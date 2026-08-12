@@ -1,0 +1,189 @@
+{{--
+    Rincian kelompok tani beserta anggotanya.
+
+    Anggota yang berhenti ditandai berstatus Sudah Keluar, bukan dihapus,
+    agar riwayat keanggotaan tetap utuh (agents/rules.md bagian 5.1 catatan 5).
+
+    Status keaktifan bukan sekadar penanda: penyaluran saprotan hanya boleh
+    kepada anggota aktif (bagian 7c poin 4), sehingga kolom ini dibaca modul
+    lain saat menentukan penerima.
+--}}
+@extends('layouts.app')
+
+@section('content')
+    @php
+        use App\Support\DummyData;
+
+        $anggota = DummyData::anggotaPoktan($data['id_poktan']);
+        $alsintan = array_values(array_filter(DummyData::alsintan(), fn ($a) => $a['poktan_id'] === $data['id_poktan']));
+        $saprotan = array_values(array_filter(DummyData::saprotan(), fn ($s) => $s['poktan_id'] === $data['id_poktan']));
+
+        $aktif = count(array_filter($anggota, fn ($a) => $a['status'] === 'Aktif'));
+        $statusVerifikasi = \App\Enums\StatusVerifikasi::from($data['status_verifikasi']);
+    @endphp
+
+    <x-sim.page-header :judul="$data['nama']"
+        :keterangan="'Kelompok tani di ' . $data['satuan_permukiman'] . ', berdiri sejak ' . $data['tahun_berdiri'] . '.'"
+        :remah="[
+            ['label' => 'Kelembagaan'],
+            ['label' => 'Kelompok Tani', 'url' => route('poktan.index')],
+            ['label' => $data['nama']],
+        ]" />
+
+    <div class="grid gap-6 lg:grid-cols-[20rem_1fr]">
+        <aside class="lg:sticky lg:top-24 lg:self-start">
+            <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
+                <h2 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">Profil Poktan</h2>
+
+                <div class="mt-3">
+                    <x-sim.status-badge :status="$statusVerifikasi" />
+                </div>
+
+                <dl class="mt-5 space-y-3 border-t border-gray-200 pt-5 text-theme-sm dark:border-gray-800">
+                    <div class="flex justify-between gap-3">
+                        <dt class="text-gray-500 dark:text-gray-400">Ketua</dt>
+                        <dd class="text-right font-medium text-gray-800 dark:text-white/90">{{ $data['nama_ketua'] }}</dd>
+                    </div>
+                    <div class="flex justify-between gap-3">
+                        <dt class="text-gray-500 dark:text-gray-400">NIK ketua</dt>
+                        <dd class="text-right font-medium tabular-nums text-gray-800 dark:text-white/90">
+                            {{ $data['nik_ketua'] }}</dd>
+                    </div>
+                    <div class="flex justify-between gap-3">
+                        <dt class="text-gray-500 dark:text-gray-400">Telepon</dt>
+                        <dd class="text-right font-medium tabular-nums text-gray-800 dark:text-white/90">
+                            {{ $data['telepon_ketua'] }}</dd>
+                    </div>
+                    <div class="flex justify-between gap-3">
+                        <dt class="text-gray-500 dark:text-gray-400">Email</dt>
+                        <dd class="text-right font-medium text-gray-800 dark:text-white/90">
+                            {{ $data['email_ketua'] ?? '-' }}</dd>
+                    </div>
+                    <div class="flex justify-between gap-3">
+                        <dt class="text-gray-500 dark:text-gray-400">Satuan permukiman</dt>
+                        <dd class="text-right font-medium text-gray-800 dark:text-white/90">
+                            <a href="{{ route('dashboard.sp', $data['satuan_permukiman_id']) }}"
+                                class="rounded text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
+                                {{ $data['satuan_permukiman'] }}
+                            </a>
+                        </dd>
+                    </div>
+                    <div class="flex justify-between gap-3">
+                        <dt class="text-gray-500 dark:text-gray-400">Anggota aktif</dt>
+                        <dd class="text-right font-medium tabular-nums text-gray-800 dark:text-white/90">
+                            {{ $aktif }} dari {{ count($anggota) }} terdata</dd>
+                    </div>
+                </dl>
+            </div>
+        </aside>
+
+        <div x-data="hashTabs('anggota')" class="min-w-0">
+            <div class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+                <div class="flex gap-1 overflow-x-auto border-b border-gray-200 px-2 pt-2 dark:border-gray-800"
+                    role="tablist" aria-label="Rincian kelompok tani">
+                    @foreach ([
+                        'anggota' => 'Anggota (' . count($anggota) . ')',
+                        'alsintan' => 'Alsintan (' . count($alsintan) . ')',
+                        'saprotan' => 'Saprotan (' . count($saprotan) . ')',
+                    ] as $kunci => $label)
+                        <button type="button" role="tab" @click="setTab('{{ $kunci }}')"
+                            :aria-selected="tab === '{{ $kunci }}'"
+                            :class="tab === '{{ $kunci }}'
+                                ? 'border-brand-500 text-brand-600 dark:text-brand-400'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
+                            class="shrink-0 border-b-2 px-4 py-2.5 text-theme-sm font-medium transition focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
+                            {{ $label }}
+                        </button>
+                    @endforeach
+                </div>
+
+                <div x-show="tab === 'anggota'" role="tabpanel">
+                    @if (empty($anggota))
+                        <x-sim.empty-state judul="Belum ada anggota terdata"
+                            pesan="Daftar anggota kelompok tani ini akan tampil setelah didata." />
+                    @else
+                        <x-sim.tabel-ringkas :kolom="['Nama', 'NIK', 'Jabatan', 'Tanggal Masuk', 'Status']">
+                            @foreach ($anggota as $a)
+                                <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
+                                    <td class="px-5 py-3">
+                                        <a href="{{ route('transmigran.detail', $a['transmigran_id']) }}"
+                                            class="rounded text-theme-sm text-gray-800 hover:text-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-white/90 dark:hover:text-brand-400">
+                                            {{ $a['nama'] }}
+                                        </a>
+                                    </td>
+                                    <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
+                                        {{ $a['nik'] }}</td>
+                                    <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
+                                        {{ $a['jabatan'] }}</td>
+                                    <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
+                                        {{ \Illuminate\Support\Carbon::parse($a['tanggal_masuk'])->translatedFormat('d M Y') }}
+                                        @if ($a['tanggal_keluar'])
+                                            <p class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                                                keluar {{ \Illuminate\Support\Carbon::parse($a['tanggal_keluar'])->translatedFormat('d M Y') }}
+                                            </p>
+                                        @endif
+                                    </td>
+                                    <td class="px-5 py-3">
+                                        <x-sim.status-badge
+                                            :status="\App\Enums\StatusKeaktifanAnggota::from($a['status'])" />
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </x-sim.tabel-ringkas>
+
+                        <p class="border-t border-gray-200 p-5 text-theme-xs text-gray-600 dark:border-gray-800 dark:text-gray-400">
+                            Anggota yang berhenti ditandai Sudah Keluar, bukan dihapus, agar riwayat
+                            keanggotaan tetap utuh. Penyaluran saprotan hanya untuk anggota berstatus Aktif.
+                        </p>
+                    @endif
+                </div>
+
+                <div x-show="tab === 'alsintan'" x-cloak role="tabpanel">
+                    @if (empty($alsintan))
+                        <x-sim.empty-state judul="Belum ada alsintan"
+                            pesan="Bantuan alat dan mesin pertanian untuk kelompok ini akan tampil di sini." />
+                    @else
+                        <x-sim.tabel-ringkas :kolom="['Nama Alat', 'Jumlah', 'Tahun', 'Kondisi']">
+                            @foreach ($alsintan as $a)
+                                <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
+                                    <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">
+                                        {{ $a['nama_alat'] }}</td>
+                                    <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
+                                        {{ $a['jumlah'] }}</td>
+                                    <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
+                                        {{ $a['tahun_perolehan'] }}</td>
+                                    <td class="px-5 py-3">
+                                        <x-sim.status-badge :status="\App\Enums\Kondisi::from($a['kondisi'])" />
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </x-sim.tabel-ringkas>
+                    @endif
+                </div>
+
+                <div x-show="tab === 'saprotan'" x-cloak role="tabpanel">
+                    @if (empty($saprotan))
+                        <x-sim.empty-state judul="Belum ada penyaluran saprotan"
+                            pesan="Penyaluran benih, pupuk, atau pestisida akan tampil di sini." />
+                    @else
+                        <x-sim.tabel-ringkas :kolom="['Jenis', 'Nama', 'Jumlah', 'Tanggal']">
+                            @foreach ($saprotan as $s)
+                                <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
+                                    <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
+                                        {{ $s['jenis'] }}</td>
+                                    <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">
+                                        {{ $s['nama'] }}</td>
+                                    <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
+                                        {{ number_format($s['jumlah'], 0, ',', '.') }} {{ $s['satuan'] }}</td>
+                                    <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
+                                        {{ \Illuminate\Support\Carbon::parse($s['tanggal_perolehan'])->translatedFormat('d M Y') }}
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </x-sim.tabel-ringkas>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+@endsection

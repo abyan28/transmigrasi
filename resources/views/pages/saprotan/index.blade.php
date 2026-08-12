@@ -1,0 +1,147 @@
+{{--
+    Penyaluran sarana produksi pertanian.
+
+    Penerima dapat berupa kelompok tani maupun individu transmigran
+    (agents/rules.md bagian 7c poin 3). Penyaluran kepada anggota poktan hanya
+    untuk anggota berstatus aktif (poin 4), aturan yang dijaga saat pemilihan
+    penerima pada Tahap 6.
+--}}
+@extends('layouts.app')
+
+@section('content')
+    @php
+        use App\Support\DummyData;
+
+        $semua = DummyData::saprotan();
+
+        $cari = trim((string) request('cari', ''));
+        $filterSp = request('sp');
+        $filterJenis = request('jenis');
+
+        $baris = array_values(array_filter($semua, function ($s) use ($cari, $filterSp, $filterJenis) {
+            if ($cari !== '' && ! str_contains(mb_strtolower($s['nama']), mb_strtolower($cari))
+                && ! str_contains(mb_strtolower($s['penerima']), mb_strtolower($cari))) {
+                return false;
+            }
+            if ($filterSp && (string) $s['satuan_permukiman_id'] !== (string) $filterSp) {
+                return false;
+            }
+            if ($filterJenis && $s['jenis'] !== $filterJenis) {
+                return false;
+            }
+
+            return true;
+        }));
+
+        $adaFilter = $cari !== '' || $filterSp || $filterJenis;
+        $kePoktan = count(array_filter($semua, fn ($s) => $s['jenis_penerima'] === 'Poktan'));
+        $jenisUnik = array_values(array_unique(array_column($semua, 'jenis')));
+    @endphp
+
+    <x-sim.halaman-daftar judul="Saprotan"
+        keterangan="Penyaluran benih, pupuk, pestisida, dan mulsa kepada petani."
+        :remah="[['label' => 'Kelembagaan'], ['label' => 'Saprotan']]"
+        :jumlah="count($baris)" :kata-kunci="$cari" :aksi-url="route('saprotan.index')"
+        placeholder-cari="Cari nama saprotan atau penerima" judul-kosong="Belum ada penyaluran saprotan"
+        pesan-kosong="Penyaluran sarana produksi akan tampil di sini setelah dicatat.">
+
+        <x-slot:ringkasan>
+            <x-sim.stat-card label="Catatan Penyaluran" :nilai="count($semua)" />
+            <x-sim.stat-card label="Jenis Saprotan" :nilai="count($jenisUnik)" />
+            <x-sim.stat-card label="Kepada Poktan" :nilai="$kePoktan" />
+            <x-sim.stat-card label="Kepada Individu" :nilai="count($semua) - $kePoktan" />
+        </x-slot:ringkasan>
+
+        <x-slot:filter>
+            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div>
+                    <label for="filter_sp"
+                        class="mb-1.5 block text-theme-xs font-medium text-gray-700 dark:text-gray-400">Satuan Permukiman</label>
+                    <select id="filter_sp" name="sp"
+                        class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
+                        <option value="">Semua SP</option>
+                        @foreach (DummyData::satuanPermukiman() as $sp)
+                            <option value="{{ $sp['id_satuan_permukiman'] }}"
+                                @selected($filterSp == $sp['id_satuan_permukiman'])>{{ $sp['nama'] }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label for="filter_jenis"
+                        class="mb-1.5 block text-theme-xs font-medium text-gray-700 dark:text-gray-400">Jenis Saprotan</label>
+                    <select id="filter_jenis" name="jenis"
+                        class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
+                        <option value="">Semua jenis</option>
+                        @foreach (\App\Enums\JenisSaprotan::opsi() as $nilai => $label)
+                            <option value="{{ $nilai }}" @selected($filterJenis === $nilai)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="flex items-end gap-2">
+                    <button type="submit"
+                        class="h-10 flex-1 rounded-lg bg-brand-500 px-4 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
+                        Terapkan Filter
+                    </button>
+                    @if ($adaFilter)
+                        <a href="{{ route('saprotan.index') }}"
+                            class="flex h-10 items-center rounded-lg border border-gray-300 px-3 text-theme-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
+                            Bersihkan
+                        </a>
+                    @endif
+                </div>
+            </div>
+        </x-slot:filter>
+
+        <x-slot:kepala>
+            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Jenis</th>
+            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Nama Saprotan</th>
+            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Jumlah</th>
+            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Penerima</th>
+            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Tanggal</th>
+            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Sumber</th>
+            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Verifikasi</th>
+        </x-slot:kepala>
+
+        @foreach ($baris as $s)
+            <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
+                <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ $s['jenis'] }}</td>
+                <td class="px-5 py-3 text-theme-sm font-medium text-gray-800 dark:text-white/90">{{ $s['nama'] }}</td>
+                <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
+                    {{ number_format($s['jumlah'], 0, ',', '.') }} {{ $s['satuan'] }}</td>
+                <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
+                    @if ($s['poktan_id'])
+                        <a href="{{ route('poktan.detail', $s['poktan_id']) }}"
+                            class="rounded text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
+                            {{ $s['penerima'] }}
+                        </a>
+                    @elseif ($s['transmigran_id'])
+                        <a href="{{ route('transmigran.detail', $s['transmigran_id']) }}"
+                            class="rounded text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
+                            {{ $s['penerima'] }}
+                        </a>
+                    @else
+                        {{ $s['penerima'] }}
+                    @endif
+                    <p class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">{{ $s['jenis_penerima'] }}</p>
+                </td>
+                <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
+                    {{ \Illuminate\Support\Carbon::parse($s['tanggal_perolehan'])->translatedFormat('d M Y') }}</td>
+                <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ $s['sumber'] }}</td>
+                <td class="px-5 py-3">
+                    <x-sim.status-badge :status="\App\Enums\StatusVerifikasi::from($s['status_verifikasi'])" />
+                </td>
+            </tr>
+        @endforeach
+
+        <x-slot:kartu>
+            @foreach ($baris as $s)
+                <div class="p-4">
+                    <p class="text-theme-sm font-medium text-gray-800 dark:text-white/90">{{ $s['nama'] }}</p>
+                    <p class="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
+                        {{ number_format($s['jumlah'], 0, ',', '.') }} {{ $s['satuan'] }} &middot; {{ $s['penerima'] }}
+                    </p>
+                </div>
+            @endforeach
+        </x-slot:kartu>
+    </x-sim.halaman-daftar>
+@endsection

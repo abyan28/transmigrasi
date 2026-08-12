@@ -1,0 +1,279 @@
+{{--
+    Daftar rumah dan hunian.
+
+    Mengikuti pola CRUD modul transmigran: daftar lebar penuh yang didominasi
+    tabel, filter dalam laci terlipat, modal tambah, dan dialog konfirmasi.
+--}}
+@extends('layouts.app')
+
+@section('content')
+    @php
+        use App\Support\DummyData;
+
+        $semua = DummyData::rumah();
+
+        $cari = trim((string) request('cari', ''));
+        $filterSp = request('sp');
+        $filterKondisi = request('kondisi');
+        $filterHunian = request('status_hunian');
+
+        $baris = array_values(array_filter($semua, function ($r) use ($cari, $filterSp, $filterKondisi, $filterHunian) {
+            if ($cari !== '') {
+                $cocok = str_contains(mb_strtolower((string) $r['no_rumah']), mb_strtolower($cari))
+                    || str_contains(mb_strtolower((string) ($r['penghuni'] ?? '')), mb_strtolower($cari));
+
+                if (! $cocok) {
+                    return false;
+                }
+            }
+
+            if ($filterSp && (string) $r['satuan_permukiman_id'] !== (string) $filterSp) {
+                return false;
+            }
+
+            if ($filterKondisi && $r['kondisi'] !== $filterKondisi) {
+                return false;
+            }
+
+            if ($filterHunian && $r['status_hunian'] !== $filterHunian) {
+                return false;
+            }
+
+            return true;
+        }));
+
+        $adaFilter = $cari !== '' || $filterSp || $filterKondisi || $filterHunian;
+
+        $jumlahDihuni = count(array_filter($semua, fn ($r) => $r['status_hunian'] === 'Dihuni'));
+        $jumlahRusak = count(array_filter($semua, fn ($r) => $r['kondisi'] !== 'Tidak Rusak'));
+
+        $bolehTambah = true;
+        $bolehHapus = true;
+        $bolehVerifikasi = true;
+    @endphp
+
+    <x-sim.page-header judul="Rumah dan Hunian"
+        keterangan="Data rumah beserta penghuninya di seluruh satuan permukiman."
+        :remah="[['label' => 'Kependudukan'], ['label' => 'Rumah dan Hunian']]">
+        <x-slot:aksi>
+            @if ($bolehTambah)
+                <button type="button" @click="$dispatch('buka-modal', 'formTambahRumah')"
+                    class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+                        aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    Tambah Data Rumah
+                </button>
+            @endif
+        </x-slot:aksi>
+    </x-sim.page-header>
+
+    <div class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <x-sim.stat-card label="Total Rumah" :nilai="number_format(count($semua), 0, ',', '.')" satuan="unit" />
+        <x-sim.stat-card label="Rumah Terhuni" :nilai="number_format($jumlahDihuni, 0, ',', '.')"
+            :keterangan="'dari ' . count($semua) . ' unit terdata'" />
+        <x-sim.stat-card label="Rumah Kosong"
+            :nilai="number_format(count($semua) - $jumlahDihuni, 0, ',', '.')" />
+        <x-sim.stat-card label="Perlu Perbaikan" :nilai="number_format($jumlahRusak, 0, ',', '.')"
+            keterangan="Rusak ringan atau rusak berat" />
+    </div>
+
+    <form method="GET" action="{{ route('rumah.index') }}">
+        <x-sim.data-table :jumlah="count($baris)" :kata-kunci="$cari"
+            placeholder-cari="Cari nomor rumah atau penghuni" judul-kosong="Belum ada data rumah"
+            pesan-kosong="Data rumah akan tampil di sini setelah ditambahkan.">
+
+            <x-slot:filter>
+                <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <div>
+                        <label for="filter_sp"
+                            class="mb-1.5 block text-theme-xs font-medium text-gray-700 dark:text-gray-400">
+                            Satuan Permukiman
+                        </label>
+                        <select id="filter_sp" name="sp"
+                            class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
+                            <option value="">Semua SP</option>
+                            @foreach (DummyData::satuanPermukiman() as $sp)
+                                <option value="{{ $sp['id_satuan_permukiman'] }}"
+                                    @selected($filterSp == $sp['id_satuan_permukiman'])>{{ $sp['nama'] }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="filter_kondisi"
+                            class="mb-1.5 block text-theme-xs font-medium text-gray-700 dark:text-gray-400">
+                            Kondisi Rumah
+                        </label>
+                        <select id="filter_kondisi" name="kondisi"
+                            class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
+                            <option value="">Semua kondisi</option>
+                            @foreach (\App\Enums\KondisiRumah::opsi() as $nilai => $label)
+                                <option value="{{ $nilai }}" @selected($filterKondisi === $nilai)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="filter_hunian"
+                            class="mb-1.5 block text-theme-xs font-medium text-gray-700 dark:text-gray-400">
+                            Status Hunian
+                        </label>
+                        <select id="filter_hunian" name="status_hunian"
+                            class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
+                            <option value="">Semua status</option>
+                            @foreach (\App\Enums\StatusHunian::opsi() as $nilai => $label)
+                                <option value="{{ $nilai }}" @selected($filterHunian === $nilai)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="flex items-end gap-2">
+                        <button type="submit"
+                            class="h-10 flex-1 rounded-lg bg-brand-500 px-4 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
+                            Terapkan Filter
+                        </button>
+                        @if ($adaFilter)
+                            <a href="{{ route('rumah.index') }}"
+                                class="flex h-10 items-center rounded-lg border border-gray-300 px-3 text-theme-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
+                                Bersihkan
+                            </a>
+                        @endif
+                    </div>
+                </div>
+            </x-slot:filter>
+
+            <x-slot:aksiKanan>
+                <button type="submit"
+                    class="h-10 shrink-0 rounded-lg border border-gray-300 px-3 text-theme-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
+                    Cari
+                </button>
+            </x-slot:aksiKanan>
+
+            <x-slot:aksiKosong>
+                @if ($adaFilter)
+                    <a href="{{ route('rumah.index') }}"
+                        class="inline-flex items-center rounded-lg border border-gray-300 px-4 py-2.5 text-theme-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
+                        Bersihkan Filter
+                    </a>
+                @elseif ($bolehTambah)
+                    <button type="button" @click="$dispatch('buka-modal', 'formTambahRumah')"
+                        class="inline-flex items-center rounded-lg bg-brand-500 px-4 py-2.5 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
+                        Tambah Data Rumah
+                    </button>
+                @endif
+            </x-slot:aksiKosong>
+
+            <x-slot:kepala>
+                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Nomor</th>
+                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Penghuni</th>
+                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">
+                    Satuan Permukiman
+                </th>
+                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Kondisi</th>
+                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">
+                    Status Hunian
+                </th>
+                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Verifikasi</th>
+                <th scope="col" class="px-5 py-3 text-right text-theme-xs font-medium text-gray-500 dark:text-gray-400">
+                    Aksi
+                </th>
+            </x-slot:kepala>
+
+            @foreach ($baris as $r)
+                <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
+                    <td class="px-5 py-3">
+                        <a href="{{ route('rumah.detail', $r['id_rumah']) }}"
+                            class="rounded text-theme-sm font-medium text-gray-800 hover:text-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-white/90 dark:hover:text-brand-400">
+                            {{ $r['no_rumah'] }}
+                        </a>
+                    </td>
+                    <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
+                        {{ $r['penghuni'] ?? '-' }}
+                    </td>
+                    <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
+                        {{ $r['satuan_permukiman'] }}
+                    </td>
+                    <td class="px-5 py-3">
+                        <x-sim.status-badge :status="\App\Enums\KondisiRumah::from($r['kondisi'])" />
+                    </td>
+                    <td class="px-5 py-3">
+                        <x-sim.status-badge :status="\App\Enums\StatusHunian::from($r['status_hunian'])"
+                            :catatan="$r['alasan_tidak_dihuni'] ?? null" />
+                    </td>
+                    <td class="px-5 py-3">
+                        <x-sim.status-badge :status="\App\Enums\StatusVerifikasi::from($r['status_verifikasi'])" />
+                    </td>
+                    <td class="px-5 py-3">
+                        <div class="flex items-center justify-end gap-1">
+                            <a href="{{ route('rumah.detail', $r['id_rumah']) }}"
+                                aria-label="Lihat rincian rumah {{ $r['no_rumah'] }}"
+                                class="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-gray-400 dark:hover:bg-white/5">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                    stroke-width="1.5" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                            </a>
+
+                            @if ($bolehHapus)
+                                <button type="button"
+                                    @click.prevent="$dispatch('buka-konfirmasi', {
+                                        nama: 'hapusRumah',
+                                        aksi: '{{ route('rumah.hapus', $r['id_rumah']) }}'
+                                    })"
+                                    aria-label="Hapus data rumah {{ $r['no_rumah'] }}"
+                                    class="rounded-lg p-2 text-gray-500 transition hover:bg-red-50 hover:text-red-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-gray-400 dark:hover:bg-red-500/10">
+                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                        stroke-width="1.5" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                                    </svg>
+                                </button>
+                            @endif
+                        </div>
+                    </td>
+                </tr>
+            @endforeach
+
+            <x-slot:kartu>
+                @foreach ($baris as $r)
+                    <div class="p-4">
+                        <div class="flex items-start justify-between gap-3">
+                            <a href="{{ route('rumah.detail', $r['id_rumah']) }}"
+                                class="min-w-0 rounded focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
+                                <p class="text-theme-sm font-medium text-gray-800 dark:text-white/90">
+                                    {{ $r['no_rumah'] }}
+                                </p>
+                                <p class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                                    {{ $r['penghuni'] ?? 'Belum berpenghuni' }}
+                                </p>
+                            </a>
+                            <x-sim.status-badge :status="\App\Enums\KondisiRumah::from($r['kondisi'])" ukuran="sm" />
+                        </div>
+                        <p class="mt-2 text-theme-xs text-gray-500 dark:text-gray-400">
+                            {{ $r['satuan_permukiman'] }}
+                        </p>
+                    </div>
+                @endforeach
+            </x-slot:kartu>
+        </x-sim.data-table>
+    </form>
+
+    @if ($bolehTambah)
+        <x-sim.modal-form nama="formTambahRumah" judul="Tambah Data Rumah"
+            keterangan="Isian bertanda bintang wajib diisi." :aksi="route('rumah.simpan')" ukuran="xl"
+            label-simpan="Simpan Data Rumah" :boleh-verifikasi="$bolehVerifikasi">
+            @include('pages.rumah.form', ['awalan' => 'tambah'])
+        </x-sim.modal-form>
+    @endif
+
+    @if ($bolehHapus)
+        <x-sim.confirm-dialog nama="hapusRumah" judul="Hapus data rumah ini?"
+            pesan="Riwayat penghunian rumah ini tetap tersimpan dan dapat dipulihkan admin."
+            label-setuju="Hapus Data Rumah" />
+    @endif
+@endsection

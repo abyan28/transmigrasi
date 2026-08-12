@@ -1,0 +1,135 @@
+{{--
+    Data master komoditas.
+
+    Setiap komoditas wajib punya satuan panen baku (agents/rules.md bagian 8
+    poin 4). Satuan itulah yang dipakai form hasil panen, sehingga jagung
+    selalu tercatat dalam ton dan cabai dalam kilogram.
+
+    Komoditas unggulan ditandai memakai aksen gold, salah satu dari empat
+    pemakaian sah aksen tunggal (agents/ui-spec.md bagian 2.4).
+--}}
+@extends('layouts.app')
+
+@section('content')
+    @php
+        use App\Support\DummyData;
+
+        $semua = DummyData::komoditas();
+        $sebaran = DummyData::sebaranKomoditas();
+
+        $cari = trim((string) request('cari', ''));
+        $filterTipe = request('tipe');
+
+        $baris = array_values(array_filter($semua, function ($k) use ($cari, $filterTipe) {
+            if ($cari !== '' && ! str_contains(mb_strtolower($k['nama']), mb_strtolower($cari))) {
+                return false;
+            }
+            if ($filterTipe && $k['tipe'] !== $filterTipe) {
+                return false;
+            }
+
+            return true;
+        }));
+
+        $adaFilter = $cari !== '' || $filterTipe;
+        $unggulan = count(array_filter($semua, fn ($k) => $k['is_unggulan']));
+    @endphp
+
+    <x-sim.halaman-daftar judul="Data Komoditas"
+        keterangan="Komoditas kawasan beserta satuan panen bakunya."
+        :remah="[['label' => 'Pertanian'], ['label' => 'Komoditas']]"
+        :jumlah="count($baris)" :kata-kunci="$cari" :aksi-url="route('komoditas.index')"
+        placeholder-cari="Cari nama komoditas" judul-kosong="Belum ada data komoditas"
+        pesan-kosong="Komoditas kawasan akan tampil di sini setelah didata.">
+
+        <x-slot:ringkasan>
+            <x-sim.stat-card label="Jenis Komoditas" :nilai="count($semua)" />
+            <x-sim.stat-card label="Komoditas Unggulan" :nilai="$unggulan" />
+            <x-sim.stat-card label="Satuan Dipakai" :nilai="count(array_unique(array_column($semua, 'satuan')))" />
+            <x-sim.stat-card label="Total Panen Tercatat"
+                :nilai="number_format(array_sum($sebaran), 1, ',', '.')" satuan="ton" />
+        </x-slot:ringkasan>
+
+        <x-slot:filter>
+            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div>
+                    <label for="filter_tipe"
+                        class="mb-1.5 block text-theme-xs font-medium text-gray-700 dark:text-gray-400">Tipe Komoditas</label>
+                    <select id="filter_tipe" name="tipe"
+                        class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
+                        <option value="">Semua tipe</option>
+                        @foreach (\App\Enums\TipeKomoditas::opsi() as $nilai => $label)
+                            <option value="{{ $nilai }}" @selected($filterTipe === $nilai)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="flex items-end gap-2">
+                    <button type="submit"
+                        class="h-10 flex-1 rounded-lg bg-brand-500 px-4 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
+                        Terapkan Filter
+                    </button>
+                    @if ($adaFilter)
+                        <a href="{{ route('komoditas.index') }}"
+                            class="flex h-10 items-center rounded-lg border border-gray-300 px-3 text-theme-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
+                            Bersihkan
+                        </a>
+                    @endif
+                </div>
+            </div>
+        </x-slot:filter>
+
+        <x-slot:kepala>
+            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Nama Komoditas</th>
+            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Tipe</th>
+            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Satuan Panen Baku</th>
+            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Volume Tercatat</th>
+            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Keterangan</th>
+        </x-slot:kepala>
+
+        @foreach ($baris as $k)
+            <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
+                <td class="px-5 py-3">
+                    <div class="flex items-center gap-2">
+                        <span class="text-theme-sm font-medium text-gray-800 dark:text-white/90">{{ $k['nama'] }}</span>
+                        @if ($k['is_unggulan'])
+                            {{-- Aksen gold, salah satu dari empat pemakaian sah --}}
+                            <span class="rounded-full bg-gold-100 px-2 py-0.5 text-theme-xs font-medium text-gold-800 dark:bg-gold-500/20 dark:text-gold-300">
+                                Unggulan
+                            </span>
+                        @endif
+                    </div>
+                </td>
+                <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ $k['tipe'] }}</td>
+                <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">{{ $k['satuan'] }}</td>
+                <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
+                    @php $vol = $sebaran[ucfirst(mb_strtolower($k['nama']))] ?? null; @endphp
+                    {{ $vol !== null ? number_format($vol, 1, ',', '.') . ' ton' : '-' }}
+                </td>
+                <td class="px-5 py-3 text-theme-xs text-gray-500 dark:text-gray-400">{{ $k['deskripsi'] ?? '-' }}</td>
+            </tr>
+        @endforeach
+
+        <x-slot:kartu>
+            @foreach ($baris as $k)
+                <div class="p-4">
+                    <div class="flex items-start justify-between gap-3">
+                        <p class="text-theme-sm font-medium text-gray-800 dark:text-white/90">{{ $k['nama'] }}</p>
+                        @if ($k['is_unggulan'])
+                            <span class="shrink-0 rounded-full bg-gold-100 px-2 py-0.5 text-theme-xs font-medium text-gold-800 dark:bg-gold-500/20 dark:text-gold-300">
+                                Unggulan
+                            </span>
+                        @endif
+                    </div>
+                    <p class="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
+                        {{ $k['tipe'] }} &middot; satuan {{ $k['satuan'] }}
+                    </p>
+                </div>
+            @endforeach
+        </x-slot:kartu>
+    </x-sim.halaman-daftar>
+
+    <p class="mt-4 rounded-lg bg-gray-50 p-3.5 text-theme-xs text-gray-600 dark:bg-white/[0.03] dark:text-gray-400">
+        Satuan panen ditetapkan di sini dan tidak dapat diubah operator saat mencatat panen.
+        Aturan ini menjaga rekap lintas komoditas tetap sepadan setelah dikonversi ke ton.
+    </p>
+@endsection

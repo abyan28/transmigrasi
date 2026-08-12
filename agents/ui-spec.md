@@ -1,0 +1,839 @@
+# ui-spec.md
+## Spesifikasi Antarmuka — Sistem Informasi Digitalisasi Monitoring Pertanian dan Tata Kelola Data Kawasan Transmigrasi Kobalima Timur
+
+Dokumen ini adalah acuan tunggal untuk pengerjaan frontend. Konsisten dengan `prd.md`, `rules.md`, dan `workflow.md`. Nama field dan aturan validasi form mengacu pada `data-dictionary.md`.
+
+> **Status:** palet warna sudah final (diambil dari logo resmi). Fondasi template sudah ditetapkan: **TailAdmin Laravel**. Referensi tata letak dari Figma masih menyusul; bagian yang menunggu ditandai `TODO`.
+
+---
+
+## 1. Stack dan Fondasi
+
+| Aspek | Keputusan |
+|---|---|
+| PHP | **8.2.12** (bawaan XAMPP) |
+| Framework | **Laravel 12.x** |
+| Template engine | **Blade** |
+| Interaktivitas | **Alpine.js 3** |
+| Styling | **Tailwind CSS v4** |
+| Grafik | **ApexCharts 5** |
+| Pemilih tanggal | **Flatpickr** |
+| Build tool | **Vite 7** |
+| Fondasi komponen | **TailAdmin Laravel** — https://github.com/TailAdmin/tailadmin-laravel (MIT) |
+| Basis data | MySQL/MariaDB (XAMPP) |
+| Acuan visual | Template Figma pilihan tim (tata letak) |
+
+**Strategi pengerjaan:** repositori TailAdmin di-clone sebagai titik awal, dibersihkan dari halaman contoh, lalu di-restyle memakai palet resmi Kementerian. Seluruh halaman dibangun sebagai Blade dengan **data dummy**. Ketika backend siap, sumber data ditukar tanpa mengubah tampilan.
+
+### 1.1 Yang sudah disediakan TailAdmin
+
+| Sudah ada | Keterangan |
+|---|---|
+| Layout sidebar + header + backdrop | Tinggal diganti isi menunya |
+| Komponen UI | `alert`, `avatar`, `badge`, `button`, `modal` |
+| Komponen form | input, select, checkbox, radio, textarea, toggle, dropzone, date picker |
+| Komponen tabel | 5 varian tabel dasar |
+| Breadcrumb, dropdown, preloader | Siap pakai |
+| Mode gelap | Lewat `@custom-variant dark` |
+| ApexCharts terpasang | Contoh grafik garis dan batang |
+
+### 1.2 Yang harus dibuang saat pembersihan
+
+Halaman contoh yang tidak relevan: dashboard e-commerce, kalender, dan seluruh halaman demo UI (alerts, avatars, badges, buttons, images, videos). Komponen `ecommerce/*` (6 berkas) dan `calender-area` ikut dihapus.
+
+Dependensi npm yang dicabut karena tak terpakai: `@fullcalendar/*` (5 paket), `jsvectormap`, `swiper`, `prismjs`, `@popperjs/core`, `@floating-ui/dom`.
+
+Yang dipertahankan: `alpinejs`, `apexcharts`, `flatpickr`, `axios`, `tailwindcss`, `vite`, `laravel-vite-plugin`, `concurrently`.
+
+### 1.3 Yang harus dibangun sendiri
+
+| Belum ada di TailAdmin | Catatan |
+|---|---|
+| **Autentikasi** | `signin.blade.php` hanya tampilan statis, tanpa controller, model, maupun sesi. Login nyata dikerjakan pada Tahap 3 |
+| Komponen khusus domain | `x-data-table`, `x-wilayah-picker`, `x-koordinat-input`, `x-stat-card`, `x-file-upload`, `x-empty-state`, `x-toast`, `x-confirm-dialog` |
+| Helper `hashTabs()` | Tab persisten lewat query string (`rules.md` §13.2 poin 1) |
+| Menu per role | Sidebar bawaan berisi menu contoh, diganti struktur pada §4 |
+
+**Catatan lisensi:** TailAdmin Laravel berlisensi MIT, sehingga bebas dipakai dan dimodifikasi untuk instansi pemerintah. Berkas `LICENSE` asli wajib dipertahankan di dalam repositori.
+
+---
+
+## 2. Arah Desain
+
+Bagian ini memenuhi `ANTISLOP-ID.md` Bagian 3 dan R-37. Tanpa arah yang dinyatakan, hasil desain akan jatuh ke default netral yang steril, dan itu dihitung sebagai kegagalan, sama seperti slop.
+
+### 2.1 Pembacaan Desain
+
+> Membaca ini sebagai: **aplikasi pendataan pemerintahan** untuk **operator desa, pendamping lapangan, dan staf dinas**, dengan bahasa visual **institusional yang tenang dan padat data**, dial **ENERGI 1 / RITME 2 / GERAK 1**.
+
+### 2.2 Tiga Dial
+
+| Dial | Nilai | Alasan |
+|---|---|---|
+| **ENERGI** | **1** (Tenang) | Sistem dipakai untuk tugas berulang setiap hari, bukan untuk membujuk pengunjung. Antarmuka yang menyapa keras justru melelahkan operator yang mengisi puluhan baris data. Acuan rasa: GOV.UK |
+| **RITME** | **2** (Seimbang) | Keseragaman penuh akan membuat dashboard, halaman daftar, dan halaman detail terasa sama dan membingungkan. Variasi komposisi antar-jenis halaman menjadi penanda orientasi: pengguna langsung tahu sedang berada di jenis halaman apa |
+| **GERAK** | **1** (Hanya hover dan transisi state) | Sinyal di lokus tidak stabil dan perangkat lapangan terbatas. Animasi masuk, parallax, dan scroll-reveal menambah bobot tanpa membantu tugas pendataan |
+
+**Konsekuensi RITME 2 yang wajib terlihat.** Empat jenis halaman berikut harus punya komposisi berbeda, bukan sekadar bertukar warna latar:
+
+| Jenis halaman | Komposisi |
+|---|---|
+| Dashboard | Baris kartu statistik di atas, lalu grid grafik dua kolom yang tidak sama lebar |
+| Halaman daftar | Lebar penuh, didominasi tabel, filter dalam laci yang dapat dilipat |
+| Halaman detail | Dua kolom asimetris: ringkasan entitas menetap di kiri, tab konten di kanan |
+| Halaman rekap | Tabel agregat dengan baris total yang ditegaskan, tanpa kartu statistik |
+
+Bila keempatnya berakhir dengan pola yang sama (judul di tengah, lalu grid kartu seragam), berarti RITME 2 gagal dipenuhi dan harus diulang.
+
+### 2.3 Motif Identitas
+
+Satu motif yang diulang agar antarmuka menjadi milik produk ini, bukan template mana pun. Diturunkan dari **bentuk sudut miring pada logo Kementerian Transmigrasi**.
+
+| Penerapan | Wujud |
+|---|---|
+| Penanda menu aktif di sidebar | Batang vertikal `gold-500` selebar 3px di tepi kiri item aktif |
+| Judul kartu statistik | Garis pendek `gold-500` selebar 24px di atas label |
+| Header halaman | Garis bawah tipis dengan gradasi berhenti di sepertiga lebar, bukan garis penuh |
+| Baris total pada tabel rekap | Garis atas `navy-500` setebal 2px, bukan garis abu-abu biasa |
+
+Motif ini **tidak** dipakai di tempat lain. Diulang di empat titik sudah cukup untuk membentuk identitas; lebih dari itu menjadi dekorasi.
+
+### 2.4 Satu Aksen yang Disengaja
+
+**Gold** (`#C09546`) adalah satu-satunya warna aksen, dipakai hemat dan hanya pada empat hal: motif identitas di atas, penanda prioritas Mendesak pada pengaduan, penanda komoditas unggulan, dan indikator dashboard yang melampaui target.
+
+Gold **dilarang** dipakai untuk: tombol biasa, tautan, ikon menu, garis pemisah, dan latar kartu. Aksen yang muncul di mana-mana berhenti menjadi aksen.
+
+### 2.5 Alasan Keputusan Desain (R-31)
+
+Setiap keputusan utama disertai alasan satu baris. Keputusan yang alasannya tidak dapat ditulis satu baris berarti belum valid.
+
+| Keputusan | Alasan |
+|---|---|
+| Palet navy, teal, sand, gold | Diambil dari logo resmi Kementerian Transmigrasi, sehingga identitas berasal dari instansi pemiliknya, bukan dari selera perancang |
+| Navy sebagai warna utama | Porsi terbesar pada logo (24,5%) dan memberi kontras 11,75 dengan teks putih, aman untuk sidebar dan header |
+| Gold sebagai aksen tunggal | Warna paling menonjol pada logo namun porsinya paling kecil (4,2%), sifat itu diteruskan ke antarmuka |
+| Font Outfit | Mengikuti fondasi TailAdmin; angka bergaya tabular sehingga digit sejajar pada tabel yang padat data |
+| Radius `rounded-2xl` untuk kartu | Mengikuti TailAdmin agar komponen bawaan tidak perlu disunting ulang satu per satu |
+| Kartu memakai garis tepi, bukan bayangan besar | Halaman berisi banyak kartu sekaligus; bayangan pada semuanya membuat layar terasa melayang dan menyulitkan pemindaian |
+| Tabel sebagai komponen utama, bukan kartu | Pekerjaan inti pengguna adalah membandingkan banyak baris data, dan tabel lebih padat serta lebih mudah dipindai daripada kartu |
+| Paginasi 25 baris | Kompromi antara jumlah data terlihat dan waktu muat pada koneksi lambat di lokus |
+| Filter dalam laci yang dapat dilipat | Filter jarang diubah setelah disetel, sehingga tidak layak menempati ruang tetap di atas tabel |
+| Ikon SVG sebaris, bukan paket ikon | Menghindari unduhan berkas font ikon yang membebani kuota pengguna lapangan |
+| Modal untuk form panjang | Mempertahankan konteks daftar di belakangnya, sehingga operator tidak kehilangan posisi setelah menyimpan |
+| Angka memakai `tabular-nums` | Digit sejajar secara vertikal sehingga selisih nilai antar-baris langsung terlihat |
+
+---
+
+## 3. Design Token
+
+### 3.1 Palet warna
+
+Diekstrak langsung dari logo resmi Kementerian Transmigrasi (`docs/Logo_Kementerian_Transmigrasi_Republik_Indonesia_(2024).svg.webp`). Empat warna inti:
+
+| Peran | Hex | Porsi pada logo |
+|---|---|---|
+| **Navy** — warna utama | `#163B54` | 24,5% |
+| **Teal** — aksen sekunder | `#33809C` | 7,3% |
+| **Sand** — aksen terang | `#DFB87E` | 6,2% |
+| **Gold** — aksen tegas | `#C09546` | 4,2% |
+
+**Penting — Tailwind v4 tidak memakai `tailwind.config.js`.** TailAdmin memakai Tailwind v4, yang mendefinisikan token langsung di dalam CSS lewat blok `@theme` pada `resources/css/app.css`. Setiap variabel `--color-x-500` otomatis menghasilkan kelas `bg-x-500`, `text-x-500`, `border-x-500`, dan seterusnya.
+
+Skala lengkap, ditulis pada `resources/css/app.css`:
+
+```css
+@theme {
+  /* Navy — warna utama, dari logo Kementerian Transmigrasi */
+  --color-navy-50:  #F3F5F6;
+  --color-navy-100: #E3E7EA;
+  --color-navy-200: #C2CCD3;
+  --color-navy-300: #98A9B4;
+  --color-navy-400: #5C7687;
+  --color-navy-500: #163B54;
+  --color-navy-600: #13344A;
+  --color-navy-700: #102C3E;
+  --color-navy-800: #0D2332;
+  --color-navy-900: #0A1B27;
+  --color-navy-950: #071219;
+
+  /* Teal — aksen sekunder */
+  --color-teal-50:  #F5F9FA;
+  --color-teal-100: #E7F0F3;
+  --color-teal-200: #CADEE5;
+  --color-teal-300: #A5C7D3;
+  --color-teal-400: #70A6BA;
+  --color-teal-500: #33809C;
+  --color-teal-600: #2D7189;
+  --color-teal-700: #265F73;
+  --color-teal-800: #1F4D5E;
+  --color-teal-900: #173B48;
+  --color-teal-950: #0F262F;
+
+  /* Sand — aksen terang */
+  --color-sand-50:  #FDFBF9;
+  --color-sand-100: #FBF6F0;
+  --color-sand-200: #F7EDDD;
+  --color-sand-300: #F1E0C6;
+  --color-sand-400: #E9CDA5;
+  --color-sand-500: #DFB87E;
+  --color-sand-600: #C4A26F;
+  --color-sand-700: #A5885D;
+  --color-sand-800: #866E4C;
+  --color-sand-900: #67553A;
+  --color-sand-950: #433726;
+
+  /* Gold — aksen tegas. JANGAN pakai gold-500 untuk teks putih (kontras 2,75) */
+  --color-gold-50:  #FCFAF6;
+  --color-gold-100: #F7F2E9;
+  --color-gold-200: #EFE3CF;
+  --color-gold-300: #E3D0AE;
+  --color-gold-400: #D3B57E;
+  --color-gold-500: #C09546;
+  --color-gold-600: #A9833E;
+  --color-gold-700: #8E6E34;
+  --color-gold-800: #73592A;
+  --color-gold-900: #584520;
+  --color-gold-950: #3A2D15;
+}
+```
+
+**Penyesuaian warna bawaan TailAdmin:** template memakai `--color-brand-*` dengan nilai biru elektrik `#465fff`. Seluruh nilai `--color-brand-25` sampai `--color-brand-950` **wajib ditimpa** dengan skala navy di atas, agar komponen bawaan (tombol, badge, tautan aktif sidebar) langsung mengikuti identitas Kementerian tanpa perlu menyunting satu per satu.
+
+Token bawaan TailAdmin yang **dipertahankan apa adanya**: `--color-gray-*`, `--color-success-*`, `--color-error-*`, `--color-warning-*`, seluruh `--text-title-*`, dan `--breakpoint-*`.
+
+**Pemetaan permukaan pada kedua mode.** Tailwind v4 memakai varian `dark:` lewat `@custom-variant dark (&:is(.dark *))` yang sudah tersedia di TailAdmin.
+
+| Peran permukaan | Mode terang | Mode gelap |
+|---|---|---|
+| Latar halaman | `white` | `navy-900` `#0A1B27` |
+| Latar kartu | `white` | `navy-800` `#0D2332` |
+| Garis tepi | `gray-200` | `navy-700` `#102C3E` |
+| Sidebar | `navy-500` | `navy-950` `#071219` |
+| Teks utama | `gray-900` | `white` |
+| Teks isi | `gray-700` | `navy-100` |
+| Teks keterangan | `gray-500` | `navy-300` |
+| Aksen | `gold-700` | `gold-400` |
+
+Sidebar di mode gelap memakai `navy-950`, satu tingkat lebih gelap dari latar halaman, agar tetap terbaca sebagai lapisan terpisah tanpa mengandalkan bayangan.
+
+### 3.2 Aturan kontras (WCAG) — WAJIB dipatuhi
+
+Aplikasi menyediakan **dua mode tema**, sehingga kontras wajib diuji pada keduanya (`ANTISLOP-ID.md` R-25 dan R-34). Rasio di bawah dihitung dengan rumus WCAG 2.1.
+
+#### 3.2.1 Mode terang
+
+Latar dasar putih `#FFFFFF`.
+
+| Kombinasi | Rasio | Status | Penggunaan |
+|---|---|---|---|
+| `navy-500` + teks putih | 11,75 | AAA | Tombol utama, header, sidebar |
+| `teal-700` + teks putih | 7,08 | AAA | Tombol sekunder, tautan |
+| `teal-500` + teks putih | 4,46 | AA-large | **Hanya** untuk teks ≥18px atau ikon |
+| `sand-500` + teks `navy-500` | 6,32 | AA | Badge, sorotan |
+| `gold-700` + teks putih | 4,74 | AA | Badge peringatan |
+| `gold-500` + teks putih | 2,75 | **GAGAL** | **Dilarang** untuk teks |
+
+**Aturan turunan mode terang:**
+1. `gold-500` hanya boleh dipakai sebagai latar dengan teks `navy-500`, atau sebagai garis/ikon dekoratif. Untuk teks putih gunakan `gold-700`.
+2. `teal-500` tidak boleh untuk teks kecil dengan latar putih. Gunakan `teal-700`.
+3. `sand-500` selalu dipasangkan dengan teks `navy-500`, tidak pernah putih.
+
+#### 3.2.2 Mode gelap
+
+Latar dasar `navy-900` `#0A1B27`, dipilih menggantikan `gray-900` bawaan TailAdmin agar mode gelap tetap membawa identitas navy Kementerian, bukan abu-abu netral.
+
+| Kombinasi | Rasio | Status | Penggunaan |
+|---|---|---|---|
+| `navy-900` + teks putih | 17,51 | AAA | Teks utama |
+| `navy-900` + `navy-100` | 14,08 | AAA | Teks isi |
+| `navy-900` + `navy-200` | 10,74 | AAA | Teks sekunder |
+| `navy-900` + `navy-300` | 7,23 | AAA | Teks keterangan, batas paling redup yang diizinkan |
+| `navy-900` + `sand-400` | 11,46 | AAA | Sorotan, nilai penting |
+| `navy-900` + `teal-300` | 9,77 | AAA | Tautan |
+| `navy-900` + `gold-400` | 8,91 | AAA | Aksen, penanda prioritas |
+| `navy-900` + `gold-500` | 6,36 | AA | Aksen alternatif |
+| `navy-900` + `teal-400` | 6,55 | AA | Ikon, teks besar |
+
+**Aturan turunan mode gelap:**
+1. **Warna dibalik arahnya.** Di mode terang dipakai tingkat 500 sampai 700 sebagai latar; di mode gelap dipakai tingkat 300 sampai 400 sebagai teks di atas latar gelap.
+2. `navy-300` adalah **batas paling redup** untuk teks. Tingkat di bawahnya (`navy-400` ke bawah) dilarang sebagai teks di mode gelap.
+3. `gold-500` yang gagal di mode terang justru **lolos AA di mode gelap** (6,36). Ini satu-satunya konteks gold-500 boleh menjadi warna teks.
+4. Kartu memakai latar `navy-800` `#0D2332` dengan garis tepi `navy-700`, memberi pemisahan tanpa bayangan.
+5. Bayangan tidak berfungsi di mode gelap; pemisahan lapisan wajib memakai perbedaan warna latar dan garis tepi.
+
+#### 3.2.3 Kewajiban pengujian dua mode
+
+Sesuai R-34, mode yang dikirim wajib berfungsi penuh. Yang wajib diperiksa pada **kedua** mode sebelum menyatakan selesai:
+
+- seluruh komponen bersama (§6),
+- seluruh 16 visualisasi dashboard beserta legenda, sumbu, dan tooltip,
+- seluruh varian badge status (§6.6),
+- state kosong, memuat, galat, dan tanpa izin (§7),
+- indikator fokus keyboard.
+
+Mode gelap yang merusak keterbacaan mode terang, atau sebaliknya, dihitung sebagai cacat dan wajib diperbaiki sebelum penyerahan.
+
+### 3.3 Warna semantik
+
+Memakai token semantik bawaan TailAdmin agar komponen `alert` dan `badge` template langsung cocok tanpa modifikasi.
+
+| Makna | Kelas | Nilai | Catatan |
+|---|---|---|---|
+| Sukses | `success-500` | `#12b76a` | Data tersimpan, pengaduan selesai |
+| Peringatan | `warning-500` | `#f79009` | Data belum lengkap, rusak ringan |
+| Bahaya | `error-500` | `#f04438` | Hapus, rusak berat, galat |
+| Info | `teal-700` | `#265F73` | Notifikasi netral |
+| Netral | `gray-*` | bawaan TailAdmin | Teks sekunder, garis, latar |
+
+**Catatan:** rencana awal memakai `emerald-600`, `amber-600`, `red-600`, dan `slate-*` bawaan Tailwind. Diganti ke token TailAdmin karena template sudah memakainya secara konsisten; memaksakan palet lain berarti menyunting ulang setiap komponen bawaan.
+
+### 3.4 Tipografi
+
+| Token | Nilai |
+|---|---|
+| Font | **Outfit** (fallback: system-ui, sans-serif) |
+| Judul halaman | `text-title-sm font-semibold text-navy-500` |
+| Judul kartu | `text-lg font-semibold` |
+| Teks isi | `text-theme-sm` |
+| Label form | `text-theme-sm font-medium` |
+| Keterangan | `text-theme-xs text-gray-500` |
+| Angka statistik | `text-title-sm font-bold tabular-nums` |
+
+Font **Outfit** mengikuti bawaan TailAdmin, dimuat lewat Google Fonts pada baris pertama `app.css`. Keputusan ini menggantikan rencana awal memakai Inter, karena seluruh komponen TailAdmin sudah ditata dengan metrik Outfit sehingga penggantian font akan menggeser tinggi baris di banyak komponen tanpa manfaat sepadan.
+
+Skala `text-title-*` dan `text-theme-*` adalah token bawaan TailAdmin dan dipakai menggantikan skala `text-2xl`/`text-sm` bawaan Tailwind, agar konsisten dengan komponen template.
+
+Kelas `tabular-nums` wajib pada semua angka di tabel dan kartu statistik agar digit sejajar.
+
+### 3.5 Spasi, radius, bayangan
+
+| Token | Nilai |
+|---|---|
+| Skala spasi | Kelipatan 4px (skala bawaan Tailwind) |
+| Padding kartu | `p-4` (mobile) / `p-6` (desktop) |
+| Jarak antar kartu | `gap-4` / `gap-6` |
+| Radius kartu & modal | `rounded-2xl` (mengikuti TailAdmin) |
+| Radius input & tombol | `rounded-lg` |
+| Radius badge | `rounded-full` |
+| Pemisahan kartu | `border border-gray-200 bg-white` / gelap: `border-navy-700 bg-navy-800` |
+| Bayangan modal | `shadow-xl` (mode terang saja; mode gelap memakai latar `navy-800` + garis tepi) |
+| Lebar konten maks. | `max-w-7xl` |
+
+**Catatan radius (R-11):** radius sengaja **dibedakan menurut peran**, bukan diseragamkan menjadi pil. Kartu `rounded-2xl`, kontrol `rounded-lg`, badge `rounded-full`. Perbedaan ini adalah alat hierarki: pengguna dapat membedakan wadah, kontrol, dan label hanya dari bentuk sudutnya.
+
+### 3.6 Ikon
+
+Set ikon: **SVG inline** mengikuti pola TailAdmin, yang menyimpan ikon sebagai markup SVG langsung di dalam Blade tanpa paket tambahan. Ukuran baku `w-5 h-5`, ikon menu `w-6 h-6`.
+
+Bila dibutuhkan ikon di luar koleksi bawaan template, ambil dari **Heroicons** (MIT) dan salin markup SVG-nya. Dilarang memasang paket ikon berbasis font demi menjaga ukuran unduhan tetap kecil untuk pengguna lapangan.
+
+### 3.7 Logo
+
+- Berkas sumber: `docs/Logo_Kementerian_Transmigrasi_Republik_Indonesia_(2024).svg.webp`
+- Simpan di `public/images/logo-kementrans.webp` beserta varian PNG untuk kompatibilitas.
+- Sidebar: logo + teks "SIM Transmigrasi" pada latar `navy-500`.
+- Halaman login: logo ukuran besar (`w-24`) di atas judul.
+- Kop laporan PDF: logo + nama kementerian.
+- **Larangan:** jangan mengubah warna, proporsi, atau memotong logo.
+
+---
+
+## 4. Inventaris Halaman dan Rute
+
+Total ±43 halaman. Kolom "Role" memakai singkatan: **A**=Admin, **DT**=Dinas Transmigrasi, **DP**=Dinas Pertanian, **OP**=Operator SP.
+
+Singkatan **T** (Transmigran) dan **KP** (Ketua Poktan) tidak lagi dipakai. Sesuai `rules.md`, seluruh pengguna sistem adalah petugas dan warga tidak memiliki akun, sehingga halaman yang dahulu diperuntukkan bagi kedua role tersebut dihapus dari inventaris ini. Jalur bagi warga hanya dua, keduanya tanpa login: form pengaduan warga dan halaman lacak pengaduan.
+
+### 4.1 Autentikasi
+
+| Halaman | Rute | Role |
+|---|---|---|
+| Masuk | `GET /login` | publik |
+| Proses masuk | `POST /login` | publik |
+| Keluar | `POST /logout` | semua |
+| Profil saya | `GET /profil` | semua |
+| Ubah kata sandi | `GET /profil/kata-sandi` | semua |
+| Wajib ganti kata sandi | `GET /ganti-kata-sandi` | semua |
+
+**Tidak ada halaman pendaftaran mandiri.** Akun hanya dibuat Admin lewat Manajemen Pengguna (`rules.md` §5.1). Berkas `signup.blade.php` bawaan template sudah dihapus.
+
+**Tidak ada halaman lupa kata sandi.** Pemulihan dilakukan Admin, bukan lewat tautan surel. Halaman masuk memuat keterangan berupa **teks biasa, bukan tautan**, agar tidak melanggar larangan navigasi menuju halaman yang tidak ada (`ANTISLOP-ID.md` R-24 dan R-26).
+
+**Satu kolom isian untuk dua kredensial.** Halaman masuk menyediakan satu kolom berlabel "Email atau Username". Seluruh pengguna sistem adalah petugas; warga tidak memiliki akun.
+
+**Halaman wajib ganti kata sandi** muncul otomatis setelah Admin menyetel ulang kata sandi seseorang, yaitu ketika `user.password_harus_diganti` bernilai `TRUE`. Selama belum diganti, pengguna tidak dapat mengakses halaman lain.
+
+### 4.1a Halaman Publik (tanpa login)
+
+Dua halaman berikut dapat diakses siapa pun tanpa akun, sebagai kanal pengaduan warga.
+
+| Halaman | Rute | Keterangan |
+|---|---|---|
+| Form pengaduan warga | `GET /pengaduan-warga` | Nama, kontak, SP, kategori, uraian, foto opsional |
+| Kirim pengaduan | `POST /pengaduan-warga` | Dibatasi 3 pengiriman per jam per alamat IP |
+| Lacak pengaduan | `GET /lacak-pengaduan` | Masukkan nomor pengaduan |
+| Hasil pelacakan | `POST /lacak-pengaduan` | Menampilkan status dan riwayat penanganan |
+
+**Aturan halaman publik:**
+1. Memakai tata letak terpisah tanpa sidebar, karena pengunjung bukan pengguna sistem.
+2. Bahasa dibuat sesederhana mungkin, karena penggunanya warga desa, bukan petugas.
+3. Setelah pengiriman berhasil, **nomor pengaduan ditampilkan besar dan jelas** beserta anjuran mencatatnya.
+4. Halaman lacak hanya menampilkan status, tanggal, dan catatan penanganan. Data pribadi pelapor tidak pernah ditampilkan.
+5. Bila batas pengiriman terlampaui, tampilkan pesan ramah: "Anda sudah mengirim beberapa pengaduan. Silakan coba lagi satu jam lagi."
+6. Tanpa CAPTCHA, agar tidak membebani pengguna berjaringan lemah.
+
+### 4.2 Dashboard
+
+| Halaman | Rute | Role |
+|---|---|---|
+| Dashboard utama | `GET /` | A, DT, DP |
+| Drill-down per SP | `GET /dashboard/sp/{sp}` | A, DT, DP |
+
+### 4.3 Data Master Wilayah
+
+| Halaman | Rute | Role |
+|---|---|---|
+| Daftar wilayah | `GET /wilayah` | A |
+| Daftar kawasan | `GET /kawasan` | A, DT |
+| Daftar SP | `GET /sp` | A, DT |
+| Detail SP | `GET /dashboard/sp/{sp}` | A, DT, DP |
+| Form SP | modal | A |
+| Inventaris SP | `GET /sp/inventaris` | A, DT |
+| Fasilitas SP | `GET /sp/fasilitas` | A, DT |
+| Data master satuan | `GET /master/satuan` | A |
+
+### 4.4 Kependudukan
+
+| Halaman | Rute | Role |
+|---|---|---|
+| Daftar transmigran | `GET /transmigran` | A, DT, DP |
+| Detail transmigran | `GET /transmigran/{id}` | A, DT, DP |
+| Form transmigran | modal | A, DT |
+| Daftar rumah | `GET /rumah` | A, DT |
+| Detail rumah | `GET /rumah/{id}` | A, DT |
+| Riwayat penghunian | tab pada detail rumah | A, DT |
+| Rekap kependudukan | `GET /kependudukan/rekap` | A, DT |
+
+### 4.5 Lahan
+
+| Halaman | Rute | Role |
+|---|---|---|
+| Daftar lahan | `GET /lahan` | A, DT, DP |
+| Detail lahan | `GET /lahan/{id}` | A, DT, DP |
+| Form lahan | modal | A, DT |
+| Dokumen lahan (HPL/SHM) | tab pada detail lahan | A, DT |
+
+### 4.6 Kelembagaan dan Sarana
+
+| Halaman | Rute | Role |
+|---|---|---|
+| Daftar poktan | `GET /poktan` | A, DP |
+| Detail poktan | `GET /poktan/{id}` | A, DP |
+| Anggota poktan | tab pada detail poktan | A, DP |
+| Daftar alsintan | `GET /alsintan` | A, DP |
+| Daftar saprotan | `GET /saprotan` | A, DP |
+
+### 4.7 Produksi Pertanian
+
+| Halaman | Rute | Role |
+|---|---|---|
+| Daftar komoditas | `GET /komoditas` | A, DP |
+| Musim tanam | `GET /musim-tanam` | A, DP |
+| Riwayat tanam | `GET /riwayat-tanam` | A, DP |
+| Daftar hasil panen | `GET /panen` | A, DP |
+| Detail hasil panen | `GET /panen/{id}` | A, DP |
+| Rekap panen | `GET /panen/rekap` | A, DP |
+
+### 4.8 Infrastruktur dan Pengaduan
+
+| Halaman | Rute | Role |
+|---|---|---|
+| Daftar infrastruktur | `GET /infrastruktur` | A, DT, DP |
+| Daftar pengaduan | `GET /pengaduan` | A, DT, DP |
+| Detail pengaduan | `GET /pengaduan/{id}` | A, DT, DP |
+| Form pengaduan warga | `GET /pengaduan-warga` | publik, tanpa login |
+| Lacak pengaduan | `GET /lacak-pengaduan` | publik, tanpa login |
+| Penanganan pengaduan | modal | A, DT, DP |
+| Rekap pengaduan | `GET /pengaduan/rekap` | A, DT, DP |
+
+### 4.9 Laporan dan Sistem
+
+Kolom "Izin" menggantikan kolom "Role" pada tabel-tabel sebelumnya, karena akses kini ditentukan izin, bukan nama role.
+
+| Halaman | Rute | Izin |
+|---|---|---|
+| Pusat laporan | `GET /laporan` | `laporan.lihat` |
+| Unduh template luring | tab pada pusat laporan | `laporan.export` |
+| Manajemen pengguna | `GET /pengguna` | `pengguna.lihat` |
+| Detail pengguna | modal, Tahap 3 | `pengguna.lihat` |
+| Form pengguna | modal, Tahap 3 | `pengguna.tambah` / `pengguna.ubah` |
+| Setel ulang kata sandi | modal, Tahap 3 | `pengguna.ubah` |
+| Daftar role | `GET /pengaturan/role` | `role.lihat` |
+| Form role dan izin | modal, Tahap 3 | `role.ubah` |
+| Audit log | `GET /audit-log` | `audit_log.lihat` |
+| Halaman 403 | — | semua |
+| Halaman 404 | — | semua |
+
+**Halaman form role** memuat: nama role, deskripsi, pilihan cakupan data, dan matriks centang izin yang dikelompokkan menurut modul (`data-dictionary.md` §13.2). Role bertanda terkunci ditampilkan dalam keadaan hanya-baca.
+
+**Catatan:** kolom "Role" pada tabel §4.1 sampai §4.8 kini dibaca sebagai **contoh role yang biasanya memiliki izin tersebut**, bukan pembatasan yang dikunci di kode.
+
+---
+
+## 5. Struktur Menu Sidebar
+
+Sejak role menjadi dinamis (`rules.md` bagian 5), menu **tidak lagi ditulis tetap per role**. Setiap item menu dikaitkan ke satu izin, lalu dirender hanya bila pengguna memilikinya.
+
+### 5.1 Pemetaan menu ke izin
+
+| Kelompok | Item menu | Rute | Izin yang dibutuhkan |
+|---|---|---|---|
+| | Dashboard | `/` | `dashboard.lihat` |
+| **Wilayah & SP** | Kawasan Transmigrasi | `/kawasan` | `kawasan.lihat` |
+| | Daftar SP | `/sp` | `sp.lihat` |
+| | Inventaris SP | `/sp/inventaris` | `inventaris_sp.lihat` |
+| | Fasilitas SP | `/sp/fasilitas` | `fasilitas_sp.lihat` |
+| **Kependudukan** | Transmigran | `/transmigran` | `transmigran.lihat` |
+| | Rumah & Hunian | `/rumah` | `rumah.lihat` |
+| | Rekap Kependudukan | `/kependudukan/rekap` | `transmigran.lihat` |
+| **Lahan** | Daftar Lahan | `/lahan` | `lahan.lihat` |
+| **Kelembagaan** | Kelompok Tani | `/poktan` | `poktan.lihat` |
+| | Alsintan | `/alsintan` | `alsintan.lihat` |
+| | Saprotan | `/saprotan` | `saprotan.lihat` |
+| **Pertanian** | Komoditas | `/komoditas` | `komoditas.lihat` |
+| | Musim Tanam | `/musim-tanam` | `musim_tanam.lihat` |
+| | Riwayat Tanam | `/riwayat-tanam` | `riwayat_tanam.lihat` |
+| | Hasil Panen | `/panen` | `hasil_panen.lihat` |
+| **Infrastruktur** | Infrastruktur | `/infrastruktur` | `infrastruktur.lihat` |
+| **Pengaduan** | Daftar Pengaduan | `/pengaduan` | `pengaduan.lihat` |
+| | Rekap Pengaduan | `/pengaduan/rekap` | `pengaduan.lihat` |
+| **Laporan** | Pusat Laporan | `/laporan` | `laporan.lihat` |
+| **Pengaturan** | Data Master Wilayah | `/wilayah` | `wilayah.lihat` |
+| | Data Master Satuan | `/master/satuan` | `satuan.lihat` |
+| | Pengguna | `/pengguna` | `pengguna.lihat` |
+| | Role & Hak Akses | `/pengaturan/role` | `role.lihat` |
+| | Audit Log | `/audit-log` | `audit_log.lihat` |
+
+### 5.2 Aturan perenderan menu
+
+1. **Item menu dirender hanya bila pengguna memiliki izin yang tercantum.** Menu yang tidak berhak **tidak dirender sama sekali**, bukan disembunyikan lewat CSS.
+2. **Kelompok menu ikut hilang** bila seluruh item di dalamnya tidak berhak diakses. Tidak boleh ada judul kelompok kosong.
+3. Menyembunyikan menu **tidak menggantikan** pemeriksaan izin di controller dan query. Tanpa itu, pengguna masih dapat membuka halaman dengan mengetik alamat URL langsung (`rules.md` bagian 5).
+4. Tombol aksi di dalam halaman (Tambah, Ubah, Hapus, Verifikasi, Export) mengikuti aturan yang sama: dirender hanya bila izinnya dimiliki.
+5. Susunan menu identik untuk seluruh role. Yang membedakan hanyalah item mana yang tampil.
+
+### 5.3 Contoh hasil untuk role bawaan
+
+Susunan berikut adalah **hasil** dari pemetaan di atas, bukan aturan tersendiri.
+
+**Admin** melihat seluruh item menu, termasuk kelompok Pengaturan.
+
+**Dinas Transmigrasi**
+```
+Dashboard
+Wilayah & SP    (Kawasan, Daftar SP, Inventaris, Fasilitas)
+Kependudukan    (Transmigran, Rumah & Hunian, Rekap)
+Lahan
+Kelembagaan     (lihat saja)
+Pertanian       (lihat saja)
+Infrastruktur
+Pengaduan
+Laporan
+```
+
+**Dinas Pertanian**
+```
+Dashboard
+Wilayah & SP    (lihat saja)
+Kependudukan    (lihat saja)
+Lahan           (lihat saja)
+Kelembagaan     (Kelompok Tani, Alsintan, Saprotan)
+Pertanian       (Komoditas, Musim Tanam, Riwayat Tanam, Hasil Panen)
+Infrastruktur
+Pengaduan
+Laporan
+```
+
+**Operator SP** (seluruhnya terbatas pada SP yang ditugaskan)
+```
+Dashboard
+Wilayah & SP    (Inventaris, Fasilitas)
+Kependudukan    (Transmigran, Rumah & Hunian)
+Lahan
+Kelembagaan     (Kelompok Tani, Alsintan, Saprotan)
+Pertanian       (Riwayat Tanam, Hasil Panen)
+Infrastruktur
+Pengaduan
+```
+
+Kelompok **Pengaturan** tidak muncul bagi ketiga role di atas, karena tidak satu pun izinnya dimiliki.
+
+---
+
+## 6. Komponen Bersama
+
+Seluruh komponen dibuat sebagai Blade component di `resources/views/components/`. Kolom "Basis" menunjukkan komponen TailAdmin yang dijadikan fondasi.
+
+| Komponen | Basis TailAdmin |
+|---|---|
+| `<x-data-table>` | `tables/basic-tables-one` |
+| `<x-modal-form>` | `ui/modal` |
+| `<x-stat-card>` | `ecommerce/ecommerce-metrics` (diambil polanya, isinya diganti) |
+| `<x-file-upload>` | `form/form-elements/dropzone` |
+| `<x-status-badge>` | `ui/badge` |
+| `<x-confirm-dialog>` | `ui/modal` |
+| `<x-toast>` | `ui/alert` |
+| `<x-breadcrumb>` | `common/page-breadcrumb` |
+| `<x-page-header>` | `common/component-card` |
+| `<x-wilayah-picker>` | dibangun sendiri di atas `form/select` |
+| `<x-koordinat-input>` | dibangun sendiri |
+| `<x-empty-state>` | dibangun sendiri |
+
+### 6.1 `<x-data-table>`
+Tabel dengan pencarian, filter, urutan, paginasi, dan tombol export.
+- Pencarian di kanan atas, filter dalam laci yang bisa dilipat
+- Paginasi default **25 baris**, pilihan 10/25/50/100
+- Kolom aksi selalu di kanan, lebar tetap
+- Baris diklik menuju halaman detail
+- Header lengket (`sticky`) saat digulir
+- Wajib punya state kosong
+
+### 6.2 `<x-modal-form>`
+Modal floating untuk form isian (`rules.md` §13.2 poin 3).
+- Ukuran: `sm` / `md` / `lg` / `xl`
+- Header judul + tombol tutup, footer tombol aksi rata kanan
+- Tutup dengan `Esc` dan klik latar
+- Fokus terkunci di dalam modal
+- Tombol simpan nonaktif + spinner selama proses kirim
+- Layar penuh pada perangkat mobile
+
+**Pola tombol simpan pada modul yang memerlukan verifikasi.** Footer memuat dua tombol bila pengguna memiliki izin `verifikasi` pada modul bersangkutan:
+
+| Tombol | Gaya | Hasil |
+|---|---|---|
+| Simpan | sekunder | Data tersimpan berstatus `Belum Diverifikasi` |
+| Simpan dan Verifikasi | utama | Data tersimpan lalu langsung ditandai `Terverifikasi` |
+
+Tombol kedua **tidak dirender sama sekali** bila izin verifikasi tidak dimiliki, mengikuti aturan perenderan pada §5.2. Keduanya menghasilkan dua entri terpisah pada audit log, sehingga verifikasi tetap terlacak sebagai tindakan tersendiri (`rules.md` §5.2 poin 5).
+
+### 6.3 `<x-stat-card>`
+Kartu indikator dashboard: label, angka besar, ikon, tren, dan tautan drill-down opsional.
+
+### 6.4 `<x-file-upload>`
+- Batas **5 MB**, tipe: gambar dan PDF (`rules.md` §14a)
+- Pratinjau gambar, ikon untuk PDF
+- Progress bar, tombol hapus
+- Menampilkan aturan penamaan berkas
+- Validasi tipe dan ukuran di sisi klien sebelum unggah
+
+### 6.5 `<x-wilayah-picker>`
+
+Hierarki wilayah bercabang dua (`rules.md` §4a), sehingga komponen ini punya **dua mode pemakaian** yang dipilih lewat atribut `mode`.
+
+**Mode `operasional`** (bawaan) untuk seluruh form data operasional: transmigran, rumah, lahan, poktan, infrastruktur, pengaduan.
+
+```
+Kawasan Transmigrasi → SP
+```
+
+Cukup dua tingkat, karena seluruh data operasional menaut ke SP. Bila hanya ada satu kawasan aktif, tingkat kawasan terisi otomatis dan disembunyikan agar operator tidak memilih hal yang sama berulang kali.
+
+**Mode `pendaftaran-sp`** dipakai **hanya** pada form pendaftaran SP baru, karena di sinilah SP ditautkan ke kedua cabang hierarki.
+
+```
+Kawasan Transmigrasi                        (cabang program)
+Provinsi → Kabupaten → Kecamatan → Desa     (cabang administratif)
+```
+
+**Aturan perilaku:**
+1. Setiap tingkat memuat opsi tingkat berikutnya; tingkat di bawahnya dikosongkan saat tingkat atas berubah.
+2. **Kecamatan tidak pernah diisi manual pada data SP.** Setelah desa dipilih, kecamatan tampil sebagai teks baca-saja hasil pembacaan dari desa tersebut.
+3. Pada mode `operasional`, daftar SP disaring menurut kawasan terpilih.
+4. Untuk role bercakupan `Per SP`, pilihan SP dibatasi hanya pada SP yang ditugaskan kepada pengguna tersebut. Bila hanya satu SP, pilihan terisi otomatis dan disembunyikan.
+
+**Filter dashboard** memakai tingkatan Kawasan → Kecamatan → Desa → SP, seluruhnya opsional. Kosong berarti seluruh kawasan.
+
+### 6.6 `<x-status-badge>`
+Dibangun di atas `<x-ui.badge>` bawaan TailAdmin. Nilai teks wajib diambil dari PHP Enum di `app/Enums/`, bukan ditulis langsung di view (§11.7).
+
+Setiap warna badge wajib punya varian mode gelap: latar memakai tingkat gelap dengan opasitas rendah, teks memakai tingkat 300 sampai 400 agar memenuhi kontras pada §3.2.2.
+
+**Badge verifikasi** tampil pada setiap baris tabel dan halaman detail modul yang memerlukan pemeriksaan (17 modul, lihat `rules.md` §5.1). Bila berstatus `Ditolak`, alasan penolakan ditampilkan sebagai tooltip pada badge dan ditulis lengkap di halaman detail, agar operator langsung tahu bagian mana yang perlu diperbaiki.
+
+| Konteks | Nilai dan warna |
+|---|---|
+| **Verifikasi data** | Belum Diverifikasi `gray` · Terverifikasi `success` · Ditolak `error` |
+| Pengaduan | Menunggu Diterima `gray` · Diterima `teal` · Diproses `warning` · Selesai `success` |
+| Prioritas pengaduan | Rendah `gray` · Sedang `teal` · Tinggi `warning` · Mendesak `error` |
+| Kondisi rumah | Tidak Rusak `success` · Rusak Ringan `warning` · Rusak Berat `error` |
+| Kondisi aset | Baik `success` · Rusak Ringan `warning` · Rusak Berat `error` |
+| Status hunian | Dihuni `teal` · Tidak Dihuni `gray` |
+| Keanggotaan | Aktif `success` · Tidak Aktif `gray` · Sudah Keluar `error` |
+| Status tinggal | Aktif `success` · Pindah `warning` · Tidak Aktif `gray` · Meninggal `gray` |
+| Status penyerahan | Sudah Diserahkan `success` · Dalam Proses `warning` · Belum Diserahkan `gray` |
+| **Kondisi SP** | Mandiri `success` · Berkembang `warning` · Perlu Penanganan `error` |
+
+### 6.7 `<x-koordinat-input>`
+Input lintang dan bujur, tombol "Ambil lokasi saat ini" (Geolocation API), serta pratinjau peta statis. Tetap dapat diisi manual bila GPS tidak tersedia.
+
+### 6.8 Komponen pelengkap
+`<x-breadcrumb>`, `<x-page-header>`, `<x-confirm-dialog>` (konfirmasi hapus), `<x-empty-state>`, `<x-toast>` (notifikasi hasil aksi).
+
+---
+
+## 7. Pola State
+
+Setiap halaman daftar dan detail **wajib** menangani lima keadaan berikut:
+
+| State | Tampilan |
+|---|---|
+| **Kosong** | Ikon, judul "Belum ada data", satu kalimat penjelasan, tombol aksi utama |
+| **Memuat** | Skeleton menyerupai bentuk konten. Dilarang memakai spinner layar penuh. Komponen `preloader` bawaan TailAdmin hanya dipakai saat pemuatan awal aplikasi, bukan per bagian |
+| **Galat** | Ikon, pesan ramah berbahasa Indonesia, tombol "Coba lagi" |
+| **Tanpa izin** | Halaman 403 dengan tombol kembali ke dashboard |
+| **Pencarian nihil** | "Tidak ditemukan hasil untuk ..." + tombol bersihkan filter |
+
+Pesan galat wajib memakai bahasa yang dimengerti operator lapangan, bukan istilah teknis.
+
+---
+
+## 8. Aturan Responsif
+
+Titik henti mengikuti bawaan Tailwind: `sm` 640 · `md` 768 · `lg` 1024 · `xl` 1280.
+
+| Elemen | Mobile (<768px) | Desktop (≥1024px) |
+|---|---|---|
+| Sidebar | Laci geser dari kiri, tertutup secara bawaan | Menetap, lebar 264px, bisa diciutkan |
+| Tabel | Berubah menjadi daftar kartu | Tabel penuh |
+| Modal | Layar penuh | Melayang di tengah |
+| Form | Satu kolom | Dua kolom |
+| Kartu statistik | 1 kolom | 4 kolom |
+| Filter | Dalam laci bawah | Sebaris di atas tabel |
+| Aksi tabel | Menu titik tiga | Tombol ikon sejajar |
+
+**Wajib:**
+- Sasaran sentuh minimal **44×44px**
+- Ukuran font input minimal **16px** agar iOS tidak melakukan zoom otomatis
+- Dilarang menggulir horizontal pada mobile, kecuali tabel yang memang dibungkus wadah bergulir
+- Diuji pada lebar layar 360px (ponsel umum di lapangan)
+
+---
+
+## 9. Spesifikasi Dashboard
+
+Indikator PRD §7.8 dipetakan ke jenis visualisasi:
+
+| # | Indikator | Jenis | Drill-down |
+|---|---|---|---|
+| 1 | Jumlah transmigran per tahun | Garis | Ya → per SP |
+| 2 | Jumlah KK per tahun | Garis | Ya → per SP |
+| 3 | Jumlah petani per tahun | Garis | Ya → per SP |
+| 4 | Pendapatan keluarga per tahun | Batang | Ya → per SP |
+| 5 | KK masuk dan keluar per tahun | Batang berkelompok | Ya → per SP |
+| 6 | Rumah terhuni | Kartu statistik + donat | Ya → per SP |
+| 7 | Pekerjaan kepala keluarga | Histogram | Ya → per SP |
+| 8 | Luas lahan | Kartu statistik | Ya → per SP |
+| 9 | Komoditas utama | Donat | Ya → per SP |
+| 10 | Total volume panen per tahun (ton) | Batang | Ya → per SP |
+| 11 | Harga rata-rata | Garis | Ya → per komoditas |
+| 12 | Status infrastruktur | Batang bertumpuk | Ya → per SP |
+| 13 | Isu prioritas (dari pengaduan) | Tabel + badge | Ya → detail pengaduan |
+| 14 | Rekap penghuni kawasan | Kartu statistik | Ya → per SP |
+| 15 | Mutu data kawasan | Kartu statistik + batang bertumpuk | Ya → per SP |
+| 16 | Status kondisi SP | Kartu statistik + tabel berbadge | Ya → per SP |
+
+**Aturan dashboard:**
+1. Filter global wilayah dan periode di bagian atas, memengaruhi seluruh visualisasi. Tingkatan filter: Kawasan → Kecamatan → Desa → SP, seluruhnya opsional.
+2. Drill-down memakai event `dataPointSelection` ApexCharts menuju `/dashboard/sp/{sp}`.
+3. Volume panen **selalu** dikonversi ke ton sebelum diagregasi (`rules.md` §8a).
+4. Kartu statistik dimuat lebih dulu, grafik menyusul secara asinkron.
+5. Setiap grafik punya state kosong sendiri bila data belum tersedia.
+6. Warna seri grafik mengambil urutan: `#163B54` (navy-500) → `#33809C` (teal-500) → `#C09546` (gold-500) → `#DFB87E` (sand-500) → `#265F73` (teal-700). ApexCharts dikonfigurasi memakai nilai heksadesimal, bukan nama kelas Tailwind.
+7. Grafik wajib menyediakan tabel data alternatif demi aksesibilitas.
+8. Konfigurasi ApexCharts bersama (warna, font Outfit, locale Indonesia, format angka) diletakkan di satu berkas `resources/js/chart-config.js`, tidak diulang di tiap grafik.
+
+**Indikator 15, mutu data kawasan.** Menampilkan sejauh mana data kawasan sudah diperiksa petugas berwenang.
+
+- Kartu statistik memuat persentase beserta angka mutlaknya, contoh: **74%** dengan keterangan "890 dari 1.200 data terverifikasi".
+- Batang bertumpuk memecah per modul utama (transmigran, rumah, lahan, hasil panen), memperlihatkan porsi Terverifikasi, Belum Diverifikasi, dan Ditolak.
+- **Hanya baris berstatus `Terverifikasi` yang dihitung sebagai terverifikasi** (`rules.md` §5.2 poin 11). Data yang dimasukkan petugas dinas tetapi belum diverifikasi tidak ikut dihitung, agar angka ini jujur menggambarkan pemeriksaan yang benar-benar dilakukan.
+- Warna mengikuti badge verifikasi: `success` untuk terverifikasi, `gray` untuk belum, `error` untuk ditolak.
+
+**Indikator 16, status kondisi SP.** Menampilkan kesiapan layanan dasar tiap satuan permukiman sebagai satu label yang mudah dibaca pemangku kepentingan (`rules.md` §10c).
+
+- Kartu statistik memuat jumlah SP per status, contoh: **2 Mandiri, 3 Berkembang, 1 Perlu Penanganan**.
+- Tabel di bawahnya memuat satu baris per SP beserta badge status dan skornya.
+- **Label wajib disertai rincian pembentuknya.** Halaman rincian SP menampilkan nilai tiap parameter beserta bobotnya, sehingga petugas langsung tahu penyebab sebuah SP berstatus Perlu Penanganan, misalnya "jalan penghubung tidak ada, telekomunikasi rusak berat". Label tanpa rincian berhenti sebagai stempel dan tidak membantu perencanaan.
+- SP yang memiliki parameter primer bernilai nol ditandai tegas, karena statusnya ditentukan aturan primer nol, bukan oleh skor (`rules.md` §10c.4 poin 11).
+- Warna badge: Mandiri `success` · Berkembang `warning` · Perlu Penanganan `error`.
+- Tanggal penilaian **wajib ditampilkan**, sebab status yang dihitung dari data lama dapat menyesatkan.
+
+**Istilah yang dilarang.** Antarmuka tidak boleh memakai kata "terbelakang", "tertinggal", atau sebutan lain yang merendahkan, sebab yang dinilai adalah jalan dan listrik, hal yang berada di luar kendali warga. Ketiga label pada §11.30 kamus data adalah satu-satunya yang boleh dipakai.
+
+---
+
+## 10. Konvensi Format Tampilan
+
+| Jenis | Aturan | Contoh |
+|---|---|---|
+| Zona waktu | **WITA (UTC+8)** — Kabupaten Malaka, NTT | — |
+| Tanggal | `translatedFormat('d F Y')` | 10 Agustus 2026 |
+| Tanggal + jam | `translatedFormat('d F Y, H:i')` + " WITA" | 10 Agustus 2026, 14:30 WITA |
+| Tanggal ringkas (tabel) | `d/m/Y` | 10/08/2026 |
+| Uang | `Rp ` + `number_format(x, 0, ',', '.')` | Rp 2.500.000 |
+| Desimal | Koma sebagai pemisah desimal, titik sebagai pemisah ribuan | 1.234,567 |
+| Volume panen | 3 angka desimal + satuan | 12,500 ton |
+| Luas lahan | 2 angka desimal + " ha" | 1,25 ha |
+| NIK / No. KK | Berkelompok 4 digit | 5321 0101 0101 0001 |
+| Telepon | `+62 812-3456-7890` | — |
+| Koordinat | 6 angka desimal | -9.512345, 124.912345 |
+| Data kosong | Tanda hubung `—`, bukan teks "null" atau kosong | — |
+
+**Locale:** `config/app.php` → `'locale' => 'id'`, `'timezone' => 'Asia/Makassar'`.
+
+---
+
+## 11. Aturan Tambahan Frontend
+
+1. **Data dummy** ditempatkan di `app/Support/DummyData.php`, **bukan** ditulis langsung di dalam Blade, agar mudah ditukar ke data nyata. Struktur array wajib mengikuti nama kolom pada `data-dictionary.md`, sehingga saat backend siap penggantiannya cukup menukar sumber data tanpa menyentuh view.
+2. **Semua teks antarmuka berbahasa Indonesia**, termasuk pesan validasi dan galat.
+3. **Tab persisten** memakai query string `?tab=` sesuai `rules.md` §13.2 poin 1.
+4. **Input teks otomatis huruf kapital** melalui middleware `UppercaseInput`, kecuali kredensial, enum, teks naratif, dan field `*_id`.
+5. **Eager loading wajib** pada query yang dipakai di dalam perulangan view.
+6. **Tanpa CSS sebaris**, seluruh gaya memakai kelas utilitas Tailwind.
+7. **Tanpa teks berkode keras** untuk label status; gunakan PHP Enum di `app/Enums/` sesuai daftar pada `data-dictionary.md` §11.
+8. **Utamakan komponen TailAdmin yang sudah ada** sebelum membuat komponen baru. Komponen khusus domain dibangun sebagai pembungkus komponen bawaan, bukan tulisan ulang dari nol.
+9. **Verifikasi sebelum selesai:** `npm run build` dan `php artisan view:cache` harus hijau, ditambah smoke test browser pada **dua mode tema × dua lebar layar** (360px dan 1280px).
+
+### 11.1 Aturan turunan ANTISLOP
+
+Berlaku untuk seluruh teks dan elemen yang **tampil di antarmuka**. Dokumen internal di folder `agents/` dikecualikan.
+
+| Aturan | Penerapan pada proyek ini |
+|---|---|
+| **R-02** dilarang em dash | Label, tombol, pesan validasi, pesan galat, dan judul halaman memakai koma, titik dua, atau tanda kurung. Untuk data kosong dipakai tanda hubung `-` (§10) |
+| **R-15** CTA spesifik | Tombol menyebut objeknya: "Simpan Data Transmigran", "Unduh Rekap Panen", "Ajukan Pengaduan". Dilarang "Simpan", "Kirim", "Lihat" tanpa objek |
+| **R-16** tanpa buzzword | Dilarang "canggih", "terintegrasi penuh", "solusi menyeluruh". Pakai kalimat yang menyebut apa yang terjadi: "Data tersimpan", "3 pengaduan menunggu ditindaklanjuti" |
+| **R-17, R-38** angka jujur | Selama tahap data dummy, setiap halaman menampilkan penanda **"Data contoh"** yang terlihat jelas. Angka dummy tidak boleh disajikan seolah data nyata |
+| **R-26** tanpa kontrol mati | Tombol yang belum berfungsi dihapus, bukan dibiarkan diam. Bila terpaksa ada, wajib berlabel "Segera hadir" dan diberi komentar `// TODO` di kode |
+| **R-24** navigasi jujur | Menu sidebar hanya memuat halaman yang benar-benar ada. Menu di luar kewenangan role tidak dirender sama sekali |
+| **R-30** bukan kloning | TailAdmin dipakai sebagai fondasi berlisensi MIT dengan seluruh `--color-brand-*` ditimpa palet Kementerian, halaman contoh dihapus, dan motif identitas sendiri ditambahkan (§2.3). Ini adopsi template, bukan peniruan identitas produk lain |
+| **R-32** keyboard | Seluruh alur wajib dapat dioperasikan dengan Tab, Enter, dan Escape, dengan indikator fokus yang terlihat di kedua mode tema |
+| **R-34** dua mode | Mode terang dan gelap sama-sama wajib berfungsi penuh, termasuk seluruh grafik dan badge (§3.2.3) |
+
+---
+
+## 12. Yang Masih Menunggu
+
+| Item | Status |
+|---|---|
+| Pemilihan template fondasi | **SELESAI** — TailAdmin Laravel (MIT) |
+| Font antarmuka | **SELESAI** — Outfit, mengikuti TailAdmin |
+| Palet warna | **SELESAI** — navy/teal/sand/gold dari logo resmi |
+| Arah desain dan dial | **SELESAI** — ENERGI 1 / RITME 2 / GERAK 1 (§2.2) |
+| Mode gelap | **SELESAI** — toggle dua mode dipertahankan, palet dan kontras ditetapkan (§3.2.2) |
+| Referensi tata letak Figma | `TODO` — menyusul dari tim. Tidak memblokir pekerjaan: tata letak memakai bawaan TailAdmin, penyesuaian dilakukan saat Figma diterima |
+| Varian logo (PNG, favicon, versi mono) | `TODO` — diturunkan dari berkas webp pada Task 1.7 |
+| Daftar satuan final per komoditas | `TODO` — menunggu konfirmasi lapangan (`notes.md` bagian 4). Nilai awal: Ton, Kuintal, Kilogram |
+| Bentuk pasti motif identitas | `TODO` — arah sudah ditetapkan (§2.3); wujud akhirnya difinalkan saat Task 1.6 setelah logo diproses |
