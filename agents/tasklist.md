@@ -821,7 +821,7 @@ sistem informasi transmigrasi/     <- root Laravel sekaligus root proyek
 
 Mode gelap ditangani otomatis: `pantauTema()` menggambar ulang seluruh grafik saat tema berganti.
 
-**Total uji: 279 lulus, 1.333 pernyataan** (PHP), ditambah 12 uji `chart-config.js` dan 11 uji kontras WCAG lewat Node, serta verifikasi visual lewat Edge headless.
+**Total uji: 302 lulus, 1.408 pernyataan** (PHP), ditambah 12 uji `chart-config.js` dan 11 uji kontras WCAG lewat Node, serta verifikasi visual lewat Edge headless.
 
 **GELOMBANG 1 SELESAI DAN SUDAH LOLOS DELIVERY GATE. Berikutnya CHECKPOINT, bukan task baru.**
 

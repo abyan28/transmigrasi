@@ -830,3 +830,24 @@ Route::delete('/pengguna/{id}', function (int $id) {
     // Rute ini sengaja tidak disediakan; penonaktifan memakai rute tersendiri.
     abort(405);
 })->where('id', '[0-9]+')->name('pengguna.hapus');
+
+/*
+|--------------------------------------------------------------------------
+| Template impor data
+|--------------------------------------------------------------------------
+|
+| Menjawab kebutuhan PRD 8.1: sinyal di lokus tidak selalu stabil, sehingga
+| petugas perlu mengunduh template, mengisinya luring di lapangan, lalu
+| mengunggahnya kembali saat sambungan tersedia.
+|
+| Satu rute melayani seluruh entitas, sebab yang membedakan hanya susunan
+| kolomnya. Mendaftarkan empat belas rute terpisah hanya akan menyalin
+| penanganan yang sama empat belas kali.
+|
+| Tahap 10: menghasilkan berkas .xlsx sungguhan beserta baris contoh dan
+| daftar nilai baku pada kolom berjenis pilihan.
+*/
+Route::get('/template-impor/{entitas}', function (string $entitas) {
+    return back()->with('info', 'Template impor ' . str_replace('-', ' ', $entitas)
+        . ' akan tersedia setelah backend selesai.');
+})->where('entitas', '[a-z\-]+')->name('template-impor');

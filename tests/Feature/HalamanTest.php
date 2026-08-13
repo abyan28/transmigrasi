@@ -2453,3 +2453,92 @@ it('menjaga hierarki tajuk dashboard tidak melompat', function () {
 
     expect($isi)->toContain('<h2');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Impor data massal
+|--------------------------------------------------------------------------
+*/
+
+it('menyediakan tombol impor pada modul berdata banyak', function (string $url, string $namaModal) {
+    // PRD 8.1 mewajibkan template luring: sinyal di lokus tidak selalu stabil,
+    // sehingga petugas mengunduh template, mengisinya di lapangan, lalu
+    // mengunggahnya saat sambungan tersedia. Tanpa jalur ini, pendataan
+    // ratusan kepala keluarga harus dikerjakan satu per satu sambil daring.
+    $isi = $this->get($url)->assertOk()->getContent();
+
+    // Diperiksa keduanya: tombol pemicunya DAN komponen modalnya. Memeriksa
+    // nama modal saja tidak cukup, sebab nama itu juga muncul pada komponen
+    // modalnya sendiri, sehingga tombol yang hilang tetap lolos.
+    expect($isi)->toContain("buka-modal', '" . $namaModal . "')")
+        ->and($isi)->toContain('Impor Data')
+        ->and($isi)->toContain('judul-' . $namaModal);
+})->with([
+    ['/transmigran', 'imporTransmigran'],
+    ['/rumah', 'imporRumah'],
+    ['/lahan', 'imporLahan'],
+    ['/panen', 'imporPanen'],
+    ['/riwayat-tanam', 'imporRiwayatTanam'],
+    ['/infrastruktur', 'imporInfrastruktur'],
+    ['/sp/inventaris', 'imporInventaris'],
+    ['/wilayah', 'imporWilayah'],
+    ['/master/satuan', 'imporSatuan'],
+    ['/poktan', 'imporPoktan'],
+    ['/alsintan', 'imporAlsintan'],
+    ['/saprotan', 'imporSaprotan'],
+    ['/sp/fasilitas', 'imporFasilitas'],
+    ['/komoditas', 'imporKomoditas'],
+]);
+
+it('tidak menyediakan impor pada modul yang tidak boleh diisi massal', function (string $url) {
+    // Pengecualian ini disengaja dan punya alasan masing-masing:
+    //
+    // - Pengaduan datang dari kanal publik satu per satu, dan nomornya wajib
+    //   memuat bagian acak (rules.md 10b poin 4) sehingga tidak dapat
+    //   disiapkan lebih dulu di dalam berkas Excel.
+    // - Pengguna: kata sandi awal diserahkan langsung kepada orangnya
+    //   (rules.md 14b poin 3). Impor massal berarti kata sandi berkeliaran
+    //   di dalam berkas yang berpindah tangan.
+    // - Role, Kawasan, SP, dan Musim Tanam jumlah barisnya sedikit dan jarang
+    //   berubah, sehingga impor hanya menambah jalur masuk tanpa manfaat.
+    $isi = $this->get($url)->assertOk()->getContent();
+
+    expect($isi)->not->toContain("buka-modal', 'impor");
+})->with([
+    '/pengaduan',
+    '/pengguna',
+    '/pengaturan/role',
+    '/kawasan',
+    '/sp',
+    '/musim-tanam',
+]);
+
+it('memandu impor lewat tiga langkah beserta kolom wajibnya', function () {
+    // Alurnya dipecah agar tiap tahap punya satu pekerjaan saja. Langkah
+    // ketiga yang paling menentukan: impor yang hanya berkata "gagal"
+    // memaksa petugas menebak barisnya, padahal berkas berisi ratusan baris
+    // tidak mungkin diperiksa manual.
+    $isi = $this->get('/transmigran')->getContent();
+
+    expect($isi)->toContain('Unduh template')
+        ->and($isi)->toContain('Unggah berkas')
+        ->and($isi)->toContain('Baris yang perlu diperbaiki')
+        // Kolom wajib ditampilkan agar petugas tahu isian apa yang diperlukan
+        // sebelum berangkat ke lapangan.
+        ->and($isi)->toContain('nama_lengkap');
+});
+
+it('menyatakan terus terang bahwa impor belum tersambung backend', function () {
+    // Tombolnya terlihat berfungsi penuh padahal penyimpanannya belum ada.
+    // Tanpa peringatan ini petugas dapat mengira datanya sudah masuk, lalu
+    // kehilangan hasil pendataan sehari penuh.
+    $this->get('/transmigran')->assertSee('Fitur belum aktif.');
+});
+
+it('menyediakan rute unduh template untuk seluruh entitas', function () {
+    // Satu rute melayani semua entitas, sebab yang membedakan hanya susunan
+    // kolomnya. Empat belas rute terpisah hanya akan menyalin penanganan
+    // yang sama empat belas kali.
+    $this->get(route('template-impor', 'transmigran'))->assertRedirect();
+    $this->get(route('template-impor', 'hasil-panen'))->assertRedirect();
+});

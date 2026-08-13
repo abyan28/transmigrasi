@@ -565,6 +565,18 @@ Ketentuan:
 4. Modul yang seluruh datanya sudah tampil pada tabel, seperti data master satuan dan wilayah, **tidak memerlukan tombol Rincian**.
 5. Satu modal ubah melayani seluruh baris; data baris dikirim lewat peristiwa saat tombol diklik. Merender satu modal per baris menggandakan formulir sebanyak baris pada satu halaman.
 
+### 5.1b Impor data massal
+
+Menjawab PRD §8.1: sinyal di lokus tidak selalu stabil, sehingga petugas mengunduh template, mengisinya luring di lapangan, lalu mengunggahnya kembali saat sambungan tersedia.
+
+1. Tombol **Impor Data** diletakkan **mendahului tombol Tambah** namun bergaya sekunder (bergaris tepi, bukan solid), sebab menambah satu data tetap tindakan yang paling sering dipakai.
+2. Alurnya **tiga langkah** di dalam satu modal `x-sim.modal-impor`: unduh template → unggah berkas → pratinjau hasil.
+3. **Hasil impor wajib merinci kegagalan per baris** beserta nomor baris dan alasannya. Berkas berisi ratusan baris tidak mungkin diperiksa manual, sehingga pesan "impor gagal" tanpa rincian memaksa petugas mengulang seluruh pekerjaan.
+4. Baris bermasalah **dilewati, sisanya tetap disimpan.** Menolak seluruh berkas karena tiga baris salah membuang pekerjaan yang sudah benar.
+5. Kolom wajib ditampilkan pada langkah pertama, agar petugas mengetahui isian yang diperlukan sebelum berangkat ke lapangan.
+6. **Modul berikut tidak diberi impor:** Pengaduan (datang satu per satu dari kanal publik, nomornya wajib memuat bagian acak), Pengguna (kata sandi awal diserahkan langsung kepada orangnya, `rules.md` §14b poin 3), serta Role, Kawasan, SP, dan Musim Tanam yang jumlah barisnya sedikit.
+7. Selama penyimpanannya belum tersambung, modal **wajib memuat spanduk** yang menyatakan fitur belum aktif, sebab tampilannya sudah terlihat berfungsi penuh.
+
 ### 5.2 Aturan perenderan menu
 
 1. **Item menu dirender hanya bila pengguna memiliki izin yang tercantum.** Menu yang tidak berhak **tidak dirender sama sekali**, bukan disembunyikan lewat CSS.
