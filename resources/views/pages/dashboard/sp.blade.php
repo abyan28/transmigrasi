@@ -137,16 +137,8 @@
                 <p class="mt-2 text-theme-xs tabular-nums text-gray-700 dark:text-gray-300">
                     {{ number_format($sp['lintang'], 6, '.', '') }}, {{ number_format($sp['bujur'], 6, '.', '') }}
                 </p>
-                <a href="https://www.openstreetmap.org/?mlat={{ $sp['lintang'] }}&mlon={{ $sp['bujur'] }}#map=14/{{ $sp['lintang'] }}/{{ $sp['bujur'] }}"
-                    target="_blank" rel="noopener noreferrer"
-                    class="mt-1.5 inline-flex items-center gap-1.5 rounded text-theme-xs font-medium text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
-                    Lihat di peta
-                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"
-                        aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-                    </svg>
-                </a>
+                        <x-sim.tautan-peta class="mt-1.5" :lintang="$sp['lintang']" :bujur="$sp['bujur']"
+                            :label="$sp['nama']" />
             </div>
         </aside>
 

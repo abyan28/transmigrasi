@@ -3,7 +3,7 @@
 
     Setiap perubahan data penting wajib tercatat (agents/rules.md bagian 14
     poin 5), termasuk penyetelan ulang kata sandi dan penonaktifan akun
-    (bagian 14b poin 11).
+    (bagian 14b poin 15).
 
     Catatan audit tidak pernah dapat disunting maupun dihapus dari antarmuka;
     itulah yang membuatnya bernilai sebagai jejak.

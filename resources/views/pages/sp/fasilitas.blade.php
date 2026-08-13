@@ -43,6 +43,17 @@
         placeholder-cari="Cari nama fasilitas" judul-kosong="Belum ada data fasilitas"
         pesan-kosong="Bangunan dan sarana milik satuan permukiman akan tampil di sini setelah didata.">
 
+        <x-slot:aksi>
+            <button type="button" @click="$dispatch('buka-modal', 'formTambahFasilitas')"
+                class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+                    aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Tambah Fasilitas
+            </button>
+        </x-slot:aksi>
+
         <x-slot:ringkasan>
             <x-sim.stat-card label="Jenis Fasilitas" :nilai="count($semua)" />
             <x-sim.stat-card label="Total Unit" :nilai="number_format($totalUnit, 0, ',', '.')" />
@@ -99,6 +110,7 @@
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Koordinat</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Kondisi</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Penyerahan</th>
+            <th scope="col" class="px-5 py-3 text-right text-theme-xs font-medium text-gray-500 dark:text-gray-400">Aksi</th>
         </x-slot:kepala>
 
         @foreach ($baris as $b)
@@ -116,12 +128,21 @@
                     {{ $b['tahun_perolehan'] }}</td>
                 <td class="px-5 py-3 text-theme-xs tabular-nums text-gray-600 dark:text-gray-400">
                     {{ number_format($b['lintang'], 6, '.', '') }},<br>{{ number_format($b['bujur'], 6, '.', '') }}
+                    <x-sim.tautan-peta class="mt-1" :lintang="$b['lintang']" :bujur="$b['bujur']"
+                        :label="$b['nama_fasilitas']" />
                 </td>
                 <td class="px-5 py-3">
                     <x-sim.status-badge :status="\App\Enums\Kondisi::from($b['kondisi'])" />
                 </td>
                 <td class="px-5 py-3">
                     <x-sim.status-badge :status="\App\Enums\StatusPenyerahan::from($b['status_penyerahan'])" />
+                </td>
+                <td class="px-5 py-3">
+                    <x-sim.aksi-baris modal-ubah="formUbahFasilitasBaris"
+                        :data-baris="$b + ['id' => $b['id_fasilitas_sp']]"
+                        :hapus-url="'/sp/fasilitas/' . $b['id_fasilitas_sp']"
+                        konfirmasi-hapus="hapusFasilitas"
+                        :label="$b['nama_fasilitas']" />
                 </td>
             </tr>
         @endforeach
@@ -140,4 +161,19 @@
             @endforeach
         </x-slot:kartu>
     </x-sim.halaman-daftar>
+
+    <x-sim.modal-form nama="formTambahFasilitas" judul="Tambah Fasilitas SP"
+        keterangan="Bangunan dan fasilitas tetap yang menempel pada lokasi."
+        :aksi="route('fasilitas.simpan')" ukuran="lg" label-simpan="Simpan Data">
+        @include('pages.sp.form-fasilitas', ['awalan' => 'tambah'])
+    </x-sim.modal-form>
+
+    <x-sim.modal-form nama="formUbahFasilitasBaris" judul="Ubah Fasilitas SP"
+        keterangan="Perubahan tercatat pada audit log."
+        pola-aksi="/sp/fasilitas/:id" metode="PUT" ukuran="lg" label-simpan="Simpan Perubahan">
+        @include('pages.sp.form-fasilitas', ['awalan' => 'ubahBaris'])
+    </x-sim.modal-form>
+
+    <x-sim.confirm-dialog nama="hapusFasilitas" judul="Hapus data fasilitas ini?"
+        pesan="Penilaian kondisi SP berikutnya tidak lagi menghitung fasilitas ini." label-setuju="Hapus" />
 @endsection

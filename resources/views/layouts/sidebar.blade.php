@@ -22,9 +22,20 @@
                 @foreach ($menuGroup['items'] as $itemIndex => $item)
                     @if (isset($item['subItems']))
                         // Check if any submenu item matches current path
+                        {{--
+                            Submenu ikut terbuka pada halaman turunan, bukan hanya pada
+                            halaman daftarnya. Membuka /transmigran/1 berarti pengguna masih
+                            berada di dalam cakupan menu Transmigran, sehingga menutup
+                            submenunya membuat ia kehilangan jejak posisinya.
+
+                            Pencocokan memakai awalan diikuti garis miring, bukan awalan
+                            polos: tanpa garis miring, /sp akan ikut cocok dengan
+                            /sp/inventaris yang sebenarnya submenu berbeda.
+                        --}}
                         @foreach ($item['subItems'] as $subItem)
-                            if (currentPath === '{{ ltrim($subItem['path'], '/') }}' ||
-                                window.location.pathname === '{{ $subItem['path'] }}') {
+                            @php $jalur = ltrim($subItem['path'], '/'); @endphp
+                            if (currentPath === '{{ $jalur }}' ||
+                                currentPath.startsWith('{{ $jalur }}/')) {
                                 this.openSubmenus['{{ $groupIndex }}-{{ $itemIndex }}'] = true;
                             } @endforeach
             @endif
@@ -46,9 +57,27 @@
             const key = groupIndex + '-' + itemIndex;
             return this.openSubmenus[key] || false;
         },
-        isActive(path) {
-            return window.location.pathname === path || '{{ $currentPath }}' === path.replace(/^\//, '');
-        }
+                isActive(path) {
+                    // Item submenu ikut tersorot pada halaman turunannya, sejalan
+                    // dengan submenu yang tetap terbuka. Tanpa ini, membuka rincian
+                    // membuat tidak ada satu pun item tampak aktif.
+                    const jalur = path.replace(/^\//, '');
+                    const sekarang = '{{ $currentPath }}';
+
+                    if (sekarang === jalur) {
+                        return true;
+                    }
+
+                    // Yang paling spesifik menang. Tanpa pemeriksaan ini, membuka
+                    // /sp/inventaris menyorot Satuan Permukiman DAN Inventaris SP
+                    // sekaligus, sebab keduanya berawalan sp.
+                    const semuaJalur = ['', 'kawasan', 'sp', 'sp/inventaris', 'sp/fasilitas', 'infrastruktur', 'transmigran', 'rumah', 'lahan', 'kependudukan/rekap', 'poktan', 'alsintan', 'saprotan', 'komoditas', 'musim-tanam', 'riwayat-tanam', 'panen', 'panen/rekap', 'pengaduan', 'pengaduan/rekap', 'laporan', 'wilayah', 'master/satuan', 'pengguna', 'pengaturan/role', 'audit-log'];
+                    const paling = semuaJalur
+                        .filter((j) => j !== '' && (sekarang === j || sekarang.startsWith(j + '/')))
+                        .sort((a, b) => b.length - a.length)[0];
+
+                    return paling === jalur;
+                }
     }"
     :class="{
         'w-[290px]': $store.sidebar.isExpanded || $store.sidebar.isMobileOpen || $store.sidebar.isHovered,

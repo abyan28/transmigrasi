@@ -52,8 +52,32 @@
             });
 
             Alpine.store('sidebar', {
-                // Initialize based on screen size
-                isExpanded: window.innerWidth >= 1280, // true for desktop, false for mobile
+                /*
+                    Lebar layar dibaca lewat pembantu ini, bukan langsung dari
+                    window.innerWidth.
+
+                    Tab yang dibuka di latar belakang lewat "buka di tab baru" belum
+                    dilukis peramban, sehingga innerWidth-nya sempat bernilai 0.
+                    Sidebar mengira layarnya sempit lalu menyempit ke 90px, dan
+                    konten di sebelahnya ikut bergeser. Setelah halaman disegarkan,
+                    tab sudah aktif dan lebarnya terbaca benar, itulah sebabnya
+                    tampilan pulih hanya dengan refresh.
+
+                    Nilai nol karena itu tidak boleh dipercaya. Selama lebar belum
+                    terbaca, sidebar dianggap lebar, sebab tampilan desktop adalah
+                    keadaan yang paling sering benar bagi petugas dinas.
+                */
+                lebarLayar() {
+                    const lebar = window.innerWidth || document.documentElement.clientWidth || 0;
+
+                    return lebar === 0 ? 1280 : lebar;
+                },
+
+                get layarLebar() {
+                    return this.lebarLayar() >= 1280;
+                },
+
+                isExpanded: (window.innerWidth || document.documentElement.clientWidth || 1280) >= 1280,
                 isMobileOpen: false,
                 isHovered: false,
 
@@ -74,7 +98,7 @@
 
                 setHovered(val) {
                     // Only allow hover effects on desktop when sidebar is collapsed
-                    if (window.innerWidth >= 1280 && !this.isExpanded) {
+                    if (this.layarLebar && !this.isExpanded) {
                         this.isHovered = val;
                     }
                 }
@@ -170,17 +194,17 @@
 
 <body
     x-data="{ 'loaded': true}"
-    x-init="$store.sidebar.isExpanded = window.innerWidth >= 1280;
-    const checkMobile = () => {
-        if (window.innerWidth < 1280) {
-            $store.sidebar.setMobileOpen(false);
-            $store.sidebar.isExpanded = false;
-        } else {
-            $store.sidebar.isMobileOpen = false;
-            $store.sidebar.isExpanded = true;
-        }
-    };
-    window.addEventListener('resize', checkMobile);">
+    x-init="$store.sidebar.isExpanded = $store.sidebar.layarLebar;
+            const sesuaikanLebar = () => {
+                if (! $store.sidebar.layarLebar) {
+                    $store.sidebar.setMobileOpen(false);
+                    $store.sidebar.isExpanded = false;
+                } else {
+                    $store.sidebar.isMobileOpen = false;
+                    $store.sidebar.isExpanded = true;
+                }
+            };
+            window.addEventListener('resize', sesuaikanLebar);">
 
     {{-- preloader --}}
     <x-common.preloader/>
@@ -190,7 +214,25 @@
         @include('layouts.backdrop')
         @include('layouts.sidebar')
 
-        <div class="flex-1 transition-all duration-300 ease-in-out"
+        {{--
+            min-w-0 WAJIB ada di sini.
+
+            Sidebar berposisi fixed, sehingga ia keluar dari alur dan tidak
+            memakan ruang di dalam pembungkus flex. Akibatnya flex-1 menghitung
+            lebar penuh layar, lalu xl:ml-[290px] menambahkan 290px lagi:
+            lebar totalnya menjadi 100% + 290px dan kontennya meluber ke kanan.
+
+            Gejalanya paling terlihat pada tab yang dibuka lewat "buka di tab
+            baru": menu pengguna terdorong keluar layar, tombol dan kartu paling
+            kanan terpotong, dan muncul gulir mendatar. Setelah disegarkan
+            tampilan pulih, sebab urutan perhitungan tata letaknya berbeda,
+            sehingga cacat ini mudah dikira masalah pemuatan.
+
+            min-w-0 mengizinkan item flex menyusut lebih kecil dari isinya,
+            sehingga flex-1 menghitung ruang yang benar-benar tersisa setelah
+            margin diperhitungkan.
+        --}}
+        <div class="min-w-0 flex-1 transition-all duration-300 ease-in-out"
             :class="{
                 'xl:ml-[290px]': $store.sidebar.isExpanded || $store.sidebar.isHovered,
                 'xl:ml-[90px]': !$store.sidebar.isExpanded && !$store.sidebar.isHovered,

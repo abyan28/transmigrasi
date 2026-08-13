@@ -121,16 +121,8 @@
                     </div>
                 </dl>
 
-                <a href="https://www.openstreetmap.org/?mlat={{ $data['lintang'] }}&mlon={{ $data['bujur'] }}#map=17/{{ $data['lintang'] }}/{{ $data['bujur'] }}"
-                    target="_blank" rel="noopener noreferrer"
-                    class="mt-3 inline-flex items-center gap-1.5 rounded text-theme-xs font-medium text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
-                    Lihat di peta
-                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"
-                        aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-                    </svg>
-                </a>
+                    <x-sim.tautan-peta class="mt-3" :lintang="$data['lintang']" :bujur="$data['bujur']"
+                        :label="'Rumah ' . $data['no_rumah']" />
 
                 @if ($bolehVerifikasi)
                     <div class="mt-5 space-y-2 border-t border-gray-200 pt-5 dark:border-gray-800">
@@ -264,11 +256,27 @@
                         <x-sim.empty-state judul="Belum ada dokumentasi"
                             pesan="Foto kondisi rumah dan dokumen pendukung dapat diunggah lewat tombol Ubah Data Rumah." />
                     @else
-                        <div class="p-5 sm:p-6">
-                            <p class="text-theme-sm text-gray-600 dark:text-gray-400">
-                                Berkas tersimpan pada penyimpanan privat dan hanya dapat dibuka petugas berwenang.
-                            </p>
-                        </div>
+                            <div class="space-y-3 p-5 sm:p-6">
+                                @if (! empty($data['foto_rumah']))
+                                    <div>
+                                        <p class="mb-1.5 text-theme-xs text-gray-500 dark:text-gray-400">Foto Rumah</p>
+                                        <x-sim.tautan-dokumen modul="rumah" :id="$data['id_rumah']"
+                                            :berkas="$data['foto_rumah']" />
+                                    </div>
+                                @endif
+
+                                @if (! empty($data['dokumen_pendukung']))
+                                    <div>
+                                        <p class="mb-1.5 text-theme-xs text-gray-500 dark:text-gray-400">Dokumen Pendukung</p>
+                                        <x-sim.tautan-dokumen modul="rumah" :id="$data['id_rumah']"
+                                            :berkas="$data['dokumen_pendukung']" />
+                                    </div>
+                                @endif
+
+                                <p class="text-theme-xs text-gray-500 dark:text-gray-400">
+                                    Berkas tersimpan pada penyimpanan privat dan hanya dapat dibuka petugas berwenang.
+                                </p>
+                            </div>
                     @endif
                 </div>
             </div>

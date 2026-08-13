@@ -1,5 +1,5 @@
 {{--
-    Infrastruktur pertanian.
+    Infrastruktur SP.
 
     Modul ini berisi PENDATAAN ASET, bukan pelaporan masalah. Kerusakan
     dilaporkan lewat modul Pengaduan (agents/rules.md bagian 10 poin 1).
@@ -42,12 +42,23 @@
         $perluPerbaikan = count(array_filter($semua, fn ($i) => $i['kondisi'] !== 'Baik'));
     @endphp
 
-    <x-sim.halaman-daftar judul="Infrastruktur Pertanian"
+    <x-sim.halaman-daftar judul="Infrastruktur SP"
         keterangan="Pendataan aset irigasi, air, jalan produksi, listrik, dan gudang."
         :remah="[['label' => 'Infrastruktur'], ['label' => 'Daftar Infrastruktur']]"
         :jumlah="count($baris)" :kata-kunci="$cari" :aksi-url="route('infrastruktur.index')"
         placeholder-cari="Cari nama infrastruktur" judul-kosong="Belum ada data infrastruktur"
         pesan-kosong="Aset infrastruktur akan tampil di sini setelah didata.">
+
+        <x-slot:aksi>
+            <button type="button" @click="$dispatch('buka-modal', 'formTambahInfrastruktur')"
+                class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+                    aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Tambah Aset
+            </button>
+        </x-slot:aksi>
 
         <x-slot:ringkasan>
             <x-sim.stat-card label="Aset Terdata" :nilai="count($semua)" />
@@ -116,6 +127,7 @@
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Tahun</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Kondisi</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Verifikasi</th>
+            <th scope="col" class="px-5 py-3 text-right text-theme-xs font-medium text-gray-500 dark:text-gray-400">Aksi</th>
         </x-slot:kepala>
 
         @foreach ($baris as $i)
@@ -131,6 +143,13 @@
                 </td>
                 <td class="px-5 py-3">
                     <x-sim.status-badge :status="\App\Enums\StatusVerifikasi::from($i['status_verifikasi'])" />
+                </td>
+                <td class="px-5 py-3">
+                    <x-sim.aksi-baris :rincian-url="route('infrastruktur.detail', $i['id_infrastruktur'])"
+                        modal-ubah="formUbahInfrastrukturBaris"
+                        :data-baris="$i + ['id' => $i['id_infrastruktur']]"
+                        :hapus-url="'/infrastruktur/' . $i['id_infrastruktur']"
+                        konfirmasi-hapus="hapusInfrastruktur" :label="$i['nama']" />
                 </td>
             </tr>
         @endforeach
@@ -196,4 +215,20 @@
             </p>
         </x-slot:setelahTabel>
     </x-sim.halaman-daftar>
+
+    <x-sim.modal-form nama="formTambahInfrastruktur" judul="Tambah Aset Infrastruktur"
+        keterangan="Pendataan aset. Keluhan warga disampaikan lewat modul pengaduan."
+        :aksi="route('infrastruktur.simpan')" ukuran="lg" label-simpan="Simpan Data">
+        @include('pages.infrastruktur.form', ['awalan' => 'tambah'])
+    </x-sim.modal-form>
+
+    <x-sim.modal-form nama="formUbahInfrastrukturBaris" judul="Ubah Data Aset"
+        keterangan="Kondisi diperbarui petugas saat pendataan berkala."
+        pola-aksi="/infrastruktur/:id" metode="PUT" ukuran="lg"
+        label-simpan="Simpan Perubahan">
+        @include('pages.infrastruktur.form', ['awalan' => 'ubahBaris'])
+    </x-sim.modal-form>
+
+    <x-sim.confirm-dialog nama="hapusInfrastruktur" judul="Hapus data ini?"
+        pesan="Data yang dihapus masih tercatat pada audit log dan dapat dipulihkan admin." label-setuju="Hapus" />
 @endsection

@@ -21,7 +21,18 @@
 
     <x-sim.page-header judul="Kawasan Transmigrasi"
         keterangan="Wilayah perencanaan program yang menaungi satuan permukiman."
-        :remah="[['label' => 'Wilayah dan SP'], ['label' => 'Kawasan Transmigrasi']]" />
+        :remah="[['label' => 'Wilayah dan SP'], ['label' => 'Kawasan Transmigrasi']]">
+        <x-slot:aksi>
+            <button type="button" @click="$dispatch('buka-modal', 'formTambahKawasan')"
+                class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+                    aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Tambah Kawasan
+            </button>
+        </x-slot:aksi>
+    </x-sim.page-header>
 
     @foreach ($kawasan as $k)
         <div class="mb-6 rounded-2xl border border-gray-200 bg-white p-5 sm:p-6 dark:border-gray-800 dark:bg-white/[0.03]">
@@ -34,9 +45,17 @@
                         Kabupaten {{ $k['kabupaten'] }}, {{ $k['provinsi'] }}
                     </p>
                 </div>
-                <span class="rounded-full bg-teal-50 px-3 py-1 text-theme-xs font-medium text-teal-700 dark:bg-teal-500/15 dark:text-teal-300">
-                    {{ $k['kode_kawasan'] }}
-                </span>
+                    <div class="flex items-center gap-3">
+                        <span class="rounded-full bg-teal-50 px-3 py-1 text-theme-xs font-medium text-teal-700 dark:bg-teal-500/15 dark:text-teal-300">
+                            {{ $k['kode_kawasan'] }}
+                        </span>
+
+                        {{-- Aksi kawasan. Tanpa Rincian, sebab seluruh isinya sudah tampil di kartu ini. --}}
+                        <x-sim.aksi-baris modal-ubah="formUbahKawasanBaris"
+                            :data-baris="$k + ['id' => $k['id_kawasan_transmigrasi']]"
+                            :hapus-url="'/kawasan/' . $k['id_kawasan_transmigrasi']"
+                            konfirmasi-hapus="hapusKawasan" :label="$k['nama']" />
+                    </div>
             </div>
 
             <dl class="mt-6 grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -99,4 +118,19 @@
             </tr>
         </x-sim.tabel-ringkas>
     </div>
+
+    <x-sim.modal-form nama="formTambahKawasan" judul="Tambah Kawasan Transmigrasi"
+        keterangan="Kawasan ditetapkan lewat SK dan dapat mencakup beberapa kecamatan."
+        :aksi="route('kawasan.simpan')" ukuran="lg" label-simpan="Simpan Data">
+        @include('pages.sp.form-kawasan', ['awalan' => 'tambah'])
+    </x-sim.modal-form>
+
+    <x-sim.modal-form nama="formUbahKawasanBaris" judul="Ubah Kawasan Transmigrasi"
+        keterangan="Perubahan tercatat pada audit log."
+        pola-aksi="/kawasan/:id" metode="PUT" ukuran="lg" label-simpan="Simpan Perubahan">
+        @include('pages.sp.form-kawasan', ['awalan' => 'ubahBaris'])
+    </x-sim.modal-form>
+
+    <x-sim.confirm-dialog nama="hapusKawasan" judul="Hapus kawasan transmigrasi ini?"
+        pesan="Seluruh satuan permukiman di dalamnya ikut kehilangan induknya." label-setuju="Hapus" />
 @endsection

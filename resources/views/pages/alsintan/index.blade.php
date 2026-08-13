@@ -38,7 +38,7 @@
 
         $adaFilter = $cari !== '' || $filterSp || $filterKepemilikan || $filterKondisi;
         $totalUnit = array_sum(array_column($semua, 'jumlah'));
-        $bantuan = count(array_filter($semua, fn ($a) => $a['kepemilikan'] === 'Bantuan Poktan'));
+        $bantuan = count(array_filter($semua, fn ($a) => $a['kepemilikan'] === \App\Enums\KepemilikanAlsintan::BantuanPoktan->value));
         $rusak = count(array_filter($semua, fn ($a) => $a['kondisi'] !== 'Baik'));
     @endphp
 
@@ -48,6 +48,17 @@
         :jumlah="count($baris)" :kata-kunci="$cari" :aksi-url="route('alsintan.index')"
         placeholder-cari="Cari nama alat atau pemilik" judul-kosong="Belum ada data alsintan"
         pesan-kosong="Alat dan mesin pertanian akan tampil di sini setelah didata.">
+
+        <x-slot:aksi>
+            <button type="button" @click="$dispatch('buka-modal', 'formTambahAlsintan')"
+                class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+                    aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Tambah Alsintan
+            </button>
+        </x-slot:aksi>
 
         <x-slot:ringkasan>
             <x-sim.stat-card label="Jenis Alat" :nilai="count($semua)" />
@@ -117,13 +128,14 @@
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Tahun</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Kondisi</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Verifikasi</th>
+            <th scope="col" class="px-5 py-3 text-right text-theme-xs font-medium text-gray-500 dark:text-gray-400">Aksi</th>
         </x-slot:kepala>
 
         @foreach ($baris as $a)
             <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                 <td class="px-5 py-3 text-theme-sm font-medium text-gray-800 dark:text-white/90">{{ $a['nama_alat'] }}</td>
                 <td class="px-5 py-3">
-                    <span class="rounded-full px-2.5 py-1 text-theme-xs font-medium {{ $a['kepemilikan'] === 'Bantuan Poktan' ? 'bg-teal-50 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300' : 'bg-gray-100 text-gray-700 dark:bg-white/5 dark:text-gray-300' }}">
+                    <span class="rounded-full px-2.5 py-1 text-theme-xs font-medium {{ $a['kepemilikan'] === \App\Enums\KepemilikanAlsintan::BantuanPoktan->value ? 'bg-teal-50 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300' : 'bg-gray-100 text-gray-700 dark:bg-white/5 dark:text-gray-300' }}">
                         {{ $a['kepemilikan'] }}
                     </span>
                 </td>
@@ -152,6 +164,13 @@
                 <td class="px-5 py-3">
                     <x-sim.status-badge :status="\App\Enums\StatusVerifikasi::from($a['status_verifikasi'])" />
                 </td>
+                <td class="px-5 py-3">
+                    <x-sim.aksi-baris :rincian-url="route('alsintan.detail', $a['id_alsintan'])"
+                        modal-ubah="formUbahAlsintanBaris"
+                        :data-baris="$a + ['id' => $a['id_alsintan']]"
+                        :hapus-url="'/alsintan/' . $a['id_alsintan']"
+                        konfirmasi-hapus="hapusAlsintan" :label="$a['nama_alat']" />
+                </td>
             </tr>
         @endforeach
 
@@ -169,4 +188,20 @@
             @endforeach
         </x-slot:kartu>
     </x-sim.halaman-daftar>
+
+    <x-sim.modal-form nama="formTambahAlsintan" judul="Tambah Alsintan"
+        keterangan="Alat baru tercatat menunggu verifikasi dinas."
+        :aksi="route('alsintan.simpan')" ukuran="lg" label-simpan="Simpan Data">
+        @include('pages.alsintan.form', ['awalan' => 'tambah'])
+    </x-sim.modal-form>
+
+    <x-sim.modal-form nama="formUbahAlsintanBaris" judul="Ubah Data Alsintan"
+        keterangan="Pemilik menyesuaikan jenis kepemilikan yang dipilih."
+        pola-aksi="/alsintan/:id" metode="PUT" ukuran="lg"
+        label-simpan="Simpan Perubahan">
+        @include('pages.alsintan.form', ['awalan' => 'ubahBaris'])
+    </x-sim.modal-form>
+
+    <x-sim.confirm-dialog nama="hapusAlsintan" judul="Hapus data ini?"
+        pesan="Data yang dihapus masih tercatat pada audit log dan dapat dipulihkan admin." label-setuju="Hapus" />
 @endsection

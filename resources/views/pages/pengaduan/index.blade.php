@@ -75,6 +75,7 @@
             && $p['status'] !== StatusPengaduan::Selesai->value));
 
         $bolehCatat = true;
+        $bolehUbah = true;
         $bolehHapus = true;
     @endphp
 
@@ -264,6 +265,42 @@
                                 </svg>
                             </a>
 
+                            @if ($bolehUbah)
+                                {{-- Ubah sejajar dengan Hapus, sebab menghapus lebih berisiko daripada menyunting --}}
+                                <button type="button"
+                                    @click.prevent="$dispatch('buka-modal-baris', {
+                                        nama: 'formUbahPengaduanBaris',
+                                        data: @js($p + ['id' => $p['id_pengaduan']])
+                                    })"
+                                    aria-label="Ubah data {{ $p['judul'] }}"
+                                    class="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-gray-400 dark:hover:bg-white/5">
+                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                        stroke-width="1.5" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+                                    </svg>
+                                </button>
+                            @endif
+
+                            {{--
+                                Penanganan dipisahkan dari tombol Ubah, sebab memajukan status
+                                berbeda sifat dari menyunting isi laporan dan tercatat berbeda
+                                pada audit log.
+                            --}}
+                            <button type="button"
+                                @click.prevent="$dispatch('buka-tangani-pengaduan', {
+                                    nama: 'tanganiPengaduanBaris',
+                                    data: @js($p + ['id' => $p['id_pengaduan']])
+                                })"
+                                aria-label="Perbarui status penanganan {{ $p['judul'] }}"
+                                class="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-teal-700 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-gray-400 dark:hover:bg-white/5">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                    stroke-width="1.5" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </button>
+
                             @if ($bolehHapus)
                                 <button type="button"
                                     @click.prevent="$dispatch('buka-konfirmasi', {
@@ -324,4 +361,16 @@
             pesan="Riwayat penanganan yang sudah tercatat ikut tidak dapat diakses sampai data dipulihkan."
             label-setuju="Hapus Pengaduan" />
     @endif
+
+    @if ($bolehUbah)
+        <x-sim.modal-form nama="formUbahPengaduanBaris" judul="Ubah Data Pengaduan"
+            keterangan="Perubahan tercatat pada riwayat penanganan."
+            pola-aksi="/pengaduan/:id" metode="PUT" ukuran="xl"
+            label-simpan="Simpan Perubahan">
+            @include('pages.pengaduan.form', ['awalan' => 'ubahBaris'])
+        </x-sim.modal-form>
+    @endif
+
+    {{-- Modal penanganan, satu untuk seluruh baris --}}
+    @include('pages.pengaduan.tangani-baris')
 @endsection

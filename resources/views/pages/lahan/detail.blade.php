@@ -158,14 +158,16 @@
                         </div>
                         <div>
                             <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Koordinat</dt>
-                            <dd class="mt-0.5 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
-                                @if (! empty($data['lintang']))
-                                    {{ number_format($data['lintang'], 6, '.', '') }},
-                                    {{ number_format($data['bujur'], 6, '.', '') }}
-                                @else
-                                    -
-                                @endif
-                            </dd>
+                        <dd class="mt-0.5 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
+                            @if (! empty($data['lintang']))
+                                {{ number_format($data['lintang'], 6, '.', '') }},
+                                {{ number_format($data['bujur'], 6, '.', '') }}
+                                <x-sim.tautan-peta class="mt-1.5" :lintang="$data['lintang']"
+                                    :bujur="$data['bujur']" :label="$data['kode_lahan']" />
+                            @else
+                                -
+                            @endif
+                        </dd>
                         </div>
                         <div class="sm:col-span-2">
                             <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Tujuan pemanfaatan</dt>
@@ -211,8 +213,14 @@
                 {{-- Dokumen status lahan --}}
                 <div x-show="tab === 'dokumen'" x-cloak role="tabpanel">
                     <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 p-5 dark:border-gray-800">
+                        {{--
+                            Penjelasan mengapa dokumen lahan diunggah di sini, bukan menyatu
+                            pada form lahan seperti modul lain. Tanpa keterangan ini,
+                            pemisahannya tampak sebagai ketidakkonsistenan.
+                        --}}
                         <p class="text-theme-xs text-gray-500 dark:text-gray-400">
-                            Satu lahan dapat memiliki lebih dari satu dokumen status.
+                            Diunggah terpisah dari form lahan, sebab satu lahan dapat memiliki HPL dan SHM
+                            sekaligus, masing-masing dengan nomor dan tanggal terbitnya sendiri.
                         </p>
                         @if ($bolehUbah)
                             <button type="button" @click="$dispatch('buka-modal', 'formDokumenLahan')"
@@ -242,11 +250,10 @@
                                             -
                                         @endif
                                     </td>
-                                    <td class="px-5 py-3">
-                                        <span class="text-theme-xs text-gray-500 dark:text-gray-400">
-                                            {{ basename($d['file_dokumen']) }}
-                                        </span>
-                                    </td>
+                                        <td class="px-5 py-3">
+                                            <x-sim.tautan-dokumen modul="lahan" :id="$data['id_lahan']"
+                                                :berkas="$d['file_dokumen']" />
+                                        </td>
                                 </tr>
                             @endforeach
                         </x-sim.tabel-ringkas>

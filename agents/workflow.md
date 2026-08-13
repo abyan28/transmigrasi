@@ -73,7 +73,7 @@ Dikerjakan dalam **dua gelombang** agar revisi hasil validasi tidak membongkar s
 14. Implementasi modul lahan: lahan pekarangan dan lahan usaha, kategori lahan, dokumen HPL/SHM, dan koordinat lahan.
 15. Implementasi modul kelembagaan dan sarana pertanian: profil poktan, daftar anggota, alsintan, dan saprotan.
 16. Implementasi modul produksi pertanian: komoditas, musim tanam, riwayat tanam, hasil panen, volume produksi, harga, dan kualitas panen.
-17. Implementasi modul infrastruktur pertanian sebagai pendataan aset beserta dokumentasi dan koordinat.
+17. Implementasi modul infrastruktur SP sebagai pendataan aset beserta dokumentasi dan koordinat.
 18. Implementasi modul pengaduan: kategori pengaduan, alur status penanganan, riwayat penanganan, dan dokumen pendukung.
 19. Penggantian data dummy dashboard dengan data nyata beserta filter wilayah dan periode.
 
@@ -124,7 +124,7 @@ Output fase ini:
 Risiko dan mitigasi: kemampuan digital bervariasi → SOP bergambar dan praktik langsung; adopsi rendah → libatkan operator lokal sebagai pendamping awal; tindak lanjut belum jelas → tetapkan PIC lokal dan rencana monitoring pascaprogram.
 
 ## 3. Workflow Operasional Sistem
-Workflow operasional adalah alur saat data dikumpulkan, divalidasi, ditampilkan, dan dipakai untuk keputusan. Sistem inti mencakup data master wilayah/SP, inventaris dan fasilitas SP, transmigran, rumah, lahan, poktan, alsintan, saprotan, komoditas, hasil panen, infrastruktur pertanian, penghuni kawasan, pengaduan, dashboard monitoring, export laporan, dan pengaturan hak akses.
+Workflow operasional adalah alur saat data dikumpulkan, divalidasi, ditampilkan, dan dipakai untuk keputusan. Sistem inti mencakup data master wilayah/SP, inventaris dan fasilitas SP, transmigran, rumah, lahan, poktan, alsintan, saprotan, komoditas, hasil panen, infrastruktur SP, penghuni kawasan, pengaduan, dashboard monitoring, export laporan, dan pengaturan hak akses.
 
 ### 3.1 Login dan Akses
 1. Pengguna masuk memakai akun yang diberikan Admin. Sistem tidak menyediakan pendaftaran mandiri.
@@ -138,19 +138,34 @@ Workflow operasional adalah alur saat data dikumpulkan, divalidasi, ditampilkan,
 9. Data pribadi transmigran dan penghuni hanya tampil penuh untuk role berwenang; role lain menerima tampilan agregat.
 
 ### 3.1a Lupa Kata Sandi
-1. Pengguna yang lupa kata sandi **menghubungi Admin desa atau SP**, bukan memakai fitur pemulihan mandiri. Halaman masuk memuat keterangan ini.
-2. Admin membuka Manajemen Pengguna, mencari akun bersangkutan, lalu memilih tindakan setel ulang kata sandi.
-3. Sistem membuat kata sandi sementara dan menandai `password_harus_diganti = TRUE`.
-4. Admin menyerahkan kata sandi sementara kepada pengguna secara langsung.
-5. Pengguna masuk memakai kata sandi sementara, lalu wajib menggantinya sebelum dapat memakai sistem.
-6. Seluruh langkah tercatat pada audit log dengan aksi `Reset Kata Sandi`.
+
+Tersedia dua jalur. Keduanya berakhir sama: kata sandi sementara yang wajib diganti saat masuk.
+
+**Jalur A, kode verifikasi lewat surel dinas.** Dipakai bila petugas punya surel aktif dan jaringan memadai.
+
+1. Pengguna membuka halaman lupa kata sandi dari tautan pada halaman masuk, lalu memasukkan email atau username.
+2. Sistem mengirim **kode enam digit** ke surel dinas terdaftar. Halaman berikutnya menampilkan pesan yang sama persis, baik akun ditemukan maupun tidak, agar halaman ini tidak dapat dipakai memeriksa siapa yang memiliki akun.
+3. Pengguna mengetik kode tersebut beserta kata sandi barunya. Kode berlaku 15 menit, sekali pakai, dan hangus setelah 5 kali salah.
+4. Bila kode telanjur kedaluwarsa, halaman menawarkan permintaan kode baru sekaligus mengingatkan jalur Admin.
+
+**Jalur B, setel ulang oleh Admin.** Selalu tersedia, dan menjadi satu-satunya jalur di lokus bersinyal lemah.
+
+5. Pengguna menghubungi Admin desa atau SP.
+6. Admin membuka Manajemen Pengguna, mencari akun bersangkutan, lalu memilih tindakan setel ulang kata sandi.
+7. Sistem menyimpan kata sandi sementara dan menandai `password_harus_diganti = TRUE`.
+8. Admin menyerahkan kata sandi sementara kepada pengguna **secara langsung**, bukan lewat surel maupun pesan singkat.
+
+**Keduanya:**
+
+9. Pengguna masuk memakai kata sandi sementara, lalu wajib menggantinya sebelum dapat memakai sistem.
+10. Seluruh langkah tercatat pada audit log dengan aksi `Reset Kata Sandi`, beserta jalur yang dipakai. Pemulihan lewat jalur A tercatat atas nama pemilik akun itu sendiri.
 
 ### 3.2 Input Data Awal
 1. Admin menyiapkan data master wilayah dan SP beserta koordinat, batas wilayah, inventaris, dan fasilitas, serta data master satuan beserta faktor konversinya.
 2. Data transmigran dan keluarga diinput, lalu ditautkan ke satu rumah kosong dan ke lahan miliknya.
 3. Data lahan pekarangan dan lahan usaha diisi beserta dokumen status lahan (HPL/SHM).
 4. Profil poktan, daftar anggota, alsintan, dan saprotan dicatat.
-5. Data komoditas, musim tanam, hasil panen, dan infrastruktur pertanian dilengkapi.
+5. Data komoditas, musim tanam, hasil panen, dan infrastruktur SP dilengkapi.
 6. Data awal dari desa/SP prioritas masuk ke sistem sebagai baseline monitoring.
 7. Dokumentasi lapangan berupa foto dan koordinat lokasi dilampirkan bila tersedia, mengikuti batas ukuran dan aturan penamaan file.
 
@@ -289,7 +304,7 @@ Verifikasi adalah penandaan bahwa suatu baris data sudah diperiksa kebenarannya.
 6. Saat merekap, sistem mengonversi volume ke ton memakai faktor konversi pada data master satuan.
 7. Rekap berdasarkan wilayah, transmigran, poktan, komoditas, atau periode.
 
-### 4.11 Modul Infrastruktur Pertanian
+### 4.11 Modul Infrastruktur SP
 1. Input data aset infrastruktur: air, irigasi, listrik, jalan produksi, telekomunikasi, atau gudang.
 2. Catat nama, tahun perolehan, sumber dana, dan kondisi terkini.
 3. Lampirkan dokumentasi foto dan koordinat lokasi.

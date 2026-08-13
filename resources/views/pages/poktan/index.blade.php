@@ -41,6 +41,17 @@
         placeholder-cari="Cari nama poktan atau ketua" judul-kosong="Belum ada kelompok tani"
         pesan-kosong="Kelompok tani akan tampil di sini setelah didata.">
 
+        <x-slot:aksi>
+            <button type="button" @click="$dispatch('buka-modal', 'formTambahPoktan')"
+                class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+                    aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Tambah Poktan
+            </button>
+        </x-slot:aksi>
+
         <x-slot:ringkasan>
             <x-sim.stat-card label="Jumlah Poktan" :nilai="count($semua)" satuan="kelompok" />
             <x-sim.stat-card label="Total Anggota" :nilai="number_format($totalAnggota, 0, ',', '.')" satuan="orang" />
@@ -86,6 +97,7 @@
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Berdiri</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Anggota</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Verifikasi</th>
+            <th scope="col" class="px-5 py-3 text-right text-theme-xs font-medium text-gray-500 dark:text-gray-400">Aksi</th>
         </x-slot:kepala>
 
         @foreach ($baris as $p)
@@ -109,6 +121,14 @@
                 <td class="px-5 py-3">
                     <x-sim.status-badge :status="\App\Enums\StatusVerifikasi::from($p['status_verifikasi'])" />
                 </td>
+                <td class="px-5 py-3">
+                    <x-sim.aksi-baris :rincian-url="route('poktan.detail', $p['id_poktan'])"
+                        modal-ubah="formUbahPoktanBaris"
+                        :data-baris="$p + ['id' => $p['id_poktan']]"
+                        :hapus-url="'/poktan/' . $p['id_poktan']"
+                        konfirmasi-hapus="hapusPoktan"
+                        :label="$p['nama']" />
+                </td>
             </tr>
         @endforeach
 
@@ -126,4 +146,19 @@
             @endforeach
         </x-slot:kartu>
     </x-sim.halaman-daftar>
+
+    <x-sim.modal-form nama="formTambahPoktan" judul="Tambah Kelompok Tani"
+        keterangan="Ketua dipilih dari data transmigran agar tautannya tetap sahih."
+        :aksi="route('poktan.simpan')" ukuran="lg" label-simpan="Simpan Data">
+        @include('pages.poktan.form', ['awalan' => 'tambah'])
+    </x-sim.modal-form>
+
+    <x-sim.modal-form nama="formUbahPoktanBaris" judul="Ubah Profil Poktan"
+        keterangan="Perubahan tercatat pada audit log."
+        pola-aksi="/poktan/:id" metode="PUT" ukuran="lg" label-simpan="Simpan Perubahan">
+        @include('pages.poktan.form', ['awalan' => 'ubahBaris'])
+    </x-sim.modal-form>
+
+    <x-sim.confirm-dialog nama="hapusPoktan" judul="Hapus kelompok tani ini?"
+        pesan="Riwayat keanggotaan dan penyaluran saprotan ikut kehilangan induknya." label-setuju="Hapus" />
 @endsection

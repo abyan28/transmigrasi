@@ -49,11 +49,11 @@ Pola ini dipilih agar kode mudah dibaca (`transmigran_id` langsung terbaca menun
 
 ## 2. Daftar Tabel
 
-Total **35 tabel**, dikelompokkan menjadi 9 domain.
+Total **36 tabel**, dikelompokkan menjadi 9 domain.
 
 | # | Domain | Tabel |
 |---|---|---|
-| 1 | Pengguna & Sistem | `user`, `role`, `permission`, `role_permission`, `user_satuan_permukiman`, `verifikasi`, `audit_log` |
+| 1 | Pengguna & Sistem | `user`, `role`, `permission`, `role_permission`, `user_satuan_permukiman`, `verifikasi`, `audit_log`, `kode_pemulihan_sandi` |
 | 2 | Master Wilayah | `provinsi`, `kabupaten`, `kecamatan`, `desa`, `kawasan_transmigrasi`, `satuan_permukiman`, `penilaian_sp` |
 | 3 | Aset SP | `inventaris_sp`, `fasilitas_sp` |
 | 4 | Master Referensi | `satuan`, `komoditas`, `parameter_penilaian_sp` |
@@ -403,19 +403,33 @@ Bagian ini merangkum seluruh penyimpangan yang disengaja dari berkas SQL referen
 
 ## 9. Tabel Bawaan Laravel
 
-Selain 35 tabel di atas, Laravel membuat tabel infrastrukturnya sendiri. Tabel ini tidak masuk hitungan ERD dan tidak perlu didokumentasikan di data dictionary.
+Selain 36 tabel di atas, Laravel membuat tabel infrastrukturnya sendiri. Tabel ini tidak masuk hitungan ERD dan tidak perlu didokumentasikan di data dictionary.
 
 | Tabel | Fungsi |
 |---|---|
 | `sessions` | Penyimpanan sesi login |
 | `cache`, `cache_locks` | Cache aplikasi |
 | `jobs`, `job_batches`, `failed_jobs` | Antrean pekerjaan latar |
-| `password_reset_tokens` | **Tidak dipakai.** Lihat catatan di bawah |
+| `password_reset_tokens` | **Tidak dipakai.** Digantikan `kode_pemulihan_sandi`, lihat catatan di bawah |
 | `migrations` | Riwayat migration |
 
 Tabel `users` bawaan Laravel **diganti** oleh tabel `user` milik sistem ini (bentuk tunggal, mengikuti konvensi bagian 1), dengan menyesuaikan `protected $table` pada model.
 
-**Catatan `password_reset_tokens`.** Tabel ini dibiarkan ada karena merupakan bagian migration bawaan Laravel, tetapi **tidak dipakai** oleh sistem. Pemulihan kata sandi tidak dilakukan lewat tautan surel, melainkan disetel ulang oleh Admin (`rules.md` §14b). Alasannya, tidak semua transmigran memiliki alamat surel yang dapat diakses, dan jaringan di lokus tidak selalu memungkinkan penerimaan surel tepat waktu.
+**Catatan `password_reset_tokens`.** Tabel bawaan ini tetap tidak dipakai, tetapi bukan lagi karena pemulihan mandiri ditiadakan. Sejak 2026-08-12 sistem menyediakan pemulihan lewat **kode verifikasi enam digit**, bukan tautan sekali klik, sehingga struktur bawaan yang menyimpan token panjang tidak cocok. Sistem memakai tabel sendiri `kode_pemulihan_sandi` yang menyimpan sidik kode, waktu kedaluwarsa, dan hitungan percobaan (`rules.md` §14b poin 7 sampai 10).
+
+**Tabel `kode_pemulihan_sandi`.**
+
+| Kolom | Tipe | Keterangan |
+|---|---|---|
+| `id_kode_pemulihan` | BIGINT PK | |
+| `user_id` | BIGINT FK → `user` | Akun sasaran |
+| `kode_hash` | VARCHAR(255) | **Sidik kode, bukan kodenya.** Basis data yang bocor tidak boleh langsung memberi jalan masuk |
+| `kedaluwarsa_pada` | TIMESTAMP | 15 menit sejak dibuat |
+| `percobaan` | TINYINT | Bertambah tiap kode salah dimasukkan, maksimal 5 |
+| `dipakai_pada` | TIMESTAMP NULL | Diisi saat kode berhasil dipakai, menjadikannya sekali pakai |
+| `created_at` | TIMESTAMP | Dasar penghitungan batas 3 permintaan per jam |
+
+Kode lama milik satu akun wajib dibatalkan ketika kode baru diminta, agar tidak ada dua kode sah beredar bersamaan.
 
 ---
 
@@ -437,28 +451,29 @@ Urutan berikut wajib dipatuhi agar foreign key selalu menemukan tabel induknya.
 10. permission
 11. role_permission              (butuh role, permission)
 12. user                         (butuh role)
-13. satuan_permukiman            (butuh desa, kawasan_transmigrasi, user)
-14. user_satuan_permukiman       (butuh user, satuan_permukiman)
-15. verifikasi                   (butuh user)
-16. inventaris_sp                (butuh satuan_permukiman)
-17. fasilitas_sp                 (butuh satuan_permukiman)
-18. transmigran                  (butuh satuan_permukiman)
-19. rumah                        (butuh satuan_permukiman, transmigran)
-20. riwayat_penghunian           (butuh rumah, transmigran)
-21. poktan                       (butuh satuan_permukiman, transmigran)
-22. anggota_poktan               (butuh poktan, transmigran)
-23. lahan                        (butuh transmigran, satuan_permukiman, poktan)
-24. dokumen_lahan                (butuh lahan)
-25. alsintan                     (butuh transmigran, poktan)
-26. saprotan                     (butuh transmigran, poktan, satuan)
-27. komoditas_poktan             (butuh komoditas, poktan)
-28. riwayat_tanam                (butuh lahan, musim_tanam, komoditas)
-29. hasil_panen                  (butuh riwayat_tanam, satuan)
-30. infrastruktur                (butuh satuan_permukiman, poktan)
-31. pengaduan                    (butuh user, satuan_permukiman)
-32. penanganan_pengaduan         (butuh pengaduan, user)
-33. audit_log                    (butuh user)
-34. penilaian_sp                 (butuh satuan_permukiman, user)
+13. kode_pemulihan_sandi         (butuh user)
+14. satuan_permukiman            (butuh desa, kawasan_transmigrasi, user)
+15. user_satuan_permukiman       (butuh user, satuan_permukiman)
+16. verifikasi                   (butuh user)
+17. inventaris_sp                (butuh satuan_permukiman)
+18. fasilitas_sp                 (butuh satuan_permukiman)
+19. transmigran                  (butuh satuan_permukiman)
+20. rumah                        (butuh satuan_permukiman, transmigran)
+21. riwayat_penghunian           (butuh rumah, transmigran)
+22. poktan                       (butuh satuan_permukiman, transmigran)
+23. anggota_poktan               (butuh poktan, transmigran)
+24. lahan                        (butuh transmigran, satuan_permukiman, poktan)
+25. dokumen_lahan                (butuh lahan)
+26. alsintan                     (butuh transmigran, poktan)
+27. saprotan                     (butuh transmigran, poktan, satuan)
+28. komoditas_poktan             (butuh komoditas, poktan)
+29. riwayat_tanam                (butuh lahan, musim_tanam, komoditas)
+30. hasil_panen                  (butuh riwayat_tanam, satuan)
+31. infrastruktur                (butuh satuan_permukiman, poktan)
+32. pengaduan                    (butuh user, satuan_permukiman)
+33. penanganan_pengaduan         (butuh pengaduan, user)
+34. audit_log                    (butuh user)
+35. penilaian_sp                 (butuh satuan_permukiman, user)
 ```
 
 **Catatan langkah 9 sampai 12:** tabel hak akses dibuat sebelum `user`, karena `user.role_id` menunjuk ke `role`. Tidak ada lagi relasi melingkar antara `user` dan `transmigran`, sebab kolom `transmigran_id` sudah dicabut seiring dihapusnya akun milik warga.

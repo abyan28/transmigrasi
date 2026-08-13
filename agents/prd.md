@@ -87,7 +87,7 @@ Seluruh rekap dan filter dashboard dipecah lewat SP, sehingga dapat dikelompokka
 - Data lahan
 - Data komoditas
 - Data hasil panen
-- Data infrastruktur pertanian dan kawasan
+- Data infrastruktur SP dan kawasan
 - Data penghuni/transmigran kawasan (status tinggal, pindah, aktif/tidak aktif)
 - Data rumah dan kondisi hunian
 - Data kelompok tani (poktan) dan daftar anggota
@@ -125,7 +125,7 @@ Sistem ini dirancang untuk menyelesaikan masalah utama berikut:
 - **Role bersifat dinamis.** Admin dapat membuat role baru, memilih izin per modul, dan menetapkan cakupan datanya lewat antarmuka, tanpa perlu mengubah kode program.
 - **Tidak ada pendaftaran mandiri.** Sistem tidak menyediakan halaman daftar akun; seluruh akun dibuat oleh Admin. Ini mencegah pihak tak berwenang membuat akun ke sistem data kependudukan.
 - **Kredensial berupa email atau username.** Seluruh pengguna adalah petugas, sehingga tidak ada kredensial berbasis NIK.
-- **Pemulihan kata sandi dilakukan Admin, bukan lewat surel.** Pengguna yang lupa kata sandi menghubungi Admin, lalu Admin memberikan kata sandi sementara yang wajib diganti saat masuk berikutnya. Cara ini dipilih karena jaringan di lokus tidak selalu memungkinkan penerimaan surel tepat waktu.
+- **Pemulihan kata sandi tersedia lewat dua jalur.** Petugas dapat meminta kode verifikasi enam digit ke surel dinasnya, atau menghubungi Admin untuk disetel ulang secara langsung. Jalur Admin dipertahankan karena jaringan di lokus tidak selalu memungkinkan penerimaan surel tepat waktu, sehingga sistem tidak pernah bergantung pada satu-satunya cara. Kode dikirim sebagai angka yang diketik, bukan tautan yang diklik, agar tetap dapat dipakai ketika surel hanya dapat dibuka di perangkat lain.
 - Setiap tindakan Admin terhadap akun orang lain, termasuk menyetel ulang kata sandi, wajib tercatat pada audit log.
 
 ### 7.2 Data wilayah transmigrasi
@@ -173,11 +173,11 @@ Sistem harus dapat:
 - menyimpan riwayat panen per transmigran petani, lahan, atau desa/SP;
 - menampilkan rekap hasil panen per periode, per komoditas, dan per wilayah.
 
-### 7.7 Infrastruktur pertanian
-Modul ini berisi **pendataan aset** infrastruktur pertanian kawasan. Pelaporan masalah/kerusakan ditangani oleh modul Pengaduan (§7.13).
+### 7.7 Infrastruktur SP
+Modul ini berisi **pendataan aset** infrastruktur satuan permukiman. Pelaporan masalah/kerusakan ditangani oleh modul Pengaduan (§7.13).
 
 Sistem harus dapat:
-- mencatat infrastruktur pertanian seperti air, irigasi, listrik, jalan produksi, telekomunikasi, dan gudang;
+- mencatat infrastruktur SP seperti air, irigasi, listrik, jalan produksi, telekomunikasi, dan gudang;
 - menyimpan nama infrastruktur, tahun perolehan, sumber dana, dan kondisi terkini;
 - menyimpan foto/dokumentasi beserta geotagging sederhana (koordinat lokasi) sebagai dasar verifikasi;
 - menautkan infrastruktur dengan desa/SP dan kelompok tani bila relevan;
@@ -305,7 +305,7 @@ Minimal entitas data yang dikelola sistem:
 - komoditas
 - musim tanam dan riwayat tanam
 - hasil panen
-- infrastruktur pertanian
+- infrastruktur SP
 - penghuni kawasan
 - pengaduan dan status penanganan
 - laporan/pelaporan

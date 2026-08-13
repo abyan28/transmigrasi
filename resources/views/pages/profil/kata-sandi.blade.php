@@ -5,8 +5,9 @@
     yang muncul dipaksa sistem, halaman ini dibuka sendiri dari menu profil,
     sehingga kata sandi lama tetap diminta sebagai pemeriksaan pemilik akun.
 
-    Sistem tidak menyediakan pemulihan lewat surel. Pengguna yang lupa kata
-    sandi menghubungi admin (agents/rules.md bagian 14b poin 7 dan 8).
+    Pengguna yang lupa kata sandi memiliki dua jalur pemulihan: kode
+    verifikasi lewat surel dinas, atau menghubungi admin bila jaringan di
+    lokus tidak memadai (agents/rules.md bagian 14b poin 7 sampai 12).
 
     Aturan kata sandi mengikuti app/Support/ValidationRules::password():
     minimal 8 karakter serta memuat huruf dan angka.
@@ -48,8 +49,10 @@
                 <div class="rounded-lg bg-gray-50 p-3.5 dark:bg-white/[0.03]">
                     <p class="text-theme-xs text-gray-600 dark:text-gray-400">
                         Setelah kata sandi diganti, Anda tetap masuk di perangkat ini.
-                        Bila lupa kata sandi di kemudian hari, hubungi admin untuk disetel ulang,
-                        karena sistem tidak mengirim tautan pemulihan lewat surel.
+                        Bila lupa kata sandi di kemudian hari, minta kode verifikasi lewat halaman
+                        <a href="{{ route('lupa-kata-sandi') }}"
+                            class="font-medium text-brand-500 underline hover:text-brand-600">lupa kata sandi</a>,
+                        atau hubungi admin bila jaringan di lokus Anda sedang tidak memadai.
                     </p>
                 </div>
 

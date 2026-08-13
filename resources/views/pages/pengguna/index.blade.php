@@ -40,6 +40,17 @@
         $aktif = count(array_filter($semua, fn ($u) => $u['is_aktif']));
         $perluGanti = count(array_filter($semua, fn ($u) => $u['password_harus_diganti']));
         $daftarRole = array_values(array_unique(array_column($semua, 'role')));
+
+        // Admin aktif terakhir tidak boleh dinonaktifkan (rules.md 14b poin 16),
+        // agar sistem tidak pernah kehilangan seluruh jalur administrasinya.
+        $jumlahAdminAktif = count(array_filter(
+            $semua,
+            fn ($u) => $u['role'] === 'Admin' && $u['is_aktif'],
+        ));
+
+        $adminTerakhir = fn ($u) => $u['role'] === 'Admin'
+            && $u['is_aktif']
+            && $jumlahAdminAktif === 1;
     @endphp
 
     <x-sim.halaman-daftar judul="Manajemen Pengguna"
@@ -54,6 +65,14 @@
                 class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-theme-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
                 Atur Role dan Hak Akses
             </a>
+            <button type="button" @click="$dispatch('buka-modal', 'formTambahPengguna')"
+                class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+                    aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Tambah Akun Petugas
+            </button>
         </x-slot:aksi>
 
         <x-slot:ringkasan>
@@ -110,6 +129,7 @@
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Penugasan SP</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Masuk Terakhir</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Status</th>
+            <th scope="col" class="px-5 py-3 text-right text-theme-xs font-medium text-gray-500 dark:text-gray-400">Aksi</th>
         </x-slot:kepala>
 
         @foreach ($baris as $u)
@@ -161,6 +181,61 @@
                         @endif
                     </div>
                 </td>
+                <td class="px-5 py-3">
+                    <div class="flex items-center justify-end gap-1">
+                        {{-- Rincian akun --}}
+                        <button type="button"
+                            @click="$dispatch('buka-detail-pengguna', { nama: 'detailPengguna', akun: @js($u) })"
+                            aria-label="Lihat rincian akun {{ $u['nama'] }}"
+                            class="rounded-lg p-2 text-gray-500 transition focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-white/5">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        </button>
+
+                        {{-- Ubah akun --}}
+                        <button type="button"
+                            @click="$dispatch('buka-modal-baris', { nama: 'formUbahPenggunaBaris', data: @js($u + ['id' => $u['id_user']]) })"
+                            aria-label="Ubah data akun {{ $u['nama'] }}"
+                            class="rounded-lg p-2 text-gray-500 transition focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-gray-400 hover:bg-gray-100 hover:text-brand-600 dark:hover:bg-white/5">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+                            </svg>
+                        </button>
+
+                        {{-- Setel ulang kata sandi, ikon kunci --}}
+                        <button type="button" @click="$dispatch('buka-setel-sandi', { akun: @js($u) })"
+                            aria-label="Setel ulang kata sandi {{ $u['nama'] }}"
+                            class="rounded-lg p-2 text-gray-500 transition focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-gray-400 hover:bg-gray-100 hover:text-brand-600 dark:hover:bg-white/5">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
+                            </svg>
+                        </button>
+
+                        {{--
+                            Tombol nonaktifkan sengaja TIDAK dirender untuk Admin
+                            aktif terakhir (rules.md 14b poin 16). Merender tombol
+                            lalu menolaknya di server berarti memasang kontrol yang
+                            tidak berfungsi, yang dilarang R-26.
+                        --}}
+                        @if ($u['is_aktif'] && ! $adminTerakhir($u))
+                            <button type="button"
+                                @click="$dispatch('buka-konfirmasi', { nama: 'nonaktifkanPengguna', aksi: '/pengguna/{{ $u['id_user'] }}/nonaktifkan' })"
+                                aria-label="Nonaktifkan akun {{ $u['nama'] }}"
+                                class="rounded-lg p-2 text-gray-500 transition focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                                </svg>
+                            </button>
+                        @elseif ($u['is_aktif'])
+                            <span class="rounded-lg bg-gray-50 px-2 py-1.5 text-theme-xs text-gray-500 dark:bg-white/5 dark:text-gray-400"
+                                title="Sistem menolak penonaktifan Admin terakhir yang masih aktif.">
+                                Admin terakhir
+                            </span>
+                        @endif
+                    </div>
+                </td>
             </tr>
         @endforeach
 
@@ -184,4 +259,29 @@
         Akun tidak pernah dihapus, hanya dinonaktifkan, agar jejak audit tetap utuh.
         Sistem juga menolak penonaktifan akun Admin terakhir yang masih aktif.
     </p>
+
+    {{-- Modal tambah akun --}}
+    <x-sim.modal-form nama="formTambahPengguna" judul="Tambah Akun Petugas"
+        keterangan="Akun hanya dapat dibuat admin. Tidak ada pendaftaran mandiri."
+        :aksi="route('pengguna.simpan')" ukuran="xl" label-simpan="Simpan Akun">
+        @include('pages.pengguna.form', ['awalan' => 'tambah', 'mode' => 'tambah'])
+    </x-sim.modal-form>
+
+    {{-- Modal rincian akun --}}
+    @include('pages.pengguna.detail')
+
+    {{-- Modal setel ulang kata sandi --}}
+    @include('pages.pengguna.setel-sandi')
+
+    {{-- Konfirmasi penonaktifan --}}
+    <x-sim.confirm-dialog nama="nonaktifkanPengguna" judul="Nonaktifkan akun ini?"
+        pesan="Petugas tidak akan dapat masuk, tetapi seluruh riwayat tindakannya tetap tersimpan. Akun dapat diaktifkan kembali sewaktu-waktu."
+        label-setuju="Nonaktifkan" metode="POST" ragam="bahaya" />
+
+    {{-- Modal ubah akun, satu untuk seluruh baris --}}
+    <x-sim.modal-form nama="formUbahPenggunaBaris" judul="Ubah Akun Petugas"
+        keterangan="Kata sandi tidak dapat disunting di sini; gunakan Setel Ulang Kata Sandi."
+        pola-aksi="/pengguna/:id" metode="PUT" ukuran="xl" label-simpan="Simpan Perubahan">
+        @include('pages.pengguna.form', ['awalan' => 'ubahBaris', 'mode' => 'ubah'])
+    </x-sim.modal-form>
 @endsection

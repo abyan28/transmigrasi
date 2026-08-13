@@ -17,7 +17,8 @@
     "dependencies": {
         "alpinejs": "^3.14.9",
         "apexcharts": "^5.3.5",
-        "flatpickr": "^4.6.13"
+        "flatpickr": "^4.6.13",
+        "leaflet": "^1.9.4"
     },
     "allowScripts": {
         "@tailwindcss/oxide@4.1.12": true,

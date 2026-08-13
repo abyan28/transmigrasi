@@ -61,6 +61,7 @@
         $daftarMusim = array_values(array_unique(array_column($semua, 'musim_tanam')));
 
         $bolehTambah = true;
+        $bolehUbah = true;
         $bolehHapus = true;
         $bolehVerifikasi = true;
     @endphp
@@ -238,6 +239,23 @@
                                 </svg>
                             </a>
 
+                            @if ($bolehUbah)
+                                {{-- Ubah sejajar dengan Hapus, sebab menghapus lebih berisiko daripada menyunting --}}
+                                <button type="button"
+                                    @click.prevent="$dispatch('buka-modal-baris', {
+                                        nama: 'formUbahPanenBaris',
+                                        data: @js($p + ['id' => $p['id_hasil_panen']])
+                                    })"
+                                    aria-label="Ubah data {{ $p['komoditas'] }}"
+                                    class="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-gray-400 dark:hover:bg-white/5">
+                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                        stroke-width="1.5" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+                                    </svg>
+                                </button>
+                            @endif
+
                             @if ($bolehHapus)
                                 <button type="button"
                                     @click.prevent="$dispatch('buka-konfirmasi', {
@@ -306,5 +324,14 @@
         <x-sim.confirm-dialog nama="hapusPanen" judul="Hapus catatan panen ini?"
             pesan="Catatan yang dihapus tidak lagi dihitung pada rekap dan dashboard."
             label-setuju="Hapus Catatan Panen" />
+    @endif
+
+    @if ($bolehUbah)
+        <x-sim.modal-form nama="formUbahPanenBaris" judul="Ubah Data Panen"
+            keterangan="Satuan mengikuti komoditas dan tidak dapat diubah di sini."
+            pola-aksi="/panen/:id" metode="PUT" ukuran="xl"
+            label-simpan="Simpan Perubahan">
+            @include('pages.panen.form', ['awalan' => 'ubahBaris'])
+        </x-sim.modal-form>
     @endif
 @endsection

@@ -1,4 +1,4 @@
-﻿# data-dictionary.md
+# data-dictionary.md
 ## Kamus Data — Sistem Informasi Digitalisasi Monitoring Pertanian dan Tata Kelola Data Kawasan Transmigrasi Kobalima Timur
 
 Dokumen ini merinci setiap kolom pada 33 tabel yang dirancang di `erd.md`. Dipakai sebagai acuan saat membuat form frontend (nama field, label, dan aturan validasi) maupun saat menulis migration Laravel.
@@ -12,7 +12,7 @@ Dokumen ini merinci setiap kolom pada 33 tabel yang dirancang di `erd.md`. Dipak
 ## Daftar Isi
 
 1. [Aturan Umum](#1-aturan-umum)
-2. [Domain Pengguna dan Sistem](#2-domain-pengguna-dan-sistem)
+2. [Domain Pengguna dan Sistem](#2-domain-pengguna-dan-sistem) &mdash; termasuk `kode_pemulihan_sandi` (2.3)
 3. [Domain Master Wilayah](#3-domain-master-wilayah)
 4. [Domain Aset SP](#4-domain-aset-sp)
 5. [Domain Master Referensi](#5-domain-master-referensi)
@@ -227,6 +227,29 @@ Riwayat perubahan data penting (`rules.md` §14.5).
 | `user_agent` | `VARCHAR(255)` | YA | | Peramban dan perangkat |
 
 **Catatan:** hanya kolom yang benar-benar berubah yang disimpan pada `data_lama`/`data_baru`, bukan seluruh baris, agar ukuran log terkendali. Kolom `password` wajib dikecualikan dari pencatatan.
+
+### 2.3 `kode_pemulihan_sandi`
+
+Kode verifikasi pemulihan kata sandi mandiri (`rules.md` 14b poin 7 sampai 10).
+
+Menggantikan tabel bawaan `password_reset_tokens`, yang strukturnya dirancang untuk token panjang pada tautan sekali klik. Sistem ini mengirim **kode enam digit yang diketik**, agar tetap dapat dipakai ketika surel dan peramban berada di perangkat berbeda, atau ketika jaringan lokus gagal memuat tautan panjang.
+
+| Kolom | Tipe | Null | Kunci | Keterangan |
+|---|---|---|---|---|
+| `id_kode_pemulihan` | `BIGINT UNSIGNED AUTO_INCREMENT` | TIDAK | PK | |
+| `user_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | Akun sasaran |
+| `kode_hash` | `VARCHAR(255)` | TIDAK | | **Sidik kode, bukan kodenya.** Basis data yang bocor tidak boleh langsung memberi jalan masuk |
+| `kedaluwarsa_pada` | `TIMESTAMP` | TIDAK | IDX | 15 menit sejak dibuat |
+| `percobaan` | `TINYINT UNSIGNED` | TIDAK | | Bertambah tiap kode salah dimasukkan; kode hangus setelah 5 |
+| `dipakai_pada` | `TIMESTAMP` | YA | | Diisi saat kode berhasil dipakai, menjadikannya sekali pakai |
+| `created_at` | `TIMESTAMP` | TIDAK | IDX | Dasar penghitungan batas 3 permintaan per jam per akun |
+
+**Catatan penting:**
+- Kode disimpan sebagai **sidik**, sama seperti kata sandi. Alasannya berlaku meski kode hanya hidup 15 menit.
+- Kode lama milik satu akun **wajib dibatalkan** ketika kode baru diminta, agar tidak ada dua kode sah beredar bersamaan.
+- Baris tidak dihapus setelah dipakai, melainkan ditandai lewat `dipakai_pada`, agar percobaan pemakaian ulang tetap terlacak.
+- Tabel ini **tidak menyimpan alamat surel tujuan**. Alamat dibaca dari `user` saat pengiriman, sehingga perubahan surel tidak meninggalkan salinan usang di sini.
+- Permintaan kode **tidak pernah dibalas berbeda** antara akun yang ada dan tidak ada (`rules.md` 14b poin 9), sehingga tabel ini juga tidak boleh dipakai sebagai sumber pesan galat yang membedakan keduanya.
 
 ---
 
@@ -770,6 +793,7 @@ Pendataan **aset** infrastruktur. Pelaporan kerusakan ditangani modul Pengaduan 
 | `user_id` | `BIGINT UNSIGNED` | **YA** | FK, IDX | Diisi bila pengaduan dicatat petugas; kosong bila dilapor warga lewat kanal publik |
 | `nama_pelapor` | `VARCHAR(255)` | TIDAK | | Nama warga pelapor |
 | `kontak_pelapor` | `VARCHAR(20)` | TIDAK | | Nomor telepon yang dapat dihubungi |
+| `email_pelapor` | `VARCHAR(100)` | YA | | **Opsional.** Bila diisi, nomor pengaduan dikirim juga ke sini sebagai salinan |
 | `sumber_laporan` | `ENUM` | TIDAK | IDX | Lihat §11.28 |
 | `ip_pelapor` | `VARCHAR(45)` | YA | IDX | Alamat IP saat melapor; dipakai untuk pembatasan laju dan penelusuran penyalahgunaan |
 | `satuan_permukiman_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | Lokasi kejadian |
@@ -1068,7 +1092,9 @@ Tanda centang berarti izin tersebut dibuat untuk modul bersangkutan.
 | `dashboard` | v | | | | | v |
 | `laporan` | v | | | | | v |
 
-Total sekitar **120 izin**. Jumlah pastinya ditetapkan saat seeder ditulis.
+Total **137 izin** dari 27 modul, dihitung dari tabel di atas.
+
+Jumlah izin yang benar-benar dipegang tiap role bawaan lebih sedikit, sesuai susunan pada `rules.md` 5.1: Admin 119, Dinas Transmigrasi 68, Dinas Pertanian 74, Operator SP 50. Admin tidak memegang seluruh 139 izin karena verifikasi data adalah kewenangan dinas sesuai bidangnya, bukan kewenangan administrator sistem.
 
 ### 13.2 Kelompok modul pada antarmuka
 

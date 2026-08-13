@@ -57,7 +57,7 @@
    - data saprotan,
    - data komoditas,
    - hasil panen dan riwayat tanam,
-   - infrastruktur pertanian,
+   - infrastruktur SP,
    - penghuni/data kependudukan kawasan,
    - pengaduan dan penanganannya,
    - dashboard monitoring,
@@ -137,7 +137,7 @@ Alamat URL **tidak menampilkan primary key berurutan**. Pola berurutan seperti `
    - komoditas,
    - musim tanam dan riwayat tanam,
    - hasil panen,
-   - infrastruktur pertanian,
+   - infrastruktur SP,
    - penghuni/kawasan,
    - pengaduan dan status penanganan,
    - laporan.
@@ -245,7 +245,8 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **V*
 | Data master wilayah | L T U H | L | L | L |
 | Kawasan transmigrasi | L T U H E | L V E | L E | L |
 | Satuan permukiman (SP) | L T U H E | L T U V E | L E | L |
-| Inventaris & fasilitas SP | L T U H E | L T U V E | L E | L T U |
+| Inventaris SP | L T U H E | L T U V E | L E | L T U |
+| Fasilitas SP | L T U H E | L T U V E | L E | L T U |
 | Data master satuan | L T U H | L | L | L |
 | Transmigran | L T U H E | L T U V E | L E | L T U |
 | Rumah & hunian | L T U H E | L T U V E | L E | L T U |
@@ -260,7 +261,7 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **V*
 | Musim tanam | L T U H | L | L T U V | L |
 | Riwayat tanam | L T U H E | L | L T U V E | L T U |
 | Hasil panen | L T U H E | L | L T U V E | L T U |
-| Infrastruktur pertanian | L T U H E | L T U V E | L T U V E | L T U |
+| Infrastruktur SP | L T U H E | L T U V E | L T U V E | L T U |
 | Pengaduan | L T U H V E | L T U V E | L T U V E | L T |
 | Penanganan pengaduan | L T U | L T U | L T U | - |
 | Dashboard | L E | L E | L E | L |
@@ -273,6 +274,7 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **V*
 2. Penghapusan data utama memakai *soft delete* agar dapat dipulihkan dan tetap tercatat pada audit log.
 3. Aksi verifikasi tidak mengubah isi data, hanya menandai bahwa data sudah diperiksa oleh petugas berwenang beserta waktunya (§5.2).
 4. Operator SP sengaja tidak diberi izin hapus maupun verifikasi. Ia bertugas memasukkan data, sedangkan pemeriksaan dan penghapusan menjadi kewenangan dinas dan admin.
+5. **Inventaris SP dan Fasilitas SP adalah dua modul terpisah**, masing-masing dengan izinnya sendiri. Keduanya memang bernilai sama pada konfigurasi awal, tetapi tetap dipisah karena berupa dua tabel dan dua halaman yang berbeda (§4b poin 1), sehingga Admin dapat memberi kewenangan berbeda antara aset bergerak dan bangunan fasilitas. Sampai 2026-08-12 keduanya tertulis sebagai satu baris di sini, tidak sejalan dengan `data-dictionary.md` §13.1, `erd.md`, dan `ui-spec.md` yang sejak awal memisahkannya.
 5. Anggota poktan yang berhenti ditandai berstatus "Sudah Keluar", bukan dihapus, agar riwayat tetap utuh.
 
 #### 5.2 Aturan verifikasi data
@@ -395,7 +397,7 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **V*
 7. Riwayat panen harus dapat dipantau untuk melihat potensi produksi kawasan.
 8. Hasil panen harus dapat direkap per desa/SP, per transmigran, per poktan, per komoditas, dan per periode.
 
-### 10. Aturan Modul Infrastruktur Pertanian
+### 10. Aturan Modul Infrastruktur SP
 1. Modul infrastruktur berisi **pendataan aset**, bukan pelaporan masalah. Pelaporan kerusakan ditangani modul Pengaduan (§10b).
 2. Infrastruktur yang dicatat minimal mencakup:
    - air,
@@ -492,6 +494,7 @@ Parameter dikelompokkan menurut satu pertanyaan: **tanpa ini, apakah tempat ters
 1a. Petugas juga dapat mencatatkan pengaduan atas nama warga yang melapor lisan. Sumber laporan dibedakan lewat kolom `sumber_laporan` bernilai `Publik` atau `Petugas`.
 1b. Setelah mengirim, warga menerima **nomor pengaduan** yang dipakai untuk melacak perkembangan laporannya pada halaman lacak publik.
 1c. Halaman lacak hanya menampilkan status, tanggal, dan catatan penanganan. Data pribadi pelapor tidak pernah ditampilkan.
+1c-1. Warga **boleh mencantumkan alamat surel**, tetapi tidak diwajibkan. Bila diisi, nomor pengaduan dikirim juga ke sana sebagai salinan. Nomor tetap ditampilkan besar di layar setelah pengiriman berhasil, sehingga surel tidak pernah menjadi satu-satunya cara menerimanya. Kolom ini dibuat opsional karena jaringan di lokus tidak selalu memadai dan sebagian warga tidak memiliki surel; mewajibkannya akan menutup kanal yang justru paling perlu terbuka.
 
 #### Pengamanan kanal publik
 1d. Pengiriman dibatasi **3 pengaduan per jam untuk setiap alamat IP**.
@@ -505,6 +508,10 @@ Parameter dikelompokkan menurut satu pertanyaan: **tanpa ini, apakah tempat ters
 4. Alur status penanganan wajib berurutan: **Menunggu Diterima → Diterima → Diproses → Selesai**.
 5. Setiap perubahan status wajib menyimpan riwayat berisi petugas penangan, tanggal penanganan, catatan, dan dokumen tindak lanjut.
 6. Pengaduan dapat dilampiri dokumen/foto pendukung dan diberi penanda prioritas.
+6a. **Prioritas awal diturunkan otomatis dari kategori**, bukan diisi warga. Bencana bernilai `Mendesak`; Infrastruktur dan Rumah bernilai `Tinggi`; Lahan Usaha, Alsintan, dan Produksi Panen bernilai `Sedang`; sisanya `Rendah`. Alasannya, warga tidak mengetahui skala prioritas dinas, dan meminta warga menilainya sendiri membuat hampir seluruh laporan ditandai mendesak sehingga penandanya kehilangan makna.
+6b. Nilai turunan itu **hanya perkiraan awal**, dipakai agar laporan tidak menumpuk tanpa urutan sebelum sempat ditinjau. **Petugas yang memutuskan prioritas sebenarnya** saat meninjau laporan, dan dapat merevisinya kapan pun. Setiap revisi tercatat pada audit log beserta pelakunya.
+6c. **Titik koordinat diminta pada kanal publik, tetapi opsional.** Pengaduan tetap dapat dikirim tanpa mengisinya, sebab warga melapor lewat ponsel dengan jaringan yang tidak selalu memadai dan mewajibkannya akan menutup kanal yang justru paling perlu terbuka. Bila diisi, petugas terbantu menemukan titik masalah tanpa bertanya ulang. Petugas tetap melengkapinya saat verifikasi lapangan bila kosong.
+6d. Setiap isian koordinat, baik pada kanal publik maupun form petugas, **wajib menyediakan pemilihan lewat peta** di samping pengambilan lokasi otomatis. GPS ponsel di lokus kerap meleset puluhan meter, sedangkan pelapor paling mengetahui letak sebenarnya. Peta memakai ubin OpenStreetMap tanpa kunci API, dimuat hanya ketika dibuka. Bila peta gagal dimuat karena jaringan lemah, isian manual dan tombol lokasi otomatis tetap berfungsi.
 7. Pengaduan diteruskan ke dinas sesuai bidangnya: bidang pertanian ke Dinas Pertanian, bidang ketransmigrasian ke Dinas Transmigrasi.
 8. Rekap pengaduan per kategori, per status, dan per desa/SP wajib tersedia sebagai sumber indikator isu prioritas pada dashboard.
 
@@ -646,15 +653,29 @@ Pola berikut adalah **standar yang harus dibangun dan dipatuhi** sejak awal proy
 6. Seluruh pengguna sistem adalah petugas, sehingga tidak ada kredensial berbasis NIK. Warga tidak memiliki akun.
 
 #### Pemulihan kata sandi
-7. **Sistem tidak mengirim tautan pemulihan lewat surel.** Tabel `password_reset_tokens` bawaan Laravel tidak dipakai.
-8. Pengguna yang lupa kata sandi menghubungi Admin. Admin menyetel ulang lewat Manajemen Pengguna, lalu menyerahkan kata sandi sementara secara langsung.
-9. Setelah disetel ulang, kolom `password_harus_diganti` bernilai `TRUE`. Pengguna diarahkan ke halaman ganti kata sandi saat masuk berikutnya dan **tidak dapat mengakses halaman lain** sebelum menggantinya.
-10. Admin **tidak dapat melihat** kata sandi pengguna mana pun, karena hanya hash yang tersimpan. Admin hanya dapat menimpanya dengan nilai baru.
-11. Setiap penyetelan ulang wajib tercatat pada audit log dengan aksi `Reset Kata Sandi`, memuat petugas pelaku, akun sasaran, dan waktu kejadian.
+
+> **Perubahan 2026-08-12.** Sebelumnya sistem sama sekali tidak menyediakan pemulihan mandiri. Alasannya waktu itu: tidak semua transmigran memiliki alamat surel. Alasan tersebut **gugur** setelah ditetapkan bahwa warga tidak memiliki akun sama sekali (§5.0 poin 5), sehingga seluruh pemegang akun adalah petugas bersurel dinas. Jalur mandiri kini ditambahkan **sebagai pelengkap**, bukan pengganti. Alasan kedua, yaitu jaringan lokus yang tidak selalu memadai, masih berlaku dan itulah sebabnya jalur Admin dipertahankan.
+
+**Dua jalur pemulihan, keduanya sah:**
+
+| Jalur | Dipakai ketika |
+|---|---|
+| **Kode verifikasi lewat surel** | Petugas memiliki surel dinas aktif dan jaringan memadai |
+| **Setel ulang oleh Admin** | Surel tidak diterima, akun tanpa surel aktif, atau petugas berada di lokus bersinyal lemah |
+
+7. Sistem mengirim **kode verifikasi enam digit**, bukan tautan yang dapat diklik. Kode dapat dibaca dari layar lain lalu diketik, sehingga tetap dapat dipakai ketika surel hanya dapat dibuka di perangkat berbeda atau ketika peramban gagal memuat tautan panjang di jaringan lemah.
+8. Kode berlaku **15 menit**, sekali pakai, dan hangus begitu kode baru diminta. Kode lama wajib dibatalkan agar tidak ada dua kode sah beredar bersamaan.
+9. Halaman permintaan kode **tidak pernah menyatakan apakah alamat terdaftar**. Pesan yang ditampilkan selalu sama, sebab pesan yang membedakan keduanya mengubah halaman ini menjadi alat memeriksa siapa saja yang memiliki akun.
+10. Permintaan kode dibatasi **3 kali per jam per akun** dan percobaan pemasukan kode dibatasi **5 kali per kode** (§14c). Setelah itu kode hangus dan petugas wajib meminta yang baru.
+11. Jalur Admin pada poin 12 sampai 15 **tetap berlaku penuh** dan tidak boleh dihapus. Jalur inilah satu-satunya yang bekerja tanpa sambungan surel.
+12. Pengguna yang lupa kata sandi dapat menghubungi Admin. Admin menyetel ulang lewat Manajemen Pengguna, lalu menyerahkan kata sandi sementara secara langsung, bukan lewat surel maupun pesan singkat.
+13. Setelah disetel ulang, baik lewat kode verifikasi maupun lewat Admin, kolom `password_harus_diganti` bernilai `TRUE`. Pengguna diarahkan ke halaman ganti kata sandi saat masuk berikutnya dan **tidak dapat mengakses halaman lain** sebelum menggantinya.
+14. Admin **tidak dapat melihat** kata sandi pengguna mana pun, karena hanya hash yang tersimpan. Admin hanya dapat menimpanya dengan nilai baru.
+15. Setiap penyetelan ulang wajib tercatat pada audit log dengan aksi `Reset Kata Sandi`, memuat petugas pelaku, akun sasaran, waktu kejadian, dan **jalur yang dipakai**. Pemulihan mandiri tercatat atas nama pemilik akun itu sendiri.
 
 #### Perlindungan akun terakhir
-12. Sistem menolak penonaktifan maupun penghapusan akun Admin terakhir yang masih aktif, agar sistem tidak pernah kehilangan seluruh jalur administrasinya.
-13. Wajib tersedia perintah artisan khusus untuk menyetel ulang kata sandi Admin lewat terminal server, sebagai jalur pemulihan darurat bila seluruh Admin kehilangan akses.
+16. Sistem menolak penonaktifan maupun penghapusan akun Admin terakhir yang masih aktif, agar sistem tidak pernah kehilangan seluruh jalur administrasinya.
+17. Wajib tersedia perintah artisan khusus untuk menyetel ulang kata sandi Admin lewat terminal server, sebagai jalur pemulihan darurat bila seluruh Admin kehilangan akses.
 
 ### 14c. Aturan Pembatasan Laju (Rate Limiting)
 

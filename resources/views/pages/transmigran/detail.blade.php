@@ -372,7 +372,13 @@
                             pesan="Kartu keluarga, KTP, atau SK penempatan dapat diunggah lewat tombol Ubah Data Transmigran." />
                     @else
                         <div class="p-5 sm:p-6">
-                            <a href="{{ $data['dokumen_pendukung'] }}"
+                                {{--
+                                    Menaut lewat rute dokumen, bukan path penyimpanan. Berkas berada
+                                    di luar folder public, sehingga path mentah tidak dapat dibuka
+                                    peramban sekaligus melewati pemeriksaan izin.
+                                --}}
+                                <a href="{{ route('dokumen.tampilkan', ['modul' => 'transmigran', 'id' => $data['id_transmigran'], 'namaBerkas' => basename($data['dokumen_pendukung'])]) }}"
+                                    target="_blank" rel="noopener"
                                 class="flex items-center gap-3 rounded-xl border border-gray-200 p-3 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-800 dark:hover:bg-white/5">
                                 <span
                                     class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-red-50 dark:bg-red-500/15">

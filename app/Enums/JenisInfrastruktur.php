@@ -5,7 +5,7 @@ namespace App\Enums;
 use App\Enums\Concerns\PunyaLabel;
 
 /**
- * Jenis aset infrastruktur pertanian kawasan.
+ * Jenis aset infrastruktur satuan permukiman.
  *
  * Daftar nilai baku ada pada agents/rules.md bagian 10 poin 2.
  *

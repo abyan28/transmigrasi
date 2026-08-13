@@ -267,7 +267,10 @@ Latar dasar `navy-900` `#0A1B27`, dipilih menggantikan `gray-900` bawaan TailAdm
 Sesuai R-34, mode yang dikirim wajib berfungsi penuh. Yang wajib diperiksa pada **kedua** mode sebelum menyatakan selesai:
 
 - seluruh komponen bersama (§6),
-- seluruh 16 visualisasi dashboard beserta legenda, sumbu, dan tooltip,
+- seluruh 17 visualisasi dashboard beserta legenda, sumbu, dan tooltip,
+- **daftar dropdown dalam keadaan TERBUKA**, bukan hanya kotaknya. Select tertutup selalu tampak baik sebab yang dirender adalah kotaknya; isi daftarnya baru terlihat setelah diklik,
+- **peta pemilih titik**, termasuk keadaan ketika ubin gagal dimuat. Peta bergantung pada sambungan, sedangkan isian koordinat manual tidak,
+- **halaman yang dibuka lewat tab baru**, bukan hanya yang dimuat langsung, **beserta seluruh grafik di dalamnya sampai bagian paling bawah halaman**. Tab yang belum dilukis peramban melaporkan lebar nol, sehingga tata letak maupun kanvas grafik yang bergantung padanya sempat salah sampai halaman disegarkan. Grafik perlu diperiksa terpisah, sebab tata letak dapat sudah benar sementara kanvasnya masih memakai ukuran keliru,
 - seluruh varian badge status (§6.6),
 - state kosong, memuat, galat, dan tanpa izin (§7),
 - indikator fokus keyboard.
@@ -341,7 +344,7 @@ Bila dibutuhkan ikon di luar koleksi bawaan template, ambil dari **Heroicons** (
 
 ## 4. Inventaris Halaman dan Rute
 
-Total ±43 halaman. Kolom "Role" memakai singkatan: **A**=Admin, **DT**=Dinas Transmigrasi, **DP**=Dinas Pertanian, **OP**=Operator SP.
+Total ±47 halaman beserta 21 modal form. Kolom "Role" memakai singkatan: **A**=Admin, **DT**=Dinas Transmigrasi, **DP**=Dinas Pertanian, **OP**=Operator SP.
 
 Singkatan **T** (Transmigran) dan **KP** (Ketua Poktan) tidak lagi dipakai. Sesuai `rules.md`, seluruh pengguna sistem adalah petugas dan warga tidak memiliki akun, sehingga halaman yang dahulu diperuntukkan bagi kedua role tersebut dihapus dari inventaris ini. Jalur bagi warga hanya dua, keduanya tanpa login: form pengaduan warga dan halaman lacak pengaduan.
 
@@ -351,6 +354,8 @@ Singkatan **T** (Transmigran) dan **KP** (Ketua Poktan) tidak lagi dipakai. Sesu
 |---|---|---|
 | Masuk | `GET /login` | publik |
 | Proses masuk | `POST /login` | publik |
+| Lupa kata sandi | `GET /lupa-kata-sandi` | publik |
+| Masukkan kode verifikasi | `GET /verifikasi-kode` | publik |
 | Keluar | `POST /logout` | semua |
 | Profil saya | `GET /profil` | semua |
 | Ubah kata sandi | `GET /profil/kata-sandi` | semua |
@@ -395,13 +400,18 @@ Dua halaman berikut dapat diakses siapa pun tanpa akun, sebagai kanal pengaduan 
 | Halaman | Rute | Role |
 |---|---|---|
 | Daftar wilayah | `GET /wilayah` | A |
+| Form wilayah | modal | A |
 | Daftar kawasan | `GET /kawasan` | A, DT |
+| Form kawasan | modal | A |
 | Daftar SP | `GET /sp` | A, DT |
 | Detail SP | `GET /dashboard/sp/{sp}` | A, DT, DP |
 | Form SP | modal | A |
 | Inventaris SP | `GET /sp/inventaris` | A, DT |
+| Form inventaris SP | modal | A, DT |
 | Fasilitas SP | `GET /sp/fasilitas` | A, DT |
+| Form fasilitas SP | modal | A, DT |
 | Data master satuan | `GET /master/satuan` | A |
+| Form data master satuan | modal | A |
 
 ### 4.4 Kependudukan
 
@@ -429,18 +439,28 @@ Dua halaman berikut dapat diakses siapa pun tanpa akun, sebagai kanal pengaduan 
 | Halaman | Rute | Role |
 |---|---|---|
 | Daftar poktan | `GET /poktan` | A, DP |
+| Form poktan | modal | A, DP |
 | Detail poktan | `GET /poktan/{id}` | A, DP |
 | Anggota poktan | tab pada detail poktan | A, DP |
+| Form anggota poktan | modal | A, DP |
 | Daftar alsintan | `GET /alsintan` | A, DP |
+| Detail alsintan | `GET /alsintan/{id}` | A, DP |
+| Form alsintan | modal | A, DP |
 | Daftar saprotan | `GET /saprotan` | A, DP |
+| Detail saprotan | `GET /saprotan/{id}` | A, DP |
+| Form saprotan | modal | A, DP |
 
 ### 4.7 Produksi Pertanian
 
 | Halaman | Rute | Role |
 |---|---|---|
 | Daftar komoditas | `GET /komoditas` | A, DP |
+| Detail komoditas | `GET /komoditas/{id}` | A, DP |
+| Form komoditas | modal | A, DP |
 | Musim tanam | `GET /musim-tanam` | A, DP |
+| Form musim tanam | modal | A, DP |
 | Riwayat tanam | `GET /riwayat-tanam` | A, DP |
+| Form riwayat tanam | modal | A, DP |
 | Daftar hasil panen | `GET /panen` | A, DP |
 | Detail hasil panen | `GET /panen/{id}` | A, DP |
 | Rekap panen | `GET /panen/rekap` | A, DP |
@@ -450,6 +470,8 @@ Dua halaman berikut dapat diakses siapa pun tanpa akun, sebagai kanal pengaduan 
 | Halaman | Rute | Role |
 |---|---|---|
 | Daftar infrastruktur | `GET /infrastruktur` | A, DT, DP |
+| Detail infrastruktur | `GET /infrastruktur/{id}` | A, DT, DP |
+| Form infrastruktur | modal | A, DT, DP |
 | Daftar pengaduan | `GET /pengaduan` | A, DT, DP |
 | Detail pengaduan | `GET /pengaduan/{id}` | A, DT, DP |
 | Form pengaduan warga | `GET /pengaduan-warga` | publik, tanpa login |
@@ -466,11 +488,12 @@ Kolom "Izin" menggantikan kolom "Role" pada tabel-tabel sebelumnya, karena akses
 | Pusat laporan | `GET /laporan` | `laporan.lihat` |
 | Unduh template luring | tab pada pusat laporan | `laporan.export` |
 | Manajemen pengguna | `GET /pengguna` | `pengguna.lihat` |
-| Detail pengguna | modal, Tahap 3 | `pengguna.lihat` |
-| Form pengguna | modal, Tahap 3 | `pengguna.tambah` / `pengguna.ubah` |
-| Setel ulang kata sandi | modal, Tahap 3 | `pengguna.ubah` |
+| Detail pengguna | modal | `pengguna.lihat` |
+| Form pengguna | modal | `pengguna.tambah` / `pengguna.ubah` |
+| Setel ulang kata sandi | modal | `pengguna.ubah` |
+| Nonaktifkan pengguna | konfirmasi | `pengguna.ubah` |
 | Daftar role | `GET /pengaturan/role` | `role.lihat` |
-| Form role dan izin | modal, Tahap 3 | `role.ubah` |
+| Form role dan izin | modal | `role.tambah` / `role.ubah` |
 | Audit log | `GET /audit-log` | `audit_log.lihat` |
 | Halaman 403 | — | semua |
 | Halaman 404 | — | semua |
@@ -487,33 +510,60 @@ Sejak role menjadi dinamis (`rules.md` bagian 5), menu **tidak lagi ditulis teta
 
 ### 5.1 Pemetaan menu ke izin
 
-| Kelompok | Item menu | Rute | Izin yang dibutuhkan |
-|---|---|---|---|
-| | Dashboard | `/` | `dashboard.lihat` |
-| **Wilayah & SP** | Kawasan Transmigrasi | `/kawasan` | `kawasan.lihat` |
-| | Daftar SP | `/sp` | `sp.lihat` |
-| | Inventaris SP | `/sp/inventaris` | `inventaris_sp.lihat` |
-| | Fasilitas SP | `/sp/fasilitas` | `fasilitas_sp.lihat` |
-| **Kependudukan** | Transmigran | `/transmigran` | `transmigran.lihat` |
-| | Rumah & Hunian | `/rumah` | `rumah.lihat` |
-| | Rekap Kependudukan | `/kependudukan/rekap` | `transmigran.lihat` |
-| **Lahan** | Daftar Lahan | `/lahan` | `lahan.lihat` |
-| **Kelembagaan** | Kelompok Tani | `/poktan` | `poktan.lihat` |
-| | Alsintan | `/alsintan` | `alsintan.lihat` |
-| | Saprotan | `/saprotan` | `saprotan.lihat` |
-| **Pertanian** | Komoditas | `/komoditas` | `komoditas.lihat` |
-| | Musim Tanam | `/musim-tanam` | `musim_tanam.lihat` |
-| | Riwayat Tanam | `/riwayat-tanam` | `riwayat_tanam.lihat` |
-| | Hasil Panen | `/panen` | `hasil_panen.lihat` |
-| **Infrastruktur** | Infrastruktur | `/infrastruktur` | `infrastruktur.lihat` |
-| **Pengaduan** | Daftar Pengaduan | `/pengaduan` | `pengaduan.lihat` |
-| | Rekap Pengaduan | `/pengaduan/rekap` | `pengaduan.lihat` |
-| **Laporan** | Pusat Laporan | `/laporan` | `laporan.lihat` |
-| **Pengaturan** | Data Master Wilayah | `/wilayah` | `wilayah.lihat` |
-| | Data Master Satuan | `/master/satuan` | `satuan.lihat` |
-| | Pengguna | `/pengguna` | `pengguna.lihat` |
-| | Role & Hak Akses | `/pengaturan/role` | `role.lihat` |
-| | Audit Log | `/audit-log` | `audit_log.lihat` |
+Sidebar memakai **submenu**: lima kelompok. Kelompok Transmigrasi dan Pertanian masing-masing memuat dua submenu, sehingga satu judul kelompok menaungi lebih dari satu daftar. Pembagiannya mengikuti pembagian urusan di dinas, bukan pembagian tabel.
+
+Dua penempatan yang perlu diketahui, sebab tidak mengikuti struktur tabel:
+
+- **Daftar Lahan** berada di submenu Penduduk & Lahan, bukan kelompok tersendiri, sebab lahan selalu melekat pada satu kepala keluarga dan ditelusuri lewat pemiliknya.
+- **Infrastruktur SP** berada di submenu Wilayah & Aset SP, bukan bersama alsintan dan saprotan. Alsintan milik poktan, sedangkan irigasi, listrik, dan jalan milik satuan permukiman.
+
+| Kelompok | Item induk | Halaman | Rute | Izin yang dibutuhkan |
+|---|---|---|---|---|
+| **Menu** | &mdash; | Dashboard | `/` | `dashboard.lihat` |
+| **Transmigrasi** | Wilayah & Aset SP | Kawasan Transmigrasi | `/kawasan` | `kawasan.lihat` |
+| | | Satuan Permukiman | `/sp` | `sp.lihat` |
+| | | Inventaris SP | `/sp/inventaris` | `inventaris_sp.lihat` |
+| | | Fasilitas SP | `/sp/fasilitas` | `fasilitas_sp.lihat` |
+| | | Infrastruktur SP | `/infrastruktur` | `infrastruktur.lihat` |
+| | Penduduk & Lahan | Transmigran | `/transmigran` | `transmigran.lihat` |
+| | | Rumah & Hunian | `/rumah` | `rumah.lihat` |
+| | | Daftar Lahan | `/lahan` | `lahan.lihat` |
+| | | Rekap Kependudukan | `/kependudukan/rekap` | `transmigran.lihat` |
+| **Pertanian** | Poktan & Sarana | Kelompok Tani | `/poktan` | `poktan.lihat` |
+| | | Alsintan | `/alsintan` | `alsintan.lihat` |
+| | | Saprotan | `/saprotan` | `saprotan.lihat` |
+| | Produksi Pertanian | Komoditas | `/komoditas` | `komoditas.lihat` |
+| | | Musim Tanam | `/musim-tanam` | `musim_tanam.lihat` |
+| | | Riwayat Tanam | `/riwayat-tanam` | `riwayat_tanam.lihat` |
+| | | Hasil Panen | `/panen` | `hasil_panen.lihat` |
+| | | Rekap Panen | `/panen/rekap` | `hasil_panen.lihat` |
+| **Pengaduan** | Pengaduan Warga | Daftar Pengaduan | `/pengaduan` | `pengaduan.lihat` |
+| | | Rekap Pengaduan | `/pengaduan/rekap` | `pengaduan.lihat` |
+| **Administrasi Sistem** | Laporan & Pengaturan | Pusat Laporan | `/laporan` | `laporan.lihat` |
+| | | Data Master Wilayah | `/wilayah` | `wilayah.lihat` |
+| | | Data Master Satuan | `/master/satuan` | `satuan.lihat` |
+| | | Pengguna | `/pengguna` | `pengguna.lihat` |
+| | | Role & Hak Akses | `/pengaturan/role` | `role.lihat` |
+| | | Audit Log | `/audit-log` | `audit_log.lihat` |
+
+### 5.1a Kolom aksi baku pada halaman daftar
+
+Seluruh halaman daftar memakai komponen `x-sim.aksi-baris` dengan bentuk dan urutan yang sama, agar petugas tidak perlu menebak letak tindakan setiap kali berpindah modul.
+
+| Urutan | Tindakan | Bentuk |
+|---|---|---|
+| 1 | Rincian | ikon mata |
+| 2 | Ubah | ikon pensil |
+| 3 | Tindakan khusus modul, contoh penanganan pengaduan | ikon sesuai maknanya |
+| 4 | Hapus | ikon tempat sampah, **selalu paling kanan** |
+
+Ketentuan:
+
+1. **Bentuk ikon, bukan teks**, agar kolom aksi tetap sempit pada tabel yang sudah padat. Setiap ikon wajib membawa `aria-label` lengkap beserta nama barisnya, sebab ikon tanpa label tidak terbaca pembaca layar (§11.1, R-32).
+2. **Hapus selalu paling kanan** dan berwarna merah saat disorot, agar tidak tertukar dengan tindakan yang tidak merusak.
+3. Tindakan yang tidak berlaku pada sebuah modul **tidak dirender sama sekali**, bukan dirender lalu ditolak (R-26).
+4. Modul yang seluruh datanya sudah tampil pada tabel, seperti data master satuan dan wilayah, **tidak memerlukan tombol Rincian**.
+5. Satu modal ubah melayani seluruh baris; data baris dikirim lewat peristiwa saat tombol diklik. Merender satu modal per baris menggandakan formulir sebanyak baris pada satu halaman.
 
 ### 5.2 Aturan perenderan menu
 
@@ -587,7 +637,8 @@ Seluruh komponen dibuat sebagai Blade component di `resources/views/components/`
 | `<x-breadcrumb>` | `common/page-breadcrumb` |
 | `<x-page-header>` | `common/component-card` |
 | `<x-wilayah-picker>` | dibangun sendiri di atas `form/select` |
-| `<x-koordinat-input>` | dibangun sendiri |
+| `<x-koordinat-input>` | dibangun sendiri, peta memakai Leaflet + ubin OpenStreetMap |
+| `<x-tautan-peta>` | dibangun sendiri, peta baca-saja untuk halaman rincian |
 | `<x-empty-state>` | dibangun sendiri |
 
 ### 6.1 `<x-data-table>`
@@ -671,7 +722,8 @@ Setiap warna badge wajib punya varian mode gelap: latar memakai tingkat gelap de
 | Status hunian | Dihuni `teal` · Tidak Dihuni `gray` |
 | Keanggotaan | Aktif `success` · Tidak Aktif `gray` · Sudah Keluar `error` |
 | Status tinggal | Aktif `success` · Pindah `warning` · Tidak Aktif `gray` · Meninggal `gray` |
-| Status penyerahan | Sudah Diserahkan `success` · Dalam Proses `warning` · Belum Diserahkan `gray` |
+| Status penyerahan | Sudah Diserahkan `success` · Dalam Proses `warning` · Belum Diserahkan `gray` |
+
 | **Kondisi SP** | Mandiri `success` · Berkembang `warning` · Perlu Penanganan `error` |
 
 ### 6.7 `<x-koordinat-input>`
@@ -742,6 +794,7 @@ Indikator PRD §7.8 dipetakan ke jenis visualisasi:
 | 14 | Rekap penghuni kawasan | Kartu statistik | Ya → per SP |
 | 15 | Mutu data kawasan | Kartu statistik + batang bertumpuk | Ya → per SP |
 | 16 | Status kondisi SP | Kartu statistik + tabel berbadge | Ya → per SP |
+| 17 | Pengaduan per status | Donat | Ya &mdash; daftar pengaduan |
 
 **Aturan dashboard:**
 1. Filter global wilayah dan periode di bagian atas, memengaruhi seluruh visualisasi. Tingkatan filter: Kawasan → Kecamatan → Desa → SP, seluruhnya opsional.
@@ -752,6 +805,9 @@ Indikator PRD §7.8 dipetakan ke jenis visualisasi:
 6. Warna seri grafik mengambil urutan: `#163B54` (navy-500) → `#33809C` (teal-500) → `#C09546` (gold-500) → `#DFB87E` (sand-500) → `#265F73` (teal-700). ApexCharts dikonfigurasi memakai nilai heksadesimal, bukan nama kelas Tailwind.
 7. Grafik wajib menyediakan tabel data alternatif demi aksesibilitas.
 8. Konfigurasi ApexCharts bersama (warna, font Outfit, locale Indonesia, format angka) diletakkan di satu berkas `resources/js/chart-config.js`, tidak diulang di tiap grafik.
+9. **Visualisasi dikelompokkan menurut topik, bukan menurut nomor indikator.** Dashboard memuat lebih dari dua puluh blok; mengurutkannya menurut nomor indikator membuat pembaca dilempar antartopik dan satu pokok bahasan terpecah di beberapa tempat berjauhan. Urutan bagiannya: Ringkasan Kawasan, Kependudukan, Pertanian dan Ekonomi, Infrastruktur dan Layanan, Perbandingan Antar SP, lalu Tata Kelola Data.
+10. Tiap bagian diawali `x-sim.judul-bagian` yang memakai `<h2>`, sehingga hierarki tajuk tidak melompat dari `<h1>` halaman ke `<h3>` kartu grafik.
+11. **Tiap baris grid wajib genap.** Lebar kartu disetel agar tidak menyisakan kolom menganggur di ujung baris; kartu yang berdiri sendiri diletakkan selebar halaman, di luar grid.
 
 **Indikator 15, mutu data kawasan.** Menampilkan sejauh mana data kawasan sudah diperiksa petugas berwenang.
 

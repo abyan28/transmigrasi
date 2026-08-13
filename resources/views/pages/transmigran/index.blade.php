@@ -244,6 +244,28 @@
                                 </svg>
                             </a>
 
+                            @if ($bolehUbah)
+                                {{--
+                                    Ubah tersedia langsung di baris, sejajar dengan Hapus.
+                                    Sebelumnya hanya Hapus yang ada di sini sementara Ubah harus
+                                    lewat halaman rincian, padahal menghapus lebih berisiko
+                                    daripada menyunting.
+                                --}}
+                                <button type="button"
+                                    @click.prevent="$dispatch('buka-modal-baris', {
+                                        nama: 'formUbahTransmigranBaris',
+                                        data: @js($t + ['id' => $t['id_transmigran']])
+                                    })"
+                                    aria-label="Ubah data {{ $t['nama_kepala_keluarga'] }}"
+                                    class="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-gray-400 dark:hover:bg-white/5">
+                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                        stroke-width="1.5" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+                                    </svg>
+                                </button>
+                            @endif
+
                             @if ($bolehHapus)
                                 <button type="button"
                                     @click.prevent="$dispatch('buka-konfirmasi', {
@@ -305,5 +327,19 @@
         <x-sim.confirm-dialog nama="hapusTransmigran" judul="Hapus data transmigran ini?"
             pesan="Data yang dihapus masih tercatat pada audit log dan dapat dipulihkan admin."
             label-setuju="Hapus Data Transmigran" />
+    @endif
+
+    {{--
+        Modal ubah berbaris. Satu modal melayani seluruh baris: data baris yang
+        diklik dikirim lewat peristiwa, lalu isian diisi Alpine. Merender satu
+        modal per baris akan menggandakan form sebanyak baris pada satu halaman.
+    --}}
+    @if ($bolehUbah)
+        <x-sim.modal-form nama="formUbahTransmigranBaris" judul="Ubah Data Transmigran"
+            keterangan="Data yang sudah terverifikasi akan kembali menunggu pemeriksaan setelah diubah."
+            pola-aksi="/transmigran/:id" metode="PUT" ukuran="xl"
+            label-simpan="Simpan Perubahan" :boleh-verifikasi="$bolehVerifikasi">
+            @include('pages.transmigran.form', ['awalan' => 'ubahBaris'])
+        </x-sim.modal-form>
     @endif
 @endsection

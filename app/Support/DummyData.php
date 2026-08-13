@@ -7,6 +7,7 @@ use App\Enums\JenisInfrastruktur;
 use App\Enums\JenisLahan;
 use App\Enums\KategoriLahan;
 use App\Enums\KategoriPengaduan;
+use App\Enums\KepemilikanAlsintan;
 use App\Enums\Kondisi;
 use App\Enums\KondisiRumah;
 use App\Enums\PrioritasPengaduan;
@@ -693,6 +694,8 @@ class DummyData
                 'kategori_lahan' => null,
                 'luas' => 0.25,
                 'status_kepemilikan' => 'HPL',
+                'lintang' => -9.5124100,
+                'bujur' => 124.9126200,
                 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value,
             ],
             [
@@ -706,6 +709,8 @@ class DummyData
                 'luas' => 1.50,
                 'status_kepemilikan' => 'HPL',
                 'pola_tanam' => 'MONOKULTUR JAGUNG',
+                'lintang' => -9.5138400,
+                'bujur' => 124.9152700,
                 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value,
             ],
             [
@@ -719,6 +724,8 @@ class DummyData
                 'luas' => 0.75,
                 'status_kepemilikan' => 'GARAPAN',
                 'pola_tanam' => 'PADI SAWAH',
+                'lintang' => -9.5471900,
+                'bujur' => 124.8873500,
                 'status_verifikasi' => StatusVerifikasi::BelumDiverifikasi->value,
             ],
             [
@@ -731,6 +738,8 @@ class DummyData
                 'kategori_lahan' => null,
                 'luas' => 0.25,
                 'status_kepemilikan' => 'HPL',
+                'lintang' => -9.5483200,
+                'bujur' => 124.8891000,
                 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value,
             ],
             [
@@ -744,6 +753,8 @@ class DummyData
                 'luas' => 2.00,
                 'status_kepemilikan' => 'SHM',
                 'pola_tanam' => 'TUMPANG SARI JAGUNG DAN KACANG',
+                'lintang' => -9.4982600,
+                'bujur' => 124.9411800,
                 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value,
             ],
             [
@@ -757,6 +768,8 @@ class DummyData
                 'luas' => 1.25,
                 'status_kepemilikan' => 'HPL',
                 'pola_tanam' => 'MONOKULTUR JAGUNG',
+                'lintang' => -9.4995300,
+                'bujur' => 124.9438100,
                 'status_verifikasi' => StatusVerifikasi::BelumDiverifikasi->value,
             ],
         ];
@@ -869,6 +882,8 @@ class DummyData
                 'judul' => 'Saluran irigasi tersumbat',
                 'deskripsi' => 'Saluran irigasi di blok A tersumbat sejak awal musim hujan, air tidak sampai ke lahan usaha.',
                 'status' => StatusPengaduan::Diproses->value,
+                'lintang' => -9.5131500,
+                'bujur' => 124.9139800,
                 'prioritas' => PrioritasPengaduan::Tinggi->value,
             ],
             [
@@ -901,6 +916,8 @@ class DummyData
                 'judul' => 'Traktor bantuan tidak dapat dinyalakan',
                 'deskripsi' => 'Traktor roda dua bantuan tahun lalu tidak dapat dinyalakan sejak dua pekan terakhir.',
                 'status' => StatusPengaduan::MenungguDiterima->value,
+                'lintang' => -9.5479200,
+                'bujur' => 124.8886400,
                 'prioritas' => PrioritasPengaduan::Sedang->value,
             ],
             [
@@ -917,6 +934,8 @@ class DummyData
                 'judul' => 'Longsor kecil di jalan produksi',
                 'deskripsi' => 'Terjadi longsor kecil menutup sebagian jalan produksi menuju lahan usaha.',
                 'status' => StatusPengaduan::MenungguDiterima->value,
+                'lintang' => -9.4991000,
+                'bujur' => 124.9430200,
                 'prioritas' => PrioritasPengaduan::Mendesak->value,
             ],
             [
@@ -1053,7 +1072,7 @@ class DummyData
     }
 
     /**
-     * Daftar aset infrastruktur pertanian.
+     * Daftar aset infrastruktur SP.
      *
      * @return array<int, array<string, mixed>> Data infrastruktur
      */
@@ -1275,10 +1294,10 @@ class DummyData
     public static function poktan(): array
     {
         return [
-            ['id_poktan' => 1, 'nama' => 'POKTAN MEKAR JAYA', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'nama_ketua' => 'YOHANES BERE', 'nik_ketua' => '5321011505800001', 'telepon_ketua' => '081234567801', 'email_ketua' => 'mekarjaya@example.id', 'tahun_berdiri' => 2016, 'jumlah_anggota' => 24, 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value],
-            ['id_poktan' => 2, 'nama' => 'POKTAN SUBUR MAKMUR', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'nama_ketua' => 'MARIA DA COSTA', 'nik_ketua' => '5321012203850002', 'telepon_ketua' => '081234567802', 'email_ketua' => null, 'tahun_berdiri' => 2017, 'jumlah_anggota' => 18, 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value],
-            ['id_poktan' => 3, 'nama' => 'POKTAN TANI BERSATU', 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'nama_ketua' => 'PETRUS NAHAK', 'nik_ketua' => '5321010809780003', 'telepon_ketua' => '081234567803', 'email_ketua' => null, 'tahun_berdiri' => 2017, 'jumlah_anggota' => 21, 'status_verifikasi' => StatusVerifikasi::BelumDiverifikasi->value],
-            ['id_poktan' => 4, 'nama' => 'POKTAN HARAPAN BARU', 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain', 'nama_ketua' => 'GABRIEL LEKI', 'nik_ketua' => '5321010107750007', 'telepon_ketua' => '081234567807', 'email_ketua' => null, 'tahun_berdiri' => 2019, 'jumlah_anggota' => 15, 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value],
+            ['id_poktan' => 1, 'nama' => 'POKTAN MEKAR JAYA', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'nama_ketua' => 'YOHANES BERE', 'nik_ketua' => '5321011505800001', 'telepon_ketua' => '081234567801', 'email_ketua' => 'mekarjaya@example.id', 'tahun_berdiri' => 2016, 'jumlah_anggota' => 24, 'lintang' => -9.5127800, 'bujur' => 124.9131400, 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value],
+            ['id_poktan' => 2, 'nama' => 'POKTAN SUBUR MAKMUR', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'nama_ketua' => 'MARIA DA COSTA', 'nik_ketua' => '5321012203850002', 'telepon_ketua' => '081234567802', 'email_ketua' => null, 'tahun_berdiri' => 2017, 'jumlah_anggota' => 18, 'lintang' => -9.5476500, 'bujur' => 124.8882300, 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value],
+            ['id_poktan' => 3, 'nama' => 'POKTAN TANI BERSATU', 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'nama_ketua' => 'PETRUS NAHAK', 'nik_ketua' => '5321010809780003', 'telepon_ketua' => '081234567803', 'email_ketua' => null, 'tahun_berdiri' => 2017, 'jumlah_anggota' => 21, 'lintang' => -9.4988700, 'bujur' => 124.9425600, 'status_verifikasi' => StatusVerifikasi::BelumDiverifikasi->value],
+            ['id_poktan' => 4, 'nama' => 'POKTAN HARAPAN BARU', 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain', 'nama_ketua' => 'GABRIEL LEKI', 'nik_ketua' => '5321010107750007', 'telepon_ketua' => '081234567807', 'email_ketua' => null, 'tahun_berdiri' => 2019, 'jumlah_anggota' => 15, 'lintang' => -9.5731200, 'bujur' => 124.8654900, 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value],
         ];
     }
 
@@ -1321,11 +1340,11 @@ class DummyData
     public static function alsintan(): array
     {
         return [
-            ['id_alsintan' => 1, 'nama_alat' => 'TRAKTOR RODA DUA', 'jumlah' => 2, 'tahun_perolehan' => 2018, 'sumber_perolehan' => 'APBN', 'kepemilikan' => 'Bantuan Poktan', 'pemilik' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'transmigran_id' => null, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'kondisi' => 'Baik', 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value],
-            ['id_alsintan' => 2, 'nama_alat' => 'POMPA AIR', 'jumlah' => 3, 'tahun_perolehan' => 2019, 'sumber_perolehan' => 'APBD Kabupaten', 'kepemilikan' => 'Bantuan Poktan', 'pemilik' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'transmigran_id' => null, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'kondisi' => 'Rusak Ringan', 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value],
-            ['id_alsintan' => 3, 'nama_alat' => 'HAND SPRAYER', 'jumlah' => 1, 'tahun_perolehan' => 2021, 'sumber_perolehan' => 'Pembelian Sendiri', 'kepemilikan' => 'Milik Pribadi', 'pemilik' => 'YOHANES BERE', 'poktan_id' => null, 'transmigran_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'kondisi' => 'Baik', 'status_verifikasi' => StatusVerifikasi::BelumDiverifikasi->value],
-            ['id_alsintan' => 4, 'nama_alat' => 'MESIN PERONTOK JAGUNG', 'jumlah' => 1, 'tahun_perolehan' => 2020, 'sumber_perolehan' => 'Dinas Pertanian Kabupaten', 'kepemilikan' => 'Bantuan Poktan', 'pemilik' => 'POKTAN TANI BERSATU', 'poktan_id' => 3, 'transmigran_id' => null, 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'kondisi' => 'Rusak Berat', 'status_verifikasi' => StatusVerifikasi::BelumDiverifikasi->value],
-            ['id_alsintan' => 5, 'nama_alat' => 'CANGKUL', 'jumlah' => 8, 'tahun_perolehan' => 2019, 'sumber_perolehan' => 'Pembelian Sendiri', 'kepemilikan' => 'Milik Pribadi', 'pemilik' => 'GABRIEL LEKI', 'poktan_id' => null, 'transmigran_id' => 7, 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain', 'kondisi' => 'Baik', 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value],
+            ['id_alsintan' => 1, 'nama_alat' => 'TRAKTOR RODA DUA', 'jumlah' => 2, 'tahun_perolehan' => 2018, 'sumber_perolehan' => 'APBN', 'kepemilikan' => KepemilikanAlsintan::BantuanPoktan->value, 'pemilik' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'transmigran_id' => null, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'kondisi' => 'Baik', 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value],
+            ['id_alsintan' => 2, 'nama_alat' => 'POMPA AIR', 'jumlah' => 3, 'tahun_perolehan' => 2019, 'sumber_perolehan' => 'APBD Kabupaten', 'kepemilikan' => KepemilikanAlsintan::BantuanPoktan->value, 'pemilik' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'transmigran_id' => null, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'kondisi' => 'Rusak Ringan', 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value],
+            ['id_alsintan' => 3, 'nama_alat' => 'HAND SPRAYER', 'jumlah' => 1, 'tahun_perolehan' => 2021, 'sumber_perolehan' => 'Pembelian Sendiri', 'kepemilikan' => KepemilikanAlsintan::Pribadi->value, 'pemilik' => 'YOHANES BERE', 'poktan_id' => null, 'transmigran_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'kondisi' => 'Baik', 'status_verifikasi' => StatusVerifikasi::BelumDiverifikasi->value],
+            ['id_alsintan' => 4, 'nama_alat' => 'MESIN PERONTOK JAGUNG', 'jumlah' => 1, 'tahun_perolehan' => 2020, 'sumber_perolehan' => 'Dinas Pertanian Kabupaten', 'kepemilikan' => KepemilikanAlsintan::BantuanPoktan->value, 'pemilik' => 'POKTAN TANI BERSATU', 'poktan_id' => 3, 'transmigran_id' => null, 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'kondisi' => 'Rusak Berat', 'status_verifikasi' => StatusVerifikasi::BelumDiverifikasi->value],
+            ['id_alsintan' => 5, 'nama_alat' => 'CANGKUL', 'jumlah' => 8, 'tahun_perolehan' => 2019, 'sumber_perolehan' => 'Pembelian Sendiri', 'kepemilikan' => KepemilikanAlsintan::Pribadi->value, 'pemilik' => 'GABRIEL LEKI', 'poktan_id' => null, 'transmigran_id' => 7, 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain', 'kondisi' => 'Baik', 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value],
         ];
     }
 
@@ -1439,10 +1458,10 @@ class DummyData
     public static function role(): array
     {
         return [
-            ['id_role' => 1, 'nama' => 'Admin', 'deskripsi' => 'Akses penuh termasuk manajemen pengguna, role, dan audit log.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => true, 'is_aktif' => true, 'jumlah_izin' => 120, 'jumlah_pengguna' => 1],
+            ['id_role' => 1, 'nama' => 'Admin', 'deskripsi' => 'Akses penuh termasuk manajemen pengguna, role, dan audit log.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => true, 'is_aktif' => true, 'jumlah_izin' => 119, 'jumlah_pengguna' => 1],
             ['id_role' => 2, 'nama' => 'Dinas Transmigrasi', 'deskripsi' => 'Memantau dan memverifikasi data wilayah, transmigran, rumah, lahan, dan infrastruktur.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 68, 'jumlah_pengguna' => 1],
-            ['id_role' => 3, 'nama' => 'Dinas Pertanian', 'deskripsi' => 'Memantau dan memverifikasi data poktan, komoditas, panen, alsintan, dan saprotan.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 64, 'jumlah_pengguna' => 1],
-            ['id_role' => 4, 'nama' => 'Operator SP', 'deskripsi' => 'Memasukkan data pada satuan permukiman yang ditugaskan. Tanpa izin hapus dan verifikasi.', 'cakupan_data' => CakupanData::PerSp->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 32, 'jumlah_pengguna' => 2],
+            ['id_role' => 3, 'nama' => 'Dinas Pertanian', 'deskripsi' => 'Memantau dan memverifikasi data poktan, komoditas, panen, alsintan, dan saprotan.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 74, 'jumlah_pengguna' => 1],
+            ['id_role' => 4, 'nama' => 'Operator SP', 'deskripsi' => 'Memasukkan data pada satuan permukiman yang ditugaskan. Tanpa izin hapus dan verifikasi.', 'cakupan_data' => CakupanData::PerSp->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 50, 'jumlah_pengguna' => 2],
         ];
     }
 
@@ -1791,5 +1810,197 @@ class DummyData
             ['modul' => 'Lahan', 'terverifikasi' => 1420, 'belum' => 380, 'ditolak' => 52],
             ['modul' => 'Hasil Panen', 'terverifikasi' => 685, 'belum' => 294, 'ditolak' => 41],
         ];
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Izin dan role
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * Seluruh modul berizin beserta aksi yang berlaku padanya.
+     *
+     * Disalin dari dua sumber yang wajib sejalan: daftar modul beserta
+     * aksinya pada agents/data-dictionary.md bagian 13.1, dan susunan izin
+     * role bawaan pada agents/rules.md bagian 5.1. Keduanyalah sumber
+     * kebenarannya, bukan daftar ini.
+     *
+     * Pengelompokan mengikuti data-dictionary.md bagian 13.2 agar susunannya
+     * sama dengan urutan menu sidebar, sehingga Admin menemukan modul di
+     * tempat yang sama seperti ketika menavigasi sistem.
+     *
+     * Tidak semua modul mengenal keenam aksi. Dashboard hanya dapat dilihat
+     * dan diekspor, sebab tidak ada yang dapat ditambahkan padanya. Menyajikan
+     * kotak centang untuk aksi yang tidak berlaku membuat matriks tampak
+     * menawarkan kewenangan yang sebenarnya mustahil.
+     *
+     * @return array<int, array<string, mixed>> Kelompok berisi modul dan aksinya
+     */
+    public static function daftarIzin(): array
+    {
+        $penuh = ['lihat', 'tambah', 'ubah', 'hapus', 'verifikasi', 'export'];
+        $kelolaSaja = ['lihat', 'tambah', 'ubah', 'hapus'];
+        $kelolaVerifikasi = ['lihat', 'tambah', 'ubah', 'hapus', 'verifikasi'];
+        $bacaEkspor = ['lihat', 'export'];
+
+        return [
+            [
+                'kelompok' => 'Sistem',
+                'modul' => [
+                    ['kunci' => 'pengguna', 'nama' => 'Manajemen pengguna', 'aksi' => $kelolaSaja],
+                    ['kunci' => 'role', 'nama' => 'Pengaturan role', 'aksi' => $kelolaSaja],
+                    ['kunci' => 'audit_log', 'nama' => 'Audit log', 'aksi' => $bacaEkspor],
+                ],
+            ],
+            [
+                'kelompok' => 'Wilayah dan SP',
+                'modul' => [
+                    ['kunci' => 'wilayah', 'nama' => 'Data master wilayah', 'aksi' => $kelolaSaja],
+                    ['kunci' => 'kawasan', 'nama' => 'Kawasan transmigrasi', 'aksi' => $penuh],
+                    ['kunci' => 'sp', 'nama' => 'Satuan permukiman (SP)', 'aksi' => $penuh],
+                    // Inventaris dan fasilitas sengaja dipisah: dua tabel, dua
+                    // halaman, sehingga kewenangannya dapat dibedakan
+                    // (rules.md 5.1 catatan 5).
+                    ['kunci' => 'inventaris_sp', 'nama' => 'Inventaris SP', 'aksi' => $penuh],
+                    ['kunci' => 'fasilitas_sp', 'nama' => 'Fasilitas SP', 'aksi' => $penuh],
+                    ['kunci' => 'satuan', 'nama' => 'Data master satuan', 'aksi' => $kelolaSaja],
+                ],
+            ],
+            [
+                'kelompok' => 'Kependudukan',
+                'modul' => [
+                    ['kunci' => 'transmigran', 'nama' => 'Transmigran', 'aksi' => $penuh],
+                    ['kunci' => 'rumah', 'nama' => 'Rumah dan hunian', 'aksi' => $penuh],
+                    ['kunci' => 'riwayat_penghunian', 'nama' => 'Riwayat penghunian', 'aksi' => $penuh],
+                ],
+            ],
+            [
+                'kelompok' => 'Lahan',
+                'modul' => [
+                    ['kunci' => 'lahan', 'nama' => 'Lahan', 'aksi' => $penuh],
+                    ['kunci' => 'dokumen_lahan', 'nama' => 'Dokumen lahan (HPL/SHM)', 'aksi' => $kelolaVerifikasi],
+                ],
+            ],
+            [
+                'kelompok' => 'Kelembagaan',
+                'modul' => [
+                    ['kunci' => 'poktan', 'nama' => 'Kelompok tani', 'aksi' => $penuh],
+                    ['kunci' => 'anggota_poktan', 'nama' => 'Anggota poktan', 'aksi' => $penuh],
+                    ['kunci' => 'alsintan', 'nama' => 'Alsintan', 'aksi' => $penuh],
+                    ['kunci' => 'saprotan', 'nama' => 'Saprotan', 'aksi' => $penuh],
+                ],
+            ],
+            [
+                'kelompok' => 'Pertanian',
+                'modul' => [
+                    ['kunci' => 'komoditas', 'nama' => 'Komoditas', 'aksi' => $penuh],
+                    ['kunci' => 'musim_tanam', 'nama' => 'Musim tanam', 'aksi' => $kelolaVerifikasi],
+                    ['kunci' => 'riwayat_tanam', 'nama' => 'Riwayat tanam', 'aksi' => $penuh],
+                    ['kunci' => 'hasil_panen', 'nama' => 'Hasil panen', 'aksi' => $penuh],
+                ],
+            ],
+            [
+                'kelompok' => 'Infrastruktur',
+                'modul' => [
+                    ['kunci' => 'infrastruktur', 'nama' => 'Infrastruktur SP', 'aksi' => $penuh],
+                ],
+            ],
+            [
+                'kelompok' => 'Pengaduan',
+                'modul' => [
+                    ['kunci' => 'pengaduan', 'nama' => 'Pengaduan', 'aksi' => $penuh],
+                    ['kunci' => 'penanganan_pengaduan', 'nama' => 'Penanganan pengaduan', 'aksi' => ['lihat', 'tambah', 'ubah']],
+                ],
+            ],
+            [
+                'kelompok' => 'Pemantauan',
+                'modul' => [
+                    ['kunci' => 'dashboard', 'nama' => 'Dashboard', 'aksi' => $bacaEkspor],
+                    ['kunci' => 'laporan', 'nama' => 'Laporan dan export', 'aksi' => $bacaEkspor],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Izin yang dimiliki sebuah role, dipetakan per modul.
+     *
+     * Nilai disalin dari tabel agents/rules.md bagian 5.1. Sejak role menjadi
+     * dinamis, tabel itu berkedudukan sebagai konfigurasi awal yang ditanam
+     * seeder, bukan aturan permanen di dalam kode.
+     *
+     * @param  int  $roleId  Pengenal role
+     * @return array<string, array<int, string>> Kunci modul berisi daftar aksi
+     */
+    public static function izinRole(int $roleId): array
+    {
+        $p = ['lihat', 'tambah', 'ubah', 'hapus', 'verifikasi', 'export'];
+        $lituhe = ['lihat', 'tambah', 'ubah', 'hapus', 'export'];
+        $k = ['lihat', 'tambah', 'ubah', 'hapus'];
+        $ltuve = ['lihat', 'tambah', 'ubah', 'verifikasi', 'export'];
+        $ltuv = ['lihat', 'tambah', 'ubah', 'verifikasi'];
+        $ltve = ['lihat', 'tambah', 'verifikasi', 'export'];
+        $ltu = ['lihat', 'tambah', 'ubah'];
+        $lt = ['lihat', 'tambah'];
+        $le = ['lihat', 'export'];
+        $l = ['lihat'];
+
+        $peta = [
+            // Admin. Kolom kedua tabel rules.md 5.1. Perhatikan bahwa Admin
+            // tidak memegang izin verifikasi pada sebagian besar modul:
+            // pemeriksaan data adalah kewenangan dinas sesuai bidangnya.
+            1 => [
+                'wilayah' => $k, 'kawasan' => $lituhe, 'sp' => $lituhe,
+                'inventaris_sp' => $lituhe, 'fasilitas_sp' => $lituhe, 'satuan' => $k,
+                'transmigran' => $lituhe, 'rumah' => $lituhe, 'riwayat_penghunian' => $lituhe,
+                'lahan' => $lituhe, 'dokumen_lahan' => $k,
+                'poktan' => $lituhe, 'anggota_poktan' => $lituhe, 'alsintan' => $lituhe, 'saprotan' => $lituhe,
+                'komoditas' => $lituhe, 'musim_tanam' => $k, 'riwayat_tanam' => $lituhe, 'hasil_panen' => $lituhe,
+                'infrastruktur' => $lituhe, 'pengaduan' => $p, 'penanganan_pengaduan' => $ltu,
+                'dashboard' => $le, 'laporan' => $le,
+                'pengguna' => $k, 'role' => $k, 'audit_log' => $le,
+            ],
+            // Dinas Transmigrasi. Memverifikasi wilayah, kependudukan, dan
+            // lahan. Pada modul pertanian hanya dapat melihat.
+            2 => [
+                'wilayah' => $l, 'kawasan' => ['lihat', 'verifikasi', 'export'], 'sp' => $ltuve,
+                'inventaris_sp' => $ltuve, 'fasilitas_sp' => $ltuve, 'satuan' => $l,
+                'transmigran' => $ltuve, 'rumah' => $ltuve, 'riwayat_penghunian' => $ltve,
+                'lahan' => $ltuve, 'dokumen_lahan' => ['lihat', 'tambah', 'verifikasi'],
+                'poktan' => $le, 'anggota_poktan' => $l, 'alsintan' => $l, 'saprotan' => $l,
+                'komoditas' => $l, 'musim_tanam' => $l, 'riwayat_tanam' => $l, 'hasil_panen' => $l,
+                'infrastruktur' => $ltuve, 'pengaduan' => $ltuve, 'penanganan_pengaduan' => $ltu,
+                'dashboard' => $le, 'laporan' => $le,
+            ],
+            // Dinas Pertanian. Memverifikasi kelembagaan dan produksi
+            // pertanian. Pada modul kependudukan hanya dapat melihat.
+            3 => [
+                'wilayah' => $l, 'kawasan' => $le, 'sp' => $le,
+                'inventaris_sp' => $le, 'fasilitas_sp' => $le, 'satuan' => $l,
+                'transmigran' => $le, 'rumah' => $le, 'riwayat_penghunian' => $l,
+                'lahan' => $le, 'dokumen_lahan' => $l,
+                'poktan' => $ltuve, 'anggota_poktan' => $ltuve, 'alsintan' => $ltuve, 'saprotan' => $ltuve,
+                'komoditas' => $ltuve, 'musim_tanam' => $ltuv,
+                'riwayat_tanam' => $ltuve, 'hasil_panen' => $ltuve,
+                'infrastruktur' => $ltuve, 'pengaduan' => $ltuve, 'penanganan_pengaduan' => $ltu,
+                'dashboard' => $le, 'laporan' => $le,
+            ],
+            // Operator SP. Memasukkan data, sengaja tanpa izin hapus maupun
+            // verifikasi (rules.md 5.1 catatan 4). Tidak memegang izin apa pun
+            // pada penanganan pengaduan.
+            4 => [
+                'wilayah' => $l, 'kawasan' => $l, 'sp' => $l,
+                'inventaris_sp' => $ltu, 'fasilitas_sp' => $ltu, 'satuan' => $l,
+                'transmigran' => $ltu, 'rumah' => $ltu, 'riwayat_penghunian' => $lt,
+                'lahan' => $ltu, 'dokumen_lahan' => $lt,
+                'poktan' => $ltu, 'anggota_poktan' => $ltu, 'alsintan' => $ltu, 'saprotan' => $ltu,
+                'komoditas' => $l, 'musim_tanam' => $l, 'riwayat_tanam' => $ltu, 'hasil_panen' => $ltu,
+                'infrastruktur' => $ltu, 'pengaduan' => $lt,
+                'dashboard' => $l, 'laporan' => $l,
+            ],
+        ];
+
+        return $peta[$roleId] ?? [];
     }
 }

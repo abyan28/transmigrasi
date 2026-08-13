@@ -23,7 +23,7 @@
             ['kunci' => 'panen', 'nama' => 'Hasil Panen', 'keterangan' => 'Volume panen per komoditas, sudah dikonversi ke ton.', 'modul' => 'Pertanian'],
             ['kunci' => 'poktan', 'nama' => 'Kelompok Tani', 'keterangan' => 'Profil poktan beserta daftar anggotanya.', 'modul' => 'Kelembagaan'],
             ['kunci' => 'aset', 'nama' => 'Inventaris dan Fasilitas SP', 'keterangan' => 'Aset satuan permukiman beserta status penyerahan.', 'modul' => 'Wilayah dan SP'],
-            ['kunci' => 'infrastruktur', 'nama' => 'Infrastruktur Pertanian', 'keterangan' => 'Kondisi aset irigasi, air, jalan produksi, dan gudang.', 'modul' => 'Infrastruktur'],
+            ['kunci' => 'infrastruktur', 'nama' => 'Infrastruktur SP', 'keterangan' => 'Kondisi aset irigasi, air, jalan produksi, dan gudang.', 'modul' => 'Infrastruktur'],
             ['kunci' => 'pengaduan', 'nama' => 'Pengaduan dan Penanganan', 'keterangan' => 'Laporan warga beserta perkembangan penanganannya.', 'modul' => 'Pengaduan'],
             ['kunci' => 'indikator', 'nama' => 'Indikator Kawasan', 'keterangan' => 'Rekap seluruh indikator utama untuk laporan kementerian.', 'modul' => 'Dashboard'],
         ];

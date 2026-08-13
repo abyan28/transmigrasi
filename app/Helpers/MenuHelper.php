@@ -11,6 +11,22 @@ class MenuHelper
      * ditulis tetap per role. Setiap item dikaitkan ke satu izin, lalu
      * disaring oleh getMenuGroups() menurut izin yang dimiliki pengguna.
      *
+     * Susunan memakai submenu agar sidebar tetap terbaca sekali pandang.
+     * Sebelumnya sepuluh kelompok berjajar rata sehingga daftar menjadi
+     * panjang dan sulit dipindai; kini lima kelompok dengan isian yang
+     * dikelompokkan menurut cara petugas bekerja.
+     *
+     * Kelompok Transmigrasi dan Pertanian masing-masing memuat DUA submenu,
+     * sehingga satu judul kelompok menaungi lebih dari satu daftar. Pembagian
+     * ini mengikuti pembagian urusan di dinas, bukan pembagian tabel.
+     *
+     * Dua penempatan yang perlu diketahui:
+     * - Daftar Lahan berada di submenu Penduduk & Lahan, sebab lahan selalu
+     *   melekat pada satu kepala keluarga dan ditelusuri lewat pemiliknya.
+     * - Infrastruktur SP berada di submenu Wilayah & Aset SP, bukan bersama
+     *   alsintan dan saprotan. Alsintan milik poktan, sedangkan irigasi,
+     *   listrik, dan jalan milik satuan permukiman.
+     *
      * Pemetaan menu ke izin mengikuti agents/ui-spec.md bagian 5.1.
      *
      * @return array<int, array<string, mixed>> Kelompok menu sebelum disaring
@@ -30,88 +46,64 @@ class MenuHelper
                 ],
             ],
             [
-                'title' => 'Wilayah & SP',
+                'title' => 'Transmigrasi',
                 'items' => [
                     [
                         'icon' => 'pages',
-                        'name' => 'Kawasan Transmigrasi',
-                        'path' => '/kawasan',
-                        'permission' => 'kawasan.lihat',
+                        'name' => 'Wilayah & Aset SP',
+                        'subItems' => [
+                            [
+                                'name' => 'Kawasan Transmigrasi',
+                                'path' => '/kawasan',
+                                'permission' => 'kawasan.lihat',
+                            ],
+                            [
+                                'name' => 'Satuan Permukiman',
+                                'path' => '/sp',
+                                'permission' => 'sp.lihat',
+                            ],
+                            [
+                                'name' => 'Inventaris SP',
+                                'path' => '/sp/inventaris',
+                                'permission' => 'inventaris_sp.lihat',
+                            ],
+                            [
+                                'name' => 'Fasilitas SP',
+                                'path' => '/sp/fasilitas',
+                                'permission' => 'fasilitas_sp.lihat',
+                            ],
+                            [
+                                'name' => 'Infrastruktur SP',
+                                'path' => '/infrastruktur',
+                                'permission' => 'infrastruktur.lihat',
+                            ],
+                        ],
                     ],
                     [
-                        'icon' => 'tables',
-                        'name' => 'Satuan Permukiman',
-                        'path' => '/sp',
-                        'permission' => 'sp.lihat',
-                    ],
-                    [
-                        'icon' => 'task',
-                        'name' => 'Inventaris SP',
-                        'path' => '/sp/inventaris',
-                        'permission' => 'inventaris_sp.lihat',
-                    ],
-                    [
-                        'icon' => 'task',
-                        'name' => 'Fasilitas SP',
-                        'path' => '/sp/fasilitas',
-                        'permission' => 'fasilitas_sp.lihat',
-                    ],
-                ],
-            ],
-            [
-                'title' => 'Kependudukan',
-                'items' => [
-                    [
-                        'icon' => 'user-profile',
-                        'name' => 'Transmigran',
-                        'path' => '/transmigran',
-                        'permission' => 'transmigran.lihat',
-                    ],
-                    [
-                        'icon' => 'pages',
-                        'name' => 'Rumah & Hunian',
-                        'path' => '/rumah',
-                        'permission' => 'rumah.lihat',
-                    ],
-                    [
-                        'icon' => 'charts',
-                        'name' => 'Rekap Kependudukan',
-                        'path' => '/kependudukan/rekap',
-                        'permission' => 'transmigran.lihat',
-                    ],
-                ],
-            ],
-            [
-                'title' => 'Lahan',
-                'items' => [
-                    [
-                        'icon' => 'tables',
-                        'name' => 'Daftar Lahan',
-                        'path' => '/lahan',
-                        'permission' => 'lahan.lihat',
-                    ],
-                ],
-            ],
-            [
-                'title' => 'Kelembagaan',
-                'items' => [
-                    [
-                        'icon' => 'user-profile',
-                        'name' => 'Kelompok Tani',
-                        'path' => '/poktan',
-                        'permission' => 'poktan.lihat',
-                    ],
-                    [
-                        'icon' => 'task',
-                        'name' => 'Alsintan',
-                        'path' => '/alsintan',
-                        'permission' => 'alsintan.lihat',
-                    ],
-                    [
-                        'icon' => 'task',
-                        'name' => 'Saprotan',
-                        'path' => '/saprotan',
-                        'permission' => 'saprotan.lihat',
+                        'icon' => 'penduduk',
+                        'name' => 'Penduduk & Lahan',
+                        'subItems' => [
+                            [
+                                'name' => 'Transmigran',
+                                'path' => '/transmigran',
+                                'permission' => 'transmigran.lihat',
+                            ],
+                            [
+                                'name' => 'Rumah & Hunian',
+                                'path' => '/rumah',
+                                'permission' => 'rumah.lihat',
+                            ],
+                            [
+                                'name' => 'Daftar Lahan',
+                                'path' => '/lahan',
+                                'permission' => 'lahan.lihat',
+                            ],
+                            [
+                                'name' => 'Rekap Kependudukan',
+                                'path' => '/kependudukan/rekap',
+                                'permission' => 'transmigran.lihat',
+                            ],
+                        ],
                     ],
                 ],
             ],
@@ -119,39 +111,56 @@ class MenuHelper
                 'title' => 'Pertanian',
                 'items' => [
                     [
-                        'icon' => 'tables',
-                        'name' => 'Komoditas',
-                        'path' => '/komoditas',
-                        'permission' => 'komoditas.lihat',
+                        'icon' => 'kelompok',
+                        'name' => 'Poktan & Sarana',
+                        'subItems' => [
+                            [
+                                'name' => 'Kelompok Tani',
+                                'path' => '/poktan',
+                                'permission' => 'poktan.lihat',
+                            ],
+                            [
+                                'name' => 'Alsintan',
+                                'path' => '/alsintan',
+                                'permission' => 'alsintan.lihat',
+                            ],
+                            [
+                                'name' => 'Saprotan',
+                                'path' => '/saprotan',
+                                'permission' => 'saprotan.lihat',
+                            ],
+                        ],
                     ],
                     [
-                        'icon' => 'calendar',
-                        'name' => 'Musim Tanam',
-                        'path' => '/musim-tanam',
-                        'permission' => 'musim_tanam.lihat',
-                    ],
-                    [
-                        'icon' => 'calendar',
-                        'name' => 'Riwayat Tanam',
-                        'path' => '/riwayat-tanam',
-                        'permission' => 'riwayat_tanam.lihat',
-                    ],
-                    [
-                        'icon' => 'charts',
-                        'name' => 'Hasil Panen',
-                        'path' => '/panen',
-                        'permission' => 'hasil_panen.lihat',
-                    ],
-                ],
-            ],
-            [
-                'title' => 'Infrastruktur',
-                'items' => [
-                    [
-                        'icon' => 'pages',
-                        'name' => 'Infrastruktur',
-                        'path' => '/infrastruktur',
-                        'permission' => 'infrastruktur.lihat',
+                        'icon' => 'tanaman',
+                        'name' => 'Produksi Pertanian',
+                        'subItems' => [
+                            [
+                                'name' => 'Komoditas',
+                                'path' => '/komoditas',
+                                'permission' => 'komoditas.lihat',
+                            ],
+                            [
+                                'name' => 'Musim Tanam',
+                                'path' => '/musim-tanam',
+                                'permission' => 'musim_tanam.lihat',
+                            ],
+                            [
+                                'name' => 'Riwayat Tanam',
+                                'path' => '/riwayat-tanam',
+                                'permission' => 'riwayat_tanam.lihat',
+                            ],
+                            [
+                                'name' => 'Hasil Panen',
+                                'path' => '/panen',
+                                'permission' => 'hasil_panen.lihat',
+                            ],
+                            [
+                                'name' => 'Rekap Panen',
+                                'path' => '/panen/rekap',
+                                'permission' => 'hasil_panen.lihat',
+                            ],
+                        ],
                     ],
                 ],
             ],
@@ -159,62 +168,61 @@ class MenuHelper
                 'title' => 'Pengaduan',
                 'items' => [
                     [
-                        'icon' => 'support-ticket',
-                        'name' => 'Daftar Pengaduan',
-                        'path' => '/pengaduan',
-                        'permission' => 'pengaduan.lihat',
-                    ],
-                    [
-                        'icon' => 'charts',
-                        'name' => 'Rekap Pengaduan',
-                        'path' => '/pengaduan/rekap',
-                        'permission' => 'pengaduan.lihat',
-                    ],
-                ],
-            ],
-            [
-                'title' => 'Laporan',
-                'items' => [
-                    [
-                        'icon' => 'forms',
-                        'name' => 'Pusat Laporan',
-                        'path' => '/laporan',
-                        'permission' => 'laporan.lihat',
+                        'icon' => 'chat',
+                        'name' => 'Pengaduan Warga',
+                        'subItems' => [
+                            [
+                                'name' => 'Daftar Pengaduan',
+                                'path' => '/pengaduan',
+                                'permission' => 'pengaduan.lihat',
+                            ],
+                            [
+                                'name' => 'Rekap Pengaduan',
+                                'path' => '/pengaduan/rekap',
+                                'permission' => 'pengaduan.lihat',
+                            ],
+                        ],
                     ],
                 ],
             ],
             [
-                'title' => 'Pengaturan',
+                'title' => 'Administrasi Sistem',
                 'items' => [
                     [
-                        'icon' => 'pages',
-                        'name' => 'Data Master Wilayah',
-                        'path' => '/wilayah',
-                        'permission' => 'wilayah.lihat',
-                    ],
-                    [
-                        'icon' => 'tables',
-                        'name' => 'Data Master Satuan',
-                        'path' => '/master/satuan',
-                        'permission' => 'satuan.lihat',
-                    ],
-                    [
-                        'icon' => 'user-profile',
-                        'name' => 'Pengguna',
-                        'path' => '/pengguna',
-                        'permission' => 'pengguna.lihat',
-                    ],
-                    [
-                        'icon' => 'authentication',
-                        'name' => 'Role & Hak Akses',
-                        'path' => '/pengaturan/role',
-                        'permission' => 'role.lihat',
-                    ],
-                    [
-                        'icon' => 'task',
-                        'name' => 'Audit Log',
-                        'path' => '/audit-log',
-                        'permission' => 'audit_log.lihat',
+                        'icon' => 'pengaturan',
+                        'name' => 'Laporan & Pengaturan',
+                        'subItems' => [
+                            [
+                                'name' => 'Pusat Laporan',
+                                'path' => '/laporan',
+                                'permission' => 'laporan.lihat',
+                            ],
+                            [
+                                'name' => 'Data Master Wilayah',
+                                'path' => '/wilayah',
+                                'permission' => 'wilayah.lihat',
+                            ],
+                            [
+                                'name' => 'Data Master Satuan',
+                                'path' => '/master/satuan',
+                                'permission' => 'satuan.lihat',
+                            ],
+                            [
+                                'name' => 'Pengguna',
+                                'path' => '/pengguna',
+                                'permission' => 'pengguna.lihat',
+                            ],
+                            [
+                                'name' => 'Role & Hak Akses',
+                                'path' => '/pengaturan/role',
+                                'permission' => 'role.lihat',
+                            ],
+                            [
+                                'name' => 'Audit Log',
+                                'path' => '/audit-log',
+                                'permission' => 'audit_log.lihat',
+                            ],
+                        ],
                     ],
                 ],
             ],
@@ -239,10 +247,33 @@ class MenuHelper
         $hasil = [];
 
         foreach (self::definisiMenu() as $kelompok) {
-            $itemBerhak = array_values(array_filter(
-                $kelompok['items'],
-                fn ($item) => self::bolehLihat($item['permission'] ?? null)
-            ));
+            $itemBerhak = [];
+
+            foreach ($kelompok['items'] as $item) {
+                // Item bersubmenu: saring isinya lebih dulu. Induk tidak punya
+                // izinnya sendiri, sehingga kelayakannya ditentukan oleh
+                // submenu yang tersisa. Induk yang seluruh submenunya tersaring
+                // akan membuka daftar kosong bila tetap dirender.
+                if (isset($item['subItems'])) {
+                    $subBerhak = array_values(array_filter(
+                        $item['subItems'],
+                        fn ($sub) => self::bolehLihat($sub['permission'] ?? null)
+                    ));
+
+                    if ($subBerhak === []) {
+                        continue;
+                    }
+
+                    $item['subItems'] = $subBerhak;
+                    $itemBerhak[] = $item;
+
+                    continue;
+                }
+
+                if (self::bolehLihat($item['permission'] ?? null)) {
+                    $itemBerhak[] = $item;
+                }
+            }
 
             // Kelompok tanpa satu pun item yang berhak tidak ikut dirender.
             if ($itemBerhak !== []) {
@@ -323,6 +354,22 @@ class MenuHelper
             'support-ticket' => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 17.0518V12C20 7.58174 16.4183 4 12 4C7.58168 4 3.99994 7.58174 3.99994 12V17.0518M19.9998 14.041V19.75C19.9998 20.5784 19.3282 21.25 18.4998 21.25H13.9998M6.5 18.75H5.5C4.67157 18.75 4 18.0784 4 17.25V13.75C4 12.9216 4.67157 12.25 5.5 12.25H6.5C7.32843 12.25 8 12.9216 8 13.75V17.25C8 18.0784 7.32843 18.75 6.5 18.75ZM17.4999 18.75H18.4999C19.3284 18.75 19.9999 18.0784 19.9999 17.25V13.75C19.9999 12.9216 19.3284 12.25 18.4999 12.25H17.4999C16.6715 12.25 15.9999 12.9216 15.9999 13.75V17.25C15.9999 18.0784 16.6715 18.75 17.4999 18.75Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>',
 
             'email' => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M3.5 8.187V17.25C3.5 17.6642 3.83579 18 4.25 18H19.75C20.1642 18 20.5 17.6642 20.5 17.25V8.18747L13.2873 13.2171C12.5141 13.7563 11.4866 13.7563 10.7134 13.2171L3.5 8.187ZM20.5 6.2286C20.5 6.23039 20.5 6.23218 20.5 6.23398V6.24336C20.4976 6.31753 20.4604 6.38643 20.3992 6.42905L12.4293 11.9867C12.1716 12.1664 11.8291 12.1664 11.5713 11.9867L3.60116 6.42885C3.538 6.38481 3.50035 6.31268 3.50032 6.23568C3.50028 6.10553 3.60577 6 3.73592 6H20.2644C20.3922 6 20.4963 6.10171 20.5 6.2286ZM22 6.25648V17.25C22 18.4926 20.9926 19.5 19.75 19.5H4.25C3.00736 19.5 2 18.4926 2 17.25V6.23398C2 6.22371 2.00021 6.2135 2.00061 6.20333C2.01781 5.25971 2.78812 4.5 3.73592 4.5H20.2644C21.2229 4.5 22 5.27697 22.0001 6.23549C22.0001 6.24249 22.0001 6.24949 22 6.25648Z" fill="currentColor"></path></svg>',
+
+            // Empat ikon berikut ditambahkan untuk submenu Tahap 2. Sebelumnya
+            // menu memakai nama yang tidak terdaftar di sini, sehingga keempatnya
+            // jatuh ke ikon cadangan berbentuk bintang dan tampak seragam.
+
+            // Penduduk & Lahan: dua sosok, mewakili keluarga yang didata.
+            'penduduk' => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 11a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM17 11a3 3 0 100-6 3 3 0 000 6zM3 19a6 6 0 0112 0M15.5 13.5A5 5 0 0121 18.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+
+            // Poktan & Sarana: tiga sosok berhimpun, mewakili kelompok tani.
+            'kelompok' => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 10a3 3 0 100-6 3 3 0 000 6zM5.5 12a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM18.5 12a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM7 20a5 5 0 0110 0M2 18a4 4 0 015-3.5M22 18a4 4 0 00-5-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+
+            // Produksi Pertanian: tunas bertumbuh, mewakili komoditas dan panen.
+            'tanaman' => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 21V10M12 10C12 6.5 9.5 4 6 4c0 3.5 2.5 6 6 6zM12 13c0-3 2-5.5 5.5-5.5 0 3-2.5 5.5-5.5 5.5zM6 21h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+
+            // Laporan & Pengaturan: roda gigi, lambang baku untuk konfigurasi.
+            'pengaturan' => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" stroke-width="1.8"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 008 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 8a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
         ];
 
         return $icons[$iconName] ?? '<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor"/></svg>';

@@ -43,6 +43,17 @@
         placeholder-cari="Cari nama barang" judul-kosong="Belum ada data inventaris"
         pesan-kosong="Barang milik satuan permukiman akan tampil di sini setelah didata.">
 
+        <x-slot:aksi>
+            <button type="button" @click="$dispatch('buka-modal', 'formTambahInventaris')"
+                class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+                    aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Tambah Inventaris
+            </button>
+        </x-slot:aksi>
+
         <x-slot:ringkasan>
             <x-sim.stat-card label="Jenis Barang" :nilai="count($semua)" />
             <x-sim.stat-card label="Total Unit" :nilai="number_format($totalUnit, 0, ',', '.')" />
@@ -100,6 +111,7 @@
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Sumber Dana</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Kondisi</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Penyerahan</th>
+            <th scope="col" class="px-5 py-3 text-right text-theme-xs font-medium text-gray-500 dark:text-gray-400">Aksi</th>
         </x-slot:kepala>
 
         @foreach ($baris as $b)
@@ -123,6 +135,13 @@
                 <td class="px-5 py-3">
                     <x-sim.status-badge :status="\App\Enums\StatusPenyerahan::from($b['status_penyerahan'])" />
                 </td>
+                <td class="px-5 py-3">
+                    <x-sim.aksi-baris modal-ubah="formUbahInventarisBaris"
+                        :data-baris="$b + ['id' => $b['id_inventaris_sp']]"
+                        :hapus-url="'/sp/inventaris/' . $b['id_inventaris_sp']"
+                        konfirmasi-hapus="hapusInventaris"
+                        :label="$b['nama_barang']" />
+                </td>
             </tr>
         @endforeach
 
@@ -140,4 +159,19 @@
             @endforeach
         </x-slot:kartu>
     </x-sim.halaman-daftar>
+
+    <x-sim.modal-form nama="formTambahInventaris" judul="Tambah Inventaris SP"
+        keterangan="Barang bergerak milik satuan permukiman."
+        :aksi="route('inventaris.simpan')" ukuran="lg" label-simpan="Simpan Data">
+        @include('pages.sp.form-inventaris', ['awalan' => 'tambah'])
+    </x-sim.modal-form>
+
+    <x-sim.modal-form nama="formUbahInventarisBaris" judul="Ubah Inventaris SP"
+        keterangan="Perubahan tercatat pada audit log."
+        pola-aksi="/sp/inventaris/:id" metode="PUT" ukuran="lg" label-simpan="Simpan Perubahan">
+        @include('pages.sp.form-inventaris', ['awalan' => 'ubahBaris'])
+    </x-sim.modal-form>
+
+    <x-sim.confirm-dialog nama="hapusInventaris" judul="Hapus data inventaris ini?"
+        pesan="Data yang dihapus masih tercatat pada audit log." label-setuju="Hapus" />
 @endsection

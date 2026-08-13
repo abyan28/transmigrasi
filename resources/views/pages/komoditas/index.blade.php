@@ -42,6 +42,17 @@
         placeholder-cari="Cari nama komoditas" judul-kosong="Belum ada data komoditas"
         pesan-kosong="Komoditas kawasan akan tampil di sini setelah didata.">
 
+        <x-slot:aksi>
+            <button type="button" @click="$dispatch('buka-modal', 'formTambahKomoditas')"
+                class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+                    aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Tambah Komoditas
+            </button>
+        </x-slot:aksi>
+
         <x-slot:ringkasan>
             <x-sim.stat-card label="Jenis Komoditas" :nilai="count($semua)" />
             <x-sim.stat-card label="Komoditas Unggulan" :nilai="$unggulan" />
@@ -84,6 +95,7 @@
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Satuan Panen Baku</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Volume Tercatat</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Keterangan</th>
+            <th scope="col" class="px-5 py-3 text-right text-theme-xs font-medium text-gray-500 dark:text-gray-400">Aksi</th>
         </x-slot:kepala>
 
         @foreach ($baris as $k)
@@ -106,6 +118,13 @@
                     {{ $vol !== null ? number_format($vol, 1, ',', '.') . ' ton' : '-' }}
                 </td>
                 <td class="px-5 py-3 text-theme-xs text-gray-500 dark:text-gray-400">{{ $k['deskripsi'] ?? '-' }}</td>
+                <td class="px-5 py-3">
+                    <x-sim.aksi-baris :rincian-url="route('komoditas.detail', $k['id_komoditas'])"
+                        modal-ubah="formUbahKomoditasBaris"
+                        :data-baris="$k + ['id' => $k['id_komoditas']]"
+                        :hapus-url="'/komoditas/' . $k['id_komoditas']"
+                        konfirmasi-hapus="hapusKomoditas" :label="$k['nama']" />
+                </td>
             </tr>
         @endforeach
 
@@ -128,8 +147,24 @@
         </x-slot:kartu>
     </x-sim.halaman-daftar>
 
+    <x-sim.modal-form nama="formTambahKomoditas" judul="Tambah Komoditas"
+        keterangan="Satuan panen yang dipilih menjadi satuan baku komoditas ini."
+        :aksi="route('komoditas.simpan')" ukuran="lg" label-simpan="Simpan Data">
+        @include('pages.komoditas.form', ['awalan' => 'tambah'])
+    </x-sim.modal-form>
+
     <p class="mt-4 rounded-lg bg-gray-50 p-3.5 text-theme-xs text-gray-600 dark:bg-white/[0.03] dark:text-gray-400">
         Satuan panen ditetapkan di sini dan tidak dapat diubah operator saat mencatat panen.
         Aturan ini menjaga rekap lintas komoditas tetap sepadan setelah dikonversi ke ton.
     </p>
+
+    <x-sim.modal-form nama="formUbahKomoditasBaris" judul="Ubah Data Komoditas"
+        keterangan="Perubahan satuan baku berlaku bagi pencatatan panen berikutnya."
+        pola-aksi="/komoditas/:id" metode="PUT" ukuran="lg"
+        label-simpan="Simpan Perubahan">
+        @include('pages.komoditas.form', ['awalan' => 'ubahBaris'])
+    </x-sim.modal-form>
+
+    <x-sim.confirm-dialog nama="hapusKomoditas" judul="Hapus data ini?"
+        pesan="Data yang dihapus masih tercatat pada audit log dan dapat dipulihkan admin." label-setuju="Hapus" />
 @endsection

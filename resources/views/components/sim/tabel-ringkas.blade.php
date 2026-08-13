@@ -10,13 +10,18 @@
     slot itu tidak diisi, tabel dibungkus wadah bergulir sebagai jalan tengah
     yang masih diizinkan.
 
+    Judul kolom yang disebutkan pada `kolomKanan` dirender rata kanan. Dipakai
+    untuk kolom aksi, agar tombolnya sejajar dengan tepi tabel dan tidak
+    menggantung di tengah ruang kosong.
+
     Pemakaian:
-        <x-sim.tabel-ringkas :kolom="['Nama', 'NIK']">
+        <x-sim.tabel-ringkas :kolom="['Nama', 'NIK', 'Aksi']" :kolom-kanan="['Aksi']">
             <tr><td class="px-5 py-3">...</td></tr>
         </x-sim.tabel-ringkas>
 --}}
 @props([
     'kolom' => [],
+    'kolomKanan' => [],
 ])
 
 <div {{ $attributes->merge(['class' => 'overflow-x-auto']) }}>
@@ -24,7 +29,8 @@
         <thead class="bg-gray-50 dark:bg-white/[0.02]">
             <tr class="border-b border-gray-200 dark:border-gray-800">
                 @foreach ($kolom as $judul)
-                    <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">
+                    <th scope="col"
+                        class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400 {{ in_array($judul, (array) $kolomKanan, true) ? 'text-right' : '' }}">
                         {{ $judul }}
                     </th>
                 @endforeach

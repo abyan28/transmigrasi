@@ -115,6 +115,31 @@
                             <p class="mt-1.5 text-theme-xs text-error-500">{{ $message }}</p>
                         @enderror
                     </div>
+
+                    {{--
+                        Surel bersifat OPSIONAL dan sengaja diletakkan setelah nomor HP.
+                        Sistem tidak boleh bergantung pada surel: jaringan di lokus tidak
+                        selalu memadai, dan sebagian warga tidak memilikinya. Nomor
+                        pengaduan tetap ditampilkan besar di layar setelah kirim, sehingga
+                        surel hanyalah salinan, bukan satu-satunya cara menerima nomor.
+                    --}}
+                    <div class="sm:col-span-2">
+                        <label for="email_pelapor"
+                            class="mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-300">
+                            Alamat Surel <span class="font-normal text-gray-500 dark:text-gray-400">(boleh dikosongkan)</span>
+                        </label>
+                        <input type="email" id="email_pelapor" name="email_pelapor"
+                            value="{{ old('email_pelapor') }}" maxlength="100" autocomplete="email"
+                            placeholder="nama@contoh.com" aria-describedby="email_pelapor_bantuan"
+                            class="h-12 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-navy-700 dark:text-white/90" />
+                        <p id="email_pelapor_bantuan" class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                            Bila diisi, nomor pelacakan dikirim juga ke surel Anda. Tanpa surel pun pengaduan tetap
+                            dapat dikirim, dan nomornya langsung tampil di layar setelah berhasil.
+                        </p>
+                        @error('email_pelapor')
+                            <p class="mt-1.5 text-theme-xs text-error-500">{{ $message }}</p>
+                        @enderror
+                    </div>
                 </div>
             </section>
 
@@ -157,7 +182,7 @@
                             @endforeach
                         </select>
                         <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
-                            Pilih yang paling mendekati. Petugas akan meneruskannya ke bagian yang tepat.
+                            Pilih yang paling mendekati. Petugas akan meneruskannya ke bagian yang tepat sekaligus menilai kesegeraannya.
                         </p>
                     </div>
 
@@ -205,6 +230,32 @@
                 <div class="mt-4">
                     <x-sim.file-upload nama="dokumen_pendukung" label="Foto dari Lokasi" :hanya-gambar="true"
                         keterangan="Foto membantu petugas melihat keadaan sebenarnya. Bila tidak ada, lewati saja." />
+                </div>
+            </section>
+
+            {{--
+                Bagian 4: titik lokasi, opsional.
+
+                Warga melapor lewat ponsel dengan jaringan yang tidak selalu memadai,
+                sehingga isian ini TIDAK diwajibkan: pengaduan tetap dapat dikirim
+                tanpa mengisinya. Bila diisi, petugas terbantu menemukan titik masalah
+                tanpa perlu bertanya ulang.
+
+                Peta pemilih titik disertakan sebab GPS ponsel kerap meleset puluhan
+                meter, dan warga paling tahu letak sebenarnya (rules.md 10b poin 6c).
+            --}}
+            <section class="border-t border-gray-200 pt-5 dark:border-navy-700">
+                <h2 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">
+                    Titik Lokasi
+                    <span class="font-normal text-gray-500 dark:text-gray-400">(boleh dikosongkan)</span>
+                </h2>
+                <p class="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
+                    Membantu petugas menemukan lokasi masalah. Pengaduan tetap dapat dikirim tanpa mengisi
+                    bagian ini.
+                </p>
+
+                <div class="mt-4">
+                    <x-sim.koordinat-input />
                 </div>
             </section>
         </div>

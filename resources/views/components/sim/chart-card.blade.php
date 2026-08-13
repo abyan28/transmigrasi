@@ -45,9 +45,21 @@
             @endisset
         </div>
 
-        {{-- Wadah grafik, diisi oleh skrip halaman --}}
+        {{--
+            Wadah grafik, diisi oleh skrip halaman.
+
+            Pembatas lebar WAJIB ada. ApexCharts menghitung lebar kanvasnya satu
+            kali saat digambar, dari lebar elemen ini. Pada tab yang dibuka di
+            latar belakang, peramban belum melakukan layout sehingga lebarnya
+            terbaca nol, lalu ApexCharts jatuh ke lebar bawaannya yang jauh
+            lebih besar.
+
+            Tanpa pembatas, kanvas berlebih itu mendorong kartunya ikut melebar
+            dan merusak tata letak seluruh halaman. Dengan pembatas, kartunya
+            tetap utuh sekalipun grafiknya belum sempat menyesuaikan diri.
+        --}}
         <div x-show="!tabelTerbuka" id="{{ $id }}" style="min-height: {{ $tinggi }}px"
-            @if ($lebar) class="{{ $lebar }}" @endif></div>
+            class="w-full max-w-full overflow-hidden {{ $lebar ?? '' }}"></div>
 
         {{-- Tabel alternatif yang setara isinya dengan grafik --}}
         @isset($tabel)

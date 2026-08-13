@@ -51,6 +51,17 @@
         placeholder-cari="Cari petani atau kode lahan" judul-kosong="Belum ada riwayat tanam"
         pesan-kosong="Catatan penanaman akan tampil di sini setelah dicatat petugas.">
 
+        <x-slot:aksi>
+            <button type="button" @click="$dispatch('buka-modal', 'formTambahRiwayatTanam')"
+                class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+                    aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Catat Penanaman
+            </button>
+        </x-slot:aksi>
+
         <x-slot:ringkasan>
             <x-sim.stat-card label="Catatan Tanam" :nilai="count($semua)" />
             <x-sim.stat-card label="Luas Ditanami"
@@ -117,6 +128,7 @@
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Komoditas</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Luas Tanam (ha)</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Tanggal Tanam</th>
+            <th scope="col" class="px-5 py-3 text-right text-theme-xs font-medium text-gray-500 dark:text-gray-400">Aksi</th>
         </x-slot:kepala>
 
         @foreach ($baris as $r)
@@ -135,6 +147,13 @@
                     {{ number_format($r['luas_tanam'], 2, ',', '.') }}</td>
                 <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
                     {{ \Illuminate\Support\Carbon::parse($r['tanggal_tanam'])->translatedFormat('d M Y') }}</td>
+                <td class="px-5 py-3">
+                    <x-sim.aksi-baris modal-ubah="formUbahRiwayatBaris"
+                        :data-baris="$r + ['id' => $r['id_riwayat_tanam']]"
+                        :hapus-url="'/riwayat-tanam/' . $r['id_riwayat_tanam']"
+                        konfirmasi-hapus="hapusRiwayat"
+                        :label="$r['komoditas']" />
+                </td>
             </tr>
         @endforeach
 
@@ -144,6 +163,8 @@
                     Total luas ditanami</td>
                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
                     {{ number_format($totalLuas, 2, ',', '.') }}</td>
+                {{-- Dua sel kosong: kolom Tanggal Tanam dan kolom Aksi tidak punya total --}}
+                <td></td>
                 <td></td>
             </tr>
         </x-slot:kaki>
@@ -161,4 +182,19 @@
             @endforeach
         </x-slot:kartu>
     </x-sim.halaman-daftar>
+
+    <x-sim.modal-form nama="formTambahRiwayatTanam" judul="Catat Riwayat Tanam"
+        keterangan="Lahan menentukan lokasi produksi yang dibaca hasil panen."
+        :aksi="route('riwayat-tanam.simpan')" ukuran="lg" label-simpan="Simpan Data">
+        @include('pages.komoditas.form-riwayat-tanam', ['awalan' => 'tambah'])
+    </x-sim.modal-form>
+
+    <x-sim.modal-form nama="formUbahRiwayatBaris" judul="Ubah Riwayat Tanam"
+        keterangan="Perubahan tercatat pada audit log."
+        pola-aksi="/riwayat-tanam/:id" metode="PUT" ukuran="lg" label-simpan="Simpan Perubahan">
+        @include('pages.komoditas.form-riwayat-tanam', ['awalan' => 'ubahBaris'])
+    </x-sim.modal-form>
+
+    <x-sim.confirm-dialog nama="hapusRiwayat" judul="Hapus catatan penanaman ini?"
+        pesan="Hasil panen yang menaut catatan ini akan kehilangan lokasi produksinya." label-setuju="Hapus" />
 @endsection

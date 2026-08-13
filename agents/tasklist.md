@@ -494,6 +494,56 @@ Diperbaiki dengan uji yang **membuka setiap tujuan menu ke aplikasi sungguhan**.
 
 **Catatan untuk FGD:** indikator ke-16 adalah **usulan**, di luar 15 indikator pada PRD. Bobot 5/3/1 dan ambang 80/55 adalah keputusan **kebijakan**, bukan teknis, sehingga wajib divalidasi dinas. Karena bobot disimpan sebagai data, penyesuaian nanti tidak memerlukan perubahan kode.
 
+- [✓] ✅ Task 2.27 - Manajemen pengguna dan role `[Sulit]` (Selesai)
+  * Empat modal pada `/pengguna` dan `/pengaturan/role`: form akun, rincian akun, setel ulang kata sandi, form role beserta matriks izin
+  * Matriks izin **27 modul x 6 aksi**, dikelompokkan sesuai `data-dictionary.md` 13.2 agar urutannya sama dengan menu sidebar
+  * Sel dibiarkan kosong untuk aksi yang tidak berlaku, misalnya Dashboard yang tidak mengenal tambah maupun hapus. Kotak centang yang mustahil bermakna membuat matriks tampak menawarkan kewenangan palsu
+  * **Role terkunci dirender tanpa satu pun kotak centang**, hanya tanda centang baca beserta alasannya. Merender kontrol lalu menolaknya di server melanggar R-26
+  * **Tombol nonaktifkan tidak dirender untuk Admin aktif terakhir**, diganti penanda beralasan (`rules.md` 14b poin 16)
+  * **Kolom kata sandi tidak dirender sama sekali pada modal ubah**, bukan sekadar dikosongkan, sebab sistem hanya menyimpan sidik (poin 14)
+  * Pilihan penugasan SP muncul hanya untuk role bercakupan Per SP, ikut berubah saat role diganti (poin 2)
+  * Menambah `DummyData::daftarIzin()` dan `izinRole()`, disalin dari kamus data 13.1 dan `rules.md` 5.1
+  * Enam rute closure: simpan, perbarui, setel sandi, nonaktifkan, simpan role, perbarui role
+
+**Koreksi yang ditemukan saat pengerjaan:** `rules.md` 5.1 menggabungkan Inventaris dan Fasilitas SP menjadi satu baris, sementara kamus data, ERD, dan ui-spec sejak awal memisahkannya sebagai dua tabel, dua halaman, dan dua izin. `rules.md` diperbaiki, dan `jumlah_izin` pada data contoh dikoreksi menjadi 119 / 68 / 74 / 50.
+
+- [✓] ✅ Task 2.28 - Pemulihan kata sandi mandiri `[Sedang]` (Selesai)
+  * Dua halaman baru: `/lupa-kata-sandi` dan `/verifikasi-kode`, ditambah tautan dari halaman masuk
+  * **Kode enam digit yang diketik, bukan tautan sekali klik.** Kode dapat dibaca di ponsel lalu diketik di komputer, sehingga tetap berguna ketika surel dan peramban berada di perangkat berbeda
+  * **Halaman tidak pernah menyatakan apakah alamat terdaftar.** Pesannya sama untuk kedua keadaan, sebab pesan yang membedakan menjadikan halaman publik ini alat memeriksa siapa saja yang memiliki akun dinas
+  * **Jalur Admin dipertahankan dan disebut sejajar** pada ketiga halaman, sebab jalur itulah satu-satunya yang bekerja tanpa sambungan surel di lokus bersinyal lemah
+  * Dua rute closure: kirim kode dan atur ulang sandi. Pengiriman surel sungguhan dikerjakan pada Task 3.11
+
+**Catatan untuk FGD:** pemulihan lewat surel mencabut sebagian keputusan 2026-08-11. Alasan lama bahwa transmigran tidak memiliki surel sudah gugur, sebab warga tidak memiliki akun sama sekali. Perlu dipastikan dinas memiliki SMTP dan seluruh petugas memiliki surel dinas aktif. Bila tidak, jalur Admin sudah menutupi seluruh kebutuhan.
+
+- [✓] ✅ Task 2.29 - Halaman rincian alsintan, saprotan, komoditas, infrastruktur `[Sedang]` (Selesai)
+  * Empat modul sebelumnya hanya punya halaman daftar, sehingga tidak ada tempat menaruh tombol Ubah
+  * Mengikuti pola baku sejak Task 2.7: **Tambah di halaman daftar, Ubah di halaman rincian**
+  * Alsintan menampilkan kepemilikan bercabang; tautan pemilik menuju poktan atau transmigran sesuai jenisnya
+  * Saprotan menegaskan bahwa penyaluran hanya untuk anggota aktif, beserta alasannya
+  * Komoditas menegaskan satuan panen baku beserta riwayat tanamnya
+  * Infrastruktur menegaskan batas modul: pendataan aset, bukan pelaporan kerusakan, dengan tautan ke modul pengaduan
+
+**Cacat yang ditemukan saat pengerjaan:** data contoh alsintan memakai `'Milik Pribadi'` sedangkan enum `KepemilikanAlsintan` bernilai `'Pribadi'`. Filter kepemilikan pada halaman daftar membandingkan keduanya, sehingga memilih Pribadi **selalu menghasilkan nol baris**. Data kini memakai nilai enum langsung.
+
+- [✓] ✅ Task 2.30 - Empat belas modal form yang tertinggal `[Sulit]` (Selesai)
+  * Tahap 2 membangun 51 halaman, tetapi form isian hanya dibuat untuk 5 modul. Task 2.13 sampai 2.18 hanya menulis Membuat halaman, sehingga form-nya tidak pernah masuk lingkup
+  * Akibatnya 14 modul berhalaman daftar baca-saja, dan form-nya menyatu di task CRUD Tahap 4 sampai 8
+  * Tahap 4: SP, inventaris SP, fasilitas SP, kawasan, satuan, wilayah
+  * Tahap 6: poktan, anggota poktan, alsintan, saprotan
+  * Tahap 7: komoditas, musim tanam, riwayat tanam
+  * Tahap 8: infrastruktur
+  * **Form SP** meminta desa dan kawasan terpisah, sebab satu SP menempel pada dua hierarki sekaligus
+  * **Form satuan** menampilkan pratinjau konversi 1/10/100 satuan ke ton, agar faktor keliru terlihat saat mengisi bukan berbulan kemudian
+  * **Form anggota poktan** tidak menyediakan opsi hapus; yang berhenti ditandai Sudah Keluar beserta tanggal dan alasannya
+  * **Form saprotan** menyaring penerima individu hanya anggota aktif, dengan keterangan mengapa nama tertentu tidak muncul
+  * **Form alsintan** menampilkan pemilik bergantian menurut jenis kepemilikan, tidak pernah keduanya sekaligus
+  * **Form fasilitas SP** memakai enum `jenis_fasilitas` agar terbaca penilaian kondisi SP, sementara `nama_fasilitas` tetap teks bebas
+  * **Form wilayah** satu form untuk empat tingkat; induk berubah mengikuti tingkat, dan provinsi tidak memilikinya
+  * Menambah 20 rute closure `POST`/`PUT` mengikuti pola `transmigran.simpan`
+
+**Catatan:** Task 3.3b (halaman pengaturan role dan izin) sudah tuntas lebih awal pada Task 2.27, sehingga ditandai selesai di Tahap 3. Task 4.2 sampai 8.1 kini tinggal menyambungkan form yang sudah ada ke database.
+
 ## Tahap 3 — Autentikasi dan Hak Akses
 
 - [ ] Task 3.1 - Migration dan model `user` beserta password dan timestamps `[Mudah]`
@@ -506,7 +556,7 @@ Diperbaiki dengan uji yang **membuka setiap tujuan menu ke aplikasi sungguhan**.
   * Model `Role`, `Permission`, relasi many-to-many, seeder ±120 izin dan 4 role bawaan
   * Middleware pemeriksa izin, helper `can()` untuk Blade
   * Izin `lihat` sebagai prasyarat aksi lain pada modul yang sama
-- [ ] Task 3.3b - Halaman pengaturan role dan izin `[Sulit]`
+- [x] Task 3.3b - Halaman pengaturan role dan izin `[Sulit]` (Tampilan selesai pada Task 2.27)
   * Daftar role, form dengan matriks centang izin dikelompokkan per modul
   * Role terkunci ditampilkan hanya-baca; role bawaan tidak dapat dihapus
 - [ ] Task 3.4 - Pembatasan akses pada level query (cakupan data) `[Sulit]`
@@ -543,13 +593,28 @@ Diperbaiki dengan uji yang **membuka setiap tujuan menu ke aplikasi sungguhan**.
   * **Dihitung per akun untuk halaman internal**, bukan per IP: satu kantor dinas kerap memakai satu sambungan bersama, sehingga hitungan per IP membuat operator saling menghabiskan jatah
   * Rute export massal dan unggah template **wajib dikecualikan** dan diberi batas tersendiri (`rules.md` 14c)
 
+- [ ] Task 3.11 - Pemulihan kata sandi lewat kode verifikasi `[Sedang]`
+  * Tampilan sudah selesai pada Tahap 2: `/lupa-kata-sandi` dan `/verifikasi-kode`
+  * Membuat tabel `kode_pemulihan_sandi` (`erd.md` bagian 9): sidik kode, kedaluwarsa, percobaan, dipakai_pada
+  * **Yang disimpan adalah sidik kode, bukan angkanya.** Basis data yang bocor tidak boleh langsung memberi jalan masuk
+  * Kode enam digit, berlaku 15 menit, sekali pakai, maksimal 5 percobaan, 3 permintaan per jam per akun
+  * Kode lama **wajib dibatalkan** saat kode baru diminta, agar tidak ada dua kode sah beredar
+  * Balasan `POST /lupa-kata-sandi` **wajib sama** baik akun ditemukan maupun tidak (`rules.md` 14b poin 9)
+  * Waktu balasan sebaiknya diseragamkan, sebab selisih waktu proses juga membocorkan keberadaan akun
+  * Jalur Admin pada Task 3.5 **tetap berlaku** dan tidak boleh dihapus
+
 ## Tahap 4 — Backend Data Master Kawasan
 
 - [ ] Task 4.1 - Migration dan model wilayah bertingkat + seeder 6 desa/4 kecamatan `[Sedang]`
+  * Tampilan form sudah selesai pada Task 2.30
 - [ ] Task 4.2 - CRUD satuan permukiman (SP) beserta koordinat dan batas wilayah `[Sedang]`
+  * Tampilan form sudah selesai pada Task 2.30; tersisa migration, model, dan penyimpanan
 - [ ] Task 4.3 - CRUD inventaris SP (nama, tahun, sumber dana, status penyerahan, dokumen) `[Sedang]`
+  * Tampilan form sudah selesai pada Task 2.30
 - [ ] Task 4.4 - CRUD fasilitas SP `[Mudah]`
+  * Tampilan form sudah selesai pada Task 2.30
 - [ ] Task 4.5 - Data master satuan + faktor konversi ke ton `[Mudah]`
+  * Tampilan form beserta pratinjau konversi sudah selesai pada Task 2.30
   * Seeder awal: Ton (1), Kuintal (0,1), Kilogram (0,001)
 
 ## Tahap 5 — Backend Kependudukan
@@ -569,15 +634,21 @@ Diperbaiki dengan uji yang **membuka setiap tujuan menu ke aplikasi sungguhan**.
 - [ ] Task 6.2 - CRUD lahan + upload dokumen HPL/SHM `[Sedang]`
 - [ ] Task 6.3 - Pencatatan koordinat, pola tanam, peralatan, dan kendala lahan usaha `[Sedang]`
 - [ ] Task 6.4 - CRUD profil poktan dan data ketua `[Sedang]`
+  * Tampilan form sudah selesai pada Task 2.30
 - [ ] Task 6.5 - CRUD daftar anggota poktan + status keaktifan `[Sedang]`
+  * Tampilan form sudah selesai pada Task 2.30, termasuk aturan tandai keluar bukan hapus
 - [ ] Task 6.6 - CRUD alsintan (milik pribadi dan bantuan via poktan) `[Sedang]`
+  * Tampilan form dan halaman rincian sudah selesai pada Task 2.29 dan 2.30
 - [ ] Task 6.7 - CRUD saprotan + penyaluran ke anggota aktif `[Sedang]`
+  * Tampilan form dan halaman rincian sudah selesai pada Task 2.29 dan 2.30
 
 ## Tahap 7 — Backend Produksi Pertanian
 
 - [ ] Task 7.1 - Migration dan model komoditas (dinormalisasi) `[Sedang]`
 - [ ] Task 7.2 - CRUD komoditas + penanda unggulan + satuan baku per komoditas `[Sedang]`
+  * Tampilan form dan halaman rincian sudah selesai pada Task 2.29 dan 2.30
 - [ ] Task 7.3 - CRUD musim tanam dan riwayat tanam `[Sedang]`
+  * Tampilan kedua form sudah selesai pada Task 2.30
 - [ ] Task 7.4 - CRUD hasil panen (volume, kualitas, harga, lokasi) `[Sulit]`
   * Satuan mengikuti komoditas terpilih; `DECIMAL(12,3)`; kolom keterangan satuan lokal
 - [ ] Task 7.5 - Helper konversi volume panen ke ton `[Sedang]`
@@ -586,12 +657,14 @@ Diperbaiki dengan uji yang **membuka setiap tujuan menu ke aplikasi sungguhan**.
 
 ## Tahap 8 — Backend Infrastruktur dan Pengaduan
 
-- [ ] Task 8.1 - CRUD infrastruktur pertanian sebagai pendataan aset `[Sedang]`
+- [ ] Task 8.1 - CRUD infrastruktur SP sebagai pendataan aset `[Sedang]`
+  * Tampilan form dan halaman rincian sudah selesai pada Task 2.29 dan 2.30
 - [ ] Task 8.2 - Migration dan model pengaduan + tabel riwayat penanganan `[Sedang]`
 - [ ] Task 8.3 - Halaman pengaduan publik tanpa login `[Sulit]`
   * Form pengaduan warga di `/pengaduan-warga`, tata letak terpisah tanpa sidebar
   * Pembatasan 3 pengiriman per jam per alamat IP, tanpa CAPTCHA
   * Nomor pengaduan ditampilkan besar setelah berhasil kirim
+  * Kolom **surel opsional**: bila diisi, nomor pengaduan dikirim juga ke sana sebagai salinan. Tidak diwajibkan, sebab jaringan lokus tidak selalu memadai dan sebagian warga tidak memiliki surel
   * Halaman lacak `/lacak-pengaduan` memakai nomor tiket, hanya menampilkan status dan riwayat penanganan
 - [ ] Task 8.3b - Form pencatatan pengaduan oleh petugas `[Sedang]`
   * Petugas mencatatkan laporan lisan warga; `sumber_laporan` bernilai Petugas
@@ -748,7 +821,7 @@ sistem informasi transmigrasi/     <- root Laravel sekaligus root proyek
 
 Mode gelap ditangani otomatis: `pantauTema()` menggambar ulang seluruh grafik saat tema berganti.
 
-**Total uji: 218 lulus, 1.149 pernyataan** (PHP), ditambah 12 uji `chart-config.js` dan 11 uji kontras WCAG lewat Node, serta verifikasi visual lewat Edge headless.
+**Total uji: 279 lulus, 1.333 pernyataan** (PHP), ditambah 12 uji `chart-config.js` dan 11 uji kontras WCAG lewat Node, serta verifikasi visual lewat Edge headless.
 
 **GELOMBANG 1 SELESAI DAN SUDAH LOLOS DELIVERY GATE. Berikutnya CHECKPOINT, bukan task baru.**
 

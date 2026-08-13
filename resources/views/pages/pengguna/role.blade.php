@@ -29,6 +29,14 @@
                 class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-theme-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
                 Kembali ke Manajemen Pengguna
             </a>
+            <button type="button" @click="$dispatch('buka-modal', 'formTambahRole')"
+                class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+                    aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Tambah Role
+            </button>
         </x-slot:aksi>
     </x-sim.page-header>
 
@@ -111,12 +119,36 @@
                         kehilangan jalur administrasinya.
                     </p>
                 @endif
+
+                <div class="mt-4 flex flex-wrap gap-2 border-t border-gray-200 pt-4 dark:border-gray-800">
+                    <button type="button" @click="$dispatch('buka-modal', 'formRole{{ $r['id_role'] }}')"
+                        class="rounded-lg border border-gray-300 px-3 py-2 text-theme-xs font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
+                        {{ $r['is_terkunci'] ? 'Lihat Susunan Izin' : 'Ubah Role dan Izin' }}
+                    </button>
+                </div>
             </div>
+
+            {{--
+                Modal per role. Role terkunci tetap dapat dibuka, tetapi
+                matriksnya dirender hanya baca beserta alasannya.
+            --}}
+            <x-sim.modal-form :nama="'formRole' . $r['id_role']"
+                :judul="$r['is_terkunci'] ? 'Susunan Izin ' . $r['nama'] : 'Ubah Role ' . $r['nama']"
+                :keterangan="$r['is_terkunci'] ? 'Hanya dapat dilihat, tidak dapat disunting.' : 'Perubahan berlaku bagi seluruh akun yang memakai role ini.'"
+                :aksi="route('role.perbarui', $r['id_role'])" metode="PUT" ukuran="xl"
+                label-simpan="Simpan Perubahan">
+                @include('pages.pengguna.form-role', [
+                    'awalan' => 'role' . $r['id_role'],
+                    'data' => $r,
+                ])
+            </x-sim.modal-form>
         @endforeach
     </div>
 
-    <p class="mt-4 rounded-lg bg-gray-50 p-3.5 text-theme-xs text-gray-600 dark:bg-white/[0.03] dark:text-gray-400">
-        Penyuntingan susunan izin per modul dikerjakan pada tahap autentikasi, bersama pembuatan
-        tabel role dan permission. Halaman ini memperlihatkan susunan awal yang ditanam seeder.
-    </p>
+    {{-- Modal tambah role --}}
+    <x-sim.modal-form nama="formTambahRole" judul="Tambah Role"
+        keterangan="Role baru dimulai tanpa izin apa pun. Centang hanya yang benar-benar diperlukan."
+        :aksi="route('role.simpan')" ukuran="xl" label-simpan="Simpan Role">
+        @include('pages.pengguna.form-role', ['awalan' => 'roleBaru', 'data' => []])
+    </x-sim.modal-form>
 @endsection

@@ -25,6 +25,17 @@
         placeholder-cari="Cari musim tanam" judul-kosong="Belum ada musim tanam"
         pesan-kosong="Periode musim tanam akan tampil di sini setelah ditetapkan.">
 
+        <x-slot:aksi>
+            <button type="button" @click="$dispatch('buka-modal', 'formTambahMusim')"
+                class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+                    aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Tambah Musim Tanam
+            </button>
+        </x-slot:aksi>
+
         <x-slot:kepala>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Musim Tanam</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Tahun</th>
@@ -32,6 +43,7 @@
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Selesai</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Penanaman</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Keterangan</th>
+            <th scope="col" class="px-5 py-3 text-right text-theme-xs font-medium text-gray-500 dark:text-gray-400">Aksi</th>
         </x-slot:kepala>
 
         @foreach ($baris as $m)
@@ -45,6 +57,13 @@
                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
                     {{ $m['jumlah_tanam'] }} catatan</td>
                 <td class="px-5 py-3 text-theme-xs text-gray-500 dark:text-gray-400">{{ $m['keterangan'] ?? '-' }}</td>
+                <td class="px-5 py-3">
+                    <x-sim.aksi-baris modal-ubah="formUbahMusimBaris"
+                        :data-baris="$m + ['id' => $m['id_musim_tanam']]"
+                        :hapus-url="'/musim-tanam/' . $m['id_musim_tanam']"
+                        konfirmasi-hapus="hapusMusim"
+                        :label="$m['label']" />
+                </td>
             </tr>
         @endforeach
 
@@ -61,4 +80,19 @@
             @endforeach
         </x-slot:kartu>
     </x-sim.halaman-daftar>
+
+    <x-sim.modal-form nama="formTambahMusim" judul="Tambah Musim Tanam"
+        keterangan="Nama dan tahun disimpan terpisah agar rekap per tahun dapat dihitung."
+        :aksi="route('musim-tanam.simpan')" ukuran="md" label-simpan="Simpan Data">
+        @include('pages.komoditas.form-musim-tanam', ['awalan' => 'tambah'])
+    </x-sim.modal-form>
+
+    <x-sim.modal-form nama="formUbahMusimBaris" judul="Ubah Musim Tanam"
+        keterangan="Perubahan tercatat pada audit log."
+        pola-aksi="/musim-tanam/:id" metode="PUT" ukuran="md" label-simpan="Simpan Perubahan">
+        @include('pages.komoditas.form-musim-tanam', ['awalan' => 'ubahBaris'])
+    </x-sim.modal-form>
+
+    <x-sim.confirm-dialog nama="hapusMusim" judul="Hapus musim tanam ini?"
+        pesan="Riwayat tanam yang memakai musim ini akan kehilangan pengelompokannya." label-setuju="Hapus" />
 @endsection

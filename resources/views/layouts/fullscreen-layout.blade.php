@@ -53,7 +53,7 @@
 
             Alpine.store('sidebar', {
                 // Initialize based on screen size
-                isExpanded: window.innerWidth >= 1280, // true for desktop, false for mobile
+                isExpanded: (window.innerWidth || document.documentElement.clientWidth || 1280) >= 1280, // nol berarti tab belum dilukis
                 isMobileOpen: false,
                 isHovered: false,
 
@@ -74,7 +74,7 @@
 
                 setHovered(val) {
                     // Only allow hover effects on desktop when sidebar is collapsed
-                    if (window.innerWidth >= 1280 && !this.isExpanded) {
+                    if ((window.innerWidth || document.documentElement.clientWidth || 1280) >= 1280 && !this.isExpanded) {
                         this.isHovered = val;
                     }
                 }
@@ -99,9 +99,9 @@
     </script>
 </head>
 
-<body x-data="{ 'loaded': true}" x-init="$store.sidebar.isExpanded = window.innerWidth >= 1280;
+<body x-data="{ 'loaded': true}" x-init="$store.sidebar.isExpanded = (window.innerWidth || document.documentElement.clientWidth || 1280) >= 1280;
 const checkMobile = () => {
-    if (window.innerWidth < 1280) {
+    if ((window.innerWidth || document.documentElement.clientWidth || 1280) < 1280) {
         $store.sidebar.setMobileOpen(false);
         $store.sidebar.isExpanded = false;
     } else {

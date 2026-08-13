@@ -4,8 +4,10 @@
     Catatan penting:
     - Sistem TIDAK menyediakan pendaftaran mandiri. Akun hanya dibuat oleh Admin
       lewat menu Manajemen Pengguna (agents/prd.md bagian 7.1).
-    - Sistem TIDAK menyediakan pemulihan kata sandi lewat email. Pengguna yang
-      lupa kata sandi menghubungi Admin untuk disetel ulang.
+    - Pemulihan kata sandi tersedia lewat dua jalur yang keduanya sah: kode
+      verifikasi ke surel dinas, dan penyetelan ulang oleh Admin. Jalur kedua
+      dipertahankan karena jaringan di lokus tidak selalu memadai
+      (agents/rules.md bagian 14b poin 7 sampai 12).
     - Seluruh pengguna sistem adalah petugas. Warga tidak memiliki akun dan
       mengajukan pengaduan lewat halaman publik tanpa login.
 
@@ -109,14 +111,24 @@
                         </form>
 
                         {{--
-                            Keterangan pemulihan akses. Sengaja berupa teks biasa, bukan tautan,
-                            karena sistem tidak menyediakan halaman pemulihan mandiri.
+                            Pemulihan akses. Dua jalur disebut sejajar: kode verifikasi untuk
+                            yang berjaringan memadai, jalur admin untuk lokus bersinyal lemah.
+                            Keduanya sah, sehingga tidak ada yang ditulis sebagai catatan kaki.
                         --}}
                         <div class="mt-5 rounded-lg bg-gray-50 p-4 dark:bg-white/[0.03]">
+                            {{--
+                                Tautan diletakkan pada frasa "Lupa kata sandi?", sebab itulah yang
+                                dicari mata pengguna. Menautkan kalimat lanjutannya membuat frasa
+                                yang dikenal justru tampak sebagai teks mati.
+                            --}}
                             <p class="text-sm text-gray-600 dark:text-gray-400">
-                                <span class="font-medium text-gray-800 dark:text-white/90">Lupa kata sandi?</span>
-                                Hubungi admin desa atau SP Anda untuk menyetel ulang kata sandi.
-                                Akun baru juga hanya dapat dibuat oleh admin.
+                                <a href="{{ route('lupa-kata-sandi') }}"
+                                    class="font-medium text-brand-500 hover:text-brand-600">Lupa kata sandi?</a>
+                                Minta kode verifikasi ke surel dinas Anda, atau hubungi admin desa atau SP
+                                bila sinyal di lokus sedang tidak memadai.
+                            </p>
+                            <p class="mt-2 text-theme-xs text-gray-500 dark:text-gray-400">
+                                Akun baru hanya dapat dibuat oleh admin.
                             </p>
                         </div>
 

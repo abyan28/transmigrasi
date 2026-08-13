@@ -110,6 +110,19 @@ export function opsiDasar() {
             toolbar: { show: false },
             animations: { enabled: false },
             background: 'transparent',
+
+            /*
+                Grafik ikut menyesuaikan diri setiap kali wadahnya berubah
+                lebar, misalnya ketika sidebar dilipat atau jendela diubah
+                ukurannya.
+
+                Ini juga menjadi pengaman berkelanjutan bagi tab yang dibuka
+                di latar belakang: lebar wadahnya baru terbentuk setelah tab
+                ditampilkan, dan tanpa opsi ini kanvasnya tetap memakai ukuran
+                keliru yang dihitung saat lebar masih nol.
+            */
+            redrawOnParentResize: true,
+            redrawOnWindowResize: true,
         },
         colors: warnaSeri,
         theme: { mode: gelap ? 'dark' : 'light' },
@@ -199,7 +212,70 @@ export function buatGrafik(idElemen, opsi) {
 
     grafikTerdaftar.set(idElemen, { instance: grafik, opsi });
 
+    pantauLebarWadah(idElemen, elemen);
+
     return grafik;
+}
+
+/**
+ * Menggambar ulang satu grafik ketika wadahnya BENAR-BENAR terlihat.
+ *
+ * ApexCharts menghitung lebar kanvasnya sekali saat digambar, dari lebar
+ * elemen wadahnya. Pada tab yang dibuka di latar belakang lewat "buka di tab
+ * baru", peramban belum melakukan layout sehingga lebar itu terbaca nol, dan
+ * ApexCharts jatuh ke lebar bawaannya yang jauh lebih besar.
+ *
+ * Kanvas keliru itu tidak pernah dihitung ulang dengan sendirinya, sehingga
+ * grafik tampak menembus tepi kartunya sampai halaman disegarkan manual.
+ * Pengamat di bawah menggambar ulang sekali begitu wadahnya memiliki lebar
+ * yang sesungguhnya, lalu melepaskan dirinya agar tidak membebani halaman.
+ *
+ * @param {string} idElemen Id elemen wadah grafik
+ * @param {HTMLElement} elemen Wadah grafik
+ */
+function pantauLebarWadah(idElemen, elemen) {
+    if (typeof IntersectionObserver === 'undefined') {
+        return;
+    }
+
+    // Lebar sudah benar sejak awal, misalnya pada tab yang langsung aktif.
+    if (elemen.clientWidth > 0) {
+        return;
+    }
+
+    const pengamat = new IntersectionObserver((entri) => {
+        for (const satu of entri) {
+            if (!satu.isIntersecting || satu.target.clientWidth === 0) {
+                continue;
+            }
+
+            pengamat.disconnect();
+            gambarUlangSatu(idElemen);
+        }
+    });
+
+    pengamat.observe(elemen);
+}
+
+/**
+ * Menggambar ulang satu grafik memakai opsi yang sudah tersimpan.
+ *
+ * @param {string} idElemen Id elemen wadah grafik
+ */
+function gambarUlangSatu(idElemen) {
+    const tercatat = grafikTerdaftar.get(idElemen);
+    const elemen = document.getElementById(idElemen);
+
+    if (!tercatat || !elemen) {
+        return;
+    }
+
+    tercatat.instance?.destroy();
+
+    const grafik = new ApexCharts(elemen, gabung(opsiDasar(), tercatat.opsi));
+    grafik.render();
+
+    grafikTerdaftar.set(idElemen, { instance: grafik, opsi: tercatat.opsi });
 }
 
 /**

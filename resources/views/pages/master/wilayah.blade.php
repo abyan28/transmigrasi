@@ -19,7 +19,18 @@
 
     <x-sim.page-header judul="Data Master Wilayah"
         keterangan="Wilayah administratif tempat kawasan transmigrasi berada."
-        :remah="[['label' => 'Pengaturan'], ['label' => 'Data Master Wilayah']]" />
+        :remah="[['label' => 'Pengaturan'], ['label' => 'Data Master Wilayah']]">
+        <x-slot:aksi>
+            <button type="button" @click="$dispatch('buka-modal', 'formTambahWilayah')"
+                class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+                    aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Tambah Wilayah
+            </button>
+        </x-slot:aksi>
+    </x-sim.page-header>
 
     {{-- Penjelasan hierarki, karena percabangannya tidak lazim --}}
     <div class="mb-6 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
@@ -58,54 +69,94 @@
         </div>
 
         <div x-show="tab === 'provinsi'" role="tabpanel">
-            <x-sim.tabel-ringkas :kolom="['Nama Provinsi', 'Kode']">
+            <x-sim.tabel-ringkas :kolom="['Nama Provinsi', 'Kode', 'Aksi']" :kolom-kanan="['Aksi']">
                 @foreach ($wilayah['provinsi'] as $b)
                     <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                         <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">{{ $b['nama'] }}</td>
                         <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
                             {{ $b['kode'] }}</td>
+                        <td class="px-5 py-3 text-right">
+                            <x-sim.aksi-baris modal-ubah="formUbahWilayahBaris"
+                                :data-baris="$b + ['id' => $b['id_provinsi']]"
+                                :hapus-url="'/wilayah/' . $b['id_provinsi']"
+                                konfirmasi-hapus="hapusWilayah" :label="$b['nama']" />
+                        </td>
                     </tr>
                 @endforeach
             </x-sim.tabel-ringkas>
         </div>
 
-        <div x-show="tab === 'kabupaten'" x-cloak role="tabpanel">
-            <x-sim.tabel-ringkas :kolom="['Nama Kabupaten', 'Provinsi', 'Kode']">
+                <div x-show="tab === 'kabupaten'" x-cloak role="tabpanel">
+            <x-sim.tabel-ringkas :kolom="['Nama Kabupaten', 'Provinsi', 'Kode', 'Aksi']" :kolom-kanan="['Aksi']">
                 @foreach ($wilayah['kabupaten'] as $b)
                     <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                         <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">{{ $b['nama'] }}</td>
                         <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ $b['provinsi'] }}</td>
                         <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
                             {{ $b['kode'] }}</td>
+                        <td class="px-5 py-3 text-right">
+                            <x-sim.aksi-baris modal-ubah="formUbahWilayahBaris"
+                                :data-baris="$b + ['id' => $b['id_kabupaten']]"
+                                :hapus-url="'/wilayah/' . $b['id_kabupaten']"
+                                konfirmasi-hapus="hapusWilayah" :label="$b['nama']" />
+                        </td>
                     </tr>
                 @endforeach
             </x-sim.tabel-ringkas>
         </div>
 
-        <div x-show="tab === 'kecamatan'" x-cloak role="tabpanel">
-            <x-sim.tabel-ringkas :kolom="['Nama Kecamatan', 'Kabupaten', 'Jumlah Desa']">
+                <div x-show="tab === 'kecamatan'" x-cloak role="tabpanel">
+
+            <x-sim.tabel-ringkas :kolom="['Nama Kecamatan', 'Kabupaten', 'Jumlah Desa', 'Aksi']" :kolom-kanan="['Aksi']">
                 @foreach ($wilayah['kecamatan'] as $b)
                     <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                         <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">{{ $b['nama'] }}</td>
                         <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ $b['kabupaten'] }}</td>
                         <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
                             {{ $b['jumlah_desa'] }}</td>
+                        <td class="px-5 py-3 text-right">
+                            <x-sim.aksi-baris modal-ubah="formUbahWilayahBaris"
+                                :data-baris="$b + ['id' => $b['id_kecamatan']]"
+                                :hapus-url="'/wilayah/' . $b['id_kecamatan']"
+                                konfirmasi-hapus="hapusWilayah" :label="$b['nama']" />
+                        </td>
                     </tr>
                 @endforeach
             </x-sim.tabel-ringkas>
         </div>
 
         <div x-show="tab === 'desa'" x-cloak role="tabpanel">
-            <x-sim.tabel-ringkas :kolom="['Nama Desa', 'Kecamatan', 'Jumlah SP']">
+            <x-sim.tabel-ringkas :kolom="['Nama Desa', 'Kecamatan', 'Jumlah SP', 'Aksi']" :kolom-kanan="['Aksi']">
                 @foreach ($wilayah['desa'] as $b)
                     <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                         <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">{{ $b['nama'] }}</td>
                         <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ $b['kecamatan'] }}</td>
                         <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
                             {{ $b['jumlah_sp'] }}</td>
+                        <td class="px-5 py-3 text-right">
+                            <x-sim.aksi-baris modal-ubah="formUbahWilayahBaris"
+                                :data-baris="$b + ['id' => $b['id_desa']]"
+                                :hapus-url="'/wilayah/' . $b['id_desa']"
+                                konfirmasi-hapus="hapusWilayah" :label="$b['nama']" />
+                        </td>
                     </tr>
                 @endforeach
             </x-sim.tabel-ringkas>
         </div>
     </div>
+
+    <x-sim.modal-form nama="formTambahWilayah" judul="Tambah Wilayah Administratif"
+        keterangan="Satu form untuk empat tingkat wilayah."
+        :aksi="route('wilayah.simpan')" ukuran="md" label-simpan="Simpan Data">
+        @include('pages.master.form-wilayah', ['awalan' => 'tambah'])
+    </x-sim.modal-form>
+
+    <x-sim.modal-form nama="formUbahWilayahBaris" judul="Ubah Wilayah Administratif"
+        keterangan="Tingkat wilayah menentukan induk yang diminta."
+        pola-aksi="/wilayah/:id" metode="PUT" ukuran="md" label-simpan="Simpan Perubahan">
+        @include('pages.master.form-wilayah', ['awalan' => 'ubahBaris'])
+    </x-sim.modal-form>
+
+    <x-sim.confirm-dialog nama="hapusWilayah" judul="Hapus wilayah ini?"
+        pesan="Wilayah yang masih memiliki turunan atau menaungi SP tidak dapat dihapus." label-setuju="Hapus" />
 @endsection

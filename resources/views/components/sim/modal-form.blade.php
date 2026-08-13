@@ -30,6 +30,20 @@
     'ukuran' => 'lg',
     'labelSimpan' => 'Simpan',
     'bolehVerifikasi' => false,
+
+    /*
+        Pola aksi untuk modal yang dipakai bergantian oleh banyak baris tabel,
+        contoh `/transmigran/:id`. Penanda :id diganti nilai sebenarnya saat
+        modal dibuka, sehingga satu modal cukup melayani seluruh baris.
+
+        Tanpa ini, tombol Ubah di setiap baris memerlukan modalnya sendiri,
+        dan halaman berisi dua puluh baris akan memuat dua puluh salinan form
+        yang sama.
+
+        Dibiarkan null secara bawaan agar dua puluh satu pemakaian yang sudah
+        ada tetap memakai `aksi` statis tanpa perubahan.
+    */
+    'polaAksi' => null,
 ])
 
 @php
@@ -44,18 +58,78 @@
 <div x-data="{
         terbuka: false,
         mengirim: false,
-        buka() {
+        polaAksi: @js($polaAksi),
+        aksiStatis: @js($aksi),
+        baris: null,
+
+        buka(detail) {
+            // Modal berbaris menerima data baris yang diklik, lalu mengisi
+            // sendiri isian di dalamnya. Modal biasa memanggil tanpa argumen.
+            this.baris = (detail && typeof detail === 'object') ? (detail.data ?? null) : null;
+
             this.terbuka = true;
             document.body.classList.add('overflow-hidden');
-            this.$nextTick(() => this.$refs.panel?.querySelector('input, select, textarea')?.focus());
+
+            this.$nextTick(() => {
+                if (this.baris) {
+                    this.isiFormulir();
+                }
+
+                this.$refs.panel?.querySelector('input, select, textarea')?.focus();
+            });
         },
+
+        /*
+            Mengisi setiap isian yang namanya cocok dengan kunci data baris.
+            Dicocokkan lewat atribut name, bukan id, sebab id diberi awalan
+            berbeda untuk membedakan modal tambah dan modal ubah.
+        */
+        isiFormulir() {
+            const panel = this.$refs.panel;
+
+            if (! panel) {
+                return;
+            }
+
+            Object.entries(this.baris).forEach(([kunci, nilai]) => {
+                const isian = panel.querySelector('[name=&quot;' + kunci + '&quot;]');
+
+                if (! isian || nilai === null) {
+                    return;
+                }
+
+                if (isian.type === 'checkbox') {
+                    isian.checked = Boolean(nilai);
+                } else {
+                    isian.value = nilai;
+                }
+
+                // Memberi tahu Alpine pada isian yang punya pengendali sendiri,
+                // misalnya pilihan yang menampilkan bagian lain saat berubah.
+                isian.dispatchEvent(new Event('input', { bubbles: true }));
+                isian.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+        },
+
+        get aksi() {
+            if (! this.polaAksi) {
+                return this.aksiStatis;
+            }
+
+            const id = this.baris ? (this.baris.id ?? '') : '';
+
+            return this.polaAksi.replace(':id', id);
+        },
+
         tutup() {
             this.terbuka = false;
             this.mengirim = false;
+            this.baris = null;
             document.body.classList.remove('overflow-hidden');
         },
     }"
     x-on:buka-modal.window="if ($event.detail === '{{ $nama }}') buka()"
+    x-on:buka-modal-baris.window="if ($event.detail.nama === '{{ $nama }}') buka($event.detail)"
     x-on:tutup-modal.window="tutup()"
     x-on:keydown.escape.window="terbuka && tutup()">
 
@@ -79,7 +153,7 @@
                 "
                 class="relative w-full {{ $lebar }} bg-white shadow-xl sm:rounded-2xl dark:bg-gray-900">
 
-                <form action="{{ $aksi }}" method="POST" enctype="multipart/form-data"
+                <form :action="aksi" method="POST" enctype="multipart/form-data"
                     @submit="mengirim = true">
                     @csrf
                     @if (! in_array($metode, ['GET', 'POST']))

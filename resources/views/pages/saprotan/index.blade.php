@@ -45,6 +45,17 @@
         placeholder-cari="Cari nama saprotan atau penerima" judul-kosong="Belum ada penyaluran saprotan"
         pesan-kosong="Penyaluran sarana produksi akan tampil di sini setelah dicatat.">
 
+        <x-slot:aksi>
+            <button type="button" @click="$dispatch('buka-modal', 'formTambahSaprotan')"
+                class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+                    aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Tambah Saprotan
+            </button>
+        </x-slot:aksi>
+
         <x-slot:ringkasan>
             <x-sim.stat-card label="Catatan Penyaluran" :nilai="count($semua)" />
             <x-sim.stat-card label="Jenis Saprotan" :nilai="count($jenisUnik)" />
@@ -100,6 +111,7 @@
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Tanggal</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Sumber</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Verifikasi</th>
+            <th scope="col" class="px-5 py-3 text-right text-theme-xs font-medium text-gray-500 dark:text-gray-400">Aksi</th>
         </x-slot:kepala>
 
         @foreach ($baris as $s)
@@ -130,6 +142,13 @@
                 <td class="px-5 py-3">
                     <x-sim.status-badge :status="\App\Enums\StatusVerifikasi::from($s['status_verifikasi'])" />
                 </td>
+                <td class="px-5 py-3">
+                    <x-sim.aksi-baris :rincian-url="route('saprotan.detail', $s['id_saprotan'])"
+                        modal-ubah="formUbahSaprotanBaris"
+                        :data-baris="$s + ['id' => $s['id_saprotan']]"
+                        :hapus-url="'/saprotan/' . $s['id_saprotan']"
+                        konfirmasi-hapus="hapusSaprotan" :label="$s['nama']" />
+                </td>
             </tr>
         @endforeach
 
@@ -144,4 +163,20 @@
             @endforeach
         </x-slot:kartu>
     </x-sim.halaman-daftar>
+
+    <x-sim.modal-form nama="formTambahSaprotan" judul="Tambah Saprotan"
+        keterangan="Penyaluran hanya dapat ditujukan kepada anggota berstatus aktif."
+        :aksi="route('saprotan.simpan')" ukuran="lg" label-simpan="Simpan Data">
+        @include('pages.saprotan.form', ['awalan' => 'tambah'])
+    </x-sim.modal-form>
+
+    <x-sim.modal-form nama="formUbahSaprotanBaris" judul="Ubah Data Saprotan"
+        keterangan="Penerima individu hanya dapat dipilih dari anggota aktif."
+        pola-aksi="/saprotan/:id" metode="PUT" ukuran="lg"
+        label-simpan="Simpan Perubahan">
+        @include('pages.saprotan.form', ['awalan' => 'ubahBaris'])
+    </x-sim.modal-form>
+
+    <x-sim.confirm-dialog nama="hapusSaprotan" judul="Hapus data ini?"
+        pesan="Data yang dihapus masih tercatat pada audit log dan dapat dipulihkan admin." label-setuju="Hapus" />
 @endsection

@@ -358,6 +358,49 @@
   body {
     @apply relative font-normal font-outfit z-1 bg-gray-50;
   }
+
+  /*
+    Daftar pilihan pada mode gelap.
+
+    Seluruh <select> di sistem ini memakai bg-transparent agar menyatu dengan
+    kartu di belakangnya. Pada mode terang hal itu benar, sebab latar halaman
+    memang putih. Pada mode gelap, daftar yang terbuka dirender peramban
+    memakai latar bawaannya yang putih, sementara teksnya mewarisi warna
+    terang dari kelas dark:. Akibatnya isi dropdown tidak terbaca sama sekali.
+
+    Cacat ini luput lama karena verifikasi visual hanya melihat select dalam
+    keadaan TERTUTUP. Yang tertutup tampak baik, sebab yang dirender saat itu
+    adalah kotaknya, bukan daftarnya.
+
+    Diperbaiki di sini, bukan pada 111 elemen satu per satu, agar select yang
+    dibuat kemudian ikut benar tanpa perlu diingat.
+  */
+  .dark select {
+    background-color: var(--color-navy-800);
+    color: var(--color-white);
+  }
+
+  .dark select option {
+    background-color: var(--color-navy-800);
+    color: var(--color-white);
+  }
+
+  /*
+    Option yang dinonaktifkan, biasanya baris "Pilih ..." sebagai penuntun.
+    Dibedakan agar tetap terbaca sebagai penuntun, bukan pilihan sah.
+  */
+  .dark select option:disabled {
+    color: var(--color-navy-300);
+  }
+
+  /*
+    Isian tanggal dan waktu. Ikon kalender bawaan peramban berwarna gelap,
+    sehingga hilang di atas latar gelap.
+  */
+  .dark input[type='date']::-webkit-calendar-picker-indicator,
+  .dark input[type='time']::-webkit-calendar-picker-indicator {
+    filter: invert(1) opacity(0.6);
+  }
 }
 
 @utility menu-item {

@@ -216,14 +216,16 @@
                         </div>
                         <div>
                             <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Titik kejadian</dt>
-                            <dd class="mt-0.5 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
-                                @if (! empty($data['lintang']))
-                                    {{ number_format($data['lintang'], 6, '.', '') }},
-                                    {{ number_format($data['bujur'], 6, '.', '') }}
-                                @else
-                                    -
-                                @endif
-                            </dd>
+                        <dd class="mt-0.5 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
+                            @if (! empty($data['lintang']))
+                                {{ number_format($data['lintang'], 6, '.', '') }},
+                                {{ number_format($data['bujur'], 6, '.', '') }}
+                                <x-sim.tautan-peta class="mt-1.5" :lintang="$data['lintang']"
+                                    :bujur="$data['bujur']" :label="$data['nomor_pengaduan']" />
+                            @else
+                                -
+                            @endif
+                        </dd>
                         </div>
                     </dl>
                 </div>

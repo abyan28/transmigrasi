@@ -32,6 +32,7 @@
         $mutuData = DummyData::mutuData();
         $statusInfra = DummyData::statusInfrastruktur();
         $sebaranPekerjaan = DummyData::sebaranPekerjaan();
+        $rekapStatusPengaduan = DummyData::rekapPengaduan('status');
         $sebaranKomoditas = DummyData::sebaranKomoditas();
         $rekapPenghuni = DummyData::rekapPenghuni();
         $daftarSp = DummyData::satuanPermukiman();
@@ -63,6 +64,8 @@
             'kkKeluar' => $deret['kk_keluar'],
             'volumePanen' => $deret['volume_panen'],
             'harga' => $deret['harga_rata_rata'],
+            'statusPengaduanNama' => array_column($rekapStatusPengaduan, 'nama'),
+            'statusPengaduanNilai' => array_column($rekapStatusPengaduan, 'jumlah'),
             'pekerjaanNama' => array_keys($sebaranPekerjaan),
             'pekerjaanNilai' => array_values($sebaranPekerjaan),
             'komoditasNama' => array_keys($sebaranKomoditas),
@@ -158,6 +161,9 @@
         </div>
     </form>
 
+    <x-sim.judul-bagian judul="Ringkasan Kawasan"
+        keterangan="Angka pokok kawasan pada satu pandangan." class="!mt-0" />
+
     {{--
         Baris kartu statistik. Dimuat lebih dulu, grafik menyusul di bawahnya
         (agents/ui-spec.md bagian 9 poin 4).
@@ -202,9 +208,16 @@
             keterangan="Menunggu ditindaklanjuti petugas" url="/pengaduan" />
     </div>
 
+    <x-sim.judul-bagian judul="Kependudukan"
+        keterangan="Berapa banyak warga, bagaimana perpindahannya, dan dari apa mereka hidup." />
+
     {{--
-        Grid grafik dua kolom yang sengaja TIDAK sama lebar, sebagai penanda
+        Grid tiga kolom yang sengaja TIDAK sama lebar, sebagai penanda
         komposisi dashboard pada dial RITME 2 (agents/ui-spec.md bagian 2.2).
+
+        Tiap baris dijaga berjumlah tiga kolom, yaitu satu kartu lebar
+        berdampingan dengan satu kartu sempit, agar tidak ada kolom
+        menganggur di ujung baris.
     --}}
     <div class="grid gap-6 xl:grid-cols-3">
         {{-- Indikator 1, 2, 3: pertumbuhan penduduk kawasan --}}
@@ -231,54 +244,6 @@
                                     {{ number_format($deret['jumlah_kk'][$i], 0, ',', '.') }}</td>
                                 <td class="px-3 py-2 tabular-nums text-gray-600 dark:text-gray-400">
                                     {{ number_format($deret['jumlah_petani'][$i], 0, ',', '.') }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </x-slot:tabel>
-        </x-sim.chart-card>
-
-        {{-- Indikator 9: komoditas utama --}}
-        <x-sim.chart-card id="grafikKomoditas" judul="Sebaran Komoditas"
-            keterangan="Volume panen per komoditas, dalam ton." tinggi="340">
-            <x-slot:tabel>
-                <table class="w-full text-left text-theme-xs">
-                    <thead class="border-b border-gray-200 dark:border-gray-800">
-                        <tr>
-                            <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Komoditas</th>
-                            <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Volume (ton)</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
-                        @foreach ($sebaranKomoditas as $nama => $volume)
-                            <tr>
-                                <td class="px-3 py-2 text-gray-800 dark:text-white/90">{{ $nama }}</td>
-                                <td class="px-3 py-2 tabular-nums text-gray-600 dark:text-gray-400">
-                                    {{ number_format($volume, 1, ',', '.') }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </x-slot:tabel>
-        </x-sim.chart-card>
-
-        {{-- Indikator 4: pendapatan keluarga --}}
-        <x-sim.chart-card id="grafikPendapatan" judul="Pendapatan Keluarga per Bulan"
-            keterangan="Rata-rata pendapatan kepala keluarga tiap tahun." tinggi="300">
-            <x-slot:tabel>
-                <table class="w-full text-left text-theme-xs">
-                    <thead class="border-b border-gray-200 dark:border-gray-800">
-                        <tr>
-                            <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Tahun</th>
-                            <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Pendapatan</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
-                        @foreach ($deret['tahun'] as $i => $tahun)
-                            <tr>
-                                <td class="px-3 py-2 tabular-nums text-gray-800 dark:text-white/90">{{ $tahun }}</td>
-                                <td class="px-3 py-2 tabular-nums text-gray-600 dark:text-gray-400">
-                                    Rp {{ number_format($deret['pendapatan_rata_rata'][$i], 0, ',', '.') }}</td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -313,30 +278,6 @@
             </x-slot:tabel>
         </x-sim.chart-card>
 
-        {{-- Indikator 14: rekap penghuni kawasan --}}
-        <x-sim.chart-card id="grafikPenghuni" judul="Status Tinggal Penghuni"
-            keterangan="Rekap kepala keluarga menurut keberadaannya di kawasan." tinggi="300">
-            <x-slot:tabel>
-                <table class="w-full text-left text-theme-xs">
-                    <thead class="border-b border-gray-200 dark:border-gray-800">
-                        <tr>
-                            <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Status</th>
-                            <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Jumlah KK</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
-                        @foreach ($rekapPenghuni as $status => $jumlah)
-                            <tr>
-                                <td class="px-3 py-2 text-gray-800 dark:text-white/90">{{ $status }}</td>
-                                <td class="px-3 py-2 tabular-nums text-gray-600 dark:text-gray-400">
-                                    {{ number_format($jumlah, 0, ',', '.') }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </x-slot:tabel>
-        </x-sim.chart-card>
-
         {{-- Indikator 7: pekerjaan kepala keluarga --}}
         <x-sim.chart-card class="xl:col-span-2" id="grafikPekerjaan" judul="Pekerjaan Kepala Keluarga"
             keterangan="Sebaran mata pencaharian utama di seluruh kawasan." tinggi="320">
@@ -361,6 +302,35 @@
             </x-slot:tabel>
         </x-sim.chart-card>
 
+        {{-- Indikator 14: rekap penghuni kawasan --}}
+        <x-sim.chart-card id="grafikPenghuni" judul="Status Tinggal Penghuni"
+            keterangan="Rekap kepala keluarga menurut keberadaannya di kawasan." tinggi="300">
+            <x-slot:tabel>
+                <table class="w-full text-left text-theme-xs">
+                    <thead class="border-b border-gray-200 dark:border-gray-800">
+                        <tr>
+                            <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Status</th>
+                            <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Jumlah KK</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
+                        @foreach ($rekapPenghuni as $status => $jumlah)
+                            <tr>
+                                <td class="px-3 py-2 text-gray-800 dark:text-white/90">{{ $status }}</td>
+                                <td class="px-3 py-2 tabular-nums text-gray-600 dark:text-gray-400">
+                                    {{ number_format($jumlah, 0, ',', '.') }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </x-slot:tabel>
+        </x-sim.chart-card>
+    </div>
+
+    <x-sim.judul-bagian judul="Pertanian dan Ekonomi"
+        keterangan="Apa yang ditanam, berapa hasilnya, dan bagaimana dampaknya bagi pendapatan keluarga." />
+
+    <div class="grid gap-6 xl:grid-cols-3">
         {{-- Indikator 10: volume panen per tahun --}}
         <x-sim.chart-card class="xl:col-span-2" id="grafikPanen" judul="Volume Panen per Tahun"
             keterangan="Seluruh komoditas dikonversi ke ton sebelum dijumlahkan." tinggi="320">
@@ -378,6 +348,54 @@
                                 <td class="px-3 py-2 tabular-nums text-gray-800 dark:text-white/90">{{ $tahun }}</td>
                                 <td class="px-3 py-2 tabular-nums text-gray-600 dark:text-gray-400">
                                     {{ number_format($deret['volume_panen'][$i], 3, ',', '.') }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </x-slot:tabel>
+        </x-sim.chart-card>
+
+        {{-- Indikator 9: komoditas utama --}}
+        <x-sim.chart-card id="grafikKomoditas" judul="Sebaran Komoditas"
+            keterangan="Volume panen per komoditas, dalam ton." tinggi="340">
+            <x-slot:tabel>
+                <table class="w-full text-left text-theme-xs">
+                    <thead class="border-b border-gray-200 dark:border-gray-800">
+                        <tr>
+                            <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Komoditas</th>
+                            <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Volume (ton)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
+                        @foreach ($sebaranKomoditas as $nama => $volume)
+                            <tr>
+                                <td class="px-3 py-2 text-gray-800 dark:text-white/90">{{ $nama }}</td>
+                                <td class="px-3 py-2 tabular-nums text-gray-600 dark:text-gray-400">
+                                    {{ number_format($volume, 1, ',', '.') }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </x-slot:tabel>
+        </x-sim.chart-card>
+
+        {{-- Indikator 4: pendapatan keluarga --}}
+        <x-sim.chart-card class="xl:col-span-2" id="grafikPendapatan" judul="Pendapatan Keluarga per Bulan"
+            keterangan="Rata-rata pendapatan kepala keluarga tiap tahun." tinggi="300">
+            <x-slot:tabel>
+                <table class="w-full text-left text-theme-xs">
+                    <thead class="border-b border-gray-200 dark:border-gray-800">
+                        <tr>
+                            <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Tahun</th>
+                            <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Pendapatan</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
+                        @foreach ($deret['tahun'] as $i => $tahun)
+                            <tr>
+                                <td class="px-3 py-2 tabular-nums text-gray-800 dark:text-white/90">{{ $tahun }}</td>
+                                <td class="px-3 py-2 tabular-nums text-gray-600 dark:text-gray-400">
+                                    Rp {{ number_format($deret['pendapatan_rata_rata'][$i], 0, ',', '.') }}</td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -408,9 +426,14 @@
                 </table>
             </x-slot:tabel>
         </x-sim.chart-card>
+    </div>
 
+    <x-sim.judul-bagian judul="Infrastruktur dan Layanan"
+        keterangan="Kesiapan layanan dasar tiap permukiman beserta laporan warga yang menunggu ditangani." />
+
+    <div class="grid gap-6 xl:grid-cols-3">
         {{-- Indikator 12: status infrastruktur --}}
-        <x-sim.chart-card class="xl:col-span-2" id="grafikInfrastruktur" judul="Kondisi Infrastruktur Pertanian"
+        <x-sim.chart-card class="xl:col-span-2" id="grafikInfrastruktur" judul="Kondisi Infrastruktur SP"
             keterangan="Jumlah aset menurut kondisi terkini, dipecah per jenis." tinggi="320">
             <x-slot:tabel>
                 <table class="w-full text-left text-theme-xs">
@@ -439,29 +462,30 @@
             </x-slot:tabel>
         </x-sim.chart-card>
 
-        {{-- Indikator 15: mutu data per modul --}}
-        <x-sim.chart-card id="grafikMutuData" judul="Mutu Data per Modul"
-            keterangan="Porsi data yang sudah diperiksa petugas berwenang." tinggi="320">
+        {{--
+            Indikator 17: rekap pengaduan per status.
+
+            Mengisi satu kolom yang sebelumnya menganggur di samping kartu
+            pekerjaan. Data rekapPengaduan sudah tersedia tetapi belum pernah
+            ditampilkan pada dashboard utama, padahal menjawab pertanyaan yang
+            paling sering muncul: berapa laporan yang masih menunggu ditangani.
+        --}}
+        <x-sim.chart-card id="grafikStatusPengaduan" judul="Pengaduan per Status"
+            keterangan="Seluruh laporan warga menurut tahap penanganannya." tinggi="320">
             <x-slot:tabel>
                 <table class="w-full text-left text-theme-xs">
                     <thead class="border-b border-gray-200 dark:border-gray-800">
                         <tr>
-                            <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Modul</th>
-                            <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Terverifikasi</th>
-                            <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Belum</th>
-                            <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Ditolak</th>
+                            <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Status</th>
+                            <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Jumlah</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
-                        @foreach ($mutuData as $baris)
+                        @foreach ($rekapStatusPengaduan as $baris)
                             <tr>
-                                <td class="px-3 py-2 text-gray-800 dark:text-white/90">{{ $baris['modul'] }}</td>
+                                <td class="px-3 py-2 text-gray-800 dark:text-white/90">{{ $baris['nama'] }}</td>
                                 <td class="px-3 py-2 tabular-nums text-gray-600 dark:text-gray-400">
-                                    {{ number_format($baris['terverifikasi'], 0, ',', '.') }}</td>
-                                <td class="px-3 py-2 tabular-nums text-gray-600 dark:text-gray-400">
-                                    {{ number_format($baris['belum'], 0, ',', '.') }}</td>
-                                <td class="px-3 py-2 tabular-nums text-gray-600 dark:text-gray-400">
-                                    {{ number_format($baris['ditolak'], 0, ',', '.') }}</td>
+                                    {{ number_format($baris['jumlah'], 0, ',', '.') }}</td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -577,56 +601,6 @@
     </div>
 
     {{--
-        Perbandingan antar SP. Inilah satu-satunya grafik yang sumbunya berupa
-        satuan permukiman, sehingga di sinilah penelusuran klik dipasang
-        (agents/rules.md bagian 11 poin 5). Grafik lain bersumbu tahun atau
-        kategori, yang tidak dapat diterjemahkan menjadi satu SP tertentu.
-    --}}
-    <div class="mt-6">
-        <x-sim.chart-card id="grafikPerSp" judul="Perbandingan Antar Satuan Permukiman"
-            keterangan="Klik salah satu batang untuk membuka rincian satuan permukiman tersebut." tinggi="360">
-            <x-slot:tabel>
-                <table class="w-full text-left text-theme-xs">
-                    <thead class="border-b border-gray-200 dark:border-gray-800">
-                        <tr>
-                            <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Satuan Permukiman</th>
-                            <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">KK</th>
-                            <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Rumah Terhuni</th>
-                            <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Luas Lahan (ha)</th>
-                            <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Panen (ton)</th>
-                            <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Rincian</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
-                        @foreach ($rekapSp as $baris)
-                            <tr>
-                                <td class="px-3 py-2 text-gray-800 dark:text-white/90">
-                                    {{ $baris['satuan_permukiman'] }}</td>
-                                <td class="px-3 py-2 tabular-nums text-gray-600 dark:text-gray-400">
-                                    {{ number_format($baris['jumlah_kk'], 0, ',', '.') }}</td>
-                                <td class="px-3 py-2 tabular-nums text-gray-600 dark:text-gray-400">
-                                    {{ number_format($baris['rumah_terhuni'], 0, ',', '.') }}</td>
-                                <td class="px-3 py-2 tabular-nums text-gray-600 dark:text-gray-400">
-                                    {{ number_format($baris['luas_lahan'], 2, ',', '.') }}</td>
-                                <td class="px-3 py-2 tabular-nums text-gray-600 dark:text-gray-400">
-                                    {{ number_format($baris['volume_panen'], 2, ',', '.') }}</td>
-                                <td class="px-3 py-2">
-                                    {{-- Tautan teks menyediakan jalur setara bagi pengguna keyboard,
-                                         karena klik pada batang grafik tidak dapat dijangkau Tab (R-32) --}}
-                                    <a href="{{ route('dashboard.sp', $baris['satuan_permukiman_id']) }}"
-                                        class="rounded font-medium text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
-                                        Buka rincian
-                                    </a>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </x-slot:tabel>
-        </x-sim.chart-card>
-    </div>
-
-    {{--
         Indikator 13: isu prioritas dari modul Pengaduan.
         Disajikan sebagai tabel beserta badge, bukan grafik, karena yang
         dibutuhkan petugas adalah daftar yang dapat langsung ditindaklanjuti
@@ -716,6 +690,101 @@
         @endif
     </div>
 
+    <x-sim.judul-bagian judul="Perbandingan Antar Satuan Permukiman"
+        keterangan="Menempatkan keenam permukiman berdampingan untuk melihat yang tertinggal." />
+
+    {{--
+        Perbandingan antar SP. Inilah satu-satunya grafik yang sumbunya berupa
+        satuan permukiman, sehingga di sinilah penelusuran klik dipasang
+        (agents/rules.md bagian 11 poin 5). Grafik lain bersumbu tahun atau
+        kategori, yang tidak dapat diterjemahkan menjadi satu SP tertentu.
+    --}}
+    <div>
+        <x-sim.chart-card id="grafikPerSp" judul="Perbandingan Antar Satuan Permukiman"
+            keterangan="Klik salah satu batang untuk membuka rincian satuan permukiman tersebut." tinggi="360">
+            <x-slot:tabel>
+                <table class="w-full text-left text-theme-xs">
+                    <thead class="border-b border-gray-200 dark:border-gray-800">
+                        <tr>
+                            <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Satuan Permukiman</th>
+                            <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">KK</th>
+                            <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Rumah Terhuni</th>
+                            <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Luas Lahan (ha)</th>
+                            <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Panen (ton)</th>
+                            <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Rincian</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
+                        @foreach ($rekapSp as $baris)
+                            <tr>
+                                <td class="px-3 py-2 text-gray-800 dark:text-white/90">
+                                    {{ $baris['satuan_permukiman'] }}</td>
+                                <td class="px-3 py-2 tabular-nums text-gray-600 dark:text-gray-400">
+                                    {{ number_format($baris['jumlah_kk'], 0, ',', '.') }}</td>
+                                <td class="px-3 py-2 tabular-nums text-gray-600 dark:text-gray-400">
+                                    {{ number_format($baris['rumah_terhuni'], 0, ',', '.') }}</td>
+                                <td class="px-3 py-2 tabular-nums text-gray-600 dark:text-gray-400">
+                                    {{ number_format($baris['luas_lahan'], 2, ',', '.') }}</td>
+                                <td class="px-3 py-2 tabular-nums text-gray-600 dark:text-gray-400">
+                                    {{ number_format($baris['volume_panen'], 2, ',', '.') }}</td>
+                                <td class="px-3 py-2">
+                                    {{-- Tautan teks menyediakan jalur setara bagi pengguna keyboard,
+                                         karena klik pada batang grafik tidak dapat dijangkau Tab (R-32) --}}
+                                    <a href="{{ route('dashboard.sp', $baris['satuan_permukiman_id']) }}"
+                                        class="rounded font-medium text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
+                                        Buka rincian
+                                    </a>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </x-slot:tabel>
+        </x-sim.chart-card>
+    </div>
+
+    <x-sim.judul-bagian judul="Tata Kelola Data"
+        keterangan="Sejauh mana data di atas sudah diperiksa petugas berwenang." />
+
+    {{--
+        Indikator 15 diletakkan terpisah di bagian akhir. Yang diukur adalah
+        mutu datanya sendiri, bukan keadaan kawasan, sehingga menaruhnya di
+        antara grafik panen dan infrastruktur membuatnya terbaca keliru
+        sebagai indikator lapangan.
+
+        Selebar halaman, tanpa grid, agar tidak menyisakan kolom kosong di
+        sampingnya.
+    --}}
+    {{-- Indikator 15: mutu data per modul --}}
+    <x-sim.chart-card id="grafikMutuData" judul="Mutu Data per Modul"
+        keterangan="Porsi data yang sudah diperiksa petugas berwenang." tinggi="320">
+        <x-slot:tabel>
+            <table class="w-full text-left text-theme-xs">
+                <thead class="border-b border-gray-200 dark:border-gray-800">
+                    <tr>
+                        <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Modul</th>
+                        <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Terverifikasi</th>
+                        <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Belum</th>
+                        <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Ditolak</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
+                    @foreach ($mutuData as $baris)
+                        <tr>
+                            <td class="px-3 py-2 text-gray-800 dark:text-white/90">{{ $baris['modul'] }}</td>
+                            <td class="px-3 py-2 tabular-nums text-gray-600 dark:text-gray-400">
+                                {{ number_format($baris['terverifikasi'], 0, ',', '.') }}</td>
+                            <td class="px-3 py-2 tabular-nums text-gray-600 dark:text-gray-400">
+                                {{ number_format($baris['belum'], 0, ',', '.') }}</td>
+                            <td class="px-3 py-2 tabular-nums text-gray-600 dark:text-gray-400">
+                                {{ number_format($baris['ditolak'], 0, ',', '.') }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </x-slot:tabel>
+    </x-sim.chart-card>
+
     @push('scripts')
         <script type="module">
             // Data disuntikkan dari PHP sebagai JSON agar berkas Blade tidak
@@ -800,6 +869,30 @@
                 xaxis: { categories: data.pekerjaanNama, labels: { formatter: (v) => angka(v, 0) } },
                 tooltip: { y: { formatter: (v) => angka(v, 0) + ' KK' } },
             });
+
+        // Indikator 17: pengaduan per status
+        buatGrafik('grafikStatusPengaduan', {
+            chart: { type: 'donut', height: 320 },
+            series: data.statusPengaduanNilai,
+            labels: data.statusPengaduanNama,
+            plotOptions: {
+                pie: {
+                    donut: {
+                        size: '62%',
+                        labels: {
+                            show: true,
+                            total: {
+                                show: true,
+                                label: 'Total',
+                                formatter: () => angka(data.statusPengaduanNilai.reduce((a, b) => a + b, 0), 0),
+                            },
+                        },
+                    },
+                },
+            },
+            legend: { position: 'bottom' },
+            tooltip: { y: { formatter: (v) => angka(v, 0) + ' pengaduan' } },
+        });
 
             // Indikator 10: volume panen per tahun
             buatGrafik('grafikPanen', {

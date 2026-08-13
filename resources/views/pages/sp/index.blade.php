@@ -47,6 +47,17 @@
         :jumlah="count($baris)" :kata-kunci="$cari" :aksi-url="route('sp.index')"
         placeholder-cari="Cari nama SP atau desa" judul-kosong="Belum ada data satuan permukiman">
 
+        <x-slot:aksi>
+            <button type="button" @click="$dispatch('buka-modal', 'formTambahSp')"
+                class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+                    aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Tambah SP
+            </button>
+        </x-slot:aksi>
+
         <x-slot:ringkasan>
             <x-sim.stat-card label="Jumlah SP" :nilai="count($semua)" satuan="SP" />
             <x-sim.stat-card label="Total Luas Lahan" :nilai="number_format($totalLuas, 2, ',', '.')" satuan="ha" />
@@ -91,6 +102,7 @@
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Luas (ha)</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Keterisian</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Kondisi</th>
+            <th scope="col" class="px-5 py-3 text-right text-theme-xs font-medium text-gray-500 dark:text-gray-400">Aksi</th>
         </x-slot:kepala>
 
         @foreach ($baris as $sp)
@@ -129,6 +141,14 @@
                         <span class="text-theme-xs text-gray-500 dark:text-gray-400">-</span>
                     @endif
                 </td>
+                <td class="px-5 py-3">
+                    <x-sim.aksi-baris :rincian-url="route('dashboard.sp', $sp['id_satuan_permukiman'])"
+                        modal-ubah="formUbahSpBaris"
+                        :data-baris="$sp + ['id' => $sp['id_satuan_permukiman']]"
+                        :hapus-url="'/sp/' . $sp['id_satuan_permukiman']"
+                        konfirmasi-hapus="hapusSp"
+                        :label="$sp['nama']" />
+                </td>
             </tr>
         @endforeach
 
@@ -140,6 +160,8 @@
                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
                     {{ array_sum(array_column($baris, 'jumlah_kk_terisi')) }} /
                     {{ array_sum(array_column($baris, 'jumlah_kk_rencana')) }}</td>
+                {{-- Dua sel kosong: kolom Kondisi dan kolom Aksi tidak punya total --}}
+                <td></td>
                 <td></td>
             </tr>
         </x-slot:kaki>
@@ -161,4 +183,19 @@
             @endforeach
         </x-slot:kartu>
     </x-sim.halaman-daftar>
+
+    <x-sim.modal-form nama="formTambahSp" judul="Tambah Satuan Permukiman"
+        keterangan="Satu SP menempel pada desa sekaligus kawasan transmigrasi."
+        :aksi="route('sp.simpan')" ukuran="xl" label-simpan="Simpan Data">
+        @include('pages.sp.form', ['awalan' => 'tambah'])
+    </x-sim.modal-form>
+
+    <x-sim.modal-form nama="formUbahSpBaris" judul="Ubah Satuan Permukiman"
+        keterangan="Perubahan tercatat pada audit log."
+        pola-aksi="/sp/:id" metode="PUT" ukuran="xl" label-simpan="Simpan Perubahan">
+        @include('pages.sp.form', ['awalan' => 'ubahBaris'])
+    </x-sim.modal-form>
+
+    <x-sim.confirm-dialog nama="hapusSp" judul="Hapus satuan permukiman ini?"
+        pesan="Seluruh data yang menaut SP ini ikut kehilangan induknya." label-setuju="Hapus" />
 @endsection
