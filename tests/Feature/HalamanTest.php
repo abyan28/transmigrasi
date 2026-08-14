@@ -1326,8 +1326,15 @@ it('menawarkan jalur admin pada setiap halaman pemulihan', function () {
     // rules.md 14b poin 11. Jalur Admin satu-satunya yang bekerja tanpa
     // sambungan surel, sehingga tidak boleh hilang dari tampilan ketika
     // jalur mandiri ditambahkan.
+    //
+    // Yang dijaga adalah keberadaan ajakan menghubungi admin, bukan kalimat
+    // persisnya. Ketiga halaman menuliskannya dengan susunan berbeda sesuai
+    // konteks masing-masing, dan penyuntingan teks tidak boleh membuat uji ini
+    // gagal selama jalurnya masih ditawarkan.
     foreach ([route('lupa-kata-sandi'), route('verifikasi-kode'), route('login')] as $tujuan) {
-        expect($this->get($tujuan)->getContent())->toContain('admin desa atau SP');
+        $isi = strtolower($this->get($tujuan)->getContent());
+
+        expect($isi)->toContain('hubungi admin');
     }
 });
 

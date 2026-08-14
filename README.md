@@ -1,439 +1,156 @@
-# TailAdmin Laravel - Tailwind CSS Free Laravel Dashboard
+# Sistem Informasi Kawasan Transmigrasi Kobalima Timur
 
-**TailAdmin Laravel** is a modern, production-ready admin dashboard template powered by **Laravel 12**, **Tailwind CSS v4**, **Alpine.js**, and a clean, modular architecture. TailAdmin is one of the most popular Tailwind CSS dashboard now also available for Larvael. It’s designed for building fast, scalable admin panels, CRM dashboards, SaaS backends, and any data-driven application where clarity and performance matter.
-![TailAdmin - Next.js Dashboard Preview](./tailadmin-laravel.png)
+Sistem informasi berbasis web untuk digitalisasi monitoring pertanian dan tata kelola data
+kawasan transmigrasi Kobalima Timur, Kabupaten Malaka, Nusa Tenggara Timur.
 
+Data transmigran, rumah, lahan, komoditas, hasil panen, alsintan, saprotan, infrastruktur,
+kelembagaan poktan, dan pengaduan kawasan dikumpulkan dalam satu platform, lalu dipakai untuk
+monitoring, pelaporan, dan pengambilan keputusan berbasis bukti.
 
-## Quick Links
+**Lokus:** 6 Satuan Permukiman yang tersebar di 4 kecamatan.
 
-* [✨ Get TailAdmin Laravel](https://tailadmin.com/laravel)
-* [📄 Documentation](https://tailadmin.com/docs)
-* [⬇️ Download](https://tailadmin.com/download)
-* [🌐 Live Demo](https://laravel-demo.tailadmin.com)
+| Satuan Permukiman | Desa | Kecamatan |
+|---|---|---|
+| SP Kapitan Meo | Kapitan Meo | Laen Manen |
+| SP Tniumanu | Tniumanu | Laen Manen |
+| SP Harekakae | Harekakae | Malaka Tengah |
+| SP Weoe / Uluk Lubuk | Weoe | Wewiku |
+| SP Tualaran | Naet | Rinhat |
+| SP Weain | Weain | Rinhat |
 
-Here’s a tighter, more search-friendly version that highlights value and avoids fluff while keeping your structure intact.
+## Status Pengembangan
 
-## ✨ Key Features
+**Tahap 2 selesai, progres 84%.** Seluruh antarmuka sudah berdiri, tetapi datanya masih berasal
+dari `app/Support/DummyData.php`, bukan dari database. Ini disengaja: tampilan divalidasi
+bersama tim dan dinas lebih dahulu, backend menyusul pada Tahap 3 sampai 9 dan hanya menukar
+sumber data tanpa mengubah tampilan.
 
-* 🚀 **Laravel 12 Core** - Built on the latest Laravel release with improved routing, security, and Blade templating
-* 🎨 **Tailwind CSS v4** - Utility-first styling for rapid, consistent UI development
-* ⚡ **Alpine.js Interactivity** - Lightweight reactivity without a heavy JavaScript framework
-* 📦 **Vite Build System** - Fast dev server, instant HMR, and optimized production builds
-* 📱 **Fully Responsive Layouts** - Smooth, mobile-first design that adapts across all screen sizes
-* 🌙 **Built-in Dark Mode** - Ready-to-use modern dark theme for better usability and aesthetics
-* 📊 **Advanced UI Components** - Charts, data tables, forms, calendars, modals, and reusable blocks for complex dashboards
-* 🎯 **Production-Ready Dashboard UI** - Clean, modern interface crafted for real apps, not placeholder demos
+Yang belum tersedia: autentikasi, hak akses, dan seluruh operasi simpan ke database. Tombol
+simpan, ubah, dan hapus saat ini mengembalikan pesan tanpa menulis apa pun.
 
-### Other Versions
+| | |
+|---|---|
+| Halaman | 70 |
+| Komponen bersama | 41 |
+| Tata letak | 6 |
+| Rute | 119 (49 GET) |
+| Enum | 31 |
+| Pengujian | 293 uji Pest, 1360 pernyataan |
 
-- [Next.js Version](https://github.com/TailAdmin/free-nextjs-admin-dashboard)
-- [React.js Version](https://github.com/TailAdmin/free-react-tailwind-admin-dashboard)
-- [Vue.js Version](https://github.com/TailAdmin/vue-tailwind-admin-dashboard)
-- [Angular Version](https://github.com/TailAdmin/free-angular-tailwind-dashboard)
-- [Laravel Version](https://github.com/TailAdmin/tailadmin-laravel)
+## Teknologi
 
-## 📋 Requirements
-To set up TailAdmin Laravel, make sure your environment includes:
+| Lapis | Pilihan |
+|---|---|
+| Framework | Laravel 12.65 |
+| PHP | 8.2.12 (XAMPP) |
+| Basis data | MySQL / MariaDB, nama `sim_transmigrasi` |
+| Gaya | Tailwind CSS v4 |
+| Interaktivitas | Alpine.js 3.14 |
+| Build | Vite 7 |
+| Grafik | ApexCharts 5.3 |
+| Pemilih tanggal | Flatpickr 4.6, locale Indonesia |
+| Peta | Leaflet 1.9, ubin OpenStreetMap |
+| Pengujian | Pest 3 |
+| Fondasi UI | TailAdmin Laravel (MIT) |
 
-* **PHP 8.2+**
-* **Composer** (PHP dependency manager)
-* **Node.js 18+** and **npm** (for compiling frontend assets)
-* **Database** - Works with SQLite (default), MySQL, or PostgreSQL
+Tiga keputusan yang perlu diketahui sebelum menyentuh kode:
 
-### Tailwind CSS Laravel Dashboard
+- **PHP 8.2.12 milik XAMPP dipakai, bukan versi yang ada di PATH.** Laravel 12 mendukung
+  8.2 sampai 8.4, sedangkan PHP di PATH mesin pengembangan adalah 8.5. Perintah artisan dan
+  Pest dijalankan lewat `C:\xampp\php\php.exe`.
+- **Tidak ada `tailwind.config.js`.** Tailwind v4 meniadakan berkas itu; seluruh design token
+  ditulis pada blok `@theme` di `resources/css/app.css`.
+- **Leaflet dimuat lewat impor dinamis** di `resources/js/peta.js`. Hanya enam formulir yang
+  memerlukan peta, sehingga memasukkannya ke bundel utama akan membebani seluruh halaman lain.
 
-TailAdmin delivers a refined Tailwind CSS Laravel Dashboard experience, combining Laravel’s robust backend with Tailwind’s flexible utility classes. The result is a clean, fast, and customizable dashboard that helps developers build modern admin interfaces without the usual front-end complexity. It’s ideal for teams looking for a Tailwind-powered Laravel starter that stays lightweight and easy to scale.
+## Modul
 
-### Laravel Admin Dashboard
+- **Data master wilayah** — kawasan, satuan permukiman, desa, kecamatan, inventaris, fasilitas
+- **Kependudukan** — transmigran, rumah, status hunian, verifikasi data
+- **Lahan** — lahan usaha dan pekarangan, dokumen kepemilikan, koordinat
+- **Kelembagaan** — profil poktan, daftar anggota, alsintan, saprotan
+- **Produksi pertanian** — komoditas, musim tanam, riwayat tanam, hasil panen
+- **Infrastruktur** — air, irigasi, listrik, jalan produksi, telekomunikasi, gudang
+- **Pengaduan** — pengajuan publik tanpa login, penanganan oleh petugas, pelacakan nomor
+- **Laporan** — rekap kawasan dan ekspor
 
-If you’re searching for a dependable Laravel Admin Dashboard template that’s easy to set up and ready for production, TailAdmin fits the job. It offers a polished UI, reusable components, optimized performance, and all the essentials needed to launch dashboards, CRM systems, and internal tools quickly. It gives developers a solid foundation, so projects move faster with fewer decisions to worry about.
-
-### Check Your Environment
-
-Verify your installations:
+## Instalasi
 
 ```bash
-php -v
-composer -V
-node -v
-npm -v
-```
+git clone https://github.com/abyan28/transmigrasi.git
+cd transmigrasi
 
-## 🚀 Quick Start Installation
-
-### Step 1: Clone the Repository
-
-```bash
-git clone https://github.com/TailAdmin/tailadmin-laravel.git
-cd tailadmin-laravel
-```
-
-### Step 2: Install PHP Dependencies
-
-```bash
 composer install
-```
-
-This command will install all Laravel dependencies defined in `composer.json`.
-
-### Step 3: Install Node.js Dependencies
-
-```bash
 npm install
-```
 
-Or if you prefer yarn or pnpm:
-
-```bash
-# Using yarn
-yarn install
-
-# Using pnpm
-pnpm install
-```
-
-### Step 4: Environment Configuration
-
-Copy the example environment file:
-
-```bash
-cp .env.example .env
-```
-
-**For Windows users:**
-
-```bash
 copy .env.example .env
-```
-
-**Or create it programmatically:**
-
-```bash
-php -r "file_exists('.env') || copy('.env.example', '.env');"
-```
-
-### Step 5: Generate Application Key
-
-```bash
 php artisan key:generate
 ```
 
-This creates a unique encryption key for your application.
-
-### Step 6: Configure Database
-
-#### Option A: Using MySQL/PostgreSQL
-
-Update your `.env` file with your database credentials:
-
-```env
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=tailadmin_db
-DB_USERNAME=your_username
-DB_PASSWORD=your_password
-```
-
-Create the database:
+Sesuaikan basis data pada `.env`, lalu buat dan migrasikan:
 
 ```bash
-# MySQL
-mysql -u root -p -e "CREATE DATABASE tailadmin_db;"
-
-# PostgreSQL
-createdb tailadmin_db
-```
-
-Run migrations:
-
-```bash
+mysql -u root -e "CREATE DATABASE sim_transmigrasi;"
 php artisan migrate
+npm run build
 ```
 
-### Step 7: (Optional) Seed the Database
-
-If you want sample data:
-
-```bash
-php artisan db:seed
-```
-
-### Step 8: Storage Link
-
-Create a symbolic link for file storage:
-
-```bash
-php artisan storage:link
-```
-
-## 🏃 Running the Application
-
-### Development Mode (Recommended)
-
-The easiest way to start development is using the built-in script:
+## Menjalankan
 
 ```bash
 composer run dev
 ```
 
-This single command starts:
-- ✅ Laravel development server (http://localhost:8000)
-- ✅ Vite dev server for hot module reloading
-- ✅ Queue worker for background jobs
-- ✅ Log monitoring
+Satu perintah ini menyalakan server Laravel, Vite, queue worker, dan pemantau log sekaligus.
+Aplikasi terbuka di http://localhost:8000.
 
-**Access your application at:** [http://localhost:8000](http://localhost:8000)
-
-### Manual Development Setup
-
-If you prefer to run services individually in separate terminal windows:
-
-**Terminal 1 - Laravel Server:**
-```bash
-php artisan serve
-```
-
-**Terminal 2 - Frontend Assets:**
-```bash
-npm run dev
-```
-
-### Building for Production
-
-#### Build Frontend Assets
+Untuk diakses dari perangkat lain pada jaringan yang sama:
 
 ```bash
-npm run build
+php artisan serve --host=0.0.0.0 --port=8000
 ```
 
-#### Optimize Laravel
+Aset dibangun dengan `npm run build`, bukan `npm run dev`. Menjalankan `npm run dev` membuat
+berkas `public/hot` yang mengalihkan seluruh klien ke `localhost:5173`, sehingga gaya tidak
+termuat di perangkat lain.
+
+Akses lewat terowongan atau reverse proxy sudah ditangani. `bootstrap/app.php` memercayai
+header `X-Forwarded-*`, sehingga `asset()` dan `url()` mengikuti skema dan host aslinya.
+
+## Pengujian
 
 ```bash
-# Clear and cache configuration
-php artisan config:cache
-
-# Cache routes
-php artisan route:cache
-
-# Cache views
-php artisan view:cache
-
-# Optimize autoloader
-composer install --optimize-autoloader --no-dev
+& "C:\xampp\php\php.exe" vendor\bin\pest
 ```
 
-#### Production Environment
+Hasil terakhir: 293 lulus, 1360 pernyataan.
 
-Update your `.env` for production:
-
-```env
-APP_ENV=production
-APP_DEBUG=false
-APP_URL=https://yourdomain.com
-```
-
-
-## 🧪 Testing
-
-Run the test suite using Pest:
-
-```bash
-composer run test
-```
-
-Or manually:
-
-```bash
-php artisan test
-```
-
-Run with coverage:
-
-```bash
-php artisan test --coverage
-```
-
-Run specific tests:
-
-```bash
-php artisan test --filter=ExampleTest
-```
-
-## 📜 Available Commands
-
-### Composer Scripts
-
-```bash
-# Start development environment
-composer run dev
-
-# Run tests
-composer run test
-
-# Code formatting (if configured)
-composer run format
-
-# Static analysis (if configured)
-composer run analyze
-```
-
-### NPM Scripts
-
-```bash
-# Start Vite dev server
-npm run dev
-
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
-
-# Lint JavaScript/TypeScript
-npm run lint
-
-# Format code
-npm run format
-```
-
-### Artisan Commands
-
-```bash
-# Start development server
-php artisan serve
-
-# Run migrations
-php artisan migrate
-
-# Rollback migrations
-php artisan migrate:rollback
-
-# Fresh migrations with seeding
-php artisan migrate:fresh --seed
-
-# Generate application key
-php artisan key:generate
-
-# Clear all caches
-php artisan optimize:clear
-
-# Cache everything for production
-php artisan optimize
-
-# Create symbolic link for storage
-php artisan storage:link
-
-# Start queue worker
-php artisan queue:work
-
-# List all routes
-php artisan route:list
-
-# Create a new controller
-php artisan make:controller YourController
-
-# Create a new model
-php artisan make:model YourModel -m
-
-# Create a new migration
-php artisan make:migration create_your_table
-```
-
-## 📁 Project Structure
+## Struktur
 
 ```
-tailadmin-laravel/
-├── app/                    # Application logic
-│   ├── Http/              # Controllers, Middleware, Requests
-│   ├── Models/            # Eloquent models
-│   └── Providers/         # Service providers
-├── bootstrap/             # Framework bootstrap files
-├── config/                # Configuration files
-├── database/              # Migrations, seeders, factories
-│   ├── migrations/
-│   ├── seeders/
-│   └── factories/
-├── public/                # Public assets (entry point)
-│   ├── build/            # Compiled assets (generated)
-│   └── index.php         # Application entry point
-├── resources/             # Views and raw assets
-│   ├── css/              # Stylesheets (Tailwind)
-│   ├── js/               # JavaScript files (Alpine.js)
-│   └── views/            # Blade templates
-├── routes/                # Route definitions
-│   ├── web.php           # Web routes
-│   ├── api.php           # API routes
-│   └── console.php       # Console routes
-├── storage/               # Logs, cache, uploads
-│   ├── app/
-│   ├── framework/
-│   └── logs/
-├── tests/                 # Pest test files
-│   ├── Feature/
-│   └── Unit/
-├── .env.example           # Example environment file
-├── artisan                # Artisan CLI
-├── composer.json          # PHP dependencies
-├── package.json           # Node dependencies
-├── vite.config.js         # Vite configuration
-└── tailwind.config.js     # Tailwind configuration
+app/
+  Enums/          31 enum, sumber tunggal seluruh pilihan baku
+  Http/           controller dan middleware
+  Support/        DummyData, penyimpanan dokumen, aturan validasi
+  View/           kelas komponen Blade
+resources/
+  css/app.css     design token pada blok @theme
+  js/             app.js, chart-config.js, peta.js
+  views/
+    components/   41 komponen bersama
+    layouts/      6 tata letak
+    pages/        70 halaman
+routes/web.php    119 rute
+agents/           dokumen acuan: prd, rules, workflow, erd, ui-spec, tasklist, notes
+refs/             berkas rujukan, bukan bagian aplikasi
 ```
 
-## 🐛 Troubleshooting
+Folder `agents/` sengaja ikut terlacak bersama kode. Seluruh keputusan desain, aturan bisnis,
+dan riwayat perubahan tercatat di sana; `agents/notes.md` memuat alasan di balik keputusan
+teknis yang tidak terlihat dari kode.
 
-### Common Issues
+## Lisensi dan Atribusi
 
-#### "Class not found" errors
-```bash
-composer dump-autoload
-```
-
-#### Permission errors on storage/bootstrap/cache
-```bash
-chmod -R 775 storage bootstrap/cache
-```
-
-#### NPM build errors
-```bash
-rm -rf node_modules package-lock.json
-npm install
-```
-
-#### Clear all caches
-```bash
-php artisan optimize:clear
-```
-
-#### Database connection errors
-- Check `.env` database credentials
-- Ensure database server is running
-- Verify database exists
-
-## 🔄 Update Log
-
-### [2026-05-23]
-
-- Added **AI Settings** page to configure models, keys, and token limits.
-- Added **Maps** page with MapLibre GL, Leaflet, and iframe styles.
-- Added **Vector Maps** page powered by AmCharts 5 geodata (World & USA).
-- Added **Radar Charts** page with 3 unique formats.
-- Added **Radial Progress Charts** page featuring 4 custom layout templates.
-- Introduced new **Bar Charts Five & Six** and **Pie Charts Four & Five**.
-
-### [April 28, 2026]
-- Added **AI Dashboard** with token usage and revenue tracking.
-- Added **Sales Dashboard** with retention and multi-channel analytics.
-- Added **Finance Dashboard** with cashflow and balance management.
-- Introduced **6 New Layout variations** for improved UI flexibility.
-- Integrated **Advanced Data Visualization** with 7+ new chart types.
-
-### [2026-03-15]
-- Fixed PHP 8.5 deprecation warning
-
-### [2025-12-29]
-- Added Date Picker in Statistics Chart
-
-## License
-
-Refer to our [LICENSE](https://tailadmin.com/license) page for more information.
+Antarmuka dibangun di atas [TailAdmin Laravel](https://github.com/TailAdmin/tailadmin-laravel),
+templat dasbor berlisensi MIT. Berkas `LICENSE` pada akar proyek adalah lisensi MIT milik
+TailAdmin.
