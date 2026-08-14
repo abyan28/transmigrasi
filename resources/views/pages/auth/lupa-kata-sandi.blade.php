@@ -30,7 +30,7 @@
                             </h1>
                             <p class="text-sm text-gray-500 dark:text-gray-400">
                                 Masukkan email atau username Anda. Kami mengirim kode enam digit
-                                ke alamat surel dinas yang terdaftar.
+                                ke alamat email yang terdaftar.
                             </p>
                         </div>
 
@@ -67,9 +67,8 @@
                         --}}
                         <div class="mt-5 rounded-lg bg-gray-50 p-4 dark:bg-white/[0.03]">
                             <p class="text-sm text-gray-600 dark:text-gray-400">
-                                <span class="font-medium text-gray-800 dark:text-white/90">Sinyal di lokus sedang lemah?</span>
-                                Hubungi admin desa atau SP Anda untuk menyetel ulang kata sandi secara langsung.
-                                Cara ini tetap berfungsi tanpa sambungan surel.
+                                <span class="font-medium text-gray-800 dark:text-white/90">Lupa email dan username?</span>
+                                Hubungi admin untuk menyetel ulang kata sandi secara langsung.
                             </p>
                         </div>
 

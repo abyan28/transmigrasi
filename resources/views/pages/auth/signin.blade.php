@@ -124,8 +124,7 @@
                             <p class="text-sm text-gray-600 dark:text-gray-400">
                                 <a href="{{ route('lupa-kata-sandi') }}"
                                     class="font-medium text-brand-500 hover:text-brand-600">Lupa kata sandi?</a>
-                                Minta kode verifikasi ke surel dinas Anda, atau hubungi admin desa atau SP
-                                bila sinyal di lokus sedang tidak memadai.
+                                Klik lupa kata sandi untuk ganti password atau hubungi admin untuk permintaan ganti password.
                             </p>
                             <p class="mt-2 text-theme-xs text-gray-500 dark:text-gray-400">
                                 Akun baru hanya dapat dibuat oleh admin.
