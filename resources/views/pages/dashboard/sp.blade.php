@@ -37,8 +37,6 @@
             ? round($rekap['rumah_terhuni'] / $sp['jumlah_kk_terisi'] * 100)
             : 0;
 
-        $persenMutu = round($rekap['terverifikasi'] / $rekap['data_total'] * 100);
-
         $persenIsi = round($sp['jumlah_kk_terisi'] / $sp['jumlah_kk_rencana'] * 100);
 
         $dataGrafik = [
@@ -218,26 +216,6 @@
             --}}
             <x-sim.rincian-kondisi-sp :penilaian="$penilaian" />
 
-            {{-- Mutu data SP ini --}}
-            <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
-                <div class="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                        <h3 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">Mutu Data</h3>
-                        <p class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
-                            {{ number_format($rekap['terverifikasi'], 0, ',', '.') }} dari
-                            {{ number_format($rekap['data_total'], 0, ',', '.') }} data sudah diperiksa petugas.
-                        </p>
-                    </div>
-                    <span class="text-title-sm font-bold tabular-nums text-gray-800 dark:text-white/90">
-                        {{ $persenMutu }}%
-                    </span>
-                </div>
-                <div class="mt-3 h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-white/10"
-                    role="img" aria-label="Mutu data {{ $persenMutu }} persen terverifikasi">
-                    <div class="h-full rounded-full bg-green-500" style="width: {{ $persenMutu }}%"></div>
-                </div>
-            </div>
-
             {{--
                 Rincian data SP dalam tab, agar halaman tidak memanjang
                 (agents/rules.md bagian 13.2 poin 2).
@@ -271,7 +249,7 @@
                         <x-sim.empty-state judul="Belum ada data transmigran"
                             :pesan="'Data kepala keluarga di ' . $sp['nama'] . ' akan tampil di sini setelah ditambahkan.'" />
                     @else
-                        <x-sim.tabel-ringkas :kolom="['Nama', 'NIK', 'Pekerjaan', 'Verifikasi']">
+                        <x-sim.tabel-ringkas :kolom="['Nama', 'NIK', 'Pekerjaan']">
                             @foreach ($transmigran as $baris)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                                     <td class="px-5 py-3">
@@ -285,11 +263,6 @@
                                     </td>
                                     <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
                                         {{ $baris['pekerjaan_kepala_keluarga'] }}
-                                    </td>
-                                    <td class="px-5 py-3">
-                                        <x-sim.status-badge
-                                            :status="\App\Enums\StatusVerifikasi::from($baris['status_verifikasi'])"
-                                            :catatan="$baris['catatan_verifikasi'] ?? null" />
                                     </td>
                                 </tr>
                             @endforeach

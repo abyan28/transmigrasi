@@ -3,18 +3,12 @@
 
     Memakai pola dua kolom asimetris seperti halaman rincian SP: ringkasan
     entitas menetap di kiri, tab konten di kanan (agents/ui-spec.md bagian 2.2).
-
-    Badge verifikasi tampil di kolom kiri, dan alasan penolakan ditulis lengkap,
-    bukan hanya sebagai tooltip, agar operator tahu persis bagian mana yang
-    perlu diperbaiki (agents/ui-spec.md bagian 6.6).
 --}}
 @extends('layouts.app')
 
 @section('content')
     @php
         use App\Support\DummyData;
-
-        $statusVerifikasi = \App\Enums\StatusVerifikasi::from($data['status_verifikasi']);
         $statusTinggal = \App\Enums\StatusTinggal::from($data['status_tinggal']);
 
         // Data terkait, disaring dari penyedia data contoh menurut nama pemilik.
@@ -35,7 +29,6 @@
         $totalLuas = array_sum(array_column($lahan, 'luas'));
 
         $bolehUbah = true;
-        $bolehVerifikasi = true;
     @endphp
 
     <x-sim.page-header :judul="$data['nama_kepala_keluarga']"
@@ -60,25 +53,6 @@
         </x-slot:aksi>
     </x-sim.page-header>
 
-    {{--
-        Alasan penolakan ditulis penuh di bagian paling atas, karena inilah
-        satu-satunya petunjuk perbaikan bagi operator (rules.md bagian 5.2 poin 7).
-    --}}
-    @if ($statusVerifikasi === \App\Enums\StatusVerifikasi::Ditolak && ! empty($data['catatan_verifikasi']))
-        <div class="mb-6 flex items-start gap-3 rounded-xl border border-red-300 bg-red-50 p-4 dark:border-red-500/30 dark:bg-red-500/10"
-            role="alert">
-            <svg class="mt-0.5 h-5 w-5 shrink-0 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                    d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-            </svg>
-            <div>
-                <p class="text-theme-sm font-semibold text-red-800 dark:text-red-200">Data ditolak saat diperiksa</p>
-                <p class="mt-1 text-theme-sm text-red-700 dark:text-red-300">{{ $data['catatan_verifikasi'] }}</p>
-            </div>
-        </div>
-    @endif
-
     <div class="grid gap-6 lg:grid-cols-[20rem_1fr]">
         {{-- Kolom kiri: ringkasan yang menetap --}}
         <aside class="lg:sticky lg:top-24 lg:self-start">
@@ -100,7 +74,6 @@
                 </div>
 
                 <div class="mt-4 flex flex-wrap gap-2">
-                    <x-sim.status-badge :status="$statusVerifikasi" :catatan="$data['catatan_verifikasi'] ?? null" />
                     <x-sim.status-badge :status="$statusTinggal" />
                 </div>
 
@@ -139,30 +112,6 @@
                         </dd>
                     </div>
                 </dl>
-
-                {{-- Tindakan verifikasi, hanya dirender bila pengguna berizin --}}
-                @if ($bolehVerifikasi)
-                    <div class="mt-5 space-y-2 border-t border-gray-200 pt-5 dark:border-gray-800">
-                        <p class="text-theme-xs text-gray-500 dark:text-gray-400">
-                            Tindakan pemeriksaan data
-                        </p>
-                        <form method="POST" action="{{ route('transmigran.verifikasi', $data['id_transmigran']) }}">
-                            @csrf
-                            <button type="submit"
-                                class="w-full rounded-lg border border-green-300 px-4 py-2.5 text-theme-sm font-medium text-green-700 transition hover:bg-green-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-green-500/40 dark:text-green-400 dark:hover:bg-green-500/10">
-                                Tandai Terverifikasi
-                            </button>
-                        </form>
-                        <button type="button"
-                            @click="$dispatch('buka-konfirmasi', {
-                                nama: 'tolakTransmigran',
-                                aksi: '{{ route('transmigran.tolak', $data['id_transmigran']) }}'
-                            })"
-                            class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-theme-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
-                            Tolak dengan Alasan
-                        </button>
-                    </div>
-                @endif
             </div>
         </aside>
 
@@ -312,8 +261,6 @@
                                         {{ number_format($l['luas'], 2, ',', '.') }}
                                     </td>
                                     <td class="px-5 py-3">
-                                        <x-sim.status-badge
-                                            :status="\App\Enums\StatusVerifikasi::from($l['status_verifikasi'])" />
                                     </td>
                                 </tr>
                             @endforeach
@@ -408,18 +355,10 @@
     {{-- Modal ubah data, terisi nilai yang sedang berlaku --}}
     @if ($bolehUbah)
         <x-sim.modal-form nama="formUbahTransmigran" judul="Ubah Data Transmigran"
-            keterangan="Data yang sudah terverifikasi akan kembali menunggu pemeriksaan setelah diubah."
+            keterangan="Perubahan tercatat pada audit log."
             :aksi="route('transmigran.perbarui', $data['id_transmigran'])" metode="PUT" ukuran="xl"
-            label-simpan="Simpan Perubahan" :boleh-verifikasi="$bolehVerifikasi">
+            label-simpan="Simpan Perubahan">
             @include('pages.transmigran.form', ['data' => $data, 'awalan' => 'ubah'])
         </x-sim.modal-form>
-    @endif
-
-    {{-- Penolakan verifikasi wajib menyertakan alasan --}}
-    @if ($bolehVerifikasi)
-        <x-sim.confirm-dialog nama="tolakTransmigran" judul="Tolak verifikasi data ini?"
-            pesan="Operator akan melihat alasan penolakan agar dapat memperbaiki datanya."
-            label-setuju="Tolak Data Transmigran" ragam="peringatan" metode="POST" :perlu-alasan="true"
-            label-alasan="Alasan penolakan" />
     @endif
 @endsection

@@ -15,13 +15,11 @@
     @php
         use App\Enums\JenisInfrastruktur;
         use App\Enums\Kondisi;
-        use App\Enums\StatusVerifikasi;
         use App\Support\DummyData;
 
         $bolehUbah = true;
 
         $kondisi = Kondisi::from($data['kondisi']);
-        $statusVerifikasi = StatusVerifikasi::from($data['status_verifikasi']);
         $jenis = JenisInfrastruktur::from($data['jenis']);
 
         // Pengaduan pada SP yang sama, sebagai konteks. Bukan daftar keluhan
@@ -61,7 +59,6 @@
 
                 <div class="mt-3 flex flex-wrap gap-2">
                     <x-sim.status-badge :status="$kondisi" />
-                    <x-sim.status-badge :status="$statusVerifikasi" />
                 </div>
 
                 <dl class="mt-5 space-y-3 border-t border-gray-200 pt-5 text-theme-sm dark:border-gray-800">
@@ -163,7 +160,7 @@
 
     @if ($bolehUbah)
         <x-sim.modal-form nama="formUbahInfrastruktur" judul="Ubah Data Aset"
-            keterangan="Data yang sudah terverifikasi akan kembali menunggu pemeriksaan setelah diubah."
+            keterangan="Perubahan tercatat pada audit log."
             :aksi="route('infrastruktur.perbarui', $data['id_infrastruktur'])" metode="PUT" ukuran="lg"
             label-simpan="Simpan Perubahan">
             @include('pages.infrastruktur.form', ['data' => $data, 'awalan' => 'ubah'])

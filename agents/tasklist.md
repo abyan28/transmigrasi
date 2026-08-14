@@ -565,13 +565,10 @@ Diperbaiki dengan uji yang **membuka setiap tujuan menu ke aplikasi sungguhan**.
   * Akun `Per SP` tanpa penugasan tidak melihat data apa pun, bukan melihat seluruhnya
 - [ ] Task 3.4b - Sidebar dinamis berbasis izin `[Sedang]`
   * `MenuHelper` menyaring item menu menurut izin; kelompok kosong ikut hilang
-- [ ] Task 3.7 - Implementasi verifikasi data `[Sulit]`
-  * Model `Verifikasi`, trait `DapatDiverifikasi` untuk 17 model terkait
-  * Aksi Verifikasi dan Tolak beserta alasan wajib; data yang diubah otomatis kembali ke Belum Diverifikasi
-  * **Tanpa verifikasi otomatis:** data baru selalu Belum Diverifikasi, sekalipun penginput punya izin verifikasi (`rules.md` §5.2 poin 4)
-  * Tombol **"Simpan dan Verifikasi"** pada modal form, dirender hanya bila izin verifikasi dimiliki
-  * Satu klik tombol gabungan menghasilkan **dua entri audit log** terpisah: `Tambah` dan `Verifikasi`
-  * Badge status pada tabel dan halaman detail; alasan penolakan tampil sebagai tooltip
+- [~] ~~Task 3.7 - Implementasi verifikasi data~~ **DIBATALKAN 2026-08-14**
+  * Fitur verifikasi dicabut seluruhnya atas kesepakatan tim, sehingga task ini tidak akan dikerjakan.
+  * Yang ikut dihapus: enum `StatusVerifikasi`, tabel `verifikasi` pada ERD, aturan `rules.md` 5.2, delapan rute verifikasi/tolak, dan indikator 15 Mutu Data pada dashboard.
+  * Rincian keputusan beserta dampaknya tercatat pada `notes.md` tabel keputusan bertanggal 2026-08-14.
 - [ ] Task 3.5 - CRUD manajemen pengguna oleh Admin `[Sedang]`
   * Termasuk tindakan **setel ulang kata sandi**: membuat kata sandi sementara dan menandai `password_harus_diganti = TRUE`
   * Penonaktifan akun memakai `is_aktif = FALSE`, bukan penghapusan
@@ -679,8 +676,6 @@ Diperbaiki dengan uji yang **membuka setiap tujuan menu ke aplikasi sungguhan**.
 ## Tahap 9 — Dashboard dengan Data Nyata
 
 - [ ] Task 9.1 - Ganti data dummy dashboard dengan query nyata `[Sulit]`
-  * Termasuk indikator ke-15 mutu data kawasan: persentase baris berstatus Terverifikasi, dipecah per SP dan per modul
-  * Hanya menghitung status Terverifikasi, tidak termasuk data input dinas yang belum diverifikasi (`rules.md` 5.2 poin 11)
 - [ ] Task 9.2 - Filter wilayah dan periode terhubung ke seluruh visualisasi `[Sedang]`
 - [ ] Task 9.3 - Drill-down klik grafik menuju rincian per SP `[Sulit]`
 - [ ] Task 9.4 - Optimasi query dashboard (indeks, agregasi, eager loading) `[Sulit]`
@@ -750,7 +745,7 @@ sistem informasi transmigrasi/     <- root Laravel sekaligus root proyek
 - **Hak akses ditentukan dua hal terpisah:** izin (boleh melakukan apa) dan cakupan data (boleh melihat data siapa, bernilai Semua / Per SP / Milik Sendiri).
 - **Role Transmigran dan Ketua Poktan dihapus.** Seluruh pengguna sistem adalah petugas.
 - **Pengaduan warga lewat kanal publik tanpa login,** cukup nama dan kontak, dengan pelacakan memakai nomor tiket.
-- **Verifikasi memakai tabel terpusat** `verifikasi`, melayani 17 modul sekaligus.
+- **Verifikasi data dicabut 2026-08-14**, beserta tabel `verifikasi` dan indikator mutu data (`notes.md` tabel keputusan).
 - Rincian lengkap pada `rules.md` §5, §5.2, §10b, dan §14b.
 
 **Aset dan layout sudah terpasang:**
@@ -821,7 +816,7 @@ sistem informasi transmigrasi/     <- root Laravel sekaligus root proyek
 
 Mode gelap ditangani otomatis: `pantauTema()` menggambar ulang seluruh grafik saat tema berganti.
 
-**Total uji: 302 lulus, 1.408 pernyataan** (PHP), ditambah 12 uji `chart-config.js` dan 11 uji kontras WCAG lewat Node, serta verifikasi visual lewat Edge headless.
+**Total uji: 293 lulus, 1.358 pernyataan** (PHP), ditambah 12 uji `chart-config.js` dan 11 uji kontras WCAG lewat Node, serta verifikasi visual lewat Edge headless.
 
 **GELOMBANG 1 SELESAI DAN SUDAH LOLOS DELIVERY GATE. Berikutnya CHECKPOINT, bukan task baru.**
 
@@ -852,7 +847,7 @@ Modul transmigran adalah acuannya. Tiap modul terdiri atas tiga berkas di `resou
 | Berkas | Isi |
 |---|---|
 | `index.blade.php` | Kartu ringkasan, `x-sim.data-table` dibungkus satu `<form method="GET">` agar pencarian dan filter terkirim bersama, modal tambah, dialog hapus |
-| `detail.blade.php` | Dua kolom asimetris, tab `hashTabs()`, tindakan verifikasi di kolom kiri, modal ubah |
+| `detail.blade.php` | Dua kolom asimetris, tab `hashTabs()`, ringkasan entitas di kolom kiri, modal ubah |
 | `form.blade.php` | Isian bersama kedua modal, wajib menerima atribut `awalan` agar id tetap unik |
 
 Aturan yang mudah terlewat:

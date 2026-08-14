@@ -178,40 +178,10 @@ Untuk lokasi dengan sinyal lemah:
 
 ### 3.4 Validasi Data
 1. Data yang baru masuk diperiksa kelengkapannya oleh sistem.
-2. Dinas terkait atau admin memverifikasi data sesuai bidangnya.
+2. Dinas terkait atau admin memeriksa kelengkapan data sesuai bidangnya.
 3. Data yang belum lengkap dikembalikan untuk perbaikan.
 4. Data yang lolos validasi dipakai sebagai data resmi sistem.
 5. Setiap perubahan data penting tercatat dalam audit log.
-
-### 3.4a Verifikasi Data
-
-Verifikasi adalah penandaan bahwa suatu baris data sudah diperiksa kebenarannya. Verifikasi **tidak mengubah isi data**, hanya menambahkan catatan siapa memeriksa dan kapan.
-
-**Jalur A: data dimasukkan Operator SP**
-1. Operator memasukkan data, misalnya data transmigran baru.
-2. Data tersimpan berstatus **Belum Diverifikasi**, ditandai badge abu-abu pada tabel.
-3. Petugas dinas membuka data tersebut dan mencocokkannya dengan dokumen sumber atau kondisi lapangan.
-4. Bila benar, petugas menekan **Verifikasi**. Status berubah menjadi **Terverifikasi**, badge menjadi hijau.
-5. Bila keliru, petugas menekan **Tolak** dan **wajib** menuliskan alasannya. Status menjadi **Ditolak**, badge merah, dan alasan terbaca oleh operator.
-6. Operator memperbaiki data sesuai alasan penolakan. Karena isinya berubah, status otomatis kembali ke **Belum Diverifikasi**.
-7. Petugas memeriksa ulang, lalu kembali ke langkah 4.
-
-**Jalur B: data dimasukkan langsung petugas dinas**
-1. Petugas dinas memasukkan data sendiri, tanpa melalui operator.
-2. Data **tetap tersimpan berstatus Belum Diverifikasi**. Tidak ada verifikasi otomatis, sekalipun petugas memiliki izin verifikasi.
-3. Untuk memudahkan, petugas dapat menekan tombol **Simpan dan Verifikasi** yang menjalankan kedua langkah sekaligus.
-4. Meski satu kali klik, sistem mencatatnya sebagai **dua entri terpisah** pada audit log: satu penambahan data, satu verifikasi.
-5. Alasannya, indikator mutu data pada dashboard hanya bermakna bila mencerminkan pemeriksaan yang benar-benar dilakukan, bukan sekadar status izin penginputnya.
-
-**Jalur C: data lama diperbarui**
-1. Data berstatus **Terverifikasi** kemudian diubah, baik oleh operator maupun petugas.
-2. Status otomatis kembali ke **Belum Diverifikasi**.
-3. Data diperiksa ulang mengikuti Jalur A atau B.
-
-**Pemantauan**
-- Dashboard menampilkan indikator mutu data, yaitu persentase baris berstatus **Terverifikasi** terhadap seluruh data, dapat dipecah per SP.
-- Laporan resmi dapat disaring agar hanya memuat data terverifikasi.
-- Seluruh perubahan status tercatat pada audit log beserta pelakunya.
 
 ### 3.5 Monitoring dan Dashboard
 1. Data yang sudah valid ditampilkan pada dashboard.
@@ -358,13 +328,13 @@ Role bersifat dinamis (`rules.md` bagian 5), sehingga alur di bawah menggambarka
 
 ### 5.2 Dinas Transmigrasi
 1. Membuka dashboard dan memantau indikator kawasan.
-2. Memeriksa data transmigran, rumah, lahan, inventaris, dan fasilitas SP, lalu menandainya Terverifikasi atau Ditolak beserta alasannya.
+2. Mengelola data transmigran, rumah, lahan, inventaris, dan fasilitas SP.
 3. Menerima dan menangani pengaduan bidang ketransmigrasian.
 4. Mengunduh laporan untuk perencanaan program dan tindak lanjut.
 
 ### 5.3 Dinas Pertanian
 1. Membuka dashboard dan memantau indikator pertanian.
-2. Memeriksa data poktan, komoditas, hasil panen, alsintan, dan saprotan, lalu menandainya Terverifikasi atau Ditolak beserta alasannya.
+2. Mengelola data poktan, komoditas, hasil panen, alsintan, dan saprotan.
 3. Menerima dan menangani pengaduan bidang pertanian.
 4. Mengunduh laporan produksi dan sarana pertanian.
 
@@ -373,7 +343,7 @@ Role bersifat dinamis (`rules.md` bagian 5), sehingga alur di bawah menggambarka
 2. Memasukkan dan memperbarui data transmigran, rumah, lahan, riwayat tanam, dan hasil panen di SP tersebut.
 3. Mencatatkan pengaduan warga yang disampaikan lisan, atas nama warga bersangkutan.
 4. Memperbaiki data yang ditolak dinas sesuai alasan penolakan yang tertulis.
-5. Tidak berwenang menghapus data, memverifikasi, maupun mengakses manajemen pengguna dan audit log.
+5. Tidak berwenang menghapus data maupun mengakses manajemen pengguna dan audit log.
 
 ### 5.5 Warga transmigran (tanpa akun)
 1. Warga **tidak memiliki akun sistem**. Data mereka dikelola petugas.

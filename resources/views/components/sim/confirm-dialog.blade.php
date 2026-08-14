@@ -1,9 +1,9 @@
 {{--
     Dialog konfirmasi untuk tindakan yang tidak dapat dibatalkan.
 
-    Dipakai sebelum penghapusan data maupun penolakan verifikasi. Untuk
-    penolakan verifikasi, alasan WAJIB diisi agar operator tahu bagian mana
-    yang perlu diperbaiki (agents/rules.md bagian 5.2 poin 7).
+    Dipakai sebelum tindakan yang tidak dapat dibatalkan, terutama penghapusan
+    data. Tersedia prop `perluAlasan` bagi tindakan yang menuntut keterangan
+    tertulis, agar alasannya ikut tercatat pada audit log.
 
     Pemakaian:
         <x-sim.confirm-dialog nama="hapusTransmigran"

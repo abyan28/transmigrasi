@@ -17,8 +17,6 @@ enum AksiAuditLog: string
     case Ubah = 'Ubah';
     case Hapus = 'Hapus';
     case Pulihkan = 'Pulihkan';
-    case Verifikasi = 'Verifikasi';
-    case TolakVerifikasi = 'Tolak Verifikasi';
     case Login = 'Login';
     case Logout = 'Logout';
     case ResetKataSandi = 'Reset Kata Sandi';

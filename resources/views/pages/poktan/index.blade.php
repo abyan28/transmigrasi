@@ -110,7 +110,6 @@
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Satuan Permukiman</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Berdiri</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Anggota</th>
-            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Verifikasi</th>
             <th scope="col" class="px-5 py-3 text-right text-theme-xs font-medium text-gray-500 dark:text-gray-400">Aksi</th>
         </x-slot:kepala>
 
@@ -132,9 +131,6 @@
                     {{ $p['tahun_berdiri'] }}</td>
                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
                     {{ $p['jumlah_anggota'] }} orang</td>
-                <td class="px-5 py-3">
-                    <x-sim.status-badge :status="\App\Enums\StatusVerifikasi::from($p['status_verifikasi'])" />
-                </td>
                 <td class="px-5 py-3">
                     <x-sim.aksi-baris :rincian-url="route('poktan.detail', $p['id_poktan'])"
                         modal-ubah="formUbahPoktanBaris"

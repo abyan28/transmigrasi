@@ -17,6 +17,5 @@ enum AksiPermission: string
     case Tambah = 'tambah';
     case Ubah = 'ubah';
     case Hapus = 'hapus';
-    case Verifikasi = 'verifikasi';
     case Export = 'export';
 }

@@ -46,7 +46,7 @@
             <h2 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">Izin</h2>
             <p class="mt-2 text-theme-sm text-gray-600 dark:text-gray-400">
                 Menjawab <span class="font-medium">boleh melakukan apa</span>, contohnya melihat,
-                menambah, mengubah, menghapus, memverifikasi, atau mengekspor data pada satu modul.
+                menambah, mengubah, menghapus, atau mengekspor data pada satu modul.
             </p>
             <p class="mt-2 text-theme-xs text-gray-500 dark:text-gray-400">
                 Daftar izin ditanam sistem dan tidak dapat ditambah admin, karena setiap izin harus

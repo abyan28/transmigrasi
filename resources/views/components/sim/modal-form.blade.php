@@ -8,13 +8,9 @@
     - tombol simpan nonaktif beserta pemintal selama proses kirim,
     - layar penuh pada perangkat mobile.
 
-    Untuk modul yang memerlukan verifikasi, tersedia tombol kedua
-    "Simpan dan Verifikasi" yang hanya dirender bila pengguna berizin
-    (agents/rules.md bagian 5.2 poin 5).
-
     Pemakaian:
         <x-sim.modal-form nama="formTransmigran" judul="Tambah Transmigran"
-            aksi="/transmigran" :boleh-verifikasi="true">
+            aksi="/transmigran">
             ... isian ...
         </x-sim.modal-form>
 
@@ -29,7 +25,6 @@
     'metode' => 'POST',
     'ukuran' => 'lg',
     'labelSimpan' => 'Simpan',
-    'bolehVerifikasi' => false,
 
     /*
         Pola aksi untuk modal yang dipakai bergantian oleh banyak baris tabel,
@@ -194,31 +189,13 @@
                             Batal
                         </button>
 
-                        @if ($bolehVerifikasi)
-                            {{--
-                                Tombol simpan biasa menjadi sekunder ketika verifikasi tersedia,
-                                agar tindakan yang lebih lengkap menjadi pilihan utama.
-                            --}}
-                            <button type="submit" name="tindakan" value="simpan" :disabled="mengirim"
-                                class="rounded-lg border border-gray-300 px-4 py-2.5 text-theme-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
-                                {{ $labelSimpan }}
-                            </button>
-                            <button type="submit" name="tindakan" value="simpan_verifikasi" :disabled="mengirim"
-                                class="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-theme-sm font-medium text-white hover:bg-brand-600 disabled:opacity-60 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
-                                <span x-show="mengirim" x-cloak
-                                    class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
-                                    aria-hidden="true"></span>
-                                Simpan dan Verifikasi
-                            </button>
-                        @else
-                            <button type="submit" :disabled="mengirim"
-                                class="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-theme-sm font-medium text-white hover:bg-brand-600 disabled:opacity-60 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
-                                <span x-show="mengirim" x-cloak
-                                    class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
-                                    aria-hidden="true"></span>
-                                {{ $labelSimpan }}
-                            </button>
-                        @endif
+                        <button type="submit" :disabled="mengirim"
+                            class="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-theme-sm font-medium text-white hover:bg-brand-600 disabled:opacity-60 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
+                            <span x-show="mengirim" x-cloak
+                                class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
+                                aria-hidden="true"></span>
+                            {{ $labelSimpan }}
+                        </button>
                     </div>
                 </form>
             </div>

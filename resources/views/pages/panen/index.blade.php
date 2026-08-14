@@ -63,7 +63,6 @@
         $bolehTambah = true;
         $bolehUbah = true;
         $bolehHapus = true;
-        $bolehVerifikasi = true;
     @endphp
 
     <x-sim.page-header judul="Hasil Panen"
@@ -202,7 +201,6 @@
                 <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Tanggal</th>
                 <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Volume</th>
                 <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Kualitas</th>
-                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Verifikasi</th>
                 <th scope="col" class="px-5 py-3 text-right text-theme-xs font-medium text-gray-500 dark:text-gray-400">
                     Aksi
                 </th>
@@ -236,9 +234,6 @@
                         @endif
                     </td>
                     <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ $p['kualitas'] }}</td>
-                    <td class="px-5 py-3">
-                        <x-sim.status-badge :status="\App\Enums\StatusVerifikasi::from($p['status_verifikasi'])" />
-                    </td>
                     <td class="px-5 py-3">
                         <div class="flex items-center justify-end gap-1">
                             <a href="{{ route('panen.detail', $p['id_hasil_panen']) }}"
@@ -329,7 +324,7 @@
     @if ($bolehTambah)
         <x-sim.modal-form nama="formTambahPanen" judul="Catat Hasil Panen"
             keterangan="Satuan volume mengikuti komoditas yang dipilih." :aksi="route('panen.simpan')" ukuran="xl"
-            label-simpan="Simpan Hasil Panen" :boleh-verifikasi="$bolehVerifikasi">
+            label-simpan="Simpan Hasil Panen">
             @include('pages.panen.form', ['awalan' => 'tambah'])
         </x-sim.modal-form>
     @endif

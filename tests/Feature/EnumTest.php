@@ -18,7 +18,6 @@ use App\Enums\Kondisi;
 use App\Enums\KondisiRumah;
 use App\Enums\PrioritasPengaduan;
 use App\Enums\StatusPengaduan;
-use App\Enums\StatusVerifikasi;
 use App\Enums\SumberDana;
 
 /*
@@ -30,14 +29,13 @@ use App\Enums\SumberDana;
 it('memuat seluruh nilai baku sesuai kamus data', function (string $enum, array $harapan) {
     expect($enum::nilai())->toBe($harapan);
 })->with([
-    'status verifikasi' => [StatusVerifikasi::class, ['Belum Diverifikasi', 'Terverifikasi', 'Ditolak']],
     'status pengaduan' => [StatusPengaduan::class, ['Menunggu Diterima', 'Diterima', 'Diproses', 'Selesai']],
     'prioritas pengaduan' => [PrioritasPengaduan::class, ['Rendah', 'Sedang', 'Tinggi', 'Mendesak']],
     'kondisi rumah' => [KondisiRumah::class, ['Tidak Rusak', 'Rusak Ringan', 'Rusak Berat']],
     'kondisi aset' => [Kondisi::class, ['Baik', 'Rusak Ringan', 'Rusak Berat']],
     'bidang pengaduan' => [BidangPengaduan::class, ['Ketransmigrasian', 'Pertanian']],
     'cakupan data' => [CakupanData::class, ['Semua', 'Per SP', 'Milik Sendiri']],
-    'aksi permission' => [AksiPermission::class, ['lihat', 'tambah', 'ubah', 'hapus', 'verifikasi', 'export']],
+    'aksi permission' => [AksiPermission::class, ['lihat', 'tambah', 'ubah', 'hapus', 'export']],
 ]);
 
 it('membedakan kondisi rumah dari kondisi aset lain', function () {
@@ -55,12 +53,12 @@ it('memuat sembilan kategori pengaduan tanpa spasi berlebih', function () {
     }
 });
 
-it('memuat dua belas aksi audit log termasuk tindakan terhadap akun', function () {
+it('memuat sepuluh aksi audit log termasuk tindakan terhadap akun', function () {
     $nilai = AksiAuditLog::nilai();
 
-    expect($nilai)->toHaveCount(12)
+    expect($nilai)->toHaveCount(10)
         ->and($nilai)->toContain('Reset Kata Sandi')
-        ->and($nilai)->toContain('Tolak Verifikasi')
+        ->and($nilai)->toContain('Pulihkan')
         ->and($nilai)->toContain('Ubah Izin Role');
 });
 
@@ -125,7 +123,6 @@ it('memakai warna badge yang dikenali komponen', function () {
     $warnaSah = ['gray', 'teal', 'success', 'warning', 'error'];
 
     $berbadge = [
-        StatusVerifikasi::class,
         StatusPengaduan::class,
         PrioritasPengaduan::class,
         KondisiRumah::class,
@@ -140,8 +137,8 @@ it('memakai warna badge yang dikenali komponen', function () {
 });
 
 it('memakai warna hijau hanya untuk keadaan yang baik', function () {
-    expect(StatusVerifikasi::Terverifikasi->warna())->toBe('success')
-        ->and(StatusVerifikasi::Ditolak->warna())->toBe('error')
+    expect(StatusPengaduan::Selesai->warna())->toBe('success')
+        ->and(PrioritasPengaduan::Mendesak->warna())->toBe('error')
         ->and(KondisiRumah::TidakRusak->warna())->toBe('success')
         ->and(KondisiRumah::RusakBerat->warna())->toBe('error');
 });
@@ -216,14 +213,4 @@ it('menetapkan bidang untuk seluruh kategori tanpa terkecuali', function () {
     }
 });
 
-/*
-|--------------------------------------------------------------------------
-| Verifikasi
-|--------------------------------------------------------------------------
-*/
 
-it('menandai data yang perlu ditindaklanjuti', function () {
-    expect(StatusVerifikasi::BelumDiverifikasi->perluTindakan())->toBeTrue()
-        ->and(StatusVerifikasi::Ditolak->perluTindakan())->toBeTrue()
-        ->and(StatusVerifikasi::Terverifikasi->perluTindakan())->toBeFalse();
-});

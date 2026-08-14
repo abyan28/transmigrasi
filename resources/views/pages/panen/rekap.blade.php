@@ -36,17 +36,12 @@
                     'jumlah_catatan' => 0,
                     'volume_ton' => 0.0,
                     'nilai_jual' => 0.0,
-                    'terverifikasi' => 0,
                 ];
             }
 
             $peta[$kunci]['jumlah_catatan']++;
             $peta[$kunci]['volume_ton'] += DummyData::keTon($p['volume'], $p['satuan']);
             $peta[$kunci]['nilai_jual'] += ($p['harga_jual'] ?? 0) * $p['volume'];
-
-            if ($p['status_verifikasi'] === 'Terverifikasi') {
-                $peta[$kunci]['terverifikasi']++;
-            }
         }
 
         // Diurutkan dari volume terbesar agar yang paling berpengaruh terbaca dulu.
@@ -56,7 +51,6 @@
         $totalCatatan = array_sum(array_column($rekap, 'jumlah_catatan'));
         $totalVolume = array_sum(array_column($rekap, 'volume_ton'));
         $totalNilai = array_sum(array_column($rekap, 'nilai_jual'));
-        $totalVerifikasi = array_sum(array_column($rekap, 'terverifikasi'));
 
         $labelKelompok = [
             'sp' => 'Satuan Permukiman',
@@ -127,9 +121,6 @@
                             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">
                                 Perkiraan Nilai Jual
                             </th>
-                            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">
-                                Terverifikasi
-                            </th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
@@ -147,9 +138,6 @@
                                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
                                     Rp {{ number_format($r['nilai_jual'], 0, ',', '.') }}
                                 </td>
-                                <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
-                                    {{ $r['terverifikasi'] }} dari {{ $r['jumlah_catatan'] }}
-                                </td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -166,9 +154,6 @@
                             </td>
                             <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
                                 Rp {{ number_format($totalNilai, 0, ',', '.') }}
-                            </td>
-                            <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
-                                {{ $totalVerifikasi }} dari {{ $totalCatatan }}
                             </td>
                         </tr>
                     </tfoot>

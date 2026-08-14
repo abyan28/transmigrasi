@@ -10,15 +10,12 @@
 @section('content')
     @php
         use App\Support\DummyData;
-
-        $statusVerifikasi = \App\Enums\StatusVerifikasi::from($data['status_verifikasi']);
         $setaraTon = DummyData::keTon($data['volume'], $data['satuan']);
         $nilaiJual = ($data['harga_jual'] ?? 0) * $data['volume'];
 
         $petani = collect(DummyData::transmigran())->firstWhere('nama_kepala_keluarga', $data['petani']);
 
         $bolehUbah = true;
-        $bolehVerifikasi = true;
     @endphp
 
     <x-sim.page-header :judul="'Panen ' . $data['komoditas']"
@@ -60,7 +57,6 @@
                 @endif
 
                 <div class="mt-4">
-                    <x-sim.status-badge :status="$statusVerifikasi" />
                 </div>
 
                 <dl class="mt-5 space-y-3 border-t border-gray-200 pt-5 text-theme-sm dark:border-gray-800">
@@ -95,24 +91,6 @@
                         <dd class="text-right font-medium text-gray-800 dark:text-white/90">{{ $data['kualitas'] }}</dd>
                     </div>
                 </dl>
-
-                @if ($bolehVerifikasi)
-                    <div class="mt-5 space-y-2 border-t border-gray-200 pt-5 dark:border-gray-800">
-                        <p class="text-theme-xs text-gray-500 dark:text-gray-400">Tindakan pemeriksaan data</p>
-                        <form method="POST" action="{{ route('panen.verifikasi', $data['id_hasil_panen']) }}">
-                            @csrf
-                            <button type="submit"
-                                class="w-full rounded-lg border border-green-300 px-4 py-2.5 text-theme-sm font-medium text-green-700 transition hover:bg-green-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-green-500/40 dark:text-green-400 dark:hover:bg-green-500/10">
-                                Tandai Terverifikasi
-                            </button>
-                        </form>
-                        <button type="button"
-                            @click="$dispatch('buka-konfirmasi', { nama: 'tolakPanen', aksi: '{{ route('panen.tolak', $data['id_hasil_panen']) }}' })"
-                            class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-theme-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
-                            Tolak dengan Alasan
-                        </button>
-                    </div>
-                @endif
             </div>
         </aside>
 
@@ -177,17 +155,10 @@
 
     @if ($bolehUbah)
         <x-sim.modal-form nama="formUbahPanen" judul="Ubah Catatan Panen"
-            keterangan="Data yang sudah terverifikasi akan kembali menunggu pemeriksaan setelah diubah."
+            keterangan="Perubahan tercatat pada audit log."
             :aksi="route('panen.perbarui', $data['id_hasil_panen'])" metode="PUT" ukuran="xl"
-            label-simpan="Simpan Perubahan" :boleh-verifikasi="$bolehVerifikasi">
+            label-simpan="Simpan Perubahan">
             @include('pages.panen.form', ['data' => $data, 'awalan' => 'ubah'])
         </x-sim.modal-form>
-    @endif
-
-    @if ($bolehVerifikasi)
-        <x-sim.confirm-dialog nama="tolakPanen" judul="Tolak verifikasi catatan panen ini?"
-            pesan="Operator akan melihat alasan penolakan agar dapat memperbaiki datanya."
-            label-setuju="Tolak Catatan Panen" ragam="peringatan" metode="POST" :perlu-alasan="true"
-            label-alasan="Alasan penolakan" />
     @endif
 @endsection

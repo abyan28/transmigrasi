@@ -29,7 +29,7 @@ it('merender dashboard beserta seluruh wadah grafiknya', function () {
     foreach ([
         'grafikPenduduk', 'grafikKomoditas', 'grafikPendapatan', 'grafikMutasiKk',
         'grafikPenghuni', 'grafikPekerjaan', 'grafikPanen', 'grafikHarga',
-        'grafikInfrastruktur', 'grafikMutuData', 'grafikStatusPengaduan',
+        'grafikInfrastruktur', 'grafikStatusPengaduan',
     ] as $idGrafik) {
         $respons->assertSee('id="' . $idGrafik . '"', false);
         $respons->assertSee("buatGrafik('" . $idGrafik . "'", false);
@@ -228,12 +228,6 @@ it('menyaring daftar transmigran menurut satuan permukiman', function () {
         ->assertDontSee('YOHANES BERE');
 });
 
-it('menyaring daftar transmigran menurut status verifikasi', function () {
-    $this->get(route('transmigran.index', ['status_verifikasi' => 'Ditolak']))
-        ->assertSee('ANGELA SERAN')
-        ->assertDontSee('YOHANES BERE');
-});
-
 it('menampilkan keadaan pencarian nihil beserta jalan keluarnya', function () {
     // Keadaan ini wajib dibedakan dari daftar yang memang belum berisi data
     // (agents/ui-spec.md bagian 7).
@@ -255,27 +249,6 @@ it('membalas 404 untuk transmigran yang tidak ada', function () {
     $this->get('/transmigran/99')->assertNotFound();
 });
 
-it('menulis alasan penolakan secara lengkap pada halaman rincian', function () {
-    // Alasan adalah satu-satunya petunjuk perbaikan bagi operator, sehingga
-    // tidak boleh hanya menjadi tooltip (agents/rules.md bagian 5.2 poin 7).
-    $this->get(route('transmigran.detail', 4))
-        ->assertSee('Data ditolak saat diperiksa')
-        ->assertSee('Jumlah anggota keluarga tidak sesuai kartu keluarga. Mohon diperiksa ulang.');
-});
-
-it('menyediakan tombol Simpan dan Verifikasi pada modal form', function () {
-    // Tombol gabungan hanya dirender bila pengguna berizin verifikasi
-    // (agents/ui-spec.md bagian 6.2).
-    $this->get(route('transmigran.index'))->assertSee('Simpan dan Verifikasi');
-});
-
-it('menuntut alasan saat menolak verifikasi', function () {
-    $isi = $this->get(route('transmigran.detail', 1))->getContent();
-
-    expect($isi)->toContain('Alasan penolakan')
-        ->and($isi)->toContain('name="alasan"');
-});
-
 it('menautkan rincian transmigran ke satuan permukimannya', function () {
     $this->get(route('transmigran.detail', 1))
         ->assertSee(route('dashboard.sp', 1), false);
@@ -283,12 +256,13 @@ it('menautkan rincian transmigran ke satuan permukimannya', function () {
 
 it('menyediakan seluruh rute tulis modul transmigran', function () {
     // Setiap tombol pada antarmuka wajib punya tujuan nyata, bukan kontrol mati.
-    $isi = $this->get(route('transmigran.detail', 1))->getContent();
+    // Halaman daftar memuat seluruh tindakan tulis: tambah lewat modal, ubah
+    // lewat pola aksi per baris, dan hapus lewat kolom aksi.
+    $isi = $this->get(route('transmigran.index'))->getContent();
 
     foreach ([
-        route('transmigran.perbarui', 1),
-        route('transmigran.verifikasi', 1),
-        route('transmigran.tolak', 1),
+        route('transmigran.simpan'),
+        route('transmigran.hapus', 1),
     ] as $tujuan) {
         expect($isi)->toContain($tujuan);
     }
@@ -1392,8 +1366,8 @@ it('menyamakan daftar izin dengan kamus data dan rules', function () {
     //
     // Memeriksa satu sumber memberi rasa aman yang keliru ketika sumbernya
     // sendiri belum sejalan. Karena itu uji ini mengadu dengan KEDUANYA.
-    $aksiUrut = ['lihat', 'tambah', 'ubah', 'hapus', 'verifikasi', 'export'];
-    $huruf = ['L' => 'lihat', 'T' => 'tambah', 'U' => 'ubah', 'H' => 'hapus', 'V' => 'verifikasi', 'E' => 'export'];
+    $aksiUrut = ['lihat', 'tambah', 'ubah', 'hapus', 'export'];
+    $huruf = ['L' => 'lihat', 'T' => 'tambah', 'U' => 'ubah', 'H' => 'hapus', 'E' => 'export'];
 
     $kamus = preg_split('/\r\n|\r|\n/', file_get_contents(base_path('agents/data-dictionary.md')));
     $rules = preg_split('/\r\n|\r|\n/', file_get_contents(base_path('agents/rules.md')));
@@ -1405,7 +1379,7 @@ it('menyamakan daftar izin dengan kamus data dan rules', function () {
             continue;
         }
         $sel = array_map('trim', explode('|', $m[2]));
-        if (count($sel) !== 6) {
+        if (count($sel) !== count($aksiUrut)) {
             continue;
         }
         $aksi = [];
@@ -2392,7 +2366,7 @@ it('mengelompokkan visualisasi dashboard ke dalam bagian bertajuk', function () 
 
     foreach ([
         'Ringkasan Kawasan', 'Kependudukan', 'Pertanian dan Ekonomi',
-        'Infrastruktur dan Layanan', 'Tata Kelola Data',
+        'Infrastruktur dan Layanan', 'Perbandingan Antar Satuan Permukiman',
     ] as $tajuk) {
         expect($isi)->toContain($tajuk);
     }
@@ -2417,7 +2391,6 @@ it('mengurutkan bagian dashboard menurut topik, bukan nomor indikator', function
         'Pertanian dan Ekonomi',
         'Infrastruktur dan Layanan',
         'Perbandingan Antar Satuan Permukiman',
-        'Tata Kelola Data',
     ]);
 });
 
@@ -2434,15 +2407,6 @@ it('mengumpulkan grafik pertanian dalam satu bagian yang sama', function () {
     foreach (['grafikPanen', 'grafikKomoditas', 'grafikHarga', 'grafikPendapatan'] as $id) {
         expect($bagian)->toContain('id="' . $id . '"');
     }
-});
-
-it('menempatkan mutu data di bagian akhir, terpisah dari indikator lapangan', function () {
-    // Yang diukur adalah mutu datanya sendiri, bukan keadaan kawasan.
-    // Menaruhnya di antara grafik panen dan infrastruktur membuatnya terbaca
-    // keliru sebagai indikator lapangan.
-    $isi = $this->get(route('beranda'))->getContent();
-
-    expect(strpos($isi, 'id="grafikPerSp"'))->toBeLessThan(strpos($isi, 'id="grafikMutuData"'));
 });
 
 it('menjaga hierarki tajuk dashboard tidak melompat', function () {

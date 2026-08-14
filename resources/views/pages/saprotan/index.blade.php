@@ -124,7 +124,6 @@
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Penerima</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Tanggal</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Sumber</th>
-            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Verifikasi</th>
             <th scope="col" class="px-5 py-3 text-right text-theme-xs font-medium text-gray-500 dark:text-gray-400">Aksi</th>
         </x-slot:kepala>
 
@@ -153,9 +152,6 @@
                 <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
                     {{ \Illuminate\Support\Carbon::parse($s['tanggal_perolehan'])->translatedFormat('d M Y') }}</td>
                 <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ $s['sumber'] }}</td>
-                <td class="px-5 py-3">
-                    <x-sim.status-badge :status="\App\Enums\StatusVerifikasi::from($s['status_verifikasi'])" />
-                </td>
                 <td class="px-5 py-3">
                     <x-sim.aksi-baris :rincian-url="route('saprotan.detail', $s['id_saprotan'])"
                         modal-ubah="formUbahSaprotanBaris"

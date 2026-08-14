@@ -18,7 +18,6 @@ use App\Enums\PrioritasPengaduan;
 use App\Enums\StatusHunian;
 use App\Enums\StatusPengaduan;
 use App\Enums\StatusTinggal;
-use App\Enums\StatusVerifikasi;
 use App\Enums\SumberLaporan;
 use App\Support\DummyData;
 
@@ -73,16 +72,14 @@ it('menempatkan koordinat di sekitar Kabupaten Malaka', function () {
 
 it('memakai nilai enum yang sah pada data transmigran', function () {
     foreach (DummyData::transmigran() as $baris) {
-        expect(StatusTinggal::dari($baris['status_tinggal']))->not->toBeNull()
-            ->and(StatusVerifikasi::dari($baris['status_verifikasi']))->not->toBeNull();
+        expect(StatusTinggal::dari($baris['status_tinggal']))->not->toBeNull();
     }
 });
 
 it('memakai nilai enum yang sah pada data rumah', function () {
     foreach (DummyData::rumah() as $baris) {
         expect(KondisiRumah::dari($baris['kondisi']))->not->toBeNull()
-            ->and(StatusHunian::dari($baris['status_hunian']))->not->toBeNull()
-            ->and(StatusVerifikasi::dari($baris['status_verifikasi']))->not->toBeNull();
+            ->and(StatusHunian::dari($baris['status_hunian']))->not->toBeNull();
     }
 });
 
@@ -150,15 +147,6 @@ it('mengisi kategori lahan hanya untuk lahan usaha', function () {
             expect($lahan['kategori_lahan'])->toBeNull();
         } else {
             expect($lahan['kategori_lahan'])->not->toBeNull();
-        }
-    }
-});
-
-it('menyertakan alasan pada data yang ditolak verifikasinya', function () {
-    foreach (DummyData::transmigran() as $baris) {
-        if ($baris['status_verifikasi'] === StatusVerifikasi::Ditolak->value) {
-            expect($baris)->toHaveKey('catatan_verifikasi')
-                ->and($baris['catatan_verifikasi'])->not->toBeEmpty();
         }
     }
 });
@@ -241,8 +229,7 @@ it('menyediakan rekap untuk keenam SP', function () {
 it('menjaga rumah terhuni tidak melebihi jumlah rumah', function () {
     $r = DummyData::ringkasanDashboard();
 
-    expect($r['rumah_terhuni'])->toBeLessThanOrEqual($r['rumah_total'])
-        ->and($r['data_terverifikasi'])->toBeLessThanOrEqual($r['data_total']);
+    expect($r['rumah_terhuni'])->toBeLessThanOrEqual($r['rumah_total']);
 });
 
 it('menandai bahwa aplikasi masih memakai data contoh', function () {
@@ -367,8 +354,3 @@ it('mengembalikan deret kosong untuk SP yang tidak ada', function () {
     expect(DummyData::deretTahunanSp(99)['tahun'])->toBe([]);
 });
 
-it('menjaga data terverifikasi per SP tidak melebihi totalnya', function () {
-    foreach (DummyData::rekapPerSp() as $baris) {
-        expect($baris['terverifikasi'])->toBeLessThanOrEqual($baris['data_total']);
-    }
-});

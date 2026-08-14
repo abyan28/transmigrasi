@@ -206,9 +206,9 @@ Dibuat lewat seeder sebagai konfigurasi awal agar sistem langsung dapat dipakai.
 | Role | Cakupan data | Ringkasan kewenangan |
 |---|---|---|
 | **Admin** | Semua | Akses penuh: kelola pengguna, role, data master, konfigurasi, dan audit log. **Terkunci**, izinnya tidak dapat diubah |
-| **Dinas Transmigrasi** | Semua | Pantau dashboard dan laporan kawasan; tambah, ubah, dan verifikasi data wilayah, SP, transmigran, rumah, lahan, dan infrastruktur; tangani pengaduan bidang ketransmigrasian |
-| **Dinas Pertanian** | Semua | Pantau dashboard dan laporan pertanian; tambah, ubah, dan verifikasi data poktan, komoditas, panen, alsintan, dan saprotan; tangani pengaduan bidang pertanian |
-| **Operator SP** | Per SP | Tambah dan ubah data transmigran, rumah, lahan, dan panen **hanya pada SP yang ditugaskan**. Tanpa izin hapus, tanpa izin verifikasi, tanpa akses manajemen pengguna dan audit log |
+| **Dinas Transmigrasi** | Semua | Pantau dashboard dan laporan kawasan; tambah dan ubah data wilayah, SP, transmigran, rumah, lahan, dan infrastruktur; tangani pengaduan bidang ketransmigrasian |
+| **Dinas Pertanian** | Semua | Pantau dashboard dan laporan pertanian; tambah dan ubah data poktan, komoditas, panen, alsintan, dan saprotan; tangani pengaduan bidang pertanian |
+| **Operator SP** | Per SP | Tambah dan ubah data transmigran, rumah, lahan, dan panen **hanya pada SP yang ditugaskan**. Tanpa izin hapus, tanpa akses manajemen pengguna dan audit log |
 
 #### 5.0b Cakupan data
 
@@ -235,7 +235,7 @@ Dibuat lewat seeder sebagai konfigurasi awal agar sistem langsung dapat dipakai.
 
 > **Kedudukan tabel ini.** Sejak role menjadi dinamis (§5.0), tabel di bawah bukan lagi aturan permanen yang dikunci di dalam kode, melainkan **konfigurasi awal** yang ditanam seeder. Admin dapat mengubahnya lewat menu Pengaturan Role, kecuali baris role Admin yang terkunci.
 
-Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **V** = verifikasi / **E** = export / **-** = tanpa akses
+Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **E** = export / **-** = tanpa akses
 
 | Modul | Admin | Dinas Transmigrasi | Dinas Pertanian | Operator SP |
 |---|---|---|---|---|
@@ -243,26 +243,26 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **V*
 | Pengaturan role | L T U H | - | - | - |
 | Audit log | L E | - | - | - |
 | Data master wilayah | L T U H | L | L | L |
-| Kawasan transmigrasi | L T U H E | L V E | L E | L |
-| Satuan permukiman (SP) | L T U H E | L T U V E | L E | L |
-| Inventaris SP | L T U H E | L T U V E | L E | L T U |
-| Fasilitas SP | L T U H E | L T U V E | L E | L T U |
+| Kawasan transmigrasi | L T U H E | L E | L E | L |
+| Satuan permukiman (SP) | L T U H E | L T U E | L E | L |
+| Inventaris SP | L T U H E | L T U E | L E | L T U |
+| Fasilitas SP | L T U H E | L T U E | L E | L T U |
 | Data master satuan | L T U H | L | L | L |
-| Transmigran | L T U H E | L T U V E | L E | L T U |
-| Rumah & hunian | L T U H E | L T U V E | L E | L T U |
-| Riwayat penghunian | L T U H E | L T V E | L | L T |
-| Lahan | L T U H E | L T U V E | L E | L T U |
-| Dokumen lahan (HPL/SHM) | L T U H | L T V | L | L T |
-| Kelompok tani | L T U H E | L E | L T U V E | L T U |
-| Anggota poktan | L T U H E | L | L T U V E | L T U |
-| Alsintan | L T U H E | L | L T U V E | L T U |
-| Saprotan | L T U H E | L | L T U V E | L T U |
-| Komoditas | L T U H E | L | L T U V E | L |
-| Musim tanam | L T U H | L | L T U V | L |
-| Riwayat tanam | L T U H E | L | L T U V E | L T U |
-| Hasil panen | L T U H E | L | L T U V E | L T U |
-| Infrastruktur SP | L T U H E | L T U V E | L T U V E | L T U |
-| Pengaduan | L T U H V E | L T U V E | L T U V E | L T |
+| Transmigran | L T U H E | L T U E | L E | L T U |
+| Rumah & hunian | L T U H E | L T U E | L E | L T U |
+| Riwayat penghunian | L T U H E | L T E | L | L T |
+| Lahan | L T U H E | L T U E | L E | L T U |
+| Dokumen lahan (HPL/SHM) | L T U H | L T | L | L T |
+| Kelompok tani | L T U H E | L E | L T U E | L T U |
+| Anggota poktan | L T U H E | L | L T U E | L T U |
+| Alsintan | L T U H E | L | L T U E | L T U |
+| Saprotan | L T U H E | L | L T U E | L T U |
+| Komoditas | L T U H E | L | L T U E | L |
+| Musim tanam | L T U H | L | L T U | L |
+| Riwayat tanam | L T U H E | L | L T U E | L T U |
+| Hasil panen | L T U H E | L | L T U E | L T U |
+| Infrastruktur SP | L T U H E | L T U E | L T U E | L T U |
+| Pengaduan | L T U H E | L T U E | L T U E | L T |
 | Penanganan pengaduan | L T U | L T U | L T U | - |
 | Dashboard | L E | L E | L E | L |
 | Laporan & export | L E | L E | L E | L |
@@ -272,27 +272,9 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **V*
 **Catatan penting:**
 1. Dinas hanya menangani pengaduan sesuai bidangnya: bidang ketransmigrasian untuk Dinas Transmigrasi, bidang pertanian untuk Dinas Pertanian. Pembatasan ini berlaku pada level query, bukan lewat izin.
 2. Penghapusan data utama memakai *soft delete* agar dapat dipulihkan dan tetap tercatat pada audit log.
-3. Aksi verifikasi tidak mengubah isi data, hanya menandai bahwa data sudah diperiksa oleh petugas berwenang beserta waktunya (§5.2).
-4. Operator SP sengaja tidak diberi izin hapus maupun verifikasi. Ia bertugas memasukkan data, sedangkan pemeriksaan dan penghapusan menjadi kewenangan dinas dan admin.
+3. Operator SP sengaja tidak diberi izin hapus. Ia bertugas memasukkan dan memutakhirkan data, sedangkan penghapusan menjadi kewenangan dinas dan admin.
 5. **Inventaris SP dan Fasilitas SP adalah dua modul terpisah**, masing-masing dengan izinnya sendiri. Keduanya memang bernilai sama pada konfigurasi awal, tetapi tetap dipisah karena berupa dua tabel dan dua halaman yang berbeda (§4b poin 1), sehingga Admin dapat memberi kewenangan berbeda antara aset bergerak dan bangunan fasilitas. Sampai 2026-08-12 keduanya tertulis sebagai satu baris di sini, tidak sejalan dengan `data-dictionary.md` §13.1, `erd.md`, dan `ui-spec.md` yang sejak awal memisahkannya.
 5. Anggota poktan yang berhenti ditandai berstatus "Sudah Keluar", bukan dihapus, agar riwayat tetap utuh.
-
-#### 5.2 Aturan verifikasi data
-
-1. Verifikasi adalah penandaan bahwa suatu baris data **sudah diperiksa kebenarannya** oleh petugas berwenang. Verifikasi **tidak mengubah isi data**.
-2. Status verifikasi memakai tiga nilai: `Belum Diverifikasi`, `Terverifikasi`, dan `Ditolak`.
-3. Data yang baru dimasukkan berstatus `Belum Diverifikasi`.
-4. **Tidak ada verifikasi otomatis.** Data baru selalu berstatus `Belum Diverifikasi` tanpa memandang izin penginputnya. Petugas dinas yang memasukkan data sendiri pun tetap harus memverifikasinya sebagai tindakan terpisah.
-5. Untuk memudahkan, petugas yang memiliki izin verifikasi pada modul bersangkutan mendapat tombol **"Simpan dan Verifikasi"**. Tombol ini menjalankan dua tindakan berurutan dan tercatat sebagai **dua entri terpisah** pada audit log.
-6. Alasan aturan 4 dan 5: indikator mutu data pada dashboard hanya bermakna bila mencerminkan pemeriksaan yang benar-benar dilakukan, bukan sekadar status izin orang yang kebetulan mengetik. Verifikasi wajib menjadi tindakan sadar yang dapat dipertanggungjawabkan.
-7. Bila petugas menolak, alasan penolakan **wajib** diisi agar operator tahu bagian mana yang perlu diperbaiki.
-8. Data yang sudah `Terverifikasi` lalu diubah kembali menjadi `Belum Diverifikasi`, sehingga perubahan diperiksa ulang.
-9. Status verifikasi disimpan terpusat pada tabel `verifikasi`, memakai pasangan nama tabel dan id baris.
-10. Setiap perubahan status verifikasi wajib tercatat pada audit log, memuat petugas pelaku, waktu, serta status sebelum dan sesudah.
-11. Indikator mutu data pada dashboard **hanya menghitung baris berstatus `Terverifikasi`**. Data yang dimasukkan petugas dinas tetapi belum diverifikasi tidak ikut dihitung.
-12. Laporan resmi dapat disaring agar hanya memuat data terverifikasi.
-
-**Catatan terbuka: prinsip empat mata.** Sistem saat ini **belum** melarang petugas memverifikasi data yang ia masukkan sendiri. Pembatasan semacam itu lazim dalam tata kelola data, tetapi berisiko menghambat bila tim dinas di kawasan hanya terdiri atas beberapa orang. Bila kelak jumlah petugas memadai, aturan ini dapat diperketat **tanpa mengubah skema**, cukup menambah pemeriksaan di sisi aplikasi dengan membandingkan pelaku verifikasi terhadap penginput asli yang terekam pada audit log.
 
 ### 6. Aturan Modul Transmigran
 1. Data transmigran harus menjadi data inti sistem.

@@ -141,7 +141,6 @@
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Jumlah</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Tahun</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Kondisi</th>
-            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Verifikasi</th>
             <th scope="col" class="px-5 py-3 text-right text-theme-xs font-medium text-gray-500 dark:text-gray-400">Aksi</th>
         </x-slot:kepala>
 
@@ -176,9 +175,6 @@
                     <x-sim.status-badge :status="\App\Enums\Kondisi::from($a['kondisi'])" />
                 </td>
                 <td class="px-5 py-3">
-                    <x-sim.status-badge :status="\App\Enums\StatusVerifikasi::from($a['status_verifikasi'])" />
-                </td>
-                <td class="px-5 py-3">
                     <x-sim.aksi-baris :rincian-url="route('alsintan.detail', $a['id_alsintan'])"
                         modal-ubah="formUbahAlsintanBaris"
                         :data-baris="$a + ['id' => $a['id_alsintan']]"
@@ -204,7 +200,7 @@
     </x-sim.halaman-daftar>
 
     <x-sim.modal-form nama="formTambahAlsintan" judul="Tambah Alsintan"
-        keterangan="Alat baru tercatat menunggu verifikasi dinas."
+        keterangan="Alat baru tercatat pada inventaris kawasan."
         :aksi="route('alsintan.simpan')" ukuran="lg" label-simpan="Simpan Data">
         @include('pages.alsintan.form', ['awalan' => 'tambah'])
     </x-sim.modal-form>

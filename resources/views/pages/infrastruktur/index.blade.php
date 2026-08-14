@@ -140,7 +140,6 @@
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Kapasitas</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Tahun</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Kondisi</th>
-            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Verifikasi</th>
             <th scope="col" class="px-5 py-3 text-right text-theme-xs font-medium text-gray-500 dark:text-gray-400">Aksi</th>
         </x-slot:kepala>
 
@@ -154,9 +153,6 @@
                     {{ $i['tahun_perolehan'] }}</td>
                 <td class="px-5 py-3">
                     <x-sim.status-badge :status="\App\Enums\Kondisi::from($i['kondisi'])" />
-                </td>
-                <td class="px-5 py-3">
-                    <x-sim.status-badge :status="\App\Enums\StatusVerifikasi::from($i['status_verifikasi'])" />
                 </td>
                 <td class="px-5 py-3">
                     <x-sim.aksi-baris :rincian-url="route('infrastruktur.detail', $i['id_infrastruktur'])"

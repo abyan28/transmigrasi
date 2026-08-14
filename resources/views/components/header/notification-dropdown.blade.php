@@ -105,7 +105,7 @@
                     Belum ada notifikasi
                 </p>
                 <p class="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
-                    Pemberitahuan pengaduan baru dan data yang perlu diverifikasi
+                    Pemberitahuan pengaduan baru dan perubahan data kawasan
                     akan tampil di sini.
                 </p>
             </li>

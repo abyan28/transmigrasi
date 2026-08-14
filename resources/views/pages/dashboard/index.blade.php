@@ -29,7 +29,6 @@
         // Indikator ke-16: kondisi layanan dasar tiap SP
         $penilaianSp = PenilaianKondisiSp::nilaiSeluruhSp();
         $rekapKondisi = PenilaianKondisiSp::rekapStatus();
-        $mutuData = DummyData::mutuData();
         $statusInfra = DummyData::statusInfrastruktur();
         $sebaranPekerjaan = DummyData::sebaranPekerjaan();
         $rekapStatusPengaduan = DummyData::rekapPengaduan('status');
@@ -37,10 +36,6 @@
         $rekapPenghuni = DummyData::rekapPenghuni();
         $daftarSp = DummyData::satuanPermukiman();
         $pengaduan = DummyData::pengaduan();
-
-        // Persentase mutu data kawasan, hanya menghitung baris Terverifikasi
-        // (agents/rules.md bagian 5.2 poin 11).
-        $persenMutu = round($ringkasan['data_terverifikasi'] / $ringkasan['data_total'] * 100);
 
         $persenHuni = round($ringkasan['rumah_terhuni'] / $ringkasan['rumah_total'] * 100);
 
@@ -76,10 +71,6 @@
             'infraBaik' => array_column($statusInfra, 'baik'),
             'infraRusakRingan' => array_column($statusInfra, 'rusak_ringan'),
             'infraRusakBerat' => array_column($statusInfra, 'rusak_berat'),
-            'mutuModul' => array_column($mutuData, 'modul'),
-            'mutuTerverifikasi' => array_column($mutuData, 'terverifikasi'),
-            'mutuBelum' => array_column($mutuData, 'belum'),
-            'mutuDitolak' => array_column($mutuData, 'ditolak'),
             'spNama' => array_column($rekapSp, 'satuan_permukiman'),
             'spKk' => array_column($rekapSp, 'jumlah_kk'),
             'spPanen' => array_column($rekapSp, 'volume_panen'),
@@ -185,8 +176,10 @@
             :nilai="number_format($ringkasan['luas_lahan_total'], 2, ',', '.')" satuan="ha"
             :keterangan="'Tersebar di ' . count($daftarSp) . ' satuan permukiman'" url="/lahan" />
 
-        <x-sim.stat-card label="Mutu Data Kawasan" :nilai="$persenMutu . '%'"
-            :keterangan="number_format($ringkasan['data_terverifikasi'], 0, ',', '.') . ' dari ' . number_format($ringkasan['data_total'], 0, ',', '.') . ' data terverifikasi'" />
+        <x-sim.stat-card label="Jumlah Petani"
+            :nilai="number_format($ringkasan['jumlah_petani'], 0, ',', '.')" satuan="orang"
+            :keterangan="round($ringkasan['jumlah_petani'] / $ringkasan['jumlah_kk'] * 100) . '% dari seluruh kepala keluarga'"
+            url="/transmigran" />
     </div>
 
     {{-- Baris kedua kartu: produksi dan pengaduan --}}
@@ -743,55 +736,13 @@
         </x-sim.chart-card>
     </div>
 
-    <x-sim.judul-bagian judul="Tata Kelola Data"
-        keterangan="Sejauh mana data di atas sudah diperiksa petugas berwenang." />
-
-    {{--
-        Indikator 15 diletakkan terpisah di bagian akhir. Yang diukur adalah
-        mutu datanya sendiri, bukan keadaan kawasan, sehingga menaruhnya di
-        antara grafik panen dan infrastruktur membuatnya terbaca keliru
-        sebagai indikator lapangan.
-
-        Selebar halaman, tanpa grid, agar tidak menyisakan kolom kosong di
-        sampingnya.
-    --}}
-    {{-- Indikator 15: mutu data per modul --}}
-    <x-sim.chart-card id="grafikMutuData" judul="Mutu Data per Modul"
-        keterangan="Porsi data yang sudah diperiksa petugas berwenang." tinggi="320">
-        <x-slot:tabel>
-            <table class="w-full text-left text-theme-xs">
-                <thead class="border-b border-gray-200 dark:border-gray-800">
-                    <tr>
-                        <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Modul</th>
-                        <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Terverifikasi</th>
-                        <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Belum</th>
-                        <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Ditolak</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
-                    @foreach ($mutuData as $baris)
-                        <tr>
-                            <td class="px-3 py-2 text-gray-800 dark:text-white/90">{{ $baris['modul'] }}</td>
-                            <td class="px-3 py-2 tabular-nums text-gray-600 dark:text-gray-400">
-                                {{ number_format($baris['terverifikasi'], 0, ',', '.') }}</td>
-                            <td class="px-3 py-2 tabular-nums text-gray-600 dark:text-gray-400">
-                                {{ number_format($baris['belum'], 0, ',', '.') }}</td>
-                            <td class="px-3 py-2 tabular-nums text-gray-600 dark:text-gray-400">
-                                {{ number_format($baris['ditolak'], 0, ',', '.') }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </x-slot:tabel>
-    </x-sim.chart-card>
-
     @push('scripts')
         <script type="module">
             // Data disuntikkan dari PHP sebagai JSON agar berkas Blade tidak
             // menyusun string JavaScript secara manual.
             const data = @json($dataGrafik);
 
-            const { buatGrafik, angka, rupiah, angkaSingkat, warnaVerifikasi, warnaKondisi, drilldownSp } = window.grafikSim;
+            const { buatGrafik, angka, rupiah, angkaSingkat, warnaKondisi, drilldownSp } = window.grafikSim;
 
             // Indikator 1, 2, 3: pertumbuhan penduduk
             buatGrafik('grafikPenduduk', {
@@ -951,20 +902,6 @@
                 tooltip: { y: { formatter: (v) => angka(v, 2) } },
                 // Kursif penunjuk memberi petunjuk bahwa batang dapat diklik
                 states: { active: { filter: { type: 'darken', value: 0.85 } } },
-            });
-
-            // Indikator 15: mutu data per modul, batang bertumpuk mendatar
-            buatGrafik('grafikMutuData', {
-                chart: { type: 'bar', height: 320, stacked: true, stackType: '100%' },
-                series: [
-                    { name: 'Terverifikasi', data: data.mutuTerverifikasi },
-                    { name: 'Belum Diverifikasi', data: data.mutuBelum },
-                    { name: 'Ditolak', data: data.mutuDitolak },
-                ],
-                colors: [warnaVerifikasi.terverifikasi, warnaVerifikasi.belum, warnaVerifikasi.ditolak],
-                plotOptions: { bar: { horizontal: true, barHeight: '58%' } },
-                xaxis: { categories: data.mutuModul, labels: { formatter: (v) => angka(v, 0) + '%' } },
-                tooltip: { y: { formatter: (v) => angka(v, 0) + ' data' } },
             });
         </script>
     @endpush

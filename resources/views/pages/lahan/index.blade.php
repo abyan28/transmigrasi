@@ -52,7 +52,6 @@
         $bolehTambah = true;
         $bolehUbah = true;
         $bolehHapus = true;
-        $bolehVerifikasi = true;
     @endphp
 
     <x-sim.page-header judul="Data Lahan"
@@ -187,7 +186,6 @@
                 <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Jenis</th>
                 <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Kategori</th>
                 <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Luas (ha)</th>
-                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Verifikasi</th>
                 <th scope="col" class="px-5 py-3 text-right text-theme-xs font-medium text-gray-500 dark:text-gray-400">
                     Aksi
                 </th>
@@ -211,9 +209,6 @@
                     </td>
                     <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
                         {{ number_format($l['luas'], 2, ',', '.') }}
-                    </td>
-                    <td class="px-5 py-3">
-                        <x-sim.status-badge :status="\App\Enums\StatusVerifikasi::from($l['status_verifikasi'])" />
                     </td>
                     <td class="px-5 py-3">
                         <div class="flex items-center justify-end gap-1">
@@ -306,7 +301,7 @@
     @if ($bolehTambah)
         <x-sim.modal-form nama="formTambahLahan" judul="Tambah Data Lahan"
             keterangan="Isian bertanda bintang wajib diisi." :aksi="route('lahan.simpan')" ukuran="xl"
-            label-simpan="Simpan Data Lahan" :boleh-verifikasi="$bolehVerifikasi">
+            label-simpan="Simpan Data Lahan">
             @include('pages.lahan.form', ['awalan' => 'tambah'])
         </x-sim.modal-form>
     @endif
@@ -319,7 +314,7 @@
 
     @if ($bolehUbah)
         <x-sim.modal-form nama="formUbahLahanBaris" judul="Ubah Data Lahan"
-            keterangan="Data yang sudah terverifikasi akan kembali menunggu pemeriksaan setelah diubah."
+            keterangan="Perubahan tercatat pada audit log."
             pola-aksi="/lahan/:id" metode="PUT" ukuran="xl"
             label-simpan="Simpan Perubahan">
             @include('pages.lahan.form', ['awalan' => 'ubahBaris'])

@@ -14,7 +14,7 @@ use App\Enums\PrioritasPengaduan;
 use App\Enums\StatusHunian;
 use App\Enums\StatusPengaduan;
 use App\Enums\StatusTinggal;
-use App\Enums\StatusVerifikasi;
+
 use App\Enums\SumberLaporan;
 
 /**
@@ -187,7 +187,7 @@ class DummyData
     }
 
     /**
-     * Daftar transmigran beserta status verifikasinya.
+     * Daftar transmigran beserta data kependudukannya.
      *
      * @return array<int, array<string, mixed>> Data transmigran
      */
@@ -214,7 +214,6 @@ class DummyData
                 'satuan_permukiman' => 'SP Kapitan Meo',
                 'satuan_permukiman_id' => 1,
                 'satuan_permukiman_id' => 1,
-                'status_verifikasi' => StatusVerifikasi::Terverifikasi->value,
             ],
             [
                 'id_transmigran' => 2,
@@ -236,7 +235,6 @@ class DummyData
                 'satuan_permukiman' => 'SP Kapitan Meo',
                 'satuan_permukiman_id' => 1,
                 'satuan_permukiman_id' => 1,
-                'status_verifikasi' => StatusVerifikasi::Terverifikasi->value,
             ],
             [
                 'id_transmigran' => 3,
@@ -258,7 +256,6 @@ class DummyData
                 'satuan_permukiman' => 'SP Tniumanu',
                 'satuan_permukiman_id' => 2,
                 'satuan_permukiman_id' => 2,
-                'status_verifikasi' => StatusVerifikasi::BelumDiverifikasi->value,
             ],
             [
                 'id_transmigran' => 4,
@@ -280,8 +277,6 @@ class DummyData
                 'satuan_permukiman' => 'SP Harekakae',
                 'satuan_permukiman_id' => 3,
                 'satuan_permukiman_id' => 3,
-                'status_verifikasi' => StatusVerifikasi::Ditolak->value,
-                'catatan_verifikasi' => 'Jumlah anggota keluarga tidak sesuai kartu keluarga. Mohon diperiksa ulang.',
             ],
             [
                 'id_transmigran' => 5,
@@ -303,7 +298,6 @@ class DummyData
                 'satuan_permukiman' => 'SP Weoe / Uluk Lubuk',
                 'satuan_permukiman_id' => 4,
                 'satuan_permukiman_id' => 4,
-                'status_verifikasi' => StatusVerifikasi::Terverifikasi->value,
             ],
             [
                 'id_transmigran' => 6,
@@ -325,7 +319,6 @@ class DummyData
                 'satuan_permukiman' => 'SP Tualaran',
                 'satuan_permukiman_id' => 5,
                 'satuan_permukiman_id' => 5,
-                'status_verifikasi' => StatusVerifikasi::BelumDiverifikasi->value,
             ],
             [
                 'id_transmigran' => 7,
@@ -347,7 +340,6 @@ class DummyData
                 'satuan_permukiman' => 'SP Weain',
                 'satuan_permukiman_id' => 6,
                 'satuan_permukiman_id' => 6,
-                'status_verifikasi' => StatusVerifikasi::Terverifikasi->value,
             ],
             [
                 'id_transmigran' => 8,
@@ -369,7 +361,6 @@ class DummyData
                 'satuan_permukiman' => 'SP Kapitan Meo',
                 'satuan_permukiman_id' => 1,
                 'satuan_permukiman_id' => 1,
-                'status_verifikasi' => StatusVerifikasi::BelumDiverifikasi->value,
             ],
         ];
     }
@@ -397,7 +388,6 @@ class DummyData
                 'luas_bangunan' => 36.00,
                 'lintang' => -9.5124100,
                 'bujur' => 124.9124200,
-                'status_verifikasi' => StatusVerifikasi::Terverifikasi->value,
             ],
             [
                 'id_rumah' => 2,
@@ -411,7 +401,6 @@ class DummyData
                 'luas_bangunan' => 36.00,
                 'lintang' => -9.5125300,
                 'bujur' => 124.9125100,
-                'status_verifikasi' => StatusVerifikasi::Terverifikasi->value,
             ],
             [
                 'id_rumah' => 3,
@@ -426,7 +415,6 @@ class DummyData
                 'luas_bangunan' => 36.00,
                 'lintang' => -9.5126400,
                 'bujur' => 124.9126800,
-                'status_verifikasi' => StatusVerifikasi::BelumDiverifikasi->value,
             ],
             [
                 'id_rumah' => 4,
@@ -440,7 +428,6 @@ class DummyData
                 'luas_bangunan' => 42.00,
                 'lintang' => -9.4981200,
                 'bujur' => 124.8876700,
-                'status_verifikasi' => StatusVerifikasi::BelumDiverifikasi->value,
             ],
             [
                 'id_rumah' => 5,
@@ -454,7 +441,6 @@ class DummyData
                 'luas_bangunan' => 36.00,
                 'lintang' => -9.4552100,
                 'bujur' => 124.9451900,
-                'status_verifikasi' => StatusVerifikasi::Terverifikasi->value,
             ],
             [
                 'id_rumah' => 6,
@@ -469,7 +455,6 @@ class DummyData
                 'luas_bangunan' => 36.00,
                 'lintang' => -9.4553300,
                 'bujur' => 124.9452400,
-                'status_verifikasi' => StatusVerifikasi::Terverifikasi->value,
             ],
         ];
     }
@@ -696,7 +681,6 @@ class DummyData
                 'status_kepemilikan' => 'HPL',
                 'lintang' => -9.5124100,
                 'bujur' => 124.9126200,
-                'status_verifikasi' => StatusVerifikasi::Terverifikasi->value,
             ],
             [
                 'id_lahan' => 2,
@@ -711,7 +695,6 @@ class DummyData
                 'pola_tanam' => 'MONOKULTUR JAGUNG',
                 'lintang' => -9.5138400,
                 'bujur' => 124.9152700,
-                'status_verifikasi' => StatusVerifikasi::Terverifikasi->value,
             ],
             [
                 'id_lahan' => 3,
@@ -726,7 +709,6 @@ class DummyData
                 'pola_tanam' => 'PADI SAWAH',
                 'lintang' => -9.5471900,
                 'bujur' => 124.8873500,
-                'status_verifikasi' => StatusVerifikasi::BelumDiverifikasi->value,
             ],
             [
                 'id_lahan' => 4,
@@ -740,7 +722,6 @@ class DummyData
                 'status_kepemilikan' => 'HPL',
                 'lintang' => -9.5483200,
                 'bujur' => 124.8891000,
-                'status_verifikasi' => StatusVerifikasi::Terverifikasi->value,
             ],
             [
                 'id_lahan' => 5,
@@ -755,7 +736,6 @@ class DummyData
                 'pola_tanam' => 'TUMPANG SARI JAGUNG DAN KACANG',
                 'lintang' => -9.4982600,
                 'bujur' => 124.9411800,
-                'status_verifikasi' => StatusVerifikasi::Terverifikasi->value,
             ],
             [
                 'id_lahan' => 6,
@@ -770,7 +750,6 @@ class DummyData
                 'pola_tanam' => 'MONOKULTUR JAGUNG',
                 'lintang' => -9.4995300,
                 'bujur' => 124.9438100,
-                'status_verifikasi' => StatusVerifikasi::BelumDiverifikasi->value,
             ],
         ];
     }
@@ -798,7 +777,6 @@ class DummyData
                 'volume' => 4.250,
                 'kualitas' => 'Baik',
                 'harga_jual' => 4500000,
-                'status_verifikasi' => StatusVerifikasi::Terverifikasi->value,
             ],
             [
                 'id_hasil_panen' => 2,
@@ -812,7 +790,6 @@ class DummyData
                 'volume' => 5.800,
                 'kualitas' => 'Sangat Baik',
                 'harga_jual' => 4750000,
-                'status_verifikasi' => StatusVerifikasi::Terverifikasi->value,
             ],
             [
                 'id_hasil_panen' => 3,
@@ -826,7 +803,6 @@ class DummyData
                 'volume' => 2.100,
                 'kualitas' => 'Baik',
                 'harga_jual' => 5200000,
-                'status_verifikasi' => StatusVerifikasi::BelumDiverifikasi->value,
             ],
             [
                 'id_hasil_panen' => 4,
@@ -841,7 +817,6 @@ class DummyData
                 'kualitas' => 'Cukup',
                 'harga_jual' => 28000,
                 'keterangan_satuan_lokal' => 'Setara 13 karung ukuran sedang',
-                'status_verifikasi' => StatusVerifikasi::BelumDiverifikasi->value,
             ],
             [
                 'id_hasil_panen' => 5,
@@ -855,7 +830,6 @@ class DummyData
                 'volume' => 3.900,
                 'kualitas' => 'Baik',
                 'harga_jual' => 4300000,
-                'status_verifikasi' => StatusVerifikasi::Terverifikasi->value,
             ],
         ];
     }
@@ -1089,7 +1063,6 @@ class DummyData
                 'sumber_dana' => 'APBN',
                 'kondisi' => Kondisi::RusakRingan->value,
                 'kapasitas' => 'Panjang 1,2 km',
-                'status_verifikasi' => StatusVerifikasi::Terverifikasi->value,
             ],
             [
                 'id_infrastruktur' => 2,
@@ -1101,7 +1074,6 @@ class DummyData
                 'sumber_dana' => 'APBD Kabupaten',
                 'kondisi' => Kondisi::Baik->value,
                 'kapasitas' => 'Debit 3 liter per detik',
-                'status_verifikasi' => StatusVerifikasi::Terverifikasi->value,
             ],
             [
                 'id_infrastruktur' => 3,
@@ -1113,7 +1085,6 @@ class DummyData
                 'sumber_dana' => 'APBD Provinsi',
                 'kondisi' => Kondisi::RusakBerat->value,
                 'kapasitas' => 'Panjang 2,4 km',
-                'status_verifikasi' => StatusVerifikasi::BelumDiverifikasi->value,
             ],
             [
                 'id_infrastruktur' => 4,
@@ -1125,7 +1096,6 @@ class DummyData
                 'sumber_dana' => 'Dinas Pertanian Kabupaten',
                 'kondisi' => Kondisi::Baik->value,
                 'kapasitas' => 'Daya tampung 40 ton',
-                'status_verifikasi' => StatusVerifikasi::Terverifikasi->value,
             ],
 
             /*
@@ -1141,36 +1111,36 @@ class DummyData
              */
 
             // SP Kapitan Meo
-            ['id_infrastruktur' => 5, 'nama' => 'JARINGAN LISTRIK PLN', 'jenis' => JenisInfrastruktur::Listrik->value, 'satuan_permukiman' => 'SP Kapitan Meo', 'satuan_permukiman_id' => 1, 'tahun_perolehan' => 2017, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Melayani 218 KK', 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value],
-            ['id_infrastruktur' => 6, 'nama' => 'JALAN MASUK KAWASAN', 'jenis' => JenisInfrastruktur::JalanPenghubung->value, 'satuan_permukiman' => 'SP Kapitan Meo', 'satuan_permukiman_id' => 1, 'tahun_perolehan' => 2016, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Panjang 4,2 km, beraspal', 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value],
-            ['id_infrastruktur' => 7, 'nama' => 'MENARA TELEKOMUNIKASI', 'jenis' => JenisInfrastruktur::Telekomunikasi->value, 'satuan_permukiman' => 'SP Kapitan Meo', 'satuan_permukiman_id' => 1, 'tahun_perolehan' => 2020, 'sumber_dana' => 'APBD Provinsi', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Jangkauan 3 km', 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value],
-            ['id_infrastruktur' => 8, 'nama' => 'SANITASI KOMUNAL', 'jenis' => JenisInfrastruktur::Sanitasi->value, 'satuan_permukiman' => 'SP Kapitan Meo', 'satuan_permukiman_id' => 1, 'tahun_perolehan' => 2018, 'sumber_dana' => 'APBD Kabupaten', 'kondisi' => Kondisi::RusakRingan->value, 'kapasitas' => 'Melayani 80 KK', 'status_verifikasi' => StatusVerifikasi::BelumDiverifikasi->value],
-            ['id_infrastruktur' => 9, 'nama' => 'KIOS SAPROTAN DESA', 'jenis' => JenisInfrastruktur::PasarKios->value, 'satuan_permukiman' => 'SP Kapitan Meo', 'satuan_permukiman_id' => 1, 'tahun_perolehan' => 2021, 'sumber_dana' => 'Swadaya', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Melayani 3 SP sekitar', 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value],
+            ['id_infrastruktur' => 5, 'nama' => 'JARINGAN LISTRIK PLN', 'jenis' => JenisInfrastruktur::Listrik->value, 'satuan_permukiman' => 'SP Kapitan Meo', 'satuan_permukiman_id' => 1, 'tahun_perolehan' => 2017, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Melayani 218 KK'],
+            ['id_infrastruktur' => 6, 'nama' => 'JALAN MASUK KAWASAN', 'jenis' => JenisInfrastruktur::JalanPenghubung->value, 'satuan_permukiman' => 'SP Kapitan Meo', 'satuan_permukiman_id' => 1, 'tahun_perolehan' => 2016, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Panjang 4,2 km, beraspal'],
+            ['id_infrastruktur' => 7, 'nama' => 'MENARA TELEKOMUNIKASI', 'jenis' => JenisInfrastruktur::Telekomunikasi->value, 'satuan_permukiman' => 'SP Kapitan Meo', 'satuan_permukiman_id' => 1, 'tahun_perolehan' => 2020, 'sumber_dana' => 'APBD Provinsi', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Jangkauan 3 km'],
+            ['id_infrastruktur' => 8, 'nama' => 'SANITASI KOMUNAL', 'jenis' => JenisInfrastruktur::Sanitasi->value, 'satuan_permukiman' => 'SP Kapitan Meo', 'satuan_permukiman_id' => 1, 'tahun_perolehan' => 2018, 'sumber_dana' => 'APBD Kabupaten', 'kondisi' => Kondisi::RusakRingan->value, 'kapasitas' => 'Melayani 80 KK'],
+            ['id_infrastruktur' => 9, 'nama' => 'KIOS SAPROTAN DESA', 'jenis' => JenisInfrastruktur::PasarKios->value, 'satuan_permukiman' => 'SP Kapitan Meo', 'satuan_permukiman_id' => 1, 'tahun_perolehan' => 2021, 'sumber_dana' => 'Swadaya', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Melayani 3 SP sekitar'],
 
             // SP Tniumanu
-            ['id_infrastruktur' => 10, 'nama' => 'SUMUR BOR TNIUMANU', 'jenis' => JenisInfrastruktur::Air->value, 'satuan_permukiman' => 'SP Tniumanu', 'satuan_permukiman_id' => 2, 'tahun_perolehan' => 2017, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Debit 2,5 liter per detik', 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value],
-            ['id_infrastruktur' => 11, 'nama' => 'JARINGAN LISTRIK PLN', 'jenis' => JenisInfrastruktur::Listrik->value, 'satuan_permukiman' => 'SP Tniumanu', 'satuan_permukiman_id' => 2, 'tahun_perolehan' => 2018, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::RusakRingan->value, 'kapasitas' => 'Sering padam saat hujan', 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value],
-            ['id_infrastruktur' => 12, 'nama' => 'JALAN MASUK KAWASAN', 'jenis' => JenisInfrastruktur::JalanPenghubung->value, 'satuan_permukiman' => 'SP Tniumanu', 'satuan_permukiman_id' => 2, 'tahun_perolehan' => 2016, 'sumber_dana' => 'APBD Kabupaten', 'kondisi' => Kondisi::RusakBerat->value, 'kapasitas' => 'Panjang 6,8 km, berlubang parah', 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value],
+            ['id_infrastruktur' => 10, 'nama' => 'SUMUR BOR TNIUMANU', 'jenis' => JenisInfrastruktur::Air->value, 'satuan_permukiman' => 'SP Tniumanu', 'satuan_permukiman_id' => 2, 'tahun_perolehan' => 2017, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Debit 2,5 liter per detik'],
+            ['id_infrastruktur' => 11, 'nama' => 'JARINGAN LISTRIK PLN', 'jenis' => JenisInfrastruktur::Listrik->value, 'satuan_permukiman' => 'SP Tniumanu', 'satuan_permukiman_id' => 2, 'tahun_perolehan' => 2018, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::RusakRingan->value, 'kapasitas' => 'Sering padam saat hujan'],
+            ['id_infrastruktur' => 12, 'nama' => 'JALAN MASUK KAWASAN', 'jenis' => JenisInfrastruktur::JalanPenghubung->value, 'satuan_permukiman' => 'SP Tniumanu', 'satuan_permukiman_id' => 2, 'tahun_perolehan' => 2016, 'sumber_dana' => 'APBD Kabupaten', 'kondisi' => Kondisi::RusakBerat->value, 'kapasitas' => 'Panjang 6,8 km, berlubang parah'],
 
             // SP Harekakae
-            ['id_infrastruktur' => 13, 'nama' => 'SUMUR BOR HAREKAKAE', 'jenis' => JenisInfrastruktur::Air->value, 'satuan_permukiman' => 'SP Harekakae', 'satuan_permukiman_id' => 3, 'tahun_perolehan' => 2017, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Debit 4 liter per detik', 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value],
-            ['id_infrastruktur' => 14, 'nama' => 'JARINGAN LISTRIK PLN', 'jenis' => JenisInfrastruktur::Listrik->value, 'satuan_permukiman' => 'SP Harekakae', 'satuan_permukiman_id' => 3, 'tahun_perolehan' => 2018, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Melayani 195 KK', 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value],
-            ['id_infrastruktur' => 15, 'nama' => 'JALAN MASUK KAWASAN', 'jenis' => JenisInfrastruktur::JalanPenghubung->value, 'satuan_permukiman' => 'SP Harekakae', 'satuan_permukiman_id' => 3, 'tahun_perolehan' => 2017, 'sumber_dana' => 'APBD Provinsi', 'kondisi' => Kondisi::RusakRingan->value, 'kapasitas' => 'Panjang 3,5 km', 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value],
-            ['id_infrastruktur' => 16, 'nama' => 'MENARA TELEKOMUNIKASI', 'jenis' => JenisInfrastruktur::Telekomunikasi->value, 'satuan_permukiman' => 'SP Harekakae', 'satuan_permukiman_id' => 3, 'tahun_perolehan' => 2021, 'sumber_dana' => 'APBD Provinsi', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Jangkauan 2,5 km', 'status_verifikasi' => StatusVerifikasi::BelumDiverifikasi->value],
+            ['id_infrastruktur' => 13, 'nama' => 'SUMUR BOR HAREKAKAE', 'jenis' => JenisInfrastruktur::Air->value, 'satuan_permukiman' => 'SP Harekakae', 'satuan_permukiman_id' => 3, 'tahun_perolehan' => 2017, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Debit 4 liter per detik'],
+            ['id_infrastruktur' => 14, 'nama' => 'JARINGAN LISTRIK PLN', 'jenis' => JenisInfrastruktur::Listrik->value, 'satuan_permukiman' => 'SP Harekakae', 'satuan_permukiman_id' => 3, 'tahun_perolehan' => 2018, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Melayani 195 KK'],
+            ['id_infrastruktur' => 15, 'nama' => 'JALAN MASUK KAWASAN', 'jenis' => JenisInfrastruktur::JalanPenghubung->value, 'satuan_permukiman' => 'SP Harekakae', 'satuan_permukiman_id' => 3, 'tahun_perolehan' => 2017, 'sumber_dana' => 'APBD Provinsi', 'kondisi' => Kondisi::RusakRingan->value, 'kapasitas' => 'Panjang 3,5 km'],
+            ['id_infrastruktur' => 16, 'nama' => 'MENARA TELEKOMUNIKASI', 'jenis' => JenisInfrastruktur::Telekomunikasi->value, 'satuan_permukiman' => 'SP Harekakae', 'satuan_permukiman_id' => 3, 'tahun_perolehan' => 2021, 'sumber_dana' => 'APBD Provinsi', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Jangkauan 2,5 km'],
 
             // SP Weoe, sengaja TANPA listrik untuk menguji aturan primer nol
-            ['id_infrastruktur' => 17, 'nama' => 'SUMUR BOR WEOE', 'jenis' => JenisInfrastruktur::Air->value, 'satuan_permukiman' => 'SP Weoe / Uluk Lubuk', 'satuan_permukiman_id' => 4, 'tahun_perolehan' => 2018, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Debit 3 liter per detik', 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value],
-            ['id_infrastruktur' => 18, 'nama' => 'JALAN MASUK KAWASAN', 'jenis' => JenisInfrastruktur::JalanPenghubung->value, 'satuan_permukiman' => 'SP Weoe / Uluk Lubuk', 'satuan_permukiman_id' => 4, 'tahun_perolehan' => 2017, 'sumber_dana' => 'APBD Kabupaten', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Panjang 5,1 km', 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value],
-            ['id_infrastruktur' => 19, 'nama' => 'IRIGASI BLOK BARAT', 'jenis' => JenisInfrastruktur::Irigasi->value, 'satuan_permukiman' => 'SP Weoe / Uluk Lubuk', 'satuan_permukiman_id' => 4, 'tahun_perolehan' => 2018, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Mengairi 120 ha', 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value],
+            ['id_infrastruktur' => 17, 'nama' => 'SUMUR BOR WEOE', 'jenis' => JenisInfrastruktur::Air->value, 'satuan_permukiman' => 'SP Weoe / Uluk Lubuk', 'satuan_permukiman_id' => 4, 'tahun_perolehan' => 2018, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Debit 3 liter per detik'],
+            ['id_infrastruktur' => 18, 'nama' => 'JALAN MASUK KAWASAN', 'jenis' => JenisInfrastruktur::JalanPenghubung->value, 'satuan_permukiman' => 'SP Weoe / Uluk Lubuk', 'satuan_permukiman_id' => 4, 'tahun_perolehan' => 2017, 'sumber_dana' => 'APBD Kabupaten', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Panjang 5,1 km'],
+            ['id_infrastruktur' => 19, 'nama' => 'IRIGASI BLOK BARAT', 'jenis' => JenisInfrastruktur::Irigasi->value, 'satuan_permukiman' => 'SP Weoe / Uluk Lubuk', 'satuan_permukiman_id' => 4, 'tahun_perolehan' => 2018, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Mengairi 120 ha'],
 
             // SP Tualaran
-            ['id_infrastruktur' => 20, 'nama' => 'SUMUR BOR TUALARAN', 'jenis' => JenisInfrastruktur::Air->value, 'satuan_permukiman' => 'SP Tualaran', 'satuan_permukiman_id' => 5, 'tahun_perolehan' => 2019, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Debit 2,8 liter per detik', 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value],
-            ['id_infrastruktur' => 21, 'nama' => 'JARINGAN LISTRIK PLN', 'jenis' => JenisInfrastruktur::Listrik->value, 'satuan_permukiman' => 'SP Tualaran', 'satuan_permukiman_id' => 5, 'tahun_perolehan' => 2019, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Melayani 201 KK', 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value],
-            ['id_infrastruktur' => 22, 'nama' => 'JALAN MASUK KAWASAN', 'jenis' => JenisInfrastruktur::JalanPenghubung->value, 'satuan_permukiman' => 'SP Tualaran', 'satuan_permukiman_id' => 5, 'tahun_perolehan' => 2018, 'sumber_dana' => 'APBD Provinsi', 'kondisi' => Kondisi::RusakRingan->value, 'kapasitas' => 'Panjang 7,4 km', 'status_verifikasi' => StatusVerifikasi::BelumDiverifikasi->value],
+            ['id_infrastruktur' => 20, 'nama' => 'SUMUR BOR TUALARAN', 'jenis' => JenisInfrastruktur::Air->value, 'satuan_permukiman' => 'SP Tualaran', 'satuan_permukiman_id' => 5, 'tahun_perolehan' => 2019, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Debit 2,8 liter per detik'],
+            ['id_infrastruktur' => 21, 'nama' => 'JARINGAN LISTRIK PLN', 'jenis' => JenisInfrastruktur::Listrik->value, 'satuan_permukiman' => 'SP Tualaran', 'satuan_permukiman_id' => 5, 'tahun_perolehan' => 2019, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Melayani 201 KK'],
+            ['id_infrastruktur' => 22, 'nama' => 'JALAN MASUK KAWASAN', 'jenis' => JenisInfrastruktur::JalanPenghubung->value, 'satuan_permukiman' => 'SP Tualaran', 'satuan_permukiman_id' => 5, 'tahun_perolehan' => 2018, 'sumber_dana' => 'APBD Provinsi', 'kondisi' => Kondisi::RusakRingan->value, 'kapasitas' => 'Panjang 7,4 km'],
 
             // SP Weain, sengaja TANPA air bersih dan TANPA jalan penghubung
-            ['id_infrastruktur' => 23, 'nama' => 'JARINGAN LISTRIK PLN', 'jenis' => JenisInfrastruktur::Listrik->value, 'satuan_permukiman' => 'SP Weain', 'satuan_permukiman_id' => 6, 'tahun_perolehan' => 2020, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::RusakRingan->value, 'kapasitas' => 'Melayani 163 KK', 'status_verifikasi' => StatusVerifikasi::BelumDiverifikasi->value],
-            ['id_infrastruktur' => 24, 'nama' => 'GUDANG PASCAPANEN', 'jenis' => JenisInfrastruktur::Gudang->value, 'satuan_permukiman' => 'SP Weain', 'satuan_permukiman_id' => 6, 'tahun_perolehan' => 2021, 'sumber_dana' => 'Dinas Pertanian Kabupaten', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Daya tampung 25 ton', 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value],
+            ['id_infrastruktur' => 23, 'nama' => 'JARINGAN LISTRIK PLN', 'jenis' => JenisInfrastruktur::Listrik->value, 'satuan_permukiman' => 'SP Weain', 'satuan_permukiman_id' => 6, 'tahun_perolehan' => 2020, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::RusakRingan->value, 'kapasitas' => 'Melayani 163 KK'],
+            ['id_infrastruktur' => 24, 'nama' => 'GUDANG PASCAPANEN', 'jenis' => JenisInfrastruktur::Gudang->value, 'satuan_permukiman' => 'SP Weain', 'satuan_permukiman_id' => 6, 'tahun_perolehan' => 2021, 'sumber_dana' => 'Dinas Pertanian Kabupaten', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Daya tampung 25 ton'],
         ];
     }
 
@@ -1294,10 +1264,10 @@ class DummyData
     public static function poktan(): array
     {
         return [
-            ['id_poktan' => 1, 'nama' => 'POKTAN MEKAR JAYA', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'nama_ketua' => 'YOHANES BERE', 'nik_ketua' => '5321011505800001', 'telepon_ketua' => '081234567801', 'email_ketua' => 'mekarjaya@example.id', 'tahun_berdiri' => 2016, 'jumlah_anggota' => 24, 'lintang' => -9.5127800, 'bujur' => 124.9131400, 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value],
-            ['id_poktan' => 2, 'nama' => 'POKTAN SUBUR MAKMUR', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'nama_ketua' => 'MARIA DA COSTA', 'nik_ketua' => '5321012203850002', 'telepon_ketua' => '081234567802', 'email_ketua' => null, 'tahun_berdiri' => 2017, 'jumlah_anggota' => 18, 'lintang' => -9.5476500, 'bujur' => 124.8882300, 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value],
-            ['id_poktan' => 3, 'nama' => 'POKTAN TANI BERSATU', 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'nama_ketua' => 'PETRUS NAHAK', 'nik_ketua' => '5321010809780003', 'telepon_ketua' => '081234567803', 'email_ketua' => null, 'tahun_berdiri' => 2017, 'jumlah_anggota' => 21, 'lintang' => -9.4988700, 'bujur' => 124.9425600, 'status_verifikasi' => StatusVerifikasi::BelumDiverifikasi->value],
-            ['id_poktan' => 4, 'nama' => 'POKTAN HARAPAN BARU', 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain', 'nama_ketua' => 'GABRIEL LEKI', 'nik_ketua' => '5321010107750007', 'telepon_ketua' => '081234567807', 'email_ketua' => null, 'tahun_berdiri' => 2019, 'jumlah_anggota' => 15, 'lintang' => -9.5731200, 'bujur' => 124.8654900, 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value],
+            ['id_poktan' => 1, 'nama' => 'POKTAN MEKAR JAYA', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'nama_ketua' => 'YOHANES BERE', 'nik_ketua' => '5321011505800001', 'telepon_ketua' => '081234567801', 'email_ketua' => 'mekarjaya@example.id', 'tahun_berdiri' => 2016, 'jumlah_anggota' => 24, 'lintang' => -9.5127800, 'bujur' => 124.9131400],
+            ['id_poktan' => 2, 'nama' => 'POKTAN SUBUR MAKMUR', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'nama_ketua' => 'MARIA DA COSTA', 'nik_ketua' => '5321012203850002', 'telepon_ketua' => '081234567802', 'email_ketua' => null, 'tahun_berdiri' => 2017, 'jumlah_anggota' => 18, 'lintang' => -9.5476500, 'bujur' => 124.8882300],
+            ['id_poktan' => 3, 'nama' => 'POKTAN TANI BERSATU', 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'nama_ketua' => 'PETRUS NAHAK', 'nik_ketua' => '5321010809780003', 'telepon_ketua' => '081234567803', 'email_ketua' => null, 'tahun_berdiri' => 2017, 'jumlah_anggota' => 21, 'lintang' => -9.4988700, 'bujur' => 124.9425600],
+            ['id_poktan' => 4, 'nama' => 'POKTAN HARAPAN BARU', 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain', 'nama_ketua' => 'GABRIEL LEKI', 'nik_ketua' => '5321010107750007', 'telepon_ketua' => '081234567807', 'email_ketua' => null, 'tahun_berdiri' => 2019, 'jumlah_anggota' => 15, 'lintang' => -9.5731200, 'bujur' => 124.8654900],
         ];
     }
 
@@ -1340,11 +1310,11 @@ class DummyData
     public static function alsintan(): array
     {
         return [
-            ['id_alsintan' => 1, 'nama_alat' => 'TRAKTOR RODA DUA', 'jumlah' => 2, 'tahun_perolehan' => 2018, 'sumber_perolehan' => 'APBN', 'kepemilikan' => KepemilikanAlsintan::BantuanPoktan->value, 'pemilik' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'transmigran_id' => null, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'kondisi' => 'Baik', 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value],
-            ['id_alsintan' => 2, 'nama_alat' => 'POMPA AIR', 'jumlah' => 3, 'tahun_perolehan' => 2019, 'sumber_perolehan' => 'APBD Kabupaten', 'kepemilikan' => KepemilikanAlsintan::BantuanPoktan->value, 'pemilik' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'transmigran_id' => null, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'kondisi' => 'Rusak Ringan', 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value],
-            ['id_alsintan' => 3, 'nama_alat' => 'HAND SPRAYER', 'jumlah' => 1, 'tahun_perolehan' => 2021, 'sumber_perolehan' => 'Pembelian Sendiri', 'kepemilikan' => KepemilikanAlsintan::Pribadi->value, 'pemilik' => 'YOHANES BERE', 'poktan_id' => null, 'transmigran_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'kondisi' => 'Baik', 'status_verifikasi' => StatusVerifikasi::BelumDiverifikasi->value],
-            ['id_alsintan' => 4, 'nama_alat' => 'MESIN PERONTOK JAGUNG', 'jumlah' => 1, 'tahun_perolehan' => 2020, 'sumber_perolehan' => 'Dinas Pertanian Kabupaten', 'kepemilikan' => KepemilikanAlsintan::BantuanPoktan->value, 'pemilik' => 'POKTAN TANI BERSATU', 'poktan_id' => 3, 'transmigran_id' => null, 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'kondisi' => 'Rusak Berat', 'status_verifikasi' => StatusVerifikasi::BelumDiverifikasi->value],
-            ['id_alsintan' => 5, 'nama_alat' => 'CANGKUL', 'jumlah' => 8, 'tahun_perolehan' => 2019, 'sumber_perolehan' => 'Pembelian Sendiri', 'kepemilikan' => KepemilikanAlsintan::Pribadi->value, 'pemilik' => 'GABRIEL LEKI', 'poktan_id' => null, 'transmigran_id' => 7, 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain', 'kondisi' => 'Baik', 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value],
+            ['id_alsintan' => 1, 'nama_alat' => 'TRAKTOR RODA DUA', 'jumlah' => 2, 'tahun_perolehan' => 2018, 'sumber_perolehan' => 'APBN', 'kepemilikan' => KepemilikanAlsintan::BantuanPoktan->value, 'pemilik' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'transmigran_id' => null, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'kondisi' => 'Baik'],
+            ['id_alsintan' => 2, 'nama_alat' => 'POMPA AIR', 'jumlah' => 3, 'tahun_perolehan' => 2019, 'sumber_perolehan' => 'APBD Kabupaten', 'kepemilikan' => KepemilikanAlsintan::BantuanPoktan->value, 'pemilik' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'transmigran_id' => null, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'kondisi' => 'Rusak Ringan'],
+            ['id_alsintan' => 3, 'nama_alat' => 'HAND SPRAYER', 'jumlah' => 1, 'tahun_perolehan' => 2021, 'sumber_perolehan' => 'Pembelian Sendiri', 'kepemilikan' => KepemilikanAlsintan::Pribadi->value, 'pemilik' => 'YOHANES BERE', 'poktan_id' => null, 'transmigran_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'kondisi' => 'Baik'],
+            ['id_alsintan' => 4, 'nama_alat' => 'MESIN PERONTOK JAGUNG', 'jumlah' => 1, 'tahun_perolehan' => 2020, 'sumber_perolehan' => 'Dinas Pertanian Kabupaten', 'kepemilikan' => KepemilikanAlsintan::BantuanPoktan->value, 'pemilik' => 'POKTAN TANI BERSATU', 'poktan_id' => 3, 'transmigran_id' => null, 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'kondisi' => 'Rusak Berat'],
+            ['id_alsintan' => 5, 'nama_alat' => 'CANGKUL', 'jumlah' => 8, 'tahun_perolehan' => 2019, 'sumber_perolehan' => 'Pembelian Sendiri', 'kepemilikan' => KepemilikanAlsintan::Pribadi->value, 'pemilik' => 'GABRIEL LEKI', 'poktan_id' => null, 'transmigran_id' => 7, 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain', 'kondisi' => 'Baik'],
         ];
     }
 
@@ -1359,11 +1329,11 @@ class DummyData
     public static function saprotan(): array
     {
         return [
-            ['id_saprotan' => 1, 'jenis' => 'Benih', 'nama' => 'BENIH JAGUNG HIBRIDA', 'jumlah' => 250.0, 'satuan' => 'Kilogram', 'tanggal_perolehan' => '2026-01-15', 'sumber' => 'Dinas Pertanian Kabupaten', 'penerima' => 'POKTAN MEKAR JAYA', 'jenis_penerima' => 'Poktan', 'poktan_id' => 1, 'transmigran_id' => null, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value],
-            ['id_saprotan' => 2, 'jenis' => 'Pupuk', 'nama' => 'PUPUK UREA', 'jumlah' => 1200.0, 'satuan' => 'Kilogram', 'tanggal_perolehan' => '2026-01-20', 'sumber' => 'APBN', 'penerima' => 'POKTAN MEKAR JAYA', 'jenis_penerima' => 'Poktan', 'poktan_id' => 1, 'transmigran_id' => null, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value],
-            ['id_saprotan' => 3, 'jenis' => 'Pestisida', 'nama' => 'INSEKTISIDA CAIR', 'jumlah' => 40.0, 'satuan' => 'Liter', 'tanggal_perolehan' => '2026-02-08', 'sumber' => 'Dinas Pertanian Kabupaten', 'penerima' => 'POKTAN TANI BERSATU', 'jenis_penerima' => 'Poktan', 'poktan_id' => 3, 'transmigran_id' => null, 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'status_verifikasi' => StatusVerifikasi::BelumDiverifikasi->value],
-            ['id_saprotan' => 4, 'jenis' => 'Benih', 'nama' => 'BENIH PADI IR64', 'jumlah' => 80.0, 'satuan' => 'Kilogram', 'tanggal_perolehan' => '2026-02-12', 'sumber' => 'APBD Provinsi', 'penerima' => 'YOHANES BERE', 'jenis_penerima' => 'Individu', 'poktan_id' => null, 'transmigran_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'status_verifikasi' => StatusVerifikasi::Terverifikasi->value],
-            ['id_saprotan' => 5, 'jenis' => 'Mulsa', 'nama' => 'MULSA PLASTIK HITAM PERAK', 'jumlah' => 15.0, 'satuan' => 'Rol', 'tanggal_perolehan' => '2026-03-02', 'sumber' => 'Lembaga Swadaya Masyarakat', 'penerima' => 'POKTAN HARAPAN BARU', 'jenis_penerima' => 'Poktan', 'poktan_id' => 4, 'transmigran_id' => null, 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain', 'status_verifikasi' => StatusVerifikasi::BelumDiverifikasi->value],
+            ['id_saprotan' => 1, 'jenis' => 'Benih', 'nama' => 'BENIH JAGUNG HIBRIDA', 'jumlah' => 250.0, 'satuan' => 'Kilogram', 'tanggal_perolehan' => '2026-01-15', 'sumber' => 'Dinas Pertanian Kabupaten', 'penerima' => 'POKTAN MEKAR JAYA', 'jenis_penerima' => 'Poktan', 'poktan_id' => 1, 'transmigran_id' => null, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo'],
+            ['id_saprotan' => 2, 'jenis' => 'Pupuk', 'nama' => 'PUPUK UREA', 'jumlah' => 1200.0, 'satuan' => 'Kilogram', 'tanggal_perolehan' => '2026-01-20', 'sumber' => 'APBN', 'penerima' => 'POKTAN MEKAR JAYA', 'jenis_penerima' => 'Poktan', 'poktan_id' => 1, 'transmigran_id' => null, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo'],
+            ['id_saprotan' => 3, 'jenis' => 'Pestisida', 'nama' => 'INSEKTISIDA CAIR', 'jumlah' => 40.0, 'satuan' => 'Liter', 'tanggal_perolehan' => '2026-02-08', 'sumber' => 'Dinas Pertanian Kabupaten', 'penerima' => 'POKTAN TANI BERSATU', 'jenis_penerima' => 'Poktan', 'poktan_id' => 3, 'transmigran_id' => null, 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu'],
+            ['id_saprotan' => 4, 'jenis' => 'Benih', 'nama' => 'BENIH PADI IR64', 'jumlah' => 80.0, 'satuan' => 'Kilogram', 'tanggal_perolehan' => '2026-02-12', 'sumber' => 'APBD Provinsi', 'penerima' => 'YOHANES BERE', 'jenis_penerima' => 'Individu', 'poktan_id' => null, 'transmigran_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo'],
+            ['id_saprotan' => 5, 'jenis' => 'Mulsa', 'nama' => 'MULSA PLASTIK HITAM PERAK', 'jumlah' => 15.0, 'satuan' => 'Rol', 'tanggal_perolehan' => '2026-03-02', 'sumber' => 'Lembaga Swadaya Masyarakat', 'penerima' => 'POKTAN HARAPAN BARU', 'jenis_penerima' => 'Poktan', 'poktan_id' => 4, 'transmigran_id' => null, 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain'],
         ];
     }
 
@@ -1458,10 +1428,10 @@ class DummyData
     public static function role(): array
     {
         return [
-            ['id_role' => 1, 'nama' => 'Admin', 'deskripsi' => 'Akses penuh termasuk manajemen pengguna, role, dan audit log.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => true, 'is_aktif' => true, 'jumlah_izin' => 119, 'jumlah_pengguna' => 1],
-            ['id_role' => 2, 'nama' => 'Dinas Transmigrasi', 'deskripsi' => 'Memantau dan memverifikasi data wilayah, transmigran, rumah, lahan, dan infrastruktur.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 68, 'jumlah_pengguna' => 1],
-            ['id_role' => 3, 'nama' => 'Dinas Pertanian', 'deskripsi' => 'Memantau dan memverifikasi data poktan, komoditas, panen, alsintan, dan saprotan.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 74, 'jumlah_pengguna' => 1],
-            ['id_role' => 4, 'nama' => 'Operator SP', 'deskripsi' => 'Memasukkan data pada satuan permukiman yang ditugaskan. Tanpa izin hapus dan verifikasi.', 'cakupan_data' => CakupanData::PerSp->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 50, 'jumlah_pengguna' => 2],
+            ['id_role' => 1, 'nama' => 'Admin', 'deskripsi' => 'Akses penuh termasuk manajemen pengguna, role, dan audit log.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => true, 'is_aktif' => true, 'jumlah_izin' => 118, 'jumlah_pengguna' => 1],
+            ['id_role' => 2, 'nama' => 'Dinas Transmigrasi', 'deskripsi' => 'Mengelola data wilayah, transmigran, rumah, lahan, dan infrastruktur.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 57, 'jumlah_pengguna' => 1],
+            ['id_role' => 3, 'nama' => 'Dinas Pertanian', 'deskripsi' => 'Mengelola data poktan, komoditas, panen, alsintan, dan saprotan.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 64, 'jumlah_pengguna' => 1],
+            ['id_role' => 4, 'nama' => 'Operator SP', 'deskripsi' => 'Memasukkan data pada satuan permukiman yang ditugaskan. Tanpa izin hapus.', 'cakupan_data' => CakupanData::PerSp->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 50, 'jumlah_pengguna' => 2],
         ];
     }
 
@@ -1473,13 +1443,15 @@ class DummyData
     public static function auditLog(): array
     {
         return [
-            ['id_audit_log' => 1, 'waktu' => '2026-08-11 08:20:14', 'pengguna' => 'SITI RAHMAWATI', 'aksi' => 'Verifikasi', 'nama_tabel' => 'transmigran', 'record_id' => 1, 'ringkasan' => 'Menandai data YOHANES BERE sebagai terverifikasi.', 'ip_address' => '10.14.2.31'],
+            ['id_audit_log' => 1, 'waktu' => '2026-08-11 08:20:14', 'pengguna' => 'SITI RAHMAWATI', 'aksi' => 'Ubah', 'nama_tabel' => 'transmigran', 'record_id' => 1, 'ringkasan' => 'Memperbaiki ejaan nama YOHANES BERE sesuai kartu keluarga.', 'ip_address' => '10.14.2.31'],
             ['id_audit_log' => 2, 'waktu' => '2026-08-11 08:04:52', 'pengguna' => 'YOSEP KLAU', 'aksi' => 'Tambah', 'nama_tabel' => 'hasil_panen', 'record_id' => 5, 'ringkasan' => 'Mencatat panen jagung 3,900 ton di SP Weain.', 'ip_address' => '10.14.2.77'],
             ['id_audit_log' => 3, 'waktu' => '2026-08-10 16:32:09', 'pengguna' => 'BUDI SANTOSO', 'aksi' => 'Ubah', 'nama_tabel' => 'rumah', 'record_id' => 3, 'ringkasan' => 'Mengubah status hunian A-03 menjadi Tidak Dihuni.', 'ip_address' => '10.14.2.31'],
-            ['id_audit_log' => 4, 'waktu' => '2026-08-10 14:22:41', 'pengguna' => 'AGUS PRASETYO', 'aksi' => 'Verifikasi', 'nama_tabel' => 'pengaduan', 'record_id' => 5, 'ringkasan' => 'Menutup pengaduan PGD-2026-0005 berstatus Selesai.', 'ip_address' => '10.14.2.55'],
+            // Penutupan pengaduan tercatat sebagai perubahan status, bukan
+            // verifikasi data, sebab yang berubah adalah tahap penanganannya.
+            ['id_audit_log' => 4, 'waktu' => '2026-08-10 14:22:41', 'pengguna' => 'AGUS PRASETYO', 'aksi' => 'Ubah', 'nama_tabel' => 'pengaduan', 'record_id' => 5, 'ringkasan' => 'Menutup pengaduan PGD-2026-0005 berstatus Selesai.', 'ip_address' => '10.14.2.55'],
             ['id_audit_log' => 5, 'waktu' => '2026-08-09 11:07:33', 'pengguna' => 'SITI RAHMAWATI', 'aksi' => 'Reset Kata Sandi', 'nama_tabel' => 'user', 'record_id' => 4, 'ringkasan' => 'Menyetel ulang kata sandi akun yosep.klau.', 'ip_address' => '10.14.2.31'],
             ['id_audit_log' => 6, 'waktu' => '2026-08-08 09:45:12', 'pengguna' => 'SITI RAHMAWATI', 'aksi' => 'Nonaktifkan Akun', 'nama_tabel' => 'user', 'record_id' => 5, 'ringkasan' => 'Menonaktifkan akun maria.goreti atas permintaan dinas.', 'ip_address' => '10.14.2.31'],
-            ['id_audit_log' => 7, 'waktu' => '2026-08-07 15:18:55', 'pengguna' => 'BUDI SANTOSO', 'aksi' => 'Tolak', 'nama_tabel' => 'transmigran', 'record_id' => 4, 'ringkasan' => 'Menolak data ANGELA SERAN, jumlah anggota tidak sesuai KK.', 'ip_address' => '10.14.2.31'],
+            ['id_audit_log' => 7, 'waktu' => '2026-08-07 15:18:55', 'pengguna' => 'BUDI SANTOSO', 'aksi' => 'Hapus', 'nama_tabel' => 'transmigran', 'record_id' => 4, 'ringkasan' => 'Menghapus data ANGELA SERAN yang terdaftar ganda.', 'ip_address' => '10.14.2.31'],
             ['id_audit_log' => 8, 'waktu' => '2026-08-06 10:02:19', 'pengguna' => 'YOSEP KLAU', 'aksi' => 'Hapus', 'nama_tabel' => 'lahan', 'record_id' => 9, 'ringkasan' => 'Menghapus data lahan duplikat LU-009.', 'ip_address' => '10.14.2.77'],
         ];
     }
@@ -1543,7 +1515,7 @@ class DummyData
             'role' => [
                 'id_role' => 2,
                 'nama' => 'Dinas Transmigrasi',
-                'deskripsi' => 'Memantau dashboard dan laporan kawasan, serta memverifikasi data wilayah, transmigran, rumah, dan lahan.',
+                'deskripsi' => 'Memantau dashboard dan laporan kawasan, serta mengelola data wilayah, transmigran, rumah, dan lahan.',
                 'cakupan_data' => CakupanData::Semua->value,
                 'is_bawaan' => true,
                 'is_terkunci' => false,
@@ -1594,8 +1566,6 @@ class DummyData
             'volume_panen_ton' => 1847.500,
             'harga_rata_rata' => 4520000,
             'pengaduan_terbuka' => 12,
-            'data_terverifikasi' => 890,
-            'data_total' => 1200,
         ];
     }
 
@@ -1684,17 +1654,17 @@ class DummyData
     {
         return [
             ['satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo',
-                'satuan_permukiman_id' => 1, 'jumlah_kk' => 218, 'rumah_terhuni' => 205, 'luas_lahan' => 620.50, 'volume_panen' => 385.20, 'pengaduan_terbuka' => 3, 'terverifikasi' => 178, 'data_total' => 240],
+                'jumlah_kk' => 218, 'rumah_terhuni' => 205, 'luas_lahan' => 620.50, 'volume_panen' => 385.20, 'pengaduan_terbuka' => 3],
             ['satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu',
-                'satuan_permukiman_id' => 2, 'jumlah_kk' => 187, 'rumah_terhuni' => 174, 'luas_lahan' => 512.25, 'volume_panen' => 312.80, 'pengaduan_terbuka' => 2, 'terverifikasi' => 142, 'data_total' => 205],
+                'jumlah_kk' => 187, 'rumah_terhuni' => 174, 'luas_lahan' => 512.25, 'volume_panen' => 312.80, 'pengaduan_terbuka' => 2],
             ['satuan_permukiman_id' => 3, 'satuan_permukiman' => 'SP Harekakae',
-                'satuan_permukiman_id' => 3, 'jumlah_kk' => 195, 'rumah_terhuni' => 182, 'luas_lahan' => 548.00, 'volume_panen' => 328.40, 'pengaduan_terbuka' => 1, 'terverifikasi' => 165, 'data_total' => 214],
+                'jumlah_kk' => 195, 'rumah_terhuni' => 182, 'luas_lahan' => 548.00, 'volume_panen' => 328.40, 'pengaduan_terbuka' => 1],
             ['satuan_permukiman_id' => 4, 'satuan_permukiman' => 'SP Weoe / Uluk Lubuk',
-                'satuan_permukiman_id' => 4, 'jumlah_kk' => 176, 'rumah_terhuni' => 164, 'luas_lahan' => 498.00, 'volume_panen' => 289.60, 'pengaduan_terbuka' => 2, 'terverifikasi' => 128, 'data_total' => 193],
+                'jumlah_kk' => 176, 'rumah_terhuni' => 164, 'luas_lahan' => 498.00, 'volume_panen' => 289.60, 'pengaduan_terbuka' => 2],
             ['satuan_permukiman_id' => 5, 'satuan_permukiman' => 'SP Tualaran',
-                'satuan_permukiman_id' => 5, 'jumlah_kk' => 201, 'rumah_terhuni' => 189, 'luas_lahan' => 574.50, 'volume_panen' => 341.30, 'pengaduan_terbuka' => 3, 'terverifikasi' => 156, 'data_total' => 221],
+                'jumlah_kk' => 201, 'rumah_terhuni' => 189, 'luas_lahan' => 574.50, 'volume_panen' => 341.30, 'pengaduan_terbuka' => 3],
             ['satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain',
-                'satuan_permukiman_id' => 6, 'jumlah_kk' => 163, 'rumah_terhuni' => 149, 'luas_lahan' => 497.50, 'volume_panen' => 190.20, 'pengaduan_terbuka' => 1, 'terverifikasi' => 121, 'data_total' => 179],
+                'jumlah_kk' => 163, 'rumah_terhuni' => 149, 'luas_lahan' => 497.50, 'volume_panen' => 190.20, 'pengaduan_terbuka' => 1],
         ];
     }
 
@@ -1797,21 +1767,6 @@ class DummyData
         ];
     }
 
-    /**
-     * Rekap mutu data per modul untuk indikator verifikasi.
-     *
-     * @return array<int, array<string, mixed>> Rekap status verifikasi
-     */
-    public static function mutuData(): array
-    {
-        return [
-            ['modul' => 'Transmigran', 'terverifikasi' => 890, 'belum' => 245, 'ditolak' => 65],
-            ['modul' => 'Rumah', 'terverifikasi' => 1063, 'belum' => 198, 'ditolak' => 39],
-            ['modul' => 'Lahan', 'terverifikasi' => 1420, 'belum' => 380, 'ditolak' => 52],
-            ['modul' => 'Hasil Panen', 'terverifikasi' => 685, 'belum' => 294, 'ditolak' => 41],
-        ];
-    }
-
     /*
     |--------------------------------------------------------------------------
     | Izin dan role
@@ -1839,9 +1794,8 @@ class DummyData
      */
     public static function daftarIzin(): array
     {
-        $penuh = ['lihat', 'tambah', 'ubah', 'hapus', 'verifikasi', 'export'];
+        $penuh = ['lihat', 'tambah', 'ubah', 'hapus', 'export'];
         $kelolaSaja = ['lihat', 'tambah', 'ubah', 'hapus'];
-        $kelolaVerifikasi = ['lihat', 'tambah', 'ubah', 'hapus', 'verifikasi'];
         $bacaEkspor = ['lihat', 'export'];
 
         return [
@@ -1879,7 +1833,7 @@ class DummyData
                 'kelompok' => 'Lahan',
                 'modul' => [
                     ['kunci' => 'lahan', 'nama' => 'Lahan', 'aksi' => $penuh],
-                    ['kunci' => 'dokumen_lahan', 'nama' => 'Dokumen lahan (HPL/SHM)', 'aksi' => $kelolaVerifikasi],
+                    ['kunci' => 'dokumen_lahan', 'nama' => 'Dokumen lahan (HPL/SHM)', 'aksi' => $kelolaSaja],
                 ],
             ],
             [
@@ -1895,7 +1849,7 @@ class DummyData
                 'kelompok' => 'Pertanian',
                 'modul' => [
                     ['kunci' => 'komoditas', 'nama' => 'Komoditas', 'aksi' => $penuh],
-                    ['kunci' => 'musim_tanam', 'nama' => 'Musim tanam', 'aksi' => $kelolaVerifikasi],
+                    ['kunci' => 'musim_tanam', 'nama' => 'Musim tanam', 'aksi' => $kelolaSaja],
                     ['kunci' => 'riwayat_tanam', 'nama' => 'Riwayat tanam', 'aksi' => $penuh],
                     ['kunci' => 'hasil_panen', 'nama' => 'Hasil panen', 'aksi' => $penuh],
                 ],
@@ -1935,21 +1889,17 @@ class DummyData
      */
     public static function izinRole(int $roleId): array
     {
-        $p = ['lihat', 'tambah', 'ubah', 'hapus', 'verifikasi', 'export'];
         $lituhe = ['lihat', 'tambah', 'ubah', 'hapus', 'export'];
         $k = ['lihat', 'tambah', 'ubah', 'hapus'];
-        $ltuve = ['lihat', 'tambah', 'ubah', 'verifikasi', 'export'];
-        $ltuv = ['lihat', 'tambah', 'ubah', 'verifikasi'];
-        $ltve = ['lihat', 'tambah', 'verifikasi', 'export'];
+        $ltue = ['lihat', 'tambah', 'ubah', 'export'];
+        $lte = ['lihat', 'tambah', 'export'];
         $ltu = ['lihat', 'tambah', 'ubah'];
         $lt = ['lihat', 'tambah'];
         $le = ['lihat', 'export'];
         $l = ['lihat'];
 
         $peta = [
-            // Admin. Kolom kedua tabel rules.md 5.1. Perhatikan bahwa Admin
-            // tidak memegang izin verifikasi pada sebagian besar modul:
-            // pemeriksaan data adalah kewenangan dinas sesuai bidangnya.
+            // Admin. Kolom kedua tabel rules.md 5.1.
             1 => [
                 'wilayah' => $k, 'kawasan' => $lituhe, 'sp' => $lituhe,
                 'inventaris_sp' => $lituhe, 'fasilitas_sp' => $lituhe, 'satuan' => $k,
@@ -1957,38 +1907,38 @@ class DummyData
                 'lahan' => $lituhe, 'dokumen_lahan' => $k,
                 'poktan' => $lituhe, 'anggota_poktan' => $lituhe, 'alsintan' => $lituhe, 'saprotan' => $lituhe,
                 'komoditas' => $lituhe, 'musim_tanam' => $k, 'riwayat_tanam' => $lituhe, 'hasil_panen' => $lituhe,
-                'infrastruktur' => $lituhe, 'pengaduan' => $p, 'penanganan_pengaduan' => $ltu,
+                'infrastruktur' => $lituhe, 'pengaduan' => $lituhe, 'penanganan_pengaduan' => $ltu,
                 'dashboard' => $le, 'laporan' => $le,
                 'pengguna' => $k, 'role' => $k, 'audit_log' => $le,
             ],
-            // Dinas Transmigrasi. Memverifikasi wilayah, kependudukan, dan
-            // lahan. Pada modul pertanian hanya dapat melihat.
+            // Dinas Transmigrasi. Mengelola wilayah, kependudukan, dan lahan.
+            // Pada modul pertanian hanya dapat melihat.
             2 => [
-                'wilayah' => $l, 'kawasan' => ['lihat', 'verifikasi', 'export'], 'sp' => $ltuve,
-                'inventaris_sp' => $ltuve, 'fasilitas_sp' => $ltuve, 'satuan' => $l,
-                'transmigran' => $ltuve, 'rumah' => $ltuve, 'riwayat_penghunian' => $ltve,
-                'lahan' => $ltuve, 'dokumen_lahan' => ['lihat', 'tambah', 'verifikasi'],
+                'wilayah' => $l, 'kawasan' => ['lihat', 'export'], 'sp' => $ltue,
+                'inventaris_sp' => $ltue, 'fasilitas_sp' => $ltue, 'satuan' => $l,
+                'transmigran' => $ltue, 'rumah' => $ltue, 'riwayat_penghunian' => $lte,
+                'lahan' => $ltue, 'dokumen_lahan' => ['lihat', 'tambah'],
                 'poktan' => $le, 'anggota_poktan' => $l, 'alsintan' => $l, 'saprotan' => $l,
                 'komoditas' => $l, 'musim_tanam' => $l, 'riwayat_tanam' => $l, 'hasil_panen' => $l,
-                'infrastruktur' => $ltuve, 'pengaduan' => $ltuve, 'penanganan_pengaduan' => $ltu,
+                'infrastruktur' => $ltue, 'pengaduan' => $ltue, 'penanganan_pengaduan' => $ltu,
                 'dashboard' => $le, 'laporan' => $le,
             ],
-            // Dinas Pertanian. Memverifikasi kelembagaan dan produksi
-            // pertanian. Pada modul kependudukan hanya dapat melihat.
+            // Dinas Pertanian. Mengelola kelembagaan dan produksi pertanian.
+            // Pada modul kependudukan hanya dapat melihat.
             3 => [
                 'wilayah' => $l, 'kawasan' => $le, 'sp' => $le,
                 'inventaris_sp' => $le, 'fasilitas_sp' => $le, 'satuan' => $l,
                 'transmigran' => $le, 'rumah' => $le, 'riwayat_penghunian' => $l,
                 'lahan' => $le, 'dokumen_lahan' => $l,
-                'poktan' => $ltuve, 'anggota_poktan' => $ltuve, 'alsintan' => $ltuve, 'saprotan' => $ltuve,
-                'komoditas' => $ltuve, 'musim_tanam' => $ltuv,
-                'riwayat_tanam' => $ltuve, 'hasil_panen' => $ltuve,
-                'infrastruktur' => $ltuve, 'pengaduan' => $ltuve, 'penanganan_pengaduan' => $ltu,
+                'poktan' => $ltue, 'anggota_poktan' => $ltue, 'alsintan' => $ltue, 'saprotan' => $ltue,
+                'komoditas' => $ltue, 'musim_tanam' => $ltu,
+                'riwayat_tanam' => $ltue, 'hasil_panen' => $ltue,
+                'infrastruktur' => $ltue, 'pengaduan' => $ltue, 'penanganan_pengaduan' => $ltu,
                 'dashboard' => $le, 'laporan' => $le,
             ],
-            // Operator SP. Memasukkan data, sengaja tanpa izin hapus maupun
-            // verifikasi (rules.md 5.1 catatan 4). Tidak memegang izin apa pun
-            // pada penanganan pengaduan.
+            // Operator SP. Memasukkan data, sengaja tanpa izin hapus
+            // (rules.md 5.1 catatan 4). Tidak memegang izin apa pun pada
+            // penanganan pengaduan.
             4 => [
                 'wilayah' => $l, 'kawasan' => $l, 'sp' => $l,
                 'inventaris_sp' => $ltu, 'fasilitas_sp' => $ltu, 'satuan' => $l,

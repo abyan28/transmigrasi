@@ -12,11 +12,8 @@
 
 @section('content')
     @php
-        use App\Enums\StatusVerifikasi;
 
         $bolehUbah = true;
-
-        $statusVerifikasi = StatusVerifikasi::from($data['status_verifikasi']);
     @endphp
 
     <x-sim.page-header :judul="$data['nama']"
@@ -47,7 +44,6 @@
                 <h2 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">Status</h2>
 
                 <div class="mt-3">
-                    <x-sim.status-badge :status="$statusVerifikasi" />
                 </div>
 
                 <dl class="mt-5 space-y-3 border-t border-gray-200 pt-5 text-theme-sm dark:border-gray-800">
@@ -120,7 +116,7 @@
 
     @if ($bolehUbah)
         <x-sim.modal-form nama="formUbahSaprotan" judul="Ubah Data Saprotan"
-            keterangan="Data yang sudah terverifikasi akan kembali menunggu pemeriksaan setelah diubah."
+            keterangan="Perubahan tercatat pada audit log."
             :aksi="route('saprotan.perbarui', $data['id_saprotan'])" metode="PUT" ukuran="lg"
             label-simpan="Simpan Perubahan">
             @include('pages.saprotan.form', ['data' => $data, 'awalan' => 'ubah'])

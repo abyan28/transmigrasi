@@ -30,13 +30,6 @@ export const warnaSeri = [
     '#265F73', // teal-700
 ];
 
-/** Warna status verifikasi, dipakai grafik mutu data. */
-export const warnaVerifikasi = {
-    terverifikasi: '#12b76a',
-    belum: '#98a2b3',
-    ditolak: '#f04438',
-};
-
 /** Warna kondisi aset, dipakai grafik status infrastruktur. */
 export const warnaKondisi = {
     baik: '#12b76a',
@@ -342,7 +335,6 @@ export function drilldownSp(idSp) {
 
 export default {
     warnaSeri,
-    warnaVerifikasi,
     warnaKondisi,
     modeGelap,
     angka,

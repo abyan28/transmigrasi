@@ -60,7 +60,7 @@
                             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Satuan Permukiman</th>
                             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Kepala Keluarga</th>
                             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Rumah Terhuni</th>
-                            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Data Terverifikasi</th>
+                            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Luas Lahan (ha)</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
@@ -77,7 +77,7 @@
                                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
                                     {{ number_format($b['rumah_terhuni'], 0, ',', '.') }}</td>
                                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
-                                    {{ $b['terverifikasi'] }} dari {{ $b['data_total'] }}</td>
+                                    {{ number_format($b['luas_lahan'], 2, ',', '.') }}</td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -89,8 +89,7 @@
                             <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
                                 {{ number_format(array_sum(array_column($perSp, 'rumah_terhuni')), 0, ',', '.') }}</td>
                             <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
-                                {{ array_sum(array_column($perSp, 'terverifikasi')) }} dari
-                                {{ array_sum(array_column($perSp, 'data_total')) }}</td>
+                                {{ number_format(array_sum(array_column($perSp, 'luas_lahan')), 2, ',', '.') }}</td>
                         </tr>
                     </tfoot>
                 </table>

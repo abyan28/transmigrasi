@@ -50,7 +50,6 @@
         $bolehTambah = true;
         $bolehUbah = true;
         $bolehHapus = true;
-        $bolehVerifikasi = true;
     @endphp
 
     <x-sim.page-header judul="Rumah dan Hunian"
@@ -190,7 +189,6 @@
                 <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">
                     Status Hunian
                 </th>
-                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Verifikasi</th>
                 <th scope="col" class="px-5 py-3 text-right text-theme-xs font-medium text-gray-500 dark:text-gray-400">
                     Aksi
                 </th>
@@ -216,9 +214,6 @@
                     <td class="px-5 py-3">
                         <x-sim.status-badge :status="\App\Enums\StatusHunian::from($r['status_hunian'])"
                             :catatan="$r['alasan_tidak_dihuni'] ?? null" />
-                    </td>
-                    <td class="px-5 py-3">
-                        <x-sim.status-badge :status="\App\Enums\StatusVerifikasi::from($r['status_verifikasi'])" />
                     </td>
                     <td class="px-5 py-3">
                         <div class="flex items-center justify-end gap-1">
@@ -298,7 +293,7 @@
     @if ($bolehTambah)
         <x-sim.modal-form nama="formTambahRumah" judul="Tambah Data Rumah"
             keterangan="Isian bertanda bintang wajib diisi." :aksi="route('rumah.simpan')" ukuran="xl"
-            label-simpan="Simpan Data Rumah" :boleh-verifikasi="$bolehVerifikasi">
+            label-simpan="Simpan Data Rumah">
             @include('pages.rumah.form', ['awalan' => 'tambah'])
         </x-sim.modal-form>
     @endif

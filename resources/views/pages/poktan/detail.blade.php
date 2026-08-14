@@ -19,7 +19,6 @@
         $saprotan = array_values(array_filter(DummyData::saprotan(), fn ($s) => $s['poktan_id'] === $data['id_poktan']));
 
         $aktif = count(array_filter($anggota, fn ($a) => $a['status'] === 'Aktif'));
-        $statusVerifikasi = \App\Enums\StatusVerifikasi::from($data['status_verifikasi']);
     @endphp
 
     <x-sim.page-header :judul="$data['nama']"
@@ -52,7 +51,6 @@
                 <h2 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">Profil Poktan</h2>
 
                 <div class="mt-3">
-                    <x-sim.status-badge :status="$statusVerifikasi" />
                 </div>
 
                 <dl class="mt-5 space-y-3 border-t border-gray-200 pt-5 text-theme-sm dark:border-gray-800">
@@ -218,7 +216,7 @@
 
     {{-- Modal ubah profil poktan --}}
     <x-sim.modal-form nama="formUbahPoktan" judul="Ubah Profil Poktan"
-        keterangan="Data yang sudah terverifikasi akan kembali menunggu pemeriksaan setelah diubah."
+        keterangan="Perubahan tercatat pada audit log."
         :aksi="route('poktan.perbarui', $data['id_poktan'])" metode="PUT" ukuran="lg"
         label-simpan="Simpan Perubahan">
         @include('pages.poktan.form', ['data' => $data, 'awalan' => 'ubah'])

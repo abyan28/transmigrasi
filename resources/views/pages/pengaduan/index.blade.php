@@ -1,9 +1,8 @@
 {{--
     Daftar pengaduan.
 
-    Berbeda dari empat modul sebelumnya, modul ini tidak memakai verifikasi
-    data melainkan ALUR STATUS berurutan. Karena itu kolom badge menampilkan
-    status penanganan dan prioritas, bukan status verifikasi.
+    Modul ini memakai ALUR STATUS berurutan, sehingga kolom badge menampilkan
+    status penanganan beserta prioritasnya.
 
     Pengaduan yang belum selesai diurutkan lebih dulu, dan yang berprioritas
     Mendesak ditandai jelas, karena inilah yang perlu segera ditindaklanjuti.

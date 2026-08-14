@@ -6,11 +6,11 @@
     enum, bukan ditulis keras di view (agents/ui-spec.md bagian 11.7).
 
     Pemakaian:
-        <x-sim.status-badge :status="$statusVerifikasi" />
+        <x-sim.status-badge :status="$rumah->kondisi" />
         <x-sim.status-badge :status="$pengaduan->status" :catatan="$alasan" />
 
     Bila hanya tersedia teks mentah dari data contoh, pakai atribut teks dan warna:
-        <x-sim.status-badge teks="Terverifikasi" warna="success" />
+        <x-sim.status-badge teks="Selesai" warna="success" />
 --}}
 @props([
     'status' => null,

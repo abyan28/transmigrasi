@@ -41,7 +41,6 @@
         'tambah' => 'Tambah',
         'ubah' => 'Ubah',
         'hapus' => 'Hapus',
-        'verifikasi' => 'Verifikasi',
         'export' => 'Export',
     ];
 @endphp

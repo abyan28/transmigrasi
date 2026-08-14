@@ -41,9 +41,9 @@ Membangun sistem informasi digital berbasis web untuk memperkuat monitoring pert
 | Role | Cakupan data | Kewenangan utama |
 |---|---|---|
 | **Admin** | Semua | Mengelola pengguna, role dan hak akses, data master wilayah/kawasan/SP, konfigurasi sistem, serta memantau audit log. Akses penuh ke seluruh modul. |
-| **Dinas Transmigrasi** | Semua | Memantau dashboard dan laporan kawasan, memverifikasi data transmigran, rumah, lahan, inventaris, dan fasilitas SP, serta menangani pengaduan bidang ketransmigrasian. |
-| **Dinas Pertanian** | Semua | Memantau dashboard dan laporan pertanian, memverifikasi data poktan, komoditas, hasil panen, alsintan, dan saprotan, serta menangani pengaduan bidang pertanian. |
-| **Operator SP** | Per SP | Memasukkan dan memperbarui data transmigran, rumah, lahan, dan hasil panen, **terbatas pada SP yang ditugaskan padanya**. Tanpa kewenangan menghapus maupun memverifikasi. |
+| **Dinas Transmigrasi** | Semua | Memantau dashboard dan laporan kawasan, mengelola data transmigran, rumah, lahan, inventaris, dan fasilitas SP, serta menangani pengaduan bidang ketransmigrasian. |
+| **Dinas Pertanian** | Semua | Memantau dashboard dan laporan pertanian, mengelola data poktan, komoditas, hasil panen, alsintan, dan saprotan, serta menangani pengaduan bidang pertanian. |
+| **Operator SP** | Per SP | Memasukkan dan memperbarui data transmigran, rumah, lahan, dan hasil panen, **terbatas pada SP yang ditugaskan padanya**. Tanpa kewenangan menghapus. |
 
 **Seluruh pengguna sistem adalah petugas.** Warga transmigran tidak memiliki akun. Data mereka dikelola petugas, sedangkan pengaduan diajukan lewat halaman publik tanpa login (§7.13). Pilihan ini diambil karena melatih ratusan warga memakai sistem tidak sebanding manfaatnya, sementara jaringan di lokus juga tidak selalu mendukung.
 
@@ -319,7 +319,7 @@ Struktur entitas ini dituangkan dalam ERD dan **data dictionary** sebagai dokume
 2. Admin memasukkan data master wilayah/SP, inventaris, dan fasilitas.
 3. Data awal transmigran, rumah, lahan, poktan, komoditas, panen, alsintan, saprotan, dan infrastruktur diinput.
 4. Warga mengajukan pengaduan lewat halaman publik tanpa login bila ada kendala di lapangan, atau menyampaikannya lisan kepada operator SP untuk dicatatkan.
-5. Dinas Transmigrasi dan Dinas Pertanian memverifikasi data serta menangani pengaduan sesuai bidangnya.
+5. Dinas Transmigrasi dan Dinas Pertanian mengelola data serta menangani pengaduan sesuai bidangnya.
 6. Dinas melihat dashboard dan laporan.
 7. Data digunakan untuk monitoring, evaluasi, dan perencanaan tindak lanjut.
 8. Sistem didokumentasikan dan diserahkan kepada pengelola lokal untuk keberlanjutan.
@@ -333,7 +333,7 @@ Indikator mengikuti Tabel 7 proposal, dengan target kuantitatif dan kualitatif b
 | 2 | Modul sistem | Minimal 5 modul inti berjalan: petani/transmigran, lahan, komoditas, hasil panen, infrastruktur | Mendukung pendataan, pemantauan, dan pelaporan secara terstruktur |
 | 3 | Dashboard monitoring | Minimal 1 dashboard aktif menampilkan indikator utama kawasan | Ringkas, mudah dibaca, membantu pengambilan keputusan |
 | 4 | Database kawasan | Tersedia database transmigran petani, lahan, komoditas, hasil panen, infrastruktur, dan penghuni kawasan | Data tertib, terintegrasi, mudah dicari, dapat diperbarui berkala |
-| 5 | Input dan validasi data awal | Data awal dari desa/SP prioritas berhasil diinput | Data dapat diverifikasi dan menjadi baseline monitoring |
+| 5 | Input dan validasi data awal | Data awal dari desa/SP prioritas berhasil diinput | Data menjadi baseline monitoring |
 | 6 | Pencatatan hasil panen | Tersedia fitur pencatatan volume, jenis komoditas, harga, periode, dan lokasi | Riwayat panen mudah dipantau untuk melihat potensi produksi |
 | 7 | Pendataan dan pengaduan infrastruktur | Tersedia pendataan aset infrastruktur serta fitur pengaduan multi-kategori dengan alur status penanganan | Masalah terdokumentasi, dapat dilacak, dan dapat diprioritaskan |
 | 8 | Hak akses pengguna | Role dapat dibuat dan diatur Admin; minimal tersedia 4 role bawaan: Admin, Dinas Transmigrasi, Dinas Pertanian, Operator SP | Akses tertib, aman, sesuai kewenangan, dan dapat disesuaikan tanpa mengubah kode |
@@ -346,7 +346,7 @@ Indikator mengikuti Tabel 7 proposal, dengan target kuantitatif dan kualitatif b
 - Sederhana dan mudah dipakai operator lapangan
 - Fokus pada kebutuhan data yang benar-benar dipakai
 - Terintegrasi, bukan terpecah dalam banyak file manual
-- Mendukung verifikasi data
+- Mendukung penelusuran perubahan data lewat audit log
 - Siap dipakai bertahap dan dapat dikembangkan lanjutan
 
 ## 13. Catatan Implementasi Awal

@@ -13,14 +13,12 @@
         use App\Support\DummyData;
 
         $riwayat = DummyData::riwayatPenghunian($data['id_rumah']);
-        $statusVerifikasi = \App\Enums\StatusVerifikasi::from($data['status_verifikasi']);
 
         // Penghuni sekarang dibaca dari riwayat yang belum punya tanggal keluar,
         // bukan dari kolom penghuni, agar keduanya selalu sepadan.
         $penghuniSekarang = collect($riwayat)->firstWhere('tanggal_keluar', null);
 
         $bolehUbah = true;
-        $bolehVerifikasi = true;
     @endphp
 
     <x-sim.page-header :judul="'Rumah ' . $data['no_rumah']"
@@ -74,7 +72,6 @@
                 <div class="mt-3 flex flex-wrap gap-2">
                     <x-sim.status-badge :status="\App\Enums\KondisiRumah::from($data['kondisi'])" />
                     <x-sim.status-badge :status="\App\Enums\StatusHunian::from($data['status_hunian'])" />
-                    <x-sim.status-badge :status="$statusVerifikasi" />
                 </div>
 
                 <dl class="mt-5 space-y-3 border-t border-gray-200 pt-5 text-theme-sm dark:border-gray-800">
@@ -123,24 +120,6 @@
 
                     <x-sim.tautan-peta class="mt-3" :lintang="$data['lintang']" :bujur="$data['bujur']"
                         :label="'Rumah ' . $data['no_rumah']" />
-
-                @if ($bolehVerifikasi)
-                    <div class="mt-5 space-y-2 border-t border-gray-200 pt-5 dark:border-gray-800">
-                        <p class="text-theme-xs text-gray-500 dark:text-gray-400">Tindakan pemeriksaan data</p>
-                        <form method="POST" action="{{ route('rumah.verifikasi', $data['id_rumah']) }}">
-                            @csrf
-                            <button type="submit"
-                                class="w-full rounded-lg border border-green-300 px-4 py-2.5 text-theme-sm font-medium text-green-700 transition hover:bg-green-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-green-500/40 dark:text-green-400 dark:hover:bg-green-500/10">
-                                Tandai Terverifikasi
-                            </button>
-                        </form>
-                        <button type="button"
-                            @click="$dispatch('buka-konfirmasi', { nama: 'tolakRumah', aksi: '{{ route('rumah.tolak', $data['id_rumah']) }}' })"
-                            class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-theme-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
-                            Tolak dengan Alasan
-                        </button>
-                    </div>
-                @endif
             </div>
         </aside>
 
@@ -287,15 +266,8 @@
         <x-sim.modal-form nama="formUbahRumah" judul="Ubah Data Rumah"
             keterangan="Pergantian penghuni akan tercatat sebagai riwayat baru."
             :aksi="route('rumah.perbarui', $data['id_rumah'])" metode="PUT" ukuran="xl"
-            label-simpan="Simpan Perubahan" :boleh-verifikasi="$bolehVerifikasi">
+            label-simpan="Simpan Perubahan">
             @include('pages.rumah.form', ['data' => $data, 'awalan' => 'ubah'])
         </x-sim.modal-form>
-    @endif
-
-    @if ($bolehVerifikasi)
-        <x-sim.confirm-dialog nama="tolakRumah" judul="Tolak verifikasi data rumah ini?"
-            pesan="Operator akan melihat alasan penolakan agar dapat memperbaiki datanya."
-            label-setuju="Tolak Data Rumah" ragam="peringatan" metode="POST" :perlu-alasan="true"
-            label-alasan="Alasan penolakan" />
     @endif
 @endsection

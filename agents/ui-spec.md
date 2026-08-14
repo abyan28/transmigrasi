@@ -582,7 +582,7 @@ Menjawab PRD §8.1: sinyal di lokus tidak selalu stabil, sehingga petugas mengun
 1. **Item menu dirender hanya bila pengguna memiliki izin yang tercantum.** Menu yang tidak berhak **tidak dirender sama sekali**, bukan disembunyikan lewat CSS.
 2. **Kelompok menu ikut hilang** bila seluruh item di dalamnya tidak berhak diakses. Tidak boleh ada judul kelompok kosong.
 3. Menyembunyikan menu **tidak menggantikan** pemeriksaan izin di controller dan query. Tanpa itu, pengguna masih dapat membuka halaman dengan mengetik alamat URL langsung (`rules.md` bagian 5).
-4. Tombol aksi di dalam halaman (Tambah, Ubah, Hapus, Verifikasi, Export) mengikuti aturan yang sama: dirender hanya bila izinnya dimiliki.
+4. Tombol aksi di dalam halaman (Tambah, Ubah, Hapus, Export) mengikuti aturan yang sama: dirender hanya bila izinnya dimiliki.
 5. Susunan menu identik untuk seluruh role. Yang membedakan hanyalah item mana yang tampil.
 
 ### 5.3 Contoh hasil untuk role bawaan
@@ -671,15 +671,6 @@ Modal floating untuk form isian (`rules.md` §13.2 poin 3).
 - Tombol simpan nonaktif + spinner selama proses kirim
 - Layar penuh pada perangkat mobile
 
-**Pola tombol simpan pada modul yang memerlukan verifikasi.** Footer memuat dua tombol bila pengguna memiliki izin `verifikasi` pada modul bersangkutan:
-
-| Tombol | Gaya | Hasil |
-|---|---|---|
-| Simpan | sekunder | Data tersimpan berstatus `Belum Diverifikasi` |
-| Simpan dan Verifikasi | utama | Data tersimpan lalu langsung ditandai `Terverifikasi` |
-
-Tombol kedua **tidak dirender sama sekali** bila izin verifikasi tidak dimiliki, mengikuti aturan perenderan pada §5.2. Keduanya menghasilkan dua entri terpisah pada audit log, sehingga verifikasi tetap terlacak sebagai tindakan tersendiri (`rules.md` §5.2 poin 5).
-
 ### 6.3 `<x-stat-card>`
 Kartu indikator dashboard: label, angka besar, ikon, tren, dan tautan drill-down opsional.
 
@@ -722,11 +713,8 @@ Dibangun di atas `<x-ui.badge>` bawaan TailAdmin. Nilai teks wajib diambil dari 
 
 Setiap warna badge wajib punya varian mode gelap: latar memakai tingkat gelap dengan opasitas rendah, teks memakai tingkat 300 sampai 400 agar memenuhi kontras pada §3.2.2.
 
-**Badge verifikasi** tampil pada setiap baris tabel dan halaman detail modul yang memerlukan pemeriksaan (17 modul, lihat `rules.md` §5.1). Bila berstatus `Ditolak`, alasan penolakan ditampilkan sebagai tooltip pada badge dan ditulis lengkap di halaman detail, agar operator langsung tahu bagian mana yang perlu diperbaiki.
-
 | Konteks | Nilai dan warna |
 |---|---|
-| **Verifikasi data** | Belum Diverifikasi `gray` · Terverifikasi `success` · Ditolak `error` |
 | Pengaduan | Menunggu Diterima `gray` · Diterima `teal` · Diproses `warning` · Selesai `success` |
 | Prioritas pengaduan | Rendah `gray` · Sedang `teal` · Tinggi `warning` · Mendesak `error` |
 | Kondisi rumah | Tidak Rusak `success` · Rusak Ringan `warning` · Rusak Berat `error` |
@@ -804,9 +792,8 @@ Indikator PRD §7.8 dipetakan ke jenis visualisasi:
 | 12 | Status infrastruktur | Batang bertumpuk | Ya → per SP |
 | 13 | Isu prioritas (dari pengaduan) | Tabel + badge | Ya → detail pengaduan |
 | 14 | Rekap penghuni kawasan | Kartu statistik | Ya → per SP |
-| 15 | Mutu data kawasan | Kartu statistik + batang bertumpuk | Ya → per SP |
-| 16 | Status kondisi SP | Kartu statistik + tabel berbadge | Ya → per SP |
-| 17 | Pengaduan per status | Donat | Ya &mdash; daftar pengaduan |
+| 15 | Status kondisi SP | Kartu statistik + tabel berbadge | Ya → per SP |
+| 16 | Pengaduan per status | Donat | Ya &mdash; daftar pengaduan |
 
 **Aturan dashboard:**
 1. Filter global wilayah dan periode di bagian atas, memengaruhi seluruh visualisasi. Tingkatan filter: Kawasan → Kecamatan → Desa → SP, seluruhnya opsional.
@@ -817,18 +804,11 @@ Indikator PRD §7.8 dipetakan ke jenis visualisasi:
 6. Warna seri grafik mengambil urutan: `#163B54` (navy-500) → `#33809C` (teal-500) → `#C09546` (gold-500) → `#DFB87E` (sand-500) → `#265F73` (teal-700). ApexCharts dikonfigurasi memakai nilai heksadesimal, bukan nama kelas Tailwind.
 7. Grafik wajib menyediakan tabel data alternatif demi aksesibilitas.
 8. Konfigurasi ApexCharts bersama (warna, font Outfit, locale Indonesia, format angka) diletakkan di satu berkas `resources/js/chart-config.js`, tidak diulang di tiap grafik.
-9. **Visualisasi dikelompokkan menurut topik, bukan menurut nomor indikator.** Dashboard memuat lebih dari dua puluh blok; mengurutkannya menurut nomor indikator membuat pembaca dilempar antartopik dan satu pokok bahasan terpecah di beberapa tempat berjauhan. Urutan bagiannya: Ringkasan Kawasan, Kependudukan, Pertanian dan Ekonomi, Infrastruktur dan Layanan, Perbandingan Antar SP, lalu Tata Kelola Data.
+9. **Visualisasi dikelompokkan menurut topik, bukan menurut nomor indikator.** Dashboard memuat lebih dari dua puluh blok; mengurutkannya menurut nomor indikator membuat pembaca dilempar antartopik dan satu pokok bahasan terpecah di beberapa tempat berjauhan. Urutan bagiannya: Ringkasan Kawasan, Kependudukan, Pertanian dan Ekonomi, Infrastruktur dan Layanan, lalu Perbandingan Antar SP.
 10. Tiap bagian diawali `x-sim.judul-bagian` yang memakai `<h2>`, sehingga hierarki tajuk tidak melompat dari `<h1>` halaman ke `<h3>` kartu grafik.
 11. **Tiap baris grid wajib genap.** Lebar kartu disetel agar tidak menyisakan kolom menganggur di ujung baris; kartu yang berdiri sendiri diletakkan selebar halaman, di luar grid.
 
-**Indikator 15, mutu data kawasan.** Menampilkan sejauh mana data kawasan sudah diperiksa petugas berwenang.
-
-- Kartu statistik memuat persentase beserta angka mutlaknya, contoh: **74%** dengan keterangan "890 dari 1.200 data terverifikasi".
-- Batang bertumpuk memecah per modul utama (transmigran, rumah, lahan, hasil panen), memperlihatkan porsi Terverifikasi, Belum Diverifikasi, dan Ditolak.
-- **Hanya baris berstatus `Terverifikasi` yang dihitung sebagai terverifikasi** (`rules.md` §5.2 poin 11). Data yang dimasukkan petugas dinas tetapi belum diverifikasi tidak ikut dihitung, agar angka ini jujur menggambarkan pemeriksaan yang benar-benar dilakukan.
-- Warna mengikuti badge verifikasi: `success` untuk terverifikasi, `gray` untuk belum, `error` untuk ditolak.
-
-**Indikator 16, status kondisi SP.** Menampilkan kesiapan layanan dasar tiap satuan permukiman sebagai satu label yang mudah dibaca pemangku kepentingan (`rules.md` §10c).
+**Indikator 15, status kondisi SP.** Menampilkan kesiapan layanan dasar tiap satuan permukiman sebagai satu label yang mudah dibaca pemangku kepentingan (`rules.md` §10c).
 
 - Kartu statistik memuat jumlah SP per status, contoh: **2 Mandiri, 3 Berkembang, 1 Perlu Penanganan**.
 - Tabel di bawahnya memuat satu baris per SP beserta badge status dan skornya.

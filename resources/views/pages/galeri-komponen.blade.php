@@ -33,9 +33,8 @@
                     :keterangan="'dari ' . number_format($ringkasan['rumah_total'], 0, ',', '.') . ' rumah'" />
                 <x-sim.stat-card label="Luas Lahan"
                     :nilai="number_format($ringkasan['luas_lahan_total'], 2, ',', '.')" satuan="ha" />
-                <x-sim.stat-card label="Mutu Data"
-                    :nilai="round($ringkasan['data_terverifikasi'] / $ringkasan['data_total'] * 100) . '%'"
-                    :keterangan="number_format($ringkasan['data_terverifikasi'], 0, ',', '.') . ' data terverifikasi'" />
+                <x-sim.stat-card label="Volume Panen"
+                    :nilai="number_format($ringkasan['volume_panen_ton'], 2, ',', '.')" satuan="ton" />
             </div>
         </section>
 
@@ -43,9 +42,6 @@
         <section>
             <h2 class="mb-3 text-lg font-semibold text-gray-800 dark:text-white/90">Badge Status</h2>
             <div class="flex flex-wrap gap-2 rounded-2xl border border-gray-200 p-5 dark:border-gray-800">
-                @foreach (\App\Enums\StatusVerifikasi::cases() as $status)
-                    <x-sim.status-badge :status="$status" />
-                @endforeach
                 @foreach (\App\Enums\StatusPengaduan::cases() as $status)
                     <x-sim.status-badge :status="$status" />
                 @endforeach
@@ -77,17 +73,6 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div>
-                            <label class="mb-1.5 block text-theme-xs font-medium text-gray-700 dark:text-gray-400">
-                                Status Verifikasi
-                            </label>
-                            <select class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm dark:border-gray-700 dark:text-white/90">
-                                <option>Semua status</option>
-                                @foreach (\App\Enums\StatusVerifikasi::cases() as $s)
-                                    <option>{{ $s->label() }}</option>
-                                @endforeach
-                            </select>
-                        </div>
                     </div>
                 </x-slot:filter>
 
@@ -95,7 +80,6 @@
                     <th scope="col" class="px-4 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Nama</th>
                     <th scope="col" class="px-4 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">NIK</th>
                     <th scope="col" class="px-4 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">SP</th>
-                    <th scope="col" class="px-4 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Verifikasi</th>
                 </x-slot:kepala>
 
                 @foreach ($transmigran as $baris)
@@ -109,10 +93,6 @@
                         <td class="px-4 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
                             {{ $baris['satuan_permukiman'] }}
                         </td>
-                        <td class="px-4 py-3">
-                            <x-sim.status-badge :status="\App\Enums\StatusVerifikasi::from($baris['status_verifikasi'])"
-                                :catatan="$baris['catatan_verifikasi'] ?? null" />
-                        </td>
                     </tr>
                 @endforeach
 
@@ -125,10 +105,6 @@
                             <p class="mt-0.5 text-theme-xs tabular-nums text-gray-500 dark:text-gray-400">
                                 {{ $baris['nik'] }} &middot; {{ $baris['satuan_permukiman'] }}
                             </p>
-                            <div class="mt-2">
-                                <x-sim.status-badge
-                                    :status="\App\Enums\StatusVerifikasi::from($baris['status_verifikasi'])" ukuran="sm" />
-                            </div>
                         </div>
                     @endforeach
                 </x-slot:kartu>
@@ -244,17 +220,17 @@
                     Buka Konfirmasi Hapus
                 </button>
                 <button type="button"
-                    @click="$dispatch('buka-konfirmasi', { nama: 'contohTolak', aksi: '/contoh' })"
+                    @click="$dispatch('buka-konfirmasi', { nama: 'contohBeralasan', aksi: '/contoh' })"
                     class="rounded-lg border border-gray-300 px-4 py-2.5 text-theme-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
-                    Tolak Verifikasi
+                    Konfirmasi Beralasan
                 </button>
             </div>
         </section>
     </div>
 
-    {{-- Modal contoh dengan tombol Simpan dan Verifikasi --}}
+    {{-- Modal formulir contoh --}}
     <x-sim.modal-form nama="contohForm" judul="Tambah Data Transmigran"
-        keterangan="Isian bertanda bintang wajib diisi." aksi="#" :boleh-verifikasi="true">
+        keterangan="Isian bertanda bintang wajib diisi." aksi="#">
         <div class="grid gap-4 sm:grid-cols-2">
             <div>
                 <label for="contoh_nama" class="mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400">
@@ -277,8 +253,13 @@
         pesan="Data yang dihapus masih dapat dipulihkan oleh admin melalui audit log."
         label-setuju="Hapus Data" />
 
-    <x-sim.confirm-dialog nama="contohTolak" judul="Tolak verifikasi data ini?"
-        pesan="Operator akan melihat alasan penolakan agar dapat memperbaiki datanya."
-        label-setuju="Tolak Verifikasi" ragam="peringatan" metode="POST" :perlu-alasan="true"
-        label-alasan="Alasan penolakan" />
+    {{--
+        Ragam peringatan beserta alasan wajib. Dipakai untuk tindakan yang perlu
+        dipertanggungjawabkan tertulis, sehingga alasannya ikut tercatat pada
+        audit log.
+    --}}
+    <x-sim.confirm-dialog nama="contohBeralasan" judul="Nonaktifkan akun ini?"
+        pesan="Akun tidak dapat dipakai masuk sampai diaktifkan kembali oleh admin."
+        label-setuju="Nonaktifkan Akun" ragam="peringatan" metode="POST" :perlu-alasan="true"
+        label-alasan="Alasan penonaktifan" />
 @endsection

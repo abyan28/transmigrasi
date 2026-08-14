@@ -186,30 +186,6 @@ Penugasan SP untuk pengguna berrole bercakupan `Per SP`. Satu operator dapat mem
 
 **Catatan:** tabel ini hanya bermakna bagi role bercakupan `Per SP`. Untuk cakupan `Semua`, isinya diabaikan. Bila seorang operator belum ditugaskan SP mana pun, ia tidak melihat data apa pun, bukan melihat semuanya. Ini disengaja agar kelalaian penugasan tidak berubah menjadi kebocoran data.
 
-### 2.1e `verifikasi`
-
-Penandaan bahwa suatu baris data sudah diperiksa petugas berwenang. Satu tabel melayani seluruh modul yang memerlukan verifikasi, memakai pasangan `nama_tabel` dan `record_id` sebagai penunjuk baris.
-
-| Kolom | Tipe | Null | Kunci | Keterangan |
-|---|---|---|---|---|
-| `id_verifikasi` | `BIGINT UNSIGNED AUTO_INCREMENT` | TIDAK | PK | |
-| `nama_tabel` | `VARCHAR(64)` | TIDAK | UQ¹, IDX | Tabel yang diverifikasi, contoh `transmigran` |
-| `record_id` | `BIGINT UNSIGNED` | TIDAK | UQ¹ | Nilai primary key baris bersangkutan |
-| `status` | `ENUM` | TIDAK | IDX | Lihat §11.27 |
-| `user_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | Petugas yang memverifikasi |
-| `tanggal_verifikasi` | `TIMESTAMP` | TIDAK | | |
-| `catatan` | `TEXT` | YA | | Wajib diisi bila status Ditolak, memuat alasan penolakan |
-
-¹ UNIQUE gabungan `(nama_tabel, record_id)`, sehingga satu baris data hanya memiliki satu status verifikasi terkini.
-
-**Catatan penting:**
-- **Verifikasi tidak mengubah isi data.** Ia hanya menandai bahwa baris tersebut sudah diperiksa, beserta siapa yang memeriksa dan kapan.
-- Baris yang belum pernah diverifikasi **tidak memiliki catatan** di tabel ini. Ketiadaan baris berarti status `Belum Diverifikasi`.
-- Bila data yang sudah terverifikasi kemudian diubah, barisnya dikembalikan ke `Belum Diverifikasi` agar perubahan diperiksa ulang.
-- Riwayat verifikasi sebelumnya tetap terlacak lewat `audit_log`, sehingga tabel ini cukup menyimpan status terkini saja.
-- **Tidak ada verifikasi otomatis.** Data baru selalu berstatus `Belum Diverifikasi`, bahkan bila penginputnya memiliki izin verifikasi. Tombol "Simpan dan Verifikasi" pada antarmuka menjalankan dua tindakan berurutan, bukan satu tindakan gabungan, sehingga keduanya tercatat terpisah pada audit log (`rules.md` §5.2).
-- `user_id` mencatat **pemeriksa**, bukan penginput. Penginput asli terbaca dari entri `Tambah` pada `audit_log` untuk baris yang sama.
-
 ### 2.2 `audit_log`
 
 Riwayat perubahan data penting (`rules.md` §14.5).
@@ -863,13 +839,12 @@ Nilai berikut dipakai berulang di beberapa tabel. Implementasinya memakai **PHP 
 Role `Transmigran` dan `Ketua Poktan` pada rancangan semula **dihapus**, karena warga tidak lagi memiliki akun sistem. Pengaduan warga ditangani lewat kanal publik tanpa login (§10.2).
 
 ### 11.2 Aksi audit log
-`Tambah` · `Ubah` · `Hapus` · `Pulihkan` · `Verifikasi` · `Tolak Verifikasi` · `Login` · `Logout` · `Reset Kata Sandi` · `Nonaktifkan Akun` · `Aktifkan Akun` · `Ubah Izin Role`
+`Tambah` · `Ubah` · `Hapus` · `Pulihkan` · `Login` · `Logout` · `Reset Kata Sandi` · `Nonaktifkan Akun` · `Aktifkan Akun` · `Ubah Izin Role`
 
 **Catatan:**
 - `Reset Kata Sandi`, `Nonaktifkan Akun`, dan `Aktifkan Akun` mencatat tindakan Admin terhadap akun pengguna lain. `Reset Kata Sandi` wajib tercatat karena memberi Admin kemampuan mengambil alih akses akun mana pun.
-- `Verifikasi` dan `Tolak Verifikasi` dicatat **terpisah dari** `Tambah` maupun `Ubah`. Menekan tombol "Simpan dan Verifikasi" menghasilkan **dua entri**: satu `Tambah` dan satu `Verifikasi` (`rules.md` §5.2 poin 5).
 - `Ubah Izin Role` mencatat perubahan susunan izin sebuah role, karena tindakan ini dapat memperluas akses banyak pengguna sekaligus.
-- Pasangan `Tambah` dan `Verifikasi` pada baris data yang sama memungkinkan penelusuran siapa penginput asli dan siapa pemeriksanya, sehingga prinsip empat mata dapat ditegakkan kelak tanpa mengubah skema.
+- Entri `Tambah` dan `Ubah` pada baris data yang sama memungkinkan penelusuran siapa penginput asli dan siapa yang memutakhirkannya.
 
 ### 11.3 Sumber dana / sumber perolehan
 `APBN` · `APBD Provinsi` · `APBD Kabupaten` · `Dinas Transmigrasi Kabupaten` · `Dinas Pertanian Kabupaten` · `Lembaga Swadaya Masyarakat` · `Swadaya` · `Lainnya`
@@ -955,12 +930,7 @@ Menentukan **data siapa** yang boleh dilihat, terpisah dari izin yang menentukan
 | `Milik Sendiri` | dibatasi baris milik pengguna | disediakan untuk kebutuhan mendatang |
 
 ### 11.26 Aksi permission
-`lihat` · `tambah` · `ubah` · `hapus` · `verifikasi` · `export`
-
-### 11.27 Status verifikasi
-`Belum Diverifikasi` · `Terverifikasi` · `Ditolak`
-
-`Belum Diverifikasi` diwakili oleh **ketiadaan baris** pada tabel `verifikasi`, bukan disimpan sebagai nilai.
+`lihat` · `tambah` · `ubah` · `hapus` · `export`
 
 ### 11.28 Sumber laporan pengaduan
 `Publik` · `Petugas`
@@ -1042,10 +1012,6 @@ Aturan berikut ditulis satu kali di `app/Support/ValidationRules.php` dan dipaka
 | 15 | Role bertanda `is_bawaan` tidak dapat dihapus | `role` |
 | 16 | Role bertanda `is_terkunci` tidak dapat diubah izinnya | `role` |
 | 17 | Role yang masih dipakai minimal satu akun tidak dapat dihapus | `role` |
-| 18 | `catatan` wajib diisi bila `status` bernilai Ditolak | `verifikasi` |
-| 18a | Data baru tidak boleh langsung dibuatkan baris `verifikasi` berstatus Terverifikasi dalam satu transaksi yang sama dengan penyimpanan. Verifikasi wajib menjadi tindakan tersendiri yang tercatat terpisah di audit log | `verifikasi` |
-| 18b | Baris `verifikasi` hanya boleh dibuat atau diubah oleh pengguna yang memiliki izin `verifikasi` pada modul bersangkutan | `verifikasi` |
-| 18c | Saat baris data induk diubah, baris `verifikasi` miliknya wajib dihapus agar status kembali ke Belum Diverifikasi | `verifikasi` |
 | 19 | `nama_pelapor` dan `kontak_pelapor` wajib pada seluruh pengaduan, baik publik maupun dicatat petugas | `pengaduan` |
 | 20 | `user_id` wajib kosong bila `sumber_laporan` bernilai Publik, dan wajib terisi bila Petugas | `pengaduan` |
 | 21 | Pengaduan publik dibatasi 3 laporan per jam untuk setiap alamat IP | `pengaduan` |
@@ -1062,39 +1028,39 @@ Penamaan memakai pola `modul.aksi`, contoh `transmigran.lihat`.
 
 Tanda centang berarti izin tersebut dibuat untuk modul bersangkutan.
 
-| Modul | lihat | tambah | ubah | hapus | verifikasi | export |
-|---|:---:|:---:|:---:|:---:|:---:|:---:|
-| `pengguna` | v | v | v | v | | |
-| `role` | v | v | v | v | | |
-| `audit_log` | v | | | | | v |
-| `wilayah` | v | v | v | v | | |
-| `kawasan` | v | v | v | v | v | v |
-| `sp` | v | v | v | v | v | v |
-| `inventaris_sp` | v | v | v | v | v | v |
-| `fasilitas_sp` | v | v | v | v | v | v |
-| `satuan` | v | v | v | v | | |
-| `transmigran` | v | v | v | v | v | v |
-| `rumah` | v | v | v | v | v | v |
-| `riwayat_penghunian` | v | v | v | v | v | v |
-| `lahan` | v | v | v | v | v | v |
-| `dokumen_lahan` | v | v | v | v | v | |
-| `poktan` | v | v | v | v | v | v |
-| `anggota_poktan` | v | v | v | v | v | v |
-| `alsintan` | v | v | v | v | v | v |
-| `saprotan` | v | v | v | v | v | v |
-| `komoditas` | v | v | v | v | v | v |
-| `musim_tanam` | v | v | v | v | v | |
-| `riwayat_tanam` | v | v | v | v | v | v |
-| `hasil_panen` | v | v | v | v | v | v |
-| `infrastruktur` | v | v | v | v | v | v |
-| `pengaduan` | v | v | v | v | v | v |
-| `penanganan_pengaduan` | v | v | v | | | |
-| `dashboard` | v | | | | | v |
-| `laporan` | v | | | | | v |
+| Modul | lihat | tambah | ubah | hapus | export |
+|---|:---:|:---:|:---:|:---:|:---:|
+| `pengguna` | v | v | v | v | |
+| `role` | v | v | v | v | |
+| `audit_log` | v | | | | v |
+| `wilayah` | v | v | v | v | |
+| `kawasan` | v | v | v | v | v |
+| `sp` | v | v | v | v | v |
+| `inventaris_sp` | v | v | v | v | v |
+| `fasilitas_sp` | v | v | v | v | v |
+| `satuan` | v | v | v | v | |
+| `transmigran` | v | v | v | v | v |
+| `rumah` | v | v | v | v | v |
+| `riwayat_penghunian` | v | v | v | v | v |
+| `lahan` | v | v | v | v | v |
+| `dokumen_lahan` | v | v | v | v | |
+| `poktan` | v | v | v | v | v |
+| `anggota_poktan` | v | v | v | v | v |
+| `alsintan` | v | v | v | v | v |
+| `saprotan` | v | v | v | v | v |
+| `komoditas` | v | v | v | v | v |
+| `musim_tanam` | v | v | v | v | |
+| `riwayat_tanam` | v | v | v | v | v |
+| `hasil_panen` | v | v | v | v | v |
+| `infrastruktur` | v | v | v | v | v |
+| `pengaduan` | v | v | v | v | v |
+| `penanganan_pengaduan` | v | v | v | | |
+| `dashboard` | v | | | | v |
+| `laporan` | v | | | | v |
 
-Total **137 izin** dari 27 modul, dihitung dari tabel di atas.
+Total **118 izin** dari 27 modul, dihitung dari tabel di atas.
 
-Jumlah izin yang benar-benar dipegang tiap role bawaan lebih sedikit, sesuai susunan pada `rules.md` 5.1: Admin 119, Dinas Transmigrasi 68, Dinas Pertanian 74, Operator SP 50. Admin tidak memegang seluruh 139 izin karena verifikasi data adalah kewenangan dinas sesuai bidangnya, bukan kewenangan administrator sistem.
+Jumlah izin yang benar-benar dipegang tiap role bawaan lebih sedikit, sesuai susunan pada `rules.md` 5.1: Admin 118, Dinas Transmigrasi 57, Dinas Pertanian 64, Operator SP 50.
 
 ### 13.2 Kelompok modul pada antarmuka
 
@@ -1116,6 +1082,6 @@ Agar halaman pengaturan role mudah dibaca, izin dikelompokkan sesuai struktur me
 
 1. Pemeriksaan wajib dilakukan pada **level query dan controller**, bukan sekadar menyembunyikan menu (`rules.md` §5).
 2. Menu sidebar dirender hanya bila pengguna memiliki izin `lihat` pada modul bersangkutan. Menu yang tidak berhak **tidak dirender sama sekali**.
-3. Tombol aksi (Tambah, Ubah, Hapus, Verifikasi) dirender hanya bila izin terkait dimiliki.
+3. Tombol aksi (Tambah, Ubah, Hapus, Export) dirender hanya bila izin terkait dimiliki.
 4. Izin `lihat` adalah prasyarat seluruh aksi lain pada modul yang sama. Memberi izin `ubah` tanpa `lihat` dianggap galat konfigurasi dan ditolak sistem.
 5. Setiap perubahan susunan izin sebuah role wajib tercatat pada `audit_log`.

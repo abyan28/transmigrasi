@@ -23,10 +23,9 @@
         // bertahan setelah halaman dimuat ulang.
         $cari = trim((string) request('cari', ''));
         $filterSp = request('sp');
-        $filterStatus = request('status_verifikasi');
         $filterTinggal = request('status_tinggal');
 
-        $baris = array_values(array_filter($semua, function ($t) use ($cari, $filterSp, $filterStatus, $filterTinggal) {
+        $baris = array_values(array_filter($semua, function ($t) use ($cari, $filterSp, $filterTinggal) {
             if ($cari !== '') {
                 $cocok = str_contains(mb_strtolower($t['nama_kepala_keluarga']), mb_strtolower($cari))
                     || str_contains($t['nik'], $cari)
@@ -41,10 +40,6 @@
                 return false;
             }
 
-            if ($filterStatus && $t['status_verifikasi'] !== $filterStatus) {
-                return false;
-            }
-
             if ($filterTinggal && $t['status_tinggal'] !== $filterTinggal) {
                 return false;
             }
@@ -52,14 +47,13 @@
             return true;
         }));
 
-        $adaFilter = $cari !== '' || $filterSp || $filterStatus || $filterTinggal;
+        $adaFilter = $cari !== '' || $filterSp || $filterTinggal;
 
         // Sementara seluruh tombol dirender. Penyaringan menurut izin
         // dipasang pada Tahap 3 lewat MenuHelper::bolehLihat().
         $bolehTambah = true;
         $bolehUbah = true;
         $bolehHapus = true;
-        $bolehVerifikasi = true;
     @endphp
 
     <x-sim.page-header judul="Data Transmigran"
@@ -97,12 +91,15 @@
     <div class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <x-sim.stat-card label="Total Kepala Keluarga" :nilai="number_format(count($semua), 0, ',', '.')"
             satuan="KK" />
-        <x-sim.stat-card label="Sudah Terverifikasi"
-            :nilai="number_format(count(array_filter($semua, fn ($t) => $t['status_verifikasi'] === 'Terverifikasi')), 0, ',', '.')" />
-        <x-sim.stat-card label="Menunggu Diperiksa"
-            :nilai="number_format(count(array_filter($semua, fn ($t) => $t['status_verifikasi'] === 'Belum Diverifikasi')), 0, ',', '.')" />
-        <x-sim.stat-card label="Perlu Diperbaiki"
-            :nilai="number_format(count(array_filter($semua, fn ($t) => $t['status_verifikasi'] === 'Ditolak')), 0, ',', '.')" />
+        <x-sim.stat-card label="Masih Tinggal di Kawasan"
+            :nilai="number_format(count(array_filter($semua, fn ($t) => $t['status_tinggal'] === 'Aktif')), 0, ',', '.')"
+            satuan="KK" />
+        <x-sim.stat-card label="Total Jiwa"
+            :nilai="number_format(array_sum(array_column($semua, 'jumlah_anggota_keluarga')), 0, ',', '.')"
+            keterangan="Seluruh anggota keluarga terdata" />
+        <x-sim.stat-card label="Satuan Permukiman"
+            :nilai="number_format(count(array_unique(array_column($semua, 'satuan_permukiman_id'))), 0, ',', '.')"
+            keterangan="Tempat data tersebar" />
     </div>
 
     {{-- Pencarian dan filter dibungkus satu form agar keduanya terkirim bersama --}}
@@ -113,7 +110,7 @@
             pesan-kosong="Data kepala keluarga akan tampil di sini setelah ditambahkan.">
 
             <x-slot:filter>
-                <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     <div>
                         <label for="filter_sp"
                             class="mb-1.5 block text-theme-xs font-medium text-gray-700 dark:text-gray-400">
@@ -127,20 +124,6 @@
                                     @selected($filterSp == $sp['id_satuan_permukiman'])>
                                     {{ $sp['nama'] }}
                                 </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div>
-                        <label for="filter_verifikasi"
-                            class="mb-1.5 block text-theme-xs font-medium text-gray-700 dark:text-gray-400">
-                            Status Verifikasi
-                        </label>
-                        <select id="filter_verifikasi" name="status_verifikasi"
-                            class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
-                            <option value="">Semua status</option>
-                            @foreach (\App\Enums\StatusVerifikasi::opsi() as $nilai => $label)
-                                <option value="{{ $nilai }}" @selected($filterStatus === $nilai)>{{ $label }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -209,9 +192,6 @@
                 <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">
                     Status Tinggal
                 </th>
-                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">
-                    Verifikasi
-                </th>
                 <th scope="col" class="px-5 py-3 text-right text-theme-xs font-medium text-gray-500 dark:text-gray-400">
                     Aksi
                 </th>
@@ -239,10 +219,6 @@
                     </td>
                     <td class="px-5 py-3">
                         <x-sim.status-badge :status="\App\Enums\StatusTinggal::from($t['status_tinggal'])" />
-                    </td>
-                    <td class="px-5 py-3">
-                        <x-sim.status-badge :status="\App\Enums\StatusVerifikasi::from($t['status_verifikasi'])"
-                            :catatan="$t['catatan_verifikasi'] ?? null" />
                     </td>
                     <td class="px-5 py-3">
                         <div class="flex items-center justify-end gap-1">
@@ -314,8 +290,6 @@
                                     {{ $t['nik'] }}
                                 </p>
                             </a>
-                            <x-sim.status-badge
-                                :status="\App\Enums\StatusVerifikasi::from($t['status_verifikasi'])" ukuran="sm" />
                         </div>
                         <p class="mt-2 text-theme-xs text-gray-500 dark:text-gray-400">
                             {{ $t['satuan_permukiman'] }} &middot; {{ $t['jumlah_anggota_keluarga'] }} anggota
@@ -331,7 +305,7 @@
         <x-sim.modal-form nama="formTambahTransmigran" judul="Tambah Data Transmigran"
             keterangan="Isian bertanda bintang wajib diisi."
             :aksi="route('transmigran.simpan')" ukuran="xl"
-            label-simpan="Simpan Data Transmigran" :boleh-verifikasi="$bolehVerifikasi">
+            label-simpan="Simpan Data Transmigran">
             @include('pages.transmigran.form', ['awalan' => 'tambah'])
         </x-sim.modal-form>
     @endif
@@ -350,9 +324,9 @@
     --}}
     @if ($bolehUbah)
         <x-sim.modal-form nama="formUbahTransmigranBaris" judul="Ubah Data Transmigran"
-            keterangan="Data yang sudah terverifikasi akan kembali menunggu pemeriksaan setelah diubah."
+            keterangan="Perubahan tercatat pada audit log."
             pola-aksi="/transmigran/:id" metode="PUT" ukuran="xl"
-            label-simpan="Simpan Perubahan" :boleh-verifikasi="$bolehVerifikasi">
+            label-simpan="Simpan Perubahan">
             @include('pages.transmigran.form', ['awalan' => 'ubahBaris'])
         </x-sim.modal-form>
     @endif

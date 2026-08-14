@@ -53,7 +53,7 @@ Total **36 tabel**, dikelompokkan menjadi 9 domain.
 
 | # | Domain | Tabel |
 |---|---|---|
-| 1 | Pengguna & Sistem | `user`, `role`, `permission`, `role_permission`, `user_satuan_permukiman`, `verifikasi`, `audit_log`, `kode_pemulihan_sandi` |
+| 1 | Pengguna & Sistem | `user`, `role`, `permission`, `role_permission`, `user_satuan_permukiman`, `audit_log`, `kode_pemulihan_sandi` |
 | 2 | Master Wilayah | `provinsi`, `kabupaten`, `kecamatan`, `desa`, `kawasan_transmigrasi`, `satuan_permukiman`, `penilaian_sp` |
 | 3 | Aset SP | `inventaris_sp`, `fasilitas_sp` |
 | 4 | Master Referensi | `satuan`, `komoditas`, `parameter_penilaian_sp` |
@@ -212,7 +212,6 @@ Kolom "Aturan hapus" memakai istilah SQL: `RESTRICT` mencegah penghapusan induk 
 | 43 | `role_permission` | `permission_id` | `permission` | N:M | CASCADE |
 | 44 | `user_satuan_permukiman` | `user_id` | `user` | N:M | CASCADE |
 | 45 | `user_satuan_permukiman` | `satuan_permukiman_id` | `satuan_permukiman` | N:M | CASCADE |
-| 46 | `verifikasi` | `user_id` | `user` | N:1 | RESTRICT |
 
 ---
 
@@ -229,7 +228,6 @@ Aturan berikut **tidak boleh** hanya divalidasi di form, karena dapat ditembus l
 | 3b | Nama permission unik | `UNIQUE` pada `permission.nama` |
 | 3c | Satu izin tidak dobel pada satu role | `UNIQUE (role_id, permission_id)` pada `role_permission` |
 | 3d | Satu SP tidak dobel ditugaskan ke satu pengguna | `UNIQUE (user_id, satuan_permukiman_id)` pada `user_satuan_permukiman` |
-| 3e | Satu baris data hanya punya satu status verifikasi terkini | `UNIQUE (nama_tabel, record_id)` pada `verifikasi` |
 | 4 | NIK transmigran unik | `UNIQUE` pada `transmigran.nik` |
 | 5 | Nomor KK unik | `UNIQUE` pada `transmigran.no_kk` |
 | 6 | Email user unik | `UNIQUE` pada `user.email` (nullable) |
@@ -268,7 +266,6 @@ Dashboard dan halaman daftar mengandalkan filter wilayah dan periode, sehingga i
 | `user` | `email`, `username`, `role_id`, `is_aktif` | Pencarian kredensial saat login dan penyaringan daftar pengguna |
 | `role_permission` | `role_id`, `permission_id` | Pemeriksaan izin pada setiap permintaan halaman |
 | `user_satuan_permukiman` | `user_id`, `satuan_permukiman_id` | Penyaring cakupan data Per SP |
-| `verifikasi` | `(nama_tabel, record_id)`, `status`, `user_id` | Pembacaan status verifikasi saat menampilkan daftar |
 | `pengaduan` | `nomor_pengaduan`, `sumber_laporan`, `ip_pelapor` | Pelacakan publik dan pembatasan laju laporan |
 
 Indeks gabungan `(satuan_permukiman_id, tahun_kedatangan)` pada `transmigran` dan `(satuan_permukiman_id, status)` pada `pengaduan` disiapkan bila query dashboard terbukti lambat setelah data nyata masuk.
@@ -298,7 +295,7 @@ user ──N:1──> role ──N:M──> permission
                 └─ cakupan_data: Semua | Per SP | Milik Sendiri
 ```
 
-1. **`permission`** adalah daftar izin baku yang ditanam sistem lewat seeder, contoh `transmigran.lihat` dan `transmigran.verifikasi`. Admin **tidak dapat** menambah atau menghapus izin, karena setiap izin harus punya pasangan pemeriksa di dalam kode.
+1. **`permission`** adalah daftar izin baku yang ditanam sistem lewat seeder, contoh `transmigran.lihat` dan `transmigran.ubah`. Admin **tidak dapat** menambah atau menghapus izin, karena setiap izin harus punya pasangan pemeriksa di dalam kode.
 2. **`role`** dibuat bebas oleh Admin, lalu dipasangkan ke sejumlah izin lewat `role_permission`.
 3. **`cakupan_data`** menjawab pertanyaan berbeda dari izin. Izin menentukan *boleh melakukan apa*, cakupan menentukan *boleh melihat data siapa*.
 
@@ -313,14 +310,6 @@ user ──N:1──> role ──N:M──> permission
 Penyaring cakupan wajib diterapkan pada **level query**, bukan sekadar menyembunyikan menu (`rules.md` §5). Tanpa itu, pengguna masih dapat membuka data di luar cakupannya dengan mengetik alamat URL langsung.
 
 **Perlindungan:** role bertanda `is_bawaan = TRUE` tidak dapat dihapus. Role Admin tidak dapat dihapus maupun dikurangi izinnya, agar sistem tidak pernah kehilangan jalur administrasi.
-
-### 7.0b Verifikasi terpusat
-
-Tabel `verifikasi` melayani seluruh modul yang memerlukan penandaan pemeriksaan data, memakai pasangan `nama_tabel` dan `record_id` sebagai penunjuk baris.
-
-Pendekatan ini dipilih daripada menambahkan tiga kolom ke setiap tabel, karena dua alasan: hanya satu tabel yang perlu dikelola untuk 17 modul, dan riwayat verifikasi berulang tetap tersimpan lewat `audit_log` tanpa menimpa data sebelumnya.
-
-Verifikasi **tidak mengubah isi data** sama sekali. Ia hanya menandai bahwa suatu baris sudah diperiksa petugas berwenang, beserta siapa yang memeriksa dan kapan.
 
 ### 7.1 Satuan dan konversi panen
 `komoditas.satuan_id` menetapkan satuan baku tiap komoditas. `hasil_panen.volume` disimpan **apa adanya** dalam satuan tersebut, tanpa dikonversi. Agregasi lintas komoditas mengalikan `volume × satuan.faktor_ke_ton` **hanya saat rekap** (`rules.md` §8a.4–5). `hasil_panen.satuan_id` disalin dari komoditas saat penyimpanan agar riwayat tetap sahih bila satuan baku komoditas kelak diubah.
@@ -379,7 +368,7 @@ Bagian ini merangkum seluruh penyimpangan yang disengaja dari berkas SQL referen
 | 25 | `poktan` menyimpan `nama_ketua_poktan`, `nik_ketua_poktan` sebagai teks sekaligus `id_transmigran` | Cukup `ketua_transmigran_id` menunjuk `transmigran` | Data ketua sudah ada pada tabel transmigran; menyalinnya berisiko tidak sinkron. Kolom `telepon` dan `email` poktan tetap disimpan karena bisa berbeda dengan kontak pribadi ketua |
 | 26 | Kawasan transmigrasi tidak punya representasi apa pun; SP langsung menempel ke desa | Tabel `kawasan_transmigrasi` ditambahkan sebagai cabang tersendiri dari `kabupaten`; `satuan_permukiman` menaut ke `kawasan_id` dan `desa_id` sekaligus | Kawasan transmigrasi adalah subjek utama sistem, tetapi pada SQL referensi hanya hidup di judul dokumen. Kawasan juga memotong batas administratif: Kobalima Timur menaungi 6 SP yang tersebar di 4 kecamatan, sehingga mustahil diwakili oleh hierarki administratif saja. Tanpa tabel ini, replikasi ke kawasan lain (`rules.md` §4a.4) tidak mungkin dilakukan |
 | 27 | Role disimpan sebagai kolom ENUM `kategori_user` pada tabel `user` | Diganti tiga tabel: `role`, `permission`, dan `role_permission`, ditambah kolom `cakupan_data` pada `role` | Menambah atau mengubah role pada bentuk ENUM berarti mengubah struktur tabel, sehingga hanya dapat dilakukan programmer. Dengan tabel tersendiri, Admin dapat menyusun role beserta izinnya lewat antarmuka. Ini sekaligus menjawab kebutuhan role Operator SP yang tidak ada pada daftar semula |
-| 28 | Tidak ada penyimpanan status verifikasi, padahal verifikasi disebut sebagai fungsi utama dinas | Tabel `verifikasi` terpusat memakai pasangan `nama_tabel` dan `record_id` | Matriks kewenangan memberi hak verifikasi pada 17 modul, tetapi tidak ada satu pun kolom penyimpannya. Hak tersebut mustahil dijalankan tanpa tabel ini |
+| 28 | ~~Tidak ada penyimpanan status verifikasi~~ | **DIBATALKAN 2026-08-14.** Tabel `verifikasi` sempat dirancang, lalu dicabut bersama seluruh fitur verifikasi atas kesepakatan tim | Temuan ini sahih pada masanya: matriks kewenangan memberi hak verifikasi pada 17 modul tanpa satu pun kolom penyimpannya. Setelah tim memutuskan fitur verifikasi tidak diperlukan, hak tersebut ikut dicabut sehingga temuan ini tidak lagi berlaku |
 | 29 | `pengaduan.user_id` wajib, sehingga pelapor harus punya akun | `user_id` menjadi nullable, ditambah `nama_pelapor`, `kontak_pelapor`, `sumber_laporan`, dan `ip_pelapor` | Warga transmigran tidak lagi memiliki akun. Pengaduan dibuka sebagai kanal publik tanpa login agar warga tetap dapat melapor, cukup mengisi nama dan kontak |
 | 30 | `user` menyimpan `transmigran_id` untuk akun milik warga | Kolom dicabut | Role Transmigran dan Ketua Poktan dihapus. Seluruh pengguna sistem kini petugas, sehingga tidak ada akun yang perlu ditautkan ke data warga |
 
@@ -454,26 +443,25 @@ Urutan berikut wajib dipatuhi agar foreign key selalu menemukan tabel induknya.
 13. kode_pemulihan_sandi         (butuh user)
 14. satuan_permukiman            (butuh desa, kawasan_transmigrasi, user)
 15. user_satuan_permukiman       (butuh user, satuan_permukiman)
-16. verifikasi                   (butuh user)
-17. inventaris_sp                (butuh satuan_permukiman)
-18. fasilitas_sp                 (butuh satuan_permukiman)
-19. transmigran                  (butuh satuan_permukiman)
-20. rumah                        (butuh satuan_permukiman, transmigran)
-21. riwayat_penghunian           (butuh rumah, transmigran)
-22. poktan                       (butuh satuan_permukiman, transmigran)
-23. anggota_poktan               (butuh poktan, transmigran)
-24. lahan                        (butuh transmigran, satuan_permukiman, poktan)
-25. dokumen_lahan                (butuh lahan)
-26. alsintan                     (butuh transmigran, poktan)
-27. saprotan                     (butuh transmigran, poktan, satuan)
-28. komoditas_poktan             (butuh komoditas, poktan)
-29. riwayat_tanam                (butuh lahan, musim_tanam, komoditas)
-30. hasil_panen                  (butuh riwayat_tanam, satuan)
-31. infrastruktur                (butuh satuan_permukiman, poktan)
-32. pengaduan                    (butuh user, satuan_permukiman)
-33. penanganan_pengaduan         (butuh pengaduan, user)
-34. audit_log                    (butuh user)
-35. penilaian_sp                 (butuh satuan_permukiman, user)
+16. inventaris_sp                (butuh satuan_permukiman)
+17. fasilitas_sp                 (butuh satuan_permukiman)
+18. transmigran                  (butuh satuan_permukiman)
+19. rumah                        (butuh satuan_permukiman, transmigran)
+20. riwayat_penghunian           (butuh rumah, transmigran)
+21. poktan                       (butuh satuan_permukiman, transmigran)
+22. anggota_poktan               (butuh poktan, transmigran)
+23. lahan                        (butuh transmigran, satuan_permukiman, poktan)
+24. dokumen_lahan                (butuh lahan)
+25. alsintan                     (butuh transmigran, poktan)
+26. saprotan                     (butuh transmigran, poktan, satuan)
+27. komoditas_poktan             (butuh komoditas, poktan)
+28. riwayat_tanam                (butuh lahan, musim_tanam, komoditas)
+29. hasil_panen                  (butuh riwayat_tanam, satuan)
+30. infrastruktur                (butuh satuan_permukiman, poktan)
+31. pengaduan                    (butuh user, satuan_permukiman)
+32. penanganan_pengaduan         (butuh pengaduan, user)
+33. audit_log                    (butuh user)
+34. penilaian_sp                 (butuh satuan_permukiman, user)
 ```
 
 **Catatan langkah 9 sampai 12:** tabel hak akses dibuat sebelum `user`, karena `user.role_id` menunjuk ke `role`. Tidak ada lagi relasi melingkar antara `user` dan `transmigran`, sebab kolom `transmigran_id` sudah dicabut seiring dihapusnya akun milik warga.
@@ -520,9 +508,9 @@ Tabel ini memperlihatkan alasan kawasan dipisah dari hierarki administratif: sat
 | Role | Cakupan data | Ringkasan izin |
 |---|---|---|
 | **Admin** | Semua | Seluruh izin. **Terkunci**, tidak dapat diubah maupun dihapus |
-| **Dinas Transmigrasi** | Semua | Lihat seluruh modul; tambah, ubah, dan verifikasi modul kependudukan, wilayah, SP, lahan, dan infrastruktur; tangani pengaduan bidang ketransmigrasian |
-| **Dinas Pertanian** | Semua | Lihat seluruh modul; tambah, ubah, dan verifikasi modul poktan, komoditas, panen, alsintan, dan saprotan; tangani pengaduan bidang pertanian |
-| **Operator SP** | Per SP | Tambah dan ubah data transmigran, rumah, lahan, dan panen pada SP yang ditugaskan. Tanpa izin hapus, tanpa izin verifikasi, tanpa akses manajemen pengguna dan audit log |
+| **Dinas Transmigrasi** | Semua | Lihat seluruh modul; tambah dan ubah modul kependudukan, wilayah, SP, lahan, dan infrastruktur; tangani pengaduan bidang ketransmigrasian |
+| **Dinas Pertanian** | Semua | Lihat seluruh modul; tambah dan ubah modul poktan, komoditas, panen, alsintan, dan saprotan; tangani pengaduan bidang pertanian |
+| **Operator SP** | Per SP | Tambah dan ubah data transmigran, rumah, lahan, dan panen pada SP yang ditugaskan. Tanpa izin hapus, tanpa akses manajemen pengguna dan audit log |
 
 Susunan izin di atas menggantikan matriks tetap pada `rules.md` §5.1, yang kini berkedudukan sebagai **acuan konfigurasi awal**, bukan aturan permanen.
 

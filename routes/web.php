@@ -189,7 +189,7 @@ Route::post('/sp', function () {
     // Tahap 4: SP menempel pada desa dan kawasan sekaligus, sehingga kedua
     // foreign key wajib terisi (erd.md bagian 7.0).
     return redirect()->route('sp.index')
-        ->with('sukses', 'Data satuan permukiman tersimpan dan menunggu diverifikasi.');
+        ->with('sukses', 'Data satuan permukiman tersimpan.');
 })->name('sp.simpan');
 
 Route::post('/sp/inventaris', function () {
@@ -230,14 +230,11 @@ Route::get('/transmigran/{id}', function (int $id) {
 
 Route::post('/transmigran', function () {
     // Tahap 5: validasi lewat ValidationRules, simpan, catat audit log.
-    // Tombol "Simpan dan Verifikasi" mengirim tindakan=simpan_verifikasi dan
-    // wajib menghasilkan dua entri audit log terpisah (rules.md bagian 5.2).
     return redirect()->route('transmigran.index')
-        ->with('sukses', 'Data transmigran tersimpan dan menunggu diverifikasi.');
+        ->with('sukses', 'Data transmigran tersimpan.');
 })->name('transmigran.simpan');
 
 Route::put('/transmigran/{id}', function (int $id) {
-    // Tahap 5: perubahan mengembalikan status verifikasi ke Belum Diverifikasi.
     return redirect()->route('transmigran.detail', $id)
         ->with('sukses', 'Perubahan data transmigran tersimpan.');
 })->where('id', '[0-9]+')->name('transmigran.perbarui');
@@ -247,18 +244,6 @@ Route::delete('/transmigran/{id}', function () {
     return redirect()->route('transmigran.index')
         ->with('sukses', 'Data transmigran dihapus.');
 })->where('id', '[0-9]+')->name('transmigran.hapus');
-
-Route::post('/transmigran/{id}/verifikasi', function (int $id) {
-    // Tahap 3 Task 3.7: tulis ke tabel verifikasi terpusat.
-    return redirect()->route('transmigran.detail', $id)
-        ->with('sukses', 'Data transmigran ditandai terverifikasi.');
-})->where('id', '[0-9]+')->name('transmigran.verifikasi');
-
-Route::post('/transmigran/{id}/tolak', function (int $id) {
-    // Alasan penolakan wajib diisi (rules.md bagian 5.2 poin 7).
-    return redirect()->route('transmigran.detail', $id)
-        ->with('peringatan', 'Data transmigran ditolak, alasan sudah dicatat.');
-})->where('id', '[0-9]+')->name('transmigran.tolak');
 
 /*
 |--------------------------------------------------------------------------
@@ -284,7 +269,7 @@ Route::get('/rumah/{id}', function (int $id) {
 
 Route::post('/rumah', function () {
     return redirect()->route('rumah.index')
-        ->with('sukses', 'Data rumah tersimpan dan menunggu diverifikasi.');
+        ->with('sukses', 'Data rumah tersimpan.');
 })->name('rumah.simpan');
 
 Route::put('/rumah/{id}', function (int $id) {
@@ -295,15 +280,6 @@ Route::put('/rumah/{id}', function (int $id) {
 Route::delete('/rumah/{id}', function () {
     return redirect()->route('rumah.index')->with('sukses', 'Data rumah dihapus.');
 })->where('id', '[0-9]+')->name('rumah.hapus');
-
-Route::post('/rumah/{id}/verifikasi', function (int $id) {
-    return redirect()->route('rumah.detail', $id)->with('sukses', 'Data rumah ditandai terverifikasi.');
-})->where('id', '[0-9]+')->name('rumah.verifikasi');
-
-Route::post('/rumah/{id}/tolak', function (int $id) {
-    return redirect()->route('rumah.detail', $id)
-        ->with('peringatan', 'Data rumah ditolak, alasan sudah dicatat.');
-})->where('id', '[0-9]+')->name('rumah.tolak');
 
 /*
 |--------------------------------------------------------------------------
@@ -328,7 +304,7 @@ Route::get('/lahan/{id}', function (int $id) {
 
 Route::post('/lahan', function () {
     return redirect()->route('lahan.index')
-        ->with('sukses', 'Data lahan tersimpan dan menunggu diverifikasi.');
+        ->with('sukses', 'Data lahan tersimpan.');
 })->name('lahan.simpan');
 
 Route::put('/lahan/{id}', function (int $id) {
@@ -343,15 +319,6 @@ Route::post('/lahan/{id}/dokumen', function (int $id) {
     return redirect()->route('lahan.detail', ['id' => $id, 'tab' => 'dokumen'])
         ->with('sukses', 'Dokumen lahan tersimpan.');
 })->where('id', '[0-9]+')->name('lahan.dokumen.simpan');
-
-Route::post('/lahan/{id}/verifikasi', function (int $id) {
-    return redirect()->route('lahan.detail', $id)->with('sukses', 'Data lahan ditandai terverifikasi.');
-})->where('id', '[0-9]+')->name('lahan.verifikasi');
-
-Route::post('/lahan/{id}/tolak', function (int $id) {
-    return redirect()->route('lahan.detail', $id)
-        ->with('peringatan', 'Data lahan ditolak, alasan sudah dicatat.');
-})->where('id', '[0-9]+')->name('lahan.tolak');
 
 /*
 |--------------------------------------------------------------------------
@@ -380,7 +347,7 @@ Route::get('/panen/{id}', function (int $id) {
 
 Route::post('/panen', function () {
     return redirect()->route('panen.index')
-        ->with('sukses', 'Hasil panen tersimpan dan menunggu diverifikasi.');
+        ->with('sukses', 'Hasil panen tersimpan.');
 })->name('panen.simpan');
 
 Route::put('/panen/{id}', function (int $id) {
@@ -390,15 +357,6 @@ Route::put('/panen/{id}', function (int $id) {
 Route::delete('/panen/{id}', function () {
     return redirect()->route('panen.index')->with('sukses', 'Catatan panen dihapus.');
 })->where('id', '[0-9]+')->name('panen.hapus');
-
-Route::post('/panen/{id}/verifikasi', function (int $id) {
-    return redirect()->route('panen.detail', $id)->with('sukses', 'Catatan panen ditandai terverifikasi.');
-})->where('id', '[0-9]+')->name('panen.verifikasi');
-
-Route::post('/panen/{id}/tolak', function (int $id) {
-    return redirect()->route('panen.detail', $id)
-        ->with('peringatan', 'Catatan panen ditolak, alasan sudah dicatat.');
-})->where('id', '[0-9]+')->name('panen.tolak');
 
 /*
 |--------------------------------------------------------------------------
@@ -434,8 +392,8 @@ Route::get('/lacak-pengaduan', function () {
 | Modul Pengaduan
 |--------------------------------------------------------------------------
 |
-| Berbeda dari modul lain, pengaduan tidak memakai verifikasi data melainkan
-| alur status berurutan: Menunggu Diterima, Diterima, Diproses, Selesai.
+| Pengaduan memakai alur status berurutan: Menunggu Diterima, Diterima,
+| Diproses, lalu Selesai.
 | Perpindahan hanya boleh maju satu tahap (rules.md bagian 10b poin 4).
 |
 | Antarmuka sudah mencegah lompatan dengan hanya merender satu tombol tujuan,
@@ -508,11 +466,10 @@ Route::post('/poktan', function () {
     // Tahap 6: ketua dipilih dari transmigran, sehingga ketua_transmigran_id
     // menjadi foreign key, bukan teks bebas.
     return redirect()->route('poktan.index')
-        ->with('sukses', 'Data kelompok tani tersimpan dan menunggu diverifikasi.');
+        ->with('sukses', 'Data kelompok tani tersimpan.');
 })->name('poktan.simpan');
 
 Route::put('/poktan/{id}', function (int $id) {
-    // Tahap 6: perubahan mengembalikan status verifikasi ke Belum Diverifikasi.
     return redirect()->route('poktan.detail', $id)
         ->with('sukses', 'Perubahan profil kelompok tani tersimpan.');
 })->where('id', '[0-9]+')->name('poktan.perbarui');
@@ -541,11 +498,10 @@ Route::post('/alsintan', function () {
     // poktan_id atau transmigran_id sesuai jenis kepemilikan, tidak pernah
     // keduanya sekaligus.
     return redirect()->route('alsintan.index')
-        ->with('sukses', 'Data alsintan tersimpan dan menunggu diverifikasi.');
+        ->with('sukses', 'Data alsintan tersimpan.');
 })->name('alsintan.simpan');
 
 Route::put('/alsintan/{id}', function (int $id) {
-    // Tahap 6: perubahan mengembalikan status verifikasi ke Belum Diverifikasi.
     return redirect()->route('alsintan.detail', $id)
         ->with('sukses', 'Perubahan data alsintan tersimpan.');
 })->where('id', '[0-9]+')->name('alsintan.perbarui');
@@ -567,11 +523,10 @@ Route::post('/saprotan', function () {
     // berstatus anggota aktif; pemeriksaan diulang di sisi server sebab
     // penyaringan dropdown saja tidak menghalangi kiriman langsung.
     return redirect()->route('saprotan.index')
-        ->with('sukses', 'Data saprotan tersimpan dan menunggu diverifikasi.');
+        ->with('sukses', 'Data saprotan tersimpan.');
 })->name('saprotan.simpan');
 
 Route::put('/saprotan/{id}', function (int $id) {
-    // Tahap 6: perubahan mengembalikan status verifikasi ke Belum Diverifikasi.
     return redirect()->route('saprotan.detail', $id)
         ->with('sukses', 'Perubahan data saprotan tersimpan.');
 })->where('id', '[0-9]+')->name('saprotan.perbarui');
@@ -640,7 +595,7 @@ Route::post('/infrastruktur', function () {
     // Tahap 8: validasi, simpan, catat audit log. Modul pendataan aset,
     // sehingga tidak ada alur laporan kerusakan di sini.
     return redirect()->route('infrastruktur.index')
-        ->with('sukses', 'Data aset infrastruktur tersimpan dan menunggu diverifikasi.');
+        ->with('sukses', 'Data aset infrastruktur tersimpan.');
 })->name('infrastruktur.simpan');
 
 Route::put('/infrastruktur/{id}', function (int $id) {
