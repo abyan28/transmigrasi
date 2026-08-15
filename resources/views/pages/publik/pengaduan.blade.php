@@ -27,7 +27,16 @@
     {{-- Nomor pengaduan setelah berhasil kirim, ditampilkan besar dan jelas --}}
     @if (session('nomor_pengaduan'))
         <div class="mb-8 rounded-2xl border border-green-300 bg-green-50 p-6 text-center dark:border-green-500/40 dark:bg-green-500/10"
-            role="status">
+            role="status"
+            x-data="{
+                tersalin: false,
+                salin() {
+                    navigator.clipboard?.writeText(@js(session('nomor_pengaduan'))).then(() => {
+                        this.tersalin = true;
+                        setTimeout(() => { this.tersalin = false; }, 2500);
+                    });
+                },
+            }">
             <span
                 class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-500 text-white"
                 aria-hidden="true">
@@ -44,15 +53,55 @@
                 Simpan nomor di bawah ini. Nomor ini dipakai untuk melihat perkembangan laporan Anda.
             </p>
 
-            {{-- Nomor dibuat sangat menonjol agar mudah dicatat atau difoto --}}
-            <p class="mt-4 text-title-md font-bold tracking-wide tabular-nums text-green-900 dark:text-green-100">
-                {{ session('nomor_pengaduan') }}
-            </p>
+            {{--
+                Nomor dibuat sangat menonjol agar mudah dicatat atau difoto,
+                dan dapat disalin sekali ketuk. Tombol salin adalah PELENGKAP,
+                bukan pengganti: menyalin hanya menaruh nomor di papan klip,
+                yang mudah tertimpa salinan berikutnya. Karena itu nomornya
+                tetap ditampilkan besar dan ajakan mencatat tetap ada.
+            --}}
+            <button type="button" @click="salin()"
+                class="mt-4 inline-flex items-center gap-3 rounded-xl border border-green-400 bg-white px-4 py-3 transition hover:bg-green-100 focus:outline-2 focus:outline-offset-2 focus:outline-green-600 dark:border-green-500/40 dark:bg-transparent dark:hover:bg-green-500/10"
+                :aria-label="tersalin
+                    ? 'Nomor pengaduan sudah disalin'
+                    : 'Salin nomor pengaduan {{ session('nomor_pengaduan') }}'">
+                <span class="text-title-md font-bold tracking-wide tabular-nums text-green-900 dark:text-green-100">
+                    {{ session('nomor_pengaduan') }}
+                </span>
+
+                <svg x-show="!tersalin" class="h-5 w-5 shrink-0 text-green-700 dark:text-green-300" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
+                </svg>
+
+                <svg x-show="tersalin" x-cloak class="h-5 w-5 shrink-0 text-green-700 dark:text-green-300"
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+            </button>
+
+            <p class="mt-2 text-theme-xs text-green-800 dark:text-green-300"
+                x-text="tersalin ? 'Nomor sudah disalin. Tetap catat atau foto sebagai cadangan.' : 'Ketuk nomor untuk menyalin.'"></p>
 
             <a href="{{ route('lacak-pengaduan', ['nomor' => session('nomor_pengaduan')]) }}"
                 class="mt-5 inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-theme-sm font-medium text-white transition hover:bg-green-700 focus:outline-2 focus:outline-offset-2 focus:outline-green-600">
                 Lihat Perkembangan Laporan
             </a>
+
+            {{--
+                Spanduk kejujuran. Surel disebut pada isian sebagai "nomor
+                dikirim juga ke surel Anda", padahal pengirimannya menunggu
+                backend. Tanpa keterangan ini warga dapat menunggu surel yang
+                tidak akan pernah datang, lalu kehilangan nomornya.
+            --}}
+            @if (session('email_pelapor'))
+                <p class="mt-5 rounded-lg border border-yellow-300 bg-yellow-50 p-3 text-theme-xs text-yellow-800 dark:border-yellow-500/30 dark:bg-yellow-500/10 dark:text-yellow-200">
+                    <span class="font-medium">Pengiriman surel belum aktif.</span>
+                    Nomor ini belum dikirim ke {{ session('email_pelapor') }}. Sampai layanan surel
+                    berjalan, catat nomornya dari layar ini.
+                </p>
+            @endif
         </div>
     @endif
 

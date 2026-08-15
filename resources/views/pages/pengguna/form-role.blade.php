@@ -128,7 +128,7 @@
                 @foreach ($kelompokIzin as $kelompok)
                     <tbody class="border-t border-gray-200 dark:border-gray-800">
                         <tr class="bg-gray-50/60 dark:bg-white/[0.02]">
-                            <th scope="colgroup" colspan="7"
+                            <th scope="colgroup" colspan="6"
                                 class="px-4 py-2 text-theme-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                                 {{ $kelompok['kelompok'] }}
                             </th>

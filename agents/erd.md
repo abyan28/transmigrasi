@@ -292,7 +292,7 @@ Role **tidak dikunci di dalam kode**, melainkan disimpan sebagai data yang dapat
 ```
 user ──N:1──> role ──N:M──> permission
                 │
-                └─ cakupan_data: Semua | Per SP | Milik Sendiri
+                └─ cakupan_data: Semua | Per SP
 ```
 
 1. **`permission`** adalah daftar izin baku yang ditanam sistem lewat seeder, contoh `transmigran.lihat` dan `transmigran.ubah`. Admin **tidak dapat** menambah atau menghapus izin, karena setiap izin harus punya pasangan pemeriksa di dalam kode.
@@ -305,7 +305,6 @@ user ──N:1──> role ──N:M──> permission
 |---|---|---|
 | `Semua` | tanpa penyaring | Admin, Dinas |
 | `Per SP` | `WHERE satuan_permukiman_id IN (SP pada user_satuan_permukiman)` | Operator SP |
-| `Milik Sendiri` | `WHERE` menyaring baris milik pengguna | disediakan untuk kebutuhan mendatang |
 
 Penyaring cakupan wajib diterapkan pada **level query**, bukan sekadar menyembunyikan menu (`rules.md` §5). Tanpa itu, pengguna masih dapat membuka data di luar cakupannya dengan mengetik alamat URL langsung.
 

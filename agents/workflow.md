@@ -133,7 +133,7 @@ Workflow operasional adalah alur saat data dikumpulkan, divalidasi, ditampilkan,
 4. Bila `password_harus_diganti` bernilai `TRUE`, pengguna langsung diarahkan ke halaman ganti kata sandi dan belum dapat membuka halaman lain.
 5. Sistem membaca **role** pengguna beserta daftar izin dan cakupan datanya.
 6. Menu sidebar dirender hanya untuk modul yang izin `lihat`-nya dimiliki. Menu yang tidak berhak tidak dirender sama sekali.
-7. Data yang tampil disaring menurut cakupan role: `Semua` tanpa penyaring, `Per SP` dibatasi SP yang ditugaskan, `Milik Sendiri` dibatasi baris terkait pengguna.
+7. Data yang tampil disaring menurut cakupan role: `Semua` tanpa penyaring, `Per SP` dibatasi SP yang ditugaskan.
 8. Pembatasan wajib diberlakukan pada level query dan controller, bukan sekadar menyembunyikan menu.
 9. Data pribadi transmigran dan penghuni hanya tampil penuh untuk role berwenang; role lain menerima tampilan agregat.
 

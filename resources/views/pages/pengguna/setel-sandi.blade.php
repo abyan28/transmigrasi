@@ -13,8 +13,10 @@
     2. Setelah disetel ulang, akun ditandai wajib ganti kata sandi (poin 9).
        Ditegaskan lewat teks, bukan lewat kotak centang, sebab ini bukan
        pilihan yang boleh dimatikan Admin.
-    3. Kata sandi diserahkan LANGSUNG kepada petugas, tidak dikirim lewat
-       surel maupun pesan singkat (poin 8).
+    3. Sejak 2026-08-14 kata sandi sementara **dikirim juga lewat surel**,
+       tetapi penyerahan langsung tetap dianjurkan. Keduanya diperlukan sebab
+       jalur ini justru dibuat untuk petugas di lokus bersinyal lemah, yang
+       belum tentu dapat membuka surelnya saat itu juga.
     4. Tindakan ini tercatat pada audit log beserta pelakunya (poin 11).
 --}}
 @props(['nama' => 'setelSandi'])
@@ -76,13 +78,22 @@
                         {{--
                             Keterangan cara penyerahan. Diletakkan sebelum isian
                             agar terbaca lebih dulu, bukan setelah Admin telanjur
-                            mengetik dan mengira sistem akan mengirimkannya.
+                            mengetik.
+
+                            Surel adalah SALINAN, bukan pengganti penyerahan
+                            langsung. Petugas di lokus bersinyal lemah belum
+                            tentu dapat membukanya saat itu juga, padahal jalur
+                            inilah yang justru dibuat untuk keadaan tersebut.
                         --}}
                         <div class="rounded-lg border border-yellow-300 bg-yellow-50 p-4 dark:border-yellow-500/30 dark:bg-yellow-500/10">
                             <p class="text-theme-sm text-yellow-800 dark:text-yellow-200">
-                                <span class="font-semibold">Serahkan kata sandi ini secara langsung.</span>
-                                Sistem tidak mengirimkannya lewat surel maupun pesan singkat. Sampaikan kepada
-                                petugas yang bersangkutan, bukan lewat perantara.
+                                <span class="font-semibold">Sampaikan juga secara langsung.</span>
+                                Kata sandi ini dikirim ke surel petugas, tetapi jaringan di lokus tidak selalu
+                                memadai. Sampaikan kepada yang bersangkutan, bukan lewat perantara.
+                            </p>
+                            <p class="mt-2 text-theme-xs text-yellow-800 dark:text-yellow-200">
+                                <span class="font-medium">Pengiriman surel belum aktif.</span>
+                                Sampai backend selesai, penyerahan langsung adalah satu-satunya cara yang bekerja.
                             </p>
                         </div>
 

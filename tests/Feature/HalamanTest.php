@@ -1228,11 +1228,18 @@ it('tidak pernah menampilkan kolom kata sandi pada modal ubah pengguna', functio
     expect($sumber)->toContain("mode === 'tambah'")
         ->and($sumber)->toContain('Kata sandi tidak dapat disunting di sini');
 
-    // Kolom kata sandi wajib berada di dalam cabang tambah, bukan di luarnya.
-    $posisiCabang = strpos($sumber, "mode === 'tambah'");
-    $posisiKolom = strpos($sumber, 'nama="password_awal"');
+    // Sejak 2026-08-14 kata sandi awal tidak lagi diketik Admin melainkan
+    // dibuatkan sistem, sehingga tidak ada kolom isian kata sandi di mana pun
+    // pada form ini, baik mode tambah maupun ubah.
+    expect($sumber)->not->toContain('nama="password_awal"')
+        ->and($sumber)->not->toContain('name="password_awal"');
 
-    expect($posisiKolom)->toBeGreaterThan($posisiCabang);
+    // Keterangan pembuatan kata sandi wajib berada di dalam cabang tambah,
+    // sebab modal ubah tidak boleh menyinggung kata sandi sama sekali.
+    $posisiCabang = strpos($sumber, "mode === 'tambah'");
+    $posisiKeterangan = strpos($sumber, 'Kata sandi sementara dibuatkan sistem');
+
+    expect($posisiKeterangan)->toBeGreaterThan($posisiCabang);
 });
 
 it('menampilkan pilihan penugasan SP hanya untuk role bercakupan Per SP', function () {
@@ -2007,34 +2014,6 @@ it('menyeragamkan kolom aksi berbentuk ikon di seluruh halaman daftar', function
     expect($bermasalah)->toBe([]);
 });
 
-it('menurunkan prioritas pengaduan dari kategorinya', function () {
-    // Warga tidak menilai kegentingan laporannya sendiri. Nilai turunan ini
-    // hanya perkiraan awal; petugas yang memutuskan saat meninjau
-    // (rules.md 10b poin 6a dan 6b).
-    // Enum tidak dapat dipakai sebagai kunci array, sehingga pasangannya
-    // ditulis sebagai daftar berisi dua nilai.
-    $peta = [
-        [App\Enums\KategoriPengaduan::Bencana, App\Enums\PrioritasPengaduan::Mendesak],
-        [App\Enums\KategoriPengaduan::Infrastruktur, App\Enums\PrioritasPengaduan::Tinggi],
-        [App\Enums\KategoriPengaduan::Rumah, App\Enums\PrioritasPengaduan::Tinggi],
-        [App\Enums\KategoriPengaduan::LahanUsaha, App\Enums\PrioritasPengaduan::Sedang],
-        [App\Enums\KategoriPengaduan::Alsintan, App\Enums\PrioritasPengaduan::Sedang],
-        [App\Enums\KategoriPengaduan::ProduksiPanen, App\Enums\PrioritasPengaduan::Sedang],
-        [App\Enums\KategoriPengaduan::LahanPekarangan, App\Enums\PrioritasPengaduan::Rendah],
-        [App\Enums\KategoriPengaduan::Lainnya, App\Enums\PrioritasPengaduan::Rendah],
-    ];
-
-    foreach ($peta as [$kategori, $harusnya]) {
-        expect(App\Enums\PrioritasPengaduan::dariKategori($kategori))->toBe($harusnya);
-    }
-
-    // Seluruh kategori wajib terpetakan, termasuk yang ditambahkan kemudian.
-    foreach (App\Enums\KategoriPengaduan::cases() as $kategori) {
-        expect(App\Enums\PrioritasPengaduan::dariKategori($kategori))
-            ->toBeInstanceOf(App\Enums\PrioritasPengaduan::class);
-    }
-});
-
 it('tidak meminta warga menilai prioritas laporannya sendiri', function () {
     // Warga tidak mengetahui skala prioritas dinas, dan meminta ia menilainya
     // membuat hampir seluruh laporan ditandai mendesak sehingga penandanya
@@ -2512,4 +2491,372 @@ it('menyediakan rute unduh template untuk seluruh entitas', function () {
     // yang sama empat belas kali.
     $this->get(route('template-impor', 'transmigran'))->assertRedirect();
     $this->get(route('template-impor', 'hasil-panen'))->assertRedirect();
+});
+
+/*
+|--------------------------------------------------------------------------
+| Akun dan role
+|--------------------------------------------------------------------------
+*/
+
+it('menyediakan jalur mengaktifkan kembali akun yang dinonaktifkan', function () {
+    // Cacat nyata: akun nonaktif sebelumnya terkunci selamanya. Tombol
+    // nonaktifkan hanya dirender untuk akun aktif, dan tidak ada cabang bagi
+    // akun yang sudah mati, padahal akun memang tidak pernah dihapus.
+    $isi = $this->get(route('pengguna.index'))->assertOk()->getContent();
+
+    $nonaktif = collect(DummyData::pengguna())->firstWhere('is_aktif', false);
+
+    expect($nonaktif)->not->toBeNull()
+        ->and($isi)->toContain('Aktifkan kembali akun ' . $nonaktif['nama'])
+        ->and($isi)->toContain('/pengguna/' . $nonaktif['id_user'] . '/aktifkan');
+});
+
+it('tidak menawarkan pengaktifan pada akun yang sudah aktif', function () {
+    // Kontrol yang tidak menuju ke mana pun dilarang (R-26): akun aktif tidak
+    // boleh punya tombol aktifkan.
+    $isi = $this->get(route('pengguna.index'))->getContent();
+
+    foreach (collect(DummyData::pengguna())->where('is_aktif', true) as $akun) {
+        expect($isi)->not->toContain('Aktifkan kembali akun ' . $akun['nama']);
+    }
+});
+
+it('tetap melindungi admin aktif terakhir dari penonaktifan', function () {
+    // Penambahan tombol aktifkan tidak boleh melemahkan perlindungan yang
+    // sudah ada (rules.md 14b poin 16).
+    $isi = $this->get(route('pengguna.index'))->getContent();
+
+    expect($isi)->toContain('Admin terakhir')
+        ->and($isi)->not->toContain('Nonaktifkan akun SITI RAHMAWATI');
+});
+
+it('tidak menyediakan izin hapus pada modul pengguna', function () {
+    // Akun tidak pernah dihapus, hanya dinonaktifkan. Menawarkan kotak centang
+    // bagi kewenangan yang mustahil dijalankan menyesatkan admin penyusun role.
+    $modul = collect(DummyData::daftarIzin())
+        ->flatMap(fn ($kelompok) => $kelompok['modul'])
+        ->keyBy('kunci');
+
+    expect($modul['pengguna']['aksi'])->not->toContain('hapus')
+        // Role JUSTRU boleh dihapus selama bukan bawaan dan tidak dipakai
+        // akun mana pun (rules.md 5.0c poin 9), jadi izinnya tetap ada.
+        ->and($modul['role']['aksi'])->toContain('hapus');
+});
+
+it('membuat akun baru tanpa isian username dan tanpa toggle aktif', function () {
+    // Username dibuat petugas sendiri saat pertama kali masuk, sebab dialah
+    // yang akan mengetiknya setiap hari. Aktif/nonaktif hanya lewat tombol
+    // pada halaman daftar, agar riwayat audit tidak terpecah dua jalur.
+    $isi = $this->get(route('pengguna.index'))->getContent();
+
+    expect($isi)->not->toContain('name="username"')
+        ->and($isi)->not->toContain('name="is_aktif"')
+        ->and($isi)->toContain('Username dibuat petugas');
+});
+
+it('mewajibkan surel pada akun baru', function () {
+    // Konsekuensi username dibuat petugas: surel menjadi satu-satunya
+    // kredensial yang dimilikinya saat pertama kali masuk.
+    expect($this->get(route('pengguna.index'))->getContent())
+        ->toContain('name="email" required');
+});
+
+it('membuatkan kata sandi sementara alih-alih meminta admin mengetiknya', function () {
+    // Kata sandi karangan manusia cenderung berpola dan dipakai ulang untuk
+    // banyak akun sekaligus.
+    $isi = $this->get(route('pengguna.index'))->getContent();
+
+    expect($isi)->not->toContain('name="password_awal"')
+        ->and($isi)->toContain('Kata sandi sementara dibuatkan sistem');
+});
+
+it('menyatakan terus terang bahwa pengiriman surel belum aktif', function () {
+    // Tampilannya sudah lengkap, tetapi pengirimannya menunggu backend. Tanpa
+    // keterangan ini admin dapat mengira petugas sudah menerima surelnya, lalu
+    // tidak menyerahkan kata sandi secara langsung.
+    $this->get(route('pengguna.index'))->assertSee('Pengiriman surel belum aktif.');
+});
+
+it('menampilkan tombol hapus hanya pada role yang memang dapat dihapus', function () {
+    // Role bawaan dan role yang masih dipakai akun tidak boleh dihapus
+    // (rules.md 5.0c poin 8 dan 9). Merender tombol lalu menolaknya di server
+    // berarti memasang kontrol mati.
+    $isi = $this->get(route('pengaturan.role'))->assertOk()->getContent();
+
+    $dapatDihapus = collect(DummyData::role())
+        ->filter(fn ($r) => ! $r['is_bawaan'] && $r['jumlah_pengguna'] === 0);
+
+    expect($dapatDihapus)->not->toBeEmpty();
+
+    foreach ($dapatDihapus as $role) {
+        expect($isi)->toContain('/pengaturan/role/' . $role['id_role']);
+    }
+
+    foreach (collect(DummyData::role())->where('is_bawaan', true) as $role) {
+        expect($isi)->not->toContain("aksi: '/pengaturan/role/" . $role['id_role'] . "'");
+    }
+});
+
+it('menyediakan contoh role buatan admin, bukan hanya bawaan sistem', function () {
+    // Tanpa satu pun role buatan sendiri, keadaan "dapat dihapus" tidak pernah
+    // terlihat pada antarmuka dan bentuk tampilannya tidak dapat dinilai.
+    $buatanSendiri = collect(DummyData::role())->where('is_bawaan', false);
+
+    expect($buatanSendiri)->not->toBeEmpty();
+
+    foreach ($buatanSendiri as $role) {
+        expect(DummyData::izinRole($role['id_role']))->not->toBeEmpty();
+    }
+});
+
+/*
+|--------------------------------------------------------------------------
+| Pengaduan: prioritas, dokumen, dan penanganan
+|--------------------------------------------------------------------------
+*/
+
+it('menyerahkan penentuan prioritas sepenuhnya kepada petugas', function () {
+    // Penurunan otomatis dari kategori dibatalkan pada 2026-08-14. Kategori
+    // hanya menyatakan pokok masalah, sedangkan kegentingan bergantung pada
+    // keadaan lapangan yang tidak terbaca dari kategori: dua laporan
+    // berkategori sama dapat berbeda jauh kemendesakannya.
+    expect(method_exists(PrioritasPengaduan::class, 'dariKategori'))->toBeFalse();
+
+    // Form petugas tetap menyediakan pilihannya, sebab dialah yang menilai.
+    expect($this->get(route('pengaduan.index'))->getContent())
+        ->toContain('name="prioritas"');
+});
+
+it('menampilkan dokumen tindak lanjut pada riwayat penanganan', function () {
+    // Modal penanganan sudah lama menyediakan isian unggahnya, tetapi hasilnya
+    // tidak pernah ditampilkan kembali sehingga berkas yang sudah diunggah
+    // petugas tidak dapat dibuka siapa pun.
+    $riwayat = DummyData::penangananPengaduan('PGD-2026-0001');
+
+    $berdokumen = collect($riwayat)->firstWhere('dokumen_tindak_lanjut', '!=', null);
+
+    expect($berdokumen)->not->toBeNull();
+
+    $this->get(route('pengaduan.detail', 1))
+        ->assertOk()
+        ->assertSee(basename($berdokumen['dokumen_tindak_lanjut']));
+});
+
+it('memberitahu warga adanya dokumen tanpa membuka berkasnya', function () {
+    // Halaman lacak terbuka tanpa login dan hanya berbekal nomor pengaduan,
+    // sehingga siapa pun yang mengetahui nomornya akan ikut memperoleh
+    // berkasnya. Dokumen tindak lanjut kerap memuat nama petugas dan hasil
+    // peninjauan.
+    $isi = $this->get(route('lacak-pengaduan', ['nomor' => 'PGD-2026-0001']))
+        ->assertOk()
+        ->getContent();
+
+    expect($isi)->toContain('melampirkan dokumen tindak lanjut')
+        // Berkasnya sendiri tidak boleh dapat diunduh dari sini.
+        ->and($isi)->not->toContain('BeritaAcaraPeninjauan');
+});
+
+it('menyediakan satu tombol penanganan saja pada halaman rincian pengaduan', function () {
+    // Sebelumnya tombol yang sama dirender dua kali: di kepala halaman dan di
+    // kolom kiri. Yang dipertahankan adalah yang berdampingan dengan stepper
+    // alur, sebab di sanalah petugas melihat konteks tahapnya.
+    $isi = $this->get(route('pengaduan.detail', 1))->getContent();
+
+    expect(substr_count($isi, "buka-modal', 'formPenanganan'"))->toBe(1);
+});
+
+it('menyamakan isian penanganan pada daftar dengan yang di halaman rincian', function () {
+    // Dua modal untuk satu tindakan yang sama tidak boleh meminta hal berbeda,
+    // sebab jejak yang dihasilkannya akan timpang: sebagian bertanggal dan
+    // berdokumen, sebagian tidak.
+    $isi = $this->get(route('pengaduan.index'))->getContent();
+
+    foreach (['tanggal_penanganan', 'catatan', 'dokumen_tindak_lanjut', 'status_sesudah'] as $isian) {
+        expect($isi)->toContain('name="' . $isian . '"');
+    }
+
+    // Unggahan berkas mustahil terkirim tanpa enctype, dan kegagalannya
+    // berlangsung diam-diam.
+    expect($isi)->toContain('enctype="multipart/form-data"');
+});
+
+it('menyediakan penyalinan nomor pengaduan bagi warga', function () {
+    // Nomor pengaduan adalah satu-satunya bekal warga untuk melacak laporannya,
+    // sedangkan mengetik ulang sederet nomor di ponsel mudah keliru.
+    $isi = $this->get(route('pengaduan-warga'))->getContent();
+
+    // Panel nomor hanya muncul setelah pengiriman, sehingga yang diperiksa di
+    // sini adalah berkas sumbernya.
+    $sumber = file_get_contents(resource_path('views/pages/publik/pengaduan.blade.php'));
+
+    expect($sumber)->toContain('navigator.clipboard')
+        ->and($sumber)->toContain('Ketuk nomor untuk menyalin')
+        // Menyalin hanya menaruh nomor di papan klip yang mudah tertimpa,
+        // sehingga ajakan mencatat tetap wajib ada.
+        ->and($isi)->toContain('Catat atau foto nomor itu');
+});
+
+it('mengarahkan tombol lacak ke nomor yang benar-benar ada', function () {
+    // Sebelumnya rute kirim membalas PGD-2026-0006 yang tidak pernah ada pada
+    // data contoh, sehingga tombol "Lihat Perkembangan Laporan" selalu berujung
+    // pada keadaan nomor tidak ditemukan. Kontrol semacam itu dilarang (R-26).
+    $nomorTersedia = collect(DummyData::pengaduan())->pluck('nomor_pengaduan')->all();
+
+    $balasan = $this->post(route('pengaduan-warga.kirim'), []);
+    $nomor = session('nomor_pengaduan');
+
+    expect($nomor)->toBeIn($nomorTersedia);
+
+    // Dan nomor itu memang menghasilkan halaman lacak yang berisi.
+    $this->get(route('lacak-pengaduan', ['nomor' => $nomor]))
+        ->assertOk()
+        ->assertDontSee('tidak ditemukan');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Catatan log pada halaman rincian
+|--------------------------------------------------------------------------
+*/
+
+it('menyaring riwayat memakai nama tabel DAN nomor barisnya', function () {
+    // Keduanya wajib dipakai bersama. Menyaring nama tabel saja membuat setiap
+    // baris menampilkan riwayat baris lain pada tabel yang sama, sehingga
+    // pembaca mengira datanya pernah diubah padahal tidak.
+    $riwayat = DummyData::riwayatData('transmigran', 1);
+
+    expect($riwayat)->not->toBeEmpty();
+
+    foreach ($riwayat as $jejak) {
+        expect($jejak['nama_tabel'])->toBe('transmigran')
+            ->and((int) $jejak['record_id'])->toBe(1);
+    }
+
+    // Baris lain pada tabel yang sama tidak boleh ikut terbawa.
+    $nomorLain = collect(DummyData::riwayatData('transmigran', 4))->pluck('id_audit_log');
+    $nomorIni = collect($riwayat)->pluck('id_audit_log');
+
+    expect($nomorIni->intersect($nomorLain))->toBeEmpty();
+});
+
+it('mengurutkan riwayat data dari yang terbaru', function () {
+    // Yang pertama dicari pembaca biasanya perubahan terakhir, bukan asal-usul
+    // datanya.
+    $waktu = collect(DummyData::riwayatData('transmigran', 1))->pluck('waktu')->all();
+
+    $urut = $waktu;
+    rsort($urut);
+
+    expect($waktu)->toBe($urut);
+});
+
+it('menyediakan tab catatan log pada setiap halaman rincian utama', function (string $url, string $namaTabel, int $recordId) {
+    // Pertanyaan "siapa yang memasukkan data ini dan siapa yang mengubahnya"
+    // dijawab di tempat datanya dibaca, bukan dengan menelusuri halaman audit
+    // log yang memuat seluruh sistem.
+    $isi = $this->get($url)->assertOk()->getContent();
+
+    expect($isi)->toContain('Catatan Log')
+        ->and($isi)->toContain("tab === 'log'");
+
+    // Isi tabnya wajib benar-benar memuat jejak milik baris ini.
+    foreach (DummyData::riwayatData($namaTabel, $recordId) as $jejak) {
+        expect($isi)->toContain($jejak['ringkasan']);
+    }
+})->with([
+    ['/transmigran/1', 'transmigran', 1],
+    ['/rumah/1', 'rumah', 1],
+    ['/lahan/1', 'lahan', 1],
+    ['/poktan/1', 'poktan', 1],
+    ['/pengaduan/1', 'pengaduan', 1],
+    ['/alsintan/1', 'alsintan', 1],
+    ['/saprotan/1', 'saprotan', 1],
+    ['/infrastruktur/1', 'infrastruktur', 1],
+    ['/komoditas/1', 'komoditas', 1],
+    ['/panen/1', 'hasil_panen', 1],
+]);
+
+it('membedakan riwayat kosong dari kegagalan pencatatan', function () {
+    // Riwayat kosong berarti datanya memang belum pernah disentuh sejak
+    // dicatat, bukan berarti pencatatannya gagal. Transmigran 2 sengaja
+    // dibiarkan tanpa jejak agar keadaan ini ikut teruji.
+    expect(DummyData::riwayatData('transmigran', 2))->toBeEmpty();
+
+    $this->get('/transmigran/2')
+        ->assertOk()
+        ->assertSee('Belum ada perubahan tercatat');
+});
+
+it('tidak menggantikan halaman audit log dengan tab catatan log', function () {
+    // Keduanya menjawab pertanyaan berbeda: audit log menjawab apa saja yang
+    // terjadi di seluruh sistem, tab ini menjawab apa yang terjadi pada satu
+    // data saja. Tab karena itu menautkan ke halaman audit log, bukan
+    // menggantikannya.
+    $this->get(route('audit-log'))->assertOk();
+
+    expect($this->get('/transmigran/1')->getContent())
+        ->toContain(route('audit-log'));
+});
+
+it('menyaring riwayat akun pengguna menurut akun yang dibuka', function () {
+    // Cacat lama: penyaringan hanya memakai nama_tabel, sehingga setiap akun
+    // menampilkan riwayat akun orang lain. Komentar lamanya bahkan mengaku
+    // mencocokkan nomor baris, padahal kodenya tidak melakukannya.
+    //
+    // Modal ini melayani seluruh baris secara bergantian, sehingga akun yang
+    // dibuka baru diketahui saat modal dipanggil; penyaringannya karena itu
+    // berada di sisi klien.
+    $isi = $this->get(route('pengguna.index'))->getContent();
+
+    expect($isi)->toContain('Number(baris.record_id) === Number(this.akun.id_user)');
+});
+
+it('memasang catatan log pada SETIAP halaman rincian yang ada', function () {
+    // Penjaga kelengkapan. Daftar halamannya dibaca dari tabel rute, bukan
+    // ditulis tetap, sehingga halaman rincian baru yang lupa dipasangi Catatan
+    // Log langsung tertangkap tanpa perlu menyunting uji ini.
+    //
+    // Uji ini lahir dari kelalaian nyata: pemasangan pertama hanya menyentuh
+    // lima halaman yang kebetulan sudah bertab, sedangkan lima halaman lain
+    // terlewat justru karena belum bertab.
+    $rute = collect(app('router')->getRoutes())
+        ->filter(fn ($r) => in_array('GET', $r->methods(), true))
+        // Halaman rincian entitas berpola "<modul>/{id}" beruas dua.
+        ->filter(fn ($r) => preg_match('#^[a-z-]+/\{id\}$#', $r->uri()) === 1)
+        ->map(fn ($r) => str_replace('{id}', '1', $r->uri()))
+        ->values();
+
+    expect($rute)->not->toBeEmpty();
+
+    $tanpaLog = [];
+
+    foreach ($rute as $jalur) {
+        $balasan = $this->get('/' . $jalur);
+
+        if ($balasan->status() !== 200) {
+            continue;
+        }
+
+        if (! str_contains($balasan->getContent(), "tab === 'log'")) {
+            $tanpaLog[] = $jalur;
+        }
+    }
+
+    expect($tanpaLog)->toBe([]);
+});
+
+it('menyeragamkan seluruh halaman rincian memakai tab', function () {
+    // ui-spec.md 2.2 menetapkan komposisi halaman detail: ringkasan entitas
+    // menetap di kiri, tab konten di kanan. Lima halaman sempat memakai kartu
+    // bersusun tanpa tab, sehingga letak Catatan Log berbeda-beda antarmodul
+    // dan petugas harus menebaknya tiap berpindah.
+    foreach ([
+        '/transmigran/1', '/rumah/1', '/lahan/1', '/poktan/1', '/pengaduan/1',
+        '/alsintan/1', '/saprotan/1', '/infrastruktur/1', '/komoditas/1', '/panen/1',
+    ] as $jalur) {
+        expect($this->get($jalur)->getContent())
+            ->toContain('hashTabs(')
+            ->and($this->get($jalur)->getContent())->toContain('role="tablist"');
+    }
 });

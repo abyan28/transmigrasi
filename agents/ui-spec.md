@@ -363,11 +363,23 @@ Singkatan **T** (Transmigran) dan **KP** (Ketua Poktan) tidak lagi dipakai. Sesu
 
 **Tidak ada halaman pendaftaran mandiri.** Akun hanya dibuat Admin lewat Manajemen Pengguna (`rules.md` §5.1). Berkas `signup.blade.php` bawaan template sudah dihapus.
 
-**Tidak ada halaman lupa kata sandi.** Pemulihan dilakukan Admin, bukan lewat tautan surel. Halaman masuk memuat keterangan berupa **teks biasa, bukan tautan**, agar tidak melanggar larangan navigasi menuju halaman yang tidak ada (`ANTISLOP-ID.md` R-24 dan R-26).
+**Dua jalur pemulihan kata sandi.** Sejak 2026-08-12 tersedia kode verifikasi lewat surel **beserta** penyetelan ulang oleh Admin. Jalur Admin tidak boleh dihapus, sebab itulah satu-satunya yang bekerja di lokus bersinyal lemah (`rules.md` §14b poin 11).
 
 **Satu kolom isian untuk dua kredensial.** Halaman masuk menyediakan satu kolom berlabel "Email atau Username". Seluruh pengguna sistem adalah petugas; warga tidak memiliki akun.
 
-**Halaman wajib ganti kata sandi** muncul otomatis setelah Admin menyetel ulang kata sandi seseorang, yaitu ketika `user.password_harus_diganti` bernilai `TRUE`. Selama belum diganti, pengguna tidak dapat mengakses halaman lain.
+**Halaman wajib ganti kata sandi** muncul otomatis ketika `user.password_harus_diganti` bernilai `TRUE`, baik setelah Admin menyetel ulang maupun saat petugas pertama kali masuk. Selama belum diselesaikan, pengguna tidak dapat mengakses halaman lain.
+
+**Pembuatan akun (2026-08-14).** Admin mengisi surel yang **wajib**, sedangkan username dan kata sandi tidak diketiknya:
+
+| Isian | Siapa yang menentukan | Kapan |
+|---|---|---|
+| Surel | Admin | saat akun dibuat, wajib |
+| Kata sandi sementara | dibangkitkan sistem | tampil sekali di layar, dikirim juga ke surel |
+| Username | petugas sendiri | saat pertama kali masuk |
+
+Kata sandi sementara **tampil di layar sekaligus dikirim lewat surel**. Keduanya diperlukan: surel menolong petugas berjaringan memadai, tampilan layar menolong petugas di lokus yang sedang berdiri di depan Admin.
+
+**Tidak ada kendali aktif/nonaktif pada formulir akun.** Akun baru selalu langsung aktif; penonaktifan dan pengaktifan kembali dilakukan lewat tombol ikon pada halaman daftar, agar seluruh perubahan keadaan akun melewati satu jalur yang sama dan tercatat rapi pada audit log.
 
 ### 4.1a Halaman Publik (tanpa login)
 
@@ -383,8 +395,9 @@ Dua halaman berikut dapat diakses siapa pun tanpa akun, sebagai kanal pengaduan 
 **Aturan halaman publik:**
 1. Memakai tata letak terpisah tanpa sidebar, karena pengunjung bukan pengguna sistem.
 2. Bahasa dibuat sesederhana mungkin, karena penggunanya warga desa, bukan petugas.
-3. Setelah pengiriman berhasil, **nomor pengaduan ditampilkan besar dan jelas** beserta anjuran mencatatnya.
+3. Setelah pengiriman berhasil, **nomor pengaduan ditampilkan besar dan jelas** beserta anjuran mencatatnya. Nomor dapat disalin sekali ketuk, tetapi penyalinan adalah **pelengkap, bukan pengganti**: papan klip mudah tertimpa salinan berikutnya, sehingga nomornya tetap tampil besar dan ajakan mencatat tetap ada.
 4. Halaman lacak hanya menampilkan status, tanggal, dan catatan penanganan. Data pribadi pelapor tidak pernah ditampilkan.
+4a. **Dokumen tindak lanjut tidak dapat diunduh dari halaman lacak.** Warga cukup diberi tahu keberadaannya beserta cara memintanya. Halaman ini terbuka tanpa login dan hanya berbekal nomor pengaduan, sehingga siapa pun yang mengetahui nomornya akan ikut memperoleh berkasnya; dokumen tindak lanjut kerap memuat nama petugas, hasil peninjauan, dan kadang data warga lain.
 5. Bila batas pengiriman terlampaui, tampilkan pesan ramah: "Anda sudah mengirim beberapa pengaduan. Silakan coba lagi satu jam lagi."
 6. Tanpa CAPTCHA, agar tidak membebani pengguna berjaringan lemah.
 
@@ -576,6 +589,21 @@ Menjawab PRD §8.1: sinyal di lokus tidak selalu stabil, sehingga petugas mengun
 5. Kolom wajib ditampilkan pada langkah pertama, agar petugas mengetahui isian yang diperlukan sebelum berangkat ke lapangan.
 6. **Modul berikut tidak diberi impor:** Pengaduan (datang satu per satu dari kanal publik, nomornya wajib memuat bagian acak), Pengguna (kata sandi awal diserahkan langsung kepada orangnya, `rules.md` §14b poin 3), serta Role, Kawasan, SP, dan Musim Tanam yang jumlah barisnya sedikit.
 7. Selama penyimpanannya belum tersambung, modal **wajib memuat spanduk** yang menyatakan fitur belum aktif, sebab tampilannya sudah terlihat berfungsi penuh.
+
+### 5.1c Tab Catatan Log pada halaman rincian
+
+**Seluruh halaman rincian entitas memakai tab**, mengikuti komposisi pada §2.2: ringkasan entitas menetap di kiri, tab konten di kanan. Tab **Catatan Log** selalu menjadi tab paling kanan, memakai komponen `x-sim.catatan-log`.
+
+> **Perubahan 2026-08-14.** Lima halaman rincian sebelumnya memakai kartu bersusun tanpa tab, yaitu Alsintan, Saprotan, Infrastruktur, Komoditas, dan Panen. Akibatnya letak Catatan Log berbeda-beda antarmodul dan petugas harus menebaknya tiap berpindah. Kelimanya diseragamkan meski sebagian hanya menghasilkan dua tab.
+
+1. Isinya adalah riwayat perubahan **baris data yang sedang dibuka saja**, disaring memakai pasangan `nama_tabel` dan `record_id`. Menyaring nama tabel saja membuat setiap baris menampilkan riwayat baris lain pada tabel yang sama.
+2. Entri **terbaru diletakkan paling atas.** Yang pertama dicari pembaca biasanya perubahan terakhir, bukan asal-usul datanya.
+3. Tiap entri memuat jenis aksi berbadge, waktu, ringkasan, pelaku, dan alamat IP. Warna badge disamakan dengan halaman Audit Log agar petugas tidak perlu belajar dua sandi warna.
+4. **Tab ini tidak menggantikan halaman Audit Log.** Keduanya menjawab pertanyaan berbeda: audit log menjawab *apa saja yang terjadi di seluruh sistem*, tab ini menjawab *apa yang terjadi pada data ini*. Karena itu tab menautkan ke halaman audit log.
+5. Riwayat kosong memakai state kosong yang menegaskan bahwa datanya **belum pernah diubah sejak dimasukkan**, bukan bahwa pencatatannya gagal.
+6. **Berlaku bagi setiap halaman rincian tanpa kecuali.** Halaman rincian baru wajib menyediakannya sejak awal; kelengkapan ini dijaga uji yang membaca daftar rute, bukan daftar tetap.
+
+Terpasang pada sepuluh halaman: Transmigran, Rumah, Lahan, Poktan, Pengaduan, Alsintan, Saprotan, Infrastruktur, Komoditas, dan Panen.
 
 ### 5.2 Aturan perenderan menu
 

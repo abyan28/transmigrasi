@@ -94,61 +94,85 @@
             </div>
         </aside>
 
-        <div class="min-w-0">
-            <div class="rounded-2xl border border-gray-200 bg-white p-5 sm:p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-                <h2 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">Rincian Panen</h2>
+        {{-- Kolom kanan: tab rincian --}}
+        <div x-data="hashTabs('rincian')" class="min-w-0">
+            <div class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+                <div class="flex gap-1 overflow-x-auto border-b border-gray-200 px-2 pt-2 dark:border-gray-800"
+                    role="tablist" aria-label="Rincian hasil panen">
+                    @foreach ([
+                        'rincian' => 'Rincian Panen',
+                        'log' => 'Catatan Log',
+                    ] as $kunci => $label)
+                        <button type="button" role="tab" @click="setTab('{{ $kunci }}')"
+                            :aria-selected="tab === '{{ $kunci }}'"
+                            :class="tab === '{{ $kunci }}'
+                                ? 'border-brand-500 text-brand-600 dark:text-brand-400'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
+                            class="shrink-0 border-b-2 px-4 py-2.5 text-theme-sm font-medium transition focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
+                            {{ $label }}
+                        </button>
+                    @endforeach
+                </div>
 
-                <dl class="mt-4 grid gap-x-6 gap-y-4 sm:grid-cols-2">
-                    <div>
-                        <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Tanggal panen</dt>
-                        <dd class="mt-0.5 text-theme-sm text-gray-800 dark:text-white/90">
-                            {{ \Illuminate\Support\Carbon::parse($data['tanggal_panen'])->translatedFormat('d F Y') }}
-                        </dd>
-                    </div>
-                    <div>
-                        <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Harga jual per satuan</dt>
-                        <dd class="mt-0.5 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
-                            @if (! empty($data['harga_jual']))
-                                Rp {{ number_format($data['harga_jual'], 0, ',', '.') }} per {{ $data['satuan'] }}
-                            @else
-                                -
-                            @endif
-                        </dd>
-                    </div>
-                    <div>
-                        <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Perkiraan nilai jual</dt>
-                        <dd class="mt-0.5 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
-                            @if ($nilaiJual > 0)
-                                Rp {{ number_format($nilaiJual, 0, ',', '.') }}
-                            @else
-                                -
-                            @endif
-                        </dd>
-                    </div>
-                    <div>
-                        <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Setara ton</dt>
-                        <dd class="mt-0.5 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
-                            {{ number_format($setaraTon, 3, ',', '.') }} ton
-                        </dd>
-                    </div>
-                    <div class="sm:col-span-2">
-                        <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Keterangan satuan lokal</dt>
-                        <dd class="mt-0.5 text-theme-sm text-gray-800 dark:text-white/90">
-                            {{ $data['keterangan_satuan_lokal'] ?? '-' }}
-                        </dd>
-                    </div>
-                    <div class="sm:col-span-2">
-                        <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Keterangan</dt>
-                        <dd class="mt-0.5 text-theme-sm text-gray-800 dark:text-white/90">
-                            {{ $data['keterangan'] ?? '-' }}
-                        </dd>
-                    </div>
-                </dl>
+                {{-- Rincian panen --}}
+                <div x-show="tab === 'rincian'" role="tabpanel" class="p-5 sm:p-6">
+                    <dl class="grid gap-x-6 gap-y-4 sm:grid-cols-2">
+                        <div>
+                            <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Tanggal panen</dt>
+                            <dd class="mt-0.5 text-theme-sm text-gray-800 dark:text-white/90">
+                                {{ \Illuminate\Support\Carbon::parse($data['tanggal_panen'])->translatedFormat('d F Y') }}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Harga jual per satuan</dt>
+                            <dd class="mt-0.5 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
+                                @if (! empty($data['harga_jual']))
+                                    Rp {{ number_format($data['harga_jual'], 0, ',', '.') }} per {{ $data['satuan'] }}
+                                @else
+                                    -
+                                @endif
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Perkiraan nilai jual</dt>
+                            <dd class="mt-0.5 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
+                                @if ($nilaiJual > 0)
+                                    Rp {{ number_format($nilaiJual, 0, ',', '.') }}
+                                @else
+                                    -
+                                @endif
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Setara ton</dt>
+                            <dd class="mt-0.5 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
+                                {{ number_format($setaraTon, 3, ',', '.') }} ton
+                            </dd>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Keterangan satuan lokal</dt>
+                            <dd class="mt-0.5 text-theme-sm text-gray-800 dark:text-white/90">
+                                {{ $data['keterangan_satuan_lokal'] ?? '-' }}
+                            </dd>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Keterangan</dt>
+                            <dd class="mt-0.5 text-theme-sm text-gray-800 dark:text-white/90">
+                                {{ $data['keterangan'] ?? '-' }}
+                            </dd>
+                        </div>
+                    </dl>
 
-                <p class="mt-6 rounded-lg bg-gray-50 p-3.5 text-theme-xs text-gray-600 dark:bg-white/[0.03] dark:text-gray-400">
-                    Volume disimpan apa adanya sesuai satuan baku komoditas.
-                    Konversi ke ton hanya dilakukan saat rekap, sehingga angka asli lapangan tetap terjaga.
-                </p>
+                    <p class="mt-6 rounded-lg bg-gray-50 p-3.5 text-theme-xs text-gray-600 dark:bg-white/[0.03] dark:text-gray-400">
+                        Volume disimpan apa adanya sesuai satuan baku komoditas.
+                        Konversi ke ton hanya dilakukan saat rekap, sehingga angka asli lapangan tetap terjaga.
+                    </p>
+                </div>
+
+                {{-- Catatan log: riwayat perubahan data ini saja --}}
+                <div x-show="tab === 'log'" x-cloak role="tabpanel">
+                    <x-sim.catatan-log nama-tabel="hasil_panen" :record-id="$data['id_hasil_panen']" />
+                </div>
             </div>
         </div>
     </div>

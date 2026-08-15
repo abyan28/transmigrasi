@@ -76,59 +76,83 @@
             </div>
         </aside>
 
-        <div class="min-w-0 space-y-6">
-            {{-- Satuan baku, alasan modul ini ada --}}
-            <section class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
-                <h2 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">Satuan Panen Baku</h2>
-                <p class="mt-2 text-theme-sm text-gray-600 dark:text-gray-400">
-                    Setiap pencatatan panen komoditas ini memakai satuan
-                    <span class="font-medium text-gray-800 dark:text-white/90">{{ $data['satuan'] }}</span>,
-                    dan tidak dapat diganti saat mengisi form panen.
-                </p>
-                <p class="mt-2 text-theme-xs text-gray-500 dark:text-gray-400">
-                    Tanpa satuan baku, satu komoditas dapat tercatat dalam ton di satu SP dan kilogram di SP lain,
-                    sehingga penjumlahan lintas wilayah menghasilkan angka yang tidak sepadan.
-                </p>
-            </section>
-
-            @if ($data['deskripsi'])
-                <section class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
-                    <h2 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">Keterangan</h2>
-                    <p class="mt-2 text-theme-sm text-gray-600 dark:text-gray-400">{{ $data['deskripsi'] }}</p>
-                </section>
-            @endif
-
-            {{-- Riwayat tanam --}}
-            <section class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-                <div class="border-b border-gray-200 px-5 py-4 dark:border-gray-800">
-                    <h2 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">
-                        Riwayat Tanam ({{ count($riwayat) }})
-                    </h2>
+        {{-- Kolom kanan: tab rincian --}}
+        <div x-data="hashTabs('satuan')" class="min-w-0">
+            <div class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+                <div class="flex gap-1 overflow-x-auto border-b border-gray-200 px-2 pt-2 dark:border-gray-800"
+                    role="tablist" aria-label="Rincian komoditas">
+                    @php
+                        // Tab keterangan hanya dirender bila deskripsinya terisi,
+                        // agar tidak ada tab yang membuka panel kosong.
+                        $tab = ['satuan' => 'Satuan Panen Baku'];
+                        if ($data['deskripsi']) {
+                            $tab['keterangan'] = 'Keterangan';
+                        }
+                        $tab['riwayat'] = 'Riwayat Tanam (' . count($riwayat) . ')';
+                        $tab['log'] = 'Catatan Log';
+                    @endphp
+                    @foreach ($tab as $kunci => $label)
+                        <button type="button" role="tab" @click="setTab('{{ $kunci }}')"
+                            :aria-selected="tab === '{{ $kunci }}'"
+                            :class="tab === '{{ $kunci }}'
+                                ? 'border-brand-500 text-brand-600 dark:text-brand-400'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
+                            class="shrink-0 border-b-2 px-4 py-2.5 text-theme-sm font-medium transition focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
+                            {{ $label }}
+                        </button>
+                    @endforeach
                 </div>
 
-                @if ($riwayat === [])
-                    <x-sim.empty-state judul="Belum ada riwayat tanam"
-                        pesan="Catatan penanaman komoditas ini akan tampil setelah petugas mendatanya." />
-                @else
-                    <x-sim.tabel-ringkas :kolom="['Kode Lahan', 'Petani', 'Musim Tanam', 'Luas Tanam', 'Tanggal Tanam']">
-                        @foreach ($riwayat as $r)
-                            <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
-                                <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">
-                                    {{ $r['kode_lahan'] }}</td>
-                                <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
-                                    {{ $r['petani'] }}</td>
-                                <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
-                                    {{ $r['musim_tanam'] }}</td>
-                                <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
-                                    {{ number_format($r['luas_tanam'], 2, ',', '.') }} ha</td>
-                                <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
-                                    {{ \Illuminate\Support\Carbon::parse($r['tanggal_tanam'])->translatedFormat('d M Y') }}
-                                </td>
-                            </tr>
-                        @endforeach
-                    </x-sim.tabel-ringkas>
+                {{-- Satuan baku, alasan modul ini ada --}}
+                <div x-show="tab === 'satuan'" role="tabpanel" class="p-5 sm:p-6">
+                    <p class="text-theme-sm text-gray-600 dark:text-gray-400">
+                        Setiap pencatatan panen komoditas ini memakai satuan
+                        <span class="font-medium text-gray-800 dark:text-white/90">{{ $data['satuan'] }}</span>,
+                        dan tidak dapat diganti saat mengisi form panen.
+                    </p>
+                    <p class="mt-2 text-theme-xs text-gray-500 dark:text-gray-400">
+                        Tanpa satuan baku, satu komoditas dapat tercatat dalam ton di satu SP dan kilogram di SP lain,
+                        sehingga penjumlahan lintas wilayah menghasilkan angka yang tidak sepadan.
+                    </p>
+                </div>
+
+                @if ($data['deskripsi'])
+                    <div x-show="tab === 'keterangan'" x-cloak role="tabpanel" class="p-5 sm:p-6">
+                        <p class="text-theme-sm text-gray-600 dark:text-gray-400">{{ $data['deskripsi'] }}</p>
+                    </div>
                 @endif
-            </section>
+
+                {{-- Riwayat tanam --}}
+                <div x-show="tab === 'riwayat'" x-cloak role="tabpanel">
+                    @if ($riwayat === [])
+                        <x-sim.empty-state judul="Belum ada riwayat tanam"
+                            pesan="Catatan penanaman komoditas ini akan tampil setelah petugas mendatanya." />
+                    @else
+                        <x-sim.tabel-ringkas :kolom="['Kode Lahan', 'Petani', 'Musim Tanam', 'Luas Tanam', 'Tanggal Tanam']">
+                            @foreach ($riwayat as $r)
+                                <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
+                                    <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">
+                                        {{ $r['kode_lahan'] }}</td>
+                                    <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
+                                        {{ $r['petani'] }}</td>
+                                    <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
+                                        {{ $r['musim_tanam'] }}</td>
+                                    <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
+                                        {{ number_format($r['luas_tanam'], 2, ',', '.') }} ha</td>
+                                    <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
+                                        {{ \Illuminate\Support\Carbon::parse($r['tanggal_tanam'])->translatedFormat('d M Y') }}
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </x-sim.tabel-ringkas>
+                    @endif
+                </div>
+
+                {{-- Catatan log: riwayat perubahan data ini saja --}}
+                <div x-show="tab === 'log'" x-cloak role="tabpanel">
+                    <x-sim.catatan-log nama-tabel="komoditas" :record-id="$data['id_komoditas']" />
+                </div>
+            </div>
         </div>
     </div>
 

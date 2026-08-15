@@ -919,7 +919,7 @@ Pada SQL referensi kolom ini bertipe `VARCHAR` bebas; dijadikan ENUM agar dapat 
 `Rendah` · `Sedang` · `Tinggi` · `Mendesak`
 
 ### 11.25 Cakupan data role
-`Semua` · `Per SP` · `Milik Sendiri`
+`Semua` · `Per SP`
 
 Menentukan **data siapa** yang boleh dilihat, terpisah dari izin yang menentukan **boleh melakukan apa**.
 
@@ -927,7 +927,6 @@ Menentukan **data siapa** yang boleh dilihat, terpisah dari izin yang menentukan
 |---|---|---|
 | `Semua` | tanpa penyaring | Admin, Dinas Transmigrasi, Dinas Pertanian |
 | `Per SP` | dibatasi SP pada `user_satuan_permukiman` | Operator SP |
-| `Milik Sendiri` | dibatasi baris milik pengguna | disediakan untuk kebutuhan mendatang |
 
 ### 11.26 Aksi permission
 `lihat` · `tambah` · `ubah` · `hapus` · `export`
@@ -1030,7 +1029,7 @@ Tanda centang berarti izin tersebut dibuat untuk modul bersangkutan.
 
 | Modul | lihat | tambah | ubah | hapus | export |
 |---|:---:|:---:|:---:|:---:|:---:|
-| `pengguna` | v | v | v | v | |
+| `pengguna` | v | v | v | | |
 | `role` | v | v | v | v | |
 | `audit_log` | v | | | | v |
 | `wilayah` | v | v | v | v | |
@@ -1058,9 +1057,9 @@ Tanda centang berarti izin tersebut dibuat untuk modul bersangkutan.
 | `dashboard` | v | | | | v |
 | `laporan` | v | | | | v |
 
-Total **118 izin** dari 27 modul, dihitung dari tabel di atas.
+Total **117 izin** dari 27 modul, dihitung dari tabel di atas.
 
-Jumlah izin yang benar-benar dipegang tiap role bawaan lebih sedikit, sesuai susunan pada `rules.md` 5.1: Admin 118, Dinas Transmigrasi 57, Dinas Pertanian 64, Operator SP 50.
+Jumlah izin yang benar-benar dipegang tiap role bawaan lebih sedikit, sesuai susunan pada `rules.md` 5.1: Admin 117, Dinas Transmigrasi 57, Dinas Pertanian 64, Operator SP 50.
 
 ### 13.2 Kelompok modul pada antarmuka
 

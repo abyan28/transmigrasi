@@ -15,5 +15,4 @@ enum CakupanData: string
 
     case Semua = 'Semua';
     case PerSp = 'Per SP';
-    case MilikSendiri = 'Milik Sendiri';
 }
