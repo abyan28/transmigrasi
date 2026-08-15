@@ -238,7 +238,7 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **E*
 
 | Modul | Admin | Dinas Transmigrasi | Dinas Pertanian | Operator SP |
 |---|---|---|---|---|
-| Manajemen pengguna | L T U H | - | - | - |
+| Manajemen pengguna | L T U | - | - | - |
 | Pengaturan role | L T U H | - | - | - |
 | Audit log | L E | - | - | - |
 | Data master wilayah | L T U H | L | L | L |
@@ -488,9 +488,14 @@ Parameter dikelompokkan menurut satu pertanyaan: **tanpa ini, apakah tempat ters
 3. Kategori pengaduan memakai pilihan baku: lahan usaha, lahan pekarangan, rumah, infrastruktur, peralatan dan perlengkapan, alsintan, produksi panen, bencana, dan lainnya.
 4. Alur status penanganan wajib berurutan: **Menunggu Diterima → Diterima → Diproses → Selesai**.
 5. Setiap perubahan status wajib menyimpan riwayat berisi petugas penangan, tanggal penanganan, catatan, dan dokumen tindak lanjut.
+5a. **Isian penanganan sama di mana pun dibuka**, baik lewat halaman rincian maupun lewat kolom aksi pada halaman daftar. Meminta hal berbeda pada dua tempat menghasilkan riwayat yang timpang: sebagian jejak bertanggal dan berdokumen, sebagian tidak.
+5b. **Dokumen tindak lanjut yang sudah diunggah wajib dapat dibuka kembali** pada riwayat penanganan. Menyediakan isian unggah tanpa menampilkan hasilnya membuat berkas tersimpan tanpa dapat dijangkau siapa pun, termasuk oleh yang mengunggahnya.
 6. Pengaduan dapat dilampiri dokumen/foto pendukung dan diberi penanda prioritas.
-6a. **Prioritas awal diturunkan otomatis dari kategori**, bukan diisi warga. Bencana bernilai `Mendesak`; Infrastruktur dan Rumah bernilai `Tinggi`; Lahan Usaha, Alsintan, dan Produksi Panen bernilai `Sedang`; sisanya `Rendah`. Alasannya, warga tidak mengetahui skala prioritas dinas, dan meminta warga menilainya sendiri membuat hampir seluruh laporan ditandai mendesak sehingga penandanya kehilangan makna.
-6b. Nilai turunan itu **hanya perkiraan awal**, dipakai agar laporan tidak menumpuk tanpa urutan sebelum sempat ditinjau. **Petugas yang memutuskan prioritas sebenarnya** saat meninjau laporan, dan dapat merevisinya kapan pun. Setiap revisi tercatat pada audit log beserta pelakunya.
+6a. **Prioritas ditentukan sepenuhnya oleh petugas** yang meninjau laporan, tidak diisi warga dan tidak diturunkan otomatis dari kategori. Warga tidak mengetahui skala prioritas dinas, dan meminta warga menilainya sendiri membuat hampir seluruh laporan ditandai mendesak sehingga penandanya kehilangan makna.
+
+> **Perubahan 2026-08-14.** Penurunan otomatis dari kategori sempat ditetapkan lalu **dibatalkan**. Kategori hanya menyatakan pokok masalah, sedangkan kegentingan bergantung pada keadaan lapangan yang tidak terbaca dari kategori: dua laporan berkategori sama dapat berbeda jauh kemendesakannya. Nilai turunan yang tampak berwibawa justru berisiko diterima begitu saja tanpa ditinjau ulang.
+
+6b. Prioritas dapat direvisi kapan pun selama laporan berjalan. Setiap revisi tercatat pada audit log beserta pelakunya.
 6c. **Titik koordinat diminta pada kanal publik, tetapi opsional.** Pengaduan tetap dapat dikirim tanpa mengisinya, sebab warga melapor lewat ponsel dengan jaringan yang tidak selalu memadai dan mewajibkannya akan menutup kanal yang justru paling perlu terbuka. Bila diisi, petugas terbantu menemukan titik masalah tanpa bertanya ulang. Petugas tetap melengkapinya saat verifikasi lapangan bila kosong.
 6d. Setiap isian koordinat, baik pada kanal publik maupun form petugas, **wajib menyediakan pemilihan lewat peta** di samping pengambilan lokasi otomatis. GPS ponsel di lokus kerap meleset puluhan meter, sedangkan pelapor paling mengetahui letak sebenarnya. Peta memakai ubin OpenStreetMap tanpa kunci API, dimuat hanya ketika dibuka. Bila peta gagal dimuat karena jaringan lemah, isian manual dan tombol lokasi otomatis tetap berfungsi.
 7. Pengaduan diteruskan ke dinas sesuai bidangnya: bidang pertanian ke Dinas Pertanian, bidang ketransmigrasian ke Dinas Transmigrasi.
@@ -624,13 +629,20 @@ Pola berikut adalah **standar yang harus dibangun dan dipatuhi** sejak awal proy
 ### 14b. Aturan Akun dan Pemulihan Kata Sandi
 
 #### Pembuatan akun
+
+> **Perubahan 2026-08-14.** Sebelumnya Admin mengisi username sekaligus mengetik kata sandi awal, dan surel bersifat opsional. Susunan itu membebani Admin dengan mengarang username orang lain, sedangkan kata sandi karangan manusia cenderung berpola dan dipakai ulang untuk banyak akun. Poin 3 sampai 5 di bawah menggantikannya.
+
 1. **Tidak ada pendaftaran mandiri.** Sistem tidak menyediakan halaman daftar akun. Seluruh akun dibuat oleh Admin lewat menu Manajemen Pengguna.
 2. Setiap akun wajib diberi satu role. Bila role tersebut bercakupan `Per SP`, akun wajib pula diberi minimal satu penugasan SP.
-3. Admin menetapkan kata sandi awal dan menyerahkannya langsung kepada pengguna. Kata sandi awal wajib ditandai `password_harus_diganti = TRUE`.
+3. **Kata sandi awal dibangkitkan sistem**, bukan diketik Admin, lalu ditandai `password_harus_diganti = TRUE`. Nilainya ditampilkan **satu kali** di layar setelah akun tersimpan dan tidak pernah dapat dibaca ulang.
+3a. Kata sandi tersebut **dikirim juga ke surel** petugas, tetapi penyerahan langsung tetap dianjurkan. Jaringan di lokus tidak selalu memadai, sehingga surel adalah salinan, bukan pengganti.
+3b. Akun baru **selalu langsung aktif**. Tidak ada pilihan menonaktifkan pada formulir; penonaktifan dan pengaktifan kembali dilakukan lewat tombol pada halaman daftar agar seluruh perubahan keadaan akun tercatat lewat satu jalur yang sama.
 
 #### Kredensial masuk
-4. Sistem menerima **email atau username** pada satu kolom isian yang sama. Keduanya wajib diisi dan unik antar-akun.
-5. Username hanya boleh memuat huruf kecil, angka, titik, dan garis bawah, dengan panjang 3 sampai 50 karakter.
+4. Sistem menerima **email atau username** pada satu kolom isian yang sama. Keduanya unik antar-akun.
+4a. **Surel wajib diisi Admin** saat akun dibuat, sebab itulah satu-satunya kredensial yang dimiliki petugas ketika pertama kali masuk.
+5. **Username dibuat sendiri oleh petugas** pada saat masuk pertama kali, bersamaan dengan penggantian kata sandi sementara. Admin tidak mengarangkannya, sebab petugaslah yang akan mengetiknya setiap hari.
+5a. Username hanya boleh memuat huruf kecil, angka, titik, dan garis bawah, dengan panjang 3 sampai 50 karakter. Ketersediaannya diperiksa saat diketik, sebelum formulir dikirim.
 6. Seluruh pengguna sistem adalah petugas, sehingga tidak ada kredensial berbasis NIK. Warga tidak memiliki akun.
 
 #### Pemulihan kata sandi
@@ -649,7 +661,7 @@ Pola berikut adalah **standar yang harus dibangun dan dipatuhi** sejak awal proy
 9. Halaman permintaan kode **tidak pernah menyatakan apakah alamat terdaftar**. Pesan yang ditampilkan selalu sama, sebab pesan yang membedakan keduanya mengubah halaman ini menjadi alat memeriksa siapa saja yang memiliki akun.
 10. Permintaan kode dibatasi **3 kali per jam per akun** dan percobaan pemasukan kode dibatasi **5 kali per kode** (§14c). Setelah itu kode hangus dan petugas wajib meminta yang baru.
 11. Jalur Admin pada poin 12 sampai 15 **tetap berlaku penuh** dan tidak boleh dihapus. Jalur inilah satu-satunya yang bekerja tanpa sambungan surel.
-12. Pengguna yang lupa kata sandi dapat menghubungi Admin. Admin menyetel ulang lewat Manajemen Pengguna, lalu menyerahkan kata sandi sementara secara langsung, bukan lewat surel maupun pesan singkat.
+12. Pengguna yang lupa kata sandi dapat menghubungi Admin. Admin menyetel ulang lewat Manajemen Pengguna, lalu menyerahkan kata sandi sementara **secara langsung**. Sejak 2026-08-14 kata sandi tersebut dikirim juga ke surel pengguna, tetapi penyerahan langsung tetap wajib dilakukan: jalur Admin justru disediakan untuk petugas di lokus bersinyal lemah, yang belum tentu dapat membuka surelnya saat itu juga.
 13. Setelah disetel ulang, baik lewat kode verifikasi maupun lewat Admin, kolom `password_harus_diganti` bernilai `TRUE`. Pengguna diarahkan ke halaman ganti kata sandi saat masuk berikutnya dan **tidak dapat mengakses halaman lain** sebelum menggantinya.
 14. Admin **tidak dapat melihat** kata sandi pengguna mana pun, karena hanya hash yang tersimpan. Admin hanya dapat menimpanya dengan nilai baru.
 15. Setiap penyetelan ulang wajib tercatat pada audit log dengan aksi `Reset Kata Sandi`, memuat petugas pelaku, akun sasaran, waktu kejadian, dan **jalur yang dipakai**. Pemulihan mandiri tercatat atas nama pemilik akun itu sendiri.

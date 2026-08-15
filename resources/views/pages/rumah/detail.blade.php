@@ -132,6 +132,7 @@
                         'rincian' => 'Rincian',
                         'riwayat' => 'Riwayat Penghunian (' . count($riwayat) . ')',
                         'dokumentasi' => 'Dokumentasi',
+                        'log' => 'Catatan Log',
                     ] as $kunci => $label)
                         <button type="button" role="tab" @click="setTab('{{ $kunci }}')"
                             :aria-selected="tab === '{{ $kunci }}'"
@@ -257,6 +258,11 @@
                                 </p>
                             </div>
                     @endif
+                </div>
+
+                {{-- Catatan log: riwayat perubahan data ini saja --}}
+                <div x-show="tab === 'log'" x-cloak role="tabpanel">
+                    <x-sim.catatan-log nama-tabel="rumah" :record-id="$data['id_rumah']" />
                 </div>
             </div>
         </div>

@@ -186,6 +186,26 @@
                                     <p class="mt-2 text-theme-sm text-gray-700 dark:text-gray-300">
                                         {{ $jejak['catatan'] }}
                                     </p>
+
+                                    {{--
+                                        Keberadaan dokumen diberitahukan, tetapi berkasnya TIDAK
+                                        dapat diunduh dari sini. Halaman ini terbuka tanpa login
+                                        dan hanya berbekal nomor pengaduan, sehingga siapa pun
+                                        yang mengetahui nomornya akan ikut memperoleh berkasnya.
+                                        Dokumen tindak lanjut kerap memuat nama petugas, hasil
+                                        peninjauan, dan kadang data warga lain.
+                                    --}}
+                                    @if (! empty($jejak['dokumen_tindak_lanjut']))
+                                        <p class="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-gray-50 px-2.5 py-1.5 text-theme-xs text-gray-600 dark:bg-white/[0.03] dark:text-gray-400">
+                                            <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24"
+                                                stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                                            </svg>
+                                            Petugas melampirkan dokumen tindak lanjut. Mintakan salinannya
+                                            kepada petugas desa atau SP bila diperlukan.
+                                        </p>
+                                    @endif
                                 </li>
                             @endforeach
                         </ol>

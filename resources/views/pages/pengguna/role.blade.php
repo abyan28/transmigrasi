@@ -149,6 +149,20 @@
                         class="rounded-lg border border-gray-300 px-3 py-2 text-theme-xs font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
                         {{ $r['is_terkunci'] ? 'Lihat Susunan Izin' : 'Ubah Role dan Izin' }}
                     </button>
+
+                    {{--
+                        Tombol hapus dirender HANYA bila kedua syarat terpenuhi:
+                        bukan role bawaan, dan tidak dipakai akun mana pun
+                        (rules.md 5.0c poin 8 dan 9). Merender tombol lalu
+                        menolaknya di server berarti memasang kontrol mati.
+                    --}}
+                    @if (! $r['is_bawaan'] && $r['jumlah_pengguna'] === 0)
+                        <button type="button"
+                            @click="$dispatch('buka-konfirmasi', { nama: 'hapusRole', aksi: '/pengaturan/role/{{ $r['id_role'] }}' })"
+                            class="rounded-lg border border-red-300 px-3 py-2 text-theme-xs font-medium text-red-600 transition hover:bg-red-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-red-500/40 dark:text-red-400 dark:hover:bg-red-500/10">
+                            Hapus Role
+                        </button>
+                    @endif
                 </div>
             </div>
 
@@ -175,4 +189,13 @@
         :aksi="route('role.simpan')" ukuran="xl" label-simpan="Simpan Role">
         @include('pages.pengguna.form-role', ['awalan' => 'roleBaru', 'data' => []])
     </x-sim.modal-form>
+
+    {{--
+        Konfirmasi penghapusan role. Alasan diminta agar tercatat pada audit
+        log, sebab penghapusan role mengubah susunan kewenangan sistem.
+    --}}
+    <x-sim.confirm-dialog nama="hapusRole" judul="Hapus role ini?"
+        pesan="Role yang dihapus tidak dapat dipulihkan. Hanya role tanpa pengguna yang dapat dihapus, sehingga tidak ada akun yang kehilangan kewenangannya."
+        label-setuju="Hapus Role" metode="DELETE" ragam="bahaya" :perlu-alasan="true"
+        label-alasan="Alasan penghapusan" />
 @endsection

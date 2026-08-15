@@ -113,6 +113,7 @@
                             $tab['pengelolaan'] = 'Pengelolaan';
                         }
                         $tab['dokumen'] = 'Dokumen (' . count($dokumen) . ')';
+                        $tab['log'] = 'Catatan Log';
                     @endphp
                     @foreach ($tab as $kunci => $label)
                         <button type="button" role="tab" @click="setTab('{{ $kunci }}')"
@@ -237,6 +238,11 @@
                             @endforeach
                         </x-sim.tabel-ringkas>
                     @endif
+                </div>
+
+                {{-- Catatan log: riwayat perubahan data ini saja --}}
+                <div x-show="tab === 'log'" x-cloak role="tabpanel">
+                    <x-sim.catatan-log nama-tabel="lahan" :record-id="$data['id_lahan']" />
                 </div>
             </div>
         </div>

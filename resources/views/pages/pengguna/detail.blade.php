@@ -17,12 +17,21 @@
     use App\Support\DummyData;
 
     $daftarPengguna = DummyData::pengguna();
-    $auditLog = DummyData::auditLog();
 
-    // Riwayat yang menyasar tabel user. Nomor barisnya dipakai untuk
-    // mencocokkan dengan akun yang sedang dibuka.
+    /*
+        Riwayat tindakan pada akun.
+
+        Modal ini melayani seluruh baris secara bergantian, sehingga akun yang
+        sedang dibuka baru diketahui Alpine saat modal dipanggil. Penyaringan
+        per akun karena itu dilakukan di sisi klien memakai `record_id`, bukan
+        di sini.
+
+        Sebelumnya penyaringan hanya memakai `nama_tabel`, sehingga setiap akun
+        menampilkan riwayat akun orang lain. Komentar lamanya bahkan mengaku
+        mencocokkan nomor baris, padahal kodenya tidak melakukannya.
+    */
     $riwayatAkun = array_values(array_filter(
-        $auditLog,
+        DummyData::auditLog(),
         fn ($baris) => $baris['nama_tabel'] === 'user',
     ));
 
@@ -33,6 +42,23 @@
 <div x-data="{
         terbuka: false,
         akun: null,
+        semuaRiwayat: @js($riwayatAkun),
+
+        /*
+            Riwayat milik akun yang sedang dibuka saja. Dicocokkan lewat
+            record_id, sebab satu modal melayani seluruh baris secara
+            bergantian sehingga akunnya baru diketahui saat modal dipanggil.
+        */
+        get riwayat() {
+            if (! this.akun) {
+                return [];
+            }
+
+            return this.semuaRiwayat.filter(
+                (baris) => Number(baris.record_id) === Number(this.akun.id_user),
+            );
+        },
+
         buka(detail) {
             this.akun = detail.akun ?? null;
             this.terbuka = true;
@@ -169,29 +195,25 @@
                             Riwayat Tindakan pada Akun
                         </h3>
 
-                        @if ($riwayatAkun === [])
-                            <p class="mt-3 text-theme-sm text-gray-500 dark:text-gray-400">
-                                Belum ada tindakan admin yang tercatat pada akun ini.
-                            </p>
-                        @else
-                            <ul class="mt-3 space-y-3">
-                                @foreach ($riwayatAkun as $baris)
-                                    <li class="flex gap-3">
-                                        <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-gray-300 dark:bg-gray-600"
-                                            aria-hidden="true"></span>
-                                        <div>
-                                            <p class="text-theme-sm text-gray-800 dark:text-white/90">
-                                                {{ $baris['ringkasan'] }}
-                                            </p>
-                                            <p class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
-                                                {{ $baris['aksi'] }} oleh {{ $baris['pengguna'] }} &middot;
-                                                {{ \Carbon\Carbon::parse($baris['waktu'])->translatedFormat('d F Y, H:i') }} WITA
-                                            </p>
-                                        </div>
-                                    </li>
-                                @endforeach
-                            </ul>
-                        @endif
+                        <p x-show="riwayat.length === 0" class="mt-3 text-theme-sm text-gray-500 dark:text-gray-400">
+                            Belum ada tindakan admin yang tercatat pada akun ini.
+                        </p>
+
+                        <ul x-show="riwayat.length > 0" x-cloak class="mt-3 space-y-3">
+                            <template x-for="baris in riwayat" :key="baris.id_audit_log">
+                                <li class="flex gap-3">
+                                    <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-gray-300 dark:bg-gray-600"
+                                        aria-hidden="true"></span>
+                                    <div>
+                                        <p class="text-theme-sm text-gray-800 dark:text-white/90" x-text="baris.ringkasan"></p>
+                                        <p class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                                            <span x-text="baris.aksi"></span> oleh <span x-text="baris.pengguna"></span>
+                                            &middot; <span x-text="baris.waktu"></span> WITA
+                                        </p>
+                                    </div>
+                                </li>
+                            </template>
+                        </ul>
                     </section>
                 </div>
 

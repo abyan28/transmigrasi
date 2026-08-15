@@ -1,7 +1,7 @@
 {{--
     Isian akun petugas, dipakai bersama modal tambah dan modal ubah.
 
-    Tiga aturan agents/rules.md bagian 14b yang wajib dijaga di sini:
+    Aturan agents/rules.md bagian 14b yang wajib dijaga di sini:
 
     1. Akun berrole bercakupan `Per SP` wajib memiliki minimal satu penugasan
        SP (poin 2). Pilihan SP karena itu hanya muncul ketika role yang dipilih
@@ -10,10 +10,15 @@
        membatasi aksesnya, padahal tidak berpengaruh apa pun.
     2. Kata sandi TIDAK PERNAH muncul pada modal ubah (poin 10). Admin hanya
        dapat menimpanya lewat modal setel ulang, tidak pernah melihatnya.
-       Menyediakan kolom kata sandi di sini akan menyiratkan bahwa nilai lama
-       dapat dibaca atau disunting sebagian.
-    3. Username hanya huruf kecil, angka, titik, dan garis bawah, sepanjang
-       3 sampai 50 karakter (poin 5).
+
+    Dua hal berubah pada 2026-08-14:
+
+    - **Username tidak lagi diisi Admin.** Petugaslah yang membuatnya sendiri
+      saat pertama kali masuk, sebab dialah yang akan mengetiknya setiap hari.
+      Akibatnya surel menjadi WAJIB, karena itulah satu-satunya kredensial
+      yang dimilikinya pada saat itu.
+    - **Kata sandi awal dibuatkan sistem**, bukan diketik Admin. Kata sandi
+      karangan manusia cenderung berpola dan berulang untuk banyak akun.
 
     Nama kolom mengikuti agents/data-dictionary.md bagian 2.1.
 --}}
@@ -90,43 +95,64 @@
         <h3 class="{{ $kelasBagian }}">Kredensial Masuk</h3>
         <div class="mt-3 grid gap-4 sm:grid-cols-2">
             <div>
-                <label for="{{ $awalan }}_username" class="{{ $kelasLabel }}">
-                    Username<span class="text-error-500">*</span>
-                </label>
-                <input type="text" id="{{ $awalan }}_username" name="username"
-                    value="{{ old('username', $data['username'] ?? '') }}" required
-                    minlength="3" maxlength="50" pattern="[a-z0-9._]{3,50}"
-                    placeholder="budi.setiyono" class="{{ $kelasKontrol }}"
-                    aria-describedby="{{ $awalan }}_username_bantuan" />
-                <p id="{{ $awalan }}_username_bantuan" class="{{ $kelasBantuan }}">
-                    Huruf kecil, angka, titik, dan garis bawah. Panjang 3 sampai 50 karakter.
-                </p>
-            </div>
-
-            <div>
                 <label for="{{ $awalan }}_email" class="{{ $kelasLabel }}">
                     Email Dinas<span class="text-error-500">*</span>
                 </label>
-                <input type="email" id="{{ $awalan }}_email" name="email"
-                    value="{{ old('email', $data['email'] ?? '') }}" maxlength="100" required
+                <input type="email" id="{{ $awalan }}_email" name="email" required
+                    value="{{ old('email', $data['email'] ?? '') }}" maxlength="100"
                     placeholder="nama@malakakab.go.id" class="{{ $kelasKontrol }}"
                     aria-describedby="{{ $awalan }}_email_bantuan" />
                 <p id="{{ $awalan }}_email_bantuan" class="{{ $kelasBantuan }}">
-                    Dipakai untuk masuk dan menerima kode verifikasi saat lupa kata sandi.
+                    Wajib diisi. Dipakai petugas untuk masuk pertama kali, menerima kata sandi
+                    sementara, dan meminta kode saat lupa kata sandi.
                 </p>
             </div>
+
+            @if ($mode === 'tambah')
+                {{--
+                    Username sengaja tidak disediakan pada modal tambah.
+                    Petugaslah yang membuatnya sendiri saat pertama kali masuk,
+                    bersamaan dengan penggantian kata sandi sementara.
+                --}}
+                <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+                    <p class="text-theme-sm font-medium text-gray-800 dark:text-white/90">Username dibuat petugas</p>
+                    <p class="mt-1 text-theme-xs text-gray-600 dark:text-gray-400">
+                        Petugas menentukan usernamenya sendiri saat pertama kali masuk, sekaligus
+                        mengganti kata sandi sementara. Admin tidak perlu mengarangkannya.
+                    </p>
+                </div>
+            @else
+                <div>
+                    <span class="{{ $kelasLabel }}">Username</span>
+                    <p class="flex h-11 items-center rounded-lg border border-gray-200 bg-gray-50 px-4 font-mono text-theme-sm text-gray-800 dark:border-gray-800 dark:bg-white/[0.03] dark:text-white/90">
+                        {{ $data['username'] ?? '-' }}
+                    </p>
+                    <p class="{{ $kelasBantuan }}">
+                        Dibuat sendiri oleh petugas dan tidak dapat diubah Admin.
+                    </p>
+                </div>
+            @endif
         </div>
 
         @if ($mode === 'tambah')
             {{--
-                Kata sandi awal hanya ada pada modal tambah. Pada modal ubah,
-                kolom ini sengaja tidak dirender sama sekali (rules.md 14b
-                poin 10), bukan sekadar dikosongkan.
+                Kata sandi awal dibuatkan sistem, bukan diketik Admin. Kata sandi
+                karangan manusia cenderung berpola dan dipakai ulang untuk banyak
+                akun sekaligus.
+
+                Hasilnya ditampilkan di layar SEKALIGUS dikirim ke surel petugas.
+                Keduanya diperlukan: surel menolong petugas yang berjaringan
+                memadai, sedangkan tampilan layar menolong petugas di lokus
+                bersinyal lemah yang sedang berdiri di depan Admin.
             --}}
-            <div class="mt-4">
-                <x-sim.input-kata-sandi nama="password_awal" label="Kata Sandi Awal"
-                    autocomplete="new-password" :wajib="true"
-                    keterangan="Serahkan langsung kepada dinas yang akan menggunakan. Sistem akan meminta penggantian saat pertama kali masuk." />
+            <div class="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+                <p class="text-theme-sm font-medium text-gray-800 dark:text-white/90">
+                    Kata sandi sementara dibuatkan sistem
+                </p>
+                <p class="mt-1 text-theme-sm text-gray-600 dark:text-gray-400">
+                    Setelah akun tersimpan, kata sandi sementara tampil satu kali di layar dan
+                    dikirim ke email di atas. Petugas wajib menggantinya saat pertama kali masuk.
+                </p>
             </div>
         @else
             <div class="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-white/[0.03]">
@@ -204,19 +230,13 @@
                 </div>
             </div>
 
-            <div>
-                <label class="flex items-start gap-2.5">
-                    <input type="checkbox" name="is_aktif" value="1"
-                        @checked(old('is_aktif', $data['is_aktif'] ?? true))
-                        class="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand-500 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700" />
-                    <span class="text-theme-sm text-gray-700 dark:text-gray-300">
-                        Akun aktif
-                        <span class="block text-theme-xs text-gray-500 dark:text-gray-400">
-                            Akun nonaktif tidak dapat masuk, tetapi seluruh riwayat tindakannya tetap tersimpan.
-                        </span>
-                    </span>
-                </label>
-            </div>
+            {{--
+                Toggle "akun aktif" sengaja tidak disediakan di sini. Akun baru
+                selalu langsung aktif, sedangkan penonaktifan dan pengaktifan
+                kembali dilakukan lewat tombol pada halaman daftar. Menyediakan
+                dua jalur untuk satu keadaan membuat riwayat audit terpecah dan
+                membingungkan saat ditelusuri.
+            --}}
         </div>
     </section>
 </div>

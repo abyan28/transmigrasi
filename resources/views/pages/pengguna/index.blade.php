@@ -53,6 +53,83 @@
             && $jumlahAdminAktif === 1;
     @endphp
 
+    {{--
+        Panel kredensial akun baru. Kata sandi sementara ditampilkan di layar
+        SEKALIGUS dikirim ke surel petugas, dan keduanya memang diperlukan:
+        surel menolong petugas yang berjaringan memadai, sedangkan tampilan
+        layar menolong petugas di lokus bersinyal lemah yang sedang berdiri di
+        depan Admin. Tanpa tampilan layar, jalur Admin yang justru dibuat untuk
+        lokus bersinyal lemah kehilangan gunanya (rules.md 14b).
+
+        Tampil sekali saja, sebab nilainya tidak pernah disimpan dalam bentuk
+        yang dapat dibaca ulang.
+    --}}
+    @if (session('kredensial_baru'))
+        @php $kredensial = session('kredensial_baru'); @endphp
+
+        <div class="mb-6 rounded-2xl border border-green-300 bg-green-50 p-5 dark:border-green-500/30 dark:bg-green-500/10"
+            role="status"
+            x-data="{
+                tersalin: false,
+                salin() {
+                    const teks = @js('Email: ' . ($kredensial['email'] ?? '') . ' | Kata sandi sementara: ' . ($kredensial['password'] ?? ''));
+                    navigator.clipboard?.writeText(teks).then(() => {
+                        this.tersalin = true;
+                        setTimeout(() => { this.tersalin = false; }, 2500);
+                    });
+                },
+            }">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div class="min-w-0">
+                    <p class="text-theme-sm font-semibold text-green-800 dark:text-green-200">
+                        Akun {{ $kredensial['nama'] ?? 'petugas' }} berhasil dibuat
+                    </p>
+                    <p class="mt-1 text-theme-xs text-green-700 dark:text-green-300">
+                        Catat atau salin kredensial di bawah ini. Kata sandi sementara hanya
+                        ditampilkan sekali dan tidak dapat dibaca ulang.
+                    </p>
+                </div>
+
+                <button type="button" @click="salin()"
+                    class="inline-flex shrink-0 items-center gap-2 rounded-lg border border-green-400 px-3 py-2 text-theme-xs font-medium text-green-800 transition hover:bg-green-100 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-green-500/40 dark:text-green-200 dark:hover:bg-green-500/10">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"
+                        aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
+                    </svg>
+                    <span x-text="tersalin ? 'Tersalin' : 'Salin Kredensial'"></span>
+                </button>
+            </div>
+
+            <dl class="mt-4 grid gap-3 border-t border-green-300 pt-4 sm:grid-cols-2 dark:border-green-500/30">
+                <div>
+                    <dt class="text-theme-xs text-green-700 dark:text-green-300">Email untuk masuk</dt>
+                    <dd class="mt-0.5 font-mono text-theme-sm text-green-900 dark:text-green-100">
+                        {{ $kredensial['email'] ?? '-' }}
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-theme-xs text-green-700 dark:text-green-300">Kata sandi sementara</dt>
+                    <dd class="mt-0.5 font-mono text-theme-sm font-semibold text-green-900 dark:text-green-100">
+                        {{ $kredensial['password'] ?? '-' }}
+                    </dd>
+                </div>
+            </dl>
+
+            {{--
+                Spanduk kejujuran. Tampilannya sudah lengkap, tetapi pengiriman
+                surel menunggu backend. Tanpa keterangan ini Admin dapat mengira
+                petugas sudah menerima surelnya, lalu tidak menyerahkan kata
+                sandi secara langsung.
+            --}}
+            <p class="mt-4 rounded-lg border border-yellow-300 bg-yellow-50 p-3 text-theme-xs text-yellow-800 dark:border-yellow-500/30 dark:bg-yellow-500/10 dark:text-yellow-200">
+                <span class="font-medium">Pengiriman surel belum aktif.</span>
+                Kredensial di atas belum benar-benar terkirim ke petugas. Sampai backend selesai,
+                serahkan kata sandi ini secara langsung.
+            </p>
+        </div>
+    @endif
+
     <x-sim.halaman-daftar judul="Manajemen Pengguna"
         keterangan="Akun petugas beserta role dan penugasannya."
         :remah="[['label' => 'Pengaturan'], ['label' => 'Pengguna']]"
@@ -239,6 +316,20 @@
                                 title="Sistem menolak penonaktifan Admin terakhir yang masih aktif.">
                                 Tidak bisa dinonaktifkan
                             </span>
+                        @else
+                            {{--
+                                Jalur mengaktifkan kembali. Tanpa tombol ini akun yang
+                                sudah dinonaktifkan terkunci selamanya, sebab akun memang
+                                tidak pernah dihapus dan tidak ada jalur lain menyalakannya.
+                            --}}
+                            <button type="button"
+                                @click="$dispatch('buka-konfirmasi', { nama: 'aktifkanPengguna', aksi: '/pengguna/{{ $u['id_user'] }}/aktifkan' })"
+                                aria-label="Aktifkan kembali akun {{ $u['nama'] }}"
+                                class="rounded-lg p-2 text-gray-500 transition focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-gray-400 hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-500/10">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </button>
                         @endif
                     </div>
                 </td>
@@ -283,6 +374,14 @@
     <x-sim.confirm-dialog nama="nonaktifkanPengguna" judul="Nonaktifkan akun ini?"
         pesan="Petugas tidak akan dapat masuk, tetapi seluruh riwayat tindakannya tetap tersimpan. Akun dapat diaktifkan kembali sewaktu-waktu."
         label-setuju="Nonaktifkan" metode="POST" ragam="bahaya" />
+
+    {{--
+        Konfirmasi pengaktifan. Memakai ragam peringatan, bukan bahaya, sebab
+        tindakannya memulihkan akses dan bukan tindakan merusak.
+    --}}
+    <x-sim.confirm-dialog nama="aktifkanPengguna" judul="Aktifkan kembali akun ini?"
+        pesan="Petugas dapat kembali masuk memakai kredensial yang sama seperti sebelum dinonaktifkan."
+        label-setuju="Aktifkan" metode="POST" ragam="peringatan" />
 
     {{-- Modal ubah akun, satu untuk seluruh baris --}}
     <x-sim.modal-form nama="formUbahPenggunaBaris" judul="Ubah Akun Petugas"

@@ -376,11 +376,18 @@ Route::get('/pengaduan-warga', function () {
     return view('pages.publik.pengaduan', ['title' => 'Kirim Pengaduan']);
 })->name('pengaduan-warga');
 
-Route::post('/pengaduan-warga', function () {
+Route::post('/pengaduan-warga', function (Illuminate\Http\Request $permintaan) {
     // Tahap 8: simpan pengaduan berstatus Menunggu Diterima, catat ip_pelapor,
-    // lalu buat nomor pengaduan berurutan.
-    // Nomor contoh di bawah dipakai agar alur antarmuka dapat dicoba utuh.
-    return back()->with('nomor_pengaduan', 'PGD-2026-0006');
+    // buat nomor pengaduan berurutan, lalu kirim nomornya ke surel pelapor
+    // bila diisi.
+    //
+    // Nomor contoh sengaja memakai salah satu yang BENAR-BENAR ADA pada data
+    // contoh. Sebelumnya dipakai PGD-2026-0006 yang tidak pernah ada, sehingga
+    // tombol "Lihat Perkembangan Laporan" selalu berujung pada keadaan nomor
+    // tidak ditemukan; kontrol semacam itu dilarang (R-26).
+    return back()
+        ->with('nomor_pengaduan', 'PGD-2026-0003')
+        ->with('email_pelapor', $permintaan->input('email_pelapor'));
 })->name('pengaduan-warga.kirim');
 
 Route::get('/lacak-pengaduan', function () {
@@ -613,11 +620,22 @@ Route::get('/pengguna', function () {
     return view('pages.pengguna.index', ['title' => 'Manajemen Pengguna']);
 })->name('pengguna.index');
 
-Route::post('/pengguna', function () {
-    // Tahap 3: validasi lewat ValidationRules, hash kata sandi awal, tandai
-    // password_harus_diganti, simpan penugasan SP, catat audit log.
+Route::post('/pengguna', function (Illuminate\Http\Request $permintaan) {
+    // Tahap 3: validasi lewat ValidationRules, bangkitkan kata sandi sementara,
+    // simpan hashnya, tandai password_harus_diganti, simpan penugasan SP, catat
+    // audit log, lalu kirim kredensial ke surel petugas.
+    //
+    // Username sengaja tidak diminta di sini. Petugas membuatnya sendiri saat
+    // pertama kali masuk, bersamaan dengan penggantian kata sandi sementara
+    // (rules.md 14b).
     return redirect()->route('pengguna.index')
-        ->with('sukses', 'Akun petugas tersimpan. Serahkan kata sandi awal secara langsung kepada yang bersangkutan.');
+        ->with('sukses', 'Akun petugas tersimpan.')
+        ->with('kredensial_baru', [
+            'nama' => $permintaan->input('nama', 'petugas'),
+            'email' => $permintaan->input('email', '-'),
+            // Tahap 3: dibangkitkan Str::password(), bukan nilai tetap seperti ini.
+            'password' => 'Tmg-7K4pQ2',
+        ]);
 })->name('pengguna.simpan');
 
 Route::put('/pengguna/{id}', function (int $id) {
@@ -643,6 +661,14 @@ Route::post('/pengguna/{id}/nonaktifkan', function (int $id) {
         ->with('sukses', 'Akun dinonaktifkan. Seluruh riwayat tindakannya tetap tersimpan.');
 })->where('id', '[0-9]+')->name('pengguna.nonaktifkan');
 
+Route::post('/pengguna/{id}/aktifkan', function (int $id) {
+    // Tahap 3: setel is_aktif menjadi TRUE, catat audit log dengan aksi
+    // AktifkanAkun. Akun yang dipulihkan memakai kredensial lamanya, sebab
+    // penonaktifan tidak pernah mengubah kata sandi.
+    return redirect()->route('pengguna.index')
+        ->with('sukses', 'Akun diaktifkan kembali. Petugas dapat masuk memakai kredensial yang sama.');
+})->where('id', '[0-9]+')->name('pengguna.aktifkan');
+
 Route::get('/pengaturan/role', function () {
     return view('pages.pengguna.role', ['title' => 'Role dan Hak Akses']);
 })->name('pengaturan.role');
@@ -659,6 +685,15 @@ Route::put('/pengaturan/role/{id}', function (int $id) {
     return redirect()->route('pengaturan.role')
         ->with('sukses', 'Susunan izin role tersimpan.');
 })->where('id', '[0-9]+')->name('role.perbarui');
+
+Route::delete('/pengaturan/role/{id}', function (int $id) {
+    // Tahap 3: tolak bila role bawaan atau masih dipakai minimal satu akun
+    // (rules.md 5.0c poin 8 dan 9). Kedua pemeriksaan wajib diulang di sisi
+    // server, sebab penyembunyian tombol saja tidak menghalangi permintaan
+    // langsung. Alasan penghapusan ikut dicatat pada audit log.
+    return redirect()->route('pengaturan.role')
+        ->with('sukses', 'Role dihapus. Susunan kewenangan akun lain tidak terpengaruh.');
+})->where('id', '[0-9]+')->name('role.hapus');
 
 Route::get('/audit-log', function () {
     return view('pages.pengguna.audit-log', ['title' => 'Audit Log']);

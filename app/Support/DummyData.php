@@ -937,6 +937,11 @@ class DummyData
     /**
      * Riwayat penanganan untuk sebuah pengaduan.
      *
+     * Kunci `dokumen_tindak_lanjut` bersifat opsional: tidak setiap langkah
+     * penanganan menghasilkan berkas. Yang menghasilkan biasanya langkah
+     * peninjauan lapangan dan penutupan laporan, sebab keduanya melahirkan
+     * berita acara.
+     *
      * @param  string  $nomorPengaduan  Nomor pengaduan yang dicari
      * @return array<int, array<string, mixed>> Riwayat penanganan
      */
@@ -950,6 +955,7 @@ class DummyData
                     'status_sebelum' => StatusPengaduan::MenungguDiterima->value,
                     'status_sesudah' => StatusPengaduan::Diterima->value,
                     'catatan' => 'Pengaduan diterima dan dijadwalkan peninjauan lapangan.',
+                    'dokumen_tindak_lanjut' => null,
                 ],
                 [
                     'tanggal_penanganan' => '2026-08-06',
@@ -957,6 +963,7 @@ class DummyData
                     'status_sebelum' => StatusPengaduan::Diterima->value,
                     'status_sesudah' => StatusPengaduan::Diproses->value,
                     'catatan' => 'Peninjauan selesai. Pembersihan saluran dijadwalkan pekan depan bersama warga.',
+                    'dokumen_tindak_lanjut' => 'pengaduan/1/BeritaAcaraPeninjauan_pgd-2026-0001.pdf',
                 ],
             ],
             'PGD-2026-0002' => [
@@ -966,6 +973,7 @@ class DummyData
                     'status_sebelum' => StatusPengaduan::MenungguDiterima->value,
                     'status_sesudah' => StatusPengaduan::Diterima->value,
                     'catatan' => 'Laporan diterima, menunggu jadwal peninjauan kondisi atap.',
+                    'dokumen_tindak_lanjut' => null,
                 ],
             ],
             'PGD-2026-0005' => [
@@ -975,6 +983,7 @@ class DummyData
                     'status_sebelum' => StatusPengaduan::MenungguDiterima->value,
                     'status_sesudah' => StatusPengaduan::Diterima->value,
                     'catatan' => 'Laporan serangan hama diterima Dinas Pertanian.',
+                    'dokumen_tindak_lanjut' => null,
                 ],
                 [
                     'tanggal_penanganan' => '2026-08-01',
@@ -982,6 +991,7 @@ class DummyData
                     'status_sebelum' => StatusPengaduan::Diterima->value,
                     'status_sesudah' => StatusPengaduan::Diproses->value,
                     'catatan' => 'Penyuluh meninjau lahan dan mengambil sampel tanaman terserang.',
+                    'dokumen_tindak_lanjut' => 'pengaduan/5/HasilPemeriksaanHama_pgd-2026-0005.pdf',
                 ],
                 [
                     'tanggal_penanganan' => '2026-08-04',
@@ -989,6 +999,7 @@ class DummyData
                     'status_sebelum' => StatusPengaduan::Diproses->value,
                     'status_sesudah' => StatusPengaduan::Selesai->value,
                     'catatan' => 'Pendampingan penyemprotan selesai, kondisi tanaman membaik. Petani diberi panduan pengendalian hama.',
+                    'dokumen_tindak_lanjut' => 'pengaduan/5/BeritaAcaraPenyelesaian_pgd-2026-0005.pdf',
                 ],
             ],
         ];
@@ -1431,10 +1442,16 @@ class DummyData
     public static function role(): array
     {
         return [
-            ['id_role' => 1, 'nama' => 'Admin', 'deskripsi' => 'Akses penuh termasuk manajemen pengguna, role, dan audit log.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => true, 'is_aktif' => true, 'jumlah_izin' => 118, 'jumlah_pengguna' => 1],
+            ['id_role' => 1, 'nama' => 'Admin', 'deskripsi' => 'Akses penuh termasuk manajemen pengguna, role, dan audit log.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => true, 'is_aktif' => true, 'jumlah_izin' => 117, 'jumlah_pengguna' => 1],
             ['id_role' => 2, 'nama' => 'Dinas Transmigrasi', 'deskripsi' => 'Mengelola data wilayah, transmigran, rumah, lahan, dan infrastruktur.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 57, 'jumlah_pengguna' => 1],
             ['id_role' => 3, 'nama' => 'Dinas Pertanian', 'deskripsi' => 'Mengelola data poktan, komoditas, panen, alsintan, dan saprotan.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 64, 'jumlah_pengguna' => 1],
             ['id_role' => 4, 'nama' => 'Operator SP', 'deskripsi' => 'Memasukkan data pada satuan permukiman yang ditugaskan. Tanpa izin hapus.', 'cakupan_data' => CakupanData::PerSp->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 50, 'jumlah_pengguna' => 2],
+
+            // Role buatan Admin, bukan bawaan sistem. Sengaja dibuat tanpa
+            // pengguna agar keadaan "dapat dihapus" ikut terlihat pada
+            // antarmuka; keempat role bawaan di atas tidak akan pernah
+            // menampilkannya (rules.md 5.0c poin 8 dan 9).
+            ['id_role' => 5, 'nama' => 'Pendamping Lapangan', 'deskripsi' => 'Memantau perkembangan kawasan tanpa kewenangan mengubah data. Disusun Admin untuk pendamping yang bertugas sementara.', 'cakupan_data' => CakupanData::PerSp->value, 'is_bawaan' => false, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 16, 'jumlah_pengguna' => 0],
         ];
     }
 
@@ -1456,7 +1473,72 @@ class DummyData
             ['id_audit_log' => 6, 'waktu' => '2026-08-08 09:45:12', 'pengguna' => 'SITI RAHMAWATI', 'aksi' => 'Nonaktifkan Akun', 'nama_tabel' => 'user', 'record_id' => 5, 'ringkasan' => 'Menonaktifkan akun maria.goreti atas permintaan dinas.', 'ip_address' => '10.14.2.31'],
             ['id_audit_log' => 7, 'waktu' => '2026-08-07 15:18:55', 'pengguna' => 'BUDI SETIYONO', 'aksi' => 'Hapus', 'nama_tabel' => 'transmigran', 'record_id' => 4, 'ringkasan' => 'Menghapus data ANGELA SERAN yang terdaftar ganda.', 'ip_address' => '10.14.2.31'],
             ['id_audit_log' => 8, 'waktu' => '2026-08-06 10:02:19', 'pengguna' => 'YOSEP KLAU', 'aksi' => 'Hapus', 'nama_tabel' => 'lahan', 'record_id' => 9, 'ringkasan' => 'Menghapus data lahan duplikat LU-009.', 'ip_address' => '10.14.2.77'],
+
+            /*
+                Jejak di bawah menopang tab Catatan Log pada halaman rincian.
+                Setiap entitas contoh yang dapat dibuka rinciannya perlu punya
+                minimal satu entri `Tambah`, sebab pertanyaan pertama pembaca
+                riwayat selalu sama: siapa yang memasukkan data ini.
+
+                Transmigran 1 sengaja diberi rangkaian terpanjang agar keadaan
+                riwayat bertumpuk ikut teruji, sedangkan transmigran 2 sengaja
+                dibiarkan tanpa jejak sama sekali agar keadaan kosong juga
+                terlihat pada antarmuka.
+            */
+            ['id_audit_log' => 9, 'waktu' => '2026-03-14 09:12:40', 'pengguna' => 'YOSEP KLAU', 'aksi' => 'Tambah', 'nama_tabel' => 'transmigran', 'record_id' => 1, 'ringkasan' => 'Menambahkan data kepala keluarga YOHANES BERE.', 'ip_address' => '10.14.2.77'],
+            ['id_audit_log' => 10, 'waktu' => '2026-05-22 14:38:05', 'pengguna' => 'YOSEP KLAU', 'aksi' => 'Ubah', 'nama_tabel' => 'transmigran', 'record_id' => 1, 'ringkasan' => 'Memperbarui jumlah anggota keluarga menjadi 5 orang.', 'ip_address' => '10.14.2.77'],
+            ['id_audit_log' => 11, 'waktu' => '2026-04-02 10:25:17', 'pengguna' => 'YOSEP KLAU', 'aksi' => 'Tambah', 'nama_tabel' => 'rumah', 'record_id' => 1, 'ringkasan' => 'Menambahkan data rumah A-01 beserta penghuninya.', 'ip_address' => '10.14.2.77'],
+            ['id_audit_log' => 12, 'waktu' => '2026-04-02 10:41:03', 'pengguna' => 'YOSEP KLAU', 'aksi' => 'Tambah', 'nama_tabel' => 'lahan', 'record_id' => 1, 'ringkasan' => 'Menambahkan lahan pekarangan LP-001 milik YOHANES BERE.', 'ip_address' => '10.14.2.77'],
+            ['id_audit_log' => 13, 'waktu' => '2026-06-18 11:03:52', 'pengguna' => 'BUDI SANTOSO', 'aksi' => 'Ubah', 'nama_tabel' => 'lahan', 'record_id' => 1, 'ringkasan' => 'Melengkapi titik koordinat lahan hasil peninjauan lapangan.', 'ip_address' => '10.14.2.31'],
+            ['id_audit_log' => 14, 'waktu' => '2026-05-09 08:55:31', 'pengguna' => 'AGUS PRASETYO', 'aksi' => 'Tambah', 'nama_tabel' => 'poktan', 'record_id' => 1, 'ringkasan' => 'Mendaftarkan kelompok tani POKTAN MEKAR JAYA.', 'ip_address' => '10.14.2.55'],
+            ['id_audit_log' => 15, 'waktu' => '2026-08-02 13:47:26', 'pengguna' => 'MARIA GORETI', 'aksi' => 'Tambah', 'nama_tabel' => 'pengaduan', 'record_id' => 1, 'ringkasan' => 'Mencatat pengaduan PGD-2026-0001 dari warga SP Kapitan Meo.', 'ip_address' => '10.14.2.91'],
+            /*
+                Jejak bagi lima modul aset dan produksi. Tanpa entri di sini,
+                tab Catatan Log pada halaman rinciannya akan selalu kosong
+                sehingga bentuk jadinya tidak pernah terlihat.
+
+                Saprotan SENGAJA dibiarkan tanpa jejak sama sekali, agar
+                keadaan kosong ikut teruji pada halaman sungguhan. Pasangannya
+                di sisi kependudukan adalah transmigran 2.
+            */
+            ['id_audit_log' => 16, 'waktu' => '2026-02-18 09:33:12', 'pengguna' => 'AGUS PRASETYO', 'aksi' => 'Tambah', 'nama_tabel' => 'alsintan', 'record_id' => 1, 'ringkasan' => 'Mencatat bantuan traktor roda dua untuk POKTAN MEKAR JAYA.', 'ip_address' => '10.14.2.55'],
+            ['id_audit_log' => 17, 'waktu' => '2026-07-11 15:20:44', 'pengguna' => 'AGUS PRASETYO', 'aksi' => 'Ubah', 'nama_tabel' => 'alsintan', 'record_id' => 1, 'ringkasan' => 'Memperbarui kondisi traktor menjadi Rusak Ringan setelah pemeriksaan.', 'ip_address' => '10.14.2.55'],
+            ['id_audit_log' => 18, 'waktu' => '2026-01-27 10:14:58', 'pengguna' => 'BUDI SANTOSO', 'aksi' => 'Tambah', 'nama_tabel' => 'infrastruktur', 'record_id' => 1, 'ringkasan' => 'Mendata jalan penghubung utama SP Kapitan Meo.', 'ip_address' => '10.14.2.31'],
+            ['id_audit_log' => 19, 'waktu' => '2026-06-30 13:52:07', 'pengguna' => 'BUDI SANTOSO', 'aksi' => 'Ubah', 'nama_tabel' => 'infrastruktur', 'record_id' => 1, 'ringkasan' => 'Memutakhirkan kondisi jalan setelah perbaikan pengerasan.', 'ip_address' => '10.14.2.31'],
+            ['id_audit_log' => 20, 'waktu' => '2026-01-15 08:41:36', 'pengguna' => 'AGUS PRASETYO', 'aksi' => 'Tambah', 'nama_tabel' => 'komoditas', 'record_id' => 1, 'ringkasan' => 'Menambahkan komoditas JAGUNG beserta satuan panen bakunya.', 'ip_address' => '10.14.2.55'],
+            ['id_audit_log' => 21, 'waktu' => '2026-04-19 11:26:49', 'pengguna' => 'SITI RAHMAWATI', 'aksi' => 'Ubah', 'nama_tabel' => 'komoditas', 'record_id' => 1, 'ringkasan' => 'Melengkapi keterangan masa tanam komoditas JAGUNG.', 'ip_address' => '10.14.2.31'],
+            ['id_audit_log' => 22, 'waktu' => '2026-07-24 16:08:23', 'pengguna' => 'YOSEP KLAU', 'aksi' => 'Tambah', 'nama_tabel' => 'hasil_panen', 'record_id' => 1, 'ringkasan' => 'Mencatat hasil panen jagung dari lahan LU-002.', 'ip_address' => '10.14.2.77'],
+            ['id_audit_log' => 23, 'waktu' => '2026-07-25 09:17:55', 'pengguna' => 'AGUS PRASETYO', 'aksi' => 'Ubah', 'nama_tabel' => 'hasil_panen', 'record_id' => 1, 'ringkasan' => 'Membetulkan satuan volume panen dari kilogram menjadi ton.', 'ip_address' => '10.14.2.55'],
         ];
+    }
+
+    /**
+     * Riwayat perubahan satu baris data tertentu.
+     *
+     * Menyaring audit log memakai pasangan nama tabel dan nomor baris, lalu
+     * mengurutkannya dari yang terbaru. Dipakai tab "Catatan Log" pada halaman
+     * rincian, sehingga pertanyaan "siapa yang memasukkan data ini dan siapa
+     * yang pernah mengubahnya" terjawab di tempat datanya dibaca, bukan dengan
+     * menelusuri halaman audit log yang memuat seluruh sistem.
+     *
+     * KEDUA penyaring wajib dipakai bersama. Menyaring nama tabel saja membuat
+     * setiap baris menampilkan riwayat baris lain pada tabel yang sama.
+     *
+     * @param  string  $namaTabel  Nama tabel sesuai kolom audit log
+     * @param  int  $recordId  Nomor baris data yang dibuka
+     * @return array<int, array<string, mixed>> Riwayat, terbaru lebih dulu
+     */
+    public static function riwayatData(string $namaTabel, int $recordId): array
+    {
+        $cocok = array_values(array_filter(
+            self::auditLog(),
+            fn ($baris) => $baris['nama_tabel'] === $namaTabel
+                && (int) $baris['record_id'] === $recordId,
+        ));
+
+        usort($cocok, fn ($a, $b) => strcmp($b['waktu'], $a['waktu']));
+
+        return $cocok;
     }
 
     /**
@@ -1801,11 +1883,19 @@ class DummyData
         $kelolaSaja = ['lihat', 'tambah', 'ubah', 'hapus'];
         $bacaEkspor = ['lihat', 'export'];
 
+        // Akun tidak pernah dihapus, hanya dinonaktifkan (rules.md 14b poin 16),
+        // sehingga izin hapus tidak disediakan untuk modul pengguna. Menawarkan
+        // kotak centang bagi kewenangan yang mustahil dijalankan hanya
+        // menyesatkan admin yang menyusun role.
+        $tanpaHapus = ['lihat', 'tambah', 'ubah'];
+
         return [
             [
                 'kelompok' => 'Sistem',
                 'modul' => [
-                    ['kunci' => 'pengguna', 'nama' => 'Manajemen pengguna', 'aksi' => $kelolaSaja],
+                    ['kunci' => 'pengguna', 'nama' => 'Manajemen pengguna', 'aksi' => $tanpaHapus],
+                    // Role BOLEH dihapus selama bukan bawaan dan tidak dipakai
+                    // akun mana pun (rules.md 5.0c poin 8 dan 9).
                     ['kunci' => 'role', 'nama' => 'Pengaturan role', 'aksi' => $kelolaSaja],
                     ['kunci' => 'audit_log', 'nama' => 'Audit log', 'aksi' => $bacaEkspor],
                 ],
@@ -1912,7 +2002,9 @@ class DummyData
                 'komoditas' => $lituhe, 'musim_tanam' => $k, 'riwayat_tanam' => $lituhe, 'hasil_panen' => $lituhe,
                 'infrastruktur' => $lituhe, 'pengaduan' => $lituhe, 'penanganan_pengaduan' => $ltu,
                 'dashboard' => $le, 'laporan' => $le,
-                'pengguna' => $k, 'role' => $k, 'audit_log' => $le,
+                // Akun tidak pernah dihapus, hanya dinonaktifkan, sehingga
+                // modul pengguna berhenti di ubah (rules.md 14b poin 16).
+                'pengguna' => $ltu, 'role' => $k, 'audit_log' => $le,
             ],
             // Dinas Transmigrasi. Mengelola wilayah, kependudukan, dan lahan.
             // Pada modul pertanian hanya dapat melihat.
@@ -1951,6 +2043,17 @@ class DummyData
                 'komoditas' => $l, 'musim_tanam' => $l, 'riwayat_tanam' => $ltu, 'hasil_panen' => $ltu,
                 'infrastruktur' => $ltu, 'pengaduan' => $lt,
                 'dashboard' => $l, 'laporan' => $l,
+            ],
+            // Pendamping Lapangan. Role buatan Admin, bukan bawaan sistem.
+            // Hanya membaca, sehingga dapat diberikan kepada pendamping yang
+            // bertugas sementara tanpa risiko data berubah.
+            5 => [
+                'sp' => $l, 'inventaris_sp' => $l, 'fasilitas_sp' => $l,
+                'transmigran' => $l, 'rumah' => $l, 'riwayat_penghunian' => $l,
+                'lahan' => $l, 'poktan' => $l, 'anggota_poktan' => $l,
+                'alsintan' => $l, 'saprotan' => $l, 'komoditas' => $l,
+                'riwayat_tanam' => $l, 'hasil_panen' => $l,
+                'infrastruktur' => $l, 'dashboard' => $l,
             ],
         ];
 

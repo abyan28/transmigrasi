@@ -9,6 +9,13 @@ use App\Enums\Concerns\PunyaWarnaBadge;
  * Tingkat kesegeraan penanganan pengaduan.
  *
  * Daftar nilai baku ada pada agents/data-dictionary.md bagian 11.24.
+ *
+ * Prioritas ditentukan SEPENUHNYA oleh petugas yang menangani, tidak
+ * diturunkan otomatis dari kategori. Penurunan otomatis sempat dirancang lalu
+ * dibatalkan pada 2026-08-14: kategori hanya menyatakan pokok masalah,
+ * sedangkan kegentingan bergantung pada keadaan lapangan yang tidak terbaca
+ * dari kategori. Dua laporan berkategori sama dapat berbeda jauh
+ * kemendesakannya, dan hanya petugas yang meninjau dapat menilainya.
  */
 enum PrioritasPengaduan: string
 {
@@ -30,45 +37,4 @@ enum PrioritasPengaduan: string
         };
     }
 
-    /**
-     * Menyimpulkan prioritas awal dari kategori pengaduan.
-     *
-     * Warga tidak diminta menilai kegentingan laporannya sendiri. Selain
-     * karena ia tidak mengetahui skala prioritas dinas, meminta warga
-     * menilainya membuat hampir seluruh laporan ditandai mendesak, sehingga
-     * penandanya kehilangan makna.
-     *
-     * Nilai di sini hanyalah PERKIRAAN AWAL agar laporan tidak menumpuk tanpa
-     * urutan sebelum sempat ditinjau. Petugas yang memutuskan prioritas
-     * sebenarnya saat meninjau, dan revisinya tercatat pada audit log
-     * (agents/rules.md bagian 10b).
-     *
-     * Mengikuti pola BidangPengaduan::dariKategori() yang sudah dipakai untuk
-     * menentukan dinas penanganan.
-     *
-     * @param  KategoriPengaduan  $kategori  Kategori yang dipilih pelapor
-     * @return self Prioritas awal yang diperkirakan
-     */
-    public static function dariKategori(KategoriPengaduan $kategori): self
-    {
-        return match ($kategori) {
-            // Menyangkut keselamatan jiwa, tidak dapat menunggu antrean.
-            KategoriPengaduan::Bencana => self::Mendesak,
-
-            // Menyangkut layanan dasar dan tempat tinggal: air, listrik,
-            // jalan, dan rumah. Terhambat berarti kehidupan sehari-hari
-            // ikut terhenti.
-            KategoriPengaduan::Infrastruktur,
-            KategoriPengaduan::Rumah => self::Tinggi,
-
-            // Menyangkut penghidupan: lahan garapan, alat, dan hasil panen.
-            // Mendesak bagi pemiliknya, tetapi masih dapat dijadwalkan.
-            KategoriPengaduan::LahanUsaha,
-            KategoriPengaduan::Alsintan,
-            KategoriPengaduan::ProduksiPanen => self::Sedang,
-
-            // Sisanya, termasuk Lainnya, ditinjau menurut urutan masuk.
-            default => self::Rendah,
-        };
-    }
 }

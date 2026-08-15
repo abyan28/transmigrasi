@@ -70,7 +70,13 @@
             <div x-ref="panel" x-show="terbuka" x-transition
                 class="relative w-full sm:max-w-lg bg-white shadow-xl sm:rounded-2xl dark:bg-gray-900">
 
-                <form :action="aksi" method="POST" @submit="mengirim = true">
+                {{--
+                    enctype WAJIB, sebab modal ini kini memuat unggahan dokumen
+                    tindak lanjut. Tanpa itu berkasnya tidak pernah ikut terkirim
+                    dan kegagalannya berlangsung diam-diam.
+                --}}
+                <form :action="aksi" method="POST" enctype="multipart/form-data"
+                    @submit="mengirim = true">
                     @csrf
 
                     <div class="flex items-start justify-between gap-4 border-b border-gray-200 px-5 py-4 dark:border-gray-800">
@@ -116,20 +122,47 @@
                             </template>
                         </div>
 
-                        <input type="hidden" name="status_tujuan" :value="statusLanjut ?? ''" />
+                        {{--
+                            Nama isian disamakan dengan modal pada halaman
+                            rincian (status_sesudah, bukan status_tujuan), agar
+                            satu penangan di sisi server melayani keduanya.
+                        --}}
+                        <input type="hidden" name="status_sesudah" :value="statusLanjut ?? ''" />
 
-                        <div x-show="statusLanjut">
-                            <label for="{{ $nama }}_catatan"
-                                class="mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400">
-                                Catatan Penanganan<span class="text-error-500">*</span>
-                            </label>
-                            <textarea id="{{ $nama }}_catatan" name="catatan" rows="3" maxlength="500"
-                                placeholder="Jelaskan tindakan yang sudah dilakukan atau alasan perubahan status."
-                                class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30"></textarea>
-                            <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
-                                Catatan tampil pada halaman lacak yang dibuka warga, sehingga tulis dengan bahasa
-                                yang dapat dipahami pelapor.
-                            </p>
+                        <div x-show="statusLanjut" class="space-y-4">
+                            <div>
+                                <label for="{{ $nama }}_tanggal"
+                                    class="mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400">
+                                    Tanggal Penanganan<span class="text-error-500">*</span>
+                                </label>
+                                {{--
+                                    Tanggal penanganan tidak selalu sama dengan
+                                    tanggal pencatatan: petugas kerap meninjau
+                                    lapangan lebih dulu, baru mencatatnya setelah
+                                    kembali ke tempat yang berjaringan.
+                                --}}
+                                <input type="date" id="{{ $nama }}_tanggal" name="tanggal_penanganan" required
+                                    value="{{ date('Y-m-d') }}" max="{{ date('Y-m-d') }}"
+                                    class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90" />
+                            </div>
+
+                            <div>
+                                <label for="{{ $nama }}_catatan"
+                                    class="mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400">
+                                    Catatan Penanganan<span class="text-error-500">*</span>
+                                </label>
+                                <textarea id="{{ $nama }}_catatan" name="catatan" rows="3" required maxlength="500"
+                                    placeholder="Jelaskan tindakan yang sudah dilakukan atau alasan perubahan status."
+                                    class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30"></textarea>
+                                <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                                    Catatan tampil pada halaman lacak yang dibuka warga, sehingga tulis dengan bahasa
+                                    yang dapat dipahami pelapor.
+                                </p>
+                            </div>
+
+                            <x-sim.file-upload nama="dokumen_tindak_lanjut" label="Dokumen Tindak Lanjut"
+                                nama-dokumen="Tindak Lanjut"
+                                keterangan="Foto perbaikan, berita acara, atau surat tindak lanjut bila ada." />
                         </div>
                     </div>
 

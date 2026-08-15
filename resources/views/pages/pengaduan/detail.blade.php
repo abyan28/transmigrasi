@@ -43,19 +43,13 @@
             ['label' => 'Daftar Pengaduan', 'url' => route('pengaduan.index')],
             ['label' => $data['nomor_pengaduan']],
         ]">
-        <x-slot:aksi>
-            @if ($bolehTangani && $statusBerikutnya !== null)
-                <button type="button" @click="$dispatch('buka-modal', 'formPenanganan')"
-                    class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
-                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"
-                        aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Tandai {{ $statusBerikutnya->label() }}
-                </button>
-            @endif
-        </x-slot:aksi>
+        {{--
+            Tombol penanganan sengaja TIDAK diletakkan di sini, melainkan hanya
+            pada kolom kiri di bawah alur penanganan. Di sana ia bersebelahan
+            dengan stepper yang menunjukkan tahap laporan saat ini, sehingga
+            petugas melihat konteksnya sebelum menekan. Tombol kedua di kepala
+            halaman hanya menggandakan tindakan yang sama tanpa konteks apa pun.
+        --}}
     </x-sim.page-header>
 
     {{-- Prioritas Mendesak ditegaskan memakai aksen gold, satu dari empat pemakaian sah --}}
@@ -189,6 +183,7 @@
                     @foreach ([
                         'uraian' => 'Uraian Masalah',
                         'riwayat' => 'Riwayat Penanganan (' . count($riwayat) . ')',
+                        'log' => 'Catatan Log',
                     ] as $kunci => $label)
                         <button type="button" role="tab" @click="setTab('{{ $kunci }}')"
                             :aria-selected="tab === '{{ $kunci }}'"
@@ -260,16 +255,36 @@
                                             {{ $jejak['petugas'] }} &middot;
                                             {{ \Illuminate\Support\Carbon::parse($jejak['tanggal_penanganan'])->translatedFormat('d F Y') }}
                                         </p>
+
+                                        {{--
+                                            Dokumen tindak lanjut. Modal penanganan sudah lama
+                                            menyediakan isian unggahnya, tetapi hasilnya tidak
+                                            pernah ditampilkan kembali, sehingga berkas yang
+                                            sudah diunggah petugas tidak dapat dibuka siapa pun.
+                                        --}}
+                                        @if (! empty($jejak['dokumen_tindak_lanjut']))
+                                            <div class="mt-2">
+                                                <x-sim.tautan-dokumen modul="pengaduan"
+                                                    :id="$data['id_pengaduan']"
+                                                    :berkas="$jejak['dokumen_tindak_lanjut']" />
+                                            </div>
+                                        @endif
                                     </li>
                                 @endforeach
                             </ol>
 
                             <p class="mt-6 rounded-lg bg-gray-50 p-3.5 text-theme-xs text-gray-600 dark:bg-white/[0.03] dark:text-gray-400">
                                 Setiap perubahan status menambah jejak baru beserta petugas penangan dan catatannya,
-                                sehingga perkembangan laporan dapat ditelusuri dari awal.
+                                sehingga perkembangan laporan dapat ditelusuri dari awal. Dokumen tindak lanjut yang
+                                diunggah petugas ikut tersimpan pada jejak yang bersangkutan.
                             </p>
                         </div>
                     @endif
+                </div>
+
+                {{-- Catatan log: riwayat perubahan data ini saja --}}
+                <div x-show="tab === 'log'" x-cloak role="tabpanel">
+                    <x-sim.catatan-log nama-tabel="pengaduan" :record-id="$data['id_pengaduan']" />
                 </div>
             </div>
         </div>
