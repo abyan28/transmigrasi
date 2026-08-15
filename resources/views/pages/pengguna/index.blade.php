@@ -158,7 +158,7 @@
             <x-sim.stat-card label="Akun Nonaktif" :nilai="count($semua) - $aktif"
                 keterangan="Dinonaktifkan, bukan dihapus" />
             <x-sim.stat-card label="Wajib Ganti Sandi" :nilai="$perluGanti"
-                keterangan="User yang perlu mengubah sandi baru" />
+                keterangan="Kata sandi baru disetel admin" />
         </x-slot:ringkasan>
 
         <x-slot:filter>
@@ -306,15 +306,9 @@
                                 </svg>
                             </button>
                         @elseif ($u['is_aktif'])
-                            {{--
-                                Label menyebut AKIBATNYA, bukan sebab teknisnya:
-                                yang perlu Admin tahu di baris ini adalah tombol
-                                nonaktif tidak tersedia. Alasannya tetap terbaca
-                                lewat tooltip dan catatan di bawah tabel.
-                            --}}
                             <span class="rounded-lg bg-gray-50 px-2 py-1.5 text-theme-xs text-gray-500 dark:bg-white/5 dark:text-gray-400"
                                 title="Sistem menolak penonaktifan Admin terakhir yang masih aktif.">
-                                Tidak bisa dinonaktifkan
+                                Admin terakhir
                             </span>
                         @else
                             {{--

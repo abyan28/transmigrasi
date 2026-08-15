@@ -28,20 +28,17 @@ use App\Enums\SumberLaporan;
  * pada agents/data-dictionary.md. Ketika backend siap, penggantian cukup
  * menukar sumber datanya tanpa menyentuh satu pun berkas Blade.
  *
- * Data ini adalah CONTOH, bukan data nyata lapangan. Sampai 13 Agustus 2026
- * setiap halaman menampilkan penanda "Data contoh" untuk menegaskannya
- * (ANTISLOP-ID R-17 dan R-38); spanduk itu kemudian dicabut atas permintaan
- * dinas karena mengganggu saat pemaparan. Angkanya tetap contoh, hanya
- * penandanya yang hilang dari layar.
+ * Data ini adalah CONTOH, bukan data nyata lapangan. Setiap halaman yang
+ * memakainya wajib menampilkan penanda "Data contoh" agar tidak disalahartikan
+ * sebagai angka sungguhan (ANTISLOP-ID R-17 dan R-38).
  */
 class DummyData
 {
     /**
      * Menandai bahwa aplikasi masih memakai data contoh.
      *
-     * Sejak spanduk penandanya dicabut, tetapan ini adalah satu-satunya tempat
-     * keadaan tersebut tercatat. Diubah menjadi false ketika backend sudah
-     * tersambung pada Tahap 3.
+     * Dipakai layout untuk memutuskan apakah spanduk penanda perlu tampil.
+     * Diubah menjadi false ketika backend sudah tersambung.
      */
     public const MEMAKAI_DATA_CONTOH = true;
 
@@ -951,7 +948,7 @@ class DummyData
             'PGD-2026-0001' => [
                 [
                     'tanggal_penanganan' => '2026-08-03',
-                    'petugas' => 'BUDI SETIYONO',
+                    'petugas' => 'BUDI SANTOSO',
                     'status_sebelum' => StatusPengaduan::MenungguDiterima->value,
                     'status_sesudah' => StatusPengaduan::Diterima->value,
                     'catatan' => 'Pengaduan diterima dan dijadwalkan peninjauan lapangan.',
@@ -959,7 +956,7 @@ class DummyData
                 ],
                 [
                     'tanggal_penanganan' => '2026-08-06',
-                    'petugas' => 'BUDI SETIYONO',
+                    'petugas' => 'BUDI SANTOSO',
                     'status_sebelum' => StatusPengaduan::Diterima->value,
                     'status_sesudah' => StatusPengaduan::Diproses->value,
                     'catatan' => 'Peninjauan selesai. Pembersihan saluran dijadwalkan pekan depan bersama warga.',
@@ -1426,7 +1423,7 @@ class DummyData
     public static function pengguna(): array
     {
         return [
-            ['id_user' => 1, 'nama' => 'BUDI SETIYONO', 'username' => 'budi.setiyono', 'email' => 'budi.setiyono@malakakab.go.id', 'role' => 'Dinas Transmigrasi', 'role_id' => 2, 'jabatan' => 'Staf Bidang Ketransmigrasian', 'telepon' => '081234567890', 'is_aktif' => true, 'password_harus_diganti' => false, 'last_login_at' => '2026-08-11 07:42:00', 'satuan_permukiman' => []],
+            ['id_user' => 1, 'nama' => 'BUDI SANTOSO', 'username' => 'budi.santoso', 'email' => 'budi.santoso@malakakab.go.id', 'role' => 'Dinas Transmigrasi', 'role_id' => 2, 'jabatan' => 'Staf Bidang Ketransmigrasian', 'telepon' => '081234567890', 'is_aktif' => true, 'password_harus_diganti' => false, 'last_login_at' => '2026-08-11 07:42:00', 'satuan_permukiman' => []],
             ['id_user' => 2, 'nama' => 'SITI RAHMAWATI', 'username' => 'siti.rahmawati', 'email' => 'siti.r@malakakab.go.id', 'role' => 'Admin', 'role_id' => 1, 'jabatan' => 'Administrator Sistem', 'telepon' => '081234567891', 'is_aktif' => true, 'password_harus_diganti' => false, 'last_login_at' => '2026-08-11 08:15:00', 'satuan_permukiman' => []],
             ['id_user' => 3, 'nama' => 'AGUS PRASETYO', 'username' => 'agus.prasetyo', 'email' => 'agus.p@malakakab.go.id', 'role' => 'Dinas Pertanian', 'role_id' => 3, 'jabatan' => 'Penyuluh Pertanian', 'telepon' => '081234567892', 'is_aktif' => true, 'password_harus_diganti' => false, 'last_login_at' => '2026-08-10 14:20:00', 'satuan_permukiman' => []],
             ['id_user' => 4, 'nama' => 'YOSEP KLAU', 'username' => 'yosep.klau', 'email' => 'yosep.klau@malakakab.go.id', 'role' => 'Operator SP', 'role_id' => 4, 'jabatan' => 'Operator SP Kapitan Meo', 'telepon' => '081234567893', 'is_aktif' => true, 'password_harus_diganti' => true, 'last_login_at' => null, 'satuan_permukiman' => ['SP Kapitan Meo']],
@@ -1465,13 +1462,13 @@ class DummyData
         return [
             ['id_audit_log' => 1, 'waktu' => '2026-08-11 08:20:14', 'pengguna' => 'SITI RAHMAWATI', 'aksi' => 'Ubah', 'nama_tabel' => 'transmigran', 'record_id' => 1, 'ringkasan' => 'Memperbaiki ejaan nama YOHANES BERE sesuai kartu keluarga.', 'ip_address' => '10.14.2.31'],
             ['id_audit_log' => 2, 'waktu' => '2026-08-11 08:04:52', 'pengguna' => 'YOSEP KLAU', 'aksi' => 'Tambah', 'nama_tabel' => 'hasil_panen', 'record_id' => 5, 'ringkasan' => 'Mencatat panen jagung 3,900 ton di SP Weain.', 'ip_address' => '10.14.2.77'],
-            ['id_audit_log' => 3, 'waktu' => '2026-08-10 16:32:09', 'pengguna' => 'BUDI SETIYONO', 'aksi' => 'Ubah', 'nama_tabel' => 'rumah', 'record_id' => 3, 'ringkasan' => 'Mengubah status hunian A-03 menjadi Tidak Dihuni.', 'ip_address' => '10.14.2.31'],
+            ['id_audit_log' => 3, 'waktu' => '2026-08-10 16:32:09', 'pengguna' => 'BUDI SANTOSO', 'aksi' => 'Ubah', 'nama_tabel' => 'rumah', 'record_id' => 3, 'ringkasan' => 'Mengubah status hunian A-03 menjadi Tidak Dihuni.', 'ip_address' => '10.14.2.31'],
             // Penutupan pengaduan tercatat sebagai perubahan status, bukan
             // verifikasi data, sebab yang berubah adalah tahap penanganannya.
             ['id_audit_log' => 4, 'waktu' => '2026-08-10 14:22:41', 'pengguna' => 'AGUS PRASETYO', 'aksi' => 'Ubah', 'nama_tabel' => 'pengaduan', 'record_id' => 5, 'ringkasan' => 'Menutup pengaduan PGD-2026-0005 berstatus Selesai.', 'ip_address' => '10.14.2.55'],
             ['id_audit_log' => 5, 'waktu' => '2026-08-09 11:07:33', 'pengguna' => 'SITI RAHMAWATI', 'aksi' => 'Reset Kata Sandi', 'nama_tabel' => 'user', 'record_id' => 4, 'ringkasan' => 'Menyetel ulang kata sandi akun yosep.klau.', 'ip_address' => '10.14.2.31'],
             ['id_audit_log' => 6, 'waktu' => '2026-08-08 09:45:12', 'pengguna' => 'SITI RAHMAWATI', 'aksi' => 'Nonaktifkan Akun', 'nama_tabel' => 'user', 'record_id' => 5, 'ringkasan' => 'Menonaktifkan akun maria.goreti atas permintaan dinas.', 'ip_address' => '10.14.2.31'],
-            ['id_audit_log' => 7, 'waktu' => '2026-08-07 15:18:55', 'pengguna' => 'BUDI SETIYONO', 'aksi' => 'Hapus', 'nama_tabel' => 'transmigran', 'record_id' => 4, 'ringkasan' => 'Menghapus data ANGELA SERAN yang terdaftar ganda.', 'ip_address' => '10.14.2.31'],
+            ['id_audit_log' => 7, 'waktu' => '2026-08-07 15:18:55', 'pengguna' => 'BUDI SANTOSO', 'aksi' => 'Hapus', 'nama_tabel' => 'transmigran', 'record_id' => 4, 'ringkasan' => 'Menghapus data ANGELA SERAN yang terdaftar ganda.', 'ip_address' => '10.14.2.31'],
             ['id_audit_log' => 8, 'waktu' => '2026-08-06 10:02:19', 'pengguna' => 'YOSEP KLAU', 'aksi' => 'Hapus', 'nama_tabel' => 'lahan', 'record_id' => 9, 'ringkasan' => 'Menghapus data lahan duplikat LU-009.', 'ip_address' => '10.14.2.77'],
 
             /*
@@ -1587,9 +1584,9 @@ class DummyData
     {
         return [
             'id_user' => 1,
-            'nama' => 'BUDI SETIYONO',
-            'username' => 'budi.setiyono',
-            'email' => 'budi.setiyono@malakakab.go.id',
+            'nama' => 'BUDI SANTOSO',
+            'username' => 'budi.santoso',
+            'email' => 'budi.santoso@malakakab.go.id',
             'telepon' => '081234567890',
             'jabatan' => 'Staf Bidang Ketransmigrasian',
             'foto' => null,

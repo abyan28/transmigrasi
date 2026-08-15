@@ -5,7 +5,8 @@
  *
  * Menjaga agar halaman yang sudah dibangun tetap merender tanpa galat dan
  * tetap memenuhi aturan yang mudah tergeser tanpa disadari, terutama larangan
- * kontrol mati (ANTISLOP-ID R-24 dan R-26).
+ * kontrol mati (ANTISLOP-ID R-24 dan R-26) serta kewajiban penanda data contoh
+ * (R-17 dan R-38).
  */
 
 use App\Support\DummyData;
@@ -47,6 +48,10 @@ it('menyediakan tabel data alternatif untuk setiap grafik', function () {
 
     expect($jumlahTabel)->toBe($jumlahGrafik)
         ->and($jumlahGrafik)->toBeGreaterThan(0);
+});
+
+it('menampilkan penanda data contoh pada dashboard', function () {
+    $this->get(route('beranda'))->assertSee('Data contoh');
 });
 
 it('menampilkan angka ringkasan dalam format Indonesia', function () {
@@ -565,12 +570,9 @@ it('menandai pengaduan berprioritas mendesak yang belum selesai', function () {
 
 it('merender rekap pengaduan pada seluruh dasar pengelompokan', function () {
     foreach (['kategori', 'status', 'sp', 'prioritas', 'bidang'] as $kelompok) {
-        // Labelnya "Total" sejak 13 Agustus 2026, tanpa kata "kawasan".
-        // Dicocokkan beserta tagnya agar tidak lolos hanya karena kata
-        // "Total" kebetulan muncul di tempat lain pada halaman.
         $this->get(route('pengaduan.rekap', ['kelompok' => $kelompok]))
             ->assertOk()
-            ->assertSee('>Total</td>', false);
+            ->assertSee('Total kawasan');
     }
 });
 
@@ -999,12 +1001,19 @@ it('memakai CTA yang menyebut objeknya', function () {
         ->toContain('Simpan Hasil Panen');
 });
 
-/*
- * Uji "menampilkan penanda data contoh" dihapus pada 13 Agustus 2026 bersama
- * spanduknya, atas permintaan dinas. Selama Tahap 3 belum menyambungkan basis
- * data, angka di layar tetap berasal dari DummyData tanpa penanda apa pun.
- * Keadaan itu kini hanya terbaca dari DummyData::MEMAKAI_DATA_CONTOH.
- */
+it('menampilkan penanda data contoh pada seluruh halaman petugas', function () {
+    // R-17 dan R-38: angka contoh dilarang disajikan seolah data nyata.
+    foreach ([
+        route('beranda'),
+        route('transmigran.index'),
+        route('rumah.index'),
+        route('lahan.index'),
+        route('panen.index'),
+        route('pengaduan.index'),
+    ] as $alamat) {
+        $this->get($alamat)->assertSee('Data contoh');
+    }
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -1203,10 +1212,7 @@ it('menyembunyikan tombol nonaktifkan pada admin aktif terakhir', function () {
 
     $isi = $this->get(route('pengguna.index'))->getContent();
 
-    // Label pengganti tombol nonaktif. Sejak 13 Agustus 2026 ia menyebut
-    // akibatnya, bukan sebabnya; "Admin terakhir" kini hanya ada di tooltip,
-    // sehingga yang diperiksa wajib teks yang benar-benar terbaca mata.
-    expect($isi)->toContain('Tidak bisa dinonaktifkan')
+    expect($isi)->toContain('Admin terakhir')
         ->and($isi)->not->toContain('/pengguna/' . $adminAktif[0]['id_user'] . '/nonaktifkan');
 });
 
@@ -1257,7 +1263,7 @@ it('merender matriks izin role sesuai tabel rules.md 5.1', function () {
         expect($jumlah)->toBe($role['jumlah_izin']);
     }
 
-    expect($isi)->toContain('Izin per Fitur');
+    expect($isi)->toContain('Izin per Modul');
 });
 
 it('menyajikan role terkunci sebagai hanya baca', function () {

@@ -1,9 +1,5 @@
 {{--
-    Isian role beserta matriks izin per fitur.
-
-    Istilah "fitur" dipakai di antarmuka sejak 13 Agustus 2026, menggantikan
-    "modul". Di dalam kode, sumber datanya masih bernama `modul` mengikuti
-    DummyData::daftarIzin() dan tabel agents/rules.md bagian 5.1.
+    Isian role beserta matriks izin per modul.
 
     Empat ketentuan yang dijaga di sini:
 
@@ -11,10 +7,10 @@
        alasannya, bukan dengan kontrol yang tampak dapat diklik lalu ditolak
        diam-diam (agents/rules.md bagian 5.0a, ANTISLOP-ID R-26).
     2. Kotak centang hanya dirender untuk aksi yang benar-benar berlaku pada
-       fitur tersebut. Dashboard tidak mengenal tambah maupun hapus, sehingga
+       modul tersebut. Dashboard tidak mengenal tambah maupun hapus, sehingga
        selnya dibiarkan kosong, bukan diisi kotak yang mustahil bermakna.
-    3. Akses ke SP adalah pilihan terpisah dari izin. Izin menjawab boleh
-       melakukan apa, akses ke SP menjawab SP mana datanya boleh dilihat
+    3. Cakupan data adalah pilihan terpisah dari izin. Izin menjawab boleh
+       melakukan apa, cakupan menjawab boleh melihat data siapa
        (rules.md bagian 5.0b).
     4. Menonaktifkan role tidak menghapusnya, agar riwayat audit log yang
        menyebut role tersebut tetap terbaca.
@@ -89,7 +85,7 @@
             </div>
 
             <div>
-                <label for="{{ $awalan }}_cakupan_data" class="{{ $kelasLabel }}">Akses ke SP</label>
+                <label for="{{ $awalan }}_cakupan_data" class="{{ $kelasLabel }}">Cakupan Data</label>
                 <select id="{{ $awalan }}_cakupan_data" name="cakupan_data" class="{{ $kelasKontrol }}"
                     @disabled($terkunci)>
                     @foreach (CakupanData::cases() as $cakupan)
@@ -100,8 +96,8 @@
                     @endforeach
                 </select>
                 <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
-                    Menentukan SP mana saja yang datanya boleh dilihat, terpisah dari izin di bawah.
-                    Role Per SP membuat seluruh izinnya otomatis terbatas pada SP yang ditugaskan.
+                    Menentukan data siapa yang boleh dilihat, terpisah dari daftar izin di bawah.
+                    Role bercakupan Per SP membuat seluruh izinnya otomatis terbatas pada SP yang ditugaskan.
                 </p>
             </div>
         </div>
@@ -110,9 +106,9 @@
     {{-- Bagian 2: matriks izin --}}
     <section>
         <div class="flex flex-wrap items-baseline justify-between gap-2">
-            <h3 class="{{ $kelasBagian }}">Izin per Fitur</h3>
+            <h3 class="{{ $kelasBagian }}">Izin per Modul</h3>
             <p class="text-theme-xs text-gray-500 dark:text-gray-400">
-                Sel kosong berarti aksi tersebut tidak berlaku pada fitur itu.
+                Sel kosong berarti aksi tersebut tidak berlaku pada modul itu.
             </p>
         </div>
 
@@ -120,7 +116,7 @@
             <table class="min-w-full text-left text-theme-sm">
                 <thead class="bg-gray-50 dark:bg-white/[0.02]">
                     <tr>
-                        <th scope="col" class="px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Fitur</th>
+                        <th scope="col" class="px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Modul</th>
                         @foreach ($semuaAksi as $label)
                             <th scope="col" class="px-3 py-3 text-center font-medium text-gray-500 dark:text-gray-400">
                                 {{ $label }}
@@ -172,7 +168,7 @@
                                             @endif
                                         @else
                                             <span class="text-gray-200 dark:text-gray-800" aria-hidden="true">&middot;</span>
-                                            <span class="sr-only">{{ $semuaAksi[$aksi] }} tidak berlaku pada fitur ini</span>
+                                            <span class="sr-only">{{ $semuaAksi[$aksi] }} tidak berlaku pada modul ini</span>
                                         @endif
                                     </td>
                                 @endforeach
