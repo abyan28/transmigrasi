@@ -918,17 +918,15 @@ Pada SQL referensi kolom ini bertipe `VARCHAR` bebas; dijadikan ENUM agar dapat 
 ### 11.24 Prioritas pengaduan
 `Rendah` · `Sedang` · `Tinggi` · `Mendesak`
 
-### 11.25 Akses ke SP
-`Semua SP` · `Per SP`
+### 11.25 Cakupan data role
+`Semua` · `Per SP`
 
-Menentukan **SP mana** datanya boleh dilihat, terpisah dari izin yang menentukan **boleh melakukan apa**. Kolomnya tetap bernama `role.cakupan_data`; yang berubah sejak 13 Agustus 2026 adalah sebutannya di antarmuka.
+Menentukan **data siapa** yang boleh dilihat, terpisah dari izin yang menentukan **boleh melakukan apa**.
 
 | Nilai | Penyaring query | Pemakai |
 |---|---|---|
-| `Semua SP` | tanpa penyaring | Admin, Dinas Transmigrasi, Dinas Pertanian |
+| `Semua` | tanpa penyaring | Admin, Dinas Transmigrasi, Dinas Pertanian |
 | `Per SP` | dibatasi SP pada `user_satuan_permukiman` | Operator SP |
-
-Nilai `Milik Sendiri` pernah tersedia "untuk kebutuhan mendatang" dan dihapus pada tanggal yang sama. Tidak ada peran di kawasan ini yang hanya boleh melihat barisnya sendiri, dan pilihan yang tidak pernah dipakai hanya membuat Admin menebak maknanya saat menyusun role.
 
 ### 11.26 Aksi permission
 `lihat` · `tambah` · `ubah` · `hapus` · `export`
