@@ -195,7 +195,7 @@ Alamat URL **tidak menampilkan primary key berurutan**. Pola berurutan seperti `
 2. Role disimpan sebagai data pada tabel `role`, sehingga Admin dapat membuat, mengubah, dan menonaktifkan role lewat antarmuka tanpa mengubah struktur database.
 3. Hak akses ditentukan oleh **dua hal yang terpisah**:
    - **Izin** menjawab *boleh melakukan apa*, contoh `transmigran.lihat` dan `transmigran.ubah`,
-   - **Cakupan data** menjawab *boleh melihat data siapa*, dengan nilai `Semua` atau `Per SP`.
+   - **Akses ke SP** menjawab *SP mana datanya boleh dilihat*, dengan nilai `Semua SP` atau `Per SP`. Disebut "cakupan data" pada kode dan kolom `role.cakupan_data`; antarmuka memakai "Akses ke SP" sejak 13 Agustus 2026 karena itulah batas yang sungguh dipakai di lapangan. Nilai `Milik Sendiri` ditiadakan pada tanggal yang sama, sebab tidak ada peran yang hanya boleh melihat barisnya sendiri.
 4. Daftar izin ditanam sistem lewat seeder dan **tidak dapat ditambah atau dihapus Admin**, karena setiap izin harus punya pasangan pemeriksa di dalam kode. Admin hanya memasangkannya ke role.
 5. **Seluruh pengguna sistem adalah petugas.** Warga transmigran tidak memiliki akun; data mereka dikelola petugas, sedangkan pengaduan diajukan lewat kanal publik tanpa login (§10b).
 
@@ -210,15 +210,15 @@ Dibuat lewat seeder sebagai konfigurasi awal agar sistem langsung dapat dipakai.
 | **Dinas Pertanian** | Semua | Pantau dashboard dan laporan pertanian; tambah dan ubah data poktan, komoditas, panen, alsintan, dan saprotan; tangani pengaduan bidang pertanian |
 | **Operator SP** | Per SP | Tambah dan ubah data transmigran, rumah, lahan, dan panen **hanya pada SP yang ditugaskan**. Tanpa izin hapus, tanpa akses manajemen pengguna dan audit log |
 
-#### 5.0b Cakupan data
+#### 5.0b Akses ke SP
 
-6. Cakupan data wajib diterapkan sebagai **penyaring query**, bukan sekadar menyembunyikan menu:
+6. Akses ke SP wajib diterapkan sebagai **penyaring query**, bukan sekadar menyembunyikan menu:
 
-   | Cakupan | Penyaring |
+   | Akses ke SP | Penyaring |
    |---|---|
-   | `Semua` | tanpa penyaring |
+   | `Semua SP` | tanpa penyaring |
    | `Per SP` | dibatasi SP yang ditugaskan pada tabel `user_satuan_permukiman` |
-   
+
 7. Akun berrole bercakupan `Per SP` **wajib** memiliki minimal satu penugasan SP. Bila belum ditugaskan, pengguna tidak melihat data apa pun, bukan melihat seluruhnya. Ini disengaja agar kelalaian penugasan tidak berubah menjadi kebocoran data.
 
 #### 5.0c Perlindungan
@@ -561,7 +561,7 @@ Parameter dikelompokkan menurut satu pertanyaan: **tanpa ini, apakah tempat ters
 |---|---|
 | R-15 | CTA menyebut objeknya: "Simpan Data Transmigran", bukan "Simpan" |
 | R-16 | Dilarang buzzword. Pakai kalimat yang menyebut kejadian nyata: "3 pengaduan menunggu ditindaklanjuti" |
-| R-17, R-38 | Selama tahap data dummy, setiap halaman wajib menampilkan penanda **"Data contoh"** yang terlihat jelas. Angka dummy dilarang disajikan seolah data nyata |
+| R-17, R-38 | Angka dummy dilarang disajikan seolah data nyata. Penanda **"Data contoh"** per halaman **dicabut 13 Agustus 2026** atas permintaan dinas karena mengganggu saat pemaparan; sampai Tahap 3 menyambungkan basis data, keadaan itu hanya terbaca dari `DummyData::MEMAKAI_DATA_CONTOH` |
 | R-23 | Dilarang membuat logo, avatar, atau aset visual tanpa instruksi. Pakai placeholder berlabel jujur |
 | R-24, R-26 | Menu dan tombol hanya untuk halaman/aksi yang benar-benar ada. Kontrol mati dihapus, bukan dibiarkan diam |
 | R-25 | Kontras WCAG AA wajib dipenuhi pada **kedua** mode tema (`ui-spec.md` §3.2) |

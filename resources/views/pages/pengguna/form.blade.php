@@ -62,23 +62,29 @@
         <h3 class="{{ $kelasBagian }}">Identitas Petugas</h3>
         <div class="mt-3 grid gap-4 sm:grid-cols-2">
             <div class="sm:col-span-2">
-                <label for="{{ $awalan }}_nama" class="{{ $kelasLabel }}">Nama Lengkap</label>
+                <label for="{{ $awalan }}_nama" class="{{ $kelasLabel }}">
+                    Nama Lengkap<span class="text-error-500">*</span>
+                </label>
                 <input type="text" id="{{ $awalan }}_nama" name="nama"
-                    value="{{ old('nama', $data['nama'] ?? '') }}" maxlength="100"
-                    placeholder="Contoh: BUDI SANTOSO" class="{{ $kelasKontrol }}" />
+                    value="{{ old('nama', $data['nama'] ?? '') }}" maxlength="100" required
+                    placeholder="Contoh: BUDI SETIYONO" class="{{ $kelasKontrol }}" />
             </div>
 
             <div>
-                <label for="{{ $awalan }}_jabatan" class="{{ $kelasLabel }}">Jabatan</label>
+                <label for="{{ $awalan }}_jabatan" class="{{ $kelasLabel }}">
+                    Jabatan<span class="text-error-500">*</span>
+                </label>
                 <input type="text" id="{{ $awalan }}_jabatan" name="jabatan"
-                    value="{{ old('jabatan', $data['jabatan'] ?? '') }}" maxlength="100"
+                    value="{{ old('jabatan', $data['jabatan'] ?? '') }}" maxlength="100" required
                     placeholder="Contoh: Staf Bidang Ketransmigrasian" class="{{ $kelasKontrol }}" />
             </div>
 
             <div>
-                <label for="{{ $awalan }}_telepon" class="{{ $kelasLabel }}">Nomor Telepon</label>
+                <label for="{{ $awalan }}_telepon" class="{{ $kelasLabel }}">
+                    Nomor Telepon<span class="text-error-500">*</span>
+                </label>
                 <input type="tel" id="{{ $awalan }}_telepon" name="telepon"
-                    value="{{ old('telepon', $data['telepon'] ?? '') }}" maxlength="20"
+                    value="{{ old('telepon', $data['telepon'] ?? '') }}" maxlength="20" required
                     placeholder="0812xxxxxxx" class="{{ $kelasKontrol }} tabular-nums" />
             </div>
         </div>
@@ -145,7 +151,7 @@
                 </p>
                 <p class="mt-1 text-theme-sm text-gray-600 dark:text-gray-400">
                     Setelah akun tersimpan, kata sandi sementara tampil satu kali di layar dan
-                    dikirim ke surel di atas. Petugas wajib menggantinya saat pertama kali masuk.
+                    dikirim ke email di atas. Petugas wajib menggantinya saat pertama kali masuk.
                 </p>
             </div>
         @else
@@ -164,8 +170,10 @@
         <h3 class="{{ $kelasBagian }}">Kewenangan</h3>
         <div class="mt-3 space-y-4">
             <div>
-                <label for="{{ $awalan }}_role_id" class="{{ $kelasLabel }}">Role</label>
-                <select id="{{ $awalan }}_role_id" name="role_id" x-model="roleId"
+                <label for="{{ $awalan }}_role_id" class="{{ $kelasLabel }}">
+                    Role<span class="text-error-500">*</span>
+                </label>
+                <select id="{{ $awalan }}_role_id" name="role_id" x-model="roleId" required
                     class="{{ $kelasKontrol }}">
                     <option value="">Pilih role</option>
                     @foreach ($daftarRole as $role)
@@ -175,7 +183,7 @@
                     @endforeach
                 </select>
                 <p class="{{ $kelasBantuan }}">
-                    Setiap akun memegang tepat satu role. Cakupan data menentukan data siapa saja yang boleh dilihat.
+                    Setiap akun memegang tepat satu role. Akses ke SP menentukan data apa saja yang boleh dilihat.
                 </p>
             </div>
 
@@ -184,7 +192,18 @@
                 (rules.md 14b poin 2), dan ikut menyesuaikan begitu role diganti.
             --}}
             <div x-show="perluSp" x-cloak x-transition>
-                <span class="{{ $kelasLabel }}">Penugasan Satuan Permukiman</span>
+                {{--
+                    Diberi tanda wajib karena memang wajib, tetapi TANPA atribut
+                    required. HTML tidak mengenal "centang minimal satu": required
+                    pada kotak centang menuntut kotak ITU dicentang, sehingga
+                    seluruh SP akan jadi wajib. Selain itu bagian ini sering
+                    tersembunyi, dan required pada kolom tersembunyi membuat
+                    peramban menolak kiriman tanpa dapat menunjukkan letak
+                    kesalahannya. Pemeriksaannya jadi tanggung jawab server.
+                --}}
+                <span class="{{ $kelasLabel }}">
+                    Penugasan Satuan Permukiman<span class="text-error-500">*</span>
+                </span>
 
                 <div class="rounded-lg border border-gray-300 p-3 dark:border-gray-700">
                     <p class="mb-3 text-theme-xs text-gray-500 dark:text-gray-400">

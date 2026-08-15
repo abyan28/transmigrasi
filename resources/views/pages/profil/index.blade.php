@@ -198,21 +198,21 @@
                         </div>
 
                         <div>
-                            <dt class="text-theme-sm font-medium text-gray-700 dark:text-gray-400">Cakupan Data</dt>
+                            <dt class="text-theme-sm font-medium text-gray-700 dark:text-gray-400">Akses ke SP</dt>
                             <dd class="mt-1 text-theme-sm text-gray-800 dark:text-white/90">
                                 {{ $cakupan?->label() ?? '-' }}
                             </dd>
+                            {{--
+                                Keterangan hanya ditulis untuk cakupan yang dikenali.
+                                Bila nilainya di luar daftar, lebih baik diam daripada
+                                menyatakan akses yang belum tentu benar.
+                            --}}
                             <dd class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
-                                @switch($cakupan)
-                                    @case(\App\Enums\CakupanData::Semua)
-                                        Anda dapat melihat data seluruh satuan permukiman di kawasan ini.
-                                        @break
-                                    @case(\App\Enums\CakupanData::PerSp)
-                                        Anda hanya dapat melihat data pada satuan permukiman yang ditugaskan kepada Anda.
-                                        @break
-                                    @default
-                                        Anda hanya dapat melihat data yang terkait dengan akun Anda sendiri.
-                                @endswitch
+                                @if ($cakupan === \App\Enums\CakupanData::PerSp)
+                                    Anda hanya dapat melihat data pada satuan permukiman yang ditugaskan kepada Anda.
+                                @elseif ($cakupan === \App\Enums\CakupanData::Semua)
+                                    Anda dapat melihat data seluruh satuan permukiman di kawasan ini.
+                                @endif
                             </dd>
                         </div>
 
@@ -223,7 +223,7 @@
                             <dd class="mt-1.5">
                                 @if ($cakupan !== \App\Enums\CakupanData::PerSp)
                                     <p class="text-theme-xs text-gray-500 dark:text-gray-400">
-                                        Tidak diperlukan, karena cakupan data Anda mencakup seluruh satuan permukiman.
+                                        Tidak diperlukan, karena akses Anda mencakup seluruh satuan permukiman.
                                     </p>
                                 @elseif (empty($pengguna['satuan_permukiman']))
                                     {{--
@@ -250,7 +250,7 @@
                     </dl>
 
                     <p class="mt-6 rounded-lg bg-gray-50 p-3.5 text-theme-xs text-gray-600 dark:bg-white/[0.03] dark:text-gray-400">
-                        Rincian izin per modul diatur admin pada menu Role dan Hak Akses.
+                        Rincian izin per fitur diatur admin pada menu Role dan Hak Akses.
                         Bila Anda memerlukan akses tambahan, sampaikan kepada admin.
                     </p>
                 </div>

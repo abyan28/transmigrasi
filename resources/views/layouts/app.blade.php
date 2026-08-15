@@ -243,27 +243,17 @@
             <!-- app header end -->
             <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
                 {{--
-                    Penanda data contoh. Wajib tampil selama aplikasi belum
-                    tersambung ke data nyata, agar angka di layar tidak
-                    disalahartikan sebagai data lapangan sungguhan
-                    (ANTISLOP-ID R-17 dan R-38).
-                --}}
-                @if (\App\Support\DummyData::MEMAKAI_DATA_CONTOH)
-                    <div class="mb-5 flex items-start gap-3 rounded-xl border border-yellow-300 bg-yellow-50 p-3.5 dark:border-yellow-500/30 dark:bg-yellow-500/10"
-                        role="status">
-                        <svg class="mt-0.5 h-5 w-5 shrink-0 text-yellow-600 dark:text-yellow-400" fill="none"
-                            viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-                        </svg>
-                        <p class="text-theme-xs text-yellow-800 dark:text-yellow-200">
-                            <span class="font-semibold">Data contoh.</span>
-                            Seluruh angka dan nama pada halaman ini adalah contoh untuk keperluan
-                            pembangunan tampilan, bukan data lapangan yang sebenarnya.
-                        </p>
-                    </div>
-                @endif
+                    Spanduk "Data contoh" dicabut pada 13 Agustus 2026 atas
+                    permintaan dinas: pada setiap halaman ia memakan satu blok
+                    penuh di atas judul dan mengganggu saat tampilan dipaparkan.
 
+                    Konsekuensinya diterima secara sadar. Selama Tahap 3 belum
+                    menyambungkan basis data, angka di layar TETAP berasal dari
+                    App\Support\DummyData dan kini tidak ada lagi penanda yang
+                    memberitahukannya. Tetapan MEMAKAI_DATA_CONTOH sengaja
+                    dipertahankan sebagai satu-satunya sumber kebenaran keadaan
+                    ini, agar penanda mudah dipasang kembali bila diperlukan.
+                --}}
                 @yield('content')
             </div>
         </div>
