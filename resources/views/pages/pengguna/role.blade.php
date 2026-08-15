@@ -6,10 +6,10 @@
 
     Hak akses ditentukan DUA hal yang terpisah:
     - izin menjawab boleh melakukan apa,
-    - cakupan data menjawab boleh melihat data siapa.
+    - akses ke SP menjawab SP mana datanya boleh dilihat.
 
     Pemisahan ini penting: dua orang dengan izin sama persis dapat melihat
-    kumpulan data yang berbeda, bergantung cakupannya.
+    kumpulan data yang berbeda, bergantung SP yang boleh diaksesnya.
 --}}
 @extends('layouts.app')
 
@@ -46,18 +46,14 @@
             <h2 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">Izin</h2>
             <p class="mt-2 text-theme-sm text-gray-600 dark:text-gray-400">
                 Menjawab <span class="font-medium">boleh melakukan apa</span>, contohnya melihat,
-                menambah, mengubah, menghapus, atau mengekspor data pada satu modul.
-            </p>
-            <p class="mt-2 text-theme-xs text-gray-500 dark:text-gray-400">
-                Daftar izin ditanam sistem dan tidak dapat ditambah admin, karena setiap izin harus
-                punya pasangan pemeriksa di dalam kode.
+                menambah, mengubah, menghapus, atau mengekspor data pada satu fitur.
             </p>
         </div>
         <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
-            <h2 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">Cakupan Data</h2>
+            <h2 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">Akses ke SP</h2>
             <p class="mt-2 text-theme-sm text-gray-600 dark:text-gray-400">
-                Menjawab <span class="font-medium">boleh melihat data siapa</span>, bernilai Semua,
-                Per SP, atau Milik Sendiri.
+                Menjawab <span class="font-medium">SP mana datanya boleh dilihat</span>, bernilai
+                Semua SP atau Per SP.
             </p>
             <p class="mt-2 text-theme-xs text-gray-500 dark:text-gray-400">
                 Diterapkan sebagai penyaring query, bukan sekadar menyembunyikan menu, sehingga tidak
@@ -88,27 +84,55 @@
                     </div>
 
                     <div class="text-right">
-                        <p class="text-theme-xs text-gray-500 dark:text-gray-400">Cakupan data</p>
+                        <p class="text-theme-xs text-gray-500 dark:text-gray-400">Akses ke SP</p>
                         <p class="mt-0.5 text-theme-sm font-medium text-gray-800 dark:text-white/90">
                             {{ $r['cakupan_data'] }}</p>
                     </div>
                 </div>
 
+                @php
+                    // Ketiga nilai ini dibuat berbentuk gelembung agar terbaca
+                    // sekilas saat beberapa role dibandingkan berturut-turut.
+                    // Sebagai teks biasa, angkanya menyatu dengan labelnya.
+                    //
+                    // Bentuknya sengaja mengikuti pil "Terkunci" dan "Bawaan
+                    // sistem" di kepala kartu ini, bukan komponen status-badge,
+                    // sebab badge itu memakai titik penanda status sedangkan
+                    // ketiga nilai berikut bukan status.
+                    $kelasGelembung = 'inline-flex items-center rounded-full px-2.5 py-1 text-theme-xs font-medium';
+                    $kelasNetral = 'bg-gray-100 text-gray-700 dark:bg-white/5 dark:text-gray-300';
+                    $dapatDihapus = ! ($r['is_bawaan'] || $r['jumlah_pengguna'] > 0);
+                @endphp
+
                 <dl class="mt-5 grid gap-4 border-t border-gray-200 pt-4 sm:grid-cols-3 dark:border-gray-800">
                     <div>
                         <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Jumlah izin</dt>
-                        <dd class="mt-0.5 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
-                            {{ $r['jumlah_izin'] }} izin</dd>
+                        <dd class="mt-1.5">
+                            <span class="{{ $kelasGelembung }} {{ $kelasNetral }} tabular-nums">
+                                {{ $r['jumlah_izin'] }} izin
+                            </span>
+                        </dd>
                     </div>
                     <div>
                         <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Dipakai akun</dt>
-                        <dd class="mt-0.5 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
-                            {{ $r['jumlah_pengguna'] }} akun</dd>
+                        <dd class="mt-1.5">
+                            <span class="{{ $kelasGelembung }} {{ $kelasNetral }} tabular-nums">
+                                {{ $r['jumlah_pengguna'] }} akun
+                            </span>
+                        </dd>
                     </div>
                     <div>
                         <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Dapat dihapus</dt>
-                        <dd class="mt-0.5 text-theme-sm text-gray-800 dark:text-white/90">
-                            {{ $r['is_bawaan'] || $r['jumlah_pengguna'] > 0 ? 'Tidak' : 'Ya' }}
+                        <dd class="mt-1.5">
+                            {{--
+                                "Ya" diberi warna hijau karena itulah keadaan
+                                yang jarang dan berarti tindakan benar-benar
+                                tersedia. "Tidak" dibiarkan netral, sebab role
+                                yang terlindungi bukan keadaan keliru.
+                            --}}
+                            <span class="{{ $kelasGelembung }} {{ $dapatDihapus ? 'bg-green-50 text-green-700 dark:bg-green-500/15 dark:text-green-400' : $kelasNetral }}">
+                                {{ $dapatDihapus ? 'Ya' : 'Tidak' }}
+                            </span>
                         </dd>
                     </div>
                 </dl>

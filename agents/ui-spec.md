@@ -863,7 +863,7 @@ Berlaku untuk seluruh teks dan elemen yang **tampil di antarmuka**. Dokumen inte
 | **R-02** dilarang em dash | Label, tombol, pesan validasi, pesan galat, dan judul halaman memakai koma, titik dua, atau tanda kurung. Untuk data kosong dipakai tanda hubung `-` (§10) |
 | **R-15** CTA spesifik | Tombol menyebut objeknya: "Simpan Data Transmigran", "Unduh Rekap Panen", "Ajukan Pengaduan". Dilarang "Simpan", "Kirim", "Lihat" tanpa objek |
 | **R-16** tanpa buzzword | Dilarang "canggih", "terintegrasi penuh", "solusi menyeluruh". Pakai kalimat yang menyebut apa yang terjadi: "Data tersimpan", "3 pengaduan menunggu ditindaklanjuti" |
-| **R-17, R-38** angka jujur | Selama tahap data dummy, setiap halaman menampilkan penanda **"Data contoh"** yang terlihat jelas. Angka dummy tidak boleh disajikan seolah data nyata |
+| **R-17, R-38** angka jujur | Angka dummy tidak boleh disajikan seolah data nyata. Penanda **"Data contoh"** per halaman **dicabut 13 Agustus 2026** atas permintaan dinas; keadaan data contoh kini hanya terbaca dari `DummyData::MEMAKAI_DATA_CONTOH`, bukan dari layar |
 | **R-26** tanpa kontrol mati | Tombol yang belum berfungsi dihapus, bukan dibiarkan diam. Bila terpaksa ada, wajib berlabel "Segera hadir" dan diberi komentar `// TODO` di kode |
 | **R-24** navigasi jujur | Menu sidebar hanya memuat halaman yang benar-benar ada. Menu di luar kewenangan role tidak dirender sama sekali |
 | **R-30** bukan kloning | TailAdmin dipakai sebagai fondasi berlisensi MIT dengan seluruh `--color-brand-*` ditimpa palet Kementerian, halaman contoh dihapus, dan motif identitas sendiri ditambahkan (§2.3). Ini adopsi template, bukan peniruan identitas produk lain |
