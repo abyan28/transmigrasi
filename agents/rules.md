@@ -253,7 +253,7 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **-*
 | Lahan | L T U H | L T U | L | L T U |
 | Dokumen lahan (HPL/SHM) | L T U H | L T | L | L T |
 | Kelompok tani | L T U H | L | L T U | L T U |
-| Anggota poktan | L T U H | L | L T U | L T U |
+| Anggota poktan | L T U | L | L T U | L T U |
 | Alsintan | L T U H | L | L T U | L T U |
 | Saprotan | L T U H | L | L T U | L T U |
 | Komoditas | L T U H | L | L T U | L |
@@ -324,11 +324,18 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **-*
 ### 7a. Aturan Fitur Kelompok Tani (Poktan)
 1. Setiap poktan wajib memiliki profil berisi nama poktan dan desa/SP asal.
 2. Data ketua poktan minimal memuat nama, NIK, telepon, dan email.
+2a. **Ketua poktan tidak selalu berasal dari transmigran.** Banyak poktan diketuai penduduk setempat yang bukan peserta program, sehingga membatasi pilihan pada daftar transmigran membuat poktan semacam itu tidak dapat didata sama sekali. Form karena itu bercabang lebih dulu lewat `is_ketua_transmigran`: bila ketua sudah terdata sebagai transmigran, ia **dipilih dari daftar** agar NIK dan tautan profilnya tetap sahih dan tidak ada dua versi data; bila bukan, **nama dan NIK diketik langsung** pada kolom `nama_ketua` dan `nik_ketua`.
+2b. **Kontak yang disimpan pada poktan adalah kontak ketua, bukan kontak kelompok** (`telepon_ketua`, `email_ketua`, `alamat_ketua`). Telepon terisi sendiri dari data transmigran saat ketua dipilih dari daftar, tetapi **tetap dapat disunting** sebab petugas kerap memegang nomor yang lebih baru. Email diisi manual, karena tabel `transmigran` tidak menyimpan email padahal poin 2 mewajibkannya.
 3. Sistem mencatat jumlah anggota beserta daftar anggota yang berasal dari transmigran.
 4. Setiap anggota mencatat nama, NIK, tanggal masuk, status keaktifan (Aktif, Tidak Aktif, Sudah Keluar), dan tanggal keluar bila ada.
+4a. **Data anggota wajib dapat diubah setelah tersimpan.** Status keaktifan dan tanggal keluar pada poin 4 justru berubah belakangan, sehingga menyediakannya hanya pada saat penambahan membuat keduanya tidak pernah dapat diisi. Yang tidak disediakan adalah **penghapusan**, sesuai 5.1 catatan 7.
+4b. **Jabatan anggota tidak memuat nilai `Ketua`.** Ketua ditetapkan pada profil poktan (poin 2a), dan menyediakannya juga pada daftar anggota membuat satu poktan dapat memiliki dua ketua berbeda tanpa penjaga apa pun.
+4c. **Perpindahan anggota antar poktan dicatat sebagai dua baris.** Baris pada poktan lama ditandai `Sudah Keluar` beserta tanggal dan alasannya, lalu dibuat baris baru pada poktan tujuan. Memindahkan `poktan_id` pada baris yang sama akan menghapus jejak keanggotaan di poktan lama seolah tidak pernah ada.
+4d. **Seorang transmigran hanya boleh berstatus Aktif pada satu poktan** dalam satu waktu (6.4). UNIQUE `(poktan_id, transmigran_id)` hanya mencegah baris ganda pada poktan yang sama, sehingga pembatasan ini ditegakkan di tingkat aplikasi saat menyimpan anggota baru.
 5. Poktan dapat ditautkan ke lahan, komoditas, alsintan, dan saprotan.
 6. Poktan dapat dilampiri dokumen pendukung.
 7. Rekap jumlah poktan dan anggotanya harus tersedia per desa/SP.
+8. **Keanggotaan poktan ditetapkan dari sisi poktan, bukan dari form transmigran.** Kolom `status_anggota_poktan` pada transmigran adalah **penanda turunan** yang dihitung dari keanggotaan berstatus Aktif, bukan isian mandiri. Menyediakannya sebagai isian membuat dua sumber kebenaran yang tidak pernah tersinkron.
 
 ### 7b. Aturan Fitur Alsintan
 1. Sistem membedakan alsintan **milik pribadi transmigran** dan **bantuan pemerintah yang disalurkan melalui poktan**.

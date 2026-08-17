@@ -69,9 +69,22 @@
 
         <div class="sm:col-span-2">
             <label for="{{ $awalan }}_status_anggota" class="{{ $kelasLabel }}">Status Keaktifan</label>
-            <select id="{{ $awalan }}_status_anggota" name="status" x-model="status" class="{{ $kelasKontrol }}">
+            {{--
+                Memakai @change, bukan x-model. Modal ubah mengisi isian ini
+                dengan menyetel `.value` secara langsung, dan x-model akan
+                menimpanya kembali dengan nilai awal Alpine sehingga bagian
+                tanggal keluar tidak pernah muncul untuk anggota yang memang
+                sudah berstatus Sudah Keluar.
+
+                `x-init` menyelaraskan keadaan awal untuk kasus yang sama.
+            --}}
+            <select id="{{ $awalan }}_status_anggota" name="status"
+                x-init="status = $el.value" @change="status = $event.target.value"
+                class="{{ $kelasKontrol }}">
                 @foreach (StatusKeaktifanAnggota::cases() as $s)
-                    <option value="{{ $s->value }}">{{ $s->value }}</option>
+                    <option value="{{ $s->value }}"
+                        @selected(old('status', $data['status'] ?? StatusKeaktifanAnggota::Aktif->value) === $s->value)>
+                        {{ $s->value }}</option>
                 @endforeach
             </select>
             <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">

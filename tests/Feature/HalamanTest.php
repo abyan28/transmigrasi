@@ -277,11 +277,18 @@ it('memakai nama kolom kamus data pada isian form', function () {
         'nama_kepala_keluarga', 'nik', 'no_kk', 'jenis_kelamin', 'tempat_lahir',
         'tanggal_lahir', 'pendidikan_terakhir', 'pekerjaan_kepala_keluarga',
         'jumlah_anggota_keluarga', 'pendapatan_per_bulan', 'daerah_asal',
-        'tahun_kedatangan', 'status_tinggal', 'status_anggota_poktan', 'telepon',
+        'tahun_kedatangan', 'status_tinggal', 'telepon',
         'dokumen_pendukung', 'keterangan', 'satuan_permukiman_id',
     ] as $kolom) {
         expect($isi)->toContain('name="' . $kolom . '"');
     }
+
+    // `status_anggota_poktan` sengaja BUKAN isian (rules.md 7a.8). Nilainya
+    // turunan dari keanggotaan berstatus Aktif pada `anggota_poktan`, dan
+    // menyediakannya sebagai pilihan Ya/Tidak di sini menciptakan dua sumber
+    // kebenaran yang tidak pernah tersinkron: petugas dapat menyatakan "Ya"
+    // tanpa seorang pun mendaftarkannya ke kelompok mana pun.
+    expect($isi)->not->toContain('name="status_anggota_poktan"');
 });
 
 /*
@@ -3255,4 +3262,96 @@ it('mencabut kewenangan export dari seluruh sumber kebenaran', function () {
     // menjanjikan kewenangan yang tidak lagi ada di kode.
     expect(file_get_contents(base_path('agents/rules.md')))
         ->not->toContain('**E** = export');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Kelompok tani: ketua, jabatan, dan keanggotaan
+|--------------------------------------------------------------------------
+*/
+
+it('menyediakan dua jalur pengisian ketua poktan', function () {
+    // Ketua poktan tidak selalu transmigran (rules.md 7a.2a). Banyak poktan
+    // diketuai penduduk setempat yang bukan peserta program, dan membatasi
+    // pilihan pada daftar transmigran membuat poktan semacam itu tidak dapat
+    // didata sama sekali.
+    $isi = $this->get(route('poktan.index'))->assertOk()->getContent();
+
+    expect($isi)->toContain('name="is_ketua_transmigran"')
+        // Jalur 1: dipilih dari daftar, agar NIK dan tautan profilnya sahih.
+        ->and($isi)->toContain('name="ketua_transmigran_id"')
+        // Jalur 2: diketik langsung untuk ketua non-transmigran.
+        ->and($isi)->toContain('name="nama_ketua"')
+        ->and($isi)->toContain('name="nik_ketua"');
+});
+
+it('menyimpan kontak ketua, bukan kontak kelompok, pada poktan', function () {
+    // Nama kolom lama (`telepon`, `email`, `alamat_sekretariat`) menyatakan
+    // kontak kelompok, padahal data contoh dan halaman rincian sejak awal
+    // memperlakukannya sebagai kontak ketua. Penamaan disamakan agar dokumen
+    // dan kode menyebut hal yang sama (rules.md 7a.2b).
+    $isi = $this->get(route('poktan.index'))->assertOk()->getContent();
+
+    expect($isi)->toContain('name="telepon_ketua"')
+        ->and($isi)->toContain('name="email_ketua"')
+        ->and($isi)->toContain('name="alamat_ketua"');
+});
+
+it('mencabut Ketua dari pilihan jabatan anggota poktan', function () {
+    // Ketua ditetapkan pada profil poktan. Menyediakannya juga di daftar
+    // anggota membuat satu poktan dapat memiliki dua ketua berbeda tanpa
+    // penjaga apa pun (rules.md 7a.4b).
+    expect(array_column(App\Enums\JabatanAnggotaPoktan::cases(), 'value'))
+        ->toBe(['Sekretaris', 'Bendahara', 'Anggota']);
+
+    foreach (App\Support\DummyData::anggotaPoktan() as $anggota) {
+        expect($anggota['jabatan'])->not->toBe('Ketua');
+    }
+});
+
+it('menyediakan jalur mengubah data anggota poktan', function () {
+    // Tanpa ini, status keaktifan dan tanggal keluar tidak pernah dapat diisi
+    // setelah anggota tersimpan, padahal justru keduanya yang berubah
+    // belakangan (rules.md 7a.4a). Sebelumnya halaman rincian hanya punya
+    // tombol tambah.
+    $isi = $this->get(route('poktan.detail', 1))->assertOk()->getContent();
+
+    // Pola aksi dikirim ke Alpine lewat @js, sehingga garis miringnya lolos
+    // sebagai `\/`. Dicocokkan setelah lolosan itu dibuang agar uji tidak
+    // bergantung pada cara Blade menuliskan JSON.
+    $tanpaLolosan = str_replace('\\/', '/', $isi);
+
+    expect($isi)->toContain('formUbahAnggotaPoktan')
+        ->and($tanpaLolosan)->toContain('/anggota-poktan/:id');
+
+    // Rutenya benar-benar ada, bukan hanya modal yang menganga.
+    expect(Illuminate\Support\Facades\Route::has('anggota-poktan.perbarui'))->toBeTrue();
+});
+
+it('tidak menyediakan penghapusan anggota poktan', function () {
+    // Anggota yang berhenti ditandai Sudah Keluar agar catatan penyaluran
+    // saprotan di masa lalu tetap memiliki penerima yang jelas. Karena itu
+    // huruf H dicabut dari matriks kewenangan agar dokumen tidak menjanjikan
+    // tindakan yang memang tidak ada.
+    expect(Illuminate\Support\Facades\Route::has('anggota-poktan.hapus'))->toBeFalse();
+
+    expect(App\Support\DummyData::izinRole(1)['anggota_poktan'])
+        ->not->toContain('hapus');
+
+    expect(file_get_contents(base_path('agents/rules.md')))
+        ->toContain('| Anggota poktan | L T U | L | L T U | L T U |');
+});
+
+it('menetapkan keanggotaan poktan dari sisi poktan saja', function () {
+    // Dua sumber kebenaran untuk satu fakta selalu berakhir berbeda: petugas
+    // dapat menyatakan "Ya" pada form transmigran tanpa seorang pun
+    // mendaftarkannya ke kelompok mana pun (rules.md 7a.8).
+    $transmigran = $this->get(route('transmigran.index'))->assertOk()->getContent();
+
+    expect($transmigran)->not->toContain('name="status_anggota_poktan"');
+
+    // Sebaliknya, form anggota poktan tetap memegang penetapannya.
+    $poktan = $this->get(route('poktan.detail', 1))->assertOk()->getContent();
+
+    expect($poktan)->toContain('name="transmigran_id"');
 });

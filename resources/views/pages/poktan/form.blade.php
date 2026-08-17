@@ -1,9 +1,16 @@
 {{--
     Isian profil kelompok tani.
 
-    Ketua poktan dipilih dari daftar transmigran, bukan diketik bebas, agar
-    tautan ke halaman transmigran tetap sahih dan NIK tidak tertulis ganda
-    dengan ejaan berbeda.
+    Ketua poktan TIDAK selalu transmigran. Di lapangan banyak poktan diketuai
+    penduduk setempat yang bukan peserta program, sehingga membatasi pilihan
+    pada daftar transmigran membuat poktan semacam itu tidak dapat didata
+    sama sekali. Karena itu isian ini bercabang lebih dulu: bila ketua berasal
+    dari transmigran, ia dipilih dari daftar agar NIK dan tautan profilnya
+    tetap sahih; bila bukan, nama dan NIK diketik langsung.
+
+    Kontak yang disimpan adalah kontak KETUA, bukan kontak kelompok. Penamaan
+    kolomnya menyesuaikan data contoh dan halaman rincian yang sejak awal
+    memang memperlakukannya demikian.
 
     Nama kolom mengikuti agents/data-dictionary.md bagian 8.1.
 --}}
@@ -19,6 +26,14 @@
 
     $daftarSp = DummyData::satuanPermukiman();
     $daftarTransmigran = DummyData::transmigran();
+
+    // Peta id transmigran ke teleponnya, dipakai mengisi kontak ketua secara
+    // otomatis di sisi klien. Disusun di sini agar tidak ada permintaan
+    // tambahan ke peladen hanya untuk membaca satu nomor.
+    $kontakTransmigran = [];
+    foreach ($daftarTransmigran as $t) {
+        $kontakTransmigran[(string) $t['id_transmigran']] = $t['telepon'] ?? '';
+    }
 @endphp
 
 <div class="space-y-6">
@@ -54,50 +69,122 @@
         </div>
     </section>
 
-    <section>
+    <section x-data="{
+        dariTransmigran: {{ old('is_ketua_transmigran', $data['is_ketua_transmigran'] ?? true) ? 'true' : 'false' }},
+        ketuaId: '{{ old('ketua_transmigran_id', $data['ketua_transmigran_id'] ?? '') }}',
+        telepon: @js(old('telepon_ketua', $data['telepon_ketua'] ?? '')),
+        kontakTransmigran: @js($kontakTransmigran),
+        {{--
+            Telepon terisi sendiri saat ketua dipilih dari daftar, tetapi tetap
+            dapat disunting. Petugas kerap memegang nomor yang lebih baru
+            daripada yang tercatat pada data transmigran, dan menguncinya akan
+            memaksa mereka memperbaiki data transmigran lebih dulu hanya untuk
+            menyimpan satu poktan.
+
+            Email tidak ikut terisi sebab tabel transmigran memang tidak
+            menyimpannya (data-dictionary.md 6.1).
+        --}}
+        isiKontak() {
+            if (! this.dariTransmigran || this.ketuaId === '') {
+                return;
+            }
+            const kontak = this.kontakTransmigran[this.ketuaId];
+            if (kontak && this.telepon === '') {
+                this.telepon = kontak;
+            }
+        },
+    }">
         <h3 class="{{ $kelasBagian }}">Ketua Kelompok</h3>
-        <div class="mt-3 grid gap-4 sm:grid-cols-2">
-            <div class="sm:col-span-2">
-                <label for="{{ $awalan }}_ketua_transmigran_id" class="{{ $kelasLabel }}">Ketua</label>
-                <select id="{{ $awalan }}_ketua_transmigran_id" name="ketua_transmigran_id"
-                    class="{{ $kelasKontrol }}">
-                    <option value="">Pilih dari daftar transmigran</option>
-                    @foreach ($daftarTransmigran as $t)
-                        <option value="{{ $t['id_transmigran'] }}"
-                            @selected(old('nama_ketua', $data['nama_ketua'] ?? '') === $t['nama_kepala_keluarga'])>
-                            {{ $t['nama_kepala_keluarga'] }} &mdash; {{ $t['satuan_permukiman'] }}
-                        </option>
-                    @endforeach
-                </select>
-                <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
-                    Dipilih dari data transmigran agar NIK dan tautan profilnya tetap sahih, bukan diketik ulang.
+
+        <fieldset class="mt-3">
+            <legend class="{{ $kelasLabel }}">Ketua berasal dari data transmigran?<span class="text-error-500">*</span></legend>
+            <div class="flex flex-wrap gap-4">
+                <label class="inline-flex items-center gap-2 text-theme-sm text-gray-700 dark:text-gray-300">
+                    <input type="radio" name="is_ketua_transmigran" value="1" required
+                        x-model.boolean="dariTransmigran"
+                        class="h-4 w-4 border-gray-300 text-brand-500 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700" />
+                    Ya, sudah terdata sebagai transmigran
+                </label>
+                <label class="inline-flex items-center gap-2 text-theme-sm text-gray-700 dark:text-gray-300">
+                    <input type="radio" name="is_ketua_transmigran" value="0" required
+                        x-model.boolean="dariTransmigran"
+                        class="h-4 w-4 border-gray-300 text-brand-500 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700" />
+                    Bukan, penduduk setempat
+                </label>
+            </div>
+            <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                Banyak poktan diketuai penduduk setempat yang bukan peserta program transmigrasi.
+            </p>
+        </fieldset>
+
+        {{-- Jalur 1: ketua sudah terdata sebagai transmigran --}}
+        <div class="mt-4" x-show="dariTransmigran">
+            <label for="{{ $awalan }}_ketua_transmigran_id" class="{{ $kelasLabel }}">Ketua<span class="text-error-500">*</span></label>
+            <select id="{{ $awalan }}_ketua_transmigran_id" name="ketua_transmigran_id"
+                x-model="ketuaId" @change="isiKontak()"
+                :required="dariTransmigran" :disabled="! dariTransmigran"
+                class="{{ $kelasKontrol }}">
+                <option value="">Pilih dari daftar transmigran</option>
+                @foreach ($daftarTransmigran as $t)
+                    <option value="{{ $t['id_transmigran'] }}">
+                        {{ $t['nama_kepala_keluarga'] }} &mdash; {{ $t['satuan_permukiman'] }}
+                    </option>
+                @endforeach
+            </select>
+            <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                Nama dan NIK dibaca dari data transmigran, tidak diketik ulang, agar tidak ada dua versi yang berbeda ejaan.
+            </p>
+        </div>
+
+        {{-- Jalur 2: ketua bukan transmigran, nama dan NIK diketik langsung --}}
+        <div class="mt-4 grid gap-4 sm:grid-cols-2" x-show="! dariTransmigran" x-cloak>
+            <div>
+                <label for="{{ $awalan }}_nama_ketua" class="{{ $kelasLabel }}">Nama Ketua<span class="text-error-500">*</span></label>
+                <input type="text" id="{{ $awalan }}_nama_ketua" name="nama_ketua"
+                    value="{{ old('nama_ketua', $data['nama_ketua'] ?? '') }}" maxlength="255"
+                    :required="! dariTransmigran" :disabled="dariTransmigran"
+                    placeholder="Nama lengkap ketua" class="{{ $kelasKontrol }}" />
+            </div>
+
+            <div>
+                <label for="{{ $awalan }}_nik_ketua" class="{{ $kelasLabel }}">NIK Ketua<span class="text-error-500">*</span></label>
+                <input type="text" inputmode="numeric" id="{{ $awalan }}_nik_ketua" name="nik_ketua"
+                    value="{{ old('nik_ketua', $data['nik_ketua'] ?? '') }}"
+                    minlength="16" maxlength="16" pattern="[0-9]{16}"
+                    :required="! dariTransmigran" :disabled="dariTransmigran"
+                    placeholder="16 digit angka" class="{{ $kelasKontrol }} tabular-nums" />
+            </div>
+        </div>
+
+        <div class="mt-4 grid gap-4 sm:grid-cols-2">
+            <div>
+                <label for="{{ $awalan }}_telepon_ketua" class="{{ $kelasLabel }}">Telepon Ketua</label>
+                <input type="tel" id="{{ $awalan }}_telepon_ketua" name="telepon_ketua"
+                    x-model="telepon" maxlength="20"
+                    placeholder="0812xxxxxxx" class="{{ $kelasKontrol }} tabular-nums" />
+                <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400"
+                    x-show="dariTransmigran">
+                    Terisi sendiri dari data transmigran, dan tetap dapat diperbarui bila nomornya sudah berganti.
                 </p>
             </div>
 
             <div>
-                <label for="{{ $awalan }}_telepon_ketua" class="{{ $kelasLabel }}">Telepon Kelompok</label>
-                <input type="tel" id="{{ $awalan }}_telepon_ketua" name="telepon"
-                    value="{{ old('telepon', $data['telepon_ketua'] ?? '') }}" maxlength="20"
-                    placeholder="0812xxxxxxx" class="{{ $kelasKontrol }} tabular-nums" />
-            </div>
-
-            <div>
-                <label for="{{ $awalan }}_email_ketua" class="{{ $kelasLabel }}">Email Kelompok</label>
-                <input type="email" id="{{ $awalan }}_email_ketua" name="email"
-                    value="{{ old('email', $data['email_ketua'] ?? '') }}" maxlength="100"
-                    placeholder="poktan@example.id" class="{{ $kelasKontrol }}" />
+                <label for="{{ $awalan }}_email_ketua" class="{{ $kelasLabel }}">Email Ketua</label>
+                <input type="email" id="{{ $awalan }}_email_ketua" name="email_ketua"
+                    value="{{ old('email_ketua', $data['email_ketua'] ?? '') }}" maxlength="255"
+                    placeholder="nama@example.id" class="{{ $kelasKontrol }}" />
             </div>
         </div>
     </section>
 
     <section>
-        <h3 class="{{ $kelasBagian }}">Sekretariat</h3>
+        <h3 class="{{ $kelasBagian }}">Alamat dan Titik Lokasi</h3>
         <div class="mt-3 space-y-4">
             <div>
-                <label for="{{ $awalan }}_alamat_sekretariat" class="{{ $kelasLabel }}">Alamat Sekretariat</label>
-                <textarea id="{{ $awalan }}_alamat_sekretariat" name="alamat_sekretariat" rows="2" maxlength="255"
-                    placeholder="Alamat tempat pertemuan kelompok."
-                    class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30">{{ old('alamat_sekretariat', $data['alamat_sekretariat'] ?? '') }}</textarea>
+                <label for="{{ $awalan }}_alamat_ketua" class="{{ $kelasLabel }}">Alamat Ketua atau Sekretariat</label>
+                <textarea id="{{ $awalan }}_alamat_ketua" name="alamat_ketua" rows="2" maxlength="255"
+                    placeholder="Alamat ketua, atau tempat pertemuan kelompok bila ada."
+                    class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30">{{ old('alamat_ketua', $data['alamat_ketua'] ?? '') }}</textarea>
             </div>
 
             <x-sim.koordinat-input :lintang="old('lintang', $data['lintang'] ?? null)"

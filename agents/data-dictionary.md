@@ -607,12 +607,15 @@ Dokumen status lahan (HPL/SHM) dipisah ke tabel sendiri karena satu lahan dapat 
 |---|---|---|---|---|
 | `id_poktan` | `BIGINT UNSIGNED AUTO_INCREMENT` | TIDAK | PK | |
 | `satuan_permukiman_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | |
-| `ketua_transmigran_id` | `BIGINT UNSIGNED` | YA | FK | Menunjuk data transmigran ketua |
+| `is_ketua_transmigran` | `BOOLEAN` | TIDAK | | Bawaan `TRUE`; menentukan jalur pengisian data ketua |
+| `ketua_transmigran_id` | `BIGINT UNSIGNED` | YA | FK | Wajib bila `is_ketua_transmigran` = `TRUE`, selain itu `NULL` |
+| `nama_ketua` | `VARCHAR(255)` | YA | | Wajib bila `is_ketua_transmigran` = `FALSE`, selain itu `NULL` |
+| `nik_ketua` | `CHAR(16)` | YA | | Wajib bila `is_ketua_transmigran` = `FALSE`; tepat 16 digit angka |
 | `nama` | `VARCHAR(255)` | TIDAK | UQ | |
 | `tahun_berdiri` | `YEAR` | YA | | Tahun saja; tanggal pendirian poktan lama kerap tidak terdokumentasi |
-| `telepon` | `VARCHAR(20)` | YA | | Kontak kelompok, boleh berbeda dari kontak pribadi ketua |
-| `email` | `VARCHAR(255)` | YA | | Kontak kelompok |
-| `alamat_sekretariat` | `VARCHAR(255)` | YA | | |
+| `telepon_ketua` | `VARCHAR(20)` | YA | | Kontak ketua, bukan kontak kelompok |
+| `email_ketua` | `VARCHAR(255)` | YA | | Kontak ketua; `transmigran` tidak menyimpan email, sehingga di sinilah tempatnya |
+| `alamat_ketua` | `VARCHAR(255)` | YA | | Alamat ketua atau sekretariat kelompok |
 | `luas_lahan_kelompok` | `DECIMAL(12,2)` | YA | | Hektare |
 | `lintang` | `DECIMAL(10,7)` | YA | | |
 | `bujur` | `DECIMAL(10,7)` | YA | | |
@@ -620,7 +623,10 @@ Dokumen status lahan (HPL/SHM) dipisah ke tabel sendiri karena satu lahan dapat 
 | `keterangan` | `TEXT` | YA | | |
 
 **Catatan:**
-- Nama dan NIK ketua **tidak** disalin ke tabel ini; keduanya dibaca lewat relasi `ketua_transmigran_id` agar tidak ada dua versi data yang berpotensi tidak sinkron (`erd.md` §8.2 nomor 25).
+- **Ketua poktan tidak selalu transmigran.** Di lapangan banyak poktan diketuai penduduk setempat yang bukan peserta program, sehingga membatasi pilihan pada daftar transmigran membuat poktan semacam itu tidak dapat didata sama sekali. Kolom `is_ketua_transmigran` menentukan jalurnya, dan **tepat satu** dari dua jalur terisi:
+  - `TRUE` → `ketua_transmigran_id` wajib; `nama_ketua` dan `nik_ketua` dibiarkan `NULL` dan dibaca lewat relasi, agar tidak ada dua versi data yang berpotensi tidak sinkron (`erd.md` §8.2 nomor 25).
+  - `FALSE` → `nama_ketua` dan `nik_ketua` wajib; `ketua_transmigran_id` bernilai `NULL`.
+- **Kontak yang disimpan adalah kontak ketua, bukan kontak kelompok** (ditetapkan 2026-08-17). Sebelumnya kolom ini bernama `telepon`, `email`, dan `alamat_sekretariat` serta dinyatakan milik kelompok, tetapi seluruh data contoh dan halaman rincian sejak awal memperlakukannya sebagai kontak ketua. Penamaan disesuaikan agar dokumen dan kode menyebut hal yang sama. `email_ketua` juga menjadi satu-satunya tempat email ketua dapat disimpan, sebab tabel `transmigran` tidak memiliki kolom email padahal `rules.md` §7a poin 2 mewajibkannya.
 - Kolom `jumlah_anggota` sengaja **tidak ada**; nilainya dihitung dari `anggota_poktan` berstatus Aktif memakai `withCount` (`erd.md` §7.3).
 
 ### 8.2 `anggota_poktan`
@@ -638,7 +644,11 @@ Dokumen status lahan (HPL/SHM) dipisah ke tabel sendiri karena satu lahan dapat 
 
 ¹ UNIQUE gabungan `(poktan_id, transmigran_id)`.
 
-**Catatan:** anggota yang berhenti **tidak dihapus**, melainkan ditandai `status = 'Sudah Keluar'` agar riwayat tetap utuh (`rules.md` §5.1 catatan 1). Nama dan NIK anggota dibaca lewat relasi ke `transmigran`, tidak disalin.
+**Catatan:**
+- Anggota yang berhenti **tidak dihapus**, melainkan ditandai `status = 'Sudah Keluar'` agar riwayat tetap utuh (`rules.md` §5.1 catatan 7). Nama dan NIK anggota dibaca lewat relasi ke `transmigran`, tidak disalin.
+- **Jabatan tidak lagi memuat nilai `Ketua`** (2026-08-17). Ketua ditetapkan pada tabel `poktan`, dan menyediakannya juga di sini berarti satu poktan dapat memiliki dua ketua berbeda tanpa ada yang menyadarinya. Lihat §11.15.
+- **Perpindahan anggota antar poktan** dicatat sebagai dua baris: baris di poktan lama ditandai `Sudah Keluar` beserta `tanggal_keluar` dan alasannya, lalu dibuat baris baru pada poktan tujuan. Memindahkan `poktan_id` pada baris yang sama akan menghapus jejak keanggotaan di poktan lama seolah tidak pernah ada.
+- Seorang transmigran hanya boleh berstatus **Aktif pada satu poktan** dalam satu waktu (`rules.md` §6.4). UNIQUE gabungan di atas hanya mencegah baris ganda pada poktan yang sama, sehingga pembatasan ini ditegakkan di tingkat aplikasi.
 
 ### 8.3 `alsintan`
 
@@ -887,7 +897,9 @@ Sengaja berbeda dari §11.5 karena `rules.md` §6a.3 menetapkan istilah `Tidak R
 `HPL` · `SHM` · `SKT` · `Surat Keterangan Desa` · `Lainnya`
 
 ### 11.15 Jabatan anggota poktan
-`Ketua` · `Sekretaris` · `Bendahara` · `Anggota`
+`Sekretaris` — `Bendahara` — `Anggota`
+
+Nilai `Ketua` **dicabut 2026-08-17**. Ketua ditetapkan pada tabel `poktan` lewat `is_ketua_transmigran` beserta pasangannya, sebab ketua tidak selalu berasal dari anggota yang terdaftar di sini. Menyediakan `Ketua` pada kedua tempat membuat satu poktan dapat memiliki dua ketua berbeda tanpa penjaga apa pun.
 
 ### 11.16 Status keaktifan anggota
 `Aktif` · `Tidak Aktif` · `Sudah Keluar`
@@ -1044,7 +1056,7 @@ Tanda centang berarti kewenangan tersebut dibuat untuk fitur bersangkutan.
 | `lahan` | v | v | v | v |
 | `dokumen_lahan` | v | v | v | v |
 | `poktan` | v | v | v | v |
-| `anggota_poktan` | v | v | v | v |
+| `anggota_poktan` | v | v | v |   |
 | `alsintan` | v | v | v | v |
 | `saprotan` | v | v | v | v |
 | `komoditas` | v | v | v | v |
@@ -1056,9 +1068,9 @@ Tanda centang berarti kewenangan tersebut dibuat untuk fitur bersangkutan.
 | `penanganan_pengaduan` | v | v | v |   |
 | `dashboard` | v |   |   |   |
 
-Total **96 kewenangan** dari 26 fitur, dihitung dari tabel di atas.
+Total **95 kewenangan** dari 26 fitur, dihitung dari tabel di atas.
 
-Jumlah kewenangan yang benar-benar dipegang tiap role bawaan lebih sedikit, sesuai susunan pada `rules.md` 5.1: Admin 96, Dinas Transmigrasi 43, Dinas Pertanian 45, Operator SP 49.
+Jumlah kewenangan yang benar-benar dipegang tiap role bawaan lebih sedikit, sesuai susunan pada `rules.md` 5.1: Admin 95, Dinas Transmigrasi 43, Dinas Pertanian 45, Operator SP 49.
 
 ### 13.2 Kelompok fitur pada antarmuka
 

@@ -495,10 +495,29 @@ Route::put('/poktan/{id}', function (int $id) {
 Route::post('/anggota-poktan', function () {
     // Tahap 6: anggota yang berhenti DITANDAI Sudah Keluar, tidak pernah
     // dihapus, agar catatan penyaluran saprotan tetap memiliki penerima
-    // yang jelas (rules.md 5.1 catatan 5).
+    // yang jelas (rules.md 5.1 catatan 7).
+    //
+    // Tahap 6 juga wajib menolak transmigran yang masih berstatus Aktif pada
+    // poktan lain, sebab satu transmigran hanya boleh aktif di satu kelompok
+    // (rules.md 6.4). UNIQUE (poktan_id, transmigran_id) tidak menangkap ini,
+    // karena poktannya memang berbeda.
     return redirect()->back()
         ->with('sukses', 'Data anggota kelompok tani tersimpan.');
 })->name('anggota-poktan.simpan');
+
+Route::put('/anggota-poktan/{id}', function (string $id) {
+    // Satu-satunya jalur mengubah status keaktifan dan mengisi tanggal
+    // keluar. Sebelum rute ini ada, keduanya hanya dapat diisi saat anggota
+    // pertama kali ditambahkan, padahal justru keduanya yang berubah
+    // belakangan (rules.md 7a.4).
+    //
+    // Anggota yang pindah kelompok ditandai Sudah Keluar di sini, lalu
+    // didaftarkan sebagai baris baru pada kelompok tujuannya. Memindahkan
+    // poktan_id pada baris yang sama akan menghapus jejak keanggotaan di
+    // kelompok lama seolah tidak pernah ada.
+    return redirect()->back()
+        ->with('sukses', 'Perubahan data anggota tersimpan.');
+})->where('id', '[0-9]+')->name('anggota-poktan.perbarui');
 Route::get('/alsintan', function () {
     return view('pages.alsintan.index', ['title' => 'Alsintan']);
 })->name('alsintan.index');

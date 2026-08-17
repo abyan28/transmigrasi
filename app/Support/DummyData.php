@@ -1275,10 +1275,13 @@ class DummyData
     public static function poktan(): array
     {
         return [
-            ['id_poktan' => 1, 'nama' => 'POKTAN MEKAR JAYA', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'nama_ketua' => 'YOHANES BERE', 'nik_ketua' => '5321011505800001', 'telepon_ketua' => '081234567801', 'email_ketua' => 'mekarjaya@example.id', 'tahun_berdiri' => 2016, 'jumlah_anggota' => 24, 'lintang' => -9.5127800, 'bujur' => 124.9131400],
-            ['id_poktan' => 2, 'nama' => 'POKTAN SUBUR MAKMUR', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'nama_ketua' => 'MARIA DA COSTA', 'nik_ketua' => '5321012203850002', 'telepon_ketua' => '081234567802', 'email_ketua' => null, 'tahun_berdiri' => 2017, 'jumlah_anggota' => 18, 'lintang' => -9.5476500, 'bujur' => 124.8882300],
-            ['id_poktan' => 3, 'nama' => 'POKTAN TANI BERSATU', 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'nama_ketua' => 'PETRUS NAHAK', 'nik_ketua' => '5321010809780003', 'telepon_ketua' => '081234567803', 'email_ketua' => null, 'tahun_berdiri' => 2017, 'jumlah_anggota' => 21, 'lintang' => -9.4988700, 'bujur' => 124.9425600],
-            ['id_poktan' => 4, 'nama' => 'POKTAN HARAPAN BARU', 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain', 'nama_ketua' => 'GABRIEL LEKI', 'nik_ketua' => '5321010107750007', 'telepon_ketua' => '081234567807', 'email_ketua' => null, 'tahun_berdiri' => 2019, 'jumlah_anggota' => 15, 'lintang' => -9.5731200, 'bujur' => 124.8654900],
+            ['id_poktan' => 1, 'nama' => 'POKTAN MEKAR JAYA', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'is_ketua_transmigran' => true, 'ketua_transmigran_id' => 1, 'nama_ketua' => 'YOHANES BERE', 'nik_ketua' => '5321011505800001', 'telepon_ketua' => '081234567801', 'email_ketua' => 'yohanes.bere@example.id', 'alamat_ketua' => 'RT 02 RW 01, SP Kapitan Meo', 'tahun_berdiri' => 2016, 'jumlah_anggota' => 24, 'lintang' => -9.5127800, 'bujur' => 124.9131400],
+            ['id_poktan' => 2, 'nama' => 'POKTAN SUBUR MAKMUR', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'is_ketua_transmigran' => true, 'ketua_transmigran_id' => 2, 'nama_ketua' => 'MARIA DA COSTA', 'nik_ketua' => '5321012203850002', 'telepon_ketua' => '081234567802', 'email_ketua' => null, 'alamat_ketua' => null, 'tahun_berdiri' => 2017, 'jumlah_anggota' => 18, 'lintang' => -9.5476500, 'bujur' => 124.8882300],
+            ['id_poktan' => 3, 'nama' => 'POKTAN TANI BERSATU', 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'is_ketua_transmigran' => true, 'ketua_transmigran_id' => 3, 'nama_ketua' => 'PETRUS NAHAK', 'nik_ketua' => '5321010809780003', 'telepon_ketua' => '081234567803', 'email_ketua' => null, 'alamat_ketua' => null, 'tahun_berdiri' => 2017, 'jumlah_anggota' => 21, 'lintang' => -9.4988700, 'bujur' => 124.9425600],
+            // Ketua bukan transmigran, melainkan penduduk setempat. Sengaja
+            // disiapkan agar cabang kedua form ikut terlihat saat peninjauan:
+            // ketua_transmigran_id kosong, nama dan NIK diisi langsung.
+            ['id_poktan' => 4, 'nama' => 'POKTAN HARAPAN BARU', 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain', 'is_ketua_transmigran' => false, 'ketua_transmigran_id' => null, 'nama_ketua' => 'YOSEPH KLAU', 'nik_ketua' => '5321010207700099', 'telepon_ketua' => '081234567890', 'email_ketua' => null, 'alamat_ketua' => 'Desa Weain, Kobalima Timur', 'tahun_berdiri' => 2019, 'jumlah_anggota' => 15, 'lintang' => -9.5731200, 'bujur' => 124.8654900],
         ];
     }
 
@@ -1294,12 +1297,12 @@ class DummyData
     public static function anggotaPoktan(?int $poktanId = null): array
     {
         $data = [
-            ['id_anggota_poktan' => 1, 'poktan_id' => 1, 'poktan' => 'POKTAN MEKAR JAYA', 'transmigran_id' => 1, 'nama' => 'YOHANES BERE', 'nik' => '5321011505800001', 'jabatan' => 'Ketua', 'tanggal_masuk' => '2016-08-01', 'tanggal_keluar' => null, 'status' => 'Aktif'],
+            ['id_anggota_poktan' => 1, 'poktan_id' => 1, 'poktan' => 'POKTAN MEKAR JAYA', 'transmigran_id' => 1, 'nama' => 'YOHANES BERE', 'nik' => '5321011505800001', 'jabatan' => 'Anggota', 'tanggal_masuk' => '2016-08-01', 'tanggal_keluar' => null, 'status' => 'Aktif'],
             ['id_anggota_poktan' => 2, 'poktan_id' => 1, 'poktan' => 'POKTAN MEKAR JAYA', 'transmigran_id' => 2, 'nama' => 'MARIA DA COSTA', 'nik' => '5321012203850002', 'jabatan' => 'Sekretaris', 'tanggal_masuk' => '2016-08-01', 'tanggal_keluar' => null, 'status' => 'Aktif'],
             ['id_anggota_poktan' => 3, 'poktan_id' => 1, 'poktan' => 'POKTAN MEKAR JAYA', 'transmigran_id' => 8, 'nama' => 'YULITA HOAR', 'nik' => '5321011409910008', 'jabatan' => 'Anggota', 'tanggal_masuk' => '2019-03-12', 'tanggal_keluar' => null, 'status' => 'Aktif'],
             ['id_anggota_poktan' => 4, 'poktan_id' => 1, 'poktan' => 'POKTAN MEKAR JAYA', 'transmigran_id' => 5, 'nama' => 'DOMINGGUS TAEK', 'nik' => '5321010304820005', 'jabatan' => 'Anggota', 'tanggal_masuk' => '2017-05-20', 'tanggal_keluar' => '2025-09-30', 'status' => 'Sudah Keluar'],
-            ['id_anggota_poktan' => 5, 'poktan_id' => 3, 'poktan' => 'POKTAN TANI BERSATU', 'transmigran_id' => 3, 'nama' => 'PETRUS NAHAK', 'nik' => '5321010809780003', 'jabatan' => 'Ketua', 'tanggal_masuk' => '2017-02-15', 'tanggal_keluar' => null, 'status' => 'Aktif'],
-            ['id_anggota_poktan' => 6, 'poktan_id' => 4, 'poktan' => 'POKTAN HARAPAN BARU', 'transmigran_id' => 7, 'nama' => 'GABRIEL LEKI', 'nik' => '5321010107750007', 'jabatan' => 'Ketua', 'tanggal_masuk' => '2019-01-10', 'tanggal_keluar' => null, 'status' => 'Aktif'],
+            ['id_anggota_poktan' => 5, 'poktan_id' => 3, 'poktan' => 'POKTAN TANI BERSATU', 'transmigran_id' => 3, 'nama' => 'PETRUS NAHAK', 'nik' => '5321010809780003', 'jabatan' => 'Anggota', 'tanggal_masuk' => '2017-02-15', 'tanggal_keluar' => null, 'status' => 'Aktif'],
+            ['id_anggota_poktan' => 6, 'poktan_id' => 4, 'poktan' => 'POKTAN HARAPAN BARU', 'transmigran_id' => 7, 'nama' => 'GABRIEL LEKI', 'nik' => '5321010107750007', 'jabatan' => 'Anggota', 'tanggal_masuk' => '2019-01-10', 'tanggal_keluar' => null, 'status' => 'Aktif'],
             ['id_anggota_poktan' => 7, 'poktan_id' => 4, 'poktan' => 'POKTAN HARAPAN BARU', 'transmigran_id' => 6, 'nama' => 'FRANSISKA BRIA', 'nik' => '5321012511870006', 'jabatan' => 'Bendahara', 'tanggal_masuk' => '2019-01-10', 'tanggal_keluar' => null, 'status' => 'Tidak Aktif'],
         ];
 
@@ -1439,7 +1442,7 @@ class DummyData
     public static function role(): array
     {
         return [
-            ['id_role' => 1, 'nama' => 'Admin', 'deskripsi' => 'Akses penuh termasuk manajemen pengguna, role, dan audit log.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => true, 'is_aktif' => true, 'jumlah_izin' => 96, 'jumlah_pengguna' => 1],
+            ['id_role' => 1, 'nama' => 'Admin', 'deskripsi' => 'Akses penuh termasuk manajemen pengguna, role, dan audit log.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => true, 'is_aktif' => true, 'jumlah_izin' => 95, 'jumlah_pengguna' => 1],
             ['id_role' => 2, 'nama' => 'Dinas Transmigrasi', 'deskripsi' => 'Mengelola data wilayah, transmigran, rumah, lahan, dan infrastruktur.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 43, 'jumlah_pengguna' => 1],
             ['id_role' => 3, 'nama' => 'Dinas Pertanian', 'deskripsi' => 'Mengelola data poktan, komoditas, panen, alsintan, dan saprotan.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 45, 'jumlah_pengguna' => 1],
             ['id_role' => 4, 'nama' => 'Operator SP', 'deskripsi' => 'Memasukkan data pada satuan permukiman yang ditugaskan. Tanpa kewenangan hapus.', 'cakupan_data' => CakupanData::PerSp->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 49, 'jumlah_pengguna' => 2],
@@ -1932,7 +1935,7 @@ class DummyData
                 'kelompok' => 'Kelembagaan',
                 'modul' => [
                     ['kunci' => 'poktan', 'nama' => 'Kelompok tani', 'aksi' => $penuh],
-                    ['kunci' => 'anggota_poktan', 'nama' => 'Anggota poktan', 'aksi' => $penuh],
+                    ['kunci' => 'anggota_poktan', 'nama' => 'Anggota poktan', 'aksi' => $tanpaHapus],
                     ['kunci' => 'alsintan', 'nama' => 'Alsintan', 'aksi' => $penuh],
                     ['kunci' => 'saprotan', 'nama' => 'Saprotan', 'aksi' => $penuh],
                 ],
@@ -1996,7 +1999,7 @@ class DummyData
                 'inventaris_sp' => $k, 'fasilitas_sp' => $k, 'satuan' => $k,
                 'transmigran' => $k, 'rumah' => $k, 'riwayat_penghunian' => $k,
                 'lahan' => $k, 'dokumen_lahan' => $k,
-                'poktan' => $k, 'anggota_poktan' => $k, 'alsintan' => $k, 'saprotan' => $k,
+                'poktan' => $k, 'anggota_poktan' => $ltu, 'alsintan' => $k, 'saprotan' => $k,
                 'komoditas' => $k, 'musim_tanam' => $k, 'riwayat_tanam' => $k, 'hasil_panen' => $k,
                 'infrastruktur' => $k, 'pengaduan' => $k, 'penanganan_pengaduan' => $ltu,
                 'dashboard' => $l,

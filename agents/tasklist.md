@@ -379,6 +379,10 @@ Dikerjakan **dua gelombang**. Gelombang 1 membangun alur inti agar dapat divalid
   * Membuat daftar dan halaman rincian bertab: Anggota, Alsintan, Saprotan
   * **Anggota yang berhenti ditandai Sudah Keluar, bukan dihapus**, agar riwayat keanggotaan utuh
   * Status keaktifan bukan sekadar penanda: penyaluran saprotan hanya untuk anggota aktif, sehingga kolom ini dibaca modul lain
+  * **Diperbaiki 2026-08-17 atas revisi pemilik proyek (`notes.md` 6, empat poin).** Ditemukan bahwa **anggota poktan tidak dapat diubah sama sekali**: tidak ada tombol edit, modal, maupun rute PUT, sehingga status keaktifan dan tanggal keluar tidak pernah dapat diisi setelah tersimpan. Ditutup dengan kolom Aksi, modal berpola `:id`, dan rute `anggota-poktan.perbarui`.
+  * **Ketua kini dapat berasal dari luar transmigran** lewat `is_ketua_transmigran`, sebab banyak poktan diketuai penduduk setempat. Nilai `Ketua` dicabut dari enum jabatan anggota agar ketua hanya ditetapkan di satu tempat.
+  * Kontak poktan diseragamkan menjadi **kontak ketua** (`telepon_ketua`, `email_ketua`, `alamat_ketua`), menyusul kenyataan bahwa `DummyData` sejak awal memang memperlakukannya demikian.
+  * Huruf **H** dicabut dari matriks kewenangan Anggota poktan karena bertentangan dengan larangan hapus; total kewenangan 96 menjadi **95**.
 - [✓] ✅ Task 2.16 - Halaman alsintan dan saprotan `[Sedang]` (Selesai)
   * Alsintan **membedakan milik pribadi dan bantuan lewat poktan**, karena berbeda pemilik dan berbeda jalur pertanggungjawaban
   * Kolom pemilik menaut ke poktan atau transmigran sesuai jenis kepemilikannya

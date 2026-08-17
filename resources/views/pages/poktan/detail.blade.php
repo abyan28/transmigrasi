@@ -130,7 +130,7 @@
                         <x-sim.empty-state judul="Belum ada anggota terdata"
                             pesan="Daftar anggota kelompok tani ini akan tampil setelah didata." />
                     @else
-                        <x-sim.tabel-ringkas :kolom="['Nama', 'NIK', 'Jabatan', 'Tanggal Masuk', 'Status']">
+                        <x-sim.tabel-ringkas :kolom="['Nama', 'NIK', 'Jabatan', 'Tanggal Masuk', 'Status', 'Aksi']">
                             @foreach ($anggota as $a)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                                     <td class="px-5 py-3">
@@ -155,13 +155,28 @@
                                         <x-sim.status-badge
                                             :status="\App\Enums\StatusKeaktifanAnggota::from($a['status'])" />
                                     </td>
+                                    <td class="px-5 py-3">
+                                        {{--
+                                            Tanpa tombol ini status keaktifan dan tanggal keluar tidak
+                                            pernah dapat diisi setelah anggota tersimpan, padahal justru
+                                            keduanya yang berubah belakangan (rules.md 7a.4).
+
+                                            Hapus sengaja tidak disediakan: anggota yang berhenti ditandai
+                                            Sudah Keluar agar riwayat keanggotaan tetap utuh.
+                                        --}}
+                                        <x-sim.aksi-baris modal-ubah="formUbahAnggotaPoktan"
+                                            :data-baris="$a + ['id' => $a['id_anggota_poktan']]"
+                                            :label="$a['nama']" />
+                                    </td>
                                 </tr>
                             @endforeach
                         </x-sim.tabel-ringkas>
 
                         <p class="border-t border-gray-200 p-5 text-theme-xs text-gray-600 dark:border-gray-800 dark:text-gray-400">
-                            Anggota yang berhenti ditandai Sudah Keluar, bukan dihapus, agar riwayat
-                            keanggotaan tetap utuh. Penyaluran saprotan hanya untuk anggota berstatus Aktif.
+                            Anggota yang berhenti ditandai Sudah Keluar lewat tombol ubah, bukan dihapus,
+                            agar riwayat keanggotaan tetap utuh. Penyaluran saprotan hanya untuk anggota
+                            berstatus Aktif. Anggota yang pindah ke kelompok lain ditandai keluar di sini,
+                            lalu didaftarkan pada kelompok tujuannya.
                         </p>
                     @endif
                 </div>
@@ -233,5 +248,22 @@
         keterangan="Anggota yang berhenti ditandai Sudah Keluar, tidak dihapus dari daftar."
         :aksi="route('anggota-poktan.simpan')" ukuran="lg" label-simpan="Simpan Data">
         @include('pages.poktan.form-anggota', ['awalan' => 'tambah', 'poktanId' => $data['id_poktan']])
+    </x-sim.modal-form>
+
+    {{--
+        Modal ubah anggota, dipakai bergantian oleh seluruh baris lewat
+        `pola-aksi` agar tabel berisi puluhan anggota tidak memuat puluhan
+        salinan form yang sama.
+
+        Inilah satu-satunya jalur mengubah status keaktifan dan mengisi
+        tanggal keluar. Sebelum modal ini ada, keduanya hanya dapat diisi pada
+        saat anggota pertama kali ditambahkan, padahal justru keduanya yang
+        berubah belakangan.
+    --}}
+    <x-sim.modal-form nama="formUbahAnggotaPoktan" judul="Ubah Data Anggota"
+        keterangan="Anggota yang berhenti atau pindah kelompok ditandai Sudah Keluar, bukan dihapus."
+        pola-aksi="/anggota-poktan/:id" metode="PUT" ukuran="lg"
+        label-simpan="Simpan Perubahan">
+        @include('pages.poktan.form-anggota', ['awalan' => 'ubahAnggota', 'poktanId' => $data['id_poktan']])
     </x-sim.modal-form>
 @endsection

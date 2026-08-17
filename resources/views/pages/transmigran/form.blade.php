@@ -155,18 +155,29 @@
                     </select>
                 </div>
 
+                {{--
+                    Keanggotaan poktan TIDAK diisi di sini (rules.md 7a.8).
+
+                    Sebelumnya bagian ini berupa pilihan Ya/Tidak, tetapi
+                    nilainya tidak pernah tersinkron dengan tabel
+                    `anggota_poktan`: petugas dapat menyatakan "Ya" tanpa
+                    seorang pun mendaftarkannya ke kelompok mana pun, dan
+                    sebaliknya. Dua sumber kebenaran untuk satu fakta selalu
+                    berakhir berbeda.
+
+                    Keanggotaan kini ditetapkan dari sisi poktan, dan nilai di
+                    bawah dibaca sebagai turunan dari keanggotaan berstatus
+                    Aktif. Ditampilkan sebagai keterangan, bukan isian, agar
+                    petugas tahu keadaannya tanpa dapat mengubahnya dari sini.
+                --}}
                 <div>
-                    <label for="{{ $awalan }}_status_poktan" class="{{ $kelasLabel }}">
-                        Anggota Kelompok Tani<span class="text-error-500">*</span>
-                    </label>
-                    <select id="{{ $awalan }}_status_poktan" name="status_anggota_poktan" required
-                        class="{{ $kelasKontrol }}">
-                        @foreach (\App\Enums\StatusAnggotaPoktan::opsi() as $nilai => $label)
-                            <option value="{{ $nilai }}" @selected(old('status_anggota_poktan', $data['status_anggota_poktan'] ?? 'Tidak') === $nilai)>
-                                {{ $label }}
-                            </option>
-                        @endforeach
-                    </select>
+                    <span class="{{ $kelasLabel }}">Anggota Kelompok Tani</span>
+                    <p class="flex h-11 items-center rounded-lg bg-gray-50 px-4 text-theme-sm text-gray-600 dark:bg-white/[0.03] dark:text-gray-400">
+                        {{ ($data['status_anggota_poktan'] ?? 'Tidak') === 'Ya' ? 'Ya, terdaftar pada kelompok tani' : 'Belum terdaftar pada kelompok mana pun' }}
+                    </p>
+                    <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                        Ditetapkan dari halaman Kelompok Tani, bukan dari sini, agar tidak ada dua catatan yang berbeda.
+                    </p>
                 </div>
             </div>
         </div>

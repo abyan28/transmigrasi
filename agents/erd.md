@@ -186,6 +186,8 @@ Kolom "Aturan hapus" memakai istilah SQL: `RESTRICT` mencegah penghapusan induk 
 | 17 | `dokumen_lahan` | `lahan_id` | `lahan` | N:1 | CASCADE |
 | 18 | `poktan` | `satuan_permukiman_id` | `satuan_permukiman` | N:1 | RESTRICT |
 | 19 | `poktan` | `ketua_transmigran_id` | `transmigran` | N:1 (nullable) | SET NULL |
+
+> **Nullable karena ketua tidak selalu transmigran** (2026-08-17). Bila `is_ketua_transmigran` bernilai `FALSE`, kolom ini `NULL` dan identitas ketua disimpan pada `nama_ketua` beserta `nik_ketua`. Banyak poktan diketuai penduduk setempat yang bukan peserta program, sehingga mewajibkan FK ini membuat poktan semacam itu tidak dapat didata. Lihat `data-dictionary.md` §8.1.
 | 20 | `anggota_poktan` | `poktan_id` | `poktan` | N:1 | CASCADE |
 | 21 | `anggota_poktan` | `transmigran_id` | `transmigran` | N:1 | RESTRICT |
 | 22 | `alsintan` | `transmigran_id` | `transmigran` | N:1 (nullable) | SET NULL |
