@@ -929,7 +929,7 @@ Menentukan **data siapa** yang boleh dilihat, terpisah dari kewenangan yang mene
 | `Per SP` | dibatasi SP pada `user_satuan_permukiman` | Operator SP |
 
 ### 11.26 Aksi permission
-`lihat` · `tambah` · `ubah` · `hapus` · `export`
+`lihat` — `tambah` — `ubah` — `hapus`
 
 ### 11.28 Sumber laporan pengaduan
 `Publik` · `Petugas`
@@ -1027,39 +1027,38 @@ Penamaan memakai pola `modul.aksi`, contoh `transmigran.lihat`.
 
 Tanda centang berarti kewenangan tersebut dibuat untuk fitur bersangkutan.
 
-| Fitur | lihat | tambah | ubah | hapus | export |
-|---|:---:|:---:|:---:|:---:|:---:|
-| `pengguna` | v | v | v | | |
-| `role` | v | v | v | v | |
-| `audit_log` | v | | | | v |
-| `wilayah` | v | v | v | v | |
-| `kawasan` | v | v | v | v | v |
-| `sp` | v | v | v | v | v |
-| `inventaris_sp` | v | v | v | v | v |
-| `fasilitas_sp` | v | v | v | v | v |
-| `satuan` | v | v | v | v | |
-| `transmigran` | v | v | v | v | v |
-| `rumah` | v | v | v | v | v |
-| `riwayat_penghunian` | v | v | v | v | v |
-| `lahan` | v | v | v | v | v |
-| `dokumen_lahan` | v | v | v | v | |
-| `poktan` | v | v | v | v | v |
-| `anggota_poktan` | v | v | v | v | v |
-| `alsintan` | v | v | v | v | v |
-| `saprotan` | v | v | v | v | v |
-| `komoditas` | v | v | v | v | v |
-| `musim_tanam` | v | v | v | v | |
-| `riwayat_tanam` | v | v | v | v | v |
-| `hasil_panen` | v | v | v | v | v |
-| `infrastruktur` | v | v | v | v | v |
-| `pengaduan` | v | v | v | v | v |
-| `penanganan_pengaduan` | v | v | v | | |
-| `dashboard` | v | | | | v |
-| `laporan` | v | | | | v |
+| Fitur | lihat | tambah | ubah | hapus |
+|---|:---:|:---:|:---:|:---:|
+| `pengguna` | v | v | v |   |
+| `role` | v | v | v | v |
+| `audit_log` | v |   |   |   |
+| `wilayah` | v | v | v | v |
+| `kawasan` | v | v | v | v |
+| `sp` | v | v | v | v |
+| `inventaris_sp` | v | v | v | v |
+| `fasilitas_sp` | v | v | v | v |
+| `satuan` | v | v | v | v |
+| `transmigran` | v | v | v | v |
+| `rumah` | v | v | v | v |
+| `riwayat_penghunian` | v | v | v | v |
+| `lahan` | v | v | v | v |
+| `dokumen_lahan` | v | v | v | v |
+| `poktan` | v | v | v | v |
+| `anggota_poktan` | v | v | v | v |
+| `alsintan` | v | v | v | v |
+| `saprotan` | v | v | v | v |
+| `komoditas` | v | v | v | v |
+| `musim_tanam` | v | v | v | v |
+| `riwayat_tanam` | v | v | v | v |
+| `hasil_panen` | v | v | v | v |
+| `infrastruktur` | v | v | v | v |
+| `pengaduan` | v | v | v | v |
+| `penanganan_pengaduan` | v | v | v |   |
+| `dashboard` | v |   |   |   |
 
-Total **117 kewenangan** dari 27 fitur, dihitung dari tabel di atas.
+Total **96 kewenangan** dari 26 fitur, dihitung dari tabel di atas.
 
-Jumlah kewenangan yang benar-benar dipegang tiap role bawaan lebih sedikit, sesuai susunan pada `rules.md` 5.1: Admin 117, Dinas Transmigrasi 57, Dinas Pertanian 64, Operator SP 50.
+Jumlah kewenangan yang benar-benar dipegang tiap role bawaan lebih sedikit, sesuai susunan pada `rules.md` 5.1: Admin 96, Dinas Transmigrasi 43, Dinas Pertanian 45, Operator SP 49.
 
 ### 13.2 Kelompok fitur pada antarmuka
 
@@ -1075,7 +1074,7 @@ Agar halaman pengaturan role mudah dibaca, kewenangan dikelompokkan sesuai struk
 | Pertanian | `komoditas`, `musim_tanam`, `riwayat_tanam`, `hasil_panen` |
 | Infrastruktur | `infrastruktur` |
 | Pengaduan | `pengaduan`, `penanganan_pengaduan` |
-| Pemantauan | `dashboard`, `laporan` |
+| Pemantauan | `dashboard` |
 
 ### 13.3 Aturan pemeriksaan kewenangan
 

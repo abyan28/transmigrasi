@@ -31,7 +31,11 @@
 
     <x-sim.page-header judul="Rekap Kependudukan"
         keterangan="Perkembangan jumlah penduduk kawasan beserta perpindahannya."
-        :remah="[['label' => 'Kependudukan'], ['label' => 'Rekap Kependudukan']]" />
+        :remah="[['label' => 'Kependudukan'], ['label' => 'Rekap Kependudukan']]">
+        <x-slot:aksi>
+            <x-sim.tombol-ekspor />
+        </x-slot:aksi>
+    </x-sim.page-header>
 
     <nav aria-label="Dasar pengelompokan rekap"
         class="mb-6 flex flex-wrap gap-2 rounded-2xl border border-gray-200 bg-white p-2 dark:border-gray-800 dark:bg-white/[0.03]">

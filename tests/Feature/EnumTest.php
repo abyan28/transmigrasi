@@ -35,7 +35,7 @@ it('memuat seluruh nilai baku sesuai kamus data', function (string $enum, array 
     'kondisi aset' => [Kondisi::class, ['Baik', 'Rusak Ringan', 'Rusak Berat']],
     'bidang pengaduan' => [BidangPengaduan::class, ['Ketransmigrasian', 'Pertanian']],
     'cakupan data' => [CakupanData::class, ['Semua', 'Per SP']],
-    'aksi permission' => [AksiPermission::class, ['lihat', 'tambah', 'ubah', 'hapus', 'export']],
+    'aksi permission' => [AksiPermission::class, ['lihat', 'tambah', 'ubah', 'hapus']],
 ]);
 
 it('membedakan kondisi rumah dari kondisi aset lain', function () {

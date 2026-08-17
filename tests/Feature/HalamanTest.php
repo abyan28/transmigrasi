@@ -1388,15 +1388,43 @@ it('menyamakan daftar izin dengan kamus data dan rules', function () {
     //
     // Memeriksa satu sumber memberi rasa aman yang keliru ketika sumbernya
     // sendiri belum sejalan. Karena itu uji ini mengadu dengan KEDUANYA.
-    $aksiUrut = ['lihat', 'tambah', 'ubah', 'hapus', 'export'];
-    $huruf = ['L' => 'lihat', 'T' => 'tambah', 'U' => 'ubah', 'H' => 'hapus', 'E' => 'export'];
+    $aksiUrut = ['lihat', 'tambah', 'ubah', 'hapus'];
+    $huruf = ['L' => 'lihat', 'T' => 'tambah', 'U' => 'ubah', 'H' => 'hapus'];
 
     $kamus = preg_split('/\r\n|\r|\n/', file_get_contents(base_path('agents/data-dictionary.md')));
     $rules = preg_split('/\r\n|\r|\n/', file_get_contents(base_path('agents/rules.md')));
 
     // Sumber 1: kamus 13.1, modul beserta aksi yang tersedia padanya.
+    //
+    // Pembacaan dibatasi pada wilayah tabel 13.1 saja. Sebelumnya pembatasnya
+    // hanyalah "jumlah sel sama dengan jumlah aksi", dan itu bekerja secara
+    // kebetulan selama tabel 13.1 punya 5 kolom. Ketika kewenangan `export`
+    // dicabut dan kolomnya menjadi 4, pola yang sama mulai mencocoki 343 baris
+    // tabel kolom database di seluruh kamus data, sebab bentuknya memang sama:
+    // satu nama berbingkai backtick diikuti empat sel.
+    //
+    // Menambatkannya pada judul bagian membuat uji ini tidak lagi bergantung
+    // pada kebetulan jumlah kolom.
+    $awal = null;
+    $akhir = null;
+    foreach ($kamus as $i => $b) {
+        if (str_starts_with(trim($b), '### 13.1 ')) {
+            $awal = $i;
+
+            continue;
+        }
+        if ($awal !== null && str_starts_with(trim($b), '### ')) {
+            $akhir = $i;
+            break;
+        }
+    }
+
+    expect($awal)->not->toBeNull('Bagian "### 13.1" tidak ditemukan pada data-dictionary.md');
+
+    $baris131 = array_slice($kamus, $awal, ($akhir ?? count($kamus)) - $awal);
+
     $modulKamus = [];
-    foreach ($kamus as $b) {
+    foreach ($baris131 as $b) {
         if (! preg_match('/^\|\s*`([a-z_]+)`\s*\|(.+)\|\s*$/', trim($b), $m)) {
             continue;
         }
@@ -1460,7 +1488,6 @@ it('menyamakan daftar izin dengan kamus data dan rules', function () {
         'Riwayat tanam' => 'riwayat_tanam', 'Hasil panen' => 'hasil_panen',
         'Infrastruktur SP' => 'infrastruktur', 'Pengaduan' => 'pengaduan',
         'Penanganan pengaduan' => 'penanganan_pengaduan', 'Dashboard' => 'dashboard',
-        'Laporan & export' => 'laporan',
     ];
 
     $izinRules = [];
@@ -3095,7 +3122,6 @@ it('memakai istilah fitur dan kewenangan pada teks yang dilihat pengguna', funct
     '/infrastruktur',
     '/infrastruktur/1',
     '/audit-log',
-    '/laporan',
     '/galeri-komponen',
 ]);
 
@@ -3119,4 +3145,114 @@ it('menyaring ketikan bukan angka pada isian angka', function () {
 
     expect($app)->toMatch('/^pasangPenjagaAngka\(\);$/m')
         ->and($app)->toContain("from './input-angka'");
+});
+/*
+|--------------------------------------------------------------------------
+| Ekspor menempel pada tabel
+|--------------------------------------------------------------------------
+*/
+
+it('menyediakan tombol ekspor pada setiap halaman berdaftar', function (string $jalur) {
+    // rules.md 12 poin 5 mewajibkan laporan dapat difilter sebelum diekspor.
+    // Halaman laporan terpusat tidak pernah memenuhinya: ia hanya memuat
+    // kartu unduhan tanpa satu pun kontrol filter, sehingga petugas selalu
+    // menerima seluruh isi tabel. Karena itu ekspor dipindah ke halaman yang
+    // filternya memang sudah bekerja, dan halaman terpusatnya dihapus.
+    $this->get($jalur)->assertOk()->assertSee('data-ekspor', false);
+})->with([
+    '/transmigran',
+    '/rumah',
+    '/lahan',
+    '/panen',
+    '/pengaduan',
+    '/poktan',
+    '/alsintan',
+    '/saprotan',
+    '/komoditas',
+    '/infrastruktur',
+    '/sp',
+    '/pengguna',
+    '/audit-log',
+    '/panen/rekap',
+    '/pengaduan/rekap',
+    '/kependudukan/rekap',
+    '/',
+]);
+
+it('membawa filter yang sedang aktif ke dalam alamat ekspor', function () {
+    // Inti perubahan ini. Tombol yang tidak meneruskan filter menghasilkan
+    // berkas berisi seluruh kawasan padahal layar sedang menampilkan satu SP
+    // saja, dan selisihnya baru disadari setelah berkas dibuka di lapangan.
+    $isi = $this->get('/transmigran?cari=NARA&status_tinggal=Menetap')
+        ->assertOk()
+        ->getContent();
+
+    preg_match('/data-parameter="([^"]*)"/', $isi, $cocok);
+
+    expect($cocok)->not->toBeEmpty('Atribut data-parameter tidak dirender');
+
+    $terurai = [];
+    parse_str(html_entity_decode($cocok[1]), $terurai);
+
+    expect($terurai)->toMatchArray([
+        'cari' => 'NARA',
+        'status_tinggal' => 'Menetap',
+    ]);
+});
+
+it('tidak membawa parameter apa pun ketika tabel belum disaring', function () {
+    // Kebalikannya juga wajib benar: tanpa filter, alamat ekspor harus bersih.
+    // Parameter sisa dari kunjungan sebelumnya akan menyaring diam-diam.
+    $isi = $this->get('/transmigran')->assertOk()->getContent();
+
+    preg_match('/data-parameter="([^"]*)"/', $isi, $cocok);
+
+    expect($cocok[1])->toBe('');
+});
+
+it('menghapus halaman laporan terpusat beserta jejaknya', function () {
+    // Halaman itu menyalahi aturannya sendiri: menawarkan sembilan unduhan
+    // tanpa filter. Setelah ekspor menempel pada tabel, mempertahankannya
+    // berarti dua jalan menuju satu hasil, dan yang satu lebih buruk.
+    $this->get('/laporan')->assertNotFound();
+
+    // Menu yang menunjuk halaman tidak ada melanggar R-24, dan baru ketahuan
+    // saat petugas mengkliknya.
+    $tujuan = [];
+    foreach (App\Helpers\MenuHelper::definisiMenu() as $kelompok) {
+        foreach ($kelompok['items'] as $item) {
+            $tujuan[] = $item['path'] ?? null;
+            foreach ($item['subItems'] ?? [] as $sub) {
+                $tujuan[] = $sub['path'] ?? null;
+            }
+        }
+    }
+
+    expect($tujuan)->not->toContain('/laporan');
+});
+
+it('mencabut kewenangan export dari seluruh sumber kebenaran', function () {
+    // Ekspor kini mengikuti `lihat`, sebab ia hanya cara lain membaca data
+    // yang sudah boleh dilihat (rules.md 5.1 catatan 5). Nilai yang tertinggal
+    // di salah satu sumber akan menghidupkan kembali kotak centang yang tidak
+    // menjaga apa pun.
+    expect(array_column(App\Enums\AksiPermission::cases(), 'value'))
+        ->toBe(['lihat', 'tambah', 'ubah', 'hapus']);
+
+    foreach (App\Support\DummyData::daftarIzin() as $kelompok) {
+        foreach ($kelompok['modul'] as $modul) {
+            expect($modul['aksi'])->not->toContain('export');
+        }
+    }
+
+    foreach ([1, 2, 3, 4, 5] as $idRole) {
+        foreach (App\Support\DummyData::izinRole($idRole) as $aksi) {
+            expect($aksi)->not->toContain('export');
+        }
+    }
+
+    // Huruf E pada matriks rules.md 5.1 ikut dicabut, agar dokumen tidak
+    // menjanjikan kewenangan yang tidak lagi ada di kode.
+    expect(file_get_contents(base_path('agents/rules.md')))
+        ->not->toContain('**E** = export');
 });

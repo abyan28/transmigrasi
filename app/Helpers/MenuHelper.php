@@ -190,13 +190,8 @@ class MenuHelper
                 'items' => [
                     [
                         'icon' => 'pengaturan',
-                        'name' => 'Laporan & Pengaturan',
+                        'name' => 'Pengaturan Sistem',
                         'subItems' => [
-                            [
-                                'name' => 'Pusat Laporan',
-                                'path' => '/laporan',
-                                'permission' => 'laporan.lihat',
-                            ],
                             [
                                 'name' => 'Data Master Wilayah',
                                 'path' => '/wilayah',

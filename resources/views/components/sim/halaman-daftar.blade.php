@@ -64,6 +64,14 @@
                 class="h-10 shrink-0 rounded-lg border border-gray-300 px-3 text-theme-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
                 Cari
             </button>
+
+            {{--
+                Ekspor diletakkan bersebelahan dengan Cari sebab keduanya
+                bekerja atas hasil penyaringan yang sama. Halaman yang memakai
+                kerangka ini otomatis memperolehnya, sehingga tidak ada halaman
+                daftar yang luput.
+            --}}
+            <x-sim.tombol-ekspor />
         </x-slot:aksiKanan>
 
         @isset($aksiKosong)

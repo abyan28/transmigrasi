@@ -500,8 +500,8 @@ Kolom "Kewenangan" menggantikan kolom "Role" pada tabel-tabel sebelumnya, karena
 
 | Halaman | Rute | Kewenangan |
 |---|---|---|
-| Pusat laporan | `GET /laporan` | `laporan.lihat` |
-| Unduh template luring | tab pada pusat laporan | `laporan.export` |
+| Ekspor data tabel | tombol pada tiap halaman daftar | `[fitur].lihat` |
+| Unduh template luring | langkah pertama modal impor | `[fitur].tambah` |
 | Manajemen pengguna | `GET /pengguna` | `pengguna.lihat` |
 | Detail pengguna | modal | `pengguna.lihat` |
 | Form pengguna | modal | `pengguna.tambah` / `pengguna.ubah` |
@@ -554,8 +554,7 @@ Dua penempatan yang perlu diketahui, sebab tidak mengikuti struktur tabel:
 | | | Rekap Panen | `/panen/rekap` | `hasil_panen.lihat` |
 | **Pengaduan** | Pengaduan Warga | Daftar Pengaduan | `/pengaduan` | `pengaduan.lihat` |
 | | | Rekap Pengaduan | `/pengaduan/rekap` | `pengaduan.lihat` |
-| **Administrasi Sistem** | Laporan & Pengaturan | Pusat Laporan | `/laporan` | `laporan.lihat` |
-| | | Data Master Wilayah | `/wilayah` | `wilayah.lihat` |
+| **Administrasi Sistem** | Pengaturan Sistem | Data Master Wilayah | `/wilayah` | `wilayah.lihat` |
 | | | Data Master Satuan | `/master/satuan` | `satuan.lihat` |
 | | | Pengguna | `/pengguna` | `pengguna.lihat` |
 | | | Role & Hak Akses | `/pengaturan/role` | `role.lihat` |

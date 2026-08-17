@@ -2,6 +2,8 @@
 
 **Tanggal:** 2026-08-17
 **Cakupan:** 23 halaman Tahap 2 gelombang 2 (Task 2.13 sampai 2.20), ditambah pemeriksaan ulang seluruh 120 berkas Blade.
+
+> **Pemutakhiran 2026-08-17.** Halaman `/laporan` **dihapus** setelah gate ini dijalankan, sehingga cakupannya kini 22 halaman. Ekspor dipindah menempel pada tabel data masing-masing; alasannya halaman terpusat itu menyalahi `rules.md` 12 poin 5 yang mewajibkan laporan dapat difilter sebelum diekspor. Seluruh angka bukti di bawah tetap sah sebab dihitung saat halaman itu masih ada, dan penghapusannya hanya mengurangi, tidak menambah pelanggaran.
 **Dasar:** `ANTISLOP-ID.md` Delivery Gate, `rules.md` 16.1 dan 721 ("gate dijalankan pada akhir setiap gelombang, bukan sekali di akhir proyek"), `tasklist.md` 433 dan 841.
 
 Setiap PASS disertai bukti konkret. Laporan yang mengandung satu FAIL dilarang diserahkan.
@@ -70,7 +72,7 @@ Laporan gate yang mengutip angka wajib menyebut perintah yang menghasilkannya, d
 
 ### Enam halaman tanpa keadaan kosong, dan mengapa itu benar
 
-`master/wilayah`, `master/satuan`, `sp/kawasan`, `kependudukan/rekap`, `laporan/index`, dan `pengguna/role` menulis markup tabelnya sendiri dan memakai `@foreach` tanpa `@forelse`.
+`master/wilayah`, `master/satuan`, `sp/kawasan`, `kependudukan/rekap`, `laporan/index` (kini dihapus), dan `pengguna/role` menulis markup tabelnya sendiri dan memakai `@foreach` tanpa `@forelse`.
 
 Pemeriksaan atas isi tiap perulangan menunjukkan **keenamnya menampilkan data master atau daftar tetap**, bukan data yang dimasukkan petugas: daftar provinsi sampai desa, satuan ukur beserta faktor konversi, kawasan dan SP, agregat kependudukan, daftar jenis laporan, dan daftar role. Data semacam ini di-seed bersama sistem dan **tidak mungkin kosong**; bila benar-benar kosong, yang terjadi adalah kegagalan pemasangan, bukan keadaan wajar yang perlu dijelaskan lewat ilustrasi ramah.
 

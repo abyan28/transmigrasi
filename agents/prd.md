@@ -218,6 +218,10 @@ Sistem harus:
 - menghasilkan laporan rekap;
 - mendukung export Excel dan PDF untuk data utama.
 
+Ekspor **menempel pada tabel data masing-masing**, bukan pada satu halaman laporan tersendiri (ditetapkan 2026-08-17, `rules.md` 12 poin 6). Alasannya kebutuhan "menyediakan filter data" di atas: halaman daftar sudah memiliki pencarian dan filter, sedangkan halaman laporan terpusat tidak pernah memilikinya. Filter yang sedang aktif ikut terbawa ke berkas hasil unduhan.
+
+Rekap indikator kawasan untuk kementerian diekspor dari dashboard, sebab tidak memiliki tabel padanan di modul mana pun.
+
 ### 7.10 Data Alsintan (Alat dan Mesin Pertanian)
 Sistem harus dapat:
 - mencatat alsintan yg dimiliki oleh petani pribadi (contoh: traktor, sprayer, cultivator, dll).

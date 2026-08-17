@@ -395,6 +395,10 @@ Dikerjakan **dua gelombang**. Gelombang 1 membangun alur inti agar dapat divalid
   * Dua tab: 9 laporan data dan 3 template isian luring
   * **Tombol export diberi label jujur Segera hadir**, bukan dibiarkan tampak berfungsi. Pembangkitan Excel dan PDF dikerjakan Tahap 10 (R-26)
   * Menjelaskan alasan template luring: sinyal di lokus tidak selalu stabil
+  * **DIBONGKAR 2026-08-17 atas keputusan pemilik proyek.** Halaman `/laporan` dihapus seluruhnya; ekspor dipindah menempel pada tabel data masing-masing lewat komponen `x-sim.tombol-ekspor`.
+  * Alasannya halaman ini **menyalahi aturannya sendiri**: `rules.md` 12 poin 5 mewajibkan laporan dapat difilter sebelum diekspor, sedangkan halaman ini menawarkan sembilan unduhan tanpa satu pun kontrol filter. Halaman daftar sudah punya pencarian dan filter yang bekerja, jadi di sanalah ekspor seharusnya sejak awal.
+  * Tab template luring **tidak dipindah** sebab ternyata duplikat: modal impor sudah memuat langkah "Unduh template" di 14 halaman. Indikator Kawasan pindah ke kepala dashboard, satu-satunya isi yang benar-benar tak punya tabel padanan.
+  * Kewenangan `export` ikut dicabut dari RBAC pada kesempatan yang sama: 117 izin menjadi 96. Rinciannya pada `notes.md` bagian 5.
 - [✓] ✅ Task 2.20 - Halaman pengguna dan audit log `[Sedang]` (Selesai)
   * Tiga halaman: manajemen pengguna, role dan hak akses, audit log
   * Halaman pengguna **menandai operator Per SP yang belum ditugaskan**, keadaan yang membuatnya tidak melihat data apa pun

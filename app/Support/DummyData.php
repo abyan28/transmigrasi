@@ -1439,10 +1439,10 @@ class DummyData
     public static function role(): array
     {
         return [
-            ['id_role' => 1, 'nama' => 'Admin', 'deskripsi' => 'Akses penuh termasuk manajemen pengguna, role, dan audit log.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => true, 'is_aktif' => true, 'jumlah_izin' => 117, 'jumlah_pengguna' => 1],
-            ['id_role' => 2, 'nama' => 'Dinas Transmigrasi', 'deskripsi' => 'Mengelola data wilayah, transmigran, rumah, lahan, dan infrastruktur.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 57, 'jumlah_pengguna' => 1],
-            ['id_role' => 3, 'nama' => 'Dinas Pertanian', 'deskripsi' => 'Mengelola data poktan, komoditas, panen, alsintan, dan saprotan.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 64, 'jumlah_pengguna' => 1],
-            ['id_role' => 4, 'nama' => 'Operator SP', 'deskripsi' => 'Memasukkan data pada satuan permukiman yang ditugaskan. Tanpa kewenangan hapus.', 'cakupan_data' => CakupanData::PerSp->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 50, 'jumlah_pengguna' => 2],
+            ['id_role' => 1, 'nama' => 'Admin', 'deskripsi' => 'Akses penuh termasuk manajemen pengguna, role, dan audit log.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => true, 'is_aktif' => true, 'jumlah_izin' => 96, 'jumlah_pengguna' => 1],
+            ['id_role' => 2, 'nama' => 'Dinas Transmigrasi', 'deskripsi' => 'Mengelola data wilayah, transmigran, rumah, lahan, dan infrastruktur.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 43, 'jumlah_pengguna' => 1],
+            ['id_role' => 3, 'nama' => 'Dinas Pertanian', 'deskripsi' => 'Mengelola data poktan, komoditas, panen, alsintan, dan saprotan.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 45, 'jumlah_pengguna' => 1],
+            ['id_role' => 4, 'nama' => 'Operator SP', 'deskripsi' => 'Memasukkan data pada satuan permukiman yang ditugaskan. Tanpa kewenangan hapus.', 'cakupan_data' => CakupanData::PerSp->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 49, 'jumlah_pengguna' => 2],
 
             // Role buatan Admin, bukan bawaan sistem. Sengaja dibuat tanpa
             // pengguna agar keadaan "dapat dihapus" ikut terlihat pada
@@ -1876,9 +1876,11 @@ class DummyData
      */
     public static function daftarIzin(): array
     {
-        $penuh = ['lihat', 'tambah', 'ubah', 'hapus', 'export'];
-        $kelolaSaja = ['lihat', 'tambah', 'ubah', 'hapus'];
-        $bacaEkspor = ['lihat', 'export'];
+        // Izin `export` dicabut 2026-08-17: ekspor mengikuti `lihat`, sebab ia
+        // hanya cara lain membaca data yang sudah boleh dilihat. Akibatnya
+        // `penuh` dan `kelolaSaja` menjadi satu, sehingga tinggal satu nama.
+        $penuh = ['lihat', 'tambah', 'ubah', 'hapus'];
+        $bacaSaja = ['lihat'];
 
         // Akun tidak pernah dihapus, hanya dinonaktifkan (rules.md 14b poin 16),
         // sehingga izin hapus tidak disediakan untuk modul pengguna. Menawarkan
@@ -1893,14 +1895,14 @@ class DummyData
                     ['kunci' => 'pengguna', 'nama' => 'Manajemen pengguna', 'aksi' => $tanpaHapus],
                     // Role BOLEH dihapus selama bukan bawaan dan tidak dipakai
                     // akun mana pun (rules.md 5.0c poin 8 dan 9).
-                    ['kunci' => 'role', 'nama' => 'Pengaturan role', 'aksi' => $kelolaSaja],
-                    ['kunci' => 'audit_log', 'nama' => 'Audit log', 'aksi' => $bacaEkspor],
+                    ['kunci' => 'role', 'nama' => 'Pengaturan role', 'aksi' => $penuh],
+                    ['kunci' => 'audit_log', 'nama' => 'Audit log', 'aksi' => $bacaSaja],
                 ],
             ],
             [
                 'kelompok' => 'Wilayah dan SP',
                 'modul' => [
-                    ['kunci' => 'wilayah', 'nama' => 'Data master wilayah', 'aksi' => $kelolaSaja],
+                    ['kunci' => 'wilayah', 'nama' => 'Data master wilayah', 'aksi' => $penuh],
                     ['kunci' => 'kawasan', 'nama' => 'Kawasan transmigrasi', 'aksi' => $penuh],
                     ['kunci' => 'sp', 'nama' => 'Satuan permukiman (SP)', 'aksi' => $penuh],
                     // Inventaris dan fasilitas sengaja dipisah: dua tabel, dua
@@ -1908,7 +1910,7 @@ class DummyData
                     // (rules.md 5.1 catatan 5).
                     ['kunci' => 'inventaris_sp', 'nama' => 'Inventaris SP', 'aksi' => $penuh],
                     ['kunci' => 'fasilitas_sp', 'nama' => 'Fasilitas SP', 'aksi' => $penuh],
-                    ['kunci' => 'satuan', 'nama' => 'Data master satuan', 'aksi' => $kelolaSaja],
+                    ['kunci' => 'satuan', 'nama' => 'Data master satuan', 'aksi' => $penuh],
                 ],
             ],
             [
@@ -1923,7 +1925,7 @@ class DummyData
                 'kelompok' => 'Lahan',
                 'modul' => [
                     ['kunci' => 'lahan', 'nama' => 'Lahan', 'aksi' => $penuh],
-                    ['kunci' => 'dokumen_lahan', 'nama' => 'Dokumen lahan (HPL/SHM)', 'aksi' => $kelolaSaja],
+                    ['kunci' => 'dokumen_lahan', 'nama' => 'Dokumen lahan (HPL/SHM)', 'aksi' => $penuh],
                 ],
             ],
             [
@@ -1939,7 +1941,7 @@ class DummyData
                 'kelompok' => 'Pertanian',
                 'modul' => [
                     ['kunci' => 'komoditas', 'nama' => 'Komoditas', 'aksi' => $penuh],
-                    ['kunci' => 'musim_tanam', 'nama' => 'Musim tanam', 'aksi' => $kelolaSaja],
+                    ['kunci' => 'musim_tanam', 'nama' => 'Musim tanam', 'aksi' => $penuh],
                     ['kunci' => 'riwayat_tanam', 'nama' => 'Riwayat tanam', 'aksi' => $penuh],
                     ['kunci' => 'hasil_panen', 'nama' => 'Hasil panen', 'aksi' => $penuh],
                 ],
@@ -1960,8 +1962,7 @@ class DummyData
             [
                 'kelompok' => 'Pemantauan',
                 'modul' => [
-                    ['kunci' => 'dashboard', 'nama' => 'Dashboard', 'aksi' => $bacaEkspor],
-                    ['kunci' => 'laporan', 'nama' => 'Laporan dan export', 'aksi' => $bacaEkspor],
+                    ['kunci' => 'dashboard', 'nama' => 'Dashboard', 'aksi' => $bacaSaja],
                 ],
             ],
         ];
@@ -1979,54 +1980,54 @@ class DummyData
      */
     public static function izinRole(int $roleId): array
     {
-        $lituhe = ['lihat', 'tambah', 'ubah', 'hapus', 'export'];
+        // Sejak izin `export` dicabut (2026-08-17), pola yang dulu berbeda
+        // hanya karena huruf E kini bertemu: `lituhe` menjadi sama dengan
+        // `k`, dan `ltue` menjadi sama dengan `ltu`. Nama lamanya tidak
+        // dipertahankan sebagai alias agar tidak ada dua nama untuk satu hal.
         $k = ['lihat', 'tambah', 'ubah', 'hapus'];
-        $ltue = ['lihat', 'tambah', 'ubah', 'export'];
-        $lte = ['lihat', 'tambah', 'export'];
         $ltu = ['lihat', 'tambah', 'ubah'];
         $lt = ['lihat', 'tambah'];
-        $le = ['lihat', 'export'];
         $l = ['lihat'];
 
         $peta = [
             // Admin. Kolom kedua tabel rules.md 5.1.
             1 => [
-                'wilayah' => $k, 'kawasan' => $lituhe, 'sp' => $lituhe,
-                'inventaris_sp' => $lituhe, 'fasilitas_sp' => $lituhe, 'satuan' => $k,
-                'transmigran' => $lituhe, 'rumah' => $lituhe, 'riwayat_penghunian' => $lituhe,
-                'lahan' => $lituhe, 'dokumen_lahan' => $k,
-                'poktan' => $lituhe, 'anggota_poktan' => $lituhe, 'alsintan' => $lituhe, 'saprotan' => $lituhe,
-                'komoditas' => $lituhe, 'musim_tanam' => $k, 'riwayat_tanam' => $lituhe, 'hasil_panen' => $lituhe,
-                'infrastruktur' => $lituhe, 'pengaduan' => $lituhe, 'penanganan_pengaduan' => $ltu,
-                'dashboard' => $le, 'laporan' => $le,
+                'wilayah' => $k, 'kawasan' => $k, 'sp' => $k,
+                'inventaris_sp' => $k, 'fasilitas_sp' => $k, 'satuan' => $k,
+                'transmigran' => $k, 'rumah' => $k, 'riwayat_penghunian' => $k,
+                'lahan' => $k, 'dokumen_lahan' => $k,
+                'poktan' => $k, 'anggota_poktan' => $k, 'alsintan' => $k, 'saprotan' => $k,
+                'komoditas' => $k, 'musim_tanam' => $k, 'riwayat_tanam' => $k, 'hasil_panen' => $k,
+                'infrastruktur' => $k, 'pengaduan' => $k, 'penanganan_pengaduan' => $ltu,
+                'dashboard' => $l,
                 // Akun tidak pernah dihapus, hanya dinonaktifkan, sehingga
                 // modul pengguna berhenti di ubah (rules.md 14b poin 16).
-                'pengguna' => $ltu, 'role' => $k, 'audit_log' => $le,
+                'pengguna' => $ltu, 'role' => $k, 'audit_log' => $l,
             ],
             // Dinas Transmigrasi. Mengelola wilayah, kependudukan, dan lahan.
             // Pada modul pertanian hanya dapat melihat.
             2 => [
-                'wilayah' => $l, 'kawasan' => ['lihat', 'export'], 'sp' => $ltue,
-                'inventaris_sp' => $ltue, 'fasilitas_sp' => $ltue, 'satuan' => $l,
-                'transmigran' => $ltue, 'rumah' => $ltue, 'riwayat_penghunian' => $lte,
-                'lahan' => $ltue, 'dokumen_lahan' => ['lihat', 'tambah'],
-                'poktan' => $le, 'anggota_poktan' => $l, 'alsintan' => $l, 'saprotan' => $l,
+                'wilayah' => $l, 'kawasan' => $l, 'sp' => $ltu,
+                'inventaris_sp' => $ltu, 'fasilitas_sp' => $ltu, 'satuan' => $l,
+                'transmigran' => $ltu, 'rumah' => $ltu, 'riwayat_penghunian' => $lt,
+                'lahan' => $ltu, 'dokumen_lahan' => $lt,
+                'poktan' => $l, 'anggota_poktan' => $l, 'alsintan' => $l, 'saprotan' => $l,
                 'komoditas' => $l, 'musim_tanam' => $l, 'riwayat_tanam' => $l, 'hasil_panen' => $l,
-                'infrastruktur' => $ltue, 'pengaduan' => $ltue, 'penanganan_pengaduan' => $ltu,
-                'dashboard' => $le, 'laporan' => $le,
+                'infrastruktur' => $ltu, 'pengaduan' => $ltu, 'penanganan_pengaduan' => $ltu,
+                'dashboard' => $l,
             ],
             // Dinas Pertanian. Mengelola kelembagaan dan produksi pertanian.
             // Pada modul kependudukan hanya dapat melihat.
             3 => [
-                'wilayah' => $l, 'kawasan' => $le, 'sp' => $le,
-                'inventaris_sp' => $le, 'fasilitas_sp' => $le, 'satuan' => $l,
-                'transmigran' => $le, 'rumah' => $le, 'riwayat_penghunian' => $l,
-                'lahan' => $le, 'dokumen_lahan' => $l,
-                'poktan' => $ltue, 'anggota_poktan' => $ltue, 'alsintan' => $ltue, 'saprotan' => $ltue,
-                'komoditas' => $ltue, 'musim_tanam' => $ltu,
-                'riwayat_tanam' => $ltue, 'hasil_panen' => $ltue,
-                'infrastruktur' => $ltue, 'pengaduan' => $ltue, 'penanganan_pengaduan' => $ltu,
-                'dashboard' => $le, 'laporan' => $le,
+                'wilayah' => $l, 'kawasan' => $l, 'sp' => $l,
+                'inventaris_sp' => $l, 'fasilitas_sp' => $l, 'satuan' => $l,
+                'transmigran' => $l, 'rumah' => $l, 'riwayat_penghunian' => $l,
+                'lahan' => $l, 'dokumen_lahan' => $l,
+                'poktan' => $ltu, 'anggota_poktan' => $ltu, 'alsintan' => $ltu, 'saprotan' => $ltu,
+                'komoditas' => $ltu, 'musim_tanam' => $ltu,
+                'riwayat_tanam' => $ltu, 'hasil_panen' => $ltu,
+                'infrastruktur' => $ltu, 'pengaduan' => $ltu, 'penanganan_pengaduan' => $ltu,
+                'dashboard' => $l,
             ],
             // Operator SP. Memasukkan data, sengaja tanpa izin hapus
             // (rules.md 5.1 catatan 4). Tidak memegang izin apa pun pada
@@ -2039,7 +2040,7 @@ class DummyData
                 'poktan' => $ltu, 'anggota_poktan' => $ltu, 'alsintan' => $ltu, 'saprotan' => $ltu,
                 'komoditas' => $l, 'musim_tanam' => $l, 'riwayat_tanam' => $ltu, 'hasil_panen' => $ltu,
                 'infrastruktur' => $ltu, 'pengaduan' => $lt,
-                'dashboard' => $l, 'laporan' => $l,
+                'dashboard' => $l,
             ],
             // Pendamping Lapangan. Role buatan Admin, bukan bawaan sistem.
             // Hanya membaca, sehingga dapat diberikan kepada pendamping yang

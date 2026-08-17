@@ -623,10 +623,6 @@ Route::put('/infrastruktur/{id}', function (int $id) {
         ->with('sukses', 'Perubahan data aset tersimpan.');
 })->where('id', '[0-9]+')->name('infrastruktur.perbarui');
 
-Route::get('/laporan', function () {
-    return view('pages.laporan.index', ['title' => 'Pusat Laporan']);
-})->name('laporan');
-
 Route::get('/pengguna', function () {
     return view('pages.pengguna.index', ['title' => 'Manajemen Pengguna']);
 })->name('pengguna.index');

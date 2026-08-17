@@ -234,37 +234,36 @@ Dibuat lewat seeder sebagai konfigurasi awal agar sistem langsung dapat dipakai.
 
 > **Kedudukan tabel ini.** Sejak role menjadi dinamis (§5.0), tabel di bawah bukan lagi aturan permanen yang dikunci di dalam kode, melainkan **konfigurasi awal** yang ditanam seeder. Admin dapat mengubahnya lewat menu Pengaturan Role, kecuali baris role Admin yang terkunci.
 
-Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **E** = export / **-** = tanpa akses
+Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **-** = tanpa akses
 
 | Fitur | Admin | Dinas Transmigrasi | Dinas Pertanian | Operator SP |
 |---|---|---|---|---|
 | Manajemen pengguna | L T U | - | - | - |
 | Pengaturan role | L T U H | - | - | - |
-| Audit log | L E | - | - | - |
+| Audit log | L | - | - | - |
 | Data master wilayah | L T U H | L | L | L |
-| Kawasan transmigrasi | L T U H E | L E | L E | L |
-| Satuan permukiman (SP) | L T U H E | L T U E | L E | L |
-| Inventaris SP | L T U H E | L T U E | L E | L T U |
-| Fasilitas SP | L T U H E | L T U E | L E | L T U |
+| Kawasan transmigrasi | L T U H | L | L | L |
+| Satuan permukiman (SP) | L T U H | L T U | L | L |
+| Inventaris SP | L T U H | L T U | L | L T U |
+| Fasilitas SP | L T U H | L T U | L | L T U |
 | Data master satuan | L T U H | L | L | L |
-| Transmigran | L T U H E | L T U E | L E | L T U |
-| Rumah & hunian | L T U H E | L T U E | L E | L T U |
-| Riwayat penghunian | L T U H E | L T E | L | L T |
-| Lahan | L T U H E | L T U E | L E | L T U |
+| Transmigran | L T U H | L T U | L | L T U |
+| Rumah & hunian | L T U H | L T U | L | L T U |
+| Riwayat penghunian | L T U H | L T | L | L T |
+| Lahan | L T U H | L T U | L | L T U |
 | Dokumen lahan (HPL/SHM) | L T U H | L T | L | L T |
-| Kelompok tani | L T U H E | L E | L T U E | L T U |
-| Anggota poktan | L T U H E | L | L T U E | L T U |
-| Alsintan | L T U H E | L | L T U E | L T U |
-| Saprotan | L T U H E | L | L T U E | L T U |
-| Komoditas | L T U H E | L | L T U E | L |
+| Kelompok tani | L T U H | L | L T U | L T U |
+| Anggota poktan | L T U H | L | L T U | L T U |
+| Alsintan | L T U H | L | L T U | L T U |
+| Saprotan | L T U H | L | L T U | L T U |
+| Komoditas | L T U H | L | L T U | L |
 | Musim tanam | L T U H | L | L T U | L |
-| Riwayat tanam | L T U H E | L | L T U E | L T U |
-| Hasil panen | L T U H E | L | L T U E | L T U |
-| Infrastruktur SP | L T U H E | L T U E | L T U E | L T U |
-| Pengaduan | L T U H E | L T U E | L T U E | L T |
+| Riwayat tanam | L T U H | L | L T U | L T U |
+| Hasil panen | L T U H | L | L T U | L T U |
+| Infrastruktur SP | L T U H | L T U | L T U | L T U |
+| Pengaduan | L T U H | L T U | L T U | L T |
 | Penanganan pengaduan | L T U | L T U | L T U | - |
-| Dashboard | L E | L E | L E | L |
-| Laporan & export | L E | L E | L E | L |
+| Dashboard | L | L | L | L |
 
 **Cakupan data tiap role:** Admin, Dinas Transmigrasi, dan Dinas Pertanian bercakupan `Semua`. Operator SP bercakupan `Per SP`, sehingga seluruh kewenangannya otomatis terbatas pada SP yang ditugaskan padanya.
 
@@ -272,8 +271,10 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **E*
 1. Dinas hanya menangani pengaduan sesuai bidangnya: bidang ketransmigrasian untuk Dinas Transmigrasi, bidang pertanian untuk Dinas Pertanian. Pembatasan ini berlaku pada level query, bukan lewat kewenangan.
 2. Penghapusan data utama memakai *soft delete* agar dapat dipulihkan dan tetap tercatat pada audit log.
 3. Operator SP sengaja tidak diberi kewenangan hapus. Ia bertugas memasukkan dan memutakhirkan data, sedangkan penghapusan menjadi kewenangan dinas dan admin.
-5. **Inventaris SP dan Fasilitas SP adalah dua fitur terpisah**, masing-masing dengan kewenangannya sendiri. Keduanya memang bernilai sama pada konfigurasi awal, tetapi tetap dipisah karena berupa dua tabel dan dua halaman yang berbeda (§4b poin 1), sehingga Admin dapat memberi kewenangan berbeda antara aset bergerak dan bangunan fasilitas. Sampai 2026-08-12 keduanya tertulis sebagai satu baris di sini, tidak sejalan dengan `data-dictionary.md` §13.1, `erd.md`, dan `ui-spec.md` yang sejak awal memisahkannya.
-5. Anggota poktan yang berhenti ditandai berstatus "Sudah Keluar", bukan dihapus, agar riwayat tetap utuh.
+4. **Operator SP tidak memegang kewenangan apa pun pada Penanganan pengaduan,** dan inilah pembeda pokoknya dari role dinas. Menangani pengaduan berarti **memutuskan tindak lanjut atas nama dinas** beserta menutup laporan warga; itu kewenangan jabatan, bukan soal kemampuan teknis. Operator SP tetap boleh melihat dan mencatat pengaduan dari wilayahnya, sehingga laporan warga tidak pernah tertahan menunggu petugas dinas hadir di lokus.
+5. **Ekspor tidak lagi menjadi kewenangan tersendiri** (dicabut 2026-08-17). Mengekspor adalah cara lain membaca data yang **sudah** boleh dilihat, bukan tindakan baru, sehingga ia mengikuti kewenangan `lihat` pada fitur yang bersangkutan. Sebelumnya huruf `E` berdiri terpisah, tetapi 24 sel memberi `lihat` tanpa `export` tanpa alasan yang dapat dijelaskan, dan Admin terpaksa menyusun satu maksud dua kali. Pembatasan sebaran data ditangani **cakupan data** (5.2): Operator SP hanya dapat mengekspor data SP yang ditugaskan padanya, sebab penyaringannya terjadi di tingkat query, bukan di tombol.
+6. **Inventaris SP dan Fasilitas SP adalah dua fitur terpisah**, masing-masing dengan kewenangannya sendiri. Keduanya memang bernilai sama pada konfigurasi awal, tetapi tetap dipisah karena berupa dua tabel dan dua halaman yang berbeda (§4b poin 1), sehingga Admin dapat memberi kewenangan berbeda antara aset bergerak dan bangunan fasilitas. Sampai 2026-08-12 keduanya tertulis sebagai satu baris di sini, tidak sejalan dengan `data-dictionary.md` §13.1, `erd.md`, dan `ui-spec.md` yang sejak awal memisahkannya.
+7. Anggota poktan yang berhenti ditandai berstatus "Sudah Keluar", bukan dihapus, agar riwayat tetap utuh.
 
 ### 6. Aturan Fitur Transmigran
 1. Data transmigran harus menjadi data inti sistem.
@@ -541,6 +542,11 @@ Parameter dikelompokkan menurut satu pertanyaan: **tanpa ini, apakah tempat ters
    - pengaduan dan status penanganan,
    - indikator kawasan.
 5. Laporan harus bisa difilter sebelum diekspor.
+6. **Tombol ekspor diletakkan menempel pada tabel datanya**, bukan dikumpulkan pada satu halaman laporan tersendiri (ditetapkan 2026-08-17). Halaman terpusat `/laporan` dihapus karena melanggar poin 5 di atas: ia menawarkan sembilan unduhan tanpa satu pun kontrol filter, sehingga petugas selalu menerima seluruh isi tabel. Halaman daftar sudah memiliki pencarian dan filter yang bekerja, jadi di sanalah ekspor seharusnya berada.
+7. **Filter yang sedang aktif wajib ikut terbawa ke berkas hasil ekspor.** Query string halaman disalin apa adanya ke alamat ekspor, sehingga isi unduhan sama persis dengan yang terlihat di layar. Tanpa aturan ini petugas yang sudah menyaring satu SP tetap menerima berkas berisi seluruh kawasan, dan selisihnya baru disadari setelah berkas dibuka di lapangan.
+8. **Rekap indikator kawasan diekspor dari dashboard**, sebab dashboard memang sumber seluruh indikatornya dan tidak memiliki tabel padanan di modul mana pun.
+9. **Ekspor bukan kewenangan tersendiri.** Ia mengikuti kewenangan `lihat` pada fitur yang bersangkutan; lihat 5.1 catatan 5. Pembatasan sebaran data ditangani cakupan data, bukan dengan menahan tombol ekspor.
+10. Template isian luring tidak diletakkan pada halaman laporan, melainkan menjadi **langkah pertama modal impor** di tiap modul yang menerimanya. Menyediakannya di dua tempat berarti dua berkas template yang dapat berbeda diam-diam.
 
 ### 13. Aturan UI/UX
 

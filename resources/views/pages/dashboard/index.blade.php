@@ -81,7 +81,17 @@
 
     <x-sim.page-header judul="Dashboard Kawasan Kobalima Timur"
         keterangan="Ringkasan kependudukan, lahan, produksi, dan pengaduan di enam satuan permukiman."
-        :remah="[['label' => 'Dashboard']]" />
+        :remah="[['label' => 'Dashboard']]">
+        {{--
+            Rekap indikator kawasan untuk laporan kementerian (rules.md 12
+            poin 4). Dahulu berada di halaman laporan terpusat; dipindah ke
+            sini karena dashboard memang sumber seluruh indikatornya, dan
+            ekspor kini menempel pada data yang ditampilkan.
+        --}}
+        <x-slot:aksi>
+            <x-sim.tombol-ekspor label="Ekspor Laporan Kawasan" />
+        </x-slot:aksi>
+    </x-sim.page-header>
 
     {{--
         Filter global. Memengaruhi seluruh visualisasi mulai Task 9.2; saat ini
