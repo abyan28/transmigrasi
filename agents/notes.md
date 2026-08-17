@@ -251,6 +251,83 @@ Indikator mutu data menjadi menyesatkan, terutama saat dilaporkan ke Kementerian
 
 ---
 
+## 1b. Penyajian Statis di GitHub Pages (2026-08-17)
+
+Antarmuka Tahap 2 diterbitkan sebagai **berkas statis** ke GitHub Pages agar dapat ditinjau tim dan dinas tanpa biaya, tanpa kartu kredit, dan tanpa laptop pengembang harus menyala. Alamatnya `https://abyan28.github.io/transmigrasi/`, diperbarui otomatis setiap `git push` ke `main`.
+
+Pilihan ini masuk akal **justru karena Tahap 2 belum punya backend**: seluruh isi halaman berasal dari `app/Support/DummyData.php`, tidak ada satu pun kueri basis data, dan tidak ada autentikasi. Aplikasi hanya dijalankan sebentar di runner, digilas menjadi HTML, lalu HTML-nya yang disajikan.
+
+### 1b.1 Cara kerjanya
+
+`.github/workflows/deploy.yml` menjalankan: pasang PHP 8.2 dan Node, `composer install`, `npm run build`, `php artisan serve`, lalu menggilas setiap alamat dari `php artisan sim:tautan-statis` menjadi `folder/index.html`. Alamat tetap bersih tanpa akhiran `.html`, sama persis dengan versi yang dilayani Laravel.
+
+Perintah `sim:tautan-statis` (`app/Console/Commands/DaftarTautanStatis.php`) membangkitkan daftar dari sumbernya langsung: rute GET tanpa parameter, ditambah halaman rincian yang dijabarkan dari `DummyData`. **Sengaja tidak ditulis tangan**, supaya penambahan data contoh tidak diam-diam meninggalkan halaman yang tidak ikut terbit. Hasil per 2026-08-17: **113 halaman, seluruhnya membalas 200.**
+
+Dua alamat dikecualikan lewat konstanta `DIKECUALIKAN`: `uji-403` yang memang sengaja membalas 403, dan `up` yang merupakan pemeriksa kesehatan bawaan Laravel, bukan halaman.
+
+### 1b.2 Sub-path, sumber masalah terbesar
+
+GitHub Pages menyajikan repositori di `/transmigrasi/`, bukan di akar domain. Akibatnya `route()`, `url()`, dan `asset()` yang menghitung akar dari request kehilangan awalan itu, dan **seluruh tautan beserta gambar rusak**.
+
+Penanganannya di `AppServiceProvider::samakanAlamatDasar()`:
+
+| Fungsi | Ditangani oleh |
+|---|---|
+| `asset()` | `config('app.asset_url')`, kunci baru pada `config/app.php` |
+| `route()` dan `url()` | `forceRootUrl()` |
+| Skema `https` | `forceScheme('https')`, hanya bila `ASSET_URL` berskema https |
+
+**Hanya aktif bila `ASSET_URL` diisi.** Pengembangan di localhost, akses lewat jaringan lokal, dan terowongan Cloudflare tidak menyetel variabel ini, sehingga perilakunya sama sekali tidak berubah: akar tetap diambil dari request yang masuk. Sudah diverifikasi untuk ketiga skenario.
+
+Penyamaan skema perlu karena penggilasan berjalan lewat `php artisan serve` yang berbicara http, sedangkan hasilnya disajikan lewat https. Tanpa itu `route()` mencetak http sementara `asset()` mencetak https, dan peramban memblokir asetnya sebagai muatan campuran.
+
+### 1b.3 Path absolut yang harus dibersihkan
+
+Peninggalan template TailAdmin berupa **24 path absolut** di 11 berkas (`src="/images/..."`, `href="/"`, favicon) diganti menjadi `asset()` dan `route()`. Ditemukan pula dua sumber lain saat pengujian:
+
+- **`layouts/sidebar.blade.php`** — 25 alamat menu dari `MenuHelper` dipakai mentah sebagai `href`. Dibungkus `url()`. Nilai `path` di `MenuHelper` **sengaja dibiarkan relatif**, sebab dipakai juga untuk membandingkan status menu aktif; mengubahnya menjadi alamat lengkap akan merusak penandaan itu.
+- **`components/sim/stat-card.blade.php`** — atribut `url` dipakai mentah. Dibungkus `url()`, dengan pengecualian untuk alamat yang sudah memuat skema.
+
+**Aturan untuk pengerjaan selanjutnya: jangan pernah menulis `href="/sesuatu"` atau `src="/images/..."` secara langsung.** Selalu lewat `route()`, `url()`, atau `asset()`. Bila tidak, tautannya akan rusak di GitHub Pages sementara tetap tampak benar di localhost, dan kesalahan seperti ini tidak tertangkap uji berbasis HTTP.
+
+### 1b.4 Jebakan `public/hot`
+
+Ditemukan saat pengujian: bila `public/hot` ikut terbawa, `@vite` mengalihkan seluruh aset ke `localhost:5173` dan situs terbit **tanpa gaya sama sekali**. Berkas itu dibuat `npm run dev` dan sudah masuk `.gitignore`, tetapi alur kerja tetap menghapusnya sebagai pengaman.
+
+Hal yang sama berlaku saat memakai terowongan Cloudflare: jangan jalankan `npm run dev` selagi demo berlangsung.
+
+### 1b.5 Yang tidak berfungsi pada versi statis
+
+1. **Seluruh tombol simpan, ubah, dan hapus.** 70 rute POST/PUT/DELETE hanya `return back()` tanpa menyimpan apa pun. Pada versi ber-PHP tombol memunculkan pesan; pada versi statis tidak terjadi apa-apa. **Bukan kemunduran**, sebab keduanya sama-sama tidak menyimpan.
+2. **Pencarian dan penyaringan tabel.** Memang belum berfungsi sejak awal.
+3. **Penyaring dashboard.** Formulir GET yang belum menyaring apa pun.
+
+### 1b.6 Lacak pengaduan dan utang yang ditinggalkan
+
+Halaman lacak semula hanya menerima `?nomor=`, yang tidak dapat dilayani berkas statis. Ditambahkan rute **tautan tetap** `/lacak-pengaduan/{nomor}`, sehingga setiap nomor punya halaman sendiri dan ikut tergilas. Formulir diarahkan ke sana lewat `x-on:submit` bertanda `ponytail:`.
+
+Rancangannya dibuat agar mudah dibongkar:
+
+- Blok PHP di `lacak.blade.php` **tidak diubah logikanya**, hanya ditambah pembacaan `$nomorRute`.
+- Bila JavaScript mati, atribut terabaikan dan formulir kembali mengirim GET seperti biasa.
+- Kueri `?nomor=` lama tetap bekerja.
+
+**Pada Tahap 8**, ketika controller pengaduan mengambil alih: hapus atribut `x-on:submit` beserta komentar `ponytail:` di atasnya. Rute tautan tetap sebaiknya **dipertahankan**, karena hasil pencarian yang dapat ditandai dan dibagikan tetap berguna pada versi ber-backend.
+
+### 1b.7 Yang harus dilakukan saat backend masuk
+
+Begitu Tahap 3 dan seterusnya berjalan, sistem memerlukan PHP dan basis data yang hidup, sehingga **GitHub Pages tidak lagi memadai**. Yang perlu diputuskan saat itu:
+
+1. **Autentikasi mematikan penggilasan.** Setelah Tahap 3 aktif, halaman yang butuh login akan membalas pengalihan ke `/login`, bukan 200, dan penerbitan gagal. Pilihannya: batasi daftar gilas hanya ke halaman publik, atau hentikan penerbitan statis sama sekali.
+2. **Pindah ke hosting ber-PHP.** `prd.md` A9 sudah menetapkan hosting dengan SSL dan cadangan terjadwal. Alur kerja ini dapat dihapus atau dialihkan menjadi penerbitan pratinjau saja.
+3. **Yang tetap berguna** meski beralih hosting: penyeragaman `asset()`, `url()`, dan `route()` pada 1b.3, serta kepercayaan pada `X-Forwarded-*` di `bootstrap/app.php`. Keduanya justru **syarat** untuk hosting di belakang reverse proxy.
+
+### 1b.8 Ketergantungan yang perlu diingat
+
+Pengaturan GitHub Pages harus disetel sekali secara manual: **Settings → Pages → Source: GitHub Actions**. Tanpa itu alur kerja berjalan tetapi hasilnya tidak terbit.
+
+---
+
 ## 2. Catatan Dokumen Proposal
 
 Lembar pengesahan pada `docs/Revisi_Proposal_Budi_TEP ITS 2026_Kobalima_Timur_Upload_10_6_2026_a.pdf` masih memuat judul dan pengusul dari proposal lain:
@@ -362,6 +439,20 @@ Seharusnya: "Digitalisasi Monitoring Pertanian dan Tata Kelola Data Kawasan Tran
 | 2026-08-17 | Baris total ditulis **"Total" saja**, tanpa penanda cakupan | Judul halaman dan filter yang sedang aktif sudah menyatakan cakupannya, sehingga "Total kawasan" mengulang informasi tepat di atasnya. Lima tempat disamakan, sedangkan baris yang menjelaskan APA yang dijumlahkan seperti "Total luas lahan" tetap dipertahankan |
 | 2026-08-17 | Istilah antarmuka **diseragamkan ke "email"**, bukan "surel" | Lebih dikenal petugas dan warga di lokus meski "surel" padanan baku. Hanya menyentuh empat tempat yang benar-benar tampil di layar; dua puluh empat kemunculan lain berada di dalam komentar kode dan dibiarkan, sebab pembacanya pengembang. Aturannya dicatat pada ``ui-spec.md`` 10.1 agar pekerjaan berikutnya tidak kembali memakai "surel" |
 | 2026-08-17 | Uji penjaga istilah sempat **lulus tanpa memeriksa apa pun** | Spanduk kredensial hanya dirender setelah formulir dikirim, sedangkan uji membuka halaman biasa sehingga teksnya tidak pernah ada. Ketahuan lewat mutasi yang tidak memerah. Sesi kini diisi lebih dulu supaya keadaan setelah pengiriman ikut terperiksa |
+
+---
+
+## 3b. Keputusan Penyajian Statis (2026-08-17)
+
+| Tanggal | Keputusan | Alasan |
+|---|---|---|
+| 2026-08-17 | Antarmuka Tahap 2 diterbitkan **sebagai berkas statis** ke GitHub Pages | Gratis tanpa kartu kredit, pembaruan cukup `git push`, dan tidak menuntut laptop pengembang menyala. Masuk akal justru karena Tahap 2 tidak memiliki kueri basis data maupun autentikasi; seluruh isi halaman berasal dari `DummyData` |
+| 2026-08-17 | Render dan Railway **gugur lebih dulu** | Render tidak memiliki runtime PHP native sehingga mensyaratkan Docker, sedangkan Railway meminta kartu kredit. InfinityFree menyediakan PHP asli tetapi pembaruannya lewat unggahan FTP manual, berlawanan dengan syarat mudah direvisi |
+| 2026-08-17 | Sub-path ditangani `ASSET_URL` + `forceRootUrl()`, **bukan menyunting tautan satu per satu** | GitHub Pages menyajikan repositori di `/transmigrasi/`. Menambal 205 pemanggilan `route()` mustahil dirawat, sedangkan satu titik pengaturan di `AppServiceProvider` menangani `route()`, `url()`, dan `asset()` sekaligus. Tidak aktif bila `ASSET_URL` kosong, sehingga localhost tidak terpengaruh |
+| 2026-08-17 | Daftar alamat **dibangkitkan dari kode**, bukan ditulis tangan | `sim:tautan-statis` membaca tabel rute dan `DummyData` langsung. Daftar tetap akan diam-diam ketinggalan setiap kali data contoh bertambah, dan halaman yang tidak ikut terbit tidak menimbulkan galat apa pun sehingga sulit disadari |
+| 2026-08-17 | Nilai `path` pada `MenuHelper` **sengaja tetap relatif** | Dipakai ganda: sebagai `href` sekaligus pembanding status menu aktif. Mengubahnya menjadi alamat lengkap akan merusak penandaan menu aktif. Yang dibungkus `url()` hanya `href`-nya di `sidebar.blade.php` |
+| 2026-08-17 | Penggilasan **diuji lengkap secara lokal** sebelum alur kerja diserahkan | Tiga cacat hanya muncul pada hasil gilasan, tidak pada uji Pest maupun tampilan localhost: `public/hot` yang membuat situs terbit tanpa gaya, 25 alamat menu telanjang, dan atribut `url` pada `stat-card`. Uji berbasis HTTP tidak memeriksa bentuk tautan pada keluaran |
+| 2026-08-17 | Tautan tetap `/lacak-pengaduan/{nomor}` **dipertahankan meski backend masuk** | Ditambahkan agar halaman lacak tetap bekerja tanpa kueri, tetapi hasil pencarian yang dapat ditandai dan dibagikan tetap berguna pada versi ber-backend. Yang dihapus pada Tahap 8 hanya pengalihan `x-on:submit` bertanda `ponytail:` |
 
 ---
 

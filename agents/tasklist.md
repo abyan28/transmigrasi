@@ -554,6 +554,8 @@ Diperbaiki dengan uji yang **membuka setiap tujuan menu ke aplikasi sungguhan**.
 
 ## Tahap 3 — Autentikasi dan Hak Akses
 
+> **Peringatan penerbitan statis.** Begitu login aktif, halaman berpelindung membalas pengalihan ke `/login`, bukan 200, sehingga `.github/workflows/deploy.yml` **gagal** dan situs GitHub Pages berhenti diperbarui. Putuskan lebih dulu: batasi `sim:tautan-statis` hanya ke halaman publik, atau hentikan penerbitan statis sama sekali. Lihat `notes.md` bagian 1b.7.
+
 - [ ] Task 3.1 - Migration dan model `user` beserta password dan timestamps `[Mudah]`
 - [ ] Task 3.2 - Implementasi login, logout, dan rate limiting `[Sedang]`
   * Satu kolom kredensial menerima **email atau NIK**; sistem memilih kolom pencarian berdasarkan bentuk masukan (16 digit angka berarti NIK)
@@ -706,6 +708,8 @@ Diperbaiki dengan uji yang **membuka setiap tujuan menu ke aplikasi sungguhan**.
 - [ ] Task 11.1 - Alpha testing internal (login, role, CRUD, filter, upload, export, audit log) `[Sulit]`
 - [ ] Task 11.2 - Perbaikan bug blocker `[Sedang]`
 - [ ] Task 11.3 - Deployment ke hosting + domain, SSL, storage, backup terjadwal `[Sulit]`
+  * **Prasyarat:** hentikan atau batasi penerbitan statis GitHub Pages lebih dulu. Rinciannya pada `notes.md` bagian 1b.7
+  * Penyeragaman `asset()`/`url()`/`route()` (1b.3) dan kepercayaan `X-Forwarded-*` di `bootstrap/app.php` **tetap diperlukan**, sebab keduanya syarat hosting di belakang reverse proxy
 - [ ] Task 11.4 - Simulasi input data awal per desa/SP prioritas `[Sedang]`
 - [ ] Task 11.5 - Beta testing bersama dinas dan pengguna lapangan `[Sedang]`
 - [ ] Task 11.6 - Penyusunan SOP, buku panduan, dan video panduan `[Sedang]`

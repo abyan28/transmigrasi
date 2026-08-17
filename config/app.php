@@ -56,6 +56,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Alamat Dasar Aset
+    |--------------------------------------------------------------------------
+    |
+    | Diisi hanya ketika aplikasi disajikan pada sub-path, misalnya build
+    | statis di GitHub Pages yang beralamat `/namarepo/`. Bila kosong, seluruh
+    | tautan dan aset mengikuti alamat request yang masuk seperti biasa,
+    | sehingga localhost, jaringan lokal, dan terowongan tetap bekerja.
+    |
+    | Pemakaiannya diatur pada App\Providers\AppServiceProvider.
+    |
+    */
+
+    'asset_url' => env('ASSET_URL'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

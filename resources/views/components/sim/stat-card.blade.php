@@ -36,7 +36,12 @@
     };
 @endphp
 
-<{{ $tagPembungkus }} @if ($url) href="{{ $url }}" @endif
+{{--
+    Alamat dilewatkan `url()` agar tetap benar ketika sistem disajikan pada
+    sub-path, misalnya build statis GitHub Pages. Alamat lengkap yang sudah
+    memuat skema dibiarkan apa adanya.
+--}}
+<{{ $tagPembungkus }} @if ($url) href="{{ str_contains($url, '://') ? $url : url($url) }}" @endif
     {{ $attributes->merge([
         'class' => 'block rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]'
             . ($url ? ' transition hover:border-brand-300 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:hover:border-brand-700' : ''),

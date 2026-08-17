@@ -22,7 +22,7 @@
     <div class="flex min-h-screen items-center justify-center bg-gray-50 p-6 dark:bg-gray-900">
         <div class="w-full max-w-md">
             <div class="mb-6 text-center">
-                <img src="/images/logo/logo-kementrans-128.png" alt="Logo Kementerian Transmigrasi"
+                <img src="{{ asset('images/logo/logo-kementrans-128.png') }}" alt="Logo Kementerian Transmigrasi"
                     class="mx-auto h-14 w-14" width="56" height="56" />
                 <h1 class="mt-4 text-title-sm font-semibold text-gray-800 dark:text-white/90">
                     Ganti Kata Sandi Dulu

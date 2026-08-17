@@ -97,8 +97,8 @@
             proporsi, atau memotongnya (agents/ui-spec.md bagian 3.7).
             Saat sidebar diciutkan, hanya lambangnya yang tampil.
         --}}
-        <a href="/" class="flex items-center gap-3" aria-label="Beranda {{ config('app.name') }}">
-            <img src="/images/logo/logo-kementrans-128.png" alt="Logo Kementerian Transmigrasi"
+        <a href="{{ route('beranda') }}" class="flex items-center gap-3" aria-label="Beranda {{ config('app.name') }}">
+            <img src="{{ asset('images/logo/logo-kementrans-128.png') }}" alt="Logo Kementerian Transmigrasi"
                 class="h-10 w-10 shrink-0" width="40" height="40" />
             <span x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
                 x-cloak class="flex flex-col leading-tight">
@@ -188,7 +188,7 @@
                                             <ul class="mt-2 space-y-1 ml-9">
                                                 @foreach ($item['subItems'] as $subItem)
                                                     <li>
-                                                        <a href="{{ $subItem['path'] }}" class="menu-dropdown-item"
+                                                        <a href="{{ url($subItem['path']) }}" class="menu-dropdown-item"
                                                             :class="isActive('{{ $subItem['path'] }}') ?
                                                                 'menu-dropdown-item-active' :
                                                                 'menu-dropdown-item-inactive'">
@@ -222,7 +222,7 @@
                                             batang gold di tepi kiri saat item sedang aktif, sebagai
                                             motif identitas (agents/ui-spec.md bagian 2.3).
                                         --}}
-                                        <a href="{{ $item['path'] }}" class="menu-item group"
+                                        <a href="{{ url($item['path']) }}" class="menu-item group"
                                             @if (MenuHelper::isActive($item['path'])) aria-current="page" @endif
                                             :class="[
                                                 isActive('{{ $item['path'] }}') ? 'menu-item-active motif-menu-aktif' :

@@ -9,10 +9,10 @@
     <title>{{ $title ?? 'Beranda' }} | {{ config('app.name') }}</title>
 
     {{-- Favicon dan ikon perangkat, diturunkan dari logo resmi Kementerian --}}
-    <link rel="icon" href="/favicon.ico" sizes="any">
-    <link rel="icon" type="image/png" sizes="32x32" href="/images/logo/favicon-32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/images/logo/favicon-16.png">
-    <link rel="apple-touch-icon" href="/images/logo/apple-touch-icon.png">
+    <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/logo/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('images/logo/favicon-16.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/logo/apple-touch-icon.png') }}">
     <meta name="theme-color" content="#163B54">
 
     <!-- Scripts -->

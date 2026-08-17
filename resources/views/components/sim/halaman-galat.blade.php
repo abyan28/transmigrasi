@@ -38,9 +38,9 @@
         </h1>
 
         @if ($ilustrasi)
-            <img src="/images/error/{{ $ilustrasi }}.svg" alt="" role="presentation"
+            <img src="{{ asset('images/error/' . $ilustrasi . '.svg') }}" alt="" role="presentation"
                 class="mx-auto mt-6 w-full max-w-sm dark:hidden" />
-            <img src="/images/error/{{ $ilustrasi }}-dark.svg" alt="" role="presentation"
+            <img src="{{ asset('images/error/' . $ilustrasi . '-dark.svg') }}" alt="" role="presentation"
                 class="mx-auto mt-6 hidden w-full max-w-sm dark:block" />
         @endif
 

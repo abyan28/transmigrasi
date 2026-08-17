@@ -26,7 +26,7 @@
         <nav aria-label="Remah roti" class="mb-2">
             <ol class="flex flex-wrap items-center gap-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
                 <li>
-                    <a href="/" class="hover:text-gray-700 dark:hover:text-gray-300">Beranda</a>
+                    <a href="{{ route('beranda') }}" class="hover:text-gray-700 dark:hover:text-gray-300">Beranda</a>
                 </li>
                 @foreach ($remah as $item)
                     <li aria-hidden="true">/</li>

@@ -1,0 +1,177 @@
+# Menerbitkan antarmuka Tahap 2 sebagai berkas statis ke GitHub Pages.
+#
+# Aplikasi tetap berupa Laravel biasa. Alur ini menjalankannya sebentar di
+# runner, menggilas seluruh halaman menjadi HTML, lalu menerbitkan hasilnya.
+# GitHub Pages hanya menyajikan berkas statis, jadi tidak ada PHP yang berjalan
+# di sisi pengunjung.
+#
+# Batasannya dicatat pada agents/notes.md bagian 1b. Ringkasnya: seluruh tombol
+# simpan, ubah, dan hapus tidak berfungsi, sama seperti sebelum digilas, sebab
+# Tahap 2 memang belum memiliki backend.
+
+name: Terbitkan ke GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Hanya satu penerbitan berjalan pada satu waktu. Penerbitan yang sedang
+# berlangsung dibiarkan selesai agar situs tidak terbit setengah jadi.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  bangun:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Siapkan Pages
+        id: pages
+        uses: actions/configure-pages@v5
+
+      - name: Siapkan PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, intl, bcmath, zip, gd, pdo_sqlite
+          coverage: none
+
+      - name: Siapkan Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Pasang dependensi PHP
+        run: composer install --no-dev --prefer-dist --no-progress --optimize-autoloader
+
+      - name: Pasang dependensi Node
+        run: npm ci
+
+      - name: Bangun aset
+        run: |
+          npm run build
+          # Berkas penanda server pengembangan Vite. Bila ikut terbawa, @vite
+          # mengalihkan seluruh aset ke localhost:5173 dan situs terbit tanpa
+          # gaya sama sekali. Runner mestinya bersih, tetapi penghapusan ini
+          # menjaga bila berkasnya sempat ikut ter-commit.
+          rm -f public/hot
+
+      - name: Siapkan lingkungan
+        env:
+          # Alamat akhir situs, dibaca config/app.php lewat kunci asset_url.
+          # AppServiceProvider lalu menyamakan akar seluruh tautan dengannya.
+          # Tanpa ini setiap tautan dan gambar kehilangan awalan /transmigrasi.
+          ASSET_URL: ${{ steps.pages.outputs.base_url }}
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force
+          # Basis data hanya diperlukan agar kerangka Laravel dapat menyala.
+          # Tahap 2 belum membaca satu tabel pun; seluruh isi halaman berasal
+          # dari app/Support/DummyData.php.
+          touch database/database.sqlite
+          {
+            echo "APP_ENV=production"
+            echo "APP_DEBUG=false"
+            echo "APP_URL=${ASSET_URL}"
+            echo "ASSET_URL=${ASSET_URL}"
+            echo "DB_CONNECTION=sqlite"
+            echo "DB_DATABASE=$(pwd)/database/database.sqlite"
+            echo "SESSION_DRIVER=file"
+            echo "CACHE_STORE=file"
+            echo "QUEUE_CONNECTION=sync"
+          } >> .env
+          php artisan migrate --force
+
+      - name: Kumpulkan daftar alamat
+        run: |
+          php artisan sim:tautan-statis > alamat.txt
+          echo "Jumlah halaman yang akan digilas: $(wc -l < alamat.txt)"
+
+      - name: Jalankan server
+        run: |
+          php artisan serve --host=127.0.0.1 --port=8000 &
+          # Menunggu sampai server benar-benar menjawab, bukan menebak dengan
+          # jeda tetap yang bisa terlalu cepat pada runner yang sibuk.
+          for i in $(seq 1 30); do
+            if curl -sf -o /dev/null http://127.0.0.1:8000/; then
+              echo "Server siap setelah ${i} detik."
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Server tidak kunjung siap."
+          exit 1
+
+      - name: Gilas menjadi berkas statis
+        run: |
+          mkdir -p keluaran
+          gagal=0
+
+          while read -r alamat; do
+            [ -z "$alamat" ] && continue
+
+            # Setiap halaman menjadi folder berisi index.html, sehingga alamat
+            # tetap bersih tanpa akhiran .html dan sama persis dengan versi
+            # yang dilayani Laravel.
+            if [ "$alamat" = "/" ]; then
+              tujuan="keluaran/index.html"
+            else
+              mkdir -p "keluaran${alamat}"
+              tujuan="keluaran${alamat}/index.html"
+            fi
+
+            kode=$(curl -s -o "$tujuan" -w '%{http_code}' "http://127.0.0.1:8000${alamat}")
+
+            if [ "$kode" != "200" ]; then
+              echo "GAGAL ${kode} ${alamat}"
+              gagal=$((gagal + 1))
+            fi
+          done < alamat.txt
+
+          if [ "$gagal" -gt 0 ]; then
+            echo "Ada ${gagal} halaman gagal digilas. Penerbitan dihentikan."
+            exit 1
+          fi
+
+          echo "Seluruh halaman berhasil digilas."
+
+      - name: Salin aset statis
+        run: |
+          cp -r public/build keluaran/build
+          cp -r public/images keluaran/images
+          cp public/favicon.ico keluaran/favicon.ico
+          # Menonaktifkan Jekyll agar folder dan berkas berawalan garis bawah
+          # tidak dibuang diam-diam oleh GitHub Pages.
+          touch keluaran/.nojekyll
+
+      - name: Sediakan halaman 404
+        run: |
+          # GitHub Pages memakai berkas ini untuk alamat yang tidak dikenal,
+          # sehingga pengunjung tetap melihat tampilan galat milik sistem.
+          curl -s -o keluaran/404.html http://127.0.0.1:8000/alamat-yang-tidak-ada || true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: keluaran
+
+  terbitkan:
+    needs: bangun
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.penerbitan.outputs.page_url }}
+
+    steps:
+      - id: penerbitan
+        uses: actions/deploy-pages@v4

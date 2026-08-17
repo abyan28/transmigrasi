@@ -123,24 +123,48 @@ header `X-Forwarded-*`, sehingga `asset()` dan `url()` mengikuti skema dan host 
 & "C:\xampp\php\php.exe" vendor\bin\pest
 ```
 
-Hasil terakhir: 293 lulus, 1360 pernyataan.
+Hasil terakhir: 357 lulus, 1562 pernyataan.
+
+## Penerbitan ke GitHub Pages
+
+Antarmuka Tahap 2 diterbitkan sebagai berkas statis di
+https://abyan28.github.io/transmigrasi/ dan diperbarui otomatis setiap `git push` ke `main`.
+
+Alur kerja `.github/workflows/deploy.yml` menjalankan aplikasi sebentar di runner, menggilas
+setiap alamat dari `php artisan sim:tautan-statis` menjadi HTML, lalu menerbitkannya. Per
+2026-08-17 tercatat 113 halaman.
+
+Pengaturan sekali di awal: **Settings → Pages → Source: GitHub Actions**.
+
+Karena yang disajikan hanya berkas statis, seluruh tombol simpan, ubah, dan hapus tidak
+berfungsi. Itu bukan kemunduran: rutenya memang belum menyimpan apa pun selama Tahap 2.
+Batasan selengkapnya beserta yang harus dikerjakan saat backend masuk ada pada
+`agents/notes.md` bagian 1b.
+
+Saat menambah halaman atau tautan, jangan menulis `href="/sesuatu"` maupun `src="/images/..."`
+secara langsung. Gunakan `route()`, `url()`, atau `asset()`, sebab tautan mentah akan rusak di
+GitHub Pages meski tampak benar di localhost.
 
 ## Struktur
 
 ```
+.github/workflows/
+  deploy.yml      penerbitan statis ke GitHub Pages
 app/
+  Console/        perintah sim:tautan-statis
   Enums/          31 enum, sumber tunggal seluruh pilihan baku
+  Helpers/        MenuHelper
   Http/           controller dan middleware
   Support/        DummyData, penyimpanan dokumen, aturan validasi
   View/           kelas komponen Blade
 resources/
   css/app.css     design token pada blok @theme
-  js/             app.js, chart-config.js, peta.js
+  js/             app.js, chart-config.js, input-angka.js, peta.js
   views/
-    components/   41 komponen bersama
+    components/   42 komponen bersama
     layouts/      6 tata letak
     pages/        70 halaman
-routes/web.php    119 rute
+routes/web.php    122 rute
 agents/           dokumen acuan: prd, rules, workflow, erd, ui-spec, tasklist, notes
 refs/             berkas rujukan, bukan bagian aplikasi
 ```

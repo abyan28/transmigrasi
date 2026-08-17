@@ -394,6 +394,17 @@ Route::get('/lacak-pengaduan', function () {
     return view('pages.publik.lacak', ['title' => 'Lacak Pengaduan']);
 })->name('lacak-pengaduan');
 
+// Tautan tetap per nomor pengaduan. Hasil pencarian menjadi dapat ditandai dan
+// dibagikan, dan inilah yang membuat halaman lacak tetap bekerja pada build
+// statis GitHub Pages, tempat kueri `?nomor=` tidak dapat dilayani.
+// Lihat agents/notes.md bagian 1b.
+Route::get('/lacak-pengaduan/{nomor}', function (string $nomor) {
+    return view('pages.publik.lacak', [
+        'title' => 'Lacak Pengaduan',
+        'nomorRute' => $nomor,
+    ]);
+})->where('nomor', '[A-Za-z0-9\-]+')->name('lacak-pengaduan.nomor');
+
 /*
 |--------------------------------------------------------------------------
 | Modul Pengaduan

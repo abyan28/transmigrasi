@@ -24,9 +24,9 @@
 
     <title>{{ $title ?? 'Pengaduan Warga' }} | {{ config('app.name') }}</title>
 
-    <link rel="icon" href="/favicon.ico" sizes="any">
-    <link rel="icon" type="image/png" sizes="32x32" href="/images/logo/favicon-32.png">
-    <link rel="apple-touch-icon" href="/images/logo/apple-touch-icon.png">
+    <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/logo/favicon-32.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/logo/apple-touch-icon.png') }}">
     <meta name="theme-color" content="#163B54">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -68,7 +68,7 @@
         <div class="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
             <a href="{{ route('pengaduan-warga') }}"
                 class="flex items-center gap-3 rounded focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
-                <img src="/images/logo/logo-kementrans-128.png" alt="Logo Kementerian Transmigrasi"
+                <img src="{{ asset('images/logo/logo-kementrans-128.png') }}" alt="Logo Kementerian Transmigrasi"
                     class="h-10 w-10 shrink-0" width="40" height="40" />
                 <span class="flex flex-col leading-tight">
                     <span class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">

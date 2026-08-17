@@ -19,7 +19,11 @@
         use App\Support\DummyData;
         use App\Enums\StatusPengaduan;
 
-        $nomor = trim((string) request('nomor', ''));
+        // Nomor dapat datang dari dua arah: kueri `?nomor=` milik formulir, dan
+        // segmen rute `/lacak-pengaduan/{nomor}` yang menjadi tautan tetap.
+        // Keduanya sah, dan yang kedua membuat halaman ini tetap berfungsi pada
+        // build statis yang tidak dapat melayani kueri.
+        $nomor = trim((string) ($nomorRute ?? request('nomor', '')));
         $pengaduan = null;
         $riwayat = [];
 
@@ -40,8 +44,22 @@
         </p>
     </div>
 
-    {{-- Pencarian nomor, memakai GET agar hasilnya dapat ditandai atau dibuka ulang --}}
+    {{--
+        ponytail: pengalihan ke tautan tetap, khusus agar halaman ini tetap
+        bekerja pada build statis GitHub Pages yang tidak dapat melayani kueri
+        `?nomor=`. HAPUS SELURUH ATRIBUT `x-on:submit` di bawah pada Tahap 8,
+        ketika controller pengaduan mengambil alih pencarian. Blok PHP di atas
+        sudah benar dan tidak perlu diubah.
+
+        Bila JavaScript mati, atribut ini terabaikan dan formulir kembali
+        mengirim GET seperti biasa, sehingga versi ber-PHP tetap berfungsi.
+    --}}
     <form method="GET" action="{{ route('lacak-pengaduan') }}"
+        x-data
+        x-on:submit.prevent="
+            const nomor = $el.nomor.value.trim().toUpperCase();
+            if (nomor) window.location.href = '{{ rtrim(route('lacak-pengaduan'), '/') }}/' + encodeURIComponent(nomor);
+        "
         class="rounded-2xl border border-gray-200 bg-white p-5 sm:p-6 dark:border-navy-700 dark:bg-navy-800">
         <label for="nomor" class="mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-300">
             Nomor Pengaduan

@@ -157,7 +157,7 @@
                     <p class="mb-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">
                         5. Tanpa kewenangan, memakai halaman 403 tersendiri
                     </p>
-                    <a href="/uji-403"
+                    <a href="{{ route('uji-403') }}"
                         class="inline-flex items-center rounded-lg border border-gray-300 px-4 py-2.5 text-theme-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
                         Buka Halaman 403
                     </a>

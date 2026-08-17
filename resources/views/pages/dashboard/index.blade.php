@@ -607,7 +607,7 @@
                     {{ count($isuPrioritas) }} pengaduan menunggu ditindaklanjuti, diurutkan dari yang paling mendesak.
                 </p>
             </div>
-            <a href="/pengaduan"
+            <a href="{{ route('pengaduan.index') }}"
                 class="rounded-lg border border-gray-300 px-3 py-2 text-theme-xs font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
                 Lihat Semua Pengaduan
             </a>
