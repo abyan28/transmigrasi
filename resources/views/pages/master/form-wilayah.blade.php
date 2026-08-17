@@ -37,8 +37,8 @@
 
     <div class="grid gap-4 sm:grid-cols-2">
         <div>
-            <label for="{{ $awalan }}_nama_wilayah" class="{{ $kelasLabel }}">Nama Wilayah</label>
-            <input type="text" id="{{ $awalan }}_nama_wilayah" name="nama"
+            <label for="{{ $awalan }}_nama_wilayah" class="{{ $kelasLabel }}">Nama Wilayah<span class="text-error-500">*</span></label>
+            <input type="text" id="{{ $awalan }}_nama_wilayah" name="nama" required
                 value="{{ old('nama', $data['nama'] ?? '') }}" maxlength="100"
                 placeholder="Contoh: Kapitan Meo" class="{{ $kelasKontrol }}" />
         </div>
@@ -63,8 +63,8 @@
     </div>
 
     <div x-show="tingkat === 'kabupaten'" x-cloak x-transition>
-        <label for="{{ $awalan }}_induk_provinsi" class="{{ $kelasLabel }}">Provinsi Induk</label>
-        <select id="{{ $awalan }}_induk_provinsi" name="provinsi_id" class="{{ $kelasKontrol }}">
+        <label for="{{ $awalan }}_induk_provinsi" class="{{ $kelasLabel }}">Provinsi Induk<span class="text-error-500">*</span></label>
+        <select id="{{ $awalan }}_induk_provinsi" name="provinsi_id" required class="{{ $kelasKontrol }}">
             <option value="">Pilih provinsi</option>
             @foreach ($wilayah['provinsi'] as $p)
                 <option value="{{ $p['id_provinsi'] }}">{{ $p['nama'] }}</option>
@@ -73,8 +73,8 @@
     </div>
 
     <div x-show="tingkat === 'kecamatan'" x-cloak x-transition>
-        <label for="{{ $awalan }}_induk_kabupaten" class="{{ $kelasLabel }}">Kabupaten Induk</label>
-        <select id="{{ $awalan }}_induk_kabupaten" name="kabupaten_id" class="{{ $kelasKontrol }}">
+        <label for="{{ $awalan }}_induk_kabupaten" class="{{ $kelasLabel }}">Kabupaten Induk<span class="text-error-500">*</span></label>
+        <select id="{{ $awalan }}_induk_kabupaten" name="kabupaten_id" required class="{{ $kelasKontrol }}">
             <option value="">Pilih kabupaten</option>
             @foreach ($wilayah['kabupaten'] as $k)
                 <option value="{{ $k['id_kabupaten'] }}">{{ $k['nama'] }}</option>
@@ -83,8 +83,8 @@
     </div>
 
     <div x-show="tingkat === 'desa'" x-cloak x-transition>
-        <label for="{{ $awalan }}_induk_kecamatan" class="{{ $kelasLabel }}">Kecamatan Induk</label>
-        <select id="{{ $awalan }}_induk_kecamatan" name="kecamatan_id" class="{{ $kelasKontrol }}">
+        <label for="{{ $awalan }}_induk_kecamatan" class="{{ $kelasLabel }}">Kecamatan Induk<span class="text-error-500">*</span></label>
+        <select id="{{ $awalan }}_induk_kecamatan" name="kecamatan_id" required class="{{ $kelasKontrol }}">
             <option value="">Pilih kecamatan</option>
             @foreach ($wilayah['kecamatan'] as $k)
                 <option value="{{ $k['id_kecamatan'] }}">{{ $k['nama'] }}</option>

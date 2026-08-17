@@ -1,9 +1,9 @@
 {{--
     Rincian satu aset infrastruktur SP.
 
-    Modul ini adalah PENDATAAN ASET, bukan pelaporan masalah. Karena itu
+    Fitur ini adalah PENDATAAN ASET, bukan pelaporan masalah. Karena itu
     halaman sengaja tidak menyediakan tombol lapor kerusakan: keluhan warga
-    masuk lewat modul pengaduan, sedangkan di sini kondisi diperbarui petugas
+    masuk lewat fitur pengaduan, sedangkan di sini kondisi diperbarui petugas
     saat pendataan berkala (agents/tasklist.md Task 2.18).
 
     Kondisi aset menjadi sumber indikator ke-12 dashboard sekaligus salah satu
@@ -126,14 +126,14 @@
                     </div>
 
                     {{--
-                        Penegasan batas modul. Tanpa ini, petugas mudah mengira
+                        Penegasan batas fitur. Tanpa ini, petugas mudah mengira
                         halaman aset adalah tempat melaporkan kerusakan.
                     --}}
                     <p class="mt-4 rounded-lg bg-gray-50 p-3.5 text-theme-xs text-gray-600 dark:bg-white/[0.03] dark:text-gray-400">
                         Halaman ini mendata aset, bukan menerima laporan kerusakan. Keluhan warga mengenai
                         infrastruktur disampaikan lewat
                         <a href="{{ route('pengaduan.index') }}"
-                            class="rounded font-medium text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">modul
+                            class="rounded font-medium text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">fitur
                             pengaduan</a>, agar penanganannya terlacak beserta riwayat tindak lanjutnya.
                     </p>
                 </div>

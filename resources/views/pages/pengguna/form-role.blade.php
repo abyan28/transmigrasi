@@ -1,5 +1,5 @@
 {{--
-    Isian role beserta matriks izin per modul.
+    Isian role beserta matriks kewenangan per fitur.
 
     Empat ketentuan yang dijaga di sini:
 
@@ -7,15 +7,15 @@
        alasannya, bukan dengan kontrol yang tampak dapat diklik lalu ditolak
        diam-diam (agents/rules.md bagian 5.0a, ANTISLOP-ID R-26).
     2. Kotak centang hanya dirender untuk aksi yang benar-benar berlaku pada
-       modul tersebut. Dashboard tidak mengenal tambah maupun hapus, sehingga
+       fitur tersebut. Dashboard tidak mengenal tambah maupun hapus, sehingga
        selnya dibiarkan kosong, bukan diisi kotak yang mustahil bermakna.
-    3. Cakupan data adalah pilihan terpisah dari izin. Izin menjawab boleh
+    3. Cakupan data adalah pilihan terpisah dari kewenangan. Kewenangan menjawab boleh
        melakukan apa, cakupan menjawab boleh melihat data siapa
        (rules.md bagian 5.0b).
     4. Menonaktifkan role tidak menghapusnya, agar riwayat audit log yang
        menyebut role tersebut tetap terbaca.
 
-    Sumber daftar modul adalah DummyData::daftarIzin(), yang menyalin tabel
+    Sumber daftar fitur adalah DummyData::daftarIzin(), yang menyalin tabel
     agents/rules.md bagian 5.1.
 --}}
 @php
@@ -57,7 +57,7 @@
             role="status">
             <p class="text-theme-sm text-yellow-800 dark:text-yellow-200">
                 <span class="font-semibold">Role ini terkunci dan hanya dapat dilihat.</span>
-                Izin Admin dipertahankan utuh agar sistem tidak pernah kehilangan seluruh jalur
+                Kewenangan Admin dipertahankan utuh agar sistem tidak pernah kehilangan seluruh jalur
                 administrasinya. Untuk membatasi kewenangan seseorang, buat role baru lalu pindahkan
                 akunnya ke role tersebut.
             </p>
@@ -69,8 +69,8 @@
         <h3 class="{{ $kelasBagian }}">Identitas Role</h3>
         <div class="mt-3 grid gap-4">
             <div>
-                <label for="{{ $awalan }}_nama_role" class="{{ $kelasLabel }}">Nama Role</label>
-                <input type="text" id="{{ $awalan }}_nama_role" name="nama"
+                <label for="{{ $awalan }}_nama_role" class="{{ $kelasLabel }}">Nama Role<span class="text-error-500">*</span></label>
+                <input type="text" id="{{ $awalan }}_nama_role" name="nama" required
                     value="{{ old('nama', $data['nama'] ?? '') }}" maxlength="50"
                     placeholder="Contoh: Penyuluh Lapangan" class="{{ $kelasKontrol }}"
                     @disabled($terkunci) />
@@ -96,19 +96,19 @@
                     @endforeach
                 </select>
                 <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
-                    Menentukan data siapa yang boleh dilihat, terpisah dari daftar izin di bawah.
-                    Role bercakupan Per SP membuat seluruh izinnya otomatis terbatas pada SP yang ditugaskan.
+                    Menentukan data siapa yang boleh dilihat, terpisah dari daftar kewenangan di bawah.
+                    Role bercakupan Per SP membuat seluruh kewenangannya otomatis terbatas pada SP yang ditugaskan.
                 </p>
             </div>
         </div>
     </section>
 
-    {{-- Bagian 2: matriks izin --}}
+    {{-- Bagian 2: matriks kewenangan --}}
     <section>
         <div class="flex flex-wrap items-baseline justify-between gap-2">
-            <h3 class="{{ $kelasBagian }}">Izin per Modul</h3>
+            <h3 class="{{ $kelasBagian }}">Kewenangan per Fitur</h3>
             <p class="text-theme-xs text-gray-500 dark:text-gray-400">
-                Sel kosong berarti aksi tersebut tidak berlaku pada modul itu.
+                Sel kosong berarti aksi tersebut tidak berlaku pada fitur itu.
             </p>
         </div>
 
@@ -116,7 +116,7 @@
             <table class="min-w-full text-left text-theme-sm">
                 <thead class="bg-gray-50 dark:bg-white/[0.02]">
                     <tr>
-                        <th scope="col" class="px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Modul</th>
+                        <th scope="col" class="px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Fitur</th>
                         @foreach ($semuaAksi as $label)
                             <th scope="col" class="px-3 py-3 text-center font-medium text-gray-500 dark:text-gray-400">
                                 {{ $label }}
@@ -168,7 +168,7 @@
                                             @endif
                                         @else
                                             <span class="text-gray-200 dark:text-gray-800" aria-hidden="true">&middot;</span>
-                                            <span class="sr-only">{{ $semuaAksi[$aksi] }} tidak berlaku pada modul ini</span>
+                                            <span class="sr-only">{{ $semuaAksi[$aksi] }} tidak berlaku pada fitur ini</span>
                                         @endif
                                     </td>
                                 @endforeach
@@ -180,21 +180,11 @@
         </div>
     </section>
 
-    {{-- Bagian 3: status --}}
-    @unless ($terkunci)
-        <section>
-            <label class="flex items-start gap-2.5">
-                <input type="checkbox" name="is_aktif" value="1"
-                    @checked(old('is_aktif', $data['is_aktif'] ?? true))
-                    class="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand-500 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700" />
-                <span class="text-theme-sm text-gray-700 dark:text-gray-300">
-                    Role aktif
-                    <span class="block text-theme-xs text-gray-500 dark:text-gray-400">
-                        Role nonaktif tidak dapat dipilih pada akun baru, tetapi tidak dihapus agar
-                        riwayat audit log yang menyebutnya tetap terbaca.
-                    </span>
-                </span>
-            </label>
-        </section>
-    @endunless
+    {{--
+        Toggle "Role aktif" sengaja tidak disediakan, sejalan dengan formulir
+        akun. Role baru selalu langsung aktif, sedangkan role yang tidak lagi
+        dipakai dihapus lewat tombol pada halaman daftar. Menyediakan dua
+        keadaan yang mirip, yaitu nonaktif dan terhapus, hanya menyulitkan
+        admin menebak yang mana yang seharusnya dipakai.
+    --}}
 </div>

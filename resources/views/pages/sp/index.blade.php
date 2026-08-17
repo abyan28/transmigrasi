@@ -154,7 +154,7 @@
 
         <x-slot:kaki>
             <tr class="motif-baris-total">
-                <td colspan="4" class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">Total kawasan</td>
+                <td colspan="4" class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">Total</td>
                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
                     {{ number_format(array_sum(array_column($baris, 'luas_lahan')), 2, ',', '.') }}</td>
                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">

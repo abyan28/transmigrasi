@@ -41,7 +41,49 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+/**
+ * Membaca kolom wajib setiap tabel langsung dari kamus data.
+ *
+ * Kolom bertanda `Null = TIDAK` pada agents/data-dictionary.md berarti wajib
+ * terisi di database. Dibaca dari dokumennya, bukan disalin ke dalam uji,
+ * supaya keduanya tidak dapat berbeda diam-diam: menambah kolom wajib di
+ * kamus data otomatis menuntut formnya ikut menandai.
+ *
+ * Kunci utama (berawalan `id_`) dilewati, sebab dibuat sistem dan tidak
+ * pernah diminta lewat formulir.
+ *
+ * @return array<string, array<int, string>> Nama tabel berisi daftar kolom wajib
+ */
+function kolomWajibDariKamusData(): array
 {
-    // ..
+    $baris = preg_split('/\r\n|\r|\n/', file_get_contents(base_path('agents/data-dictionary.md')));
+
+    $tabel = null;
+    $hasil = [];
+
+    foreach ($baris as $b) {
+        $teks = trim($b);
+
+        // Judul definisi tabel, contoh: ### 8.4 `saprotan`
+        if (preg_match('/^### [\d.]+[a-z]? `(\w+)`/', $teks, $m) === 1) {
+            $tabel = $m[1];
+
+            continue;
+        }
+
+        if ($tabel === null) {
+            continue;
+        }
+
+        // Baris kolom: | `nama` | `TIPE` | TIDAK | ... |
+        if (preg_match('/^\|\s*`(\w+)`\s*\|[^|]*\|\s*(TIDAK|YA)\s*\|/', $teks, $m) !== 1) {
+            continue;
+        }
+
+        if ($m[2] === 'TIDAK' && ! str_starts_with($m[1], 'id_')) {
+            $hasil[$tabel][] = $m[1];
+        }
+    }
+
+    return $hasil;
 }

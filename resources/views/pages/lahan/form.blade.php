@@ -97,10 +97,17 @@
                 </select>
             </div>
 
-            {{-- Kategori hanya berlaku untuk lahan usaha --}}
+            {{--
+                Kategori hanya berlaku untuk lahan usaha, dan wajib bila
+                berlaku. Bintang statis, `required` mengikuti jenis lahan
+                agar isian yang tersembunyi tidak menghalangi pengiriman.
+            --}}
             <div x-show="jenisLahan === 'Lahan Usaha'" x-cloak>
-                <label for="{{ $awalan }}_kategori_lahan" class="{{ $kelasLabel }}">Kategori Lahan</label>
-                <select id="{{ $awalan }}_kategori_lahan" name="kategori_lahan" class="{{ $kelasKontrol }}">
+                <label for="{{ $awalan }}_kategori_lahan" class="{{ $kelasLabel }}">
+                    Kategori Lahan<span class="text-error-500">*</span>
+                </label>
+                <select id="{{ $awalan }}_kategori_lahan" name="kategori_lahan" class="{{ $kelasKontrol }}"
+                    :required="jenisLahan === 'Lahan Usaha'">
                     <option value="">Pilih kategori</option>
                     @foreach (\App\Enums\KategoriLahan::opsi() as $nilai => $label)
                         <option value="{{ $nilai }}"

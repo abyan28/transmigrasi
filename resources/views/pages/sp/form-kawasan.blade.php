@@ -26,8 +26,8 @@
         <h3 class="{{ $kelasBagian }}">Identitas Kawasan</h3>
         <div class="mt-3 grid gap-4 sm:grid-cols-2">
             <div>
-                <label for="{{ $awalan }}_nama_kawasan" class="{{ $kelasLabel }}">Nama Kawasan</label>
-                <input type="text" id="{{ $awalan }}_nama_kawasan" name="nama"
+                <label for="{{ $awalan }}_nama_kawasan" class="{{ $kelasLabel }}">Nama Kawasan<span class="text-error-500">*</span></label>
+                <input type="text" id="{{ $awalan }}_nama_kawasan" name="nama" required
                     value="{{ old('nama', $data['nama'] ?? '') }}" maxlength="100"
                     placeholder="Contoh: Kobalima Timur" class="{{ $kelasKontrol }}" />
             </div>
@@ -40,8 +40,8 @@
             </div>
 
             <div>
-                <label for="{{ $awalan }}_kabupaten_kawasan" class="{{ $kelasLabel }}">Kabupaten</label>
-                <select id="{{ $awalan }}_kabupaten_kawasan" name="kabupaten_id" class="{{ $kelasKontrol }}">
+                <label for="{{ $awalan }}_kabupaten_kawasan" class="{{ $kelasLabel }}">Kabupaten<span class="text-error-500">*</span></label>
+                <select id="{{ $awalan }}_kabupaten_kawasan" name="kabupaten_id" required class="{{ $kelasKontrol }}">
                     <option value="">Pilih kabupaten</option>
                     @foreach ($daftarKabupaten as $kab)
                         <option value="{{ $kab['id_kabupaten'] }}"

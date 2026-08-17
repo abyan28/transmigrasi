@@ -11,6 +11,9 @@ import { Indonesian } from 'flatpickr/dist/l10n/id.js';
 // dan penggambaran ulang saat mode tema berganti
 import grafik from './chart-config';
 
+// Penjaga isian angka: menolak notasi ilmiah, tanda minus, dan tempelan teks
+import { pasangPenjagaAngka } from './input-angka';
+
 // Locale flatpickr disetel ke Bahasa Indonesia mengikuti locale aplikasi
 flatpickr.localize(Indonesian);
 
@@ -37,5 +40,12 @@ window.petaSim = {
 
 // Grafik ikut berganti warna ketika pengguna menukar mode terang dan gelap
 grafik.pantauTema();
+
+/*
+    Penjaga isian angka. Dipasang sekali di sini sebagai pendengar pada
+    document, sehingga ikut melayani isian yang baru muncul di dalam modal.
+    Lihat resources/js/input-angka.js untuk alasan tiap penolakannya.
+*/
+pasangPenjagaAngka();
 
 Alpine.start();

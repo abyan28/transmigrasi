@@ -34,8 +34,8 @@
         <h3 class="{{ $kelasBagian }}">Identitas Satuan Permukiman</h3>
         <div class="mt-3 grid gap-4 sm:grid-cols-2">
             <div>
-                <label for="{{ $awalan }}_nama_sp" class="{{ $kelasLabel }}">Nama SP</label>
-                <input type="text" id="{{ $awalan }}_nama_sp" name="nama"
+                <label for="{{ $awalan }}_nama_sp" class="{{ $kelasLabel }}">Nama SP<span class="text-error-500">*</span></label>
+                <input type="text" id="{{ $awalan }}_nama_sp" name="nama" required
                     value="{{ old('nama', $data['nama'] ?? '') }}" maxlength="100"
                     placeholder="Contoh: SP Kapitan Meo" class="{{ $kelasKontrol }}" />
             </div>
@@ -90,8 +90,8 @@
 
         <div class="mt-3 grid gap-4 sm:grid-cols-2">
             <div>
-                <label for="{{ $awalan }}_desa_id" class="{{ $kelasLabel }}">Desa</label>
-                <select id="{{ $awalan }}_desa_id" name="desa_id" class="{{ $kelasKontrol }}">
+                <label for="{{ $awalan }}_desa_id" class="{{ $kelasLabel }}">Desa<span class="text-error-500">*</span></label>
+                <select id="{{ $awalan }}_desa_id" name="desa_id" required class="{{ $kelasKontrol }}">
                     <option value="">Pilih desa</option>
                     @foreach ($daftarDesa as $d)
                         <option value="{{ $d['id_desa'] }}"
@@ -103,8 +103,8 @@
             </div>
 
             <div>
-                <label for="{{ $awalan }}_kawasan_id" class="{{ $kelasLabel }}">Kawasan Transmigrasi</label>
-                <select id="{{ $awalan }}_kawasan_id" name="kawasan_id" class="{{ $kelasKontrol }}">
+                <label for="{{ $awalan }}_kawasan_id" class="{{ $kelasLabel }}">Kawasan Transmigrasi<span class="text-error-500">*</span></label>
+                <select id="{{ $awalan }}_kawasan_id" name="kawasan_id" required class="{{ $kelasKontrol }}">
                     <option value="">Pilih kawasan</option>
                     @foreach ($daftarKawasan as $k)
                         <option value="{{ $k['id_kawasan_transmigrasi'] }}"

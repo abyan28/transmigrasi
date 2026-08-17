@@ -119,7 +119,7 @@
             <h2 class="mb-3 text-lg font-semibold text-gray-800 dark:text-white/90">Lima Keadaan Halaman</h2>
             <p class="mb-4 text-theme-sm text-gray-500 dark:text-gray-400">
                 Setiap halaman daftar dan rincian wajib menangani kelimanya.
-                Keadaan tanpa izin memakai halaman 403 tersendiri.
+                Keadaan tanpa kewenangan memakai halaman 403 tersendiri.
             </p>
 
             <div class="grid gap-4 lg:grid-cols-2">
@@ -155,7 +155,7 @@
 
                 <div class="rounded-2xl border border-gray-200 p-4 lg:col-span-2 dark:border-gray-800">
                     <p class="mb-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">
-                        5. Tanpa izin, memakai halaman 403 tersendiri
+                        5. Tanpa kewenangan, memakai halaman 403 tersendiri
                     </p>
                     <a href="/uji-403"
                         class="inline-flex items-center rounded-lg border border-gray-300 px-4 py-2.5 text-theme-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">

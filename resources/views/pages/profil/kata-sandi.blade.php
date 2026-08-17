@@ -6,7 +6,7 @@
     sehingga kata sandi lama tetap diminta sebagai pemeriksaan pemilik akun.
 
     Pengguna yang lupa kata sandi memiliki dua jalur pemulihan: kode
-    verifikasi lewat surel dinas, atau menghubungi admin bila jaringan di
+    verifikasi lewat email, atau menghubungi admin bila jaringan di
     lokus tidak memadai (agents/rules.md bagian 14b poin 7 sampai 12).
 
     Aturan kata sandi mengikuti app/Support/ValidationRules::password():

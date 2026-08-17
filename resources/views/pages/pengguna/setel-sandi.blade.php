@@ -87,12 +87,12 @@
                         --}}
                         <div class="rounded-lg border border-yellow-300 bg-yellow-50 p-4 dark:border-yellow-500/30 dark:bg-yellow-500/10">
                             <p class="text-theme-sm text-yellow-800 dark:text-yellow-200">
-                                <span class="font-semibold">Sampaikan juga secara langsung.</span>
-                                Kata sandi ini dikirim ke surel petugas, tetapi jaringan di lokus tidak selalu
-                                memadai. Sampaikan kepada yang bersangkutan, bukan lewat perantara.
+                                <span class="font-semibold">Sampaikan kepada pengguna terkait.</span>
+                                Kata sandi baru akan dikirimkan ke email. Pastikan kata sandi tersebut juga disampaikan 
+                                secara langsung kepada pengguna dan tidak melalui pihak lain.
                             </p>
                             <p class="mt-2 text-theme-xs text-yellow-800 dark:text-yellow-200">
-                                <span class="font-medium">Pengiriman surel belum aktif.</span>
+                                <span class="font-medium">Pengiriman email belum aktif.</span>
                                 Sampai backend selesai, penyerahan langsung adalah satu-satunya cara yang bekerja.
                             </p>
                         </div>

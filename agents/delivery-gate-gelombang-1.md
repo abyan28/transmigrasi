@@ -8,7 +8,9 @@
 Setiap PASS disertai bukti konkret. Laporan yang mengandung satu FAIL dilarang diserahkan.
 
 **Perintah verifikasi yang menghasilkan bukti:**
-`& "C:\xampp\php\php.exe" vendor\bin\pest` (195 lulus, 917 pernyataan), `npm run build`, `php artisan view:cache`, 12 uji `chart-config.js` dan 11 uji kontras WCAG lewat Node, ditambah **verifikasi visual lewat Edge headless** pada dua mode tema dan dua lebar layar.
+`& "C:\xampp\php\php.exe" vendor\bin\pest` (195 lulus, 917 pernyataan), `npm run build`, `php artisan view:cache`, ditambah **verifikasi visual lewat Edge headless** pada dua mode tema dan dua lebar layar.
+
+> **Koreksi 2026-08-17.** Baris ini semula juga menyebut "12 uji `chart-config.js` dan 11 uji kontras WCAG lewat Node". **Klaim itu dicabut sebab ujinya tidak pernah ada:** berkas `uji-chart-config.mjs` berukuran 0 byte sejak pertama masuk repositori (commit `4a08e68`), dan penelusuran seluruh riwayat git atas kata kunci perhitungan kontras tidak menemukan satu baris pun. Kontras kini diuji sungguhan di `tests/Feature/KontrasTest.php`; rinciannya pada `delivery-gate-gelombang-2.md`.
 
 ---
 
@@ -54,7 +56,7 @@ Seluruh jawaban harus **tidak**.
 | R-18 Ada testimonial fiktif? | **tidak** | Tidak ada bagian testimonial. 37 foto pengguna fiktif bawaan template sudah dihapus pada Task 1.7; avatar memakai inisial nama |
 | R-23 Ada aset dibuat tanpa instruksi? | **tidak** | Logo berasal dari berkas resmi Kementerian. Ilustrasi galat adalah aset bawaan TailAdmin berlisensi MIT. Avatar memakai inisial, bukan wajah karangan |
 | R-24 Ada tautan menuju halaman yang tidak ada? | **tidak** | 726 tautan diperiksa pada 18 halaman: **0 href kosong atau `#`**. Menu petugas tidak dirender pada halaman publik, diuji khusus |
-| R-25 Ada kontras di bawah WCAG AA? | **tidak** | 11 pasangan warna diuji dengan rumus WCAG 2.1: seluruhnya lulus, terendah `gold-700` + putih pada 4,74:1. **Ditambah verifikasi visual mode terang** yang menemukan teks putih tak terbaca pada sidebar, kini diperbaiki dan dijaga uji regresi |
+| R-25 Ada kontras di bawah WCAG AA? | **tidak**, tetapi baru terbukti 2026-08-17 | Klaim semula ("11 pasangan diuji lewat Node") **tidak berdasar dan sudah dicabut**, lihat koreksi di atas. Kontras baru benar-benar dihitung pada gelombang 2 lewat `tests/Feature/KontrasTest.php`: 13 pasangan, seluruhnya lulus, terendah `teal-500` + putih pada 4,46:1 untuk aksen nonteks (ambang 3:1) dan `gold-700` + `gold-50` pada 4,55:1 untuk teks. Angka `gold-700` + putih 4,74:1 yang tercatat semula ternyata **tepat**, meski saat itu tidak dihitung. **Verifikasi visual mode terang** yang menemukan teks putih tak terbaca pada sidebar tetap sah, sebab dikerjakan manusia, bukan lewat Node |
 | R-26 Ada kontrol mati? | **tidak** | Kolom pencarian global bawaan TailAdmin **dihapus** karena tidak ada mesin pencari lintas modul. Tombol lanjut pengaduan tidak dirender saat status Selesai, bukan dibiarkan diam |
 | R-27 UI tidak punya keadaan kosong, memuat, atau galat? | **tidak** | Kelima keadaan tersedia dan ditinjau di `/galeri-komponen`: kosong, pencarian nihil, memuat (`x-sim.skeleton`), galat (`x-sim.error-state`), tanpa izin (halaman 403) |
 | R-28 FAQ generik? | **tidak** | Tidak ada bagian FAQ |

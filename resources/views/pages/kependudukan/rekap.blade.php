@@ -83,7 +83,7 @@
                     </tbody>
                     <tfoot>
                         <tr class="motif-baris-total">
-                            <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">Total kawasan</td>
+                            <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">Total</td>
                             <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
                                 {{ number_format(array_sum(array_column($perSp, 'jumlah_kk')), 0, ',', '.') }}</td>
                             <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">

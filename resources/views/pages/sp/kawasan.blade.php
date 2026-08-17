@@ -111,7 +111,7 @@
             @endforeach
 
             <tr class="motif-baris-total">
-                <td colspan="3" class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">Total kawasan</td>
+                <td colspan="3" class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">Total</td>
                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
                     {{ number_format($totalKk, 0, ',', '.') }} KK</td>
                 <td></td>

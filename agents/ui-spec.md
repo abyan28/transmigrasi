@@ -219,6 +219,8 @@ Sidebar di mode gelap memakai `navy-950`, satu tingkat lebih gelap dari latar ha
 
 ### 3.2 Aturan kontras (WCAG) — WAJIB dipatuhi
 
+> **Angka pada tabel di bawah dijaga uji, bukan sekadar dicatat.** `tests/Feature/KontrasTest.php` menghitung ulang rasio dengan rumus WCAG 2.1 dan membaca nilai warna **langsung dari `resources/css/app.css`**, sehingga warna yang disunting tanpa memperbarui tabel ini akan memerahkan uji. Sebelum 2026-08-17 tabel ini tidak dijaga apa pun: laporan gate gelombang 1 mengklaim ada 11 uji kontras lewat Node, padahal berkasnya 0 byte dan tidak pernah berisi.
+
 Aplikasi menyediakan **dua mode tema**, sehingga kontras wajib diuji pada keduanya (`ANTISLOP-ID.md` R-25 dan R-34). Rasio di bawah dihitung dengan rumus WCAG 2.1.
 
 #### 3.2.1 Mode terang
@@ -272,7 +274,7 @@ Sesuai R-34, mode yang dikirim wajib berfungsi penuh. Yang wajib diperiksa pada 
 - **peta pemilih titik**, termasuk keadaan ketika ubin gagal dimuat. Peta bergantung pada sambungan, sedangkan isian koordinat manual tidak,
 - **halaman yang dibuka lewat tab baru**, bukan hanya yang dimuat langsung, **beserta seluruh grafik di dalamnya sampai bagian paling bawah halaman**. Tab yang belum dilukis peramban melaporkan lebar nol, sehingga tata letak maupun kanvas grafik yang bergantung padanya sempat salah sampai halaman disegarkan. Grafik perlu diperiksa terpisah, sebab tata letak dapat sudah benar sementara kanvasnya masih memakai ukuran keliru,
 - seluruh varian badge status (§6.6),
-- state kosong, memuat, galat, dan tanpa izin (§7),
+- state kosong, memuat, galat, dan tanpa kewenangan (§7),
 - indikator fokus keyboard.
 
 Mode gelap yang merusak keterbacaan mode terang, atau sebaliknya, dihitung sebagai cacat dan wajib diperbaiki sebelum penyerahan.
@@ -494,9 +496,9 @@ Dua halaman berikut dapat diakses siapa pun tanpa akun, sebagai kanal pengaduan 
 
 ### 4.9 Laporan dan Sistem
 
-Kolom "Izin" menggantikan kolom "Role" pada tabel-tabel sebelumnya, karena akses kini ditentukan izin, bukan nama role.
+Kolom "Kewenangan" menggantikan kolom "Role" pada tabel-tabel sebelumnya, karena akses kini ditentukan kewenangan, bukan nama role.
 
-| Halaman | Rute | Izin |
+| Halaman | Rute | Kewenangan |
 |---|---|---|
 | Pusat laporan | `GET /laporan` | `laporan.lihat` |
 | Unduh template luring | tab pada pusat laporan | `laporan.export` |
@@ -506,22 +508,22 @@ Kolom "Izin" menggantikan kolom "Role" pada tabel-tabel sebelumnya, karena akses
 | Setel ulang kata sandi | modal | `pengguna.ubah` |
 | Nonaktifkan pengguna | konfirmasi | `pengguna.ubah` |
 | Daftar role | `GET /pengaturan/role` | `role.lihat` |
-| Form role dan izin | modal | `role.tambah` / `role.ubah` |
+| Form role dan kewenangan | modal | `role.tambah` / `role.ubah` |
 | Audit log | `GET /audit-log` | `audit_log.lihat` |
 | Halaman 403 | — | semua |
 | Halaman 404 | — | semua |
 
-**Halaman form role** memuat: nama role, deskripsi, pilihan cakupan data, dan matriks centang izin yang dikelompokkan menurut modul (`data-dictionary.md` §13.2). Role bertanda terkunci ditampilkan dalam keadaan hanya-baca.
+**Halaman form role** memuat: nama role, deskripsi, pilihan cakupan data, dan matriks centang kewenangan yang dikelompokkan menurut fitur (`data-dictionary.md` §13.2). Role bertanda terkunci ditampilkan dalam keadaan hanya-baca.
 
-**Catatan:** kolom "Role" pada tabel §4.1 sampai §4.8 kini dibaca sebagai **contoh role yang biasanya memiliki izin tersebut**, bukan pembatasan yang dikunci di kode.
+**Catatan:** kolom "Role" pada tabel §4.1 sampai §4.8 kini dibaca sebagai **contoh role yang biasanya memiliki kewenangan tersebut**, bukan pembatasan yang dikunci di kode.
 
 ---
 
 ## 5. Struktur Menu Sidebar
 
-Sejak role menjadi dinamis (`rules.md` bagian 5), menu **tidak lagi ditulis tetap per role**. Setiap item menu dikaitkan ke satu izin, lalu dirender hanya bila pengguna memilikinya.
+Sejak role menjadi dinamis (`rules.md` bagian 5), menu **tidak lagi ditulis tetap per role**. Setiap item menu dikaitkan ke satu kewenangan, lalu dirender hanya bila pengguna memilikinya.
 
-### 5.1 Pemetaan menu ke izin
+### 5.1 Pemetaan menu ke kewenangan
 
 Sidebar memakai **submenu**: lima kelompok. Kelompok Transmigrasi dan Pertanian masing-masing memuat dua submenu, sehingga satu judul kelompok menaungi lebih dari satu daftar. Pembagiannya mengikuti pembagian urusan di dinas, bukan pembagian tabel.
 
@@ -530,7 +532,7 @@ Dua penempatan yang perlu diketahui, sebab tidak mengikuti struktur tabel:
 - **Daftar Lahan** berada di submenu Penduduk & Lahan, bukan kelompok tersendiri, sebab lahan selalu melekat pada satu kepala keluarga dan ditelusuri lewat pemiliknya.
 - **Infrastruktur SP** berada di submenu Wilayah & Aset SP, bukan bersama alsintan dan saprotan. Alsintan milik poktan, sedangkan irigasi, listrik, dan jalan milik satuan permukiman.
 
-| Kelompok | Item induk | Halaman | Rute | Izin yang dibutuhkan |
+| Kelompok | Item induk | Halaman | Rute | Kewenangan yang dibutuhkan |
 |---|---|---|---|---|
 | **Menu** | &mdash; | Dashboard | `/` | `dashboard.lihat` |
 | **Transmigrasi** | Wilayah & Aset SP | Kawasan Transmigrasi | `/kawasan` | `kawasan.lihat` |
@@ -561,21 +563,21 @@ Dua penempatan yang perlu diketahui, sebab tidak mengikuti struktur tabel:
 
 ### 5.1a Kolom aksi baku pada halaman daftar
 
-Seluruh halaman daftar memakai komponen `x-sim.aksi-baris` dengan bentuk dan urutan yang sama, agar petugas tidak perlu menebak letak tindakan setiap kali berpindah modul.
+Seluruh halaman daftar memakai komponen `x-sim.aksi-baris` dengan bentuk dan urutan yang sama, agar petugas tidak perlu menebak letak tindakan setiap kali berpindah fitur.
 
 | Urutan | Tindakan | Bentuk |
 |---|---|---|
 | 1 | Rincian | ikon mata |
 | 2 | Ubah | ikon pensil |
-| 3 | Tindakan khusus modul, contoh penanganan pengaduan | ikon sesuai maknanya |
+| 3 | Tindakan khusus fitur, contoh penanganan pengaduan | ikon sesuai maknanya |
 | 4 | Hapus | ikon tempat sampah, **selalu paling kanan** |
 
 Ketentuan:
 
 1. **Bentuk ikon, bukan teks**, agar kolom aksi tetap sempit pada tabel yang sudah padat. Setiap ikon wajib membawa `aria-label` lengkap beserta nama barisnya, sebab ikon tanpa label tidak terbaca pembaca layar (§11.1, R-32).
 2. **Hapus selalu paling kanan** dan berwarna merah saat disorot, agar tidak tertukar dengan tindakan yang tidak merusak.
-3. Tindakan yang tidak berlaku pada sebuah modul **tidak dirender sama sekali**, bukan dirender lalu ditolak (R-26).
-4. Modul yang seluruh datanya sudah tampil pada tabel, seperti data master satuan dan wilayah, **tidak memerlukan tombol Rincian**.
+3. Tindakan yang tidak berlaku pada sebuah fitur **tidak dirender sama sekali**, bukan dirender lalu ditolak (R-26).
+4. Fitur yang seluruh datanya sudah tampil pada tabel, seperti data master satuan dan wilayah, **tidak memerlukan tombol Rincian**.
 5. Satu modal ubah melayani seluruh baris; data baris dikirim lewat peristiwa saat tombol diklik. Merender satu modal per baris menggandakan formulir sebanyak baris pada satu halaman.
 
 ### 5.1b Impor data massal
@@ -587,7 +589,7 @@ Menjawab PRD §8.1: sinyal di lokus tidak selalu stabil, sehingga petugas mengun
 3. **Hasil impor wajib merinci kegagalan per baris** beserta nomor baris dan alasannya. Berkas berisi ratusan baris tidak mungkin diperiksa manual, sehingga pesan "impor gagal" tanpa rincian memaksa petugas mengulang seluruh pekerjaan.
 4. Baris bermasalah **dilewati, sisanya tetap disimpan.** Menolak seluruh berkas karena tiga baris salah membuang pekerjaan yang sudah benar.
 5. Kolom wajib ditampilkan pada langkah pertama, agar petugas mengetahui isian yang diperlukan sebelum berangkat ke lapangan.
-6. **Modul berikut tidak diberi impor:** Pengaduan (datang satu per satu dari kanal publik, nomornya wajib memuat bagian acak), Pengguna (kata sandi awal diserahkan langsung kepada orangnya, `rules.md` §14b poin 3), serta Role, Kawasan, SP, dan Musim Tanam yang jumlah barisnya sedikit.
+6. **Fitur berikut tidak diberi impor:** Pengaduan (datang satu per satu dari kanal publik, nomornya wajib memuat bagian acak), Pengguna (kata sandi awal diserahkan langsung kepada orangnya, `rules.md` §14b poin 3), serta Role, Kawasan, SP, dan Musim Tanam yang jumlah barisnya sedikit.
 7. Selama penyimpanannya belum tersambung, modal **wajib memuat spanduk** yang menyatakan fitur belum aktif, sebab tampilannya sudah terlihat berfungsi penuh.
 
 ### 5.1c Tab Catatan Log pada halaman rincian
@@ -607,10 +609,10 @@ Terpasang pada sepuluh halaman: Transmigran, Rumah, Lahan, Poktan, Pengaduan, Al
 
 ### 5.2 Aturan perenderan menu
 
-1. **Item menu dirender hanya bila pengguna memiliki izin yang tercantum.** Menu yang tidak berhak **tidak dirender sama sekali**, bukan disembunyikan lewat CSS.
+1. **Item menu dirender hanya bila pengguna memiliki kewenangan yang tercantum.** Menu yang tidak berhak **tidak dirender sama sekali**, bukan disembunyikan lewat CSS.
 2. **Kelompok menu ikut hilang** bila seluruh item di dalamnya tidak berhak diakses. Tidak boleh ada judul kelompok kosong.
-3. Menyembunyikan menu **tidak menggantikan** pemeriksaan izin di controller dan query. Tanpa itu, pengguna masih dapat membuka halaman dengan mengetik alamat URL langsung (`rules.md` bagian 5).
-4. Tombol aksi di dalam halaman (Tambah, Ubah, Hapus, Export) mengikuti aturan yang sama: dirender hanya bila izinnya dimiliki.
+3. Menyembunyikan menu **tidak menggantikan** pemeriksaan kewenangan di controller dan query. Tanpa itu, pengguna masih dapat membuka halaman dengan mengetik alamat URL langsung (`rules.md` bagian 5).
+4. Tombol aksi di dalam halaman (Tambah, Ubah, Hapus, Export) mengikuti aturan yang sama: dirender hanya bila kewenangannya dimiliki.
 5. Susunan menu identik untuk seluruh role. Yang membedakan hanyalah item mana yang tampil.
 
 ### 5.3 Contoh hasil untuk role bawaan
@@ -657,7 +659,7 @@ Infrastruktur
 Pengaduan
 ```
 
-Kelompok **Pengaturan** tidak muncul bagi ketiga role di atas, karena tidak satu pun izinnya dimiliki.
+Kelompok **Pengaturan** tidak muncul bagi ketiga role di atas, karena tidak satu pun kewenangannya dimiliki.
 
 ---
 
@@ -680,6 +682,26 @@ Seluruh komponen dibuat sebagai Blade component di `resources/views/components/`
 | `<x-koordinat-input>` | dibangun sendiri, peta memakai Leaflet + ubin OpenStreetMap |
 | `<x-tautan-peta>` | dibangun sendiri, peta baca-saja untuk halaman rincian |
 | `<x-empty-state>` | dibangun sendiri |
+
+### 6.0 Penandaan isian wajib
+
+Isian wajib ditandai **dua hal yang selalu berpasangan**. Salah satu tanpa yang lain adalah cacat:
+
+| Penanda | Wujud | Perannya |
+|---|---|---|
+| Bintang merah | `<span class="text-error-500">*</span>` pada label | memberi tahu pengguna sebelum ia mengisi |
+| Atribut `required` | pada `<input>`, `<select>`, `<textarea>` | menegakkannya saat dikirim |
+
+**Aturan:**
+
+1. **Setiap kolom bertanda `Null = TIDAK` pada `data-dictionary.md` wajib ditandai** bila diminta lewat formulir. Kamus data adalah rujukannya, bukan penilaian per kasus.
+2. Bintang tanpa `required` **dilarang**: ia menjanjikan sesuatu yang tidak ditegakkan, dan pengguna baru mengetahuinya setelah data tersimpan setengah jadi.
+3. **Isian wajib bersyarat** memakai bintang statis beserta `:required` Alpine, contoh `:required="statusHunian === 'Tidak Dihuni'"`. Bintang tetap tampil sebab isiannya hanya muncul ketika syaratnya berlaku, sedangkan `required` menyala mengikuti syarat agar isian tersembunyi tidak menghalangi pengiriman.
+4. **Larik kotak centang tidak memakai `required`**, sebab di sana atribut itu menuntut *setiap* kotak dicentang, bukan minimal satu. Pengiriman dicegah lewat Alpine beserta pesan galat yang menjelaskan akibatnya.
+5. Dua bentuk berikut **tidak memerlukan** `required` dan bukan cacat: isian tersembunyi yang nilainya diisi sistem, serta `<select>` tanpa `<option value="">` yang pilihan pertamanya sudah menjadi nilai bawaan.
+6. Komponen `x-sim.input-kata-sandi`, `x-sim.file-upload`, `x-sim.wilayah-picker`, dan `x-sim.koordinat-input` memancarkan kedua penanda sekaligus lewat prop `wajib`.
+
+> **Audit 2026-08-17.** Ditemukan 45 cacat: 43 isian berkolom `Null = TIDAK` tanpa penanda apa pun, dan 2 bintang tanpa `required` pada halaman masuk. Cacatnya **mengelompok**, bukan tersebar: seluruh form master dan aset belum pernah dilewati penandaan, sedangkan form kependudukan sudah benar sejak awal. Kelengkapannya kini dijaga uji yang membaca kamus data.
 
 ### 6.1 `<x-data-table>`
 Tabel dengan pencarian, filter, urutan, paginasi, dan tombol export.
@@ -771,7 +793,7 @@ Setiap halaman daftar dan detail **wajib** menangani lima keadaan berikut:
 | **Kosong** | Ikon, judul "Belum ada data", satu kalimat penjelasan, tombol aksi utama |
 | **Memuat** | Skeleton menyerupai bentuk konten. Dilarang memakai spinner layar penuh. Komponen `preloader` bawaan TailAdmin hanya dipakai saat pemuatan awal aplikasi, bukan per bagian |
 | **Galat** | Ikon, pesan ramah berbahasa Indonesia, tombol "Coba lagi" |
-| **Tanpa izin** | Halaman 403 dengan tombol kembali ke dashboard |
+| **Tanpa kewenangan** | Halaman 403 dengan tombol kembali ke dashboard |
 | **Pencarian nihil** | "Tidak ditemukan hasil untuk ..." + tombol bersihkan filter |
 
 Pesan galat wajib memakai bahasa yang dimengerti operator lapangan, bukan istilah teknis.
@@ -867,6 +889,26 @@ Indikator PRD §7.8 dipetakan ke jenis visualisasi:
 | Data kosong | Tanda hubung `—`, bukan teks "null" atau kosong | — |
 
 **Locale:** `config/app.php` → `'locale' => 'id'`, `'timezone' => 'Asia/Makassar'`.
+
+### 10.1 Istilah pada teks antarmuka
+
+| Dipakai | Bukan | Berlaku pada |
+|---|---|---|
+| **email** | surel | seluruh teks yang dilihat pengguna |
+| **Total** | Total kawasan | baris total pada tabel agregat |
+| **fitur** | modul | penyebutan bagian sistem pada teks |
+| **kewenangan** | izin | daftar tindakan yang boleh dilakukan role |
+
+**Ketentuan:**
+
+1. Aturan ini mengikat **teks yang tampil di layar** saja. Komentar kode dan dokumen acuan bebas memakai istilah mana pun, sebab pembacanya pengembang, bukan petugas lapangan.
+2. **"email" dipilih daripada "surel"** karena lebih dikenal petugas dan warga di lokus, meski "surel" adalah padanan baku.
+3. **Baris total cukup ditulis "Total"** tanpa keterangan cakupan. Judul halaman dan filter yang sedang aktif sudah menyatakan cakupannya, sehingga "Total kawasan" mengulang informasi yang ada di atasnya.
+4. Baris total yang menjelaskan **apa** yang dijumlahkan tetap menuliskannya, contoh "Total luas lahan" atau "Total volume yang ditampilkan". Yang dihapus hanyalah penanda cakupan.
+5. Uji dilarang mengunci kalimat penuh sebagai penanda keberadaan elemen. Pakai penanda struktural seperti kelas `motif-baris-total`, agar penyuntingan wording tidak memerahkan uji padahal tidak ada yang rusak.
+6. **"modul" diganti "fitur"** sebab yang pertama adalah istilah pengembang, sedangkan petugas dinas mengenali sistem ini lewat menu dan fiturnya.
+7. **"izin" diganti "kewenangan"**, bukan "hak akses". Menu induknya sendiri bernama Role dan Hak Akses, sehingga memakai istilah itu untuk salah satu isinya membuat pembaca mengira keduanya hal yang sama. Sistem ini memisahkan **kewenangan** (boleh melakukan apa) dari **cakupan data** (boleh melihat data siapa).
+8. **Nama di dalam kode tidak wajib mengikuti aturan ini.** Tabel `permission`, kolom `permission.modul`, dan parameter rute `{modul}` mengikuti konvensi Laravel serta menyentuh skema dan URL. Istilah peramban seperti "izin lokasi" pada Geolocation API juga tetap, sebab menggantinya membuat pesan tidak cocok dengan dialog yang dilihat pengguna.
 
 ---
 

@@ -35,8 +35,8 @@
         <h3 class="{{ $kelasBagian }}">Identitas Fasilitas</h3>
         <div class="mt-3 grid gap-4 sm:grid-cols-2">
             <div>
-                <label for="{{ $awalan }}_jenis_fasilitas" class="{{ $kelasLabel }}">Jenis Fasilitas</label>
-                <select id="{{ $awalan }}_jenis_fasilitas" name="jenis_fasilitas" class="{{ $kelasKontrol }}">
+                <label for="{{ $awalan }}_jenis_fasilitas" class="{{ $kelasLabel }}">Jenis Fasilitas<span class="text-error-500">*</span></label>
+                <select id="{{ $awalan }}_jenis_fasilitas" name="jenis_fasilitas" required class="{{ $kelasKontrol }}">
                     <option value="">Pilih jenis</option>
                     @foreach (JenisFasilitas::cases() as $j)
                         <option value="{{ $j->value }}"
@@ -51,8 +51,8 @@
             </div>
 
             <div>
-                <label for="{{ $awalan }}_nama_fasilitas" class="{{ $kelasLabel }}">Nama Fasilitas</label>
-                <input type="text" id="{{ $awalan }}_nama_fasilitas" name="nama_fasilitas"
+                <label for="{{ $awalan }}_nama_fasilitas" class="{{ $kelasLabel }}">Nama Fasilitas<span class="text-error-500">*</span></label>
+                <input type="text" id="{{ $awalan }}_nama_fasilitas" name="nama_fasilitas" required
                     value="{{ old('nama_fasilitas', $data['nama_fasilitas'] ?? '') }}" maxlength="100"
                     placeholder="Contoh: SD NEGERI KAPITAN MEO" class="{{ $kelasKontrol }}" />
                 <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
@@ -61,15 +61,15 @@
             </div>
 
             <div>
-                <label for="{{ $awalan }}_jumlah_fasilitas" class="{{ $kelasLabel }}">Jumlah</label>
-                <input type="number" id="{{ $awalan }}_jumlah_fasilitas" name="jumlah"
+                <label for="{{ $awalan }}_jumlah_fasilitas" class="{{ $kelasLabel }}">Jumlah<span class="text-error-500">*</span></label>
+                <input type="number" id="{{ $awalan }}_jumlah_fasilitas" name="jumlah" required
                     value="{{ old('jumlah', $data['jumlah'] ?? '') }}" min="0" step="1"
                     class="{{ $kelasKontrol }} tabular-nums" />
             </div>
 
             <div>
-                <label for="{{ $awalan }}_sp_fasilitas" class="{{ $kelasLabel }}">Satuan Permukiman</label>
-                <select id="{{ $awalan }}_sp_fasilitas" name="satuan_permukiman_id" class="{{ $kelasKontrol }}">
+                <label for="{{ $awalan }}_sp_fasilitas" class="{{ $kelasLabel }}">Satuan Permukiman<span class="text-error-500">*</span></label>
+                <select id="{{ $awalan }}_sp_fasilitas" name="satuan_permukiman_id" required class="{{ $kelasKontrol }}">
                     <option value="">Pilih satuan permukiman</option>
                     @foreach ($daftarSp as $sp)
                         <option value="{{ $sp['id_satuan_permukiman'] }}"

@@ -37,8 +37,8 @@
 
     <div class="grid gap-4 sm:grid-cols-2">
         <div class="sm:col-span-2">
-            <label for="{{ $awalan }}_transmigran_anggota" class="{{ $kelasLabel }}">Transmigran</label>
-            <select id="{{ $awalan }}_transmigran_anggota" name="transmigran_id" class="{{ $kelasKontrol }}">
+            <label for="{{ $awalan }}_transmigran_anggota" class="{{ $kelasLabel }}">Transmigran<span class="text-error-500">*</span></label>
+            <select id="{{ $awalan }}_transmigran_anggota" name="transmigran_id" required class="{{ $kelasKontrol }}">
                 <option value="">Pilih transmigran</option>
                 @foreach ($daftarTransmigran as $t)
                     <option value="{{ $t['id_transmigran'] }}"
@@ -61,8 +61,8 @@
         </div>
 
         <div>
-            <label for="{{ $awalan }}_tanggal_masuk_anggota" class="{{ $kelasLabel }}">Tanggal Masuk</label>
-            <input type="date" id="{{ $awalan }}_tanggal_masuk_anggota" name="tanggal_masuk"
+            <label for="{{ $awalan }}_tanggal_masuk_anggota" class="{{ $kelasLabel }}">Tanggal Masuk<span class="text-error-500">*</span></label>
+            <input type="date" id="{{ $awalan }}_tanggal_masuk_anggota" name="tanggal_masuk" required
                 value="{{ old('tanggal_masuk', $data['tanggal_masuk'] ?? '') }}" max="{{ date('Y-m-d') }}"
                 class="{{ $kelasKontrol }}" />
         </div>
@@ -87,10 +87,17 @@
     <div x-show="status === @js($keluar)" x-cloak x-transition
         class="space-y-4 rounded-lg border border-gray-200 p-4 dark:border-gray-800">
         <div>
-            <label for="{{ $awalan }}_tanggal_keluar_anggota" class="{{ $kelasLabel }}">Tanggal Keluar</label>
+            {{--
+                Wajib bila status Sudah Keluar: tanpa tanggalnya, riwayat
+                keanggotaan kehilangan batas akhir dan lama keanggotaan tidak
+                dapat dihitung. Bintang statis, `required` mengikuti status.
+            --}}
+            <label for="{{ $awalan }}_tanggal_keluar_anggota" class="{{ $kelasLabel }}">
+                Tanggal Keluar<span class="text-error-500">*</span>
+            </label>
             <input type="date" id="{{ $awalan }}_tanggal_keluar_anggota" name="tanggal_keluar"
                 value="{{ old('tanggal_keluar', $data['tanggal_keluar'] ?? '') }}" max="{{ date('Y-m-d') }}"
-                class="{{ $kelasKontrol }}" />
+                :required="status === @js($keluar)" class="{{ $kelasKontrol }}" />
         </div>
 
         <div>

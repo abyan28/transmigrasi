@@ -23,14 +23,14 @@
 
     <div class="grid gap-4 sm:grid-cols-2">
         <div>
-            <label for="{{ $awalan }}_nama_musim" class="{{ $kelasLabel }}">Nama Musim</label>
-            <input type="text" id="{{ $awalan }}_nama_musim" name="nama" x-model="nama"
+            <label for="{{ $awalan }}_nama_musim" class="{{ $kelasLabel }}">Nama Musim<span class="text-error-500">*</span></label>
+            <input type="text" id="{{ $awalan }}_nama_musim" name="nama" required x-model="nama"
                 maxlength="20" placeholder="Contoh: MT1" class="{{ $kelasKontrol }}" />
         </div>
 
         <div>
-            <label for="{{ $awalan }}_tahun_musim" class="{{ $kelasLabel }}">Tahun</label>
-            <input type="number" id="{{ $awalan }}_tahun_musim" name="tahun" x-model="tahun"
+            <label for="{{ $awalan }}_tahun_musim" class="{{ $kelasLabel }}">Tahun<span class="text-error-500">*</span></label>
+            <input type="number" id="{{ $awalan }}_tahun_musim" name="tahun" required x-model="tahun"
                 min="2000" max="{{ (int) date('Y') + 2 }}" class="{{ $kelasKontrol }} tabular-nums" />
         </div>
     </div>

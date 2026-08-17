@@ -1,8 +1,8 @@
 {{--
     Infrastruktur SP.
 
-    Modul ini berisi PENDATAAN ASET, bukan pelaporan masalah. Kerusakan
-    dilaporkan lewat modul Pengaduan (agents/rules.md bagian 10 poin 1).
+    Fitur ini berisi PENDATAAN ASET, bukan pelaporan masalah. Kerusakan
+    dilaporkan lewat fitur Pengaduan (agents/rules.md bagian 10 poin 1).
     Karena itu halaman ini tidak menyediakan tombol lapor kerusakan,
     melainkan menaut ke kanal pengaduan.
 --}}
@@ -203,7 +203,7 @@
                         </tr>
                     @endforeach
                     <tr class="motif-baris-total">
-                        <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">Total kawasan</td>
+                        <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">Total</td>
                         <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
                             {{ array_sum(array_column($statusJenis, 'baik')) }}</td>
                         <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
@@ -218,16 +218,16 @@
             </div>
 
             <p class="mt-4 rounded-lg bg-gray-50 p-3.5 text-theme-xs text-gray-600 dark:bg-white/[0.03] dark:text-gray-400">
-                Modul ini mendata aset, bukan menerima laporan kerusakan. Kerusakan disampaikan lewat
+                Fitur ini mendata aset, bukan menerima laporan kerusakan. Kerusakan disampaikan lewat
                 <a href="{{ route('pengaduan.index') }}"
-                    class="rounded font-medium text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">modul
+                    class="rounded font-medium text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">fitur
                     Pengaduan</a>, agar penanganannya terlacak beserta petugas dan tanggalnya.
             </p>
         </x-slot:setelahTabel>
     </x-sim.halaman-daftar>
 
     <x-sim.modal-form nama="formTambahInfrastruktur" judul="Tambah Aset Infrastruktur"
-        keterangan="Pendataan aset. Keluhan warga disampaikan lewat modul pengaduan."
+        keterangan="Pendataan aset. Keluhan warga disampaikan lewat fitur pengaduan."
         :aksi="route('infrastruktur.simpan')" ukuran="lg" label-simpan="Simpan Data">
         @include('pages.infrastruktur.form', ['awalan' => 'tambah'])
     </x-sim.modal-form>

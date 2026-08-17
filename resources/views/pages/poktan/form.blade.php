@@ -26,15 +26,15 @@
         <h3 class="{{ $kelasBagian }}">Identitas Kelompok</h3>
         <div class="mt-3 grid gap-4 sm:grid-cols-2">
             <div class="sm:col-span-2">
-                <label for="{{ $awalan }}_nama_poktan" class="{{ $kelasLabel }}">Nama Kelompok Tani</label>
-                <input type="text" id="{{ $awalan }}_nama_poktan" name="nama"
+                <label for="{{ $awalan }}_nama_poktan" class="{{ $kelasLabel }}">Nama Kelompok Tani<span class="text-error-500">*</span></label>
+                <input type="text" id="{{ $awalan }}_nama_poktan" name="nama" required
                     value="{{ old('nama', $data['nama'] ?? '') }}" maxlength="100"
                     placeholder="Contoh: POKTAN MEKAR JAYA" class="{{ $kelasKontrol }}" />
             </div>
 
             <div>
-                <label for="{{ $awalan }}_sp_poktan" class="{{ $kelasLabel }}">Satuan Permukiman</label>
-                <select id="{{ $awalan }}_sp_poktan" name="satuan_permukiman_id" class="{{ $kelasKontrol }}">
+                <label for="{{ $awalan }}_sp_poktan" class="{{ $kelasLabel }}">Satuan Permukiman<span class="text-error-500">*</span></label>
+                <select id="{{ $awalan }}_sp_poktan" name="satuan_permukiman_id" required class="{{ $kelasKontrol }}">
                     <option value="">Pilih satuan permukiman</option>
                     @foreach ($daftarSp as $sp)
                         <option value="{{ $sp['id_satuan_permukiman'] }}"

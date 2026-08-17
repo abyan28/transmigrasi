@@ -25,8 +25,8 @@
 <div class="space-y-6">
     <div class="grid gap-4 sm:grid-cols-2">
         <div class="sm:col-span-2">
-            <label for="{{ $awalan }}_lahan_riwayat" class="{{ $kelasLabel }}">Lahan</label>
-            <select id="{{ $awalan }}_lahan_riwayat" name="lahan_id" class="{{ $kelasKontrol }}">
+            <label for="{{ $awalan }}_lahan_riwayat" class="{{ $kelasLabel }}">Lahan<span class="text-error-500">*</span></label>
+            <select id="{{ $awalan }}_lahan_riwayat" name="lahan_id" required class="{{ $kelasKontrol }}">
                 <option value="">Pilih lahan</option>
                 @foreach ($daftarLahan as $l)
                     <option value="{{ $l['id_lahan'] }}"
@@ -42,8 +42,8 @@
         </div>
 
         <div>
-            <label for="{{ $awalan }}_musim_riwayat" class="{{ $kelasLabel }}">Musim Tanam</label>
-            <select id="{{ $awalan }}_musim_riwayat" name="musim_tanam_id" class="{{ $kelasKontrol }}">
+            <label for="{{ $awalan }}_musim_riwayat" class="{{ $kelasLabel }}">Musim Tanam<span class="text-error-500">*</span></label>
+            <select id="{{ $awalan }}_musim_riwayat" name="musim_tanam_id" required class="{{ $kelasKontrol }}">
                 <option value="">Pilih musim tanam</option>
                 @foreach ($daftarMusim as $m)
                     <option value="{{ $m['id_musim_tanam'] }}"
@@ -55,8 +55,8 @@
         </div>
 
         <div>
-            <label for="{{ $awalan }}_komoditas_riwayat" class="{{ $kelasLabel }}">Komoditas</label>
-            <select id="{{ $awalan }}_komoditas_riwayat" name="komoditas_id" class="{{ $kelasKontrol }}">
+            <label for="{{ $awalan }}_komoditas_riwayat" class="{{ $kelasLabel }}">Komoditas<span class="text-error-500">*</span></label>
+            <select id="{{ $awalan }}_komoditas_riwayat" name="komoditas_id" required class="{{ $kelasKontrol }}">
                 <option value="">Pilih komoditas</option>
                 @foreach ($daftarKomoditas as $k)
                     <option value="{{ $k['id_komoditas'] }}"

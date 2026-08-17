@@ -5,7 +5,7 @@
     - Sistem TIDAK menyediakan pendaftaran mandiri. Akun hanya dibuat oleh Admin
       lewat menu Manajemen Pengguna (agents/prd.md bagian 7.1).
     - Pemulihan kata sandi tersedia lewat dua jalur yang keduanya sah: kode
-      verifikasi ke surel dinas, dan penyetelan ulang oleh Admin. Jalur kedua
+      verifikasi ke email, dan penyetelan ulang oleh Admin. Jalur kedua
       dipertahankan karena jaringan di lokus tidak selalu memadai
       (agents/rules.md bagian 14b poin 7 sampai 12).
     - Seluruh pengguna sistem adalah petugas. Warga tidak memiliki akun dan
@@ -41,7 +41,7 @@
                                         Email atau Username<span class="text-error-500">*</span>
                                     </label>
                                     <input type="text" id="kredensial" name="kredensial" autocomplete="username"
-                                        placeholder="Masukkan email atau username"
+                                        required placeholder="Masukkan email atau username"
                                         class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30" />
                                 </div>
 
@@ -53,7 +53,7 @@
                                     </label>
                                     <div x-data="{ tampilkanSandi: false }" class="relative">
                                         <input :type="tampilkanSandi ? 'text' : 'password'" id="password" name="password"
-                                            autocomplete="current-password" placeholder="Masukkan kata sandi"
+                                            autocomplete="current-password" required placeholder="Masukkan kata sandi"
                                             class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent py-2.5 pr-11 pl-4 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30" />
                                         <button type="button" @click="tampilkanSandi = !tampilkanSandi"
                                             :aria-label="tampilkanSandi ? 'Sembunyikan kata sandi' : 'Perlihatkan kata sandi'"

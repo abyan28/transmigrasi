@@ -19,8 +19,8 @@ Pengembangan menggunakan pendekatan **incremental-prototyping**: membangun fitur
 
 | Fase | Periode | Fokus utama | Keluaran |
 |---|---|---|---|
-| Fase 1 — Persiapan dan Analisis | Agustus III – September II (bulan 1) | Koordinasi awal, pembentukan tim, telaah dokumen, identifikasi stakeholder, penyusunan instrumen kebutuhan, validasi kebutuhan awal | Dokumen kebutuhan pengguna, daftar modul prioritas, rencana kerja teknis |
-| Fase 2 — Desain dan Pengembangan Sistem | September III – Oktober IV (bulan 1–3) | Desain database dan UI, pembangunan seluruh antarmuka dengan data dummy, lalu backend modul data master/SP, transmigran, rumah, lahan, poktan, alsintan, saprotan, komoditas, panen, infrastruktur, pengaduan, dan dashboard | Prototype aplikasi dan dokumen desain sistem |
+| Fase 1 — Persiapan dan Analisis | Agustus III – September II (bulan 1) | Koordinasi awal, pembentukan tim, telaah dokumen, identifikasi stakeholder, penyusunan instrumen kebutuhan, validasi kebutuhan awal | Dokumen kebutuhan pengguna, daftar fitur prioritas, rencana kerja teknis |
+| Fase 2 — Desain dan Pengembangan Sistem | September III – Oktober IV (bulan 1–3) | Desain database dan UI, pembangunan seluruh antarmuka dengan data dummy, lalu backend fitur data master/SP, transmigran, rumah, lahan, poktan, alsintan, saprotan, komoditas, panen, infrastruktur, pengaduan, dan dashboard | Prototype aplikasi dan dokumen desain sistem |
 | Fase 3 — Uji Coba, Perbaikan, dan Deployment | Oktober V – November III (bulan 4) | FGD progres, refinement dashboard, uji fungsi, perbaikan bug, deployment hosting, konfigurasi domain/SSL, pengaturan akun, simulasi input data | Aplikasi online versi operasional awal |
 | Fase 4 — Pendampingan dan Evaluasi | November IV – Desember I (bulan 4) | Beta testing, pelatihan pengguna, pendampingan input data, monitoring penggunaan, evaluasi indikator, penyusunan laporan akhir, serah terima | SOP, laporan evaluasi, rekomendasi pengembangan lanjutan |
 
@@ -38,7 +38,7 @@ Output fase ini:
 - kebutuhan data awal dan dataset awal pertanian,
 - dokumen kebutuhan pengguna (user requirement),
 - kebutuhan fungsional dan nonfungsional,
-- daftar modul prioritas dan rencana kerja teknis.
+- daftar fitur prioritas dan rencana kerja teknis.
 
 Risiko dan mitigasi: stakeholder belum lengkap → validasi ulang melalui pemerintah desa/kecamatan; data awal belum lengkap → gunakan format isian sederhana dan validasi bertahap; data kependudukan sensitif → gunakan hak akses dan agregasi data.
 
@@ -62,19 +62,19 @@ Dikerjakan dalam **dua gelombang** agar revisi hasil validasi tidak membongkar s
 
 *Gelombang 2 — halaman sisanya (±31 halaman):*
 7. Membangun halaman data master wilayah/SP/inventaris/fasilitas/satuan, rekap kependudukan, poktan dan anggota, alsintan, saprotan, komoditas, musim tanam, riwayat tanam, infrastruktur, laporan, template luring, pengguna, dan audit log.
-8. Menyusun struktur menu untuk kelima role beserta status halaman kosong, memuat, galat, dan tanpa izin.
+8. Menyusun struktur menu untuk kelima role beserta status halaman kosong, memuat, galat, dan tanpa kewenangan.
 9. Memastikan tampilan berjalan baik pada ponsel dan desktop, diuji pada lebar 360px dan 1280px.
 
 **Langkah C — Pembangunan backend dan penyambungan**
 10. Migration dan model seluruh tabel mengikuti urutan pada `erd.md` §10, beserta seeder data wilayah dan satuan.
-11. Autentikasi, hak akses dinamis (tabel `role`, `permission`, `role_permission`), seeder 4 role bawaan, dan pembatasan akses pada level query menurut izin serta cakupan data.
-12. Implementasi modul data master kawasan: wilayah administratif provinsi-kabupaten-kecamatan-desa, kawasan transmigrasi, dan SP beserta koordinat dan batas SP, inventaris SP, fasilitas SP, serta data master satuan beserta faktor konversi ke ton.
-13. Implementasi modul kependudukan kawasan: transmigran dan keluarga, rumah dan kondisi hunian, riwayat penghunian, status tinggal/pindah/aktif, serta rekap kependudukan.
-14. Implementasi modul lahan: lahan pekarangan dan lahan usaha, kategori lahan, dokumen HPL/SHM, dan koordinat lahan.
-15. Implementasi modul kelembagaan dan sarana pertanian: profil poktan, daftar anggota, alsintan, dan saprotan.
-16. Implementasi modul produksi pertanian: komoditas, musim tanam, riwayat tanam, hasil panen, volume produksi, harga, dan kualitas panen.
-17. Implementasi modul infrastruktur SP sebagai pendataan aset beserta dokumentasi dan koordinat.
-18. Implementasi modul pengaduan: kategori pengaduan, alur status penanganan, riwayat penanganan, dan dokumen pendukung.
+11. Autentikasi, hak akses dinamis (tabel `role`, `permission`, `role_permission`), seeder 4 role bawaan, dan pembatasan akses pada level query menurut kewenangan serta cakupan data.
+12. Implementasi fitur data master kawasan: wilayah administratif provinsi-kabupaten-kecamatan-desa, kawasan transmigrasi, dan SP beserta koordinat dan batas SP, inventaris SP, fasilitas SP, serta data master satuan beserta faktor konversi ke ton.
+13. Implementasi fitur kependudukan kawasan: transmigran dan keluarga, rumah dan kondisi hunian, riwayat penghunian, status tinggal/pindah/aktif, serta rekap kependudukan.
+14. Implementasi fitur lahan: lahan pekarangan dan lahan usaha, kategori lahan, dokumen HPL/SHM, dan koordinat lahan.
+15. Implementasi fitur kelembagaan dan sarana pertanian: profil poktan, daftar anggota, alsintan, dan saprotan.
+16. Implementasi fitur produksi pertanian: komoditas, musim tanam, riwayat tanam, hasil panen, volume produksi, harga, dan kualitas panen.
+17. Implementasi fitur infrastruktur SP sebagai pendataan aset beserta dokumentasi dan koordinat.
+18. Implementasi fitur pengaduan: kategori pengaduan, alur status penanganan, riwayat penanganan, dan dokumen pendukung.
 19. Penggantian data dummy dashboard dengan data nyata beserta filter wilayah dan periode.
 
 Output fase ini:
@@ -82,7 +82,7 @@ Output fase ini:
 - mockup halaman utama dan rancangan navigasi,
 - seluruh halaman antarmuka berjalan dengan data dummy,
 - catatan hasil validasi gelombang 1 bersama tim dan dinas,
-- prototype aplikasi dengan modul inti tersambung ke basis data,
+- prototype aplikasi dengan fitur inti tersambung ke basis data,
 - dokumen desain sistem.
 
 Risiko dan mitigasi: relasi data berubah → gunakan desain modular dan field fleksibel; UI terlalu kompleks → form bertahap dan label sederhana; variasi satuan panen antar komoditas → tetapkan satuan baku per komoditas beserta faktor konversi ke ton, dan sediakan kolom keterangan untuk satuan lokal; unggahan foto besar → kompresi file dan batas ukuran unggahan.
@@ -90,7 +90,7 @@ Risiko dan mitigasi: relasi data berubah → gunakan desain modular dan field fl
 ### 2.3 Fase 3 — Uji Coba, Perbaikan, dan Deployment (Oktober V – November III)
 Langkah kerja:
 1. FGD progres dan validasi prototype bersama pengguna: mendemonstrasikan prototype, mengumpulkan masukan, memvalidasi field data, alur input, dashboard awal, dan kebutuhan laporan.
-2. Refinement modul berdasarkan feedback dan implementasi dashboard indikator lengkap dengan filter wilayah dan periode.
+2. Refinement fitur berdasarkan feedback dan implementasi dashboard indikator lengkap dengan filter wilayah dan periode.
 3. Alpha testing internal: login, role, CRUD, validasi input, filter, upload, export, dashboard, audit log, dan keamanan akses.
 4. Perbaikan bug dengan prioritas blocker terlebih dahulu.
 5. Deployment ke hosting: konfigurasi domain/subdomain, SSL/HTTPS, database, storage, backup, akun awal, dan monitoring error log.
@@ -131,8 +131,8 @@ Workflow operasional adalah alur saat data dikumpulkan, divalidasi, ditampilkan,
 2. Kredensial diisi pada satu kolom yang sama, berupa **email atau username**. Seluruh pengguna sistem adalah petugas.
 3. Sistem menolak akun yang berstatus tidak aktif (`is_aktif = FALSE`).
 4. Bila `password_harus_diganti` bernilai `TRUE`, pengguna langsung diarahkan ke halaman ganti kata sandi dan belum dapat membuka halaman lain.
-5. Sistem membaca **role** pengguna beserta daftar izin dan cakupan datanya.
-6. Menu sidebar dirender hanya untuk modul yang izin `lihat`-nya dimiliki. Menu yang tidak berhak tidak dirender sama sekali.
+5. Sistem membaca **role** pengguna beserta daftar kewenangan dan cakupan datanya.
+6. Menu sidebar dirender hanya untuk fitur yang kewenangan `lihat`-nya dimiliki. Menu yang tidak berhak tidak dirender sama sekali.
 7. Data yang tampil disaring menurut cakupan role: `Semua` tanpa penyaring, `Per SP` dibatasi SP yang ditugaskan.
 8. Pembatasan wajib diberlakukan pada level query dan controller, bukan sekadar menyembunyikan menu.
 9. Data pribadi transmigran dan penghuni hanya tampil penuh untuk role berwenang; role lain menerima tampilan agregat.
@@ -197,29 +197,29 @@ Untuk lokasi dengan sinyal lemah:
 3. Hasil rekap dapat diekspor ke Excel atau PDF.
 4. Laporan digunakan untuk desa, dinas, pendamping, dan Kementerian Transmigrasi.
 
-## 4. Workflow Per Modul
-### 4.1 Modul Wilayah dan Satuan Permukiman (SP)
+## 4. Workflow Per Fitur
+### 4.1 Fitur Wilayah dan Satuan Permukiman (SP)
 1. Admin membuat data wilayah administratif mengikuti hierarki provinsi → kabupaten → kecamatan → desa.
 2. Admin mendaftarkan **kawasan transmigrasi** di bawah kabupaten, beserta tahun penetapan, nomor SK, dan luas total.
 3. Admin mendaftarkan **SP** di bawah kawasan tersebut, sekaligus memilih desa tempat SP berdiri. Kecamatan terisi otomatis mengikuti desa yang dipilih, tidak diinput ulang.
 4. Isi titik koordinat SP beserta batas wilayah Utara, Timur, Selatan, dan Barat.
 5. Isi luas lahan SP, tetapkan penanggung jawab data, dan unggah dokumen pendukung.
-6. Data SP menjadi acuan seluruh modul lain dan dasar filter dashboard. Rekap dapat dipecah per kawasan, kecamatan, desa, maupun SP, seluruhnya dihitung lewat SP.
+6. Data SP menjadi acuan seluruh fitur lain dan dasar filter dashboard. Rekap dapat dipecah per kawasan, kecamatan, desa, maupun SP, seluruhnya dihitung lewat SP.
 
-### 4.2 Modul Inventaris dan Fasilitas SP
+### 4.2 Fitur Inventaris dan Fasilitas SP
 1. Pilih SP yang akan didata.
 2. Input nama barang atau fasilitas, tahun perolehan, dan sumber dana.
 3. Catat status penyerahan dan lampirkan dokumen pendukung.
 4. Tampilkan rekap aset per SP pada laporan kawasan.
 
-### 4.3 Modul Transmigran
+### 4.3 Fitur Transmigran
 1. Input data transmigran: nama kepala keluarga, NIK, nomor KK, jumlah anggota keluarga, pekerjaan, pendapatan per bulan, dan status keanggotaan poktan.
 2. Validasi format NIK dan nomor KK.
 3. Unggah dokumen pendukung.
 4. Hubungkan dengan desa/SP, rumah, lahan, komoditas, dan panen.
 5. Tampilkan pada rekap dan dashboard.
 
-### 4.4 Modul Rumah dan Hunian
+### 4.4 Fitur Rumah dan Hunian
 1. Input data rumah beserta titik koordinat lokasi.
 2. Catat kondisi rumah (Tidak Rusak, Rusak Ringan, Rusak Berat) dan status hunian (Dihuni, Tidak Dihuni).
 3. Saat menautkan KK ke rumah, sistem hanya menampilkan rumah yang masih kosong; rumah yang sudah dihuni tidak muncul pada pilihan.
@@ -229,7 +229,7 @@ Untuk lokasi dengan sinyal lemah:
 7. Lampirkan foto rumah dan simpan riwayat kepemilikan/penghunian.
 8. Rekap jumlah rumah terhuni ditampilkan pada dashboard.
 
-### 4.5 Modul Lahan
+### 4.5 Fitur Lahan
 1. Input identitas lahan: jenis (pekarangan atau usaha), luas, lokasi, koordinat, status, dan tujuan pemanfaatan.
 2. Unggah dokumen status lahan (HPL/SHM).
 3. Untuk lahan usaha, catat kategori lahan (basah/kering), pola tanam, musim tanam, peralatan, dan kendala.
@@ -237,35 +237,35 @@ Untuk lokasi dengan sinyal lemah:
 5. Rekap luas lahan dihitung dengan menjumlahkan seluruh lahan milik transmigran atau wilayah terkait.
 6. Gunakan data lahan untuk analisis produksi dan perencanaan.
 
-### 4.6 Modul Kelompok Tani (Poktan)
+### 4.6 Fitur Kelompok Tani (Poktan)
 1. Buat profil poktan: nama poktan dan desa/SP asal.
 2. Isi data ketua poktan: nama, NIK, telepon, dan email.
 3. Tambahkan daftar anggota beserta tanggal masuk dan status keaktifan.
 4. Tautkan poktan ke lahan, komoditas, alsintan, dan saprotan.
 5. Unggah dokumen pendukung dan tampilkan rekap per desa/SP.
 
-### 4.7 Modul Alsintan
+### 4.7 Fitur Alsintan
 1. Pilih jenis kepemilikan: milik pribadi transmigran atau bantuan pemerintah melalui poktan.
 2. Input nama alat, jumlah, tahun perolehan, sumber perolehan, dan kondisi.
 3. Tautkan ke poktan penerima atau transmigran pemilik.
 4. Unggah dokumen pendukung.
 5. Rekap alsintan ditampilkan per desa/SP, per poktan, dan per jenis alat.
 
-### 4.8 Modul Saprotan
+### 4.8 Fitur Saprotan
 1. Input jenis saprotan (benih, pupuk, pestisida, mulsa, dan sejenisnya), jumlah, satuan, dan waktu perolehan.
 2. Tentukan penerima: kelompok tani atau individu transmigran.
 3. Untuk penyaluran ke anggota poktan, sistem hanya menampilkan anggota berstatus aktif.
 4. Unggah dokumen pendukung.
 5. Rekap penyaluran ditampilkan per periode, per poktan, dan per desa/SP.
 
-### 4.9 Modul Komoditas
+### 4.9 Fitur Komoditas
 1. Pilih atau buat data komoditas beserta tipenya (pangan, palawija, hortikultura).
 2. Tetapkan **satuan panen baku** untuk komoditas tersebut, diambil dari data master satuan.
 3. Tandai komoditas unggulan kawasan bila diperlukan.
 4. Hubungkan dengan transmigran, lahan, poktan, dan hasil panen.
 5. Gunakan pada dashboard dan laporan, dianalisis per desa/SP atau per periode.
 
-### 4.10 Modul Hasil Panen
+### 4.10 Fitur Hasil Panen
 1. Pilih komoditas; sistem otomatis menampilkan satuan baku komoditas tersebut.
 2. Input volume panen sesuai satuan baku, kualitas panen, harga jual, musim tanam, dan lokasi produksi.
 3. Isi keterangan tambahan bila di lapangan memakai satuan lokal seperti karung atau ikat.
@@ -274,21 +274,21 @@ Untuk lokasi dengan sinyal lemah:
 6. Saat merekap, sistem mengonversi volume ke ton memakai faktor konversi pada data master satuan.
 7. Rekap berdasarkan wilayah, transmigran, poktan, komoditas, atau periode.
 
-### 4.11 Modul Infrastruktur SP
+### 4.11 Fitur Infrastruktur SP
 1. Input data aset infrastruktur: air, irigasi, listrik, jalan produksi, telekomunikasi, atau gudang.
 2. Catat nama, tahun perolehan, sumber dana, dan kondisi terkini.
 3. Lampirkan dokumentasi foto dan koordinat lokasi.
 4. Tautkan ke desa/SP dan poktan bila relevan.
 5. Tampilkan sebagai peta aset dan bahan perencanaan perbaikan.
 
-### 4.12 Modul Penghuni Kawasan
+### 4.12 Fitur Penghuni Kawasan
 1. Input data penghuni/transmigran per desa/SP.
 2. Catat status tinggal, pindah, dan aktif/tidak aktif.
 3. Tautkan ke data rumah beserta kondisi, foto, dan koordinatnya.
 4. Validasi oleh dinas terkait atau admin.
 5. Tampilkan rekap kependudukan kawasan, termasuk KK masuk dan keluar per tahun, dalam bentuk agregat pada dashboard.
 
-### 4.13 Modul Pengaduan
+### 4.13 Fitur Pengaduan
 
 **Jalur A: warga melapor sendiri lewat halaman publik**
 1. Warga membuka halaman pengaduan publik, tanpa perlu akun maupun masuk sistem.
@@ -318,13 +318,13 @@ Role bersifat dinamis (`rules.md` bagian 5), sehingga alur di bawah menggambarka
 
 ### 5.1 Admin
 1. Membuat akun pengguna, menetapkan role, dan bila role bercakupan Per SP, menugaskan SP yang menjadi tanggung jawabnya.
-2. Menyusun role baru bila dibutuhkan: memberi nama, memilih izin per modul, dan menetapkan cakupan datanya.
+2. Menyusun role baru bila dibutuhkan: memberi nama, memilih kewenangan per fitur, dan menetapkan cakupan datanya.
 3. Menyetel ulang kata sandi pengguna yang lupa, lalu menyerahkan kata sandi sementara secara langsung.
 4. Menonaktifkan akun yang tidak lagi dipakai, tanpa menghapusnya, agar jejak audit tetap utuh.
 5. Mengelola data master wilayah, kawasan transmigrasi, SP, inventaris, fasilitas, dan parameter referensi.
-6. Memantau audit log perubahan data, termasuk jejak penyetelan ulang kata sandi dan perubahan susunan izin role.
+6. Memantau audit log perubahan data, termasuk jejak penyetelan ulang kata sandi dan perubahan susunan kewenangan role.
 7. Membantu validasi data dan operasional deployment.
-8. Memiliki akses penuh ke seluruh modul.
+8. Memiliki akses penuh ke seluruh fitur.
 
 ### 5.2 Dinas Transmigrasi
 1. Membuka dashboard dan memantau indikator kawasan.
@@ -353,7 +353,7 @@ Role bersifat dinamis (`rules.md` bagian 5), sehingga alur di bawah menggambarka
 5. Bila tidak memiliki akses internet, warga dapat melapor lisan kepada operator SP untuk dicatatkan ke sistem.
 
 ## 6. Workflow Validasi dan Persetujuan Data
-1. Data diinput oleh petugas sesuai izin dan cakupan data role-nya.
+1. Data diinput oleh petugas sesuai kewenangan dan cakupan data role-nya.
 2. Sistem melakukan validasi format dan kelengkapan di sisi client dan sisi server.
 3. Dinas terkait atau admin meninjau data sesuai bidangnya.
 4. Jika salah atau kurang lengkap, data dikembalikan untuk revisi.

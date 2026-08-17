@@ -35,15 +35,15 @@
         <h3 class="{{ $kelasBagian }}">Identitas Alat</h3>
         <div class="mt-3 grid gap-4 sm:grid-cols-2">
             <div class="sm:col-span-2">
-                <label for="{{ $awalan }}_nama_alat" class="{{ $kelasLabel }}">Nama Alat</label>
-                <input type="text" id="{{ $awalan }}_nama_alat" name="nama_alat"
+                <label for="{{ $awalan }}_nama_alat" class="{{ $kelasLabel }}">Nama Alat<span class="text-error-500">*</span></label>
+                <input type="text" id="{{ $awalan }}_nama_alat" name="nama_alat" required
                     value="{{ old('nama_alat', $data['nama_alat'] ?? '') }}" maxlength="100"
                     placeholder="Contoh: TRAKTOR RODA DUA" class="{{ $kelasKontrol }}" />
             </div>
 
             <div>
-                <label for="{{ $awalan }}_jumlah" class="{{ $kelasLabel }}">Jumlah Unit</label>
-                <input type="number" id="{{ $awalan }}_jumlah" name="jumlah"
+                <label for="{{ $awalan }}_jumlah" class="{{ $kelasLabel }}">Jumlah Unit<span class="text-error-500">*</span></label>
+                <input type="number" id="{{ $awalan }}_jumlah" name="jumlah" required
                     value="{{ old('jumlah', $data['jumlah'] ?? '') }}" min="1" step="1"
                     class="{{ $kelasKontrol }} tabular-nums" />
             </div>
@@ -103,9 +103,18 @@
                 Pemilik ditampilkan bergantian, tidak pernah keduanya sekaligus,
                 agar satu alat tidak berakhir memiliki dua pemilik.
             --}}
+            {{--
+                Wajib bersyarat. Bintang dipasang statis sebab isian ini hanya
+                muncul ketika syaratnya berlaku, sedangkan `required` menyala
+                mengikuti pilihan kepemilikan agar isian yang tersembunyi tidak
+                menghalangi pengiriman form (pola sama dengan rumah/form).
+            --}}
             <div x-show="kepemilikan === @js(KepemilikanAlsintan::BantuanPoktan->value)" x-cloak x-transition>
-                <label for="{{ $awalan }}_poktan_id" class="{{ $kelasLabel }}">Kelompok Tani Pemilik</label>
-                <select id="{{ $awalan }}_poktan_id" name="poktan_id" class="{{ $kelasKontrol }}">
+                <label for="{{ $awalan }}_poktan_id" class="{{ $kelasLabel }}">
+                    Kelompok Tani Pemilik<span class="text-error-500">*</span>
+                </label>
+                <select id="{{ $awalan }}_poktan_id" name="poktan_id" class="{{ $kelasKontrol }}"
+                    :required="kepemilikan === @js(KepemilikanAlsintan::BantuanPoktan->value)">
                     <option value="">Pilih kelompok tani</option>
                     @foreach ($daftarPoktan as $p)
                         <option value="{{ $p['id_poktan'] }}"
@@ -120,8 +129,11 @@
             </div>
 
             <div x-show="kepemilikan === @js(KepemilikanAlsintan::Pribadi->value)" x-cloak x-transition>
-                <label for="{{ $awalan }}_transmigran_id" class="{{ $kelasLabel }}">Transmigran Pemilik</label>
-                <select id="{{ $awalan }}_transmigran_id" name="transmigran_id" class="{{ $kelasKontrol }}">
+                <label for="{{ $awalan }}_transmigran_id" class="{{ $kelasLabel }}">
+                    Transmigran Pemilik<span class="text-error-500">*</span>
+                </label>
+                <select id="{{ $awalan }}_transmigran_id" name="transmigran_id" class="{{ $kelasKontrol }}"
+                    :required="kepemilikan === @js(KepemilikanAlsintan::Pribadi->value)">
                     <option value="">Pilih transmigran</option>
                     @foreach ($daftarTransmigran as $t)
                         <option value="{{ $t['id_transmigran'] }}"

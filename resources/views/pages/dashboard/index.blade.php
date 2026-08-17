@@ -594,7 +594,7 @@
     </div>
 
     {{--
-        Indikator 13: isu prioritas dari modul Pengaduan.
+        Indikator 13: isu prioritas dari fitur Pengaduan.
         Disajikan sebagai tabel beserta badge, bukan grafik, karena yang
         dibutuhkan petugas adalah daftar yang dapat langsung ditindaklanjuti
         (agents/ui-spec.md bagian 9).

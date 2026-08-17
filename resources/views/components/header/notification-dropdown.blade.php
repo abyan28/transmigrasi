@@ -92,7 +92,7 @@
             Sumber data notifikasi belum tersedia. Menampilkan nama dan kegiatan
             karangan melanggar ANTISLOP-ID R-18 dan R-38, sehingga untuk sementara
             ditampilkan keadaan kosong yang jujur. Diisi data nyata pada Tahap 8
-            bersama modul Pengaduan.
+            bersama fitur Pengaduan.
         --}}
         <ul class="flex flex-col h-auto overflow-y-auto custom-scrollbar">
             <li class="px-4 py-10 text-center">

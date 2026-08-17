@@ -44,8 +44,8 @@
         <h3 class="{{ $kelasBagian }}">Identitas Sarana</h3>
         <div class="mt-3 grid gap-4 sm:grid-cols-2">
             <div>
-                <label for="{{ $awalan }}_jenis" class="{{ $kelasLabel }}">Jenis Saprotan</label>
-                <select id="{{ $awalan }}_jenis" name="jenis" class="{{ $kelasKontrol }}">
+                <label for="{{ $awalan }}_jenis" class="{{ $kelasLabel }}">Jenis Saprotan<span class="text-error-500">*</span></label>
+                <select id="{{ $awalan }}_jenis" name="jenis" required class="{{ $kelasKontrol }}">
                     <option value="">Pilih jenis</option>
                     @foreach (JenisSaprotan::cases() as $j)
                         <option value="{{ $j->value }}" @selected(old('jenis', $data['jenis'] ?? '') === $j->value)>
@@ -56,22 +56,22 @@
             </div>
 
             <div>
-                <label for="{{ $awalan }}_nama" class="{{ $kelasLabel }}">Nama Sarana</label>
-                <input type="text" id="{{ $awalan }}_nama" name="nama"
+                <label for="{{ $awalan }}_nama" class="{{ $kelasLabel }}">Nama Sarana<span class="text-error-500">*</span></label>
+                <input type="text" id="{{ $awalan }}_nama" name="nama" required
                     value="{{ old('nama', $data['nama'] ?? '') }}" maxlength="100"
                     placeholder="Contoh: BENIH JAGUNG HIBRIDA" class="{{ $kelasKontrol }}" />
             </div>
 
             <div>
-                <label for="{{ $awalan }}_jumlah" class="{{ $kelasLabel }}">Jumlah</label>
-                <input type="number" id="{{ $awalan }}_jumlah" name="jumlah"
+                <label for="{{ $awalan }}_jumlah" class="{{ $kelasLabel }}">Jumlah<span class="text-error-500">*</span></label>
+                <input type="number" id="{{ $awalan }}_jumlah" name="jumlah" required
                     value="{{ old('jumlah', $data['jumlah'] ?? '') }}" min="0" step="0.01"
                     class="{{ $kelasKontrol }} tabular-nums" />
             </div>
 
             <div>
-                <label for="{{ $awalan }}_satuan_id" class="{{ $kelasLabel }}">Satuan</label>
-                <select id="{{ $awalan }}_satuan_id" name="satuan_id" class="{{ $kelasKontrol }}">
+                <label for="{{ $awalan }}_satuan_id" class="{{ $kelasLabel }}">Satuan<span class="text-error-500">*</span></label>
+                <select id="{{ $awalan }}_satuan_id" name="satuan_id" required class="{{ $kelasKontrol }}">
                     <option value="">Pilih satuan</option>
                     @foreach ($daftarSatuan as $s)
                         <option value="{{ $s['id_satuan'] }}"
@@ -121,9 +121,18 @@
                 </div>
             </div>
 
+            {{--
+                Wajib bersyarat. Bintang dipasang statis sebab isian ini hanya
+                muncul ketika syaratnya berlaku, sedangkan `required` menyala
+                mengikuti jenis penerima agar isian yang tersembunyi tidak
+                menghalangi pengiriman form (pola sama dengan rumah/form).
+            --}}
             <div x-show="jenisPenerima === 'Poktan'" x-cloak x-transition>
-                <label for="{{ $awalan }}_poktan_id" class="{{ $kelasLabel }}">Kelompok Tani Penerima</label>
-                <select id="{{ $awalan }}_poktan_id" name="poktan_id" class="{{ $kelasKontrol }}">
+                <label for="{{ $awalan }}_poktan_id" class="{{ $kelasLabel }}">
+                    Kelompok Tani Penerima<span class="text-error-500">*</span>
+                </label>
+                <select id="{{ $awalan }}_poktan_id" name="poktan_id" class="{{ $kelasKontrol }}"
+                    :required="jenisPenerima === 'Poktan'">
                     <option value="">Pilih kelompok tani</option>
                     @foreach ($daftarPoktan as $p)
                         <option value="{{ $p['id_poktan'] }}"
@@ -135,8 +144,11 @@
             </div>
 
             <div x-show="jenisPenerima === 'Individu'" x-cloak x-transition>
-                <label for="{{ $awalan }}_transmigran_id" class="{{ $kelasLabel }}">Anggota Penerima</label>
-                <select id="{{ $awalan }}_transmigran_id" name="transmigran_id" class="{{ $kelasKontrol }}">
+                <label for="{{ $awalan }}_transmigran_id" class="{{ $kelasLabel }}">
+                    Anggota Penerima<span class="text-error-500">*</span>
+                </label>
+                <select id="{{ $awalan }}_transmigran_id" name="transmigran_id" class="{{ $kelasKontrol }}"
+                    :required="jenisPenerima === 'Individu'">
                     <option value="">Pilih anggota</option>
                     @foreach ($anggotaAktif as $a)
                         <option value="{{ $a['transmigran_id'] }}"

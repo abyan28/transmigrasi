@@ -52,20 +52,36 @@
     x-data="{
         roleId: @js((string) $roleTerpilih),
         cakupan: @js($cakupanPerRole),
+        spTerpilih: @js(array_map('strval', (array) $spTerpilih)),
+
         get perluSp() {
             return this.cakupan[this.roleId] === @js(CakupanData::PerSp->value);
         },
-    }">
+
+        get adaSpTerpilih() {
+            return this.spTerpilih.length > 0;
+        },
+    }"
+    {{--
+        Penegakan penugasan SP. Atribut `required` tidak dapat dipakai pada
+        larik kotak centang, sebab di sana ia menuntut SETIAP kotak dicentang,
+        bukan minimal satu. Pengiriman karena itu dicegah di sini.
+
+        Akun bercakupan Per SP tanpa penugasan tidak melihat data apa pun
+        (rules.md 5.0b poin 7), sehingga menyimpannya berarti membuat akun yang
+        pasti gagal dipakai sejak hari pertama.
+    --}}
+    x-on:submit="if (perluSp && ! adaSpTerpilih) { $event.preventDefault(); }">
 
     {{-- Bagian 1: identitas petugas --}}
     <section>
         <h3 class="{{ $kelasBagian }}">Identitas Petugas</h3>
         <div class="mt-3 grid gap-4 sm:grid-cols-2">
             <div class="sm:col-span-2">
-                <label for="{{ $awalan }}_nama" class="{{ $kelasLabel }}">Nama Lengkap</label>
-                <input type="text" id="{{ $awalan }}_nama" name="nama"
+                <label for="{{ $awalan }}_nama" class="{{ $kelasLabel }}">Nama Lengkap<span class="text-error-500">*</span></label>
+                <input type="text" id="{{ $awalan }}_nama" name="nama" required
                     value="{{ old('nama', $data['nama'] ?? '') }}" maxlength="100"
-                    placeholder="Contoh: BUDI SANTOSO" class="{{ $kelasKontrol }}" />
+                    placeholder="Contoh: NARA WIJAYA" class="{{ $kelasKontrol }}" />
             </div>
 
             <div>
@@ -90,15 +106,15 @@
         <div class="mt-3 grid gap-4 sm:grid-cols-2">
             <div>
                 <label for="{{ $awalan }}_email" class="{{ $kelasLabel }}">
-                    Email Dinas<span class="text-error-500">*</span>
+                    Email<span class="text-error-500">*</span>
                 </label>
                 <input type="email" id="{{ $awalan }}_email" name="email" required
                     value="{{ old('email', $data['email'] ?? '') }}" maxlength="100"
                     placeholder="nama@malakakab.go.id" class="{{ $kelasKontrol }}"
                     aria-describedby="{{ $awalan }}_email_bantuan" />
                 <p id="{{ $awalan }}_email_bantuan" class="{{ $kelasBantuan }}">
-                    Wajib diisi. Dipakai petugas untuk masuk pertama kali, menerima kata sandi
-                    sementara, dan meminta kode saat lupa kata sandi.
+                    Wajib diisi. Dipakai petugas untuk login pertama kali, menerima kata sandi
+                    sementara, dan meminta kode verifikasi untuk pemulihan kata sandi.
                 </p>
             </div>
 
@@ -111,8 +127,8 @@
                 <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-white/[0.03]">
                     <p class="text-theme-sm font-medium text-gray-800 dark:text-white/90">Username dibuat petugas</p>
                     <p class="mt-1 text-theme-xs text-gray-600 dark:text-gray-400">
-                        Petugas menentukan usernamenya sendiri saat pertama kali masuk, sekaligus
-                        mengganti kata sandi sementara. Admin tidak perlu mengarangkannya.
+                        Petugas menentukan usernamenya sendiri saat pertama kali login, sekaligus
+                        mengganti kata sandi sementara. Admin tidak perlu meng-input-kannya.
                     </p>
                 </div>
             @else
@@ -145,15 +161,15 @@
                 </p>
                 <p class="mt-1 text-theme-sm text-gray-600 dark:text-gray-400">
                     Setelah akun tersimpan, kata sandi sementara tampil satu kali di layar dan
-                    dikirim ke surel di atas. Petugas wajib menggantinya saat pertama kali masuk.
+                    dikirim ke email di atas. Petugas wajib menggantinya saat pertama kali login.
                 </p>
             </div>
         @else
             <div class="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-white/[0.03]">
                 <p class="text-theme-sm text-gray-600 dark:text-gray-400">
                     <span class="font-medium text-gray-800 dark:text-white/90">Kata sandi tidak dapat disunting di sini.</span>
-                    Sistem hanya menyimpan sidik kata sandi, sehingga nilai lamanya tidak dapat dibaca siapa pun,
-                    termasuk Admin. Gunakan tombol Setel Ulang Kata Sandi bila petugas kehilangan akses.
+                    Kata sandi asli tidak dapat dilihat oleh siapa pun, termasuk Admin. Jika pengguna kehilangan akses,
+                    gunakan tombol “Setel Ulang Kata Sandi” untuk membuat kata sandi baru.
                 </p>
             </div>
         @endif
@@ -164,8 +180,8 @@
         <h3 class="{{ $kelasBagian }}">Kewenangan</h3>
         <div class="mt-3 space-y-4">
             <div>
-                <label for="{{ $awalan }}_role_id" class="{{ $kelasLabel }}">Role</label>
-                <select id="{{ $awalan }}_role_id" name="role_id" x-model="roleId"
+                <label for="{{ $awalan }}_role_id" class="{{ $kelasLabel }}">Role<span class="text-error-500">*</span></label>
+                <select id="{{ $awalan }}_role_id" name="role_id" required x-model="roleId"
                     class="{{ $kelasKontrol }}">
                     <option value="">Pilih role</option>
                     @foreach ($daftarRole as $role)
@@ -175,7 +191,7 @@
                     @endforeach
                 </select>
                 <p class="{{ $kelasBantuan }}">
-                    Setiap akun memegang tepat satu role. Cakupan data menentukan data siapa saja yang boleh dilihat.
+                    Setiap akun memegang tepat satu role. Cakupan data menentukan data apa saja yang boleh dilihat.
                 </p>
             </div>
 
@@ -184,9 +200,12 @@
                 (rules.md 14b poin 2), dan ikut menyesuaikan begitu role diganti.
             --}}
             <div x-show="perluSp" x-cloak x-transition>
-                <span class="{{ $kelasLabel }}">Penugasan Satuan Permukiman</span>
+                <span class="{{ $kelasLabel }}">
+                    Penugasan Satuan Permukiman<span class="text-error-500">*</span>
+                </span>
 
-                <div class="rounded-lg border border-gray-300 p-3 dark:border-gray-700">
+                <div class="rounded-lg border border-gray-300 p-3 dark:border-gray-700"
+                    :class="perluSp && ! adaSpTerpilih ? 'border-error-500 dark:border-error-500' : ''">
                     <p class="mb-3 text-theme-xs text-gray-500 dark:text-gray-400">
                         Wajib dipilih minimal satu. Petugas hanya dapat melihat dan memasukkan data
                         pada SP yang ditugaskan padanya.
@@ -195,7 +214,7 @@
                     <div class="grid gap-2 sm:grid-cols-2">
                         @foreach ($daftarSp as $sp)
                             <label class="flex items-start gap-2.5 rounded-lg p-2 hover:bg-gray-50 dark:hover:bg-white/5">
-                                <input type="checkbox" name="satuan_permukiman[]"
+                                <input type="checkbox" name="satuan_permukiman[]" x-model="spTerpilih"
                                     value="{{ $sp['id_satuan_permukiman'] }}"
                                     @checked(in_array($sp['id_satuan_permukiman'], (array) $spTerpilih))
                                     class="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand-500 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700" />
@@ -208,6 +227,18 @@
                             </label>
                         @endforeach
                     </div>
+
+                    {{--
+                        Peringatan menggantikan atribut `required`, yang tidak
+                        berlaku pada larik kotak centang: memasangnya di sana
+                        justru menuntut SETIAP kotak dicentang. Pesan ini muncul
+                        hanya ketika syaratnya berlaku dan belum ada yang dipilih.
+                    --}}
+                    <p x-show="perluSp && ! adaSpTerpilih" x-cloak
+                        class="mt-3 text-theme-xs text-error-500" role="alert">
+                        Pilih minimal satu satuan permukiman. Akun bercakupan Per SP tanpa penugasan
+                        tidak akan melihat data apa pun.
+                    </p>
                 </div>
             </div>
 

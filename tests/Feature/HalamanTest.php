@@ -447,10 +447,13 @@ it('mengubah volume ke ton memakai faktor satuannya', function () {
 });
 
 it('merender rekap panen pada keempat dasar pengelompokan', function () {
+    // Yang dijaga adalah baris totalnya terender, bukan kalimatnya. Mengunci
+    // teks membuat penyuntingan wording memerahkan uji padahal tidak ada yang
+    // rusak, sehingga penandanya yang diperiksa.
     foreach (['sp', 'komoditas', 'musim', 'petani'] as $kelompok) {
         $this->get(route('panen.rekap', ['kelompok' => $kelompok]))
             ->assertOk()
-            ->assertSee('Total kawasan');
+            ->assertSee('motif-baris-total', false);
     }
 });
 
@@ -569,10 +572,12 @@ it('menandai pengaduan berprioritas mendesak yang belum selesai', function () {
 });
 
 it('merender rekap pengaduan pada seluruh dasar pengelompokan', function () {
+    // Memeriksa penanda baris total, bukan kalimatnya. Lihat alasannya pada
+    // uji rekap panen di atas.
     foreach (['kategori', 'status', 'sp', 'prioritas', 'bidang'] as $kelompok) {
         $this->get(route('pengaduan.rekap', ['kelompok' => $kelompok]))
             ->assertOk()
-            ->assertSee('Total kawasan');
+            ->assertSee('motif-baris-total', false);
     }
 });
 
@@ -1212,8 +1217,11 @@ it('menyembunyikan tombol nonaktifkan pada admin aktif terakhir', function () {
 
     $isi = $this->get(route('pengguna.index'))->getContent();
 
-    expect($isi)->toContain('Admin terakhir')
-        ->and($isi)->not->toContain('/pengguna/' . $adminAktif[0]['id_user'] . '/nonaktifkan');
+    // Yang dijaga adalah tidak adanya jalur penonaktifan, bukan penandanya.
+    // Sejak 2026-08-17 label "Admin terakhir" per baris dihapus; alasannya
+    // dinyatakan sekali lewat keterangan di bawah tabel.
+    expect($isi)->not->toContain('/pengguna/' . $adminAktif[0]['id_user'] . '/nonaktifkan')
+        ->and($isi)->toContain('tidak memiliki tombol nonaktifkan');
 });
 
 it('tidak pernah menampilkan kolom kata sandi pada modal ubah pengguna', function () {
@@ -1263,7 +1271,7 @@ it('merender matriks izin role sesuai tabel rules.md 5.1', function () {
         expect($jumlah)->toBe($role['jumlah_izin']);
     }
 
-    expect($isi)->toContain('Izin per Modul');
+    expect($isi)->toContain('Kewenangan per Fitur');
 });
 
 it('menyajikan role terkunci sebagai hanya baca', function () {
@@ -1675,7 +1683,7 @@ it('menjaga aturan modul pada form yang mudah tergeser', function () {
     // Infrastruktur adalah pendataan aset, bukan pelaporan kerusakan.
     expect($sumber('infrastruktur/form.blade.php'))
         ->not->toContain('Lapor Kerusakan')
-        ->and($sumber('infrastruktur/form.blade.php'))->toContain('modul pengaduan');
+        ->and($sumber('infrastruktur/form.blade.php'))->toContain('fitur pengaduan');
 
     // Alsintan menampilkan pemilik bergantian, tidak pernah keduanya.
     expect($sumber('alsintan/form.blade.php'))->toContain('KepemilikanAlsintan::Pribadi->value');
@@ -2527,8 +2535,8 @@ it('tetap melindungi admin aktif terakhir dari penonaktifan', function () {
     // sudah ada (rules.md 14b poin 16).
     $isi = $this->get(route('pengguna.index'))->getContent();
 
-    expect($isi)->toContain('Admin terakhir')
-        ->and($isi)->not->toContain('Nonaktifkan akun SITI RAHMAWATI');
+    expect($isi)->not->toContain('Nonaktifkan akun SITI RAHMAWATI')
+        ->and($isi)->toContain('tidak memiliki tombol nonaktifkan');
 });
 
 it('tidak menyediakan izin hapus pada modul pengguna', function () {
@@ -2571,11 +2579,25 @@ it('membuatkan kata sandi sementara alih-alih meminta admin mengetiknya', functi
         ->and($isi)->toContain('Kata sandi sementara dibuatkan sistem');
 });
 
-it('menyatakan terus terang bahwa pengiriman surel belum aktif', function () {
+it('menyatakan terus terang bahwa pengiriman email belum aktif', function () {
     // Tampilannya sudah lengkap, tetapi pengirimannya menunggu backend. Tanpa
-    // keterangan ini admin dapat mengira petugas sudah menerima surelnya, lalu
+    // keterangan ini admin dapat mengira petugas sudah menerima emailnya, lalu
     // tidak menyerahkan kata sandi secara langsung.
-    $this->get(route('pengguna.index'))->assertSee('Pengiriman surel belum aktif.');
+    //
+    // Spanduk kredensial hanya muncul SETELAH akun dibuat, sehingga sesinya
+    // perlu diisi lebih dulu. Membuka halaman biasa tidak akan pernah
+    // menampilkannya, dan uji yang tidak menyadarinya akan lulus tanpa
+    // benar-benar memeriksa apa pun.
+    $isi = $this->withSession(['kredensial_baru' => [
+        'nama' => 'PETUGAS UJI',
+        'email' => 'petugas.uji@malakakab.go.id',
+        'password' => 'Tmg-7K4pQ2',
+    ]])->get(route('pengguna.index'))->assertOk()->getContent();
+
+    expect($isi)->toContain('belum aktif')
+        // Sekaligus menjaga istilahnya, sebab teks ini termasuk yang dilihat
+        // pengguna (ui-spec.md 10.1).
+        ->and(mb_strtolower($isi))->not->toContain('surel');
 });
 
 it('menampilkan tombol hapus hanya pada role yang memang dapat dihapus', function () {
@@ -2693,8 +2715,9 @@ it('menyediakan penyalinan nomor pengaduan bagi warga', function () {
     expect($sumber)->toContain('navigator.clipboard')
         ->and($sumber)->toContain('Ketuk nomor untuk menyalin')
         // Menyalin hanya menaruh nomor di papan klip yang mudah tertimpa,
-        // sehingga ajakan mencatat tetap wajib ada.
-        ->and($isi)->toContain('Catat atau foto nomor itu');
+        // sehingga ajakan mencatat tetap wajib ada. Dicocokkan pada intinya
+        // saja, bukan kalimat penuh, agar wording bebas disunting.
+        ->and($isi)->toContain('Catat atau foto');
 });
 
 it('mengarahkan tombol lacak ke nomor yang benar-benar ada', function () {
@@ -2859,4 +2882,241 @@ it('menyeragamkan seluruh halaman rincian memakai tab', function () {
             ->toContain('hashTabs(')
             ->and($this->get($jalur)->getContent())->toContain('role="tablist"');
     }
+});
+
+/*
+|--------------------------------------------------------------------------
+| Penandaan isian wajib
+|--------------------------------------------------------------------------
+*/
+
+it('menandai wajib setiap isian yang kolomnya tidak boleh kosong', function () {
+    // Penjaga berbasis kamus data, bukan daftar tetap. Kolom bertanda
+    // "Null = TIDAK" berarti wajib di database, sehingga formnya pun harus
+    // menuntutnya sejak di peramban.
+    //
+    // Uji ini lahir dari audit yang menemukan 43 isian tanpa penanda apa pun.
+    // Cacatnya ternyata mengelompok: seluruh form master dan aset tidak pernah
+    // dilewati penandaan, sedangkan form kependudukan sudah benar sejak awal.
+    $wajibPerTabel = kolomWajibDariKamusData();
+
+    // Berkas form dipetakan ke tabelnya. Yang tidak tercantum di sini belum
+    // punya form tersendiri pada Tahap 2.
+    $peta = [
+        'master/form-satuan' => 'satuan',
+        'sp/form-kawasan' => 'kawasan_transmigrasi',
+        'sp/form' => 'satuan_permukiman',
+        'sp/form-inventaris' => 'inventaris_sp',
+        'sp/form-fasilitas' => 'fasilitas_sp',
+        'transmigran/form' => 'transmigran',
+        'rumah/form' => 'rumah',
+        'lahan/form' => 'lahan',
+        'poktan/form' => 'poktan',
+        'poktan/form-anggota' => 'anggota_poktan',
+        'alsintan/form' => 'alsintan',
+        'saprotan/form' => 'saprotan',
+        'komoditas/form' => 'komoditas',
+        'komoditas/form-musim-tanam' => 'musim_tanam',
+        'komoditas/form-riwayat-tanam' => 'riwayat_tanam',
+        'panen/form' => 'hasil_panen',
+        'infrastruktur/form' => 'infrastruktur',
+        'pengaduan/form' => 'pengaduan',
+    ];
+
+    // Kolom yang sengaja tidak diminta lewat formulir.
+    $dikecualikan = [
+        // Diisi sistem, bukan pengguna.
+        'user' => ['username', 'password', 'password_harus_diganti', 'is_aktif'],
+        'role' => ['is_bawaan', 'is_terkunci'],
+        // Kolom boolean berbawaan tidak memerlukan required; memasangnya pada
+        // kotak centang justru berarti "harus dicentang".
+        'komoditas' => ['is_unggulan'],
+        // Diturunkan sistem dari kategori, bukan dipilih pengguna.
+        'pengaduan' => ['bidang_penanganan', 'sumber_laporan', 'status', 'nomor_pengaduan'],
+        'hasil_panen' => ['satuan_id'],
+        'inventaris_sp' => ['status_penyerahan'],
+        'fasilitas_sp' => ['status_penyerahan'],
+        'infrastruktur' => ['kondisi'],
+        'alsintan' => ['kepemilikan'],
+        'rumah' => ['kode_rumah'],
+    ];
+
+    $bolong = [];
+
+    foreach ($peta as $berkas => $tabel) {
+        $sumber = file_get_contents(resource_path("views/pages/{$berkas}.blade.php"));
+
+        foreach ($wajibPerTabel[$tabel] ?? [] as $kolom) {
+            if (in_array($kolom, $dikecualikan[$tabel] ?? [], true)) {
+                continue;
+            }
+
+            // Isian boleh tidak ada sama sekali; yang dilarang adalah ada
+            // tetapi tanpa penanda wajib.
+            if (! str_contains($sumber, 'name="' . $kolom . '"')) {
+                continue;
+            }
+
+            $pola = preg_quote($kolom, '/');
+
+            // Isian tersembunyi selalu terisi nilai dari sistem, sehingga
+            // `required` di sana tidak menambah apa pun.
+            if (preg_match('/<input type="hidden" name="' . $pola . '"/', $sumber) === 1) {
+                continue;
+            }
+
+            // Select tanpa <option value=""> mustahil dikirim kosong: pilihan
+            // pertamanya sudah menjadi nilai bawaan.
+            if (preg_match('/<select[^>]*name="' . $pola . '"(.*?)<\/select>/s', $sumber, $m) === 1
+                && ! str_contains($m[1], 'value=""')) {
+                continue;
+            }
+
+            $berRequired = preg_match(
+                '/name="' . $pola . '"[^>]*\srequired/s',
+                $sumber,
+            ) === 1;
+
+            if (! $berRequired) {
+                $bolong[] = "{$berkas} -> {$kolom}";
+            }
+        }
+    }
+
+    expect($bolong)->toBe([]);
+});
+
+it('memasangkan bintang wajib dengan atribut required', function () {
+    // Keduanya wajib berpasangan. Bintang tanpa `required` menjanjikan sesuatu
+    // yang tidak ditegakkan, dan cacat persis itu ditemukan pada halaman masuk:
+    // bintang sudah terpasang sejak awal, `required` tidak pernah ada.
+    $timpang = [];
+
+    $berkas = array_merge(
+        glob(resource_path('views/pages/*/form*.blade.php')),
+        glob(resource_path('views/pages/auth/*.blade.php')),
+    );
+
+    foreach ($berkas as $path) {
+        $sumber = file_get_contents($path);
+        $nama = str_replace(resource_path('views/pages/'), '', $path);
+
+        // Hitung bintang pada label dan isian ber-required. Komponen bersama
+        // memancarkan keduanya sekaligus, sehingga ikut dihitung lewat prop
+        // `wajib`. Larik kotak centang ditegakkan Alpine saat submit, sebab
+        // `required` di sana berarti "setiap kotak harus dicentang".
+        $bintang = substr_count($sumber, 'text-error-500">*</span>');
+        $required = preg_match_all('/\srequired(\s|\/|>)/', $sumber)
+            + substr_count($sumber, ':wajib="true"')
+            + substr_count($sumber, ':required=')
+            + substr_count($sumber, '$event.preventDefault()');
+
+        if ($bintang > $required) {
+            $timpang[] = "{$nama}: {$bintang} bintang, {$required} required";
+        }
+    }
+
+    expect($timpang)->toBe([]);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Istilah pada teks antarmuka
+|--------------------------------------------------------------------------
+*/
+
+it('memakai istilah email, bukan surel, pada teks yang dilihat pengguna', function (string $jalur) {
+    // ui-spec.md 10.1. Diperiksa pada halaman TERENDER, bukan berkas sumber,
+    // sebab komentar kode bebas memakai istilah mana pun; yang mengikat hanya
+    // teks yang benar-benar sampai ke pengguna.
+    //
+    // Sesi diisi lebih dulu agar spanduk yang hanya muncul setelah pengiriman
+    // formulir ikut terperiksa. Tanpa itu, sebagian teks tidak pernah dirender
+    // dan uji lulus tanpa memeriksa apa pun.
+    $isi = $this->withSession([
+        'kredensial_baru' => ['nama' => 'UJI', 'email' => 'uji@malakakab.go.id', 'password' => 'Rahasia123'],
+        'nomor_pengaduan' => 'PGD-2026-0003',
+        'email_pelapor' => 'warga@contoh.id',
+    ])->get($jalur)->assertOk()->getContent();
+
+    expect(mb_strtolower($isi))->not->toContain('surel');
+})->with([
+    '/login',
+    '/lupa-kata-sandi',
+    '/verifikasi-kode',
+    '/pengguna',
+    '/pengaturan/role',
+    '/pengaduan-warga',
+    '/lacak-pengaduan',
+    '/profil',
+    '/profil/kata-sandi',
+]);
+
+it('menuliskan baris total tanpa penanda cakupan', function (string $jalur) {
+    // Judul halaman dan filter yang sedang aktif sudah menyatakan cakupannya,
+    // sehingga "Total kawasan" mengulang informasi yang ada tepat di atasnya.
+    $isi = $this->get($jalur)->assertOk()->getContent();
+
+    expect($isi)->toContain('motif-baris-total')
+        ->and($isi)->not->toContain('>Total kawasan<');
+})->with([
+    '/panen/rekap',
+    '/pengaduan/rekap',
+    '/kependudukan/rekap',
+    '/sp',
+    '/kawasan',
+    '/infrastruktur',
+]);
+
+it('memakai istilah fitur dan kewenangan pada teks yang dilihat pengguna', function (string $jalur) {
+    // ui-spec.md 10.1. "Modul" dan "izin" adalah istilah pengembang; petugas
+    // dinas lebih mengenali "fitur" dan "kewenangan".
+    //
+    // Diperiksa pada TEKS terender, bukan berkas sumber. Tag dibuang lebih
+    // dulu sebab atribut seperti type="module" dan name="izin[]" memang tetap
+    // memakai istilah teknis, dan tidak pernah dibaca pengguna.
+    $isi = $this->get($jalur)->assertOk()->getContent();
+
+    $teks = preg_replace('/<script.*?<\/script>/s', ' ', $isi);
+    $teks = preg_replace('/<[^>]+>/', ' ', $teks);
+
+    // "Izin lokasi" adalah istilah peramban yang muncul pada pesan Geolocation
+    // API, bukan istilah sistem ini. Menggantinya justru membuat pesannya tidak
+    // cocok dengan yang dilihat pengguna pada dialog peramban.
+    $teks = str_ireplace('izin lokasi', '', $teks);
+
+    expect($teks)->not->toMatch('/\bmodul\b/i')
+        // "diizinkan" dan "mengizinkan" adalah kata kerja yang tetap sah;
+        // yang dilarang hanya kata benda "izin" berdiri sendiri.
+        ->and($teks)->not->toMatch('/\bizin\b/i');
+})->with([
+    '/pengaturan/role',
+    '/pengguna',
+    '/infrastruktur',
+    '/infrastruktur/1',
+    '/audit-log',
+    '/laporan',
+    '/galeri-komponen',
+]);
+
+it('menyaring ketikan bukan angka pada isian angka', function () {
+    // `type="number"` menolak huruf, tetapi masih menerima notasi ilmiah `e`,
+    // tanda minus, dan tempelan teks. Ketiganya baru tertangkap saat
+    // penyimpanan, padahal petugas sudah telanjur mengisi seluruh formulir.
+    $sumber = file_get_contents(resource_path('js/input-angka.js'));
+
+    expect($sumber)->toContain("isian.type !== 'number'")
+        ->and($sumber)->toContain('keydown')
+        ->and($sumber)->toContain('paste')
+        // Isian berlangkah pecahan tetap menerima koma desimal, sedangkan
+        // tahun dan jumlah unit tidak.
+        ->and($sumber)->toContain('menerimaPecahan');
+
+    // Terpasang sekali pada app.js, bukan disalin ke tiap isian. Dicocokkan
+    // pada baris yang benar-benar dijalankan, sebab pemanggilan yang sekadar
+    // dikomentari tetap lolos bila hanya kata kuncinya yang dicari.
+    $app = file_get_contents(resource_path('js/app.js'));
+
+    expect($app)->toMatch('/^pasangPenjagaAngka\(\);$/m')
+        ->and($app)->toContain("from './input-angka'");
 });

@@ -4,7 +4,7 @@
     Modul pendataan aset, bukan pelaporan masalah. Form ini karena itu TIDAK
     memuat kolom keluhan maupun tombol lapor kerusakan: kondisi diisi petugas
     berdasarkan pengamatan saat pendataan, sedangkan keluhan warga masuk lewat
-    modul pengaduan (agents/tasklist.md Task 2.18).
+    fitur pengaduan (agents/tasklist.md Task 2.18).
 
     Jenis infrastruktur memakai sepuluh nilai enum yang sama dengan penilaian
     kondisi SP, sehingga aset yang didata di sini langsung terbaca oleh
@@ -34,15 +34,15 @@
         <h3 class="{{ $kelasBagian }}">Identitas Aset</h3>
         <div class="mt-3 grid gap-4 sm:grid-cols-2">
             <div class="sm:col-span-2">
-                <label for="{{ $awalan }}_nama_infrastruktur" class="{{ $kelasLabel }}">Nama Aset</label>
-                <input type="text" id="{{ $awalan }}_nama_infrastruktur" name="nama"
+                <label for="{{ $awalan }}_nama_infrastruktur" class="{{ $kelasLabel }}">Nama Aset<span class="text-error-500">*</span></label>
+                <input type="text" id="{{ $awalan }}_nama_infrastruktur" name="nama" required
                     value="{{ old('nama', $data['nama'] ?? '') }}" maxlength="100"
                     placeholder="Contoh: SALURAN IRIGASI BLOK A" class="{{ $kelasKontrol }}" />
             </div>
 
             <div>
-                <label for="{{ $awalan }}_jenis_infrastruktur" class="{{ $kelasLabel }}">Jenis</label>
-                <select id="{{ $awalan }}_jenis_infrastruktur" name="jenis" class="{{ $kelasKontrol }}">
+                <label for="{{ $awalan }}_jenis_infrastruktur" class="{{ $kelasLabel }}">Jenis<span class="text-error-500">*</span></label>
+                <select id="{{ $awalan }}_jenis_infrastruktur" name="jenis" required class="{{ $kelasKontrol }}">
                     <option value="">Pilih jenis</option>
                     @foreach (JenisInfrastruktur::cases() as $j)
                         <option value="{{ $j->value }}" @selected(old('jenis', $data['jenis'] ?? '') === $j->value)>
@@ -63,8 +63,8 @@
             </div>
 
             <div>
-                <label for="{{ $awalan }}_satuan_permukiman_infrastruktur" class="{{ $kelasLabel }}">Satuan Permukiman</label>
-                <select id="{{ $awalan }}_satuan_permukiman_infrastruktur" name="satuan_permukiman_id"
+                <label for="{{ $awalan }}_satuan_permukiman_infrastruktur" class="{{ $kelasLabel }}">Satuan Permukiman<span class="text-error-500">*</span></label>
+                <select id="{{ $awalan }}_satuan_permukiman_infrastruktur" name="satuan_permukiman_id" required
                     class="{{ $kelasKontrol }}">
                     <option value="">Pilih satuan permukiman</option>
                     @foreach ($daftarSp as $sp)
@@ -119,7 +119,7 @@
         --}}
         <p class="mt-4 rounded-lg bg-gray-50 p-3.5 text-theme-xs text-gray-600 dark:bg-white/[0.03] dark:text-gray-400">
             Kondisi diisi berdasarkan pengamatan petugas saat pendataan. Keluhan warga mengenai kerusakan
-            disampaikan lewat modul pengaduan, bukan lewat form ini, agar penanganannya terlacak beserta
+            disampaikan lewat fitur pengaduan, bukan lewat form ini, agar penanganannya terlacak beserta
             riwayat tindak lanjutnya.
         </p>
     </section>

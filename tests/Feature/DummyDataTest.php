@@ -281,7 +281,7 @@ it('memakai username berhuruf kecil sesuai aturan kredensial', function () {
 });
 
 it('menyusun inisial dari maksimal dua kata pertama nama', function () {
-    expect(DummyData::inisial('BUDI SANTOSO'))->toBe('BS')
+    expect(DummyData::inisial('NARA WIJAYA'))->toBe('NW')
         ->and(DummyData::inisial('Yohanes Bere Nahak'))->toBe('YB')
         ->and(DummyData::inisial('Maria'))->toBe('M');
 });

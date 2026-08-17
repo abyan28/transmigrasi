@@ -23,7 +23,7 @@ Dokumen ini merinci setiap kolom pada 33 tabel yang dirancang di `erd.md`. Dipak
 10. [Domain Infrastruktur dan Pengaduan](#10-domain-infrastruktur-dan-pengaduan)
 11. [Daftar Nilai Enum Terpusat](#11-daftar-nilai-enum-terpusat)
 12. [Aturan Validasi Bersama](#12-aturan-validasi-bersama)
-13. [Daftar Izin (Permission)](#13-daftar-izin-permission)
+13. [Daftar Kewenangan (Permission)](#13-daftar-kewenangan-permission)
 
 ---
 
@@ -103,7 +103,7 @@ Akun untuk masuk ke sistem. Menggantikan tabel `users` bawaan Laravel; model waj
 | Kolom | Tipe | Null | Kunci | Keterangan |
 |---|---|---|---|---|
 | `id_user` | `BIGINT UNSIGNED AUTO_INCREMENT` | TIDAK | PK | |
-| `role_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | Menunjuk role beserta izin dan cakupan datanya |
+| `role_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | Menunjuk role beserta kewenangan dan cakupan datanya |
 | `nama` | `VARCHAR(255)` | TIDAK | | Nama lengkap pengguna |
 | `username` | `VARCHAR(50)` | TIDAK | UQ, IDX | Kredensial login alternatif, huruf kecil tanpa spasi |
 | `email` | `VARCHAR(255)` | TIDAK | UQ, IDX | Kredensial login utama |
@@ -138,16 +138,16 @@ Role bersifat **dinamis**: dibuat dan diatur Admin lewat antarmuka, bukan dikunc
 | `deskripsi` | `VARCHAR(255)` | YA | | Penjelasan singkat kegunaan role |
 | `cakupan_data` | `ENUM` | TIDAK | | Lihat §11.25 |
 | `is_bawaan` | `BOOLEAN` | TIDAK | | `TRUE` untuk empat role hasil seeder; tidak dapat dihapus |
-| `is_terkunci` | `BOOLEAN` | TIDAK | | `TRUE` hanya untuk role Admin; izinnya tidak dapat diubah |
+| `is_terkunci` | `BOOLEAN` | TIDAK | | `TRUE` hanya untuk role Admin; kewenangannya tidak dapat diubah |
 | `is_aktif` | `BOOLEAN` | TIDAK | | Role nonaktif tidak dapat dipilih saat membuat akun baru |
 
 **Catatan:**
-- Role Admin memiliki `is_bawaan = TRUE` dan `is_terkunci = TRUE`, sehingga tidak dapat dihapus maupun dikurangi izinnya. Ini menjamin sistem tidak pernah kehilangan jalur administrasi.
+- Role Admin memiliki `is_bawaan = TRUE` dan `is_terkunci = TRUE`, sehingga tidak dapat dihapus maupun dikurangi kewenangannya. Ini menjamin sistem tidak pernah kehilangan jalur administrasi.
 - Role yang masih dipakai minimal satu akun tidak dapat dihapus. Aturan hapus FK memakai `RESTRICT`.
 
 ### 2.1b `permission`
 
-Daftar izin baku yang ditanam sistem lewat seeder. **Admin tidak dapat menambah atau menghapus izin,** karena setiap izin harus memiliki pasangan pemeriksa di dalam kode. Admin hanya memasangkannya ke role.
+Daftar kewenangan baku yang ditanam sistem lewat seeder. **Admin tidak dapat menambah atau menghapus kewenangan,** karena setiap kewenangan harus memiliki pasangan pemeriksa di dalam kode. Admin hanya memasangkannya ke role.
 
 | Kolom | Tipe | Null | Kunci | Keterangan |
 |---|---|---|---|---|
@@ -158,11 +158,11 @@ Daftar izin baku yang ditanam sistem lewat seeder. **Admin tidak dapat menambah 
 | `label` | `VARCHAR(150)` | TIDAK | | Teks Bahasa Indonesia yang tampil di antarmuka |
 | `urutan` | `SMALLINT UNSIGNED` | TIDAK | | Urutan tampil dalam kelompok modulnya |
 
-Daftar lengkap izin ada pada §13.
+Daftar lengkap kewenangan ada pada §13.
 
 ### 2.1c `role_permission`
 
-Tabel pivot penghubung role dan izin.
+Tabel pivot penghubung role dan kewenangan.
 
 | Kolom | Tipe | Null | Kunci | Keterangan |
 |---|---|---|---|---|
@@ -609,7 +609,7 @@ Dokumen status lahan (HPL/SHM) dipisah ke tabel sendiri karena satu lahan dapat 
 | `satuan_permukiman_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | |
 | `ketua_transmigran_id` | `BIGINT UNSIGNED` | YA | FK | Menunjuk data transmigran ketua |
 | `nama` | `VARCHAR(255)` | TIDAK | UQ | |
-| `tanggal_berdiri` | `DATE` | YA | | |
+| `tahun_berdiri` | `YEAR` | YA | | Tahun saja; tanggal pendirian poktan lama kerap tidak terdokumentasi |
 | `telepon` | `VARCHAR(20)` | YA | | Kontak kelompok, boleh berbeda dari kontak pribadi ketua |
 | `email` | `VARCHAR(255)` | YA | | Kontak kelompok |
 | `alamat_sekretariat` | `VARCHAR(255)` | YA | | |
@@ -632,13 +632,13 @@ Dokumen status lahan (HPL/SHM) dipisah ke tabel sendiri karena satu lahan dapat 
 | `transmigran_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX, UQ¹ | |
 | `jabatan` | `ENUM` | TIDAK | | Lihat §11.15 |
 | `tanggal_masuk` | `DATE` | TIDAK | | |
-| `status_keaktifan` | `ENUM` | TIDAK | IDX | Lihat §11.16 |
+| `status` | `ENUM` | TIDAK | IDX | Lihat §11.16 |
 | `tanggal_keluar` | `DATE` | YA | | Wajib diisi bila status Sudah Keluar |
 | `keterangan` | `TEXT` | YA | | |
 
 ¹ UNIQUE gabungan `(poktan_id, transmigran_id)`.
 
-**Catatan:** anggota yang berhenti **tidak dihapus**, melainkan ditandai `status_keaktifan = 'Sudah Keluar'` agar riwayat tetap utuh (`rules.md` §5.1 catatan 1). Nama dan NIK anggota dibaca lewat relasi ke `transmigran`, tidak disalin.
+**Catatan:** anggota yang berhenti **tidak dihapus**, melainkan ditandai `status = 'Sudah Keluar'` agar riwayat tetap utuh (`rules.md` §5.1 catatan 1). Nama dan NIK anggota dibaca lewat relasi ke `transmigran`, tidak disalin.
 
 ### 8.3 `alsintan`
 
@@ -670,8 +670,8 @@ Sarana produksi pertanian: benih, pupuk, pestisida, mulsa.
 | `transmigran_id` | `BIGINT UNSIGNED` | YA | FK, IDX | Penerima perorangan |
 | `poktan_id` | `BIGINT UNSIGNED` | YA | FK, IDX | Penerima kelompok |
 | `satuan_id` | `BIGINT UNSIGNED` | TIDAK | FK | Satuan jumlah yang disalurkan |
-| `jenis_saprotan` | `ENUM` | TIDAK | IDX | Lihat §11.18 |
-| `nama_saprotan` | `VARCHAR(255)` | TIDAK | | Contoh: Urea, benih jagung hibrida |
+| `jenis` | `ENUM` | TIDAK | IDX | Lihat §11.18 |
+| `nama` | `VARCHAR(255)` | TIDAK | | Contoh: Urea, benih jagung hibrida |
 | `jumlah` | `DECIMAL(12,3)` | TIDAK | | |
 | `tahun_perolehan` | `YEAR` | YA | IDX | |
 | `tanggal_penyaluran` | `DATE` | YA | | |
@@ -742,7 +742,7 @@ Catatan penanaman: lahan mana, musim apa, komoditas apa.
 
 ### 10.1 `infrastruktur`
 
-Pendataan **aset** infrastruktur. Pelaporan kerusakan ditangani modul Pengaduan (`rules.md` §10.1).
+Pendataan **aset** infrastruktur. Pelaporan kerusakan ditangani fitur Pengaduan (`rules.md` §10.1).
 
 | Kolom | Tipe | Null | Kunci | Keterangan |
 |---|---|---|---|---|
@@ -843,7 +843,7 @@ Role `Transmigran` dan `Ketua Poktan` pada rancangan semula **dihapus**, karena 
 
 **Catatan:**
 - `Reset Kata Sandi`, `Nonaktifkan Akun`, dan `Aktifkan Akun` mencatat tindakan Admin terhadap akun pengguna lain. `Reset Kata Sandi` wajib tercatat karena memberi Admin kemampuan mengambil alih akses akun mana pun.
-- `Ubah Izin Role` mencatat perubahan susunan izin sebuah role, karena tindakan ini dapat memperluas akses banyak pengguna sekaligus.
+- `Ubah Izin Role` mencatat perubahan susunan kewenangan sebuah role, karena tindakan ini dapat memperluas akses banyak pengguna sekaligus.
 - Entri `Tambah` dan `Ubah` pada baris data yang sama memungkinkan penelusuran siapa penginput asli dan siapa yang memutakhirkannya.
 
 ### 11.3 Sumber dana / sumber perolehan
@@ -921,7 +921,7 @@ Pada SQL referensi kolom ini bertipe `VARCHAR` bebas; dijadikan ENUM agar dapat 
 ### 11.25 Cakupan data role
 `Semua` · `Per SP`
 
-Menentukan **data siapa** yang boleh dilihat, terpisah dari izin yang menentukan **boleh melakukan apa**.
+Menentukan **data siapa** yang boleh dilihat, terpisah dari kewenangan yang menentukan **boleh melakukan apa**.
 
 | Nilai | Penyaring query | Pemakai |
 |---|---|---|
@@ -995,7 +995,7 @@ Aturan berikut ditulis satu kali di `app/Support/ValidationRules.php` dan dipaka
 | # | Aturan | Tabel |
 |---|---|---|
 | 1 | `alasan_tidak_dihuni` wajib bila `status_hunian` = Tidak Dihuni | `rumah` |
-| 2 | `tanggal_keluar` wajib bila `status_keaktifan` = Sudah Keluar | `anggota_poktan` |
+| 2 | `tanggal_keluar` wajib bila `status` = Sudah Keluar | `anggota_poktan` |
 | 3 | `tanggal_keluar` tidak boleh mendahului `tanggal_masuk` | `anggota_poktan`, `riwayat_penghunian` |
 | 4 | `transmigran_id` wajib bila `kepemilikan` = Pribadi; `poktan_id` wajib bila Bantuan Poktan | `alsintan` |
 | 5 | Minimal satu di antara `transmigran_id` dan `poktan_id` terisi | `saprotan` |
@@ -1009,7 +1009,7 @@ Aturan berikut ditulis satu kali di `app/Support/ValidationRules.php` dan dipaka
 | 13 | Akun berrole bercakupan `Per SP` wajib memiliki minimal satu penugasan SP | `user_satuan_permukiman` |
 | 14 | Admin tidak boleh menonaktifkan atau menghapus akun Admin terakhir yang masih aktif | `user` |
 | 15 | Role bertanda `is_bawaan` tidak dapat dihapus | `role` |
-| 16 | Role bertanda `is_terkunci` tidak dapat diubah izinnya | `role` |
+| 16 | Role bertanda `is_terkunci` tidak dapat diubah kewenangannya | `role` |
 | 17 | Role yang masih dipakai minimal satu akun tidak dapat dihapus | `role` |
 | 19 | `nama_pelapor` dan `kontak_pelapor` wajib pada seluruh pengaduan, baik publik maupun dicatat petugas | `pengaduan` |
 | 20 | `user_id` wajib kosong bila `sumber_laporan` bernilai Publik, dan wajib terisi bila Petugas | `pengaduan` |
@@ -1017,17 +1017,17 @@ Aturan berikut ditulis satu kali di `app/Support/ValidationRules.php` dan dipaka
 
 ---
 
-## 13. Daftar Izin (Permission)
+## 13. Daftar Kewenangan (Permission)
 
-Izin ditanam sistem lewat seeder dan **tidak dapat ditambah atau dihapus Admin**, karena setiap izin harus memiliki pasangan pemeriksa di dalam kode. Admin hanya memasangkannya ke role lewat `role_permission`.
+Kewenangan ditanam sistem lewat seeder dan **tidak dapat ditambah atau dihapus Admin**, karena setiap kewenangan harus memiliki pasangan pemeriksa di dalam kode. Admin hanya memasangkannya ke role lewat `role_permission`.
 
 Penamaan memakai pola `modul.aksi`, contoh `transmigran.lihat`.
 
-### 13.1 Aksi yang tersedia per modul
+### 13.1 Aksi yang tersedia per fitur
 
-Tanda centang berarti izin tersebut dibuat untuk modul bersangkutan.
+Tanda centang berarti kewenangan tersebut dibuat untuk fitur bersangkutan.
 
-| Modul | lihat | tambah | ubah | hapus | export |
+| Fitur | lihat | tambah | ubah | hapus | export |
 |---|:---:|:---:|:---:|:---:|:---:|
 | `pengguna` | v | v | v | | |
 | `role` | v | v | v | v | |
@@ -1057,15 +1057,15 @@ Tanda centang berarti izin tersebut dibuat untuk modul bersangkutan.
 | `dashboard` | v | | | | v |
 | `laporan` | v | | | | v |
 
-Total **117 izin** dari 27 modul, dihitung dari tabel di atas.
+Total **117 kewenangan** dari 27 fitur, dihitung dari tabel di atas.
 
-Jumlah izin yang benar-benar dipegang tiap role bawaan lebih sedikit, sesuai susunan pada `rules.md` 5.1: Admin 117, Dinas Transmigrasi 57, Dinas Pertanian 64, Operator SP 50.
+Jumlah kewenangan yang benar-benar dipegang tiap role bawaan lebih sedikit, sesuai susunan pada `rules.md` 5.1: Admin 117, Dinas Transmigrasi 57, Dinas Pertanian 64, Operator SP 50.
 
-### 13.2 Kelompok modul pada antarmuka
+### 13.2 Kelompok fitur pada antarmuka
 
-Agar halaman pengaturan role mudah dibaca, izin dikelompokkan sesuai struktur menu:
+Agar halaman pengaturan role mudah dibaca, kewenangan dikelompokkan sesuai struktur menu:
 
-| Kelompok | Modul |
+| Kelompok | Fitur |
 |---|---|
 | Sistem | `pengguna`, `role`, `audit_log` |
 | Wilayah dan SP | `wilayah`, `kawasan`, `sp`, `inventaris_sp`, `fasilitas_sp`, `satuan` |
@@ -1077,10 +1077,10 @@ Agar halaman pengaturan role mudah dibaca, izin dikelompokkan sesuai struktur me
 | Pengaduan | `pengaduan`, `penanganan_pengaduan` |
 | Pemantauan | `dashboard`, `laporan` |
 
-### 13.3 Aturan pemeriksaan izin
+### 13.3 Aturan pemeriksaan kewenangan
 
 1. Pemeriksaan wajib dilakukan pada **level query dan controller**, bukan sekadar menyembunyikan menu (`rules.md` §5).
-2. Menu sidebar dirender hanya bila pengguna memiliki izin `lihat` pada modul bersangkutan. Menu yang tidak berhak **tidak dirender sama sekali**.
-3. Tombol aksi (Tambah, Ubah, Hapus, Export) dirender hanya bila izin terkait dimiliki.
-4. Izin `lihat` adalah prasyarat seluruh aksi lain pada modul yang sama. Memberi izin `ubah` tanpa `lihat` dianggap galat konfigurasi dan ditolak sistem.
-5. Setiap perubahan susunan izin sebuah role wajib tercatat pada `audit_log`.
+2. Menu sidebar dirender hanya bila pengguna memiliki kewenangan `lihat` pada fitur bersangkutan. Menu yang tidak berhak **tidak dirender sama sekali**.
+3. Tombol aksi (Tambah, Ubah, Hapus, Export) dirender hanya bila kewenangan terkait dimiliki.
+4. Kewenangan `lihat` adalah prasyarat seluruh aksi lain pada fitur yang sama. Memberi kewenangan `ubah` tanpa `lihat` dianggap galat konfigurasi dan ditolak sistem.
+5. Setiap perubahan susunan kewenangan sebuah role wajib tercatat pada `audit_log`.

@@ -40,14 +40,14 @@ Membangun sistem informasi digital berbasis web untuk memperkuat monitoring pert
 
 | Role | Cakupan data | Kewenangan utama |
 |---|---|---|
-| **Admin** | Semua | Mengelola pengguna, role dan hak akses, data master wilayah/kawasan/SP, konfigurasi sistem, serta memantau audit log. Akses penuh ke seluruh modul. |
+| **Admin** | Semua | Mengelola pengguna, role dan hak akses, data master wilayah/kawasan/SP, konfigurasi sistem, serta memantau audit log. Akses penuh ke seluruh fitur. |
 | **Dinas Transmigrasi** | Semua | Memantau dashboard dan laporan kawasan, mengelola data transmigran, rumah, lahan, inventaris, dan fasilitas SP, serta menangani pengaduan bidang ketransmigrasian. |
 | **Dinas Pertanian** | Semua | Memantau dashboard dan laporan pertanian, mengelola data poktan, komoditas, hasil panen, alsintan, dan saprotan, serta menangani pengaduan bidang pertanian. |
 | **Operator SP** | Per SP | Memasukkan dan memperbarui data transmigran, rumah, lahan, dan hasil panen, **terbatas pada SP yang ditugaskan padanya**. Tanpa kewenangan menghapus. |
 
 **Seluruh pengguna sistem adalah petugas.** Warga transmigran tidak memiliki akun. Data mereka dikelola petugas, sedangkan pengaduan diajukan lewat halaman publik tanpa login (§7.13). Pilihan ini diambil karena melatih ratusan warga memakai sistem tidak sebanding manfaatnya, sementara jaringan di lokus juga tidak selalu mendukung.
 
-Hak akses ditentukan oleh dua hal terpisah: **izin** menjawab boleh melakukan apa, sedangkan **cakupan data** menjawab boleh melihat data siapa. Rincian pada `rules.md` §5.
+Hak akses ditentukan oleh dua hal terpisah: **kewenangan** menjawab boleh melakukan apa, sedangkan **cakupan data** menjawab boleh melihat data siapa. Rincian pada `rules.md` §5.
 
 ## 4a. Lokus Kegiatan
 Sistem dipakai pada **Kawasan Transmigrasi Kobalima Timur**, Kabupaten Malaka, Nusa Tenggara Timur, yang menaungi 6 Satuan Permukiman tersebar di 4 kecamatan:
@@ -119,10 +119,10 @@ Sistem ini dirancang untuk menyelesaikan masalah utama berikut:
 ## 7. Kebutuhan Fungsional
 ### 7.1 Autentikasi dan hak akses
 - Pengguna dapat login menggunakan akun yang diberikan.
-- Sistem membatasi akses berdasarkan role beserta izin dan cakupan datanya. Empat role bawaan: Admin, Dinas Transmigrasi, Dinas Pertanian, dan Operator SP.
+- Sistem membatasi akses berdasarkan role beserta kewenangan dan cakupan datanya. Empat role bawaan: Admin, Dinas Transmigrasi, Dinas Pertanian, dan Operator SP.
 - Admin dapat menambah, mengubah, menonaktifkan, dan mengatur hak akses pengguna.
 - Akun bercakupan Per SP, seperti Operator SP, hanya dapat mengakses data pada SP yang ditugaskan padanya.
-- **Role bersifat dinamis.** Admin dapat membuat role baru, memilih izin per modul, dan menetapkan cakupan datanya lewat antarmuka, tanpa perlu mengubah kode program.
+- **Role bersifat dinamis.** Admin dapat membuat role baru, memilih kewenangan per fitur, dan menetapkan cakupan datanya lewat antarmuka, tanpa perlu mengubah kode program.
 - **Tidak ada pendaftaran mandiri.** Sistem tidak menyediakan halaman daftar akun; seluruh akun dibuat oleh Admin. Ini mencegah pihak tak berwenang membuat akun ke sistem data kependudukan.
 - **Kredensial berupa email atau username.** Seluruh pengguna adalah petugas, sehingga tidak ada kredensial berbasis NIK.
 - **Pemulihan kata sandi tersedia lewat dua jalur.** Petugas dapat meminta kode verifikasi enam digit ke surel dinasnya, atau menghubungi Admin untuk disetel ulang secara langsung. Jalur Admin dipertahankan karena jaringan di lokus tidak selalu memungkinkan penerimaan surel tepat waktu, sehingga sistem tidak pernah bergantung pada satu-satunya cara. Kode dikirim sebagai angka yang diketik, bukan tautan yang diklik, agar tetap dapat dipakai ketika surel hanya dapat dibuka di perangkat lain.
@@ -135,7 +135,7 @@ Sistem ini dirancang untuk menyelesaikan masalah utama berikut:
 - menyimpan pada tiap SP: nama SP, kecamatan dan desa, titik koordinat, batas wilayah, luas lahan, dan penanggung jawab data;
 - menyimpan data inventaris yg dimiliki SP beserta status penyerahan dan perolehannya;
 - menyimpan data fasilitas SP;
-- Data master menjadi acuan untuk modul lain;
+- Data master menjadi acuan untuk fitur lain;
 - melakukan pencarian, filter, edit, dan hapus data sesuai kewenangan.
 
 Informasi kecamatan pada SP dibaca otomatis dari desa yang dipilih, sehingga operator cukup memilih desa tanpa mengisi kecamatan dua kali.
@@ -174,7 +174,7 @@ Sistem harus dapat:
 - menampilkan rekap hasil panen per periode, per komoditas, dan per wilayah.
 
 ### 7.7 Infrastruktur SP
-Modul ini berisi **pendataan aset** infrastruktur satuan permukiman. Pelaporan masalah/kerusakan ditangani oleh modul Pengaduan (§7.13).
+Fitur ini berisi **pendataan aset** infrastruktur satuan permukiman. Pelaporan masalah/kerusakan ditangani oleh fitur Pengaduan (§7.13).
 
 Sistem harus dapat:
 - mencatat infrastruktur SP seperti air, irigasi, listrik, jalan produksi, telekomunikasi, dan gudang;
@@ -206,7 +206,7 @@ Dashboard harus menampilkan ringkasan minimal:
 - total volume panen tiap tahun, dinyatakan dalam ton hasil konversi lintas komoditas;
 - harga rata-rata;
 - status infrastruktur;
-- isu prioritas per desa/SP (bersumber dari modul Pengaduan: jumlah pengaduan per kategori dan per status penanganan);
+- isu prioritas per desa/SP (bersumber dari fitur Pengaduan: jumlah pengaduan per kategori dan per status penanganan);
 - rekap data penghuni kawasan;
 - status kondisi tiap SP (Mandiri, Berkembang, Perlu Penanganan), dihitung dari ketersediaan dan kondisi layanan dasar.
 
@@ -330,7 +330,7 @@ Indikator mengikuti Tabel 7 proposal, dengan target kuantitatif dan kualitatif b
 | No | Aspek | Target kuantitatif | Target kualitatif |
 |---|---|---|---|
 | 1 | Pengembangan aplikasi web | Minimal 1 aplikasi web berhasil dikembangkan dan dapat diakses daring | Mudah digunakan, alur kerja jelas, sesuai kebutuhan lapangan |
-| 2 | Modul sistem | Minimal 5 modul inti berjalan: petani/transmigran, lahan, komoditas, hasil panen, infrastruktur | Mendukung pendataan, pemantauan, dan pelaporan secara terstruktur |
+| 2 | Fitur sistem | Minimal 5 fitur inti berjalan: petani/transmigran, lahan, komoditas, hasil panen, infrastruktur | Mendukung pendataan, pemantauan, dan pelaporan secara terstruktur |
 | 3 | Dashboard monitoring | Minimal 1 dashboard aktif menampilkan indikator utama kawasan | Ringkas, mudah dibaca, membantu pengambilan keputusan |
 | 4 | Database kawasan | Tersedia database transmigran petani, lahan, komoditas, hasil panen, infrastruktur, dan penghuni kawasan | Data tertib, terintegrasi, mudah dicari, dapat diperbarui berkala |
 | 5 | Input dan validasi data awal | Data awal dari desa/SP prioritas berhasil diinput | Data menjadi baseline monitoring |
@@ -354,7 +354,7 @@ Indikator mengikuti Tabel 7 proposal, dengan target kuantitatif dan kualitatif b
 - Fondasi antarmuka memakai template TailAdmin Laravel berlisensi MIT
 - Aplikasi web responsif dan mobile friendly
 - Deployment melalui hosting/server daring dengan SSL, backup terjadwal, dan penyimpanan foto/dokumen
-- Fokus awal pada modul inti dan dashboard monitoring
+- Fokus awal pada fitur inti dan dashboard monitoring
 - Pelatihan dan pendampingan menjadi bagian penting dari implementasi
 - Skema awal dapat memakai shared hosting premium atau cloud VPS ringan; ditingkatkan ke VPS/cloud dengan queue, object storage, dan caching bila beban data bertambah
 - Versi PHP pada hosting target wajib dikonfirmasi sebelum tahap deployment, minimal 8.2
@@ -365,7 +365,7 @@ Kegiatan berjalan Agustus minggu III sampai Desember minggu I, dibagi menjadi em
 | Fase | Periode | Fokus |
 |---|---|---|
 | Fase 1 — Persiapan dan Analisis | Agustus III – September II | Koordinasi, telaah dokumen, survei, analisis kebutuhan pengguna |
-| Fase 2 — Desain dan Pengembangan Sistem | September III – Oktober IV | Desain database/UI dan pengembangan modul inti |
+| Fase 2 — Desain dan Pengembangan Sistem | September III – Oktober IV | Desain database/UI dan pengembangan fitur inti |
 | Fase 3 — Uji Coba, Perbaikan, dan Deployment | Oktober V – November III | FGD progres, dashboard, testing internal, deployment |
 | Fase 4 — Pendampingan dan Evaluasi | November IV – Desember I | Beta testing, pelatihan, evaluasi akhir, serah terima |
 

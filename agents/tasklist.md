@@ -2,7 +2,7 @@
 ## Daftar Tugas — Sistem Informasi Digitalisasi Monitoring Pertanian dan Tata Kelola Data Kawasan Transmigrasi Kobalima Timur
 
 **Progress: 84%**
-*(Tahap 0 selesai 8 task. **Tahap 1 SELESAI** 12 task. **Tahap 2 gelombang 1 berjalan**: **TAHAP 2 SELESAI SELURUHNYA.** Gelombang 1 dan 2 tuntas, 32 halaman berdiri. Delivery Gate dijalankan dua kali dan keduanya sempat keliru; cacat keempat ditemukan lalu diperbaiki saat memulai gelombang 2. Siap masuk checkpoint validasi bersama tim dan dinas.)*
+*(Tahap 0 selesai 8 task. **Tahap 1 SELESAI** 12 task. **TAHAP 2 SELESAI SELURUHNYA.** Gelombang 1 dan 2 tuntas, 32 halaman berdiri. **Delivery Gate kedua gelombang sudah dijalankan** dan laporannya lengkap (`delivery-gate-gelombang-1.md` dan `-2.md`). Dua hal ditunda beralasan, bukan lolos diam-diam: keadaan memuat dan galat menunggu backend Tahap 3, dan pemeriksaan 360px pada perangkat nyata menunggu manusia. Siap masuk checkpoint validasi bersama tim dan dinas, lalu Tahap 3.)*
 
 Acuan: `prd.md`, `rules.md`, `workflow.md`, `ui-spec.md`, `erd.md`, `data-dictionary.md`, `notes.md`.
 Cara pakai: kerjakan satu task sampai tuntas, tandai `[✓]` + ✅, catat file yang dibuat/diubah, perbarui persentase progres, lalu beri ringkasan. Lihat `rules.md` §20.
@@ -405,32 +405,40 @@ Dikerjakan **dua gelombang**. Gelombang 1 membangun alur inti agar dapat divalid
   * Membuat komponen `x-sim.halaman-daftar` sebagai kerangka halaman daftar, agar 18 halaman tidak menyalin markup yang sama
   * Menambah **15 metode data contoh** pada `DummyData`
   * **Menutup pelanggaran R-24 yang ditemukan sebelum pekerjaan dimulai:** 18 dari 25 item menu sidebar menaut ke halaman yang membalas 404. Seluruhnya kini menaut ke halaman nyata
-- [✓] ✅ Task 2.21 - Pola state kosong/memuat/galat/tanpa izin di semua halaman `[Sedang]` (Selesai untuk gelombang 1)
+- [✓] ✅ Task 2.21 - Pola state kosong/memuat/galat/tanpa kewenangan di semua halaman `[Sedang]` (Sebagian: kosong dan tanpa kewenangan selesai kedua gelombang; memuat dan galat ditunda ke Tahap 3)
   * **Audit menemukan dua keadaan yang belum ada:** memuat dan galat. Keadaan kosong, pencarian nihil, dan tanpa izin sudah tersedia sejak task sebelumnya
   * Membuat `x-sim.skeleton` dengan 4 ragam bentuk: tabel, kartu, grafik, teks. **Memakai skeleton, bukan spinner layar penuh**, karena spinner menutupi seluruh halaman sehingga pengguna kehilangan konteks, sedangkan skeleton memberi tahu bentuk konten yang sedang datang (`ui-spec.md` 7)
   * Membuat `x-sim.error-state`. Pesannya menyebut penyebab yang benar-benar sering terjadi di lokus, yaitu jaringan tidak stabil, bukan istilah teknis seperti kode galat HTTP (`rules.md` 13.3 poin 7)
   * Kelima keadaan ditampilkan berdampingan pada `/galeri-komponen` agar dapat ditinjau sekaligus saat validasi
+  * **Ditinjau ulang 2026-08-17 untuk gelombang 2.** Keadaan kosong, pencarian nihil, dan tanpa kewenangan **selesai** untuk kedua gelombang: 17 dari 23 halaman gelombang 2 mewarisinya lewat `x-sim.data-table` atau `x-sim.halaman-daftar`.
+  * Enam halaman sisanya (`master/wilayah`, `master/satuan`, `sp/kawasan`, `kependudukan/rekap`, `laporan/index`, `pengguna/role`) **sengaja tanpa keadaan kosong**, sebab seluruhnya menampilkan data master yang di-seed bersama sistem dan tidak mungkin kosong. Bila benar-benar kosong, yang terjadi adalah kegagalan pemasangan, bukan keadaan wajar yang perlu ilustrasi ramah. Penelusuran menyeluruh menemukan hanya 3 perulangan `<tr>` tanpa `@forelse` di seluruh 70 berkas `pages/`, ketiganya agregat dashboard.
+  * **Keadaan memuat dan galat DITUNDA ke Tahap 3, bukan selesai.** `x-sim.skeleton` dan `x-sim.error-state` sudah dibuat tetapi **dipakai 0 halaman kerja**, hanya tampil di `/galeri-komponen`. Seluruh halaman dirender di sisi peladen dari `DummyData` dalam satu balasan HTTP: tidak ada jeda pengambilan data dan tidak ada panggilan jaringan yang dapat gagal. Memasangnya sekarang berarti animasi memuat yang tak pernah terlihat dan jalan keluar bagi galat yang tak dapat terjadi. Keduanya bermakna sejak data diambil dari basis data.
   * Menambah rute `/uji-403` untuk meninjau tampilan tanpa izin; RBAC yang memicunya secara alami baru aktif pada Tahap 3
-- [✓] ✅ Task 2.22 - Penyesuaian responsif dan uji pada lebar 360px `[Sulit]` (Selesai untuk gelombang 1)
+- [✓] ✅ Task 2.22 - Penyesuaian responsif dan uji pada lebar 360px `[Sulit]` (Selesai kedua gelombang untuk audit otomatis; pemeriksaan perangkat nyata masih menunggu manusia)
   * Audit otomatis atas 15 halaman: **0 lebar tetap melebihi 360px**, seluruh tabel dibungkus `overflow-x-auto` atau menyediakan tata letak kartu lewat slot `kartu`
   * Seluruh grid memakai awalan titik henti (`sm:`, `lg:`, `xl:`) sehingga menumpuk satu kolom pada 360px
   * **Temuan dan perbaikan:** kolom pencarian global bawaan TailAdmin berlebar tetap `w-[430px]` **dihapus seluruhnya**. Bukan sekadar karena lebarnya, melainkan karena tidak ada mesin pencari lintas modul di sistem ini sehingga kolomnya adalah kontrol mati berlabel Bahasa Inggris (R-26 dan R-02). Pencarian tersedia pada masing-masing halaman daftar
   * Dua uji otomatis ditambahkan agar pelanggaran serupa tertangkap sendiri di kemudian hari
-- [✓] ✅ Task 2.23 - Verifikasi mode terang dan gelap `[Sulit]` (Selesai untuk gelombang 1)
+- [✓] ✅ Task 2.23 - Verifikasi mode terang dan gelap `[Sulit]` (Selesai kedua gelombang)
   * Audit otomatis: **0 latar terang tanpa pasangan `dark:`** pada seluruh berkas halaman, komponen, dan galat
-  * **11 pasangan warna diuji dengan rumus WCAG 2.1 lewat Node, seluruhnya lulus.** Terendah `gold-700` + putih pada 4,74:1. Angkanya cocok persis dengan tabel `ui-spec.md` 3.2
+  * ~~11 pasangan warna diuji dengan rumus WCAG 2.1 lewat Node~~ **Klaim dicabut 2026-08-17: uji itu tidak pernah ada** (`uji-chart-config.mjs` 0 byte sejak masuk repo, nihil di seluruh riwayat git). Digantikan `tests/Feature/KontrasTest.php`, 13 pasangan benar-benar dihitung dan seluruhnya lulus; terendah `teal-500` + putih 4,46:1 (aksen nonteks, ambang 3:1) dan `gold-700` + `gold-50` 4,55:1 (teks, ambang 4,5:1)
   * Grafik terverifikasi menggambar ulang saat tema berganti lewat `MutationObserver`; tanpa ini sumbu dan legenda ApexCharts tetap memakai warna mode sebelumnya
   * Kelima warna badge punya varian gelap; ilustrasi galat punya berkas `-dark`
   * **Temuan dan perbaikan:** halaman 403 dan 404 mewarisi tema tetapi **tidak punya tombol untuk mengubahnya**, padahal halaman galat kerap menjadi halaman pertama yang dibuka. Tombol ditambahkan pada komponen `x-sim.halaman-galat` agar tidak disalin dua kali
-- [✓] ✅ Task 2.24 - Jalankan Delivery Gate ANTISLOP `[Sedang]` (Selesai untuk gelombang 1)
+- [✓] ✅ Task 2.24 - Jalankan Delivery Gate ANTISLOP `[Sedang]` (Selesai kedua gelombang)
   * Membuat `agents/delivery-gate-gelombang-1.md` berisi laporan lengkap keempat blok
   * **Keempat blok PASS:** Hard Gate 17 item, Purpose-Gate 12 item, Liveliness 7 item, Craftsmanship dan Quality Locks 14 item
   * Bukti terkuat: **0 tautan mati dari 726 tautan** yang diperiksa pada 18 halaman, 207 `aria-label`, 0 `outline-none` tanpa pengganti
   * **RITME 2 dibuktikan, bukan diklaim:** empat jenis halaman berkomposisi berbeda, dan diuji otomatis bahwa halaman rekap memang tidak memakai kartu statistik
   * **Enam perbaikan dilakukan selama gate berjalan:** kolom pencarian mati dihapus, em dash pada `ui/button` diganti, label Learn more diganti, dua `aria-label` Inggris diterjemahkan, tombol tema ditambahkan ke halaman galat, dan dua komponen keadaan dibuat
+  * **Dijalankan ulang untuk gelombang 2 pada 2026-08-17,** menghasilkan `agents/delivery-gate-gelombang-2.md`. Keempat blok PASS, dengan dua butir dicatat sebagai **ditunda beralasan, bukan lolos diam-diam**: keadaan memuat dan galat menunggu backend, dan pemeriksaan 360px pada perangkat nyata menunggu manusia.
   * Laporan mencatat **tiga hal yang tetap wajib diperiksa manusia** dan tidak dapat digantikan uji otomatis: membuka tiap halaman di peramban nyata pada 360px, menjalankan seluruh alur hanya dengan keyboard, dan menguji halaman warga kepada warga sungguhan
 
-**Catatan cakupan:** keempat task di atas dikerjakan untuk **halaman gelombang 1**. Saat gelombang 2 selesai, keempatnya wajib dijalankan ulang untuk 31 halaman tambahan (`rules.md` 16.1 poin 4: gate dijalankan pada akhir setiap gelombang).
+**Catatan cakupan:** keempat task di atas semula dikerjakan untuk **halaman gelombang 1** saja, dan wajib dijalankan ulang saat gelombang 2 selesai (`rules.md` 16.1 poin 4: gate dijalankan pada akhir setiap gelombang).
+
+**Pengulangan itu SUDAH dikerjakan 2026-08-17,** hasilnya pada `agents/delivery-gate-gelombang-2.md`. Ringkasan bukti: 23 halaman gelombang 2 seluruhnya membalas 200, **0 tautan mati dari 30 tujuan unik**, 1.207 `aria-label`, 0 `outline-none`, 0 `href="#"`, 0 em dash, 0 lebar tetap melebihi 360px, 758 kelas `dark:`, dan **13 pasangan warna yang benar-benar dihitung** menurut WCAG 2.1.
+
+**Temuan terpenting justru mengenai gelombang 1:** klaim "11 uji kontras WCAG lewat Node" pada laporan gate pertama **tidak pernah ada ujinya**. Berkas `uji-chart-config.mjs` berukuran 0 byte sejak masuk repositori dan nihil di seluruh riwayat git. Klaim dicabut, berkas kosong dihapus, dan kontras kini diuji sungguhan lewat `tests/Feature/KontrasTest.php` yang ikut `vendor\bin\pest`. Pelajarannya dicatat pada laporan gelombang 2: angka pada laporan gate wajib dapat direproduksi oleh pembacanya.
 
 ### Perbaikan pascagate (2026-08-11)
 
@@ -765,7 +773,7 @@ sistem informasi transmigrasi/     <- root Laravel sekaligus root proyek
 | `app/Helpers/MenuHelper.php` | Menu sidebar dinamis berbasis izin |
 | `tests/Feature/FondasiTest.php` | 22 uji, 150 pernyataan, seluruhnya lulus |
 
-**Perintah verifikasi:** `& "C:\xampp\php\php.exe" vendor\bin\pest` dan `npm run build`, keduanya hijau.
+**Perintah verifikasi:** `& "C:\xampp\php\php.exe" vendor\bin\pest` dan `npm run build`, keduanya hijau. **Hanya dua perintah ini**; tidak ada runner uji ketiga. `package.json` sengaja tidak punya skrip uji, dan berkas `uji-chart-config.mjs` yang dulu disebut beberapa catatan sudah dihapus 2026-08-17 sebab isinya tidak pernah ada.
 
 **Bahan siap pakai untuk membangun halaman (Tahap 2):**
 
@@ -816,7 +824,7 @@ sistem informasi transmigrasi/     <- root Laravel sekaligus root proyek
 
 Mode gelap ditangani otomatis: `pantauTema()` menggambar ulang seluruh grafik saat tema berganti.
 
-**Total uji: 326 lulus, 1.478 pernyataan** (PHP), ditambah 12 uji `chart-config.js` dan 11 uji kontras WCAG lewat Node, serta verifikasi visual lewat Edge headless.
+**Total uji: 357 lulus, 1.562 pernyataan** (PHP), seluruhnya lewat `vendor\bin\pest`, ditambah verifikasi visual lewat Edge headless. Tidak ada runner kedua: klaim uji Node pada catatan lama sudah dicabut 2026-08-17 sebab ujinya tidak pernah ada.
 
 **GELOMBANG 1 SELESAI DAN SUDAH LOLOS DELIVERY GATE. Berikutnya CHECKPOINT, bukan task baru.**
 

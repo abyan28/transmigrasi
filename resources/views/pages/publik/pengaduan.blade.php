@@ -97,8 +97,8 @@
             --}}
             @if (session('email_pelapor'))
                 <p class="mt-5 rounded-lg border border-yellow-300 bg-yellow-50 p-3 text-theme-xs text-yellow-800 dark:border-yellow-500/30 dark:bg-yellow-500/10 dark:text-yellow-200">
-                    <span class="font-medium">Pengiriman surel belum aktif.</span>
-                    Nomor ini belum dikirim ke {{ session('email_pelapor') }}. Sampai layanan surel
+                    <span class="font-medium">Pengiriman email belum aktif.</span>
+                    Nomor ini belum dikirim ke {{ session('email_pelapor') }}. Sampai layanan email
                     berjalan, catat nomornya dari layar ini.
                 </p>
             @endif
@@ -119,9 +119,9 @@
     <div class="mb-6 rounded-xl border border-gray-200 bg-white p-4 dark:border-navy-700 dark:bg-navy-800">
         <p class="text-theme-sm font-medium text-gray-800 dark:text-white/90">Yang terjadi setelah Anda mengirim</p>
         <ol class="mt-2 space-y-1.5 text-theme-sm text-gray-600 dark:text-gray-400">
-            <li>1. Anda menerima nomor pengaduan. Catat atau foto nomor itu.</li>
+            <li>1. Anda menerima <strong>Nomor Pengaduan</strong>. Catat atau foto nomor itu.</li>
             <li>2. Petugas memeriksa laporan Anda lalu menindaklanjutinya.</li>
-            <li>3. Anda dapat melihat perkembangannya kapan saja lewat menu Lacak Pengaduan.</li>
+            <li>3. Anda dapat melihat perkembangannya kapan saja lewat menu <strong>Lacak Pengaduan</strong>.</li>
         </ol>
     </div>
 
@@ -175,14 +175,14 @@
                     <div class="sm:col-span-2">
                         <label for="email_pelapor"
                             class="mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-300">
-                            Alamat Surel <span class="font-normal text-gray-500 dark:text-gray-400">(boleh dikosongkan)</span>
+                            Alamat Email <span class="font-normal text-gray-500 dark:text-gray-400">(boleh dikosongkan)</span>
                         </label>
                         <input type="email" id="email_pelapor" name="email_pelapor"
                             value="{{ old('email_pelapor') }}" maxlength="100" autocomplete="email"
                             placeholder="nama@contoh.com" aria-describedby="email_pelapor_bantuan"
                             class="h-12 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-navy-700 dark:text-white/90" />
                         <p id="email_pelapor_bantuan" class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
-                            Bila diisi, nomor pelacakan dikirim juga ke surel Anda. Tanpa surel pun pengaduan tetap
+                            Bila diisi, nomor pelacakan dikirim juga ke email Anda. Tanpa email pun pengaduan tetap
                             dapat dikirim, dan nomornya langsung tampil di layar setelah berhasil.
                         </p>
                         @error('email_pelapor')

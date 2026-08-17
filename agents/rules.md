@@ -6,7 +6,7 @@
 2. Sistem harus mendukung monitoring pertanian dan tata kelola data kawasan transmigrasi secara terintegrasi.
 3. Sistem harus dibuat sederhana, ringkas, dan mudah dipahami oleh operator lapangan.
 4. Setiap fitur harus mengutamakan kebutuhan lapangan, bukan sekadar tampilan.
-5. Semua modul harus mendukung pengambilan keputusan berbasis data.
+5. Semua fitur harus mendukung pengambilan keputusan berbasis data.
 6. Pengembangan dilakukan bertahap dengan pendekatan prototype, uji coba, perbaikan, lalu deployment.
 
 ### 2. Aturan Teknologi
@@ -43,8 +43,8 @@
 8. Berkas `LICENSE` milik TailAdmin wajib dipertahankan di dalam repositori sebagai pemenuhan syarat lisensi MIT.
 
 ### 3. Aturan Arsitektur Sistem
-1. Struktur modul harus dipisahkan dengan jelas per domain data.
-2. Modul inti minimal terdiri dari:
+1. Struktur fitur harus dipisahkan dengan jelas per domain data.
+2. Fitur inti minimal terdiri dari:
    - autentikasi dan manajemen pengguna,
    - data master wilayah dan satuan permukiman (SP),
    - inventaris SP,
@@ -63,7 +63,7 @@
    - dashboard monitoring,
    - laporan/export,
    - dokumentasi dan SOP.
-3. Setiap modul harus punya alur input, validasi, penyimpanan, pencarian, dan rekap data.
+3. Setiap fitur harus punya alur input, validasi, penyimpanan, pencarian, dan rekap data.
 4. Dashboard tidak boleh menjadi sekadar tampilan dekoratif; harus menampilkan indikator utama kawasan.
 
 ### 4. Aturan Data dan Basis Data
@@ -111,7 +111,7 @@ Alamat URL **tidak menampilkan primary key berurutan**. Pola berurutan seperti `
 2. **Slug dilarang diturunkan dari data pribadi.** Nama orang tidak boleh menjadi slug, sebab alamat URL tersimpan pada riwayat peramban, log server, dan terlihat siapa pun yang memandang layar. Untuk data pribadi, slug justru menurunkan kerahasiaan dibandingkan id angka.
 3. Slug wajib unik dan tidak berubah setelah dibuat, meski namanya kelak disunting, agar tautan yang sudah dibagikan tidak rusak.
 4. Nomor pengaduan publik wajib memuat **bagian acak**, contoh `PGD-2026-0001-K7F2M9`. Nomor berurutan dapat ditebak, dan halaman lacak dapat diakses tanpa login sehingga menjadi permukaan serangan yang nyata.
-5. Penggantian ke UUID dilakukan **bertahap**, dimulai dari modul berdata pribadi. Mengubah seluruh modul sekaligus memperbesar risiko tanpa menambah perlindungan yang sepadan.
+5. Penggantian ke UUID dilakukan **bertahap**, dimulai dari fitur berdata pribadi. Mengubah seluruh fitur sekaligus memperbesar risiko tanpa menambah perlindungan yang sepadan.
 6. Pembatasan laju melengkapi, bukan menggantikan, pengenal tak tertebak (§14c).
 
 **Aturan tambahan:**
@@ -122,7 +122,7 @@ Alamat URL **tidak menampilkan primary key berurutan**. Pola berurutan seperti `
 
 #### 4.1 Aturan umum
 
-1. Struktur database dan kamus istilah wajib didokumentasikan dalam **ERD** dan **data dictionary** sebelum implementasi modul dimulai.
+1. Struktur database dan kamus istilah wajib didokumentasikan dalam **ERD** dan **data dictionary** sebelum implementasi fitur dimulai.
 2. Data harus tersimpan terstruktur dan saling terhubung.
 3. Data utama yang wajib dikelola adalah:
    - wilayah dan satuan permukiman (SP),
@@ -180,7 +180,7 @@ Alamat URL **tidak menampilkan primary key berurutan**. Pola berurutan seperti `
 7. Struktur wilayah dan kawasan harus dapat ditambah tanpa mengubah skema, agar sistem dapat direplikasi ke kawasan transmigrasi lain. Nama wilayah dan nama kawasan disimpan sebagai data referensi, bukan nilai tetap di dalam struktur tabel.
 8. Setiap kawasan transmigrasi menyimpan nama, kabupaten, tahun penetapan, nomor SK, luas total, dan dokumen pendukung.
 
-### 4b. Aturan Modul Inventaris dan Fasilitas SP
+### 4b. Aturan Fitur Inventaris dan Fasilitas SP
 1. Inventaris SP dan fasilitas SP dikelola sebagai dua daftar terpisah yang menempel pada satu SP.
 2. Setiap entri wajib memuat nama barang/fasilitas, tahun perolehan, dan sumber dana.
 3. Sumber dana mengikuti pilihan baku: APBN, APBD Provinsi, APBD Kabupaten, Dinas Transmigrasi Kabupaten, Dinas Pertanian Kabupaten, Lembaga Swadaya Masyarakat, dan Lainnya.
@@ -194,21 +194,21 @@ Alamat URL **tidak menampilkan primary key berurutan**. Pola berurutan seperti `
 1. Sistem wajib menggunakan **role-based access control** dengan role yang bersifat **dinamis**, bukan dikunci di dalam kode.
 2. Role disimpan sebagai data pada tabel `role`, sehingga Admin dapat membuat, mengubah, dan menonaktifkan role lewat antarmuka tanpa mengubah struktur database.
 3. Hak akses ditentukan oleh **dua hal yang terpisah**:
-   - **Izin** menjawab *boleh melakukan apa*, contoh `transmigran.lihat` dan `transmigran.ubah`,
+   - **Kewenangan** menjawab *boleh melakukan apa*, contoh `transmigran.lihat` dan `transmigran.ubah`,
    - **Cakupan data** menjawab *boleh melihat data siapa*, dengan nilai `Semua` atau `Per SP`.
-4. Daftar izin ditanam sistem lewat seeder dan **tidak dapat ditambah atau dihapus Admin**, karena setiap izin harus punya pasangan pemeriksa di dalam kode. Admin hanya memasangkannya ke role.
+4. Daftar kewenangan ditanam sistem lewat seeder dan **tidak dapat ditambah atau dihapus Admin**, karena setiap kewenangan harus punya pasangan pemeriksa di dalam kode. Admin hanya memasangkannya ke role.
 5. **Seluruh pengguna sistem adalah petugas.** Warga transmigran tidak memiliki akun; data mereka dikelola petugas, sedangkan pengaduan diajukan lewat kanal publik tanpa login (§10b).
 
 #### 5.0a Empat role bawaan
 
-Dibuat lewat seeder sebagai konfigurasi awal agar sistem langsung dapat dipakai. Seluruhnya bertanda `is_bawaan` sehingga tidak dapat dihapus, tetapi izinnya masih dapat disesuaikan kecuali role Admin.
+Dibuat lewat seeder sebagai konfigurasi awal agar sistem langsung dapat dipakai. Seluruhnya bertanda `is_bawaan` sehingga tidak dapat dihapus, tetapi kewenangannya masih dapat disesuaikan kecuali role Admin.
 
 | Role | Cakupan data | Ringkasan kewenangan |
 |---|---|---|
-| **Admin** | Semua | Akses penuh: kelola pengguna, role, data master, konfigurasi, dan audit log. **Terkunci**, izinnya tidak dapat diubah |
+| **Admin** | Semua | Akses penuh: kelola pengguna, role, data master, konfigurasi, dan audit log. **Terkunci**, kewenangannya tidak dapat diubah |
 | **Dinas Transmigrasi** | Semua | Pantau dashboard dan laporan kawasan; tambah dan ubah data wilayah, SP, transmigran, rumah, lahan, dan infrastruktur; tangani pengaduan bidang ketransmigrasian |
 | **Dinas Pertanian** | Semua | Pantau dashboard dan laporan pertanian; tambah dan ubah data poktan, komoditas, panen, alsintan, dan saprotan; tangani pengaduan bidang pertanian |
-| **Operator SP** | Per SP | Tambah dan ubah data transmigran, rumah, lahan, dan panen **hanya pada SP yang ditugaskan**. Tanpa izin hapus, tanpa akses manajemen pengguna dan audit log |
+| **Operator SP** | Per SP | Tambah dan ubah data transmigran, rumah, lahan, dan panen **hanya pada SP yang ditugaskan**. Tanpa kewenangan hapus, tanpa akses manajemen pengguna dan audit log |
 
 #### 5.0b Cakupan data
 
@@ -223,20 +223,20 @@ Dibuat lewat seeder sebagai konfigurasi awal agar sistem langsung dapat dipakai.
 
 #### 5.0c Perlindungan
 
-8. Role Admin tidak dapat dihapus maupun dikurangi izinnya, agar sistem tidak pernah kehilangan jalur administrasi.
+8. Role Admin tidak dapat dihapus maupun dikurangi kewenangannya, agar sistem tidak pernah kehilangan jalur administrasi.
 9. Role yang masih dipakai minimal satu akun tidak dapat dihapus.
-10. Izin `lihat` adalah prasyarat seluruh aksi lain pada modul yang sama. Memberi izin `ubah` tanpa `lihat` ditolak sistem sebagai galat konfigurasi.
-11. Setiap perubahan susunan izin sebuah role wajib tercatat pada audit log.
+10. Kewenangan `lihat` adalah prasyarat seluruh aksi lain pada fitur yang sama. Memberi kewenangan `ubah` tanpa `lihat` ditolak sistem sebagai galat konfigurasi.
+11. Setiap perubahan susunan kewenangan sebuah role wajib tercatat pada audit log.
 12. Data pribadi transmigran dan penghuni kawasan bersifat sensitif: tampilan penuh hanya untuk role berwenang, sedangkan role lain menerima data dalam bentuk agregat.
 13. Pembatasan akses wajib diterapkan di sisi query dan controller, bukan sekadar menyembunyikan menu di antarmuka. Menu yang tidak berhak diakses tidak dirender sama sekali.
 
-#### 5.1 Susunan izin role bawaan
+#### 5.1 Susunan kewenangan role bawaan
 
 > **Kedudukan tabel ini.** Sejak role menjadi dinamis (§5.0), tabel di bawah bukan lagi aturan permanen yang dikunci di dalam kode, melainkan **konfigurasi awal** yang ditanam seeder. Admin dapat mengubahnya lewat menu Pengaturan Role, kecuali baris role Admin yang terkunci.
 
 Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **E** = export / **-** = tanpa akses
 
-| Modul | Admin | Dinas Transmigrasi | Dinas Pertanian | Operator SP |
+| Fitur | Admin | Dinas Transmigrasi | Dinas Pertanian | Operator SP |
 |---|---|---|---|---|
 | Manajemen pengguna | L T U | - | - | - |
 | Pengaturan role | L T U H | - | - | - |
@@ -266,16 +266,16 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **E*
 | Dashboard | L E | L E | L E | L |
 | Laporan & export | L E | L E | L E | L |
 
-**Cakupan data tiap role:** Admin, Dinas Transmigrasi, dan Dinas Pertanian bercakupan `Semua`. Operator SP bercakupan `Per SP`, sehingga seluruh izinnya otomatis terbatas pada SP yang ditugaskan padanya.
+**Cakupan data tiap role:** Admin, Dinas Transmigrasi, dan Dinas Pertanian bercakupan `Semua`. Operator SP bercakupan `Per SP`, sehingga seluruh kewenangannya otomatis terbatas pada SP yang ditugaskan padanya.
 
 **Catatan penting:**
-1. Dinas hanya menangani pengaduan sesuai bidangnya: bidang ketransmigrasian untuk Dinas Transmigrasi, bidang pertanian untuk Dinas Pertanian. Pembatasan ini berlaku pada level query, bukan lewat izin.
+1. Dinas hanya menangani pengaduan sesuai bidangnya: bidang ketransmigrasian untuk Dinas Transmigrasi, bidang pertanian untuk Dinas Pertanian. Pembatasan ini berlaku pada level query, bukan lewat kewenangan.
 2. Penghapusan data utama memakai *soft delete* agar dapat dipulihkan dan tetap tercatat pada audit log.
-3. Operator SP sengaja tidak diberi izin hapus. Ia bertugas memasukkan dan memutakhirkan data, sedangkan penghapusan menjadi kewenangan dinas dan admin.
-5. **Inventaris SP dan Fasilitas SP adalah dua modul terpisah**, masing-masing dengan izinnya sendiri. Keduanya memang bernilai sama pada konfigurasi awal, tetapi tetap dipisah karena berupa dua tabel dan dua halaman yang berbeda (§4b poin 1), sehingga Admin dapat memberi kewenangan berbeda antara aset bergerak dan bangunan fasilitas. Sampai 2026-08-12 keduanya tertulis sebagai satu baris di sini, tidak sejalan dengan `data-dictionary.md` §13.1, `erd.md`, dan `ui-spec.md` yang sejak awal memisahkannya.
+3. Operator SP sengaja tidak diberi kewenangan hapus. Ia bertugas memasukkan dan memutakhirkan data, sedangkan penghapusan menjadi kewenangan dinas dan admin.
+5. **Inventaris SP dan Fasilitas SP adalah dua fitur terpisah**, masing-masing dengan kewenangannya sendiri. Keduanya memang bernilai sama pada konfigurasi awal, tetapi tetap dipisah karena berupa dua tabel dan dua halaman yang berbeda (§4b poin 1), sehingga Admin dapat memberi kewenangan berbeda antara aset bergerak dan bangunan fasilitas. Sampai 2026-08-12 keduanya tertulis sebagai satu baris di sini, tidak sejalan dengan `data-dictionary.md` §13.1, `erd.md`, dan `ui-spec.md` yang sejak awal memisahkannya.
 5. Anggota poktan yang berhenti ditandai berstatus "Sudah Keluar", bukan dihapus, agar riwayat tetap utuh.
 
-### 6. Aturan Modul Transmigran
+### 6. Aturan Fitur Transmigran
 1. Data transmigran harus menjadi data inti sistem.
 2. Field minimal yang wajib dicatat:
    - nama kepala keluarga,
@@ -294,7 +294,7 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **E*
 6. Data transmigran harus bisa ditambah, diubah, dicari, difilter, dan diekspor.
 7. Data transmigran harus mendukung kebutuhan monitoring kawasan dan pendataan awal.
 
-### 6a. Aturan Modul Rumah dan Hunian
+### 6a. Aturan Fitur Rumah dan Hunian
 1. Setiap rumah wajib tertaut ke SP dan dapat tertaut ke transmigran penghuninya.
 2. Data rumah minimal memuat titik koordinat lokasi, kondisi rumah, dan status hunian.
 3. Kondisi rumah memakai pilihan baku: Tidak Rusak, Rusak Ringan, dan Rusak Berat.
@@ -307,7 +307,7 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **E*
 10. Sistem harus menyimpan catatan hunian dan foto rumah.
 11. Jumlah rumah terhuni harus dapat direkap per desa/SP untuk kebutuhan dashboard.
 
-### 7. Aturan Modul Lahan
+### 7. Aturan Fitur Lahan
 1. Setiap lahan harus memiliki identitas yang jelas.
 2. Lahan dibedakan menjadi dua jenis: **lahan pekarangan** dan **lahan usaha**.
 3. Data lahan harus dapat dikaitkan dengan transmigran, kelompok tani, dan komoditas.
@@ -320,7 +320,7 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **E*
 10. Rekap luas lahan per transmigran, per poktan, maupun per desa/SP wajib memakai penjumlahan seluruh lahan terkait, bukan mengambil satu baris data saja.
 11. Lahan harus bisa dipakai sebagai dasar analisis produksi dan perencanaan.
 
-### 7a. Aturan Modul Kelompok Tani (Poktan)
+### 7a. Aturan Fitur Kelompok Tani (Poktan)
 1. Setiap poktan wajib memiliki profil berisi nama poktan dan desa/SP asal.
 2. Data ketua poktan minimal memuat nama, NIK, telepon, dan email.
 3. Sistem mencatat jumlah anggota beserta daftar anggota yang berasal dari transmigran.
@@ -329,14 +329,14 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **E*
 6. Poktan dapat dilampiri dokumen pendukung.
 7. Rekap jumlah poktan dan anggotanya harus tersedia per desa/SP.
 
-### 7b. Aturan Modul Alsintan
+### 7b. Aturan Fitur Alsintan
 1. Sistem membedakan alsintan **milik pribadi transmigran** dan **bantuan pemerintah yang disalurkan melalui poktan**.
 2. Setiap alsintan wajib mencatat nama alat, jumlah, tahun perolehan, sumber perolehan, dan kondisi.
 3. Alsintan bantuan wajib ditautkan ke poktan penerima; alsintan pribadi ditautkan ke transmigran pemilik.
 4. Setiap alsintan dapat dilampiri dokumen pendukung.
 5. Alsintan harus dapat direkap per desa/SP, per poktan, dan per jenis alat.
 
-### 7c. Aturan Modul Saprotan
+### 7c. Aturan Fitur Saprotan
 1. Saprotan mencatat sarana produksi pertanian seperti benih, pupuk, pestisida, dan mulsa.
 2. Setiap penyaluran wajib mencatat jenis saprotan, jumlah, satuan, dan waktu perolehan.
 3. Penerima saprotan dapat berupa kelompok tani maupun individu transmigran, dan wajib ditautkan ke penerimanya.
@@ -344,7 +344,7 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **E*
 5. Setiap penyaluran dapat dilampiri dokumen pendukung.
 6. Saprotan harus dapat direkap per periode, per poktan, dan per desa/SP.
 
-### 8. Aturan Modul Komoditas
+### 8. Aturan Fitur Komoditas
 1. Sistem harus mendukung komoditas unggulan kawasan, terutama komoditas utama yang disebut dalam proposal, yaitu jagung.
 2. Komoditas harus dapat dikaitkan dengan transmigran, poktan, lahan, dan hasil panen.
 3. Sistem harus mendukung penandaan komoditas unggulan.
@@ -361,7 +361,7 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **E*
 6. Satuan lokal seperti karung dan ikat tidak dipakai sebagai satuan baku, melainkan dicatat pada kolom keterangan tambahan.
 7. Penambahan satuan baru cukup menambah baris data, tanpa mengubah struktur tabel.
 
-### 9. Aturan Modul Hasil Panen
+### 9. Aturan Fitur Hasil Panen
 1. Hasil panen harus dicatat per periode.
 2. Minimal data panen yang dicatat:
    - jenis komoditas,
@@ -378,8 +378,8 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **E*
 7. Riwayat panen harus dapat dipantau untuk melihat potensi produksi kawasan.
 8. Hasil panen harus dapat direkap per desa/SP, per transmigran, per poktan, per komoditas, dan per periode.
 
-### 10. Aturan Modul Infrastruktur SP
-1. Modul infrastruktur berisi **pendataan aset**, bukan pelaporan masalah. Pelaporan kerusakan ditangani modul Pengaduan (§10b).
+### 10. Aturan Fitur Infrastruktur SP
+1. Fitur infrastruktur berisi **pendataan aset**, bukan pelaporan masalah. Pelaporan kerusakan ditangani fitur Pengaduan (§10b).
 2. Infrastruktur yang dicatat minimal mencakup:
    - air,
    - irigasi,
@@ -461,14 +461,14 @@ Parameter dikelompokkan menurut satu pertanyaan: **tanpa ini, apakah tempat ters
 16. Riwayat memungkinkan perkembangan kondisi SP terbaca dari waktu ke waktu, misalnya kenaikan dari Perlu Penanganan menjadi Berkembang setelah jalan penghubung diperbaiki. Perkembangan ini justru lebih berguna bagi perencanaan daripada angka hari ini saja.
 17. Penilaian **tidak dihitung ulang secara diam-diam** saat halaman dibuka. Penilaian baru dibuat sebagai baris baru, sehingga yang lama tetap utuh.
 
-### 10a. Aturan Modul Penghuni Kawasan
+### 10a. Aturan Fitur Penghuni Kawasan
 1. Sistem harus mencatat data penghuni/transmigran kawasan beserta status tinggal, pindah, dan aktif/tidak aktif.
 2. Data penghuni wajib tertaut ke data rumah, mencakup kondisi rumah, foto rumah, koordinat lokasi, riwayat kepemilikan, dan catatan tambahan.
 3. Data penghuni harus tertaut ke desa/SP dan dapat difilter per lokus.
 4. Sistem harus menyediakan rekap kependudukan kawasan, termasuk KK masuk dan keluar per tahun.
 5. Data penghuni bersifat sensitif dan wajib dibatasi oleh RBAC serta ditampilkan agregat bagi pihak terbatas.
 
-### 10b. Aturan Modul Pengaduan
+### 10b. Aturan Fitur Pengaduan
 
 #### Kanal publik tanpa login
 1. Pengaduan diajukan lewat **halaman publik tanpa login**, karena warga transmigran tidak memiliki akun sistem. Warga cukup mengisi nama, kontak, lokasi SP, kategori, dan uraian masalah.
@@ -516,7 +516,7 @@ Parameter dikelompokkan menurut satu pertanyaan: **tanpa ini, apakah tempat ters
    - total volume panen per tahun, dinyatakan dalam ton hasil konversi lintas komoditas,
    - harga rata-rata,
    - status infrastruktur,
-   - isu prioritas per desa/SP yang bersumber dari modul Pengaduan,
+   - isu prioritas per desa/SP yang bersumber dari fitur Pengaduan,
    - rekap data penghuni kawasan.
 3. Dashboard harus mudah dibaca oleh pengguna nonteknis.
 4. Informasi penting harus dapat difilter berdasarkan wilayah (kawasan/kecamatan/desa/SP) atau periode.
@@ -602,7 +602,7 @@ Pola berikut adalah **standar yang harus dibangun dan dipatuhi** sejak awal proy
 3. Angka desimal memakai koma sebagai pemisah desimal dan titik sebagai pemisah ribuan.
 4. Volume panen ditampilkan dengan 3 angka desimal beserta satuannya; luas lahan dengan 2 angka desimal beserta satuan hektare.
 5. Data kosong ditampilkan sebagai tanda hubung `—`, bukan string kosong atau teks `null`.
-6. Setiap halaman daftar dan detail wajib menangani lima keadaan: kosong, memuat, galat, tanpa izin, dan hasil pencarian nihil.
+6. Setiap halaman daftar dan detail wajib menangani lima keadaan: kosong, memuat, galat, tanpa kewenangan, dan hasil pencarian nihil.
 7. Pesan galat dan validasi wajib berbahasa Indonesia yang mudah dipahami operator lapangan, bukan istilah teknis.
 8. Palet warna, tipografi, komponen bersama, struktur menu, dan inventaris halaman mengikuti `ui-spec.md`.
 9. Kombinasi warna wajib memenuhi rasio kontras WCAG AA sesuai tabel pada `ui-spec.md` §3.2.

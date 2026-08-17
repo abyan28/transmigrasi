@@ -43,15 +43,15 @@
         <h3 class="{{ $kelasBagian }}">Identitas Komoditas</h3>
         <div class="mt-3 grid gap-4 sm:grid-cols-2">
             <div>
-                <label for="{{ $awalan }}_nama_komoditas" class="{{ $kelasLabel }}">Nama Komoditas</label>
-                <input type="text" id="{{ $awalan }}_nama_komoditas" name="nama"
+                <label for="{{ $awalan }}_nama_komoditas" class="{{ $kelasLabel }}">Nama Komoditas<span class="text-error-500">*</span></label>
+                <input type="text" id="{{ $awalan }}_nama_komoditas" name="nama" required
                     value="{{ old('nama', $data['nama'] ?? '') }}" maxlength="100"
                     placeholder="Contoh: JAGUNG" class="{{ $kelasKontrol }}" />
             </div>
 
             <div>
-                <label for="{{ $awalan }}_tipe" class="{{ $kelasLabel }}">Tipe</label>
-                <select id="{{ $awalan }}_tipe" name="tipe" class="{{ $kelasKontrol }}">
+                <label for="{{ $awalan }}_tipe" class="{{ $kelasLabel }}">Tipe<span class="text-error-500">*</span></label>
+                <select id="{{ $awalan }}_tipe" name="tipe" required class="{{ $kelasKontrol }}">
                     <option value="">Pilih tipe</option>
                     @foreach (TipeKomoditas::cases() as $t)
                         <option value="{{ $t->value }}" @selected(old('tipe', $data['tipe'] ?? '') === $t->value)>
@@ -74,8 +74,8 @@
         <h3 class="{{ $kelasBagian }}">Satuan Panen Baku</h3>
         <div class="mt-3 space-y-4">
             <div>
-                <label for="{{ $awalan }}_satuan_id_komoditas" class="{{ $kelasLabel }}">Satuan</label>
-                <select id="{{ $awalan }}_satuan_id_komoditas" name="satuan_id" x-model="satuanId"
+                <label for="{{ $awalan }}_satuan_id_komoditas" class="{{ $kelasLabel }}">Satuan<span class="text-error-500">*</span></label>
+                <select id="{{ $awalan }}_satuan_id_komoditas" name="satuan_id" required x-model="satuanId"
                     class="{{ $kelasKontrol }}">
                     <option value="">Pilih satuan</option>
                     @foreach ($daftarSatuan as $s)

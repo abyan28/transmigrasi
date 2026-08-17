@@ -123,7 +123,7 @@
                 sandi secara langsung.
             --}}
             <p class="mt-4 rounded-lg border border-yellow-300 bg-yellow-50 p-3 text-theme-xs text-yellow-800 dark:border-yellow-500/30 dark:bg-yellow-500/10 dark:text-yellow-200">
-                <span class="font-medium">Pengiriman surel belum aktif.</span>
+                <span class="font-medium">Pengiriman email belum aktif.</span>
                 Kredensial di atas belum benar-benar terkirim ke petugas. Sampai backend selesai,
                 serahkan kata sandi ini secara langsung.
             </p>
@@ -158,7 +158,7 @@
             <x-sim.stat-card label="Akun Nonaktif" :nilai="count($semua) - $aktif"
                 keterangan="Dinonaktifkan, bukan dihapus" />
             <x-sim.stat-card label="Wajib Ganti Sandi" :nilai="$perluGanti"
-                keterangan="Kata sandi baru disetel admin" />
+                keterangan="Pengguna yang wajib mengubah kata sandi" />
         </x-slot:ringkasan>
 
         <x-slot:filter>
@@ -295,6 +295,11 @@
                             aktif terakhir (rules.md 14b poin 16). Merender tombol
                             lalu menolaknya di server berarti memasang kontrol yang
                             tidak berfungsi, yang dilarang R-26.
+
+                            Sejak 2026-08-17 tidak ada pula penanda pengganti pada
+                            barisnya. Alasannya cukup dinyatakan sekali lewat
+                            keterangan di bawah tabel, bukan diulang pada setiap
+                            baris Admin.
                         --}}
                         @if ($u['is_aktif'] && ! $adminTerakhir($u))
                             <button type="button"
@@ -306,10 +311,7 @@
                                 </svg>
                             </button>
                         @elseif ($u['is_aktif'])
-                            <span class="rounded-lg bg-gray-50 px-2 py-1.5 text-theme-xs text-gray-500 dark:bg-white/5 dark:text-gray-400"
-                                title="Sistem menolak penonaktifan Admin terakhir yang masih aktif.">
-                                Admin terakhir
-                            </span>
+                            {{-- Admin aktif terakhir: tanpa tombol, tanpa penanda. --}}
                         @else
                             {{--
                                 Jalur mengaktifkan kembali. Tanpa tombol ini akun yang
@@ -348,7 +350,8 @@
 
     <p class="mt-4 rounded-lg bg-gray-50 p-3.5 text-theme-xs text-gray-600 dark:bg-white/[0.03] dark:text-gray-400">
         Akun tidak pernah dihapus, hanya dinonaktifkan, agar jejak audit tetap utuh.
-        Sistem juga menolak penonaktifan akun Admin terakhir yang masih aktif.
+        Akun Admin terakhir yang masih aktif tidak memiliki tombol nonaktifkan, sebab
+        sistem menolak penonaktifannya agar jalur administrasi tidak pernah hilang.
     </p>
 
     {{-- Modal tambah akun --}}

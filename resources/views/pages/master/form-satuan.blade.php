@@ -23,22 +23,22 @@
 
     <div class="grid gap-4 sm:grid-cols-2">
         <div>
-            <label for="{{ $awalan }}_nama_satuan" class="{{ $kelasLabel }}">Nama Satuan</label>
-            <input type="text" id="{{ $awalan }}_nama_satuan" name="nama"
+            <label for="{{ $awalan }}_nama_satuan" class="{{ $kelasLabel }}">Nama Satuan<span class="text-error-500">*</span></label>
+            <input type="text" id="{{ $awalan }}_nama_satuan" name="nama" required
                 value="{{ old('nama', $data['nama'] ?? '') }}" maxlength="50"
                 placeholder="Contoh: Kuintal" class="{{ $kelasKontrol }}" />
         </div>
 
         <div>
-            <label for="{{ $awalan }}_simbol" class="{{ $kelasLabel }}">Simbol</label>
-            <input type="text" id="{{ $awalan }}_simbol" name="simbol"
+            <label for="{{ $awalan }}_simbol" class="{{ $kelasLabel }}">Simbol<span class="text-error-500">*</span></label>
+            <input type="text" id="{{ $awalan }}_simbol" name="simbol" required
                 value="{{ old('simbol', $data['simbol'] ?? '') }}" maxlength="10"
                 placeholder="Contoh: kw" class="{{ $kelasKontrol }}" />
         </div>
 
         <div class="sm:col-span-2">
-            <label for="{{ $awalan }}_faktor_ke_ton" class="{{ $kelasLabel }}">Faktor Konversi ke Ton</label>
-            <input type="number" id="{{ $awalan }}_faktor_ke_ton" name="faktor_ke_ton" x-model="faktor"
+            <label for="{{ $awalan }}_faktor_ke_ton" class="{{ $kelasLabel }}">Faktor Konversi ke Ton<span class="text-error-500">*</span></label>
+            <input type="number" id="{{ $awalan }}_faktor_ke_ton" name="faktor_ke_ton" required x-model="faktor"
                 min="0" step="0.000001" placeholder="0.1" class="{{ $kelasKontrol }} tabular-nums" />
             <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
                 Berapa ton nilai satu satuan ini. Ton bernilai 1, kuintal 0,1, kilogram 0,001.

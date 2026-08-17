@@ -122,7 +122,7 @@
                                 <dd class="{{ $kelasNilai }}" x-text="akun ? akun.username : '-'"></dd>
                             </div>
                             <div>
-                                <dt class="{{ $kelasLabel }}">Email Dinas</dt>
+                                <dt class="{{ $kelasLabel }}">Email</dt>
                                 <dd class="{{ $kelasNilai }} break-all" x-text="akun ? akun.email : '-'"></dd>
                             </div>
                             <div>

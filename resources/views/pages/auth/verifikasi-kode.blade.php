@@ -34,7 +34,7 @@
                             --}}
                             <p class="text-sm text-gray-500 dark:text-gray-400">
                                 Bila alamat yang Anda masukkan terdaftar, kode enam digit sudah dikirim
-                                ke surel dinasnya. Periksa juga folder spam.
+                                ke emailnya. Periksa juga folder spam.
                             </p>
                         </div>
 

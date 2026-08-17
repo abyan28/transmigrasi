@@ -948,7 +948,7 @@ class DummyData
             'PGD-2026-0001' => [
                 [
                     'tanggal_penanganan' => '2026-08-03',
-                    'petugas' => 'BUDI SANTOSO',
+                    'petugas' => 'NARA WIJAYA',
                     'status_sebelum' => StatusPengaduan::MenungguDiterima->value,
                     'status_sesudah' => StatusPengaduan::Diterima->value,
                     'catatan' => 'Pengaduan diterima dan dijadwalkan peninjauan lapangan.',
@@ -956,7 +956,7 @@ class DummyData
                 ],
                 [
                     'tanggal_penanganan' => '2026-08-06',
-                    'petugas' => 'BUDI SANTOSO',
+                    'petugas' => 'NARA WIJAYA',
                     'status_sebelum' => StatusPengaduan::Diterima->value,
                     'status_sesudah' => StatusPengaduan::Diproses->value,
                     'catatan' => 'Peninjauan selesai. Pembersihan saluran dijadwalkan pekan depan bersama warga.',
@@ -1423,7 +1423,7 @@ class DummyData
     public static function pengguna(): array
     {
         return [
-            ['id_user' => 1, 'nama' => 'BUDI SANTOSO', 'username' => 'budi.santoso', 'email' => 'budi.santoso@malakakab.go.id', 'role' => 'Dinas Transmigrasi', 'role_id' => 2, 'jabatan' => 'Staf Bidang Ketransmigrasian', 'telepon' => '081234567890', 'is_aktif' => true, 'password_harus_diganti' => false, 'last_login_at' => '2026-08-11 07:42:00', 'satuan_permukiman' => []],
+            ['id_user' => 1, 'nama' => 'NARA WIJAYA', 'username' => 'nara.wijaya', 'email' => 'nara.wijaya@malakakab.go.id', 'role' => 'Dinas Transmigrasi', 'role_id' => 2, 'jabatan' => 'Staf Bidang Ketransmigrasian', 'telepon' => '081234567890', 'is_aktif' => true, 'password_harus_diganti' => false, 'last_login_at' => '2026-08-11 07:42:00', 'satuan_permukiman' => []],
             ['id_user' => 2, 'nama' => 'SITI RAHMAWATI', 'username' => 'siti.rahmawati', 'email' => 'siti.r@malakakab.go.id', 'role' => 'Admin', 'role_id' => 1, 'jabatan' => 'Administrator Sistem', 'telepon' => '081234567891', 'is_aktif' => true, 'password_harus_diganti' => false, 'last_login_at' => '2026-08-11 08:15:00', 'satuan_permukiman' => []],
             ['id_user' => 3, 'nama' => 'AGUS PRASETYO', 'username' => 'agus.prasetyo', 'email' => 'agus.p@malakakab.go.id', 'role' => 'Dinas Pertanian', 'role_id' => 3, 'jabatan' => 'Penyuluh Pertanian', 'telepon' => '081234567892', 'is_aktif' => true, 'password_harus_diganti' => false, 'last_login_at' => '2026-08-10 14:20:00', 'satuan_permukiman' => []],
             ['id_user' => 4, 'nama' => 'YOSEP KLAU', 'username' => 'yosep.klau', 'email' => 'yosep.klau@malakakab.go.id', 'role' => 'Operator SP', 'role_id' => 4, 'jabatan' => 'Operator SP Kapitan Meo', 'telepon' => '081234567893', 'is_aktif' => true, 'password_harus_diganti' => true, 'last_login_at' => null, 'satuan_permukiman' => ['SP Kapitan Meo']],
@@ -1442,7 +1442,7 @@ class DummyData
             ['id_role' => 1, 'nama' => 'Admin', 'deskripsi' => 'Akses penuh termasuk manajemen pengguna, role, dan audit log.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => true, 'is_aktif' => true, 'jumlah_izin' => 117, 'jumlah_pengguna' => 1],
             ['id_role' => 2, 'nama' => 'Dinas Transmigrasi', 'deskripsi' => 'Mengelola data wilayah, transmigran, rumah, lahan, dan infrastruktur.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 57, 'jumlah_pengguna' => 1],
             ['id_role' => 3, 'nama' => 'Dinas Pertanian', 'deskripsi' => 'Mengelola data poktan, komoditas, panen, alsintan, dan saprotan.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 64, 'jumlah_pengguna' => 1],
-            ['id_role' => 4, 'nama' => 'Operator SP', 'deskripsi' => 'Memasukkan data pada satuan permukiman yang ditugaskan. Tanpa izin hapus.', 'cakupan_data' => CakupanData::PerSp->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 50, 'jumlah_pengguna' => 2],
+            ['id_role' => 4, 'nama' => 'Operator SP', 'deskripsi' => 'Memasukkan data pada satuan permukiman yang ditugaskan. Tanpa kewenangan hapus.', 'cakupan_data' => CakupanData::PerSp->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 50, 'jumlah_pengguna' => 2],
 
             // Role buatan Admin, bukan bawaan sistem. Sengaja dibuat tanpa
             // pengguna agar keadaan "dapat dihapus" ikut terlihat pada
@@ -1462,13 +1462,13 @@ class DummyData
         return [
             ['id_audit_log' => 1, 'waktu' => '2026-08-11 08:20:14', 'pengguna' => 'SITI RAHMAWATI', 'aksi' => 'Ubah', 'nama_tabel' => 'transmigran', 'record_id' => 1, 'ringkasan' => 'Memperbaiki ejaan nama YOHANES BERE sesuai kartu keluarga.', 'ip_address' => '10.14.2.31'],
             ['id_audit_log' => 2, 'waktu' => '2026-08-11 08:04:52', 'pengguna' => 'YOSEP KLAU', 'aksi' => 'Tambah', 'nama_tabel' => 'hasil_panen', 'record_id' => 5, 'ringkasan' => 'Mencatat panen jagung 3,900 ton di SP Weain.', 'ip_address' => '10.14.2.77'],
-            ['id_audit_log' => 3, 'waktu' => '2026-08-10 16:32:09', 'pengguna' => 'BUDI SANTOSO', 'aksi' => 'Ubah', 'nama_tabel' => 'rumah', 'record_id' => 3, 'ringkasan' => 'Mengubah status hunian A-03 menjadi Tidak Dihuni.', 'ip_address' => '10.14.2.31'],
+            ['id_audit_log' => 3, 'waktu' => '2026-08-10 16:32:09', 'pengguna' => 'NARA WIJAYA', 'aksi' => 'Ubah', 'nama_tabel' => 'rumah', 'record_id' => 3, 'ringkasan' => 'Mengubah status hunian A-03 menjadi Tidak Dihuni.', 'ip_address' => '10.14.2.31'],
             // Penutupan pengaduan tercatat sebagai perubahan status, bukan
             // verifikasi data, sebab yang berubah adalah tahap penanganannya.
             ['id_audit_log' => 4, 'waktu' => '2026-08-10 14:22:41', 'pengguna' => 'AGUS PRASETYO', 'aksi' => 'Ubah', 'nama_tabel' => 'pengaduan', 'record_id' => 5, 'ringkasan' => 'Menutup pengaduan PGD-2026-0005 berstatus Selesai.', 'ip_address' => '10.14.2.55'],
             ['id_audit_log' => 5, 'waktu' => '2026-08-09 11:07:33', 'pengguna' => 'SITI RAHMAWATI', 'aksi' => 'Reset Kata Sandi', 'nama_tabel' => 'user', 'record_id' => 4, 'ringkasan' => 'Menyetel ulang kata sandi akun yosep.klau.', 'ip_address' => '10.14.2.31'],
             ['id_audit_log' => 6, 'waktu' => '2026-08-08 09:45:12', 'pengguna' => 'SITI RAHMAWATI', 'aksi' => 'Nonaktifkan Akun', 'nama_tabel' => 'user', 'record_id' => 5, 'ringkasan' => 'Menonaktifkan akun maria.goreti atas permintaan dinas.', 'ip_address' => '10.14.2.31'],
-            ['id_audit_log' => 7, 'waktu' => '2026-08-07 15:18:55', 'pengguna' => 'BUDI SANTOSO', 'aksi' => 'Hapus', 'nama_tabel' => 'transmigran', 'record_id' => 4, 'ringkasan' => 'Menghapus data ANGELA SERAN yang terdaftar ganda.', 'ip_address' => '10.14.2.31'],
+            ['id_audit_log' => 7, 'waktu' => '2026-08-07 15:18:55', 'pengguna' => 'NARA WIJAYA', 'aksi' => 'Hapus', 'nama_tabel' => 'transmigran', 'record_id' => 4, 'ringkasan' => 'Menghapus data ANGELA SERAN yang terdaftar ganda.', 'ip_address' => '10.14.2.31'],
             ['id_audit_log' => 8, 'waktu' => '2026-08-06 10:02:19', 'pengguna' => 'YOSEP KLAU', 'aksi' => 'Hapus', 'nama_tabel' => 'lahan', 'record_id' => 9, 'ringkasan' => 'Menghapus data lahan duplikat LU-009.', 'ip_address' => '10.14.2.77'],
 
             /*
@@ -1486,7 +1486,7 @@ class DummyData
             ['id_audit_log' => 10, 'waktu' => '2026-05-22 14:38:05', 'pengguna' => 'YOSEP KLAU', 'aksi' => 'Ubah', 'nama_tabel' => 'transmigran', 'record_id' => 1, 'ringkasan' => 'Memperbarui jumlah anggota keluarga menjadi 5 orang.', 'ip_address' => '10.14.2.77'],
             ['id_audit_log' => 11, 'waktu' => '2026-04-02 10:25:17', 'pengguna' => 'YOSEP KLAU', 'aksi' => 'Tambah', 'nama_tabel' => 'rumah', 'record_id' => 1, 'ringkasan' => 'Menambahkan data rumah A-01 beserta penghuninya.', 'ip_address' => '10.14.2.77'],
             ['id_audit_log' => 12, 'waktu' => '2026-04-02 10:41:03', 'pengguna' => 'YOSEP KLAU', 'aksi' => 'Tambah', 'nama_tabel' => 'lahan', 'record_id' => 1, 'ringkasan' => 'Menambahkan lahan pekarangan LP-001 milik YOHANES BERE.', 'ip_address' => '10.14.2.77'],
-            ['id_audit_log' => 13, 'waktu' => '2026-06-18 11:03:52', 'pengguna' => 'BUDI SANTOSO', 'aksi' => 'Ubah', 'nama_tabel' => 'lahan', 'record_id' => 1, 'ringkasan' => 'Melengkapi titik koordinat lahan hasil peninjauan lapangan.', 'ip_address' => '10.14.2.31'],
+            ['id_audit_log' => 13, 'waktu' => '2026-06-18 11:03:52', 'pengguna' => 'NARA WIJAYA', 'aksi' => 'Ubah', 'nama_tabel' => 'lahan', 'record_id' => 1, 'ringkasan' => 'Melengkapi titik koordinat lahan hasil peninjauan lapangan.', 'ip_address' => '10.14.2.31'],
             ['id_audit_log' => 14, 'waktu' => '2026-05-09 08:55:31', 'pengguna' => 'AGUS PRASETYO', 'aksi' => 'Tambah', 'nama_tabel' => 'poktan', 'record_id' => 1, 'ringkasan' => 'Mendaftarkan kelompok tani POKTAN MEKAR JAYA.', 'ip_address' => '10.14.2.55'],
             ['id_audit_log' => 15, 'waktu' => '2026-08-02 13:47:26', 'pengguna' => 'MARIA GORETI', 'aksi' => 'Tambah', 'nama_tabel' => 'pengaduan', 'record_id' => 1, 'ringkasan' => 'Mencatat pengaduan PGD-2026-0001 dari warga SP Kapitan Meo.', 'ip_address' => '10.14.2.91'],
             /*
@@ -1500,8 +1500,8 @@ class DummyData
             */
             ['id_audit_log' => 16, 'waktu' => '2026-02-18 09:33:12', 'pengguna' => 'AGUS PRASETYO', 'aksi' => 'Tambah', 'nama_tabel' => 'alsintan', 'record_id' => 1, 'ringkasan' => 'Mencatat bantuan traktor roda dua untuk POKTAN MEKAR JAYA.', 'ip_address' => '10.14.2.55'],
             ['id_audit_log' => 17, 'waktu' => '2026-07-11 15:20:44', 'pengguna' => 'AGUS PRASETYO', 'aksi' => 'Ubah', 'nama_tabel' => 'alsintan', 'record_id' => 1, 'ringkasan' => 'Memperbarui kondisi traktor menjadi Rusak Ringan setelah pemeriksaan.', 'ip_address' => '10.14.2.55'],
-            ['id_audit_log' => 18, 'waktu' => '2026-01-27 10:14:58', 'pengguna' => 'BUDI SANTOSO', 'aksi' => 'Tambah', 'nama_tabel' => 'infrastruktur', 'record_id' => 1, 'ringkasan' => 'Mendata jalan penghubung utama SP Kapitan Meo.', 'ip_address' => '10.14.2.31'],
-            ['id_audit_log' => 19, 'waktu' => '2026-06-30 13:52:07', 'pengguna' => 'BUDI SANTOSO', 'aksi' => 'Ubah', 'nama_tabel' => 'infrastruktur', 'record_id' => 1, 'ringkasan' => 'Memutakhirkan kondisi jalan setelah perbaikan pengerasan.', 'ip_address' => '10.14.2.31'],
+            ['id_audit_log' => 18, 'waktu' => '2026-01-27 10:14:58', 'pengguna' => 'NARA WIJAYA', 'aksi' => 'Tambah', 'nama_tabel' => 'infrastruktur', 'record_id' => 1, 'ringkasan' => 'Mendata jalan penghubung utama SP Kapitan Meo.', 'ip_address' => '10.14.2.31'],
+            ['id_audit_log' => 19, 'waktu' => '2026-06-30 13:52:07', 'pengguna' => 'NARA WIJAYA', 'aksi' => 'Ubah', 'nama_tabel' => 'infrastruktur', 'record_id' => 1, 'ringkasan' => 'Memutakhirkan kondisi jalan setelah perbaikan pengerasan.', 'ip_address' => '10.14.2.31'],
             ['id_audit_log' => 20, 'waktu' => '2026-01-15 08:41:36', 'pengguna' => 'AGUS PRASETYO', 'aksi' => 'Tambah', 'nama_tabel' => 'komoditas', 'record_id' => 1, 'ringkasan' => 'Menambahkan komoditas JAGUNG beserta satuan panen bakunya.', 'ip_address' => '10.14.2.55'],
             ['id_audit_log' => 21, 'waktu' => '2026-04-19 11:26:49', 'pengguna' => 'SITI RAHMAWATI', 'aksi' => 'Ubah', 'nama_tabel' => 'komoditas', 'record_id' => 1, 'ringkasan' => 'Melengkapi keterangan masa tanam komoditas JAGUNG.', 'ip_address' => '10.14.2.31'],
             ['id_audit_log' => 22, 'waktu' => '2026-07-24 16:08:23', 'pengguna' => 'YOSEP KLAU', 'aksi' => 'Tambah', 'nama_tabel' => 'hasil_panen', 'record_id' => 1, 'ringkasan' => 'Mencatat hasil panen jagung dari lahan LU-002.', 'ip_address' => '10.14.2.77'],
@@ -1584,9 +1584,9 @@ class DummyData
     {
         return [
             'id_user' => 1,
-            'nama' => 'BUDI SANTOSO',
-            'username' => 'budi.santoso',
-            'email' => 'budi.santoso@malakakab.go.id',
+            'nama' => 'NARA WIJAYA',
+            'username' => 'nara.wijaya',
+            'email' => 'nara.wijaya@malakakab.go.id',
             'telepon' => '081234567890',
             'jabatan' => 'Staf Bidang Ketransmigrasian',
             'foto' => null,
