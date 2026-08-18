@@ -10,7 +10,7 @@
 
 use App\Enums\BidangPengaduan;
 use App\Enums\JenisInfrastruktur;
-use App\Enums\JenisLahan;
+use App\Enums\PeruntukanLahan;
 use App\Enums\KategoriPengaduan;
 use App\Enums\Kondisi;
 use App\Enums\KondisiRumah;
@@ -132,23 +132,74 @@ it('mengosongkan penghuni pada rumah yang tidak dihuni', function () {
     }
 });
 
-it('memperbolehkan satu transmigran memiliki banyak lahan usaha', function () {
-    $lahanYohanes = array_filter(
-        DummyData::lahan(),
-        fn ($l) => $l['pemilik'] === 'YOHANES BERE' && $l['jenis_lahan'] === JenisLahan::LahanUsaha->value
-    );
+it('memberi tiap keluarga paling banyak satu pekarangan dan satu lahan usaha', function () {
+    // Keadaan di Kobalima Timur: satu transmigran menerima satu lahan
+    // pekarangan dan satu lahan usaha, tidak lebih. Data contoh yang melebihi
+    // itu akan menyesatkan pembaca yang memakainya sebagai acuan.
+    //
+    // Aturan ini menyatakan jumlah yang WAJAR, bukan batas yang ditegakkan
+    // sistem: bila satu jatah lahan usaha terletak pada dua petak berkoordinat
+    // berbeda, keduanya tetap perlu dicatat sebagai baris tersendiri.
+    $perKeluarga = [];
 
-    expect(count($lahanYohanes))->toBeGreaterThan(1);
+    foreach (DummyData::lahan() as $lahan) {
+        $kunci = PeruntukanLahan::from($lahan['peruntukan_lahan'])->lahanUsaha() ? 'usaha' : 'pekarangan';
+        $perKeluarga[$lahan['pemilik']][$kunci] = ($perKeluarga[$lahan['pemilik']][$kunci] ?? 0) + 1;
+    }
+
+    foreach ($perKeluarga as $pemilik => $jumlah) {
+        expect($jumlah['pekarangan'] ?? 0)->toBeLessThanOrEqual(1, "{$pemilik} punya lebih dari satu pekarangan");
+        expect($jumlah['usaha'] ?? 0)->toBeLessThanOrEqual(1, "{$pemilik} punya lebih dari satu lahan usaha");
+    }
+});
+
+it('mencatat kedua peruntukan lahan pada data contoh', function () {
+    // Keduanya wajib terwakili, sebab lahan pekarangan dan lahan usaha
+    // berbeda perlakuan: hanya lahan usaha yang memiliki kategori beserta
+    // empat kolom pengelolaan.
+    $peruntukan = array_column(DummyData::lahan(), 'peruntukan_lahan');
+
+    foreach (PeruntukanLahan::cases() as $kasus) {
+        expect($peruntukan)->toContain($kasus->value);
+    }
+
+    // Tepat dua nilai; tahap I dan II sempat ditambahkan pada 2026-08-18 lalu
+    // dibatalkan pada hari yang sama setelah keadaan lapangan diketahui.
+    expect(PeruntukanLahan::cases())->toHaveCount(2);
 });
 
 it('mengisi kategori lahan hanya untuk lahan usaha', function () {
     foreach (DummyData::lahan() as $lahan) {
-        if ($lahan['jenis_lahan'] === JenisLahan::LahanPekarangan->value) {
-            expect($lahan['kategori_lahan'])->toBeNull();
-        } else {
+        $peruntukan = PeruntukanLahan::from($lahan['peruntukan_lahan']);
+
+        if ($peruntukan->lahanUsaha()) {
             expect($lahan['kategori_lahan'])->not->toBeNull();
+        } else {
+            expect($lahan['kategori_lahan'])->toBeNull();
         }
     }
+});
+
+it('tidak memakai HPL maupun SHM sebagai status hak perorangan', function () {
+    // HPL adalah Hak Pengelolaan milik instansi atas tanah kawasan, sehingga
+    // tidak pernah menjadi hak seorang transmigran. SHM adalah nama
+    // sertifikatnya, bukan nama haknya. Keduanya kini menjadi jenis dokumen.
+    expect(array_column(App\Enums\StatusHakLahan::cases(), 'value'))
+        ->not->toContain('HPL')
+        ->not->toContain('SHM');
+
+    foreach (DummyData::lahan() as $lahan) {
+        expect($lahan['status_hak'])->not->toBe('HPL');
+        expect($lahan['status_hak'])->not->toBe('SHM');
+    }
+
+    // Sebaliknya, keduanya WAJIB tetap ada sebagai jenis dokumen: SHM sebagai
+    // bukti hak milik, HPL sebagai rujukan asal tanah kawasan.
+    $dokumen = array_column(App\Enums\JenisDokumenLahan::cases(), 'value');
+
+    expect($dokumen)->toContain('SHM')->toContain('HPL')
+        // Sandaran legalitas sebelum sertifikat terbit.
+        ->toContain('Surat Keterangan Pembagian Tanah');
 });
 
 it('memakai NIK dan nomor KK sepanjang 16 digit', function () {

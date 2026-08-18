@@ -566,10 +566,10 @@ Menggabungkan `lahan_sp`, `lahan_usaha_sp`, `kategori_lahan_sp`, dan `kategori_l
 | `satuan_permukiman_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | |
 | `poktan_id` | `BIGINT UNSIGNED` | YA | FK | Poktan pengelola bila ada |
 | `kode_lahan` | `VARCHAR(50)` | YA | UQ | Identitas lahan (`rules.md` §7.1) |
-| `jenis_lahan` | `ENUM` | TIDAK | IDX | Lihat §11.11 |
-| `kategori_lahan` | `ENUM` | YA | | Lihat §11.12; hanya untuk Lahan Usaha |
+| `peruntukan_lahan` | `ENUM` | TIDAK | IDX | Lihat 11.11 |
+| `kategori_lahan` | `ENUM` | YA | | Lihat 11.12; hanya untuk lahan usaha |
 | `luas` | `DECIMAL(12,2)` | TIDAK | | Hektare |
-| `status_kepemilikan` | `ENUM` | YA | | Lihat §11.13 |
+| `status_hak` | `ENUM` | YA | | Lihat 11.13 |
 | `tujuan_pemanfaatan` | `TEXT` | YA | | |
 | `lintang` | `DECIMAL(10,7)` | YA | | |
 | `bujur` | `DECIMAL(10,7)` | YA | | |
@@ -580,7 +580,7 @@ Menggabungkan `lahan_sp`, `lahan_usaha_sp`, `kategori_lahan_sp`, dan `kategori_l
 
 **Catatan:**
 - FK berada di tabel ini, **bukan** di `transmigran`, karena satu transmigran dapat memiliki lebih dari satu lahan usaha (`rules.md` §7.8).
-- Empat kolom terakhir sebelum `keterangan` hanya relevan bila `jenis_lahan` = Lahan Usaha; untuk lahan pekarangan dibiarkan `NULL`.
+- Empat kolom terakhir sebelum `keterangan` hanya relevan bila peruntukannya lahan usaha (kedua tahapnya); untuk lahan pekarangan keempatnya dibiarkan `NULL`.
 - Rekap luas lahan **wajib** memakai `SUM(luas)`, bukan mengambil satu baris (`rules.md` §7.10).
 
 ### 7.2 `dokumen_lahan`
@@ -884,17 +884,25 @@ Sengaja berbeda dari §11.5 karena `rules.md` §6a.3 menetapkan istilah `Tidak R
 ### 11.10 Status hunian
 `Dihuni` · `Tidak Dihuni`
 
-### 11.11 Jenis lahan
-`Lahan Pekarangan` · `Lahan Usaha`
+### 11.11 Peruntukan lahan
+`Lahan Pekarangan` — `Lahan Usaha`
+
+Satu transmigran umumnya menerima **satu bidang tiap peruntukan** (`rules.md` 7.8). Nilai `Lahan Usaha I` dan `Lahan Usaha II` sempat ditambahkan pada 2026-08-18 atas dugaan pembagian bertahap, lalu dibatalkan pada hari yang sama setelah keadaan lapangan diketahui. Pemeriksaan "apakah ini lahan usaha" **dilarang** membandingkan satu nilai teks; pakai `PeruntukanLahan::lahanUsaha()`.
 
 ### 11.12 Kategori lahan
 `Lahan Basah` · `Lahan Kering`
 
-### 11.13 Status kepemilikan lahan
-`HPL` · `SHM` · `Sewa` · `Garapan` · `Lainnya`
+### 11.13 Status hak atas tanah
+`Belum Bersertifikat` — `Hak Milik` — `Hak Milik Bersama` — `Hak Pakai` — `Sewa` — `Garapan`
+
+**Diperbaiki 2026-08-18.** Nilai sebelumnya `HPL`, `SHM`, `Sewa`, `Garapan`, `Lainnya`, dan dua yang pertama keliru sebagai status hak perorangan. **HPL** adalah Hak Pengelolaan yang dipegang instansi atas tanah kawasan, sehingga tidak pernah menjadi hak seorang transmigran; menuliskannya di sini membuat sistem menyatakan warga "memiliki lahan berstatus HPL". **SHM** adalah nama sertifikatnya, bukan nama haknya; haknya bernama Hak Milik. Keduanya kini menjadi jenis dokumen (11.14).
+
+Rantai yang sebenarnya: tanah kawasan berstatus Hak Pengelolaan, lalu bidang-bidangnya dibagikan kepada transmigran dengan status Hak Milik. Sebelum sertifikatnya terbit, bidang berstatus `Belum Bersertifikat` dan legalitas penggunaannya bersandar pada surat keterangan pembagian tanah.
+
+> Istilah pada daftar ini **masih menunggu konfirmasi dinas** (`notes.md` bagian 6), sebab berkas penetapan di tiap daerah dapat memakai sebutan berbeda.
 
 ### 11.14 Jenis dokumen lahan
-`HPL` · `SHM` · `SKT` · `Surat Keterangan Desa` · `Lainnya`
+`SHM` — `Surat Keterangan Pembagian Tanah` — `SKT` — `Surat Keterangan Desa` — `HPL` — `Lainnya`
 
 ### 11.15 Jabatan anggota poktan
 `Sekretaris` — `Bendahara` — `Anggota`
@@ -1011,7 +1019,7 @@ Aturan berikut ditulis satu kali di `app/Support/ValidationRules.php` dan dipaka
 | 3 | `tanggal_keluar` tidak boleh mendahului `tanggal_masuk` | `anggota_poktan`, `riwayat_penghunian` |
 | 4 | `transmigran_id` wajib bila `kepemilikan` = Pribadi; `poktan_id` wajib bila Bantuan Poktan | `alsintan` |
 | 5 | Minimal satu di antara `transmigran_id` dan `poktan_id` terisi | `saprotan` |
-| 6 | `kategori_lahan` wajib bila `jenis_lahan` = Lahan Usaha | `lahan` |
+| 6 | `kategori_lahan` wajib bila peruntukannya lahan usaha | `lahan` |
 | 7 | Pilihan rumah hanya menampilkan baris dengan `transmigran_id` bernilai `NULL` | `rumah` |
 | 8 | Perubahan status pengaduan wajib mengikuti urutan yang ditetapkan | `pengaduan` |
 | 9 | Penerima saprotan lewat poktan wajib berstatus keaktifan Aktif | `saprotan` |

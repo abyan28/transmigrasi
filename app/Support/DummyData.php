@@ -4,17 +4,17 @@ namespace App\Support;
 
 use App\Enums\CakupanData;
 use App\Enums\JenisInfrastruktur;
-use App\Enums\JenisLahan;
 use App\Enums\KategoriLahan;
 use App\Enums\KategoriPengaduan;
 use App\Enums\KepemilikanAlsintan;
 use App\Enums\Kondisi;
 use App\Enums\KondisiRumah;
+use App\Enums\PeruntukanLahan;
 use App\Enums\PrioritasPengaduan;
+use App\Enums\StatusHakLahan;
 use App\Enums\StatusHunian;
 use App\Enums\StatusPengaduan;
 use App\Enums\StatusTinggal;
-
 use App\Enums\SumberLaporan;
 
 /**
@@ -675,10 +675,10 @@ class DummyData
                 'pemilik' => 'YOHANES BERE',
                 'satuan_permukiman' => 'SP Kapitan Meo',
                 'satuan_permukiman_id' => 1,
-                'jenis_lahan' => JenisLahan::LahanPekarangan->value,
+                'peruntukan_lahan' => PeruntukanLahan::LahanPekarangan->value,
                 'kategori_lahan' => null,
                 'luas' => 0.25,
-                'status_kepemilikan' => 'HPL',
+                'status_hak' => StatusHakLahan::BelumBersertifikat->value,
                 'lintang' => -9.5124100,
                 'bujur' => 124.9126200,
             ],
@@ -688,10 +688,10 @@ class DummyData
                 'pemilik' => 'YOHANES BERE',
                 'satuan_permukiman' => 'SP Kapitan Meo',
                 'satuan_permukiman_id' => 1,
-                'jenis_lahan' => JenisLahan::LahanUsaha->value,
+                'peruntukan_lahan' => PeruntukanLahan::LahanUsaha->value,
                 'kategori_lahan' => KategoriLahan::LahanKering->value,
                 'luas' => 1.50,
-                'status_kepemilikan' => 'HPL',
+                'status_hak' => StatusHakLahan::BelumBersertifikat->value,
                 'pola_tanam' => 'MONOKULTUR JAGUNG',
                 'lintang' => -9.5138400,
                 'bujur' => 124.9152700,
@@ -699,13 +699,13 @@ class DummyData
             [
                 'id_lahan' => 3,
                 'kode_lahan' => 'LU-002',
-                'pemilik' => 'YOHANES BERE',
+                'pemilik' => 'YULITA HOAR',
                 'satuan_permukiman' => 'SP Kapitan Meo',
                 'satuan_permukiman_id' => 1,
-                'jenis_lahan' => JenisLahan::LahanUsaha->value,
+                'peruntukan_lahan' => PeruntukanLahan::LahanUsaha->value,
                 'kategori_lahan' => KategoriLahan::LahanBasah->value,
                 'luas' => 0.75,
-                'status_kepemilikan' => 'GARAPAN',
+                'status_hak' => StatusHakLahan::Garapan->value,
                 'pola_tanam' => 'PADI SAWAH',
                 'lintang' => -9.5471900,
                 'bujur' => 124.8873500,
@@ -716,10 +716,10 @@ class DummyData
                 'pemilik' => 'MARIA DA COSTA',
                 'satuan_permukiman' => 'SP Kapitan Meo',
                 'satuan_permukiman_id' => 1,
-                'jenis_lahan' => JenisLahan::LahanPekarangan->value,
+                'peruntukan_lahan' => PeruntukanLahan::LahanPekarangan->value,
                 'kategori_lahan' => null,
                 'luas' => 0.25,
-                'status_kepemilikan' => 'HPL',
+                'status_hak' => StatusHakLahan::HakMilik->value,
                 'lintang' => -9.5483200,
                 'bujur' => 124.8891000,
             ],
@@ -729,10 +729,10 @@ class DummyData
                 'pemilik' => 'MARIA DA COSTA',
                 'satuan_permukiman' => 'SP Kapitan Meo',
                 'satuan_permukiman_id' => 1,
-                'jenis_lahan' => JenisLahan::LahanUsaha->value,
+                'peruntukan_lahan' => PeruntukanLahan::LahanUsaha->value,
                 'kategori_lahan' => KategoriLahan::LahanKering->value,
                 'luas' => 2.00,
-                'status_kepemilikan' => 'SHM',
+                'status_hak' => StatusHakLahan::HakMilik->value,
                 'pola_tanam' => 'TUMPANG SARI JAGUNG DAN KACANG',
                 'lintang' => -9.4982600,
                 'bujur' => 124.9411800,
@@ -743,10 +743,10 @@ class DummyData
                 'pemilik' => 'PETRUS NAHAK',
                 'satuan_permukiman' => 'SP Tniumanu',
                 'satuan_permukiman_id' => 2,
-                'jenis_lahan' => JenisLahan::LahanUsaha->value,
+                'peruntukan_lahan' => PeruntukanLahan::LahanUsaha->value,
                 'kategori_lahan' => KategoriLahan::LahanKering->value,
                 'luas' => 1.25,
-                'status_kepemilikan' => 'HPL',
+                'status_hak' => StatusHakLahan::BelumBersertifikat->value,
                 'pola_tanam' => 'MONOKULTUR JAGUNG',
                 'lintang' => -9.4995300,
                 'bujur' => 124.9438100,
@@ -1402,7 +1402,7 @@ class DummyData
     {
         return [
             ['id_riwayat_tanam' => 1, 'lahan_id' => 2, 'kode_lahan' => 'LU-001', 'petani' => 'YOHANES BERE', 'musim_tanam' => 'MT1 2026', 'komoditas' => 'JAGUNG', 'luas_tanam' => 1.50, 'tanggal_tanam' => '2025-11-20', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo'],
-            ['id_riwayat_tanam' => 2, 'lahan_id' => 3, 'kode_lahan' => 'LU-002', 'petani' => 'YOHANES BERE', 'musim_tanam' => 'MT1 2026', 'komoditas' => 'PADI', 'luas_tanam' => 0.75, 'tanggal_tanam' => '2025-12-05', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo'],
+            ['id_riwayat_tanam' => 2, 'lahan_id' => 3, 'kode_lahan' => 'LU-002', 'petani' => 'YULITA HOAR', 'musim_tanam' => 'MT1 2026', 'komoditas' => 'PADI', 'luas_tanam' => 0.75, 'tanggal_tanam' => '2025-12-05', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo'],
             ['id_riwayat_tanam' => 3, 'lahan_id' => 5, 'kode_lahan' => 'LU-003', 'petani' => 'MARIA DA COSTA', 'musim_tanam' => 'MT1 2026', 'komoditas' => 'JAGUNG', 'luas_tanam' => 2.00, 'tanggal_tanam' => '2025-11-18', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo'],
             ['id_riwayat_tanam' => 4, 'lahan_id' => 6, 'kode_lahan' => 'LU-004', 'petani' => 'PETRUS NAHAK', 'musim_tanam' => 'MT1 2026', 'komoditas' => 'CABAI', 'luas_tanam' => 0.30, 'tanggal_tanam' => '2025-12-01', 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu'],
             ['id_riwayat_tanam' => 5, 'lahan_id' => 2, 'kode_lahan' => 'LU-001', 'petani' => 'YOHANES BERE', 'musim_tanam' => 'MT2 2025', 'komoditas' => 'JAGUNG', 'luas_tanam' => 1.50, 'tanggal_tanam' => '2025-06-10', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo'],

@@ -929,7 +929,7 @@ Aturan modul yang mudah terlewat, tercatat agar tidak terulang:
 **Masih menunggu:**
 - Referensi tata letak Figma (tidak memblokir; sementara memakai tata letak bawaan TailAdmin).
 - Daftar satuan final per komoditas dari konfirmasi lapangan (sementara: Ton, Kuintal, Kilogram).
-- Konfirmasi apakah lahan pekarangan bisa lebih dari satu per KK (sementara: one-to-many agar fleksibel).
+- ~~Konfirmasi apakah lahan pekarangan bisa lebih dari satu per KK~~ **TERJAWAB 2026-08-18: tidak.** Satu transmigran menerima satu lahan pekarangan dan satu lahan usaha (`rules.md` 7.8). Relasi tetap one-to-many sebab satu KK memegang dua bidang berbeda peruntukan.
 - Perlakuan rumah yang ditinggalkan sementara (sementara: tetap Dihuni, dicatat pada `catatan_hunian`).
 - Konfirmasi apakah satu transmigran bisa masuk lebih dari satu poktan (sementara: tidak, sesuai `rules.md` §6.4).
 - Keputusan apakah mode gelap bawaan TailAdmin dipakai atau dimatikan.

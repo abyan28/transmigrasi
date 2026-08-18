@@ -16,7 +16,10 @@
         use App\Support\DummyData;
 
         $dokumen = DummyData::dokumenLahan($data['id_lahan']);
-        $lahanUsaha = $data['jenis_lahan'] === 'Lahan Usaha';
+
+        // Lahan usaha terbagi beberapa tahap, sehingga tidak boleh dicocokkan
+        // dengan satu nilai teks. Pemeriksaannya dipusatkan pada enum.
+        $lahanUsaha = \App\Enums\PeruntukanLahan::from($data['peruntukan_lahan'])->lahanUsaha();
 
         $pemilik = collect(DummyData::transmigran())
             ->firstWhere('nama_kepala_keluarga', $data['pemilik']);
@@ -25,7 +28,7 @@
     @endphp
 
     <x-sim.page-header :judul="'Lahan ' . $data['kode_lahan']"
-        :keterangan="$data['jenis_lahan'] . ' seluas ' . number_format($data['luas'], 2, ',', '.') . ' hektare di ' . $data['satuan_permukiman'] . '.'"
+        :keterangan="$data['peruntukan_lahan'] . ' seluas ' . number_format($data['luas'], 2, ',', '.') . ' hektare di ' . $data['satuan_permukiman'] . '.'"
         :remah="[
             ['label' => 'Lahan'],
             ['label' => 'Daftar Lahan', 'url' => route('lahan.index')],
@@ -59,7 +62,7 @@
                 </p>
 
                 <div class="mt-3 flex flex-wrap gap-2">
-                    <x-sim.status-badge :teks="$data['jenis_lahan']"
+                    <x-sim.status-badge :teks="$data['peruntukan_lahan']"
                         :warna="$lahanUsaha ? 'teal' : 'gray'" />
                 </div>
 
@@ -95,7 +98,7 @@
                     <div class="flex justify-between gap-3">
                         <dt class="text-gray-500 dark:text-gray-400">Status kepemilikan</dt>
                         <dd class="text-right font-medium text-gray-800 dark:text-white/90">
-                            {{ $data['status_kepemilikan'] ?? '-' }}
+                            {{ $data['status_hak'] ?? '-' }}
                         </dd>
                     </div>
                 </dl>
@@ -194,13 +197,14 @@
                 <div x-show="tab === 'dokumen'" x-cloak role="tabpanel">
                     <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 p-5 dark:border-gray-800">
                         {{--
-                            Penjelasan mengapa dokumen lahan diunggah di sini, bukan menyatu
-                            pada form lahan seperti modul lain. Tanpa keterangan ini,
-                            pemisahannya tampak sebagai ketidakkonsistenan.
+                            Sejak 2026-08-18 dokumen PERTAMA diisi langsung pada form lahan,
+                            sebab itulah keadaan yang paling lazim. Tab ini tetap ada untuk
+                            dokumen kedua dan seterusnya, misalnya bidang yang sertifikatnya
+                            terbit menyusul setelah surat keterangan pembagian tanah.
                         --}}
                         <p class="text-theme-xs text-gray-500 dark:text-gray-400">
-                            Diunggah terpisah dari form lahan, sebab satu lahan dapat memiliki HPL dan SHM
-                            sekaligus, masing-masing dengan nomor dan tanggal terbitnya sendiri.
+                            Dokumen pertama diisi pada form lahan. Tab ini untuk dokumen tambahan pada
+                            bidang yang sama, masing-masing dengan nomor dan tanggal terbitnya sendiri.
                         </p>
                         @if ($bolehUbah)
                             <button type="button" @click="$dispatch('buka-modal', 'formDokumenLahan')"

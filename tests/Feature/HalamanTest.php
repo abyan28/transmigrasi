@@ -367,11 +367,16 @@ it('merender daftar lahan beserta total luasnya', function () {
     $respons->assertSee(number_format($total, 2, ',', '.'));
 });
 
-it('menyaring daftar lahan menurut jenis dan kategori', function () {
-    $this->get(route('lahan.index', ['jenis_lahan' => 'Lahan Pekarangan']))
+it('menyaring daftar lahan menurut peruntukan dan kategori', function () {
+    $this->get(route('lahan.index', ['peruntukan_lahan' => 'Lahan Pekarangan']))
         ->assertOk()
         ->assertSee('LP-001')
         ->assertDontSee('LU-001');
+
+    $this->get(route('lahan.index', ['peruntukan_lahan' => 'Lahan Usaha']))
+        ->assertOk()
+        ->assertSee('LU-001')
+        ->assertDontSee('LP-001');
 
     $this->get(route('lahan.index', ['kategori_lahan' => 'Lahan Basah']))
         ->assertSee('LU-002');
@@ -3469,4 +3474,96 @@ it('tidak menyentuh document.body sebelum DOM siap', function () {
         expect($cocok)->not->toBeEmpty("Skrip tema tidak ditemukan pada {$berkas}");
         expect($cocok[0])->toContain('DOMContentLoaded');
     }
+});
+
+/*
+|--------------------------------------------------------------------------
+| Bidang lahan: peruntukan, status hak, dan dokumen
+|--------------------------------------------------------------------------
+*/
+
+it('menyediakan dokumen pertama langsung pada form lahan', function () {
+    // Dokumen semula hanya dapat diunggah lewat tab tersendiri di halaman
+    // rincian, dengan alasan satu bidang dapat memiliki lebih dari satu
+    // dokumen. Alasan itu benar secara teori, tetapi memaksa dua langkah untuk
+    // keadaan yang paling lazim: pada data contoh, tidak satu pun bidang
+    // memiliki lebih dari satu dokumen.
+    $isi = $this->get(route('lahan.index'))->assertOk()->getContent();
+
+    foreach (['jenis_dokumen', 'nomor_dokumen', 'tanggal_terbit', 'file_dokumen'] as $isian) {
+        expect($isi)->toContain('name="' . $isian . '"');
+    }
+});
+
+it('mempertahankan tab dokumen untuk berkas tambahan', function () {
+    // Dokumen kedua tetap perlu tempat, misalnya bidang yang sertifikatnya
+    // terbit menyusul setelah surat keterangan pembagian tanah.
+    $this->get(route('lahan.detail', 1))
+        ->assertOk()
+        ->assertSee('Tambah Dokumen Lahan')
+        ->assertSee('Dokumen pertama diisi pada form lahan');
+});
+
+it('menyediakan dua peruntukan lahan, bukan lebih', function () {
+    // Tahap I dan II sempat ditambahkan pada 2026-08-18 atas dugaan bahwa
+    // lahan usaha dibagikan bertahap. Dugaan itu dibatalkan pada hari yang
+    // sama: satu transmigran menerima satu pekarangan dan satu lahan usaha.
+    // Pilihan yang tidak pernah berbeda hanya menambah keputusan bagi petugas.
+    $isi = $this->get(route('lahan.index'))->assertOk()->getContent();
+
+    expect($isi)->toContain('name="peruntukan_lahan"')
+        ->and($isi)->not->toContain('Lahan Usaha I<')
+        ->and($isi)->not->toContain('Lahan Usaha II')
+        // Nama kolom lama tidak boleh tertinggal di mana pun.
+        ->and($isi)->not->toContain('name="jenis_lahan"')
+        ->and($isi)->not->toContain('name="status_kepemilikan"');
+});
+
+it('menempatkan area unggah dokumen di baris penuh, bukan berpasangan', function () {
+    // Area unggah jauh lebih tinggi daripada isian teks, sehingga menaruhnya
+    // dalam grid berpasangan menyisakan ruang kosong besar di kolom sebelahnya.
+    // Tiga belas form lain sudah menempatkannya di baris penuh.
+    $sumber = file_get_contents(resource_path('views/pages/lahan/form.blade.php'));
+
+    // Ketiga keterangan dokumen berjajar tiga kolom.
+    expect($sumber)->toContain('sm:grid-cols-3');
+
+    // Area unggah berada SETELAH grid ditutup, bukan di dalamnya.
+    preg_match('/sm:grid-cols-3(.*?)file_dokumen/s', $sumber, $cocok);
+
+    expect($cocok)->not->toBeEmpty()
+        ->and($cocok[1])->toContain('</div>');
+});
+
+it('memakai status hak atas tanah, bukan status kepemilikan', function () {
+    // HPL adalah Hak Pengelolaan milik instansi atas tanah kawasan, sehingga
+    // tidak pernah menjadi hak seorang transmigran; SHM adalah nama
+    // sertifikatnya, bukan nama haknya. Menampilkannya sebagai pilihan status
+    // membuat sistem menyatakan warga "memiliki lahan berstatus HPL".
+    $isi = $this->get(route('lahan.index'))->assertOk()->getContent();
+
+    expect($isi)->toContain('name="status_hak"')
+        ->and($isi)->toContain('Status Hak Atas Tanah')
+        ->and($isi)->toContain('Belum Bersertifikat');
+});
+
+it('menjumlahkan luas lahan usaha dari seluruh tahapnya', function () {
+    // Penjumlahan semula mencocokkan teks "Lahan Usaha" persis, sehingga
+    // bidang tahap kedua akan hilang dari rekap tanpa ada yang menyadarinya.
+    $nilaiUsaha = App\Enums\PeruntukanLahan::nilaiLahanUsaha();
+
+    $luasUsaha = array_sum(array_column(
+        array_filter(
+            DummyData::lahan(),
+            fn ($l) => in_array($l['peruntukan_lahan'], $nilaiUsaha, true)
+        ),
+        'luas'
+    ));
+
+    // 1,50 + 0,75 + 2,00 + 1,25 = 5,50 hektare pada data contoh.
+    expect($luasUsaha)->toBe(5.5);
+
+    $this->get(route('lahan.index'))
+        ->assertOk()
+        ->assertSee(number_format($luasUsaha, 2, ',', '.'));
 });

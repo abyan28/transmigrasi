@@ -15,7 +15,7 @@
 
         $cari = trim((string) request('cari', ''));
         $filterSp = request('sp');
-        $filterJenis = request('jenis_lahan');
+        $filterJenis = request('peruntukan_lahan');
         $filterKategori = request('kategori_lahan');
 
         $baris = array_values(array_filter($semua, function ($l) use ($cari, $filterSp, $filterJenis, $filterKategori) {
@@ -32,7 +32,7 @@
                 return false;
             }
 
-            if ($filterJenis && $l['jenis_lahan'] !== $filterJenis) {
+            if ($filterJenis && $l['peruntukan_lahan'] !== $filterJenis) {
                 return false;
             }
 
@@ -46,8 +46,12 @@
         $adaFilter = $cari !== '' || $filterSp || $filterJenis || $filterKategori;
 
         $totalLuasTampil = array_sum(array_column($baris, 'luas'));
-        $luasPekarangan = array_sum(array_column(array_filter($semua, fn ($l) => $l['jenis_lahan'] === 'Lahan Pekarangan'), 'luas'));
-        $luasUsaha = array_sum(array_column(array_filter($semua, fn ($l) => $l['jenis_lahan'] === 'Lahan Usaha'), 'luas'));
+        // Lahan usaha kini terbagi beberapa tahap, sehingga penjumlahannya tidak
+        // boleh lagi mencocokkan satu nilai teks. Daftar tahapnya dibaca dari enum
+        // agar penambahan tahap berikutnya tidak melewatkan halaman ini.
+        $nilaiLahanUsaha = \App\Enums\PeruntukanLahan::nilaiLahanUsaha();
+        $luasPekarangan = array_sum(array_column(array_filter($semua, fn ($l) => ! in_array($l['peruntukan_lahan'], $nilaiLahanUsaha, true)), 'luas'));
+        $luasUsaha = array_sum(array_column(array_filter($semua, fn ($l) => in_array($l['peruntukan_lahan'], $nilaiLahanUsaha, true)), 'luas'));
 
         $bolehTambah = true;
         $bolehUbah = true;
@@ -121,10 +125,10 @@
                             class="mb-1.5 block text-theme-xs font-medium text-gray-700 dark:text-gray-400">
                             Jenis Lahan
                         </label>
-                        <select id="filter_jenis" name="jenis_lahan"
+                        <select id="filter_jenis" name="peruntukan_lahan"
                             class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
                             <option value="">Semua jenis</option>
-                            @foreach (\App\Enums\JenisLahan::opsi() as $nilai => $label)
+                            @foreach (\App\Enums\PeruntukanLahan::opsi() as $nilai => $label)
                                 <option value="{{ $nilai }}" @selected($filterJenis === $nilai)>{{ $label }}</option>
                             @endforeach
                         </select>
@@ -205,7 +209,7 @@
                         </p>
                     </td>
                     <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ $l['pemilik'] }}</td>
-                    <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ $l['jenis_lahan'] }}</td>
+                    <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ $l['peruntukan_lahan'] }}</td>
                     <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
                         {{ $l['kategori_lahan'] ?? '-' }}
                     </td>
@@ -292,7 +296,7 @@
                             </span>
                         </div>
                         <p class="mt-2 text-theme-xs text-gray-500 dark:text-gray-400">
-                            {{ $l['jenis_lahan'] }}{{ $l['kategori_lahan'] ? ' , ' . $l['kategori_lahan'] : '' }}
+                            {{ $l['peruntukan_lahan'] }}{{ $l['kategori_lahan'] ? ' , ' . $l['kategori_lahan'] : '' }}
                         </p>
                     </div>
                 @endforeach
@@ -326,5 +330,5 @@
     {{-- Impor massal, lihat komponennya untuk alur tiga langkah --}}
     <x-sim.modal-impor nama="imporLahan" judul="Impor Data Lahan"
         entitas="lahan"
-        :kolom-wajib="['kode_lahan', 'satuan_permukiman', 'luas_ha', 'jenis_lahan', 'status_kepemilikan']" />
+        :kolom-wajib="['kode_lahan', 'satuan_permukiman', 'luas_ha', 'peruntukan_lahan', 'status_hak']" />
 @endsection

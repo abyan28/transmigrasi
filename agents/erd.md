@@ -256,7 +256,7 @@ Dashboard dan halaman daftar mengandalkan filter wilayah dan periode, sehingga i
 | `transmigran` | `satuan_permukiman_id`, `nik`, `tahun_kedatangan`, `pekerjaan_kepala_keluarga` | Filter per SP, pencarian NIK, grafik per tahun, histogram pekerjaan |
 | `rumah` | `satuan_permukiman_id`, `status_hunian`, `kondisi` | Rekap rumah terhuni per SP |
 | `riwayat_penghunian` | `rumah_id`, `transmigran_id`, `tanggal_masuk`, `tanggal_keluar` | Grafik KK masuk dan keluar per tahun |
-| `lahan` | `transmigran_id`, `satuan_permukiman_id`, `jenis_lahan` | Rekap luas lahan per SP dan per jenis |
+| `lahan` | `transmigran_id`, `satuan_permukiman_id`, `peruntukan_lahan` | Rekap luas lahan per SP dan per jenis |
 | `riwayat_tanam` | `lahan_id`, `musim_tanam_id`, `komoditas_id` | Rekap tanam per musim dan komoditas |
 | `hasil_panen` | `riwayat_tanam_id`, `tanggal_panen` | Grafik volume panen per tahun |
 | `anggota_poktan` | `poktan_id`, `transmigran_id`, `status` | Daftar anggota aktif |

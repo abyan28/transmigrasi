@@ -253,7 +253,7 @@
                                         </a>
                                     </td>
                                     <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
-                                        {{ $l['jenis_lahan'] }}
+                                        {{ $l['peruntukan_lahan'] }}
                                     </td>
                                     <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
                                         {{ $l['kategori_lahan'] ?? '-' }}

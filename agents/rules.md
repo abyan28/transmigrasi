@@ -310,14 +310,18 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **-*
 
 ### 7. Aturan Fitur Lahan
 1. Setiap lahan harus memiliki identitas yang jelas.
-2. Lahan dibedakan menjadi dua jenis: **lahan pekarangan** dan **lahan usaha**.
+2. Lahan dibedakan menurut **peruntukannya**: **lahan pekarangan** dan **lahan usaha**. Istilah "peruntukan" dipakai sejak 2026-08-18 menggantikan "jenis", sebab yang dibedakan adalah untuk apa bidang itu diberikan; sifat fisiknya diwakili kategori lahan (basah atau kering). Tiap bidang dicatat sebagai baris tersendiri, sehingga luas, koordinat, dan dokumennya tidak tercampur.
+2a. **Pemeriksaan "apakah ini lahan usaha" dilarang membandingkan satu nilai teks.** Pakai `PeruntukanLahan::lahanUsaha()`. Penjumlahan luas usaha pernah mencocokkan teks persis, dan cara itu akan kehilangan sebagian bidang tanpa ada yang menyadarinya bila daftar nilainya berubah.
+2b. Nilai `Lahan Usaha I` dan `Lahan Usaha II` sempat ditambahkan pada 2026-08-18 atas dugaan bahwa lahan usaha dibagikan bertahap, lalu **dibatalkan pada hari yang sama** setelah keadaan lapangan diketahui (lihat poin 8). Dicatat di sini agar tidak diusulkan ulang tanpa konfirmasi.
 3. Data lahan harus dapat dikaitkan dengan transmigran, kelompok tani, dan komoditas.
 4. Data lahan minimal memuat informasi luas, lokasi, titik koordinat, status, dan tujuan/jenis pemanfaatan.
 5. Kategori lahan usaha dibedakan menjadi lahan basah dan lahan kering.
-6. Dokumen status lahan (HPL/SHM) wajib dapat diunggah dan ditautkan ke data lahan.
+4a. **Status hak atas tanah bukan status kepemilikan** (diperbaiki 2026-08-18). Nilainya `Belum Bersertifikat`, `Hak Milik`, `Hak Milik Bersama`, `Hak Pakai`, `Sewa`, `Garapan`. **HPL dan SHM dicabut dari daftar ini**: HPL adalah Hak Pengelolaan milik instansi atas tanah kawasan sehingga tidak pernah menjadi hak seorang transmigran, sedangkan SHM adalah nama sertifikatnya, bukan nama haknya. Keduanya menjadi jenis dokumen. Rantainya: tanah kawasan berstatus Hak Pengelolaan, lalu bidangnya dibagikan dengan status Hak Milik; sebelum sertifikat terbit, sandarannya surat keterangan pembagian tanah.
+6. Dokumen status lahan wajib dapat diunggah dan ditautkan ke data lahan. **Dokumen pertama diisi langsung pada form lahan**, sedangkan tab pada halaman rincian melayani dokumen kedua dan seterusnya. Sebelum 2026-08-18 seluruh dokumen hanya dapat diunggah lewat tab, dan itu memaksa dua langkah untuk keadaan yang paling lazim: tidak satu pun bidang pada data memiliki lebih dari satu dokumen.
+6a. Keterangan dokumen (`jenis_dokumen`, `nomor_dokumen`, `tanggal_terbit`) **wajib dipertahankan** dan tidak boleh disederhanakan menjadi satu kolom unggahan seperti modul lain. Nomor sertifikat adalah data legal yang harus dapat dicari, bukan sekadar lampiran.
 7. Lahan usaha juga mencatat pola tanam, musim tanam, peralatan/perlengkapan pertanian, dan kendala yang dihadapi.
-8. Satu transmigran dapat memiliki **lebih dari satu lahan usaha**, sehingga foreign key disimpan pada tabel lahan, bukan pada tabel transmigran.
-9. Lahan pekarangan umumnya satu per KK, tetapi struktur data tetap mengikuti pola satu-ke-banyak agar fleksibel.
+8. **Satu transmigran umumnya menerima satu lahan pekarangan dan satu lahan usaha** (dikoreksi 2026-08-18 atas keterangan lapangan pemilik proyek). Keputusan 2026-08-10 sebelumnya menyatakan "boleh memiliki lebih dari satu lahan usaha" dengan alasan kondisi lapangan, dan itu **keliru**.
+9. **Jumlah pada poin 8 adalah jumlah yang wajar, bukan batas yang ditegakkan sistem.** Relasi tetap satu-ke-banyak dengan foreign key pada tabel `lahan`, sebab satu KK memang memegang dua bidang berbeda peruntukan sehingga satu-ke-satu tidak mungkin. Sistem juga tidak menolak bidang ketiga: bila satu jatah lahan usaha terletak pada dua petak berkoordinat berbeda, keduanya tetap perlu dicatat tersendiri karena dokumen dan letaknya berbeda. Yang dijaga adalah kewajaran data, bukan penolakan di tingkat isian.
 10. Rekap luas lahan per transmigran, per poktan, maupun per desa/SP wajib memakai penjumlahan seluruh lahan terkait, bukan mengambil satu baris data saja.
 11. Lahan harus bisa dipakai sebagai dasar analisis produksi dan perencanaan.
 

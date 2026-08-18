@@ -322,7 +322,7 @@
                                         {{ $baris['pemilik'] }}
                                     </td>
                                     <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
-                                        {{ $baris['jenis_lahan'] }}
+                                        {{ $baris['peruntukan_lahan'] }}
                                     </td>
                                     <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
                                         {{ number_format($baris['luas'], 2, ',', '.') }}
