@@ -3597,3 +3597,83 @@ it('mencabut batas wilayah SP dari seluruh sumber', function () {
     expect(file_get_contents(base_path('agents/data-dictionary.md')))
         ->not->toContain('| `batas_utara` |');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Komoditas unggulan: penandaan manusia, bukan hitungan
+|--------------------------------------------------------------------------
+*/
+
+it('menandai komoditas unggulan lewat penandaan petugas, bukan hitungan volume', function () {
+    // rules.md 8.1 menyebut unggulan sebagai yang "disebut dalam proposal",
+    // dan 8.3 memakai kata "penandaan". Jagung sudah ditandai unggulan sebelum
+    // satu baris panen pun tercatat, sehingga menghitungnya dari volume berarti
+    // menjawab pertanyaan yang berbeda.
+    //
+    // Menghitung otomatis juga menutup kasus yang justru paling perlu
+    // ditandai: komoditas prioritas program yang volumenya masih kecil.
+    $isi = $this->get(route('komoditas.index'))->assertOk()->getContent();
+
+    expect($isi)->toContain('name="is_unggulan"')
+        ->and($isi)->toContain('Ditetapkan menurut proposal atau kebijakan dinas');
+});
+
+it('menampilkan volume tercatat sebagai bahan pertimbangan penandaan', function () {
+    // Petugas tetap memutuskan, tetapi tidak lagi menebak: keadaan volume
+    // ditampilkan di samping centang.
+    $this->get(route('komoditas.detail', 1))
+        ->assertOk()
+        ->assertSee('Volume tercatat')
+        // Jagung volumenya terbesar, sehingga tidak diperingatkan.
+        ->assertDontSee('bukan yang volumenya terbesar');
+});
+
+it('memperingatkan bila yang ditandai unggulan bukan volume terbesar', function () {
+    // Peringatan, bukan penolakan. Unggulan bervolume kecil adalah keadaan
+    // yang sah; yang tidak boleh adalah petugas menandainya tanpa menyadari.
+    $this->get(route('komoditas.detail', 3))
+        ->assertOk()
+        ->assertSee('bukan yang volumenya terbesar');
+});
+
+it('memilih komoditas utama dashboard menurut nilai, bukan urutan larik', function () {
+    // `array_key_first()` sempat dipakai dan kebetulan benar hanya karena
+    // sebaranKomoditas() ditulis terurut. Begitu urutannya berubah, kartu ini
+    // menampilkan komoditas yang keliru tanpa ada yang menyadarinya.
+    $sumber = file_get_contents(resource_path('views/pages/dashboard/index.blade.php'));
+
+    expect($sumber)->toContain('max($sebaranKomoditas)')
+        ->and($sumber)->not->toContain('array_key_first($sebaranKomoditas)');
+
+    // Hasilnya tetap benar: jagung memang bervolume terbesar.
+    $sebaran = DummyData::sebaranKomoditas();
+
+    expect(array_search(max($sebaran), $sebaran, true))->toBe('Jagung');
+});
+
+it('memisahkan agregat kawasan dari transaksi panen contoh', function () {
+    // Keduanya menjawab pertanyaan berbeda dan tidak boleh diturunkan satu
+    // dari yang lain: sebaranKomoditas() adalah agregat kawasan setahun,
+    // hasilPanen() hanya beberapa transaksi contoh untuk menguji tampilan.
+    //
+    // Uji ini menjaga agar keduanya tidak "diperbaiki" menjadi konsisten,
+    // sebab menyamakannya akan membuat dashboard menampilkan belasan ton untuk
+    // kawasan berisi ribuan keluarga.
+    $agregat = array_sum(DummyData::sebaranKomoditas());
+
+    $transaksi = 0.0;
+    foreach (DummyData::hasilPanen() as $panen) {
+        $transaksi += DummyData::keTon((float) $panen['volume'], $panen['satuan']);
+    }
+
+    expect($agregat)->toBeGreaterThan($transaksi * 10);
+
+    // Empat angka dashboard wajib tetap saling konsisten dengan agregat.
+    $ringkasan = DummyData::ringkasanDashboard();
+    $totalSp = array_sum(array_column(DummyData::rekapPerSp(), 'volume_panen'));
+    $deret = DummyData::deretTahunan();
+
+    expect(round($ringkasan['volume_panen_ton'], 1))->toBe(round($agregat, 1))
+        ->and(round($totalSp, 1))->toBe(round($agregat, 1))
+        ->and(round((float) end($deret['volume_panen']), 1))->toBe(round($agregat, 1));
+});

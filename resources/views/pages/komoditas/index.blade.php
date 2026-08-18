@@ -7,6 +7,18 @@
 
     Komoditas unggulan ditandai memakai aksen gold, salah satu dari empat
     pemakaian sah aksen tunggal (agents/ui-spec.md bagian 2.4).
+
+    DUA ISTILAH YANG BERBEDA dan sengaja tidak disatukan:
+
+    - **Komoditas utama** pada dashboard adalah yang volumenya terbesar saat
+      ini. Dihitung dari data panen, berubah mengikuti musim.
+    - **Komoditas unggulan** di halaman ini ditetapkan menurut proposal atau
+      kebijakan dinas (`rules.md` 8.1). Ditandai petugas, dan tidak berubah
+      hanya karena panen satu musim naik atau turun.
+
+    Keduanya kebetulan sama-sama menunjuk jagung, tetapi tidak menggantikan
+    satu sama lain. Komoditas prioritas program yang volumenya masih kecil
+    tetap sah ditandai unggulan.
 --}}
 @extends('layouts.app')
 
@@ -69,10 +81,18 @@
 
         <x-slot:ringkasan>
             <x-sim.stat-card label="Jenis Komoditas" :nilai="count($semua)" />
-            <x-sim.stat-card label="Komoditas Unggulan" :nilai="$unggulan" />
+            {{--
+                Dua kartu berikut bersumber dari hal yang berbeda: jumlah
+                unggulan berasal dari penandaan petugas, sedangkan total panen
+                dari data produksi. Keterangannya ditulis agar keduanya tidak
+                terbaca sebagai dua sisi angka yang sama.
+            --}}
+            <x-sim.stat-card label="Komoditas Unggulan" :nilai="$unggulan"
+                keterangan="Ditandai menurut proposal atau kebijakan dinas" />
             <x-sim.stat-card label="Satuan Dipakai" :nilai="count(array_unique(array_column($semua, 'satuan')))" />
             <x-sim.stat-card label="Total Panen Tercatat"
-                :nilai="number_format(array_sum($sebaran), 1, ',', '.')" satuan="ton" />
+                :nilai="number_format(array_sum($sebaran), 1, ',', '.')" satuan="ton"
+                keterangan="Agregat kawasan seluruh komoditas" />
         </x-slot:ringkasan>
 
         <x-slot:filter>

@@ -39,8 +39,18 @@
 
         $persenHuni = round($ringkasan['rumah_terhuni'] / $ringkasan['rumah_total'] * 100);
 
-        // Komoditas dengan volume terbesar, dipakai kartu komoditas utama
-        $komoditasUtama = array_key_first($sebaranKomoditas);
+        // Komoditas dengan volume terbesar, dipakai kartu komoditas utama.
+        //
+        // Dipilih berdasarkan NILAI, bukan urutan larik. `array_key_first()`
+        // sempat dipakai di sini dan kebetulan benar hanya karena
+        // `sebaranKomoditas()` ditulis terurut; begitu urutannya berubah,
+        // kartu ini akan menampilkan komoditas yang keliru tanpa ada yang
+        // menyadarinya.
+        //
+        // "Utama" berbeda dari "unggulan": yang ini dihitung dari volume dan
+        // berubah mengikuti musim, sedangkan unggulan ditetapkan menurut
+        // proposal atau kebijakan dinas (`rules.md` 8.1) dan ditandai petugas.
+        $komoditasUtama = array_search(max($sebaranKomoditas), $sebaranKomoditas, true);
 
         // Isu prioritas: pengaduan yang belum selesai, diurutkan dari yang paling mendesak
         $urutanPrioritas = ['Mendesak' => 0, 'Tinggi' => 1, 'Sedang' => 2, 'Rendah' => 3];

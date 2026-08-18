@@ -360,6 +360,9 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **-*
 1. Sistem harus mendukung komoditas unggulan kawasan, terutama komoditas utama yang disebut dalam proposal, yaitu jagung.
 2. Komoditas harus dapat dikaitkan dengan transmigran, poktan, lahan, dan hasil panen.
 3. Sistem harus mendukung penandaan komoditas unggulan.
+3a. **Unggulan ditandai petugas, bukan dihitung sistem** (ditegaskan 2026-08-18). Dasarnya proposal atau kebijakan dinas, sebagaimana poin 1 yang menyebut jagung "disebut dalam proposal" — penetapannya mendahului data panen mana pun. Menghitungnya dari volume terbesar akan menutup kasus yang justru paling perlu ditandai: komoditas prioritas program yang volumenya masih kecil karena baru dirintis. Perhitungan otomatis juga membuat jumlah penanda aksen gold tidak terkendali, bertentangan dengan `ui-spec.md` 2.4 yang membatasi pemakaiannya.
+3b. Form komoditas **menampilkan volume tercatat sebagai bahan pertimbangan**, beserta peringatan bila yang ditandai bukan bervolume terbesar. Peringatan itu **tidak menghalangi penyimpanan**: unggulan bervolume kecil adalah keadaan yang sah, yang tidak boleh terjadi hanyalah petugas menandainya tanpa menyadari keadaan itu.
+3c. **"Komoditas utama" pada dashboard berbeda dari "komoditas unggulan"** dan keduanya sengaja tidak disatukan. Utama dihitung dari volume terbesar dan berubah mengikuti musim; unggulan ditetapkan program dan tidak berubah hanya karena panen satu musim naik atau turun. Pemilihan komoditas utama wajib memakai nilai terbesar, bukan urutan larik.
 4. Setiap komoditas wajib memiliki **satuan panen baku** yang ditetapkan pada data master, misalnya jagung dalam ton dan cabai dalam kilogram.
 5. Komoditas dikelompokkan menurut tipenya: pangan, palawija, dan hortikultura.
 6. Komoditas harus bisa dianalisis per desa/SP atau per periode.

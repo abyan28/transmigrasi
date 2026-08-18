@@ -736,6 +736,15 @@ class DummyData
      * Volume disimpan apa adanya sesuai satuan baku komoditas, konversi ke ton
      * hanya dilakukan saat rekap (agents/rules.md bagian 8a).
      *
+     * CAKUPANNYA BEBERAPA TRANSAKSI CONTOH, bukan seluruh panen kawasan.
+     * Isinya sengaja sedikit dan beragam satuan agar tampilan tabel, konversi
+     * ton, serta penyaringan dapat diuji; totalnya karena itu jauh lebih kecil
+     * daripada `sebaranKomoditas()` yang merupakan agregat kawasan setahun.
+     *
+     * Perbedaan itu disengaja. Menjumlahkan baris di sini lalu membandingkannya
+     * dengan angka dashboard akan selalu tampak timpang, dan bukan itu yang
+     * hendak dijawab keduanya.
+     *
      * @return array<int, array<string, mixed>> Data hasil panen
      */
     public static function hasilPanen(): array
@@ -1688,6 +1697,18 @@ class DummyData
 
     /**
      * Sebaran komoditas utama untuk grafik donat.
+     *
+     * CAKUPANNYA AGREGAT KAWASAN SETAHUN, bukan penjumlahan `hasilPanen()`.
+     * Angkanya mencerminkan panen seluruh keluarga di kawasan, sehingga wajar
+     * bernilai ribuan ton; `hasilPanen()` hanya memuat lima transaksi contoh
+     * untuk menguji tampilan tabel dan totalnya jauh lebih kecil.
+     *
+     * Keduanya BUKAN dua versi dari angka yang sama, dan tidak boleh
+     * diturunkan satu dari yang lain. Nilai di sini menopang empat angka
+     * dashboard yang saling konsisten: `ringkasanDashboard()['volume_panen_ton']`,
+     * jumlah seluruh `rekapPerSp()['volume_panen']`, dan nilai terakhir
+     * `deretTahunan()['volume_panen']`. Mengubah salah satunya tanpa yang lain
+     * membuat dashboard menampilkan angka yang saling bertentangan.
      *
      * @return array<string, float> Peta komoditas ke volume dalam ton
      */

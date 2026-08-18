@@ -28,6 +28,30 @@
     $faktorSatuan = collect($daftarSatuan)
         ->mapWithKeys(fn ($s) => [(string) $s['id_satuan'] => ['nama' => $s['nama'], 'faktor' => $s['faktor_ke_ton']]])
         ->all();
+
+    // Volume tercatat dipakai sebagai BAHAN PERTIMBANGAN, bukan penentu.
+    // Unggulan ditetapkan menurut proposal atau kebijakan dinas (rules.md 8.1),
+    // dan jagung sudah ditandai unggulan sebelum satu baris panen pun tercatat.
+    // Angka ini hanya membantu petugas melihat keadaan sebelum memutuskan.
+    $sebaran = DummyData::sebaranKomoditas();
+    arsort($sebaran);
+
+    $namaKomoditas = $data['nama'] ?? null;
+    $volumeTerbesar = $sebaran === [] ? null : array_key_first($sebaran);
+
+    // Pencocokan tidak peka huruf besar-kecil: data komoditas memakai huruf
+    // kapital seluruhnya, sedangkan sebaran memakai huruf judul.
+    $volumeKomoditas = null;
+    foreach ($sebaran as $nama => $ton) {
+        if ($namaKomoditas !== null && mb_strtolower($nama) === mb_strtolower($namaKomoditas)) {
+            $volumeKomoditas = $ton;
+            break;
+        }
+    }
+
+    $iniTerbesar = $namaKomoditas !== null
+        && $volumeTerbesar !== null
+        && mb_strtolower($namaKomoditas) === mb_strtolower($volumeTerbesar);
 @endphp
 
 <div class="space-y-6"
@@ -107,18 +131,55 @@
                 </p>
             </div>
 
-            <div>
+            {{--
+                Penandaan unggulan sengaja tetap di tangan petugas.
+
+                `rules.md` 8.1 menyebut komoditas unggulan sebagai yang
+                "disebut dalam proposal", dan 8.3 memakai kata "penandaan",
+                bukan penentuan. Jagung sudah ditandai unggulan sebelum satu
+                baris panen pun tercatat, sehingga menghitungnya dari volume
+                berarti menjawab pertanyaan yang berbeda.
+
+                Menghitungnya otomatis juga akan menutup kasus yang justru
+                paling perlu ditandai: komoditas prioritas program yang
+                volumenya masih kecil karena baru dirintis.
+
+                Yang ditambahkan di sini hanyalah BAHAN PERTIMBANGAN, agar
+                petugas memutuskan tanpa menebak.
+            --}}
+            <div x-data="{ unggulan: @js((bool) old('is_unggulan', $data['is_unggulan'] ?? false)) }">
                 <label class="flex items-start gap-2.5">
-                    <input type="checkbox" name="is_unggulan" value="1"
-                        @checked(old('is_unggulan', $data['is_unggulan'] ?? false))
+                    <input type="checkbox" name="is_unggulan" value="1" x-model="unggulan"
                         class="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand-500 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700" />
                     <span class="text-theme-sm text-gray-700 dark:text-gray-300">
                         Komoditas unggulan
                         <span class="block text-theme-xs text-gray-500 dark:text-gray-400">
-                            Ditandai khusus pada dashboard dan daftar komoditas.
+                            Ditetapkan menurut proposal atau kebijakan dinas, bukan dari volume panen.
+                            Ditandai memakai aksen gold pada dashboard dan daftar komoditas.
                         </span>
                     </span>
                 </label>
+
+                @if ($volumeKomoditas !== null)
+                    <p class="mt-2 text-theme-xs text-gray-500 dark:text-gray-400">
+                        Volume tercatat
+                        <span class="font-medium tabular-nums">{{ number_format($volumeKomoditas, 1, ',', '.') }} ton</span>@if ($iniTerbesar), terbesar di kawasan.@else. Terbesar saat ini {{ $volumeTerbesar }} ({{ number_format($sebaran[$volumeTerbesar], 1, ',', '.') }} ton).@endif
+                    </p>
+                @endif
+
+                {{--
+                    Peringatan, bukan penolakan. Unggulan yang volumenya bukan
+                    terbesar adalah keadaan yang sah, misalnya komoditas yang
+                    sedang didorong dinas. Yang tidak boleh terjadi adalah
+                    petugas menandainya tanpa menyadari keadaan itu.
+                --}}
+                @unless ($iniTerbesar)
+                    <p x-show="unggulan" x-cloak
+                        class="mt-2 rounded-lg bg-warning-50 p-2.5 text-theme-xs text-warning-700 dark:bg-warning-500/10 dark:text-warning-400">
+                        Komoditas ini bukan yang volumenya terbesar. Pastikan penandaan mengikuti
+                        proposal atau kebijakan dinas, bukan sekadar perkiraan.
+                    </p>
+                @endunless
             </div>
         </div>
     </section>

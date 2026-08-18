@@ -104,6 +104,8 @@ Motif ini **tidak** dipakai di tempat lain. Diulang di empat titik sudah cukup u
 
 Gold **dilarang** dipakai untuk: tombol biasa, tautan, ikon menu, garis pemisah, dan latar kartu. Aksen yang muncul di mana-mana berhenti menjadi aksen.
 
+Penanda komoditas unggulan **wajib tetap ditandai manusia**, tidak dihitung dari volume panen (`rules.md` 8.3a). Perhitungan otomatis membuat jumlah komoditas bergold berubah-ubah mengikuti musim: bisa nol bila tidak ada yang menonjol, bisa banyak sekaligus bila ambangnya longgar. Aksen yang jumlahnya tidak terkendali berhenti menjadi aksen.
+
 ### 2.5 Alasan Keputusan Desain (R-31)
 
 Setiap keputusan utama disertai alasan satu baris. Keputusan yang alasannya tidak dapat ditulis satu baris berarti belum valid.
