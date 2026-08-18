@@ -162,7 +162,7 @@ Alamat URL **tidak menampilkan primary key berurutan**. Pola berurutan seperti `
 
 2. **Cabang administratif** mencatat pembagian pemerintahan. **Cabang program** mencatat kawasan transmigrasi, yaitu wilayah perencanaan yang dapat memotong batas kecamatan. Keduanya bertemu di SP.
 3. Setiap SP wajib menaut ke **satu desa** dan **satu kawasan transmigrasi** sekaligus. Informasi kecamatan tidak disimpan langsung pada SP, melainkan dibaca lewat desanya.
-4. Setiap SP wajib menyimpan: nama SP, desa, kawasan, titik koordinat, batas wilayah Utara/Timur/Selatan/Barat, luas lahan, dokumen pendukung, dan penanggung jawab data. Inventaris dan fasilitas SP dikelola sebagai daftar terpisah yang menempel pada SP (§4b).
+4. Setiap SP wajib menyimpan: nama SP, desa, kawasan, titik koordinat, luas lahan, dokumen pendukung, dan penanggung jawab data. Inventaris dan fasilitas SP dikelola sebagai daftar terpisah yang menempel pada SP (§4b). **Batas wilayah Utara/Timur/Selatan/Barat dicabut 2026-08-18** karena isinya sebutan naratif yang tidak pernah dipakai perhitungan, indikator, maupun peta; lihat `notes.md` bagian 6.
 5. Lokus awal sistem adalah **Kawasan Transmigrasi Kobalima Timur**, Kabupaten Malaka, Nusa Tenggara Timur, yang menaungi 6 SP tersebar di 4 kecamatan:
 
    | Satuan Permukiman / Lokus | Desa | Kecamatan |

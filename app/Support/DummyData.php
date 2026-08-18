@@ -88,10 +88,6 @@ class DummyData
                 'jumlah_kk_terisi' => 218,
                 'lintang' => -9.5123450,
                 'bujur' => 124.9123450,
-                'batas_utara' => 'Desa Tniumanu',
-                'batas_timur' => 'Sungai Benanain',
-                'batas_selatan' => 'Desa Weain',
-                'batas_barat' => 'Hutan lindung',
             ],
             [
                 'id_satuan_permukiman' => 2,
@@ -106,10 +102,6 @@ class DummyData
                 'jumlah_kk_terisi' => 187,
                 'lintang' => -9.4980120,
                 'bujur' => 124.8875600,
-                'batas_utara' => 'Desa Harekakae',
-                'batas_timur' => 'Desa Kapitan Meo',
-                'batas_selatan' => 'Kebun rakyat',
-                'batas_barat' => 'Jalan kabupaten',
             ],
             [
                 'id_satuan_permukiman' => 3,
@@ -124,10 +116,6 @@ class DummyData
                 'jumlah_kk_terisi' => 195,
                 'lintang' => -9.4551230,
                 'bujur' => 124.9450780,
-                'batas_utara' => 'Persawahan Harekakae',
-                'batas_timur' => 'Desa Weoe',
-                'batas_selatan' => 'Desa Tniumanu',
-                'batas_barat' => 'Sungai kecil',
             ],
             [
                 'id_satuan_permukiman' => 4,
@@ -142,10 +130,6 @@ class DummyData
                 'jumlah_kk_terisi' => 176,
                 'lintang' => -9.4210900,
                 'bujur' => 124.9812340,
-                'batas_utara' => 'Pantai selatan',
-                'batas_timur' => 'Desa Naet',
-                'batas_selatan' => 'Desa Harekakae',
-                'batas_barat' => 'Lahan usaha warga',
             ],
             [
                 'id_satuan_permukiman' => 5,
@@ -160,10 +144,6 @@ class DummyData
                 'jumlah_kk_terisi' => 201,
                 'lintang' => -9.3987650,
                 'bujur' => 125.0123450,
-                'batas_utara' => 'Desa Weain',
-                'batas_timur' => 'Perbukitan',
-                'batas_selatan' => 'Desa Weoe',
-                'batas_barat' => 'Jalan produksi',
             ],
             [
                 'id_satuan_permukiman' => 6,
@@ -178,10 +158,6 @@ class DummyData
                 'jumlah_kk_terisi' => 163,
                 'lintang' => -9.3765430,
                 'bujur' => 125.0345670,
-                'batas_utara' => 'Hutan produksi',
-                'batas_timur' => 'Batas kabupaten',
-                'batas_selatan' => 'Desa Naet',
-                'batas_barat' => 'Sungai Benanain',
             ],
         ];
     }

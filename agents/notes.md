@@ -135,7 +135,7 @@ Masalahnya, Eloquent tidak mendukung tipe spasial secara natif. Setiap pembacaan
 
 Tabel ini berisi empat kolom `TEXT` bernama `Utara`, `Timur`, `Selatan`, dan `Barat`. Isinya sebenarnya **deskripsi batas wilayah** ("berbatasan dengan Desa X"), bukan koordinat. Relasinya ke `satuan_permukiman` bersifat satu-ke-satu wajib, sehingga tabel terpisah hanya menambah satu join tanpa manfaat.
 
-**Keputusan:** dilebur menjadi empat kolom `batas_utara`, `batas_timur`, `batas_selatan`, `batas_barat` pada `satuan_permukiman`.
+**Keputusan:** dilebur menjadi empat kolom `batas_utara`, `batas_timur`, `batas_selatan`, `batas_barat` pada `satuan_permukiman`. **DICABUT 2026-08-18:** keempat kolom hasil peleburan ini akhirnya dihapus seluruhnya, sebab isinya tidak pernah dipakai perhitungan, indikator, maupun peta. Peleburan tabelnya tetap keputusan yang benar; yang salah adalah menyimpan isinya sama sekali.
 
 ### 1a.4 Empat tabel untuk satu konsep lahan
 
@@ -687,7 +687,13 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
 - buat cache/cookies/pwa untuk atasi sinyal ketika kirim data tapi sinyal jelek/putus. dikerjakan setelah backend selesai.
 
 ## 6. Revisi
-- Batas utara, timur, selatan, barat pada form tambah dan ubah di halaman SP dihapus saja.
+- [done] Batas utara, timur, selatan, barat pada form tambah dan ubah di halaman SP dihapus saja.
+  * **Dihapus sepenuhnya**, bukan hanya dari form: kolom kamus data, tampilan dashboard SP, 24 nilai data contoh, dan pengecualian pada `UppercaseInput` ikut dicabut.
+  * **Alasan yang membuat penghapusan aman:** keempat kolom dipakai **0 perhitungan, 0 indikator dashboard, 0 parameter penilaian kondisi SP, 0 fitur peta, dan 0 uji**. Menghapusnya tidak memerahkan satu uji pun, dan itu sendiri pertanda tidak ada yang bergantung padanya.
+  * Isinya memang bukan geometri melainkan sebutan naratif seperti `Hutan lindung` atau `Sungai Benanain`, sehingga mustahil dipakai menggambar batas. `peta.js` hanya memplot titik dan tidak memiliki `polygon` maupun `geojson`.
+  * **Bentrok dokumen diselesaikan, bukan diabaikan.** `rules.md` 4a.4 sempat menulis batas wilayah sebagai hal yang "wajib disimpan", diikuti `prd.md` dan `workflow.md`. Ketiganya disunting agar tidak menjanjikan isian yang sudah tidak ada.
+  * **Nilainya dokumenter, dan itu diakui.** Keempat kolom menyalin isi berkas penetapan SP; kegunaannya sebagai arsip, bukan sebagai data yang diolah. Bila dinas kelak menyatakan memerlukannya, jalan mengembalikannya jelas: tambahkan kembali 4 kolom pada kamus data 3.6, satu bagian pada `sp/form`, dan satu blok tampilan pada `dashboard/sp`. Riwayat ini sengaja ditulis rinci agar keputusan dapat dibalik tanpa menebak-nebak.
+  * Keputusan lama 2026-08-11 yang melebur `koordinat_lokasi_sp` menjadi empat kolom ini **tetap benar pada bagian peleburannya**; yang keliru adalah menyimpan isinya sama sekali. Catatan pada bagian 1a.3 ditandai dicabut, bukan dihapus.
 - Bagaimana kalau topik pengaduan warga bisa ditautkan ke inventaris, fasilitas, dan infrastruktur SP? Begitupun juga ditautkan ke poktan, alsintan, saprotan, hasil panen, rumah transmigran? Mungkin ini yg menautkannya admin? Atau masyarakat?
 - [done] Tambah dokumen pendukung pada form tambah dan ubah pada halaman Satuan Permukiman, inventaris, fasilitas, infrastruktur, kelompok tani, alsintan, saprotan
   * **Bukan pekerjaan baru, melainkan komponen yang belum dipasang.** Kedelapan kolom dokumen sudah lama tercatat pada `data-dictionary.md` (3.6, 4.1, 4.2, 8.1, 8.3, 8.4, dan dua kolom pada 10.1), dan `x-sim.file-upload` sudah matang serta terpakai di lima form lain. Yang tidak ada hanya isiannya.

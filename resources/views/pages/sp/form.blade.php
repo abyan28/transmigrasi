@@ -6,9 +6,11 @@
     mudah disalahpahami, sehingga keduanya diminta terpisah beserta
     penjelasannya (agents/erd.md bagian 7.0).
 
-    Batas wilayah disimpan sebagai empat teks bebas, bukan koordinat poligon,
-    karena yang tersedia di lapangan adalah sebutan batas menurut warga,
-    misalnya "berbatasan dengan Sungai Benanain".
+    Keempat isian batas wilayah dicabut 2026-08-18. Isinya berupa sebutan
+    naratif seperti "Hutan lindung", bukan koordinat, sehingga tidak pernah
+    dipakai perhitungan, indikator, maupun peta mana pun; satu-satunya
+    kegunaannya adalah menyalin isi berkas penetapan. Rinciannya pada
+    `notes.md` bagian 6.
 
     Nama kolom mengikuti agents/data-dictionary.md bagian 3.6.
 --}}
@@ -117,30 +119,14 @@
         </div>
     </section>
 
-    {{-- Bagian 3: koordinat dan batas --}}
+    {{-- Bagian 3: titik lokasi --}}
     <section>
-        <h3 class="{{ $kelasBagian }}">Letak dan Batas Wilayah</h3>
+        <h3 class="{{ $kelasBagian }}">Titik Lokasi</h3>
 
         <div class="mt-3">
             <x-sim.koordinat-input :lintang="old('lintang', $data['lintang'] ?? null)"
                 :bujur="old('bujur', $data['bujur'] ?? null)" />
         </div>
-
-        <div class="mt-4 grid gap-4 sm:grid-cols-2">
-            @foreach (['utara' => 'Batas Utara', 'timur' => 'Batas Timur', 'selatan' => 'Batas Selatan', 'barat' => 'Batas Barat'] as $arah => $label)
-                <div>
-                    <label for="{{ $awalan }}_batas_{{ $arah }}" class="{{ $kelasLabel }}">{{ $label }}</label>
-                    <input type="text" id="{{ $awalan }}_batas_{{ $arah }}" name="batas_{{ $arah }}"
-                        value="{{ old('batas_' . $arah, $data['batas_' . $arah] ?? '') }}" maxlength="100"
-                        placeholder="Contoh: Sungai Benanain" class="{{ $kelasKontrol }}" />
-                </div>
-            @endforeach
-        </div>
-
-        <p class="mt-3 text-theme-xs text-gray-500 dark:text-gray-400">
-            Batas ditulis sebagai sebutan yang dikenal warga, bukan koordinat, sebab itulah bentuk yang
-            tersedia pada berkas penetapan dan yang dipahami di lapangan.
-        </p>
     </section>
 
     {{--

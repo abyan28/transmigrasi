@@ -161,7 +161,7 @@ Tersedia dua jalur. Keduanya berakhir sama: kata sandi sementara yang wajib diga
 10. Seluruh langkah tercatat pada audit log dengan aksi `Reset Kata Sandi`, beserta jalur yang dipakai. Pemulihan lewat jalur A tercatat atas nama pemilik akun itu sendiri.
 
 ### 3.2 Input Data Awal
-1. Admin menyiapkan data master wilayah dan SP beserta koordinat, batas wilayah, inventaris, dan fasilitas, serta data master satuan beserta faktor konversinya.
+1. Admin menyiapkan data master wilayah dan SP beserta koordinat, inventaris, dan fasilitas, serta data master satuan beserta faktor konversinya.
 2. Data transmigran dan keluarga diinput, lalu ditautkan ke satu rumah kosong dan ke lahan miliknya.
 3. Data lahan pekarangan dan lahan usaha diisi beserta dokumen status lahan (HPL/SHM).
 4. Profil poktan, daftar anggota, alsintan, dan saprotan dicatat.
@@ -202,7 +202,7 @@ Untuk lokasi dengan sinyal lemah:
 1. Admin membuat data wilayah administratif mengikuti hierarki provinsi → kabupaten → kecamatan → desa.
 2. Admin mendaftarkan **kawasan transmigrasi** di bawah kabupaten, beserta tahun penetapan, nomor SK, dan luas total.
 3. Admin mendaftarkan **SP** di bawah kawasan tersebut, sekaligus memilih desa tempat SP berdiri. Kecamatan terisi otomatis mengikuti desa yang dipilih, tidak diinput ulang.
-4. Isi titik koordinat SP beserta batas wilayah Utara, Timur, Selatan, dan Barat.
+4. Isi titik koordinat SP.
 5. Isi luas lahan SP, tetapkan penanggung jawab data, dan unggah dokumen pendukung.
 6. Data SP menjadi acuan seluruh fitur lain dan dasar filter dashboard. Rekap dapat dipecah per kawasan, kecamatan, desa, maupun SP, seluruhnya dihitung lewat SP.
 

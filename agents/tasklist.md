@@ -266,7 +266,7 @@ Dikerjakan **dua gelombang**. Gelombang 1 membangun alur inti agar dapat divalid
   * Verifikasi `chart-config.js` memakai Node: **12 dari 12 lulus** (format angka, penggabungan rekursif, kesesuaian palet)
 - [✓] ✅ Task 2.6 - Halaman drill-down per SP `[Sedang]` (Selesai)
   * Membuat `resources/views/pages/dashboard/sp.blade.php` — halaman rincian satu satuan permukiman, tujuan penelusuran dari dashboard kawasan (`rules.md` §11 poin 5)
-  * Komposisi **dua kolom asimetris** mengikuti pola halaman detail (`ui-spec.md` §2.2): profil SP menetap di kiri (kode, tahun penempatan, luas, keterisian, 4 batas wilayah, koordinat), indikator dan rincian di kanan. Sengaja dibedakan dari grid grafik dashboard kawasan agar pengguna tahu sedang berada di jenis halaman berbeda
+  * Komposisi **dua kolom asimetris** mengikuti pola halaman detail (`ui-spec.md` §2.2): profil SP menetap di kiri (kode, tahun penempatan, luas, keterisian, koordinat), indikator dan rincian di kanan. Sengaja dibedakan dari grid grafik dashboard kawasan agar pengguna tahu sedang berada di jenis halaman berbeda
   * **Enam tab rincian** memakai `hashTabs()`: transmigran, rumah, lahan, panen, pengaduan, infrastruktur. Setiap label memuat jumlah baris, dan tab tanpa data menampilkan keadaan kosong, bukan tabel kosong
   * Dua grafik ringkas khusus SP: pertumbuhan KK dan volume panen per tahun
   * Navigasi pindah antar SP di bagian atas, agar petugas tidak perlu kembali ke dashboard lebih dulu
@@ -632,7 +632,7 @@ Dikerjakan atas daftar revisi pemilik proyek pada `notes.md` bagian 6, dibagi ti
 
 - [ ] Task 4.1 - Migration dan model wilayah bertingkat + seeder 6 desa/4 kecamatan `[Sedang]`
   * Tampilan form sudah selesai pada Task 2.30
-- [ ] Task 4.2 - CRUD satuan permukiman (SP) beserta koordinat dan batas wilayah `[Sedang]`
+- [ ] Task 4.2 - CRUD satuan permukiman (SP) beserta koordinat `[Sedang]`
   * Tampilan form sudah selesai pada Task 2.30; tersisa migration, model, dan penyimpanan
 - [ ] Task 4.3 - CRUD inventaris SP (nama, tahun, sumber dana, status penyerahan, dokumen) `[Sedang]`
   * Tampilan form sudah selesai pada Task 2.30

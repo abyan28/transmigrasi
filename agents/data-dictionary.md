@@ -320,15 +320,11 @@ Satuan Permukiman (SP), unit lokus utama sistem. Seluruh data operasional bermua
 | `jumlah_kk_rencana` | `INT UNSIGNED` | YA | | Daya tampung rencana, pembanding realisasi |
 | `lintang` | `DECIMAL(10,7)` | YA | | Titik pusat SP |
 | `bujur` | `DECIMAL(10,7)` | YA | | Titik pusat SP |
-| `batas_utara` | `VARCHAR(255)` | YA | | Deskripsi batas wilayah |
-| `batas_timur` | `VARCHAR(255)` | YA | | Deskripsi batas wilayah |
-| `batas_selatan` | `VARCHAR(255)` | YA | | Deskripsi batas wilayah |
-| `batas_barat` | `VARCHAR(255)` | YA | | Deskripsi batas wilayah |
 | `dokumen_pendukung` | `VARCHAR(255)` | YA | | Path berkas |
 | `keterangan` | `TEXT` | YA | | Catatan bebas |
 
 **Catatan:**
-- Empat kolom `batas_*` menggantikan tabel `koordinat_lokasi_sp` pada SQL referensi. Isinya deskripsi seperti "Berbatasan dengan Desa Naet", bukan koordinat (`erd.md` §8.2 nomor 17).
+- Empat kolom `batas_utara`, `batas_timur`, `batas_selatan`, dan `batas_barat` **dicabut 2026-08-18**. Keempatnya menggantikan tabel `koordinat_lokasi_sp` pada SQL referensi, tetapi isinya berupa sebutan naratif seperti "Berbatasan dengan Desa Naet", bukan koordinat, sehingga tidak pernah dipakai perhitungan, indikator dashboard, penilaian kondisi SP, maupun peta mana pun. Rinciannya pada `notes.md` bagian 6.
 - **Kolom `kecamatan_id` sengaja tidak ada.** Kecamatan dibaca lewat rantai `desa_id → desa → kecamatan`. Menyimpannya secara terpisah membuka peluang data tidak sinkron bila desa berpindah kecamatan.
 - SP menyimpan **dua** foreign key wilayah yang saling melengkapi: `kawasan_id` menjawab "bagian dari program mana", `desa_id` menjawab "berdiri di wilayah administratif mana". Keduanya wajib diisi.
 

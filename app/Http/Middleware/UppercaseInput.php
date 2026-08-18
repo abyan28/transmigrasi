@@ -57,10 +57,6 @@ class UppercaseInput
         'alasan_tidak_dihuni',
         'kendala',
         'tujuan_pemanfaatan',
-        'batas_utara',
-        'batas_timur',
-        'batas_selatan',
-        'batas_barat',
     ];
 
     /**

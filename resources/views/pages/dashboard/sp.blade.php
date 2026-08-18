@@ -121,16 +121,6 @@
                     </div>
                 </div>
 
-                <h3 class="mt-6 text-theme-sm font-semibold text-gray-800 dark:text-white/90">Batas Wilayah</h3>
-                <dl class="mt-3 space-y-2 text-theme-xs">
-                    @foreach (['Utara' => 'batas_utara', 'Timur' => 'batas_timur', 'Selatan' => 'batas_selatan', 'Barat' => 'batas_barat'] as $arah => $kolom)
-                        <div class="flex justify-between gap-3">
-                            <dt class="shrink-0 text-gray-500 dark:text-gray-400">{{ $arah }}</dt>
-                            <dd class="text-right text-gray-700 dark:text-gray-300">{{ $sp[$kolom] ?? '-' }}</dd>
-                        </div>
-                    @endforeach
-                </dl>
-
                 <h3 class="mt-6 text-theme-sm font-semibold text-gray-800 dark:text-white/90">Titik Koordinat</h3>
                 <p class="mt-2 text-theme-xs tabular-nums text-gray-700 dark:text-gray-300">
                     {{ number_format($sp['lintang'], 6, '.', '') }}, {{ number_format($sp['bujur'], 6, '.', '') }}

@@ -132,7 +132,7 @@ Sistem ini dirancang untuk menyelesaikan masalah utama berikut:
 - mengelola data wilayah administratif: provinsi, kabupaten, kecamatan, dan desa;
 - menambah data **kawasan transmigrasi** di bawah kabupaten, beserta tahun penetapan, nomor SK, dan luas total;
 - menambah data **SP (Satuan Permukiman)** di bawah kawasan, dengan menautkan SP ke desa tempatnya berdiri;
-- menyimpan pada tiap SP: nama SP, kecamatan dan desa, titik koordinat, batas wilayah, luas lahan, dan penanggung jawab data;
+- menyimpan pada tiap SP: nama SP, kecamatan dan desa, titik koordinat, luas lahan, dan penanggung jawab data;
 - menyimpan data inventaris yg dimiliki SP beserta status penyerahan dan perolehannya;
 - menyimpan data fasilitas SP;
 - Data master menjadi acuan untuk fitur lain;

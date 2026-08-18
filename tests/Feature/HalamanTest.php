@@ -3567,3 +3567,33 @@ it('menjumlahkan luas lahan usaha dari seluruh tahapnya', function () {
         ->assertOk()
         ->assertSee(number_format($luasUsaha, 2, ',', '.'));
 });
+
+it('mencabut batas wilayah SP dari seluruh sumber', function () {
+    // Keempat kolom `batas_*` menyimpan sebutan naratif seperti "Hutan
+    // lindung", bukan koordinat, sehingga tidak pernah dipakai perhitungan,
+    // indikator dashboard, penilaian kondisi SP, maupun peta. Satu-satunya
+    // kegunaannya menyalin isi berkas penetapan.
+    //
+    // Uji ini menjaga agar isian yang sudah dicabut tidak kembali sebagian:
+    // form tanpa kolom, atau kolom tanpa form, sama-sama menyesatkan.
+    $arah = ['batas_utara', 'batas_timur', 'batas_selatan', 'batas_barat'];
+
+    $formSp = $this->get(route('sp.index'))->assertOk()->getContent();
+    $rincianSp = $this->get(route('dashboard.sp', 1))->assertOk()->getContent();
+
+    foreach ($arah as $kolom) {
+        expect($formSp)->not->toContain('name="' . $kolom . '"')
+            ->and($rincianSp)->not->toContain($kolom);
+    }
+
+    // Data contoh dan kamus data ikut bersih, agar tidak ada kolom yatim yang
+    // tersimpan tanpa pernah dapat diisi.
+    foreach (DummyData::satuanPermukiman() as $sp) {
+        foreach ($arah as $kolom) {
+            expect($sp)->not->toHaveKey($kolom);
+        }
+    }
+
+    expect(file_get_contents(base_path('agents/data-dictionary.md')))
+        ->not->toContain('| `batas_utara` |');
+});
