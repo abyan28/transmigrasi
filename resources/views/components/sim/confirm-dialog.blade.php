@@ -43,11 +43,17 @@
         buka(detail) {
             this.aksi = detail.aksi ?? '';
             this.terbuka = true;
+            window.kunciGulir?.kunci();
             this.$nextTick(() => this.$refs.tombolBatal?.focus());
         },
         tutup() {
+            if (! this.terbuka) {
+                return;
+            }
+
             this.terbuka = false;
             this.mengirim = false;
+            window.kunciGulir?.lepas();
         },
     }"
     x-on:buka-konfirmasi.window="if ($event.detail.nama === '{{ $nama }}') buka($event.detail)"

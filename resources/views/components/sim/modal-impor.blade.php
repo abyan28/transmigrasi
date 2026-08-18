@@ -48,7 +48,7 @@
             this.langkah = 1;
             this.berkas = null;
             this.galat = '';
-            document.body.classList.add('overflow-hidden');
+            window.kunciGulir?.kunci();
 
             this.$nextTick(() => {
                 this.$refs.panel?.querySelector('a, button')?.focus();
@@ -56,9 +56,13 @@
         },
 
         tutup() {
+            if (! this.terbuka) {
+                return;
+            }
+
             this.terbuka = false;
             this.memproses = false;
-            document.body.classList.remove('overflow-hidden');
+            window.kunciGulir?.lepas();
         },
 
         pilih(peristiwa) {

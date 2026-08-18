@@ -37,7 +37,7 @@
             async buka() {
                 this.terbuka = true;
                 this.gagal = false;
-                document.body.classList.add('overflow-hidden');
+                window.kunciGulir?.kunci();
 
                 await this.$nextTick();
 
@@ -55,8 +55,12 @@
             },
 
             tutup() {
+                if (! this.terbuka) {
+                    return;
+                }
+
                 this.terbuka = false;
-                document.body.classList.remove('overflow-hidden');
+                window.kunciGulir?.lepas();
                 this.peta?.musnahkan();
                 this.peta = null;
             },

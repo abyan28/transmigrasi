@@ -62,12 +62,16 @@
         buka(detail) {
             this.akun = detail.akun ?? null;
             this.terbuka = true;
-            document.body.classList.add('overflow-hidden');
+            window.kunciGulir?.kunci();
             this.$nextTick(() => this.$refs.tombolTutup?.focus());
         },
         tutup() {
+            if (! this.terbuka) {
+                return;
+            }
+
             this.terbuka = false;
-            document.body.classList.remove('overflow-hidden');
+            window.kunciGulir?.lepas();
         },
     }"
     x-on:buka-detail-pengguna.window="if ($event.detail.nama === '{{ $nama }}') buka($event.detail)"

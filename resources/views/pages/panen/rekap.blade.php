@@ -17,7 +17,11 @@
         use App\Support\DummyData;
 
         $semua = DummyData::hasilPanen();
-        $kelompok = request('kelompok', 'sp');
+
+        // Dasar pengelompokan datang dari dua arah: segmen rute yang menjadi
+        // tautan tetap, dan kueri `?kelompok=` milik tautan lama. Yang pertama
+        // membuat keempat tab tetap dapat dibuka pada build statis.
+        $kelompok = $kelompokRute ?? request('kelompok', 'sp');
 
         // Menyusun rekap menurut kolom pengelompokan yang dipilih.
         $peta = [];
@@ -36,12 +40,20 @@
                     'jumlah_catatan' => 0,
                     'volume_ton' => 0.0,
                     'nilai_jual' => 0.0,
+                    // Hanya terpakai pada rekap per petani. Dihimpun sebagai
+                    // himpunan agar tetap benar bila kelak satu petani memiliki
+                    // lahan di lebih dari satu satuan permukiman.
+                    'satuan_permukiman' => [],
                 ];
             }
 
             $peta[$kunci]['jumlah_catatan']++;
             $peta[$kunci]['volume_ton'] += DummyData::keTon($p['volume'], $p['satuan']);
             $peta[$kunci]['nilai_jual'] += ($p['harga_jual'] ?? 0) * $p['volume'];
+
+            if (! in_array($p['satuan_permukiman'], $peta[$kunci]['satuan_permukiman'], true)) {
+                $peta[$kunci]['satuan_permukiman'][] = $p['satuan_permukiman'];
+            }
         }
 
         // Diurutkan dari volume terbesar agar yang paling berpengaruh terbaca dulu.
@@ -82,7 +94,7 @@
         class="mb-6 flex flex-wrap gap-2 rounded-2xl border border-gray-200 bg-white p-2 dark:border-gray-800 dark:bg-white/[0.03]">
         @foreach ($labelKelompok as $nilai => $label)
             @php $aktif = $kelompok === $nilai; @endphp
-            <a href="{{ route('panen.rekap', ['kelompok' => $nilai]) }}"
+            <a href="{{ route('panen.rekap.kelompok', ['kelompok' => $nilai]) }}"
                 @if ($aktif) aria-current="page" @endif
                 class="rounded-lg px-3 py-2 text-theme-sm font-medium transition focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 {{ $aktif
                     ? 'bg-brand-500 text-white'
@@ -114,6 +126,17 @@
                             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">
                                 {{ $labelKelompok[$kelompok] ?? 'Satuan Permukiman' }}
                             </th>
+                            {{--
+                                Asal satuan permukiman hanya ditampilkan pada rekap per petani.
+                                Pada rekap lain kolom ini mubazir: per SP sudah menjadi kolom
+                                pertama, sedangkan per komoditas dan per musim menghimpun data
+                                lintas SP sehingga isinya selalu daftar panjang tanpa makna.
+                            --}}
+                            @if ($kelompok === 'petani')
+                                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">
+                                    Satuan Permukiman
+                                </th>
+                            @endif
                             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">
                                 Jumlah Catatan
                             </th>
@@ -131,6 +154,11 @@
                                 <td class="px-5 py-3 text-theme-sm font-medium text-gray-800 dark:text-white/90">
                                     {{ $r['nama'] }}
                                 </td>
+                                @if ($kelompok === 'petani')
+                                    <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
+                                        {{ implode(', ', $r['satuan_permukiman']) }}
+                                    </td>
+                                @endif
                                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
                                     {{ number_format($r['jumlah_catatan'], 0, ',', '.') }}
                                 </td>
@@ -148,6 +176,10 @@
                     <tfoot>
                         <tr class="motif-baris-total">
                             <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">Total</td>
+                            {{-- Sel kosong penyeimbang kolom asal SP di atasnya --}}
+                            @if ($kelompok === 'petani')
+                                <td class="px-5 py-3"></td>
+                            @endif
                             <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
                                 {{ number_format($totalCatatan, 0, ',', '.') }}
                             </td>

@@ -14,6 +14,9 @@ import grafik from './chart-config';
 // Penjaga isian angka: menolak notasi ilmiah, tanda minus, dan tempelan teks
 import { pasangPenjagaAngka } from './input-angka';
 
+// Penguncian gulir selama modal terbuka
+import kunciGulir from './kunci-gulir';
+
 // Locale flatpickr disetel ke Bahasa Indonesia mengikuti locale aplikasi
 flatpickr.localize(Indonesian);
 
@@ -23,6 +26,14 @@ window.flatpickr = flatpickr;
 
 // Diekspos ke window agar dapat dipanggil dari Blade tanpa modul tambahan
 window.grafikSim = grafik;
+
+/*
+    Penguncian gulir halaman selama modal, laci, atau peta layar penuh terbuka.
+    Seluruh lapisan WAJIB memakai ini, bukan menyetel `overflow-hidden` sendiri
+    pada `<body>`: yang menggulir adalah `<html>`, sehingga penguncian pada
+    `<body>` tidak berpengaruh sama sekali. Lihat resources/js/kunci-gulir.js.
+*/
+window.kunciGulir = kunciGulir;
 
 /*
     Peta pemilih titik. Leaflet TIDAK diimpor di sini, melainkan di dalam

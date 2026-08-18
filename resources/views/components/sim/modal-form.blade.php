@@ -63,7 +63,7 @@
             this.baris = (detail && typeof detail === 'object') ? (detail.data ?? null) : null;
 
             this.terbuka = true;
-            document.body.classList.add('overflow-hidden');
+            window.kunciGulir?.kunci();
 
             this.$nextTick(() => {
                 if (this.baris) {
@@ -117,10 +117,14 @@
         },
 
         tutup() {
+            if (! this.terbuka) {
+                return;
+            }
+
             this.terbuka = false;
             this.mengirim = false;
             this.baris = null;
-            document.body.classList.remove('overflow-hidden');
+            window.kunciGulir?.lepas();
         },
     }"
     x-on:buka-modal.window="if ($event.detail === '{{ $nama }}') buka()"

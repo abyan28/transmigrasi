@@ -314,6 +314,31 @@ Rancangannya dibuat agar mudah dibongkar:
 
 **Pada Tahap 8**, ketika controller pengaduan mengambil alih: hapus atribut `x-on:submit` beserta komentar `ponytail:` di atasnya. Rute tautan tetap sebaiknya **dipertahankan**, karena hasil pencarian yang dapat ditandai dan dibagikan tetap berguna pada versi ber-backend.
 
+### 1b.6a Tiga temuan setelah penerbitan pertama (2026-08-18)
+
+**Rincian SP membalas 404 di situs terbit.** `DaftarTautanStatis` menyebut kunci `no_sp`, padahal kunci sebenarnya pada `DummyData::satuanPermukiman()` adalah `id_satuan_permukiman`. Sepuluh peta lainnya sudah benar; hanya baris ini yang salah.
+
+Yang membuatnya berbahaya bukan salah ketiknya, melainkan `isset($baris[$kunci])` yang membungkusnya. Kunci yang tidak ada membuat kondisi bernilai salah, sehingga keenam halaman **dilewati tanpa suara**: penggilasan tetap hijau, penerbitan tetap sukses, dan kekeliruannya baru muncul sebagai 404 di tangan pengguna. Pemeriksaan diganti `array_key_exists` yang melempar `RuntimeException` beserta daftar kunci yang tersedia.
+
+> **Aturan:** pada perkakas pembangkit daftar, kunci yang tidak dikenal wajib menghentikan proses. Melewati diam-diam menukar kegagalan yang terlihat saat build dengan kegagalan yang tidak terlihat sampai produksi.
+
+**Modal ikut menggulir sampai tenggelam.** Seluruh lapisan memanggil `document.body.classList.add('overflow-hidden')`. Namun `layouts/app.blade.php` menetapkan `<html class="h-full">` sedangkan `<body>` tidak diberi tinggi, sehingga elemen yang benar-benar menggulir adalah `<html>`. Penguncian pada `<body>` karena itu tidak mengunci apa pun.
+
+Polanya tersalin ke delapan berkas, dan `confirm-dialog.blade.php` yang dipakai 24 kali malah tidak mengunci sama sekali. Diganti satu modul bersama `resources/js/kunci-gulir.js`, diekspos sebagai `window.kunciGulir`, dipakai sembilan komponen.
+
+Dua hal yang membuat modul ini tidak sesederhana satu penanda:
+
+- **Penghitung lapisan.** Dialog konfirmasi dapat dibuka dari dalam modal formulir. Bila setiap penutupan langsung melepas kunci, gulir terbuka kembali padahal modal di bawahnya masih tampil.
+- **Penjaga `if (! this.terbuka) return`** pada setiap `tutup()`. Peristiwa `tutup-modal.window` disiarkan ke seluruh modal di halaman sekaligus, sehingga tanpa penjaga ini puluhan modal yang sedang tertutup ikut memanggil `lepas()` dan penghitungnya jatuh ke bawah nol.
+
+Padding pengganti lebar bilah gulir dipasang agar tata letak tidak melompat mendatar saat bilah gulir menghilang.
+
+**Tab rekap panen tidak dapat dibuka.** Pemilihnya memakai `?kelompok=`, dan kueri tidak dilayani berkas statis. Ditambahkan tautan tetap `/panen/rekap/{kelompok}` dengan pola sama seperti lacak pengaduan, dibatasi `where` pada empat nilai yang sah. Rute wajib didaftarkan **sebelum** `/panen/{id}`, sebab `routes/web.php` sudah mencatat bahwa `/panen/rekap` dapat tertangkap sebagai id.
+
+Nilai kelompoknya ditulis langsung pada `DaftarTautanStatis`, tidak dibangkitkan dari data, sebab pilihan tab ditentukan tampilan bukan isi data. Daftar itu wajib dijaga sejalan dengan batasan `where` pada rutenya.
+
+Setelah ketiganya diperbaiki, jumlah halaman terbit naik dari 113 menjadi **122**.
+
 ### 1b.7 Yang harus dilakukan saat backend masuk
 
 Begitu Tahap 3 dan seterusnya berjalan, sistem memerlukan PHP dan basis data yang hidup, sehingga **GitHub Pages tidak lagi memadai**. Yang perlu diputuskan saat itu:
@@ -453,6 +478,11 @@ Seharusnya: "Digitalisasi Monitoring Pertanian dan Tata Kelola Data Kawasan Tran
 | 2026-08-17 | Nilai `path` pada `MenuHelper` **sengaja tetap relatif** | Dipakai ganda: sebagai `href` sekaligus pembanding status menu aktif. Mengubahnya menjadi alamat lengkap akan merusak penandaan menu aktif. Yang dibungkus `url()` hanya `href`-nya di `sidebar.blade.php` |
 | 2026-08-17 | Penggilasan **diuji lengkap secara lokal** sebelum alur kerja diserahkan | Tiga cacat hanya muncul pada hasil gilasan, tidak pada uji Pest maupun tampilan localhost: `public/hot` yang membuat situs terbit tanpa gaya, 25 alamat menu telanjang, dan atribut `url` pada `stat-card`. Uji berbasis HTTP tidak memeriksa bentuk tautan pada keluaran |
 | 2026-08-17 | Tautan tetap `/lacak-pengaduan/{nomor}` **dipertahankan meski backend masuk** | Ditambahkan agar halaman lacak tetap bekerja tanpa kueri, tetapi hasil pencarian yang dapat ditandai dan dibagikan tetap berguna pada versi ber-backend. Yang dihapus pada Tahap 8 hanya pengalihan `x-on:submit` bertanda `ponytail:` |
+| 2026-08-18 | Kunci yang salah tulis pada pembangkit daftar **wajib melempar galat**, bukan dilewati | `isset()` membuat kekeliruan `no_sp` lolos tanpa jejak sehingga enam halaman rincian SP tidak pernah terbit, dan baru ketahuan sebagai 404 di tangan pengguna. Kegagalan yang terlihat saat build selalu lebih murah daripada kegagalan yang tersembunyi sampai produksi |
+| 2026-08-18 | Penguncian gulir menyasar `<html>`, **bukan `<body>`** | `<html class="h-full">` dengan `<body>` tanpa tinggi membuat elemen penggulir adalah `<html>`, sehingga `overflow-hidden` pada `<body>` tidak mengunci apa pun dan panel modal ikut terbawa naik sampai tenggelam |
+| 2026-08-18 | Penguncian gulir **dipusatkan pada satu modul**, bukan disalin ke tiap lapisan | Pola lama tersalin ke delapan berkas dan satu komponen justru terlewat tidak mengunci sama sekali. Modul bersama memakai penghitung lapisan agar modal bertumpuk tidak saling membuka kunci lebih awal |
+| 2026-08-18 | Setiap `tutup()` diberi penjaga **keadaan terbuka** | `tutup-modal.window` disiarkan ke seluruh modal di halaman sekaligus. Tanpa penjaga, puluhan modal yang sedang tertutup ikut melepas kunci dan penghitung lapisan jatuh ke bawah nol |
+| 2026-08-18 | Kolom asal SP **hanya muncul pada rekap per petani** | Pada rekap per SP kolom itu mengulang kolom pertama, sedangkan pada rekap per komoditas dan per musim isinya selalu daftar panjang lintas SP yang tidak menjawab pertanyaan apa pun. Disimpan sebagai himpunan agar tetap benar bila kelak satu petani berlahan di lebih dari satu SP |
 
 ---
 

@@ -28,16 +28,24 @@
         buka(detail) {
             this.akun = detail.akun ?? null;
             this.terbuka = true;
-            document.body.classList.add('overflow-hidden');
+            window.kunciGulir?.kunci();
             this.$nextTick(() => this.$refs.panel?.querySelector('input')?.focus());
         },
         tutup() {
+            if (! this.terbuka) {
+                return;
+            }
+
             this.terbuka = false;
             this.mengirim = false;
-            document.body.classList.remove('overflow-hidden');
+            window.kunciGulir?.lepas();
         },
         get aksi() {
-            return this.akun ? '/pengguna/' + this.akun.id_user + '/setel-sandi' : '#';
+            // Alamat dirakit dari pola milik Laravel, bukan ditulis mentah,
+            // agar tetap benar ketika sistem disajikan pada sub-path.
+            return this.akun
+                ? @js(route('pengguna.setel-sandi', ['id' => '__ID__'])).replace('__ID__', this.akun.id_user)
+                : '#';
         },
     }"
     x-on:buka-setel-sandi.window="buka($event.detail)"

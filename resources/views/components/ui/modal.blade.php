@@ -7,10 +7,13 @@
     open: @js($isOpen),
     init() {
         this.$watch('open', value => {
+            // Penguncian dipusatkan pada resources/js/kunci-gulir.js. Yang
+            // menggulir adalah `<html>`, sehingga penyetelan pada `<body>`
+            // tidak berpengaruh sama sekali.
             if (value) {
-                document.body.style.overflow = 'hidden';
+                window.kunciGulir?.kunci();
             } else {
-                document.body.style.overflow = 'unset';
+                window.kunciGulir?.lepas();
             }
         });
     }

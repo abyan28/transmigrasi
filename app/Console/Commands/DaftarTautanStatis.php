@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Support\DummyData;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Route;
+use RuntimeException;
 
 /**
  * Menuliskan seluruh alamat yang perlu digilas menjadi berkas statis.
@@ -117,16 +118,28 @@ class DaftarTautanStatis extends Command
             'saprotan' => ['saprotan', 'id_saprotan'],
             'komoditas' => ['komoditas', 'id_komoditas'],
             'infrastruktur' => ['infrastruktur', 'id_infrastruktur'],
-            'dashboard/sp' => ['satuanPermukiman', 'no_sp'],
+            'dashboard/sp' => ['satuanPermukiman', 'id_satuan_permukiman'],
         ];
 
         $hasil = [];
 
         foreach ($peta as $awalan => [$sumber, $kunci]) {
             foreach (DummyData::$sumber() as $baris) {
-                if (isset($baris[$kunci])) {
-                    $hasil[] = '/' . $awalan . '/' . $baris[$kunci];
+                // Kunci yang salah tulis WAJIB menghentikan penerbitan, bukan
+                // dilewati diam-diam. Pemeriksaan `isset` sebelumnya membuat
+                // kekeliruan `no_sp` (seharusnya `id_satuan_permukiman`) lolos
+                // tanpa jejak, sehingga enam halaman rincian SP tidak pernah
+                // ikut tergilas dan baru ketahuan sebagai 404 di situs terbit.
+                if (! array_key_exists($kunci, $baris)) {
+                    throw new RuntimeException(sprintf(
+                        'Kunci "%s" tidak ada pada DummyData::%s(). Kunci yang tersedia: %s.',
+                        $kunci,
+                        $sumber,
+                        implode(', ', array_keys($baris)),
+                    ));
                 }
+
+                $hasil[] = '/' . $awalan . '/' . $baris[$kunci];
             }
         }
 
@@ -135,6 +148,13 @@ class DaftarTautanStatis extends Command
             if (isset($baris['nomor_pengaduan'])) {
                 $hasil[] = '/lacak-pengaduan/' . $baris['nomor_pengaduan'];
             }
+        }
+
+        // Tautan tetap tab rekap panen. Nilainya terbatas dan ditentukan
+        // tampilan, bukan data, sehingga disebut langsung. Daftar ini wajib
+        // sejalan dengan batasan `where` pada rute `panen.rekap.kelompok`.
+        foreach (['sp', 'komoditas', 'musim', 'petani'] as $kelompok) {
+            $hasil[] = '/panen/rekap/' . $kelompok;
         }
 
         return $hasil;

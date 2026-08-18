@@ -337,6 +337,17 @@ Route::get('/panen/rekap', function () {
     return view('pages.panen.rekap', ['title' => 'Rekap Hasil Panen']);
 })->name('panen.rekap');
 
+// Tautan tetap per dasar pengelompokan. Membuat keempat tab dapat ditandai,
+// dibagikan, dan ikut tergilas pada build statis GitHub Pages yang tidak dapat
+// melayani kueri `?kelompok=`. Lihat agents/notes.md bagian 1b.
+// Wajib berada SEBELUM /panen/{id} agar tidak tertangkap sebagai id.
+Route::get('/panen/rekap/{kelompok}', function (string $kelompok) {
+    return view('pages.panen.rekap', [
+        'title' => 'Rekap Hasil Panen',
+        'kelompokRute' => $kelompok,
+    ]);
+})->where('kelompok', 'sp|komoditas|musim|petani')->name('panen.rekap.kelompok');
+
 Route::get('/panen/{id}', function (int $id) {
     $data = collect(\App\Support\DummyData::hasilPanen())->firstWhere('id_hasil_panen', $id);
 

@@ -34,15 +34,19 @@
         buka(detail) {
             this.baris = detail.data ?? null;
             this.terbuka = true;
-            document.body.classList.add('overflow-hidden');
+            window.kunciGulir?.kunci();
             this.$nextTick(() => this.$refs.panel?.querySelector('textarea')?.focus());
         },
 
         tutup() {
+            if (! this.terbuka) {
+                return;
+            }
+
             this.terbuka = false;
             this.mengirim = false;
             this.baris = null;
-            document.body.classList.remove('overflow-hidden');
+            window.kunciGulir?.lepas();
         },
 
         get statusSekarang() {

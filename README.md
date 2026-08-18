@@ -30,12 +30,12 @@ simpan, ubah, dan hapus saat ini mengembalikan pesan tanpa menulis apa pun.
 
 | | |
 |---|---|
-| Halaman | 70 |
-| Komponen bersama | 41 |
+| Halaman | 69 |
+| Komponen bersama | 44 |
 | Tata letak | 6 |
-| Rute | 119 (49 GET) |
+| Rute | 123 (50 GET) |
 | Enum | 31 |
-| Pengujian | 293 uji Pest, 1360 pernyataan |
+| Pengujian | 413 uji Pest, 1926 pernyataan |
 
 ## Teknologi
 
@@ -123,7 +123,7 @@ header `X-Forwarded-*`, sehingga `asset()` dan `url()` mengikuti skema dan host 
 & "C:\xampp\php\php.exe" vendor\bin\pest
 ```
 
-Hasil terakhir: 357 lulus, 1562 pernyataan.
+Hasil terakhir: 413 lulus, 1926 pernyataan.
 
 ## Penerbitan ke GitHub Pages
 
@@ -132,7 +132,7 @@ https://abyan28.github.io/transmigrasi/ dan diperbarui otomatis setiap `git push
 
 Alur kerja `.github/workflows/deploy.yml` menjalankan aplikasi sebentar di runner, menggilas
 setiap alamat dari `php artisan sim:tautan-statis` menjadi HTML, lalu menerbitkannya. Per
-2026-08-17 tercatat 113 halaman.
+2026-08-18 tercatat 122 halaman.
 
 Pengaturan sekali di awal: **Settings → Pages → Source: GitHub Actions**.
 
@@ -159,12 +159,12 @@ app/
   View/           kelas komponen Blade
 resources/
   css/app.css     design token pada blok @theme
-  js/             app.js, chart-config.js, input-angka.js, peta.js
+  js/             app.js, chart-config.js, input-angka.js, kunci-gulir.js, peta.js
   views/
-    components/   42 komponen bersama
+    components/   44 komponen bersama
     layouts/      6 tata letak
-    pages/        70 halaman
-routes/web.php    122 rute
+    pages/        69 halaman
+routes/web.php    123 rute
 agents/           dokumen acuan: prd, rules, workflow, erd, ui-spec, tasklist, notes
 refs/             berkas rujukan, bukan bagian aplikasi
 ```

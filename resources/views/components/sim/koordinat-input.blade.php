@@ -84,7 +84,7 @@
         async bukaPeta() {
             this.petaTerbuka = true;
             this.petaGagal = false;
-            document.body.classList.add('overflow-hidden');
+            window.kunciGulir?.kunci();
 
             await this.$nextTick();
 
@@ -114,9 +114,13 @@
         },
 
         tutupPeta() {
+            if (! this.petaTerbuka) {
+                return;
+            }
+
             this.petaTerbuka = false;
             this.petaSiap = false;
-            document.body.classList.remove('overflow-hidden');
+            window.kunciGulir?.lepas();
 
             this.peta?.musnahkan();
             this.peta = null;
