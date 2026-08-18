@@ -3355,3 +3355,118 @@ it('menetapkan keanggotaan poktan dari sisi poktan saja', function () {
 
     expect($poktan)->toContain('name="transmigran_id"');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Dokumen pendukung dan pilihan berdaftar panjang
+|--------------------------------------------------------------------------
+*/
+
+it('menyediakan unggahan dokumen pada modul yang kolomnya sudah ada', function (string $jalur, string $isian) {
+    // Kedelapan kolom dokumen sudah lama tercatat pada data-dictionary.md,
+    // tetapi tujuh form tidak pernah punya isiannya. Akibatnya SK pembentukan
+    // poktan dan berita acara penyaluran saprotan tidak dapat diunggah ke mana
+    // pun, padahal justru keduanya yang diminta saat pemeriksaan.
+    $this->get($jalur)->assertOk()->assertSee('name="' . $isian . '"', false);
+})->with([
+    ['/sp', 'dokumen_pendukung'],
+    ['/sp/inventaris', 'dokumen_pendukung'],
+    ['/sp/fasilitas', 'dokumen_pendukung'],
+    ['/infrastruktur', 'dokumen_pendukung'],
+    // Infrastruktur punya dua kolom terpisah: foto merekam kondisi lapangan,
+    // dokumen menyimpan berkas administratifnya.
+    ['/infrastruktur', 'foto'],
+    ['/poktan', 'dokumen_pendukung'],
+    ['/alsintan', 'dokumen_pendukung'],
+    ['/saprotan', 'dokumen_pendukung'],
+]);
+
+it('mengirim unggahan lewat form yang benar-benar menerima berkas', function () {
+    // Tanpa enctype multipart, berkas yang dipilih petugas tidak pernah
+    // terkirim dan kegagalannya berlangsung diam-diam: form tetap tersimpan,
+    // hanya berkasnya yang hilang.
+    expect(file_get_contents(resource_path('views/components/sim/modal-form.blade.php')))
+        ->toContain('enctype="multipart/form-data"');
+});
+
+it('menyediakan pencarian pada pilihan yang daftarnya panjang', function () {
+    // Data contoh hanya berisi 8 transmigran sehingga select biasa masih
+    // nyaman, tetapi PRD menyebut sekitar 1.140 kepala keluarga di kawasan
+    // ini. Menggulir 1.140 baris untuk mencari satu nama adalah pekerjaan
+    // yang tidak akan dilakukan siapa pun dengan sabar.
+    foreach (['/poktan', '/alsintan', '/lahan', '/panen'] as $jalur) {
+        $this->get($jalur)->assertOk()->assertSee('Ketik untuk menyaring daftar');
+    }
+});
+
+it('tidak memasang kotak pencarian pada daftar yang masih pendek', function () {
+    // Kotak pencarian di atas empat pilihan justru menambah satu benda yang
+    // harus dilewati, bukan mempercepat. Ambangnya dihitung dari jumlah opsi
+    // yang benar-benar dirender, bukan disetel per halaman.
+    expect(count(DummyData::transmigranTanpaRumah()))->toBeLessThan(8);
+
+    $this->get('/rumah')->assertOk()->assertDontSee('Ketik untuk menyaring daftar');
+});
+
+it('mengirim nilai lewat isian bernama kolomnya, bukan lewat panel', function () {
+    // Panel hanyalah antarmuka. Nilai yang terkirim berasal dari isian bernama
+    // sama seperti kolomnya, sehingga Form Request pada tahap backend tidak
+    // perlu tahu komponen ini ada.
+    //
+    // Isian itu BUKAN `type="hidden"`: peramban mengabaikan `required` pada
+    // isian tersembunyi, sehingga form akan terkirim tanpa peringatan meski
+    // isian wajib masih kosong. Dipakai `sr-only` agar tetap dapat divalidasi.
+    $isi = $this->get('/lahan')->assertOk()->getContent();
+
+    expect($isi)->toContain('name="transmigran_id"')
+        ->and($isi)->toMatch('/name="transmigran_id"[^>]*class="sr-only"/');
+});
+
+it('menyediakan cadangan tanpa JavaScript pada pilihan berpanel', function () {
+    // Sinyal di lokus tidak selalu stabil, dan form yang mustahil diisi karena
+    // satu berkas gagal diunduh adalah kegagalan yang tidak perlu. Isi
+    // <noscript> hanya diuraikan peramban ketika JavaScript benar-benar mati.
+    $isi = $this->get('/lahan')->assertOk()->getContent();
+
+    expect($isi)->toContain('<noscript>')
+        // Cadangannya berupa select asli yang tetap membawa nama kolom.
+        ->and($isi)->toMatch('/<noscript>.*?<select name="transmigran_id"/s');
+});
+
+it('menandai pilihan berpanel dengan peran ARIA yang benar', function () {
+    // Tidak ada preseden combobox di repositori ini, sehingga perannya ditulis
+    // eksplisit: tanpa role dan aria-expanded, pembaca layar hanya mengumumkan
+    // sebuah tombol tanpa memberi tahu bahwa ada daftar yang dapat dibuka
+    // (ANTISLOP-ID R-32).
+    $isi = $this->get('/lahan')->assertOk()->getContent();
+
+    expect($isi)->toContain('role="combobox"')
+        ->and($isi)->toContain('role="listbox"')
+        ->and($isi)->toContain('role="option"')
+        ->and($isi)->toContain('aria-haspopup="listbox"');
+});
+
+it('mendefinisikan x-cloak secara global', function () {
+    // Sebelum 2026-08-17 aturan ini hanya ada inline di components/ui/modal,
+    // dan komponen itu tidak dipakai satu halaman pun. Akibatnya 96 pemakaian
+    // x-cloak di repositori tidak berfungsi: panel dan modal sempat berkedip
+    // terlihat setiap kali halaman dimuat.
+    expect(file_get_contents(resource_path('css/app.css')))
+        ->toMatch('/\[x-cloak\]\s*\{/');
+});
+
+it('tidak menyentuh document.body sebelum DOM siap', function () {
+    // Skrip tema berjalan di dalam <head>, saat document.body belum ada.
+    // Versi sebelumnya melempar "Cannot read properties of null" pada setiap
+    // pemuatan halaman; galatnya tidak menghentikan apa pun, tetapi membanjiri
+    // konsol dan menyamarkan galat lain yang benar-benar penting.
+    foreach (['layouts/app', 'layouts/fullscreen-layout'] as $berkas) {
+        $sumber = file_get_contents(resource_path("views/{$berkas}.blade.php"));
+
+        // Ambil hanya skrip anti-kedip yang berada di dalam <head>.
+        preg_match('/const savedTheme.*?\}\)\(\);/s', $sumber, $cocok);
+
+        expect($cocok)->not->toBeEmpty("Skrip tema tidak ditemukan pada {$berkas}");
+        expect($cocok[0])->toContain('DOMContentLoaded');
+    }
+});

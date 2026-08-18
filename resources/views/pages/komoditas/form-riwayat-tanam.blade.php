@@ -25,20 +25,12 @@
 <div class="space-y-6">
     <div class="grid gap-4 sm:grid-cols-2">
         <div class="sm:col-span-2">
-            <label for="{{ $awalan }}_lahan_riwayat" class="{{ $kelasLabel }}">Lahan<span class="text-error-500">*</span></label>
-            <select id="{{ $awalan }}_lahan_riwayat" name="lahan_id" required class="{{ $kelasKontrol }}">
-                <option value="">Pilih lahan</option>
-                @foreach ($daftarLahan as $l)
-                    <option value="{{ $l['id_lahan'] }}"
-                        @selected((string) old('lahan_id', $data['lahan_id'] ?? '') === (string) $l['id_lahan'])>
-                        {{ $l['kode_lahan'] }} &mdash; {{ $l['pemilik'] }} ({{ $l['satuan_permukiman'] }})
-                    </option>
-                @endforeach
-            </select>
-            <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
-                Lahan menentukan lokasi produksi. Hasil panen membaca satuan permukimannya lewat catatan ini,
-                bukan menyimpannya sendiri.
-            </p>
+            <x-sim.pilih-cari nama="lahan_id" label="Lahan" :wajib="true"
+                :awalan="$awalan" :opsi="$daftarLahan" kunci="id_lahan"
+                teks="kode_lahan" keterangan-opsi="pemilik, satuan_permukiman"
+                :terpilih="old('lahan_id', $data['lahan_id'] ?? null)"
+                placeholder="Pilih lahan"
+                keterangan="Lahan menentukan lokasi produksi. Hasil panen membaca satuan permukimannya lewat catatan ini, bukan menyimpannya sendiri." />
         </div>
 
         <div>

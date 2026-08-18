@@ -129,19 +129,14 @@
             </div>
 
             <div x-show="kepemilikan === @js(KepemilikanAlsintan::Pribadi->value)" x-cloak x-transition>
-                <label for="{{ $awalan }}_transmigran_id" class="{{ $kelasLabel }}">
-                    Transmigran Pemilik<span class="text-error-500">*</span>
-                </label>
-                <select id="{{ $awalan }}_transmigran_id" name="transmigran_id" class="{{ $kelasKontrol }}"
-                    :required="kepemilikan === @js(KepemilikanAlsintan::Pribadi->value)">
-                    <option value="">Pilih transmigran</option>
-                    @foreach ($daftarTransmigran as $t)
-                        <option value="{{ $t['id_transmigran'] }}"
-                            @selected((string) old('transmigran_id', $data['transmigran_id'] ?? '') === (string) $t['id_transmigran'])>
-                            {{ $t['nama_kepala_keluarga'] }} &mdash; {{ $t['satuan_permukiman'] }}
-                        </option>
-                    @endforeach
-                </select>
+                {{-- Wajib hanya saat kepemilikan Pribadi, sebab bagian ini
+                     ikut tersembunyi untuk alsintan bantuan poktan. --}}
+                <x-sim.pilih-cari nama="transmigran_id" label="Transmigran Pemilik" :wajib="true"
+                    :awalan="$awalan" :opsi="$daftarTransmigran" kunci="id_transmigran"
+                    teks="nama_kepala_keluarga" keterangan-opsi="satuan_permukiman"
+                    :terpilih="old('transmigran_id', $data['transmigran_id'] ?? null)"
+                    placeholder="Pilih transmigran"
+                    :required="'kepemilikan === ' . json_encode(KepemilikanAlsintan::Pribadi->value)" />
             </div>
 
             <div>
@@ -157,6 +152,21 @@
                     @endforeach
                 </select>
             </div>
+        </div>
+    </section>
+
+    {{--
+        Dokumen pendukung. Kolomnya sudah ada pada data-dictionary.md 8.3
+        tetapi belum pernah punya isian, sehingga bukti penyerahan alsintan
+        bantuan tidak dapat diunggah ke mana pun.
+    --}}
+    <section>
+        <h3 class="{{ $kelasBagian }}">Dokumen Pendukung</h3>
+        <div class="mt-3">
+            <x-sim.file-upload nama="dokumen_pendukung" label="Dokumen atau Foto Alat"
+                nama-dokumen="Dokumen Alsintan" :nama-pemilik="$data['nama_alat'] ?? null"
+                :berkas-saat-ini="$data['dokumen_pendukung'] ?? null"
+                keterangan="Berita acara penyerahan, bukti pembelian, atau foto alat." />
         </div>
     </section>
 </div>

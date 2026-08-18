@@ -39,22 +39,12 @@
             </div>
 
             <div>
-                <label for="{{ $awalan }}_transmigran_id" class="{{ $kelasLabel }}">
-                    Pemilik<span class="text-error-500">*</span>
-                </label>
-                <select id="{{ $awalan }}_transmigran_id" name="transmigran_id" required
-                    class="{{ $kelasKontrol }}">
-                    <option value="">Pilih kepala keluarga</option>
-                    @foreach (DummyData::transmigran() as $kk)
-                        <option value="{{ $kk['id_transmigran'] }}"
-                            @selected(($data['pemilik'] ?? null) === $kk['nama_kepala_keluarga'])>
-                            {{ $kk['nama_kepala_keluarga'] }} ({{ $kk['nik'] }})
-                        </option>
-                    @endforeach
-                </select>
-                <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
-                    Satu keluarga boleh memiliki lebih dari satu lahan.
-                </p>
+                <x-sim.pilih-cari nama="transmigran_id" label="Pemilik" :wajib="true"
+                    :awalan="$awalan" :opsi="DummyData::transmigran()" kunci="id_transmigran"
+                    teks="nama_kepala_keluarga" keterangan-opsi="nik" gaya="kurung"
+                    :terpilih="old('transmigran_id', $data['transmigran_id'] ?? null)"
+                    placeholder="Pilih kepala keluarga"
+                    keterangan="Satu keluarga boleh memiliki lebih dari satu lahan." />
             </div>
 
             <div>

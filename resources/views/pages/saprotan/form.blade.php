@@ -178,4 +178,20 @@
             </div>
         </div>
     </section>
+
+    {{--
+        Dokumen pendukung. Kolomnya sudah ada pada data-dictionary.md 8.4
+        dengan keterangan "Berita acara penyaluran", tetapi belum pernah punya
+        isian. Justru di modul inilah bukti penyaluran paling sering diminta
+        saat pemeriksaan.
+    --}}
+    <section>
+        <h3 class="{{ $kelasBagian }}">Dokumen Pendukung</h3>
+        <div class="mt-3">
+            <x-sim.file-upload nama="dokumen_pendukung" label="Berita Acara Penyaluran"
+                nama-dokumen="Dokumen Saprotan" :nama-pemilik="$data['nama'] ?? null"
+                :berkas-saat-ini="$data['dokumen_pendukung'] ?? null"
+                keterangan="Berita acara penyaluran atau tanda terima penerima bantuan." />
+        </div>
+    </section>
 </div>

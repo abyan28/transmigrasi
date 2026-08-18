@@ -127,6 +127,18 @@
                     placeholder="Catatan tambahan, misalnya penempatan barang."
                     class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30">{{ old('keterangan', $data['keterangan'] ?? '') }}</textarea>
             </div>
+
+            {{--
+                Kolom `dokumen_pendukung` sudah ada pada data-dictionary.md 4.1
+                tetapi belum pernah punya isian, sehingga berita acara
+                penyerahan barang tidak dapat diunggah ke mana pun.
+            --}}
+            <div class="sm:col-span-2">
+                <x-sim.file-upload nama="dokumen_pendukung" label="Dokumen Pendukung"
+                    nama-dokumen="Dokumen Inventaris" :nama-pemilik="$data['nama_barang'] ?? null"
+                    :berkas-saat-ini="$data['dokumen_pendukung'] ?? null"
+                    keterangan="Berita acara penyerahan atau bukti pengadaan barang." />
+            </div>
         </div>
     </section>
 </div>

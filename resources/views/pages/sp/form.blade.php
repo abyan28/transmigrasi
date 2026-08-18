@@ -143,7 +143,22 @@
         </p>
     </section>
 
-    {{-- Bagian 4: keterangan --}}
+    {{--
+        Dokumen pendukung. Kolomnya sudah lama ada pada data-dictionary.md 3.6,
+        tetapi belum pernah punya isian, sehingga SK penetapan SP tidak dapat
+        diunggah ke mana pun.
+    --}}
+    <section>
+        <h3 class="{{ $kelasBagian }}">Dokumen Pendukung</h3>
+        <div class="mt-3">
+            <x-sim.file-upload nama="dokumen_pendukung" label="Dokumen Penetapan SP"
+                nama-dokumen="Dokumen SP" :nama-pemilik="$data['nama'] ?? null"
+                :berkas-saat-ini="$data['dokumen_pendukung'] ?? null"
+                keterangan="SK penetapan, peta wilayah, atau berita acara penyerahan." />
+        </div>
+    </section>
+
+    {{-- Bagian 5: keterangan --}}
     <section>
         <h3 class="{{ $kelasBagian }}">Keterangan</h3>
         <div class="mt-3">

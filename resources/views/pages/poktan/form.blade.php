@@ -119,21 +119,21 @@
 
         {{-- Jalur 1: ketua sudah terdata sebagai transmigran --}}
         <div class="mt-4" x-show="dariTransmigran">
-            <label for="{{ $awalan }}_ketua_transmigran_id" class="{{ $kelasLabel }}">Ketua<span class="text-error-500">*</span></label>
-            <select id="{{ $awalan }}_ketua_transmigran_id" name="ketua_transmigran_id"
-                x-model="ketuaId" @change="isiKontak()"
-                :required="dariTransmigran" :disabled="! dariTransmigran"
-                class="{{ $kelasKontrol }}">
-                <option value="">Pilih dari daftar transmigran</option>
-                @foreach ($daftarTransmigran as $t)
-                    <option value="{{ $t['id_transmigran'] }}">
-                        {{ $t['nama_kepala_keluarga'] }} &mdash; {{ $t['satuan_permukiman'] }}
-                    </option>
-                @endforeach
-            </select>
-            <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
-                Nama dan NIK dibaca dari data transmigran, tidak diketik ulang, agar tidak ada dua versi yang berbeda ejaan.
-            </p>
+            {{--
+                Memakai @change untuk menyalin nilai ke `ketuaId`, bukan
+                `x-model`. Komponen pencarian merender opsinya lewat `x-for`,
+                dan `x-model` menyetel ulang nilai select setiap daftar opsi
+                berubah, sehingga pilihan petugas hilang begitu ia mengetik di
+                kotak pencarian.
+            --}}
+            <x-sim.pilih-cari nama="ketua_transmigran_id" label="Ketua" :wajib="true"
+                :awalan="$awalan" :opsi="$daftarTransmigran" kunci="id_transmigran"
+                teks="nama_kepala_keluarga" keterangan-opsi="satuan_permukiman"
+                :terpilih="old('ketua_transmigran_id', $data['ketua_transmigran_id'] ?? null)"
+                placeholder="Pilih dari daftar transmigran"
+                keterangan="Nama dan NIK dibaca dari data transmigran, tidak diketik ulang, agar tidak ada dua versi yang berbeda ejaan."
+                @change="ketuaId = $event.target.value; isiKontak()"
+                :required="'dariTransmigran'" :disabled="'! dariTransmigran'" />
         </div>
 
         {{-- Jalur 2: ketua bukan transmigran, nama dan NIK diketik langsung --}}
@@ -189,6 +189,20 @@
 
             <x-sim.koordinat-input :lintang="old('lintang', $data['lintang'] ?? null)"
                 :bujur="old('bujur', $data['bujur'] ?? null)" />
+        </div>
+    </section>
+
+    {{--
+        Dokumen pendukung. Kolomnya sudah lama ada pada data-dictionary.md 8.1
+        dengan keterangan "SK pembentukan", tetapi belum pernah punya isian.
+    --}}
+    <section>
+        <h3 class="{{ $kelasBagian }}">Dokumen Pendukung</h3>
+        <div class="mt-3">
+            <x-sim.file-upload nama="dokumen_pendukung" label="SK Pembentukan Kelompok"
+                nama-dokumen="SK Poktan" :nama-pemilik="$data['nama'] ?? null"
+                :berkas-saat-ini="$data['dokumen_pendukung'] ?? null"
+                keterangan="Surat keputusan pembentukan atau pengukuhan kelompok tani." />
         </div>
     </section>
 </div>

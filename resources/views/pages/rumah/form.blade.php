@@ -112,24 +112,17 @@
             </div>
 
             <div>
-                <label for="{{ $awalan }}_transmigran_id" class="{{ $kelasLabel }}">Kepala Keluarga Penghuni</label>
-                <select id="{{ $awalan }}_transmigran_id" name="transmigran_id"
-                    :disabled="statusHunian === 'Tidak Dihuni'" class="{{ $kelasKontrol }}">
-                    <option value="">Belum ada penghuni</option>
-                    @foreach ($calonPenghuni as $kk)
-                        <option value="{{ $kk['id_transmigran'] }}"
-                            @selected(($data['penghuni'] ?? null) === $kk['nama_kepala_keluarga'])>
-                            {{ $kk['nama_kepala_keluarga'] }} ({{ $kk['nik'] }})
-                        </option>
-                    @endforeach
-                </select>
                 {{--
-                    Keterangan ini penting: operator sering bingung mengapa nama
-                    yang dicarinya tidak muncul di daftar.
+                    Keterangan di bawah penting: operator sering bingung mengapa
+                    nama yang dicarinya tidak muncul di daftar.
                 --}}
-                <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
-                    Hanya keluarga yang belum menempati rumah lain yang dapat dipilih.
-                </p>
+                <x-sim.pilih-cari nama="transmigran_id" label="Kepala Keluarga Penghuni"
+                    :awalan="$awalan" :opsi="$calonPenghuni" kunci="id_transmigran"
+                    teks="nama_kepala_keluarga" keterangan-opsi="nik" gaya="kurung"
+                    :terpilih="old('transmigran_id', $data['transmigran_id'] ?? null)"
+                    placeholder="Belum ada penghuni"
+                    keterangan="Hanya keluarga yang belum menempati rumah lain yang dapat dipilih."
+                    :disabled="'statusHunian === \'Tidak Dihuni\''" />
             </div>
 
             {{-- Alasan wajib diisi saat rumah tidak dihuni --}}

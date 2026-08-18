@@ -681,6 +681,28 @@ Seluruh komponen dibuat sebagai Blade component di `resources/views/components/`
 | `<x-koordinat-input>` | dibangun sendiri, peta memakai Leaflet + ubin OpenStreetMap |
 | `<x-tautan-peta>` | dibangun sendiri, peta baca-saja untuk halaman rincian |
 | `<x-empty-state>` | dibangun sendiri |
+| `<x-pilih-cari>` | dibangun sendiri di atas `form/select` |
+
+### 6.0a Pilihan berdaftar panjang
+
+Isian yang sumbernya **tabel data**, bukan enum, memakai `x-sim.pilih-cari`. Contohnya daftar transmigran, lahan, dan sejenisnya; enum seperti kondisi atau jenis fasilitas tetap memakai `<select>` biasa sebab jumlahnya tidak pernah bertambah.
+
+> **Koreksi 2026-08-17.** Rancangan pertama komponen ini menaruh kotak pencarian **di atas** `<select>` sebagai dua kontrol berjajar, dan butir 1 di bawah semula berbunyi "isian sesungguhnya tetap `<select>` biasa". Itu keliru: pengguna melihat dua kotak dan harus menebak sendiri bahwa yang satu menyaring yang lain, sementara keduanya tampak sama-sama dapat diisi. Bentuknya kini combobox berpanel, dan aturan di bawah sudah disesuaikan.
+
+1. **Satu tombol, satu panel.** Tombol menampilkan pilihan yang sedang aktif; kotak pencarian berada **di dalam** panel bersama daftarnya, sehingga hubungan keduanya tidak perlu ditebak. Satu pekerjaan tidak boleh memerlukan dua kontrol yang kaitannya tidak terlihat.
+2. **Nilai disimpan pada isian ber-`name` sesuai kolomnya**, bukan pada panel. Isian itu memakai kelas `sr-only`, **bukan `type="hidden"`**: peramban mengabaikan `required` pada isian tersembunyi, sehingga form akan terkirim tanpa peringatan apa pun meski isian wajib masih kosong.
+3. **Nilai yang berubah wajib diumumkan lewat event `change` sungguhan** pada isian tersebut. Tanpa itu `isiFormulir()` milik `x-sim.modal-form` tidak dapat mengisi form saat modal ubah dibuka, dan pemanggil yang memasang `@change` sendiri ikut diam.
+4. **Cadangan tanpa JavaScript wajib ada** berupa `<select>` di dalam `<noscript>`. Sinyal di lokus tidak selalu stabil, dan form yang mustahil diisi karena satu berkas gagal diunduh adalah kegagalan yang tidak perlu.
+5. **Kotak pencarian hanya dirender bila daftarnya mencapai 8 opsi.** Memasangnya di atas tiga pilihan menambah satu benda yang harus dilewati, bukan mempercepat.
+6. Pencarian mencocokkan **teks utama maupun keterangannya**, sebab petugas kerap mengingat asal SP lebih dulu daripada nama lengkapnya.
+7. **Escape berlapis.** Panel wajib memakai `@keydown.escape.stop`: tekanan pertama menutup panel, tekanan kedua barulah menutup modal. Tanpa `.stop`, satu tekanan menutup keduanya sekaligus dan pengguna kehilangan seluruh isian yang sedang diketik.
+8. **Tinggi panel wajib dibatasi beserta gulirnya sendiri.** Badan `x-sim.modal-form` memakai `overflow-y-auto`, sehingga panel yang lebih tinggi daripada sisa ruang akan terpotong, bukan mengambang keluar.
+9. **Pemicu berupa `<button>`**, bukan `<div>` yang dapat diklik, agar ikut terjaring focus trap modal yang hanya mengumpulkan `a`, `button`, `input`, `select`, dan `textarea`.
+10. **Peran ARIA ditulis eksplisit**: `role="combobox"` beserta `aria-expanded` pada pemicu, `role="listbox"` pada daftar, dan `role="option"` beserta `aria-selected` pada tiap opsi. Tanpa itu pembaca layar hanya mengumumkan sebuah tombol tanpa memberi tahu ada daftar yang dapat dibuka.
+11. **Keyboard wajib berfungsi penuh** (R-32): `Enter`, `Space`, atau panah bawah membuka panel; panah atas dan bawah menyorot; `Enter` memilih; `Escape` menutup. Opsi yang tersorot wajib ikut tergulir agar terlihat, bukan sekadar tertandai.
+12. **Pilihan aktif ditandai lebih dari sekadar warna.** Dipakai tanda centang, sebab pengguna yang tidak membedakan warna akan melihat seluruh baris tampak sama.
+13. **Dilarang memakai `x-model` pada `<select>` yang opsinya dirender lewat `x-for`.** Alpine menyetel ulang nilainya setiap daftar opsi berubah, sehingga pilihan pengguna hilang begitu ia mengetik di kotak pencarian. Pakai `@change` untuk menyalin nilainya.
+14. Keadaan pencarian nihil **wajib dikatakan**; daftar yang mendadak kosong tanpa penjelasan terbaca sebagai kerusakan.
 
 ### 6.0 Penandaan isian wajib
 

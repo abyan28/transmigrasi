@@ -114,6 +114,25 @@
         </div>
 
         {{--
+            Dua kolom terpisah pada data-dictionary.md 10.1, dan keduanya
+            menjawab hal berbeda: `foto` merekam kondisi lapangan saat
+            pendataan, sedangkan `dokumen_pendukung` menyimpan berkas
+            administratifnya. Menggabungkan keduanya membuat foto kondisi
+            tertimpa dokumen pengadaan, atau sebaliknya.
+        --}}
+        <div class="mt-4 grid gap-4 sm:grid-cols-2">
+            <x-sim.file-upload nama="foto" label="Foto Kondisi" :hanya-gambar="true"
+                nama-dokumen="Foto Infrastruktur" :nama-pemilik="$data['nama'] ?? null"
+                :berkas-saat-ini="$data['foto'] ?? null"
+                keterangan="Dokumentasi kondisi aset saat pendataan." />
+
+            <x-sim.file-upload nama="dokumen_pendukung" label="Dokumen Pendukung"
+                nama-dokumen="Dokumen Infrastruktur" :nama-pemilik="$data['nama'] ?? null"
+                :berkas-saat-ini="$data['dokumen_pendukung'] ?? null"
+                keterangan="Dokumen pembangunan, serah terima, atau pemeliharaan." />
+        </div>
+
+        {{--
             Penegasan batas modul, diletakkan di dalam form agar terbaca saat
             petugas mengisi, bukan hanya di halaman rincian.
         --}}

@@ -360,6 +360,23 @@
   }
 
   /*
+    Menyembunyikan elemen ber-`x-cloak` sampai Alpine selesai memuat.
+
+    Ditambahkan 2026-08-17 setelah ditemukan bahwa aturan ini SATU-SATUNYA
+    definisinya berada inline di `components/ui/modal.blade.php`, dan komponen
+    itu tidak dipakai satu halaman pun. Akibatnya 96 pemakaian `x-cloak` di
+    seluruh repositori tidak berfungsi sama sekali: modal, laci filter, dan
+    panel pilihan sempat berkedip terlihat setiap kali halaman dimuat, lalu
+    menghilang begitu Alpine berjalan.
+
+    Diletakkan di `app.css` agar berlaku pada seluruh halaman tanpa bergantung
+    komponen mana pun yang kebetulan ikut dirender.
+  */
+  [x-cloak] {
+    display: none !important;
+  }
+
+  /*
     Daftar pilihan pada mode gelap.
 
     Seluruh <select> di sistem ini memakai bg-transparent agar menyatu dengan

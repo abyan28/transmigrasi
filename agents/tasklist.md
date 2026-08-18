@@ -560,6 +560,16 @@ Diperbaiki dengan uji yang **membuka setiap tujuan menu ke aplikasi sungguhan**.
 
 **Catatan:** Task 3.3b (halaman pengaturan role dan izin) sudah tuntas lebih awal pada Task 2.27, sehingga ditandai selesai di Tahap 3. Task 4.2 sampai 8.1 kini tinggal menyambungkan form yang sudah ada ke database.
 
+### Revisi lanjutan (2026-08-17)
+
+Dikerjakan atas daftar revisi pemilik proyek pada `notes.md` bagian 6, dibagi tiga kelompok. Rinciannya beserta alasan tiap keputusan tercatat di sana.
+
+**Kelompok 1 - Kelompok tani** (4 poin). Ditemukan bahwa **anggota poktan tidak dapat diubah sama sekali**: tanpa tombol, modal, maupun rute PUT, sehingga status keaktifan dan tanggal keluar tidak pernah dapat diisi setelah tersimpan. Ketua kini boleh berasal dari luar transmigran lewat `is_ketua_transmigran`, nilai `Ketua` dicabut dari enum jabatan, kontak poktan diseragamkan menjadi kontak ketua, dan keanggotaan ditetapkan dari sisi poktan saja. Huruf `H` pada matriks kewenangan Anggota poktan dicabut karena bertentangan dengan larangan hapus; total kewenangan 96 menjadi **95**.
+
+**Kelompok 2 - Dokumen dan pilihan panjang** (2 poin).
+* **Unggahan dokumen dipasang pada 7 form** (SP, inventaris, fasilitas, infrastruktur, poktan, alsintan, saprotan). Kedelapan kolomnya sudah lama ada di kamus data dan `x-sim.file-upload` sudah dipakai lima form lain; yang tidak ada hanya isiannya. Akibatnya SK pembentukan poktan dan berita acara penyaluran saprotan tidak dapat diunggah ke mana pun.
+* **Dibuat `x-sim.pilih-cari`**, dipasang pada 7 isian bersumber tabel data. Isian sesungguhnya tetap `<select>` biasa sehingga backend tidak perlu tahu komponen ini ada, dan kotak pencarian hanya dirender bila daftarnya mencapai 8 opsi.
+
 ## Tahap 3 — Autentikasi dan Hak Akses
 
 > **Peringatan penerbitan statis.** Begitu login aktif, halaman berpelindung membalas pengalihan ke `/login`, bukan 200, sehingga `.github/workflows/deploy.yml` **gagal** dan situs GitHub Pages berhenti diperbarui. Putuskan lebih dulu: batasi `sim:tautan-statis` hanya ke halaman publik, atau hentikan penerbitan statis sama sekali. Lihat `notes.md` bagian 1b.7.

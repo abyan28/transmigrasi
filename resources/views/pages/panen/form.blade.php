@@ -72,18 +72,11 @@
             </div>
 
             <div>
-                <label for="{{ $awalan }}_petani" class="{{ $kelasLabel }}">
-                    Petani<span class="text-error-500">*</span>
-                </label>
-                <select id="{{ $awalan }}_petani" name="transmigran_id" required class="{{ $kelasKontrol }}">
-                    <option value="">Pilih petani</option>
-                    @foreach (DummyData::transmigran() as $kk)
-                        <option value="{{ $kk['id_transmigran'] }}"
-                            @selected(($data['petani'] ?? null) === $kk['nama_kepala_keluarga'])>
-                            {{ $kk['nama_kepala_keluarga'] }}
-                        </option>
-                    @endforeach
-                </select>
+                <x-sim.pilih-cari nama="transmigran_id" label="Petani" :wajib="true"
+                    :awalan="$awalan" :opsi="DummyData::transmigran()" kunci="id_transmigran"
+                    teks="nama_kepala_keluarga" keterangan-opsi="satuan_permukiman"
+                    :terpilih="old('transmigran_id', $data['transmigran_id'] ?? null)"
+                    placeholder="Pilih petani" />
             </div>
 
             <div>

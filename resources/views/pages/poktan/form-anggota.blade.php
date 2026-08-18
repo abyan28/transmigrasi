@@ -37,16 +37,11 @@
 
     <div class="grid gap-4 sm:grid-cols-2">
         <div class="sm:col-span-2">
-            <label for="{{ $awalan }}_transmigran_anggota" class="{{ $kelasLabel }}">Transmigran<span class="text-error-500">*</span></label>
-            <select id="{{ $awalan }}_transmigran_anggota" name="transmigran_id" required class="{{ $kelasKontrol }}">
-                <option value="">Pilih transmigran</option>
-                @foreach ($daftarTransmigran as $t)
-                    <option value="{{ $t['id_transmigran'] }}"
-                        @selected((string) old('transmigran_id', $data['transmigran_id'] ?? '') === (string) $t['id_transmigran'])>
-                        {{ $t['nama_kepala_keluarga'] }} &mdash; {{ $t['satuan_permukiman'] }}
-                    </option>
-                @endforeach
-            </select>
+            <x-sim.pilih-cari nama="transmigran_id" label="Transmigran" :wajib="true"
+                :awalan="$awalan" :opsi="$daftarTransmigran" kunci="id_transmigran"
+                teks="nama_kepala_keluarga" keterangan-opsi="satuan_permukiman"
+                :terpilih="old('transmigran_id', $data['transmigran_id'] ?? null)"
+                placeholder="Pilih transmigran" />
         </div>
 
         <div>

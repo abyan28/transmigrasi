@@ -147,5 +147,16 @@
                 placeholder="Catatan tambahan mengenai fasilitas ini."
                 class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30">{{ old('keterangan', $data['keterangan'] ?? '') }}</textarea>
         </div>
+
+        {{--
+            Kolom `dokumen_pendukung` sudah ada pada data-dictionary.md 4.2
+            tetapi belum pernah punya isian.
+        --}}
+        <div class="mt-4">
+            <x-sim.file-upload nama="dokumen_pendukung" label="Dokumen atau Foto Fasilitas"
+                nama-dokumen="Dokumen Fasilitas" :nama-pemilik="$data['nama'] ?? null"
+                :berkas-saat-ini="$data['dokumen_pendukung'] ?? null"
+                keterangan="Foto bangunan, berita acara serah terima, atau dokumen pendukung lain." />
+        </div>
     </section>
 </div>

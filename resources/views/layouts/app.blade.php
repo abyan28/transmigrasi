@@ -106,19 +106,31 @@
         });
     </script>
 
-    <!-- Apply dark mode immediately to prevent flash -->
+    {{--
+        Menerapkan mode gelap sedini mungkin agar halaman tidak berkedip terang
+        lebih dulu.
+
+        Skrip ini berjalan di dalam `<head>`, saat `document.body` BELUM ADA.
+        Versi sebelumnya menyentuhnya langsung dan melempar
+        "Cannot read properties of null" pada setiap pemuatan halaman;
+        galatnya tidak terlihat sebab tidak menghentikan apa pun, tetapi ia
+        membanjiri konsol dan menyamarkan galat lain yang benar-benar penting.
+
+        Kelas pada `<html>` sudah cukup untuk `@custom-variant dark`, sedangkan
+        kelas pada `<body>` menunggu DOM siap.
+    --}}
     <script>
         (function() {
             const savedTheme = localStorage.getItem('theme');
             const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-            const theme = savedTheme || systemTheme;
-            if (theme === 'dark') {
-                document.documentElement.classList.add('dark');
-                document.body.classList.add('dark', 'bg-gray-900');
-            } else {
-                document.documentElement.classList.remove('dark');
-                document.body.classList.remove('dark', 'bg-gray-900');
-            }
+            const gelap = (savedTheme || systemTheme) === 'dark';
+
+            document.documentElement.classList.toggle('dark', gelap);
+
+            document.addEventListener('DOMContentLoaded', function() {
+                document.body.classList.toggle('dark', gelap);
+                document.body.classList.toggle('bg-gray-900', gelap);
+            });
         })();
     </script>
 
