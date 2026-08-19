@@ -52,6 +52,7 @@ class UppercaseInput
         'catatan_penanganan',
         'keterangan',
         'keterangan_satuan_lokal',
+        'objek_keterangan',
         'alasan',
         'alasan_keluar',
         'alasan_tidak_dihuni',

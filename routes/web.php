@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 use App\Http\Controllers\DokumenController;
 use Illuminate\Support\Facades\Route;
@@ -156,6 +156,39 @@ Route::get('/sp/inventaris', function () {
 Route::get('/sp/fasilitas', function () {
     return view('pages.sp.fasilitas', ['title' => 'Fasilitas SP']);
 })->name('sp.fasilitas');
+
+/*
+ * Rincian inventaris dan fasilitas SP.
+ *
+ * WAJIB didaftarkan SETELAH rute daftar di atas, sebab '/sp/inventaris'
+ * akan tertangkap sebagai '/sp/{id}' bila urutannya terbalik. Pola yang sama
+ * sudah dicatat pada rute panen soal '/panen/rekap'.
+ *
+ * Kedua halaman ini lahir 2026-08-19 bersama tautan objek pengaduan.
+ * Sebelumnya keduanya hanya memiliki halaman daftar, sehingga keluhan warga
+ * atas sebuah barang atau bangunan tidak punya tempat ditampilkan kembali.
+ */
+Route::get('/sp/inventaris/{id}', function (int $id) {
+    $data = collect(\App\Support\DummyData::inventarisSp())->firstWhere('id_inventaris_sp', $id);
+
+    abort_if($data === null, 404);
+
+    return view('pages.sp.detail-inventaris', [
+        'title' => $data['nama_barang'],
+        'data' => $data,
+    ]);
+})->where('id', '[0-9]+')->name('sp.inventaris.detail');
+
+Route::get('/sp/fasilitas/{id}', function (int $id) {
+    $data = collect(\App\Support\DummyData::fasilitasSp())->firstWhere('id_fasilitas_sp', $id);
+
+    abort_if($data === null, 404);
+
+    return view('pages.sp.detail-fasilitas', [
+        'title' => $data['nama_fasilitas'],
+        'data' => $data,
+    ]);
+})->where('id', '[0-9]+')->name('sp.fasilitas.detail');
 
 Route::get('/sp', function () {
     return view('pages.sp.index', ['title' => 'Satuan Permukiman']);
@@ -439,6 +472,23 @@ Route::get('/pengaduan', function () {
 Route::get('/pengaduan/rekap', function () {
     return view('pages.pengaduan.rekap', ['title' => 'Rekap Pengaduan']);
 })->name('pengaduan.rekap');
+
+/*
+ * Tautan tetap pemilih kelompok rekap.
+ *
+ * Pemilihnya semula hanya memakai '?kelompok=', dan kueri tidak dapat
+ * dilayani berkas statis di GitHub Pages. Polanya menyalin '/panen/rekap/
+ * {kelompok}' yang sudah lebih dulu memakai cara ini.
+ *
+ * Daftar nilai pada `where` WAJIB dijaga sejalan dengan $labelKelompok pada
+ * viewnya; keduanya menyatakan hal yang sama di dua tempat.
+ */
+Route::get('/pengaduan/rekap/{kelompok}', function (string $kelompok) {
+    return view('pages.pengaduan.rekap', [
+        'title' => 'Rekap Pengaduan',
+        'kelompok' => $kelompok,
+    ]);
+})->where('kelompok', 'kategori|status|sp|prioritas|bidang')->name('pengaduan.rekap.kelompok');
 
 Route::get('/pengaduan/{id}', function (int $id) {
     $data = collect(\App\Support\DummyData::pengaduan())->firstWhere('id_pengaduan', $id);

@@ -569,13 +569,17 @@ it('menampilkan keadaan kosong untuk pengaduan yang belum ditangani', function (
     $this->get(route('pengaduan.detail', 3))->assertSee('Belum ada penanganan');
 });
 
-it('menyimpulkan bidang penanganan dari kategori, bukan pilihan manual', function () {
-    // Petugas pencatat tidak perlu hafal pembagian tugas antar-dinas
-    // (App\Enums\BidangPengaduan::dariKategori).
+it('mengisi bidang penanganan dari kategori sebagai nilai awal', function () {
+    // Diubah 2026-08-19: bidang kini berupa PILIHAN, bukan tampilan baca-saja.
+    // Nilainya terisi otomatis dari kategori, tetapi selalu dapat ditimpa
+    // petugas sebab penentuan dinas bergantung isi laporan yang tidak selalu
+    // terbaca dari kategori (rules.md 10b poin 7c).
     $isi = $this->get(route('pengaduan.index'))->getContent();
 
-    expect($isi)->toContain('Mengikuti kategori terpilih')
-        ->and($isi)->not->toContain('<select id="tambah_bidang"');
+    expect($isi)->toContain('id="tambah_bidang"')
+        ->and($isi)->toContain('petaBidang')
+        // Empat kategori netral wajib menghasilkan peringatan, bukan tebakan.
+        ->and($isi)->toContain('bidangNetral');
 });
 
 it('menandai pengaduan berprioritas mendesak yang belum selesai', function () {
@@ -2485,6 +2489,11 @@ it('menyediakan tombol impor pada modul berdata banyak', function (string $url, 
     ['/saprotan', 'imporSaprotan'],
     ['/sp/fasilitas', 'imporFasilitas'],
     ['/komoditas', 'imporKomoditas'],
+    // Ditambahkan 2026-08-19: musim tanam sempat dikecualikan dengan alasan
+    // "jumlah barisnya sedikit", padahal ia bertambah dua kali setahun tanpa
+    // henti sehingga justru paling terpengaruh waktu. Alasan itu menghitung
+    // baris data contoh, dan itu dilarang rules.md 19a.
+    ['/musim-tanam', 'imporMusimTanam'],
 ]);
 
 it('tidak menyediakan impor pada modul yang tidak boleh diisi massal', function (string $url) {
@@ -2496,8 +2505,13 @@ it('tidak menyediakan impor pada modul yang tidak boleh diisi massal', function 
     // - Pengguna: kata sandi awal diserahkan langsung kepada orangnya
     //   (rules.md 14b poin 3). Impor massal berarti kata sandi berkeliaran
     //   di dalam berkas yang berpindah tangan.
-    // - Role, Kawasan, SP, dan Musim Tanam jumlah barisnya sedikit dan jarang
-    //   berubah, sehingga impor hanya menambah jalur masuk tanpa manfaat.
+    // - Role, Kawasan, dan SP berjumlah tetap menurut prd.md: satu kawasan,
+    //   enam SP, dan empat role bawaan. Angkanya berasal dari dokumen acuan,
+    //   bukan dari menghitung baris data contoh.
+    //
+    // Musim Tanam DIKELUARKAN dari daftar ini pada 2026-08-19. Ia sempat
+    // disamaratakan dengan ketiga modul di atas, padahal jumlahnya bertambah
+    // dua kali setahun tanpa henti sehingga justru paling terpengaruh waktu.
     $isi = $this->get($url)->assertOk()->getContent();
 
     expect($isi)->not->toContain("buka-modal', 'impor");
@@ -2507,7 +2521,6 @@ it('tidak menyediakan impor pada modul yang tidak boleh diisi massal', function 
     '/pengaturan/role',
     '/kawasan',
     '/sp',
-    '/musim-tanam',
 ]);
 
 it('memandu impor lewat tiga langkah beserta kolom wajibnya', function () {
@@ -3676,4 +3689,151 @@ it('memisahkan agregat kawasan dari transaksi panen contoh', function () {
     expect(round($ringkasan['volume_panen_ton'], 1))->toBe(round($agregat, 1))
         ->and(round($totalSp, 1))->toBe(round($agregat, 1))
         ->and(round((float) end($deret['volume_panen']), 1))->toBe(round($agregat, 1));
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| Halaman rincian Inventaris dan Fasilitas SP
+|--------------------------------------------------------------------------
+*/
+
+it('membuka halaman rincian inventaris dan fasilitas SP', function (string $jalur) {
+    $this->get($jalur)->assertOk();
+})->with([
+    '/sp/inventaris/1',
+    '/sp/fasilitas/1',
+]);
+
+it('menolak rincian aset SP yang tidak ada', function (string $jalur) {
+    $this->get($jalur)->assertNotFound();
+})->with([
+    '/sp/inventaris/999',
+    '/sp/fasilitas/999',
+]);
+
+it('menyediakan tombol rincian pada daftar inventaris dan fasilitas SP', function () {
+    expect($this->get('/sp/inventaris')->getContent())->toContain('/sp/inventaris/1')
+        ->and($this->get('/sp/fasilitas')->getContent())->toContain('/sp/fasilitas/1');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Privasi halaman lacak publik
+|--------------------------------------------------------------------------
+*/
+
+it('tidak menampilkan data aset pada halaman lacak publik', function () {
+    // Halaman lacak terbuka tanpa login dan hanya berbekal nomor pengaduan,
+    // sehingga menampilkan "Rumah A-12" atau "LU-001" berarti menyiarkan
+    // alamat maupun lahan keluarga tertentu kepada siapa pun yang mengetahui
+    // nomornya. rules.md 10b poin 1c membatasinya pada status, tanggal, dan
+    // catatan penanganan saja.
+    $isi = $this->get('/lacak-pengaduan/PGD-2026-0001')->getContent();
+
+    expect($isi)->not->toContain('SALURAN IRIGASI BLOK A')
+        ->and($isi)->not->toContain('LU-001')
+        ->and($isi)->not->toContain('Objek yang diadukan');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Bidang penanganan pengaduan
+|--------------------------------------------------------------------------
+*/
+
+it('menyediakan filter bidang pada daftar pengaduan', function () {
+    // rules.md 10b poin 7e. Paling berguna bagi Admin dan Dinas Transmigrasi
+    // yang daftarnya memuat laporan kedua dinas sekaligus.
+    $isi = $this->get('/pengaduan')->getContent();
+
+    expect($isi)->toContain('name="bidang"')
+        ->and($isi)->toContain('Semua bidang')
+        ->and($isi)->toContain('Belum ditentukan');
+});
+
+it('menyaring pengaduan menurut bidangnya', function () {
+    // PGD-2026-0003 berbidang Pertanian, PGD-2026-0002 berbidang
+    // Ketransmigrasian. Menyaring salah satu wajib menyingkirkan yang lain.
+    $pertanian = $this->get('/pengaduan?bidang=Pertanian')->getContent();
+
+    expect($pertanian)->toContain('PGD-2026-0003')
+        ->and($pertanian)->not->toContain('PGD-2026-0002');
+});
+
+it('menyaring pengaduan yang bidangnya belum ditetapkan', function () {
+    // Inilah antrean penyaringan awal Admin dan Dinas Transmigrasi.
+    $belum = $this->get('/pengaduan?bidang=belum')->getContent();
+
+    expect($belum)->toContain('PGD-2026-0004')
+        ->and($belum)->not->toContain('PGD-2026-0003');
+});
+
+it('menyatakan bidang kosong sebagai keterangan, bukan sel hampa', function () {
+    // Sel hampa terbaca sebagai data gagal termuat, padahal yang sebenarnya
+    // terjadi adalah laporan belum disaring petugas.
+    expect($this->get('/pengaduan')->getContent())
+        ->toContain('Belum ditentukan');
+});
+
+it('menyediakan isian bidang yang dapat ditimpa petugas', function () {
+    // rules.md 10b poin 7c: bidang berupa pilihan, bukan tampilan baca-saja,
+    // sebab penentuan dinas bergantung isi laporan yang tidak selalu terbaca
+    // dari kategori.
+    $isi = $this->get('/pengaduan')->getContent();
+
+    expect($isi)->toContain('id="tambah_bidang"')
+        ->and($isi)->toContain('gantiKategori(')
+        ->and($isi)->toContain('disentuh');
+});
+
+it('menyediakan penetapan bidang pada modal penanganan', function () {
+    // Laporan kanal publik berkategori netral tiba tanpa bidang, sehingga
+    // petugas harus dapat menetapkannya saat meninjau tanpa membuka modal lain.
+    expect($this->get('/pengaduan/4')->getContent())
+        ->toContain('id="penanganan_bidang"');
+});
+
+it('mengisi bidang seluruh pengaduan yang sudah diproses', function () {
+    // rules.md 10b poin 7b: wajib terisi sebelum status maju ke Diproses.
+    $sudahLewat = [\App\Enums\StatusPengaduan::Diproses->value, \App\Enums\StatusPengaduan::Selesai->value];
+
+    foreach (DummyData::pengaduan() as $baris) {
+        if (! in_array($baris['status'], $sudahLewat, true)) {
+            continue;
+        }
+
+        expect(! empty($baris['bidang']))
+            ->toBeTrue("Pengaduan {$baris['nomor_pengaduan']} berstatus {$baris['status']} tanpa bidang");
+    }
+});
+
+it('menyisakan contoh pengaduan yang bidangnya belum ditetapkan', function () {
+    // Keadaan ini pasti muncul di lapangan saat laporan baru masuk, sehingga
+    // wajib ikut terlihat pada data contoh.
+    $belum = array_filter(DummyData::pengaduan(), fn ($p) => empty($p['bidang']));
+
+    expect($belum)->not->toBeEmpty();
+
+    foreach ($belum as $baris) {
+        expect($baris['status'])->toBe(\App\Enums\StatusPengaduan::MenungguDiterima->value);
+    }
+});
+
+it('menyelaraskan bidang data contoh dengan peta kategori', function () {
+    // Kategori netral boleh berbidang apa pun sebab ditetapkan petugas;
+    // kategori bermuatan wajib cocok dengan turunannya.
+    foreach (DummyData::pengaduan() as $baris) {
+        $kategori = \App\Enums\KategoriPengaduan::from($baris['kategori']);
+        $bawaan = \App\Enums\BidangPengaduan::dariKategori($kategori);
+
+        if ($bawaan === null) {
+            continue;
+        }
+
+        expect($baris['bidang'])->toBe(
+            $bawaan->value,
+            "Bidang {$baris['nomor_pengaduan']} tidak cocok dengan kategorinya"
+        );
+    }
 });

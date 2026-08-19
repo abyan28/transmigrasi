@@ -5,9 +5,10 @@
     dipakai petugas untuk mencatatkan laporan yang disampaikan lisan. Karena
     itu `sumber_laporan` bernilai Petugas (agents/rules.md bagian 10b poin 1a).
 
-    Aturan khusus modul ini: bidang penanganan TIDAK dipilih manual, melainkan
-    disimpulkan dari kategori lewat BidangPengaduan::dariKategori(). Warga
-    maupun petugas tidak perlu tahu pembagian tugas antar-dinas.
+    Aturan khusus modul ini: bidang penanganan terisi otomatis dari kategori
+    lewat BidangPengaduan::dariKategori(), tetapi SELALU DAPAT DITIMPA petugas
+    (agents/rules.md bagian 10b poin 7c). Empat kategori sengaja tidak dapat
+    disimpulkan bidangnya dan wajib dipilih manual.
 
     Nama kolom mengikuti agents/data-dictionary.md bagian 10.2.
 --}}
@@ -24,20 +25,33 @@
     $kelasLabel = 'mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400';
     $kelasBagian = 'text-theme-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400';
 
-    // Peta kategori ke bidang, dipakai Alpine agar bidang penanganan terbaca
-    // seketika saat kategori dipilih.
-    $petaBidang = [];
-    foreach (KategoriPengaduan::cases() as $kategori) {
-        $petaBidang[$kategori->value] = BidangPengaduan::dariKategori($kategori)->value;
-    }
+    // Peta kategori ke bidang, dipakai Alpine agar bidang terisi seketika saat
+    // kategori dipilih. Kategori netral bernilai string kosong.
+    $petaBidang = BidangPengaduan::petaDariKategori();
 @endphp
 
 <div class="space-y-6"
     x-data="{
         kategori: @js($data['kategori'] ?? ''),
+        bidang: @js($data['bidang'] ?? ''),
+        disentuh: {{ empty($data['bidang']) ? 'false' : 'true' }},
         petaBidang: @js($petaBidang),
-        get bidang() {
-            return this.petaBidang[this.kategori] ?? '';
+
+        /*
+         * Bidang hanya diisi ulang selama petugas belum menyentuhnya sendiri.
+         * Tanpa penjaga ini, pilihan manual akan tertimpa setiap kali kategori
+         * disunting, dan petugas kehilangan hasil penilaiannya tanpa peringatan.
+         */
+        gantiKategori(nilai) {
+            this.kategori = nilai;
+
+            if (! this.disentuh) {
+                this.bidang = this.petaBidang[nilai] ?? '';
+            }
+        },
+
+        get bidangNetral() {
+            return this.kategori !== '' && (this.petaBidang[this.kategori] ?? '') === '';
         },
     }">
 
@@ -85,28 +99,44 @@
                 <label for="{{ $awalan }}_kategori" class="{{ $kelasLabel }}">
                     Kategori<span class="text-error-500">*</span>
                 </label>
-                <select id="{{ $awalan }}_kategori" name="kategori" x-model="kategori" required
+                <select id="{{ $awalan }}_kategori" name="kategori" required
+                    :value="kategori" @change="gantiKategori($event.target.value)"
                     class="{{ $kelasKontrol }}">
                     <option value="">Pilih kategori</option>
                     @foreach (KategoriPengaduan::opsi() as $nilai => $label)
-                        <option value="{{ $nilai }}">{{ $label }}</option>
+                        <option value="{{ $nilai }}" @selected(($data['kategori'] ?? '') === $nilai)>{{ $label }}</option>
                     @endforeach
                 </select>
             </div>
 
             <div>
-                <span class="{{ $kelasLabel }}">Bidang Penanganan</span>
+                <label for="{{ $awalan }}_bidang" class="{{ $kelasLabel }}">
+                    Bidang Penanganan
+                </label>
                 {{--
-                    Bidang disimpulkan dari kategori, bukan dipilih manual.
-                    Petugas pencatat tidak perlu hafal pembagian tugas dinas,
-                    dan penerusan laporan jadi konsisten.
+                    Terisi otomatis dari kategori, tetapi tetap dapat ditimpa.
+                    Empat kategori sengaja netral sebab pokok masalahnya dapat
+                    jatuh ke dua dinas: sengketa lahan usaha bisa menyangkut
+                    pembagian lahan maupun produktivitasnya.
                 --}}
-                <p class="flex h-11 items-center rounded-lg bg-gray-50 px-4 text-theme-sm text-gray-600 dark:bg-white/5 dark:text-gray-400">
-                    <span x-text="bidang || 'Mengikuti kategori terpilih'"></span>
+                <select id="{{ $awalan }}_bidang" name="bidang"
+                    :value="bidang" @change="bidang = $event.target.value; disentuh = true"
+                    class="{{ $kelasKontrol }}">
+                    <option value="">Belum ditentukan</option>
+                    @foreach (BidangPengaduan::opsi() as $nilai => $label)
+                        <option value="{{ $nilai }}" :selected="bidang === '{{ $nilai }}'">{{ $label }}</option>
+                    @endforeach
+                </select>
+
+                <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400"
+                    x-show="! bidangNetral">
+                    Terisi otomatis dari kategori. Ubah bila laporan ini sebenarnya
+                    ditangani dinas lain.
                 </p>
-                <input type="hidden" name="bidang" :value="bidang" />
-                <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
-                    Laporan diteruskan otomatis ke dinas yang sesuai.
+                <p class="mt-1.5 text-theme-xs text-gold-700 dark:text-gold-400" x-show="bidangNetral"
+                    x-cloak>
+                    Kategori ini dapat ditangani dua dinas, sehingga bidangnya perlu
+                    ditetapkan sendiri berdasarkan isi laporan.
                 </p>
             </div>
 

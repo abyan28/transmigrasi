@@ -21,13 +21,6 @@
 
         $kondisi = Kondisi::from($data['kondisi']);
         $jenis = JenisInfrastruktur::from($data['jenis']);
-
-        // Pengaduan pada SP yang sama, sebagai konteks. Bukan daftar keluhan
-        // atas aset ini, sebab pengaduan tidak menaut ke id infrastruktur.
-        $pengaduanSp = array_values(array_filter(
-            DummyData::pengaduan(),
-            fn ($p) => $p['satuan_permukiman_id'] === $data['satuan_permukiman_id'],
-        ));
     @endphp
 
     <x-sim.page-header :judul="$data['nama']"
@@ -101,7 +94,6 @@
                     role="tablist" aria-label="Rincian aset infrastruktur">
                     @foreach ([
                         'kondisi' => 'Kondisi Aset',
-                        'pengaduan' => 'Pengaduan (' . count($pengaduanSp) . ')',
                         'log' => 'Catatan Log',
                     ] as $kunci => $label)
                         <button type="button" role="tab" @click="setTab('{{ $kunci }}')"
@@ -136,40 +128,6 @@
                             class="rounded font-medium text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">fitur
                             pengaduan</a>, agar penanganannya terlacak beserta riwayat tindak lanjutnya.
                     </p>
-                </div>
-
-                {{-- Pengaduan pada SP yang sama, sebagai konteks --}}
-                <div x-show="tab === 'pengaduan'" x-cloak role="tabpanel">
-                    <div class="border-b border-gray-200 px-5 py-4 dark:border-gray-800">
-                        <p class="text-theme-xs text-gray-500 dark:text-gray-400">
-                            Seluruh pengaduan pada SP ini, tidak khusus mengenai aset yang sedang dibuka.
-                        </p>
-                    </div>
-
-                    @if ($pengaduanSp === [])
-                        <x-sim.empty-state judul="Belum ada pengaduan"
-                            pesan="Pengaduan warga pada satuan permukiman ini akan tampil di sini." />
-                    @else
-                        <x-sim.tabel-ringkas :kolom="['Nomor', 'Judul', 'Kategori', 'Status']">
-                            @foreach ($pengaduanSp as $p)
-                                <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
-                                    <td class="px-5 py-3">
-                                        <a href="{{ route('pengaduan.detail', $p['id_pengaduan']) }}"
-                                            class="rounded text-theme-sm tabular-nums text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
-                                            {{ $p['nomor_pengaduan'] }}
-                                        </a>
-                                    </td>
-                                    <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">
-                                        {{ $p['judul'] }}</td>
-                                    <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
-                                        {{ $p['kategori'] }}</td>
-                                    <td class="px-5 py-3">
-                                        <x-sim.status-badge :status="\App\Enums\StatusPengaduan::from($p['status'])" />
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </x-sim.tabel-ringkas>
-                    @endif
                 </div>
 
                 {{-- Catatan log: riwayat perubahan data ini saja --}}

@@ -88,8 +88,13 @@ it('memakai nilai enum yang sah pada data pengaduan', function () {
         expect(KategoriPengaduan::dari($baris['kategori']))->not->toBeNull()
             ->and(StatusPengaduan::dari($baris['status']))->not->toBeNull()
             ->and(PrioritasPengaduan::dari($baris['prioritas']))->not->toBeNull()
-            ->and(SumberLaporan::dari($baris['sumber_laporan']))->not->toBeNull()
-            ->and(BidangPengaduan::dari($baris['bidang']))->not->toBeNull();
+            ->and(SumberLaporan::dari($baris['sumber_laporan']))->not->toBeNull();
+
+        // Bidang boleh kosong, artinya belum ditetapkan petugas. Bila terisi,
+        // nilainya wajib dikenali enum.
+        if (! empty($baris['bidang'])) {
+            expect(BidangPengaduan::dari($baris['bidang']))->not->toBeNull();
+        }
     }
 });
 
@@ -101,9 +106,16 @@ it('memakai nilai enum yang sah pada data infrastruktur', function () {
 });
 
 it('menetapkan bidang pengaduan sesuai kategorinya', function () {
+    // Kategori netral dilewati: bidangnya ditetapkan petugas berdasarkan isi
+    // laporan, sehingga tidak dapat diadu dengan nilai turunan mana pun
+    // (rules.md 10b poin 7a).
     foreach (DummyData::pengaduan() as $baris) {
         $kategori = KategoriPengaduan::from($baris['kategori']);
         $bidangSeharusnya = BidangPengaduan::dariKategori($kategori);
+
+        if ($bidangSeharusnya === null) {
+            continue;
+        }
 
         expect($baris['bidang'])->toBe($bidangSeharusnya->value);
     }
@@ -404,4 +416,3 @@ it('menjaga deret SP tidak melebihi deret kawasan', function () {
 it('mengembalikan deret kosong untuk SP yang tidak ada', function () {
     expect(DummyData::deretTahunanSp(99)['tahun'])->toBe([]);
 });
-

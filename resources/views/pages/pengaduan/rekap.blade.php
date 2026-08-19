@@ -13,7 +13,8 @@
     @php
         use App\Support\DummyData;
 
-        $kelompok = request('kelompok', 'kategori');
+        $kelompok = $kelompok ?? request('kelompok', 'kategori');
+
         $rekap = DummyData::rekapPengaduan($kelompok);
 
         $totalJumlah = array_sum(array_column($rekap, 'jumlah'));
@@ -21,6 +22,12 @@
         $totalBelum = array_sum(array_column($rekap, 'belum_selesai'));
         $totalMendesak = array_sum(array_column($rekap, 'mendesak'));
 
+        /*
+         * Daftar ini WAJIB sejalan dengan batasan `where` pada rute
+         * `pengaduan.rekap.kelompok` dan larik pada DaftarTautanStatis.
+         * Ketiganya mengunci hal yang sama, dan mengubah salah satunya saja
+         * membuat halaman terbit membalas 404.
+         */
         $labelKelompok = [
             'kategori' => 'Kategori',
             'status' => 'Status Penanganan',
@@ -51,7 +58,8 @@
         class="mb-6 flex flex-wrap gap-2 rounded-2xl border border-gray-200 bg-white p-2 dark:border-gray-800 dark:bg-white/[0.03]">
         @foreach ($labelKelompok as $nilai => $label)
             @php $aktif = $kelompok === $nilai; @endphp
-            <a href="{{ route('pengaduan.rekap', ['kelompok' => $nilai]) }}"
+            {{-- Tautan tetap, bukan kueri, agar tiap tab punya halamannya sendiri saat digilas jadi berkas statis --}}
+            <a href="{{ route('pengaduan.rekap.kelompok', $nilai) }}"
                 @if ($aktif) aria-current="page" @endif
                 class="rounded-lg px-3 py-2 text-theme-sm font-medium transition focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 {{ $aktif
                     ? 'bg-brand-500 text-white'

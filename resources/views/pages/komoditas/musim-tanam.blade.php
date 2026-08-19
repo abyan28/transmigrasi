@@ -26,6 +26,27 @@
         pesan-kosong="Periode musim tanam akan tampil di sini setelah ditetapkan.">
 
         <x-slot:aksi>
+            {{--
+                Impor massal diletakkan mendahului tombol tambah namun bergaya
+                sekunder, sebab menambah satu data tetap tindakan yang paling
+                sering dipakai (PRD 8.1).
+
+                Ditambahkan 2026-08-19. Modul ini sempat dikecualikan dari impor
+                dengan alasan "jumlah barisnya sedikit", padahal musim tanam
+                bertambah dua kali setahun tanpa henti sehingga jumlahnya justru
+                paling terpengaruh waktu. Alasan itu menghitung baris data
+                contoh, dan itu penalaran yang dilarang rules.md 19a.
+            --}}
+            <button type="button" @click="$dispatch('buka-modal', 'imporMusimTanam')"
+                class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-theme-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"
+                    aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                </svg>
+                Impor Data
+            </button>
+
             <button type="button" @click="$dispatch('buka-modal', 'formTambahMusim')"
                 class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
@@ -95,4 +116,14 @@
 
     <x-sim.confirm-dialog nama="hapusMusim" judul="Hapus musim tanam ini?"
         pesan="Riwayat tanam yang memakai musim ini akan kehilangan pengelompokannya." label-setuju="Hapus" />
+
+    {{--
+        Kolom wajib mengikuti kamus data 9.1: `nama` dan `tahun` tidak boleh
+        kosong, sedangkan tanggal mulai dan selesai nullable tetapi diminta
+        pada template sebab tanpa keduanya musim tidak dapat dipakai memilah
+        panen menurut periode.
+    --}}
+    <x-sim.modal-impor nama="imporMusimTanam" judul="Impor Musim Tanam"
+        entitas="musim-tanam"
+        :kolom-wajib="['nama', 'tahun', 'tanggal_mulai', 'tanggal_selesai']" />
 @endsection

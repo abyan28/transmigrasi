@@ -353,6 +353,204 @@ Pengaturan GitHub Pages harus disetel sekali secara manual: **Settings → Pages
 
 ---
 
+## 1c. Penalaran Melingkar Berbasis Data Contoh (2026-08-19)
+
+Ditegur pemilik proyek: keputusan struktur berulang kali disandarkan pada `DummyData`, padahal berkas itu dikarang AI sendiri. Kalimat "skenario itu tidak ada pada data contoh" karena itu tidak pernah menjadi fakta tentang Kobalima Timur, melainkan fakta tentang apa yang terlintas saat menuliskannya.
+
+Aturannya kini tertulis pada `rules.md` 19a. Bagian ini menyimpan buktinya agar larangan itu tidak terbaca sebagai kehati-hatian berlebihan.
+
+### 1c.1 Mengapa data contoh secara struktural tidak dapat menjawab
+
+Tiga sifat berikut melekat pada `DummyData` dan tidak dapat dihilangkan dengan menambah baris:
+
+1. **Potret sesaat tanpa sumbu waktu.** Pengaduan menumpuk, dokumen bertambah, kerusakan berulang. Seluruh "banyak" yang lahir dari perjalanan waktu mustahil tampak pada larik statis.
+2. **Sengaja dibuat minimal.** Catatan bertanggal 2026-08-14 dan 2026-08-17 berulang kali menyatakan suatu baris "sengaja dibiarkan kosong agar keadaan kosong ikut teruji". Ketiadaan sebuah kasus karena itu adalah **keputusan desain**, bukan temuan. Memakainya sebagai bukti sama dengan menaruh barang di laci lalu terkejut menemukannya di sana.
+3. **Dikalibrasi ke tampilan, bukan ke lapangan.** 8 KK melawan sekitar 1.140 KK yang disebut `prd.md`, rasio 1:140.
+
+Ditambah satu bentuk yang baru terlihat pada audit 2026-08-19 dan **arahnya terbalik** dari ketiganya:
+
+4. **Data karangan mengalahkan alasan lapangan yang sudah ditulis benar.** Bukan sekadar menyimpulkan dari data contoh ketika alasan lain belum ada, melainkan **membatalkan** alasan lapangan yang sudah tercatat demi menyesuaikan dokumen pada bentuk `DummyData`. Ini yang paling sulit terlihat, sebab menyamar sebagai perapian ketidakkonsistenan antara dokumen dan kode. Pembedanya satu pertanyaan: **mana yang disesuaikan pada mana?** Bila dokumen yang mengalah pada data contoh, arahnya sudah salah.
+
+### 1c.2 Lima pelanggaran yang tercatat
+
+Tiga yang pertama ditemukan bersamaan pada 2026-08-19. Dua berikutnya ditemukan pada **audit menyeluruh** hari yang sama, yang menyisir seluruh keputusan `notes.md` terhadap `rules.md` 19a.
+
+**Pertama, tautan objek pengaduan (2026-08-19).** Tabel `pengaduan_objek` sempat ditolak dengan alasan "dari 5 pengaduan contoh, tidak satu pun menyangkut lebih dari satu objek". Pernyataan itu **salah pada data contoh itu sendiri**: `PGD-2026-0001` berbunyi *"saluran irigasi tersumbat ... air tidak sampai ke lahan usaha"* dan `PGD-2026-0004` berbunyi *"longsor menutup sebagian jalan produksi menuju lahan usaha"*. Dua dari lima baris, masing-masing menyebut dua objek dalam satu kalimat.
+
+Yang memberatkan: `PGD-2026-0004` justru dikutip sendiri pada paragraf sebelumnya sebagai bukti "kategori tidak sama dengan objek". Baris yang sama dibaca teliti untuk satu keperluan, lalu buta untuk keperluan lain. Itu bukan pemeriksaan data, melainkan pencarian pembenaran atas kesimpulan yang sudah diambil.
+
+**Kedua, dokumen lahan (butir b735).** Pemisahan `dokumen_lahan` dibatalkan alasannya dengan kalimat "dari 6 bidang, tidak satu pun memiliki lebih dari satu dokumen, skenario yang menjadi seluruh alasan pemisahan tidak pernah ada". Padahal `data-dictionary.md` 7.2 sampai kini berbunyi sebaliknya, dan secara lapangan sertifikasi transmigrasi memang berlapis: Surat Keterangan Pembagian Tanah lebih dulu, sertifikat menyusul bertahun kemudian. Satu bidang **pasti** melewati dua dokumen. Yang tidak punya sumbu waktu adalah data contohnya, bukan tanahnya. Kesimpulan akhirnya kebetulan tetap benar sebab tabelnya dipertahankan, tetapi penalarannya sudah cacat sejak itu.
+
+**Ketiga, ambang searchable dropdown (butir b789).** Ambang 8 opsi disetel lalu dibenarkan dengan "dengan data contoh sekarang, `/rumah` dan `/riwayat-tanam` sengaja tidak menampilkannya sebab daftarnya masih 4 dan 6 baris". Empat baris di bawahnya tertulis pengakuan sendiri bahwa "PRD menyebut 1.140 KK, sedangkan data contoh hanya 8". Jurangnya dilihat, dituliskan, lalu kalibrasinya tetap mengikuti data contoh.
+
+**Keempat, peruntukan lahan bertahap (2026-08-18).** Enum `PeruntukanLahan` dipecah menjadi `Lahan Usaha I` dan `Lahan Usaha II` dengan alasan "YOHANES BERE tercatat memiliki 3 bidang, tetapi dua di antaranya bernama sama persis tanpa pembeda apa pun", diperkuat kalimat "dua kekeliruan nyata ditemukan, keduanya **terbukti dari data proyek sendiri**".
+
+**Inilah satu-satunya yang kerusakannya sudah nyata, bukan potensi.** Enum dipasang, data contoh disesuaikan, lalu dicabut pada hari yang sama setelah pemilik proyek menyatakan keadaan sebenarnya: satu transmigran menerima **satu** pekarangan dan **satu** lahan usaha.
+
+Yang membuatnya lebih dalam: keterangan lapangan itu sekaligus membatalkan keputusan **2026-08-10** yang berbunyi "boleh lebih dari satu lahan usaha, kondisi lapangan" — yang ternyata juga tidak pernah berdasar lapangan. Satu penalaran melingkar menutupi penalaran melingkar lain selama delapan hari, dan keduanya baru terbongkar oleh satu kalimat pemilik proyek.
+
+**Kelima, kontak poktan (2026-08-17).** Kolom kontak kelompok diganti menjadi kontak ketua dengan alasan "kontak poktan **ternyata sudah lama menjadi kontak ketua di dalam kode**, hanya dokumennya yang menyebut lain".
+
+Ini bentuk keempat pada 1c.1: alasan itu **membatalkan keterangan lapangan yang sudah ditulis benar** pada bagian 1a.6, yaitu "kontak kelompok bisa berbeda dari kontak pribadi ketua". Dokumen disesuaikan pada data karangan, bukan sebaliknya. Jejaknya sempat menyebar ke `data-dictionary.md` 8.1 dan `rules.md` 7a.2b sebelum diperbaiki.
+
+Keputusannya **kebetulan tetap benar** setelah dikonfirmasi pemilik proyek pada 2026-08-19: poktan di Kobalima Timur memang tidak memiliki kontak sendiri. Tetapi kebenaran itu baru diketahui **dua hari setelah** keputusannya diambil, dan selama itu dasarnya tidak sah.
+
+### 1c.3 Mengapa pelajaran 2026-08-18 tidak menahannya
+
+Catatan bertanggal 2026-08-18 sudah memuat pelajaran yang tepat: *"bertanya lebih dulu lebih murah daripada menyimpulkan"*. Ia tidak bekerja sebab ditulis terlalu sempit, hanya berlaku "untuk hal yang bergantung praktik dinas setempat", sehingga tidak terpicu ketika pertanyaannya menyangkut kardinalitas.
+
+Pelajaran yang dicatat terlalu spesifik tidak akan pernah menahan kesalahan berikutnya, sebab kesalahan berikutnya selalu datang dalam bentuk yang sedikit berbeda. `rules.md` 19a karena itu ditulis sebagai pembedaan jenis pertanyaan, bukan sebagai daftar topik.
+
+### 1c.4 Hasil audit menyeluruh (2026-08-19)
+
+Seluruh 992 baris `notes.md` disisir terhadap `rules.md` 19a. **36 keputusan** menyebut data contoh sebagai alasan:
+
+| Golongan | Jumlah | Tindakan |
+|---|---|---|
+| **Cacat, menyangkut struktur data** | 5 | Alasannya diperbaiki atau ditandai dicabut |
+| Ragu, menyangkut struktur data | 4 | Ditinjau; seluruhnya bertahan dengan alasan yang sah |
+| Cacat atau ragu, hanya tampilan | 4 | Satu ditandai perlu tinjau ulang saat data nyata masuk |
+| **Sah** — menjawab pertanyaan tentang kode | 23 | Tidak perlu tindakan |
+
+Dua puluh tiga yang sah menunjukkan aturan ini **tidak melarang memakai data contoh**, hanya melarang memakainya untuk pertanyaan yang salah. Menghitung "96 pemakaian `x-cloak` mati", "19 dari 41 rute tidak pernah diuji", atau "nilai enum `'Milik Pribadi'` tidak cocok dengan `'Pribadi'`" seluruhnya sah, sebab ketiganya pertanyaan tentang kode.
+
+**Dua pertanyaan lapangan yang muncul dari audit dijawab pemilik proyek, bukan disimpulkan:**
+
+| Pertanyaan | Jawaban | Akibat |
+|---|---|---|
+| Apakah poktan punya kontak sendiri? | Tidak | Keputusan 2026-08-17 bertahan, alasannya diperbaiki |
+| Perlukah impor massal musim tanam? | Perlu | Pengecualian dicabut, fitur impor ditambahkan |
+
+Inilah perilaku yang diminta 19a poin 11, dan justru pertanyaan kedua membuktikan nilainya: pengecualian musim tanam dari impor **memang keliru**, dan tidak akan pernah ketahuan bila alasannya tidak diperiksa.
+
+### 1c.5 Aturan yang dilanggar oleh penulisnya sendiri
+
+Hal yang paling perlu dicatat dari audit ini: `rules.md` 19a **sudah ada** ketika dua pelanggaran terakhir ditemukan, dan `notes.md` 1c.1 poin 1 tentang "tanpa sumbu waktu" **sudah tertulis 400 baris di atas** kalimat yang melanggarnya (pengecualian musim tanam dari impor).
+
+Menulis aturan tidak cukup. Yang kurang adalah **kebiasaan memeriksa aturan itu terhadap pekerjaan sendiri**, dan audit berkala semacam inilah bentuknya. Karena itu audit ini dicatat sebagai kegiatan yang dapat diulang, bukan sebagai perbaikan sekali jalan.
+
+---
+
+## 1d. Fitur Lulus Uji tetapi Tidak Dapat Dipakai (2026-08-19)
+
+Ditemukan pemilik proyek beberapa saat setelah tautan objek pengaduan dinyatakan selesai: pada halaman rincian pengaduan hanya tampil daftar objek yang sudah tertaut, tanpa satu pun cara menautkannya. Pemeriksaan membenarkan hal itu dan menemukan **empat cacat**, seluruhnya lolos dari 449 uji yang hijau.
+
+### 1d.1 Empat cacat
+
+| # | Cacat | Akibat |
+|---|---|---|
+| 1 | Isian hanya menerima **satu objek** | Kejamakan yang menjadi seluruh alasan tabel `pengaduan_objek` tidak dapat dijalankan petugas |
+| 2 | Isian hanya ada di dalam modal penanganan | Pengaduan berstatus Selesai **tidak dapat ditaut sama sekali**, sebab modal itu tidak dirender ketika tidak ada status lanjutan |
+| 3 | Form ubah pengaduan tanpa isian objek | Menyunting laporan tidak menyentuh objeknya |
+| 4 | Tidak ada tombol mencabut tautan | Salah taut bersifat permanen |
+
+Cacat 1 yang paling telak. Data contohnya jamak, tabelnya jamak, tampilan rinciannya jamak, uji integritasnya memeriksa kejamakan — **hanya isiannya yang tunggal**. Petugas tidak akan pernah dapat menghasilkan data seperti `PGD-2026-0004` yang justru dipajang sebagai contoh pembenaran tabel ini.
+
+Cacat 2 lebih memalukan lagi: aturan `rules.md` 10b.6h yang berbunyi *"tautan boleh disunting kapan saja, tidak dikunci status"* ditulis pada hari yang sama, lalu dilanggar pada berkas berikutnya.
+
+### 1d.2 Mengapa 449 uji tidak menangkapnya
+
+**Sebab pertama, uji memeriksa keberadaan string, bukan kemampuan.** Ketiga uji yang ditulis berbunyi seperti ini:
+
+```php
+expect($isi)->toContain('name="objek_tipe"');     // ada? ya. jamak? tidak diperiksa
+expect($isi)->toContain('value="belum_terdata"'); // ada? ya
+```
+
+Tidak satu pun menanyakan apakah petugas dapat **menambah objek kedua**. Ini persis kekeliruan yang sudah tercatat pada butir b799 pada 2026-08-17 — *"uji Pest hanya memastikan sebuah string ada di HTML, bukan bahwa tampilannya masuk akal"* — dan terulang dua hari kemudian.
+
+**Sebab kedua, id contoh yang kebetulan menguntungkan.** Uji membaca `/pengaduan/1` yang berstatus Diproses, sehingga modal penanganannya dirender dan isian objeknya ikut terbaca. Bila membaca `/pengaduan/5` yang berstatus Selesai, uji yang sama akan memerah. Memilih satu baris contoh tanpa alasan berarti menguji keadaan yang paling ramah, bukan keadaan yang paling mungkin gagal.
+
+**Akar keduanya sama:** yang diuji adalah **apa yang dibangun**, bukan **apa yang dijanjikan**. Uji disusun setelah kode selesai dengan membaca kode itu sendiri, sehingga ia hanya dapat menemukan hal yang sudah diketahui penulisnya.
+
+### 1d.3 Yang diperbaiki
+
+- Isian menjadi **daftar baris** ber-`objek[i][tipe]`, dengan tombol Tambah objek dan tombol cabut per baris.
+- Kedua pernyataan dipindah **ke dalam** dropdown jenis, sehingga satu laporan dapat memuat objek tertaut sekaligus pernyataan, persis `PGD-2026-0004`.
+- Modal **Kelola Objek** tersendiri, dirender tanpa memeriksa status, dan terisi tautan yang sudah ada agar dapat disunting. Modal penanganan tetap memuat isian yang sama sebagai jalan pintas.
+- Rute `POST /pengaduan/{id}/objek`.
+- `rules.md` 10b ditambah poin **6h-1** dan **6h-2** agar kedua cacat ini tidak dapat terulang tanpa melanggar aturan tertulis.
+
+### 1d.4 Uji peramban dijadikan syarat, bukan pelengkap
+
+Ditambahkan `tests/Browser/uji-isian-objek.mjs`, dijalankan lewat Edge headless dan protokol DevTools **tanpa menambah dependensi**. Enam pemeriksaan menguji perilaku, bukan markup: menambah baris benar-benar menambah, mencabut benar-benar mengurangi, memilih pernyataan benar-benar menyembunyikan pemilih aset, dan pengaduan berstatus Selesai benar-benar dapat ditaut.
+
+Nilainya terbukti seketika: uji ini **langsung memerah** pada pemeriksaan terakhir saat pertama dijalankan, yaitu pemeriksaan yang tidak dapat ditiru satu pun uji string.
+
+Dua jebakan ditemukan saat menyusunnya, dan keduanya layak dicatat:
+
+- **`offsetParent` tidak dapat dipakai memeriksa keterlihatan** pada elemen di dalam panel berposisi `fixed`; nilainya `null` meski elemennya tampil. Diganti `getClientRects().length > 0`. Pemeriksaan pertama memerahkan halaman yang sebenarnya sehat.
+- **Modal wajib ditutup sebelum berpindah halaman.** Penguncian gulir milik modal lama masih menempel saat halaman berikutnya dimuat, sehingga panel yang baru terbaca belum bergeometri.
+
+Berkas `uji-combobox.mjs` di akar proyek ternyata **kosong 0 byte**, sisa yang tidak terbersihkan dari pekerjaan 2026-08-17. Dihapus, dan uji peramban kini ditempatkan pada `tests/Browser/` agar tidak lagi tercecer di akar.
+
+---
+
+## 1e. Tautan Objek Dicabut, Bidang Menggantikannya (2026-08-19)
+
+Ditetapkan pemilik proyek beberapa jam setelah tautan objek diperbaiki: fitur pengelolaan objek **ditiadakan seluruhnya**, dan halaman daftar pengaduan diberi filter bidang.
+
+### 1e.1 Mengapa dicabut
+
+Alasannya bukan cacat pelaksanaan, melainkan pergeseran dasar keputusan. Sepanjang pembahasan hari itu ditetapkan bahwa **satu laporan ditangani satu dinas**. Begitu itu berlaku, pertanyaan yang perlu dijawab sistem berubah: bukan lagi "benda apa saja yang rusak", melainkan **"dinas mana yang menangani"**. Mengelola daftar objek per laporan menjadi pekerjaan tambahan yang tidak menjawab pertanyaan itu.
+
+Penghapusan dipilih **menyeluruh**, bukan sekadar mencabut isiannya. Bila hanya cara mengisinya yang dihapus, tab Pengaduan Terkait pada sembilan halaman rincian dan rekap aset akan selamanya kosong pada sistem nyata, sebab tidak ada lagi jalan menautkan. Itu kontrol mati yang dilarang R-26.
+
+### 1e.2 Yang ikut hilang dan yang dipertahankan
+
+| Dihapus | Dipertahankan |
+|---|---|
+| `ObjekPengaduan`, `pengaduan_objek`, komponen, partial isian | **Halaman rincian Inventaris SP & Fasilitas SP** beserta rute dan tombolnya |
+| 7 metode `DummyData`, tab pada 9 halaman rincian | Pemecahan kategori `Inventaris SP` / `Fasilitas SP` |
+| Rekap "Aset paling sering diadukan", rute `pengaduan.objek` | Uji privasi halaman lacak publik |
+| 23 uji, `tests/Browser/uji-isian-objek.mjs` | `rules.md` 16.0a tentang uji yang menyasar janji |
+
+Kedua halaman rincian SP dipertahankan sebab lahir bersama fitur ini tetapi **sudah berdiri sendiri**: keduanya menampilkan rincian aset dan Catatan Log, dan dijaga tiga uji tersendiri.
+
+Tab lama pada rincian infrastruktur yang menampilkan seluruh pengaduan se-SP **tidak dikembalikan**. Komentarnya sendiri dulu mengakui itu menyesatkan: keluhan atas jalan produksi ikut muncul pada halaman sumur bor.
+
+### 1e.3 Bidang menggantikan objek
+
+Penentu dinas kini kembali ke kategori, tetapi dengan tiga perbedaan penting dari bentuk semula:
+
+1. **`dariKategori()` bertipe `?self`.** Empat kategori sengaja mengembalikan `null`: lahan usaha, infrastruktur, bencana, dan lainnya. Pokok masalahnya dapat jatuh ke dua dinas sekaligus, sehingga menebak justru menyesatkan; laporan akan masuk ke daftar dinas yang keliru lalu tertahan di sana.
+2. **Nilai turunan dapat ditimpa.** Isian bidang berupa pilihan, bukan tampilan baca-saja seperti sebelumnya. Pilihan manual dijaga penanda `disentuh` agar tidak tertimpa ketika kategori disunting kemudian.
+3. **Kolom `bidang` menjadi nullable**, wajib terisi sebelum status maju ke Diproses.
+
+Ditambah kategori **Saprotan**, sebab keluhan bibit, pupuk, dan obat sebelumnya menumpang pada Produksi Panen. Jumlah kategori 10 menjadi **11**.
+
+### 1e.4 Cakupan data kedua dinas sengaja tidak simetris
+
+Dinas Transmigrasi bercakupan `Semua`, Dinas Pertanian bercakupan `Per Bidang`. Alasannya dinyatakan pemilik proyek: **sistem ini milik Dinas Transmigrasi** sebagai pengelola kawasan, dan merekalah yang menyaring laporan berbidang kosong.
+
+Konsekuensi yang diterima sadar: satu-satunya jalan laporan sampai ke Dinas Pertanian adalah lewat penetapan Admin atau Dinas Transmigrasi. Bila keduanya lambat meninjau, laporan hama atau alsintan rusak akan menunggu. Peredamnya dua, keduanya sudah terpasang: filter bidang menyediakan pilihan **Belum ditentukan beserta jumlahnya**, dan kolom bidang yang kosong ditulis sebagai keterangan bertanda gold, bukan sel hampa yang terbaca sebagai data gagal termuat.
+
+### 1e.5 Tiga tempat yang mengunci daftar kelompok rekap
+
+Nilai `objek` pada tab rekap terkunci di **tiga berkas sekaligus**: batasan `where` pada rute, `$labelKelompok` pada view, dan larik pada `DaftarTautanStatis`. Ketiganya wajib diubah serentak; mengubah dua di antaranya membuat penerbitan statis membalas 404, dan berbeda dari peta rincian, tidak ada `array_key_exists` yang melempar galat sebagai penjaga.
+
+### 1e.6 Kategori Kelompok Tani terlewat
+
+Ditemukan pemilik proyek setelah pekerjaan bidang dinyatakan selesai: **kategori pengaduan tidak memuat poktan**, padahal poktan adalah modul penuh dengan halaman daftar, rincian, pengelolaan anggota, dan empat kewenangannya sendiri.
+
+Sebabnya kelalaian bertanya. Pada penetapan peta bidang, pemilik proyek menulis *"untuk kategori poktan, alsintan, saprotan, dan panen otomatis bidang pertanian"*. Dua di antaranya ternyata belum ada sebagai kategori, yaitu saprotan dan poktan. Saprotan ditanyakan dan ditambahkan; **poktan tidak ditanyakan dan ikut terlupa**. Memeriksa satu ketidakcocokan lalu berhenti, padahal daftarnya belum habis diperiksa.
+
+Akibatnya bukan sekadar pilihan yang kurang. Keluhan soal kelompok tani terpaksa masuk kategori `Lainnya`, dan `Lainnya` justru **berbidang kosong** sehingga setiap laporan semacam itu menambah antrean penyaringan Dinas Transmigrasi, padahal urusannya jelas milik Dinas Pertanian.
+
+**Penyisiran menyeluruh** atas 26 fitur berkewenangan lalu dilakukan atas permintaan pemilik proyek, dan hasilnya **tepat satu yang terlewat**. Modul yang sengaja tidak berkategori beserta alasannya kini tercatat pada `data-dictionary.md` §11.21, dan kewajiban pemetaan lengkap dua arah pada `rules.md` 10b.3a. Ditambah uji penjaga yang mengadu daftar modul dengan daftar kategori, sehingga modul baru yang dapat dikeluhkan warga tidak dapat lagi lolos tanpa kategorinya.
+
+> **Pelajaran:** ketika pemilik proyek menyebut sederet nilai, **seluruhnya wajib diperiksa terhadap keadaan sistem**, bukan hanya yang kebetulan menarik perhatian lebih dulu. Satu ketidakcocokan yang ditemukan justru pertanda daftar itu perlu diperiksa sampai habis.
+
+### 1e.7 Kekeliruan encoding yang hampir lolos
+
+Penyuntingan `data-dictionary.md` lewat `Set-Content` PowerShell **merusak seluruh karakter non-ASCII** pada berkas: 259 kemunculan mojibake menggantikan separator `·`, tanda `§`, `±`, dan em dash. Kerusakannya menyebar ke ratusan baris yang sama sekali tidak berhubungan dengan pekerjaan hari itu.
+
+Ketahuan hanya karena satu penggantian teks gagal mencocokkan pola. Berkas dipulihkan lewat `git checkout HEAD`, lalu seluruh suntingan diterapkan ulang memakai perkakas penyuntingan yang menjaga encoding.
+
+> **Aturan:** penyuntingan berkas dokumen **wajib memakai perkakas edit**, bukan penulisan ulang seluruh isi lewat shell. Bila terpaksa memakai shell, hasilnya wajib diperiksa terhadap mojibake sebelum dilanjutkan, sebab kerusakan semacam ini tidak memerahkan satu uji pun.
+
+---
+
 ## 2. Catatan Dokumen Proposal
 
 Lembar pengesahan pada `docs/Revisi_Proposal_Budi_TEP ITS 2026_Kobalima_Timur_Upload_10_6_2026_a.pdf` masih memuat judul dan pengusul dari proposal lain:
@@ -439,7 +637,7 @@ Seharusnya: "Digitalisasi Monitoring Pertanian dan Tata Kelola Data Kawasan Tran
 | 2026-08-14 | Satu baris audit log memakai aksi ``Verifikasi`` untuk **konteks yang sama sekali berbeda** | ``DummyData::auditLog()`` baris keempat memakainya untuk menutup pengaduan, bukan memverifikasi data. Menghapus enum tanpa membaca baris ini akan merusak contoh audit log secara diam-diam. Aksinya diganti ``Ubah``, sebab yang berubah adalah tahap penanganannya |
 | 2026-08-14 | **Username kini dibuat petugas sendiri**, bukan dikarang Admin | Petugaslah yang mengetiknya setiap hari, sehingga ia pula yang paling berkepentingan memilihnya. Konsekuensi yang harus disepakati lebih dulu: surel menjadi **wajib**, sebab itulah satu-satunya kredensial yang dimiliki petugas ketika pertama kali masuk. Kata sandi awal ikut dibangkitkan sistem, karena kata sandi karangan manusia cenderung berpola dan dipakai ulang untuk banyak akun |
 | 2026-08-14 | Akun nonaktif ternyata **terkunci selamanya** | Cabang kondisi pada halaman daftar tidak menghasilkan apa pun ketika akun sudah mati, sehingga tidak ada jalur mengaktifkannya kembali, padahal akun memang tidak pernah dihapus. Enum ``AksiAuditLog::AktifkanAkun`` sudah disiapkan sejak lama tetapi tidak pernah dipicu antarmuka mana pun |
-| 2026-08-14 | Cakupan data ``Milik Sendiri`` **dibuang** | Tidak pernah dipakai role mana pun dan hanya ditandai "untuk kebutuhan mendatang" pada dua dokumen. Pilihan yang tak pernah dipakai menambah beban baca tanpa manfaat, dan dapat ditambahkan kembali bila kelak benar-benar diperlukan |
+| 2026-08-14 | Cakupan data ``Milik Sendiri`` **dibuang** | **Diminta pemilik proyek.** Nilai ini hanya ditandai "untuk kebutuhan mendatang" pada dua dokumen tanpa satu pun aturan yang menjelaskan kapan dipakai, sehingga menambah beban baca tanpa manfaat. Dapat ditambahkan kembali bila kelak benar-benar diperlukan. *(Alasan "tidak pernah dipakai role mana pun" dicabut 2026-08-19: itu merujuk ``DummyData::role()`` yang dikarang sendiri, bukan bukti tentang kebutuhan lapangan. Keputusannya tetap sah sebab bersumber dari permintaan pemilik proyek.)* |
 | 2026-08-14 | Ditambahkan role dummy **Pendamping Lapangan** yang bukan bawaan sistem | Keempat role bawaan seluruhnya bernilai "Dapat dihapus: Tidak", sehingga bentuk tampilan role buatan Admin tidak pernah terlihat dan tidak dapat dinilai. Role ini sengaja dibuat tanpa pengguna agar keadaan tersebut ikut teruji |
 | 2026-08-14 | Izin ``hapus`` dicabut dari modul ``pengguna``, **tetapi dipertahankan pada ``role``** | Akun tidak pernah dihapus melainkan dinonaktifkan, sehingga kotak centangnya menawarkan kewenangan yang mustahil dijalankan. Sebaliknya role **boleh** dihapus selama bukan bawaan dan tidak dipakai akun mana pun (``rules.md`` 5.0c poin 9); yang keliru justru tombolnya yang belum pernah dibuat. Total izin 118 menjadi 117 |
 | 2026-08-14 | Kata sandi dikirim lewat surel **sekaligus tetap tampil di layar** | Permintaan pengiriman surel dipenuhi, tetapi tampilan layar dipertahankan. Jalur Admin justru dibuat untuk petugas di lokus bersinyal lemah; bila kata sandi hanya dikirim lewat surel, petugas yang sedang berdiri di depan Admin tidak dapat membacanya sampai memperoleh sinyal. Peringatan pada modal setel-sandi ditulis ulang, bukan dihapus |
@@ -464,6 +662,18 @@ Seharusnya: "Digitalisasi Monitoring Pertanian dan Tata Kelola Data Kawasan Tran
 | 2026-08-17 | Baris total ditulis **"Total" saja**, tanpa penanda cakupan | Judul halaman dan filter yang sedang aktif sudah menyatakan cakupannya, sehingga "Total kawasan" mengulang informasi tepat di atasnya. Lima tempat disamakan, sedangkan baris yang menjelaskan APA yang dijumlahkan seperti "Total luas lahan" tetap dipertahankan |
 | 2026-08-17 | Istilah antarmuka **diseragamkan ke "email"**, bukan "surel" | Lebih dikenal petugas dan warga di lokus meski "surel" padanan baku. Hanya menyentuh empat tempat yang benar-benar tampil di layar; dua puluh empat kemunculan lain berada di dalam komentar kode dan dibiarkan, sebab pembacanya pengembang. Aturannya dicatat pada ``ui-spec.md`` 10.1 agar pekerjaan berikutnya tidak kembali memakai "surel" |
 | 2026-08-17 | Uji penjaga istilah sempat **lulus tanpa memeriksa apa pun** | Spanduk kredensial hanya dirender setelah formulir dikirim, sedangkan uji membuka halaman biasa sehingga teksnya tidak pernah ada. Ketahuan lewat mutasi yang tidak memerah. Sesi kini diisi lebih dulu supaya keadaan setelah pengiriman ikut terperiksa |
+| 2026-08-19 | **Data contoh dilarang menjadi bukti tentang lapangan** | Ditegur pemilik proyek. Kesimpulan struktur berulang kali disandarkan pada `DummyData` yang dikarang AI sendiri, sehingga penalarannya melingkar: "tidak ada di data" hanya berarti "belum terpikir saat menuliskannya". Aturannya kini tertulis pada `rules.md` 19a. Lihat bagian 1c |
+| 2026-08-19 | **Tautan objek pengaduan dicabut seluruhnya**, digantikan bidang berbasis kategori | Setelah ditetapkan satu laporan ditangani satu dinas, mengelola daftar objek per laporan menjadi beban tanpa menjawab pertanyaan yang sebenarnya, yaitu dinas mana yang menangani. Dicabut menyeluruh sebab mencabut isiannya saja menyisakan tab dan rekap yang selamanya kosong, dan itu kontrol mati (R-26). Lihat bagian 1e |
+| 2026-08-19 | Bidang **boleh kosong** untuk empat kategori yang dapat ditangani dua dinas | Lahan usaha, infrastruktur, bencana, dan lainnya menyatakan pokok masalah yang dapat jatuh ke dua dinas. Menebak bidangnya membuat laporan masuk ke daftar dinas yang keliru lalu tertahan di sana. Nilai turunan pun selalu dapat ditimpa petugas, sebab penentuan dinas bergantung isi laporan yang tidak selalu terbaca dari kategori |
+| 2026-08-19 | Cakupan kedua dinas **sengaja tidak simetris**: Transmigrasi `Semua`, Pertanian `Per Bidang` | Sistem ini milik Dinas Transmigrasi sebagai pengelola kawasan, dan merekalah yang menyaring laporan berbidang kosong. Konsekuensinya laporan hanya sampai ke Dinas Pertanian lewat penetapan mereka, diredam filter "Belum ditentukan" beserta jumlahnya agar antrean tidak menumpuk diam-diam |
+| 2026-08-19 | **Audit menyeluruh `rules.md` 19a dijalankan**, menemukan dua pelanggaran baru | Bagian 1c semula mencatat tiga pelanggaran; penyisiran 992 baris menemukan **lima**. Yang terberat: enum `PeruntukanLahan` sempat dipecah menjadi Lahan Usaha I/II berdasarkan hitungan baris data contoh, dipasang lalu dicabut pada hari yang sama. Yang paling halus: kontak poktan, satu-satunya yang **membatalkan alasan lapangan yang sudah benar** demi menyesuaikan dokumen pada bentuk `DummyData`. Lihat bagian 1c.2 dan 1c.4 |
+| 2026-08-19 | Bentuk keempat ditambahkan pada 1c.1: **data karangan mengalahkan alasan lapangan** | Berbeda dari tiga bentuk sebelumnya, arahnya terbalik: bukan menyimpulkan ketika alasan lain belum ada, melainkan membatalkan alasan lapangan yang sudah tercatat. Menyamar sebagai perapian ketidakkonsistenan dokumen dan kode, sehingga tampak seperti perbaikan. Pembedanya satu pertanyaan: mana yang disesuaikan pada mana |
+| 2026-08-19 | **Musim Tanam diberi impor**, dikeluarkan dari daftar pengecualian | Sempat disamaratakan dengan Role, Kawasan, dan SP lewat alasan "jumlah barisnya sedikit". Ketiganya berjumlah tetap menurut `prd.md`, sedangkan musim tanam bertambah dua kali setahun tanpa henti. Kebutuhannya dipastikan keterangan pemilik proyek: dinas perlu memasukkan riwayat musim tahun-tahun sebelumnya secara massal. Modul berimpor 14 menjadi 15 |
+| 2026-08-19 | Kontak poktan **tetap kontak ketua**, tetapi alasannya diperbaiki | Keputusan 2026-08-17 kebetulan benar dan dipastikan keterangan pemilik proyek: poktan di Kobalima Timur tidak memiliki kontak sendiri. Yang dicabut hanya alasan lamanya yang bersandar pada bentuk `DummyData`, sebab kebenaran itu baru diketahui dua hari setelah keputusannya diambil |
+| 2026-08-19 | Aturan `rules.md` 19a ditambah poin **13 dan 14** | Poin 13 memperingatkan bentuk berarah terbalik; poin 14 mewajibkan aturan ini diperiksa ulang berkala terhadap keputusan yang sudah diambil, sebab menulis aturan terbukti tidak cukup: dua pelanggaran terjadi setelah aturannya berlaku |
+| 2026-08-19 | Kategori **Kelompok Tani** ditambahkan setelah terlewat | Poktan modul penuh tetapi keluhan atasnya terpaksa masuk kategori `Lainnya` yang berbidang kosong, sehingga menambah antrean penyaringan padahal urusannya jelas milik Dinas Pertanian. Terlewat karena hanya sebagian dari sederet nilai yang disebut pemilik proyek diperiksa terhadap keadaan sistem. Penyisiran 26 fitur menemukan tepat satu yang terlewat, dan pemetaan modul-kategori kini dijaga uji. Lihat bagian 1e.6 |
+| 2026-08-19 | Penyuntingan dokumen **wajib lewat perkakas edit**, bukan penulisan ulang lewat shell | `Set-Content` merusak 259 karakter non-ASCII pada `data-dictionary.md`, menyebar ke ratusan baris yang tidak berhubungan dengan pekerjaan. Kerusakan semacam ini tidak memerahkan satu uji pun dan hampir lolos; ketahuan hanya karena satu penggantian teks gagal mencocokkan pola |
+| 2026-08-19 | Skenario **disisir sendiri**, tidak menunggu disodorkan | Pemilik proyek menyampaikan dua kasus tautan aset, dan penyisiran lanjutan menemukan 17 skenario lain, tiga di antaranya menyangkut privasi yang dapat membocorkan data pribadi di kanal publik. Menunggu kasus disodorkan berarti menyerahkan kelengkapan analisis kepada ingatan pemilik proyek. Dituangkan pada `rules.md` 20a |
 
 ---
 
@@ -498,6 +708,9 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
 6. Konfirmasi apakah satu transmigran dapat menjadi anggota lebih dari satu poktan. *Sementara diasumsikan tidak, mengikuti `rules.md` §6.4.*
 7. Konfirmasi spesifikasi hosting/VPS target, khususnya versi PHP yang tersedia, sebelum tahap deployment.
 8. Putuskan apakah mode gelap bawaan TailAdmin dipertahankan atau dimatikan, setelah uji coba bersama operator lapangan.
+9. ~~**Audit keputusan lama yang bersandar pada data contoh** (disepakati 2026-08-19).~~ **Selesai 2026-08-19.** Seluruh 992 baris `notes.md` disisir; 36 keputusan menyebut data contoh sebagai alasan, **5 di antaranya cacat dan menyangkut struktur data**. Dua pertanyaan lapangan yang muncul dijawab pemilik proyek, bukan disimpulkan. Hasil lengkapnya pada bagian 1c.4, dan dua pelanggaran baru yang ditemukan tercatat pada 1c.2 sebagai pelanggaran keempat dan kelima.
+10. **Tinjau ulang ambang searchable dropdown setelah data nyata masuk**, khusus `/rumah` dan `/riwayat-tanam`. Keduanya kini tidak menampilkan kotak pencarian karena daftarnya di bawah ambang 8 opsi pada data contoh, padahal pada data nyata keduanya memuat ribuan baris. Ambang 8 opsinya sendiri tidak bermasalah; yang perlu diperiksa adalah apakah kedua halaman itu benar-benar melewatinya. Lihat bagian 1c.2 pelanggaran ketiga.
+11. **Ulangi audit `rules.md` 19a secara berkala**, tidak cukup sekali. Audit 2026-08-19 menemukan dua pelanggaran yang terjadi **setelah** aturannya berlaku, salah satunya melanggar prinsip yang tertulis 400 baris di atasnya pada dokumen yang sama. Lihat bagian 1c.5.
 
 
 ## 5. Catatan Ide
@@ -612,7 +825,8 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
   * **Antarmukanya selesai, penyimpanannya menunggu backend.** Dikerjakan lebih dulu mengikuti strategi Tahap 2 yang membangun tampilan dengan data contoh.
   * Temuan: impor ternyata **bukan tambahan, melainkan kebutuhan PRD 8.1** yang belum dikerjakan. Sinyal di lokus tidak selalu stabil, sehingga sistem wajib menyediakan template luring yang diunduh, diisi di lapangan, lalu diunggah kembali saat sambungan tersedia. `erd.md` 5 juga sudah menyebut impor sebagai jalur masuk data yang integritasnya harus dijaga database, bukan hanya form.
   * Keputusan: dipasang pada **14 modul berdata banyak**, yaitu Transmigran, Rumah, Lahan, Panen, Riwayat Tanam, Infrastruktur, Inventaris SP, Master Wilayah, Master Satuan, Poktan, Alsintan, Saprotan, Fasilitas SP, dan Komoditas.
-  * **Enam modul sengaja dikecualikan.** Pengaduan datang dari kanal publik satu per satu dan nomornya wajib memuat bagian acak sehingga tidak dapat disiapkan di Excel; Pengguna tidak diberi impor sebab kata sandi awal diserahkan langsung kepada orangnya (`rules.md` 14b poin 3) dan impor massal berarti kata sandi berkeliaran di berkas yang berpindah tangan; Role, Kawasan, SP, dan Musim Tanam jumlah barisnya sedikit sehingga impor hanya menambah jalur masuk tanpa manfaat.
+  * **Lima modul sengaja dikecualikan.** Pengaduan datang dari kanal publik satu per satu dan nomornya wajib memuat bagian acak sehingga tidak dapat disiapkan di Excel; Pengguna tidak diberi impor sebab kata sandi awal diserahkan langsung kepada orangnya (`rules.md` 14b poin 3) dan impor massal berarti kata sandi berkeliaran di berkas yang berpindah tangan; Role, Kawasan, dan SP **berjumlah tetap menurut `prd.md`** yaitu satu kawasan, enam SP, dan empat role bawaan, sehingga impor hanya menambah jalur masuk tanpa manfaat.
+  * **KOREKSI 2026-08-19: Musim Tanam dikeluarkan dari daftar pengecualian** dan kini memiliki impor. Ia sempat disamaratakan dengan Role, Kawasan, dan SP lewat alasan "jumlah barisnya sedikit", padahal ketiga modul itu berjumlah tetap menurut dokumen acuan sedangkan **musim tanam bertambah dua kali setahun tanpa henti**. Alasan lamanya menghitung baris data contoh, dan itu persis penalaran yang dilarang `rules.md` 19a; lebih menusuk lagi, ia melanggar prinsip "tanpa sumbu waktu" yang tertulis pada bagian 1c.1 poin 1 di dokumen yang sama. Kebutuhannya dipastikan lewat keterangan pemilik proyek: dinas memang perlu memasukkan riwayat musim tahun-tahun sebelumnya secara massal. Modul berimpor 14 menjadi **15**.
   * Alurnya **tiga langkah**: unduh template, unggah berkas, lalu pratinjau hasil. Langkah ketiga yang paling menentukan, sebab impor yang hanya berkata "gagal" memaksa petugas menebak barisnya, padahal berkas berisi ratusan baris tidak mungkin diperiksa manual. Karena itu kegagalan selalu disertai nomor baris beserta alasannya.
   * **Spanduk "Fitur belum aktif" wajib ada** di dalam modal. Tombolnya terlihat berfungsi penuh padahal penyimpanannya belum ada, sehingga tanpa peringatan petugas dapat mengira datanya sudah masuk lalu kehilangan hasil pendataan sehari penuh.
   * Satu rute `GET /template-impor/{entitas}` melayani seluruh entitas, sebab yang membedakan hanya susunan kolomnya.
@@ -632,7 +846,7 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
 - [done] Bisa jelaskan lebih detail dan kasih contoh nyata dari fitur RBAC di bagian cakupan data? Soalnya itu pilihannya ada "semua", "per SP", "milik sendiri". Nah, ini aku gak paham maksudnya.
   * Jawaban: RBAC di sistem ini punya **dua dimensi terpisah**. Izin menjawab *boleh melakukan apa*, cakupan data menjawab *boleh melihat data siapa*. Keduanya berlapis, bukan menggantikan.
   * Contoh nyata: YOSEP KLAU berrole Operator SP bercakupan `Per SP` dan ditugaskan di SP Weain. Ia berizin tambah transmigran, tetapi membuka `/transmigran` hanya menampilkan KK di SP Weain. Data SP lain tidak disembunyikan tombolnya, melainkan tidak ikut terambil dari database. Bandingkan dengan BUDI SANTOSO bercakupan `Semua` yang melihat keenam SP sekaligus.
-  * **Nilai `Milik Sendiri` dibuang** atas permintaan. Nilai itu tidak pernah dipakai role mana pun dan hanya ditandai "untuk kebutuhan mendatang" di dua dokumen. Pilihan yang tidak pernah dipakai hanya menambah beban baca tanpa manfaat.
+  * **Nilai `Milik Sendiri` dibuang** atas permintaan pemilik proyek. Nilai itu hanya ditandai "untuk kebutuhan mendatang" di dua dokumen tanpa satu pun aturan yang menjelaskan kapan dipakai, sehingga menambah beban baca tanpa manfaat.
 - [done] Di modal floating ubah role kan ada kolom hapus ya. Nah, karena akun pengguna itu tidak bisa dihapus, berarti kolom checklist hapus pada manajemen pengguna harusnya gak ada kan?
   * Benar, dan **sudah diperbaiki**: izin `hapus` dicabut dari modul `pengguna`, sebab akun tidak pernah dihapus melainkan dinonaktifkan. Rutenya bahkan membalas `abort(405)`.
   * **Namun modul `role` tetap memiliki izin hapus.** Ini koreksi terhadap dugaan awal: `rules.md` 5.0c poin 9 membolehkan role dihapus selama bukan bawaan dan tidak dipakai akun mana pun. Yang keliru bukan izinnya, melainkan tombolnya yang belum pernah dibuat.
@@ -724,7 +938,20 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
   * **Bentrok dokumen diselesaikan, bukan diabaikan.** `rules.md` 4a.4 sempat menulis batas wilayah sebagai hal yang "wajib disimpan", diikuti `prd.md` dan `workflow.md`. Ketiganya disunting agar tidak menjanjikan isian yang sudah tidak ada.
   * **Nilainya dokumenter, dan itu diakui.** Keempat kolom menyalin isi berkas penetapan SP; kegunaannya sebagai arsip, bukan sebagai data yang diolah. Bila dinas kelak menyatakan memerlukannya, jalan mengembalikannya jelas: tambahkan kembali 4 kolom pada kamus data 3.6, satu bagian pada `sp/form`, dan satu blok tampilan pada `dashboard/sp`. Riwayat ini sengaja ditulis rinci agar keputusan dapat dibalik tanpa menebak-nebak.
   * Keputusan lama 2026-08-11 yang melebur `koordinat_lokasi_sp` menjadi empat kolom ini **tetap benar pada bagian peleburannya**; yang keliru adalah menyimpan isinya sama sekali. Catatan pada bagian 1a.3 ditandai dicabut, bukan dihapus.
-- Bagaimana kalau topik pengaduan warga bisa ditautkan ke inventaris, fasilitas, dan infrastruktur SP? Begitupun juga ditautkan ke poktan, alsintan, saprotan, hasil panen, rumah transmigran? Mungkin ini yg menautkannya admin? Atau masyarakat?
+- [done] Bagaimana kalau topik pengaduan warga bisa ditautkan ke inventaris, fasilitas, dan infrastruktur SP? Begitupun juga ditautkan ke poktan, alsintan, saprotan, hasil panen, rumah transmigran? Mungkin ini yg menautkannya admin? Atau masyarakat?
+  * **Yang menautkan petugas, bukan warga.** Warga melapor lewat ponsel berjaringan terbatas dan tidak mengetahui id aset; meminta ia memilih dari 1.140 KK akan menutup kanal yang justru paling perlu terbuka. Petugas melengkapinya saat meninjau, pola yang sama dengan koordinat pada `rules.md` 10b.6c. Form publik **tidak disentuh sama sekali**.
+  * Dibuat tabel **`pengaduan_objek`**, bukan dua kolom pada `pengaduan`. Alasannya disusun dari lapangan: kategori `Bencana` memang untuk kejadian yang merusak banyak hal sekaligus, dan infrastruktur di kawasan transmigrasi dipakai bersama sehingga satu irigasi rusak menghambat puluhan bidang. Bila hanya satu objek dapat ditaut, objek kedua akan ditulis ke `deskripsi` sebagai teks bebas dan **tidak terhitung pada rekap** — kegagalan yang berlangsung diam-diam.
+  * **Kewajiban tanpa memaksa berbohong.** Objek wajib dinyatakan sebelum status maju ke Diproses, dipenuhi salah satu dari tiga cara: ditautkan, ditandai `belum_terdata`, atau ditandai `tidak_ada`. Memaksa memilih dari daftar akan membuat petugas menaut ke aset yang sekadar mirip demi dapat melanjutkan, dan rekap lalu menuduh aset yang tidak bersalah. Penandaan `belum_terdata` sekaligus menjadi daftar kerja pendataan.
+  * **Batas ketelitian diakui terbuka.** Inventaris didata per jenis, sehingga satu baris "MEJA KANTOR" mewakili 12 unit dan sistem tidak sanggup menunjuk meja yang mana. Cacat ini sudah ada sebelum tautan objek: data contoh sendiri menulis kursi plastik berkondisi "Rusak Ringan" dengan keterangan *"sebagian retak"*, dan kata "sebagian" itulah pengakuan bahwa modelnya tidak sanggup menyimpan kondisi per unit. Unit spesifik ditulis pada `keterangan`. Pemecahan per unit **tidak dikerjakan**, sebab menuntut penomoran dan pelabelan fisik di lapangan.
+  * **Tiga temuan privasi, seluruhnya ditutup.** Halaman lacak publik tidak menampilkan objek sama sekali (`10b.6i`), sebab siapa pun yang tahu nomor pengaduan akan ikut mengetahui alamat keluarga yang bersangkutan. Rumah, lahan, hasil panen, dan alsintan hanya tampil sebagai **angka gabungan** pada rekap (`10b.8b`), sebab menyebut unitnya mengumumkan keluarga mana yang paling sering mengeluh. Daftar objek pada dropdown wajib disaring cakupan data (`10b.6j`), sebab dropdown adalah jalur baru yang dapat melewati pembatasan Per SP.
+  * **Rekap dipecah dua tabel**, bukan satu. "Aset belum terdata" bukan nama aset; menaruhnya pada tabel peringkat membuatnya bersaing dengan aset sungguhan. Tabel kedua **wajib ditampilkan**: bila sebagian besar laporan masuk ke sana, peringkatnya tidak mewakili keadaan dan pembaca berhak tahu sebelum memakainya menyusun anggaran.
+  * Kolom **jumlah unit** ditampilkan berdampingan, tanpa rasio otomatis. Kursi plastik 60 unit wajar lebih sering diadukan daripada genset 1 unit, tetapi angka turunan yang tampak berwibawa cenderung diterima tanpa ditinjau — alasan yang sama dengan penolakan prioritas otomatis (10b.6a) dan unggulan otomatis (8.3).
+  * **Satu cacat lama ikut diperbaiki.** Tab "Pengaduan" pada rincian infrastruktur selama ini menampilkan **seluruh pengaduan se-SP**, dan komentarnya sendiri mengakui *"bukan daftar keluhan atas aset ini, sebab pengaduan tidak menaut ke id infrastruktur"*. Akibatnya keluhan atas jalan produksi ikut muncul di halaman sumur bor.
+  * **Dua halaman rincian baru** dibuat untuk Inventaris SP dan Fasilitas SP, sebab keduanya hanya punya halaman daftar sehingga keluhan atas sebuah barang tidak punya tempat ditampilkan. Uji penjaga berbasis daftar rute langsung menuntut keduanya bertab dan ber-Catatan Log tanpa ujinya disunting, dan itu memang gunanya.
+  * Kategori `Peralatan dan Perlengkapan` **dipecah** menjadi `Inventaris SP` dan `Fasilitas SP`. Ternyata murah: nilai lama tidak dipakai satu pun data contoh dan seluruh view membacanya lewat `::opsi()`.
+  * Halaman terbit **122 menjadi 152**. Dijaga 20 uji baru, termasuk penjaga privasi lacak publik dan penjaga kejamakan yang memerah bila contoh pengaduan berobjek jamak hilang.
+  * **KOREKSI PADA HARI YANG SAMA.** Pemilik proyek menemukan bahwa isiannya ternyata **hanya dapat menaut satu objek**, sehingga janji kejamakan yang menjadi seluruh alasan tabel ini tidak pernah dapat dijalankan petugas. Rinciannya beserta sebab lolosnya dari 449 uji ada pada bagian 1d.
+  * **DICABUT SELURUHNYA PADA HARI YANG SAMA.** Setelah ditetapkan bahwa satu laporan ditangani satu dinas, pemilik proyek menilai pengelolaan objek menambah beban petugas tanpa menjawab kebutuhan. Seluruh fitur dihapus dan digantikan penentuan bidang berbasis kategori. Lihat bagian 1e.
 - [done] Tambah dokumen pendukung pada form tambah dan ubah pada halaman Satuan Permukiman, inventaris, fasilitas, infrastruktur, kelompok tani, alsintan, saprotan
   * **Bukan pekerjaan baru, melainkan komponen yang belum dipasang.** Kedelapan kolom dokumen sudah lama tercatat pada `data-dictionary.md` (3.6, 4.1, 4.2, 8.1, 8.3, 8.4, dan dua kolom pada 10.1), dan `x-sim.file-upload` sudah matang serta terpakai di lima form lain. Yang tidak ada hanya isiannya.
   * Akibat sebelumnya nyata: **SK pembentukan poktan dan berita acara penyaluran saprotan tidak dapat diunggah ke mana pun**, padahal justru keduanya yang paling sering diminta saat pemeriksaan.
@@ -732,7 +959,8 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
   * `enctype="multipart/form-data"` sudah ada pada `x-sim.modal-form`, sehingga berkas benar-benar terkirim. Dijaga uji tersendiri, sebab kegagalannya berlangsung diam-diam: form tetap tersimpan, hanya berkasnya yang hilang.
 - [done] untuk dokumen lahan, bagaimana kalau ditambahkan di form tambah lahan saja? begitupun juga di form ubah data lahan. soalnya agak bingung juga kalau dipisah.
   * **Dikerjakan bersama koreksi konsep hak atas tanah**, sebab keduanya menyentuh form yang sama.
-  * **Dasar keputusan lama ternyata gugur.** `notes.md` sebelumnya memutuskan dokumen tetap terpisah karena "satu lahan dapat memiliki HPL dan SHM sekaligus". Pemeriksaan data membantahnya: dari **6 bidang, tidak satu pun memiliki lebih dari satu dokumen**. Skenario yang menjadi seluruh alasan pemisahan tidak pernah ada.
+  * ~~**Dasar keputusan lama ternyata gugur.** `notes.md` sebelumnya memutuskan dokumen tetap terpisah karena "satu lahan dapat memiliki HPL dan SHM sekaligus". Pemeriksaan data membantahnya: dari **6 bidang, tidak satu pun memiliki lebih dari satu dokumen**. Skenario yang menjadi seluruh alasan pemisahan tidak pernah ada.~~ **ALASAN INI DICABUT 2026-08-19.** Menghitung baris data contoh tidak dapat membuktikan apa pun tentang kardinalitas di lapangan (`rules.md` 19a), dan kenyataannya justru sebaliknya: sertifikasi transmigrasi memang berlapis, Surat Keterangan Pembagian Tanah lebih dulu lalu sertifikat menyusul bertahun kemudian, sehingga satu bidang **pasti** melewati lebih dari satu dokumen. Yang tidak punya sumbu waktu adalah data contohnya, bukan tanahnya. Lihat bagian 1c.2 pelanggaran kedua.
+  * **Keputusannya tetap berlaku** meski alasannya gugur, sebab tabel `dokumen_lahan` memang dipertahankan. Yang berubah hanya dasarnya: pemisahan dibenarkan oleh sifat sertifikasi berlapis, bukan oleh jumlah baris data contoh.
   * Ketidakkonsistenan yang Anda rasakan juga terukur: **12 tabel** memakai `dokumen_pendukung` satu kolom, **1 tabel** punya tabel dokumen sendiri.
   * Keputusan: **dokumen pertama diisi pada form lahan**, tab pada halaman rincian tetap ada untuk dokumen kedua dan seterusnya. Kasus lazim selesai satu langkah; kasus jarang tetap terlayani.
   * Ketiga keterangan dokumen (`jenis_dokumen`, `nomor_dokumen`, `tanggal_terbit`) **dipertahankan** dan tidak disederhanakan menjadi satu kolom unggahan seperti modul lain. Nomor sertifikat adalah data legal yang harus dapat dicari, bukan sekadar lampiran.
@@ -777,7 +1005,9 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
   * **Dokumen sempat bertentangan sendiri.** Matriks `rules.md` memberi huruf **H** pada Anggota poktan untuk Admin, sementara catatan 5.1 melarang penghapusan demi menjaga riwayat. Kode memilih larangan, dan kini huruf H dicabut agar dokumen tidak menjanjikan tindakan yang memang tidak ada. Total kewenangan turun 96 menjadi **95**.
   * **Ketua sempat dapat ditetapkan di dua tempat sekaligus:** `poktan.ketua_transmigran_id` dan `anggota_poktan.jabatan = 'Ketua'`, tanpa satu pun validasi silang maupun batas satu ketua per poktan. Nilai `Ketua` karena itu dicabut dari enum jabatan; ketua kini hanya hidup di profil poktan.
   * **Ketua tidak selalu transmigran, dan itu keadaan lapangan yang nyata.** Form kini bercabang lewat `is_ketua_transmigran`: bila ya, dipilih dari daftar agar NIK dan tautan profilnya sahih; bila tidak, `nama_ketua` dan `nik_ketua` diketik langsung. Data contoh POKTAN HARAPAN BARU sengaja dibuat berketua non-transmigran agar cabang kedua ikut terlihat saat peninjauan.
-  * **Kontak poktan ternyata sudah lama menjadi kontak ketua di dalam kode**, hanya dokumennya yang menyebut lain. `DummyData` sejak awal memakai `nama_ketua`, `nik_ketua`, `telepon_ketua`, `email_ketua`, sedangkan kamus data menyatakannya milik kelompok dan form mengirim `name="telepon"` tetapi membaca `$data['telepon_ketua']`. Penamaan diseragamkan menjadi `telepon_ketua`, `email_ketua`, `alamat_ketua`.
+  * **Kontak poktan adalah kontak ketua, bukan kontak kelompok.** Penamaan diseragamkan menjadi `telepon_ketua`, `email_ketua`, `alamat_ketua`.
+  * **ALASAN DIPERBAIKI 2026-08-19.** Alasan yang semula ditulis bersandar pada bentuk `DummyData` — "kontak poktan ternyata sudah lama menjadi kontak ketua di dalam kode, hanya dokumennya yang menyebut lain" — dan itu **penalaran melingkar**: data contoh dikarang AI sendiri, sehingga ia tidak dapat membuktikan apa pun tentang keadaan lapangan (`rules.md` 19a). Lebih buruk lagi, alasan itu membatalkan keterangan lapangan yang sudah ditulis benar pada bagian 1a.6 yaitu "kontak kelompok bisa berbeda dari kontak pribadi ketua", sehingga arah penalarannya terbalik: dokumen disesuaikan ke data karangan, bukan sebaliknya.
+  * Keputusannya **kebetulan tetap benar**, dan kini berdasar keterangan pemilik proyek (2026-08-19): kelompok tani di Kobalima Timur **tidak memiliki kontak sendiri** yang berbeda dari kontak ketuanya. Itulah dasar yang sah, bukan bentuk `DummyData`. Yang sebenarnya ditemukan pada kode hanyalah **ketidakcocokan penamaan** — form mengirim `name="telepon"` tetapi membaca `$data['telepon_ketua']` — dan itu pertanyaan tentang kode yang memang boleh dijawab dari data contoh.
   * `email_ketua` **menjadi satu-satunya tempat email ketua dapat disimpan**, sebab tabel `transmigran` tidak memiliki kolom email padahal `rules.md` 7a.2 mewajibkannya. Telepon terisi sendiri dari data transmigran tetapi tetap dapat disunting, karena petugas kerap memegang nomor yang lebih baru daripada yang tercatat.
   * **Perpindahan anggota dicatat sebagai dua baris**, bukan dengan memindahkan `poktan_id`. Memindahkan baris yang sama akan menghapus jejak keanggotaan di poktan lama seolah tidak pernah ada. Ditambah aturan bahwa seorang transmigran hanya boleh **Aktif di satu poktan**; UNIQUE `(poktan_id, transmigran_id)` tidak menangkap ini sebab poktannya memang berbeda.
   * **Field poktan pada form transmigran dijadikan turunan, bukan isian.** Benar seperti dugaan: `status_anggota_poktan` tidak pernah tersinkron dengan `anggota_poktan`, sehingga petugas dapat menyatakan "Ya" tanpa seorang pun mendaftarkannya ke kelompok mana pun. Keanggotaan kini ditetapkan dari sisi poktan saja.
@@ -786,7 +1016,8 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
 - [done] tambahkan searchable dropdown pada semua dropdown yg kemungkinan list datanya banyak banget.
   * Dibuat `x-sim.pilih-cari`, dipasang pada **7 isian** yang sumbernya tabel data: ketua poktan, anggota poktan, pemilik alsintan, pemilik lahan, petani panen, penghuni rumah, dan lahan pada riwayat tanam.
   * **Isian sesungguhnya tetap `<select>` biasa.** Kotak pencarian hanya menyaring opsi yang ditampilkan, sedangkan nilai yang terkirim tetap berasal dari elemen bernama sama. Akibatnya Form Request pada tahap backend tidak perlu tahu komponen ini ada, dan halaman tetap berfungsi bila JavaScript gagal dimuat: yang hilang hanya kotak pencariannya, bukan kemampuan memilih.
-  * **Kotak pencarian hanya muncul bila daftarnya memang panjang** (ambang 8 opsi). Memasangnya di atas empat pilihan justru menambah satu benda yang harus dilewati, bukan mempercepat. Dengan data contoh sekarang, `/rumah` dan `/riwayat-tanam` sengaja tidak menampilkannya sebab daftarnya masih 4 dan 6 baris.
+  * **Kotak pencarian hanya muncul bila daftarnya memang panjang** (ambang 8 opsi). Memasangnya di atas empat pilihan justru menambah satu benda yang harus dilewati, bukan mempercepat.
+  * ~~Dengan data contoh sekarang, `/rumah` dan `/riwayat-tanam` sengaja tidak menampilkannya sebab daftarnya masih 4 dan 6 baris.~~ **DITANDAI PERLU TINJAU ULANG 2026-08-19.** Kalimat ini mengalibrasi tampilan pada hitungan data contoh, padahal `/rumah` menampilkan daftar rumah dan `/riwayat-tanam` menampilkan daftar lahan yang pada data nyata mencapai ribuan baris. Ambang 8 opsinya sendiri tidak bermasalah; yang bermasalah adalah **menyimpulkan bahwa kedua halaman itu tidak memerlukan pencarian**. Begitu data nyata masuk, keduanya akan menampilkan dropdown ribuan baris tanpa kotak pencarian. Dicatat sebagai tindak lanjut butir 10 pada bagian 4. Lihat bagian 1c.2 pelanggaran ketiga.
   * Alasan tidak memakai pustaka pihak ketiga: perilaku yang dibutuhkan hanya menyaring daftar, dan Alpine yang sudah terpasang cukup. Menambah dependensi berarti menambah berkas yang harus diunduh petugas di lokus yang sinyalnya tidak selalu stabil.
   * Pencarian mencocokkan **teks maupun keterangannya**, sebab petugas kerap mengingat asal SP lebih dulu daripada nama lengkapnya.
   * **Satu jebakan Alpine ditemukan saat pemasangan.** `x-model` pada select yang opsinya dirender lewat `x-for` menyetel ulang nilainya setiap daftar opsi berubah, sehingga pilihan petugas hilang begitu ia mengetik di kotak pencarian. Diganti `@change` pada isian ketua poktan.
@@ -801,3 +1032,19 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
   **Dua bug lama ikut ditemukan saat pengujian peramban:**
   * **`x-cloak` tidak berfungsi sama sekali di seluruh sistem.** Definisinya hanya ada inline di `components/ui/modal.blade.php`, dan komponen itu **tidak dipakai satu halaman pun**. Akibatnya **96 pemakaian** `x-cloak` mati: modal, laci filter, dan panel sempat berkedip terlihat setiap kali halaman dimuat. Diperbaiki dengan satu aturan di `app.css`.
   * **Skrip tema melempar galat pada setiap pemuatan halaman.** Ia berjalan di dalam `<head>` dan menyentuh `document.body` yang belum ada, sehingga melempar "Cannot read properties of null". Galatnya tidak menghentikan apa pun sehingga tidak pernah disadari, tetapi ia membanjiri konsol dan menyamarkan galat lain yang benar-benar penting. Terjadi di dua layout sekaligus.
+
+
+------------------------------------------------------------------------------------------------------------------------------------
+
+- Ketika klik data master wilayah, kenapa url-nya langsung menuju ke tab kecamatan? 
+- Pada form tambah wilayah, kenapa field Tingkat wilayah otomatis terisi desa?
+- di form tambah Kawasan trans, sebelum form kabupaten, bukankah harusnya ada form provinsi dan lalu baru form kabupaten (multilevel dropdown)?
+- coba cek lagi untuk beberapa halaman detail dari sebuah data (view detail) di github page itu masih ada yg gak bisa dibuka
+- semua modal float (yg saya cek cuma modal float tambah dan ubah) ketika scroll terlalu ke bawah, susah untuk scroll ke atas lagi 
+- halaman musim tanam, Riwayat tanam, inventaris, dan fasilitas sp tambahkan view/halaman detail untuk dibuatkan tab catatan log
+- di halaman pengaduan admin kan ada kolom bidang. Nah bagaimana sistem tahu pengaduan si A masuk ke bidang transmigrasi/pertanian? Sedangkan di form pengaduan tidak ada form pengisian bidang tujuan laporannya.
+- fitur upload dokumen pada halaman inventaris dan fasilitas itu bisa upload banyak dokumen/foto atau cuma 1 doang? Kalau cuma 1, bagaimana kalau tambah fitur upload foto seperti infrastruktur.
+- pada semua form dropdown di semua halaman yang ada form dropdown-nya, apakah memungkinkan jika dibuatkan data master untuk CRUD pilihan pada form dropdown-nya? Atau kalau gak dibuatkan data master, mungkin bisa dibuat CRUD nya itu di halaman yg bersangkutan biar gak terlalu bingung. Namun aku bingung nanti letaknya di mana agar tidak terlalu mengganggu estetika halaman yg sudah jadi. Coba kita diskusikan ini.
+- kan mayoritas pada form tambah data ada kolom catatan, cek apakah pada halaman detail data sudah menyediakan field untuk menampilkan catatan tersebut
+- Aku cek ada beberapa form tambah/ubah data yg belum dikasih kolom catatan. Coba cek pada form di halaman apa saja yg belum ada. Sekalian ubah penamaannya agar seragam semua  Catatan/Keterangan/jika ada penamaan yg mirip, di-rename jadi Catatan. Agar semuanya seragam.
+- Ini kita mau diskusi. Misal ada suatu kasus di mana kepala keluarga (suami) meninggal, kan admin bakal update datanya dan mengubah agar yg jadi kepala keluarga itu istrinya. Namun gimana agar system mencatat perubahan tersebut secara detail ya? Apakah via log atau bagaimana?

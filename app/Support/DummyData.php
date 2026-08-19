@@ -837,6 +837,11 @@ class DummyData
                 'satuan_permukiman' => 'SP Kapitan Meo',
                 'satuan_permukiman_id' => 1,
                 'kategori' => KategoriPengaduan::Infrastruktur->value,
+                /*
+                 * Kategori Infrastruktur bersifat netral, sehingga bidang ini
+                 * BUKAN nilai turunan melainkan hasil penetapan petugas saat
+                 * meninjau. Contoh keadaan setelah kewajiban 10b.7b dipenuhi.
+                 */
                 'bidang' => 'Ketransmigrasian',
                 'judul' => 'Saluran irigasi tersumbat',
                 'deskripsi' => 'Saluran irigasi di blok A tersumbat sejak awal musim hujan, air tidak sampai ke lahan usaha.',
@@ -889,7 +894,13 @@ class DummyData
                 'satuan_permukiman' => 'SP Tualaran',
                 'satuan_permukiman_id' => 5,
                 'kategori' => KategoriPengaduan::Bencana->value,
-                'bidang' => 'Ketransmigrasian',
+                /*
+                 * Sengaja NULL. Kategori Bencana tidak dapat disimpulkan
+                 * bidangnya, dan laporan ini masih berstatus Menunggu Diterima
+                 * sehingga belum melewati ambang kewajiban (rules.md 10b.7b).
+                 * Keadaan "belum ditentukan" perlu ikut terlihat pada tampilan.
+                 */
+                'bidang' => null,
                 'judul' => 'Longsor kecil di jalan produksi',
                 'deskripsi' => 'Terjadi longsor kecil menutup sebagian jalan produksi menuju lahan usaha.',
                 'status' => StatusPengaduan::MenungguDiterima->value,
@@ -912,6 +923,87 @@ class DummyData
                 'deskripsi' => 'Sebagian tanaman jagung terserang hama ulat, mohon pendampingan penyuluh.',
                 'status' => StatusPengaduan::Selesai->value,
                 'prioritas' => PrioritasPengaduan::Tinggi->value,
+            ],
+
+            /*
+             * Tiga baris berikut melengkapi keadaan yang belum terwakili pada
+             * tautan objek: pengaduan atas inventaris, atas fasilitas, dan
+             * pengaduan yang asetnya belum terdata sama sekali.
+             */
+            [
+                'id_pengaduan' => 6,
+                'nomor_pengaduan' => 'PGD-2026-0006',
+                'tanggal_pengaduan' => '2026-08-11',
+                'nama_pelapor' => 'YULITA HOAR',
+                'kontak_pelapor' => '081234567804',
+                'sumber_laporan' => SumberLaporan::Petugas->value,
+                'satuan_permukiman' => 'SP Kapitan Meo',
+                'satuan_permukiman_id' => 1,
+                'kategori' => KategoriPengaduan::InventarisSp->value,
+                'bidang' => 'Ketransmigrasian',
+                'judul' => 'Meja kantor balai pertemuan rusak',
+                'deskripsi' => 'Salah satu meja di ruang kepala patah kakinya sehingga tidak dapat dipakai.',
+                'status' => StatusPengaduan::Diproses->value,
+                'prioritas' => PrioritasPengaduan::Rendah->value,
+            ],
+            [
+                'id_pengaduan' => 7,
+                'nomor_pengaduan' => 'PGD-2026-0007',
+                'tanggal_pengaduan' => '2026-08-12',
+                'nama_pelapor' => 'AGUSTINUS SERAN',
+                'kontak_pelapor' => '081234567808',
+                'sumber_laporan' => SumberLaporan::Publik->value,
+                'satuan_permukiman' => 'SP Tniumanu',
+                'satuan_permukiman_id' => 2,
+                'kategori' => KategoriPengaduan::FasilitasSp->value,
+                'bidang' => 'Ketransmigrasian',
+                'judul' => 'Plafon ruang kelas sekolah dasar bocor',
+                'deskripsi' => 'Plafon dua ruang kelas bocor sehingga kegiatan belajar terganggu saat hujan.',
+                'status' => StatusPengaduan::Diproses->value,
+                'prioritas' => PrioritasPengaduan::Tinggi->value,
+            ],
+            [
+                'id_pengaduan' => 8,
+                'nomor_pengaduan' => 'PGD-2026-0008',
+                'tanggal_pengaduan' => '2026-08-13',
+                'nama_pelapor' => 'THERESIA BAU',
+                'kontak_pelapor' => '081234567809',
+                'sumber_laporan' => SumberLaporan::Publik->value,
+                'satuan_permukiman' => 'SP Harekakae',
+                'satuan_permukiman_id' => 3,
+                'kategori' => KategoriPengaduan::InventarisSp->value,
+                'bidang' => 'Ketransmigrasian',
+                'judul' => 'Mesin pompa balai desa tidak berfungsi',
+                'deskripsi' => 'Mesin pompa di balai desa mati total, warga tidak dapat mengambil air.',
+                'status' => StatusPengaduan::Diproses->value,
+                'prioritas' => PrioritasPengaduan::Tinggi->value,
+            ],
+
+            /*
+             * Contoh kategori Kelompok Tani, ditambahkan 2026-08-19. Keluhan
+             * semacam ini sebelumnya terpaksa masuk kategori Lainnya yang
+             * justru berbidang kosong, sehingga menambah antrean penyaringan
+             * padahal urusannya jelas milik Dinas Pertanian.
+             *
+             * Sengaja berstatus Menunggu Diterima agar keadaan laporan yang
+             * belum ditinjau ikut terwakili, sekaligus tidak menuntut riwayat
+             * penanganan.
+             */
+            [
+                'id_pengaduan' => 9,
+                'nomor_pengaduan' => 'PGD-2026-0009',
+                'tanggal_pengaduan' => '2026-08-15',
+                'nama_pelapor' => 'DOMINGGUS TAEK',
+                'kontak_pelapor' => '081234567810',
+                'sumber_laporan' => SumberLaporan::Publik->value,
+                'satuan_permukiman' => 'SP Kapitan Meo',
+                'satuan_permukiman_id' => 1,
+                'kategori' => KategoriPengaduan::KelompokTani->value,
+                'bidang' => 'Pertanian',
+                'judul' => 'Pembagian bantuan kelompok tani tidak merata',
+                'deskripsi' => 'Sebagian anggota POKTAN MEKAR JAYA belum menerima pembagian bantuan, mohon ditinjau pengelolaannya.',
+                'status' => StatusPengaduan::MenungguDiterima->value,
+                'prioritas' => PrioritasPengaduan::Sedang->value,
             ],
         ];
     }
@@ -982,6 +1074,60 @@ class DummyData
                     'status_sesudah' => StatusPengaduan::Selesai->value,
                     'catatan' => 'Pendampingan penyemprotan selesai, kondisi tanaman membaik. Petani diberi panduan pengendalian hama.',
                     'dokumen_tindak_lanjut' => 'pengaduan/5/BeritaAcaraPenyelesaian_pgd-2026-0005.pdf',
+                ],
+            ],
+            'PGD-2026-0006' => [
+                [
+                    'tanggal_penanganan' => '2026-08-12',
+                    'petugas' => 'NARA WIJAYA',
+                    'status_sebelum' => StatusPengaduan::MenungguDiterima->value,
+                    'status_sesudah' => StatusPengaduan::Diterima->value,
+                    'catatan' => 'Laporan kerusakan meja balai pertemuan diterima.',
+                    'dokumen_tindak_lanjut' => null,
+                ],
+                [
+                    'tanggal_penanganan' => '2026-08-14',
+                    'petugas' => 'NARA WIJAYA',
+                    'status_sebelum' => StatusPengaduan::Diterima->value,
+                    'status_sesudah' => StatusPengaduan::Diproses->value,
+                    'catatan' => 'Meja ditautkan ke inventaris SP dan diusulkan masuk perbaikan triwulan berikutnya.',
+                    'dokumen_tindak_lanjut' => null,
+                ],
+            ],
+            'PGD-2026-0007' => [
+                [
+                    'tanggal_penanganan' => '2026-08-13',
+                    'petugas' => 'NARA WIJAYA',
+                    'status_sebelum' => StatusPengaduan::MenungguDiterima->value,
+                    'status_sesudah' => StatusPengaduan::Diterima->value,
+                    'catatan' => 'Laporan kebocoran plafon sekolah diterima.',
+                    'dokumen_tindak_lanjut' => null,
+                ],
+                [
+                    'tanggal_penanganan' => '2026-08-15',
+                    'petugas' => 'NARA WIJAYA',
+                    'status_sebelum' => StatusPengaduan::Diterima->value,
+                    'status_sesudah' => StatusPengaduan::Diproses->value,
+                    'catatan' => 'Peninjauan lapangan selesai, kerusakan cocok dengan catatan kondisi fasilitas.',
+                    'dokumen_tindak_lanjut' => null,
+                ],
+            ],
+            'PGD-2026-0008' => [
+                [
+                    'tanggal_penanganan' => '2026-08-14',
+                    'petugas' => 'SITI RAHMAWATI',
+                    'status_sebelum' => StatusPengaduan::MenungguDiterima->value,
+                    'status_sesudah' => StatusPengaduan::Diterima->value,
+                    'catatan' => 'Laporan mesin pompa balai desa diterima.',
+                    'dokumen_tindak_lanjut' => null,
+                ],
+                [
+                    'tanggal_penanganan' => '2026-08-16',
+                    'petugas' => 'SITI RAHMAWATI',
+                    'status_sebelum' => StatusPengaduan::Diterima->value,
+                    'status_sesudah' => StatusPengaduan::Diproses->value,
+                    'catatan' => 'Mesin pompa tidak ditemukan pada inventaris SP, ditandai belum terdata dan diusulkan masuk pendataan berikutnya.',
+                    'dokumen_tindak_lanjut' => null,
                 ],
             ],
         ];
@@ -1429,7 +1575,7 @@ class DummyData
         return [
             ['id_role' => 1, 'nama' => 'Admin', 'deskripsi' => 'Akses penuh termasuk manajemen pengguna, role, dan audit log.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => true, 'is_aktif' => true, 'jumlah_izin' => 95, 'jumlah_pengguna' => 1],
             ['id_role' => 2, 'nama' => 'Dinas Transmigrasi', 'deskripsi' => 'Mengelola data wilayah, transmigran, rumah, lahan, dan infrastruktur.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 43, 'jumlah_pengguna' => 1],
-            ['id_role' => 3, 'nama' => 'Dinas Pertanian', 'deskripsi' => 'Mengelola data poktan, komoditas, panen, alsintan, dan saprotan.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 45, 'jumlah_pengguna' => 1],
+            ['id_role' => 3, 'nama' => 'Dinas Pertanian', 'deskripsi' => 'Mengelola data poktan, komoditas, panen, alsintan, dan saprotan.', 'cakupan_data' => CakupanData::PerBidang->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 45, 'jumlah_pengguna' => 1],
             ['id_role' => 4, 'nama' => 'Operator SP', 'deskripsi' => 'Memasukkan data pada satuan permukiman yang ditugaskan. Tanpa kewenangan hapus.', 'cakupan_data' => CakupanData::PerSp->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 49, 'jumlah_pengguna' => 2],
 
             // Role buatan Admin, bukan bawaan sistem. Sengaja dibuat tanpa

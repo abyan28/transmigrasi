@@ -340,6 +340,30 @@
                 <x-sim.file-upload nama="dokumen_tindak_lanjut" label="Dokumen Tindak Lanjut"
                     nama-dokumen="Tindak Lanjut" :nama-pemilik="$data['nomor_pengaduan']"
                     keterangan="Foto perbaikan, berita acara, atau surat tindak lanjut bila ada." />
+
+                {{--
+                    Bidang dapat ditetapkan saat meninjau, sebab laporan yang
+                    masuk lewat kanal publik berkategori netral tiba tanpa
+                    bidang. Menyediakannya hanya pada form ubah akan memaksa
+                    petugas membuka dua modal untuk satu alur kerja.
+                --}}
+                <div>
+                    <label for="penanganan_bidang"
+                        class="mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400">
+                        Bidang Penanganan
+                    </label>
+                    <select id="penanganan_bidang" name="bidang"
+                        class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
+                        <option value="">Belum ditentukan</option>
+                        @foreach (\App\Enums\BidangPengaduan::opsi() as $nilai => $label)
+                            <option value="{{ $nilai }}" @selected(($data['bidang'] ?? null) === $nilai)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                    <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                        Wajib terisi sebelum laporan berstatus Diproses, agar tampil pada
+                        daftar dinas yang menanganinya.
+                    </p>
+                </div>
             </div>
         </x-sim.modal-form>
     @endif

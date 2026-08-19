@@ -244,6 +244,7 @@
                     @endif
                 </div>
 
+
                 {{-- Catatan log: riwayat perubahan data ini saja --}}
                 <div x-show="tab === 'log'" x-cloak role="tabpanel">
                     <x-sim.catatan-log nama-tabel="lahan" :record-id="$data['id_lahan']" />

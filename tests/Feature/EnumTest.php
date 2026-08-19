@@ -34,7 +34,7 @@ it('memuat seluruh nilai baku sesuai kamus data', function (string $enum, array 
     'kondisi rumah' => [KondisiRumah::class, ['Tidak Rusak', 'Rusak Ringan', 'Rusak Berat']],
     'kondisi aset' => [Kondisi::class, ['Baik', 'Rusak Ringan', 'Rusak Berat']],
     'bidang pengaduan' => [BidangPengaduan::class, ['Ketransmigrasian', 'Pertanian']],
-    'cakupan data' => [CakupanData::class, ['Semua', 'Per SP']],
+    'cakupan data' => [CakupanData::class, ['Semua', 'Per SP', 'Per Bidang']],
     'aksi permission' => [AksiPermission::class, ['lihat', 'tambah', 'ubah', 'hapus']],
 ]);
 
@@ -45,11 +45,50 @@ it('membedakan kondisi rumah dari kondisi aset lain', function () {
         ->and(Kondisi::Baik->value)->toBe('Baik');
 });
 
-it('memuat sembilan kategori pengaduan tanpa spasi berlebih', function () {
-    expect(KategoriPengaduan::cases())->toHaveCount(9);
+it('memuat dua belas kategori pengaduan tanpa spasi berlebih', function () {
+    // Tiga perubahan pada 2026-08-19: 'Peralatan dan Perlengkapan' dipecah
+    // menjadi 'Inventaris SP' dan 'Fasilitas SP' sebab satu kategori menaungi
+    // dua tabel berbeda; 'Saprotan' ditambahkan agar keluhan bibit dan pupuk
+    // tidak menumpang pada 'Produksi Panen'; dan 'Kelompok Tani' ditambahkan
+    // sebab poktan modul penuh tetapi keluhannya terpaksa masuk 'Lainnya'.
+    expect(KategoriPengaduan::cases())->toHaveCount(12);
 
     foreach (KategoriPengaduan::cases() as $kategori) {
         expect($kategori->value)->toBe(trim($kategori->value));
+    }
+
+    expect(KategoriPengaduan::nilai())
+        ->toContain('Inventaris SP')
+        ->toContain('Fasilitas SP')
+        ->toContain('Saprotan')
+        ->toContain('Kelompok Tani')
+        ->not->toContain('Peralatan dan Perlengkapan');
+});
+
+it('menyediakan kategori bagi tiap modul yang dapat diadukan warga', function () {
+    // Penjaga terhadap kelalaian 2026-08-19: modul poktan sempat terlewat
+    // sehingga keluhan atasnya terpaksa masuk kategori 'Lainnya' yang justru
+    // berbidang kosong, dan itu menambah antrean penyaringan tanpa alasan.
+    //
+    // Modul internal sistem, data referensi, serta data pribadi transmigran
+    // sengaja tidak berkategori (rules.md 10b poin 3a).
+    $nilai = KategoriPengaduan::nilai();
+
+    foreach ([
+        'rumah' => 'Rumah',
+        'lahan' => 'Lahan Usaha',
+        'inventaris_sp' => 'Inventaris SP',
+        'fasilitas_sp' => 'Fasilitas SP',
+        'infrastruktur' => 'Infrastruktur',
+        'poktan' => 'Kelompok Tani',
+        'alsintan' => 'Alsintan',
+        'saprotan' => 'Saprotan',
+        'hasil_panen' => 'Produksi Panen',
+    ] as $modul => $kategori) {
+        // Pesan disusun sendiri sebab toContain() memakai argumen kedua
+        // sebagai nilai tambahan yang dicari, bukan sebagai keterangan.
+        expect(in_array($kategori, $nilai, true))
+            ->toBeTrue("Modul {$modul} tanpa kategori pengaduan");
     }
 });
 
@@ -190,27 +229,57 @@ it('menandai pengaduan yang masih berjalan', function () {
 |--------------------------------------------------------------------------
 */
 
-it('meneruskan pengaduan bidang pertanian ke Dinas Pertanian', function (KategoriPengaduan $kategori) {
+it('menurunkan bidang pertanian dari kategori kelembagaan, sarana, dan hasil usaha', function (KategoriPengaduan $kategori) {
     expect(BidangPengaduan::dariKategori($kategori))->toBe(BidangPengaduan::Pertanian);
 })->with([
-    'lahan usaha' => KategoriPengaduan::LahanUsaha,
+    'kelompok tani' => KategoriPengaduan::KelompokTani,
     'alsintan' => KategoriPengaduan::Alsintan,
+    'saprotan' => KategoriPengaduan::Saprotan,
     'produksi panen' => KategoriPengaduan::ProduksiPanen,
 ]);
 
-it('meneruskan pengaduan lainnya ke Dinas Transmigrasi', function (KategoriPengaduan $kategori) {
+it('menurunkan bidang ketransmigrasian dari kategori permukiman dan aset SP', function (KategoriPengaduan $kategori) {
     expect(BidangPengaduan::dariKategori($kategori))->toBe(BidangPengaduan::Ketransmigrasian);
 })->with([
     'rumah' => KategoriPengaduan::Rumah,
-    'infrastruktur' => KategoriPengaduan::Infrastruktur,
     'lahan pekarangan' => KategoriPengaduan::LahanPekarangan,
-    'bencana' => KategoriPengaduan::Bencana,
+    'inventaris sp' => KategoriPengaduan::InventarisSp,
+    'fasilitas sp' => KategoriPengaduan::FasilitasSp,
 ]);
 
-it('menetapkan bidang untuk seluruh kategori tanpa terkecuali', function () {
+it('membiarkan bidang kosong pada kategori yang dapat ditangani dua dinas', function (KategoriPengaduan $kategori) {
+    // Menebak bidang untuk kategori semacam ini justru menyesatkan: laporan
+    // akan masuk ke daftar dinas yang keliru lalu tertahan di sana.
+    // rules.md 10b poin 7a mewajibkannya ditetapkan petugas.
+    expect(BidangPengaduan::dariKategori($kategori))->toBeNull()
+        ->and(BidangPengaduan::perluDitetapkan($kategori))->toBeTrue();
+})->with([
+    'lahan usaha' => KategoriPengaduan::LahanUsaha,
+    'infrastruktur' => KategoriPengaduan::Infrastruktur,
+    'bencana' => KategoriPengaduan::Bencana,
+    'lainnya' => KategoriPengaduan::Lainnya,
+]);
+
+it('memetakan seluruh kategori tanpa terkecuali', function () {
+    // Penjaga terhadap kategori baru yang lupa dipetakan. match() tanpa arm
+    // penampung akan melempar UnhandledMatchError, dan uji ini memastikan
+    // seluruh nilai enum benar-benar dilewatkan.
+    $peta = BidangPengaduan::petaDariKategori();
+
+    expect($peta)->toHaveCount(count(KategoriPengaduan::cases()));
+
     foreach (KategoriPengaduan::cases() as $kategori) {
-        expect(BidangPengaduan::dariKategori($kategori))->toBeInstanceOf(BidangPengaduan::class);
+        expect($peta)->toHaveKey($kategori->value);
     }
+
+    // Empat kategori netral bernilai string kosong, bukan hilang dari peta.
+    expect(array_keys($peta, '', true))->toHaveCount(4);
 });
 
-
+it('menyediakan cakupan data per bidang untuk dinas sektoral', function () {
+    // rules.md 5.0b poin 6a: Dinas Pertanian bercakupan Per Bidang, sedangkan
+    // Dinas Transmigrasi tetap Semua sebab merekalah yang menyaring laporan
+    // berbidang kosong.
+    expect(CakupanData::cases())->toHaveCount(3)
+        ->and(CakupanData::nilai())->toContain('Per Bidang');
+});

@@ -152,7 +152,8 @@
                     <x-sim.status-badge :status="\App\Enums\StatusPenyerahan::from($b['status_penyerahan'])" />
                 </td>
                 <td class="px-5 py-3">
-                    <x-sim.aksi-baris modal-ubah="formUbahFasilitasBaris"
+                    <x-sim.aksi-baris :rincian-url="route('sp.fasilitas.detail', $b['id_fasilitas_sp'])"
+                        modal-ubah="formUbahFasilitasBaris"
                         :data-baris="$b + ['id' => $b['id_fasilitas_sp']]"
                         :hapus-url="'/sp/fasilitas/' . $b['id_fasilitas_sp']"
                         konfirmasi-hapus="hapusFasilitas"

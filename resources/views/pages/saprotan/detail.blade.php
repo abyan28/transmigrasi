@@ -130,6 +130,7 @@
                     </p>
                 </div>
 
+
                 {{-- Catatan log: riwayat perubahan data ini saja --}}
                 <div x-show="tab === 'log'" x-cloak role="tabpanel">
                     <x-sim.catatan-log nama-tabel="saprotan" :record-id="$data['id_saprotan']" />

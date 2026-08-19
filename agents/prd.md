@@ -253,7 +253,9 @@ Sistem harus dapat:
 - memberikan nomor pengaduan kepada pelapor dan menyediakan halaman lacak publik berdasarkan nomor tersebut;
 - membatasi pengiriman 3 pengaduan per jam untuk setiap alamat IP guna mencegah penyalahgunaan;
 - mencatat tanggal pengaduan, nama dan kontak pelapor, lokasi/SP, dan deskripsi pengaduan;
-- mengelompokkan pengaduan berdasarkan kategori: lahan usaha, lahan pekarangan, rumah, infrastruktur, peralatan dan perlengkapan, alsintan, produksi panen, bencana, dan lainnya;
+- mengelompokkan pengaduan berdasarkan kategori: lahan usaha, lahan pekarangan, rumah, infrastruktur, inventaris SP, fasilitas SP, kelompok tani, alsintan, saprotan, produksi panen, bencana, dan lainnya;
+- menentukan bidang dinas penanganan dari kategori, dengan sebagian kategori sengaja ditetapkan petugas karena dapat ditangani dua dinas;
+- menyaring daftar pengaduan menurut bidang, termasuk laporan yang bidangnya belum ditetapkan;
 - mengunggah dokumen/foto pendukung pengaduan;
 - mengelola alur status penanganan: **Menunggu Diterima → Diterima → Diproses → Selesai**;
 - mencatat riwayat penanganan berisi petugas penangan, tanggal penanganan, catatan, dan dokumen tindak lanjut;

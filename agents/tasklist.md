@@ -570,6 +570,83 @@ Dikerjakan atas daftar revisi pemilik proyek pada `notes.md` bagian 6, dibagi ti
 * **Unggahan dokumen dipasang pada 7 form** (SP, inventaris, fasilitas, infrastruktur, poktan, alsintan, saprotan). Kedelapan kolomnya sudah lama ada di kamus data dan `x-sim.file-upload` sudah dipakai lima form lain; yang tidak ada hanya isiannya. Akibatnya SK pembentukan poktan dan berita acara penyaluran saprotan tidak dapat diunggah ke mana pun.
 * **Dibuat `x-sim.pilih-cari`**, dipasang pada 7 isian bersumber tabel data. Isian sesungguhnya tetap `<select>` biasa sehingga backend tidak perlu tahu komponen ini ada, dan kotak pencarian hanya dirender bila daftarnya mencapai 8 opsi.
 
+### Revisi lanjutan (2026-08-19) — Tautan objek pengaduan ✅
+
+Butir terakhir `notes.md` bagian 6 yang belum dikerjakan. Rinciannya beserta alasan tiap keputusan tercatat di sana.
+
+**Berkas baru:** `app/Enums/ObjekPengaduan.php`, `resources/views/components/sim/pengaduan-terkait.blade.php`, `resources/views/pages/pengaduan/isian-objek.blade.php`, `resources/views/pages/sp/detail-inventaris.blade.php`, `resources/views/pages/sp/detail-fasilitas.blade.php`.
+
+* **Tabel `pengaduan_objek`**, bukan dua kolom, sebab satu kejadian kerap merusak beberapa hal sekaligus. Sembilan objek nyata ditambah dua pernyataan (`belum_terdata`, `tidak_ada`) yang ber-`objek_id` NULL.
+* **Objek wajib dinyatakan sebelum status maju ke Diproses** (`rules.md` 10b.6g), dipenuhi salah satu dari tiga cara. Petugas tidak dipaksa memilih dari daftar agar tidak menaut ke aset yang sekadar mirip.
+* **Tab Pengaduan Terkait pada 9 halaman rincian.** Tab lama pada rincian infrastruktur diperbaiki: sebelumnya menampilkan seluruh pengaduan se-SP, bukan keluhan atas aset yang dibuka.
+* **Dua halaman rincian baru** untuk Inventaris SP dan Fasilitas SP, lengkap dengan rute, tombol Rincian, dan entri `DaftarTautanStatis`.
+* **Tiga penjaga privasi:** objek tidak tampil di lacak publik; rumah, lahan, hasil panen, dan alsintan hanya sebagai angka gabungan di rekap; daftar objek wajib disaring cakupan data saat RBAC aktif.
+* **Rekap aset dipecah dua tabel** berdampingan, disertai kolom jumlah unit tanpa rasio otomatis.
+* Kategori `Peralatan dan Perlengkapan` dipecah menjadi `Inventaris SP` dan `Fasilitas SP`; jumlah kategori 9 menjadi **10**.
+* **Aturan kerja baru** dari teguran pemilik proyek: `rules.md` 19a melarang data contoh dijadikan bukti tentang lapangan, dan 20a mewajibkan penyisiran skenario sendiri. Bukti pelanggaran tercatat pada `notes.md` bagian 1c — semula tiga, menjadi **lima** setelah audit menyeluruh.
+* **Verifikasi:** 453 uji hijau, `pint` tidak bertambah dari 45 berkas, `npm run build` hijau, dan **152 halaman digilas seluruhnya membalas 200** (naik dari 122).
+
+**Koreksi pada hari yang sama — isian objek ternyata tunggal.** Ditemukan pemilik proyek: halaman rincian hanya menampilkan daftar objek yang sudah tertaut, tanpa cara menautkannya. Empat cacat, seluruhnya lolos 449 uji yang hijau:
+
+1. Isian hanya menerima **satu objek**, sehingga kejamakan yang menjadi alasan tabel `pengaduan_objek` tidak dapat dijalankan petugas.
+2. Isian hanya ada di modal penanganan, sehingga pengaduan berstatus **Selesai tidak dapat ditaut sama sekali** — melanggar `rules.md` 10b.6h yang ditulis pada hari yang sama.
+3. Form ubah pengaduan tanpa isian objek.
+4. Tidak ada tombol mencabut tautan.
+
+**Sebab lolosnya:** uji memeriksa keberadaan string (`toContain('name="objek_tipe"')`), bukan kemampuan menambah baris; dan uji membaca `/pengaduan/1` yang berstatus Diproses, padahal yang rusak adalah yang berstatus Selesai. Akarnya sama — yang diuji adalah apa yang dibangun, bukan apa yang dijanjikan.
+
+**Diperbaiki:** isian menjadi daftar baris ber-`objek[i][tipe]` dengan tombol Tambah dan Cabut; kedua pernyataan dipindah ke dalam dropdown jenis sehingga satu laporan dapat memuat objek tertaut sekaligus pernyataan; modal **Kelola Objek** tersendiri dirender tanpa syarat status dan terisi tautan yang ada; rute `POST /pengaduan/{id}/objek`.
+
+**Uji peramban dijadikan syarat.** `tests/Browser/uji-isian-objek.mjs` lewat Edge headless + protokol DevTools, tanpa dependensi baru. **6/6 lulus**, dan uji ini langsung memerah pada percobaan pertama — menangkap hal yang tidak dapat ditiru satu pun uji string. Berkas `uji-combobox.mjs` di akar ternyata kosong 0 byte dan dihapus.
+
+**Aturan baru:** `rules.md` 10b.6h-1, 10b.6h-2, dan bagian **16.0a** (uji menyasar janji bukan kode; string bukan bukti; dilarang memilih satu baris contoh tanpa alasan; perilaku peramban wajib diuji di peramban). Rinciannya pada `notes.md` bagian 1d.
+
+### Pencabutan tautan objek dan bidang berbasis kategori (2026-08-19) ✅
+
+Ditetapkan pemilik proyek pada hari yang sama: **fitur tautan objek ditiadakan seluruhnya**, digantikan penentuan bidang dinas dan filter bidang pada halaman daftar. Alasannya bukan cacat pelaksanaan melainkan pergeseran dasar keputusan — setelah ditetapkan satu laporan ditangani satu dinas, mengelola daftar objek per laporan tidak lagi menjawab pertanyaan yang sebenarnya.
+
+**Dihapus:** `ObjekPengaduan`, komponen `pengaduan-terkait`, partial `isian-objek`, `tests/Browser/uji-isian-objek.mjs`, 7 metode `DummyData`, tab pada 9 halaman rincian, rekap "Aset paling sering diadukan", rute `pengaduan.objek`, tab rekap `objek`, bagian 10.4 dan 11.30 kamus data, aturan `rules.md` 10b.6e–8g, serta 23 uji.
+
+**Dipertahankan:** halaman rincian Inventaris SP & Fasilitas SP (sudah berdiri sendiri, dijaga 3 uji), pemecahan kategori Inventaris/Fasilitas SP, uji privasi lacak publik, dan aturan 16.0a.
+
+**Bidang menggantikan objek:**
+* `BidangPengaduan::dariKategori()` bertipe **`?self`** — empat kategori (lahan usaha, infrastruktur, bencana, lainnya) sengaja `null` sebab dapat ditangani dua dinas.
+* Nilai turunan **dapat ditimpa** petugas; penanda `disentuh` mencegah pilihan manual tertimpa saat kategori disunting.
+* Kolom `bidang` jadi **nullable**, wajib terisi sebelum status maju ke Diproses.
+* Kategori **Saprotan** ditambahkan; jumlah kategori 10 menjadi **11**.
+
+**Filter bidang** pada datatable pengaduan, termasuk pilihan **Belum ditentukan beserta jumlahnya**. Kolom bidang kosong ditulis sebagai keterangan bertanda gold, bukan sel hampa.
+
+**Cakupan `Per Bidang`** ditambahkan; Dinas Pertanian memakainya, sedangkan Dinas Transmigrasi tetap `Semua` sebab sistem ini miliknya dan merekalah penyaring awal.
+
+**Verifikasi:** 433 uji hijau (14 baru/diperbarui), `pint` tidak menambah berkas bermasalah, `npm run build` hijau, **151 halaman digilas seluruhnya membalas 200**.
+
+**Catatan penting:** penyuntingan lewat `Set-Content` PowerShell sempat merusak 259 karakter non-ASCII pada `data-dictionary.md`. Dipulihkan lewat `git checkout` lalu disunting ulang dengan perkakas yang menjaga encoding. Aturannya dicatat pada `notes.md` 1e.7.
+
+**Susulan: kategori Kelompok Tani** ✅ — ditemukan pemilik proyek bahwa poktan tidak punya kategori pengaduan, padahal modul penuh. Keluhannya terpaksa masuk `Lainnya` yang berbidang kosong sehingga menambah antrean penyaringan tanpa alasan. Terlewat karena hanya sebagian dari sederet nilai yang disebut pemilik proyek diperiksa terhadap keadaan sistem.
+
+Penyisiran menyeluruh atas **26 fitur berkewenangan** menemukan **tepat satu** yang terlewat. Modul yang sengaja tidak berkategori (internal sistem, data referensi, data pribadi transmigran) kini tercatat beserta alasannya, kewajiban pemetaan lengkap dua arah masuk `rules.md` 10b.3a, dan ditambah uji penjaga yang mengadu daftar modul dengan daftar kategori.
+
+Jumlah kategori 11 menjadi **12**; ditambah contoh `PGD-2026-0009`. Verifikasi: **435 uji hijau**, `pint` tidak menambah utang, build hijau, **153 halaman digilas seluruhnya 200**.
+
+### Audit menyeluruh `rules.md` 19a (2026-08-19) ✅
+
+Butir tindak lanjut 9 pada `notes.md` bagian 4, dikerjakan atas permintaan pemilik proyek. Seluruh **992 baris** `notes.md` disisir terhadap aturan larangan memakai data contoh sebagai bukti tentang lapangan.
+
+**Hasil:** 36 keputusan menyebut data contoh sebagai alasan — **5 cacat menyangkut struktur data**, 4 ragu, 4 hanya tampilan, dan **23 sah** karena menjawab pertanyaan tentang kode.
+
+**Dua pelanggaran baru ditemukan** di luar tiga yang sudah tercatat:
+* **`PeruntukanLahan` I/II** — satu-satunya yang kerusakannya sudah nyata: enum dipasang lalu dicabut pada hari yang sama. Keterangan pemilik proyek sekaligus membatalkan keputusan 2026-08-10 yang juga tak berdasar lapangan, sehingga satu penalaran melingkar menutupi yang lain selama delapan hari.
+* **Kontak poktan** — satu-satunya yang membatalkan alasan lapangan yang sudah benar demi menyesuaikan dokumen pada bentuk `DummyData`. Melahirkan **bentuk keempat** pada 1c.1 yang arahnya terbalik.
+
+**Dua pertanyaan lapangan dijawab pemilik proyek, bukan disimpulkan:** poktan tidak punya kontak sendiri (keputusan bertahan, alasan diperbaiki), dan dinas perlu impor massal musim tanam (pengecualian dicabut, fitur ditambahkan).
+
+**Perubahan fungsional:** impor musim tanam. Modul berimpor 14 → **15**; daftar pengecualian 6 → **5**.
+
+**Perubahan dokumen:** bagian 1c diperluas dari 3 jadi 5 pelanggaran plus bagian 1c.4 dan 1c.5; alasan cacat pada dokumen lahan dan ambang dropdown ditandai dicabut; `rules.md` 19a ditambah poin 13 dan 14; tiga butir tindak lanjut baru.
+
+**Verifikasi:** seluruh uji hijau, `pint` tidak menambah utang, build hijau, halaman digilas seluruhnya 200.
+
 ## Tahap 3 — Autentikasi dan Hak Akses
 
 > **Peringatan penerbitan statis.** Begitu login aktif, halaman berpelindung membalas pengalihan ke `/login`, bukan 200, sehingga `.github/workflows/deploy.yml` **gagal** dan situs GitHub Pages berhenti diperbarui. Putuskan lebih dulu: batasi `sim:tautan-statis` hanya ke halaman publik, atau hentikan penerbitan statis sama sekali. Lihat `notes.md` bagian 1b.7.
@@ -930,6 +1007,9 @@ Aturan modul yang mudah terlewat, tercatat agar tidak terulang:
 - Referensi tata letak Figma (tidak memblokir; sementara memakai tata letak bawaan TailAdmin).
 - Daftar satuan final per komoditas dari konfirmasi lapangan (sementara: Ton, Kuintal, Kilogram).
 - ~~Konfirmasi apakah lahan pekarangan bisa lebih dari satu per KK~~ **TERJAWAB 2026-08-18: tidak.** Satu transmigran menerima satu lahan pekarangan dan satu lahan usaha (`rules.md` 7.8). Relasi tetap one-to-many sebab satu KK memegang dua bidang berbeda peruntukan.
+- **Apakah petugas benar-benar akan mengisi tautan objek pengaduan?** Isian wajib sebelum Diproses sudah ditegakkan, tetapi bila mayoritas ditandai "belum terdata" maka rekap aset paling sering diadukan tidak mewakili keadaan. Tabel kedua pada rekap sengaja dibuat untuk memperlihatkan hal itu secara terbuka, bukan menyembunyikannya. Perlu ditinjau setelah data nyata masuk.
+- **Perlukah deteksi pengaduan berulang atas satu kejadian?** Sepuluh warga yang melaporkan longsor yang sama kini terhitung sepuluh laporan atas satu aset (`rules.md` 10b.8g). Angkanya benar sebagai jumlah laporan, tetapi tidak dapat dibaca sebagai ukuran keparahan. Menuntut konsep "pengaduan induk" yang lingkupnya besar.
+- **Perlukah inventaris didata per unit?** Saat ini per jenis, sehingga sistem hanya sanggup menunjuk "meja kantor" bukan meja yang mana. Bila dinas memerlukannya, jalannya adalah tabel `unit_inventaris` di bawah `inventaris_sp`, tanpa membongkar `pengaduan_objek`. Menuntut penomoran dan pelabelan fisik di lapangan.
 - Perlakuan rumah yang ditinggalkan sementara (sementara: tetap Dihuni, dicatat pada `catatan_hunian`).
 - Konfirmasi apakah satu transmigran bisa masuk lebih dari satu poktan (sementara: tidak, sesuai `rules.md` §6.4).
 - Keputusan apakah mode gelap bawaan TailAdmin dipakai atau dimatikan.

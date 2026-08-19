@@ -23,7 +23,16 @@
         $filterKategori = request('kategori');
         $filterPrioritas = request('prioritas');
 
-        $baris = array_values(array_filter($semua, function ($p) use ($cari, $filterSp, $filterStatus, $filterKategori, $filterPrioritas) {
+        /*
+         * Filter bidang paling berguna bagi Admin dan Dinas Transmigrasi, sebab
+         * keduanya bercakupan Semua sehingga daftarnya memuat laporan kedua
+         * dinas sekaligus (rules.md 5.0b). Nilai khusus 'belum' menyaring
+         * laporan yang bidangnya belum ditetapkan, dan itulah antrean kerja
+         * penyaringan awal.
+         */
+        $filterBidang = request('bidang');
+
+        $baris = array_values(array_filter($semua, function ($p) use ($cari, $filterSp, $filterStatus, $filterKategori, $filterPrioritas, $filterBidang) {
             if ($cari !== '') {
                 $cocok = str_contains(mb_strtolower($p['judul']), mb_strtolower($cari))
                     || str_contains(mb_strtolower($p['nomor_pengaduan']), mb_strtolower($cari))
@@ -50,6 +59,14 @@
                 return false;
             }
 
+            if ($filterBidang === 'belum' && ! empty($p['bidang'])) {
+                return false;
+            }
+
+            if ($filterBidang && $filterBidang !== 'belum' && ($p['bidang'] ?? null) !== $filterBidang) {
+                return false;
+            }
+
             return true;
         }));
 
@@ -66,7 +83,11 @@
             return $urutanPrioritas[$a['prioritas']] <=> $urutanPrioritas[$b['prioritas']];
         });
 
-        $adaFilter = $cari !== '' || $filterSp || $filterStatus || $filterKategori || $filterPrioritas;
+        $adaFilter = $cari !== '' || $filterSp || $filterStatus || $filterKategori || $filterPrioritas || $filterBidang;
+
+        // Antrean penyaringan awal, ditampilkan agar laporan tanpa bidang tidak
+        // menumpuk diam-diam menunggu dinas yang tidak pernah tahu.
+        $belumBerbidang = count(array_filter($semua, fn ($p) => empty($p['bidang'])));
 
         $belumSelesai = count(array_filter($semua, fn ($p) => $p['status'] !== StatusPengaduan::Selesai->value));
         $menungguDiterima = count(array_filter($semua, fn ($p) => $p['status'] === StatusPengaduan::MenungguDiterima->value));
@@ -115,7 +136,30 @@
             pesan-kosong="Laporan warga akan tampil di sini setelah masuk.">
 
             <x-slot:filter>
-                <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {{--
+                        Filter bidang. Paling berguna bagi Admin dan Dinas
+                        Transmigrasi yang daftarnya memuat laporan kedua dinas
+                        sekaligus. Pilihan "Belum ditentukan" menampilkan
+                        antrean penyaringan awal.
+                    --}}
+                    <div>
+                        <label for="filter_bidang"
+                            class="mb-1.5 block text-theme-xs font-medium text-gray-700 dark:text-gray-400">
+                            Bidang Penanganan
+                        </label>
+                        <select id="filter_bidang" name="bidang"
+                            class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
+                            <option value="">Semua bidang</option>
+                            @foreach (\App\Enums\BidangPengaduan::opsi() as $nilai => $label)
+                                <option value="{{ $nilai }}" @selected($filterBidang === $nilai)>{{ $label }}</option>
+                            @endforeach
+                            <option value="belum" @selected($filterBidang === 'belum')>
+                                Belum ditentukan ({{ $belumBerbidang }})
+                            </option>
+                        </select>
+                    </div>
+
                     <div>
                         <label for="filter_sp"
                             class="mb-1.5 block text-theme-xs font-medium text-gray-700 dark:text-gray-400">
@@ -245,7 +289,19 @@
                     <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
                         {{ $p['satuan_permukiman'] }}
                     </td>
-                    <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ $p['bidang'] }}</td>
+                                {{--
+                                    Bidang kosong ditulis sebagai keterangan, bukan
+                                    dibiarkan sebagai sel hampa. Sel hampa terbaca
+                                    sebagai data gagal termuat, sedangkan yang
+                                    sebenarnya terjadi adalah laporan belum disaring.
+                                --}}
+                                <td class="px-5 py-3 text-theme-sm">
+                                    @if (! empty($p['bidang']))
+                                        <span class="text-gray-600 dark:text-gray-400">{{ $p['bidang'] }}</span>
+                                    @else
+                                        <span class="text-gold-700 dark:text-gold-400">Belum ditentukan</span>
+                                    @endif
+                                </td>
                     <td class="px-5 py-3">
                         <x-sim.status-badge :status="PrioritasPengaduan::from($p['prioritas'])" />
                     </td>

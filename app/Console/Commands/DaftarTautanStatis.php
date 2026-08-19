@@ -118,6 +118,8 @@ class DaftarTautanStatis extends Command
             'saprotan' => ['saprotan', 'id_saprotan'],
             'komoditas' => ['komoditas', 'id_komoditas'],
             'infrastruktur' => ['infrastruktur', 'id_infrastruktur'],
+            'sp/inventaris' => ['inventarisSp', 'id_inventaris_sp'],
+            'sp/fasilitas' => ['fasilitasSp', 'id_fasilitas_sp'],
             'dashboard/sp' => ['satuanPermukiman', 'id_satuan_permukiman'],
         ];
 
@@ -155,6 +157,13 @@ class DaftarTautanStatis extends Command
         // sejalan dengan batasan `where` pada rute `panen.rekap.kelompok`.
         foreach (['sp', 'komoditas', 'musim', 'petani'] as $kelompok) {
             $hasil[] = '/panen/rekap/' . $kelompok;
+        }
+
+        // Tautan tetap tab rekap pengaduan, mengikuti pola yang sama. Daftar
+        // ini wajib sejalan dengan batasan `where` pada rute
+        // `pengaduan.rekap.kelompok` dan $labelKelompok pada viewnya.
+        foreach (['kategori', 'status', 'sp', 'prioritas', 'bidang'] as $kelompok) {
+            $hasil[] = '/pengaduan/rekap/' . $kelompok;
         }
 
         return $hasil;

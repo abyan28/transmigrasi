@@ -622,7 +622,8 @@ Dokumen status lahan (HPL/SHM) dipisah ke tabel sendiri karena satu lahan dapat 
 - **Ketua poktan tidak selalu transmigran.** Di lapangan banyak poktan diketuai penduduk setempat yang bukan peserta program, sehingga membatasi pilihan pada daftar transmigran membuat poktan semacam itu tidak dapat didata sama sekali. Kolom `is_ketua_transmigran` menentukan jalurnya, dan **tepat satu** dari dua jalur terisi:
   - `TRUE` → `ketua_transmigran_id` wajib; `nama_ketua` dan `nik_ketua` dibiarkan `NULL` dan dibaca lewat relasi, agar tidak ada dua versi data yang berpotensi tidak sinkron (`erd.md` §8.2 nomor 25).
   - `FALSE` → `nama_ketua` dan `nik_ketua` wajib; `ketua_transmigran_id` bernilai `NULL`.
-- **Kontak yang disimpan adalah kontak ketua, bukan kontak kelompok** (ditetapkan 2026-08-17). Sebelumnya kolom ini bernama `telepon`, `email`, dan `alamat_sekretariat` serta dinyatakan milik kelompok, tetapi seluruh data contoh dan halaman rincian sejak awal memperlakukannya sebagai kontak ketua. Penamaan disesuaikan agar dokumen dan kode menyebut hal yang sama. `email_ketua` juga menjadi satu-satunya tempat email ketua dapat disimpan, sebab tabel `transmigran` tidak memiliki kolom email padahal `rules.md` §7a poin 2 mewajibkannya.
+- **Kontak yang disimpan adalah kontak ketua, bukan kontak kelompok** (ditetapkan 2026-08-17, alasannya diperbaiki 2026-08-19). Dasarnya keterangan pemilik proyek: kelompok tani di Kobalima Timur **tidak memiliki kontak sendiri** yang berbeda dari kontak ketuanya, sehingga menyediakan dua pasang kolom hanya menyisakan satu yang selalu kosong. Sebelumnya kolom ini bernama `telepon`, `email`, dan `alamat_sekretariat` serta dinyatakan milik kelompok. `email_ketua` juga menjadi satu-satunya tempat email ketua dapat disimpan, sebab tabel `transmigran` tidak memiliki kolom email padahal `rules.md` §7a poin 2 mewajibkannya.
+  > Alasan yang semula ditulis di sini bersandar pada bentuk data contoh, dan itu penalaran melingkar yang dilarang `rules.md` §19a. Lihat `notes.md` §1c.2 pelanggaran kelima.
 - Kolom `jumlah_anggota` sengaja **tidak ada**; nilainya dihitung dari `anggota_poktan` berstatus Aktif memakai `withCount` (`erd.md` §7.3).
 
 ### 8.2 `anggota_poktan`
@@ -782,7 +783,7 @@ Pendataan **aset** infrastruktur. Pelaporan kerusakan ditangani fitur Pengaduan 
 | `nomor_pengaduan` | `VARCHAR(30)` | TIDAK | UQ, IDX | Dibuat otomatis, contoh `PGD-2026-0001-K7F2M9`. Enam karakter terakhir **acak**, sehingga nomor tidak dapat ditebak berurutan. Dipakai warga untuk melacak perkembangan laporannya |
 | `tanggal_pengaduan` | `DATE` | TIDAK | IDX | |
 | `kategori` | `ENUM` | TIDAK | IDX | Lihat §11.21 |
-| `bidang` | `ENUM` | TIDAK | IDX | Lihat §11.22; menentukan dinas penanganan |
+| `bidang` | `ENUM` | **YA** | IDX | Lihat §11.22; menentukan dinas penanganan. `NULL` berarti belum ditetapkan petugas |
 | `judul` | `VARCHAR(255)` | TIDAK | | Ringkasan singkat |
 | `deskripsi` | `TEXT` | TIDAK | | |
 | `status` | `ENUM` | TIDAK | IDX | Lihat §11.23; hanya status **terkini** |
@@ -793,7 +794,7 @@ Pendataan **aset** infrastruktur. Pelaporan kerusakan ditangani fitur Pengaduan 
 
 **Catatan:**
 - Kolom `catatan_penanganan` dan `id_status_penanganan` pada SQL referensi **dihapus**; keduanya duplikatif (`notes.md` §1.5).
-- `bidang` menentukan penerusan: Ketransmigrasian ke Dinas Transmigrasi, Pertanian ke Dinas Pertanian (`rules.md` §10b.7).
+- `bidang` menentukan penerusan: Ketransmigrasian ke Dinas Transmigrasi, Pertanian ke Dinas Pertanian (`rules.md` §10b.7). Nilainya diturunkan dari kategori sebagai nilai awal, dapat ditimpa petugas, dan **wajib terisi sebelum status maju ke Diproses**.
 - Nilai enum `'Lainnya '` yang mengandung spasi berlebih pada SQL referensi sudah dibersihkan.
 
 **Kanal publik tanpa login.** Warga transmigran tidak memiliki akun sistem, sehingga pengaduan dibuka sebagai halaman publik. Warga cukup mengisi nama, kontak, lokasi SP, kategori, dan uraian masalah.
@@ -923,10 +924,26 @@ Pada SQL referensi kolom ini bertipe `VARCHAR` bebas; dijadikan ENUM agar dapat 
 `Air` · `Irigasi` · `Listrik` · `Jalan Produksi` · `Telekomunikasi` · `Gudang` · `Lainnya`
 
 ### 11.21 Kategori pengaduan
-`Lahan Usaha` · `Lahan Pekarangan` · `Rumah` · `Infrastruktur` · `Peralatan dan Perlengkapan` · `Alsintan` · `Produksi Panen` · `Bencana` · `Lainnya`
+`Lahan Usaha` · `Lahan Pekarangan` · `Rumah` · `Infrastruktur` · `Inventaris SP` · `Fasilitas SP` · `Kelompok Tani` · `Alsintan` · `Saprotan` · `Produksi Panen` · `Bencana` · `Lainnya`
+
+Tiga perubahan pada 2026-08-19: nilai `Peralatan dan Perlengkapan` **dipecah** menjadi `Inventaris SP` dan `Fasilitas SP`, sebab satu kategori menaungi dua daftar berbeda sehingga petugas tidak dapat mengetahui yang mana dimaksud pelapor; `Saprotan` **ditambahkan** agar keluhan bibit, pupuk, serta obat tidak menumpang pada `Produksi Panen`; dan `Kelompok Tani` **ditambahkan** sebab poktan adalah modul penuh tetapi keluhan atasnya tidak punya kategori sendiri.
+
+**Daftar kategori memetakan modul yang dapat diadukan warga.** Penyisiran 2026-08-19 atas 26 fitur berkewenangan (§13.1) menyimpulkan pemetaannya kini lengkap dua arah. Modul yang sengaja **tidak** berkategori: `pengguna`, `role`, `audit_log`, `dashboard` (urusan internal sistem); `wilayah`, `kawasan`, `sp`, `satuan` (data referensi, bukan benda yang dapat rusak); `transmigran` (warga mengadukan masalah, bukan sesama warga); serta `komoditas`, `musim_tanam`, `riwayat_tanam` (data master pertanian yang keluhannya bermuara ke `Produksi Panen`).
 
 ### 11.22 Bidang pengaduan
 `Ketransmigrasian` · `Pertanian`
+
+Menentukan dinas penanganan. Kolom `pengaduan.bidang` **boleh `NULL`**, artinya bidangnya belum ditetapkan petugas.
+
+Nilai awalnya diturunkan dari kategori lewat `BidangPengaduan::dariKategori()`, tetapi **selalu dapat ditimpa** petugas (`rules.md` §10b.7c):
+
+| Kategori | Bidang bawaan |
+|---|---|
+| `Rumah`, `Lahan Pekarangan`, `Inventaris SP`, `Fasilitas SP` | Ketransmigrasian |
+| `Kelompok Tani`, `Alsintan`, `Saprotan`, `Produksi Panen` | Pertanian |
+| `Lahan Usaha`, `Infrastruktur`, `Bencana`, `Lainnya` | **`NULL`**, wajib ditetapkan petugas |
+
+Empat kategori terakhir sengaja netral sebab pokok masalahnya dapat jatuh ke dua dinas sekaligus: sengketa lahan usaha bisa menyangkut pembagian lahan (Ketransmigrasian) maupun produktivitasnya (Pertanian), sedangkan bencana dan `Lainnya` memang tidak menunjuk urusan tertentu. Menebak bidang untuk kategori semacam itu justru menyesatkan, sebab laporan akan masuk ke daftar dinas yang keliru lalu tertahan di sana.
 
 ### 11.23 Status pengaduan
 `Menunggu Diterima` · `Diterima` · `Diproses` · `Selesai`
@@ -935,14 +952,19 @@ Pada SQL referensi kolom ini bertipe `VARCHAR` bebas; dijadikan ENUM agar dapat 
 `Rendah` · `Sedang` · `Tinggi` · `Mendesak`
 
 ### 11.25 Cakupan data role
-`Semua` · `Per SP`
+`Semua` · `Per SP` · `Per Bidang`
 
 Menentukan **data siapa** yang boleh dilihat, terpisah dari kewenangan yang menentukan **boleh melakukan apa**.
 
 | Nilai | Penyaring query | Pemakai |
 |---|---|---|
-| `Semua` | tanpa penyaring | Admin, Dinas Transmigrasi, Dinas Pertanian |
+| `Semua` | tanpa penyaring | Admin, Dinas Transmigrasi |
 | `Per SP` | dibatasi SP pada `user_satuan_permukiman` | Operator SP |
+| `Per Bidang` | dibatasi `pengaduan.bidang` yang sesuai | Dinas Pertanian |
+
+**Mengapa kedua dinas tidak simetris.** Dinas Transmigrasi bercakupan `Semua`, bukan `Per Bidang`, sebab sistem ini milik Dinas Transmigrasi sebagai pengelola kawasan. Merekalah yang menyaring laporan berbidang `NULL` dan menetapkan bidangnya, sehingga laporan bidang pertanian baru muncul pada daftar Dinas Pertanian setelah ditetapkan.
+
+Konsekuensi yang diterima sadar: satu-satunya jalan laporan sampai ke Dinas Pertanian adalah lewat penetapan Admin atau Dinas Transmigrasi. Peredamnya, filter bidang pada halaman daftar menyediakan pilihan **Belum ditentukan** beserta jumlahnya, sehingga antrean penyaringan tidak menumpuk diam-diam.
 
 ### 11.26 Aksi permission
 `lihat` — `tambah` — `ubah` — `hapus`
@@ -1030,6 +1052,7 @@ Aturan berikut ditulis satu kali di `app/Support/ValidationRules.php` dan dipaka
 | 19 | `nama_pelapor` dan `kontak_pelapor` wajib pada seluruh pengaduan, baik publik maupun dicatat petugas | `pengaduan` |
 | 20 | `user_id` wajib kosong bila `sumber_laporan` bernilai Publik, dan wajib terisi bila Petugas | `pengaduan` |
 | 21 | Pengaduan publik dibatasi 3 laporan per jam untuk setiap alamat IP | `pengaduan` |
+| 22 | `bidang` wajib terisi sebelum status pengaduan maju ke `Diproses` | `pengaduan` |
 
 ---
 
