@@ -104,8 +104,32 @@
     // Ekspresi Alpine milik pemanggil, diambil dari atribut agar dapat
     // dipasang pada tombol dan isian nilai sekaligus. Pembungkus terluar tidak
     // boleh menerimanya, sebab `disabled` tidak berlaku pada elemen biasa.
-    $ekspresiRequired = $attributes->get(':required');
-    $ekspresiDisabled = $attributes->get(':disabled');
+    //
+    // DIBACA TANPA TITIK DUA, dan itu bukan kelalaian penulisan. Blade
+    // memperlakukan `:nama` sebagai atribut TERIKAT: nilainya dievaluasi
+    // sebagai PHP lalu disimpan pada kunci `nama` tanpa titik dua. Membacanya
+    // sebagai `:required` karena itu SELALU menghasilkan null.
+    //
+    // Kekeliruan ini berlangsung diam-diam sejak komponen dibangun ulang
+    // 2026-08-17: seluruh pemanggil yang memasang `:required` dan `:disabled`
+    // tidak pernah mendapat keduanya, sehingga isian pada cabang form yang
+    // sedang tersembunyi tetap aktif dan ikut terkirim. Tidak ada satu pun uji
+    // yang memerah, sebab seluruhnya hanya memeriksa keberadaan atribut `name`
+    // (agents/notes.md 1d.2).
+    $ekspresiRequired = $attributes->get('required');
+    $ekspresiDisabled = $attributes->get('disabled');
+
+    // `@change` milik pemanggil WAJIB diambil dan digabung sendiri.
+    //
+    // Komponen ini tidak pernah memanggil `$attributes->merge()` pada elemen
+    // mana pun, sehingga atribut yang dipasang pemanggil hilang begitu saja.
+    // Isian nilai sendiri sudah memakai `@change="selaraskan()"`, dan Alpine
+    // hanya menghormati satu pengendali per peristiwa pada satu elemen.
+    //
+    // Akibatnya sama diamnya: autofill telepon ketua poktan tidak pernah
+    // bekerja, sebab `@change` yang membawa `isiKontak()` tidak pernah
+    // terpasang sama sekali.
+    $ekspresiChange = $attributes->get('@change') ?? $attributes->get('x-on:change');
 @endphp
 
 <div x-data="{
@@ -248,7 +272,8 @@
         luar komponen, misalnya dari `isiFormulir()` milik modal ubah.
     --}}
     <input type="text" id="{{ $id }}" name="{{ $nama }}" x-ref="nilai"
-        :value="nilai" @change="selaraskan()" tabindex="-1" aria-hidden="true"
+        :value="nilai" @change="selaraskan(); {{ $ekspresiChange ? $ekspresiChange . ';' : '' }}"
+        tabindex="-1" aria-hidden="true"
         @invalid="$refs.tombol?.focus()"
         @if ($wajib && ! $ekspresiRequired) required @endif
         @if ($ekspresiRequired) :required="{{ $ekspresiRequired }}" @endif

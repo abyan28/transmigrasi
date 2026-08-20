@@ -255,6 +255,7 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **-*
 | Transmigran | L T U H | L T U | L | L T U |
 | Rumah & hunian | L T U H | L T U | L | L T U |
 | Riwayat penghunian | L T U H | L T | L | L T |
+| Riwayat kepala keluarga | L T U | L T | L | L |
 | Lahan | L T U H | L T U | L | L T U |
 | Dokumen lahan (HPL/SHM) | L T U H | L T | L | L T |
 | Kelompok tani | L T U H | L | L T U | L T U |
@@ -280,6 +281,7 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **-*
 5. **Ekspor tidak lagi menjadi kewenangan tersendiri** (dicabut 2026-08-17). Mengekspor adalah cara lain membaca data yang **sudah** boleh dilihat, bukan tindakan baru, sehingga ia mengikuti kewenangan `lihat` pada fitur yang bersangkutan. Sebelumnya huruf `E` berdiri terpisah, tetapi 24 sel memberi `lihat` tanpa `export` tanpa alasan yang dapat dijelaskan, dan Admin terpaksa menyusun satu maksud dua kali. Pembatasan sebaran data ditangani **cakupan data** (5.2): Operator SP hanya dapat mengekspor data SP yang ditugaskan padanya, sebab penyaringannya terjadi di tingkat query, bukan di tombol.
 6. **Inventaris SP dan Fasilitas SP adalah dua fitur terpisah**, masing-masing dengan kewenangannya sendiri. Keduanya memang bernilai sama pada konfigurasi awal, tetapi tetap dipisah karena berupa dua tabel dan dua halaman yang berbeda (Â§4b poin 1), sehingga Admin dapat memberi kewenangan berbeda antara aset bergerak dan bangunan fasilitas. Sampai 2026-08-12 keduanya tertulis sebagai satu baris di sini, tidak sejalan dengan `data-dictionary.md` Â§13.1, `erd.md`, dan `ui-spec.md` yang sejak awal memisahkannya.
 7. Anggota poktan yang berhenti ditandai berstatus "Sudah Keluar", bukan dihapus, agar riwayat tetap utuh.
+8. **Riwayat kepala keluarga tidak dapat dihapus siapa pun**, termasuk Admin. Admin hanya memegang `ubah` untuk membetulkan salah ketik pada tanggal atau sebab; tanpa itu petugas akan mencatat suksesi kedua sebagai penebus kekeliruan yang pertama. Riwayat ini menyangkut keabsahan penguasaan lahan, sebab ia menyatakan siapa pemegang jatah pada rentang waktu tertentu (6.5f).
 
 ### 6. Aturan Fitur Transmigran
 1. Data transmigran harus menjadi data inti sistem.
@@ -296,9 +298,16 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **-*
    - satu transmigran dapat memiliki **banyak lahan usaha** (one-to-many),
    - satu transmigran menempati **tepat satu rumah** (one-to-one),
    - satu transmigran dapat menjadi anggota satu kelompok tani.
-5. Setiap transmigran dapat dilampiri dokumen pendukung.
-6. Data transmigran harus bisa ditambah, diubah, dicari, difilter, dan diekspor.
-7. Data transmigran harus mendukung kebutuhan monitoring kawasan dan pendataan awal.
+5. **Pergantian kepala keluarga dicatat sebagai riwayat tersendiri** (ditetapkan 2026-08-20 atas keterangan pemilik proyek). Ketika kepala keluarga meninggal, merantau, atau bercerai, kedudukannya berpindah kepada istri, lalu kepada anak pertama bila istrinya juga tiada. Rumah tangganya berlanjut, sehingga baris `transmigran` yang ada **disunting**, bukan diganti baris baru: jatah rumah dan lahan diberikan kepada KK, bukan kepada suaminya secara pribadi, dan ketujuh relasi yang menaut ke transmigran memang seharusnya tetap utuh.
+5a. **Audit log saja tidak cukup.** Ia merekam bahwa nama berubah, tetapi **tidak dapat membedakan suksesi dari perbaikan salah ketik**, sebab keduanya berbentuk aksi `Ubah` pada kolom yang sama. Karena itu dibuat tabel `riwayat_kepala_keluarga` yang menyimpan kedua sisi identitas, nomor KK sebelum dan sesudah, tanggal, sebab, serta kedudukan pengganti.
+5b. **Suksesi adalah tindakan tersendiri, bukan efek samping form ubah.** Ia dijalankan lewat tombol dan modal khusus di halaman rincian. Bila ia lahir dari penyuntingan nama pada form biasa, setiap perbaikan ejaan akan mengotori riwayat suksesi, yaitu kekaburan yang justru hendak ditutup.
+5c. **Nomor KK dapat ikut berubah**, sebab Dukcapil menerbitkan KK baru ketika kepala keluarganya berganti. Keduanya disimpan; bila tidak berubah, diisi sama.
+5d. **Urutan pengganti tidak ditegakkan sistem.** Aturan istri lalu anak pertama adalah ketentuan Dukcapil, sedangkan sistem tidak mendata anggota keluarga satu per satu sehingga tidak punya baris untuk memvalidasinya. Identitas pengganti karena itu diketik petugas: sistem merekam siapa penggantinya, bukan menebaknya.
+5e. **Jabatan ketua poktan tidak diwariskan.** Bila keluarga yang bersangkutan menjabat ketua lewat jalur `Kepala Keluarga`, suksesi wajib menuntut petugas memutuskan: mengosongkan jabatan itu atau meneruskannya kepada kepala keluarga baru. Membiarkannya berpindah sendiri berarti sistem mengangkat ketua tanpa seorang pun memutuskan, padahal ketua dipilih anggota. Sebaliknya **keanggotaan poktan memang mengikuti**, sebab keanggotaan melekat pada keluarga (7a poin 3a); petugas cukup diberi tahu.
+5f. Kewenangan suksesi dipegang **Admin dan Dinas Transmigrasi** saja. Admin memegang `ubah` untuk membetulkan salah ketik pada riwayat; **tidak ada kewenangan hapus** bagi siapa pun, sebab riwayat suksesi menyangkut keabsahan penguasaan lahan.
+6. Setiap transmigran dapat dilampiri dokumen pendukung.
+7. Data transmigran harus bisa ditambah, diubah, dicari, difilter, dan diekspor.
+8. Data transmigran harus mendukung kebutuhan monitoring kawasan dan pendataan awal.
 
 ### 6a. Aturan Fitur Rumah dan Hunian
 1. Setiap rumah wajib tertaut ke SP dan dapat tertaut ke transmigran penghuninya.
@@ -315,12 +324,15 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **-*
 
 ### 7. Aturan Fitur Lahan
 1. Setiap lahan harus memiliki identitas yang jelas.
-2. Lahan dibedakan menurut **peruntukannya**: **lahan pekarangan** dan **lahan usaha**. Istilah "peruntukan" dipakai sejak 2026-08-18 menggantikan "jenis", sebab yang dibedakan adalah untuk apa bidang itu diberikan; sifat fisiknya diwakili kategori lahan (basah atau kering). Tiap bidang dicatat sebagai baris tersendiri, sehingga luas, koordinat, dan dokumennya tidak tercampur.
+2. Lahan dibedakan menurut **peruntukannya**: **lahan pekarangan** dan **lahan usaha**. Istilah "peruntukan" dipakai sejak 2026-08-18 menggantikan "jenis", sebab yang dibedakan adalah untuk apa bidang itu diberikan; sifat pengairannya dicatat terpisah sebagai komposisi luas kering dan basah (poin 5). Tiap bidang dicatat sebagai baris tersendiri, sehingga luas, koordinat, dan dokumennya tidak tercampur.
 2a. **Pemeriksaan "apakah ini lahan usaha" dilarang membandingkan satu nilai teks.** Pakai `PeruntukanLahan::lahanUsaha()`. Penjumlahan luas usaha pernah mencocokkan teks persis, dan cara itu akan kehilangan sebagian bidang tanpa ada yang menyadarinya bila daftar nilainya berubah.
 2b. Nilai `Lahan Usaha I` dan `Lahan Usaha II` sempat ditambahkan pada 2026-08-18 atas dugaan bahwa lahan usaha dibagikan bertahap, lalu **dibatalkan pada hari yang sama** setelah keadaan lapangan diketahui (lihat poin 8). Dicatat di sini agar tidak diusulkan ulang tanpa konfirmasi.
 3. Data lahan harus dapat dikaitkan dengan transmigran, kelompok tani, dan komoditas.
 4. Data lahan minimal memuat informasi luas, lokasi, titik koordinat, status, dan tujuan/jenis pemanfaatan.
-5. Kategori lahan usaha dibedakan menjadi lahan basah dan lahan kering.
+5. **Lahan kering dan lahan basah adalah komposisi luas sebuah bidang, bukan kategori bidang** (ditetapkan 2026-08-20 atas keterangan lapangan pemilik proyek). Satu bidang lahan usaha seluas 1 ha dapat digarap 0,5 ha kering dan 0,5 ha basah sekaligus, dan pembagiannya ditentukan penggarapnya. Karena itu luasnya dicatat pada dua kolom, `luas_kering` dan `luas_basah`, yang jumlahnya wajib sama dengan `luas`.
+5a. Sebelum tanggal itu sifat pengairan disimpan sebagai enum satu nilai per bidang, sehingga **bidang campuran tidak dapat dicatat sama sekali**. Petugas terpaksa memilih salah satu, dan separuh luasnya hilang dari rekap tanpa ada yang menyadarinya — kegagalan senyap yang sudah pernah terjadi pada penjumlahan luas usaha (poin 2a).
+5b. **Bidangnya tetap satu baris dengan satu titik koordinat.** Yang dipecah hanya angka luasnya, sebab pemecahan kering/basah tidak melahirkan bidang baru dan tidak berpindah tempat. Bidang yang seluruhnya kering diisi `luas_basah = 0`, bukan dikosongkan.
+5c. Penyaringan "lahan basah" pada halaman daftar berarti **bidang yang memiliki bagian basah** (`luas_basah > 0`), bukan bidang yang seluruhnya basah. Rekapnya memakai penjumlahan kolom, sejalan dengan poin 10.
 4a. **Status hak atas tanah bukan status kepemilikan** (diperbaiki 2026-08-18). Nilainya `Belum Bersertifikat`, `Hak Milik`, `Hak Milik Bersama`, `Hak Pakai`, `Sewa`, `Garapan`. **HPL dan SHM dicabut dari daftar ini**: HPL adalah Hak Pengelolaan milik instansi atas tanah kawasan sehingga tidak pernah menjadi hak seorang transmigran, sedangkan SHM adalah nama sertifikatnya, bukan nama haknya. Keduanya menjadi jenis dokumen. Rantainya: tanah kawasan berstatus Hak Pengelolaan, lalu bidangnya dibagikan dengan status Hak Milik; sebelum sertifikat terbit, sandarannya surat keterangan pembagian tanah.
 6. Dokumen status lahan wajib dapat diunggah dan ditautkan ke data lahan. **Dokumen pertama diisi langsung pada form lahan**, sedangkan tab pada halaman rincian melayani dokumen kedua dan seterusnya. Sebelum 2026-08-18 seluruh dokumen hanya dapat diunggah lewat tab, dan itu memaksa dua langkah untuk keadaan yang paling lazim: tidak satu pun bidang pada data memiliki lebih dari satu dokumen.
 6a. Keterangan dokumen (`jenis_dokumen`, `nomor_dokumen`, `tanggal_terbit`) **wajib dipertahankan** dan tidak boleh disederhanakan menjadi satu kolom unggahan seperti modul lain. Nomor sertifikat adalah data legal yang harus dapat dicari, bukan sekadar lampiran.
@@ -333,14 +345,23 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **-*
 ### 7a. Aturan Fitur Kelompok Tani (Poktan)
 1. Setiap poktan wajib memiliki profil berisi nama poktan dan desa/SP asal.
 2. Data ketua poktan minimal memuat nama, NIK, telepon, dan email.
-2a. **Ketua poktan tidak selalu berasal dari transmigran.** Banyak poktan diketuai penduduk setempat yang bukan peserta program, sehingga membatasi pilihan pada daftar transmigran membuat poktan semacam itu tidak dapat didata sama sekali. Form karena itu bercabang lebih dulu lewat `is_ketua_transmigran`: bila ketua sudah terdata sebagai transmigran, ia **dipilih dari daftar** agar NIK dan tautan profilnya tetap sahih dan tidak ada dua versi data; bila bukan, **nama dan NIK diketik langsung** pada kolom `nama_ketua` dan `nik_ketua`.
+2a. **Ketua poktan punya tiga asal-usul** (diperluas 2026-08-20 atas keterangan pemilik proyek). Kolom `is_ketua_transmigran` bertipe boolean digantikan `asal_ketua` bertipe enum, sebab boolean hanya sanggup membedakan dua keadaan sedangkan keadaan lapangan ada tiga:
+   - **Kepala Keluarga** — dipilih dari daftar transmigran; nama, NIK, dan telepon dibaca lewat relasi agar tidak ada dua versi data yang berbeda ejaan.
+   - **Anggota Keluarga** — keluarganya dipilih dari daftar, tetapi nama, NIK, dan hubungannya terhadap kepala keluarga **wajib diketik**, sebab sistem tidak mendata anggota keluarga satu per satu.
+   - **Bukan Transmigran** — penduduk setempat yang bukan peserta program. Nama dan NIK diketik, dan hanya jalur inilah yang mengetik luas lahan sendiri.
+
+   Membatasi pilihan pada daftar transmigran membuat poktan berketua penduduk setempat tidak dapat didata sama sekali, sedangkan membatasinya pada kepala keluarga membuat poktan berketua istri atau anak tidak dapat didata dengan benar.
 2b. **Kontak yang disimpan pada poktan adalah kontak ketua, bukan kontak kelompok** (`telepon_ketua`, `email_ketua`, `alamat_ketua`). Dasarnya keterangan pemilik proyek: kelompok tani di Kobalima Timur tidak memiliki kontak sendiri yang berbeda dari kontak ketuanya, sehingga menyediakan dua pasang kolom hanya menyisakan satu yang selalu kosong. Telepon terisi sendiri dari data transmigran saat ketua dipilih dari daftar, tetapi **tetap dapat disunting** sebab petugas kerap memegang nomor yang lebih baru. Email diisi manual, karena tabel `transmigran` tidak menyimpan email padahal poin 2 mewajibkannya.
-3. Sistem mencatat jumlah anggota beserta daftar anggota yang berasal dari transmigran.
+3. Sistem mencatat jumlah anggota beserta daftar anggota, dan **setiap anggota wajib berasal dari keluarga transmigran**. Berbeda dari ketua, anggota tidak boleh berasal dari penduduk setempat.
+3a. **Keanggotaan poktan melekat pada keluarga, bukan pada kepala keluarga** (ditetapkan 2026-08-20 atas keterangan pemilik proyek). Yang terdaftar adalah orang yang benar-benar menggarap dan menghadiri pertemuan, dan ia tidak selalu kepala keluarga: bila kepala keluarga merantau, istri atau anaknya yang mewakili. Karena itu `anggota_poktan.transmigran_id` menunjuk **keluarga** yang diwakili, sedangkan `asal_wakil` menyatakan siapa wakilnya. Bila wakilnya bukan kepala keluarga, nama, NIK, telepon, dan hubungannya wajib diketik.
+3b. **Satu keluarga diwakili satu orang saja pada satu poktan.** Sudah ditegakkan UNIQUE `(poktan_id, transmigran_id)` yang ada, sebab `transmigran_id` kini bermakna keluarga.
+3c. **Luas lahan dan koordinat ketua maupun anggota diturunkan, tidak disimpan.** Keduanya dijumlahkan dari bidang milik keluarga yang bersangkutan (7.10), sehingga tidak pernah basi ketika luas dibetulkan di modul lahan dan tidak berubah ketika wakilnya berganti. Pengecualiannya hanya ketua bertanda `Bukan Transmigran`, yang lahannya memang tidak terdata sehingga wajib diketik.
 4. Setiap anggota mencatat nama, NIK, tanggal masuk, status keaktifan (Aktif, Tidak Aktif, Sudah Keluar), dan tanggal keluar bila ada.
 4a. **Data anggota wajib dapat diubah setelah tersimpan.** Status keaktifan dan tanggal keluar pada poin 4 justru berubah belakangan, sehingga menyediakannya hanya pada saat penambahan membuat keduanya tidak pernah dapat diisi. Yang tidak disediakan adalah **penghapusan**, sesuai 5.1 catatan 7.
 4b. **Jabatan anggota tidak memuat nilai `Ketua`.** Ketua ditetapkan pada profil poktan (poin 2a), dan menyediakannya juga pada daftar anggota membuat satu poktan dapat memiliki dua ketua berbeda tanpa penjaga apa pun.
 4c. **Perpindahan anggota antar poktan dicatat sebagai dua baris.** Baris pada poktan lama ditandai `Sudah Keluar` beserta tanggal dan alasannya, lalu dibuat baris baru pada poktan tujuan. Memindahkan `poktan_id` pada baris yang sama akan menghapus jejak keanggotaan di poktan lama seolah tidak pernah ada.
-4d. **Seorang transmigran hanya boleh berstatus Aktif pada satu poktan** dalam satu waktu (6.4). UNIQUE `(poktan_id, transmigran_id)` hanya mencegah baris ganda pada poktan yang sama, sehingga pembatasan ini ditegakkan di tingkat aplikasi saat menyimpan anggota baru.
+4d. **Satu keluarga hanya boleh berstatus Aktif pada satu poktan** dalam satu waktu (6.4). Dinyatakan per keluarga, bukan per orang: sejak 3a, `transmigran_id` bermakna keluarga, sehingga satu keluarga tidak dapat diwakili istri di satu poktan dan anak di poktan lain sekaligus. UNIQUE `(poktan_id, transmigran_id)` hanya mencegah baris ganda pada poktan yang sama, sehingga pembatasan lintas-poktan ini ditegakkan di tingkat aplikasi saat menyimpan anggota baru.
+4e. **Alasan keluar dipisahkan dari keterangan.** Kolom `keterangan` sempat dipakai dua maksud sekaligus: kamus data menyebutnya catatan umum, sedangkan form melabelinya "Alasan Keluar", sehingga catatan keanggotaan biasa tidak punya tempat. Kini `alasan_keluar` berdiri sendiri, mengikuti `riwayat_penghunian` yang sudah membedakan keduanya.
 5. Poktan dapat ditautkan ke lahan, komoditas, alsintan, dan saprotan.
 6. Poktan dapat dilampiri dokumen pendukung.
 7. Rekap jumlah poktan dan anggotanya harus tersedia per desa/SP.

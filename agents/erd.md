@@ -49,7 +49,7 @@ Pola ini dipilih agar kode mudah dibaca (`transmigran_id` langsung terbaca menun
 
 ## 2. Daftar Tabel
 
-Total **36 tabel**, dikelompokkan menjadi 9 domain.
+Total **37 tabel**, dikelompokkan menjadi 9 domain.
 
 | # | Domain | Tabel |
 |---|---|---|
@@ -57,7 +57,7 @@ Total **36 tabel**, dikelompokkan menjadi 9 domain.
 | 2 | Master Wilayah | `provinsi`, `kabupaten`, `kecamatan`, `desa`, `kawasan_transmigrasi`, `satuan_permukiman`, `penilaian_sp` |
 | 3 | Aset SP | `inventaris_sp`, `fasilitas_sp` |
 | 4 | Master Referensi | `satuan`, `komoditas`, `parameter_penilaian_sp` |
-| 5 | Kependudukan | `transmigran`, `rumah`, `riwayat_penghunian` |
+| 5 | Kependudukan | `transmigran`, `rumah`, `riwayat_penghunian`, `riwayat_kepala_keluarga` |
 | 6 | Lahan | `lahan`, `dokumen_lahan` |
 | 7 | Kelembagaan & Sarana | `poktan`, `anggota_poktan`, `alsintan`, `saprotan` |
 | 8 | Produksi Pertanian | `musim_tanam`, `riwayat_tanam`, `hasil_panen`, `komoditas_poktan` |
@@ -180,6 +180,7 @@ Kolom "Aturan hapus" memakai istilah SQL: `RESTRICT` mencegah penghapusan induk 
 | 11 | `rumah` | `transmigran_id` | `transmigran` | **1:1 (UNIQUE, nullable)** | SET NULL |
 | 12 | `riwayat_penghunian` | `rumah_id` | `rumah` | N:1 | CASCADE |
 | 13 | `riwayat_penghunian` | `transmigran_id` | `transmigran` | N:1 | RESTRICT |
+| 13a | `riwayat_kepala_keluarga` | `transmigran_id` | `transmigran` | N:1 | RESTRICT |
 | 14 | `lahan` | `transmigran_id` | `transmigran` | **N:1** | CASCADE |
 | 15 | `lahan` | `satuan_permukiman_id` | `satuan_permukiman` | N:1 | RESTRICT |
 | 16 | `lahan` | `poktan_id` | `poktan` | N:1 (nullable) | SET NULL |
@@ -187,7 +188,7 @@ Kolom "Aturan hapus" memakai istilah SQL: `RESTRICT` mencegah penghapusan induk 
 | 18 | `poktan` | `satuan_permukiman_id` | `satuan_permukiman` | N:1 | RESTRICT |
 | 19 | `poktan` | `ketua_transmigran_id` | `transmigran` | N:1 (nullable) | SET NULL |
 
-> **Nullable karena ketua tidak selalu transmigran** (2026-08-17). Bila `is_ketua_transmigran` bernilai `FALSE`, kolom ini `NULL` dan identitas ketua disimpan pada `nama_ketua` beserta `nik_ketua`. Banyak poktan diketuai penduduk setempat yang bukan peserta program, sehingga mewajibkan FK ini membuat poktan semacam itu tidak dapat didata. Lihat `data-dictionary.md` Â§8.1.
+> **Nullable karena ketua tidak selalu transmigran** (2026-08-17). Diperluas 2026-08-20: bila `asal_ketua` bernilai `Bukan Transmigran`, kolom ini `NULL` dan identitas ketua disimpan pada `nama_ketua` beserta `nik_ketua`. Pada nilai `Anggota Keluarga`, FK ini **tetap terisi** sebab yang ditunjuk adalah keluarga yang diwakili, bukan orangnya. Banyak poktan diketuai penduduk setempat yang bukan peserta program, sehingga mewajibkan FK ini membuat poktan semacam itu tidak dapat didata. Lihat `data-dictionary.md` Â§8.1.
 | 20 | `anggota_poktan` | `poktan_id` | `poktan` | N:1 | CASCADE |
 | 21 | `anggota_poktan` | `transmigran_id` | `transmigran` | N:1 | RESTRICT |
 | 22 | `alsintan` | `transmigran_id` | `transmigran` | N:1 (nullable) | SET NULL |
@@ -234,7 +235,7 @@ Aturan berikut **tidak boleh** hanya divalidasi di form, karena dapat ditembus l
 | 5 | Nomor KK unik | `UNIQUE` pada `transmigran.no_kk` |
 | 6 | Email user unik | `UNIQUE` pada `user.email` (nullable) |
 | 6a | Username user unik | `UNIQUE` pada `user.username` |
-| 7 | Satu transmigran hanya sekali terdaftar aktif di satu poktan | `UNIQUE (poktan_id, transmigran_id)` pada `anggota_poktan` |
+| 7 | Satu keluarga hanya sekali terdaftar aktif di satu poktan, dan diwakili satu orang saja | `UNIQUE (poktan_id, transmigran_id)` pada `anggota_poktan`; sejak 2026-08-20 `transmigran_id` bermakna keluarga |
 | 8 | Satu komoditas tidak dobel pada satu poktan | `UNIQUE (poktan_id, komoditas_id)` pada `komoditas_poktan` |
 | 9 | Nama wilayah unik dalam induknya | `UNIQUE (kecamatan_id, nama)` pada `desa`, dan seterusnya berjenjang |
 | 9a | Nama kawasan unik dalam kabupatennya | `UNIQUE (kabupaten_id, nama)` pada `kawasan_transmigrasi` |
@@ -321,8 +322,17 @@ Penyaring cakupan wajib diterapkan pada **level query**, bukan sekadar menyembun
 ### 7.3 Jumlah anggota poktan
 `poktan` **tidak** menyimpan kolom `jumlah_anggota`. Nilai tersebut dihitung dari `anggota_poktan` yang berstatus Aktif (`withCount`), agar tidak pernah basi.
 
+Alasan yang sama mencabut `luas_lahan_kelompok` pada 2026-08-20: luas lahan kelompok dijumlahkan dari bidang milik seluruh anggotanya, dan luas lahan ketua maupun anggota dijumlahkan dari bidang milik keluarga masing-masing. Menyimpannya sebagai kolom akan basi begitu petugas membetulkan luas di modul lahan. Pengecualiannya hanya ketua bertanda `Bukan Transmigran`, yang lahannya memang tidak terdata pada tabel `lahan`.
+
 ### 7.4 Jumlah anggota keluarga
 `transmigran.jumlah_anggota_keluarga` **disimpan** sebagai angka, karena sistem tidak mendata anggota keluarga satu per satu (di luar lingkup PRD).
+
+Keputusan itu berkonsekuensi pada suksesi kepala keluarga: istri dan anak tidak punya baris di mana pun, sehingga identitas pengganti **wajib diketik petugas**. Sistem merekam siapa penggantinya, bukan menebaknya dari daftar anggota keluarga yang memang tidak ada.
+
+### 7.4a Pergantian kepala keluarga
+Satu baris `transmigran` adalah satu RUMAH TANGGA, bukan satu orang. Ketika kepala keluarganya meninggal atau merantau, barisnya **disunting** dan ketujuh relasi yang menautinya tetap utuh: jatah rumah dan lahan diberikan kepada KK, bukan kepada suaminya secara pribadi.
+
+Peristiwanya direkam pada `riwayat_kepala_keluarga`, sebab `audit_log` tidak dapat membedakan suksesi dari perbaikan salah ketik — keduanya berbentuk aksi `Ubah` pada `nama_kepala_keluarga`. Lihat `data-dictionary.md` 6.4.
 
 ### 7.5 Riwayat penghunian
 Pergantian penghuni tidak menimpa data lama. Alurnya: baris `riwayat_penghunian` lama diisi `tanggal_keluar` dan `alasan_keluar`, `rumah.transmigran_id` diperbarui, lalu baris riwayat baru dibuat (`rules.md` Â§6a.9).
@@ -360,14 +370,14 @@ Bagian ini merangkum seluruh penyimpangan yang disengaja dari berkas SQL referen
 | 15 | Data panen (`volumen_panen`, `harga_jual`, `kualitas_panen`, `musim_tanam`) menempel sebagai kolom di `lahan_usaha_sp` | Dipindah ke tabel `hasil_panen` tersendiri, ditaut lewat `riwayat_tanam` | Struktur lama membatasi satu lahan hanya punya satu panen selamanya, sedangkan PRD Â§7.6 mewajibkan riwayat panen per periode dan grafik volume per tahun |
 | 16 | Koordinat memakai tipe `GEOMETRY` | Dua kolom `lintang` dan `bujur` bertipe `DECIMAL(10,7)` | Eloquent tidak mendukung `GEOMETRY` secara natif sehingga butuh raw query atau paket tambahan, padahal kebutuhan hanya menampilkan lintang/bujur 6 desimal (`ui-spec.md` Â§10). Presisi 7 desimal setara Â±1 cm, jauh melebihi kebutuhan lapangan |
 | 17 | Tabel `koordinat_lokasi_sp` berisi 4 kolom TEXT bernama Utara/Timur/Selatan/Barat | Dilebur menjadi 4 kolom `batas_utara`, `batas_timur`, `batas_selatan`, `batas_barat` pada `satuan_permukiman` | Isinya deskripsi batas wilayah, bukan koordinat. Relasinya 1:1 wajib, sehingga tabel terpisah hanya menambah join tanpa manfaat | **Keempat kolom itu kemudian dicabut seluruhnya pada 2026-08-18** sebab isinya tidak pernah dipakai perhitungan maupun peta; peleburan tabelnya tetap sah, hanya kolomnya yang tidak jadi disimpan.
-| 18 | Empat tabel untuk satu konsep lahan: `lahan_sp`, `lahan_usaha_sp`, `kategori_lahan_sp`, `kategori_lahan` | Digabung menjadi satu tabel `lahan` dengan kolom `jenis_lahan` (Pekarangan/Usaha) dan `kategori_lahan` (Basah/Kering) | `kategori_lahan_sp` dan `lahan_sp` sama-sama memuat ENUM identik (`notes.md` Â§1.7). Kolom khusus lahan usaha dibuat nullable, diisi hanya bila `jenis_lahan` = Usaha |
+| 18 | Empat tabel untuk satu konsep lahan: `lahan_sp`, `lahan_usaha_sp`, `kategori_lahan_sp`, `kategori_lahan` | Digabung menjadi satu tabel `lahan` dengan kolom `jenis_lahan` (Pekarangan/Usaha) dan `kategori_lahan` (Basah/Kering) | `kategori_lahan_sp` dan `lahan_sp` sama-sama memuat ENUM identik (`notes.md` Â§1.7). Kolom khusus lahan usaha dibuat nullable, diisi hanya bila `jenis_lahan` = Usaha. **Peleburannya tetap benar, tetapi `kategori_lahan` dicabut 2026-08-20** dan digantikan kolom `luas_kering` serta `luas_basah`, sebab sifat pengairan ternyata komposisi luas bukan sifat bidang (`data-dictionary.md` 7.1) |
 | 19 | `saprotan` tidak menyimpan jenis, jumlah, maupun satuan | Ditambahkan `jenis`, `jumlah`, `satuan_id` | `rules.md` Â§7c.2 mewajibkan pencatatan jenis, jumlah, dan satuan tiap penyaluran |
 | 20 | `alsintan` tidak menyimpan jumlah, kondisi, maupun sumber perolehan | Ditambahkan `jumlah`, `kondisi`, `sumber_perolehan` | `rules.md` Â§7b.2 mewajibkan keempat data tersebut |
 | 21 | `infrastruktur_pertanian` tidak menyimpan jenis, kondisi, maupun sumber dana | Ditambahkan `jenis`, `kondisi`, `sumber_dana`, `lintang`, `bujur` | `rules.md` Â§10.2â€“4 mewajibkan jenis (air, irigasi, listrik, jalan produksi, telekomunikasi, gudang), kondisi terkini, sumber dana, dan titik koordinat |
 | 22 | `musim_tanam` hanya punya kolom `keterangan` | Ditambahkan `nama`, `tahun`, `tanggal_mulai`, `tanggal_selesai` | Grafik panen per tahun membutuhkan periode yang terstruktur, bukan teks bebas |
 | 23 | `inventaris_sp` dan `fasilitas_sp` tidak menyimpan status penyerahan | Ditambahkan `status_penyerahan` dan `jumlah` | `rules.md` Â§4b.4 mewajibkan pencatatan status penyerahan |
 | 24 | `transmigran` tidak menyimpan tahun kedatangan | Ditambahkan `tahun_kedatangan` dan `status_tinggal` | PRD Â§7.8 meminta grafik jumlah transmigran/KK/petani per tahun; tanpa kolom ini agregasi per tahun mustahil |
-| 25 | `poktan` menyimpan `nama_ketua_poktan`, `nik_ketua_poktan` sebagai teks sekaligus `id_transmigran` | Cukup `ketua_transmigran_id` menunjuk `transmigran` | Data ketua sudah ada pada tabel transmigran; menyalinnya berisiko tidak sinkron. Kolom `telepon` dan `email` poktan tetap disimpan karena bisa berbeda dengan kontak pribadi ketua |
+| 25 | `poktan` menyimpan `nama_ketua_poktan`, `nik_ketua_poktan` sebagai teks sekaligus `id_transmigran` | Cukup `ketua_transmigran_id` menunjuk `transmigran` | Data ketua sudah ada pada tabel transmigran; menyalinnya berisiko tidak sinkron. **Diperluas 2026-08-20:** kolom teks itu ternyata tetap diperlukan bagi ketua yang bukan kepala keluarga maupun bukan transmigran, sebab keduanya tidak punya baris yang dapat dibaca. Yang tetap berlaku adalah larangan menyalin: pada jalur `Kepala Keluarga` kolom teks itu wajib `NULL` |
 | 26 | Kawasan transmigrasi tidak punya representasi apa pun; SP langsung menempel ke desa | Tabel `kawasan_transmigrasi` ditambahkan sebagai cabang tersendiri dari `kabupaten`; `satuan_permukiman` menaut ke `kawasan_id` dan `desa_id` sekaligus | Kawasan transmigrasi adalah subjek utama sistem, tetapi pada SQL referensi hanya hidup di judul dokumen. Kawasan juga memotong batas administratif: Kobalima Timur menaungi 6 SP yang tersebar di 4 kecamatan, sehingga mustahil diwakili oleh hierarki administratif saja. Tanpa tabel ini, replikasi ke kawasan lain (`rules.md` Â§4a.4) tidak mungkin dilakukan |
 | 27 | Role disimpan sebagai kolom ENUM `kategori_user` pada tabel `user` | Diganti tiga tabel: `role`, `permission`, dan `role_permission`, ditambah kolom `cakupan_data` pada `role` | Menambah atau mengubah role pada bentuk ENUM berarti mengubah struktur tabel, sehingga hanya dapat dilakukan programmer. Dengan tabel tersendiri, Admin dapat menyusun role beserta kewenangannya lewat antarmuka. Ini sekaligus menjawab kebutuhan role Operator SP yang tidak ada pada daftar semula |
 | 28 | ~~Tidak ada penyimpanan status verifikasi~~ | **DIBATALKAN 2026-08-14.** Tabel `verifikasi` sempat dirancang, lalu dicabut bersama seluruh fitur verifikasi atas kesepakatan tim | Temuan ini sahih pada masanya: matriks kewenangan memberi hak verifikasi pada 17 fitur tanpa satu pun kolom penyimpannya. Setelah tim memutuskan fitur verifikasi tidak diperlukan, hak tersebut ikut dicabut sehingga temuan ini tidak lagi berlaku |
@@ -394,7 +404,7 @@ Bagian ini merangkum seluruh penyimpangan yang disengaja dari berkas SQL referen
 
 ## 9. Tabel Bawaan Laravel
 
-Selain 36 tabel di atas, Laravel membuat tabel infrastrukturnya sendiri. Tabel ini tidak masuk hitungan ERD dan tidak perlu didokumentasikan di data dictionary.
+Selain 37 tabel di atas, Laravel membuat tabel infrastrukturnya sendiri. Tabel ini tidak masuk hitungan ERD dan tidak perlu didokumentasikan di data dictionary.
 
 | Tabel | Fungsi |
 |---|---|
@@ -450,6 +460,7 @@ Urutan berikut wajib dipatuhi agar foreign key selalu menemukan tabel induknya.
 18. transmigran                  (butuh satuan_permukiman)
 19. rumah                        (butuh satuan_permukiman, transmigran)
 20. riwayat_penghunian           (butuh rumah, transmigran)
+20a. riwayat_kepala_keluarga     (butuh transmigran)
 21. poktan                       (butuh satuan_permukiman, transmigran)
 22. anggota_poktan               (butuh poktan, transmigran)
 23. lahan                        (butuh transmigran, satuan_permukiman, poktan)

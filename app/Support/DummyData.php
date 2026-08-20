@@ -2,16 +2,17 @@
 
 namespace App\Support;
 
+use App\Enums\AlasanPergantianKK;
+use App\Enums\AsalWakilPoktan;
 use App\Enums\CakupanData;
+use App\Enums\HubunganKeluarga;
 use App\Enums\JenisInfrastruktur;
-use App\Enums\KategoriLahan;
 use App\Enums\KategoriPengaduan;
 use App\Enums\KepemilikanAlsintan;
 use App\Enums\Kondisi;
 use App\Enums\KondisiRumah;
 use App\Enums\PeruntukanLahan;
 use App\Enums\PrioritasPengaduan;
-use App\Enums\StatusHakLahan;
 use App\Enums\StatusHunian;
 use App\Enums\StatusPengaduan;
 use App\Enums\StatusTinggal;
@@ -513,6 +514,100 @@ class DummyData
     }
 
     /**
+     * Riwayat pergantian kedudukan kepala keluarga.
+     *
+     * Satu baris `transmigran` adalah satu RUMAH TANGGA, bukan satu orang.
+     * Ketika kepala keluarganya meninggal atau merantau, barisnya disunting dan
+     * ketujuh relasi yang menautinya tetap utuh: jatah rumah dan lahan
+     * diberikan kepada KK, bukan kepada suaminya secara pribadi.
+     *
+     * Peristiwanya direkam di sini, BUKAN cukup pada `audit_log`. Audit log
+     * memang mencatat bahwa `nama_kepala_keluarga` berubah, tetapi ia tidak
+     * dapat membedakan suksesi dari perbaikan salah ketik: keduanya berbentuk
+     * aksi `Ubah` pada kolom yang sama. Data contoh audit log sendiri sudah
+     * memuat contoh yang kedua (agents/rules.md bagian 6 poin 5a).
+     *
+     * Kedua sisi identitas disimpan agar riwayat dapat dibaca berdiri sendiri
+     * tanpa merangkainya dari baris berikutnya.
+     *
+     * @param  int|null  $transmigranId  Menyaring riwayat satu keluarga; null berarti seluruhnya
+     * @return array<int, array<string, mixed>> Riwayat suksesi, terbaru di atas
+     */
+    public static function riwayatKepalaKeluarga(?int $transmigranId = null): array
+    {
+        $data = [
+            // Kasus paling lazim: suami meninggal, istri menggantikan. Nomor
+            // KK ikut berubah sebab Dukcapil menerbitkan KK baru.
+            [
+                'id_riwayat_kepala_keluarga' => 1,
+                'transmigran_id' => 6,
+                'nik_lama' => '5321010512830106',
+                'nama_lama' => 'YAKOBUS BRIA',
+                'nik_baru' => '5321012511870006',
+                'nama_baru' => 'FRANSISKA BRIA',
+                'no_kk_lama' => '5321010102160006',
+                'no_kk_baru' => '5321010102180006',
+                'tanggal_pergantian' => '2024-08-22',
+                'alasan' => AlasanPergantianKK::Meninggal->value,
+                'hubungan_pengganti' => HubunganKeluarga::IstriSuami->value,
+                'keterangan' => 'Akta kematian dan KK baru sudah diserahkan ke kantor SP.',
+            ],
+            // Kepala keluarga merantau, keluarganya tetap tinggal. Nomor KK
+            // TIDAK berubah, dan keadaan itu memang sah: keduanya diisi sama.
+            // Sengaja ada agar tampilan tidak mengandaikan nomor KK selalu
+            // berganti setiap kali kepala keluarganya berganti.
+            [
+                'id_riwayat_kepala_keluarga' => 2,
+                'transmigran_id' => 4,
+                'nik_lama' => '5321010703860104',
+                'nama_lama' => 'LUKAS SERAN',
+                'nik_baru' => '5321011712900004',
+                'nama_baru' => 'ANGELA SERAN',
+                'no_kk_lama' => '5321010102170004',
+                'no_kk_baru' => '5321010102170004',
+                'tanggal_pergantian' => '2025-02-10',
+                'alasan' => AlasanPergantianKK::PindahAtauMerantau->value,
+                'hubungan_pengganti' => HubunganKeluarga::IstriSuami->value,
+                'keterangan' => 'Bekerja di Kupang sejak awal 2025, keluarga tetap menggarap lahan.',
+            ],
+        ];
+
+        // Terbaru di atas, sama seperti riwayat penghunian dan catatan log.
+        usort($data, fn ($a, $b) => strcmp($b['tanggal_pergantian'], $a['tanggal_pergantian']));
+
+        if ($transmigranId === null) {
+            return $data;
+        }
+
+        return array_values(array_filter($data, fn ($b) => $b['transmigran_id'] === $transmigranId));
+    }
+
+    /**
+     * Poktan yang diketuai sebuah keluarga lewat jalur kepala keluarga.
+     *
+     * Dipakai saat suksesi: jabatan ketua TIDAK diwariskan, sehingga petugas
+     * wajib memutuskan apakah jabatan itu dikosongkan atau diteruskan kepada
+     * kepala keluarga baru (agents/rules.md bagian 6 poin 5e). Membiarkannya
+     * berpindah sendiri berarti sistem mengangkat ketua tanpa seorang pun
+     * memutuskan, padahal ketua dipilih anggota.
+     *
+     * Hanya jalur `Kepala Keluarga` yang terpengaruh. Ketua yang berupa anggota
+     * keluarga punya nama dan NIK tersendiri, sehingga tidak ikut berubah
+     * ketika kepala keluarganya berganti.
+     *
+     * @param  int  $transmigranId  Keluarga yang diperiksa
+     * @return array<int, array<string, mixed>> Poktan yang diketuainya
+     */
+    public static function poktanDiketuaiKeluarga(int $transmigranId): array
+    {
+        return array_values(array_filter(
+            self::poktan(),
+            fn ($p) => $p['ketua_transmigran_id'] === $transmigranId
+                && $p['asal_ketua'] === AsalWakilPoktan::KepalaKeluarga->value
+        ));
+    }
+
+    /**
      * Daftar rumah yang belum berpenghuni.
      *
      * Saat menautkan KK ke rumah, sistem hanya boleh menawarkan rumah kosong
@@ -637,8 +732,19 @@ class DummyData
     /**
      * Daftar lahan milik transmigran.
      *
-     * Satu transmigran boleh memiliki lebih dari satu lahan usaha
-     * (agents/rules.md bagian 7.8).
+     * Satu transmigran umumnya menerima satu lahan pekarangan dan satu lahan
+     * usaha (agents/rules.md bagian 7.8). Jumlah itu kewajaran, bukan batas
+     * yang ditolak sistem, sehingga relasinya tetap satu-ke-banyak.
+     *
+     * LUAS KERING DAN BASAH ADALAH KOMPOSISI, BUKAN KATEGORI. Satu bidang
+     * lahan usaha dapat digarap sebagian kering dan sebagian basah sekaligus,
+     * dan jumlah keduanya wajib sama dengan `luas` (rules.md bagian 7.5).
+     * Lahan pekarangan tidak memiliki komposisi, keduanya null.
+     *
+     * `transmigran_id` wajib ada pada setiap baris: rekap luas per keluarga
+     * membacanya lewat id, bukan mencocokkan nama pemilik. Kolom `pemilik`
+     * dipertahankan sebagai teks tampilan agar tabel tidak perlu menelusuri
+     * relasi hanya untuk mencetak satu nama.
      *
      * @return array<int, array<string, mixed>> Data lahan
      */
@@ -648,40 +754,46 @@ class DummyData
             [
                 'id_lahan' => 1,
                 'kode_lahan' => 'LP-001',
+                'transmigran_id' => 1,
                 'pemilik' => 'YOHANES BERE',
                 'satuan_permukiman' => 'SP Kapitan Meo',
                 'satuan_permukiman_id' => 1,
                 'peruntukan_lahan' => PeruntukanLahan::LahanPekarangan->value,
-                'kategori_lahan' => null,
                 'luas' => 0.25,
-                'status_hak' => StatusHakLahan::BelumBersertifikat->value,
+                'luas_kering' => null,
+                'luas_basah' => null,
                 'lintang' => -9.5124100,
                 'bujur' => 124.9126200,
             ],
+            // Seluruhnya kering. Bagian basah ditulis 0, bukan null, agar
+            // penjumlahan rekap tidak perlu membedakan nol dari kosong.
             [
                 'id_lahan' => 2,
                 'kode_lahan' => 'LU-001',
+                'transmigran_id' => 1,
                 'pemilik' => 'YOHANES BERE',
                 'satuan_permukiman' => 'SP Kapitan Meo',
                 'satuan_permukiman_id' => 1,
                 'peruntukan_lahan' => PeruntukanLahan::LahanUsaha->value,
-                'kategori_lahan' => KategoriLahan::LahanKering->value,
                 'luas' => 1.50,
-                'status_hak' => StatusHakLahan::BelumBersertifikat->value,
+                'luas_kering' => 1.50,
+                'luas_basah' => 0.00,
                 'pola_tanam' => 'MONOKULTUR JAGUNG',
                 'lintang' => -9.5138400,
                 'bujur' => 124.9152700,
             ],
+            // Seluruhnya basah.
             [
                 'id_lahan' => 3,
                 'kode_lahan' => 'LU-002',
+                'transmigran_id' => 8,
                 'pemilik' => 'YULITA HOAR',
                 'satuan_permukiman' => 'SP Kapitan Meo',
                 'satuan_permukiman_id' => 1,
                 'peruntukan_lahan' => PeruntukanLahan::LahanUsaha->value,
-                'kategori_lahan' => KategoriLahan::LahanBasah->value,
                 'luas' => 0.75,
-                'status_hak' => StatusHakLahan::Garapan->value,
+                'luas_kering' => 0.00,
+                'luas_basah' => 0.75,
                 'pola_tanam' => 'PADI SAWAH',
                 'lintang' => -9.5471900,
                 'bujur' => 124.8873500,
@@ -689,26 +801,32 @@ class DummyData
             [
                 'id_lahan' => 4,
                 'kode_lahan' => 'LP-002',
+                'transmigran_id' => 2,
                 'pemilik' => 'MARIA DA COSTA',
                 'satuan_permukiman' => 'SP Kapitan Meo',
                 'satuan_permukiman_id' => 1,
                 'peruntukan_lahan' => PeruntukanLahan::LahanPekarangan->value,
-                'kategori_lahan' => null,
                 'luas' => 0.25,
-                'status_hak' => StatusHakLahan::HakMilik->value,
+                'luas_kering' => null,
+                'luas_basah' => null,
                 'lintang' => -9.5483200,
                 'bujur' => 124.8891000,
             ],
+            // Bidang campuran, satu-satunya pada data contoh. Sengaja ada
+            // agar keadaan yang menjadi seluruh alasan pemecahan kolom ini
+            // benar-benar terlihat saat peninjauan, bukan hanya terbaca di
+            // dokumen. Uji integritas memeriksa jumlahnya sama dengan luas.
             [
                 'id_lahan' => 5,
                 'kode_lahan' => 'LU-003',
+                'transmigran_id' => 2,
                 'pemilik' => 'MARIA DA COSTA',
                 'satuan_permukiman' => 'SP Kapitan Meo',
                 'satuan_permukiman_id' => 1,
                 'peruntukan_lahan' => PeruntukanLahan::LahanUsaha->value,
-                'kategori_lahan' => KategoriLahan::LahanKering->value,
                 'luas' => 2.00,
-                'status_hak' => StatusHakLahan::HakMilik->value,
+                'luas_kering' => 1.25,
+                'luas_basah' => 0.75,
                 'pola_tanam' => 'TUMPANG SARI JAGUNG DAN KACANG',
                 'lintang' => -9.4982600,
                 'bujur' => 124.9411800,
@@ -716,13 +834,14 @@ class DummyData
             [
                 'id_lahan' => 6,
                 'kode_lahan' => 'LU-004',
+                'transmigran_id' => 3,
                 'pemilik' => 'PETRUS NAHAK',
                 'satuan_permukiman' => 'SP Tniumanu',
                 'satuan_permukiman_id' => 2,
                 'peruntukan_lahan' => PeruntukanLahan::LahanUsaha->value,
-                'kategori_lahan' => KategoriLahan::LahanKering->value,
                 'luas' => 1.25,
-                'status_hak' => StatusHakLahan::BelumBersertifikat->value,
+                'luas_kering' => 1.25,
+                'luas_basah' => 0.00,
                 'pola_tanam' => 'MONOKULTUR JAGUNG',
                 'lintang' => -9.4995300,
                 'bujur' => 124.9438100,
@@ -1399,21 +1518,144 @@ class DummyData
     */
 
     /**
+     * Rekap luas lahan dan titik koordinat milik satu keluarga.
+     *
+     * DITURUNKAN, TIDAK DISIMPAN. Luas lahan ketua maupun anggota poktan tidak
+     * pernah menjadi kolom pada `poktan` atau `anggota_poktan`, sebab nilainya
+     * akan basi begitu petugas membetulkan luas di modul lahan. Kekeliruan
+     * yang sama pernah terjadi pada `poktan.jumlah_anggota` (erd.md 7.3).
+     *
+     * Hanya lahan USAHA yang dihitung: lahan pekarangan tidak memiliki
+     * komposisi kering dan basah (rules.md 7.5), dan poktan mengurus usaha
+     * pertanian bukan pekarangan. Koordinatnya pun koordinat lahan usaha,
+     * sebab itulah bidang yang digarap bersama kelompok.
+     *
+     * Dipusatkan di sini, bukan ditulis ulang di tiap view: penjumlahan luas
+     * yang tersebar pernah kehilangan sebagian bidang tanpa ada yang
+     * menyadarinya (agents/notes.md butir 2026-08-18).
+     *
+     * @param  int|null  $transmigranId  Keluarga yang dihitung; null menghasilkan rekap kosong
+     * @return array{kering: float, basah: float, total: float, lintang: float|null, bujur: float|null, jumlah_bidang: int}
+     */
+    public static function rekapLahanKeluarga(?int $transmigranId): array
+    {
+        $kosong = ['kering' => 0.0, 'basah' => 0.0, 'total' => 0.0, 'lintang' => null, 'bujur' => null, 'jumlah_bidang' => 0];
+
+        if ($transmigranId === null) {
+            return $kosong;
+        }
+
+        $bidang = array_values(array_filter(
+            self::lahan(),
+            fn ($l) => $l['transmigran_id'] === $transmigranId
+                && PeruntukanLahan::from($l['peruntukan_lahan'])->lahanUsaha()
+        ));
+
+        if ($bidang === []) {
+            return $kosong;
+        }
+
+        return [
+            'kering' => round(array_sum(array_column($bidang, 'luas_kering')), 2),
+            'basah' => round(array_sum(array_column($bidang, 'luas_basah')), 2),
+            'total' => round(array_sum(array_column($bidang, 'luas')), 2),
+            // Koordinat bidang pertama. Satu keluarga umumnya menerima satu
+            // lahan usaha (rules.md 7.8), sehingga "pertama" hampir selalu
+            // berarti "satu-satunya". Bila kelak ada dua petak, yang tampil
+            // adalah petak pertama dan bidang lainnya tetap dapat dibuka dari
+            // modul lahan.
+            'lintang' => $bidang[0]['lintang'] ?? null,
+            'bujur' => $bidang[0]['bujur'] ?? null,
+            'jumlah_bidang' => count($bidang),
+        ];
+    }
+
+    /**
      * Kelompok tani beserta profil ketuanya.
+     *
+     * KETUA PUNYA TIGA ASAL-USUL, bukan dua (rules.md 7a poin 2a). Kolom
+     * `is_ketua_transmigran` bertipe boolean digantikan `asal_ketua` bertipe
+     * enum, sebab boolean hanya sanggup membedakan dua keadaan sedangkan
+     * keadaan lapangan ada tiga. Pada jalur `Kepala Keluarga`, nama dan NIK
+     * dibiarkan null dan dibaca lewat relasi agar tidak ada dua versi data.
      *
      * @return array<int, array<string, mixed>> Data poktan
      */
     public static function poktan(): array
     {
         return [
-            ['id_poktan' => 1, 'nama' => 'POKTAN MEKAR JAYA', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'is_ketua_transmigran' => true, 'ketua_transmigran_id' => 1, 'nama_ketua' => 'YOHANES BERE', 'nik_ketua' => '5321011505800001', 'telepon_ketua' => '081234567801', 'email_ketua' => 'yohanes.bere@example.id', 'alamat_ketua' => 'RT 02 RW 01, SP Kapitan Meo', 'tahun_berdiri' => 2016, 'jumlah_anggota' => 24, 'lintang' => -9.5127800, 'bujur' => 124.9131400],
-            ['id_poktan' => 2, 'nama' => 'POKTAN SUBUR MAKMUR', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'is_ketua_transmigran' => true, 'ketua_transmigran_id' => 2, 'nama_ketua' => 'MARIA DA COSTA', 'nik_ketua' => '5321012203850002', 'telepon_ketua' => '081234567802', 'email_ketua' => null, 'alamat_ketua' => null, 'tahun_berdiri' => 2017, 'jumlah_anggota' => 18, 'lintang' => -9.5476500, 'bujur' => 124.8882300],
-            ['id_poktan' => 3, 'nama' => 'POKTAN TANI BERSATU', 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'is_ketua_transmigran' => true, 'ketua_transmigran_id' => 3, 'nama_ketua' => 'PETRUS NAHAK', 'nik_ketua' => '5321010809780003', 'telepon_ketua' => '081234567803', 'email_ketua' => null, 'alamat_ketua' => null, 'tahun_berdiri' => 2017, 'jumlah_anggota' => 21, 'lintang' => -9.4988700, 'bujur' => 124.9425600],
-            // Ketua bukan transmigran, melainkan penduduk setempat. Sengaja
-            // disiapkan agar cabang kedua form ikut terlihat saat peninjauan:
-            // ketua_transmigran_id kosong, nama dan NIK diisi langsung.
-            ['id_poktan' => 4, 'nama' => 'POKTAN HARAPAN BARU', 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain', 'is_ketua_transmigran' => false, 'ketua_transmigran_id' => null, 'nama_ketua' => 'YOSEPH KLAU', 'nik_ketua' => '5321010207700099', 'telepon_ketua' => '081234567890', 'email_ketua' => null, 'alamat_ketua' => 'Desa Weain, Kobalima Timur', 'tahun_berdiri' => 2019, 'jumlah_anggota' => 15, 'lintang' => -9.5731200, 'bujur' => 124.8654900],
+            ['id_poktan' => 1, 'nama' => 'POKTAN MEKAR JAYA', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'asal_ketua' => AsalWakilPoktan::KepalaKeluarga->value, 'ketua_transmigran_id' => 1, 'nama_ketua' => null, 'nik_ketua' => null, 'hubungan_ketua' => null, 'telepon_ketua' => '081234567801', 'email_ketua' => 'yohanes.bere@example.id', 'alamat_ketua' => 'RT 02 RW 01, SP Kapitan Meo', 'tahun_berdiri' => 2016, 'jumlah_anggota' => 24, 'luas_kering_ketua' => null, 'luas_basah_ketua' => null, 'lintang' => -9.5127800, 'bujur' => 124.9131400],
+            ['id_poktan' => 2, 'nama' => 'POKTAN SUBUR MAKMUR', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'asal_ketua' => AsalWakilPoktan::KepalaKeluarga->value, 'ketua_transmigran_id' => 2, 'nama_ketua' => null, 'nik_ketua' => null, 'hubungan_ketua' => null, 'telepon_ketua' => '081234567802', 'email_ketua' => null, 'alamat_ketua' => null, 'tahun_berdiri' => 2017, 'jumlah_anggota' => 18, 'luas_kering_ketua' => null, 'luas_basah_ketua' => null, 'lintang' => -9.5476500, 'bujur' => 124.8882300],
+            // Ketua diwakili anggota keluarga, bukan kepala keluarganya.
+            // Keadaan lapangannya: kepala keluarga PETRUS NAHAK merantau,
+            // sehingga istrinya yang menggarap dan memimpin kelompok. FK
+            // keluarga TETAP terisi, sebab yang ditunjuk adalah keluarganya;
+            // nama dan NIK diketik sebab sistem tidak mendata anggota
+            // keluarga satu per satu. Luas lahan tetap terbaca dari bidang
+            // milik keluarga PETRUS NAHAK.
+            ['id_poktan' => 3, 'nama' => 'POKTAN TANI BERSATU', 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'asal_ketua' => AsalWakilPoktan::AnggotaKeluarga->value, 'ketua_transmigran_id' => 3, 'nama_ketua' => 'YOVITA NAHAK', 'nik_ketua' => '5321015208820103', 'hubungan_ketua' => HubunganKeluarga::IstriSuami->value, 'telepon_ketua' => '081234567803', 'email_ketua' => null, 'alamat_ketua' => null, 'tahun_berdiri' => 2017, 'jumlah_anggota' => 21, 'luas_kering_ketua' => null, 'luas_basah_ketua' => null, 'lintang' => -9.4988700, 'bujur' => 124.9425600],
+            // Ketua bukan transmigran, melainkan penduduk setempat. Satu-satunya
+            // jalur yang mengetik luas lahannya sendiri, sebab bidangnya memang
+            // tidak terdata pada tabel lahan.
+            ['id_poktan' => 4, 'nama' => 'POKTAN HARAPAN BARU', 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain', 'asal_ketua' => AsalWakilPoktan::BukanTransmigran->value, 'ketua_transmigran_id' => null, 'nama_ketua' => 'YOSEPH KLAU', 'nik_ketua' => '5321010207700099', 'hubungan_ketua' => null, 'telepon_ketua' => '081234567890', 'email_ketua' => null, 'alamat_ketua' => 'Desa Weain, Kobalima Timur', 'tahun_berdiri' => 2019, 'jumlah_anggota' => 15, 'luas_kering_ketua' => 0.80, 'luas_basah_ketua' => 0.20, 'lintang' => -9.5731200, 'bujur' => 124.8654900],
         ];
+    }
+
+    /**
+     * Identitas wakil sebuah keluarga di poktan, dari jalur mana pun.
+     *
+     * Menyatukan pembacaan nama, NIK, dan telepon yang jalurnya bercabang tiga.
+     * Tanpa ini, setiap tempat yang menampilkan nama wakil harus mengulang
+     * percabangan yang sama, dan satu di antaranya pasti terlewat saat aturannya
+     * berubah.
+     *
+     * @param  array<string, mixed>  $baris  Baris poktan atau anggota_poktan
+     * @param  string  $awalan  `ketua` untuk poktan, `wakil` untuk anggota
+     * @return array{nama: string, nik: string, telepon: string|null, asal: AsalWakilPoktan}
+     */
+    public static function identitasWakil(array $baris, string $awalan): array
+    {
+        $asal = AsalWakilPoktan::from($baris["asal_{$awalan}"] ?? $baris['asal_wakil'] ?? $baris['asal_ketua']);
+        $keluarga = self::cariTransmigran($baris['ketua_transmigran_id'] ?? $baris['transmigran_id'] ?? null);
+
+        // Jalur Kepala Keluarga membaca lewat relasi; dua jalur lain memakai
+        // nilai yang diketik petugas.
+        if ($asal->identitasDariRelasi() && $keluarga !== null) {
+            return [
+                'nama' => $keluarga['nama_kepala_keluarga'],
+                'nik' => $keluarga['nik'],
+                'telepon' => $baris["telepon_{$awalan}"] ?? $keluarga['telepon'] ?? null,
+                'asal' => $asal,
+            ];
+        }
+
+        return [
+            'nama' => $baris["nama_{$awalan}"] ?? '-',
+            'nik' => $baris["nik_{$awalan}"] ?? '-',
+            'telepon' => $baris["telepon_{$awalan}"] ?? null,
+            'asal' => $asal,
+        ];
+    }
+
+    /**
+     * Mencari satu keluarga transmigran menurut idnya.
+     *
+     * @param  int|null  $id  Id transmigran
+     * @return array<string, mixed>|null Baris transmigran, atau null
+     */
+    public static function cariTransmigran(?int $id): ?array
+    {
+        if ($id === null) {
+            return null;
+        }
+
+        foreach (self::transmigran() as $baris) {
+            if ($baris['id_transmigran'] === $id) {
+                return $baris;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -1422,20 +1664,50 @@ class DummyData
      * Anggota yang berhenti ditandai berstatus Sudah Keluar, bukan dihapus,
      * agar riwayat tetap utuh (agents/rules.md bagian 5.1 catatan 5).
      *
+     * KEANGGOTAAN MELEKAT PADA KELUARGA, BUKAN PADA KEPALA KELUARGA
+     * (rules.md 7a poin 3a). `transmigran_id` menunjuk keluarga yang diwakili,
+     * sedangkan `asal_wakil` menyatakan siapa wakilnya. Kunci `nama` dan `nik`
+     * adalah nilai TAMPILAN hasil percabangan itu, disiapkan di sini agar view
+     * tidak perlu mengulang percabangan yang sama di banyak tempat.
+     *
      * @param  int|null  $poktanId  Menyaring anggota satu poktan; null berarti seluruhnya
      * @return array<int, array<string, mixed>> Data anggota
      */
     public static function anggotaPoktan(?int $poktanId = null): array
     {
+        $kk = AsalWakilPoktan::KepalaKeluarga->value;
+        $anggotaKeluarga = AsalWakilPoktan::AnggotaKeluarga->value;
+
         $data = [
-            ['id_anggota_poktan' => 1, 'poktan_id' => 1, 'poktan' => 'POKTAN MEKAR JAYA', 'transmigran_id' => 1, 'nama' => 'YOHANES BERE', 'nik' => '5321011505800001', 'jabatan' => 'Anggota', 'tanggal_masuk' => '2016-08-01', 'tanggal_keluar' => null, 'status' => 'Aktif'],
-            ['id_anggota_poktan' => 2, 'poktan_id' => 1, 'poktan' => 'POKTAN MEKAR JAYA', 'transmigran_id' => 2, 'nama' => 'MARIA DA COSTA', 'nik' => '5321012203850002', 'jabatan' => 'Sekretaris', 'tanggal_masuk' => '2016-08-01', 'tanggal_keluar' => null, 'status' => 'Aktif'],
-            ['id_anggota_poktan' => 3, 'poktan_id' => 1, 'poktan' => 'POKTAN MEKAR JAYA', 'transmigran_id' => 8, 'nama' => 'YULITA HOAR', 'nik' => '5321011409910008', 'jabatan' => 'Anggota', 'tanggal_masuk' => '2019-03-12', 'tanggal_keluar' => null, 'status' => 'Aktif'],
-            ['id_anggota_poktan' => 4, 'poktan_id' => 1, 'poktan' => 'POKTAN MEKAR JAYA', 'transmigran_id' => 5, 'nama' => 'DOMINGGUS TAEK', 'nik' => '5321010304820005', 'jabatan' => 'Anggota', 'tanggal_masuk' => '2017-05-20', 'tanggal_keluar' => '2025-09-30', 'status' => 'Sudah Keluar'],
-            ['id_anggota_poktan' => 5, 'poktan_id' => 3, 'poktan' => 'POKTAN TANI BERSATU', 'transmigran_id' => 3, 'nama' => 'PETRUS NAHAK', 'nik' => '5321010809780003', 'jabatan' => 'Anggota', 'tanggal_masuk' => '2017-02-15', 'tanggal_keluar' => null, 'status' => 'Aktif'],
-            ['id_anggota_poktan' => 6, 'poktan_id' => 4, 'poktan' => 'POKTAN HARAPAN BARU', 'transmigran_id' => 7, 'nama' => 'GABRIEL LEKI', 'nik' => '5321010107750007', 'jabatan' => 'Anggota', 'tanggal_masuk' => '2019-01-10', 'tanggal_keluar' => null, 'status' => 'Aktif'],
-            ['id_anggota_poktan' => 7, 'poktan_id' => 4, 'poktan' => 'POKTAN HARAPAN BARU', 'transmigran_id' => 6, 'nama' => 'FRANSISKA BRIA', 'nik' => '5321012511870006', 'jabatan' => 'Bendahara', 'tanggal_masuk' => '2019-01-10', 'tanggal_keluar' => null, 'status' => 'Tidak Aktif'],
+            ['id_anggota_poktan' => 1, 'poktan_id' => 1, 'poktan' => 'POKTAN MEKAR JAYA', 'transmigran_id' => 1, 'asal_wakil' => $kk, 'nama_wakil' => null, 'nik_wakil' => null, 'telepon_wakil' => null, 'hubungan_dengan_kk' => null, 'jabatan' => 'Anggota', 'tanggal_masuk' => '2016-08-01', 'tanggal_keluar' => null, 'status' => 'Aktif', 'alasan_keluar' => null, 'keterangan' => null],
+            ['id_anggota_poktan' => 2, 'poktan_id' => 1, 'poktan' => 'POKTAN MEKAR JAYA', 'transmigran_id' => 2, 'asal_wakil' => $kk, 'nama_wakil' => null, 'nik_wakil' => null, 'telepon_wakil' => null, 'hubungan_dengan_kk' => null, 'jabatan' => 'Sekretaris', 'tanggal_masuk' => '2016-08-01', 'tanggal_keluar' => null, 'status' => 'Aktif', 'alasan_keluar' => null, 'keterangan' => null],
+            // Diwakili anak, sebab kepala keluarganya sudah sepuh. Sengaja ada
+            // agar cabang kedua ikut terlihat saat peninjauan: nama dan NIK
+            // diketik, sedangkan luas lahannya tetap terbaca dari bidang milik
+            // keluarga YULITA HOAR.
+            ['id_anggota_poktan' => 3, 'poktan_id' => 1, 'poktan' => 'POKTAN MEKAR JAYA', 'transmigran_id' => 8, 'asal_wakil' => $anggotaKeluarga, 'nama_wakil' => 'ANDREAS HOAR', 'nik_wakil' => '5321011803050108', 'telepon_wakil' => '081234567808', 'hubungan_dengan_kk' => HubunganKeluarga::Anak->value, 'jabatan' => 'Anggota', 'tanggal_masuk' => '2019-03-12', 'tanggal_keluar' => null, 'status' => 'Aktif', 'alasan_keluar' => null, 'keterangan' => 'Mewakili keluarga sejak 2019.'],
+            ['id_anggota_poktan' => 4, 'poktan_id' => 1, 'poktan' => 'POKTAN MEKAR JAYA', 'transmigran_id' => 5, 'asal_wakil' => $kk, 'nama_wakil' => null, 'nik_wakil' => null, 'telepon_wakil' => null, 'hubungan_dengan_kk' => null, 'jabatan' => 'Anggota', 'tanggal_masuk' => '2017-05-20', 'tanggal_keluar' => '2025-09-30', 'status' => 'Sudah Keluar', 'alasan_keluar' => 'Pindah mengikuti keluarga ke SP Weoe.', 'keterangan' => null],
+            ['id_anggota_poktan' => 5, 'poktan_id' => 3, 'poktan' => 'POKTAN TANI BERSATU', 'transmigran_id' => 3, 'asal_wakil' => $kk, 'nama_wakil' => null, 'nik_wakil' => null, 'telepon_wakil' => null, 'hubungan_dengan_kk' => null, 'jabatan' => 'Anggota', 'tanggal_masuk' => '2017-02-15', 'tanggal_keluar' => null, 'status' => 'Aktif', 'alasan_keluar' => null, 'keterangan' => null],
+            ['id_anggota_poktan' => 6, 'poktan_id' => 4, 'poktan' => 'POKTAN HARAPAN BARU', 'transmigran_id' => 7, 'asal_wakil' => $kk, 'nama_wakil' => null, 'nik_wakil' => null, 'telepon_wakil' => null, 'hubungan_dengan_kk' => null, 'jabatan' => 'Anggota', 'tanggal_masuk' => '2019-01-10', 'tanggal_keluar' => null, 'status' => 'Aktif', 'alasan_keluar' => null, 'keterangan' => null],
+            ['id_anggota_poktan' => 7, 'poktan_id' => 4, 'poktan' => 'POKTAN HARAPAN BARU', 'transmigran_id' => 6, 'asal_wakil' => $kk, 'nama_wakil' => null, 'nik_wakil' => null, 'telepon_wakil' => null, 'hubungan_dengan_kk' => null, 'jabatan' => 'Bendahara', 'tanggal_masuk' => '2019-01-10', 'tanggal_keluar' => null, 'status' => 'Tidak Aktif', 'alasan_keluar' => null, 'keterangan' => null],
         ];
+
+        // Nama, NIK, telepon, dan rekap lahan disiapkan di sini agar view tidak
+        // mengulang percabangan tiga jalur di setiap tempat yang menampilkannya.
+        $data = array_map(function (array $baris): array {
+            $identitas = self::identitasWakil($baris, 'wakil');
+            $lahan = self::rekapLahanKeluarga($baris['transmigran_id']);
+
+            return $baris + [
+                'nama' => $identitas['nama'],
+                'nik' => $identitas['nik'],
+                'telepon' => $identitas['telepon'],
+                'luas_kering' => $lahan['kering'],
+                'luas_basah' => $lahan['basah'],
+                'lintang' => $lahan['lintang'],
+                'bujur' => $lahan['bujur'],
+            ];
+        }, $data);
 
         if ($poktanId === null) {
             return $data;
@@ -1573,10 +1845,10 @@ class DummyData
     public static function role(): array
     {
         return [
-            ['id_role' => 1, 'nama' => 'Admin', 'deskripsi' => 'Akses penuh termasuk manajemen pengguna, role, dan audit log.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => true, 'is_aktif' => true, 'jumlah_izin' => 95, 'jumlah_pengguna' => 1],
-            ['id_role' => 2, 'nama' => 'Dinas Transmigrasi', 'deskripsi' => 'Mengelola data wilayah, transmigran, rumah, lahan, dan infrastruktur.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 43, 'jumlah_pengguna' => 1],
-            ['id_role' => 3, 'nama' => 'Dinas Pertanian', 'deskripsi' => 'Mengelola data poktan, komoditas, panen, alsintan, dan saprotan.', 'cakupan_data' => CakupanData::PerBidang->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 45, 'jumlah_pengguna' => 1],
-            ['id_role' => 4, 'nama' => 'Operator SP', 'deskripsi' => 'Memasukkan data pada satuan permukiman yang ditugaskan. Tanpa kewenangan hapus.', 'cakupan_data' => CakupanData::PerSp->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 49, 'jumlah_pengguna' => 2],
+            ['id_role' => 1, 'nama' => 'Admin', 'deskripsi' => 'Akses penuh termasuk manajemen pengguna, role, dan audit log.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => true, 'is_aktif' => true, 'jumlah_izin' => 98, 'jumlah_pengguna' => 1],
+            ['id_role' => 2, 'nama' => 'Dinas Transmigrasi', 'deskripsi' => 'Mengelola data wilayah, transmigran, rumah, lahan, dan infrastruktur.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 45, 'jumlah_pengguna' => 1],
+            ['id_role' => 3, 'nama' => 'Dinas Pertanian', 'deskripsi' => 'Mengelola data poktan, komoditas, panen, alsintan, dan saprotan.', 'cakupan_data' => CakupanData::PerBidang->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 46, 'jumlah_pengguna' => 1],
+            ['id_role' => 4, 'nama' => 'Operator SP', 'deskripsi' => 'Memasukkan data pada satuan permukiman yang ditugaskan. Tanpa kewenangan hapus.', 'cakupan_data' => CakupanData::PerSp->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 50, 'jumlah_pengguna' => 2],
 
             // Role buatan Admin, bukan bawaan sistem. Sengaja dibuat tanpa
             // pengguna agar keadaan "dapat dihapus" ikut terlihat pada
@@ -2065,6 +2337,11 @@ class DummyData
                     ['kunci' => 'transmigran', 'nama' => 'Transmigran', 'aksi' => $penuh],
                     ['kunci' => 'rumah', 'nama' => 'Rumah dan hunian', 'aksi' => $penuh],
                     ['kunci' => 'riwayat_penghunian', 'nama' => 'Riwayat penghunian', 'aksi' => $penuh],
+                    // Tanpa hapus: riwayat suksesi menyatakan siapa pemegang
+                    // jatah lahan pada rentang waktu tertentu, sehingga
+                    // menghapusnya menghilangkan dasar penguasaan lahan
+                    // (rules.md 5.1 catatan 8).
+                    ['kunci' => 'riwayat_kepala_keluarga', 'nama' => 'Riwayat kepala keluarga', 'aksi' => $tanpaHapus],
                 ],
             ],
             [
@@ -2141,6 +2418,10 @@ class DummyData
                 'wilayah' => $k, 'kawasan' => $k, 'sp' => $k,
                 'inventaris_sp' => $k, 'fasilitas_sp' => $k, 'satuan' => $k,
                 'transmigran' => $k, 'rumah' => $k, 'riwayat_penghunian' => $k,
+                // Riwayat suksesi tidak dapat dihapus siapa pun, termasuk
+                // Admin: ia menyatakan siapa pemegang jatah lahan pada rentang
+                // waktu tertentu (rules.md 5.1 catatan 8).
+                'riwayat_kepala_keluarga' => $ltu,
                 'lahan' => $k, 'dokumen_lahan' => $k,
                 'poktan' => $k, 'anggota_poktan' => $ltu, 'alsintan' => $k, 'saprotan' => $k,
                 'komoditas' => $k, 'musim_tanam' => $k, 'riwayat_tanam' => $k, 'hasil_panen' => $k,
@@ -2156,6 +2437,7 @@ class DummyData
                 'wilayah' => $l, 'kawasan' => $l, 'sp' => $ltu,
                 'inventaris_sp' => $ltu, 'fasilitas_sp' => $ltu, 'satuan' => $l,
                 'transmigran' => $ltu, 'rumah' => $ltu, 'riwayat_penghunian' => $lt,
+                'riwayat_kepala_keluarga' => $lt,
                 'lahan' => $ltu, 'dokumen_lahan' => $lt,
                 'poktan' => $l, 'anggota_poktan' => $l, 'alsintan' => $l, 'saprotan' => $l,
                 'komoditas' => $l, 'musim_tanam' => $l, 'riwayat_tanam' => $l, 'hasil_panen' => $l,
@@ -2168,6 +2450,7 @@ class DummyData
                 'wilayah' => $l, 'kawasan' => $l, 'sp' => $l,
                 'inventaris_sp' => $l, 'fasilitas_sp' => $l, 'satuan' => $l,
                 'transmigran' => $l, 'rumah' => $l, 'riwayat_penghunian' => $l,
+                'riwayat_kepala_keluarga' => $l,
                 'lahan' => $l, 'dokumen_lahan' => $l,
                 'poktan' => $ltu, 'anggota_poktan' => $ltu, 'alsintan' => $ltu, 'saprotan' => $ltu,
                 'komoditas' => $ltu, 'musim_tanam' => $ltu,
@@ -2182,6 +2465,7 @@ class DummyData
                 'wilayah' => $l, 'kawasan' => $l, 'sp' => $l,
                 'inventaris_sp' => $ltu, 'fasilitas_sp' => $ltu, 'satuan' => $l,
                 'transmigran' => $ltu, 'rumah' => $ltu, 'riwayat_penghunian' => $lt,
+                'riwayat_kepala_keluarga' => $l,
                 'lahan' => $ltu, 'dokumen_lahan' => $lt,
                 'poktan' => $ltu, 'anggota_poktan' => $ltu, 'alsintan' => $ltu, 'saprotan' => $ltu,
                 'komoditas' => $l, 'musim_tanam' => $l, 'riwayat_tanam' => $ltu, 'hasil_panen' => $ltu,

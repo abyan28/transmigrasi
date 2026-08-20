@@ -9,6 +9,17 @@
  * (R-17 dan R-38).
  */
 
+use App\Enums\AksiPermission;
+use App\Enums\AlasanPergantianKK;
+use App\Enums\AsalWakilPoktan;
+use App\Enums\BidangPengaduan;
+use App\Enums\JabatanAnggotaPoktan;
+use App\Enums\KategoriPengaduan;
+use App\Enums\KepemilikanAlsintan;
+use App\Enums\Kondisi;
+use App\Enums\PeruntukanLahan;
+use App\Enums\StatusPengaduan;
+use App\Helpers\MenuHelper;
 use App\Support\DummyData;
 use Illuminate\Support\Facades\Route;
 use Tests\Support\BerkasBlade;
@@ -31,8 +42,8 @@ it('merender dashboard beserta seluruh wadah grafiknya', function () {
         'grafikPenghuni', 'grafikPekerjaan', 'grafikPanen', 'grafikHarga',
         'grafikInfrastruktur', 'grafikStatusPengaduan',
     ] as $idGrafik) {
-        $respons->assertSee('id="' . $idGrafik . '"', false);
-        $respons->assertSee("buatGrafik('" . $idGrafik . "'", false);
+        $respons->assertSee('id="'.$idGrafik.'"', false);
+        $respons->assertSee("buatGrafik('".$idGrafik."'", false);
     }
 });
 
@@ -280,7 +291,7 @@ it('memakai nama kolom kamus data pada isian form', function () {
         'tahun_kedatangan', 'status_tinggal', 'telepon',
         'dokumen_pendukung', 'keterangan', 'satuan_permukiman_id',
     ] as $kolom) {
-        expect($isi)->toContain('name="' . $kolom . '"');
+        expect($isi)->toContain('name="'.$kolom.'"');
     }
 
     // `status_anggota_poktan` sengaja BUKAN isian (rules.md 7a.8). Nilainya
@@ -315,12 +326,12 @@ it('hanya menawarkan keluarga yang belum menempati rumah', function () {
     $sudahPunyaRumah = array_filter(array_column(DummyData::rumah(), 'penghuni'));
 
     foreach ($sudahPunyaRumah as $nama) {
-        expect($isi)->not->toContain($nama . ' (');
+        expect($isi)->not->toContain($nama.' (');
     }
 
     // Sebaliknya, yang belum punya rumah wajib muncul sebagai pilihan.
     foreach (DummyData::transmigranTanpaRumah() as $kk) {
-        expect($isi)->toContain($kk['nama_kepala_keluarga'] . ' (');
+        expect($isi)->toContain($kk['nama_kepala_keluarga'].' (');
     }
 });
 
@@ -378,8 +389,14 @@ it('menyaring daftar lahan menurut peruntukan dan kategori', function () {
         ->assertSee('LU-001')
         ->assertDontSee('LP-001');
 
-    $this->get(route('lahan.index', ['kategori_lahan' => 'Lahan Basah']))
-        ->assertSee('LU-002');
+    // Nilai penyaring komposisi adalah `basah`, bukan nama enum lama. Sempat
+    // tertulis `Lahan Basah` di sini, dan uji ini lolos secara kebetulan:
+    // nilai yang tidak dikenal membuat penyaringnya diabaikan, sehingga
+    // seluruh baris tetap muncul termasuk yang dicari.
+    $this->get(route('lahan.index', ['kategori_lahan' => 'basah']))
+        ->assertOk()
+        ->assertSee('LU-002')
+        ->assertDontSee('LU-001');
 });
 
 it('menampilkan dokumen lahan pada tab tersendiri', function () {
@@ -528,13 +545,13 @@ it('hanya menawarkan satu status berikutnya yang sah', function () {
     foreach ($harapan as $id => $tujuan) {
         $isi = $this->get(route('pengaduan.detail', $id))->getContent();
 
-        expect($isi)->toContain('Tandai ' . $tujuan)
-            ->and($isi)->toContain('name="status_sesudah" value="' . $tujuan . '"');
+        expect($isi)->toContain('Tandai '.$tujuan)
+            ->and($isi)->toContain('name="status_sesudah" value="'.$tujuan.'"');
 
         // Status lain tidak boleh ikut ditawarkan sebagai nilai kiriman.
-        foreach (App\Enums\StatusPengaduan::cases() as $lain) {
+        foreach (StatusPengaduan::cases() as $lain) {
             if ($lain->value !== $tujuan) {
-                expect($isi)->not->toContain('name="status_sesudah" value="' . $lain->value . '"');
+                expect($isi)->not->toContain('name="status_sesudah" value="'.$lain->value.'"');
             }
         }
     }
@@ -644,9 +661,9 @@ it('tidak merender navigasi petugas pada halaman publik', function () {
     // "/pengaduan" adalah awalan dari "/pengaduan-warga" sehingga pencocokan
     // potongan akan selalu cocok dan ujinya jadi tidak bermakna.
     expect($isi)->not->toContain('id="sidebar"')
-        ->and($isi)->not->toContain('href="' . route('transmigran.index') . '"')
-        ->and($isi)->not->toContain('href="' . route('pengaduan.index') . '"')
-        ->and($isi)->not->toContain('href="' . route('rumah.index') . '"');
+        ->and($isi)->not->toContain('href="'.route('transmigran.index').'"')
+        ->and($isi)->not->toContain('href="'.route('pengaduan.index').'"')
+        ->and($isi)->not->toContain('href="'.route('rumah.index').'"');
 });
 
 it('menyembunyikan sidebar dan spanduk petugas dari halaman publik', function () {
@@ -762,7 +779,7 @@ it('menyediakan jalan keluar pada halaman 404', function () {
 it('merender halaman 403 beserta jalan keluarnya', function () {
     // Rute uji dibuat sementara karena RBAC yang memicu 403 baru aktif pada
     // Tahap 3; yang diperiksa di sini adalah tampilannya.
-    Illuminate\Support\Facades\Route::get('/uji-403', fn () => abort(403));
+    Route::get('/uji-403', fn () => abort(403));
 
     $this->get('/uji-403')
         ->assertForbidden()
@@ -849,7 +866,7 @@ it('menyeimbangkan tag HTML pada seluruh berkas Blade', function () {
         $galat = BerkasBlade::periksaTag(file_get_contents($path));
 
         if ($galat !== []) {
-            $pelanggaran[] = BerkasBlade::namaPendek($path) . ': ' . implode(', ', $galat);
+            $pelanggaran[] = BerkasBlade::namaPendek($path).': '.implode(', ', $galat);
         }
     }
 
@@ -897,7 +914,7 @@ it('tidak memakai teks putih di atas permukaan yang terang', function () {
                 continue;
             }
 
-            $pelanggaran[] = BerkasBlade::namaPendek($path) . ': ' . $kelas;
+            $pelanggaran[] = BerkasBlade::namaPendek($path).': '.$kelas;
         }
     }
 
@@ -917,7 +934,7 @@ it('memasangkan setiap latar terang dengan varian gelapnya', function () {
             $latarTerang = preg_match('/(^|\s)bg-(white|gray-50|gray-100)(\s|$)/', $kelas);
 
             if ($latarTerang && ! str_contains($kelas, 'dark:bg-')) {
-                $pelanggaran[] = BerkasBlade::namaPendek($path) . ': ' . $kelas;
+                $pelanggaran[] = BerkasBlade::namaPendek($path).': '.$kelas;
             }
         }
     }
@@ -944,7 +961,7 @@ it('tidak memakai lebar tetap yang berlaku pada layar sempit', function () {
         foreach ($cocok[1] as $daftarKelas) {
             foreach (preg_split('/\s+/', $daftarKelas) as $kelas) {
                 if (preg_match('/^w-\[(\d+)px\]$/', $kelas, $ukuran) && (int) $ukuran[1] > 360) {
-                    $pelanggaran[] = BerkasBlade::namaPendek($path) . ': ' . $kelas;
+                    $pelanggaran[] = BerkasBlade::namaPendek($path).': '.$kelas;
                 }
             }
         }
@@ -1002,7 +1019,7 @@ it('tidak menyisakan teks bawaan template berbahasa Inggris', function () {
 
         foreach ($terlarang as $teks) {
             if (str_contains($isi, $teks)) {
-                $pelanggaran[] = BerkasBlade::namaPendek($path) . ': ' . $teks;
+                $pelanggaran[] = BerkasBlade::namaPendek($path).': '.$teks;
             }
         }
     }
@@ -1088,7 +1105,7 @@ it('menautkan setiap item menu sidebar ke halaman yang benar-benar ada', functio
     $mati = [];
     $diperiksa = 0;
 
-    foreach (App\Helpers\MenuHelper::definisiMenu() as $kelompok) {
+    foreach (MenuHelper::definisiMenu() as $kelompok) {
         foreach ($kelompok['items'] as $item) {
             // Sejak sidebar memakai submenu, sebagian besar path berada satu
             // tingkat lebih dalam. Menelusuri 'items' saja membuat uji ini
@@ -1108,7 +1125,7 @@ it('menautkan setiap item menu sidebar ke halaman yang benar-benar ada', functio
                 $status = $this->get($path)->getStatusCode();
 
                 if ($status !== 200) {
-                    $mati[] = $t['name'] . ' (' . $path . ') -> ' . $status;
+                    $mati[] = $t['name'].' ('.$path.') -> '.$status;
                 }
             }
         }
@@ -1171,10 +1188,10 @@ it('merender setiap rute GET yang terdaftar tanpa galat', function () {
             continue;
         }
 
-        $status = $this->get('/' . ltrim($uri, '/'))->getStatusCode();
+        $status = $this->get('/'.ltrim($uri, '/'))->getStatusCode();
 
         if ($status !== 200) {
-            $gagal[] = $uri . ' -> ' . $status;
+            $gagal[] = $uri.' -> '.$status;
         }
     }
 
@@ -1236,7 +1253,7 @@ it('menyembunyikan tombol nonaktifkan pada admin aktif terakhir', function () {
     // Yang dijaga adalah tidak adanya jalur penonaktifan, bukan penandanya.
     // Sejak 2026-08-17 label "Admin terakhir" per baris dihapus; alasannya
     // dinyatakan sekali lewat keterangan di bawah tabel.
-    expect($isi)->not->toContain('/pengguna/' . $adminAktif[0]['id_user'] . '/nonaktifkan')
+    expect($isi)->not->toContain('/pengguna/'.$adminAktif[0]['id_user'].'/nonaktifkan')
         ->and($isi)->toContain('tidak memiliki tombol nonaktifkan');
 });
 
@@ -1309,7 +1326,7 @@ it('menyajikan role terkunci sebagai hanya baca', function () {
     // pembungkus, sekali pada id judulnya. Memotong dari kemunculan pertama
     // menghasilkan potongan yang berhenti sebelum isi modal, sehingga uji
     // lulus tanpa memeriksa apa pun.
-    $awal = strpos($isi, 'id="judul-formRole' . $adminRole['id_role'] . '"');
+    $awal = strpos($isi, 'id="judul-formRole'.$adminRole['id_role'].'"');
     $berikutnya = strpos($isi, 'id="judul-formRole', $awal + 20);
     $potongan = substr($isi, $awal, $berikutnya === false ? null : $berikutnya - $awal);
 
@@ -1497,7 +1514,8 @@ it('menyamakan daftar izin dengan kamus data dan rules', function () {
         'Satuan permukiman (SP)' => 'sp', 'Inventaris SP' => 'inventaris_sp',
         'Fasilitas SP' => 'fasilitas_sp', 'Data master satuan' => 'satuan',
         'Transmigran' => 'transmigran', 'Rumah & hunian' => 'rumah',
-        'Riwayat penghunian' => 'riwayat_penghunian', 'Lahan' => 'lahan',
+        'Riwayat penghunian' => 'riwayat_penghunian',
+        'Riwayat kepala keluarga' => 'riwayat_kepala_keluarga', 'Lahan' => 'lahan',
         'Dokumen lahan (HPL/SHM)' => 'dokumen_lahan', 'Kelompok tani' => 'poktan',
         'Anggota poktan' => 'anggota_poktan', 'Alsintan' => 'alsintan', 'Saprotan' => 'saprotan',
         'Komoditas' => 'komoditas', 'Musim tanam' => 'musim_tanam',
@@ -1690,7 +1708,7 @@ it('membuat setiap modal form menunjuk rute yang benar-benar ada', function () {
 
         foreach ($cocok[1] as $nama) {
             if (! in_array($nama, $namaRute, true)) {
-                $mati[] = BerkasBlade::namaPendek($berkas) . ' -> ' . $nama;
+                $mati[] = BerkasBlade::namaPendek($berkas).' -> '.$nama;
             }
         }
     }
@@ -1703,8 +1721,8 @@ it('menyediakan halaman rincian bagi modul yang dapat disunting', function () {
     // rincian. Modul tanpa rincian karena itu tidak punya tempat menaruh
     // tombol Ubah.
     foreach (['alsintan', 'saprotan', 'komoditas', 'infrastruktur'] as $modul) {
-        $this->get('/' . $modul . '/1')->assertOk();
-        $this->get('/' . $modul . '/999')->assertNotFound();
+        $this->get('/'.$modul.'/1')->assertOk();
+        $this->get('/'.$modul.'/999')->assertNotFound();
     }
 });
 
@@ -1712,7 +1730,7 @@ it('menjaga aturan modul pada form yang mudah tergeser', function () {
     // Empat aturan yang tertulis di dokumen tetapi mudah hilang saat form
     // ditata ulang. Masing-masing punya alasan yang tidak terlihat dari
     // tampilannya sendiri.
-    $sumber = fn (string $path) => file_get_contents(resource_path('views/pages/' . $path));
+    $sumber = fn (string $path) => file_get_contents(resource_path('views/pages/'.$path));
 
     // Anggota poktan ditandai keluar, bukan dihapus, agar catatan penyaluran
     // saprotan tetap memiliki penerima yang jelas.
@@ -1737,13 +1755,13 @@ it('memakai nilai enum pada data contoh, bukan teks yang menyerupainya', functio
     // bernilai 'Pribadi', sehingga filter kepemilikan pada halaman daftar
     // tidak pernah cocok dan selalu menghasilkan nol baris. Cacat semacam ini
     // tidak terlihat pada tampilan biasa, hanya muncul ketika filter dipakai.
-    $sah = array_column(App\Enums\KepemilikanAlsintan::cases(), 'value');
+    $sah = array_column(KepemilikanAlsintan::cases(), 'value');
 
     foreach (DummyData::alsintan() as $baris) {
         expect($sah)->toContain($baris['kepemilikan']);
     }
 
-    $kondisiSah = array_column(App\Enums\Kondisi::cases(), 'value');
+    $kondisiSah = array_column(Kondisi::cases(), 'value');
 
     foreach (DummyData::alsintan() as $baris) {
         expect($kondisiSah)->toContain($baris['kondisi']);
@@ -1830,7 +1848,7 @@ it('menyusun sidebar sesuai kelompok yang disepakati', function () {
     // Dua penempatan yang mudah tergeser kembali: lahan berada di bawah
     // Kependudukan sebab selalu melekat pada satu kepala keluarga, dan
     // Infrastruktur SP di bawah Wilayah sebab asetnya milik SP, bukan poktan.
-    $kelompok = array_column(App\Helpers\MenuHelper::definisiMenu(), 'title');
+    $kelompok = array_column(MenuHelper::definisiMenu(), 'title');
 
     expect($kelompok)->toBe([
         'Menu',
@@ -1842,7 +1860,7 @@ it('menyusun sidebar sesuai kelompok yang disepakati', function () {
 
     $letak = [];
 
-    foreach (App\Helpers\MenuHelper::definisiMenu() as $grup) {
+    foreach (MenuHelper::definisiMenu() as $grup) {
         foreach ($grup['items'] as $item) {
             foreach ($item['subItems'] ?? [$item] as $sub) {
                 if (isset($sub['path'])) {
@@ -1861,7 +1879,7 @@ it('menyaring submenu menurut izin, bukan hanya item induknya', function () {
     // Induk submenu tidak punya izinnya sendiri, sehingga kelayakannya
     // ditentukan submenu yang tersisa. Induk yang seluruh submenunya tersaring
     // akan membuka daftar kosong bila tetap dirender.
-    foreach (App\Helpers\MenuHelper::getMenuGroups() as $grup) {
+    foreach (MenuHelper::getMenuGroups() as $grup) {
         foreach ($grup['items'] as $item) {
             if (isset($item['subItems'])) {
                 expect($item['subItems'])->not->toBeEmpty();
@@ -1971,12 +1989,12 @@ it('memakai ikon yang benar-benar terdaftar pada setiap menu', function () {
     $bintang = 'M12 2l3.09 6.26';
     $tanpaIkon = [];
 
-    foreach (App\Helpers\MenuHelper::definisiMenu() as $kelompok) {
+    foreach (MenuHelper::definisiMenu() as $kelompok) {
         foreach ($kelompok['items'] as $item) {
-            $svg = App\Helpers\MenuHelper::getIconSvg($item['icon'] ?? '');
+            $svg = MenuHelper::getIconSvg($item['icon'] ?? '');
 
             if (str_contains($svg, $bintang)) {
-                $tanpaIkon[] = $item['name'] . ' (' . ($item['icon'] ?? '-') . ')';
+                $tanpaIkon[] = $item['name'].' ('.($item['icon'] ?? '-').')';
             }
         }
     }
@@ -1988,7 +2006,7 @@ it('memberi ikon berbeda pada setiap kelompok menu', function () {
     // Ikon yang berulang membuat kelompok sulit dibedakan sekilas.
     $ikon = [];
 
-    foreach (App\Helpers\MenuHelper::definisiMenu() as $kelompok) {
+    foreach (MenuHelper::definisiMenu() as $kelompok) {
         foreach ($kelompok['items'] as $item) {
             $ikon[] = $item['icon'] ?? '';
         }
@@ -2018,7 +2036,7 @@ it('tidak mempercayai lebar layar bernilai nol', function () {
         // seluruh isi <script> sementara justru di sanalah kode yang diperiksa
         // berada. Yang dibuang cukup komentarnya saja: penjelasan mengenai
         // cacat ini menyebut innerWidth dan akan terbaca sebagai pelanggaran.
-        $isi = file_get_contents(resource_path('views/' . $berkas));
+        $isi = file_get_contents(resource_path('views/'.$berkas));
         $isi = preg_replace('#/\*[\s\S]*?\*/#', '', $isi);
         $isi = preg_replace('#//[^\n]*#', '', $isi);
 
@@ -2026,7 +2044,7 @@ it('tidak mempercayai lebar layar bernilai nol', function () {
         // yang belum dilukis mengembalikan nol.
         preg_match_all('/window\.innerWidth(?![\s]*\|\|)/', $isi, $telanjang);
 
-        expect($telanjang[0])->toBe([], $berkas . ' memakai innerWidth tanpa nilai cadangan');
+        expect($telanjang[0])->toBe([], $berkas.' memakai innerWidth tanpa nilai cadangan');
     }
 });
 
@@ -2058,7 +2076,7 @@ it('menyeragamkan kolom aksi berbentuk ikon di seluruh halaman daftar', function
 
         // Setiap halaman daftar wajib menyediakan jalan menyunting barisnya.
         if (! str_contains($isi, 'buka-modal-baris') && ! str_contains($isi, 'aksi-baris')) {
-            $bermasalah[] = $nama . ' (tanpa aksi baris)';
+            $bermasalah[] = $nama.' (tanpa aksi baris)';
         }
     }
 
@@ -2178,7 +2196,7 @@ it('menyamakan jumlah kolom judul dengan jumlah sel pada halaman daftar', functi
         $jumlahSel = preg_match_all('/<td[\s>]/', $baris[0]);
 
         if ($jumlahJudul !== $jumlahSel) {
-            $bermasalah[] = $namaRute . ": {$jumlahJudul} judul, {$jumlahSel} sel";
+            $bermasalah[] = $namaRute.": {$jumlahJudul} judul, {$jumlahSel} sel";
         }
     }
 
@@ -2442,7 +2460,7 @@ it('mengumpulkan grafik pertanian dalam satu bagian yang sama', function () {
     $bagian = substr($isi, $awal, $akhir - $awal);
 
     foreach (['grafikPanen', 'grafikKomoditas', 'grafikHarga', 'grafikPendapatan'] as $id) {
-        expect($bagian)->toContain('id="' . $id . '"');
+        expect($bagian)->toContain('id="'.$id.'"');
     }
 });
 
@@ -2471,9 +2489,9 @@ it('menyediakan tombol impor pada modul berdata banyak', function (string $url, 
     // Diperiksa keduanya: tombol pemicunya DAN komponen modalnya. Memeriksa
     // nama modal saja tidak cukup, sebab nama itu juga muncul pada komponen
     // modalnya sendiri, sehingga tombol yang hilang tetap lolos.
-    expect($isi)->toContain("buka-modal', '" . $namaModal . "')")
+    expect($isi)->toContain("buka-modal', '".$namaModal."')")
         ->and($isi)->toContain('Impor Data')
-        ->and($isi)->toContain('judul-' . $namaModal);
+        ->and($isi)->toContain('judul-'.$namaModal);
 })->with([
     ['/transmigran', 'imporTransmigran'],
     ['/rumah', 'imporRumah'],
@@ -2568,8 +2586,8 @@ it('menyediakan jalur mengaktifkan kembali akun yang dinonaktifkan', function ()
     $nonaktif = collect(DummyData::pengguna())->firstWhere('is_aktif', false);
 
     expect($nonaktif)->not->toBeNull()
-        ->and($isi)->toContain('Aktifkan kembali akun ' . $nonaktif['nama'])
-        ->and($isi)->toContain('/pengguna/' . $nonaktif['id_user'] . '/aktifkan');
+        ->and($isi)->toContain('Aktifkan kembali akun '.$nonaktif['nama'])
+        ->and($isi)->toContain('/pengguna/'.$nonaktif['id_user'].'/aktifkan');
 });
 
 it('tidak menawarkan pengaktifan pada akun yang sudah aktif', function () {
@@ -2578,7 +2596,7 @@ it('tidak menawarkan pengaktifan pada akun yang sudah aktif', function () {
     $isi = $this->get(route('pengguna.index'))->getContent();
 
     foreach (collect(DummyData::pengguna())->where('is_aktif', true) as $akun) {
-        expect($isi)->not->toContain('Aktifkan kembali akun ' . $akun['nama']);
+        expect($isi)->not->toContain('Aktifkan kembali akun '.$akun['nama']);
     }
 });
 
@@ -2664,11 +2682,11 @@ it('menampilkan tombol hapus hanya pada role yang memang dapat dihapus', functio
     expect($dapatDihapus)->not->toBeEmpty();
 
     foreach ($dapatDihapus as $role) {
-        expect($isi)->toContain('/pengaturan/role/' . $role['id_role']);
+        expect($isi)->toContain('/pengaturan/role/'.$role['id_role']);
     }
 
     foreach (collect(DummyData::role())->where('is_bawaan', true) as $role) {
-        expect($isi)->not->toContain("aksi: '/pengaturan/role/" . $role['id_role'] . "'");
+        expect($isi)->not->toContain("aksi: '/pengaturan/role/".$role['id_role']."'");
     }
 });
 
@@ -2747,7 +2765,7 @@ it('menyamakan isian penanganan pada daftar dengan yang di halaman rincian', fun
     $isi = $this->get(route('pengaduan.index'))->getContent();
 
     foreach (['tanggal_penanganan', 'catatan', 'dokumen_tindak_lanjut', 'status_sesudah'] as $isian) {
-        expect($isi)->toContain('name="' . $isian . '"');
+        expect($isi)->toContain('name="'.$isian.'"');
     }
 
     // Unggahan berkas mustahil terkirim tanpa enctype, dan kegagalannya
@@ -2907,7 +2925,7 @@ it('memasang catatan log pada SETIAP halaman rincian yang ada', function () {
     $tanpaLog = [];
 
     foreach ($rute as $jalur) {
-        $balasan = $this->get('/' . $jalur);
+        $balasan = $this->get('/'.$jalur);
 
         if ($balasan->status() !== 200) {
             continue;
@@ -3005,7 +3023,7 @@ it('menandai wajib setiap isian yang kolomnya tidak boleh kosong', function () {
 
             // Isian boleh tidak ada sama sekali; yang dilarang adalah ada
             // tetapi tanpa penanda wajib.
-            if (! str_contains($sumber, 'name="' . $kolom . '"')) {
+            if (! str_contains($sumber, 'name="'.$kolom.'"')) {
                 continue;
             }
 
@@ -3013,19 +3031,31 @@ it('menandai wajib setiap isian yang kolomnya tidak boleh kosong', function () {
 
             // Isian tersembunyi selalu terisi nilai dari sistem, sehingga
             // `required` di sana tidak menambah apa pun.
-            if (preg_match('/<input type="hidden" name="' . $pola . '"/', $sumber) === 1) {
+            if (preg_match('/<input type="hidden" name="'.$pola.'"/', $sumber) === 1) {
                 continue;
             }
 
             // Select tanpa <option value=""> mustahil dikirim kosong: pilihan
             // pertamanya sudah menjadi nilai bawaan.
-            if (preg_match('/<select[^>]*name="' . $pola . '"(.*?)<\/select>/s', $sumber, $m) === 1
+            if (preg_match('/<select[^>]*name="'.$pola.'"(.*?)<\/select>/s', $sumber, $m) === 1
                 && ! str_contains($m[1], 'value=""')) {
                 continue;
             }
 
+            // Menerima `required` maupun `:required` Alpine. Isian yang hanya
+            // berlaku pada salah satu cabang form wajib memakai bentuk
+            // bersyarat: menandainya wajib tanpa syarat akan memblokir
+            // pengiriman ketika cabangnya sedang tersembunyi. Pola ini sudah
+            // dipakai form poktan dan form lahan.
+            //
+            // Sengaja TIDAK memakai `[^>]*` sebagai pembatas. Nilai atribut
+            // Blade kerap memuat tanda `>`, misalnya `{{ $asal->value }}`,
+            // sehingga pembatas itu memutus pencocokan di tengah tag dan
+            // melaporkan isian yang sebenarnya sudah bertanda wajib. Yang
+            // dipakai adalah jendela 200 karakter sesudah `name`, cukup untuk
+            // satu tag dan tidak sampai menjangkau tag berikutnya.
             $berRequired = preg_match(
-                '/name="' . $pola . '"[^>]*\srequired/s',
+                '/name="'.$pola.'".{0,200}?\s:?required/s',
                 $sumber,
             ) === 1;
 
@@ -3244,7 +3274,7 @@ it('menghapus halaman laporan terpusat beserta jejaknya', function () {
     // Menu yang menunjuk halaman tidak ada melanggar R-24, dan baru ketahuan
     // saat petugas mengkliknya.
     $tujuan = [];
-    foreach (App\Helpers\MenuHelper::definisiMenu() as $kelompok) {
+    foreach (MenuHelper::definisiMenu() as $kelompok) {
         foreach ($kelompok['items'] as $item) {
             $tujuan[] = $item['path'] ?? null;
             foreach ($item['subItems'] ?? [] as $sub) {
@@ -3261,17 +3291,17 @@ it('mencabut kewenangan export dari seluruh sumber kebenaran', function () {
     // yang sudah boleh dilihat (rules.md 5.1 catatan 5). Nilai yang tertinggal
     // di salah satu sumber akan menghidupkan kembali kotak centang yang tidak
     // menjaga apa pun.
-    expect(array_column(App\Enums\AksiPermission::cases(), 'value'))
+    expect(array_column(AksiPermission::cases(), 'value'))
         ->toBe(['lihat', 'tambah', 'ubah', 'hapus']);
 
-    foreach (App\Support\DummyData::daftarIzin() as $kelompok) {
+    foreach (DummyData::daftarIzin() as $kelompok) {
         foreach ($kelompok['modul'] as $modul) {
             expect($modul['aksi'])->not->toContain('export');
         }
     }
 
     foreach ([1, 2, 3, 4, 5] as $idRole) {
-        foreach (App\Support\DummyData::izinRole($idRole) as $aksi) {
+        foreach (DummyData::izinRole($idRole) as $aksi) {
             expect($aksi)->not->toContain('export');
         }
     }
@@ -3284,23 +3314,437 @@ it('mencabut kewenangan export dari seluruh sumber kebenaran', function () {
 
 /*
 |--------------------------------------------------------------------------
+| Data master wilayah dan kawasan
+|--------------------------------------------------------------------------
+*/
+
+it('membuka master wilayah dari tingkat teratas', function () {
+    // Tab bawaan sempat `kecamatan`, dan itu keliru pada dua hal: pembacaannya
+    // melompati dua tingkat pertama sehingga susunan hierarki yang dijelaskan
+    // di atasnya tidak terlihat, dan pengunjung mendapat alamat `?tab=kecamatan`
+    // seolah ia pernah memilihnya sendiri.
+    $sumber = file_get_contents(resource_path('views/pages/master/wilayah.blade.php'));
+
+    expect($sumber)->toContain("hashTabs('provinsi')")
+        ->and($sumber)->not->toContain("hashTabs('kecamatan')");
+});
+
+it('menyesuaikan tingkat bawaan form wilayah dengan tab yang dibuka', function () {
+    // Sebelumnya selalu `desa`, sehingga petugas yang membuka tab Kecamatan
+    // lalu menekan Tambah mendapat form bertingkat Desa dan harus menggantinya
+    // setiap kali.
+    $peta = [
+        '' => 'provinsi',
+        'kabupaten' => 'kabupaten',
+        'kecamatan' => 'kecamatan',
+        'desa' => 'desa',
+        // Nilai yang tidak dikenal jatuh ke tingkat teratas, bukan diteruskan
+        // apa adanya: alamat yang dikarang tidak boleh menghasilkan tingkat
+        // yang tidak ada pada daftar.
+        'ngawur' => 'provinsi',
+    ];
+
+    foreach ($peta as $tab => $harapan) {
+        $isi = $this->get(route('wilayah', $tab === '' ? [] : ['tab' => $tab]))
+            ->assertOk()
+            ->getContent();
+
+        preg_match('/<option value="(\w+)" selected>/', $isi, $cocok);
+
+        expect($cocok[1] ?? null)->toBe($harapan, "tab '{$tab}' menghasilkan tingkat yang keliru");
+    }
+});
+
+it('menandai wajib isian induk wilayah secara bersyarat', function () {
+    // Ketiga isian induk saling meniadakan: hanya satu berlaku pada satu waktu.
+    // Dengan `required` tetap, peramban menuntut ketiganya terisi sekaligus dan
+    // form TIDAK PERNAH dapat dikirim untuk tingkat apa pun, sementara pesan
+    // galatnya menunjuk elemen tersembunyi sehingga petugas tidak melihat apa
+    // yang kurang.
+    $sumber = file_get_contents(resource_path('views/pages/master/form-wilayah.blade.php'));
+
+    foreach (['provinsi_id', 'kabupaten_id', 'kecamatan_id'] as $isian) {
+        expect($sumber)->toContain('name="'.$isian.'"');
+    }
+
+    // Tidak boleh ada `required` tetap pada ketiganya.
+    expect(preg_match('/name="(provinsi|kabupaten|kecamatan)_id"\s+required/', $sumber))->toBe(0);
+
+    // Sebaliknya, ketiganya wajib memakai pasangan bersyarat.
+    expect(substr_count($sumber, ':required="tingkat ==='))->toBe(3)
+        ->and(substr_count($sumber, ':disabled="tingkat !=='))->toBe(3);
+});
+
+it('memilih kabupaten kawasan lewat dua tingkat', function () {
+    // Menyodorkan daftar kabupaten se-Indonesia tanpa menanyakan provinsinya
+    // membuat petugas mencari di antara lima ratusan nama yang sebagian besar
+    // tidak pernah relevan, dan nama kabupaten pun tidak selalu unik
+    // antar-provinsi.
+    $isi = $this->get(route('kawasan'))->assertOk()->getContent();
+
+    expect($isi)->toContain('name="provinsi_id"')
+        ->and($isi)->toContain('name="kabupaten_id"')
+        // Daftar kabupaten dirender Alpine agar dapat disaring.
+        ->and($isi)->toContain('kabupatenTersaring')
+        // Ajakan yang jujur ketika provinsi belum dipilih.
+        ->and($isi)->toContain('Pilih provinsi lebih dulu')
+        // Jaminan tanpa JavaScript, mengikuti pola pilih-cari.
+        ->and($isi)->toContain('<noscript>');
+
+    $sumber = file_get_contents(resource_path('views/pages/sp/form-kawasan.blade.php'));
+
+    // Provinsi hanya menyaring dan tidak disimpan, sehingga tidak boleh wajib:
+    // menandainya wajib memblokir pengiriman ketika JavaScript mati dan isian
+    // ini disembunyikan.
+    expect(preg_match('/name="provinsi_id"\s+required/', $sumber))->toBe(0);
+
+    // Kabupatennya yang wajib, dan `required`-nya dipasang Alpine dengan alasan
+    // yang sama.
+    expect($sumber)->toContain(':required="provinsiId !== \'\'"')
+        ->and($sumber)->toContain('gantiProvinsi()');
+});
+
+it('menyediakan provinsi induk bagi setiap kabupaten', function () {
+    // Penyaringan bertingkat hanya mungkin bila setiap kabupaten menyatakan
+    // provinsinya. Tanpa kunci ini daftar tersaring akan selalu kosong, dan
+    // kegagalannya berlangsung diam-diam: dropdown tampil terbuka tetapi tidak
+    // menawarkan apa pun.
+    $wilayah = DummyData::wilayah();
+    $idProvinsi = array_column($wilayah['provinsi'], 'id_provinsi');
+
+    expect($wilayah['kabupaten'])->not->toBeEmpty();
+
+    foreach ($wilayah['kabupaten'] as $kabupaten) {
+        expect($kabupaten)->toHaveKey('provinsi_id');
+        expect(in_array($kabupaten['provinsi_id'], $idProvinsi, true))
+            ->toBeTrue("kabupaten {$kabupaten['nama']} menunjuk provinsi yang tidak ada");
+    }
+});
+
+/*
+|--------------------------------------------------------------------------
+| Pergantian kepala keluarga
+|--------------------------------------------------------------------------
+*/
+
+it('menyediakan suksesi sebagai tindakan tersendiri, bukan lewat form ubah', function () {
+    // Bila suksesi lahir dari penyuntingan nama pada form biasa, setiap
+    // perbaikan ejaan akan mengotori riwayat suksesi. Audit log pun tidak dapat
+    // membedakan keduanya, sebab keduanya berbentuk aksi Ubah pada kolom yang
+    // sama (rules.md 6 poin 5a dan 5b).
+    $isi = $this->get(route('transmigran.detail', 1))->assertOk()->getContent();
+
+    expect($isi)->toContain('formGantiKepalaKeluarga')
+        ->and($isi)->toContain('Ganti Kepala Keluarga')
+        // Modal tersendiri, bukan isian tambahan pada modal ubah.
+        ->and($isi)->toContain('formUbahTransmigran');
+
+    // Rutenya berdiri sendiri dan bermetode POST, bukan menumpang PUT perbarui.
+    expect(Route::has('transmigran.ganti-kepala-keluarga'))->toBeTrue();
+
+    $this->post(route('transmigran.ganti-kepala-keluarga', 1))
+        ->assertRedirect(route('transmigran.detail', ['id' => 1, 'tab' => 'riwayat-kk']));
+});
+
+it('meminta identitas pengganti diketik, bukan dipilih dari daftar', function () {
+    // Sistem tidak mendata anggota keluarga satu per satu (erd.md 7.4),
+    // sehingga tidak ada daftar yang dapat ditawarkan. Urutan istri lalu anak
+    // pertama adalah ketentuan Dukcapil yang tidak dapat ditegakkan sistem:
+    // yang direkam adalah siapa penggantinya, bukan tebakan (rules.md 6.5d).
+    $isi = $this->get(route('transmigran.detail', 1))->assertOk()->getContent();
+
+    foreach (['nama_baru', 'nik_baru', 'no_kk_baru', 'hubungan_pengganti', 'tanggal_pergantian', 'alasan'] as $isian) {
+        expect($isi)->toContain('name="'.$isian.'"');
+    }
+
+    // Sisi lama dikirim tanpa diketik ulang, agar riwayat menyimpan keduanya.
+    foreach (['nik_lama', 'nama_lama', 'no_kk_lama'] as $isian) {
+        expect($isi)->toContain('name="'.$isian.'"');
+    }
+});
+
+it('menuntut petugas memutuskan nasib jabatan ketua poktan saat suksesi', function () {
+    // Jabatan ketua dipilih anggota dan TIDAK diwariskan. Tanpa pemeriksaan
+    // ini, menyunting baris transmigran akan membuat kepala keluarga baru
+    // menjadi ketua tanpa seorang pun memutuskan (rules.md 6 poin 5e).
+    //
+    // Keluarga 1 menjabat ketua POKTAN MEKAR JAYA lewat jalur Kepala Keluarga.
+    $adaKetua = $this->get(route('transmigran.detail', 1))->assertOk()->getContent();
+
+    expect($adaKetua)->toContain('name="nasib_ketua_poktan"')
+        ->and($adaKetua)->toContain('value="kosongkan"')
+        ->and($adaKetua)->toContain('value="teruskan"')
+        ->and($adaKetua)->toContain('POKTAN MEKAR JAYA');
+
+    // Keluarga 8 hanya anggota, bukan ketua: pilihan itu tidak boleh muncul,
+    // sebab kontrol yang tidak menentukan apa pun adalah kontrol mati (R-26).
+    $bukanKetua = $this->get(route('transmigran.detail', 8))->assertOk()->getContent();
+
+    expect($bukanKetua)->not->toContain('name="nasib_ketua_poktan"');
+
+    // Ketua yang berupa anggota keluarga TIDAK ikut terpengaruh, sebab ia punya
+    // nama dan NIK tersendiri. Keluarga 3 diketuai istrinya di POKTAN TANI
+    // BERSATU, sehingga suksesi kepala keluarganya tidak menyentuh jabatan itu.
+    expect(DummyData::poktanDiketuaiKeluarga(3))->toBeEmpty();
+    expect(DummyData::poktanDiketuaiKeluarga(1))->not->toBeEmpty();
+});
+
+it('memberi tahu bahwa keanggotaan poktan mengikuti, tanpa meminta keputusan', function () {
+    // Berbeda dari jabatan ketua, keanggotaan MEMANG mengikuti sebab melekat
+    // pada keluarga (rules.md 7a poin 3a). Petugas cukup diberi tahu.
+    $isi = $this->get(route('transmigran.detail', 1))->assertOk()->getContent();
+
+    expect($isi)->toContain('mengikuti kepala keluarga baru')
+        ->and($isi)->toContain('POKTAN MEKAR JAYA');
+});
+
+it('menyajikan riwayat suksesi beserta kedua sisi identitasnya', function () {
+    // Kedua sisi disimpan agar riwayat terbaca berdiri sendiri, tanpa perlu
+    // merangkainya dari baris berikutnya.
+    $this->get(route('transmigran.detail', 6))
+        ->assertOk()
+        ->assertSee('Riwayat Kepala Keluarga (1)')
+        ->assertSee('YAKOBUS BRIA')
+        ->assertSee('FRANSISKA BRIA')
+        ->assertSee('Meninggal');
+
+    // Keadaan kosong dinyatakan apa adanya, bukan tab yang hilang.
+    $this->get(route('transmigran.detail', 1))
+        ->assertOk()
+        ->assertSee('Belum pernah berganti kepala keluarga');
+});
+
+it('menampilkan nomor KK hanya bila benar-benar berubah', function () {
+    // Menampilkan dua nomor yang sama membuat pembaca menduga ada perubahan
+    // yang tidak ada. Keluarga 6 nomornya berganti, keluarga 4 tidak.
+    $berubah = $this->get(route('transmigran.detail', 6))->assertOk()->getContent();
+    $tetap = $this->get(route('transmigran.detail', 4))->assertOk()->getContent();
+
+    expect($berubah)->toContain('5321010102160006')
+        ->and($tetap)->toContain('tidak berubah');
+});
+
+it('menyelaraskan riwayat suksesi dengan data transmigran terkini', function () {
+    // Sisi BARU pada riwayat wajib sama dengan keadaan sekarang: suksesi
+    // menyunting baris yang ada, sehingga nama, NIK, dan nomor KK terakhir
+    // harus cocok. Data contoh yang tidak selaras akan menampilkan riwayat
+    // yang bertentangan dengan kartu profil di halaman yang sama.
+    foreach (DummyData::riwayatKepalaKeluarga() as $jejak) {
+        $keluarga = DummyData::cariTransmigran($jejak['transmigran_id']);
+
+        expect($keluarga)->not->toBeNull();
+        expect($keluarga['nama_kepala_keluarga'])->toBe($jejak['nama_baru'])
+            ->and($keluarga['nik'])->toBe($jejak['nik_baru'])
+            ->and($keluarga['no_kk'])->toBe($jejak['no_kk_baru']);
+
+        // Pengganti tidak boleh orang yang sama (aturan integritas 28).
+        expect($jejak['nik_baru'])->not->toBe($jejak['nik_lama']);
+    }
+
+    // Kedua sebab yang paling lazim wajib terwakili, dan satu di antaranya
+    // wajib bernomor KK tetap agar cabang tampilannya ikut terlihat.
+    $alasan = array_column(DummyData::riwayatKepalaKeluarga(), 'alasan');
+
+    expect($alasan)->toContain('Meninggal')->toContain('Pindah atau Merantau');
+
+    $kkTetap = array_filter(
+        DummyData::riwayatKepalaKeluarga(),
+        fn ($r) => $r['no_kk_lama'] === $r['no_kk_baru']
+    );
+
+    expect($kkTetap)->not->toBeEmpty('data contoh wajib memuat suksesi tanpa perubahan nomor KK');
+});
+
+it('tidak menyediakan penghapusan riwayat kepala keluarga', function () {
+    // Riwayat suksesi menyatakan siapa pemegang jatah lahan pada rentang waktu
+    // tertentu, sehingga menghapusnya menghilangkan dasar penguasaan lahan
+    // (rules.md 5.1 catatan 8). Admin pun hanya memegang ubah.
+    foreach ([1, 2, 3, 4] as $idRole) {
+        $izin = DummyData::izinRole($idRole)['riwayat_kepala_keluarga'] ?? [];
+
+        expect($izin)->not->toContain('hapus');
+    }
+
+    expect(DummyData::izinRole(1)['riwayat_kepala_keluarga'])->toBe(['lihat', 'tambah', 'ubah']);
+    expect(DummyData::izinRole(2)['riwayat_kepala_keluarga'])->toBe(['lihat', 'tambah']);
+    expect(DummyData::izinRole(3)['riwayat_kepala_keluarga'])->toBe(['lihat']);
+    expect(DummyData::izinRole(4)['riwayat_kepala_keluarga'])->toBe(['lihat']);
+
+    expect(Route::has('riwayat-kepala-keluarga.hapus'))->toBeFalse();
+});
+
+it('membedakan alasan pergantian dari status tinggal keluarga', function () {
+    // Keduanya menjawab pertanyaan berbeda: status tinggal menyatakan keadaan
+    // terkini sebuah KELUARGA, sedangkan alasan pergantian merekam satu
+    // PERISTIWA bertanggal. Ketika kepala keluarga meninggal lalu istrinya
+    // menggantikan, keluarganya tetap Aktif (data-dictionary.md 11.36).
+    expect(AlasanPergantianKK::nilai())
+        ->toBe(['Meninggal', 'Pindah atau Merantau', 'Cerai', 'Lainnya']);
+
+    foreach (DummyData::riwayatKepalaKeluarga() as $jejak) {
+        $keluarga = DummyData::cariTransmigran($jejak['transmigran_id']);
+
+        // Keluarga 6 kepala keluarganya meninggal, tetapi keluarganya sendiri
+        // tetap aktif sebab istrinya menempati rumah yang sama.
+        if ($jejak['alasan'] === AlasanPergantianKK::Meninggal->value) {
+            expect($keluarga['status_tinggal'])->not->toBe('Meninggal');
+        }
+    }
+});
+
+/*
+|--------------------------------------------------------------------------
 | Kelompok tani: ketua, jabatan, dan keanggotaan
 |--------------------------------------------------------------------------
 */
 
-it('menyediakan dua jalur pengisian ketua poktan', function () {
-    // Ketua poktan tidak selalu transmigran (rules.md 7a.2a). Banyak poktan
-    // diketuai penduduk setempat yang bukan peserta program, dan membatasi
-    // pilihan pada daftar transmigran membuat poktan semacam itu tidak dapat
-    // didata sama sekali.
+it('menyediakan tiga jalur pengisian ketua poktan', function () {
+    // Diperluas 2026-08-20 dari dua jalur menjadi tiga (rules.md 7a.2a).
+    // Boolean `is_ketua_transmigran` hanya sanggup membedakan dua keadaan,
+    // sedangkan keadaan lapangan ada tiga: kepala keluarga, anggota keluarga
+    // yang mewakili, dan penduduk setempat yang bukan peserta program.
     $isi = $this->get(route('poktan.index'))->assertOk()->getContent();
 
-    expect($isi)->toContain('name="is_ketua_transmigran"')
-        // Jalur 1: dipilih dari daftar, agar NIK dan tautan profilnya sahih.
+    expect($isi)->toContain('name="asal_ketua"')
+        // Kolom boolean lama tidak boleh tertinggal di mana pun.
+        ->and($isi)->not->toContain('name="is_ketua_transmigran"')
+        // Keluarga yang diwakili, terisi pada dua jalur pertama.
         ->and($isi)->toContain('name="ketua_transmigran_id"')
-        // Jalur 2: diketik langsung untuk ketua non-transmigran.
+        // Diketik pada dua jalur terakhir.
         ->and($isi)->toContain('name="nama_ketua"')
-        ->and($isi)->toContain('name="nik_ketua"');
+        ->and($isi)->toContain('name="nik_ketua"')
+        // Hanya jalur anggota keluarga.
+        ->and($isi)->toContain('name="hubungan_ketua"')
+        // Hanya jalur non-transmigran.
+        ->and($isi)->toContain('name="luas_kering_ketua"')
+        ->and($isi)->toContain('name="luas_basah_ketua"');
+
+    // Ketiga nilai enum benar-benar ditawarkan sebagai pilihan.
+    foreach (AsalWakilPoktan::cases() as $asal) {
+        expect($isi)->toContain('value="'.$asal->value.'"');
+    }
+});
+
+it('meneruskan required, disabled, dan change milik pemanggil pilih-cari', function () {
+    // Blade memperlakukan `:nama` sebagai atribut TERIKAT: nilainya dievaluasi
+    // sebagai PHP lalu disimpan pada kunci TANPA titik dua. Komponen sempat
+    // membacanya sebagai `:required`, sehingga selalu bernilai null.
+    //
+    // Akibatnya berlangsung diam-diam sejak 2026-08-17: isian pada cabang form
+    // yang sedang tersembunyi tetap aktif dan ikut terkirim, dan autofill
+    // telepon ketua tidak pernah berjalan sebab `@change` juga tidak pernah
+    // terpasang. Tidak satu pun uji memerah, sebab seluruhnya hanya memeriksa
+    // keberadaan atribut `name` (notes.md 1d.2).
+    $isi = $this->get(route('poktan.index'))->assertOk()->getContent();
+
+    $awal = strpos($isi, 'id="tambah_ketua_transmigran_id"');
+    expect($awal)->not->toBeFalse();
+
+    $tag = substr($isi, $awal, 500);
+
+    expect($tag)->toContain(':required="dariKeluarga"')
+        ->and($tag)->toContain(':disabled="! dariKeluarga"')
+        // `@change` pemanggil digabung setelah `selaraskan()`, bukan menimpanya.
+        ->and($tag)->toContain('selaraskan();')
+        ->and($tag)->toContain('isiKontak()');
+});
+
+it('membatasi wakil anggota poktan pada keluarga transmigran', function () {
+    // Berbeda dari ketua, anggota TIDAK boleh berasal dari penduduk setempat:
+    // seluruh anggota wajib berasal dari keluarga transmigran (rules.md 7a.3).
+    // Menawarkannya sebagai pilihan akan melahirkan data yang aturannya sendiri
+    // melarang.
+    expect(AsalWakilPoktan::nilaiAnggota())
+        ->toBe(['Kepala Keluarga', 'Anggota Keluarga']);
+
+    $sumber = file_get_contents(resource_path('views/pages/poktan/form-anggota.blade.php'));
+
+    // Daftar pilihan dibangkitkan dari enum, bukan ditulis tangan, agar
+    // penambahan nilai berikutnya tidak melewatkan pembatasan ini.
+    expect($sumber)->toContain('AsalWakilPoktan::nilaiAnggota()');
+
+    // Yang benar-benar menentukan adalah HTML terender, bukan sumber Blade:
+    // komentar boleh menyebut nilai terlarang untuk menerangkan alasannya.
+    $isi = $this->get(route('poktan.detail', 1))->assertOk()->getContent();
+
+    preg_match_all('/name="asal_wakil"[^>]*value="([^"]+)"/', $isi, $cocok);
+
+    expect($cocok[1])->not->toBeEmpty()
+        ->and(array_unique($cocok[1]))->toBe(['Kepala Keluarga', 'Anggota Keluarga']);
+});
+
+it('menautkan keanggotaan poktan ke keluarga, bukan ke kepala keluarga', function () {
+    // Ditetapkan 2026-08-20: yang terdaftar adalah orang yang benar-benar
+    // menggarap, dan ia tidak selalu kepala keluarga (rules.md 7a.3a).
+    $isi = $this->get(route('poktan.detail', 1))->assertOk()->getContent();
+
+    expect($isi)->toContain('name="asal_wakil"')
+        ->and($isi)->toContain('name="nama_wakil"')
+        ->and($isi)->toContain('name="nik_wakil"')
+        ->and($isi)->toContain('name="telepon_wakil"')
+        ->and($isi)->toContain('name="hubungan_dengan_kk"');
+
+    // Data contoh wajib memuat satu wakil non-kepala-keluarga, jika tidak
+    // cabang kedua tidak pernah terlihat saat peninjauan.
+    $anggota = DummyData::anggotaPoktan();
+    $wakilKeluarga = array_filter(
+        $anggota,
+        fn ($a) => $a['asal_wakil'] === AsalWakilPoktan::AnggotaKeluarga->value
+    );
+
+    expect($wakilKeluarga)->not->toBeEmpty('data contoh wajib memuat wakil bukan kepala keluarga');
+
+    // Namanya yang tampil adalah nama wakil, bukan nama kepala keluarganya.
+    $wakil = array_values($wakilKeluarga)[0];
+
+    expect($wakil['nama'])->toBe($wakil['nama_wakil'])
+        ->and($wakil['nik'])->toBe($wakil['nik_wakil']);
+});
+
+it('menurunkan luas lahan wakil poktan dari bidang milik keluarganya', function () {
+    // Luas lahan TIDAK disimpan sebagai kolom: nilainya akan basi begitu
+    // petugas membetulkan luas di modul lahan, kekeliruan yang sama dengan
+    // `jumlah_anggota` yang sudah dicabut (erd.md 7.3).
+    foreach (DummyData::anggotaPoktan() as $anggota) {
+        $rekap = DummyData::rekapLahanKeluarga($anggota['transmigran_id']);
+
+        expect($anggota['luas_kering'])->toBe($rekap['kering'])
+            ->and($anggota['luas_basah'])->toBe($rekap['basah']);
+    }
+
+    // Hanya lahan usaha yang dihitung; pekarangan tidak berkomposisi.
+    // Keluarga 1 memiliki pekarangan 0,25 ha dan lahan usaha 1,50 ha kering.
+    $keluarga1 = DummyData::rekapLahanKeluarga(1);
+
+    expect($keluarga1['total'])->toBe(1.5)
+        ->and($keluarga1['kering'])->toBe(1.5)
+        ->and($keluarga1['jumlah_bidang'])->toBe(1);
+
+    // Keluarga tanpa lahan menghasilkan rekap kosong, bukan galat.
+    $tanpaLahan = DummyData::rekapLahanKeluarga(999);
+
+    expect($tanpaLahan['kering'])->toBe(0.0)
+        ->and($tanpaLahan['lintang'])->toBeNull()
+        ->and($tanpaLahan['jumlah_bidang'])->toBe(0);
+});
+
+it('memisahkan alasan keluar dari catatan anggota poktan', function () {
+    // Kolom `keterangan` sempat dipakai dua maksud sekaligus: kamus data
+    // menyebutnya catatan umum, sedangkan form melabelinya "Alasan Keluar",
+    // sehingga catatan keanggotaan biasa tidak punya tempat (rules.md 7a.4e).
+    $isi = $this->get(route('poktan.detail', 1))->assertOk()->getContent();
+
+    expect($isi)->toContain('name="alasan_keluar"')
+        ->and($isi)->toContain('name="keterangan"');
+
+    // Keduanya benar-benar dipakai untuk maksud berbeda pada data contoh.
+    $anggota = DummyData::anggotaPoktan();
+
+    $adaAlasan = array_filter($anggota, fn ($a) => ! empty($a['alasan_keluar']));
+    $adaCatatan = array_filter($anggota, fn ($a) => ! empty($a['keterangan']));
+
+    expect($adaAlasan)->not->toBeEmpty()
+        ->and($adaCatatan)->not->toBeEmpty();
 });
 
 it('menyimpan kontak ketua, bukan kontak kelompok, pada poktan', function () {
@@ -3319,10 +3763,10 @@ it('mencabut Ketua dari pilihan jabatan anggota poktan', function () {
     // Ketua ditetapkan pada profil poktan. Menyediakannya juga di daftar
     // anggota membuat satu poktan dapat memiliki dua ketua berbeda tanpa
     // penjaga apa pun (rules.md 7a.4b).
-    expect(array_column(App\Enums\JabatanAnggotaPoktan::cases(), 'value'))
+    expect(array_column(JabatanAnggotaPoktan::cases(), 'value'))
         ->toBe(['Sekretaris', 'Bendahara', 'Anggota']);
 
-    foreach (App\Support\DummyData::anggotaPoktan() as $anggota) {
+    foreach (DummyData::anggotaPoktan() as $anggota) {
         expect($anggota['jabatan'])->not->toBe('Ketua');
     }
 });
@@ -3343,7 +3787,7 @@ it('menyediakan jalur mengubah data anggota poktan', function () {
         ->and($tanpaLolosan)->toContain('/anggota-poktan/:id');
 
     // Rutenya benar-benar ada, bukan hanya modal yang menganga.
-    expect(Illuminate\Support\Facades\Route::has('anggota-poktan.perbarui'))->toBeTrue();
+    expect(Route::has('anggota-poktan.perbarui'))->toBeTrue();
 });
 
 it('tidak menyediakan penghapusan anggota poktan', function () {
@@ -3351,9 +3795,9 @@ it('tidak menyediakan penghapusan anggota poktan', function () {
     // saprotan di masa lalu tetap memiliki penerima yang jelas. Karena itu
     // huruf H dicabut dari matriks kewenangan agar dokumen tidak menjanjikan
     // tindakan yang memang tidak ada.
-    expect(Illuminate\Support\Facades\Route::has('anggota-poktan.hapus'))->toBeFalse();
+    expect(Route::has('anggota-poktan.hapus'))->toBeFalse();
 
-    expect(App\Support\DummyData::izinRole(1)['anggota_poktan'])
+    expect(DummyData::izinRole(1)['anggota_poktan'])
         ->not->toContain('hapus');
 
     expect(file_get_contents(base_path('agents/rules.md')))
@@ -3385,7 +3829,7 @@ it('menyediakan unggahan dokumen pada modul yang kolomnya sudah ada', function (
     // tetapi tujuh form tidak pernah punya isiannya. Akibatnya SK pembentukan
     // poktan dan berita acara penyaluran saprotan tidak dapat diunggah ke mana
     // pun, padahal justru keduanya yang diminta saat pemeriksaan.
-    $this->get($jalur)->assertOk()->assertSee('name="' . $isian . '"', false);
+    $this->get($jalur)->assertOk()->assertSee('name="'.$isian.'"', false);
 })->with([
     ['/sp', 'dokumen_pendukung'],
     ['/sp/inventaris', 'dokumen_pendukung'],
@@ -3497,15 +3941,20 @@ it('tidak menyentuh document.body sebelum DOM siap', function () {
 
 it('menyediakan dokumen pertama langsung pada form lahan', function () {
     // Dokumen semula hanya dapat diunggah lewat tab tersendiri di halaman
-    // rincian, dengan alasan satu bidang dapat memiliki lebih dari satu
-    // dokumen. Alasan itu benar secara teori, tetapi memaksa dua langkah untuk
-    // keadaan yang paling lazim: pada data contoh, tidak satu pun bidang
-    // memiliki lebih dari satu dokumen.
+    // rincian, sehingga keadaan yang paling lazim menuntut dua langkah.
+    //
+    // Nomor dokumen dan tanggal terbit DICABUT dari form lahan 2026-08-20 atas
+    // keputusan pemilik proyek, bersama status hak atas tanah. Keduanya tetap
+    // hidup pada modal Tambah Dokumen Lahan di halaman rincian, sebab keduanya
+    // memang keterangan per dokumen, bukan per bidang.
     $isi = $this->get(route('lahan.index'))->assertOk()->getContent();
 
-    foreach (['jenis_dokumen', 'nomor_dokumen', 'tanggal_terbit', 'file_dokumen'] as $isian) {
-        expect($isi)->toContain('name="' . $isian . '"');
+    foreach (['jenis_dokumen', 'file_dokumen'] as $isian) {
+        expect($isi)->toContain('name="'.$isian.'"');
     }
+
+    expect($isi)->not->toContain('name="nomor_dokumen"')
+        ->and($isi)->not->toContain('name="tanggal_terbit"');
 });
 
 it('mempertahankan tab dokumen untuk berkas tambahan', function () {
@@ -3548,22 +3997,71 @@ it('menempatkan area unggah dokumen di baris penuh, bukan berpasangan', function
         ->and($cocok[1])->toContain('</div>');
 });
 
-it('memakai status hak atas tanah, bukan status kepemilikan', function () {
-    // HPL adalah Hak Pengelolaan milik instansi atas tanah kawasan, sehingga
-    // tidak pernah menjadi hak seorang transmigran; SHM adalah nama
-    // sertifikatnya, bukan nama haknya. Menampilkannya sebagai pilihan status
-    // membuat sistem menyatakan warga "memiliki lahan berstatus HPL".
-    $isi = $this->get(route('lahan.index'))->assertOk()->getContent();
+it('mencabut status hak atas tanah dari seluruh modul lahan', function () {
+    // Dicabut 2026-08-20 atas keputusan pemilik proyek. Penghapusannya
+    // MENYELURUH, bukan hanya dari form: isian ini satu-satunya jalan mengisi
+    // kolomnya, sehingga menyisakan tampilannya di halaman rincian akan
+    // membuat keterangan yang tidak pernah terisi - kontrol mati yang dilarang
+    // R-26, dan pola yang sama dipakai saat mencabut batas wilayah SP.
+    $isiDaftar = $this->get(route('lahan.index'))->assertOk()->getContent();
+    $isiRincian = $this->get(route('lahan.detail', 1))->assertOk()->getContent();
 
-    expect($isi)->toContain('name="status_hak"')
-        ->and($isi)->toContain('Status Hak Atas Tanah')
-        ->and($isi)->toContain('Belum Bersertifikat');
+    foreach ([$isiDaftar, $isiRincian] as $isi) {
+        expect($isi)->not->toContain('name="status_hak"')
+            ->and($isi)->not->toContain('Status Hak Atas Tanah')
+            ->and($isi)->not->toContain('Belum Bersertifikat')
+            // Nama kolom lama yang sudah pernah dicabut sebelumnya.
+            ->and($isi)->not->toContain('name="status_kepemilikan"');
+    }
+});
+
+it('menampilkan komposisi kering dan basah, bukan kategori tunggal', function () {
+    // Satu bidang dapat digarap sebagian kering dan sebagian basah sekaligus
+    // (rules.md 7.5). Kolom enum lama memaksa memilih salah satu, sehingga
+    // separuh luasnya hilang dari rekap tanpa ada yang menyadarinya.
+    $isiDaftar = $this->get(route('lahan.index'))->assertOk()->getContent();
+
+    expect($isiDaftar)->toContain('name="luas_kering"')
+        ->and($isiDaftar)->toContain('name="luas_basah"')
+        // Enumnya dicabut seluruhnya, bukan sekadar disembunyikan.
+        ->and($isiDaftar)->not->toContain('name="kategori_lahan" ')
+        ->and(enum_exists('App\Enums\KategoriLahan'))->toBeFalse();
+
+    // Bidang campuran wajib terbaca sebagai satu bidang berkomposisi. LU-003
+    // milik MARIA DA COSTA adalah 1,25 ha kering + 0,75 ha basah.
+    $this->get(route('lahan.detail', 5))
+        ->assertOk()
+        ->assertSee('Lahan kering')
+        ->assertSee('Lahan basah')
+        ->assertSee('1,25 ha')
+        ->assertSee('0,75 ha');
+});
+
+it('menyaring bidang yang memiliki bagian basah, bukan yang seluruhnya basah', function () {
+    // Inti perubahan 2026-08-20: penyaring menanyakan "punya bagian basah?".
+    // Bidang campuran wajib muncul pada kedua penyaring sekaligus, dan itulah
+    // yang membedakannya dari kolom enum lama.
+    $basah = $this->get(route('lahan.index', ['kategori_lahan' => 'basah']))
+        ->assertOk()
+        // LU-003 campuran, LU-002 seluruhnya basah.
+        ->assertSee('LU-003')
+        ->assertSee('LU-002')
+        // LU-001 seluruhnya kering, tidak boleh muncul.
+        ->assertDontSee('LU-001');
+
+    expect($basah)->not->toBeNull();
+
+    $this->get(route('lahan.index', ['kategori_lahan' => 'kering']))
+        ->assertOk()
+        ->assertSee('LU-003')
+        ->assertSee('LU-001')
+        ->assertDontSee('LU-002');
 });
 
 it('menjumlahkan luas lahan usaha dari seluruh tahapnya', function () {
     // Penjumlahan semula mencocokkan teks "Lahan Usaha" persis, sehingga
     // bidang tahap kedua akan hilang dari rekap tanpa ada yang menyadarinya.
-    $nilaiUsaha = App\Enums\PeruntukanLahan::nilaiLahanUsaha();
+    $nilaiUsaha = PeruntukanLahan::nilaiLahanUsaha();
 
     $luasUsaha = array_sum(array_column(
         array_filter(
@@ -3595,7 +4093,7 @@ it('mencabut batas wilayah SP dari seluruh sumber', function () {
     $rincianSp = $this->get(route('dashboard.sp', 1))->assertOk()->getContent();
 
     foreach ($arah as $kolom) {
-        expect($formSp)->not->toContain('name="' . $kolom . '"')
+        expect($formSp)->not->toContain('name="'.$kolom.'"')
             ->and($rincianSp)->not->toContain($kolom);
     }
 
@@ -3690,7 +4188,6 @@ it('memisahkan agregat kawasan dari transaksi panen contoh', function () {
         ->and(round($totalSp, 1))->toBe(round($agregat, 1))
         ->and(round((float) end($deret['volume_panen']), 1))->toBe(round($agregat, 1));
 });
-
 
 /*
 |--------------------------------------------------------------------------
@@ -3796,7 +4293,7 @@ it('menyediakan penetapan bidang pada modal penanganan', function () {
 
 it('mengisi bidang seluruh pengaduan yang sudah diproses', function () {
     // rules.md 10b poin 7b: wajib terisi sebelum status maju ke Diproses.
-    $sudahLewat = [\App\Enums\StatusPengaduan::Diproses->value, \App\Enums\StatusPengaduan::Selesai->value];
+    $sudahLewat = [StatusPengaduan::Diproses->value, StatusPengaduan::Selesai->value];
 
     foreach (DummyData::pengaduan() as $baris) {
         if (! in_array($baris['status'], $sudahLewat, true)) {
@@ -3816,7 +4313,7 @@ it('menyisakan contoh pengaduan yang bidangnya belum ditetapkan', function () {
     expect($belum)->not->toBeEmpty();
 
     foreach ($belum as $baris) {
-        expect($baris['status'])->toBe(\App\Enums\StatusPengaduan::MenungguDiterima->value);
+        expect($baris['status'])->toBe(StatusPengaduan::MenungguDiterima->value);
     }
 });
 
@@ -3824,8 +4321,8 @@ it('menyelaraskan bidang data contoh dengan peta kategori', function () {
     // Kategori netral boleh berbidang apa pun sebab ditetapkan petugas;
     // kategori bermuatan wajib cocok dengan turunannya.
     foreach (DummyData::pengaduan() as $baris) {
-        $kategori = \App\Enums\KategoriPengaduan::from($baris['kategori']);
-        $bawaan = \App\Enums\BidangPengaduan::dariKategori($kategori);
+        $kategori = KategoriPengaduan::from($baris['kategori']);
+        $bawaan = BidangPengaduan::dariKategori($kategori);
 
         if ($bawaan === null) {
             continue;

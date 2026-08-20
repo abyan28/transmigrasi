@@ -3,7 +3,9 @@
 
     Dokumen HPL dan SHM dikelola di sini, bukan di dalam form lahan, karena
     satu lahan dapat memiliki lebih dari satu dokumen
-    (agents/data-dictionary.md bagian 7.2).
+    (agents/data-dictionary.md bagian 7.2). Nomor dokumen dan tanggal terbit
+    tetap hidup di tab ini meski isiannya dicabut dari form lahan pada
+    2026-08-20, sebab keduanya memang keterangan per dokumen, bukan per bidang.
 
     Bagian pengelolaan (pola tanam, peralatan, kendala) hanya ditampilkan bila
     lahan berjenis Lahan Usaha, mengikuti aturan bahwa keempat kolom itu tidak
@@ -21,8 +23,11 @@
         // dengan satu nilai teks. Pemeriksaannya dipusatkan pada enum.
         $lahanUsaha = \App\Enums\PeruntukanLahan::from($data['peruntukan_lahan'])->lahanUsaha();
 
+        // Dibaca lewat id, bukan mencocokkan nama. Dua kepala keluarga dapat
+        // bernama sama, dan pencocokan nama akan menautkan bidang ini ke
+        // profil orang yang keliru tanpa ada yang menyadarinya.
         $pemilik = collect(DummyData::transmigran())
-            ->firstWhere('nama_kepala_keluarga', $data['pemilik']);
+            ->firstWhere('id_transmigran', $data['transmigran_id']);
 
         $bolehUbah = true;
     @endphp
@@ -89,18 +94,27 @@
                             </a>
                         </dd>
                     </div>
-                    <div class="flex justify-between gap-3">
-                        <dt class="text-gray-500 dark:text-gray-400">Kategori</dt>
-                        <dd class="text-right font-medium text-gray-800 dark:text-white/90">
-                            {{ $data['kategori_lahan'] ?? '-' }}
-                        </dd>
-                    </div>
-                    <div class="flex justify-between gap-3">
-                        <dt class="text-gray-500 dark:text-gray-400">Status kepemilikan</dt>
-                        <dd class="text-right font-medium text-gray-800 dark:text-white/90">
-                            {{ $data['status_hak'] ?? '-' }}
-                        </dd>
-                    </div>
+                    {{--
+                        Komposisi luas hanya berlaku bagi lahan usaha. Nol
+                        ditampilkan apa adanya, bukan disembunyikan: bidang
+                        yang seluruhnya kering memang bernilai 0 ha basah, dan
+                        menyembunyikannya membuat pembaca menduga datanya belum
+                        terisi.
+                    --}}
+                    @if ($lahanUsaha)
+                        <div class="flex justify-between gap-3">
+                            <dt class="text-gray-500 dark:text-gray-400">Lahan kering</dt>
+                            <dd class="text-right font-medium tabular-nums text-gray-800 dark:text-white/90">
+                                {{ number_format($data['luas_kering'] ?? 0, 2, ',', '.') }} ha
+                            </dd>
+                        </div>
+                        <div class="flex justify-between gap-3">
+                            <dt class="text-gray-500 dark:text-gray-400">Lahan basah</dt>
+                            <dd class="text-right font-medium tabular-nums text-gray-800 dark:text-white/90">
+                                {{ number_format($data['luas_basah'] ?? 0, 2, ',', '.') }} ha
+                            </dd>
+                        </div>
+                    @endif
                 </dl>
             </div>
         </aside>

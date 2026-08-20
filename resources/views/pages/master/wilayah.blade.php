@@ -61,7 +61,19 @@
         </p>
     </div>
 
-    <div x-data="hashTabs('kecamatan')"
+    {{--
+        Tab bawaan PROVINSI, bukan kecamatan.
+
+        Semula bawaannya `kecamatan`, dan itu keliru pada dua hal sekaligus:
+        pembacaannya melompati dua tingkat pertama sehingga susunan hierarki
+        yang baru saja dijelaskan di atas tidak terlihat, dan pengunjung yang
+        mengklik menu langsung mendapat alamat `?tab=kecamatan` seolah ia
+        pernah memilihnya sendiri.
+
+        Halaman bertingkat dibuka dari tingkat teratas; penelusuran ke bawah
+        adalah tindakan yang dipilih pengguna, bukan keadaan awal.
+    --}}
+    <div x-data="hashTabs('provinsi')"
         class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
         <div class="flex gap-1 overflow-x-auto border-b border-gray-200 px-2 pt-2 dark:border-gray-800"
             role="tablist" aria-label="Tingkat wilayah">
@@ -82,6 +94,16 @@
             @endforeach
         </div>
 
+        {{--
+            Panel ini SENGAJA tanpa `x-cloak`, dan itu bukan kelalaian: ia
+            panel bawaan, sehingga menyembunyikannya sampai Alpine memulai
+            justru membuat halaman kosong sesaat. Ketiga panel lain memakai
+            `x-cloak` agar tidak berkedip terlihat.
+
+            Sebelum bawaannya diubah menjadi provinsi, keduanya tidak sejalan:
+            yang tanpa `x-cloak` adalah provinsi sementara bawaannya kecamatan,
+            sehingga panel provinsi berkedip lalu tergantikan.
+        --}}
         <div x-show="tab === 'provinsi'" role="tabpanel">
             <x-sim.tabel-ringkas :kolom="['Nama Provinsi', 'Kode', 'Aksi']" :kolom-kanan="['Aksi']">
                 @foreach ($wilayah['provinsi'] as $b)

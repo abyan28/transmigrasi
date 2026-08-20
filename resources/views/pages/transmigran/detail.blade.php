@@ -16,9 +16,12 @@
         $rumah = collect(DummyData::rumah())
             ->firstWhere('penghuni', $data['nama_kepala_keluarga']);
 
+        // Lahan dibaca lewat id, bukan mencocokkan nama: dua kepala keluarga
+        // dapat bernama sama, dan pencocokan nama akan menautkan bidang milik
+        // orang lain ke halaman ini tanpa ada yang menyadarinya.
         $lahan = array_values(array_filter(
             DummyData::lahan(),
-            fn ($l) => $l['pemilik'] === $data['nama_kepala_keluarga']
+            fn ($l) => $l['transmigran_id'] === $data['id_transmigran']
         ));
 
         $panen = array_values(array_filter(
@@ -28,7 +31,31 @@
 
         $totalLuas = array_sum(array_column($lahan, 'luas'));
 
+        // Riwayat suksesi kepala keluarga. Satu baris transmigran adalah satu
+        // RUMAH TANGGA, sehingga pergantian kepalanya menyunting baris ini dan
+        // peristiwanya direkam terpisah (rules.md 6 poin 5).
+        $riwayatKk = DummyData::riwayatKepalaKeluarga($data['id_transmigran']);
+
+        // Jabatan ketua poktan TIDAK diwariskan. Bila keluarga ini menjabat
+        // ketua lewat jalur Kepala Keluarga, petugas wajib memutuskan nasib
+        // jabatannya saat suksesi (rules.md 6 poin 5e).
+        $poktanDiketuai = DummyData::poktanDiketuaiKeluarga($data['id_transmigran']);
+
+        // Keanggotaan poktan justru MENGIKUTI, sebab melekat pada keluarga
+        // (rules.md 7a poin 3a). Petugas cukup diberi tahu, tidak diminta
+        // memutuskan. Hanya wakil berjalur Kepala Keluarga yang ikut berganti.
+        $keanggotaanIkut = array_values(array_filter(
+            DummyData::anggotaPoktan(),
+            fn ($a) => $a['transmigran_id'] === $data['id_transmigran']
+                && $a['asal_wakil'] === \App\Enums\AsalWakilPoktan::KepalaKeluarga->value
+                && $a['status'] !== 'Sudah Keluar'
+        ));
+
         $bolehUbah = true;
+
+        // Suksesi hanya untuk Admin dan Dinas Transmigrasi (rules.md 6 poin 5f).
+        // Tahap 3 menggantinya dengan pemeriksaan kewenangan sungguhan.
+        $bolehSuksesi = true;
     @endphp
 
     <x-sim.page-header :judul="$data['nama_kepala_keluarga']"
@@ -39,6 +66,26 @@
             ['label' => $data['nama_kepala_keluarga']],
         ]">
         <x-slot:aksi>
+            {{--
+                Suksesi adalah TINDAKAN TERSENDIRI, bukan efek samping form
+                ubah (rules.md 6 poin 5b). Bila ia lahir dari penyuntingan nama
+                pada form biasa, setiap perbaikan ejaan akan mengotori riwayat
+                suksesi, yaitu kekaburan yang justru hendak ditutup.
+
+                Bergaya sekunder sebab jauh lebih jarang dipakai daripada
+                menyunting data biasa.
+            --}}
+            @if ($bolehSuksesi)
+                <button type="button" @click="$dispatch('buka-modal', 'formGantiKepalaKeluarga')"
+                    class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-theme-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"
+                        aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M16.023 9.348h4.992V4.356m-4.993 4.992l3.181-3.183a8.25 8.25 0 00-13.803 3.7M4.031 9.865v4.992h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7" />
+                    </svg>
+                    Ganti Kepala Keluarga
+                </button>
+            @endif
             @if ($bolehUbah)
                 <button type="button" @click="$dispatch('buka-modal', 'formUbahTransmigran')"
                     class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
@@ -126,6 +173,9 @@
                         'lahan' => 'Lahan (' . count($lahan) . ')',
                         'panen' => 'Hasil Panen (' . count($panen) . ')',
                         'dokumen' => 'Dokumen',
+                        // Catatan Log wajib tetap paling kanan (ui-spec.md 5.1c),
+                        // sehingga riwayat suksesi disisipkan sebelum itu.
+                        'riwayat-kk' => 'Riwayat Kepala Keluarga (' . count($riwayatKk) . ')',
                         'log' => 'Catatan Log',
                     ] as $kunci => $label)
                         <button type="button" role="tab" @click="setTab('{{ $kunci }}')"
@@ -243,7 +293,13 @@
                         <x-sim.empty-state judul="Belum ada data lahan"
                             pesan="Lahan pekarangan dan lahan usaha keluarga ini akan tampil di sini setelah didata." />
                     @else
-                        <x-sim.tabel-ringkas :kolom="['Kode', 'Jenis', 'Kategori', 'Luas (ha)', 'Status']">
+                        {{--
+                            Kolom Status dihapus bersama pencabutan status hak
+                            atas tanah (2026-08-20). Sebelum itu isinya memang
+                            sudah kosong, sehingga tabel ini menjanjikan satu
+                            keterangan yang tidak pernah ada.
+                        --}}
+                        <x-sim.tabel-ringkas :kolom="['Kode', 'Peruntukan', 'Kering (ha)', 'Basah (ha)', 'Luas (ha)']">
                             @foreach ($lahan as $l)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                                     <td class="px-5 py-3">
@@ -255,26 +311,32 @@
                                     <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
                                         {{ $l['peruntukan_lahan'] }}
                                     </td>
-                                    <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
-                                        {{ $l['kategori_lahan'] ?? '-' }}
+                                    <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
+                                        {{ $l['luas_kering'] === null ? '-' : number_format($l['luas_kering'], 2, ',', '.') }}
+                                    </td>
+                                    <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
+                                        {{ $l['luas_basah'] === null ? '-' : number_format($l['luas_basah'], 2, ',', '.') }}
                                     </td>
                                     <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
                                         {{ number_format($l['luas'], 2, ',', '.') }}
-                                    </td>
-                                    <td class="px-5 py-3">
                                     </td>
                                 </tr>
                             @endforeach
 
                             {{-- Baris total memakai motif identitas garis atas navy --}}
                             <tr class="motif-baris-total">
-                                <td colspan="3" class="px-5 py-3 text-theme-sm text-gray-700 dark:text-gray-300">
+                                <td colspan="2" class="px-5 py-3 text-theme-sm text-gray-700 dark:text-gray-300">
                                     Total luas lahan
+                                </td>
+                                <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
+                                    {{ number_format(array_sum(array_column($lahan, 'luas_kering')), 2, ',', '.') }}
+                                </td>
+                                <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
+                                    {{ number_format(array_sum(array_column($lahan, 'luas_basah')), 2, ',', '.') }}
                                 </td>
                                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
                                     {{ number_format($totalLuas, 2, ',', '.') }}
                                 </td>
-                                <td></td>
                             </tr>
                         </x-sim.tabel-ringkas>
                     @endif
@@ -350,6 +412,83 @@
                     @endif
                 </div>
 
+                {{--
+                    Riwayat suksesi kepala keluarga, disajikan sebagai garis
+                    waktu mengikuti riwayat penghunian: yang perlu terbaca
+                    adalah urutan kejadian, siapa digantikan siapa, kapan, dan
+                    mengapa.
+                --}}
+                <div x-show="tab === 'riwayat-kk'" x-cloak role="tabpanel">
+                    @if (empty($riwayatKk))
+                        <x-sim.empty-state judul="Belum pernah berganti kepala keluarga"
+                            pesan="Pergantian kedudukan kepala keluarga akan tercatat di sini beserta sebab dan tanggalnya." />
+                    @else
+                        <ol class="relative m-5 space-y-6 border-l border-gray-200 pl-6 sm:m-6 dark:border-gray-700">
+                            @foreach ($riwayatKk as $jejak)
+                                @php
+                                    $alasan = \App\Enums\AlasanPergantianKK::from($jejak['alasan']);
+                                    $kkBerubah = $jejak['no_kk_lama'] !== $jejak['no_kk_baru'];
+                                @endphp
+                                <li class="relative">
+                                    <span
+                                        class="absolute -left-[1.9rem] mt-1 flex h-3 w-3 rounded-full bg-brand-500 ring-4 ring-white dark:ring-gray-900"
+                                        aria-hidden="true"></span>
+
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <x-sim.status-badge :teks="$alasan->label()"
+                                            :warna="$alasan === \App\Enums\AlasanPergantianKK::Meninggal ? 'gray' : 'warning'"
+                                            ukuran="sm" />
+                                        <span class="text-theme-xs tabular-nums text-gray-500 dark:text-gray-400">
+                                            {{ \Illuminate\Support\Carbon::parse($jejak['tanggal_pergantian'])->translatedFormat('d F Y') }}
+                                        </span>
+                                    </div>
+
+                                    {{--
+                                        Kedua sisi ditampilkan berdampingan agar riwayat
+                                        terbaca berdiri sendiri, tanpa perlu merangkainya
+                                        dari baris berikutnya.
+                                    --}}
+                                    <p class="mt-1.5 text-theme-sm text-gray-800 dark:text-white/90">
+                                        <span class="text-gray-500 line-through dark:text-gray-400">{{ $jejak['nama_lama'] }}</span>
+                                        <span class="mx-1 text-gray-400" aria-hidden="true">&rarr;</span>
+                                        <span class="font-medium">{{ $jejak['nama_baru'] }}</span>
+                                        <span class="text-gray-500 dark:text-gray-400">({{ $jejak['hubungan_pengganti'] }})</span>
+                                    </p>
+
+                                    <p class="mt-1 text-theme-xs tabular-nums text-gray-500 dark:text-gray-400">
+                                        NIK {{ $jejak['nik_lama'] }} &rarr; {{ $jejak['nik_baru'] }}
+                                    </p>
+
+                                    {{--
+                                        Nomor KK hanya ditulis bila benar-benar berubah.
+                                        Menampilkan dua nomor yang sama justru membuat
+                                        pembaca menduga ada perubahan yang tidak ada.
+                                    --}}
+                                    <p class="mt-0.5 text-theme-xs tabular-nums text-gray-500 dark:text-gray-400">
+                                        @if ($kkBerubah)
+                                            No. KK {{ $jejak['no_kk_lama'] }} &rarr; {{ $jejak['no_kk_baru'] }}
+                                        @else
+                                            No. KK {{ $jejak['no_kk_baru'] }}, tidak berubah
+                                        @endif
+                                    </p>
+
+                                    @if ($jejak['keterangan'])
+                                        <p class="mt-1.5 text-theme-xs text-gray-600 dark:text-gray-400">
+                                            {{ $jejak['keterangan'] }}
+                                        </p>
+                                    @endif
+                                </li>
+                            @endforeach
+                        </ol>
+
+                        <p class="border-t border-gray-200 p-5 text-theme-xs text-gray-600 dark:border-gray-800 dark:text-gray-400">
+                            Rumah tangganya berlanjut, yang berganti kepalanya, sehingga rumah dan lahan tetap
+                            melekat pada keluarga ini. Riwayat suksesi tidak dapat dihapus, sebab ia menyatakan
+                            siapa pemegang jatah pada rentang waktu tertentu.
+                        </p>
+                    @endif
+                </div>
+
                 {{-- Catatan log: riwayat perubahan data ini saja --}}
                 <div x-show="tab === 'log'" x-cloak role="tabpanel">
                     <x-sim.catatan-log nama-tabel="transmigran" :record-id="$data['id_transmigran']" />
@@ -357,6 +496,202 @@
             </div>
         </div>
     </div>
+
+    {{--
+        Modal suksesi kepala keluarga.
+
+        Sengaja TERPISAH dari modal ubah, dan itu bukan soal tata letak: bila
+        suksesi lahir dari penyuntingan nama pada form biasa, setiap perbaikan
+        ejaan akan mengotori riwayat suksesi. Audit log pun tidak dapat
+        membedakan keduanya, sebab keduanya berbentuk aksi Ubah pada kolom yang
+        sama (rules.md 6 poin 5a dan 5b).
+    --}}
+    @if ($bolehSuksesi)
+        <x-sim.modal-form nama="formGantiKepalaKeluarga" judul="Ganti Kepala Keluarga"
+            :keterangan="'Kedudukan kepala keluarga berpindah dari ' . $data['nama_kepala_keluarga'] . ' kepada penggantinya. Rumah, lahan, dan keanggotaan poktan tetap melekat pada keluarga ini.'"
+            :aksi="route('transmigran.ganti-kepala-keluarga', $data['id_transmigran'])" ukuran="lg"
+            label-simpan="Simpan Pergantian">
+
+            @php
+                $kelasKontrol = 'h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30';
+                $kelasLabel = 'mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400';
+            @endphp
+
+            <div class="space-y-6">
+                {{--
+                    Kepala keluarga yang digantikan, ditampilkan sebagai bacaan
+                    dan dikirim sebagai isian tersembunyi. Petugas tidak perlu
+                    mengetiknya ulang, dan riwayat tetap menyimpan kedua sisi.
+                --}}
+                <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+                    <p class="text-theme-xs text-gray-500 dark:text-gray-400">Kepala keluarga saat ini</p>
+                    <p class="mt-0.5 text-theme-sm font-medium text-gray-800 dark:text-white/90">
+                        {{ $data['nama_kepala_keluarga'] }}
+                    </p>
+                    <p class="mt-0.5 text-theme-xs tabular-nums text-gray-500 dark:text-gray-400">
+                        NIK {{ $data['nik'] }} &middot; No. KK {{ $data['no_kk'] }}
+                    </p>
+                </div>
+
+                <input type="hidden" name="nik_lama" value="{{ $data['nik'] }}" />
+                <input type="hidden" name="nama_lama" value="{{ $data['nama_kepala_keluarga'] }}" />
+                <input type="hidden" name="no_kk_lama" value="{{ $data['no_kk'] }}" />
+
+                {{--
+                    Identitas pengganti DIKETIK, tidak dipilih dari daftar.
+                    Sistem tidak mendata anggota keluarga satu per satu
+                    (erd.md 7.4), sehingga tidak ada daftar yang dapat
+                    ditawarkan. Urutan istri lalu anak pertama adalah ketentuan
+                    Dukcapil yang tidak dapat ditegakkan sistem: yang direkam
+                    adalah siapa penggantinya, bukan tebakan (rules.md 6.5d).
+                --}}
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <div>
+                        <label for="suksesi_nama_baru" class="{{ $kelasLabel }}">
+                            Nama Kepala Keluarga Baru<span class="text-error-500">*</span>
+                        </label>
+                        <input type="text" id="suksesi_nama_baru" name="nama_baru" required maxlength="255"
+                            placeholder="Nama lengkap sesuai kartu keluarga" class="{{ $kelasKontrol }}" />
+                    </div>
+
+                    <div>
+                        <label for="suksesi_nik_baru" class="{{ $kelasLabel }}">
+                            NIK Kepala Keluarga Baru<span class="text-error-500">*</span>
+                        </label>
+                        <input type="text" inputmode="numeric" id="suksesi_nik_baru" name="nik_baru" required
+                            minlength="16" maxlength="16" pattern="[0-9]{16}"
+                            placeholder="16 digit angka" class="{{ $kelasKontrol }} tabular-nums" />
+                    </div>
+
+                    <div>
+                        <label for="suksesi_hubungan" class="{{ $kelasLabel }}">
+                            Hubungan dengan Kepala Keluarga Lama<span class="text-error-500">*</span>
+                        </label>
+                        <select id="suksesi_hubungan" name="hubungan_pengganti" required class="{{ $kelasKontrol }}">
+                            <option value="">Pilih hubungan</option>
+                            @foreach (\App\Enums\HubunganKeluarga::opsi() as $nilai => $label)
+                                <option value="{{ $nilai }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    {{--
+                        Nomor KK terisi nilai lama dan dapat disunting. Dukcapil
+                        menerbitkan KK baru ketika kepala keluarganya berganti,
+                        tetapi tidak selalu sudah terbit saat pendataan
+                        (rules.md 6.5c).
+                    --}}
+                    <div>
+                        <label for="suksesi_no_kk_baru" class="{{ $kelasLabel }}">
+                            Nomor KK Baru<span class="text-error-500">*</span>
+                        </label>
+                        <input type="text" inputmode="numeric" id="suksesi_no_kk_baru" name="no_kk_baru" required
+                            value="{{ $data['no_kk'] }}" minlength="16" maxlength="16" pattern="[0-9]{16}"
+                            class="{{ $kelasKontrol }} tabular-nums" />
+                        <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                            Biarkan seperti semula bila KK baru belum terbit.
+                        </p>
+                    </div>
+
+                    <div>
+                        <label for="suksesi_tanggal" class="{{ $kelasLabel }}">
+                            Tanggal Pergantian<span class="text-error-500">*</span>
+                        </label>
+                        <input type="date" id="suksesi_tanggal" name="tanggal_pergantian" required
+                            value="{{ date('Y-m-d') }}" max="{{ date('Y-m-d') }}" class="{{ $kelasKontrol }}" />
+                    </div>
+
+                    <div>
+                        <label for="suksesi_alasan" class="{{ $kelasLabel }}">
+                            Sebab Pergantian<span class="text-error-500">*</span>
+                        </label>
+                        <select id="suksesi_alasan" name="alasan" required class="{{ $kelasKontrol }}">
+                            <option value="">Pilih sebab</option>
+                            @foreach (\App\Enums\AlasanPergantianKK::opsi() as $nilai => $label)
+                                <option value="{{ $nilai }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                {{--
+                    JABATAN KETUA POKTAN TIDAK DIWARISKAN.
+
+                    Tanpa blok ini, menyunting baris transmigran akan membuat
+                    kepala keluarga baru menjadi ketua poktan tanpa seorang pun
+                    memutuskan, padahal ketua dipilih anggota. Karena itu
+                    petugas WAJIB memilih, bukan sekadar diberi tahu
+                    (rules.md 6 poin 5e).
+                --}}
+                @if (! empty($poktanDiketuai))
+                    <div class="rounded-lg border border-warning-200 bg-warning-50 p-4 dark:border-warning-500/30 dark:bg-warning-500/10">
+                        <p class="text-theme-sm font-medium text-warning-800 dark:text-warning-300">
+                            Keluarga ini menjabat ketua kelompok tani
+                        </p>
+                        <p class="mt-1 text-theme-xs text-warning-700 dark:text-warning-200">
+                            {{ implode(', ', array_column($poktanDiketuai, 'nama')) }}.
+                            Jabatan ketua dipilih anggota dan tidak berpindah dengan sendirinya, sehingga
+                            nasibnya perlu ditetapkan sekarang.
+                        </p>
+
+                        <fieldset class="mt-3 space-y-2">
+                            <legend class="sr-only">Nasib jabatan ketua poktan</legend>
+                            <label class="flex items-start gap-2 text-theme-sm text-warning-800 dark:text-warning-200">
+                                <input type="radio" name="nasib_ketua_poktan" value="kosongkan" required
+                                    class="mt-0.5 h-4 w-4 border-gray-300 text-brand-500 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500" />
+                                <span>
+                                    Kosongkan jabatan ketua
+                                    <span class="block text-theme-xs opacity-80">
+                                        Kelompok memilih ketua baru, lalu petugas menetapkannya di halaman poktan.
+                                    </span>
+                                </span>
+                            </label>
+                            <label class="flex items-start gap-2 text-theme-sm text-warning-800 dark:text-warning-200">
+                                <input type="radio" name="nasib_ketua_poktan" value="teruskan" required
+                                    class="mt-0.5 h-4 w-4 border-gray-300 text-brand-500 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500" />
+                                <span>
+                                    Teruskan kepada kepala keluarga baru
+                                    <span class="block text-theme-xs opacity-80">
+                                        Dipakai bila kelompok memang sudah menyepakatinya.
+                                    </span>
+                                </span>
+                            </label>
+                        </fieldset>
+                    </div>
+                @endif
+
+                {{--
+                    KEANGGOTAAN POKTAN JUSTRU MENGIKUTI, dan itu benar: sejak
+                    2026-08-20 keanggotaan melekat pada keluarga, bukan pada
+                    kepala keluarganya (rules.md 7a poin 3a). Petugas cukup
+                    diberi tahu, tidak diminta memutuskan.
+                --}}
+                @if (! empty($keanggotaanIkut))
+                    <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+                        <p class="text-theme-xs text-gray-600 dark:text-gray-400">
+                            Keanggotaan pada
+                            <span class="font-medium text-gray-800 dark:text-white/90">{{ implode(', ', array_column($keanggotaanIkut, 'poktan')) }}</span>
+                            mengikuti kepala keluarga baru, sebab keanggotaan melekat pada keluarga.
+                            Bila yang mewakili keluarga ternyata orang lain, ubah wakilnya di halaman poktan.
+                        </p>
+                    </div>
+                @endif
+
+                <div>
+                    <label for="suksesi_keterangan" class="{{ $kelasLabel }}">Catatan</label>
+                    <textarea id="suksesi_keterangan" name="keterangan" rows="2" maxlength="500"
+                        placeholder="Contoh: akta kematian dan KK baru sudah diserahkan ke kantor SP."
+                        class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30"></textarea>
+                </div>
+
+                <p class="rounded-lg bg-gray-50 p-3.5 text-theme-xs text-gray-600 dark:bg-white/[0.03] dark:text-gray-400">
+                    Rumah, lahan, dan dokumen tetap melekat pada keluarga ini, sebab jatah transmigrasi
+                    diberikan kepada keluarga bukan kepada orangnya. Pergantian ini tercatat sebagai riwayat
+                    tersendiri dan tidak dapat dihapus.
+                </p>
+            </div>
+        </x-sim.modal-form>
+    @endif
 
     {{-- Modal ubah data, terisi nilai yang sedang berlaku --}}
     @if ($bolehUbah)

@@ -19,6 +19,23 @@
         $saprotan = array_values(array_filter(DummyData::saprotan(), fn ($s) => $s['poktan_id'] === $data['id_poktan']));
 
         $aktif = count(array_filter($anggota, fn ($a) => $a['status'] === 'Aktif'));
+
+        // Identitas ketua bercabang tiga jalur, dipusatkan pada satu helper agar
+        // tidak diulang di setiap tempat yang menampilkannya.
+        $ketua = DummyData::identitasWakil($data, 'ketua');
+        $keluargaKetua = DummyData::cariTransmigran($data['ketua_transmigran_id']);
+
+        // Luas lahan ketua diturunkan dari bidang milik keluarganya, kecuali bagi
+        // ketua non-transmigran yang lahannya tidak terdata sehingga diketik.
+        $lahanKetua = $ketua['asal']->dariKeluargaTransmigran()
+            ? DummyData::rekapLahanKeluarga($data['ketua_transmigran_id'])
+            : ['kering' => $data['luas_kering_ketua'] ?? 0, 'basah' => $data['luas_basah_ketua'] ?? 0];
+
+        // Luas lahan kelompok dijumlahkan dari seluruh anggotanya. Kolom
+        // `luas_lahan_kelompok` sudah dicabut sebab nilainya basi begitu luas
+        // dibetulkan di modul lahan (erd.md 7.3).
+        $luasKelompokKering = array_sum(array_column($anggota, 'luas_kering'));
+        $luasKelompokBasah = array_sum(array_column($anggota, 'luas_basah'));
     @endphp
 
     <x-sim.page-header :judul="$data['nama']"
@@ -56,17 +73,38 @@
                 <dl class="mt-5 space-y-3 border-t border-gray-200 pt-5 text-theme-sm dark:border-gray-800">
                     <div class="flex justify-between gap-3">
                         <dt class="text-gray-500 dark:text-gray-400">Ketua</dt>
-                        <dd class="text-right font-medium text-gray-800 dark:text-white/90">{{ $data['nama_ketua'] }}</dd>
+                        <dd class="text-right font-medium text-gray-800 dark:text-white/90">
+                            {{ $ketua['nama'] }}
+                            {{-- Asal-usul ketua ditulis apa adanya. Tanpa keterangan ini, ketua
+                                 yang bukan kepala keluarga terbaca seolah kepala keluarga. --}}
+                            @if (! $ketua['asal']->identitasDariRelasi())
+                                <span class="mt-0.5 block text-theme-xs font-normal text-gray-500 dark:text-gray-400">
+                                    {{ $ketua['asal']->label() }}@if ($data['hubungan_ketua']), {{ $data['hubungan_ketua'] }} dari {{ $keluargaKetua['nama_kepala_keluarga'] ?? '-' }}@endif
+                                </span>
+                            @endif
+                        </dd>
                     </div>
                     <div class="flex justify-between gap-3">
                         <dt class="text-gray-500 dark:text-gray-400">NIK ketua</dt>
                         <dd class="text-right font-medium tabular-nums text-gray-800 dark:text-white/90">
-                            {{ $data['nik_ketua'] }}</dd>
+                            {{ $ketua['nik'] }}</dd>
                     </div>
                     <div class="flex justify-between gap-3">
                         <dt class="text-gray-500 dark:text-gray-400">Telepon</dt>
                         <dd class="text-right font-medium tabular-nums text-gray-800 dark:text-white/90">
-                            {{ $data['telepon_ketua'] }}</dd>
+                            {{ $ketua['telepon'] ?? '-' }}</dd>
+                    </div>
+                    {{--
+                        Luas lahan ketua. Dua jalur pertama membacanya dari bidang milik
+                        keluarga; ketua non-transmigran memakai nilai yang diketik, sebab
+                        lahannya memang tidak terdata pada modul Lahan.
+                    --}}
+                    <div class="flex justify-between gap-3">
+                        <dt class="text-gray-500 dark:text-gray-400">Lahan usaha ketua</dt>
+                        <dd class="text-right font-medium tabular-nums text-gray-800 dark:text-white/90">
+                            {{ number_format($lahanKetua['kering'], 2, ',', '.') }} ha kering,
+                            {{ number_format($lahanKetua['basah'], 2, ',', '.') }} ha basah
+                        </dd>
                     </div>
                     <div class="flex justify-between gap-3">
                         <dt class="text-gray-500 dark:text-gray-400">Email</dt>
@@ -130,19 +168,36 @@
                         <x-sim.empty-state judul="Belum ada anggota terdata"
                             pesan="Daftar anggota kelompok tani ini akan tampil setelah didata." />
                     @else
-                        <x-sim.tabel-ringkas :kolom="['Nama', 'NIK', 'Jabatan', 'Tanggal Masuk', 'Status', 'Aksi']">
+                        <x-sim.tabel-ringkas
+                            :kolom="['Wakil Keluarga', 'NIK', 'Jabatan', 'Lahan Usaha (ha)', 'Tanggal Masuk', 'Status', 'Aksi']">
                             @foreach ($anggota as $a)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                                     <td class="px-5 py-3">
+                                        {{--
+                                            Tautan menuju KELUARGA yang diwakili, bukan orangnya:
+                                            wakil yang bukan kepala keluarga tidak punya halaman
+                                            rincian sendiri sebab sistem tidak mendata anggota
+                                            keluarga satu per satu.
+                                        --}}
                                         <a href="{{ route('transmigran.detail', $a['transmigran_id']) }}"
                                             class="rounded text-theme-sm text-gray-800 hover:text-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-white/90 dark:hover:text-brand-400">
                                             {{ $a['nama'] }}
                                         </a>
+                                        @if ($a['asal_wakil'] !== \App\Enums\AsalWakilPoktan::KepalaKeluarga->value)
+                                            <p class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                                                {{ $a['hubungan_dengan_kk'] }} dari
+                                                {{ \App\Support\DummyData::cariTransmigran($a['transmigran_id'])['nama_kepala_keluarga'] ?? '-' }}
+                                            </p>
+                                        @endif
                                     </td>
                                     <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
                                         {{ $a['nik'] }}</td>
                                     <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
                                         {{ $a['jabatan'] }}</td>
+                                    <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
+                                        {{ number_format($a['luas_kering'], 2, ',', '.') }} K /
+                                        {{ number_format($a['luas_basah'], 2, ',', '.') }} B
+                                    </td>
                                     <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
                                         {{ \Illuminate\Support\Carbon::parse($a['tanggal_masuk'])->translatedFormat('d M Y') }}
                                         @if ($a['tanggal_keluar'])
@@ -170,13 +225,30 @@
                                     </td>
                                 </tr>
                             @endforeach
+
+                            {{--
+                                Luas lahan kelompok dijumlahkan dari anggotanya, bukan disimpan
+                                sebagai kolom. Kolom `luas_lahan_kelompok` dicabut 2026-08-20
+                                sebab nilainya basi begitu luas dibetulkan di modul Lahan.
+                            --}}
+                            <tr class="motif-baris-total">
+                                <td colspan="3" class="px-5 py-3 text-theme-sm text-gray-700 dark:text-gray-300">
+                                    Total lahan usaha kelompok
+                                </td>
+                                <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
+                                    {{ number_format($luasKelompokKering, 2, ',', '.') }} K /
+                                    {{ number_format($luasKelompokBasah, 2, ',', '.') }} B
+                                </td>
+                                <td colspan="3"></td>
+                            </tr>
                         </x-sim.tabel-ringkas>
 
                         <p class="border-t border-gray-200 p-5 text-theme-xs text-gray-600 dark:border-gray-800 dark:text-gray-400">
-                            Anggota yang berhenti ditandai Sudah Keluar lewat tombol ubah, bukan dihapus,
-                            agar riwayat keanggotaan tetap utuh. Penyaluran saprotan hanya untuk anggota
-                            berstatus Aktif. Anggota yang pindah ke kelompok lain ditandai keluar di sini,
-                            lalu didaftarkan pada kelompok tujuannya.
+                            Keanggotaan melekat pada keluarga, bukan pada kepala keluarganya: yang terdaftar
+                            adalah orang yang benar-benar menggarap. Luas lahan dijumlahkan dari bidang milik
+                            keluarga tersebut, sehingga selalu mengikuti data lahan terbaru. Anggota yang
+                            berhenti ditandai Sudah Keluar lewat tombol ubah, bukan dihapus, agar riwayat
+                            keanggotaan tetap utuh. Penyaluran saprotan hanya untuk anggota berstatus Aktif.
                         </p>
                     @endif
                 </div>

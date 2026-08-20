@@ -9,7 +9,8 @@ use App\Enums\Concerns\PunyaLabel;
  *
  * Menggantikan nama lama `JenisLahan`. Istilah "peruntukan" dipakai karena
  * yang dibedakan adalah untuk apa bidang itu diberikan, bukan sifat fisiknya;
- * sifat fisik diwakili `KategoriLahan` (basah atau kering).
+ * sifat pengairannya dicatat terpisah sebagai komposisi luas kering dan basah
+ * pada kolom `luas_kering` dan `luas_basah` (agents/rules.md bagian 7.5).
  *
  * Sempat memuat `Lahan Usaha I` dan `Lahan Usaha II` pada 2026-08-18, atas
  * dugaan bahwa lahan usaha dibagikan bertahap. Dugaan itu **dibatalkan pada

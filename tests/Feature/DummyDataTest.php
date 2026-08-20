@@ -9,11 +9,13 @@
  */
 
 use App\Enums\BidangPengaduan;
+use App\Enums\CakupanData;
+use App\Enums\JenisDokumenLahan;
 use App\Enums\JenisInfrastruktur;
-use App\Enums\PeruntukanLahan;
 use App\Enums\KategoriPengaduan;
 use App\Enums\Kondisi;
 use App\Enums\KondisiRumah;
+use App\Enums\PeruntukanLahan;
 use App\Enums\PrioritasPengaduan;
 use App\Enums\StatusHunian;
 use App\Enums\StatusPengaduan;
@@ -156,12 +158,13 @@ it('memberi tiap keluarga paling banyak satu pekarangan dan satu lahan usaha', f
 
     foreach (DummyData::lahan() as $lahan) {
         $kunci = PeruntukanLahan::from($lahan['peruntukan_lahan'])->lahanUsaha() ? 'usaha' : 'pekarangan';
-        $perKeluarga[$lahan['pemilik']][$kunci] = ($perKeluarga[$lahan['pemilik']][$kunci] ?? 0) + 1;
+        $id = $lahan['transmigran_id'];
+        $perKeluarga[$id][$kunci] = ($perKeluarga[$id][$kunci] ?? 0) + 1;
     }
 
-    foreach ($perKeluarga as $pemilik => $jumlah) {
-        expect($jumlah['pekarangan'] ?? 0)->toBeLessThanOrEqual(1, "{$pemilik} punya lebih dari satu pekarangan");
-        expect($jumlah['usaha'] ?? 0)->toBeLessThanOrEqual(1, "{$pemilik} punya lebih dari satu lahan usaha");
+    foreach ($perKeluarga as $id => $jumlah) {
+        expect($jumlah['pekarangan'] ?? 0)->toBeLessThanOrEqual(1, "transmigran {$id} punya lebih dari satu pekarangan");
+        expect($jumlah['usaha'] ?? 0)->toBeLessThanOrEqual(1, "transmigran {$id} punya lebih dari satu lahan usaha");
     }
 });
 
@@ -180,38 +183,71 @@ it('mencatat kedua peruntukan lahan pada data contoh', function () {
     expect(PeruntukanLahan::cases())->toHaveCount(2);
 });
 
-it('mengisi kategori lahan hanya untuk lahan usaha', function () {
+it('memecah luas lahan usaha menjadi bagian kering dan basah', function () {
+    // Aturan rules.md 7.5: keduanya KOMPOSISI, bukan kategori. Jumlahnya wajib
+    // sama dengan luas bidang, dan hanya lahan usaha yang memilikinya.
     foreach (DummyData::lahan() as $lahan) {
         $peruntukan = PeruntukanLahan::from($lahan['peruntukan_lahan']);
+        $kode = $lahan['kode_lahan'];
 
-        if ($peruntukan->lahanUsaha()) {
-            expect($lahan['kategori_lahan'])->not->toBeNull();
-        } else {
-            expect($lahan['kategori_lahan'])->toBeNull();
+        if (! $peruntukan->lahanUsaha()) {
+            expect($lahan['luas_kering'])->toBeNull("{$kode} pekarangan tidak boleh berkomposisi");
+            expect($lahan['luas_basah'])->toBeNull("{$kode} pekarangan tidak boleh berkomposisi");
+
+            continue;
         }
+
+        expect($lahan['luas_kering'])->not->toBeNull("{$kode} lahan usaha wajib berkomposisi");
+        expect($lahan['luas_basah'])->not->toBeNull("{$kode} lahan usaha wajib berkomposisi");
+
+        // Dibandingkan sebagai nilai berpembulatan dua angka, sesuai
+        // DECIMAL(12,2) pada kamus data. Membandingkan float mentah akan
+        // memerah karena ekor pecahan biner, bukan karena datanya salah.
+        expect(round($lahan['luas_kering'] + $lahan['luas_basah'], 2))
+            ->toBe(round($lahan['luas'], 2), "{$kode} komposisinya tidak berjumlah luas bidang");
     }
 });
 
-it('tidak memakai HPL maupun SHM sebagai status hak perorangan', function () {
-    // HPL adalah Hak Pengelolaan milik instansi atas tanah kawasan, sehingga
-    // tidak pernah menjadi hak seorang transmigran. SHM adalah nama
-    // sertifikatnya, bukan nama haknya. Keduanya kini menjadi jenis dokumen.
-    expect(array_column(App\Enums\StatusHakLahan::cases(), 'value'))
-        ->not->toContain('HPL')
-        ->not->toContain('SHM');
+it('menyediakan satu bidang berkomposisi campuran pada data contoh', function () {
+    // Bidang campuran adalah SELURUH ALASAN kolom ini dipecah. Tanpa satu pun
+    // contohnya, tampilan komposisi tidak pernah teruji pada keadaan yang
+    // membedakannya dari kolom enum lama, dan tidak ada yang akan menyadari
+    // bila penjumlahannya keliru.
+    $campuran = array_filter(
+        DummyData::lahan(),
+        fn ($l) => (float) ($l['luas_kering'] ?? 0) > 0 && (float) ($l['luas_basah'] ?? 0) > 0
+    );
+
+    expect($campuran)->not->toBeEmpty('data contoh wajib memuat bidang kering sekaligus basah');
+});
+
+it('mempersempit jenis dokumen lahan menjadi HPL dan SHM', function () {
+    // Dipersempit 2026-08-20 atas keputusan pemilik proyek: pendataan di
+    // Kobalima Timur hanya mengenal kedua berkas ini.
+    $dokumen = array_column(JenisDokumenLahan::cases(), 'value');
+
+    expect($dokumen)->toBe(['HPL', 'SHM']);
+
+    // Status hak atas tanah dicabut seluruhnya pada tanggal yang sama. Enumnya
+    // ikut dihapus, sehingga HPL dan SHM tidak mungkin lagi dipakai sebagai
+    // status hak perorangan - kekeliruan yang diperbaiki 2026-08-18.
+    expect(enum_exists('App\Enums\StatusHakLahan'))->toBeFalse();
 
     foreach (DummyData::lahan() as $lahan) {
-        expect($lahan['status_hak'])->not->toBe('HPL');
-        expect($lahan['status_hak'])->not->toBe('SHM');
+        expect($lahan)->not->toHaveKey('status_hak');
     }
+});
 
-    // Sebaliknya, keduanya WAJIB tetap ada sebagai jenis dokumen: SHM sebagai
-    // bukti hak milik, HPL sebagai rujukan asal tanah kawasan.
-    $dokumen = array_column(App\Enums\JenisDokumenLahan::cases(), 'value');
+it('menautkan lahan ke pemiliknya lewat id, bukan nama', function () {
+    // Dua kepala keluarga dapat bernama sama. Pencocokan nama akan menautkan
+    // bidang ke profil orang yang keliru tanpa ada yang menyadarinya.
+    $idTransmigran = array_column(DummyData::transmigran(), 'id_transmigran');
 
-    expect($dokumen)->toContain('SHM')->toContain('HPL')
-        // Sandaran legalitas sebelum sertifikat terbit.
-        ->toContain('Surat Keterangan Pembagian Tanah');
+    foreach (DummyData::lahan() as $lahan) {
+        expect($lahan)->toHaveKey('transmigran_id');
+        expect(in_array($lahan['transmigran_id'], $idTransmigran, true))
+            ->toBeTrue("{$lahan['kode_lahan']} menunjuk transmigran yang tidak ada");
+    }
 });
 
 it('memakai NIK dan nomor KK sepanjang 16 digit', function () {
@@ -334,7 +370,7 @@ it('menyediakan akun contoh beserta role dan cakupan datanya', function () {
 
     expect($pengguna)->toHaveKeys(['id_user', 'nama', 'username', 'email', 'role'])
         ->and($pengguna['role'])->toHaveKeys(['nama', 'cakupan_data'])
-        ->and(App\Enums\CakupanData::tryFrom($pengguna['role']['cakupan_data']))->not->toBeNull();
+        ->and(CakupanData::tryFrom($pengguna['role']['cakupan_data']))->not->toBeNull();
 });
 
 it('memakai username berhuruf kecil sesuai aturan kredensial', function () {

@@ -6,12 +6,20 @@
     beserta satu lahan usaha, dan keduanya dicatat sebagai baris tersendiri
     agar luas, koordinat, dan dokumennya tidak tercampur.
 
-    Aturan khusus modul ini: kategori lahan, pola tanam, peralatan, dan kendala
-    HANYA relevan bila peruntukannya lahan usaha. Untuk lahan pekarangan
-    keempatnya dibiarkan kosong (agents/data-dictionary.md bagian 7.1).
+    Aturan khusus modul ini: komposisi luas kering/basah, pola tanam,
+    peralatan, dan kendala HANYA relevan bila peruntukannya lahan usaha. Untuk
+    lahan pekarangan keempatnya dibiarkan kosong (agents/data-dictionary.md
+    bagian 7.1).
 
     Karena itu keempat isian disembunyikan lewat Alpine ketika peruntukannya
     lahan pekarangan, agar operator tidak mengisi kolom yang tidak berlaku.
+
+    LUAS LAHAN USAHA DIHITUNG, BUKAN DIKETIK. Aturan `luas_kering + luas_basah
+    = luas` (rules.md 7.5) ditegakkan dengan cara menurunkan totalnya dari
+    kedua bagian, bukan dengan memvalidasi tiga angka yang diketik terpisah.
+    Petugas karena itu tidak dapat memasukkan angka yang jumlahnya keliru, dan
+    tidak ada pesan galat yang perlu ditulis. Lahan pekarangan tidak memiliki
+    komposisi, sehingga luasnya diketik langsung.
 
     Nama kolom mengikuti agents/data-dictionary.md bagian 7.1.
 --}}
@@ -36,8 +44,19 @@
     x-data="{
         peruntukan: @js($data['peruntukan_lahan'] ?? PeruntukanLahan::LahanPekarangan->value),
         nilaiLahanUsaha: @js($nilaiLahanUsaha),
+        kering: @js($data['luas_kering'] ?? ''),
+        basah: @js($data['luas_basah'] ?? ''),
         get lahanUsaha() {
             return this.nilaiLahanUsaha.includes(this.peruntukan);
+        },
+        {{--
+            Total lahan usaha selalu jumlah kedua bagiannya. Dibulatkan dua
+            angka di belakang koma mengikuti DECIMAL(12,2) pada kamus data,
+            sebab penjumlahan pecahan biner dapat menghasilkan ekor panjang
+            seperti 1.9500000000000002 dan angka itu akan ikut terkirim.
+        --}}
+        get totalUsaha() {
+            return Math.round(((Number(this.kering) || 0) + (Number(this.basah) || 0)) * 100) / 100;
         },
     }">
     {{-- Bagian 1: identitas bidang --}}
@@ -79,65 +98,24 @@
                 </p>
             </div>
 
-            <div>
+            {{--
+                Luas lahan pekarangan: diketik langsung, sebab pekarangan
+                tidak memiliki komposisi kering dan basah.
+            --}}
+            <div x-show="! lahanUsaha">
                 <label for="{{ $awalan }}_luas" class="{{ $kelasLabel }}">
                     Luas Lahan<span class="text-error-500">*</span>
                 </label>
                 <div class="relative">
                     <input type="number" id="{{ $awalan }}_luas" name="luas"
-                        value="{{ old('luas', $data['luas'] ?? '') }}" required min="0.01" step="0.01"
-                        placeholder="1.50" class="{{ $kelasKontrol }} tabular-nums pr-12" />
+                        value="{{ old('luas', $data['luas'] ?? '') }}" min="0.01" step="0.01"
+                        :required="! lahanUsaha" :disabled="lahanUsaha"
+                        placeholder="0.25" class="{{ $kelasKontrol }} tabular-nums pr-12" />
                     <span
                         class="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-theme-sm text-gray-500 dark:text-gray-400">
                         ha
                     </span>
                 </div>
-            </div>
-
-            {{--
-                Status HAK, bukan status kepemilikan.
-
-                Isian ini sempat memuat nilai HPL dan SHM, dan keduanya keliru:
-                HPL adalah Hak Pengelolaan milik instansi atas tanah kawasan,
-                sehingga tidak pernah menjadi hak seorang transmigran; SHM
-                adalah nama sertifikatnya, bukan nama haknya. Keduanya kini
-                menjadi jenis dokumen, bukan status hak.
-            --}}
-            <div>
-                <label for="{{ $awalan }}_status_hak" class="{{ $kelasLabel }}">Status Hak Atas Tanah</label>
-                <select id="{{ $awalan }}_status_hak" name="status_hak" class="{{ $kelasKontrol }}">
-                    <option value="">Pilih status hak</option>
-                    @foreach (\App\Enums\StatusHakLahan::opsi() as $nilai => $label)
-                        <option value="{{ $nilai }}"
-                            @selected(old('status_hak', $data['status_hak'] ?? '') === $nilai)>
-                            {{ $label }}
-                        </option>
-                    @endforeach
-                </select>
-                <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
-                    Bidang yang sertifikatnya belum terbit diisi Belum Bersertifikat.
-                </p>
-            </div>
-
-            {{--
-                Kategori hanya berlaku untuk lahan usaha, dan wajib bila
-                berlaku. Bintang statis, `required` mengikuti peruntukan
-                agar isian yang tersembunyi tidak menghalangi pengiriman.
-            --}}
-            <div x-show="lahanUsaha" x-cloak>
-                <label for="{{ $awalan }}_kategori_lahan" class="{{ $kelasLabel }}">
-                    Kategori Lahan<span class="text-error-500">*</span>
-                </label>
-                <select id="{{ $awalan }}_kategori_lahan" name="kategori_lahan" class="{{ $kelasKontrol }}"
-                    :required="lahanUsaha">
-                    <option value="">Pilih kategori</option>
-                    @foreach (\App\Enums\KategoriLahan::opsi() as $nilai => $label)
-                        <option value="{{ $nilai }}"
-                            @selected(old('kategori_lahan', $data['kategori_lahan'] ?? '') === $nilai)>
-                            {{ $label }}
-                        </option>
-                    @endforeach
-                </select>
             </div>
 
             <div class="sm:col-span-2">
@@ -165,7 +143,70 @@
         <p class="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
             Bagian ini hanya berlaku untuk lahan usaha, tidak untuk lahan pekarangan.
         </p>
-        <div class="mt-3 grid gap-4 sm:grid-cols-2">
+
+        {{--
+            Komposisi luas. Satu bidang boleh digarap sebagian kering dan
+            sebagian basah sekaligus, sehingga keduanya isian angka, bukan
+            pilihan salah satu. Bidang yang seluruhnya kering diisi 0 pada
+            bagian basah, bukan dikosongkan (rules.md 7.5b).
+
+            Total tidak dapat disunting: ia bacaan, bukan isian. Nilainya
+            dikirim lewat isian ber-`name` berkelas `sr-only`, BUKAN
+            `type="hidden"`, mengikuti keputusan yang sama pada komponen
+            pilih-cari (ui-spec.md 6.0a): peramban mengabaikan `required`
+            pada isian tersembunyi, sehingga form akan terkirim tanpa
+            peringatan meski isiannya kosong.
+        --}}
+        <div class="mt-3 grid gap-4 sm:grid-cols-3">
+            <div>
+                <label for="{{ $awalan }}_luas_kering" class="{{ $kelasLabel }}">
+                    Luas Lahan Kering<span class="text-error-500">*</span>
+                </label>
+                <div class="relative">
+                    <input type="number" id="{{ $awalan }}_luas_kering" name="luas_kering"
+                        x-model="kering" min="0" step="0.01"
+                        :required="lahanUsaha" :disabled="! lahanUsaha"
+                        placeholder="1.25" class="{{ $kelasKontrol }} tabular-nums pr-12" />
+                    <span
+                        class="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-theme-sm text-gray-500 dark:text-gray-400">
+                        ha
+                    </span>
+                </div>
+            </div>
+
+            <div>
+                <label for="{{ $awalan }}_luas_basah" class="{{ $kelasLabel }}">
+                    Luas Lahan Basah<span class="text-error-500">*</span>
+                </label>
+                <div class="relative">
+                    <input type="number" id="{{ $awalan }}_luas_basah" name="luas_basah"
+                        x-model="basah" min="0" step="0.01"
+                        :required="lahanUsaha" :disabled="! lahanUsaha"
+                        placeholder="0.75" class="{{ $kelasKontrol }} tabular-nums pr-12" />
+                    <span
+                        class="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-theme-sm text-gray-500 dark:text-gray-400">
+                        ha
+                    </span>
+                </div>
+            </div>
+
+            <div>
+                <span class="{{ $kelasLabel }}">Total Luas Bidang</span>
+                <div
+                    class="flex h-11 items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-4 dark:border-gray-800 dark:bg-white/[0.03]">
+                    <span class="text-theme-sm font-medium tabular-nums text-gray-800 dark:text-white/90"
+                        x-text="totalUsaha.toFixed(2)">0.00</span>
+                    <span class="text-theme-sm text-gray-500 dark:text-gray-400">ha</span>
+                </div>
+                <input type="number" name="luas" class="sr-only" tabindex="-1" aria-hidden="true"
+                    :value="totalUsaha" :disabled="! lahanUsaha" />
+                <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                    Dihitung dari kedua bagian di atas.
+                </p>
+            </div>
+        </div>
+
+        <div class="mt-4 grid gap-4 sm:grid-cols-2">
             <div class="sm:col-span-2">
                 <label for="{{ $awalan }}_pola_tanam" class="{{ $kelasLabel }}">Pola Tanam</label>
                 <input type="text" id="{{ $awalan }}_pola_tanam" name="pola_tanam"
@@ -207,9 +248,15 @@
         bidang memiliki lebih dari satu dokumen.
 
         Dokumen pertama karena itu dipindah ke sini, sedangkan tab pada halaman
-        rincian tetap ada untuk dokumen kedua dan seterusnya. Ketiga isian
-        keterangan dokumen dipertahankan sebab nomor sertifikat adalah data
-        legal yang harus dapat dicari, bukan sekadar lampiran.
+        rincian tetap ada untuk dokumen kedua dan seterusnya.
+
+        NOMOR DOKUMEN DAN TANGGAL TERBIT DICABUT 2026-08-20 atas keputusan
+        pemilik proyek, bersama isian status hak atas tanah. Keduanya sempat
+        dipertahankan dengan alasan nomor sertifikat adalah data legal yang
+        harus dapat dicari; alasan itu tidak salah, tetapi pendataan di
+        lapangan tidak sampai ke sana. Kolomnya tetap ada pada tabel
+        `dokumen_lahan` sehingga isian ini dapat dikembalikan tanpa mengubah
+        skema bila dinas kelak memerlukannya.
     --}}
     <section class="border-t border-gray-200 pt-5 dark:border-gray-800">
         <h3 class="{{ $kelasBagian }}">Dokumen Status Lahan</h3>
@@ -217,13 +264,11 @@
             Dokumen tambahan untuk bidang yang sama diunggah lewat tab Dokumen pada halaman rincian.
         </p>
         {{--
-            Tiga keterangan dokumen berjajar, sedangkan area unggah berdiri
-            sendiri di baris penuh.
-
-            Menaruh area unggah di dalam grid berpasangan membuat kolom
-            sebelahnya menyisakan ruang kosong besar, sebab tingginya jauh
-            melebihi isian teks biasa. Tiga belas form lain di sistem ini sudah
-            menempatkannya di baris penuh dengan alasan yang sama.
+            Jenis dokumen berdiri sendiri di kolom sempit, area unggah di
+            baris penuh. Menaruh area unggah berpasangan dalam grid membuat
+            kolom sebelahnya menyisakan ruang kosong besar, sebab tingginya
+            jauh melebihi isian teks biasa. Tiga belas form lain di sistem ini
+            sudah menempatkannya di baris penuh dengan alasan yang sama.
         --}}
         <div class="mt-3 grid gap-4 sm:grid-cols-3">
             <div>
@@ -237,20 +282,6 @@
                         </option>
                     @endforeach
                 </select>
-            </div>
-
-            <div>
-                <label for="{{ $awalan }}_nomor_dokumen" class="{{ $kelasLabel }}">Nomor Dokumen</label>
-                <input type="text" id="{{ $awalan }}_nomor_dokumen" name="nomor_dokumen"
-                    value="{{ old('nomor_dokumen', $data['nomor_dokumen'] ?? '') }}" maxlength="100"
-                    placeholder="Contoh: SHM/MLK/2021/0871" class="{{ $kelasKontrol }}" />
-            </div>
-
-            <div>
-                <label for="{{ $awalan }}_tanggal_terbit" class="{{ $kelasLabel }}">Tanggal Terbit</label>
-                <input type="date" id="{{ $awalan }}_tanggal_terbit" name="tanggal_terbit"
-                    value="{{ old('tanggal_terbit', $data['tanggal_terbit'] ?? '') }}" max="{{ date('Y-m-d') }}"
-                    class="{{ $kelasKontrol }}" />
             </div>
         </div>
 

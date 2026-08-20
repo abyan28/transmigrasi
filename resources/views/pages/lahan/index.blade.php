@@ -36,7 +36,16 @@
                 return false;
             }
 
-            if ($filterKategori && ($l['kategori_lahan'] ?? null) !== $filterKategori) {
+            // Kering dan basah adalah KOMPOSISI, bukan kategori bidang, sehingga
+            // penyaringnya menanyakan "punya bagian basah?" bukan "seluruhnya
+            // basah?". Bidang campuran 1,25 ha kering + 0,75 ha basah wajib
+            // muncul pada kedua penyaring, dan itu memang maksudnya
+            // (agents/rules.md 7.5c).
+            if ($filterKategori === 'kering' && (float) ($l['luas_kering'] ?? 0) <= 0) {
+                return false;
+            }
+
+            if ($filterKategori === 'basah' && (float) ($l['luas_basah'] ?? 0) <= 0) {
                 return false;
             }
 
@@ -50,8 +59,15 @@
         // boleh lagi mencocokkan satu nilai teks. Daftar tahapnya dibaca dari enum
         // agar penambahan tahap berikutnya tidak melewatkan halaman ini.
         $nilaiLahanUsaha = \App\Enums\PeruntukanLahan::nilaiLahanUsaha();
+        $bidangUsaha = array_filter($semua, fn ($l) => in_array($l['peruntukan_lahan'], $nilaiLahanUsaha, true));
         $luasPekarangan = array_sum(array_column(array_filter($semua, fn ($l) => ! in_array($l['peruntukan_lahan'], $nilaiLahanUsaha, true)), 'luas'));
-        $luasUsaha = array_sum(array_column(array_filter($semua, fn ($l) => in_array($l['peruntukan_lahan'], $nilaiLahanUsaha, true)), 'luas'));
+        $luasUsaha = array_sum(array_column($bidangUsaha, 'luas'));
+
+        // Komposisi dijumlahkan dari kolomnya, bukan dari kategori bidang.
+        // Hanya lahan usaha yang memilikinya; pekarangan bernilai null dan
+        // tidak boleh ikut terjumlah.
+        $luasKering = array_sum(array_column($bidangUsaha, 'luas_kering'));
+        $luasBasah = array_sum(array_column($bidangUsaha, 'luas_basah'));
 
         $bolehTambah = true;
         $bolehUbah = true;
@@ -89,13 +105,23 @@
         </x-slot:aksi>
     </x-sim.page-header>
 
-    <div class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    {{--
+        Empat kartu: dua peruntukan, lalu dua komposisi lahan usaha.
+
+        Kering dan basah sengaja diberi label "Lahan Usaha" agar tidak terbaca
+        sebagai bagian dari total seluruh lahan. Jumlah keduanya sama dengan
+        Luas Lahan Usaha, bukan dengan Total Luas, sebab pekarangan memang
+        tidak memiliki komposisi.
+    --}}
+    <div class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <x-sim.stat-card label="Total Bidang Lahan" :nilai="number_format(count($semua), 0, ',', '.')" satuan="bidang" />
-        <x-sim.stat-card label="Total Luas"
-            :nilai="number_format(array_sum(array_column($semua, 'luas')), 2, ',', '.')" satuan="ha" />
         <x-sim.stat-card label="Luas Lahan Usaha" :nilai="number_format($luasUsaha, 2, ',', '.')" satuan="ha" />
         <x-sim.stat-card label="Luas Lahan Pekarangan" :nilai="number_format($luasPekarangan, 2, ',', '.')"
             satuan="ha" />
+        <x-sim.stat-card label="Lahan Usaha Kering" :nilai="number_format($luasKering, 2, ',', '.')" satuan="ha" />
+        <x-sim.stat-card label="Lahan Usaha Basah" :nilai="number_format($luasBasah, 2, ',', '.')" satuan="ha" />
+        <x-sim.stat-card label="Total Luas"
+            :nilai="number_format(array_sum(array_column($semua, 'luas')), 2, ',', '.')" satuan="ha" />
     </div>
 
     <form method="GET" action="{{ route('lahan.index') }}">
@@ -134,17 +160,24 @@
                         </select>
                     </div>
 
+                    {{--
+                        Menyaring bidang yang MEMILIKI bagian kering atau
+                        basah, bukan yang seluruhnya demikian. Bidang campuran
+                        muncul pada kedua pilihan. Nilainya sengaja `kering`
+                        dan `basah`, bukan nama enum lama, agar tautan lama
+                        yang masih membawa `?kategori_lahan=Lahan Basah` tidak
+                        diam-diam cocok dan menyaring keliru.
+                    --}}
                     <div>
                         <label for="filter_kategori"
                             class="mb-1.5 block text-theme-xs font-medium text-gray-700 dark:text-gray-400">
-                            Kategori Lahan
+                            Komposisi Lahan
                         </label>
                         <select id="filter_kategori" name="kategori_lahan"
                             class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
-                            <option value="">Semua kategori</option>
-                            @foreach (\App\Enums\KategoriLahan::opsi() as $nilai => $label)
-                                <option value="{{ $nilai }}" @selected($filterKategori === $nilai)>{{ $label }}</option>
-                            @endforeach
+                            <option value="">Semua komposisi</option>
+                            <option value="kering" @selected($filterKategori === 'kering')>Ada lahan kering</option>
+                            <option value="basah" @selected($filterKategori === 'basah')>Ada lahan basah</option>
                         </select>
                     </div>
 
@@ -190,7 +223,7 @@
                 <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Kode</th>
                 <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Pemilik</th>
                 <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Jenis</th>
-                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Kategori</th>
+                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Komposisi</th>
                 <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Luas (ha)</th>
                 <th scope="col" class="px-5 py-3 text-right text-theme-xs font-medium text-gray-500 dark:text-gray-400">
                     Aksi
@@ -210,8 +243,18 @@
                     </td>
                     <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ $l['pemilik'] }}</td>
                     <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ $l['peruntukan_lahan'] }}</td>
-                    <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
-                        {{ $l['kategori_lahan'] ?? '-' }}
+                    {{--
+                        Ditulis "1,25 K / 0,75 B" agar bidang campuran terbaca
+                        sebagai satu bidang berkomposisi, bukan sebagai dua
+                        baris. Pekarangan tidak memiliki komposisi.
+                    --}}
+                    <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
+                        @if ($l['luas_kering'] === null && $l['luas_basah'] === null)
+                            -
+                        @else
+                            {{ number_format($l['luas_kering'] ?? 0, 2, ',', '.') }} K /
+                            {{ number_format($l['luas_basah'] ?? 0, 2, ',', '.') }} B
+                        @endif
                     </td>
                     <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
                         {{ number_format($l['luas'], 2, ',', '.') }}
@@ -296,7 +339,10 @@
                             </span>
                         </div>
                         <p class="mt-2 text-theme-xs text-gray-500 dark:text-gray-400">
-                            {{ $l['peruntukan_lahan'] }}{{ $l['kategori_lahan'] ? ' , ' . $l['kategori_lahan'] : '' }}
+                            {{ $l['peruntukan_lahan'] }}@if ($l['luas_kering'] !== null || $l['luas_basah'] !== null)
+                                &middot; {{ number_format($l['luas_kering'] ?? 0, 2, ',', '.') }} ha kering,
+                                {{ number_format($l['luas_basah'] ?? 0, 2, ',', '.') }} ha basah
+                            @endif
                         </p>
                     </div>
                 @endforeach

@@ -1,12 +1,26 @@
 {{--
     Isian profil kelompok tani.
 
-    Ketua poktan TIDAK selalu transmigran. Di lapangan banyak poktan diketuai
-    penduduk setempat yang bukan peserta program, sehingga membatasi pilihan
-    pada daftar transmigran membuat poktan semacam itu tidak dapat didata
-    sama sekali. Karena itu isian ini bercabang lebih dulu: bila ketua berasal
-    dari transmigran, ia dipilih dari daftar agar NIK dan tautan profilnya
-    tetap sahih; bila bukan, nama dan NIK diketik langsung.
+    KETUA PUNYA TIGA ASAL-USUL, bukan dua (rules.md 7a poin 2a):
+
+      1. Kepala keluarga  - dipilih dari daftar; nama, NIK, dan telepon dibaca
+                            lewat relasi agar tidak ada dua versi data.
+      2. Anggota keluarga - keluarganya dipilih dari daftar, tetapi nama, NIK,
+                            dan hubungannya WAJIB diketik. Sistem tidak mendata
+                            anggota keluarga satu per satu (erd.md 7.4),
+                            sehingga tidak ada relasi yang dapat dibaca.
+      3. Bukan transmigran - penduduk setempat. Nama, NIK, dan luas lahannya
+                            diketik seluruhnya.
+
+    Membatasi pilihan pada daftar transmigran membuat poktan berketua penduduk
+    setempat tidak dapat didata sama sekali, sedangkan membatasinya pada kepala
+    keluarga membuat poktan berketua istri atau anak tidak dapat didata dengan
+    benar. Sebelum 2026-08-20 percabangannya boolean, dan hanya sanggup
+    membedakan dua keadaan pertama dari yang ketiga.
+
+    LUAS LAHAN DAN KOORDINAT DITURUNKAN, TIDAK DIKETIK - kecuali jalur ketiga.
+    Keduanya dijumlahkan dari bidang milik keluarga yang bersangkutan, sehingga
+    tidak pernah basi ketika petugas membetulkan luas di modul lahan.
 
     Kontak yang disimpan adalah kontak KETUA, bukan kontak kelompok. Penamaan
     kolomnya menyesuaikan data contoh dan halaman rincian yang sejak awal
@@ -15,6 +29,8 @@
     Nama kolom mengikuti agents/data-dictionary.md bagian 8.1.
 --}}
 @php
+    use App\Enums\AsalWakilPoktan;
+    use App\Enums\HubunganKeluarga;
     use App\Support\DummyData;
 
     $awalan = $awalan ?? 'tambah';
@@ -27,13 +43,18 @@
     $daftarSp = DummyData::satuanPermukiman();
     $daftarTransmigran = DummyData::transmigran();
 
-    // Peta id transmigran ke teleponnya, dipakai mengisi kontak ketua secara
-    // otomatis di sisi klien. Disusun di sini agar tidak ada permintaan
-    // tambahan ke peladen hanya untuk membaca satu nomor.
+    // Peta id keluarga ke telepon dan rekap lahannya, dipakai mengisi kontak
+    // serta luas ketua secara otomatis di sisi klien. Disusun di sini agar
+    // tidak ada permintaan tambahan ke peladen hanya untuk membaca satu nomor.
     $kontakTransmigran = [];
+    $lahanTransmigran = [];
     foreach ($daftarTransmigran as $t) {
-        $kontakTransmigran[(string) $t['id_transmigran']] = $t['telepon'] ?? '';
+        $kunci = (string) $t['id_transmigran'];
+        $kontakTransmigran[$kunci] = $t['telepon'] ?? '';
+        $lahanTransmigran[$kunci] = DummyData::rekapLahanKeluarga($t['id_transmigran']);
     }
+
+    $asalKetua = old('asal_ketua', $data['asal_ketua'] ?? AsalWakilPoktan::KepalaKeluarga->value);
 @endphp
 
 <div class="space-y-6">
@@ -70,22 +91,53 @@
     </section>
 
     <section x-data="{
-        dariTransmigran: {{ old('is_ketua_transmigran', $data['is_ketua_transmigran'] ?? true) ? 'true' : 'false' }},
+        asal: @js($asalKetua),
         ketuaId: '{{ old('ketua_transmigran_id', $data['ketua_transmigran_id'] ?? '') }}',
         telepon: @js(old('telepon_ketua', $data['telepon_ketua'] ?? '')),
         kontakTransmigran: @js($kontakTransmigran),
+        lahanTransmigran: @js($lahanTransmigran),
+
         {{--
-            Telepon terisi sendiri saat ketua dipilih dari daftar, tetapi tetap
-            dapat disunting. Petugas kerap memegang nomor yang lebih baru
+            Dua penurunan yang perlu dibedakan:
+
+            - `dariKeluarga` menentukan apakah luas lahan dan koordinat dapat
+              dibaca dari bidang milik keluarga. Berlaku bagi dua jalur pertama.
+            - `identitasDariRelasi` menentukan apakah nama dan NIK dapat dibaca
+              lewat relasi. Hanya berlaku bagi kepala keluarga, sebab anggota
+              keluarga tidak punya baris yang dapat dibaca.
+
+            Menyatukan keduanya menjadi satu penanda adalah kekeliruan yang
+            membuat jalur kedua mustahil dilayani.
+        --}}
+        get dariKeluarga() {
+            return this.asal !== @js(AsalWakilPoktan::BukanTransmigran->value);
+        },
+        get identitasDariRelasi() {
+            return this.asal === @js(AsalWakilPoktan::KepalaKeluarga->value);
+        },
+        get perluHubungan() {
+            return this.asal === @js(AsalWakilPoktan::AnggotaKeluarga->value);
+        },
+        get lahanKeluarga() {
+            return this.lahanTransmigran[this.ketuaId] ?? null;
+        },
+
+        {{--
+            Telepon terisi sendiri saat keluarga dipilih dari daftar, tetapi
+            tetap dapat disunting. Petugas kerap memegang nomor yang lebih baru
             daripada yang tercatat pada data transmigran, dan menguncinya akan
             memaksa mereka memperbaiki data transmigran lebih dulu hanya untuk
             menyimpan satu poktan.
+
+            Hanya diisi pada jalur kepala keluarga: nomor pada tabel transmigran
+            adalah nomor kepala keluarganya, bukan nomor anggota keluarga yang
+            mewakili.
 
             Email tidak ikut terisi sebab tabel transmigran memang tidak
             menyimpannya (data-dictionary.md 6.1).
         --}}
         isiKontak() {
-            if (! this.dariTransmigran || this.ketuaId === '') {
+            if (! this.identitasDariRelasi || this.ketuaId === '') {
                 return;
             }
             const kontak = this.kontakTransmigran[this.ketuaId];
@@ -97,28 +149,29 @@
         <h3 class="{{ $kelasBagian }}">Ketua Kelompok</h3>
 
         <fieldset class="mt-3">
-            <legend class="{{ $kelasLabel }}">Ketua berasal dari data transmigran?<span class="text-error-500">*</span></legend>
-            <div class="flex flex-wrap gap-4">
-                <label class="inline-flex items-center gap-2 text-theme-sm text-gray-700 dark:text-gray-300">
-                    <input type="radio" name="is_ketua_transmigran" value="1" required
-                        x-model.boolean="dariTransmigran"
-                        class="h-4 w-4 border-gray-300 text-brand-500 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700" />
-                    Ya, sudah terdata sebagai transmigran
-                </label>
-                <label class="inline-flex items-center gap-2 text-theme-sm text-gray-700 dark:text-gray-300">
-                    <input type="radio" name="is_ketua_transmigran" value="0" required
-                        x-model.boolean="dariTransmigran"
-                        class="h-4 w-4 border-gray-300 text-brand-500 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700" />
-                    Bukan, penduduk setempat
-                </label>
+            <legend class="{{ $kelasLabel }}">Ketua berasal dari<span class="text-error-500">*</span></legend>
+            <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-4">
+                @foreach (AsalWakilPoktan::cases() as $asal)
+                    <label class="inline-flex items-center gap-2 text-theme-sm text-gray-700 dark:text-gray-300">
+                        {{-- `required` ditulis sebelum `value`: uji penjaga isian wajib
+                             mencocokkan atribut sesudah `name`, dan sintaks panah pada
+                             `{{ $asal->value }}` memutus pencocokannya. --}}
+                        <input type="radio" name="asal_ketua" required value="{{ $asal->value }}"
+                            x-model="asal" @change="isiKontak()"
+                            class="h-4 w-4 border-gray-300 text-brand-500 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700" />
+                        {{ $asal->label() }}
+                    </label>
+                @endforeach
             </div>
             <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
-                Banyak poktan diketuai penduduk setempat yang bukan peserta program transmigrasi.
+                Ketua boleh anggota keluarga transmigran yang bukan kepala keluarga, misalnya bila
+                kepala keluarga merantau. Banyak pula poktan diketuai penduduk setempat yang bukan
+                peserta program.
             </p>
         </fieldset>
 
-        {{-- Jalur 1: ketua sudah terdata sebagai transmigran --}}
-        <div class="mt-4" x-show="dariTransmigran">
+        {{-- Keluarga yang diwakili. Terisi pada dua jalur pertama. --}}
+        <div class="mt-4" x-show="dariKeluarga">
             {{--
                 Memakai @change untuk menyalin nilai ke `ketuaId`, bukan
                 `x-model`. Komponen pencarian merender opsinya lewat `x-for`,
@@ -126,23 +179,30 @@
                 berubah, sehingga pilihan petugas hilang begitu ia mengetik di
                 kotak pencarian.
             --}}
-            <x-sim.pilih-cari nama="ketua_transmigran_id" label="Ketua" :wajib="true"
+            <x-sim.pilih-cari nama="ketua_transmigran_id" label="Keluarga Transmigran" :wajib="true"
                 :awalan="$awalan" :opsi="$daftarTransmigran" kunci="id_transmigran"
                 teks="nama_kepala_keluarga" keterangan-opsi="satuan_permukiman"
                 :terpilih="old('ketua_transmigran_id', $data['ketua_transmigran_id'] ?? null)"
-                placeholder="Pilih dari daftar transmigran"
-                keterangan="Nama dan NIK dibaca dari data transmigran, tidak diketik ulang, agar tidak ada dua versi yang berbeda ejaan."
+                placeholder="Pilih keluarga transmigran"
+                keterangan="Keluarga yang diwakili ketua. Luas lahan dan titik koordinatnya dibaca dari bidang milik keluarga ini."
                 @change="ketuaId = $event.target.value; isiKontak()"
-                :required="'dariTransmigran'" :disabled="'! dariTransmigran'" />
+                {{-- Ekspresi Alpine dikirim sebagai STRING berkutip: Blade
+                     mengevaluasi `:atribut` sebagai PHP, sehingga tanpa kutip
+                     `dariKeluarga` terbaca sebagai konstanta PHP yang tidak ada. --}}
+                :required="'dariKeluarga'" :disabled="'! dariKeluarga'" />
         </div>
 
-        {{-- Jalur 2: ketua bukan transmigran, nama dan NIK diketik langsung --}}
-        <div class="mt-4 grid gap-4 sm:grid-cols-2" x-show="! dariTransmigran" x-cloak>
+        {{--
+            Nama dan NIK diketik pada dua jalur terakhir. Kepala keluarga
+            dikecualikan sebab keduanya dibaca lewat relasi; menyalinnya akan
+            melahirkan dua versi data yang berpotensi tidak sinkron.
+        --}}
+        <div class="mt-4 grid gap-4 sm:grid-cols-2" x-show="! identitasDariRelasi" x-cloak>
             <div>
                 <label for="{{ $awalan }}_nama_ketua" class="{{ $kelasLabel }}">Nama Ketua<span class="text-error-500">*</span></label>
                 <input type="text" id="{{ $awalan }}_nama_ketua" name="nama_ketua"
                     value="{{ old('nama_ketua', $data['nama_ketua'] ?? '') }}" maxlength="255"
-                    :required="! dariTransmigran" :disabled="dariTransmigran"
+                    :required="! identitasDariRelasi" :disabled="identitasDariRelasi"
                     placeholder="Nama lengkap ketua" class="{{ $kelasKontrol }}" />
             </div>
 
@@ -151,8 +211,25 @@
                 <input type="text" inputmode="numeric" id="{{ $awalan }}_nik_ketua" name="nik_ketua"
                     value="{{ old('nik_ketua', $data['nik_ketua'] ?? '') }}"
                     minlength="16" maxlength="16" pattern="[0-9]{16}"
-                    :required="! dariTransmigran" :disabled="dariTransmigran"
+                    :required="! identitasDariRelasi" :disabled="identitasDariRelasi"
                     placeholder="16 digit angka" class="{{ $kelasKontrol }} tabular-nums" />
+            </div>
+
+            {{-- Hubungan hanya berlaku bagi anggota keluarga. --}}
+            <div x-show="perluHubungan" x-cloak>
+                <label for="{{ $awalan }}_hubungan_ketua" class="{{ $kelasLabel }}">
+                    Hubungan dengan Kepala Keluarga<span class="text-error-500">*</span>
+                </label>
+                <select id="{{ $awalan }}_hubungan_ketua" name="hubungan_ketua"
+                    :required="perluHubungan" :disabled="! perluHubungan" class="{{ $kelasKontrol }}">
+                    <option value="">Pilih hubungan</option>
+                    @foreach (HubunganKeluarga::opsi() as $nilai => $label)
+                        <option value="{{ $nilai }}"
+                            @selected(old('hubungan_ketua', $data['hubungan_ketua'] ?? '') === $nilai)>
+                            {{ $label }}
+                        </option>
+                    @endforeach
+                </select>
             </div>
         </div>
 
@@ -163,7 +240,7 @@
                     x-model="telepon" maxlength="20"
                     placeholder="0812xxxxxxx" class="{{ $kelasKontrol }} tabular-nums" />
                 <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400"
-                    x-show="dariTransmigran">
+                    x-show="identitasDariRelasi">
                     Terisi sendiri dari data transmigran, dan tetap dapat diperbarui bila nomornya sudah berganti.
                 </p>
             </div>
@@ -173,6 +250,87 @@
                 <input type="email" id="{{ $awalan }}_email_ketua" name="email_ketua"
                     value="{{ old('email_ketua', $data['email_ketua'] ?? '') }}" maxlength="255"
                     placeholder="nama@example.id" class="{{ $kelasKontrol }}" />
+            </div>
+        </div>
+
+        {{--
+            Luas lahan ketua. Dua jalur pertama menampilkannya sebagai BACAAN
+            hasil penjumlahan bidang milik keluarga; hanya jalur ketiga yang
+            mengetiknya, sebab lahannya memang tidak terdata pada tabel lahan.
+
+            Menyimpannya sebagai kolom pada kedua jalur pertama akan basi begitu
+            petugas membetulkan luas di modul lahan, kekeliruan yang sama dengan
+            `jumlah_anggota` yang sudah dicabut (erd.md 7.3).
+        --}}
+        <div class="mt-4" x-show="dariKeluarga" x-cloak>
+            <span class="{{ $kelasLabel }}">Luas Lahan Usaha Ketua</span>
+            <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+                <template x-if="lahanKeluarga && lahanKeluarga.jumlah_bidang > 0">
+                    <div class="flex flex-wrap gap-x-8 gap-y-2 text-theme-sm">
+                        <span class="text-gray-600 dark:text-gray-400">
+                            Kering
+                            <span class="ml-1 font-medium tabular-nums text-gray-800 dark:text-white/90"
+                                x-text="Number(lahanKeluarga.kering).toFixed(2) + ' ha'"></span>
+                        </span>
+                        <span class="text-gray-600 dark:text-gray-400">
+                            Basah
+                            <span class="ml-1 font-medium tabular-nums text-gray-800 dark:text-white/90"
+                                x-text="Number(lahanKeluarga.basah).toFixed(2) + ' ha'"></span>
+                        </span>
+                        <span class="text-gray-600 dark:text-gray-400">
+                            Titik koordinat
+                            <span class="ml-1 font-medium tabular-nums text-gray-800 dark:text-white/90"
+                                x-text="lahanKeluarga.lintang !== null
+                                    ? Number(lahanKeluarga.lintang).toFixed(6) + ', ' + Number(lahanKeluarga.bujur).toFixed(6)
+                                    : 'belum ada'"></span>
+                        </span>
+                    </div>
+                </template>
+                <template x-if="! lahanKeluarga || lahanKeluarga.jumlah_bidang === 0">
+                    <p class="text-theme-sm text-gray-500 dark:text-gray-400">
+                        <span x-show="ketuaId === ''">Pilih keluarga transmigran lebih dulu.</span>
+                        <span x-show="ketuaId !== ''" x-cloak>
+                            Keluarga ini belum memiliki lahan usaha terdata.
+                        </span>
+                    </p>
+                </template>
+            </div>
+            <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                Dijumlahkan dari bidang milik keluarga tersebut, sehingga selalu mengikuti data lahan
+                terbaru. Perbaikannya dilakukan di modul Lahan, bukan di sini.
+            </p>
+        </div>
+
+        <div class="mt-4 grid gap-4 sm:grid-cols-2" x-show="! dariKeluarga" x-cloak>
+            <div>
+                <label for="{{ $awalan }}_luas_kering_ketua" class="{{ $kelasLabel }}">Luas Lahan Kering Ketua</label>
+                <div class="relative">
+                    <input type="number" id="{{ $awalan }}_luas_kering_ketua" name="luas_kering_ketua"
+                        value="{{ old('luas_kering_ketua', $data['luas_kering_ketua'] ?? '') }}"
+                        min="0" step="0.01" :disabled="dariKeluarga"
+                        placeholder="0.80" class="{{ $kelasKontrol }} tabular-nums pr-12" />
+                    <span
+                        class="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-theme-sm text-gray-500 dark:text-gray-400">
+                        ha
+                    </span>
+                </div>
+                <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                    Diketik sebab lahan penduduk setempat tidak terdata pada modul Lahan.
+                </p>
+            </div>
+
+            <div>
+                <label for="{{ $awalan }}_luas_basah_ketua" class="{{ $kelasLabel }}">Luas Lahan Basah Ketua</label>
+                <div class="relative">
+                    <input type="number" id="{{ $awalan }}_luas_basah_ketua" name="luas_basah_ketua"
+                        value="{{ old('luas_basah_ketua', $data['luas_basah_ketua'] ?? '') }}"
+                        min="0" step="0.01" :disabled="dariKeluarga"
+                        placeholder="0.20" class="{{ $kelasKontrol }} tabular-nums pr-12" />
+                    <span
+                        class="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-theme-sm text-gray-500 dark:text-gray-400">
+                        ha
+                    </span>
+                </div>
             </div>
         </div>
     </section>

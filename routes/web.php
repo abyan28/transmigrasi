@@ -272,6 +272,22 @@ Route::put('/transmigran/{id}', function (int $id) {
         ->with('sukses', 'Perubahan data transmigran tersimpan.');
 })->where('id', '[0-9]+')->name('transmigran.perbarui');
 
+/*
+ * Pergantian kepala keluarga.
+ *
+ * Rute TERSENDIRI, bukan bagian dari perbarui. Suksesi adalah tindakan yang
+ * berbeda dari menyunting data, dan menyatukannya membuat setiap perbaikan
+ * ejaan nama ikut tercatat sebagai pergantian kepala keluarga (rules.md 6.5b).
+ *
+ * Tahap 5: sunting baris transmigran (nama, NIK, no_kk), tambahkan baris
+ * riwayat_kepala_keluarga, lalu terapkan pilihan nasib jabatan ketua poktan.
+ * Ketiganya dalam satu transaksi.
+ */
+Route::post('/transmigran/{id}/ganti-kepala-keluarga', function (int $id) {
+    return redirect()->route('transmigran.detail', ['id' => $id, 'tab' => 'riwayat-kk'])
+        ->with('sukses', 'Pergantian kepala keluarga tercatat pada riwayat.');
+})->where('id', '[0-9]+')->name('transmigran.ganti-kepala-keluarga');
+
 Route::delete('/transmigran/{id}', function () {
     // Tahap 5: soft delete agar data tetap dapat dipulihkan.
     return redirect()->route('transmigran.index')

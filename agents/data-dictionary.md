@@ -41,7 +41,7 @@ Aturan berikut berlaku untuk **seluruh tabel**, sehingga tidak diulang pada tiap
 
 Tabel yang memakai soft delete: `user`, `kawasan_transmigrasi`, `satuan_permukiman`, `inventaris_sp`, `fasilitas_sp`, `transmigran`, `rumah`, `lahan`, `poktan`, `anggota_poktan`, `alsintan`, `saprotan`, `komoditas`, `hasil_panen`, `infrastruktur`, `pengaduan`.
 
-Tabel referensi wilayah (`provinsi`, `kabupaten`, `kecamatan`, `desa`), `satuan`, `musim_tanam`, `riwayat_penghunian`, `riwayat_tanam`, `penanganan_pengaduan`, dan `audit_log` **tidak** memakai soft delete: tabel referensi dilindungi `RESTRICT`, sedangkan tabel riwayat memang tidak boleh dihapus.
+Tabel referensi wilayah (`provinsi`, `kabupaten`, `kecamatan`, `desa`), `satuan`, `musim_tanam`, `riwayat_penghunian`, `riwayat_kepala_keluarga`, `riwayat_tanam`, `penanganan_pengaduan`, dan `audit_log` **tidak** memakai soft delete: tabel referensi dilindungi `RESTRICT`, sedangkan tabel riwayat memang tidak boleh dihapus.
 
 `kawasan_transmigrasi` memakai soft delete karena merupakan data yang dikelola pengguna, bukan referensi administratif baku.
 
@@ -547,6 +547,34 @@ Jejak pergantian penghuni. Tidak pernah ditimpa, hanya bertambah (`rules.md` §6
 
 **Catatan:** grafik "KK masuk dan keluar per tahun" (PRD §7.8) dihitung dari tabel ini, bukan dari `transmigran`, agar perpindahan antar-rumah tetap terekam.
 
+### 6.4 `riwayat_kepala_keluarga`
+
+Jejak pergantian kedudukan kepala keluarga pada satu rumah tangga. Tidak pernah ditimpa, hanya bertambah (`rules.md` §6.5).
+
+| Kolom | Tipe | Null | Kunci | Keterangan |
+|---|---|---|---|---|
+| `id_riwayat_kepala_keluarga` | `BIGINT UNSIGNED AUTO_INCREMENT` | TIDAK | PK | |
+| `transmigran_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | Rumah tangganya; **tidak pernah berubah** |
+| `nik_lama` | `CHAR(16)` | TIDAK | | NIK kepala keluarga yang digantikan |
+| `nama_lama` | `VARCHAR(255)` | TIDAK | | Nama kepala keluarga yang digantikan |
+| `nik_baru` | `CHAR(16)` | TIDAK | | NIK penggantinya |
+| `nama_baru` | `VARCHAR(255)` | TIDAK | | Nama penggantinya |
+| `no_kk_lama` | `CHAR(16)` | TIDAK | | Nomor KK sebelum pergantian |
+| `no_kk_baru` | `CHAR(16)` | TIDAK | | Nomor KK sesudahnya; sama dengan yang lama bila KK tidak terbit ulang |
+| `tanggal_pergantian` | `DATE` | TIDAK | IDX | |
+| `alasan` | `ENUM` | TIDAK | IDX | Lihat 11.36 |
+| `hubungan_pengganti` | `ENUM` | TIDAK | | Lihat 11.35; kedudukan pengganti terhadap kepala keluarga lama |
+| `keterangan` | `TEXT` | YA | | |
+
+**Catatan:**
+
+- **Rumah tangganya berlanjut, yang berganti kepalanya.** Karena itu suksesi menyunting baris `transmigran` yang ada, bukan membuat baris baru. Alasannya bukan kepraktisan: jatah rumah dan lahan transmigrasi diberikan kepada **KK**, bukan kepada suaminya secara pribadi, sehingga ketujuh relasi yang menaut ke `transmigran` memang seharusnya tetap utuh. Membuat baris baru juga menuntut melepas UNIQUE pada `no_kk` dan memindahkan tujuh FK secara manual, dan setiap hitungan "jumlah KK" pada dashboard akan menghitung ganda kecuali disaring status.
+- **`audit_log` saja tidak cukup, dan itulah sebab tabel ini ada.** Audit log memang merekam bahwa `nama_kepala_keluarga` berubah, tetapi ia **tidak dapat membedakan suksesi dari perbaikan salah ketik**: keduanya tercatat sebagai aksi `Ubah` pada kolom yang sama. Data contoh audit log sendiri sudah memuat contoh yang pertama, yaitu *"Memperbaiki ejaan nama YOHANES BERE"*.
+- **Kedua sisi disimpan**, bukan hanya yang lama. Merangkai nama pengganti dari baris riwayat berikutnya memang menghemat tiga kolom, tetapi menukarnya dengan kueri berantai yang rapuh dan riwayat yang tidak dapat dibaca berdiri sendiri.
+- **`no_kk` ikut disimpan dua sisi** sebab Dukcapil menerbitkan KK baru ketika kepala keluarganya berganti. Bila nomornya tidak berubah, keduanya diisi sama.
+- Tanpa kolom `user_id`: pelaku suksesi sudah terekam `audit_log`, sama seperti `riwayat_penghunian`.
+- **Suksesi adalah tindakan tersendiri, bukan efek samping form ubah** (`rules.md` §6.5b). Bila ia lahir dari penyuntingan nama pada form biasa, setiap perbaikan ejaan akan mengotori riwayat suksesi — persis kekaburan yang tabel ini dibuat untuk menutupnya.
+
 ---
 
 ## 7. Domain Lahan
@@ -563,8 +591,9 @@ Menggabungkan `lahan_sp`, `lahan_usaha_sp`, `kategori_lahan_sp`, dan `kategori_l
 | `poktan_id` | `BIGINT UNSIGNED` | YA | FK | Poktan pengelola bila ada |
 | `kode_lahan` | `VARCHAR(50)` | YA | UQ | Identitas lahan (`rules.md` §7.1) |
 | `peruntukan_lahan` | `ENUM` | TIDAK | IDX | Lihat 11.11 |
-| `kategori_lahan` | `ENUM` | YA | | Lihat 11.12; hanya untuk lahan usaha |
-| `luas` | `DECIMAL(12,2)` | TIDAK | | Hektare |
+| `luas` | `DECIMAL(12,2)` | TIDAK | | Hektare; luas seluruh bidang |
+| `luas_kering` | `DECIMAL(12,2)` | YA | | Hektare; bagian lahan kering. Hanya untuk lahan usaha |
+| `luas_basah` | `DECIMAL(12,2)` | YA | | Hektare; bagian lahan basah. Hanya untuk lahan usaha |
 | `status_hak` | `ENUM` | YA | | Lihat 11.13 |
 | `tujuan_pemanfaatan` | `TEXT` | YA | | |
 | `lintang` | `DECIMAL(10,7)` | YA | | |
@@ -576,8 +605,12 @@ Menggabungkan `lahan_sp`, `lahan_usaha_sp`, `kategori_lahan_sp`, dan `kategori_l
 
 **Catatan:**
 - FK berada di tabel ini, **bukan** di `transmigran`, karena satu transmigran dapat memiliki lebih dari satu lahan usaha (`rules.md` §7.8).
-- Empat kolom terakhir sebelum `keterangan` hanya relevan bila peruntukannya lahan usaha (kedua tahapnya); untuk lahan pekarangan keempatnya dibiarkan `NULL`.
+- Tiga kolom terakhir sebelum `keterangan` hanya relevan bila peruntukannya lahan usaha; untuk lahan pekarangan ketiganya dibiarkan `NULL`.
 - Rekap luas lahan **wajib** memakai `SUM(luas)`, bukan mengambil satu baris (`rules.md` §7.10).
+- **Kering dan basah adalah komposisi luas, bukan kategori bidang** (ditetapkan 2026-08-20 atas keterangan lapangan pemilik proyek). Sebelumnya sifat pengairan disimpan sebagai kolom enum `kategori_lahan` bernilai `Lahan Basah` atau `Lahan Kering`, sehingga satu bidang hanya boleh bersifat salah satu. Keadaan sebenarnya di Kobalima Timur: satu bidang lahan usaha seluas 1 ha dapat digarap 0,5 ha kering dan 0,5 ha basah sekaligus. Bidang campuran semacam itu **tidak dapat dicatat** oleh kolom enum, dan petugas terpaksa memilih salah satu — membuat separuh luasnya hilang dari rekap tanpa ada yang menyadarinya, kegagalan yang persis pernah terjadi pada penjumlahan luas (`notes.md` §1c.2 dan butir 2026-08-18).
+- **Bidangnya tetap satu baris dengan satu titik koordinat.** Yang dipecah hanya angka luasnya, sebab pemecahan kering/basah tidak melahirkan bidang baru dan tidak berpindah tempat. Karena itu dipilih dua kolom luas, bukan tabel komposisi tersendiri: kategorinya tetap dua dan tidak bertambah, sehingga tabel terpisah hanya menambah join tanpa menambah kemampuan.
+- **Aturan jumlah:** untuk lahan usaha, `luas_kering + luas_basah` wajib sama dengan `luas`. Bidang yang seluruhnya kering diisi `luas_kering = luas` dan `luas_basah = 0`, bukan `NULL`, agar penjumlahan rekap tidak perlu membedakan nol dari kosong.
+- Rekap luas kering dan basah memakai `SUM(luas_kering)` dan `SUM(luas_basah)` atas lahan berperuntukan usaha. Penyaringan "lahan basah" berarti `luas_basah > 0`, yaitu **bidang yang memiliki bagian basah**, bukan bidang yang seluruhnya basah.
 
 ### 7.2 `dokumen_lahan`
 
@@ -603,25 +636,37 @@ Dokumen status lahan (HPL/SHM) dipisah ke tabel sendiri karena satu lahan dapat 
 |---|---|---|---|---|
 | `id_poktan` | `BIGINT UNSIGNED AUTO_INCREMENT` | TIDAK | PK | |
 | `satuan_permukiman_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | |
-| `is_ketua_transmigran` | `BOOLEAN` | TIDAK | | Bawaan `TRUE`; menentukan jalur pengisian data ketua |
-| `ketua_transmigran_id` | `BIGINT UNSIGNED` | YA | FK | Wajib bila `is_ketua_transmigran` = `TRUE`, selain itu `NULL` |
-| `nama_ketua` | `VARCHAR(255)` | YA | | Wajib bila `is_ketua_transmigran` = `FALSE`, selain itu `NULL` |
-| `nik_ketua` | `CHAR(16)` | YA | | Wajib bila `is_ketua_transmigran` = `FALSE`; tepat 16 digit angka |
+| `asal_ketua` | `ENUM` | TIDAK | | Lihat 11.34; bawaan `Kepala Keluarga`. Menentukan jalur pengisian data ketua |
+| `ketua_transmigran_id` | `BIGINT UNSIGNED` | YA | FK | Keluarga yang diwakili ketua. Wajib bila `asal_ketua` bukan `Bukan Transmigran` |
+| `nama_ketua` | `VARCHAR(255)` | YA | | Wajib bila `asal_ketua` bukan `Kepala Keluarga`, selain itu `NULL` |
+| `nik_ketua` | `CHAR(16)` | YA | | Wajib bila `asal_ketua` bukan `Kepala Keluarga`; tepat 16 digit angka |
+| `hubungan_ketua` | `ENUM` | YA | | Lihat 11.35; wajib bila `asal_ketua` = `Anggota Keluarga`, selain itu `NULL` |
 | `nama` | `VARCHAR(255)` | TIDAK | UQ | |
 | `tahun_berdiri` | `YEAR` | YA | | Tahun saja; tanggal pendirian poktan lama kerap tidak terdokumentasi |
 | `telepon_ketua` | `VARCHAR(20)` | YA | | Kontak ketua, bukan kontak kelompok |
 | `email_ketua` | `VARCHAR(255)` | YA | | Kontak ketua; `transmigran` tidak menyimpan email, sehingga di sinilah tempatnya |
 | `alamat_ketua` | `VARCHAR(255)` | YA | | Alamat ketua atau sekretariat kelompok |
-| `luas_lahan_kelompok` | `DECIMAL(12,2)` | YA | | Hektare |
+| `luas_kering_ketua` | `DECIMAL(12,2)` | YA | | Hektare; **hanya** bila `asal_ketua` = `Bukan Transmigran` |
+| `luas_basah_ketua` | `DECIMAL(12,2)` | YA | | Hektare; **hanya** bila `asal_ketua` = `Bukan Transmigran` |
 | `lintang` | `DECIMAL(10,7)` | YA | | |
 | `bujur` | `DECIMAL(10,7)` | YA | | |
 | `dokumen_pendukung` | `VARCHAR(255)` | YA | | SK pembentukan |
 | `keterangan` | `TEXT` | YA | | |
 
 **Catatan:**
-- **Ketua poktan tidak selalu transmigran.** Di lapangan banyak poktan diketuai penduduk setempat yang bukan peserta program, sehingga membatasi pilihan pada daftar transmigran membuat poktan semacam itu tidak dapat didata sama sekali. Kolom `is_ketua_transmigran` menentukan jalurnya, dan **tepat satu** dari dua jalur terisi:
-  - `TRUE` → `ketua_transmigran_id` wajib; `nama_ketua` dan `nik_ketua` dibiarkan `NULL` dan dibaca lewat relasi, agar tidak ada dua versi data yang berpotensi tidak sinkron (`erd.md` §8.2 nomor 25).
-  - `FALSE` → `nama_ketua` dan `nik_ketua` wajib; `ketua_transmigran_id` bernilai `NULL`.
+- **Ketua poktan punya tiga asal-usul, bukan dua** (diperluas 2026-08-20). Kolom `is_ketua_transmigran` bertipe boolean digantikan `asal_ketua` bertipe enum, sebab boolean hanya sanggup membedakan dua keadaan sedangkan keadaan lapangan ada tiga. Jalur pengisiannya:
+
+  | `asal_ketua` | `ketua_transmigran_id` | `nama_ketua`, `nik_ketua` | `hubungan_ketua` | Luas & koordinat |
+  |---|---|---|---|---|
+  | `Kepala Keluarga` | wajib | `NULL`, dibaca lewat relasi | `NULL` | dari lahan keluarga |
+  | `Anggota Keluarga` | wajib | **wajib diketik** | wajib | dari lahan keluarga |
+  | `Bukan Transmigran` | `NULL` | **wajib diketik** | `NULL` | `luas_*_ketua` diketik |
+
+  - Jalur pertama tidak menyalin nama dan NIK agar tidak ada dua versi data yang berpotensi tidak sinkron (`erd.md` §8.2 nomor 25).
+  - Jalur kedua **harus** mengetiknya: sistem tidak mendata anggota keluarga satu per satu (`erd.md` §7.4), sehingga tidak ada relasi yang dapat dibaca. `ketua_transmigran_id` tetap terisi karena yang ditunjuk adalah **keluarga** yang diwakili, bukan orangnya.
+  - Jalur ketiga ada sebab banyak poktan diketuai penduduk setempat yang bukan peserta program; membatasi pilihan pada daftar transmigran membuat poktan semacam itu tidak dapat didata sama sekali.
+- **Luas lahan ketua diturunkan, tidak disimpan** — kecuali bagi ketua non-transmigran. Untuk kedua jalur pertama, luas kering dan basah dijumlahkan dari bidang milik keluarga yang bersangkutan (`SUM` atas `lahan`), sejalan dengan `rules.md` §7.10. Menyimpannya sebagai kolom akan basi begitu petugas membetulkan luas di modul lahan, kekeliruan yang sama dengan `jumlah_anggota` (`erd.md` §7.3). Ketua non-transmigran tidak memiliki bidang terdata, sehingga hanya bagi merekalah kedua kolom itu terisi.
+- **Kolom `luas_lahan_kelompok` dihapus** (2026-08-20). Ia tidak pernah dipakai satu berkas pun di seluruh sistem: tidak ada isiannya di form, tidak ada tampilannya, tidak ada uji, dan `DummyData::poktan()` bahkan tidak memuat kuncinya. Luas lahan kelompok kini dijumlahkan dari lahan seluruh anggotanya.
 - **Kontak yang disimpan adalah kontak ketua, bukan kontak kelompok** (ditetapkan 2026-08-17, alasannya diperbaiki 2026-08-19). Dasarnya keterangan pemilik proyek: kelompok tani di Kobalima Timur **tidak memiliki kontak sendiri** yang berbeda dari kontak ketuanya, sehingga menyediakan dua pasang kolom hanya menyisakan satu yang selalu kosong. Sebelumnya kolom ini bernama `telepon`, `email`, dan `alamat_sekretariat` serta dinyatakan milik kelompok. `email_ketua` juga menjadi satu-satunya tempat email ketua dapat disimpan, sebab tabel `transmigran` tidak memiliki kolom email padahal `rules.md` §7a poin 2 mewajibkannya.
   > Alasan yang semula ditulis di sini bersandar pada bentuk data contoh, dan itu penalaran melingkar yang dilarang `rules.md` §19a. Lihat `notes.md` §1c.2 pelanggaran kelima.
 - Kolom `jumlah_anggota` sengaja **tidak ada**; nilainya dihitung dari `anggota_poktan` berstatus Aktif memakai `withCount` (`erd.md` §7.3).
@@ -632,17 +677,29 @@ Dokumen status lahan (HPL/SHM) dipisah ke tabel sendiri karena satu lahan dapat 
 |---|---|---|---|---|
 | `id_anggota_poktan` | `BIGINT UNSIGNED AUTO_INCREMENT` | TIDAK | PK | |
 | `poktan_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX, UQ¹ | |
-| `transmigran_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX, UQ¹ | |
+| `transmigran_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX, UQ¹ | **Keluarga** yang diwakili, bukan orangnya |
+| `asal_wakil` | `ENUM` | TIDAK | | Lihat 11.34; bawaan `Kepala Keluarga`. Nilai `Bukan Transmigran` tidak berlaku di sini |
+| `nama_wakil` | `VARCHAR(255)` | YA | | Wajib bila `asal_wakil` = `Anggota Keluarga`, selain itu `NULL` |
+| `nik_wakil` | `CHAR(16)` | YA | | Wajib bila `asal_wakil` = `Anggota Keluarga`; tepat 16 digit angka |
+| `telepon_wakil` | `VARCHAR(20)` | YA | | Kontak wakil; terisi sendiri dari transmigran bila wakilnya kepala keluarga |
+| `hubungan_dengan_kk` | `ENUM` | YA | | Lihat 11.35; wajib bila `asal_wakil` = `Anggota Keluarga` |
 | `jabatan` | `ENUM` | TIDAK | | Lihat §11.15 |
 | `tanggal_masuk` | `DATE` | TIDAK | | |
 | `status` | `ENUM` | TIDAK | IDX | Lihat §11.16 |
 | `tanggal_keluar` | `DATE` | YA | | Wajib diisi bila status Sudah Keluar |
-| `keterangan` | `TEXT` | YA | | |
+| `alasan_keluar` | `TEXT` | YA | | Sebab berhenti atau pindah kelompok |
+| `keterangan` | `TEXT` | YA | | Catatan umum keanggotaan |
 
 ¹ UNIQUE gabungan `(poktan_id, transmigran_id)`.
 
 **Catatan:**
-- Anggota yang berhenti **tidak dihapus**, melainkan ditandai `status = 'Sudah Keluar'` agar riwayat tetap utuh (`rules.md` §5.1 catatan 7). Nama dan NIK anggota dibaca lewat relasi ke `transmigran`, tidak disalin.
+- Anggota yang berhenti **tidak dihapus**, melainkan ditandai `status = 'Sudah Keluar'` agar riwayat tetap utuh (`rules.md` §5.1 catatan 7).
+- **Keanggotaan melekat pada keluarga, bukan pada kepala keluarga** (ditetapkan 2026-08-20 atas keterangan pemilik proyek). Yang terdaftar adalah orang yang benar-benar menggarap dan menghadiri pertemuan, dan ia tidak selalu kepala keluarga: bila kepala keluarga merantau, istri atau anaknya yang mewakili. Karena itu `transmigran_id` menunjuk **keluarga** yang diwakili, sedangkan `asal_wakil` menyatakan siapa wakilnya.
+  - `Kepala Keluarga` → nama, NIK, dan telepon dibaca lewat relasi ke `transmigran`; ketiga kolom `*_wakil` dibiarkan `NULL`.
+  - `Anggota Keluarga` → ketiganya wajib diketik beserta `hubungan_dengan_kk`, sebab sistem tidak mendata anggota keluarga satu per satu (`erd.md` §7.4).
+  - `Bukan Transmigran` **tidak berlaku** bagi anggota: seluruh anggota wajib berasal dari keluarga transmigran (`rules.md` §7a poin 3). Pembatasannya ditegakkan aplikasi, sebab ENUM database memuat ketiga nilai agar dapat dipakai bersama `poktan.asal_ketua`.
+- **Luas lahan dan koordinat anggota diturunkan, tidak disimpan.** Keduanya dijumlahkan dari bidang milik keluarga yang diwakili, sehingga tidak berubah ketika wakilnya berganti dan tidak pernah basi ketika luas dibetulkan di modul lahan.
+- **`alasan_keluar` dipisahkan dari `keterangan`** (2026-08-20). Sebelumnya `keterangan` dipakai dua maksud sekaligus: kamus data menyebutnya catatan umum, sedangkan form melabelinya "Alasan Keluar", sehingga catatan keanggotaan biasa tidak punya tempat. Pemisahan ini mengikuti `riwayat_penghunian` §6.3 yang sudah membedakan `alasan_keluar` dari `keterangan`.
 - **Jabatan tidak lagi memuat nilai `Ketua`** (2026-08-17). Ketua ditetapkan pada tabel `poktan`, dan menyediakannya juga di sini berarti satu poktan dapat memiliki dua ketua berbeda tanpa ada yang menyadarinya. Lihat §11.15.
 - **Perpindahan anggota antar poktan** dicatat sebagai dua baris: baris di poktan lama ditandai `Sudah Keluar` beserta `tanggal_keluar` dan alasannya, lalu dibuat baris baru pada poktan tujuan. Memindahkan `poktan_id` pada baris yang sama akan menghapus jejak keanggotaan di poktan lama seolah tidak pernah ada.
 - Seorang transmigran hanya boleh berstatus **Aktif pada satu poktan** dalam satu waktu (`rules.md` §6.4). UNIQUE gabungan di atas hanya mencegah baris ganda pada poktan yang sama, sehingga pembatasan ini ditegakkan di tingkat aplikasi.
@@ -886,8 +943,11 @@ Sengaja berbeda dari §11.5 karena `rules.md` §6a.3 menetapkan istilah `Tidak R
 
 Satu transmigran umumnya menerima **satu bidang tiap peruntukan** (`rules.md` 7.8). Nilai `Lahan Usaha I` dan `Lahan Usaha II` sempat ditambahkan pada 2026-08-18 atas dugaan pembagian bertahap, lalu dibatalkan pada hari yang sama setelah keadaan lapangan diketahui. Pemeriksaan "apakah ini lahan usaha" **dilarang** membandingkan satu nilai teks; pakai `PeruntukanLahan::lahanUsaha()`.
 
-### 11.12 Kategori lahan
-`Lahan Basah` · `Lahan Kering`
+### 11.12 Kategori lahan — **DICABUT 2026-08-20**
+
+Semula bernilai `Lahan Basah` · `Lahan Kering` sebagai kolom enum pada `lahan`. Dicabut sebab sifat pengairan ternyata **komposisi luas, bukan sifat bidang**: satu bidang lahan usaha dapat digarap sebagian kering dan sebagian basah. Digantikan kolom `luas_kering` dan `luas_basah` pada 7.1, yang alasannya tercatat di sana.
+
+Nomor bagian ini sengaja **tidak dipakai ulang** agar rujukan lama pada dokumen dan riwayat tetap dapat ditelusuri.
 
 ### 11.13 Status hak atas tanah
 `Belum Bersertifikat` — `Hak Milik` — `Hak Milik Bersama` — `Hak Pakai` — `Sewa` — `Garapan`
@@ -928,7 +988,7 @@ Pada SQL referensi kolom ini bertipe `VARCHAR` bebas; dijadikan ENUM agar dapat 
 
 Tiga perubahan pada 2026-08-19: nilai `Peralatan dan Perlengkapan` **dipecah** menjadi `Inventaris SP` dan `Fasilitas SP`, sebab satu kategori menaungi dua daftar berbeda sehingga petugas tidak dapat mengetahui yang mana dimaksud pelapor; `Saprotan` **ditambahkan** agar keluhan bibit, pupuk, serta obat tidak menumpang pada `Produksi Panen`; dan `Kelompok Tani` **ditambahkan** sebab poktan adalah modul penuh tetapi keluhan atasnya tidak punya kategori sendiri.
 
-**Daftar kategori memetakan modul yang dapat diadukan warga.** Penyisiran 2026-08-19 atas 26 fitur berkewenangan (§13.1) menyimpulkan pemetaannya kini lengkap dua arah. Modul yang sengaja **tidak** berkategori: `pengguna`, `role`, `audit_log`, `dashboard` (urusan internal sistem); `wilayah`, `kawasan`, `sp`, `satuan` (data referensi, bukan benda yang dapat rusak); `transmigran` (warga mengadukan masalah, bukan sesama warga); serta `komoditas`, `musim_tanam`, `riwayat_tanam` (data master pertanian yang keluhannya bermuara ke `Produksi Panen`).
+**Daftar kategori memetakan modul yang dapat diadukan warga.** Penyisiran 2026-08-19 atas 26 fitur berkewenangan (§13.1) menyimpulkan pemetaannya kini lengkap dua arah. Modul yang sengaja **tidak** berkategori: `pengguna`, `role`, `audit_log`, `dashboard` (urusan internal sistem); `wilayah`, `kawasan`, `sp`, `satuan` (data referensi, bukan benda yang dapat rusak); `transmigran`, `riwayat_penghunian`, `riwayat_kepala_keluarga`, `dokumen_lahan`, `anggota_poktan`, `penanganan_pengaduan` (catatan administratif tentang warga; warga mengadukan masalah, bukan sesama warga, dan kekeliruan pencatatan diperbaiki lewat petugas bukan lewat kanal pengaduan); serta `komoditas`, `musim_tanam`, `riwayat_tanam` (data master pertanian yang keluhannya bermuara ke `Produksi Panen`).
 
 ### 11.22 Bidang pengaduan
 `Ketransmigrasian` · `Pertanian`
@@ -1006,6 +1066,34 @@ Enum ini diperlukan agar penilaian kondisi SP dapat menghitung otomatis. Nama sp
 
 `Tidak Ada` **bukan** nilai enum tersendiri pada tabel `infrastruktur` maupun `fasilitas_sp`, melainkan keadaan ketika tidak ditemukan satu pun aset yang bersesuaian. Ketiadaan dan kerusakan wajib dibedakan karena berbeda penanganannya: yang satu memerlukan pembangunan, yang lain perbaikan (`rules.md` 10c.4 poin 9).
 
+### 11.34 Asal wakil poktan
+
+`Kepala Keluarga` · `Anggota Keluarga` · `Bukan Transmigran`
+
+Dipakai bersama oleh `poktan.asal_ketua` dan `anggota_poktan.asal_wakil`. Menggantikan `poktan.is_ketua_transmigran` bertipe boolean, sebab keadaan lapangan ada tiga sedangkan boolean hanya sanggup membedakan dua.
+
+**Anggota poktan hanya boleh memakai dua nilai pertama**; seluruh anggota wajib berasal dari keluarga transmigran (`rules.md` 7a poin 3). Nilai ketiga khusus ketua. Pembatasannya ditegakkan aplikasi, bukan ENUM database, agar satu tipe dapat dipakai kedua tabel.
+
+Pemeriksaan "apakah identitasnya dapat dibaca lewat relasi" **dilarang** membandingkan nilai teks; pakai `AsalWakilPoktan::identitasDariRelasi()` dan `dariKeluargaTransmigran()`.
+
+### 11.35 Hubungan dengan kepala keluarga
+
+`Istri/Suami` · `Anak` · `Menantu` · `Lainnya`
+
+Diisi bila wakil keluarga di poktan bukan kepala keluarganya sendiri. Sengaja kasar dan tidak dirinci sampai urutan anak: yang perlu diketahui hanyalah kedudukan wakil terhadap kepala keluarga, agar petugas dapat menelusuri bila namanya tidak dikenali. Merincinya lebih jauh menuntut pendataan anggota keluarga yang memang di luar lingkup PRD (`erd.md` 7.4).
+
+Dipakai bersama oleh `anggota_poktan.hubungan_dengan_kk`, `poktan.hubungan_ketua`, dan `riwayat_kepala_keluarga.hubungan_pengganti`.
+
+### 11.36 Alasan pergantian kepala keluarga
+
+`Meninggal` · `Pindah atau Merantau` · `Cerai` · `Lainnya`
+
+**Bukan pengganti status tinggal (11.8).** Keduanya menjawab pertanyaan berbeda: status tinggal menyatakan keadaan terkini sebuah **keluarga**, sedangkan enum ini merekam satu **peristiwa bertanggal**. Ketika kepala keluarga meninggal lalu istrinya menggantikan, keluarganya tetap berstatus `Aktif` sebab istrinya masih hidup dan menempati rumah yang sama; kematian itu hanya terekam di sini.
+
+Konsekuensi yang perlu disadari saat membaca dashboard: nilai `Meninggal` pada status tinggal hanya menghitung **keluarga yang bubar**, bukan orang yang meninggal. Angka kematian yang sesungguhnya dihitung dari tabel `riwayat_kepala_keluarga`.
+
+`Pindah atau Merantau` sengaja tidak dipecah dua. Dari sisi pendataan keduanya sama: kepala keluarga tidak lagi berada di kawasan sementara keluarganya tetap tinggal. Membedakannya menuntut petugas menilai niat kepergian, dan itu tidak dapat diverifikasi.
+
 ---
 
 ## 12. Aturan Validasi Bersama
@@ -1037,7 +1125,7 @@ Aturan berikut ditulis satu kali di `app/Support/ValidationRules.php` dan dipaka
 | 3 | `tanggal_keluar` tidak boleh mendahului `tanggal_masuk` | `anggota_poktan`, `riwayat_penghunian` |
 | 4 | `transmigran_id` wajib bila `kepemilikan` = Pribadi; `poktan_id` wajib bila Bantuan Poktan | `alsintan` |
 | 5 | Minimal satu di antara `transmigran_id` dan `poktan_id` terisi | `saprotan` |
-| 6 | `kategori_lahan` wajib bila peruntukannya lahan usaha | `lahan` |
+| 6 | `luas_kering` dan `luas_basah` wajib bila peruntukannya lahan usaha, dan jumlah keduanya sama dengan `luas` | `lahan` |
 | 7 | Pilihan rumah hanya menampilkan baris dengan `transmigran_id` bernilai `NULL` | `rumah` |
 | 8 | Perubahan status pengaduan wajib mengikuti urutan yang ditetapkan | `pengaduan` |
 | 9 | Penerima saprotan lewat poktan wajib berstatus keaktifan Aktif | `saprotan` |
@@ -1053,6 +1141,14 @@ Aturan berikut ditulis satu kali di `app/Support/ValidationRules.php` dan dipaka
 | 20 | `user_id` wajib kosong bila `sumber_laporan` bernilai Publik, dan wajib terisi bila Petugas | `pengaduan` |
 | 21 | Pengaduan publik dibatasi 3 laporan per jam untuk setiap alamat IP | `pengaduan` |
 | 22 | `bidang` wajib terisi sebelum status pengaduan maju ke `Diproses` | `pengaduan` |
+| 23 | `nama_wakil`, `nik_wakil`, dan `hubungan_dengan_kk` wajib bila `asal_wakil` = `Anggota Keluarga`, dan wajib `NULL` bila `Kepala Keluarga` | `anggota_poktan` |
+| 24 | `asal_wakil` tidak boleh bernilai `Bukan Transmigran`; seluruh anggota wajib berasal dari keluarga transmigran | `anggota_poktan` |
+| 25 | `ketua_transmigran_id` wajib bila `asal_ketua` bukan `Bukan Transmigran`, dan wajib `NULL` bila `Bukan Transmigran` | `poktan` |
+| 26 | `nama_ketua` dan `nik_ketua` wajib bila `asal_ketua` bukan `Kepala Keluarga`, dan wajib `NULL` bila `Kepala Keluarga` | `poktan` |
+| 27 | `luas_kering_ketua` dan `luas_basah_ketua` hanya terisi bila `asal_ketua` = `Bukan Transmigran`; selain itu diturunkan dari lahan keluarga | `poktan` |
+| 28 | `nik_baru` tidak boleh sama dengan `nik_lama` pada baris yang sama | `riwayat_kepala_keluarga` |
+| 29 | `tanggal_pergantian` tidak boleh mendahului `tahun_kedatangan` keluarganya, dan tidak boleh melampaui hari ini | `riwayat_kepala_keluarga` |
+| 30 | Suksesi wajib menyetel ulang `poktan.ketua_transmigran_id` bila keluarga tersebut menjabat ketua lewat jalur `Kepala Keluarga`; jabatan ketua tidak diwariskan | `poktan` |
 
 ---
 
@@ -1080,6 +1176,7 @@ Tanda centang berarti kewenangan tersebut dibuat untuk fitur bersangkutan.
 | `transmigran` | v | v | v | v |
 | `rumah` | v | v | v | v |
 | `riwayat_penghunian` | v | v | v | v |
+| `riwayat_kepala_keluarga` | v | v | v | |
 | `lahan` | v | v | v | v |
 | `dokumen_lahan` | v | v | v | v |
 | `poktan` | v | v | v | v |
@@ -1095,9 +1192,9 @@ Tanda centang berarti kewenangan tersebut dibuat untuk fitur bersangkutan.
 | `penanganan_pengaduan` | v | v | v |   |
 | `dashboard` | v |   |   |   |
 
-Total **95 kewenangan** dari 26 fitur, dihitung dari tabel di atas.
+Total **98 kewenangan** dari 27 fitur, dihitung dari tabel di atas.
 
-Jumlah kewenangan yang benar-benar dipegang tiap role bawaan lebih sedikit, sesuai susunan pada `rules.md` 5.1: Admin 95, Dinas Transmigrasi 43, Dinas Pertanian 45, Operator SP 49.
+Jumlah kewenangan yang benar-benar dipegang tiap role bawaan lebih sedikit, sesuai susunan pada `rules.md` 5.1: Admin 98, Dinas Transmigrasi 45, Dinas Pertanian 46, Operator SP 50.
 
 ### 13.2 Kelompok fitur pada antarmuka
 
@@ -1107,7 +1204,7 @@ Agar halaman pengaturan role mudah dibaca, kewenangan dikelompokkan sesuai struk
 |---|---|
 | Sistem | `pengguna`, `role`, `audit_log` |
 | Wilayah dan SP | `wilayah`, `kawasan`, `sp`, `inventaris_sp`, `fasilitas_sp`, `satuan` |
-| Kependudukan | `transmigran`, `rumah`, `riwayat_penghunian` |
+| Kependudukan | `transmigran`, `rumah`, `riwayat_penghunian`, `riwayat_kepala_keluarga` |
 | Lahan | `lahan`, `dokumen_lahan` |
 | Kelembagaan | `poktan`, `anggota_poktan`, `alsintan`, `saprotan` |
 | Pertanian | `komoditas`, `musim_tanam`, `riwayat_tanam`, `hasil_panen` |
