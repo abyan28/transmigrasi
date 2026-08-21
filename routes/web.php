@@ -218,6 +218,44 @@ Route::put('/master/referensi/{id}', function (int $id) {
         ->with('sukses', 'Perubahan pilihan tersimpan.');
 })->where('id', '[0-9]+')->name('referensi.perbarui');
 
+/*
+ * Pengaturan penilaian kondisi SP.
+ *
+ * Dua tab pada satu halaman: bobot parameter, dan ambang beserta wording
+ * status. Keduanya adalah keputusan KEBIJAKAN yang wajib divalidasi dinas
+ * (rules.md 10c poin 13), bukan angka teknis.
+ *
+ * Dua tab BOLEH di sini, berbeda dari data master referensi yang tabnya
+ * dibongkar menjadi kartu: yang membatasi bukan cacah tab melainkan lebar
+ * judulnya terhadap wadahnya (ui-spec.md 5.1d), dan dua judul pendek jelas
+ * muat dalam satu baris.
+ *
+ * TANPA RUTE TAMBAH DAN HAPUS. Baris parameter dihasilkan dari jenis
+ * infrastruktur dan fasilitas pada data master, sedangkan status wajib tetap
+ * tiga sebab `StatusKondisiSp::dariSkor()` hanya mengembalikan tiga keluaran.
+ */
+Route::get('/master/penilaian-kondisi', function () {
+    return view('pages.master.penilaian-kondisi', ['title' => 'Penilaian Kondisi SP']);
+})->name('master.penilaian-kondisi');
+
+Route::put('/master/penilaian-kondisi/parameter/{id}', function (int $id) {
+    // Tahap 4: sunting `parameter_penilaian_sp`. Penilaian yang sudah
+    // tersimpan tidak dihitung ulang, sebab `penilaian_sp.rincian` menyalin
+    // bobot yang berlaku saat penilaian dibuat (rules.md 10c.6).
+    return redirect()->route('master.penilaian-kondisi')
+        ->with('sukses', 'Parameter penilaian tersimpan dan berlaku pada penilaian berikutnya.');
+})->where('id', '[0-9]+')->name('penilaian-kondisi.parameter');
+
+Route::put('/master/penilaian-kondisi/status/{kode}', function (string $kode) {
+    abort_if(\App\Enums\StatusKondisiSp::tryFrom($kode) === null, 404);
+
+    // Tahap 4: ambang wajib menurun menurut urutan status. Ambang Mandiri
+    // yang lebih kecil daripada Berkembang membuat Berkembang mustahil
+    // dicapai, sebab pembacaannya berhenti pada ambang tertinggi yang cocok.
+    return redirect()->route('master.penilaian-kondisi')
+        ->with('sukses', 'Status kondisi SP tersimpan.');
+})->name('penilaian-kondisi.status');
+
 Route::get('/kawasan', function () {
     return view('pages.sp.kawasan', ['title' => 'Kawasan Transmigrasi']);
 })->name('kawasan');

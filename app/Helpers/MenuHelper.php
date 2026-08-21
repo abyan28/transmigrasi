@@ -188,25 +188,54 @@ class MenuHelper
             [
                 'title' => 'Administrasi Sistem',
                 'items' => [
+                    /*
+                     * DIPECAH DUA pada 2026-08-21, sebelumnya satu menu
+                     * "Pengaturan Sistem" berisi enam butir.
+                     *
+                     * Alasannya bukan sekadar panjang, melainkan isinya memang
+                     * dua hal berbeda: data acuan yang disunting dinas, dan
+                     * administrasi sistem yang disunting Admin. Tiga butir
+                     * pertama bahkan sudah berawalan "Data Master", jadi
+                     * namanya sendiri sudah mengaku kelompok tersendiri.
+                     *
+                     * Awalan itu kini dicabut dari nama submenu, sebab induknya
+                     * sudah menyebutkannya: "Data Master / Data Master Wilayah"
+                     * mengulang kata yang sama dua kali pada remah.
+                     */
                     [
-                        'icon' => 'pengaturan',
-                        'name' => 'Pengaturan Sistem',
+                        'icon' => 'tables',
+                        'name' => 'Data Master',
                         'subItems' => [
                             [
-                                'name' => 'Data Master Wilayah',
+                                'name' => 'Wilayah',
                                 'path' => '/wilayah',
                                 'permission' => 'wilayah.lihat',
                             ],
                             [
-                                'name' => 'Data Master Satuan',
+                                'name' => 'Satuan',
                                 'path' => '/master/satuan',
                                 'permission' => 'satuan.lihat',
                             ],
                             [
-                                'name' => 'Data Master Referensi',
+                                'name' => 'Referensi',
                                 'path' => '/master/referensi',
                                 'permission' => 'referensi.lihat',
                             ],
+                            [
+                                // Bukan sekadar daftar nilai: di sinilah bobot
+                                // parameter dan ambang predikat diatur, dan
+                                // keduanya keputusan kebijakan dinas
+                                // (rules.md 10c poin 13).
+                                'name' => 'Penilaian Kondisi SP',
+                                'path' => '/master/penilaian-kondisi',
+                                'permission' => 'penilaian_kondisi.lihat',
+                            ],
+                        ],
+                    ],
+                    [
+                        'icon' => 'pengaturan',
+                        'name' => 'Pengaturan Sistem',
+                        'subItems' => [
                             [
                                 'name' => 'Pengguna',
                                 'path' => '/pengguna',

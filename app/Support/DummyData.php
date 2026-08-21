@@ -15,9 +15,12 @@ use App\Enums\KondisiRumah;
 use App\Enums\PeruntukanLahan;
 use App\Enums\PrioritasPengaduan;
 use App\Enums\StatusHunian;
+use App\Enums\StatusKondisiSp;
 use App\Enums\StatusPengaduan;
 use App\Enums\StatusTinggal;
 use App\Enums\SumberLaporan;
+use App\Enums\TingkatKebutuhan;
+use Illuminate\Support\Str;
 
 /**
  * Penyedia data contoh untuk pembangunan antarmuka.
@@ -1409,6 +1412,22 @@ class DummyData
             // SP Weain, sengaja TANPA air bersih dan TANPA jalan penghubung
             ['id_infrastruktur' => 23, 'nama' => 'JARINGAN LISTRIK PLN', 'jenis' => JenisInfrastruktur::Listrik->value, 'satuan_permukiman' => 'SP Weain', 'satuan_permukiman_id' => 6, 'tahun_perolehan' => 2020, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::RusakRingan->value, 'kapasitas' => 'Melayani 163 KK'],
             ['id_infrastruktur' => 24, 'nama' => 'GUDANG PASCAPANEN', 'jenis' => JenisInfrastruktur::Gudang->value, 'satuan_permukiman' => 'SP Weain', 'satuan_permukiman_id' => 6, 'tahun_perolehan' => 2021, 'sumber_dana' => 'Dinas Pertanian Kabupaten', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Daya tampung 25 ton'],
+            // Aset penyeimbang data contoh, ditambahkan 2026-08-21 bersama
+            // empat parameter yang dahulu terlewat. Sebarannya semula timpang
+            // 1 Mandiri, 1 Berkembang, dan 4 Perlu Penanganan, sehingga dua
+            // status pertama masing-masing hanya punya satu contoh untuk
+            // memeriksa lencana, kartu rekap, dan penyortiran.
+            ['id_infrastruktur' => 25, 'nama' => 'GUDANG PASCAPANEN KAPITAN MEO', 'jenis' => JenisInfrastruktur::Gudang->value, 'satuan_permukiman' => 'SP Kapitan Meo', 'satuan_permukiman_id' => 1, 'tahun_perolehan' => 2021, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Daya tampung 60 ton'],
+            ['id_infrastruktur' => 26, 'nama' => 'JALAN PRODUKSI BLOK TIMUR', 'jenis' => JenisInfrastruktur::JalanProduksi->value, 'satuan_permukiman' => 'SP Kapitan Meo', 'satuan_permukiman_id' => 1, 'tahun_perolehan' => 2022, 'sumber_dana' => 'APBD Kabupaten', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Panjang 2,4 km'],
+            ['id_infrastruktur' => 27, 'nama' => 'SANITASI KOMUNAL TNIUMANU', 'jenis' => JenisInfrastruktur::Sanitasi->value, 'satuan_permukiman' => 'SP Tniumanu', 'satuan_permukiman_id' => 2, 'tahun_perolehan' => 2021, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Melayani 45 KK'],
+            ['id_infrastruktur' => 28, 'nama' => 'MENARA TELEKOMUNIKASI TNIUMANU', 'jenis' => JenisInfrastruktur::Telekomunikasi->value, 'satuan_permukiman' => 'SP Tniumanu', 'satuan_permukiman_id' => 2, 'tahun_perolehan' => 2022, 'sumber_dana' => 'Swadaya', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Jangkauan 4G'],
+            ['id_infrastruktur' => 29, 'nama' => 'SALURAN IRIGASI TNIUMANU', 'jenis' => JenisInfrastruktur::Irigasi->value, 'satuan_permukiman' => 'SP Tniumanu', 'satuan_permukiman_id' => 2, 'tahun_perolehan' => 2019, 'sumber_dana' => 'APBD Provinsi', 'kondisi' => Kondisi::RusakRingan->value, 'kapasitas' => 'Mengairi 18 ha'],
+            ['id_infrastruktur' => 30, 'nama' => 'SANITASI KOMUNAL HAREKAKAE', 'jenis' => JenisInfrastruktur::Sanitasi->value, 'satuan_permukiman' => 'SP Harekakae', 'satuan_permukiman_id' => 3, 'tahun_perolehan' => 2021, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Melayani 52 KK'],
+            ['id_infrastruktur' => 31, 'nama' => 'SALURAN IRIGASI HAREKAKAE', 'jenis' => JenisInfrastruktur::Irigasi->value, 'satuan_permukiman' => 'SP Harekakae', 'satuan_permukiman_id' => 3, 'tahun_perolehan' => 2020, 'sumber_dana' => 'APBD Provinsi', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Mengairi 26 ha'],
+            ['id_infrastruktur' => 32, 'nama' => 'JALAN PRODUKSI HAREKAKAE', 'jenis' => JenisInfrastruktur::JalanProduksi->value, 'satuan_permukiman' => 'SP Harekakae', 'satuan_permukiman_id' => 3, 'tahun_perolehan' => 2022, 'sumber_dana' => 'APBD Kabupaten', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Panjang 3,1 km'],
+            ['id_infrastruktur' => 33, 'nama' => 'KIOS SAPROTAN HAREKAKAE', 'jenis' => JenisInfrastruktur::PasarKios->value, 'satuan_permukiman' => 'SP Harekakae', 'satuan_permukiman_id' => 3, 'tahun_perolehan' => 2022, 'sumber_dana' => 'Swadaya', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Satu unit kios'],
+            ['id_infrastruktur' => 34, 'nama' => 'MENARA TELEKOMUNIKASI TUALARAN', 'jenis' => JenisInfrastruktur::Telekomunikasi->value, 'satuan_permukiman' => 'SP Tualaran', 'satuan_permukiman_id' => 5, 'tahun_perolehan' => 2023, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Jangkauan 4G'],
+            ['id_infrastruktur' => 35, 'nama' => 'SANITASI KOMUNAL TUALARAN', 'jenis' => JenisInfrastruktur::Sanitasi->value, 'satuan_permukiman' => 'SP Tualaran', 'satuan_permukiman_id' => 5, 'tahun_perolehan' => 2019, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::RusakRingan->value, 'kapasitas' => 'Melayani 38 KK'],
         ];
     }
 
@@ -1499,6 +1518,22 @@ class DummyData
             ['id_fasilitas_sp' => 11, 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'jenis_fasilitas' => 'Kesehatan', 'nama_fasilitas' => 'POSKESDES TNIUMANU', 'jumlah' => 1, 'tahun_perolehan' => 2019, 'sumber_dana' => 'APBD Kabupaten', 'status_penyerahan' => 'Dalam Proses', 'kondisi' => 'Rusak Ringan', 'lintang' => -9.4984000, 'bujur' => 124.8880000, 'keterangan' => 'Atap ruang periksa bocor.'],
             ['id_fasilitas_sp' => 12, 'satuan_permukiman_id' => 5, 'satuan_permukiman' => 'SP Tualaran', 'jenis_fasilitas' => 'Pendidikan Dasar', 'nama_fasilitas' => 'SD INPRES NAET', 'jumlah' => 1, 'tahun_perolehan' => 2019, 'sumber_dana' => 'APBN', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Baik', 'lintang' => -9.3989000, 'bujur' => 125.0125000, 'keterangan' => null],
             ['id_fasilitas_sp' => 13, 'satuan_permukiman_id' => 5, 'satuan_permukiman' => 'SP Tualaran', 'jenis_fasilitas' => 'Ibadah', 'nama_fasilitas' => 'GEREJA STASI NAET', 'jumlah' => 1, 'tahun_perolehan' => 2020, 'sumber_dana' => 'Swadaya', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Baik', 'lintang' => -9.3991000, 'bujur' => 125.0128000, 'keterangan' => null],
+            // Fasilitas penyeimbang data contoh (2026-08-21). Empat jenis
+            // terakhir baru ikut dinilai sejak parameter dihasilkan dari data
+            // master, sehingga sebelumnya tidak ada satu pun contohnya.
+            ['id_fasilitas_sp' => 14, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'jenis_fasilitas' => 'Pendidikan Lanjutan', 'nama_fasilitas' => 'SMP SATU ATAP KAPITAN MEO', 'jumlah' => 1, 'tahun_perolehan' => 2021, 'sumber_dana' => 'APBN', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Baik', 'lintang' => -9.3612000, 'bujur' => 124.9871000, 'keterangan' => null],
+            ['id_fasilitas_sp' => 15, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'jenis_fasilitas' => 'Pasar atau Kios', 'nama_fasilitas' => 'PASAR DESA KAPITAN MEO', 'jumlah' => 1, 'tahun_perolehan' => 2022, 'sumber_dana' => 'APBD Kabupaten', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Baik', 'lintang' => -9.3618000, 'bujur' => 124.9880000, 'keterangan' => null],
+            ['id_fasilitas_sp' => 16, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'jenis_fasilitas' => 'Olahraga', 'nama_fasilitas' => 'LAPANGAN SERBAGUNA KAPITAN MEO', 'jumlah' => 1, 'tahun_perolehan' => 2020, 'sumber_dana' => 'Swadaya', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Baik', 'lintang' => -9.3625000, 'bujur' => 124.9865000, 'keterangan' => null],
+            ['id_fasilitas_sp' => 17, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'jenis_fasilitas' => 'Keamanan', 'nama_fasilitas' => 'POS KAMLING KAPITAN MEO', 'jumlah' => 2, 'tahun_perolehan' => 2021, 'sumber_dana' => 'Swadaya', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Baik', 'lintang' => -9.3609000, 'bujur' => 124.9858000, 'keterangan' => null],
+            ['id_fasilitas_sp' => 18, 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'jenis_fasilitas' => 'Balai Pertemuan', 'nama_fasilitas' => 'BALAI PERTEMUAN TNIUMANU', 'jumlah' => 1, 'tahun_perolehan' => 2020, 'sumber_dana' => 'APBD Kabupaten', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Baik', 'lintang' => -9.3745000, 'bujur' => 124.9993000, 'keterangan' => null],
+            ['id_fasilitas_sp' => 19, 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'jenis_fasilitas' => 'Ibadah', 'nama_fasilitas' => 'GEREJA STASI TNIUMANU', 'jumlah' => 1, 'tahun_perolehan' => 2018, 'sumber_dana' => 'Swadaya', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Baik', 'lintang' => -9.3751000, 'bujur' => 124.9987000, 'keterangan' => null],
+            ['id_fasilitas_sp' => 20, 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'jenis_fasilitas' => 'Keamanan', 'nama_fasilitas' => 'POS KAMLING TNIUMANU', 'jumlah' => 1, 'tahun_perolehan' => 2019, 'sumber_dana' => 'Swadaya', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Rusak Ringan', 'lintang' => -9.3738000, 'bujur' => 125.0001000, 'keterangan' => null],
+            ['id_fasilitas_sp' => 21, 'satuan_permukiman_id' => 3, 'satuan_permukiman' => 'SP Harekakae', 'jenis_fasilitas' => 'Pendidikan Lanjutan', 'nama_fasilitas' => 'SMP NEGERI HAREKAKAE', 'jumlah' => 1, 'tahun_perolehan' => 2019, 'sumber_dana' => 'APBN', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Rusak Ringan', 'lintang' => -9.3881000, 'bujur' => 125.0072000, 'keterangan' => null],
+            ['id_fasilitas_sp' => 22, 'satuan_permukiman_id' => 3, 'satuan_permukiman' => 'SP Harekakae', 'jenis_fasilitas' => 'Pasar atau Kios', 'nama_fasilitas' => 'PASAR DESA HAREKAKAE', 'jumlah' => 1, 'tahun_perolehan' => 2021, 'sumber_dana' => 'APBD Kabupaten', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Baik', 'lintang' => -9.3888000, 'bujur' => 125.0065000, 'keterangan' => null],
+            ['id_fasilitas_sp' => 23, 'satuan_permukiman_id' => 3, 'satuan_permukiman' => 'SP Harekakae', 'jenis_fasilitas' => 'Olahraga', 'nama_fasilitas' => 'LAPANGAN SEPAK BOLA HAREKAKAE', 'jumlah' => 1, 'tahun_perolehan' => 2020, 'sumber_dana' => 'Swadaya', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Baik', 'lintang' => -9.3875000, 'bujur' => 125.0081000, 'keterangan' => null],
+            ['id_fasilitas_sp' => 24, 'satuan_permukiman_id' => 3, 'satuan_permukiman' => 'SP Harekakae', 'jenis_fasilitas' => 'Keamanan', 'nama_fasilitas' => 'POS KAMLING HAREKAKAE', 'jumlah' => 2, 'tahun_perolehan' => 2021, 'sumber_dana' => 'Swadaya', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Baik', 'lintang' => -9.3869000, 'bujur' => 125.0058000, 'keterangan' => null],
+            ['id_fasilitas_sp' => 25, 'satuan_permukiman_id' => 5, 'satuan_permukiman' => 'SP Tualaran', 'jenis_fasilitas' => 'Kesehatan', 'nama_fasilitas' => 'POSKESDES TUALARAN', 'jumlah' => 1, 'tahun_perolehan' => 2022, 'sumber_dana' => 'APBN', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Baik', 'lintang' => -9.3985000, 'bujur' => 125.0134000, 'keterangan' => null],
+            ['id_fasilitas_sp' => 26, 'satuan_permukiman_id' => 5, 'satuan_permukiman' => 'SP Tualaran', 'jenis_fasilitas' => 'Balai Pertemuan', 'nama_fasilitas' => 'BALAI PERTEMUAN NAET', 'jumlah' => 1, 'tahun_perolehan' => 2021, 'sumber_dana' => 'APBD Kabupaten', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Baik', 'lintang' => -9.3979000, 'bujur' => 125.0141000, 'keterangan' => null],
         ];
     }
 
@@ -1769,6 +1804,200 @@ class DummyData
         }
 
         return $hasil;
+    }
+
+    /**
+     * Parameter penilaian kondisi SP, DIHASILKAN DARI DATA MASTER JENIS.
+     *
+     * BUKAN LAGI DAFTAR TULIS TANGAN, dan itu inti perbaikannya. Sebelumnya
+     * `PenilaianKondisiSp::parameter()` memuat tiga belas baris yang ditulis
+     * satu per satu, sehingga jenis infrastruktur atau fasilitas yang
+     * ditambahkan Admin tidak pernah ikut dinilai: dropdownnya hidup, petugas
+     * dapat mendata asetnya, tetapi skor SP tidak berubah sama sekali.
+     *
+     * Akibatnya sudah nyata pada data contoh. `Pendidikan Lanjutan`,
+     * `Pasar atau Kios`, `Olahraga`, dan `Keamanan` tidak pernah masuk daftar,
+     * sehingga POS KAMLING di SP Weain yang berkondisi Rusak Berat terdata
+     * rapi, tampil di daftar fasilitas, dan tidak menyumbang apa pun pada
+     * skornya. Bukan keputusan sadar, hanya daftar yang berhenti di baris ke
+     * tiga belas.
+     *
+     * `sumber` DISIMPULKAN dari jenisnya, tidak diisi manual: jenis
+     * infrastruktur selalu dibaca dari tabel `infrastruktur` kolom `jenis`,
+     * jenis fasilitas dari `fasilitas_sp` kolom `jenis_fasilitas`. Menyimpannya
+     * sebagai isian terpisah membuka peluang parameter menunjuk tabel yang
+     * tidak memuat jenisnya.
+     *
+     * `is_dinilai` menjawab pertanyaan "mana yang masuk penilaian". Jenis baru
+     * lahir dalam keadaan TIDAK dinilai, sebab menambah jenis adalah tindakan
+     * pendataan sedangkan memasukkannya ke penilaian adalah keputusan
+     * kebijakan. Menyatukan keduanya membuat skor seluruh SP turun hanya
+     * karena Admin menambah satu pilihan dropdown, sebab penyebutnya bertambah.
+     *
+     * `Lainnya` tidak dinilai dan itu bukan pengecualian di dalam kode,
+     * melainkan sekadar tidak dicentang. Ia keranjang penampung, bukan satu
+     * jenis barang; menilai "ketersediaan Lainnya" berarti memberi nilai penuh
+     * kepada SP yang memiliki satu benda tak jelas.
+     *
+     * @return array<int, array<string, mixed>> Parameter penilaian
+     */
+    public static function parameterPenilaian(): array
+    {
+        // Parameter yang berlaku, dipetakan dari nilai jenisnya. Yang tidak
+        // tercantum di sini ada sebagai baris tetapi belum dinilai.
+        //
+        // `nama` sengaja boleh berbeda dari nama jenisnya: jenis menjawab
+        // "aset ini apa", parameter menjawab "apa yang dinilai". Petugas
+        // mendata aset berjenis `Gudang`, dinas menilai ketersediaan
+        // `Gudang Pascapanen`.
+        // Kunci larik: nilai jenis pada data master. Isi: kode, nama, tingkat.
+        //
+        // $kode DITULIS TETAP, tidak diturunkan dari nama jenisnya. Ia penunjuk
+        // yang tersalin ke $penilaian_sp.rincian`, sehingga menurunkannya dari
+        // teks jenis membuat penilaian lama kehilangan pasangannya begitu Admin
+        // memperbaiki ejaan. Alasannya sama dengan $referensi_id` menggantikan
+        // rujukan berbasis teks.
+        $berlaku = [
+            // Primer: tanpa ini tempat tidak layak dihuni.
+            'Air' => ['air_bersih', 'Air Bersih', TingkatKebutuhan::Primer],
+            'Jalan Penghubung' => ['jalan_penghubung', 'Jalan Penghubung', TingkatKebutuhan::Primer],
+            'Listrik' => ['listrik', 'Listrik', TingkatKebutuhan::Primer],
+
+            // Sekunder: masih dapat dihuni, tetapi tidak berkembang.
+            'Kesehatan' => ['kesehatan', 'Fasilitas Kesehatan', TingkatKebutuhan::Sekunder],
+            'Pendidikan Dasar' => ['pendidikan_dasar', 'Pendidikan Dasar', TingkatKebutuhan::Sekunder],
+            'Telekomunikasi' => ['telekomunikasi', 'Telekomunikasi', TingkatKebutuhan::Sekunder],
+            'Sanitasi' => ['sanitasi', 'Sanitasi', TingkatKebutuhan::Sekunder],
+
+            // Tersier: penunjang produktivitas dan kehidupan sosial.
+            'Irigasi' => ['irigasi', 'Irigasi', TingkatKebutuhan::Tersier],
+            'Gudang' => ['gudang', 'Gudang Pascapanen', TingkatKebutuhan::Tersier],
+            'Jalan Produksi' => ['jalan_produksi', 'Jalan Produksi', TingkatKebutuhan::Tersier],
+            'Balai Pertemuan' => ['balai', 'Balai Pertemuan', TingkatKebutuhan::Tersier],
+            'Ibadah' => ['ibadah', 'Rumah Ibadah', TingkatKebutuhan::Tersier],
+            'Pasar atau Kios Saprotan' => ['pasar_kios', 'Pasar atau Kios Saprotan', TingkatKebutuhan::Tersier],
+
+            // Empat yang dahulu terlewat. POS KAMLING berjenis Keamanan
+            // terdata sejak awal tetapi tidak pernah ikut dihitung.
+            'Pendidikan Lanjutan' => ['pendidikan_lanjutan', 'Pendidikan Lanjutan', TingkatKebutuhan::Tersier],
+            'Pasar atau Kios' => ['pasar_kios_fasilitas', 'Pasar atau Kios', TingkatKebutuhan::Tersier],
+            'Olahraga' => ['olahraga', 'Sarana Olahraga', TingkatKebutuhan::Tersier],
+            'Keamanan' => ['keamanan', 'Sarana Keamanan', TingkatKebutuhan::Tersier],
+        ];
+
+        $hasil = [];
+        $id = 1;
+
+        foreach ([JenisReferensi::JenisInfrastruktur, JenisReferensi::JenisFasilitas] as $jenis) {
+            $sumber = $jenis === JenisReferensi::JenisFasilitas ? 'Fasilitas' : 'Infrastruktur';
+
+            foreach (self::referensi($jenis) as $urutan => $baris) {
+                $cocok = $berlaku[$baris['nilai']] ?? null;
+
+                $hasil[] = [
+                    'id_parameter_penilaian_sp' => $id++,
+                    'kode' => $cocok[0] ?? Str::slug($baris['nilai'], '_'),
+                    'nama' => $cocok[1] ?? $baris['nilai'],
+                    'tingkat' => $cocok[2] ?? TingkatKebutuhan::Tersier,
+                    'bobot' => ($cocok[2] ?? TingkatKebutuhan::Tersier)->bobotBawaan(),
+                    'sumber' => $sumber,
+                    'jenis' => $jenis->value,
+                    'referensi_id' => $baris['id_referensi'],
+                    'nilai_jenis' => $baris['nilai'],
+                    'is_dinilai' => $cocok !== null,
+                    'urutan' => $urutan + 1,
+                ];
+            }
+        }
+
+        return $hasil;
+    }
+
+    /**
+     * Parameter yang benar-benar ikut dihitung, terurut.
+     *
+     * Dipisah dari parameterPenilaian() sebab halaman pengaturan perlu melihat
+     * SELURUH jenis termasuk yang belum dinilai, sedangkan penghitung skor
+     * hanya boleh membaca yang dicentang.
+     *
+     * @return array<int, array<string, mixed>> Parameter yang dinilai
+     */
+    public static function parameterDinilai(): array
+    {
+        return array_values(array_filter(
+            self::parameterPenilaian(),
+            fn ($p) => $p['is_dinilai']
+        ));
+    }
+
+    /**
+     * Ambang dan wording status kondisi SP, dapat disunting dinas.
+     *
+     * ENUM TETAP MENJADI KUNCI PERILAKU, hanya teks tampil dan ambangnya yang
+     * berupa data. Pola ini sama dengan bidang pengaduan: `dariSkor()` wajib
+     * mengembalikan salah satu dari tiga case, sehingga statusnya TIDAK dapat
+     * ditambah maupun dihapus lewat antarmuka. Yang bebas ditentukan dinas
+     * adalah namanya, sebab tiap dinas punya istilah sendiri.
+     *
+     * Status juga BUKAN pilihan melainkan kesimpulan: tidak ada satu pun form
+     * yang menyuruh petugas memilihnya, ia selalu hasil hitungan. Itu sebabnya
+     * ia tidak ikut menjadi baris pada data master referensi, yang seluruh
+     * isinya adalah pilihan pada dropdown.
+     *
+     * `ambang_bawah` pada status terendah bernilai 0 dan tidak disunting: ia
+     * penampung sisa, sehingga tidak ada skor yang jatuh tanpa status.
+     *
+     * Warna tidak ikut disunting. Hijau, kuning, dan merah terikat makna
+     * urutan keparahan, bukan selera; menukarnya membuat rekap dashboard
+     * terbaca terbalik.
+     *
+     * @return array<int, array<string, mixed>> Status beserta ambangnya
+     */
+    public static function statusKondisiSp(): array
+    {
+        return [
+            [
+                'kode' => StatusKondisiSp::Mandiri->value,
+                'nama' => 'Mandiri',
+                'keterangan' => 'Seluruh layanan dasar tersedia dan berfungsi baik',
+                'ambang_bawah' => 80,
+                'warna' => 'success',
+                'urutan' => 1,
+            ],
+            [
+                'kode' => StatusKondisiSp::Berkembang->value,
+                'nama' => 'Berkembang',
+                'keterangan' => 'Sebagian layanan tersedia, ada yang perlu diperbaiki',
+                'ambang_bawah' => 55,
+                'warna' => 'warning',
+                'urutan' => 2,
+            ],
+            [
+                'kode' => StatusKondisiSp::PerluPenanganan->value,
+                'nama' => 'Perlu Penanganan',
+                'keterangan' => 'Ada layanan dasar yang belum tersedia atau tidak berfungsi',
+                'ambang_bawah' => 0,
+                'warna' => 'error',
+                'urutan' => 3,
+            ],
+        ];
+    }
+
+    /**
+     * Satu baris status kondisi SP berdasarkan kodenya.
+     *
+     * @param  string  $kode  Nilai enum StatusKondisiSp
+     * @return array<string, mixed>|null Baris status, null bila tidak ada
+     */
+    public static function statusKondisiSpDari(string $kode): ?array
+    {
+        foreach (self::statusKondisiSp() as $baris) {
+            if ($baris['kode'] === $kode) {
+                return $baris;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -2121,10 +2350,10 @@ class DummyData
     public static function role(): array
     {
         return [
-            ['id_role' => 1, 'nama' => 'Admin', 'deskripsi' => 'Akses penuh termasuk manajemen pengguna, role, dan audit log.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => true, 'is_aktif' => true, 'jumlah_izin' => 101, 'jumlah_pengguna' => 1],
-            ['id_role' => 2, 'nama' => 'Dinas Transmigrasi', 'deskripsi' => 'Mengelola data wilayah, transmigran, rumah, lahan, dan infrastruktur.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 48, 'jumlah_pengguna' => 1],
-            ['id_role' => 3, 'nama' => 'Dinas Pertanian', 'deskripsi' => 'Mengelola data poktan, komoditas, panen, alsintan, dan saprotan.', 'cakupan_data' => CakupanData::PerBidang->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 47, 'jumlah_pengguna' => 1],
-            ['id_role' => 4, 'nama' => 'Operator SP', 'deskripsi' => 'Memasukkan data pada satuan permukiman yang ditugaskan. Tanpa kewenangan hapus.', 'cakupan_data' => CakupanData::PerSp->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 51, 'jumlah_pengguna' => 2],
+            ['id_role' => 1, 'nama' => 'Admin', 'deskripsi' => 'Akses penuh termasuk manajemen pengguna, role, dan audit log.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => true, 'is_aktif' => true, 'jumlah_izin' => 103, 'jumlah_pengguna' => 1],
+            ['id_role' => 2, 'nama' => 'Dinas Transmigrasi', 'deskripsi' => 'Mengelola data wilayah, transmigran, rumah, lahan, dan infrastruktur.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 50, 'jumlah_pengguna' => 1],
+            ['id_role' => 3, 'nama' => 'Dinas Pertanian', 'deskripsi' => 'Mengelola data poktan, komoditas, panen, alsintan, dan saprotan.', 'cakupan_data' => CakupanData::PerBidang->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 48, 'jumlah_pengguna' => 1],
+            ['id_role' => 4, 'nama' => 'Operator SP', 'deskripsi' => 'Memasukkan data pada satuan permukiman yang ditugaskan. Tanpa kewenangan hapus.', 'cakupan_data' => CakupanData::PerSp->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 52, 'jumlah_pengguna' => 2],
 
             // Role buatan Admin, bukan bawaan sistem. Sengaja dibuat tanpa
             // pengguna agar keadaan "dapat dihapus" ikut terlihat pada
@@ -2609,6 +2838,12 @@ class DummyData
                     // dihapus, agar data lama yang memakainya tetap terbaca
                     // (kamus data 5.6).
                     ['kunci' => 'referensi', 'nama' => 'Data master referensi', 'aksi' => $tanpaHapus],
+                    // Hanya lihat dan ubah. Parameter penilaian TIDAK dapat
+                    // ditambah maupun dihapus lewat antarmuka: barisnya
+                    // dihasilkan dari jenis infrastruktur dan fasilitas, dan
+                    // status kondisi wajib tetap tiga sebab `dariSkor()` hanya
+                    // mengembalikan tiga keluaran.
+                    ['kunci' => 'penilaian_kondisi', 'nama' => 'Penilaian kondisi SP', 'aksi' => ['lihat', 'ubah']],
                 ],
             ],
             [
@@ -2697,6 +2932,7 @@ class DummyData
             1 => [
                 'wilayah' => $k, 'kawasan' => $k, 'sp' => $k,
                 'inventaris_sp' => $k, 'fasilitas_sp' => $k, 'satuan' => $k, 'referensi' => $ltu,
+                'penilaian_kondisi' => ['lihat', 'ubah'],
                 'transmigran' => $k, 'rumah' => $k, 'riwayat_penghunian' => $k,
                 // Riwayat suksesi tidak dapat dihapus siapa pun, termasuk
                 // Admin: ia menyatakan siapa pemegang jatah lahan pada rentang
@@ -2716,6 +2952,7 @@ class DummyData
             2 => [
                 'wilayah' => $l, 'kawasan' => $l, 'sp' => $ltu,
                 'inventaris_sp' => $ltu, 'fasilitas_sp' => $ltu, 'satuan' => $l, 'referensi' => $ltu,
+                'penilaian_kondisi' => ['lihat', 'ubah'],
                 'transmigran' => $ltu, 'rumah' => $ltu, 'riwayat_penghunian' => $lt,
                 'riwayat_kepala_keluarga' => $lt,
                 'lahan' => $ltu, 'dokumen_lahan' => $lt,
@@ -2729,6 +2966,7 @@ class DummyData
             3 => [
                 'wilayah' => $l, 'kawasan' => $l, 'sp' => $l,
                 'inventaris_sp' => $l, 'fasilitas_sp' => $l, 'satuan' => $l, 'referensi' => $l,
+                'penilaian_kondisi' => $l,
                 'transmigran' => $l, 'rumah' => $l, 'riwayat_penghunian' => $l,
                 'riwayat_kepala_keluarga' => $l,
                 'lahan' => $l, 'dokumen_lahan' => $l,
@@ -2744,6 +2982,7 @@ class DummyData
             4 => [
                 'wilayah' => $l, 'kawasan' => $l, 'sp' => $l,
                 'inventaris_sp' => $ltu, 'fasilitas_sp' => $ltu, 'satuan' => $l, 'referensi' => $l,
+                'penilaian_kondisi' => $l,
                 'transmigran' => $ltu, 'rumah' => $ltu, 'riwayat_penghunian' => $lt,
                 'riwayat_kepala_keluarga' => $l,
                 'lahan' => $ltu, 'dokumen_lahan' => $lt,

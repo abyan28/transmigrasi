@@ -441,15 +441,20 @@ Bobot disimpan sebagai **data**, bukan ditulis di dalam kode, agar Admin dapat m
 | `kode` | `VARCHAR(50)` | TIDAK | UQ | Penunjuk parameter, contoh `air_bersih`, `jalan_penghubung` |
 | `nama` | `VARCHAR(100)` | TIDAK | | Teks yang tampil, contoh "Air Bersih" |
 | `tingkat` | `ENUM` | TIDAK | IDX | Lihat 11.29 |
-| `bobot` | `TINYINT UNSIGNED` | TIDAK | | Bawaan mengikuti tingkat: Primer 5, Sekunder 3, Tersier 1 |
+| `bobot` | `TINYINT UNSIGNED` | TIDAK | | Bawaan mengikuti tingkat: Primer 5, Sekunder 3, Tersier 1. Disunting dinas lewat `/master/penilaian-kondisi` |
 | `sumber` | `ENUM` | TIDAK | | Lihat 11.31; menentukan tabel mana yang dibaca |
 | `referensi_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | Baris `referensi` yang dicari pada tabel sumber, contoh jenis infrastruktur `Air` |
-| `is_aktif` | `BOOLEAN` | TIDAK | | Parameter nonaktif tidak ikut dihitung pada penilaian baru |
+| `is_dinilai` | `BOOLEAN` | TIDAK | | Parameter yang tidak dicentang tetap tercatat tetapi tidak menambah pembagi skor |
 | `urutan` | `SMALLINT UNSIGNED` | TIDAK | | Urutan tampil pada halaman pengaturan dan rincian skor |
 
 **Catatan:**
 - Parameter **dinonaktifkan, bukan dihapus**, agar riwayat penilaian yang memakainya tetap dapat dibaca.
 - `sumber` dan `referensi_id` menjelaskan dari mana nilai kondisi diambil: parameter `air_bersih` membaca `infrastruktur` berjenis `Air`, sedangkan `kesehatan` membaca `fasilitas_sp` berjenis `Kesehatan`.
+- **Barisnya DIHASILKAN dari jenis infrastruktur dan fasilitas**, tidak ditulis satu per satu. Sebelumnya daftar parameter berupa tiga belas baris tulis tangan di dalam kode, sehingga jenis yang ditambahkan Admin tidak pernah ikut dinilai: dropdownnya hidup dan petugas dapat mendata asetnya, tetapi skor SP tidak berubah sama sekali. POS KAMLING di SP Weain berkondisi Rusak Berat terdata rapi dan tidak menyumbang apa pun, semata karena daftar itu berhenti di baris ke tiga belas.
+- **Jenis baru lahir dalam keadaan `is_dinilai` bernilai salah.** Menambah jenis adalah tindakan pendataan, sedangkan memasukkannya ke penilaian adalah keputusan kebijakan. Menyatukan keduanya membuat skor seluruh SP turun hanya karena Admin menambah satu pilihan dropdown, sebab pembaginya ikut bertambah.
+- **`sumber` disimpulkan dari jenisnya**, tidak diisi manual: jenis infrastruktur selalu dibaca dari tabel `infrastruktur` kolom `jenis`, jenis fasilitas dari `fasilitas_sp` kolom `jenis_fasilitas`. Menyimpannya sebagai isian terpisah membuka peluang parameter menunjuk tabel yang tidak memuat jenisnya.
+- **`tingkat` tiga parameter primer terkunci** (`air_bersih`, `jalan_penghubung`, `listrik`). Memindahkannya ke tingkat lain bukan menurunkan bobot, melainkan mencabut aturan primer nol, sehingga SP tanpa listrik berhenti otomatis berstatus Perlu Penanganan.
+- **`kode` ditulis tetap, tidak diturunkan dari nama jenisnya.** Ia penunjuk yang tersalin ke `penilaian_sp.rincian`, sehingga menurunkannya dari teks membuat penilaian lama kehilangan pasangannya begitu Admin memperbaiki ejaan.
 - `referensi_id` **menggantikan `jenis_rujukan` yang dulu berupa teks**, sejak jenis infrastruktur dan fasilitas menjadi data master. Rujukan berbasis teks putus tanpa pesan apa pun begitu Admin memperbaiki ejaannya, dan parameter itu lalu diam-diam menilai setiap SP sebagai tidak punya aset tersebut. Bila idnya tidak ditemukan, parameter **dilewati**, bukan dinilai nol: menilainya nol berarti seluruh SP jatuh statusnya hanya karena satu baris referensi hilang.
 
 ### 5.5 `penilaian_sp`
@@ -1084,6 +1089,13 @@ Dikelompokkan menurut satu pertanyaan: tanpa parameter ini, apakah tempat terseb
 Istilah bernada merendahkan seperti "terbelakang" atau "tertinggal" **dilarang**, sebab yang dinilai adalah infrastruktur, bukan warganya (`rules.md` 10c.1 poin 3).
 
 Warna badge: Mandiri `success` · Berkembang `warning` · Perlu Penanganan `error`.
+**Nama dan ambangnya dapat disunting dinas** lewat `/master/penilaian-kondisi`, sebab tiap dinas punya istilah sendiri. Yang tersimpan pada `penilaian_sp.status` tetap nilai enum di atas; yang berubah hanya teks tampilnya.
+
+**Jumlahnya tetap tiga dan tidak dapat ditambah maupun dihapus.** `StatusKondisiSp::dariSkor()` hanya mengembalikan tiga keluaran, sehingga status keempat tidak akan pernah tercapai satuan permukiman mana pun. Warna juga tidak ikut disunting: hijau, kuning, dan merah menyatakan urutan keparahan, bukan selera.
+
+**Ambang wajib menurun**, dan ambang status terendah terkunci pada 0 sebagai penampung sisa. Bila urutannya terbalik, status tengah tidak akan pernah tercapai sebab pembacaan berhenti pada ambang tertinggi yang cocok lebih dulu.
+
+Larangan istilah merendahkan berlaku atas **nilai bawaan**; wording hasil suntingan dinas tidak diperiksa sistem.
 
 ### 11.31 Sumber nilai parameter penilaian
 
@@ -1225,6 +1237,7 @@ Tanda centang berarti kewenangan tersebut dibuat untuk fitur bersangkutan.
 | `riwayat_penghunian` | v | v | v | v |
 | `riwayat_kepala_keluarga` | v | v | v | |
 | `referensi` | v | v | v | |
+| `penilaian_kondisi` | v |   | v |   |
 | `lahan` | v | v | v | v |
 | `dokumen_lahan` | v | v | v | v |
 | `poktan` | v | v | v | v |
@@ -1251,7 +1264,7 @@ Agar halaman pengaturan role mudah dibaca, kewenangan dikelompokkan sesuai struk
 | Kelompok | Fitur |
 |---|---|
 | Sistem | `pengguna`, `role`, `audit_log` |
-| Wilayah dan SP | `wilayah`, `kawasan`, `sp`, `inventaris_sp`, `fasilitas_sp`, `satuan`, `referensi` |
+| Wilayah dan SP | `wilayah`, `kawasan`, `sp`, `inventaris_sp`, `fasilitas_sp`, `satuan`, `referensi`, `penilaian_kondisi` |
 | Kependudukan | `transmigran`, `rumah`, `riwayat_penghunian`, `riwayat_kepala_keluarga` |
 | Lahan | `lahan`, `dokumen_lahan` |
 | Kelembagaan | `poktan`, `anggota_poktan`, `alsintan`, `saprotan` |

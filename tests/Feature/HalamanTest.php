@@ -1517,7 +1517,8 @@ it('menyamakan daftar izin dengan kamus data dan rules', function () {
         'Transmigran' => 'transmigran', 'Rumah & hunian' => 'rumah',
         'Riwayat penghunian' => 'riwayat_penghunian',
         'Riwayat kepala keluarga' => 'riwayat_kepala_keluarga',
-        'Data master referensi' => 'referensi', 'Lahan' => 'lahan',
+        'Data master referensi' => 'referensi',
+        'Penilaian kondisi SP' => 'penilaian_kondisi', 'Lahan' => 'lahan',
         'Dokumen lahan (HPL/SHM)' => 'dokumen_lahan', 'Kelompok tani' => 'poktan',
         'Anggota poktan' => 'anggota_poktan', 'Alsintan' => 'alsintan', 'Saprotan' => 'saprotan',
         'Komoditas' => 'komoditas', 'Musim tanam' => 'musim_tanam',
@@ -4540,7 +4541,7 @@ it('memakai nama submenu yang sama persis dengan sidebar', function () {
         '/infrastruktur' => ['Wilayah & SP', 'Infrastruktur SP'],
         '/sp/inventaris' => ['Wilayah & SP', 'Inventaris SP'],
         '/musim-tanam' => ['Produksi Pertanian', 'Musim Tanam'],
-        '/wilayah' => ['Pengaturan Sistem', 'Data Master Wilayah'],
+        '/wilayah' => ['Data Master', 'Wilayah'],
     ];
 
     foreach ($peta as $jalur => [$induk, $nama]) {

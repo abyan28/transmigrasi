@@ -4,6 +4,7 @@ namespace App\Enums;
 
 use App\Enums\Concerns\PunyaLabel;
 use App\Enums\Concerns\PunyaWarnaBadge;
+use App\Support\DummyData;
 
 /**
  * Status kesiapan layanan dasar sebuah satuan permukiman.
@@ -41,11 +42,41 @@ enum StatusKondisiSp: string
      */
     public function keterangan(): string
     {
+        return DummyData::statusKondisiSpDari($this->value)['keterangan']
+            ?? $this->bawaanKeterangan();
+    }
+
+    /**
+     * Keterangan bawaan, dipakai bila datanya belum ada.
+     *
+     * Cadangan ini sengaja ada: status tanpa keterangan membuat kartu rekap
+     * dashboard tampil sebagai judul tanpa penjelasan, dan label tanpa
+     * rincian berhenti sebagai stempel (rules.md 10c.1 poin 4).
+     *
+     * @return string Keterangan berbahasa Indonesia
+     */
+    private function bawaanKeterangan(): string
+    {
         return match ($this) {
             self::Mandiri => 'Seluruh layanan dasar tersedia dan berfungsi baik',
             self::Berkembang => 'Sebagian layanan tersedia, ada yang perlu diperbaiki',
             self::PerluPenanganan => 'Ada layanan dasar yang belum tersedia atau tidak berfungsi',
         };
+    }
+
+    /**
+     * Nama status yang tampil, dapat disunting dinas.
+     *
+     * Nilai enum tetap dipakai sebagai kunci di dalam sistem, sedangkan yang
+     * tampil di layar dibaca dari data. Dinas kerap punya istilah sendiri;
+     * "Perlu Penanganan" pada satu kabupaten bisa disebut "Prioritas
+     * Pembinaan" di kabupaten lain, dan keduanya menunjuk keadaan yang sama.
+     *
+     * @return string Nama yang tampil
+     */
+    public function label(): string
+    {
+        return DummyData::statusKondisiSpDari($this->value)['nama'] ?? $this->value;
     }
 
     /**
@@ -67,10 +98,24 @@ enum StatusKondisiSp: string
             return self::PerluPenanganan;
         }
 
-        return match (true) {
-            $skor >= 80 => self::Mandiri,
-            $skor >= 55 => self::Berkembang,
-            default => self::PerluPenanganan,
-        };
+        // AMBANG DIBACA DARI DATA, bukan angka di dalam kode. Bobot parameter
+        // sudah lebih dulu dapat disunting, sedangkan ambangnya terkunci,
+        // padahal keduanya sama-sama keputusan kebijakan yang wajib divalidasi
+        // dinas (rules.md 10c poin 13).
+        //
+        // Dibaca menurun dari yang tertinggi, dan urutan itu dijamin kolom
+        // `urutan`. Status terendah berambang 0 sehingga selalu tercapai; tanpa
+        // itu ada skor yang tidak mendapat status sama sekali.
+        $ambang = DummyData::statusKondisiSp();
+
+        usort($ambang, fn ($a, $b) => $b['ambang_bawah'] <=> $a['ambang_bawah']);
+
+        foreach ($ambang as $baris) {
+            if ($skor >= $baris['ambang_bawah']) {
+                return self::from($baris['kode']);
+            }
+        }
+
+        return self::PerluPenanganan;
     }
 }

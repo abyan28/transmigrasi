@@ -430,6 +430,8 @@ Dua halaman berikut dapat diakses siapa pun tanpa akun, sebagai kanal pengaduan 
 | Data master satuan | `GET /master/satuan` | A |
 | Form data master satuan | modal | A |
 | Indeks data master referensi | `GET /master/referensi` | A, DT |
+| Pengaturan penilaian kondisi SP | `GET /master/penilaian-kondisi` | A, DT |
+| Form parameter dan status penilaian | modal | A, DT |
 | Satu daftar referensi | `GET /master/referensi/{jenis}` | A, DT |
 | Form nilai referensi | modal | A, DT |
 
@@ -562,6 +564,7 @@ Dua penempatan yang perlu diketahui, sebab tidak mengikuti struktur tabel:
 | **Administrasi Sistem** | Pengaturan Sistem | Data Master Wilayah | `/wilayah` | `wilayah.lihat` |
 | | | Data Master Satuan | `/master/satuan` | `satuan.lihat` |
 | | | Data Master Referensi | `/master/referensi` | `referensi.lihat` |
+| | | Penilaian Kondisi SP | `/master/penilaian-kondisi` | `penilaian_kondisi.lihat` |
 | | | Pengguna | `/pengguna` | `pengguna.lihat` |
 | | | Role & Hak Akses | `/pengaturan/role` | `role.lihat` |
 | | | Audit Log | `/audit-log` | `audit_log.lihat` |

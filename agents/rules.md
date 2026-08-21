@@ -257,6 +257,7 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **-*
 | Riwayat penghunian | L T U H | L T | L | L T |
 | Riwayat kepala keluarga | L T U | L T | L | L |
 | Data master referensi | L T U | L T U | L | L |
+| Penilaian kondisi SP | L U | L U | L | L |
 | Lahan | L T U H | L T U | L | L T U |
 | Dokumen lahan (HPL/SHM) | L T U H | L T | L | L T |
 | Kelompok tani | L T U H | L | L T U | L T U |
@@ -463,6 +464,10 @@ Parameter dikelompokkan menurut satu pertanyaan: **tanpa ini, apakah tempat ters
 5. Bobot awal: **Primer 5, Sekunder 3, Tersier 1**. Jarak ini disengaja agar kegagalan pada layanan dasar tidak tertutupi oleh kelengkapan fasilitas penunjang.
 6. Bobot **disimpan sebagai data** pada tabel `parameter_penilaian_sp`, bukan ditulis di dalam kode, sehingga Admin dapat menyesuaikannya lewat antarmuka tanpa mengubah struktur database. Pola ini mengikuti keputusan yang sama pada role dinamis (Â§5.0) dan faktor konversi satuan (Â§8a).
 7. Parameter dapat dinonaktifkan tanpa dihapus, agar riwayat penilaian yang memakainya tetap dapat dibaca.
+7a. **Barisnya dihasilkan dari jenis infrastruktur dan fasilitas** pada data master, bukan ditulis satu per satu. Daftar tulis tangan membuat jenis yang ditambahkan Admin tidak pernah ikut dinilai: dropdownnya hidup dan petugas dapat mendata asetnya, tetapi skor tidak berubah sama sekali. Keadaan itu pernah terjadi dan baru ketahuan setelah empat jenis fasilitas terlewat.
+7b. **Jenis baru belum dinilai sampai dinas mencentangnya.** Menambah jenis adalah pendataan, memasukkannya ke penilaian adalah kebijakan; menyatukan keduanya membuat skor seluruh SP turun hanya karena satu pilihan dropdown bertambah.
+7c. **Tingkat tiga parameter primer terkunci.** Memindahkan air bersih, jalan penghubung, atau listrik ke tingkat lain bukan menurunkan bobotnya, melainkan mencabut aturan primer nol pada poin 11. Bobotnya tetap dapat disesuaikan.
+7d. Jenis penampung seperti `Lainnya` **tidak dinilai**. Ia bukan satu jenis barang, sehingga menilai ketersediaannya berarti memberi nilai penuh kepada SP yang memiliki satu benda tak jelas.
 
 #### 10c.4 Cara menghitung
 
@@ -495,6 +500,9 @@ Parameter dikelompokkan menurut satu pertanyaan: **tanpa ini, apakah tempat ters
     | **Perlu Penanganan** | Skor < 55, **atau** ada parameter primer bernilai nol |
 
 13. Bobot pada Â§10c.3 dan ambang pada poin 12 adalah **keputusan kebijakan, bukan keputusan teknis**. Keduanya wajib divalidasi dinas sebelum dipakai pada laporan resmi.
+13a. **Ketiganya kini dapat disunting dinas**, tidak lagi terkunci di dalam kode: nilai kondisi aset lewat data master referensi, sedangkan bobot dan ambang lewat `/master/penilaian-kondisi`. Sebelumnya hanya yang pertama yang berupa data, sehingga separuh perhitungan dapat diatur dan separuhnya tidak.
+13b. **Nama status juga dapat disesuaikan**, sebab tiap dinas punya istilah sendiri. Yang tersimpan tetap nilai enum; yang berubah hanya teks tampilnya. Jumlahnya tetap tiga, sebab perhitungan hanya mengenal tiga keluaran.
+13c. Larangan istilah merendahkan pada A10c.1 berlaku atas **nilai bawaan**. Wording hasil suntingan dinas tidak diperiksa sistem, sehingga tanggung jawabnya berpindah ke dinas yang menyuntingnya.
 
 #### 10c.6 Riwayat penilaian
 

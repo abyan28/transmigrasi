@@ -2,7 +2,6 @@
 
 namespace App\Support;
 
-use App\Enums\JenisReferensi;
 use App\Enums\StatusKondisiSp;
 use App\Enums\TingkatKebutuhan;
 
@@ -61,51 +60,25 @@ class PenilaianKondisiSp
     public const KONDISI_TIDAK_ADA = 'Tidak Ada';
 
     /**
-     * Daftar parameter penilaian beserta bobot bawaannya.
+     * Daftar parameter penilaian yang berlaku, beserta bobotnya.
      *
-     * CATATAN: pada Tahap 4 daftar ini dibaca dari tabel
-     * `parameter_penilaian_sp` agar Admin dapat menyesuaikan bobotnya lewat
-     * antarmuka. Bentuk larik di sini sengaja dibuat sama dengan kolom tabel
-     * tersebut, sehingga penggantian sumber tidak mengubah pemakainya.
+     * DIBACA DARI DATA, bukan ditulis sebagai daftar di sini. Sebelumnya
+     * metode ini memuat tiga belas baris tulis tangan, dan itu membuat jenis
+     * infrastruktur atau fasilitas yang ditambahkan Admin tidak pernah ikut
+     * dinilai: dropdownnya hidup, petugas dapat mendata asetnya, tetapi skor
+     * SP tidak berubah sama sekali. POS KAMLING di SP Weain berkondisi Rusak
+     * Berat terdata rapi dan tidak menyumbang apa pun, semata karena daftar di
+     * sini berhenti di baris ke tiga belas.
      *
-     * `referensi_id` MENGGANTIKAN `jenis_rujukan` yang dulu berupa teks.
-     * Alasannya bukan kerapian: jenis infrastruktur dan fasilitas kini
-     * dikelola Admin, dan rujukan berbasis teks putus tanpa pesan apa pun
-     * begitu Admin memperbaiki ejaan `Air` menjadi `Air Bersih`. Parameter itu
-     * lalu diam-diam menilai setiap SP sebagai tidak punya air, dan status SP
-     * jatuh karena satu penyuntingan ejaan.
+     * Hanya parameter yang DICENTANG yang dikembalikan. Jenis yang belum
+     * dicentang tetap ada sebagai baris pada halaman pengaturan, tetapi tidak
+     * ikut menambah penyebut skor.
      *
-     * @return array<int, array<string, mixed>> Parameter penilaian
+     * @return array<int, array<string, mixed>> Parameter yang dinilai
      */
     public static function parameter(): array
     {
-        $p = TingkatKebutuhan::Primer;
-        $s = TingkatKebutuhan::Sekunder;
-        $t = TingkatKebutuhan::Tersier;
-
-        $infra = fn (string $nilai) => DummyData::referensiId(JenisReferensi::JenisInfrastruktur, $nilai);
-        $fasil = fn (string $nilai) => DummyData::referensiId(JenisReferensi::JenisFasilitas, $nilai);
-
-        return [
-            // Primer: tanpa ini tempat tidak layak dihuni
-            ['kode' => 'air_bersih', 'nama' => 'Air Bersih', 'tingkat' => $p, 'bobot' => $p->bobotBawaan(), 'sumber' => 'Infrastruktur', 'referensi_id' => $infra('Air')],
-            ['kode' => 'jalan_penghubung', 'nama' => 'Jalan Penghubung', 'tingkat' => $p, 'bobot' => $p->bobotBawaan(), 'sumber' => 'Infrastruktur', 'referensi_id' => $infra('Jalan Penghubung')],
-            ['kode' => 'listrik', 'nama' => 'Listrik', 'tingkat' => $p, 'bobot' => $p->bobotBawaan(), 'sumber' => 'Infrastruktur', 'referensi_id' => $infra('Listrik')],
-
-            // Sekunder: masih dapat dihuni, tetapi tidak berkembang
-            ['kode' => 'kesehatan', 'nama' => 'Fasilitas Kesehatan', 'tingkat' => $s, 'bobot' => $s->bobotBawaan(), 'sumber' => 'Fasilitas', 'referensi_id' => $fasil('Kesehatan')],
-            ['kode' => 'pendidikan_dasar', 'nama' => 'Pendidikan Dasar', 'tingkat' => $s, 'bobot' => $s->bobotBawaan(), 'sumber' => 'Fasilitas', 'referensi_id' => $fasil('Pendidikan Dasar')],
-            ['kode' => 'telekomunikasi', 'nama' => 'Telekomunikasi', 'tingkat' => $s, 'bobot' => $s->bobotBawaan(), 'sumber' => 'Infrastruktur', 'referensi_id' => $infra('Telekomunikasi')],
-            ['kode' => 'sanitasi', 'nama' => 'Sanitasi', 'tingkat' => $s, 'bobot' => $s->bobotBawaan(), 'sumber' => 'Infrastruktur', 'referensi_id' => $infra('Sanitasi')],
-
-            // Tersier: penunjang produktivitas dan kehidupan sosial
-            ['kode' => 'irigasi', 'nama' => 'Irigasi', 'tingkat' => $t, 'bobot' => $t->bobotBawaan(), 'sumber' => 'Infrastruktur', 'referensi_id' => $infra('Irigasi')],
-            ['kode' => 'gudang', 'nama' => 'Gudang Pascapanen', 'tingkat' => $t, 'bobot' => $t->bobotBawaan(), 'sumber' => 'Infrastruktur', 'referensi_id' => $infra('Gudang')],
-            ['kode' => 'jalan_produksi', 'nama' => 'Jalan Produksi', 'tingkat' => $t, 'bobot' => $t->bobotBawaan(), 'sumber' => 'Infrastruktur', 'referensi_id' => $infra('Jalan Produksi')],
-            ['kode' => 'balai', 'nama' => 'Balai Pertemuan', 'tingkat' => $t, 'bobot' => $t->bobotBawaan(), 'sumber' => 'Fasilitas', 'referensi_id' => $fasil('Balai Pertemuan')],
-            ['kode' => 'ibadah', 'nama' => 'Rumah Ibadah', 'tingkat' => $t, 'bobot' => $t->bobotBawaan(), 'sumber' => 'Fasilitas', 'referensi_id' => $fasil('Ibadah')],
-            ['kode' => 'pasar_kios', 'nama' => 'Pasar atau Kios Saprotan', 'tingkat' => $t, 'bobot' => $t->bobotBawaan(), 'sumber' => 'Infrastruktur', 'referensi_id' => $infra('Pasar atau Kios Saprotan')],
-        ];
+        return DummyData::parameterDinilai();
     }
 
     /**
