@@ -256,6 +256,7 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **-*
 | Rumah & hunian | L T U H | L T U | L | L T U |
 | Riwayat penghunian | L T U H | L T | L | L T |
 | Riwayat kepala keluarga | L T U | L T | L | L |
+| Data master referensi | L T U | L T U | L | L |
 | Lahan | L T U H | L T U | L | L T U |
 | Dokumen lahan (HPL/SHM) | L T U H | L T | L | L T |
 | Kelompok tani | L T U H | L | L T U | L T U |
@@ -543,12 +544,12 @@ Parameter dikelompokkan menurut satu pertanyaan: **tanpa ini, apakah tempat ters
 6d. Setiap isian koordinat, baik pada kanal publik maupun form petugas, **wajib menyediakan pemilihan lewat peta** di samping pengambilan lokasi otomatis. GPS ponsel di lokus kerap meleset puluhan meter, sedangkan pelapor paling mengetahui letak sebenarnya. Peta memakai ubin OpenStreetMap tanpa kunci API, dimuat hanya ketika dibuka. Bila peta gagal dimuat karena jaringan lemah, isian manual dan tombol lokasi otomatis tetap berfungsi.
 7. Pengaduan diteruskan ke dinas sesuai bidangnya: bidang pertanian ke Dinas Pertanian, bidang ketransmigrasian ke Dinas Transmigrasi. **Satu laporan ditangani satu dinas**, sehingga alur statusnya tunggal dan tidak dipecah per bidang.
 
-7a. **Bidang diturunkan dari kategori sebagai nilai awal.** Kategori yang menunjuk urusan tertentu langsung mengisi bidangnya:
+    7a. **Bidang diturunkan dari kategori sebagai nilai awal.** Petanya berupa DATA pada `referensi.bidang_id`, bukan `match` di dalam kode, sebab kategori kini dapat ditambah Admin lewat data master; `match` tanpa `default` akan melempar `UnhandledMatchError` begitu ada yang memilih kategori baru. Kategori yang menunjuk urusan tertentu langsung mengisi bidangnya:
 
 | Kategori | Bidang bawaan |
 |---|---|
 | Rumah, lahan pekarangan, inventaris SP, fasilitas SP | Ketransmigrasian |
-| Alsintan, saprotan, produksi panen | Pertanian |
+    | Kelompok tani, alsintan, saprotan, produksi panen | Pertanian |
 | Lahan usaha, infrastruktur, bencana, lainnya | **kosong**, wajib ditetapkan petugas |
 
 Empat kategori terakhir sengaja dibiarkan kosong sebab pokok masalahnya dapat jatuh ke dua dinas sekaligus: sengketa lahan usaha bisa menyangkut pembagian lahan maupun produktivitasnya, sedangkan bencana dan "lainnya" memang tidak menunjuk urusan tertentu. Menebak bidangnya justru menyesatkan, sebab laporan akan masuk ke daftar dinas yang keliru lalu tertahan di sana.

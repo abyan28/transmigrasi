@@ -144,6 +144,35 @@ Route::get('/master/satuan', function () {
     return view('pages.master.satuan', ['title' => 'Data Master Satuan']);
 })->name('master.satuan');
 
+/*
+ * Data master referensi.
+ *
+ * Sepuluh daftar pilihan yang sebelumnya ditulis sebagai enum di dalam kode,
+ * kini dikelola Admin dan Dinas Transmigrasi lewat antarmuka (kamus data 5.6).
+ *
+ * TANPA RUTE HAPUS, dan itu disengaja: nilai yang tidak lagi dipakai
+ * dinonaktifkan lewat kolom `is_aktif`. Menghapusnya membuat data lama
+ * menunjuk pilihan yang lenyap, dan rekapnya kehilangan baris itu tanpa pesan
+ * apa pun.
+ */
+Route::get('/master/referensi', function () {
+    return view('pages.master.referensi', ['title' => 'Data Master Referensi']);
+})->name('master.referensi');
+
+Route::post('/master/referensi', function () {
+    // Tahap 4: simpan baris baru pada tabel `referensi`, lalu perbarui urutan
+    // pada jenis yang sama bila nomornya bertabrakan.
+    return redirect()->route('master.referensi')
+        ->with('sukses', 'Pilihan baru tersimpan dan langsung tersedia pada form.');
+})->name('referensi.simpan');
+
+Route::put('/master/referensi/{id}', function (int $id) {
+    // Tahap 4: penonaktifan hanya menyetel `is_aktif`, tidak menyentuh baris
+    // data lain yang sudah memakai nilainya.
+    return redirect()->route('master.referensi')
+        ->with('sukses', 'Perubahan pilihan tersimpan.');
+})->where('id', '[0-9]+')->name('referensi.perbarui');
+
 Route::get('/kawasan', function () {
     return view('pages.sp.kawasan', ['title' => 'Kawasan Transmigrasi']);
 })->name('kawasan');
@@ -288,21 +317,6 @@ Route::post('/transmigran/{id}/ganti-kepala-keluarga', function (int $id) {
         ->with('sukses', 'Pergantian kepala keluarga tercatat pada riwayat.');
 })->where('id', '[0-9]+')->name('transmigran.ganti-kepala-keluarga');
 
-/*
- * Pergantian kepala keluarga.
- *
- * Rute TERSENDIRI, bukan bagian dari perbarui. Suksesi adalah tindakan yang
- * berbeda dari menyunting data, dan menyatukannya membuat setiap perbaikan
- * ejaan nama ikut tercatat sebagai pergantian kepala keluarga (rules.md 6.5b).
- *
- * Tahap 5: sunting baris transmigran (nama, NIK, no_kk), tambahkan baris
- * riwayat_kepala_keluarga, lalu terapkan pilihan nasib jabatan ketua poktan.
- * Ketiganya dalam satu transaksi.
- */
-Route::post('/transmigran/{id}/ganti-kepala-keluarga', function (int $id) {
-    return redirect()->route('transmigran.detail', ['id' => $id, 'tab' => 'riwayat-kk'])
-        ->with('sukses', 'Pergantian kepala keluarga tercatat pada riwayat.');
-})->where('id', '[0-9]+')->name('transmigran.ganti-kepala-keluarga');
 
 Route::delete('/transmigran/{id}', function () {
     // Tahap 5: soft delete agar data tetap dapat dipulihkan.

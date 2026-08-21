@@ -151,7 +151,7 @@
                         <select id="filter_bidang" name="bidang"
                             class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
                             <option value="">Semua bidang</option>
-                            @foreach (\App\Enums\BidangPengaduan::opsi() as $nilai => $label)
+                            @foreach (\App\Support\DummyData::opsiFilterReferensi(\App\Enums\JenisReferensi::BidangPengaduan) as $nilai => $label)
                                 <option value="{{ $nilai }}" @selected($filterBidang === $nilai)>{{ $label }}</option>
                             @endforeach
                             <option value="belum" @selected($filterBidang === 'belum')>
@@ -197,7 +197,7 @@
                         <select id="filter_kategori" name="kategori"
                             class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
                             <option value="">Semua kategori</option>
-                            @foreach (\App\Enums\KategoriPengaduan::opsi() as $nilai => $label)
+                            @foreach (\App\Support\DummyData::opsiFilterReferensi(\App\Enums\JenisReferensi::KategoriPengaduan) as $nilai => $label)
                                 <option value="{{ $nilai }}" @selected($filterKategori === $nilai)>{{ $label }}</option>
                             @endforeach
                         </select>
@@ -211,7 +211,7 @@
                         <select id="filter_prioritas" name="prioritas"
                             class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
                             <option value="">Semua prioritas</option>
-                            @foreach (PrioritasPengaduan::opsi() as $nilai => $label)
+                            @foreach (\App\Support\DummyData::opsiFilterReferensi(\App\Enums\JenisReferensi::PrioritasPengaduan) as $nilai => $label)
                                 <option value="{{ $nilai }}" @selected($filterPrioritas === $nilai)>{{ $label }}</option>
                             @endforeach
                         </select>

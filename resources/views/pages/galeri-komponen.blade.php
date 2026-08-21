@@ -47,11 +47,17 @@
                 @foreach (\App\Enums\StatusPengaduan::cases() as $status)
                     <x-sim.status-badge :status="$status" />
                 @endforeach
-                @foreach (\App\Enums\PrioritasPengaduan::cases() as $status)
-                    <x-sim.status-badge :status="$status" />
+                {{--
+                    Kedua daftar ini kini data master referensi, bukan enum,
+                    sehingga badge-nya diberi teks dan warna langsung. Peragaan
+                    di atas tetap memakai enum sebab `StatusPengaduan` memang
+                    tetap enum: ia membawa state machine.
+                --}}
+                @foreach (\App\Support\DummyData::opsiReferensi(\App\Enums\JenisReferensi::PrioritasPengaduan) as $nilaiRef => $labelRef)
+                    <x-sim.status-badge :teks="$labelRef" warna="warning" />
                 @endforeach
-                @foreach (\App\Enums\KondisiRumah::cases() as $status)
-                    <x-sim.status-badge :status="$status" />
+                @foreach (\App\Support\DummyData::opsiReferensi(\App\Enums\JenisReferensi::KondisiRumah) as $nilaiRef => $labelRef)
+                    <x-sim.status-badge :teks="$labelRef" warna="gray" />
                 @endforeach
             </div>
         </section>

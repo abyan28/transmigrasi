@@ -97,7 +97,7 @@
                     <select id="filter_status" name="status_penyerahan"
                         class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
                         <option value="">Semua status</option>
-                        @foreach (\App\Enums\StatusPenyerahan::opsi() as $nilai => $label)
+                        @foreach (\App\Support\DummyData::opsiFilterReferensi(\App\Enums\JenisReferensi::StatusPenyerahan) as $nilai => $label)
                             <option value="{{ $nilai }}" @selected($filterStatus === $nilai)>{{ $label }}</option>
                         @endforeach
                     </select>

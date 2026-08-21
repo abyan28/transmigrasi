@@ -28,8 +28,7 @@
 @php
     use App\Enums\AsalWakilPoktan;
     use App\Enums\HubunganKeluarga;
-    use App\Enums\JabatanAnggotaPoktan;
-    use App\Enums\StatusKeaktifanAnggota;
+        use App\Enums\StatusKeaktifanAnggota;
     use App\Support\DummyData;
 
     $awalan = $awalan ?? 'tambah';
@@ -226,9 +225,9 @@
         <div>
             <label for="{{ $awalan }}_jabatan_anggota" class="{{ $kelasLabel }}">Jabatan</label>
             <select id="{{ $awalan }}_jabatan_anggota" name="jabatan" class="{{ $kelasKontrol }}">
-                @foreach (JabatanAnggotaPoktan::cases() as $j)
-                    <option value="{{ $j->value }}" @selected(old('jabatan', $data['jabatan'] ?? '') === $j->value)>
-                        {{ $j->value }}
+                @foreach (DummyData::opsiReferensi(\App\Enums\JenisReferensi::JabatanAnggotaPoktan) as $nilaiJab => $labelJab)
+                    <option value="{{ $nilaiJab }}" @selected(old('jabatan', $data['jabatan'] ?? '') === $nilaiJab)>
+                        {{ $labelJab }}
                     </option>
                 @endforeach
             </select>

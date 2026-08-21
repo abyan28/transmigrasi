@@ -3,6 +3,7 @@
 namespace App\Enums;
 
 use App\Enums\Concerns\PunyaLabel;
+use App\Support\DummyData;
 
 /**
  * Bidang yang menentukan dinas mana yang menangani sebuah pengaduan.
@@ -21,6 +22,13 @@ enum BidangPengaduan: string
     /**
      * Menyimpulkan bidang penanganan dari kategori pengaduan.
      *
+     * Petanya DIBACA DARI DATA MASTER, bukan dari `match` di dalam kode.
+     * Sebelumnya `match` itu memuat dua belas kategori tanpa `default`,
+     * sehingga kategori baru yang ditambahkan Admin lewat data master akan
+     * melempar `UnhandledMatchError` begitu ada yang memilihnya, dan form
+     * pengaduan mati total. Itulah sebabnya kategori tidak dapat menjadi data
+     * master selama peta ini masih berupa `match`.
+     *
      * Mengembalikan NULL untuk kategori yang bidangnya tidak dapat disimpulkan.
      * Kategori semacam itu menyatakan pokok masalah yang dapat jatuh ke dua
      * dinas sekaligus: sengketa lahan usaha bisa menyangkut pembagian lahan
@@ -35,39 +43,23 @@ enum BidangPengaduan: string
      * Nilai yang disimpulkan di sini hanya nilai AWAL; petugas selalu dapat
      * menimpanya (10b poin 7c).
      *
-     * @param  KategoriPengaduan  $kategori  Kategori yang dipilih pelapor
+     * @param  string  $kategori  Kategori yang dipilih pelapor
      * @return self|null Bidang penanganan, atau null bila perlu ditetapkan petugas
      */
-    public static function dariKategori(KategoriPengaduan $kategori): ?self
+    public static function dariKategori(string $kategori): ?self
     {
-        return match ($kategori) {
-            // Paket permukiman dan aset milik SP: urusan ketransmigrasian.
-            KategoriPengaduan::Rumah,
-            KategoriPengaduan::LahanPekarangan,
-            KategoriPengaduan::InventarisSp,
-            KategoriPengaduan::FasilitasSp => self::Ketransmigrasian,
+        $bidang = DummyData::petaBidangKategori()[$kategori] ?? '';
 
-            // Kelembagaan, sarana, dan hasil usaha pertanian.
-            KategoriPengaduan::KelompokTani,
-            KategoriPengaduan::Alsintan,
-            KategoriPengaduan::Saprotan,
-            KategoriPengaduan::ProduksiPanen => self::Pertanian,
-
-            // Lahan usaha, infrastruktur, bencana, dan lainnya sengaja netral.
-            KategoriPengaduan::LahanUsaha,
-            KategoriPengaduan::Infrastruktur,
-            KategoriPengaduan::Bencana,
-            KategoriPengaduan::Lainnya => null,
-        };
+        return $bidang === '' ? null : self::tryFrom($bidang);
     }
 
     /**
      * Memeriksa apakah bidang sebuah kategori perlu ditetapkan petugas.
      *
-     * @param  KategoriPengaduan  $kategori  Kategori yang diperiksa
+     * @param  string  $kategori  Kategori yang diperiksa
      * @return bool True bila kategori bersifat netral
      */
-    public static function perluDitetapkan(KategoriPengaduan $kategori): bool
+    public static function perluDitetapkan(string $kategori): bool
     {
         return self::dariKategori($kategori) === null;
     }
@@ -82,12 +74,6 @@ enum BidangPengaduan: string
      */
     public static function petaDariKategori(): array
     {
-        $hasil = [];
-
-        foreach (KategoriPengaduan::cases() as $kategori) {
-            $hasil[$kategori->value] = self::dariKategori($kategori)?->value ?? '';
-        }
-
-        return $hasil;
+        return DummyData::petaBidangKategori();
     }
 }

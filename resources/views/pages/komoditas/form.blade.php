@@ -77,9 +77,9 @@
                 <label for="{{ $awalan }}_tipe" class="{{ $kelasLabel }}">Tipe<span class="text-error-500">*</span></label>
                 <select id="{{ $awalan }}_tipe" name="tipe" required class="{{ $kelasKontrol }}">
                     <option value="">Pilih tipe</option>
-                    @foreach (TipeKomoditas::cases() as $t)
-                        <option value="{{ $t->value }}" @selected(old('tipe', $data['tipe'] ?? '') === $t->value)>
-                            {{ $t->value }}
+                    @foreach (\App\Support\DummyData::opsiReferensi(\App\Enums\JenisReferensi::TipeKomoditas) as $nilaiRef => $labelRef)
+                        <option value="{{ $nilaiRef }}" @selected(old('tipe', $data['tipe'] ?? '') === $nilaiRef)>
+                            {{ $nilaiRef }}
                         </option>
                     @endforeach
                 </select>

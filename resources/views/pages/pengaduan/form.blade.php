@@ -6,7 +6,7 @@
     itu `sumber_laporan` bernilai Petugas (agents/rules.md bagian 10b poin 1a).
 
     Aturan khusus modul ini: bidang penanganan terisi otomatis dari kategori
-    lewat BidangPengaduan::dariKategori(), tetapi SELALU DAPAT DITIMPA petugas
+    lewat DummyData::petaBidangKategori(), tetapi SELALU DAPAT DITIMPA petugas
     (agents/rules.md bagian 10b poin 7c). Empat kategori sengaja tidak dapat
     disimpulkan bidangnya dan wajib dipilih manual.
 
@@ -14,9 +14,7 @@
 --}}
 @php
     use App\Support\DummyData;
-    use App\Enums\BidangPengaduan;
-    use App\Enums\KategoriPengaduan;
-
+        
     $awalan = $awalan ?? 'tambah';
     $data = $data ?? [];
 
@@ -27,7 +25,7 @@
 
     // Peta kategori ke bidang, dipakai Alpine agar bidang terisi seketika saat
     // kategori dipilih. Kategori netral bernilai string kosong.
-    $petaBidang = BidangPengaduan::petaDariKategori();
+    $petaBidang = \App\Support\DummyData::petaBidangKategori();
 @endphp
 
 <div class="space-y-6"
@@ -103,7 +101,7 @@
                     :value="kategori" @change="gantiKategori($event.target.value)"
                     class="{{ $kelasKontrol }}">
                     <option value="">Pilih kategori</option>
-                    @foreach (KategoriPengaduan::opsi() as $nilai => $label)
+                    @foreach (\App\Support\DummyData::opsiReferensi(\App\Enums\JenisReferensi::KategoriPengaduan) as $nilai => $label)
                         <option value="{{ $nilai }}" @selected(($data['kategori'] ?? '') === $nilai)>{{ $label }}</option>
                     @endforeach
                 </select>
@@ -123,7 +121,7 @@
                     :value="bidang" @change="bidang = $event.target.value; disentuh = true"
                     class="{{ $kelasKontrol }}">
                     <option value="">Belum ditentukan</option>
-                    @foreach (BidangPengaduan::opsi() as $nilai => $label)
+                    @foreach (\App\Support\DummyData::opsiReferensi(\App\Enums\JenisReferensi::BidangPengaduan) as $nilai => $label)
                         <option value="{{ $nilai }}" :selected="bidang === '{{ $nilai }}'">{{ $label }}</option>
                     @endforeach
                 </select>
@@ -145,7 +143,7 @@
                     Prioritas<span class="text-error-500">*</span>
                 </label>
                 <select id="{{ $awalan }}_prioritas" name="prioritas" required class="{{ $kelasKontrol }}">
-                    @foreach (\App\Enums\PrioritasPengaduan::opsi() as $nilai => $label)
+                    @foreach (\App\Support\DummyData::opsiReferensi(\App\Enums\JenisReferensi::PrioritasPengaduan) as $nilai => $label)
                         <option value="{{ $nilai }}" @selected(old('prioritas', $data['prioritas'] ?? 'Sedang') === $nilai)>
                             {{ $label }}
                         </option>

@@ -275,7 +275,7 @@
                 <label for="{{ $awalan }}_jenis_dokumen" class="{{ $kelasLabel }}">Jenis Dokumen</label>
                 <select id="{{ $awalan }}_jenis_dokumen" name="jenis_dokumen" class="{{ $kelasKontrol }}">
                     <option value="">Belum ada dokumen</option>
-                    @foreach (\App\Enums\JenisDokumenLahan::opsi() as $nilai => $label)
+                    @foreach (\App\Support\DummyData::opsiReferensi(\App\Enums\JenisReferensi::JenisDokumenLahan) as $nilai => $label)
                         <option value="{{ $nilai }}"
                             @selected(old('jenis_dokumen', $data['jenis_dokumen'] ?? '') === $nilai)>
                             {{ $label }}

@@ -21,8 +21,7 @@
 @section('content')
     @php
         use App\Support\DummyData;
-        use App\Enums\KategoriPengaduan;
-    @endphp
+            @endphp
 
     {{-- Nomor pengaduan setelah berhasil kirim, ditampilkan besar dan jelas --}}
     @if (session('nomor_pengaduan'))
@@ -226,7 +225,7 @@
                         <select id="kategori" name="kategori" required
                             class="h-12 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-navy-700 dark:text-white/90">
                             <option value="">Pilih salah satu</option>
-                            @foreach (KategoriPengaduan::opsi() as $nilai => $label)
+                            @foreach (\App\Support\DummyData::opsiReferensi(\App\Enums\JenisReferensi::KategoriPengaduan) as $nilai => $label)
                                 <option value="{{ $nilai }}" @selected(old('kategori') === $nilai)>{{ $label }}</option>
                             @endforeach
                         </select>

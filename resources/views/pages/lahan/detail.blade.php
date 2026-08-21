@@ -283,7 +283,7 @@
                     </label>
                     <select id="dok_jenis" name="jenis_dokumen" required
                         class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
-                        @foreach (\App\Enums\JenisDokumenLahan::opsi() as $nilai => $label)
+                        @foreach (\App\Support\DummyData::opsiReferensi(\App\Enums\JenisReferensi::JenisDokumenLahan) as $nilai => $label)
                             <option value="{{ $nilai }}">{{ $label }}</option>
                         @endforeach
                     </select>

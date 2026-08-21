@@ -14,7 +14,6 @@ use App\Enums\AlasanPergantianKK;
 use App\Enums\AsalWakilPoktan;
 use App\Enums\BidangPengaduan;
 use App\Enums\JabatanAnggotaPoktan;
-use App\Enums\KategoriPengaduan;
 use App\Enums\KepemilikanAlsintan;
 use App\Enums\Kondisi;
 use App\Enums\PeruntukanLahan;
@@ -1517,7 +1516,8 @@ it('menyamakan daftar izin dengan kamus data dan rules', function () {
         'Fasilitas SP' => 'fasilitas_sp', 'Data master satuan' => 'satuan',
         'Transmigran' => 'transmigran', 'Rumah & hunian' => 'rumah',
         'Riwayat penghunian' => 'riwayat_penghunian',
-        'Riwayat kepala keluarga' => 'riwayat_kepala_keluarga', 'Lahan' => 'lahan',
+        'Riwayat kepala keluarga' => 'riwayat_kepala_keluarga',
+        'Data master referensi' => 'referensi', 'Lahan' => 'lahan',
         'Dokumen lahan (HPL/SHM)' => 'dokumen_lahan', 'Kelompok tani' => 'poktan',
         'Anggota poktan' => 'anggota_poktan', 'Alsintan' => 'alsintan', 'Saprotan' => 'saprotan',
         'Komoditas' => 'komoditas', 'Musim tanam' => 'musim_tanam',
@@ -3322,6 +3322,23 @@ it('mencabut kewenangan export dari seluruh sumber kebenaran', function () {
     // menjanjikan kewenangan yang tidak lagi ada di kode.
     expect(file_get_contents(base_path('agents/rules.md')))
         ->not->toContain('**E** = export');
+
+    // Sumber kelima, yang justru terlewat: tampilan. `form-role.blade.php`
+    // menyalin daftar aksi dengan tangan dan masih merender kolom `export`
+    // tiga hari setelah enum-nya dibersihkan. Kolomnya selalu kosong pada
+    // setiap fitur, sehingga tidak ada yang tampak rusak dan tidak ada uji
+    // yang memerah. Sekarang view membaca AksiPermission::opsi().
+    $formRole = file_get_contents(resource_path('views/pages/pengguna/form-role.blade.php'));
+
+    expect($formRole)->toContain('AksiPermission::opsi()');
+    expect($formRole)->not->toContain("'export' =>");
+    expect(array_keys(AksiPermission::opsi()))
+        ->toBe(['lihat', 'tambah', 'ubah', 'hapus']);
+
+    // Kalimat pengantar pada halaman role juga menjanjikan "mengekspor"
+    // sebagai kewenangan tersendiri.
+    expect(file_get_contents(resource_path('views/pages/pengguna/role.blade.php')))
+        ->not->toContain('mengekspor data');
 });
 
 /*
@@ -4421,8 +4438,7 @@ it('menyelaraskan bidang data contoh dengan peta kategori', function () {
     // Kategori netral boleh berbidang apa pun sebab ditetapkan petugas;
     // kategori bermuatan wajib cocok dengan turunannya.
     foreach (DummyData::pengaduan() as $baris) {
-        $kategori = KategoriPengaduan::from($baris['kategori']);
-        $bawaan = BidangPengaduan::dariKategori($kategori);
+        $bawaan = BidangPengaduan::dariKategori($baris['kategori']);
 
         if ($bawaan === null) {
             continue;

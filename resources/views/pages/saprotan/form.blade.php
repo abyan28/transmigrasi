@@ -93,9 +93,9 @@
                 <label for="{{ $awalan }}_sumber" class="{{ $kelasLabel }}">Sumber Dana</label>
                 <select id="{{ $awalan }}_sumber" name="sumber" class="{{ $kelasKontrol }}">
                     <option value="">Pilih sumber</option>
-                    @foreach (SumberDana::cases() as $s)
-                        <option value="{{ $s->value }}" @selected(old('sumber', $data['sumber'] ?? '') === $s->value)>
-                            {{ $s->value }}
+                    @foreach (\App\Support\DummyData::opsiReferensi(\App\Enums\JenisReferensi::SumberDana) as $nilaiRef => $labelRef)
+                        <option value="{{ $nilaiRef }}" @selected(old('sumber', $data['sumber'] ?? '') === $nilaiRef)>
+                            {{ $nilaiRef }}
                         </option>
                     @endforeach
                 </select>

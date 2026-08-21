@@ -36,13 +36,9 @@
         ? DummyData::izinRole((int) $data['id_role'])
         : [];
 
-    $semuaAksi = [
-        'lihat' => 'Lihat',
-        'tambah' => 'Tambah',
-        'ubah' => 'Ubah',
-        'hapus' => 'Hapus',
-        'export' => 'Export',
-    ];
+    // Dibaca dari enum, tidak disalin dengan tangan: salinan lama sempat
+    // merender kolom `export` yang kewenangannya sudah dicabut.
+    $semuaAksi = \App\Enums\AksiPermission::opsi();
 @endphp
 
 <div class="space-y-6">

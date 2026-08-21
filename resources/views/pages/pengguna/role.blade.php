@@ -45,8 +45,11 @@
         <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
             <h2 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">Kewenangan</h2>
             <p class="mt-2 text-theme-sm text-gray-600 dark:text-gray-400">
-                Menentukan <span class="font-medium">tindakan yang dapat dilakukan pengguna</span>, 
-                seperti melihat, menambah, mengubah, menghapus, atau mengekspor data dalam suatu fitur.
+                {{-- Kata "mengekspor" dicabut 2026-08-20. Kewenangan `export`
+                     sudah dihapus 2026-08-17 sebab ekspor mengikuti `lihat`,
+                     tetapi kalimat ini masih menjanjikannya. --}}
+                Menentukan <span class="font-medium">tindakan yang dapat dilakukan pengguna</span>,
+                yaitu melihat, menambah, mengubah, dan menghapus data dalam suatu fitur.
             </p>
             <p class="mt-2 text-theme-xs text-gray-500 dark:text-gray-400">
                 Daftar kewenangan ditetapkan oleh sistem dan tidak dapat ditambahkan oleh Admin. 

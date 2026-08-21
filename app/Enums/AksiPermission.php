@@ -25,4 +25,23 @@ enum AksiPermission: string
     case Tambah = 'tambah';
     case Ubah = 'ubah';
     case Hapus = 'hapus';
+
+    /**
+     * Label kolom pada matriks kewenangan, dipetakan dari enum ini.
+     *
+     * Ditambahkan 2026-08-20 sebab `form-role.blade.php` menyalin daftar ini
+     * dengan tangan, dan salinannya masih memuat `export` selama tiga hari
+     * setelah kewenangan itu dicabut dari enum. Kolomnya selalu kosong, tetapi
+     * tidak ada yang memerah: salinan tulis-tangan tidak tahu sumbernya berubah.
+     *
+     * @return array<string, string>
+     */
+    public static function opsi(): array
+    {
+        return array_reduce(
+            self::cases(),
+            fn (array $bawa, self $aksi) => $bawa + [$aksi->value => ucfirst($aksi->value)],
+            [],
+        );
+    }
 }

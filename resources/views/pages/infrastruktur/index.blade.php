@@ -102,7 +102,7 @@
                     <select id="filter_jenis" name="jenis"
                         class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
                         <option value="">Semua jenis</option>
-                        @foreach (\App\Enums\JenisInfrastruktur::opsi() as $nilai => $label)
+                        @foreach (\App\Support\DummyData::opsiFilterReferensi(\App\Enums\JenisReferensi::JenisInfrastruktur) as $nilai => $label)
                             <option value="{{ $nilai }}" @selected($filterJenis === $nilai)>{{ $label }}</option>
                         @endforeach
                     </select>
@@ -113,7 +113,7 @@
                     <select id="filter_kondisi" name="kondisi"
                         class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
                         <option value="">Semua kondisi</option>
-                        @foreach (\App\Enums\Kondisi::opsi() as $nilai => $label)
+                        @foreach (\App\Support\DummyData::opsiFilterReferensi(\App\Enums\JenisReferensi::Kondisi) as $nilai => $label)
                             <option value="{{ $nilai }}" @selected($filterKondisi === $nilai)>{{ $label }}</option>
                         @endforeach
                     </select>

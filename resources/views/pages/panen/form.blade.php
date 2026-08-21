@@ -159,7 +159,7 @@
                 <label for="{{ $awalan }}_kualitas" class="{{ $kelasLabel }}">Kualitas Panen</label>
                 <select id="{{ $awalan }}_kualitas" name="kualitas" class="{{ $kelasKontrol }}">
                     <option value="">Pilih kualitas</option>
-                    @foreach (\App\Enums\KualitasPanen::opsi() as $nilai => $label)
+                    @foreach (\App\Support\DummyData::opsiReferensi(\App\Enums\JenisReferensi::KualitasPanen) as $nilai => $label)
                         <option value="{{ $nilai }}" @selected(old('kualitas', $data['kualitas'] ?? '') === $nilai)>
                             {{ $label }}
                         </option>

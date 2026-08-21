@@ -229,35 +229,35 @@ it('menandai pengaduan yang masih berjalan', function () {
 |--------------------------------------------------------------------------
 */
 
-it('menurunkan bidang pertanian dari kategori kelembagaan, sarana, dan hasil usaha', function (KategoriPengaduan $kategori) {
+it('menurunkan bidang pertanian dari kategori kelembagaan, sarana, dan hasil usaha', function (string $kategori) {
     expect(BidangPengaduan::dariKategori($kategori))->toBe(BidangPengaduan::Pertanian);
 })->with([
-    'kelompok tani' => KategoriPengaduan::KelompokTani,
-    'alsintan' => KategoriPengaduan::Alsintan,
-    'saprotan' => KategoriPengaduan::Saprotan,
-    'produksi panen' => KategoriPengaduan::ProduksiPanen,
+    'kelompok tani' => 'Kelompok Tani',
+    'alsintan' => 'Alsintan',
+    'saprotan' => 'Saprotan',
+    'produksi panen' => 'Produksi Panen',
 ]);
 
-it('menurunkan bidang ketransmigrasian dari kategori permukiman dan aset SP', function (KategoriPengaduan $kategori) {
+it('menurunkan bidang ketransmigrasian dari kategori permukiman dan aset SP', function (string $kategori) {
     expect(BidangPengaduan::dariKategori($kategori))->toBe(BidangPengaduan::Ketransmigrasian);
 })->with([
-    'rumah' => KategoriPengaduan::Rumah,
-    'lahan pekarangan' => KategoriPengaduan::LahanPekarangan,
-    'inventaris sp' => KategoriPengaduan::InventarisSp,
-    'fasilitas sp' => KategoriPengaduan::FasilitasSp,
+    'rumah' => 'Rumah',
+    'lahan pekarangan' => 'Lahan Pekarangan',
+    'inventaris sp' => 'Inventaris SP',
+    'fasilitas sp' => 'Fasilitas SP',
 ]);
 
-it('membiarkan bidang kosong pada kategori yang dapat ditangani dua dinas', function (KategoriPengaduan $kategori) {
+it('membiarkan bidang kosong pada kategori yang dapat ditangani dua dinas', function (string $kategori) {
     // Menebak bidang untuk kategori semacam ini justru menyesatkan: laporan
     // akan masuk ke daftar dinas yang keliru lalu tertahan di sana.
     // rules.md 10b poin 7a mewajibkannya ditetapkan petugas.
     expect(BidangPengaduan::dariKategori($kategori))->toBeNull()
         ->and(BidangPengaduan::perluDitetapkan($kategori))->toBeTrue();
 })->with([
-    'lahan usaha' => KategoriPengaduan::LahanUsaha,
-    'infrastruktur' => KategoriPengaduan::Infrastruktur,
-    'bencana' => KategoriPengaduan::Bencana,
-    'lainnya' => KategoriPengaduan::Lainnya,
+    'lahan usaha' => 'Lahan Usaha',
+    'infrastruktur' => 'Infrastruktur',
+    'bencana' => 'Bencana',
+    'lainnya' => 'Lainnya',
 ]);
 
 it('memetakan seluruh kategori tanpa terkecuali', function () {

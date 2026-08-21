@@ -13,8 +13,7 @@
     Nama kolom mengikuti agents/data-dictionary.md bagian 4.2.
 --}}
 @php
-    use App\Enums\JenisFasilitas;
-    use App\Enums\Kondisi;
+        use App\Enums\Kondisi;
     use App\Enums\StatusPenyerahan;
     use App\Enums\SumberDana;
     use App\Support\DummyData;
@@ -38,10 +37,10 @@
                 <label for="{{ $awalan }}_jenis_fasilitas" class="{{ $kelasLabel }}">Jenis Fasilitas<span class="text-error-500">*</span></label>
                 <select id="{{ $awalan }}_jenis_fasilitas" name="jenis_fasilitas" required class="{{ $kelasKontrol }}">
                     <option value="">Pilih jenis</option>
-                    @foreach (JenisFasilitas::cases() as $j)
-                        <option value="{{ $j->value }}"
-                            @selected(old('jenis_fasilitas', $data['jenis_fasilitas'] ?? '') === $j->value)>
-                            {{ $j->value }}
+                    @foreach (\App\Support\DummyData::opsiReferensi(\App\Enums\JenisReferensi::JenisFasilitas) as $nilaiJenis => $labelJenis)
+                        <option value="{{ $nilaiJenis }}"
+                            @selected(old('jenis_fasilitas', $data['jenis_fasilitas'] ?? '') === $nilaiJenis)>
+                            {{ $labelJenis }}
                         </option>
                     @endforeach
                 </select>
@@ -96,10 +95,10 @@
                 <label for="{{ $awalan }}_sumber_dana_fasilitas" class="{{ $kelasLabel }}">Sumber Dana</label>
                 <select id="{{ $awalan }}_sumber_dana_fasilitas" name="sumber_dana" class="{{ $kelasKontrol }}">
                     <option value="">Pilih sumber dana</option>
-                    @foreach (SumberDana::cases() as $s)
-                        <option value="{{ $s->value }}"
-                            @selected(old('sumber_dana', $data['sumber_dana'] ?? '') === $s->value)>
-                            {{ $s->value }}
+                    @foreach (\App\Support\DummyData::opsiReferensi(\App\Enums\JenisReferensi::SumberDana) as $nilaiRef => $labelRef)
+                        <option value="{{ $nilaiRef }}"
+                            @selected(old('sumber_dana', $data['sumber_dana'] ?? '') === $nilaiRef)>
+                            {{ $nilaiRef }}
                         </option>
                     @endforeach
                 </select>
@@ -109,10 +108,10 @@
                 <label for="{{ $awalan }}_status_penyerahan_fasilitas" class="{{ $kelasLabel }}">Status Penyerahan</label>
                 <select id="{{ $awalan }}_status_penyerahan_fasilitas" name="status_penyerahan"
                     class="{{ $kelasKontrol }}">
-                    @foreach (StatusPenyerahan::cases() as $s)
-                        <option value="{{ $s->value }}"
-                            @selected(old('status_penyerahan', $data['status_penyerahan'] ?? '') === $s->value)>
-                            {{ $s->value }}
+                    @foreach (\App\Support\DummyData::opsiReferensi(\App\Enums\JenisReferensi::StatusPenyerahan) as $nilaiRef => $labelRef)
+                        <option value="{{ $nilaiRef }}"
+                            @selected(old('status_penyerahan', $data['status_penyerahan'] ?? '') === $nilaiRef)>
+                            {{ $nilaiRef }}
                         </option>
                     @endforeach
                 </select>
@@ -121,9 +120,9 @@
             <div>
                 <label for="{{ $awalan }}_kondisi_fasilitas" class="{{ $kelasLabel }}">Kondisi</label>
                 <select id="{{ $awalan }}_kondisi_fasilitas" name="kondisi" class="{{ $kelasKontrol }}">
-                    @foreach (Kondisi::cases() as $k)
-                        <option value="{{ $k->value }}" @selected(old('kondisi', $data['kondisi'] ?? '') === $k->value)>
-                            {{ $k->value }}
+                    @foreach (\App\Support\DummyData::opsiReferensi(\App\Enums\JenisReferensi::Kondisi) as $nilaiRef => $labelRef)
+                        <option value="{{ $nilaiRef }}" @selected(old('kondisi', $data['kondisi'] ?? '') === $nilaiRef)>
+                            {{ $nilaiRef }}
                         </option>
                     @endforeach
                 </select>

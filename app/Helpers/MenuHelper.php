@@ -203,6 +203,11 @@ class MenuHelper
                                 'permission' => 'satuan.lihat',
                             ],
                             [
+                                'name' => 'Data Master Referensi',
+                                'path' => '/master/referensi',
+                                'permission' => 'referensi.lihat',
+                            ],
+                            [
                                 'name' => 'Pengguna',
                                 'path' => '/pengguna',
                                 'permission' => 'pengguna.lihat',

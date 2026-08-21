@@ -112,8 +112,7 @@ it('menetapkan bidang pengaduan sesuai kategorinya', function () {
     // laporan, sehingga tidak dapat diadu dengan nilai turunan mana pun
     // (rules.md 10b poin 7a).
     foreach (DummyData::pengaduan() as $baris) {
-        $kategori = KategoriPengaduan::from($baris['kategori']);
-        $bidangSeharusnya = BidangPengaduan::dariKategori($kategori);
+        $bidangSeharusnya = BidangPengaduan::dariKategori($baris['kategori']);
 
         if ($bidangSeharusnya === null) {
             continue;

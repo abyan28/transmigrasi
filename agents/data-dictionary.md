@@ -443,13 +443,14 @@ Bobot disimpan sebagai **data**, bukan ditulis di dalam kode, agar Admin dapat m
 | `tingkat` | `ENUM` | TIDAK | IDX | Lihat 11.29 |
 | `bobot` | `TINYINT UNSIGNED` | TIDAK | | Bawaan mengikuti tingkat: Primer 5, Sekunder 3, Tersier 1 |
 | `sumber` | `ENUM` | TIDAK | | Lihat 11.31; menentukan tabel mana yang dibaca |
-| `jenis_rujukan` | `VARCHAR(50)` | TIDAK | | Nilai enum yang dicari pada tabel sumber, contoh `Air` atau `Kesehatan` |
+| `referensi_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | Baris `referensi` yang dicari pada tabel sumber, contoh jenis infrastruktur `Air` |
 | `is_aktif` | `BOOLEAN` | TIDAK | | Parameter nonaktif tidak ikut dihitung pada penilaian baru |
 | `urutan` | `SMALLINT UNSIGNED` | TIDAK | | Urutan tampil pada halaman pengaturan dan rincian skor |
 
 **Catatan:**
 - Parameter **dinonaktifkan, bukan dihapus**, agar riwayat penilaian yang memakainya tetap dapat dibaca.
-- `sumber` dan `jenis_rujukan` menjelaskan dari mana nilai kondisi diambil: parameter `air_bersih` membaca `infrastruktur` berjenis `Air`, sedangkan `kesehatan` membaca `fasilitas_sp` berjenis `Kesehatan`.
+- `sumber` dan `referensi_id` menjelaskan dari mana nilai kondisi diambil: parameter `air_bersih` membaca `infrastruktur` berjenis `Air`, sedangkan `kesehatan` membaca `fasilitas_sp` berjenis `Kesehatan`.
+- `referensi_id` **menggantikan `jenis_rujukan` yang dulu berupa teks**, sejak jenis infrastruktur dan fasilitas menjadi data master. Rujukan berbasis teks putus tanpa pesan apa pun begitu Admin memperbaiki ejaannya, dan parameter itu lalu diam-diam menilai setiap SP sebagai tidak punya aset tersebut. Bila idnya tidak ditemukan, parameter **dilewati**, bukan dinilai nol: menilainya nol berarti seluruh SP jatuh statusnya hanya karena satu baris referensi hilang.
 
 ### 5.5 `penilaian_sp`
 
@@ -480,6 +481,35 @@ Riwayat penilaian kondisi SP. Satu SP memiliki banyak baris, satu untuk setiap k
   {"kode": "jalan_penghubung", "nama": "Jalan Penghubung", "tingkat": "Primer", "bobot": 5, "kondisi": "Tidak Ada", "nilai": 0}
 ]
 ```
+
+### 5.6 `referensi`
+
+Daftar pilihan yang **dikelola Admin lewat antarmuka**, bukan ditulis sebagai enum di dalam kode (`rules.md` 4 poin 12).
+
+Empat belas daftar disatukan pada satu tabel karena strukturnya identik. Empat belas tabel terpisah berarti empat belas migration, empat belas model, dan empat belas halaman CRUD untuk perbedaan yang hanya terletak pada nama jenisnya.
+
+| Kolom | Tipe | Null | Kunci | Keterangan |
+|---|---|---|---|---|
+| `id_referensi` | `BIGINT UNSIGNED AUTO_INCREMENT` | TIDAK | PK | |
+| `jenis` | `ENUM` | TIDAK | IDX, UQ¹ | Lihat 11.37; menentukan daftar mana nilai ini termasuk |
+| `nilai` | `VARCHAR(100)` | TIDAK | UQ¹ | Teks yang tampil sekaligus tersimpan pada kolom pemakainya |
+| `urutan` | `SMALLINT UNSIGNED` | TIDAK | | Urutan tampil; bermakna pada jenis berjenjang |
+| `nilai_skor` | `DECIMAL(3,2)` | YA | | Bobot nilai pada penilaian kondisi SP; hanya jenis berskor |
+| `bidang_id` | `BIGINT UNSIGNED` | YA | FK, IDX | Bidang penanganan bawaan; hanya jenis `kategori_pengaduan`. NULL bermakna: bidang ditetapkan petugas per laporan |
+| `is_aktif` | `BOOLEAN` | TIDAK | IDX | Nilai nonaktif tidak ditawarkan pada data baru |
+
+¹ UNIQUE gabungan `(jenis, nilai)`.
+
+**Catatan:**
+
+- **Nilai DINONAKTIFKAN, tidak pernah dihapus.** Menghapus `Hibah` dari sumber dana membuat puluhan baris infrastruktur lama menunjuk baris yang lenyap, dan rekap kehilangan baris itu **tanpa pesan apa pun**. Nilai nonaktif tetap terbaca pada data lama, hanya tidak lagi ditawarkan pada data baru. Pola ini mengikuti `parameter_penilaian_sp` (5.4) yang sudah memakainya lebih dulu dengan alasan sama.
+- **Yang tersimpan pada kolom pemakainya adalah TEKS `nilai`, bukan id.** Sengaja demikian: kolom-kolom itu bertipe `ENUM` atau `VARCHAR` pada SQL referensi dan sudah dipakai puluhan tampilan tanpa join. Pengecualiannya hanya `parameter_penilaian_sp.jenis_rujukan` yang menunjuk id (Fase 4), sebab di sanalah penggantian teks berakibat fatal: parameter berhenti menemukan asetnya lalu menilai SP sebagai `Tidak Ada`.
+- **`nilai_skor` hanya untuk jenis `kondisi`**, bukan `kondisi_rumah`. Keduanya tampak sebagai skala kerusakan yang sama, tetapi hanya `kondisi` yang dibaca `PenilaianKondisiSp`; kondisi rumah murni tampilan dan tidak pernah masuk perhitungan mana pun. Memberi `nilai_skor` kepadanya berarti menyediakan isian yang tidak menentukan apa pun, dan Admin yang menyuntingnya akan menyangka skor SP ikut berubah. Mengubahnya mengubah cara penilaian BERIKUTNYA dihitung, tetapi tidak mengubah penilaian yang sudah tersimpan: `penilaian_sp.rincian` menyalin nilai yang berlaku saat penilaian dibuat (5.5). Tanpa salinan itu, laporan yang sudah dicetak akan berbeda dari tampilan sistem setiap kali Admin menyunting skor.
+- **`jenis_infrastruktur` dan `jenis_fasilitas` DIRUJUK LEWAT ID**, satu-satunya pengecualian dari aturan teks di atas. `parameter_penilaian_sp.referensi_id` menunjuk baris pada tabel ini, misalnya parameter `air_bersih` menunjuk jenis infrastruktur `Air`. Alasannya justru dampaknya: daftar lain hanya menampilkan teksnya kembali, sedangkan dua daftar ini menentukan hasil perhitungan. Rujukan berbasis teks putus tanpa pesan apa pun begitu Admin memperbaiki ejaan `Air` menjadi `Air Bersih`, dan parameter itu lalu diam-diam menilai setiap SP sebagai tidak punya air, sehingga status SP jatuh karena satu penyuntingan ejaan.
+- **`bidang_id` hanya untuk `kategori_pengaduan`**, dan NULL di sana bermakna. Ia menyatakan kategori yang dapat jatuh ke dua dinas sekaligus, sehingga bidangnya wajib ditetapkan petugas sebelum status maju ke Diproses (`rules.md` 10b poin 7b). Nilai yang terisi hanya menetapkan bidang AWAL; petugas selalu dapat menimpanya.
+- **`urutan` bermakna pada `prioritas_pengaduan`**, sebab daftar pengaduan menyortir memakainya. Menukar urutan berarti menukar antrean petugas, bukan sekadar menukar tampilan.
+- **Jenisnya tetap enum**, tidak ikut menjadi data. `jenis` menyatakan daftar mana yang ada, bukan isinya; menjadikannya data membuat Admin dapat membuat jenis yang tidak satu pun kolom database menunjuknya.
+- Enum yang **tetap di dalam kode** dan tidak menjadi referensi: seluruh enum yang membawa perilaku (`StatusPengaduan` dengan state machine-nya, `StatusKondisiSp` dengan `dariSkor()`, `PeruntukanLahan` dengan `lahanUsaha()`, `AsalWakilPoktan`, `CakupanData`, `AksiPermission`, `AksiAuditLog`), serta enum yang nilainya terikat ketentuan luar (`JenisKelamin`, `PendidikanTerakhir`).
 
 ---
 
@@ -1090,6 +1120,16 @@ Diisi bila wakil keluarga di poktan bukan kepala keluarganya sendiri. Sengaja ka
 
 Dipakai bersama oleh `anggota_poktan.hubungan_dengan_kk`, `poktan.hubungan_ketua`, dan `riwayat_kepala_keluarga.hubungan_pengganti`.
 
+### 11.37 Jenis referensi
+
+`sumber_dana` - `status_penyerahan` - `kondisi` - `kondisi_rumah` - `status_hunian` - `tipe_komoditas` - `kualitas_panen` - `prioritas_pengaduan` - `jenis_dokumen_lahan` - `jabatan_anggota_poktan` - `jenis_infrastruktur` - `jenis_fasilitas` - `bidang_pengaduan` - `kategori_pengaduan`
+
+Menyatakan daftar mana saja yang dikelola Admin lewat data master referensi (5.6). **Enum ini sendiri tidak ikut menjadi data**, sebab ia menyatakan daftar mana yang ada, bukan isi daftarnya.
+
+Setiap nilai di sini **wajib punya kolom yang membacanya**. Menambah satu nilai karena itu selalu berpasangan dengan menyunting kolom pada kamus data; tanpa itu, daftar yang dikelolanya tidak pernah tampil di mana pun.
+
+Pemeriksaan "apakah jenis ini berskor" dan "apakah urutannya bermakna" **dilarang** membandingkan nilai teks; pakai `JenisReferensi::berskor()` dan `berjenjang()`.
+
 ### 11.36 Alasan pergantian kepala keluarga
 
 `Meninggal` · `Pindah atau Merantau` · `Cerai` · `Lainnya`
@@ -1183,6 +1223,7 @@ Tanda centang berarti kewenangan tersebut dibuat untuk fitur bersangkutan.
 | `rumah` | v | v | v | v |
 | `riwayat_penghunian` | v | v | v | v |
 | `riwayat_kepala_keluarga` | v | v | v | |
+| `referensi` | v | v | v | |
 | `lahan` | v | v | v | v |
 | `dokumen_lahan` | v | v | v | v |
 | `poktan` | v | v | v | v |
@@ -1198,9 +1239,9 @@ Tanda centang berarti kewenangan tersebut dibuat untuk fitur bersangkutan.
 | `penanganan_pengaduan` | v | v | v |   |
 | `dashboard` | v |   |   |   |
 
-Total **98 kewenangan** dari 27 fitur, dihitung dari tabel di atas.
+Total **101 kewenangan** dari 28 fitur, dihitung dari tabel di atas.
 
-Jumlah kewenangan yang benar-benar dipegang tiap role bawaan lebih sedikit, sesuai susunan pada `rules.md` 5.1: Admin 98, Dinas Transmigrasi 45, Dinas Pertanian 46, Operator SP 50.
+Jumlah kewenangan yang benar-benar dipegang tiap role bawaan lebih sedikit, sesuai susunan pada `rules.md` 5.1: Admin 101, Dinas Transmigrasi 48, Dinas Pertanian 47, Operator SP 51.
 
 ### 13.2 Kelompok fitur pada antarmuka
 
@@ -1209,7 +1250,7 @@ Agar halaman pengaturan role mudah dibaca, kewenangan dikelompokkan sesuai struk
 | Kelompok | Fitur |
 |---|---|
 | Sistem | `pengguna`, `role`, `audit_log` |
-| Wilayah dan SP | `wilayah`, `kawasan`, `sp`, `inventaris_sp`, `fasilitas_sp`, `satuan` |
+| Wilayah dan SP | `wilayah`, `kawasan`, `sp`, `inventaris_sp`, `fasilitas_sp`, `satuan`, `referensi` |
 | Kependudukan | `transmigran`, `rumah`, `riwayat_penghunian`, `riwayat_kepala_keluarga` |
 | Lahan | `lahan`, `dokumen_lahan` |
 | Kelembagaan | `poktan`, `anggota_poktan`, `alsintan`, `saprotan` |

@@ -109,7 +109,7 @@ it('menilai parameter tanpa aset sebagai Tidak Ada, bukan mengabaikannya', funct
 it('membedakan nilai rusak berat dari tidak ada', function () {
     // Yang satu memerlukan perbaikan, yang lain pembangunan. Menyamakan
     // keduanya menyembunyikan perbedaan penanganan.
-    expect(PenilaianKondisiSp::NILAI_KONDISI['Rusak Berat'])->toBe(0.2)
+    expect(PenilaianKondisiSp::nilaiKondisi()['Rusak Berat'])->toBe(0.2)
         ->and(PenilaianKondisiSp::NILAI_TIDAK_ADA)->toBe(0.0);
 });
 
@@ -175,7 +175,7 @@ it('tidak memakai istilah yang merendahkan penghuni', function () {
     $terlarang = ['terbelakang', 'tertinggal', 'miskin', 'gagal', 'buruk'];
 
     foreach (StatusKondisiSp::cases() as $status) {
-        $teks = mb_strtolower($status->value . ' ' . $status->keterangan());
+        $teks = mb_strtolower($status->value.' '.$status->keterangan());
 
         foreach ($terlarang as $kata) {
             expect($teks)->not->toContain($kata);

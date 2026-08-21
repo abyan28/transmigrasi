@@ -58,9 +58,9 @@
             <div>
                 <label for="{{ $awalan }}_kondisi" class="{{ $kelasLabel }}">Kondisi</label>
                 <select id="{{ $awalan }}_kondisi" name="kondisi" class="{{ $kelasKontrol }}">
-                    @foreach (Kondisi::cases() as $k)
-                        <option value="{{ $k->value }}" @selected(old('kondisi', $data['kondisi'] ?? '') === $k->value)>
-                            {{ $k->value }}
+                    @foreach (\App\Support\DummyData::opsiReferensi(\App\Enums\JenisReferensi::Kondisi) as $nilaiRef => $labelRef)
+                        <option value="{{ $nilaiRef }}" @selected(old('kondisi', $data['kondisi'] ?? '') === $nilaiRef)>
+                            {{ $nilaiRef }}
                         </option>
                     @endforeach
                 </select>
@@ -70,10 +70,10 @@
                 <label for="{{ $awalan }}_sumber_perolehan" class="{{ $kelasLabel }}">Sumber Perolehan</label>
                 <select id="{{ $awalan }}_sumber_perolehan" name="sumber_perolehan" class="{{ $kelasKontrol }}">
                     <option value="">Pilih sumber</option>
-                    @foreach (SumberDana::cases() as $s)
-                        <option value="{{ $s->value }}"
-                            @selected(old('sumber_perolehan', $data['sumber_perolehan'] ?? '') === $s->value)>
-                            {{ $s->value }}
+                    @foreach (\App\Support\DummyData::opsiReferensi(\App\Enums\JenisReferensi::SumberDana) as $nilaiRef => $labelRef)
+                        <option value="{{ $nilaiRef }}"
+                            @selected(old('sumber_perolehan', $data['sumber_perolehan'] ?? '') === $nilaiRef)>
+                            {{ $nilaiRef }}
                         </option>
                     @endforeach
                 </select>

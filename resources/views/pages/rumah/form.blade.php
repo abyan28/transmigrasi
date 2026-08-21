@@ -76,7 +76,7 @@
                     Kondisi Rumah<span class="text-error-500">*</span>
                 </label>
                 <select id="{{ $awalan }}_kondisi" name="kondisi" required class="{{ $kelasKontrol }}">
-                    @foreach (\App\Enums\KondisiRumah::opsi() as $nilai => $label)
+                    @foreach (\App\Support\DummyData::opsiReferensi(\App\Enums\JenisReferensi::KondisiRumah) as $nilai => $label)
                         <option value="{{ $nilai }}" @selected(old('kondisi', $data['kondisi'] ?? '') === $nilai)>
                             {{ $label }}
                         </option>
@@ -105,7 +105,7 @@
                 </label>
                 <select id="{{ $awalan }}_status_hunian" name="status_hunian" x-model="statusHunian" required
                     class="{{ $kelasKontrol }}">
-                    @foreach (\App\Enums\StatusHunian::opsi() as $nilai => $label)
+                    @foreach (\App\Support\DummyData::opsiReferensi(\App\Enums\JenisReferensi::StatusHunian) as $nilai => $label)
                         <option value="{{ $nilai }}">{{ $label }}</option>
                     @endforeach
                 </select>

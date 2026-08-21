@@ -2,8 +2,7 @@
 
 namespace App\Support;
 
-use App\Enums\JenisFasilitas;
-use App\Enums\JenisInfrastruktur;
+use App\Enums\JenisReferensi;
 use App\Enums\StatusKondisiSp;
 use App\Enums\TingkatKebutuhan;
 
@@ -33,12 +32,27 @@ use App\Enums\TingkatKebutuhan;
  */
 class PenilaianKondisiSp
 {
-    /** Nilai skor untuk tiap kondisi aset. */
-    public const NILAI_KONDISI = [
-        'Baik' => 1.0,
-        'Rusak Ringan' => 0.5,
-        'Rusak Berat' => 0.2,
-    ];
+    /**
+     * Nilai skor untuk tiap kondisi aset, dibaca dari data master referensi.
+     *
+     * SEJAK 2026-08-20 BUKAN LAGI KONSTANTA. Nilainya berpindah ke kolom
+     * `referensi.nilai_skor` agar Admin dapat menyesuaikannya lewat antarmuka,
+     * sejalan dengan bobot parameter yang sudah lebih dulu berupa data
+     * (erd.md 7.3). Sebelumnya bobot dapat disunting tetapi nilai kondisinya
+     * tidak, padahal keduanya sama-sama menentukan skor akhir.
+     *
+     * Mengubahnya mempengaruhi penilaian BERIKUTNYA saja. Penilaian yang sudah
+     * tersimpan tidak ikut berubah, sebab `penilaian_sp.rincian` menyalin nilai
+     * yang berlaku saat penilaian dibuat (kamus data 5.5). Tanpa salinan itu,
+     * laporan yang sudah dicetak akan berbeda dari tampilan sistem setiap kali
+     * Admin menyunting skor.
+     *
+     * @return array<string, float> Peta nilai kondisi ke skornya
+     */
+    public static function nilaiKondisi(): array
+    {
+        return DummyData::skorKondisi();
+    }
 
     /** Nilai untuk parameter yang asetnya tidak ditemukan sama sekali. */
     public const NILAI_TIDAK_ADA = 0.0;
@@ -54,6 +68,13 @@ class PenilaianKondisiSp
      * antarmuka. Bentuk larik di sini sengaja dibuat sama dengan kolom tabel
      * tersebut, sehingga penggantian sumber tidak mengubah pemakainya.
      *
+     * `referensi_id` MENGGANTIKAN `jenis_rujukan` yang dulu berupa teks.
+     * Alasannya bukan kerapian: jenis infrastruktur dan fasilitas kini
+     * dikelola Admin, dan rujukan berbasis teks putus tanpa pesan apa pun
+     * begitu Admin memperbaiki ejaan `Air` menjadi `Air Bersih`. Parameter itu
+     * lalu diam-diam menilai setiap SP sebagai tidak punya air, dan status SP
+     * jatuh karena satu penyuntingan ejaan.
+     *
      * @return array<int, array<string, mixed>> Parameter penilaian
      */
     public static function parameter(): array
@@ -62,25 +83,28 @@ class PenilaianKondisiSp
         $s = TingkatKebutuhan::Sekunder;
         $t = TingkatKebutuhan::Tersier;
 
+        $infra = fn (string $nilai) => DummyData::referensiId(JenisReferensi::JenisInfrastruktur, $nilai);
+        $fasil = fn (string $nilai) => DummyData::referensiId(JenisReferensi::JenisFasilitas, $nilai);
+
         return [
             // Primer: tanpa ini tempat tidak layak dihuni
-            ['kode' => 'air_bersih', 'nama' => 'Air Bersih', 'tingkat' => $p, 'bobot' => $p->bobotBawaan(), 'sumber' => 'Infrastruktur', 'jenis_rujukan' => JenisInfrastruktur::Air->value],
-            ['kode' => 'jalan_penghubung', 'nama' => 'Jalan Penghubung', 'tingkat' => $p, 'bobot' => $p->bobotBawaan(), 'sumber' => 'Infrastruktur', 'jenis_rujukan' => JenisInfrastruktur::JalanPenghubung->value],
-            ['kode' => 'listrik', 'nama' => 'Listrik', 'tingkat' => $p, 'bobot' => $p->bobotBawaan(), 'sumber' => 'Infrastruktur', 'jenis_rujukan' => JenisInfrastruktur::Listrik->value],
+            ['kode' => 'air_bersih', 'nama' => 'Air Bersih', 'tingkat' => $p, 'bobot' => $p->bobotBawaan(), 'sumber' => 'Infrastruktur', 'referensi_id' => $infra('Air')],
+            ['kode' => 'jalan_penghubung', 'nama' => 'Jalan Penghubung', 'tingkat' => $p, 'bobot' => $p->bobotBawaan(), 'sumber' => 'Infrastruktur', 'referensi_id' => $infra('Jalan Penghubung')],
+            ['kode' => 'listrik', 'nama' => 'Listrik', 'tingkat' => $p, 'bobot' => $p->bobotBawaan(), 'sumber' => 'Infrastruktur', 'referensi_id' => $infra('Listrik')],
 
             // Sekunder: masih dapat dihuni, tetapi tidak berkembang
-            ['kode' => 'kesehatan', 'nama' => 'Fasilitas Kesehatan', 'tingkat' => $s, 'bobot' => $s->bobotBawaan(), 'sumber' => 'Fasilitas', 'jenis_rujukan' => JenisFasilitas::Kesehatan->value],
-            ['kode' => 'pendidikan_dasar', 'nama' => 'Pendidikan Dasar', 'tingkat' => $s, 'bobot' => $s->bobotBawaan(), 'sumber' => 'Fasilitas', 'jenis_rujukan' => JenisFasilitas::PendidikanDasar->value],
-            ['kode' => 'telekomunikasi', 'nama' => 'Telekomunikasi', 'tingkat' => $s, 'bobot' => $s->bobotBawaan(), 'sumber' => 'Infrastruktur', 'jenis_rujukan' => JenisInfrastruktur::Telekomunikasi->value],
-            ['kode' => 'sanitasi', 'nama' => 'Sanitasi', 'tingkat' => $s, 'bobot' => $s->bobotBawaan(), 'sumber' => 'Infrastruktur', 'jenis_rujukan' => JenisInfrastruktur::Sanitasi->value],
+            ['kode' => 'kesehatan', 'nama' => 'Fasilitas Kesehatan', 'tingkat' => $s, 'bobot' => $s->bobotBawaan(), 'sumber' => 'Fasilitas', 'referensi_id' => $fasil('Kesehatan')],
+            ['kode' => 'pendidikan_dasar', 'nama' => 'Pendidikan Dasar', 'tingkat' => $s, 'bobot' => $s->bobotBawaan(), 'sumber' => 'Fasilitas', 'referensi_id' => $fasil('Pendidikan Dasar')],
+            ['kode' => 'telekomunikasi', 'nama' => 'Telekomunikasi', 'tingkat' => $s, 'bobot' => $s->bobotBawaan(), 'sumber' => 'Infrastruktur', 'referensi_id' => $infra('Telekomunikasi')],
+            ['kode' => 'sanitasi', 'nama' => 'Sanitasi', 'tingkat' => $s, 'bobot' => $s->bobotBawaan(), 'sumber' => 'Infrastruktur', 'referensi_id' => $infra('Sanitasi')],
 
             // Tersier: penunjang produktivitas dan kehidupan sosial
-            ['kode' => 'irigasi', 'nama' => 'Irigasi', 'tingkat' => $t, 'bobot' => $t->bobotBawaan(), 'sumber' => 'Infrastruktur', 'jenis_rujukan' => JenisInfrastruktur::Irigasi->value],
-            ['kode' => 'gudang', 'nama' => 'Gudang Pascapanen', 'tingkat' => $t, 'bobot' => $t->bobotBawaan(), 'sumber' => 'Infrastruktur', 'jenis_rujukan' => JenisInfrastruktur::Gudang->value],
-            ['kode' => 'jalan_produksi', 'nama' => 'Jalan Produksi', 'tingkat' => $t, 'bobot' => $t->bobotBawaan(), 'sumber' => 'Infrastruktur', 'jenis_rujukan' => JenisInfrastruktur::JalanProduksi->value],
-            ['kode' => 'balai', 'nama' => 'Balai Pertemuan', 'tingkat' => $t, 'bobot' => $t->bobotBawaan(), 'sumber' => 'Fasilitas', 'jenis_rujukan' => JenisFasilitas::BalaiPertemuan->value],
-            ['kode' => 'ibadah', 'nama' => 'Rumah Ibadah', 'tingkat' => $t, 'bobot' => $t->bobotBawaan(), 'sumber' => 'Fasilitas', 'jenis_rujukan' => JenisFasilitas::Ibadah->value],
-            ['kode' => 'pasar_kios', 'nama' => 'Pasar atau Kios Saprotan', 'tingkat' => $t, 'bobot' => $t->bobotBawaan(), 'sumber' => 'Infrastruktur', 'jenis_rujukan' => JenisInfrastruktur::PasarKios->value],
+            ['kode' => 'irigasi', 'nama' => 'Irigasi', 'tingkat' => $t, 'bobot' => $t->bobotBawaan(), 'sumber' => 'Infrastruktur', 'referensi_id' => $infra('Irigasi')],
+            ['kode' => 'gudang', 'nama' => 'Gudang Pascapanen', 'tingkat' => $t, 'bobot' => $t->bobotBawaan(), 'sumber' => 'Infrastruktur', 'referensi_id' => $infra('Gudang')],
+            ['kode' => 'jalan_produksi', 'nama' => 'Jalan Produksi', 'tingkat' => $t, 'bobot' => $t->bobotBawaan(), 'sumber' => 'Infrastruktur', 'referensi_id' => $infra('Jalan Produksi')],
+            ['kode' => 'balai', 'nama' => 'Balai Pertemuan', 'tingkat' => $t, 'bobot' => $t->bobotBawaan(), 'sumber' => 'Fasilitas', 'referensi_id' => $fasil('Balai Pertemuan')],
+            ['kode' => 'ibadah', 'nama' => 'Rumah Ibadah', 'tingkat' => $t, 'bobot' => $t->bobotBawaan(), 'sumber' => 'Fasilitas', 'referensi_id' => $fasil('Ibadah')],
+            ['kode' => 'pasar_kios', 'nama' => 'Pasar atau Kios Saprotan', 'tingkat' => $t, 'bobot' => $t->bobotBawaan(), 'sumber' => 'Infrastruktur', 'referensi_id' => $infra('Pasar atau Kios Saprotan')],
         ];
     }
 
@@ -110,8 +134,22 @@ class PenilaianKondisiSp
             $sumber = $par['sumber'] === 'Fasilitas' ? $asetFasilitas : $asetInfra;
             $kolom = $par['sumber'] === 'Fasilitas' ? 'jenis_fasilitas' : 'jenis';
 
-            $kondisi = self::kondisiTerbaik($sumber, $kolom, $par['jenis_rujukan']);
-            $nilai = self::NILAI_KONDISI[$kondisi] ?? self::NILAI_TIDAK_ADA;
+            // Kolom `jenis` pada aset masih menyimpan teks, sedangkan parameter
+            // menunjuk id. Penerjemahan terjadi di sini, satu tempat, sehingga
+            // penggantian ejaan oleh Admin ikut terbawa dengan sendirinya.
+            //
+            // Bila idnya tidak ditemukan, parameter itu DILEWATI, bukan dinilai
+            // nol. Menilainya nol berarti seluruh SP mendadak dianggap tidak
+            // punya air hanya karena satu baris referensi hilang, dan pada
+            // parameter primer itu langsung menjatuhkan status setiap SP.
+            $jenisRujukan = DummyData::referensiNilai($par['referensi_id']);
+
+            if ($jenisRujukan === null) {
+                continue;
+            }
+
+            $kondisi = self::kondisiTerbaik($sumber, $kolom, $jenisRujukan);
+            $nilai = self::nilaiKondisi()[$kondisi] ?? self::NILAI_TIDAK_ADA;
 
             // Aturan primer nol: satu saja cukup untuk menentukan status
             if ($par['tingkat'] === TingkatKebutuhan::Primer && $nilai === self::NILAI_TIDAK_ADA) {
@@ -168,7 +206,7 @@ class PenilaianKondisiSp
         $nilaiTerbaik = -1.0;
 
         foreach ($cocok as $a) {
-            $nilai = self::NILAI_KONDISI[$a['kondisi'] ?? ''] ?? self::NILAI_TIDAK_ADA;
+            $nilai = self::nilaiKondisi()[$a['kondisi'] ?? ''] ?? self::NILAI_TIDAK_ADA;
 
             if ($nilai > $nilaiTerbaik) {
                 $nilaiTerbaik = $nilai;
@@ -232,8 +270,8 @@ class PenilaianKondisiSp
         $penyebab = [];
 
         foreach ($penilaian['rincian'] as $r) {
-            if ($r['nilai'] <= self::NILAI_KONDISI['Rusak Berat']) {
-                $penyebab[] = $r['nama'] . ' (' . mb_strtolower($r['kondisi']) . ')';
+            if ($r['nilai'] <= (self::nilaiKondisi()['Rusak Berat'] ?? 0.2)) {
+                $penyebab[] = $r['nama'].' ('.mb_strtolower($r['kondisi']).')';
             }
         }
 
