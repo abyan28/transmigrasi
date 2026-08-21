@@ -43,7 +43,7 @@
 
     <x-sim.halaman-daftar judul="Satuan Permukiman"
         keterangan="Enam satuan permukiman di Kawasan Transmigrasi Kobalima Timur."
-        :remah="[['label' => 'Wilayah dan SP'], ['label' => 'Satuan Permukiman']]"
+        :remah="\App\Helpers\RemahHelper::untuk('/sp')"
         :jumlah="count($baris)" :kata-kunci="$cari" :aksi-url="route('sp.index')"
         placeholder-cari="Cari nama SP atau desa" judul-kosong="Belum ada data satuan permukiman">
 

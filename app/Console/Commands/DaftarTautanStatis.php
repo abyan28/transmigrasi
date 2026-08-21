@@ -94,7 +94,7 @@ class DaftarTautanStatis extends Command
                 continue;
             }
 
-            $hasil[] = '/' . ltrim($uri === '/' ? '' : $uri, '/');
+            $hasil[] = '/'.ltrim($uri === '/' ? '' : $uri, '/');
         }
 
         return $hasil;
@@ -118,6 +118,8 @@ class DaftarTautanStatis extends Command
             'saprotan' => ['saprotan', 'id_saprotan'],
             'komoditas' => ['komoditas', 'id_komoditas'],
             'infrastruktur' => ['infrastruktur', 'id_infrastruktur'],
+            'musim-tanam' => ['musimTanam', 'id_musim_tanam'],
+            'riwayat-tanam' => ['riwayatTanam', 'id_riwayat_tanam'],
             'sp/inventaris' => ['inventarisSp', 'id_inventaris_sp'],
             'sp/fasilitas' => ['fasilitasSp', 'id_fasilitas_sp'],
             'dashboard/sp' => ['satuanPermukiman', 'id_satuan_permukiman'],
@@ -141,14 +143,14 @@ class DaftarTautanStatis extends Command
                     ));
                 }
 
-                $hasil[] = '/' . $awalan . '/' . $baris[$kunci];
+                $hasil[] = '/'.$awalan.'/'.$baris[$kunci];
             }
         }
 
         // Tautan tetap lacak pengaduan memakai nomor, bukan id.
         foreach (DummyData::pengaduan() as $baris) {
             if (isset($baris['nomor_pengaduan'])) {
-                $hasil[] = '/lacak-pengaduan/' . $baris['nomor_pengaduan'];
+                $hasil[] = '/lacak-pengaduan/'.$baris['nomor_pengaduan'];
             }
         }
 
@@ -156,14 +158,14 @@ class DaftarTautanStatis extends Command
         // tampilan, bukan data, sehingga disebut langsung. Daftar ini wajib
         // sejalan dengan batasan `where` pada rute `panen.rekap.kelompok`.
         foreach (['sp', 'komoditas', 'musim', 'petani'] as $kelompok) {
-            $hasil[] = '/panen/rekap/' . $kelompok;
+            $hasil[] = '/panen/rekap/'.$kelompok;
         }
 
         // Tautan tetap tab rekap pengaduan, mengikuti pola yang sama. Daftar
         // ini wajib sejalan dengan batasan `where` pada rute
         // `pengaduan.rekap.kelompok` dan $labelKelompok pada viewnya.
         foreach (['kategori', 'status', 'sp', 'prioritas', 'bidang'] as $kelompok) {
-            $hasil[] = '/pengaduan/rekap/' . $kelompok;
+            $hasil[] = '/pengaduan/rekap/'.$kelompok;
         }
 
         return $hasil;

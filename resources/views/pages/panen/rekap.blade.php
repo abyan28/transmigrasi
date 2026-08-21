@@ -74,11 +74,7 @@
 
     <x-sim.page-header judul="Rekap Hasil Panen"
         keterangan="Agregat volume panen yang seluruhnya sudah dikonversi ke ton."
-        :remah="[
-            ['label' => 'Pertanian'],
-            ['label' => 'Hasil Panen', 'url' => route('panen.index')],
-            ['label' => 'Rekap Panen'],
-        ]">
+        :remah="\App\Helpers\RemahHelper::untuk('/panen/rekap')">
         <x-slot:aksi>
             <a href="{{ route('panen.index') }}"
                 class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-theme-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">

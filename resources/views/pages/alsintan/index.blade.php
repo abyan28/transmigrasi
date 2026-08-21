@@ -44,7 +44,7 @@
 
     <x-sim.halaman-daftar judul="Alsintan"
         keterangan="Alat dan mesin pertanian milik pribadi maupun bantuan lewat kelompok tani."
-        :remah="[['label' => 'Kelembagaan'], ['label' => 'Alsintan']]"
+        :remah="\App\Helpers\RemahHelper::untuk('/alsintan')"
         :jumlah="count($baris)" :kata-kunci="$cari" :aksi-url="route('alsintan.index')"
         placeholder-cari="Cari nama alat atau pemilik" judul-kosong="Belum ada data alsintan"
         pesan-kosong="Alat dan mesin pertanian akan tampil di sini setelah didata.">

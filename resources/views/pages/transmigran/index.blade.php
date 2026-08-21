@@ -58,7 +58,7 @@
 
     <x-sim.page-header judul="Data Transmigran"
         keterangan="Daftar kepala keluarga di seluruh satuan permukiman Kawasan Kobalima Timur."
-        :remah="[['label' => 'Kependudukan'], ['label' => 'Transmigran']]">
+        :remah="\App\Helpers\RemahHelper::untuk('/transmigran')">
         <x-slot:aksi>
             {{--
                 Impor massal diletakkan mendahului tombol tambah namun bergaya

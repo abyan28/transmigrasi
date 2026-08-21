@@ -25,11 +25,7 @@
 
     <x-sim.page-header :judul="$data['nama']"
         :keterangan="'Komoditas ' . strtolower($data['tipe']) . ', satuan panen baku ' . $data['satuan'] . '.'"
-        :remah="[
-            ['label' => 'Pertanian'],
-            ['label' => 'Komoditas', 'url' => route('komoditas.index')],
-            ['label' => $data['nama']],
-        ]">
+        :remah="\App\Helpers\RemahHelper::untuk('/komoditas', $data['nama'])">
         <x-slot:aksi>
             @if ($bolehUbah)
                 <button type="button" @click="$dispatch('buka-modal', 'formUbahKomoditas')"

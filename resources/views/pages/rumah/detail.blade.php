@@ -23,11 +23,7 @@
 
     <x-sim.page-header :judul="'Rumah ' . $data['no_rumah']"
         :keterangan="$data['satuan_permukiman'] . ', dibangun tahun ' . $data['tahun_pembangunan'] . '.'"
-        :remah="[
-            ['label' => 'Kependudukan'],
-            ['label' => 'Rumah dan Hunian', 'url' => route('rumah.index')],
-            ['label' => 'Rumah ' . $data['no_rumah']],
-        ]">
+        :remah="\App\Helpers\RemahHelper::untuk('/rumah', 'Rumah ' . $data['no_rumah'])">
         <x-slot:aksi>
             @if ($bolehUbah)
                 <button type="button" @click="$dispatch('buka-modal', 'formUbahRumah')"

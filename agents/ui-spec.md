@@ -695,7 +695,10 @@ Isian yang sumbernya **tabel data**, bukan enum, memakai `x-sim.pilih-cari`. Con
 2. **Nilai disimpan pada isian ber-`name` sesuai kolomnya**, bukan pada panel. Isian itu memakai kelas `sr-only`, **bukan `type="hidden"`**: peramban mengabaikan `required` pada isian tersembunyi, sehingga form akan terkirim tanpa peringatan apa pun meski isian wajib masih kosong.
 3. **Nilai yang berubah wajib diumumkan lewat event `change` sungguhan** pada isian tersebut. Tanpa itu `isiFormulir()` milik `x-sim.modal-form` tidak dapat mengisi form saat modal ubah dibuka, dan pemanggil yang memasang `@change` sendiri ikut diam.
 4. **Cadangan tanpa JavaScript wajib ada** berupa `<select>` di dalam `<noscript>`. Sinyal di lokus tidak selalu stabil, dan form yang mustahil diisi karena satu berkas gagal diunduh adalah kegagalan yang tidak perlu.
-5. **Kotak pencarian hanya dirender bila daftarnya mencapai 8 opsi.** Memasangnya di atas tiga pilihan menambah satu benda yang harus dilewati, bukan mempercepat.
+5. **Kotak pencarian selalu dirender, tanpa ambang jumlah opsi** (ambang 8 dicabut 2026-08-20). Yang menentukan bukan jumlah opsi hari ini, melainkan **apakah daftarnya bertambah ketika petugas menambah data**. Bila ya, pencariannya memang diperlukan, dan menyembunyikannya sampai melewati ambang hanya membuat satu komponen berperilaku dua macam tanpa dapat diduga pemakainya.
+5a. **Ambang itu dicabut karena dasarnya keliru, bukan karena tidak nyaman.** Perbandingannya dilakukan terhadap jumlah baris `DummyData`, yaitu data yang dikarang AI sendiri, sehingga kalimat "poktan baru 4 baris jadi wajar belum muncul" adalah penalaran melingkar yang dilarang `rules.md` 19a. Kekeliruan yang sama terulang **tiga kali** pada butir ini: ditetapkan 2026-08-17, ditandai perlu tinjau ulang 2026-08-19, lalu dipakai lagi sebagai pembenaran 2026-08-20. Lihat `notes.md` 1c.2 pelanggaran keenam.
+5b. Alasan lama juga sudah tidak berlaku sejak komponen dibangun ulang. Kotak pencarian kini berada **di dalam panel** yang harus dibuka lebih dulu, bukan berjajar di luar sebagai kontrol kedua, sehingga yang hendak mengklik tetap mengklik tanpa melewati apa pun.
+5c. **Tabel referensi kecil dikecualikan.** Isian `satuan_id` tetap `<select>` biasa: ia memang dapat ditambah Admin lewat data master, tetapi satuan takaran tidak akan pernah menuntut pencarian. Pengecualian ini disebut satu per satu, bukan dinyatakan sebagai ambang, agar tidak ada lagi yang perlu ditebak.
 6. Pencarian mencocokkan **teks utama maupun keterangannya**, sebab petugas kerap mengingat asal SP lebih dulu daripada nama lengkapnya.
 7. **Escape berlapis.** Panel wajib memakai `@keydown.escape.stop`: tekanan pertama menutup panel, tekanan kedua barulah menutup modal. Tanpa `.stop`, satu tekanan menutup keduanya sekaligus dan pengguna kehilangan seluruh isian yang sedang diketik.
 8. **Tinggi panel wajib dibatasi beserta gulirnya sendiri.** Badan `x-sim.modal-form` memakai `overflow-y-auto`, sehingga panel yang lebih tinggi daripada sisa ruang akan terpotong, bukan mengambang keluar.
@@ -753,6 +756,18 @@ Kartu indikator dashboard: label, angka besar, ikon, tren, dan tautan drill-down
 - Progress bar, tombol hapus
 - Menampilkan aturan penamaan berkas
 - Validasi tipe dan ukuran di sisi klien sebelum unggah
+- **Satu instansi menampung satu berkas.** Modul yang perlu menyimpan foto sekaligus dokumen memasang **dua instansi terpisah**, bukan satu slot berlabel ganda. Keduanya menjawab hal berbeda: foto merekam kondisi saat pendataan, dokumen menyimpan berkas administratifnya. Satu slot untuk keduanya membuat yang satu tertimpa yang lain, dan kehilangannya berlangsung diam-diam sebab form tetap tersimpan. Berlaku pada `infrastruktur`, `inventaris_sp`, `fasilitas_sp` (ditetapkan 2026-08-20).
+- **Berkas yang dapat diunggah wajib dapat dibuka kembali** dari halaman rincian modulnya, memakai `x-sim.tautan-dokumen`. Unggahan yang tidak punya jalan dibuka adalah kontrol mati (R-26): petugas mengunggah berita acara lalu tidak menemukan cara membacanya.
+
+### 6.4a Isian catatan
+
+1. **Namanya "Catatan", bukan "Keterangan".** Sebelum 2026-08-20 empat penamaan dipakai bergantian pada satu maksud yang sama, dan tiga di antaranya bahkan pada modul yang berdampingan. Kolom databasenya tetap `keterangan` mengikuti kamus data; yang diseragamkan adalah teks yang dibaca petugas.
+2. **Setiap modul yang kolomnya ada di kamus data wajib punya isiannya.** Empat modul sempat memiliki kolom `keterangan` tanpa satu pun isian, sehingga hal yang tidak tertampung kolom baku tidak dapat dicatat ke mana pun.
+3. **Nilainya wajib ditampilkan kembali pada halaman rincian.** Catatan yang hanya dapat diketik tetapi tidak pernah terbaca sama saja dengan tidak dicatat. Keadaan kosong dinyatakan apa adanya, bukan disembunyikan.
+4. **Tiga pengecualian, sebab maknanya memang berbeda** dan menyamakan namanya justru menyesatkan:
+   - `rumah.catatan_hunian` berlabel "Catatan Hunian" — kolomnya memang bernama demikian dan isinya khusus keadaan hunian.
+   - `hasil_panen.keterangan_satuan_lokal` berlabel "Keterangan Satuan Lokal" — kolom tersendiri di samping `keterangan`, isinya padanan satuan setempat.
+   - `pengaduan.deskripsi` berlabel "Uraian Masalah" — isi laporan yang wajib diisi, bukan catatan tambahan.
 
 ### 6.5 `<x-wilayah-picker>`
 

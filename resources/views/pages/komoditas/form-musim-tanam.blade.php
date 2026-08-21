@@ -66,7 +66,7 @@
     </div>
 
     <div>
-        <label for="{{ $awalan }}_keterangan_musim" class="{{ $kelasLabel }}">Keterangan</label>
+        <label for="{{ $awalan }}_keterangan_musim" class="{{ $kelasLabel }}">Catatan</label>
         <textarea id="{{ $awalan }}_keterangan_musim" name="keterangan" rows="2" maxlength="255"
             placeholder="Contoh: Musim hujan, penanaman utama jagung."
             class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30">{{ old('keterangan', $data['keterangan'] ?? '') }}</textarea>

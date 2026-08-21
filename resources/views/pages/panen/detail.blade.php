@@ -20,11 +20,7 @@
 
     <x-sim.page-header :judul="'Panen ' . $data['komoditas']"
         :keterangan="'Dipanen ' . \Illuminate\Support\Carbon::parse($data['tanggal_panen'])->translatedFormat('d F Y') . ' oleh ' . $data['petani'] . '.'"
-        :remah="[
-            ['label' => 'Pertanian'],
-            ['label' => 'Hasil Panen', 'url' => route('panen.index')],
-            ['label' => $data['komoditas']],
-        ]">
+        :remah="\App\Helpers\RemahHelper::untuk('/panen', $data['komoditas'])">
         <x-slot:aksi>
             @if ($bolehUbah)
                 <button type="button" @click="$dispatch('buka-modal', 'formUbahPanen')"

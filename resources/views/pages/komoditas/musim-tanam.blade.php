@@ -20,7 +20,7 @@
 
     <x-sim.halaman-daftar judul="Musim Tanam"
         keterangan="Periode tanam yang menjadi dasar pengelompokan hasil panen."
-        :remah="[['label' => 'Pertanian'], ['label' => 'Musim Tanam']]"
+        :remah="\App\Helpers\RemahHelper::untuk('/musim-tanam')"
         :jumlah="count($baris)" :kata-kunci="$cari" :aksi-url="route('musim-tanam')"
         placeholder-cari="Cari musim tanam" judul-kosong="Belum ada musim tanam"
         pesan-kosong="Periode musim tanam akan tampil di sini setelah ditetapkan.">
@@ -79,7 +79,8 @@
                     {{ $m['jumlah_tanam'] }} catatan</td>
                 <td class="px-5 py-3 text-theme-xs text-gray-500 dark:text-gray-400">{{ $m['keterangan'] ?? '-' }}</td>
                 <td class="px-5 py-3">
-                    <x-sim.aksi-baris modal-ubah="formUbahMusimBaris"
+                                <x-sim.aksi-baris :rincian-url="route('musim-tanam.detail', $m['id_musim_tanam'])"
+                                    modal-ubah="formUbahMusimBaris"
                         :data-baris="$m + ['id' => $m['id_musim_tanam']]"
                         :hapus-url="'/musim-tanam/' . $m['id_musim_tanam']"
                         konfirmasi-hapus="hapusMusim"

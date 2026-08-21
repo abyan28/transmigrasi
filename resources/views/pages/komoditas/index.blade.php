@@ -49,7 +49,7 @@
 
     <x-sim.halaman-daftar judul="Data Komoditas"
         keterangan="Komoditas kawasan beserta satuan panen bakunya."
-        :remah="[['label' => 'Pertanian'], ['label' => 'Komoditas']]"
+        :remah="\App\Helpers\RemahHelper::untuk('/komoditas')"
         :jumlah="count($baris)" :kata-kunci="$cari" :aksi-url="route('komoditas.index')"
         placeholder-cari="Cari nama komoditas" judul-kosong="Belum ada data komoditas"
         pesan-kosong="Komoditas kawasan akan tampil di sini setelah didata.">

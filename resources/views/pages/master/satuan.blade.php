@@ -20,7 +20,7 @@
 
     <x-sim.page-header judul="Data Master Satuan"
         keterangan="Satuan panen beserta faktor konversinya ke ton."
-        :remah="[['label' => 'Pengaturan'], ['label' => 'Data Master Satuan']]">
+        :remah="\App\Helpers\RemahHelper::untuk('/master/satuan')">
         <x-slot:aksi>
             {{--
                 Impor massal diletakkan mendahului tombol tambah namun bergaya

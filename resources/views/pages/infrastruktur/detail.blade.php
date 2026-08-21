@@ -25,11 +25,7 @@
 
     <x-sim.page-header :judul="$data['nama']"
         :keterangan="$jenis->value . ' di ' . $data['satuan_permukiman'] . ', dibangun tahun ' . $data['tahun_perolehan'] . '.'"
-        :remah="[
-            ['label' => 'Infrastruktur'],
-            ['label' => 'Infrastruktur SP', 'url' => route('infrastruktur.index')],
-            ['label' => $data['nama']],
-        ]">
+        :remah="\App\Helpers\RemahHelper::untuk('/infrastruktur', $data['nama'])">
         <x-slot:aksi>
             @if ($bolehUbah)
                 <button type="button" @click="$dispatch('buka-modal', 'formUbahInfrastruktur')"
@@ -128,6 +124,41 @@
                             class="rounded font-medium text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">fitur
                             pengaduan</a>, agar penanganannya terlacak beserta riwayat tindak lanjutnya.
                     </p>
+
+                    {{--
+                        Catatan dan kedua berkas, ditambahkan 2026-08-20.
+
+                        Modul ini satu-satunya yang sejak awal memisahkan `foto`
+                        dari `dokumen_pendukung` (kamus data 10.1), tetapi
+                        keduanya tidak pernah ditampilkan kembali. Foto kondisi
+                        justru yang paling berguna dibuka ulang saat menilai
+                        kondisi SP, sebab ia merekam keadaan pada tanggal
+                        pendataan.
+                    --}}
+                    <dl class="mt-6 space-y-4 border-t border-gray-200 pt-6 dark:border-gray-800">
+                        <div>
+                            <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Catatan</dt>
+                            <dd class="mt-0.5 text-theme-sm leading-relaxed text-gray-800 dark:text-white/90">
+                                {{ $data['keterangan'] ?? 'Tidak ada catatan tambahan.' }}
+                            </dd>
+                        </div>
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Foto kondisi</dt>
+                                <dd class="mt-0.5 text-theme-sm text-gray-800 dark:text-white/90">
+                                    <x-sim.tautan-dokumen modul="infrastruktur" :id="$data['id_infrastruktur']"
+                                        :berkas="$data['foto'] ?? null" />
+                                </dd>
+                            </div>
+                            <div>
+                                <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Dokumen pendukung</dt>
+                                <dd class="mt-0.5 text-theme-sm text-gray-800 dark:text-white/90">
+                                    <x-sim.tautan-dokumen modul="infrastruktur" :id="$data['id_infrastruktur']"
+                                        :berkas="$data['dokumen_pendukung'] ?? null" />
+                                </dd>
+                            </div>
+                        </div>
+                    </dl>
                 </div>
 
                 {{-- Catatan log: riwayat perubahan data ini saja --}}

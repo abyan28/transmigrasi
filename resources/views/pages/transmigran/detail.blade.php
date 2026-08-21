@@ -60,11 +60,7 @@
 
     <x-sim.page-header :judul="$data['nama_kepala_keluarga']"
         :keterangan="'Kepala keluarga di ' . $data['satuan_permukiman'] . ', datang tahun ' . $data['tahun_kedatangan'] . '.'"
-        :remah="[
-            ['label' => 'Kependudukan'],
-            ['label' => 'Transmigran', 'url' => route('transmigran.index')],
-            ['label' => $data['nama_kepala_keluarga']],
-        ]">
+        :remah="\App\Helpers\RemahHelper::untuk('/transmigran', $data['nama_kepala_keluarga'])">
         <x-slot:aksi>
             {{--
                 Suksesi adalah TINDAKAN TERSENDIRI, bukan efek samping form

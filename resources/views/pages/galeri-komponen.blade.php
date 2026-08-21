@@ -10,7 +10,9 @@
 @section('content')
     <x-sim.page-header judul="Galeri Komponen"
         keterangan="Acuan pemakaian komponen bersama. Halaman ini hanya untuk pengembangan."
-        :remah="[['label' => 'Pengembangan'], ['label' => 'Galeri Komponen']]">
+        {{-- Halaman pengembangan, tidak ada di sidebar. RemahHelper menyusun
+             labelnya dari alamat sendiri. --}}
+        :remah="\App\Helpers\RemahHelper::untuk('/galeri-komponen')">
         <x-slot:aksi>
             <button type="button" @click="$dispatch('toast', { pesan: 'Contoh pemberitahuan berhasil.', ragam: 'sukses' })"
                 class="rounded-lg bg-brand-500 px-4 py-2.5 text-theme-sm font-medium text-white hover:bg-brand-600">

@@ -347,10 +347,13 @@ Barang bergerak milik SP (`rules.md` §4b).
 | `sumber_dana` | `ENUM` | YA | | Lihat §11.3 |
 | `status_penyerahan` | `ENUM` | TIDAK | | Lihat §11.4 |
 | `kondisi` | `ENUM` | YA | | Lihat §11.5 |
-| `dokumen_pendukung` | `VARCHAR(255)` | YA | | |
+| `foto` | `VARCHAR(255)` | YA | | Dokumentasi kondisi barang |
+| `dokumen_pendukung` | `VARCHAR(255)` | YA | | Berita acara atau bukti pengadaan |
 | `keterangan` | `TEXT` | YA | | |
 
-**Catatan:** `satuan_barang` sengaja berupa teks bebas dan **tidak** menaut ke tabel `satuan`, karena tabel `satuan` khusus menyimpan satuan berat beserta faktor konversi ke ton.
+**Catatan:**
+- `satuan_barang` sengaja berupa teks bebas dan **tidak** menaut ke tabel `satuan`, karena tabel `satuan` khusus menyimpan satuan berat beserta faktor konversi ke ton.
+- **Kolom `foto` ditambahkan 2026-08-20**, mengikuti pola `infrastruktur` §10.1. Keduanya menjawab hal berbeda: foto merekam kondisi barang saat pendataan, dokumen menyimpan berkas administratifnya. Satu slot untuk keduanya membuat foto kondisi tertimpa berita acara, atau sebaliknya, dan kehilangannya berlangsung diam-diam sebab form tetap tersimpan.
 
 ### 4.2 `fasilitas_sp`
 
@@ -369,10 +372,13 @@ Bangunan dan fasilitas tetap milik SP. Struktur sama persis dengan `inventaris_s
 | `kondisi` | `ENUM` | YA | | Lihat §11.5 |
 | `lintang` | `DECIMAL(10,7)` | YA | | Lokasi fasilitas |
 | `bujur` | `DECIMAL(10,7)` | YA | | Lokasi fasilitas |
-| `dokumen_pendukung` | `VARCHAR(255)` | YA | | |
+| `foto` | `VARCHAR(255)` | YA | | Dokumentasi kondisi bangunan |
+| `dokumen_pendukung` | `VARCHAR(255)` | YA | | Berita acara serah terima atau berkas pembangunan |
 | `keterangan` | `TEXT` | YA | | |
 
-**Catatan:** `jenis_fasilitas` dan `nama_fasilitas` sengaja berdampingan. Enum diperlukan agar penilaian kondisi SP dapat menghitung otomatis, sebab teks bebas membuat "SEKOLAH DASAR" dan "SD Negeri 1" tidak terbaca sebagai hal yang sama. Nama bebas tetap dipertahankan agar petugas dapat menulis sebutan yang dikenal warga setempat.
+**Catatan:**
+- **Kolom `foto` ditambahkan 2026-08-20**, alasan sama dengan §4.1. Sebelumnya satu slot dipakai untuk keduanya, dan labelnya bahkan berbunyi "Dokumen atau Foto Fasilitas" — menjanjikan dua hal untuk satu tempat penyimpanan.
+- `jenis_fasilitas` dan `nama_fasilitas` sengaja berdampingan. Enum diperlukan agar penilaian kondisi SP dapat menghitung otomatis, sebab teks bebas membuat "SEKOLAH DASAR" dan "SD Negeri 1" tidak terbaca sebagai hal yang sama. Nama bebas tetap dipertahankan agar petugas dapat menulis sebutan yang dikenal warga setempat.
 
 ---
 

@@ -40,11 +40,7 @@
 
     <x-sim.page-header :judul="$data['nama']"
         :keterangan="'Kelompok tani di ' . $data['satuan_permukiman'] . ', berdiri sejak ' . $data['tahun_berdiri'] . '.'"
-        :remah="[
-            ['label' => 'Kelembagaan'],
-            ['label' => 'Kelompok Tani', 'url' => route('poktan.index')],
-            ['label' => $data['nama']],
-        ]">
+        :remah="\App\Helpers\RemahHelper::untuk('/poktan', $data['nama'])">
         <x-slot:aksi>
             <button type="button" @click="$dispatch('buka-modal', 'formTambahAnggota')"
                 class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-theme-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
@@ -125,7 +121,27 @@
                         <dd class="text-right font-medium tabular-nums text-gray-800 dark:text-white/90">
                             {{ $aktif }} dari {{ count($anggota) }} terdata</dd>
                     </div>
+                    {{--
+                        SK pembentukan dan catatan, ditambahkan 2026-08-20.
+                        Keduanya sudah lama ada pada kamus data 8.1 tetapi tidak
+                        pernah ditampilkan kembali, sehingga SK yang diunggah
+                        petugas tidak punya cara dibuka.
+                    --}}
+                    <div class="flex justify-between gap-3">
+                        <dt class="text-gray-500 dark:text-gray-400">SK pembentukan</dt>
+                        <dd class="text-right font-medium text-gray-800 dark:text-white/90">
+                            <x-sim.tautan-dokumen modul="poktan" :id="$data['id_poktan']"
+                                :berkas="$data['dokumen_pendukung'] ?? null" />
+                        </dd>
+                    </div>
                 </dl>
+
+                <div class="mt-5 border-t border-gray-200 pt-5 dark:border-gray-800">
+                    <p class="text-theme-xs text-gray-500 dark:text-gray-400">Catatan</p>
+                    <p class="mt-0.5 text-theme-sm leading-relaxed text-gray-800 dark:text-white/90">
+                        {{ $data['keterangan'] ?? 'Tidak ada catatan tambahan.' }}
+                    </p>
+                </div>
 
                 {{-- Titik sekretariat poktan, agar petugas dapat menemukan lokasinya --}}
                 @if (! empty($data['lintang']))

@@ -46,7 +46,7 @@
 
     <x-sim.halaman-daftar judul="Riwayat Tanam"
         keterangan="Catatan penanaman per lahan, musim, dan komoditas."
-        :remah="[['label' => 'Pertanian'], ['label' => 'Riwayat Tanam']]"
+        :remah="\App\Helpers\RemahHelper::untuk('/riwayat-tanam')"
         :jumlah="count($baris)" :kata-kunci="$cari" :aksi-url="route('riwayat-tanam')"
         placeholder-cari="Cari petani atau kode lahan" judul-kosong="Belum ada riwayat tanam"
         pesan-kosong="Catatan penanaman akan tampil di sini setelah dicatat petugas.">
@@ -162,7 +162,8 @@
                 <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
                     {{ \Illuminate\Support\Carbon::parse($r['tanggal_tanam'])->translatedFormat('d M Y') }}</td>
                 <td class="px-5 py-3">
-                    <x-sim.aksi-baris modal-ubah="formUbahRiwayatBaris"
+                                <x-sim.aksi-baris :rincian-url="route('riwayat-tanam.detail', $r['id_riwayat_tanam'])"
+                                    modal-ubah="formUbahRiwayatBaris"
                         :data-baris="$r + ['id' => $r['id_riwayat_tanam']]"
                         :hapus-url="'/riwayat-tanam/' . $r['id_riwayat_tanam']"
                         konfirmasi-hapus="hapusRiwayat"

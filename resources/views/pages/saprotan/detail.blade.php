@@ -18,11 +18,7 @@
 
     <x-sim.page-header :judul="$data['nama']"
         :keterangan="$data['jenis'] . ' di ' . $data['satuan_permukiman'] . '.'"
-        :remah="[
-            ['label' => 'Kelembagaan'],
-            ['label' => 'Saprotan', 'url' => route('saprotan.index')],
-            ['label' => $data['nama']],
-        ]">
+        :remah="\App\Helpers\RemahHelper::untuk('/saprotan', $data['nama'])">
         <x-slot:aksi>
             @if ($bolehUbah)
                 <button type="button" @click="$dispatch('buka-modal', 'formUbahSaprotan')"
@@ -128,8 +124,32 @@
                         Penyaluran hanya dapat ditujukan kepada anggota berstatus aktif. Anggota yang sudah keluar
                         tetap tersimpan pada riwayat keanggotaan, tetapi tidak muncul sebagai calon penerima.
                     </p>
-                </div>
 
+                    {{--
+                        Catatan dan berkas, ditambahkan 2026-08-20. Kolom
+                        `keterangan` dan `dokumen_pendukung` sudah lama ada pada
+                        kamus data 8.4 tetapi tidak pernah ditampilkan kembali.
+
+                        Justru di modul inilah berita acara penyaluran paling
+                        sering diminta saat pemeriksaan, sehingga tidak dapat
+                        membukanya berarti unggahannya tidak berguna.
+                    --}}
+                    <dl class="mt-6 space-y-4 border-t border-gray-200 pt-6 dark:border-gray-800">
+                        <div>
+                            <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Catatan</dt>
+                            <dd class="mt-0.5 text-theme-sm leading-relaxed text-gray-800 dark:text-white/90">
+                                {{ $data['keterangan'] ?? 'Tidak ada catatan tambahan.' }}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Berita acara penyaluran</dt>
+                            <dd class="mt-0.5 text-theme-sm text-gray-800 dark:text-white/90">
+                                <x-sim.tautan-dokumen modul="saprotan" :id="$data['id_saprotan']"
+                                    :berkas="$data['dokumen_pendukung'] ?? null" />
+                            </dd>
+                        </div>
+                    </dl>
+                </div>
 
                 {{-- Catatan log: riwayat perubahan data ini saja --}}
                 <div x-show="tab === 'log'" x-cloak role="tabpanel">

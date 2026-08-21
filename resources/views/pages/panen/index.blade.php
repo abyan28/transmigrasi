@@ -67,7 +67,7 @@
 
     <x-sim.page-header judul="Hasil Panen"
         keterangan="Catatan panen per periode beserta volume, kualitas, dan harga jualnya."
-        :remah="[['label' => 'Pertanian'], ['label' => 'Hasil Panen']]">
+        :remah="\App\Helpers\RemahHelper::untuk('/panen')">
         <x-slot:aksi>
             {{--
                 Impor massal diletakkan mendahului tombol tambah namun bergaya

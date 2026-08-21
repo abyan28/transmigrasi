@@ -25,7 +25,9 @@
 
     <x-sim.page-header judul="Profil Saya"
         keterangan="Data akun Anda beserta kewenangan yang diberikan admin."
-        :remah="[['label' => 'Profil Saya']]">
+        {{-- Profil tidak ada di sidebar, sehingga labelnya disusun dari
+             alamatnya sendiri oleh RemahHelper. --}}
+        :remah="\App\Helpers\RemahHelper::untuk('/profil')">
         <x-slot:aksi>
             <a href="{{ route('profil.kata-sandi') }}"
                 class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">

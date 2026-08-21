@@ -34,11 +34,7 @@
 
     <x-sim.page-header :judul="'Lahan ' . $data['kode_lahan']"
         :keterangan="$data['peruntukan_lahan'] . ' seluas ' . number_format($data['luas'], 2, ',', '.') . ' hektare di ' . $data['satuan_permukiman'] . '.'"
-        :remah="[
-            ['label' => 'Lahan'],
-            ['label' => 'Daftar Lahan', 'url' => route('lahan.index')],
-            ['label' => $data['kode_lahan']],
-        ]">
+        :remah="\App\Helpers\RemahHelper::untuk('/lahan', $data['kode_lahan'])">
         <x-slot:aksi>
             @if ($bolehUbah)
                 <button type="button" @click="$dispatch('buka-modal', 'formUbahLahan')"

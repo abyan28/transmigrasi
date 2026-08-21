@@ -16,6 +16,20 @@
     Entri PALING BARU diletakkan di atas, sebab yang pertama dicari pembaca
     biasanya perubahan terakhir, bukan asal-usulnya.
 
+    ## Nilai lama tidak hilang saat catatan diubah
+
+    Menjawab pertanyaan yang wajar: ketika petugas menyunting catatan sebuah
+    data, apakah catatan sebelumnya tertimpa? TIDAK. Tabel `audit_log`
+    menyimpan `data_lama` dan `data_baru` per kolom yang berubah (kamus data
+    2.2), sehingga isi catatan sebelum penyuntingan tetap tersimpan.
+
+    UTANG TAHAP 4 YANG PERLU DIINGAT: komponen ini merender `$jejak['ringkasan']`,
+    padahal tabel `audit_log` TIDAK memiliki kolom bernama `ringkasan`. Pada
+    Tahap 2 hal itu tidak terlihat sebab `DummyData::auditLog()` mengarang kunci
+    tersebut. Begitu backend masuk, tampilan ini wajib dibangun dari pasangan
+    `data_lama`/`data_baru`; bila tidak, tab log pada dua belas halaman rincian
+    akan kosong atau melempar galat.
+
     Pemakaian:
         <x-sim.catatan-log nama-tabel="transmigran" :record-id="$data['id_transmigran']" />
 --}}
@@ -80,7 +94,9 @@
 
         <p class="mt-6 rounded-lg bg-gray-50 p-3.5 text-theme-xs text-gray-600 dark:bg-white/[0.03] dark:text-gray-400">
             Riwayat ini hanya memuat perubahan pada data yang sedang dibuka.
-            Untuk menelusuri seluruh tindakan di sistem, buka
+            Setiap penyuntingan menyimpan nilai sebelumnya, termasuk isi catatan,
+            sehingga versi lama tidak tertimpa. Untuk menelusuri seluruh tindakan
+            di sistem, buka
             <a href="{{ route('audit-log') }}"
                 class="rounded font-medium text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">Audit
                 Log</a>.

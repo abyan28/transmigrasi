@@ -288,6 +288,22 @@ Route::post('/transmigran/{id}/ganti-kepala-keluarga', function (int $id) {
         ->with('sukses', 'Pergantian kepala keluarga tercatat pada riwayat.');
 })->where('id', '[0-9]+')->name('transmigran.ganti-kepala-keluarga');
 
+/*
+ * Pergantian kepala keluarga.
+ *
+ * Rute TERSENDIRI, bukan bagian dari perbarui. Suksesi adalah tindakan yang
+ * berbeda dari menyunting data, dan menyatukannya membuat setiap perbaikan
+ * ejaan nama ikut tercatat sebagai pergantian kepala keluarga (rules.md 6.5b).
+ *
+ * Tahap 5: sunting baris transmigran (nama, NIK, no_kk), tambahkan baris
+ * riwayat_kepala_keluarga, lalu terapkan pilihan nasib jabatan ketua poktan.
+ * Ketiganya dalam satu transaksi.
+ */
+Route::post('/transmigran/{id}/ganti-kepala-keluarga', function (int $id) {
+    return redirect()->route('transmigran.detail', ['id' => $id, 'tab' => 'riwayat-kk'])
+        ->with('sukses', 'Pergantian kepala keluarga tercatat pada riwayat.');
+})->where('id', '[0-9]+')->name('transmigran.ganti-kepala-keluarga');
+
 Route::delete('/transmigran/{id}', function () {
     // Tahap 5: soft delete agar data tetap dapat dipulihkan.
     return redirect()->route('transmigran.index')
@@ -678,6 +694,35 @@ Route::get('/musim-tanam', function () {
 Route::get('/riwayat-tanam', function () {
     return view('pages.komoditas.riwayat-tanam', ['title' => 'Riwayat Tanam']);
 })->name('riwayat-tanam');
+
+/*
+ * Halaman rincian musim tanam dan riwayat tanam.
+ *
+ * Ditambahkan 2026-08-20 agar keduanya memiliki tab Catatan Log seperti modul
+ * lain. Sebelumnya keduanya hanya punya halaman daftar, sehingga perubahan
+ * datanya tidak dapat ditelusuri dari tempat datanya sendiri.
+ *
+ * Rute rincian didaftarkan SETELAH rute daftarnya, mengikuti catatan lama pada
+ * berkas ini bahwa alamat beruas dua dapat tertangkap sebagai id.
+ */
+Route::get('/musim-tanam/{id}', function (int $id) {
+    $data = collect(\App\Support\DummyData::musimTanam())->firstWhere('id_musim_tanam', $id);
+
+    abort_if($data === null, 404);
+
+    return view('pages.komoditas.detail-musim-tanam', ['title' => $data['label'], 'data' => $data]);
+})->where('id', '[0-9]+')->name('musim-tanam.detail');
+
+Route::get('/riwayat-tanam/{id}', function (int $id) {
+    $data = collect(\App\Support\DummyData::riwayatTanam())->firstWhere('id_riwayat_tanam', $id);
+
+    abort_if($data === null, 404);
+
+    return view('pages.komoditas.detail-riwayat-tanam', [
+        'title' => $data['kode_lahan'] . ' - ' . $data['musim_tanam'],
+        'data' => $data,
+    ]);
+})->where('id', '[0-9]+')->name('riwayat-tanam.detail');
 
 Route::post('/musim-tanam', function () {
     // Tahap 7: nama dan tahun disimpan pada dua kolom terpisah agar rekap

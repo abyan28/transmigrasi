@@ -19,7 +19,7 @@
 
     <x-sim.page-header judul="Data Master Wilayah"
         keterangan="Wilayah administratif tempat kawasan transmigrasi berada."
-        :remah="[['label' => 'Pengaturan'], ['label' => 'Data Master Wilayah']]">
+        :remah="\App\Helpers\RemahHelper::untuk('/wilayah')">
         <x-slot:aksi>
             {{--
                 Impor massal diletakkan mendahului tombol tambah namun bergaya

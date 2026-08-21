@@ -91,7 +91,7 @@
 
     <x-sim.page-header judul="Dashboard Kawasan Kobalima Timur"
         keterangan="Ringkasan kependudukan, lahan, produksi, dan pengaduan di enam satuan permukiman."
-        :remah="[['label' => 'Dashboard']]">
+        :remah="\App\Helpers\RemahHelper::untuk('/')">
         {{--
             Rekap indikator kawasan untuk laporan kementerian (rules.md 12
             poin 4). Dahulu berada di halaman laporan terpusat; dipindah ke

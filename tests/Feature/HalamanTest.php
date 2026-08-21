@@ -20,7 +20,9 @@ use App\Enums\Kondisi;
 use App\Enums\PeruntukanLahan;
 use App\Enums\StatusPengaduan;
 use App\Helpers\MenuHelper;
+use App\Helpers\RemahHelper;
 use App\Support\DummyData;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
 use Tests\Support\BerkasBlade;
 
@@ -2913,14 +2915,24 @@ it('memasang catatan log pada SETIAP halaman rincian yang ada', function () {
     // Uji ini lahir dari kelalaian nyata: pemasangan pertama hanya menyentuh
     // lima halaman yang kebetulan sudah bertab, sedangkan lima halaman lain
     // terlewat justru karena belum bertab.
+    // Pola menerima URI BERUAS DUA MAUPUN TIGA.
+    //
+    // Sebelumnya polanya `^[a-z-]+/\{id\}$` yang hanya cocok pada dua ruas,
+    // sehingga `sp/inventaris/{id}` dan `sp/fasilitas/{id}` TIDAK PERNAH ikut
+    // terperiksa. Keduanya kebetulan sudah memasang tab log, tetapi penjaganya
+    // diam-diam melewatkannya - kegagalan yang justru dibuat untuk dicegah uji
+    // ini sendiri. Ditemukan saat penyisiran 2026-08-20.
     $rute = collect(app('router')->getRoutes())
         ->filter(fn ($r) => in_array('GET', $r->methods(), true))
-        // Halaman rincian entitas berpola "<modul>/{id}" beruas dua.
-        ->filter(fn ($r) => preg_match('#^[a-z-]+/\{id\}$#', $r->uri()) === 1)
+        ->filter(fn ($r) => preg_match('#^[a-z-]+(/[a-z-]+)?/\{id\}$#', $r->uri()) === 1)
         ->map(fn ($r) => str_replace('{id}', '1', $r->uri()))
         ->values();
 
     expect($rute)->not->toBeEmpty();
+
+    // Halaman rincian SP wajib benar-benar ikut terjaring, jika tidak
+    // perbaikan pola di atas tidak berarti apa pun.
+    expect($rute)->toContain('sp/inventaris/1')->toContain('sp/fasilitas/1');
 
     $tanpaLog = [];
 
@@ -3838,6 +3850,10 @@ it('menyediakan unggahan dokumen pada modul yang kolomnya sudah ada', function (
     // Infrastruktur punya dua kolom terpisah: foto merekam kondisi lapangan,
     // dokumen menyimpan berkas administratifnya.
     ['/infrastruktur', 'foto'],
+    // Inventaris dan fasilitas SP ikut memisahkan foto dari dokumen sejak
+    // 2026-08-20, mengikuti pola infrastruktur.
+    ['/sp/inventaris', 'foto'],
+    ['/sp/fasilitas', 'foto'],
     ['/poktan', 'dokumen_pendukung'],
     ['/alsintan', 'dokumen_pendukung'],
     ['/saprotan', 'dokumen_pendukung'],
@@ -3851,14 +3867,47 @@ it('mengirim unggahan lewat form yang benar-benar menerima berkas', function () 
         ->toContain('enctype="multipart/form-data"');
 });
 
-it('menyediakan pencarian pada pilihan yang daftarnya panjang', function () {
-    // Data contoh hanya berisi 8 transmigran sehingga select biasa masih
-    // nyaman, tetapi PRD menyebut sekitar 1.140 kepala keluarga di kawasan
-    // ini. Menggulir 1.140 baris untuk mencari satu nama adalah pekerjaan
-    // yang tidak akan dilakukan siapa pun dengan sabar.
-    foreach (['/poktan', '/alsintan', '/lahan', '/panen'] as $jalur) {
+it('menyediakan pencarian pada setiap halaman berisian pilih-cari', function () {
+    // Kotak pencarian TIDAK lagi bergantung jumlah opsi (ui-spec.md 6.0a.5).
+    // Ambang 8 dicabut 2026-08-20 sebab dasarnya membandingkan jumlah baris
+    // DummyData, yaitu data karangan sendiri; kriterianya kini sifat sumber.
+    //
+    // Delapan halaman ini memuat isian bersumber tabel operasional, sehingga
+    // seluruhnya wajib menampilkan kotak pencarian meski data contoh pendek.
+    $halaman = [
+        '/poktan', '/alsintan', '/saprotan', '/lahan',
+        '/panen', '/rumah', '/riwayat-tanam', '/poktan/1',
+    ];
+
+    foreach ($halaman as $jalur) {
         $this->get($jalur)->assertOk()->assertSee('Ketik untuk menyaring daftar');
     }
+});
+
+it('tidak memakai pilih-cari pada tabel referensi kecil', function () {
+    // `satuan` memang dapat ditambah Admin lewat data master, tetapi satuan
+    // takaran tidak akan pernah menuntut pencarian. Pengecualian ini disebut
+    // satu per satu, bukan dinyatakan sebagai ambang (ui-spec.md 6.0a.5c).
+    foreach (['komoditas/form', 'saprotan/form'] as $berkas) {
+        $sumber = file_get_contents(resource_path("views/pages/{$berkas}.blade.php"));
+
+        expect($sumber)->not->toContain('pilih-cari nama="satuan_id"');
+        expect($sumber)->toContain('name="satuan_id"');
+    }
+});
+
+it('mencabut ambang jumlah opsi dari komponen pilih-cari', function () {
+    // Ambang membuat satu komponen berperilaku dua macam tanpa dapat diduga
+    // pemakainya: dropdown yang sama kadang berkotak cari, kadang tidak.
+    $sumber = file_get_contents(resource_path('views/components/sim/pilih-cari.blade.php'));
+
+    expect($sumber)->not->toContain('ambangCari')
+        ->and($sumber)->not->toContain('pakaiCari');
+
+    // Aturannya ikut dicabut dari dokumen, agar tidak ada yang memasangnya lagi
+    // dengan alasan "sudah tertulis di spesifikasi".
+    expect(file_get_contents(base_path('agents/ui-spec.md')))
+        ->not->toContain('hanya dirender bila daftarnya mencapai 8 opsi');
 });
 
 it('memakai pilih-cari pada setiap pilihan yang bersumber tabel data', function () {
@@ -3919,15 +3968,6 @@ it('membaca catatan tanam pada form panen dari data, bukan dari daftar tertulis'
 
         expect($isi)->toContain($label);
     }
-});
-
-it('tidak memasang kotak pencarian pada daftar yang masih pendek', function () {
-    // Kotak pencarian di atas empat pilihan justru menambah satu benda yang
-    // harus dilewati, bukan mempercepat. Ambangnya dihitung dari jumlah opsi
-    // yang benar-benar dirender, bukan disetel per halaman.
-    expect(count(DummyData::transmigranTanpaRumah()))->toBeLessThan(8);
-
-    $this->get('/rumah')->assertOk()->assertDontSee('Ketik untuk menyaring daftar');
 });
 
 it('mengirim nilai lewat isian bernama kolomnya, bukan lewat panel', function () {
@@ -4394,3 +4434,172 @@ it('menyelaraskan bidang data contoh dengan peta kategori', function () {
         );
     }
 });
+
+/*
+|--------------------------------------------------------------------------
+| Remah roti
+|--------------------------------------------------------------------------
+*/
+
+it('menyusun remah dari struktur menu, bukan dari teks yang ditulis tangan', function () {
+    // Sebelum 2026-08-20 setiap halaman mengarang sendiri ruas pertamanya, dan
+    // TIDAK SATU PUN cocok dengan menu yang benar-benar dipakai: transmigran
+    // menulis "Kependudukan" padahal menunya "Penduduk & Lahan", poktan menulis
+    // "Kelembagaan" padahal menunya "Poktan & Sarana", dan halaman daftar
+    // inventaris menulis "Wilayah dan SP" sedangkan halaman rinciannya sendiri
+    // menulis "Wilayah dan Aset SP".
+    //
+    // Remah yang tidak sejalan dengan menu lebih buruk daripada tidak ada remah
+    // sama sekali: ia menyatakan pengguna berada pada cabang yang tidak pernah
+    // ia lewati.
+    $berkas = collect(File::allFiles(resource_path('views/pages')))
+        ->filter(fn ($f) => str_ends_with($f->getFilename(), '.blade.php'));
+
+    $ditulisTangan = [];
+
+    foreach ($berkas as $f) {
+        $isi = file_get_contents($f->getPathname());
+
+        if (! str_contains($isi, ':remah=')) {
+            continue;
+        }
+
+        if (! preg_match('/:remah="\\\\App\\\\Helpers\\\\RemahHelper::untuk\(/', $isi)) {
+            $ditulisTangan[] = str_replace(resource_path('views/pages').DIRECTORY_SEPARATOR, '', $f->getPathname());
+        }
+    }
+
+    expect($ditulisTangan)->toBe([]);
+});
+
+it('memakai nama submenu yang sama persis dengan sidebar', function () {
+    // Inti perbaikannya: ruas kedua remah wajib nama submenu sesungguhnya.
+    // Diuji terhadap MenuHelper, bukan terhadap daftar yang ditulis di sini,
+    // sehingga penggantian nama menu langsung terbaca tanpa menyunting uji.
+    $peta = [
+        '/transmigran' => ['Penduduk & Lahan', 'Transmigran'],
+        '/lahan' => ['Penduduk & Lahan', 'Daftar Lahan'],
+        '/poktan' => ['Poktan & Sarana', 'Kelompok Tani'],
+        '/infrastruktur' => ['Wilayah & Aset SP', 'Infrastruktur SP'],
+        '/sp/inventaris' => ['Wilayah & Aset SP', 'Inventaris SP'],
+        '/musim-tanam' => ['Produksi Pertanian', 'Musim Tanam'],
+        '/wilayah' => ['Pengaturan Sistem', 'Data Master Wilayah'],
+    ];
+
+    foreach ($peta as $jalur => [$induk, $nama]) {
+        $remah = RemahHelper::untuk($jalur);
+
+        expect($remah)->toHaveCount(2, "remah {$jalur} bukan dua ruas");
+        expect($remah[0]['label'])->toBe($induk);
+        expect($remah[1]['label'])->toBe($nama);
+
+        // Ruas terakhir tidak boleh bertaut ke dirinya sendiri.
+        expect($remah[1])->not->toHaveKey('url');
+    }
+});
+
+it('menambahkan ruas rincian tanpa melepas tautan halaman daftarnya', function () {
+    // Pada halaman rincian, ruas daftar JUSTRU harus bertaut: itulah jalan
+    // kembali yang dicari pengguna.
+    $remah = RemahHelper::untuk('/transmigran', 'YOHANES BERE');
+
+    expect($remah)->toHaveCount(3)
+        ->and($remah[1])->toHaveKey('url')
+        ->and($remah[2]['label'])->toBe('YOHANES BERE')
+        ->and($remah[2])->not->toHaveKey('url');
+});
+
+it('tetap menyusun remah untuk halaman di luar sidebar', function () {
+    // Profil dan galeri komponen tidak ada di menu. Remah kosong akan membuat
+    // kepala halaman kehilangan penunjuk posisi sama sekali.
+    expect(RemahHelper::untuk('/profil'))
+        ->toBe([['label' => 'Profil']]);
+
+    expect(RemahHelper::untuk('/profil', 'Ubah Kata Sandi'))
+        ->toBe([['label' => 'Profil'], ['label' => 'Ubah Kata Sandi']]);
+});
+it('menyediakan isian catatan pada setiap modul yang kolomnya ada di kamus data', function (string $berkas) {
+    // Empat modul sempat punya kolom `keterangan` pada kamus data tanpa satu
+    // pun isian, sehingga hal yang tidak tertampung kolom baku tidak dapat
+    // dicatat ke mana pun (ui-spec.md 6.4a poin 2).
+    $sumber = file_get_contents(resource_path("views/pages/{$berkas}.blade.php"));
+
+    expect($sumber)->toContain('name="keterangan"');
+})->with([
+    'alsintan/form',
+    'infrastruktur/form',
+    'poktan/form',
+    'saprotan/form',
+    'sp/form',
+    'sp/form-inventaris',
+    'sp/form-fasilitas',
+    'sp/form-kawasan',
+    'lahan/form',
+    'transmigran/form',
+    'panen/form',
+    'komoditas/form-musim-tanam',
+    'komoditas/form-riwayat-tanam',
+    'poktan/form-anggota',
+]);
+
+it('menyeragamkan label isian catatan', function () {
+    // Sebelum 2026-08-20 empat penamaan dipakai bergantian untuk satu maksud
+    // yang sama. Kolom databasenya tetap `keterangan`; yang diseragamkan adalah
+    // teks yang dibaca petugas (ui-spec.md 6.4a poin 1).
+    $menyimpang = [];
+
+    foreach (File::allFiles(resource_path('views/pages')) as $f) {
+        if (! str_contains($f->getFilename(), 'form')) {
+            continue;
+        }
+
+        $isi = file_get_contents($f->getPathname());
+
+        if (! str_contains($isi, 'name="keterangan"')) {
+            continue;
+        }
+
+        // Label lama yang tidak boleh muncul lagi pada isian catatan umum.
+        if (str_contains($isi, '>Keterangan</label>')) {
+            $menyimpang[] = str_replace(resource_path('views/pages').DIRECTORY_SEPARATOR, '', $f->getPathname());
+        }
+    }
+
+    expect($menyimpang)->toBe([]);
+});
+
+it('menampilkan catatan pada setiap halaman rincian yang modulnya punya kolom itu', function (string $jalur) {
+    // Catatan yang hanya dapat diketik tetapi tidak pernah terbaca sama saja
+    // dengan tidak dicatat (ui-spec.md 6.4a poin 3). Lima halaman rincian
+    // sempat tidak menampilkannya sama sekali.
+    $this->get($jalur)->assertOk()->assertSee('Catatan', false);
+})->with([
+    '/alsintan/1',
+    '/saprotan/1',
+    '/infrastruktur/1',
+    '/poktan/1',
+    '/sp/inventaris/1',
+    '/sp/fasilitas/1',
+    '/lahan/1',
+    '/transmigran/1',
+]);
+
+it('menyediakan cara membuka berkas dari halaman rincian modulnya', function (string $jalur, int $jumlahBerkas) {
+    // Unggahan yang tidak punya jalan dibuka adalah kontrol mati (R-26):
+    // petugas mengunggah berita acara lalu tidak menemukan cara membacanya.
+    // Ketiga halaman aset sempat menerima unggahan tanpa menampilkannya sama
+    // sekali (ui-spec.md 6.4).
+    $isi = $this->get($jalur)->assertOk()->getContent();
+
+    preg_match_all('#/dokumen/[a-z_]+/\d+/[^"]+#', $isi, $cocok);
+
+    expect($cocok[0])->toHaveCount($jumlahBerkas, "berkas tertaut pada {$jalur} tidak sesuai");
+})->with([
+    ['/alsintan/1', 1],
+    ['/saprotan/1', 1],
+    ['/poktan/1', 1],
+    // Ketiganya memisahkan foto dari dokumen, sehingga dua tautan.
+    ['/infrastruktur/1', 2],
+    ['/sp/inventaris/2', 2],
+    ['/sp/fasilitas/3', 2],
+]);

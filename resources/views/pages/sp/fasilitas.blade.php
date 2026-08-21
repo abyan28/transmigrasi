@@ -38,7 +38,7 @@
 
     <x-sim.halaman-daftar judul="Fasilitas SP"
         keterangan="Bangunan dan sarana tetap milik satuan permukiman."
-        :remah="[['label' => 'Wilayah dan SP'], ['label' => 'Fasilitas SP']]"
+        :remah="\App\Helpers\RemahHelper::untuk('/sp/fasilitas')"
         :jumlah="count($baris)" :kata-kunci="$cari" :aksi-url="route('sp.fasilitas')"
         placeholder-cari="Cari nama fasilitas" judul-kosong="Belum ada data fasilitas"
         pesan-kosong="Bangunan dan sarana milik satuan permukiman akan tampil di sini setelah didata.">

@@ -122,18 +122,29 @@
             </div>
 
             <div class="sm:col-span-2">
-                <label for="{{ $awalan }}_keterangan_inventaris" class="{{ $kelasLabel }}">Keterangan</label>
+                <label for="{{ $awalan }}_keterangan_inventaris" class="{{ $kelasLabel }}">Catatan</label>
                 <textarea id="{{ $awalan }}_keterangan_inventaris" name="keterangan" rows="2" maxlength="255"
                     placeholder="Catatan tambahan, misalnya penempatan barang."
                     class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30">{{ old('keterangan', $data['keterangan'] ?? '') }}</textarea>
             </div>
 
             {{--
-                Kolom `dokumen_pendukung` sudah ada pada data-dictionary.md 4.1
-                tetapi belum pernah punya isian, sehingga berita acara
-                penyerahan barang tidak dapat diunggah ke mana pun.
+                DUA SLOT TERPISAH, mengikuti pola infrastruktur (kamus data
+                10.1). Keduanya menjawab hal berbeda: foto merekam kondisi
+                barang saat pendataan, dokumen menyimpan berkas
+                administratifnya. Satu slot untuk keduanya membuat foto kondisi
+                tertimpa berita acara, dan kehilangannya berlangsung diam-diam
+                sebab form tetap tersimpan.
+
+                Kolom `foto` ditambahkan 2026-08-20; `dokumen_pendukung` sudah
+                lama ada pada kamus data tetapi baru mendapat isian 2026-08-19.
             --}}
-            <div class="sm:col-span-2">
+            <div class="grid gap-4 sm:col-span-2 sm:grid-cols-2">
+                <x-sim.file-upload nama="foto" label="Foto Kondisi" :hanya-gambar="true"
+                    nama-dokumen="Foto Inventaris" :nama-pemilik="$data['nama_barang'] ?? null"
+                    :berkas-saat-ini="$data['foto'] ?? null"
+                    keterangan="Dokumentasi keadaan barang saat pendataan." />
+
                 <x-sim.file-upload nama="dokumen_pendukung" label="Dokumen Pendukung"
                     nama-dokumen="Dokumen Inventaris" :nama-pemilik="$data['nama_barang'] ?? null"
                     :berkas-saat-ini="$data['dokumen_pendukung'] ?? null"

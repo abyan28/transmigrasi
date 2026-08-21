@@ -40,7 +40,7 @@
 
     <x-sim.halaman-daftar judul="Saprotan"
         keterangan="Penyaluran benih, pupuk, pestisida, dan mulsa kepada petani."
-        :remah="[['label' => 'Kelembagaan'], ['label' => 'Saprotan']]"
+        :remah="\App\Helpers\RemahHelper::untuk('/saprotan')"
         :jumlah="count($baris)" :kata-kunci="$cari" :aksi-url="route('saprotan.index')"
         placeholder-cari="Cari nama saprotan atau penerima" judul-kosong="Belum ada penyaluran saprotan"
         pesan-kosong="Penyaluran sarana produksi akan tampil di sini setelah dicatat.">

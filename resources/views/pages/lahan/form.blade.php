@@ -293,11 +293,14 @@
         </div>
     </section>
 
-    {{-- Bagian 5: keterangan --}}
+    {{-- Bagian 5: catatan --}}
     <section class="border-t border-gray-200 pt-5 dark:border-gray-800">
-        <h3 class="{{ $kelasBagian }}">Keterangan</h3>
+        <h3 class="{{ $kelasBagian }}">Catatan</h3>
         <div class="mt-3">
-            <label for="{{ $awalan }}_keterangan" class="sr-only">Keterangan</label>
+            {{-- Label tampak, bukan `sr-only`. Judul seksi memang menyebutkan
+                 hal yang sama, tetapi label yang disembunyikan membuat satu
+                 isian di sini berbeda dari isian catatan di form lain. --}}
+            <label for="{{ $awalan }}_keterangan" class="{{ $kelasLabel }}">Catatan</label>
             <textarea id="{{ $awalan }}_keterangan" name="keterangan" rows="3" maxlength="1000"
                 placeholder="Catatan tambahan bila ada"
                 class="{{ $kelasArea }}">{{ old('keterangan', $data['keterangan'] ?? '') }}</textarea>

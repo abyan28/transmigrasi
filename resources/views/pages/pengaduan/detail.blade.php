@@ -38,11 +38,7 @@
 
     <x-sim.page-header :judul="$data['judul']"
         :keterangan="'Nomor ' . $data['nomor_pengaduan'] . ', dilaporkan ' . \Illuminate\Support\Carbon::parse($data['tanggal_pengaduan'])->translatedFormat('d F Y') . '.'"
-        :remah="[
-            ['label' => 'Pengaduan'],
-            ['label' => 'Daftar Pengaduan', 'url' => route('pengaduan.index')],
-            ['label' => $data['nomor_pengaduan']],
-        ]">
+        :remah="\App\Helpers\RemahHelper::untuk('/pengaduan', $data['nomor_pengaduan'])">
         {{--
             Tombol penanganan sengaja TIDAK diletakkan di sini, melainkan hanya
             pada kolom kiri di bawah alur penanganan. Di sana ia bersebelahan

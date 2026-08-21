@@ -24,11 +24,7 @@
 
     <x-sim.page-header :judul="$data['nama_fasilitas']"
         :keterangan="$data['jenis_fasilitas'] . ' di ' . $data['satuan_permukiman'] . ', dibangun tahun ' . $data['tahun_perolehan'] . '.'"
-        :remah="[
-            ['label' => 'Wilayah dan Aset SP'],
-            ['label' => 'Fasilitas SP', 'url' => route('sp.fasilitas')],
-            ['label' => $data['nama_fasilitas']],
-        ]">
+        :remah="\App\Helpers\RemahHelper::untuk('/sp/fasilitas', $data['nama_fasilitas'])">
         <x-slot:aksi>
             @if ($bolehUbah)
                 <button type="button"
@@ -145,10 +141,33 @@
                             </dd>
                         </div>
                         <div>
-                            <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Keterangan</dt>
+                            <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Catatan</dt>
                             <dd class="mt-0.5 text-theme-sm leading-relaxed text-gray-800 dark:text-white/90">
-                                {{ $data['keterangan'] ?? 'Tidak ada keterangan tambahan.' }}
+                                {{ $data['keterangan'] ?? 'Tidak ada catatan tambahan.' }}
                             </dd>
+                        </div>
+                        {{--
+                            Foto dan dokumen, ditambahkan 2026-08-20 bersama
+                            pemisahan kolom `foto` pada kamus data 4.2.
+                            Sebelumnya keduanya berbagi satu slot unggah dan
+                            tidak pernah ditampilkan kembali, sehingga berkas
+                            yang diunggah petugas tidak punya cara dibuka.
+                        --}}
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Foto kondisi</dt>
+                                <dd class="mt-0.5 text-theme-sm text-gray-800 dark:text-white/90">
+                                    <x-sim.tautan-dokumen modul="fasilitas_sp" :id="$data['id_fasilitas_sp']"
+                                        :berkas="$data['foto'] ?? null" />
+                                </dd>
+                            </div>
+                            <div>
+                                <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Dokumen pendukung</dt>
+                                <dd class="mt-0.5 text-theme-sm text-gray-800 dark:text-white/90">
+                                    <x-sim.tautan-dokumen modul="fasilitas_sp" :id="$data['id_fasilitas_sp']"
+                                        :berkas="$data['dokumen_pendukung'] ?? null" />
+                                </dd>
+                            </div>
                         </div>
                     </dl>
                 </div>

@@ -77,7 +77,7 @@
             </div>
 
             <div>
-                <label for="{{ $awalan }}_deskripsi_role" class="{{ $kelasLabel }}">Keterangan</label>
+                <label for="{{ $awalan }}_deskripsi_role" class="{{ $kelasLabel }}">Catatan</label>
                 <textarea id="{{ $awalan }}_deskripsi_role" name="deskripsi" rows="2" maxlength="255"
                     placeholder="Jelaskan tugas pemegang role ini dalam satu kalimat."
                     class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30"

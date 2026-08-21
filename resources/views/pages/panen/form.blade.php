@@ -196,7 +196,7 @@
             </div>
 
             <div class="sm:col-span-2">
-                <label for="{{ $awalan }}_keterangan" class="{{ $kelasLabel }}">Keterangan</label>
+                <label for="{{ $awalan }}_keterangan" class="{{ $kelasLabel }}">Catatan</label>
                 <textarea id="{{ $awalan }}_keterangan" name="keterangan" rows="2" maxlength="1000"
                     class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">{{ old('keterangan', $data['keterangan'] ?? '') }}</textarea>
             </div>

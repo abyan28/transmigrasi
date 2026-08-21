@@ -31,7 +31,7 @@
 
     <x-sim.page-header judul="Rekap Kependudukan"
         keterangan="Perkembangan jumlah penduduk kawasan beserta perpindahannya."
-        :remah="[['label' => 'Kependudukan'], ['label' => 'Rekap Kependudukan']]">
+        :remah="\App\Helpers\RemahHelper::untuk('/kependudukan/rekap')">
         <x-slot:aksi>
             <x-sim.tombol-ekspor />
         </x-slot:aksi>

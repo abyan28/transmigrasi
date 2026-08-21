@@ -132,7 +132,7 @@
 
     <x-sim.halaman-daftar judul="Manajemen Pengguna"
         keterangan="Akun petugas beserta role dan penugasannya."
-        :remah="[['label' => 'Pengaturan'], ['label' => 'Pengguna']]"
+        :remah="\App\Helpers\RemahHelper::untuk('/pengguna')"
         :jumlah="count($baris)" :kata-kunci="$cari" :aksi-url="route('pengguna.index')"
         placeholder-cari="Cari nama atau username" judul-kosong="Belum ada pengguna"
         pesan-kosong="Akun petugas akan tampil di sini setelah dibuat admin.">

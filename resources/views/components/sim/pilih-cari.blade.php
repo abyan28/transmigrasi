@@ -2,10 +2,19 @@
     Pilihan berdaftar panjang: satu tombol yang membuka panel berisi kotak
     pencarian beserta daftar opsinya.
 
-    Dipakai pada isian yang sumbernya tabel data, bukan enum: daftar
-    transmigran, lahan, dan sejenisnya. Enum seperti kondisi atau jenis
-    fasilitas tetap memakai `<select>` biasa, sebab jumlahnya tidak pernah
-    bertambah.
+    Dipakai pada isian yang sumbernya TABEL DATA OPERASIONAL: daftar
+    transmigran, lahan, poktan, musim tanam, dan sejenisnya. Kriterianya satu
+    pertanyaan: apakah daftarnya bertambah ketika petugas menambah data? Bila
+    ya, pencariannya diperlukan, berapa pun jumlahnya hari ini.
+
+    Dua hal yang TIDAK memakainya:
+    - Enum seperti kondisi atau jenis fasilitas, sebab nilainya tidak bertambah
+      dari tambah data.
+    - Tabel referensi kecil seperti `satuan`, yang memang dapat ditambah Admin
+      tetapi jumlahnya tidak akan pernah menuntut pencarian.
+
+    Kotak pencarian SELALU ada, tanpa ambang jumlah opsi. Alasan pencabutan
+    ambang itu ditulis pada blok penyusunan daftar di bawah.
 
     ## Mengapa bukan `<select>` beserta kotak cari terpisah
 
@@ -52,7 +61,6 @@
     'placeholder' => 'Pilih data',
     'keterangan' => null,
     'awalan' => null,
-    'ambangCari' => 8,
     // Bentuk penulisan keterangan di samping teks utama. `kurung`
     // menghasilkan "NAMA (NIK)", `pisah` menghasilkan "NAMA - SP". Yang
     // pertama dipakai bila keterangannya berupa pengenal tunggal seperti NIK,
@@ -93,10 +101,30 @@
         ];
     }
 
-    // Kotak pencarian hanya dirender bila daftarnya memang panjang. Memasang
-    // kotak pencarian di atas tiga pilihan justru menambah satu benda yang
-    // harus dilewati, bukan mempercepat.
-    $pakaiCari = count($daftar) >= $ambangCari;
+    // KOTAK PENCARIAN SELALU DIRENDER, tanpa ambang jumlah opsi.
+    //
+    // Sebelumnya ia hanya muncul bila daftarnya mencapai delapan opsi, dengan
+    // alasan "kotak pencarian di atas tiga pilihan menambah satu benda yang
+    // harus dilewati". Ambang itu DICABUT 2026-08-20 atas keberatan pemilik
+    // proyek, dan keberatannya tepat pada dua hal.
+    //
+    // Pertama, ambangnya dibandingkan terhadap jumlah baris `DummyData`, yaitu
+    // data yang dikarang AI sendiri. Menyimpulkan "poktan baru empat baris jadi
+    // wajar belum muncul" adalah penalaran melingkar yang dilarang rules.md
+    // bagian 19a, dan kekeliruan itu terulang tiga kali pada butir yang sama.
+    //
+    // Kedua, yang menentukan bukan jumlah hari ini melainkan apakah daftarnya
+    // BERTAMBAH ketika petugas menambah data. Bila ya, pencariannya memang
+    // diperlukan, dan menyembunyikannya sampai melewati ambang hanya membuat
+    // satu komponen berperilaku dua macam tanpa dapat diduga pemakainya.
+    //
+    // Alasan lama juga sudah tidak berlaku sejak komponen ini dibangun ulang:
+    // kotak pencarian kini berada DI DALAM panel yang harus dibuka lebih dulu,
+    // bukan berjajar di luar sebagai kontrol kedua. Yang hendak mengklik tetap
+    // mengklik tanpa melewati apa pun.
+    //
+    // Isian yang sumbernya tabel referensi kecil seperti `satuan` sengaja tidak
+    // memakai komponen ini sama sekali (ui-spec.md bagian 6.0a).
 
     $kelasKontrol = 'h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30';
     $kelasLabel = 'mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400';
@@ -321,19 +349,17 @@
         x-transition:leave-end="opacity-0 scale-95"
         class="absolute left-0 right-0 z-50 mt-1 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-theme-lg dark:border-gray-700 dark:bg-gray-900">
 
-        @if ($pakaiCari)
-            <div class="border-b border-gray-200 p-2 dark:border-gray-700">
-                <input type="search" x-ref="kotakCari" x-model="cari"
-                    @keydown.arrow-down.prevent="turun()"
-                    @keydown.arrow-up.prevent="naik()"
-                    @keydown.enter.prevent="pilihYangTersorot()"
-                    @keydown.tab="tutup(false)"
-                    @input="sorot = tersaring.length > 0 ? 0 : -1"
-                    aria-label="Cari pada daftar {{ \Illuminate\Support\Str::lower($label) }}"
-                    placeholder="Ketik untuk menyaring daftar"
-                    class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30" />
-            </div>
-        @endif
+        <div class="border-b border-gray-200 p-2 dark:border-gray-700">
+            <input type="search" x-ref="kotakCari" x-model="cari"
+                @keydown.arrow-down.prevent="turun()"
+                @keydown.arrow-up.prevent="naik()"
+                @keydown.enter.prevent="pilihYangTersorot()"
+                @keydown.tab="tutup(false)"
+                @input="sorot = tersaring.length > 0 ? 0 : -1"
+                aria-label="Cari pada daftar {{ \Illuminate\Support\Str::lower($label) }}"
+                placeholder="Ketik untuk menyaring daftar"
+                class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30" />
+        </div>
 
         {{--
             Tinggi maksimal kira-kira lima opsi berketerangan. Dibatasi bukan

@@ -38,7 +38,7 @@
 
     <x-sim.halaman-daftar judul="Inventaris SP"
         keterangan="Barang bergerak milik satuan permukiman beserta status penyerahannya."
-        :remah="[['label' => 'Wilayah dan SP'], ['label' => 'Inventaris SP']]"
+        :remah="\App\Helpers\RemahHelper::untuk('/sp/inventaris')"
         :jumlah="count($baris)" :kata-kunci="$cari" :aksi-url="route('sp.inventaris')"
         placeholder-cari="Cari nama barang" judul-kosong="Belum ada data inventaris"
         pesan-kosong="Barang milik satuan permukiman akan tampil di sini setelah didata.">

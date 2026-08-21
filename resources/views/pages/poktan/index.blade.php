@@ -36,7 +36,7 @@
 
     <x-sim.halaman-daftar judul="Kelompok Tani"
         keterangan="Poktan di kawasan beserta ketua dan jumlah anggotanya."
-        :remah="[['label' => 'Kelembagaan'], ['label' => 'Kelompok Tani']]"
+        :remah="\App\Helpers\RemahHelper::untuk('/poktan')"
         :jumlah="count($baris)" :kata-kunci="$cari" :aksi-url="route('poktan.index')"
         placeholder-cari="Cari nama poktan atau ketua" judul-kosong="Belum ada kelompok tani"
         pesan-kosong="Kelompok tani akan tampil di sini setelah didata.">

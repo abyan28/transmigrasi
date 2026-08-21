@@ -44,7 +44,7 @@
 
     <x-sim.halaman-daftar judul="Infrastruktur SP"
         keterangan="Pendataan aset irigasi, air, jalan produksi, listrik, dan gudang."
-        :remah="[['label' => 'Infrastruktur'], ['label' => 'Daftar Infrastruktur']]"
+        :remah="\App\Helpers\RemahHelper::untuk('/infrastruktur')"
         :jumlah="count($baris)" :kata-kunci="$cari" :aksi-url="route('infrastruktur.index')"
         placeholder-cari="Cari nama infrastruktur" judul-kosong="Belum ada data infrastruktur"
         pesan-kosong="Aset infrastruktur akan tampil di sini setelah didata.">

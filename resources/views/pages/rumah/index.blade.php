@@ -54,7 +54,7 @@
 
     <x-sim.page-header judul="Rumah dan Hunian"
         keterangan="Data rumah beserta penghuninya di seluruh satuan permukiman."
-        :remah="[['label' => 'Kependudukan'], ['label' => 'Rumah dan Hunian']]">
+        :remah="\App\Helpers\RemahHelper::untuk('/rumah')">
         <x-slot:aksi>
             {{--
                 Impor massal diletakkan mendahului tombol tambah namun bergaya

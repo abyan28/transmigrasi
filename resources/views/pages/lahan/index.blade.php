@@ -76,7 +76,7 @@
 
     <x-sim.page-header judul="Data Lahan"
         keterangan="Lahan pekarangan dan lahan usaha milik keluarga transmigran."
-        :remah="[['label' => 'Lahan'], ['label' => 'Daftar Lahan']]">
+        :remah="\App\Helpers\RemahHelper::untuk('/lahan')">
         <x-slot:aksi>
             {{--
                 Impor massal diletakkan mendahului tombol tambah namun bergaya

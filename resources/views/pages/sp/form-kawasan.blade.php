@@ -208,7 +208,7 @@
             </div>
 
             <div class="sm:col-span-2">
-                <label for="{{ $awalan }}_keterangan_kawasan" class="{{ $kelasLabel }}">Keterangan</label>
+                <label for="{{ $awalan }}_keterangan_kawasan" class="{{ $kelasLabel }}">Catatan</label>
                 <textarea id="{{ $awalan }}_keterangan_kawasan" name="keterangan" rows="2" maxlength="255"
                     placeholder="Catatan tambahan mengenai kawasan ini."
                     class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30">{{ old('keterangan', $data['keterangan'] ?? '') }}</textarea>

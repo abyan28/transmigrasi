@@ -39,11 +39,7 @@
 
     <x-sim.page-header judul="Rekap Pengaduan"
         keterangan="Sebaran laporan warga sebagai dasar penentuan isu prioritas kawasan."
-        :remah="[
-            ['label' => 'Pengaduan'],
-            ['label' => 'Daftar Pengaduan', 'url' => route('pengaduan.index')],
-            ['label' => 'Rekap Pengaduan'],
-        ]">
+        :remah="\App\Helpers\RemahHelper::untuk('/pengaduan/rekap')">
         <x-slot:aksi>
             <a href="{{ route('pengaduan.index') }}"
                 class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-theme-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">

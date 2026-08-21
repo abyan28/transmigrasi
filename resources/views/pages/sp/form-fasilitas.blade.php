@@ -142,21 +142,30 @@
         </div>
 
         <div class="mt-4">
-            <label for="{{ $awalan }}_keterangan_fasilitas" class="{{ $kelasLabel }}">Keterangan</label>
+            <label for="{{ $awalan }}_keterangan_fasilitas" class="{{ $kelasLabel }}">Catatan</label>
             <textarea id="{{ $awalan }}_keterangan_fasilitas" name="keterangan" rows="2" maxlength="255"
                 placeholder="Catatan tambahan mengenai fasilitas ini."
                 class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30">{{ old('keterangan', $data['keterangan'] ?? '') }}</textarea>
         </div>
 
         {{--
-            Kolom `dokumen_pendukung` sudah ada pada data-dictionary.md 4.2
-            tetapi belum pernah punya isian.
+            DUA SLOT TERPISAH sejak 2026-08-20, mengikuti pola infrastruktur.
+
+            Sebelumnya satu slot dipakai untuk keduanya, dan labelnya bahkan
+            berbunyi "Dokumen atau Foto Fasilitas": menjanjikan dua hal untuk
+            satu tempat penyimpanan. Petugas yang mengunggah berita acara
+            setelah foto akan kehilangan fotonya tanpa peringatan apa pun.
         --}}
-        <div class="mt-4">
-            <x-sim.file-upload nama="dokumen_pendukung" label="Dokumen atau Foto Fasilitas"
-                nama-dokumen="Dokumen Fasilitas" :nama-pemilik="$data['nama'] ?? null"
+        <div class="mt-4 grid gap-4 sm:grid-cols-2">
+            <x-sim.file-upload nama="foto" label="Foto Kondisi" :hanya-gambar="true"
+                nama-dokumen="Foto Fasilitas" :nama-pemilik="$data['nama_fasilitas'] ?? null"
+                :berkas-saat-ini="$data['foto'] ?? null"
+                keterangan="Dokumentasi keadaan bangunan saat pendataan." />
+
+            <x-sim.file-upload nama="dokumen_pendukung" label="Dokumen Pendukung"
+                nama-dokumen="Dokumen Fasilitas" :nama-pemilik="$data['nama_fasilitas'] ?? null"
                 :berkas-saat-ini="$data['dokumen_pendukung'] ?? null"
-                keterangan="Foto bangunan, berita acara serah terima, atau dokumen pendukung lain." />
+                keterangan="Berita acara serah terima atau berkas pembangunan." />
         </div>
     </section>
 </div>

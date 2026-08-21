@@ -23,7 +23,7 @@
 
     <x-sim.page-header judul="Role dan Hak Akses"
         keterangan="Susunan kewenangan yang dapat diberikan kepada akun petugas."
-        :remah="[['label' => 'Pengaturan'], ['label' => 'Role dan Hak Akses']]">
+        :remah="\App\Helpers\RemahHelper::untuk('/pengaturan/role')">
         <x-slot:aksi>
             <a href="{{ route('pengguna.index') }}"
                 class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-theme-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">

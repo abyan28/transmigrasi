@@ -21,7 +21,7 @@
 
     <x-sim.page-header judul="Kawasan Transmigrasi"
         keterangan="Wilayah perencanaan program yang menaungi satuan permukiman."
-        :remah="[['label' => 'Wilayah dan SP'], ['label' => 'Kawasan Transmigrasi']]">
+        :remah="\App\Helpers\RemahHelper::untuk('/kawasan')">
         <x-slot:aksi>
             <button type="button" @click="$dispatch('buka-modal', 'formTambahKawasan')"
                 class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">

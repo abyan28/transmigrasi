@@ -17,7 +17,7 @@
 @section('content')
     <x-sim.page-header judul="Ubah Kata Sandi"
         keterangan="Ganti kata sandi akun Anda secara berkala agar data kawasan tetap aman."
-        :remah="[['label' => 'Profil Saya', 'url' => route('profil')], ['label' => 'Ubah Kata Sandi']]" />
+        :remah="\App\Helpers\RemahHelper::untuk('/profil', 'Ubah Kata Sandi')" />
 
     <div class="max-w-2xl">
         <div class="rounded-2xl border border-gray-200 bg-white p-5 sm:p-6 dark:border-gray-800 dark:bg-white/[0.03]">

@@ -53,7 +53,7 @@
 
     <x-sim.halaman-daftar judul="Audit Log"
         keterangan="Jejak perubahan data penting beserta pelaku dan waktunya."
-        :remah="[['label' => 'Pengaturan'], ['label' => 'Audit Log']]"
+        :remah="\App\Helpers\RemahHelper::untuk('/audit-log')"
         :jumlah="count($baris)" :kata-kunci="$cari" :aksi-url="route('audit-log')"
         placeholder-cari="Cari keterangan atau nama tabel" judul-kosong="Belum ada catatan audit"
         pesan-kosong="Perubahan data akan tercatat di sini secara otomatis.">
