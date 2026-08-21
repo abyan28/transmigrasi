@@ -94,8 +94,37 @@ jobs:
 
       - name: Kumpulkan daftar alamat
         run: |
-          php artisan sim:tautan-statis > alamat.txt
-          echo "Jumlah halaman yang akan digilas: $(wc -l < alamat.txt)"
+          php artisan sim:tautan-statis > alamat-mentah.txt
+
+          # Menyaring baris yang BUKAN alamat, dan menghentikan proses bila ada.
+          #
+          # Artisan menulis ke stdout yang sama dengan daftar alamat, sehingga
+          # satu peringatan PHP atau pesan deprecation ikut terbawa ke berkas
+          # ini. Baris semacam itu lalu dirangkai menjadi URL dan membuat curl
+          # gagal dengan kode 3 (URL malformed), yang membunuh langkah
+          # penggilasan sebelum satu halaman pun diperiksa.
+          #
+          # Kejadian nyata: penerbitan 2026-08-19 gagal dengan "exit code 3"
+          # tanpa satu pun baris GAGAL tercetak, sebab kegagalannya terjadi
+          # pada perintah, bukan pada hasil pemeriksaan.
+          grep -E '^/[A-Za-z0-9/_.~-]*$' alamat-mentah.txt > alamat.txt || true
+
+          jumlah_mentah=$(wc -l < alamat-mentah.txt)
+          jumlah_bersih=$(wc -l < alamat.txt)
+
+          if [ "$jumlah_mentah" != "$jumlah_bersih" ]; then
+            echo "::error::Keluaran sim:tautan-statis memuat baris yang bukan alamat."
+            echo "Baris yang ditolak:"
+            grep -vE '^/[A-Za-z0-9/_.~-]*$' alamat-mentah.txt || true
+            exit 1
+          fi
+
+          if [ "$jumlah_bersih" -eq 0 ]; then
+            echo "::error::Daftar alamat kosong."
+            exit 1
+          fi
+
+          echo "Jumlah halaman yang akan digilas: ${jumlah_bersih}"
 
       - name: Jalankan server
         run: |
@@ -116,6 +145,19 @@ jobs:
         run: |
           mkdir -p keluaran
           gagal=0
+          daftar_gagal=""
+
+          # Menonaktifkan `-e` untuk blok ini.
+          #
+          # Langkah ini dijalankan dengan `bash -e`, sehingga perintah gagal
+          # menghentikan skrip SEKETIKA beserta kode keluar milik perintah itu.
+          # Akibatnya penghitung `gagal` di bawah tidak pernah terpakai dan
+          # ringkasan yang sudah disiapkan tidak pernah tercetak: kegagalan
+          # yang seharusnya terbaca jelas malah muncul sebagai angka telanjang.
+          #
+          # Kini setiap kegagalan dicatat dan penggilasan diteruskan, agar satu
+          # laporan memuat SELURUH halaman bermasalah, bukan hanya yang pertama.
+          set +e
 
           while read -r alamat; do
             [ -z "$alamat" ] && continue
@@ -126,24 +168,74 @@ jobs:
             if [ "$alamat" = "/" ]; then
               tujuan="keluaran/index.html"
             else
-              mkdir -p "keluaran${alamat}"
+              if ! mkdir -p "keluaran${alamat}"; then
+                echo "GAGAL mkdir ${alamat}"
+                daftar_gagal="${daftar_gagal}  mkdir gagal: ${alamat}"$'\n'
+                gagal=$((gagal + 1))
+                continue
+              fi
               tujuan="keluaran${alamat}/index.html"
             fi
 
             kode=$(curl -s -o "$tujuan" -w '%{http_code}' "http://127.0.0.1:8000${alamat}")
+            galat_curl=$?
+
+            if [ "$galat_curl" -ne 0 ]; then
+              echo "GAGAL curl(${galat_curl}) ${alamat}"
+              daftar_gagal="${daftar_gagal}  curl galat ${galat_curl}: ${alamat}"$'\n'
+              gagal=$((gagal + 1))
+              continue
+            fi
 
             if [ "$kode" != "200" ]; then
               echo "GAGAL ${kode} ${alamat}"
+              daftar_gagal="${daftar_gagal}  HTTP ${kode}: ${alamat}"$'\n'
               gagal=$((gagal + 1))
             fi
           done < alamat.txt
 
+          set -e
+
           if [ "$gagal" -gt 0 ]; then
-            echo "Ada ${gagal} halaman gagal digilas. Penerbitan dihentikan."
+            echo "::error::Ada ${gagal} halaman gagal digilas. Penerbitan dihentikan."
+            echo "Rincian:"
+            printf '%s' "$daftar_gagal"
             exit 1
           fi
 
           echo "Seluruh halaman berhasil digilas."
+
+      - name: Pastikan setiap alamat menghasilkan berkas
+        run: |
+          # Penjaga terhadap kegagalan yang TIDAK memerahkan langkah di atas.
+          #
+          # `curl` membalas 200 sekaligus menulis berkas, tetapi berkas kosong
+          # atau folder yang gagal terbentuk tidak selalu tertangkap kode HTTP.
+          # Kekeliruan semacam itu baru muncul sebagai 404 di tangan pengguna,
+          # persis yang terjadi pada halaman rincian SP (notes.md 1b.6a).
+          kurang=0
+
+          while read -r alamat; do
+            [ -z "$alamat" ] && continue
+
+            if [ "$alamat" = "/" ]; then
+              berkas="keluaran/index.html"
+            else
+              berkas="keluaran${alamat}/index.html"
+            fi
+
+            if [ ! -s "$berkas" ]; then
+              echo "TIDAK ADA ATAU KOSONG: ${berkas}"
+              kurang=$((kurang + 1))
+            fi
+          done < alamat.txt
+
+          if [ "$kurang" -gt 0 ]; then
+            echo "::error::${kurang} alamat tidak menghasilkan berkas. Penerbitan dihentikan."
+            exit 1
+          fi
+
+          echo "Seluruh $(wc -l < alamat.txt) alamat menghasilkan berkas."
 
       - name: Salin aset statis
         run: |

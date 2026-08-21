@@ -59,15 +59,20 @@
     x-on:buka-konfirmasi.window="if ($event.detail.nama === '{{ $nama }}') buka($event.detail)"
     x-on:keydown.escape.window="terbuka && tutup()">
 
-    <div x-show="terbuka" x-cloak class="fixed inset-0 z-99999 overflow-y-auto" role="alertdialog" aria-modal="true"
+    {{--
+        Pola gulir sama dengan `modal-form`; lihat komentar rinci di sana.
+        Dialog ini isinya pendek, tetapi tetap disamakan agar tidak menjadi
+        satu-satunya lapisan yang berperilaku berbeda ketika pesannya panjang.
+    --}}
+    <div x-show="terbuka" x-cloak class="fixed inset-0 z-99999" role="alertdialog" aria-modal="true"
         aria-labelledby="judul-konfirmasi-{{ $nama }}">
 
         <div x-show="terbuka" x-transition.opacity @click="tutup()" class="fixed inset-0 bg-gray-900/50"
             aria-hidden="true"></div>
 
-        <div class="flex min-h-full items-center justify-center p-4">
+        <div class="flex h-full items-start justify-center overflow-hidden p-4">
             <div x-show="terbuka" x-transition
-                class="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-900">
+                class="relative my-auto flex max-h-full w-full max-w-md flex-col overflow-y-auto rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-900">
 
                 <form :action="aksi" method="POST" @submit="mengirim = true">
                     @csrf

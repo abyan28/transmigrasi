@@ -79,15 +79,16 @@
             Lihat di peta
         </button>
 
-        <div x-show="terbuka" x-cloak class="fixed inset-0 z-99999 overflow-y-auto" role="dialog"
+        <div x-show="terbuka" x-cloak class="fixed inset-0 z-99999" role="dialog"
             aria-modal="true" aria-labelledby="judul-{{ $idPeta }}">
 
             <div x-show="terbuka" x-transition.opacity @click="tutup()" class="fixed inset-0 bg-gray-900/50"
                 aria-hidden="true"></div>
 
-            <div class="flex min-h-full items-end justify-center sm:items-center sm:p-4">
-                <div x-show="terbuka" x-transition
-                    class="relative w-full sm:max-w-3xl bg-white shadow-xl sm:rounded-2xl dark:bg-gray-900">
+        {{-- Pola gulir sama dengan `modal-form`; lihat komentar rinci di sana. --}}
+        <div class="flex h-full items-end justify-center overflow-hidden sm:items-start sm:p-4">
+            <div x-show="terbuka" x-transition
+                class="relative flex max-h-full w-full flex-col bg-white shadow-xl sm:my-auto sm:max-h-[calc(100vh-2rem)] sm:max-w-3xl sm:rounded-2xl dark:bg-gray-900">
 
                     <div class="flex items-start justify-between gap-4 border-b border-gray-200 px-5 py-4 dark:border-gray-800">
                         <div>

@@ -34,16 +34,21 @@
         </div>
 
         <div>
-            <label for="{{ $awalan }}_musim_riwayat" class="{{ $kelasLabel }}">Musim Tanam<span class="text-error-500">*</span></label>
-            <select id="{{ $awalan }}_musim_riwayat" name="musim_tanam_id" required class="{{ $kelasKontrol }}">
-                <option value="">Pilih musim tanam</option>
-                @foreach ($daftarMusim as $m)
-                    <option value="{{ $m['id_musim_tanam'] }}"
-                        @selected(old('musim_tanam', $data['musim_tanam'] ?? '') === $m['label'])>
-                        {{ $m['label'] }}
-                    </option>
-                @endforeach
-            </select>
+            {{--
+                Musim tanam bertambah SATU BARIS TIAP MUSIM dan tidak pernah
+                dihapus, sehingga daftarnya tumbuh terus meski data contoh baru
+                memuat tiga. Pencariannya muncul sendiri begitu melewati ambang.
+
+                Terpilihnya dicocokkan lewat `musim_tanam_id`, bukan `musim_tanam`.
+                Sebelumnya isian ini mengirim `musim_tanam_id` tetapi membandingkan
+                `old('musim_tanam')` terhadap label, sehingga pilihan petugas hilang
+                setiap kali form gagal tersimpan.
+            --}}
+            <x-sim.pilih-cari nama="musim_tanam_id" label="Musim Tanam" :wajib="true"
+                :awalan="$awalan" :opsi="$daftarMusim" kunci="id_musim_tanam"
+                teks="label"
+                :terpilih="old('musim_tanam_id', $data['musim_tanam_id'] ?? null)"
+                placeholder="Pilih musim tanam" />
         </div>
 
         <div>

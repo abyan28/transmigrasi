@@ -3861,6 +3861,66 @@ it('menyediakan pencarian pada pilihan yang daftarnya panjang', function () {
     }
 });
 
+it('memakai pilih-cari pada setiap pilihan yang bersumber tabel data', function () {
+    // Ambang 8 opsi yang menentukan kapan kotak pencarian muncul, bukan halaman
+    // yang memutuskannya. Karena itu komponen ini dipasang pada SELURUH pilihan
+    // yang daftarnya tumbuh mengikuti data, meski data contoh masih pendek:
+    // begitu data nyata masuk, pencariannya sudah ada tanpa menyunting form.
+    $peta = [
+        'alsintan/form' => ['poktan_id', 'transmigran_id'],
+        'saprotan/form' => ['poktan_id', 'transmigran_id'],
+        'komoditas/form-riwayat-tanam' => ['lahan_id', 'musim_tanam_id'],
+        'panen/form' => ['transmigran_id', 'riwayat_tanam_id'],
+        'rumah/form' => ['transmigran_id'],
+        'lahan/form' => ['transmigran_id'],
+        'poktan/form' => ['ketua_transmigran_id'],
+        'poktan/form-anggota' => ['transmigran_id'],
+    ];
+
+    $bolong = [];
+
+    foreach ($peta as $berkas => $isian) {
+        $sumber = file_get_contents(resource_path("views/pages/{$berkas}.blade.php"));
+
+        foreach ($isian as $nama) {
+            // Yang dilarang adalah isian bersumber tabel yang masih memakai
+            // `<select>` bertulis tangan, sebab daftarnya tidak akan pernah
+            // menawarkan pencarian berapa pun panjangnya.
+            if (preg_match('/<select[^>]{0,200}name="'.preg_quote($nama, '/').'"/', $sumber) === 1) {
+                $bolong[] = "{$berkas} -> {$nama}";
+
+                continue;
+            }
+
+            if (! str_contains($sumber, 'nama="'.$nama.'"')) {
+                $bolong[] = "{$berkas} -> {$nama} (tidak ditemukan)";
+            }
+        }
+    }
+
+    expect($bolong)->toBe([]);
+});
+
+it('membaca catatan tanam pada form panen dari data, bukan dari daftar tertulis', function () {
+    // Isian ini sempat memuat tiga label musim harfiah sementara namanya
+    // `riwayat_tanam_id`. Dua hal keliru sekaligus: nilai yang terkirim berupa
+    // teks label bukan id, dan daftarnya tidak pernah bertambah ketika musim
+    // tanam baru didata - sehingga panen musim berikutnya tidak dapat dicatat.
+    $sumber = file_get_contents(resource_path('views/pages/panen/form.blade.php'));
+
+    expect($sumber)->not->toContain("'MT1 2026', 'MT2 2025', 'MT1 2025'")
+        ->and($sumber)->toContain('DummyData::riwayatTanam()');
+
+    // Nilai yang ditawarkan wajib berupa id yang benar-benar ada.
+    $isi = $this->get('/panen')->assertOk()->getContent();
+
+    foreach (DummyData::riwayatTanam() as $baris) {
+        $label = $baris['kode_lahan'].' - '.$baris['musim_tanam'].' - '.$baris['komoditas'];
+
+        expect($isi)->toContain($label);
+    }
+});
+
 it('tidak memasang kotak pencarian pada daftar yang masih pendek', function () {
     // Kotak pencarian di atas empat pilihan justru menambah satu benda yang
     // harus dilewati, bukan mempercepat. Ambangnya dihitung dari jumlah opsi

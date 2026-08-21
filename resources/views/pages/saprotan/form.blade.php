@@ -128,39 +128,28 @@
                 menghalangi pengiriman form (pola sama dengan rumah/form).
             --}}
             <div x-show="jenisPenerima === 'Poktan'" x-cloak x-transition>
-                <label for="{{ $awalan }}_poktan_id" class="{{ $kelasLabel }}">
-                    Kelompok Tani Penerima<span class="text-error-500">*</span>
-                </label>
-                <select id="{{ $awalan }}_poktan_id" name="poktan_id" class="{{ $kelasKontrol }}"
-                    :required="jenisPenerima === 'Poktan'">
-                    <option value="">Pilih kelompok tani</option>
-                    @foreach ($daftarPoktan as $p)
-                        <option value="{{ $p['id_poktan'] }}"
-                            @selected((string) old('poktan_id', $data['poktan_id'] ?? '') === (string) $p['id_poktan'])>
-                            {{ $p['nama'] }} &mdash; {{ $p['satuan_permukiman'] }}
-                        </option>
-                    @endforeach
-                </select>
+                <x-sim.pilih-cari nama="poktan_id" label="Kelompok Tani Penerima" :wajib="true"
+                    :awalan="$awalan" :opsi="$daftarPoktan" kunci="id_poktan"
+                    teks="nama" keterangan-opsi="satuan_permukiman"
+                    :terpilih="old('poktan_id', $data['poktan_id'] ?? null)"
+                    placeholder="Pilih kelompok tani"
+                    :required="'jenisPenerima === ' . json_encode('Poktan')" />
             </div>
 
             <div x-show="jenisPenerima === 'Individu'" x-cloak x-transition>
-                <label for="{{ $awalan }}_transmigran_id" class="{{ $kelasLabel }}">
-                    Anggota Penerima<span class="text-error-500">*</span>
-                </label>
-                <select id="{{ $awalan }}_transmigran_id" name="transmigran_id" class="{{ $kelasKontrol }}"
-                    :required="jenisPenerima === 'Individu'">
-                    <option value="">Pilih anggota</option>
-                    @foreach ($anggotaAktif as $a)
-                        <option value="{{ $a['transmigran_id'] }}"
-                            @selected((string) old('transmigran_id', $data['transmigran_id'] ?? '') === (string) $a['transmigran_id'])>
-                            {{ $a['nama'] }} &mdash; {{ $a['poktan'] }}
-                        </option>
-                    @endforeach
-                </select>
-                <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
-                    Hanya anggota berstatus aktif yang dapat menerima penyaluran. Anggota yang sudah keluar
-                    tetap tersimpan pada riwayat keanggotaan, tetapi tidak muncul di sini.
-                </p>
+                {{--
+                    Kuncinya `transmigran_id`, bukan `id_anggota_poktan`: yang
+                    disimpan `saprotan` adalah penerimanya, sedangkan daftar ini
+                    kebetulan berasal dari tabel keanggotaan karena hanya
+                    anggota aktif yang boleh menerima (rules.md 7c.4).
+                --}}
+                <x-sim.pilih-cari nama="transmigran_id" label="Anggota Penerima" :wajib="true"
+                    :awalan="$awalan" :opsi="$anggotaAktif" kunci="transmigran_id"
+                    teks="nama" keterangan-opsi="poktan"
+                    :terpilih="old('transmigran_id', $data['transmigran_id'] ?? null)"
+                    placeholder="Pilih anggota"
+                    keterangan="Hanya anggota berstatus aktif yang dapat menerima penyaluran. Anggota yang sudah keluar tetap tersimpan pada riwayat keanggotaan, tetapi tidak muncul di sini."
+                    :required="'jenisPenerima === ' . json_encode('Individu')" />
             </div>
 
             <div>

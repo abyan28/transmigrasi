@@ -30,6 +30,15 @@
         'UBI KAYU' => 'Kuintal',
         'CABAI' => 'Kilogram',
     ];
+
+    // Catatan tanam sebagai sumber pilihan, beserta label rakitan yang menyebut
+    // lahan, musim, dan komoditasnya sekaligus. Dirakit di sini, bukan pada
+    // `DummyData`, sebab bentuknya kebutuhan tampilan form ini saja.
+    $daftarRiwayatTanam = collect(DummyData::riwayatTanam())
+        ->map(fn ($r) => $r + [
+            'label_tanam' => $r['kode_lahan'] . ' - ' . $r['musim_tanam'] . ' - ' . $r['komoditas'],
+        ])
+        ->all();
 @endphp
 
 <div class="space-y-6"
@@ -80,18 +89,29 @@
             </div>
 
             <div>
-                <label for="{{ $awalan }}_musim_tanam" class="{{ $kelasLabel }}">
-                    Musim Tanam<span class="text-error-500">*</span>
-                </label>
-                <select id="{{ $awalan }}_musim_tanam" name="riwayat_tanam_id" required
-                    class="{{ $kelasKontrol }}">
-                    <option value="">Pilih musim tanam</option>
-                    @foreach (['MT1 2026', 'MT2 2025', 'MT1 2025'] as $musim)
-                        <option value="{{ $musim }}" @selected(($data['musim_tanam'] ?? null) === $musim)>
-                            {{ $musim }}
-                        </option>
-                    @endforeach
-                </select>
+                {{--
+                    DIBACA DARI `riwayatTanam()`, bukan daftar musim yang
+                    ditulis tangan.
+
+                    Isian ini sempat memuat tiga label musim yang ditulis
+                    langsung sebagai larik harfiah, sementara namanya
+                    `riwayat_tanam_id`. Dua hal keliru sekaligus: nilai yang
+                    terkirim berupa teks label, bukan id; dan daftarnya tidak
+                    pernah bertambah ketika musim tanam baru didata, sehingga
+                    panen musim berikutnya tidak dapat dicatat sama sekali.
+
+                    Yang dipilih adalah CATATAN TANAM, bukan musimnya, sebab
+                    `hasil_panen.riwayat_tanam_id` menentukan lahan, musim, dan
+                    komoditas sekaligus (kamus data 9.3). Labelnya menyebut
+                    ketiganya agar petugas tahu persis penanaman mana yang
+                    sedang dipanen.
+                --}}
+                <x-sim.pilih-cari nama="riwayat_tanam_id" label="Catatan Tanam" :wajib="true"
+                    :awalan="$awalan" :opsi="$daftarRiwayatTanam" kunci="id_riwayat_tanam"
+                    teks="label_tanam" keterangan-opsi="petani, satuan_permukiman"
+                    :terpilih="old('riwayat_tanam_id', $data['riwayat_tanam_id'] ?? null)"
+                    placeholder="Pilih catatan tanam"
+                    keterangan="Menentukan lahan, musim, dan komoditas sekaligus." />
             </div>
 
             <div class="sm:col-span-2">

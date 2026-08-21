@@ -126,13 +126,18 @@
     x-on:buka-modal.window="if ($event.detail === '{{ $nama }}') buka()"
     x-on:keydown.escape.window="terbuka && tutup()">
 
-    <div x-show="terbuka" x-cloak class="fixed inset-0 z-99999 overflow-y-auto" role="dialog" aria-modal="true"
+    {{--
+        Pola gulir sama dengan `modal-form`: wadah tidak menggulir,
+        `sm:items-start` beserta `my-auto` pada panel, dan hanya badan yang
+        menggulir. Lihat komentar rinci di komponen itu.
+    --}}
+    <div x-show="terbuka" x-cloak class="fixed inset-0 z-99999" role="dialog" aria-modal="true"
         aria-labelledby="judul-{{ $nama }}">
 
         <div x-show="terbuka" x-transition.opacity @click="tutup()" class="fixed inset-0 bg-gray-900/50"
             aria-hidden="true"></div>
 
-        <div class="flex min-h-full items-end justify-center sm:items-center sm:p-4">
+        <div class="flex h-full items-end justify-center overflow-hidden sm:items-start sm:p-4">
             <div x-ref="panel" x-show="terbuka" x-transition
                 @keydown.tab="
                     const fokusable = $refs.panel.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])');
@@ -142,10 +147,10 @@
                     if ($event.shiftKey && document.activeElement === pertama) { $event.preventDefault(); terakhir.focus(); }
                     else if (!$event.shiftKey && document.activeElement === terakhir) { $event.preventDefault(); pertama.focus(); }
                 "
-                class="relative w-full sm:max-w-2xl bg-white shadow-xl sm:rounded-2xl dark:bg-gray-900">
+                class="relative flex max-h-full w-full flex-col bg-white shadow-xl sm:my-auto sm:max-h-[calc(100vh-2rem)] sm:max-w-2xl sm:rounded-2xl dark:bg-gray-900">
 
-                {{-- Kepala modal beserta penunjuk langkah --}}
-                <div class="border-b border-gray-200 px-5 py-4 dark:border-gray-800">
+                {{-- Kepala modal beserta penunjuk langkah, tidak ikut menggulir --}}
+                <div class="shrink-0 border-b border-gray-200 px-5 py-4 dark:border-gray-800">
                     <div class="flex items-start justify-between gap-4">
                         <div class="min-w-0">
                             <h2 id="judul-{{ $nama }}"
@@ -193,7 +198,9 @@
                     </ol>
                 </div>
 
-                <div class="max-h-[calc(100vh-18rem)] overflow-y-auto px-5 py-4">
+                {{-- Badan, satu-satunya wilayah yang menggulir. `min-h-0` wajib
+                     ada agar item flex mau menyusut di bawah tinggi isinya. --}}
+                <div class="min-h-0 flex-1 overflow-y-auto px-5 py-4">
                     {{--
                         Spanduk kejujuran. Tombol ini terlihat berfungsi penuh
                         padahal penyimpanannya belum ada, sehingga tanpa
@@ -356,7 +363,7 @@
                 </div>
 
                 {{-- Kaki modal, tombolnya menyesuaikan langkah --}}
-                <div class="flex flex-col-reverse gap-2 border-t border-gray-200 px-5 py-4 sm:flex-row sm:justify-end dark:border-gray-800">
+                <div class="flex shrink-0 flex-col-reverse gap-2 border-t border-gray-200 px-5 py-4 sm:flex-row sm:justify-end dark:border-gray-800">
                     <button type="button" @click="langkah === 1 ? tutup() : langkah--"
                         class="rounded-lg border border-gray-300 px-4 py-2.5 text-theme-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
                         <span x-text="langkah === 1 ? 'Batal' : 'Kembali'"></span>

@@ -110,22 +110,21 @@
                 menghalangi pengiriman form (pola sama dengan rumah/form).
             --}}
             <div x-show="kepemilikan === @js(KepemilikanAlsintan::BantuanPoktan->value)" x-cloak x-transition>
-                <label for="{{ $awalan }}_poktan_id" class="{{ $kelasLabel }}">
-                    Kelompok Tani Pemilik<span class="text-error-500">*</span>
-                </label>
-                <select id="{{ $awalan }}_poktan_id" name="poktan_id" class="{{ $kelasKontrol }}"
-                    :required="kepemilikan === @js(KepemilikanAlsintan::BantuanPoktan->value)">
-                    <option value="">Pilih kelompok tani</option>
-                    @foreach ($daftarPoktan as $p)
-                        <option value="{{ $p['id_poktan'] }}"
-                            @selected((string) old('poktan_id', $data['poktan_id'] ?? '') === (string) $p['id_poktan'])>
-                            {{ $p['nama'] }} &mdash; {{ $p['satuan_permukiman'] }}
-                        </option>
-                    @endforeach
-                </select>
-                <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
-                    Alat bantuan dipakai bergilir antar-anggota, sehingga tercatat atas nama kelompok.
-                </p>
+                {{--
+                    Memakai `pilih-cari` meski data contoh hanya 4 poktan.
+                    Ambangnya sendiri yang menentukan kapan kotak pencarian
+                    muncul, sehingga pada data contoh ia tetap tampil sebagai
+                    dropdown biasa. Yang penting: begitu data nyata masuk dan
+                    poktan mencapai puluhan, pencariannya sudah ada tanpa perlu
+                    menyunting halaman ini lagi.
+                --}}
+                <x-sim.pilih-cari nama="poktan_id" label="Kelompok Tani Pemilik" :wajib="true"
+                    :awalan="$awalan" :opsi="$daftarPoktan" kunci="id_poktan"
+                    teks="nama" keterangan-opsi="satuan_permukiman"
+                    :terpilih="old('poktan_id', $data['poktan_id'] ?? null)"
+                    placeholder="Pilih kelompok tani"
+                    keterangan="Alat bantuan dipakai bergilir antar-anggota, sehingga tercatat atas nama kelompok."
+                    :required="'kepemilikan === ' . json_encode(KepemilikanAlsintan::BantuanPoktan->value)" />
             </div>
 
             <div x-show="kepemilikan === @js(KepemilikanAlsintan::Pribadi->value)" x-cloak x-transition>
