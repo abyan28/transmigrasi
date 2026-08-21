@@ -1,44 +1,51 @@
 @extends('layouts.app')
 
+{{--
+    Indeks data master referensi: empat belas daftar sebagai kartu.
+
+    SEMULA BERUPA TAB, dan itu berhenti bekerja karena jumlahnya. Dengan
+    sembilan daftar keempatnya masih muat dalam satu baris; setelah menjadi
+    empat belas, bar tab mencapai 2309px pada ruang 705px, sehingga hanya
+    empat tab yang terlihat dan sepuluh sisanya tersembunyi di balik gulir
+    mendatar yang paling sering tidak disadari orang.
+
+    Kartu dipilih, bukan empat belas butir menu di bilah sisi: menu Pengaturan
+    Sistem sudah berisi enam butir, dan menambah empat belas lagi hanya
+    memindahkan baris panjang yang sama dari bar tab ke bilah sisi.
+
+    Dikelompokkan per MODUL YANG MEMAKAINYA, sebab petugas mencari daftar
+    lewat tempat ia melihat dropdownnya, bukan lewat nama daftarnya.
+--}}
+
 @section('content')
     @php
-        use App\Enums\JenisReferensi;
+        use App\Enums\KelompokReferensi;
         use App\Support\DummyData;
 
         $semua = DummyData::referensi();
 
-        // Dikelompokkan per jenis agar tiap tab hanya membaca bagiannya.
-        $perJenis = [];
-        foreach (JenisReferensi::cases() as $j) {
-            $perJenis[$j->value] = array_values(array_filter($semua, fn ($b) => $b['jenis'] === $j->value));
-        }
+        // Dihitung sekali, dipakai seluruh kartu.
+        $jumlah = [];
+        $nonaktif = [];
 
-        $bolehUbah = true;
+        foreach ($semua as $b) {
+            $jumlah[$b['jenis']] = ($jumlah[$b['jenis']] ?? 0) + 1;
+
+            if (! $b['is_aktif']) {
+                $nonaktif[$b['jenis']] = ($nonaktif[$b['jenis']] ?? 0) + 1;
+            }
+        }
     @endphp
 
     <x-sim.page-header judul="Data Master Referensi"
         keterangan="Pilihan pada form yang dapat ditambah dan disunting tanpa mengubah kode."
-        :remah="\App\Helpers\RemahHelper::untuk('/master/referensi')">
-        <x-slot:aksi>
-            @if ($bolehUbah)
-                <button type="button" @click="$dispatch('buka-modal', 'formTambahReferensi')"
-                    class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
-                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
-                        aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                    </svg>
-                    Tambah Pilihan
-                </button>
-            @endif
-        </x-slot:aksi>
-    </x-sim.page-header>
+        :remah="\App\Helpers\RemahHelper::untuk('/master/referensi')" />
 
-    {{-- Penjelasan aturan pokoknya, sebab penonaktifan tidak lazim --}}
     <div class="mb-6 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
         <h2 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">Cara Kerja Daftar Ini</h2>
         <p class="mt-2 text-theme-sm text-gray-600 dark:text-gray-400">
             Setiap daftar di bawah muncul sebagai pilihan pada form. Menambah satu nilai membuatnya langsung
-            tersedia, tanpa perlu mengubah kode.
+            tersedia, tanpa perlu mengubah kode. Pilih satu daftar untuk melihat dan menyunting isinya.
         </p>
         <p class="mt-3 rounded-lg bg-gray-50 p-3.5 text-theme-xs text-gray-600 dark:bg-white/[0.03] dark:text-gray-400">
             <span class="font-medium text-gray-800 dark:text-white/90">Nilai dinonaktifkan, bukan dihapus.</span>
@@ -47,129 +54,72 @@
             kehilangan baris itu tanpa pemberitahuan apa pun.
         </p>
     </div>
+    <div class="space-y-6">
+        @foreach (KelompokReferensi::cases() as $kelompok)
+            <section>
+                <div class="mb-3">
+                    <h2 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">
+                        {{ $kelompok->label() }}
+                    </h2>
+                    <p class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                        {{ $kelompok->keterangan() }}
+                    </p>
+                </div>
 
-    <div x-data="hashTabs('{{ JenisReferensi::SumberDana->value }}')"
-        class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-        <div class="flex gap-1 overflow-x-auto border-b border-gray-200 px-2 pt-2 dark:border-gray-800"
-            role="tablist" aria-label="Jenis referensi">
-            @foreach (JenisReferensi::cases() as $j)
-                <button type="button" role="tab" @click="setTab('{{ $j->value }}')"
-                    :aria-selected="tab === '{{ $j->value }}'"
-                    :class="tab === '{{ $j->value }}'
-                        ? 'border-brand-500 text-brand-600 dark:text-brand-400'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
-                    class="shrink-0 border-b-2 px-4 py-2.5 text-theme-sm font-medium transition focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
-                    {{ $j->label() }} ({{ count($perJenis[$j->value]) }})
-                </button>
-            @endforeach
-        </div>
+                <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                    @foreach ($kelompok->jenis() as $j)
+                        <a href="{{ route('referensi.jenis', ['jenis' => $j->value]) }}"
+                            class="group flex flex-col rounded-2xl border border-gray-200 bg-white p-5 transition hover:border-brand-300 hover:shadow-theme-sm focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-800 dark:bg-white/[0.03] dark:hover:border-brand-500/50">
+                            <div class="flex items-start justify-between gap-3">
+                                <h3 class="text-theme-sm font-medium text-gray-800 group-hover:text-brand-600 dark:text-white/90 dark:group-hover:text-brand-400">
+                                    {{ $j->label() }}
+                                </h3>
+                                <span class="shrink-0 rounded-full bg-gray-100 px-2.5 py-0.5 text-theme-xs font-medium tabular-nums text-gray-700 dark:bg-white/[0.06] dark:text-gray-300">
+                                    {{ $jumlah[$j->value] ?? 0 }}
+                                </span>
+                            </div>
 
-        @foreach (JenisReferensi::cases() as $indeks => $j)
-            {{--
-                Panel pertama sengaja tanpa `x-cloak`: ia panel bawaan,
-                sehingga menyembunyikannya sampai Alpine memulai justru
-                membuat halaman kosong sesaat.
-            --}}
-            <div x-show="tab === '{{ $j->value }}'" @if ($indeks > 0) x-cloak @endif role="tabpanel">
-                <x-sim.tabel-ringkas
-                    :kolom="match (true) {
-                        $j->berskor() => ['Nilai', 'Skor', 'Urutan', 'Status', 'Aksi'],
-                        $j->berbidang() => ['Nilai', 'Bidang Bawaan', 'Urutan', 'Status', 'Aksi'],
-                        default => ['Nilai', 'Urutan', 'Status', 'Aksi'],
-                    }"
-                    :kolom-kanan="['Aksi']">
-                    @foreach ($perJenis[$j->value] as $b)
-                        <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
-                            <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">{{ $b['nilai'] }}</td>
+                            {{--
+                                Penanda perilaku khusus. Ditampilkan di indeks
+                                agar petugas tahu daftar mana yang berdampak
+                                lebih jauh dari sekadar teks pada dropdown,
+                                sebelum ia membukanya.
+                            --}}
+                            <div class="mt-3 flex flex-wrap gap-1.5">
+                                @if ($j->berskor())
+                                    <span class="rounded-md bg-warning-50 px-2 py-0.5 text-theme-xs font-medium text-warning-700 dark:bg-warning-500/10 dark:text-warning-300">
+                                        Menentukan skor SP
+                                    </span>
+                                @endif
 
-                            @if ($j->berskor())
-                                {{--
-                                    Skor hanya untuk jenis yang benar-benar
-                                    dipakai menghitung kondisi SP. Menampilkan
-                                    kolom ini pada jenis lain akan menyiratkan
-                                    perhitungan yang tidak ada.
-                                --}}
-                                <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
-                                    {{ $b['nilai_skor'] !== null ? number_format($b['nilai_skor'], 2, ',', '.') : '-' }}
-                                </td>
-                            @endif
+                                @if ($j->berjenjang())
+                                    <span class="rounded-md bg-warning-50 px-2 py-0.5 text-theme-xs font-medium text-warning-700 dark:bg-warning-500/10 dark:text-warning-300">
+                                        Urutan bermakna
+                                    </span>
+                                @endif
 
-                            @if ($j->berbidang())
-                                {{--
-                                    Kosong DIBERI LABEL, bukan tanda hubung.
-                                    Bidang kosong menyatakan kategori yang perlu
-                                    ditimbang petugas, dan tanda hubung membuatnya
-                                    tampak seperti data yang lupa diisi.
-                                --}}
-                                <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
-                                    @if ($b['bidang_id'] === null)
-                                        <span class="text-gray-400 dark:text-gray-500">Ditetapkan petugas</span>
-                                    @else
-                                        {{ \App\Support\DummyData::referensiNilai($b['bidang_id']) }}
-                                    @endif
-                                </td>
-                            @endif
+                                @if ($j->dirujukParameter())
+                                    <span class="rounded-md bg-blue-light-50 px-2 py-0.5 text-theme-xs font-medium text-blue-light-700 dark:bg-blue-light-500/10 dark:text-blue-light-300">
+                                        Dirujuk penilaian SP
+                                    </span>
+                                @endif
 
-                            <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
-                                {{ $b['urutan'] }}
-                            </td>
-                            <td class="px-5 py-3">
-                                <x-sim.status-badge :teks="$b['is_aktif'] ? 'Aktif' : 'Nonaktif'"
-                                    :warna="$b['is_aktif'] ? 'success' : 'gray'" ukuran="sm" />
-                            </td>
-                            <td class="px-5 py-3 text-right">
-                                {{--
-                                    Tanpa tombol hapus. Nilai yang tidak lagi
-                                    dipakai dinonaktifkan lewat tombol ubah,
-                                    sehingga data lama tetap terbaca.
-                                --}}
-                                <x-sim.aksi-baris modal-ubah="formUbahReferensi"
-                                    :data-baris="$b + ['id' => $b['id_referensi']]"
-                                    :label="$b['nilai']" />
-                            </td>
-                        </tr>
+                                @if ($j->berbidang())
+                                    <span class="rounded-md bg-blue-light-50 px-2 py-0.5 text-theme-xs font-medium text-blue-light-700 dark:bg-blue-light-500/10 dark:text-blue-light-300">
+                                        Menentukan bidang
+                                    </span>
+                                @endif
+
+                                @if (($nonaktif[$j->value] ?? 0) > 0)
+                                    <span class="rounded-md bg-gray-100 px-2 py-0.5 text-theme-xs font-medium text-gray-600 dark:bg-white/[0.06] dark:text-gray-400">
+                                        {{ $nonaktif[$j->value] }} nonaktif
+                                    </span>
+                                @endif
+                            </div>
+                        </a>
                     @endforeach
-                </x-sim.tabel-ringkas>
-
-                @if ($j->berjenjang())
-                    <p class="border-t border-gray-200 p-5 text-theme-xs text-gray-600 dark:border-gray-800 dark:text-gray-400">
-                        Urutan pada daftar ini <span class="font-medium">bermakna</span>: daftar pengaduan
-                        menyortir memakainya, sehingga menukar urutan berarti menukar antrean petugas.
-                    </p>
-                @elseif ($j->berskor())
-                    <p class="border-t border-gray-200 p-5 text-theme-xs text-gray-600 dark:border-gray-800 dark:text-gray-400">
-                        Skor pada daftar ini dipakai menghitung kondisi satuan permukiman. Mengubahnya
-                        mempengaruhi penilaian <span class="font-medium">berikutnya</span>; penilaian yang sudah
-                        tersimpan tidak berubah, sebab masing-masing menyalin skor yang berlaku saat itu.
-                    </p>
-                @elseif ($j->berbidang())
-                    <p class="border-t border-gray-200 p-5 text-theme-xs text-gray-600 dark:border-gray-800 dark:text-gray-400">
-                        Bidang bawaan hanya mengisi nilai <span class="font-medium">awal</span> saat kategori
-                        dipilih; petugas selalu dapat menimpanya. Kategori tanpa bidang bawaan memang perlu
-                        ditimbang dari isi laporan, sebab dapat jatuh ke dua dinas sekaligus.
-                    </p>
-                @elseif ($j->dirujukParameter())
-                    <p class="border-t border-gray-200 p-5 text-theme-xs text-gray-600 dark:border-gray-800 dark:text-gray-400">
-                        Nilai pada daftar ini <span class="font-medium">dirujuk parameter penilaian</span> satuan
-                        permukiman. Mengganti ejaannya aman, sebab rujukannya memakai id; menonaktifkannya juga
-                        aman, sebab parameter yang sudah menunjuknya tetap membacanya.
-                    </p>
-                @endif
-            </div>
+                </div>
+            </section>
         @endforeach
     </div>
-
-    @if ($bolehUbah)
-        <x-sim.modal-form nama="formTambahReferensi" judul="Tambah Pilihan"
-            keterangan="Pilihan langsung tersedia pada form yang memakainya."
-            :aksi="route('referensi.simpan')" ukuran="lg" label-simpan="Simpan Pilihan">
-            @include('pages.master.form-referensi', ['awalan' => 'tambah'])
-        </x-sim.modal-form>
-
-        <x-sim.modal-form nama="formUbahReferensi" judul="Ubah Pilihan"
-            keterangan="Nilai yang tidak lagi dipakai dinonaktifkan, bukan dihapus."
-            pola-aksi="/master/referensi/:id" metode="PUT" ukuran="lg" label-simpan="Simpan Perubahan">
-            @include('pages.master.form-referensi', ['awalan' => 'ubahBaris'])
-        </x-sim.modal-form>
-    @endif
 @endsection

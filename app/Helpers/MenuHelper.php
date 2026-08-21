@@ -23,7 +23,7 @@ class MenuHelper
      * Dua penempatan yang perlu diketahui:
      * - Daftar Lahan berada di submenu Penduduk & Lahan, sebab lahan selalu
      *   melekat pada satu kepala keluarga dan ditelusuri lewat pemiliknya.
-     * - Infrastruktur SP berada di submenu Wilayah & Aset SP, bukan bersama
+     * - Infrastruktur SP berada di submenu Wilayah & SP, bukan bersama
      *   alsintan dan saprotan. Alsintan milik poktan, sedangkan irigasi,
      *   listrik, dan jalan milik satuan permukiman.
      *
@@ -50,7 +50,7 @@ class MenuHelper
                 'items' => [
                     [
                         'icon' => 'pages',
-                        'name' => 'Wilayah & Aset SP',
+                        'name' => 'Wilayah & SP',
                         'subItems' => [
                             [
                                 'name' => 'Kawasan Transmigrasi',

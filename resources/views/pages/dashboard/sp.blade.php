@@ -48,9 +48,22 @@
 
     <x-sim.page-header :judul="$sp['nama']"
         :keterangan="'Desa ' . $sp['desa'] . ', Kecamatan ' . $sp['kecamatan'] . ', Kawasan ' . $sp['kawasan'] . '.'"
-        {{-- Dashboard SP menempel pada Dashboard, bukan pada menu Satuan
-             Permukiman: ia menyajikan rekap kawasan per SP, bukan data SP-nya. --}}
-        :remah="\App\Helpers\RemahHelper::untuk('/', $sp['nama'])">
+        {{--
+            Menempel pada menu Satuan Permukiman, BUKAN pada Dashboard.
+
+            Sebelumnya remah ini menunjuk `/`, sehingga terbaca
+            "Beranda / Dashboard / SP Kapitan Meo". Alasan yang dulu ditulis,
+            bahwa halaman ini menyajikan rekap kawasan per SP, tidak cocok
+            dengan isinya: yang ditampilkan adalah profil SP beserta
+            transmigran, rumah, lahan, panen, dan pengaduan MILIK SP itu.
+            Ia halaman rincian satuan permukiman, dan letaknya di menu
+            mengikuti isinya, bukan mengikuti alamat rutenya.
+
+            Alamat `/dashboard/sp/{id}` sengaja dibiarkan: 21 tempat menautkan
+            ke sana, dan memindahkannya ke `/sp/{id}` berisiko tertangkap
+            rute `/sp/inventaris` serta `/sp/fasilitas` yang sudah ada.
+        --}}
+        :remah="\App\Helpers\RemahHelper::untuk('/sp', $sp['nama'])">
         <x-slot:aksi>
             <a href="{{ route('beranda') }}"
                 class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-theme-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">

@@ -70,6 +70,44 @@ enum JenisReferensi: string
     }
 
     /**
+     * Kelompok tempat daftar ini tampil pada halaman indeks data master.
+     *
+     * WAJIB ADA UNTUK SETIAP JENIS. Jenis tanpa kelompok tidak muncul di
+     * indeks sama sekali, dan karena indeks adalah satu-satunya jalan menuju
+     * halamannya, daftar itu menjadi tidak terjangkau tanpa mengetik alamatnya
+     * sendiri. `match` tanpa `default` di sini disengaja: jenis baru yang lupa
+     * dikelompokkan akan memerah saat itu juga, bukan menghilang diam-diam.
+     *
+     * Pengelompokannya mengikuti MODUL YANG MEMAKAINYA, bukan kemiripan
+     * bentuk daftarnya. Petugas mencari `jenis_fasilitas` karena sedang
+     * mengurus aset satuan permukiman, bukan karena ingat isinya sembilan.
+     *
+     * @return KelompokReferensi Kelompok pada halaman indeks
+     */
+    public function kelompok(): KelompokReferensi
+    {
+        return match ($this) {
+            self::SumberDana,
+            self::StatusPenyerahan,
+            self::Kondisi,
+            self::JenisInfrastruktur,
+            self::JenisFasilitas => KelompokReferensi::AsetInfrastruktur,
+
+            self::KondisiRumah,
+            self::StatusHunian,
+            self::JenisDokumenLahan => KelompokReferensi::RumahLahan,
+
+            self::TipeKomoditas,
+            self::KualitasPanen,
+            self::JabatanAnggotaPoktan => KelompokReferensi::Pertanian,
+
+            self::KategoriPengaduan,
+            self::BidangPengaduan,
+            self::PrioritasPengaduan => KelompokReferensi::Pengaduan,
+        };
+    }
+
+    /**
      * Menandai jenis yang nilainya dipakai menghitung skor kondisi SP.
      *
      * HANYA `kondisi`, bukan `kondisi_rumah`. Keduanya tampak sebagai skala

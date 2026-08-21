@@ -20,12 +20,11 @@
     $kelasKontrol = 'h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30';
     $kelasLabel = 'mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400';
 
-    // Jenis awal mengikuti tab yang sedang dibuka, sama seperti form wilayah:
-    // tab yang terbuka adalah pernyataan paling jelas tentang apa yang hendak
-    // ditambahkan.
-    $jenisSah = array_column(JenisReferensi::cases(), 'value');
-    $jenisTab = request('tab');
-    $jenisAwal = old('jenis', $data['jenis'] ?? (in_array($jenisTab, $jenisSah, true) ? $jenisTab : JenisReferensi::SumberDana->value));
+    // Jenis DITENTUKAN HALAMANNYA, tidak lagi dipilih di dalam form. Halaman
+    // yang sedang dibuka adalah pernyataan paling jelas tentang daftar mana
+    // yang hendak ditambah, dan membiarkannya dapat diganti di sini membuat
+    // nilai baru dapat mendarat di daftar lain tanpa petugas menyadarinya.
+    $jenisAwal = old('jenis', $data['jenis'] ?? $jenis->value);
 
     $berskor = array_values(array_map(
         fn (JenisReferensi $j) => $j->value,
@@ -56,22 +55,18 @@
         get jenisBerbidang() { return this.berbidang.includes(this.jenis); },
     }">
 
-    <div class="grid gap-4 sm:grid-cols-2">
-        <div>
-            <label for="{{ $awalan }}_jenis_referensi" class="{{ $kelasLabel }}">
-                Daftar<span class="text-error-500">*</span>
-            </label>
-            <select id="{{ $awalan }}_jenis_referensi" name="jenis" required x-model="jenis"
-                class="{{ $kelasKontrol }}">
-                @foreach (JenisReferensi::cases() as $j)
-                    <option value="{{ $j->value }}" @selected($jenisAwal === $j->value)>{{ $j->label() }}</option>
-                @endforeach
-            </select>
-            <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
-                Menentukan form mana yang menawarkan pilihan ini.
-            </p>
-        </div>
+    {{--
+        Jenis dikirim sebagai isian tersembunyi, BUKAN dropdown.
 
+        Nama isiannya sengaja tetap `jenis` agar sisi penyimpanan tidak perlu
+        berubah, tetapi nilainya dikunci ke halaman yang sedang dibuka.
+        Sebelumnya ini dropdown berisi keempat belas daftar, dan itu wajar
+        ketika seluruhnya berada pada satu halaman bertab; kini halaman itu
+        sendiri sudah menyatakan daftarnya.
+    --}}
+    <input type="hidden" name="jenis" value="{{ $jenisAwal }}" />
+
+    <div class="grid gap-4 sm:grid-cols-2">
         <div>
             <label for="{{ $awalan }}_nilai_referensi" class="{{ $kelasLabel }}">
                 Nilai<span class="text-error-500">*</span>

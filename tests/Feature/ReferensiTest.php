@@ -12,6 +12,7 @@
 
 use App\Enums\BidangPengaduan;
 use App\Enums\JenisReferensi;
+use App\Enums\KelompokReferensi;
 use App\Support\DummyData;
 use App\Support\PenilaianKondisiSp;
 use Illuminate\Support\Facades\File;
@@ -123,22 +124,86 @@ it('tidak lagi memakai enum untuk daftar yang sudah menjadi data master', functi
     expect($tertinggal)->toBe([]);
 });
 
-it('menyediakan halaman data master referensi beserta isiannya', function () {
+it('menampilkan seluruh daftar sebagai kartu, bukan tab yang tersembunyi', function () {
+    // Sebab perubahan ini terukur: dengan empat belas tab, bar tab mencapai
+    // 2309px pada ruang 705px sehingga hanya empat tab terlihat dan sepuluh
+    // sisanya tersembunyi di balik gulir mendatar.
     $isi = $this->get(route('master.referensi'))->assertOk()->getContent();
 
-    // Seluruh tab dirender beserta jumlah nilainya.
+    expect($isi)->not->toContain('role="tablist"');
+
+    // Keempat belas daftar hadir sebagai tautan menuju halamannya sendiri.
     foreach (JenisReferensi::cases() as $jenis) {
         expect($isi)->toContain($jenis->label());
+        expect($isi)->toContain(route('referensi.jenis', ['jenis' => $jenis->value]));
     }
 
-    foreach (['name="jenis"', 'name="nilai"', 'name="urutan"', 'name="nilai_skor"', 'name="is_aktif"'] as $isian) {
-        expect($isi)->toContain($isian);
+    // Keempat kelompok dirender sebagai judul bagian. Dibandingkan setelah
+    // di-escape, sebab Blade mengubah `&` pada "Aset & Infrastruktur" menjadi
+    // `&amp;`.
+    foreach (KelompokReferensi::cases() as $kelompok) {
+        expect($isi)->toContain(e($kelompok->label()));
     }
-
-    // Kolom skor hanya dirender pada tab berskor, yaitu satu dari seluruhnya.
-    expect(preg_match_all('/>\s*Skor\s*</', $isi))->toBe(1);
 });
 
+it('mengelompokkan setiap jenis tanpa menyisakan satu pun', function () {
+    // Jenis tanpa kelompok tidak muncul di indeks sama sekali, dan karena
+    // indeks satu-satunya jalan menuju halamannya, daftar itu jadi tidak
+    // terjangkau tanpa mengetik alamatnya sendiri.
+    $terkumpul = [];
+
+    foreach (KelompokReferensi::cases() as $kelompok) {
+        foreach ($kelompok->jenis() as $jenis) {
+            $terkumpul[] = $jenis->value;
+        }
+    }
+
+    sort($terkumpul);
+    $seluruhnya = array_column(JenisReferensi::cases(), 'value');
+    sort($seluruhnya);
+
+    expect($terkumpul)->toBe($seluruhnya);
+});
+
+it('memberi setiap daftar halamannya sendiri', function () {
+    foreach (JenisReferensi::cases() as $jenis) {
+        $isi = $this->get(route('referensi.jenis', ['jenis' => $jenis->value]))
+            ->assertOk()
+            ->getContent();
+
+        expect($isi)->toContain($jenis->label());
+
+        // Isian form ada di halaman jenis, bukan lagi di indeks.
+        foreach (['name="jenis"', 'name="nilai"', 'name="urutan"', 'name="is_aktif"'] as $isian) {
+            expect($isi)->toContain($isian);
+        }
+
+        // Jenisnya dikunci ke halaman: dikirim sebagai isian tersembunyi,
+        // bukan dropdown yang dapat memindahkan nilai baru ke daftar lain.
+        expect($isi)->toContain('<input type="hidden" name="jenis" value="'.$jenis->value.'"');
+
+        // Kolom skor hanya pada jenis berskor.
+        expect(preg_match_all('/>\s*Skor\s*</', $isi))->toBe($jenis->berskor() ? 1 : 0);
+    }
+});
+
+it('membalas 404 untuk daftar yang tidak dikenal', function () {
+    // Daftar yang tidak ada dan daftar yang kebetulan kosong adalah dua
+    // keadaan berbeda; menyamakannya membuat salah ketik tampak seperti data
+    // yang belum diisi.
+    $this->get('/master/referensi/jenis_karangan')->assertNotFound();
+});
+
+it('mengalihkan alamat tab lama ke halaman daftarnya', function () {
+    // Bentuk `?tab={jenis}` sempat dipakai form untuk menentukan jenis awal.
+    // Tautan yang sudah tersimpan tidak boleh mendarat di halaman yang salah
+    // tanpa penjelasan apa pun.
+    $this->get('/master/referensi?tab=kondisi')
+        ->assertRedirect(route('referensi.jenis', ['jenis' => 'kondisi']));
+
+    // Tab karangan tidak mengalihkan, hanya menampilkan indeks.
+    $this->get('/master/referensi?tab=karangan')->assertOk();
+});
 it('tidak menyediakan penghapusan nilai referensi', function () {
     // Menghapus `Hibah` dari sumber dana membuat baris infrastruktur lama
     // menunjuk nilai yang lenyap, dan rekap kehilangan baris itu tanpa pesan
@@ -256,9 +321,9 @@ it('membedakan bidang kosong yang bermakna dari bidang yang terlewat diisi', fun
             ->toBeIn(['Ketransmigrasian', 'Pertanian']);
     }
 
-    // Halaman master menjelaskan maksud kosongnya, bukan menampilkan tanda
+    // Halaman daftarnya menjelaskan maksud kosongnya, bukan menampilkan tanda
     // hubung yang membuatnya tampak seperti data yang lupa diisi.
-    expect($this->get(route('master.referensi'))->getContent())
+    expect($this->get(route('referensi.jenis', ['jenis' => JenisReferensi::KategoriPengaduan->value]))->getContent())
         ->toContain('Ditetapkan petugas');
 });
 

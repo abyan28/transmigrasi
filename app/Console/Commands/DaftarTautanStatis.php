@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\JenisReferensi;
 use App\Support\DummyData;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Route;
@@ -166,6 +167,14 @@ class DaftarTautanStatis extends Command
         // `pengaduan.rekap.kelompok` dan $labelKelompok pada viewnya.
         foreach (['kategori', 'status', 'sp', 'prioritas', 'bidang'] as $kelompok) {
             $hasil[] = '/pengaduan/rekap/'.$kelompok;
+        }
+
+        // Halaman satu daftar referensi. Dibaca dari enumnya, bukan disebut
+        // satu per satu: jenis baru wajib ikut terperiksa dengan sendirinya,
+        // sebab halaman yang tidak masuk daftar ini tidak pernah tergilas dan
+        // barulah ketahuan sebagai 404 di situs terbit.
+        foreach (JenisReferensi::cases() as $jenis) {
+            $hasil[] = '/master/referensi/'.$jenis->value;
         }
 
         return $hasil;

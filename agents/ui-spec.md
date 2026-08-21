@@ -429,6 +429,9 @@ Dua halaman berikut dapat diakses siapa pun tanpa akun, sebagai kanal pengaduan 
 | Form fasilitas SP | modal | A, DT |
 | Data master satuan | `GET /master/satuan` | A |
 | Form data master satuan | modal | A |
+| Indeks data master referensi | `GET /master/referensi` | A, DT |
+| Satu daftar referensi | `GET /master/referensi/{jenis}` | A, DT |
+| Form nilai referensi | modal | A, DT |
 
 ### 4.4 Kependudukan
 
@@ -532,12 +535,12 @@ Sidebar memakai **submenu**: lima kelompok. Kelompok Transmigrasi dan Pertanian 
 Dua penempatan yang perlu diketahui, sebab tidak mengikuti struktur tabel:
 
 - **Daftar Lahan** berada di submenu Penduduk & Lahan, bukan kelompok tersendiri, sebab lahan selalu melekat pada satu kepala keluarga dan ditelusuri lewat pemiliknya.
-- **Infrastruktur SP** berada di submenu Wilayah & Aset SP, bukan bersama alsintan dan saprotan. Alsintan milik poktan, sedangkan irigasi, listrik, dan jalan milik satuan permukiman.
+- **Infrastruktur SP** berada di submenu Wilayah & SP, bukan bersama alsintan dan saprotan. Alsintan milik poktan, sedangkan irigasi, listrik, dan jalan milik satuan permukiman.
 
 | Kelompok | Item induk | Halaman | Rute | Kewenangan yang dibutuhkan |
 |---|---|---|---|---|
 | **Menu** | &mdash; | Dashboard | `/` | `dashboard.lihat` |
-| **Transmigrasi** | Wilayah & Aset SP | Kawasan Transmigrasi | `/kawasan` | `kawasan.lihat` |
+| **Transmigrasi** | Wilayah & SP | Kawasan Transmigrasi | `/kawasan` | `kawasan.lihat` |
 | | | Satuan Permukiman | `/sp` | `sp.lihat` |
 | | | Inventaris SP | `/sp/inventaris` | `inventaris_sp.lihat` |
 | | | Fasilitas SP | `/sp/fasilitas` | `fasilitas_sp.lihat` |
@@ -558,6 +561,7 @@ Dua penempatan yang perlu diketahui, sebab tidak mengikuti struktur tabel:
 | | | Rekap Pengaduan | `/pengaduan/rekap` | `pengaduan.lihat` |
 | **Administrasi Sistem** | Pengaturan Sistem | Data Master Wilayah | `/wilayah` | `wilayah.lihat` |
 | | | Data Master Satuan | `/master/satuan` | `satuan.lihat` |
+| | | Data Master Referensi | `/master/referensi` | `referensi.lihat` |
 | | | Pengguna | `/pengguna` | `pengguna.lihat` |
 | | | Role & Hak Akses | `/pengaturan/role` | `role.lihat` |
 | | | Audit Log | `/audit-log` | `audit_log.lihat` |
@@ -685,6 +689,22 @@ Seluruh komponen dibuat sebagai Blade component di `resources/views/components/`
 | `<x-empty-state>` | dibangun sendiri |
 | `<x-pilih-cari>` | dibangun sendiri di atas `form/select` |
 
+### 5.1d Batas jumlah tab pada satu halaman
+
+Tab hanya bekerja selama **seluruh judulnya muat dalam satu baris tanpa gulir mendatar**. Melewati batas itu, tab berhenti menjadi navigasi dan berubah menjadi tempat bersembunyi.
+
+> **Ditemukan 2026-08-21.** Halaman `/master/referensi` dibangun dengan sembilan tab dan bekerja baik. Setelah daftarnya bertambah menjadi empat belas, pengukuran di peramban menunjukkan bar tab mencapai **2309px pada ruang 705px**: hanya **empat tab yang terlihat, sepuluh tersembunyi**. Tidak ada yang tampak rusak, sebab keempat belas tab tetap ada di HTML dan `overflow-x-auto` bekerja persis seperti seharusnya.
+
+1. **Ambangnya bukan angka, melainkan lebar.** Empat tab berjudul panjang dapat melewati batas lebih dulu daripada delapan tab berjudul pendek. Yang menentukan adalah jumlah lebar judulnya terhadap lebar wadahnya, bukan cacahnya.
+2. **Gulir mendatar bukan penyelamat.** Ia menyembunyikan gejala, bukan menyelesaikan masalah: bar gulir mendatar termasuk hal yang paling sering tidak disadari orang, dan pengguna yang tidak menyadarinya menyimpulkan daftar itu memang tidak ada.
+3. **Setelah melewati batas, ganti menjadi halaman indeks berkartu**, bukan tab bertingkat. Tab di dalam tab menuntut pengguna mengingat dua kedudukan sekaligus, dan tetap menyisakan satu alamat untuk seluruh isinya.
+4. **Bukan pula memecahnya menjadi butir menu.** Menu bilah sisi punya batas yang sama; memindahkan empat belas judul dari bar tab ke bilah sisi hanya memindahkan baris panjang yang sama ke tempat lain.
+5. **Kartu dikelompokkan menurut modul yang memakainya**, bukan menurut kemiripan bentuk daftarnya. Petugas mencari `jenis_fasilitas` karena sedang mengurus aset satuan permukiman, bukan karena ingat isinya sembilan baris.
+6. **Setiap daftar mendapat alamatnya sendiri**, sehingga dapat ditandai, muncul pada remah, dan dituju langsung dari tempat lain. Alamat lama berbentuk `?tab={jenis}` **dialihkan**, tidak dibiarkan mati.
+7. **Keterangan tentang akibat menyunting ditaruh pada halaman daftarnya**, bukan pada indeks. Peringatan bahwa skor menentukan penilaian SP tidak berguna bagi orang yang sedang memilih daftar mana yang hendak dibuka.
+8. **Penanda perilaku khusus tetap tampil di indeks** berupa lencana singkat, agar petugas mengetahui daftar mana yang berdampak lebih jauh daripada sekadar teks pada dropdown sebelum ia membukanya.
+9. **Isian yang menentukan daftar dikunci ke halamannya**, dikirim sebagai isian tersembunyi. Membiarkannya berupa dropdown membuat nilai baru dapat mendarat di daftar lain tanpa petugas menyadarinya.
+10. **Batas ini wajib dijaga uji peramban, bukan uji string.** Keempat belas judul tetap ada di HTML meski hanya empat yang terlihat; hanya pengukuran di peramban yang dapat membedakannya. Uji wajib memeriksa elemen benar-benar berada di dalam batas layar, bukan sekadar memiliki lebar dan tinggi.
 ### 6.0a Pilihan berdaftar panjang
 
 Isian yang sumbernya **tabel data**, bukan enum, memakai `x-sim.pilih-cari`. Contohnya daftar transmigran, lahan, dan sejenisnya; enum seperti kondisi atau jenis fasilitas tetap memakai `<select>` biasa sebab jumlahnya tidak pernah bertambah.

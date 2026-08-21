@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 use App\Http\Controllers\DokumenController;
 use Illuminate\Support\Facades\Route;
@@ -147,8 +147,14 @@ Route::get('/master/satuan', function () {
 /*
  * Data master referensi.
  *
- * Sepuluh daftar pilihan yang sebelumnya ditulis sebagai enum di dalam kode,
- * kini dikelola Admin dan Dinas Transmigrasi lewat antarmuka (kamus data 5.6).
+ * Empat belas daftar pilihan yang sebelumnya ditulis sebagai enum di dalam
+ * kode, kini dikelola Admin dan Dinas Transmigrasi lewat antarmuka (kamus
+ * data 5.6).
+ *
+ * SATU HALAMAN PER DAFTAR, bukan satu halaman bertab. Semula keempat belasnya
+ * berupa tab dalam satu baris, dan itu berhenti bekerja begitu jumlahnya
+ * bertambah: bar tab mencapai 2309px pada ruang 705px, sehingga hanya empat
+ * tab yang terlihat dan sepuluh sisanya tersembunyi di balik gulir mendatar.
  *
  * TANPA RUTE HAPUS, dan itu disengaja: nilai yang tidak lagi dipakai
  * dinonaktifkan lewat kolom `is_aktif`. Menghapusnya membuat data lama
@@ -156,20 +162,59 @@ Route::get('/master/satuan', function () {
  * apa pun.
  */
 Route::get('/master/referensi', function () {
+    // Alamat lama `?tab={jenis}` dialihkan, bukan dibiarkan mati. Bentuk itu
+    // sempat dipakai form untuk menentukan jenis awal, dan tautan yang sudah
+    // tersimpan siapa pun tidak boleh mendarat di halaman yang salah tanpa
+    // penjelasan.
+    $tabLama = \App\Enums\JenisReferensi::tryFrom((string) request('tab'));
+
+    if ($tabLama !== null) {
+        return redirect()->route('referensi.jenis', ['jenis' => $tabLama->value], 301);
+    }
+
     return view('pages.master.referensi', ['title' => 'Data Master Referensi']);
 })->name('master.referensi');
+
+Route::get('/master/referensi/{jenis}', function (string $jenis) {
+    $pilihan = \App\Enums\JenisReferensi::tryFrom($jenis);
+
+    // Jenis karangan membalas 404, bukan halaman kosong: daftar yang tidak ada
+    // dan daftar yang kebetulan masih kosong adalah dua keadaan berbeda, dan
+    // menyamakannya membuat salah ketik tampak seperti data yang belum diisi.
+    abort_if($pilihan === null, 404);
+
+    return view('pages.master.detail-referensi', [
+        'title' => $pilihan->label(),
+        'jenis' => $pilihan,
+    ]);
+})->where('jenis', '[a-z_]+')->name('referensi.jenis');
 
 Route::post('/master/referensi', function () {
     // Tahap 4: simpan baris baru pada tabel `referensi`, lalu perbarui urutan
     // pada jenis yang sama bila nomornya bertabrakan.
-    return redirect()->route('master.referensi')
+    //
+    // Kembali ke halaman DAFTARNYA, bukan ke indeks: petugas baru saja
+    // menambah satu nilai dan perlu melihat hasilnya pada daftar itu juga.
+    $jenis = \App\Enums\JenisReferensi::tryFrom((string) request('jenis'));
+
+    return redirect()
+        ->route(
+            $jenis !== null ? 'referensi.jenis' : 'master.referensi',
+            $jenis !== null ? ['jenis' => $jenis->value] : []
+        )
         ->with('sukses', 'Pilihan baru tersimpan dan langsung tersedia pada form.');
 })->name('referensi.simpan');
 
 Route::put('/master/referensi/{id}', function (int $id) {
     // Tahap 4: penonaktifan hanya menyetel `is_aktif`, tidak menyentuh baris
     // data lain yang sudah memakai nilainya.
-    return redirect()->route('master.referensi')
+    $jenis = \App\Enums\JenisReferensi::tryFrom((string) request('jenis'));
+
+    return redirect()
+        ->route(
+            $jenis !== null ? 'referensi.jenis' : 'master.referensi',
+            $jenis !== null ? ['jenis' => $jenis->value] : []
+        )
         ->with('sukses', 'Perubahan pilihan tersimpan.');
 })->where('id', '[0-9]+')->name('referensi.perbarui');
 

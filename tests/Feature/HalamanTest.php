@@ -4488,6 +4488,47 @@ it('menyusun remah dari struktur menu, bukan dari teks yang ditulis tangan', fun
     expect($ditulisTangan)->toBe([]);
 });
 
+it('menempelkan rincian satuan permukiman pada menunya, bukan pada Dashboard', function () {
+    // Halaman ini sempat memakai RemahHelper::untuk('/'), sehingga remahnya
+    // terbaca "Beranda / Dashboard / SP Kapitan Meo". Alasan yang dulu
+    // ditulis, bahwa ia menyajikan rekap kawasan per SP, tidak cocok dengan
+    // isinya: yang ditampilkan adalah profil SP beserta transmigran, rumah,
+    // lahan, panen, dan pengaduan MILIK SP itu.
+    $remah = RemahHelper::untuk('/sp', 'SP Kapitan Meo');
+    $label = array_column($remah, 'label');
+
+    expect($label)->toBe(['Wilayah & SP', 'Satuan Permukiman', 'SP Kapitan Meo']);
+
+    // "Satuan Permukiman" bertaut kembali ke daftarnya, ruas terakhir tidak.
+    expect($remah[1]['url'] ?? null)->toBe(url('/sp'));
+    expect($remah[2]['url'] ?? null)->toBeNull();
+
+    // Halamannya benar-benar memakai remah itu, bukan remah Dashboard.
+    $berkas = file_get_contents(resource_path('views/pages/dashboard/sp.blade.php'));
+
+    expect($berkas)->toContain("RemahHelper::untuk('/sp'");
+    expect($berkas)->not->toContain("RemahHelper::untuk('/'");
+});
+
+it('tidak menempelkan halaman rincian mana pun pada Dashboard', function () {
+    // Penjaga umum, sebab cacat di atas lolos justru karena tidak ada yang
+    // memeriksanya: remah yang menunjuk `/` selalu terbaca "Dashboard", dan
+    // itu hanya benar bagi Dashboard itu sendiri.
+    $salah = [];
+
+    foreach (File::allFiles(resource_path('views/pages')) as $berkas) {
+        $isi = file_get_contents($berkas->getPathname());
+
+        // Dashboard sendiri memang berhak, dan ia memanggilnya tanpa ruas
+        // rincian. Yang dilarang adalah halaman rincian, yang mengirim ruas
+        // kedua sebagai nama datanya.
+        if (preg_match("/RemahHelper::untuk\('\/',\s*\S/", $isi) === 1) {
+            $salah[] = $berkas->getFilename();
+        }
+    }
+
+    expect($salah)->toBe([]);
+});
 it('memakai nama submenu yang sama persis dengan sidebar', function () {
     // Inti perbaikannya: ruas kedua remah wajib nama submenu sesungguhnya.
     // Diuji terhadap MenuHelper, bukan terhadap daftar yang ditulis di sini,
@@ -4496,8 +4537,8 @@ it('memakai nama submenu yang sama persis dengan sidebar', function () {
         '/transmigran' => ['Penduduk & Lahan', 'Transmigran'],
         '/lahan' => ['Penduduk & Lahan', 'Daftar Lahan'],
         '/poktan' => ['Poktan & Sarana', 'Kelompok Tani'],
-        '/infrastruktur' => ['Wilayah & Aset SP', 'Infrastruktur SP'],
-        '/sp/inventaris' => ['Wilayah & Aset SP', 'Inventaris SP'],
+        '/infrastruktur' => ['Wilayah & SP', 'Infrastruktur SP'],
+        '/sp/inventaris' => ['Wilayah & SP', 'Inventaris SP'],
         '/musim-tanam' => ['Produksi Pertanian', 'Musim Tanam'],
         '/wilayah' => ['Pengaturan Sistem', 'Data Master Wilayah'],
     ];
