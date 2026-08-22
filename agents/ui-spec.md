@@ -479,10 +479,8 @@ Dua halaman berikut dapat diakses siapa pun tanpa akun, sebagai kanal pengaduan 
 | Daftar komoditas | `GET /komoditas` | A, DP |
 | Detail komoditas | `GET /komoditas/{id}` | A, DP |
 | Form komoditas | modal | A, DP |
-| Musim tanam | `GET /musim-tanam` | A, DP |
-| Form musim tanam | modal | A, DP |
-| Riwayat tanam | `GET /riwayat-tanam` | A, DP |
-| Form riwayat tanam | modal | A, DP |
+| Penanaman | `GET /penanaman` | A, DP |
+| Form penanaman | modal | A, DP |
 | Daftar hasil panen | `GET /panen` | A, DP |
 | Detail hasil panen | `GET /panen/{id}` | A, DP |
 | Rekap panen | `GET /panen/rekap` | A, DP |
@@ -555,8 +553,7 @@ Dua penempatan yang perlu diketahui, sebab tidak mengikuti struktur tabel:
 | | | Alsintan | `/alsintan` | `alsintan.lihat` |
 | | | Saprotan | `/saprotan` | `saprotan.lihat` |
 | | Produksi Pertanian | Komoditas | `/komoditas` | `komoditas.lihat` |
-| | | Musim Tanam | `/musim-tanam` | `musim_tanam.lihat` |
-| | | Riwayat Tanam | `/riwayat-tanam` | `riwayat_tanam.lihat` |
+| | | Penanaman | `/penanaman` | `penanaman.lihat` |
 | | | Hasil Panen | `/panen` | `hasil_panen.lihat` |
 | | | Rekap Panen | `/panen/rekap` | `hasil_panen.lihat` |
 | **Pengaduan** | Pengaduan Warga | Daftar Pengaduan | `/pengaduan` | `pengaduan.lihat` |
@@ -597,7 +594,7 @@ Menjawab PRD §8.1: sinyal di lokus tidak selalu stabil, sehingga petugas mengun
 3. **Hasil impor wajib merinci kegagalan per baris** beserta nomor baris dan alasannya. Berkas berisi ratusan baris tidak mungkin diperiksa manual, sehingga pesan "impor gagal" tanpa rincian memaksa petugas mengulang seluruh pekerjaan.
 4. Baris bermasalah **dilewati, sisanya tetap disimpan.** Menolak seluruh berkas karena tiga baris salah membuang pekerjaan yang sudah benar.
 5. Kolom wajib ditampilkan pada langkah pertama, agar petugas mengetahui isian yang diperlukan sebelum berangkat ke lapangan.
-6. **Fitur berikut tidak diberi impor:** Pengaduan (datang satu per satu dari kanal publik, nomornya wajib memuat bagian acak), Pengguna (kata sandi awal diserahkan langsung kepada orangnya, `rules.md` §14b poin 3), serta Role, Kawasan, SP, dan Musim Tanam yang jumlah barisnya sedikit.
+6. **Fitur berikut tidak diberi impor:** Pengaduan (datang satu per satu dari kanal publik, nomornya wajib memuat bagian acak), Pengguna (kata sandi awal diserahkan langsung kepada orangnya, `rules.md` §14b poin 3), serta Role, Kawasan, dan SP yang jumlah barisnya ditetapkan dokumen acuan, bukan dihitung dari data contoh.
 7. Selama penyimpanannya belum tersambung, modal **wajib memuat spanduk** yang menyatakan fitur belum aktif, sebab tampilannya sudah terlihat berfungsi penuh.
 
 ### 5.1c Tab Catatan Log pada halaman rincian
@@ -649,7 +646,7 @@ Wilayah & SP    (lihat saja)
 Kependudukan    (lihat saja)
 Lahan           (lihat saja)
 Kelembagaan     (Kelompok Tani, Alsintan, Saprotan)
-Pertanian       (Komoditas, Musim Tanam, Riwayat Tanam, Hasil Panen)
+Pertanian       (Komoditas, Penanaman, Hasil Panen)
 Infrastruktur
 Pengaduan
 Laporan
@@ -662,7 +659,7 @@ Wilayah & SP    (Inventaris, Fasilitas)
 Kependudukan    (Transmigran, Rumah & Hunian)
 Lahan
 Kelembagaan     (Kelompok Tani, Alsintan, Saprotan)
-Pertanian       (Riwayat Tanam, Hasil Panen)
+Pertanian       (Penanaman, Hasil Panen)
 Infrastruktur
 Pengaduan
 ```
@@ -909,7 +906,7 @@ Indikator PRD §7.8 dipetakan ke jenis visualisasi:
 **Aturan dashboard:**
 1. Filter global wilayah dan periode di bagian atas, memengaruhi seluruh visualisasi. Tingkatan filter: Kawasan → Kecamatan → Desa → SP, seluruhnya opsional.
 2. Drill-down memakai event `dataPointSelection` ApexCharts menuju `/dashboard/sp/{sp}`.
-3. Volume panen **selalu** dikonversi ke ton sebelum diagregasi (`rules.md` §8a).
+3. Produksi **selalu** dikonversi ke ton sebelum diagregasi (`rules.md` §8a).
 4. Kartu statistik dimuat lebih dulu, grafik menyusul secara asinkron.
 5. Setiap grafik punya state kosong sendiri bila data belum tersedia.
 6. Warna seri grafik mengambil urutan: `#163B54` (navy-500) → `#33809C` (teal-500) → `#C09546` (gold-500) → `#DFB87E` (sand-500) → `#265F73` (teal-700). ApexCharts dikonfigurasi memakai nilai heksadesimal, bukan nama kelas Tailwind.
@@ -942,7 +939,7 @@ Indikator PRD §7.8 dipetakan ke jenis visualisasi:
 | Tanggal ringkas (tabel) | `d/m/Y` | 10/08/2026 |
 | Uang | `Rp ` + `number_format(x, 0, ',', '.')` | Rp 2.500.000 |
 | Desimal | Koma sebagai pemisah desimal, titik sebagai pemisah ribuan | 1.234,567 |
-| Volume panen | 3 angka desimal + satuan | 12,500 ton |
+| Produksi | 3 angka desimal + satuan | 12,500 ton |
 | Luas lahan | 2 angka desimal + " ha" | 1,25 ha |
 | NIK / No. KK | Berkelompok 4 digit | 5321 0101 0101 0001 |
 | Telepon | `+62 812-3456-7890` | — |

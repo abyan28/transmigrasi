@@ -104,7 +104,7 @@ it('tidak lagi memakai enum untuk daftar yang sudah menjadi data master', functi
     // begitu Admin menambah satu nilai.
     $enumMaster = [
         'SumberDana', 'StatusPenyerahan', 'Kondisi', 'KondisiRumah', 'StatusHunian',
-        'TipeKomoditas', 'KualitasPanen', 'PrioritasPengaduan', 'JenisDokumenLahan',
+        'TipeKomoditas', 'PrioritasPengaduan', 'JenisDokumenLahan',
         'JabatanAnggotaPoktan', 'JenisInfrastruktur', 'JenisFasilitas',
         'BidangPengaduan', 'KategoriPengaduan',
     ];

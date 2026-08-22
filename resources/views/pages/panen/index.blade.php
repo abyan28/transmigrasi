@@ -17,11 +17,17 @@
         $cari = trim((string) request('cari', ''));
         $filterSp = request('sp');
         $filterKomoditas = request('komoditas');
-        $filterMusim = request('musim_tanam');
+        $filterTahun = request('tahun');
 
-        $baris = array_values(array_filter($semua, function ($p) use ($cari, $filterSp, $filterKomoditas, $filterMusim) {
+        // Tahun panen diturunkan dari tanggalnya, menggantikan penyaringan per
+        // musim tanam yang dicabut 2026-08-22 bersama fiturnya.
+        $tahunPanen = fn ($p) => $p['periode_panen']
+            ? (int) substr($p['periode_panen'], 0, 4)
+            : null;
+
+        $baris = array_values(array_filter($semua, function ($p) use ($cari, $filterSp, $filterKomoditas, $filterTahun, $tahunPanen) {
             if ($cari !== '') {
-                $cocok = str_contains(mb_strtolower($p['petani']), mb_strtolower($cari))
+                $cocok = str_contains(mb_strtolower($p['poktan']), mb_strtolower($cari))
                     || str_contains(mb_strtolower($p['komoditas']), mb_strtolower($cari));
 
                 if (! $cocok) {
@@ -37,28 +43,30 @@
                 return false;
             }
 
-            if ($filterMusim && $p['musim_tanam'] !== $filterMusim) {
+            if ($filterTahun && (string) $tahunPanen($p) !== (string) $filterTahun) {
                 return false;
             }
 
             return true;
         }));
 
-        $adaFilter = $cari !== '' || $filterSp || $filterKomoditas || $filterMusim;
+        $adaFilter = $cari !== '' || $filterSp || $filterKomoditas || $filterTahun;
 
         // Total dihitung setelah konversi ke ton, bukan menjumlahkan volume mentah.
         $totalTonTampil = array_sum(array_map(
-            fn ($p) => DummyData::keTon($p['volume'], $p['satuan']),
+            fn ($p) => DummyData::keTon($p['produksi'], $p['satuan']),
             $baris
         ));
 
         $totalTonSemua = array_sum(array_map(
-            fn ($p) => DummyData::keTon($p['volume'], $p['satuan']),
+            fn ($p) => DummyData::keTon($p['produksi'], $p['satuan']),
             $semua
         ));
 
         $daftarKomoditas = array_values(array_unique(array_column($semua, 'komoditas')));
-        $daftarMusim = array_values(array_unique(array_column($semua, 'musim_tanam')));
+
+        $daftarTahun = array_values(array_filter(array_unique(array_map($tahunPanen, $semua))));
+        rsort($daftarTahun);
 
         $bolehTambah = true;
         $bolehUbah = true;
@@ -66,7 +74,7 @@
     @endphp
 
     <x-sim.page-header judul="Hasil Panen"
-        keterangan="Catatan panen per periode beserta volume, kualitas, dan harga jualnya."
+        keterangan="Catatan panen per periode beserta produksi dan harga jualnya."
         :remah="\App\Helpers\RemahHelper::untuk('/panen')">
         <x-slot:aksi>
             {{--
@@ -105,12 +113,12 @@
         <x-sim.stat-card label="Total Volume" :nilai="number_format($totalTonSemua, 3, ',', '.')" satuan="ton"
             keterangan="Hasil konversi seluruh komoditas" />
         <x-sim.stat-card label="Jenis Komoditas" :nilai="number_format(count($daftarKomoditas), 0, ',', '.')" />
-        <x-sim.stat-card label="Musim Tanam Tercatat" :nilai="number_format(count($daftarMusim), 0, ',', '.')" />
+                <x-sim.stat-card label="Tahun Panen Tercatat" :nilai="number_format(count($daftarTahun), 0, ',', '.')" />
     </div>
 
     <form method="GET" action="{{ route('panen.index') }}">
         <x-sim.data-table :jumlah="count($baris)" :kata-kunci="$cari"
-            placeholder-cari="Cari petani atau komoditas" judul-kosong="Belum ada catatan panen"
+            placeholder-cari="Cari kelompok tani atau komoditas" judul-kosong="Belum ada catatan panen"
             pesan-kosong="Hasil panen akan tampil di sini setelah dicatat petugas.">
 
             <x-slot:filter>
@@ -145,15 +153,15 @@
                     </div>
 
                     <div>
-                        <label for="filter_musim"
+                        <label for="filter_tahun"
                             class="mb-1.5 block text-theme-xs font-medium text-gray-700 dark:text-gray-400">
-                            Musim Tanam
+                            Tahun Panen
                         </label>
-                        <select id="filter_musim" name="musim_tanam"
+                        <select id="filter_tahun" name="tahun"
                             class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
-                            <option value="">Semua musim</option>
-                            @foreach ($daftarMusim as $m)
-                                <option value="{{ $m }}" @selected($filterMusim === $m)>{{ $m }}</option>
+                            <option value="">Semua tahun</option>
+                            @foreach ($daftarTahun as $t)
+                                <option value="{{ $t }}" @selected((string) $filterTahun === (string) $t)>{{ $t }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -198,11 +206,10 @@
 
             <x-slot:kepala>
                 <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Komoditas</th>
-                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Petani</th>
-                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Musim</th>
+                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Kelompok Tani</th>
                 <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Tanggal</th>
                 <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Volume</th>
-                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Kualitas</th>
+                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Produktivitas</th>
                 <th scope="col" class="px-5 py-3 text-right text-theme-xs font-medium text-gray-500 dark:text-gray-400">
                     Aksi
                 </th>
@@ -219,27 +226,31 @@
                             {{ $p['satuan_permukiman'] }}
                         </p>
                     </td>
-                    <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ $p['petani'] }}</td>
-                    <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ $p['musim_tanam'] }}</td>
+                    <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ $p['poktan'] }}</td>
                     <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
-                        {{ \Illuminate\Support\Carbon::parse($p['tanggal_panen'])->translatedFormat('d M Y') }}
+                        {{ \Illuminate\Support\Carbon::parse($p['periode_panen'] . '-01')->translatedFormat('F Y') }}
                     </td>
                     <td class="px-5 py-3">
                         <span class="text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
-                            {{ number_format($p['volume'], 3, ',', '.') }} {{ $p['satuan'] }}
+                            {{ number_format($p['produksi'], 3, ',', '.') }} {{ $p['satuan'] }}
                         </span>
                         {{-- Setara ton ditampilkan bila satuannya bukan ton --}}
                         @if ($p['satuan'] !== 'Ton')
                             <p class="mt-0.5 text-theme-xs tabular-nums text-gray-500 dark:text-gray-400">
-                                setara {{ number_format(DummyData::keTon($p['volume'], $p['satuan']), 3, ',', '.') }} ton
+                                setara {{ number_format(DummyData::keTon($p['produksi'], $p['satuan']), 3, ',', '.') }} ton
                             </p>
                         @endif
                     </td>
-                    <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ $p['kualitas'] }}</td>
+                    {{-- Kualitas dicabut 2026-08-22, digantikan produktivitas:
+                         angka terukur lebih berguna daripada label mutu. --}}
+                    <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
+                        {{ rtrim(rtrim(number_format($p['produktivitas'], 3, ',', '.'), '0'), ',') }}
+                        {{ $p['satuan'] }}/ha
+                    </td>
                     <td class="px-5 py-3">
                         <div class="flex items-center justify-end gap-1">
                             <a href="{{ route('panen.detail', $p['id_hasil_panen']) }}"
-                                aria-label="Lihat rincian panen {{ $p['komoditas'] }} milik {{ $p['petani'] }}"
+                                aria-label="Lihat rincian panen {{ $p['komoditas'] }} milik {{ $p['poktan'] }}"
                                 class="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-gray-400 dark:hover:bg-white/5">
                                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"
                                     stroke-width="1.5" aria-hidden="true">
@@ -289,13 +300,15 @@
 
             <x-slot:kaki>
                 <tr class="motif-baris-total">
-                    <td colspan="4" class="px-5 py-3 text-theme-sm text-gray-700 dark:text-gray-300">
+                    {{-- Tiga kolom pertama: Komoditas, Kelompok Tani, Periode. Kolom
+                         Musim dicabut 2026-08-22, sehingga colspan turun dari 4. --}}
+                    <td colspan="3" class="px-5 py-3 text-theme-sm text-gray-700 dark:text-gray-300">
                         Total volume yang ditampilkan, dikonversi ke ton
                     </td>
                     <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
                         {{ number_format($totalTonTampil, 3, ',', '.') }} ton
                     </td>
-                    <td colspan="3"></td>
+                    <td colspan="2"></td>
                 </tr>
             </x-slot:kaki>
 
@@ -308,14 +321,15 @@
                                 <p class="text-theme-sm font-medium text-gray-800 dark:text-white/90">
                                     {{ $p['komoditas'] }}
                                 </p>
-                                <p class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">{{ $p['petani'] }}</p>
+                                <p class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">{{ $p['poktan'] }}</p>
                             </a>
                             <span class="shrink-0 text-theme-sm tabular-nums text-gray-700 dark:text-gray-300">
-                                {{ number_format($p['volume'], 3, ',', '.') }} {{ $p['satuan'] }}
+                                {{ number_format($p['produksi'], 3, ',', '.') }} {{ $p['satuan'] }}
                             </span>
                         </div>
                         <p class="mt-2 text-theme-xs text-gray-500 dark:text-gray-400">
-                            {{ $p['musim_tanam'] }} &middot; {{ $p['satuan_permukiman'] }}
+                            {{ \Illuminate\Support\Carbon::parse($p['periode_panen'] . '-01')->translatedFormat('F Y') }}
+                            &middot; {{ $p['satuan_permukiman'] }}
                         </p>
                     </div>
                 @endforeach
@@ -349,5 +363,5 @@
     {{-- Impor massal, lihat komponennya untuk alur tiga langkah --}}
     <x-sim.modal-impor nama="imporPanen" judul="Impor Hasil Panen"
         entitas="hasil-panen"
-        :kolom-wajib="['tanggal_panen', 'komoditas', 'lahan', 'volume', 'satuan']" />
+        :kolom-wajib="['periode_panen', 'komoditas', 'kelompok_tani', 'produksi', 'satuan']" />
 @endsection

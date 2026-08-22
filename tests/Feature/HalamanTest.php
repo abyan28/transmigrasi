@@ -14,13 +14,14 @@ use App\Enums\AlasanPergantianKK;
 use App\Enums\AsalWakilPoktan;
 use App\Enums\BidangPengaduan;
 use App\Enums\JabatanAnggotaPoktan;
-use App\Enums\KepemilikanAlsintan;
 use App\Enums\Kondisi;
 use App\Enums\PeruntukanLahan;
 use App\Enums\StatusPengaduan;
+use App\Enums\SumberDana;
 use App\Helpers\MenuHelper;
 use App\Helpers\RemahHelper;
 use App\Support\DummyData;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
 use Tests\Support\BerkasBlade;
@@ -455,16 +456,16 @@ it('menampilkan setara ton untuk satuan selain ton', function () {
 });
 
 it('menjumlahkan volume panen memakai hasil konversi, bukan angka mentah', function () {
-    // Menjumlahkan 4,250 ton dan 320,500 kilogram begitu saja menghasilkan
+    // Menjumlahkan ton dan kilogram begitu saja menghasilkan
     // angka yang keliru (agents/rules.md bagian 8a poin 5).
     $benar = array_sum(array_map(
-        fn ($p) => DummyData::keTon($p['volume'], $p['satuan']),
+        fn ($p) => DummyData::keTon($p['produksi'], $p['satuan']),
         DummyData::hasilPanen()
     ));
 
-    $mentah = array_sum(array_column(DummyData::hasilPanen(), 'volume'));
+    $mentah = array_sum(array_column(DummyData::hasilPanen(), 'produksi'));
 
-    expect(round($benar, 3))->toBe(16.371)
+    expect(round($benar, 3))->toBe(14.051)
         ->and($mentah)->toBeGreaterThan($benar);
 
     $this->get(route('panen.index'))->assertSee(number_format($benar, 3, ',', '.'));
@@ -480,7 +481,7 @@ it('merender rekap panen pada keempat dasar pengelompokan', function () {
     // Yang dijaga adalah baris totalnya terender, bukan kalimatnya. Mengunci
     // teks membuat penyuntingan wording memerahkan uji padahal tidak ada yang
     // rusak, sehingga penandanya yang diperiksa.
-    foreach (['sp', 'komoditas', 'musim', 'petani'] as $kelompok) {
+    foreach (['sp', 'komoditas', 'poktan'] as $kelompok) {
         $this->get(route('panen.rekap', ['kelompok' => $kelompok]))
             ->assertOk()
             ->assertSee('motif-baris-total', false);
@@ -1060,14 +1061,18 @@ it('menampilkan penanda data contoh pada seluruh halaman petugas', function () {
 |--------------------------------------------------------------------------
 */
 
-it('menautkan modul kependudukan, lahan, dan panen satu sama lain', function () {
+it('menautkan modul kependudukan, lahan, dan poktan satu sama lain', function () {
     // Operator kerap berpindah dari satu entitas ke entitas terkait; tanpa
     // tautan ini ia harus kembali ke daftar dan mencari ulang.
     $transmigran = $this->get(route('transmigran.detail', 1))->getContent();
 
     expect($transmigran)->toContain(route('rumah.detail', 1))
         ->and($transmigran)->toContain(route('lahan.detail', 1))
-        ->and($transmigran)->toContain(route('panen.detail', 1));
+        // Tautan ke PANEN diganti tautan ke POKTAN pada 2026-08-22. Panen
+        // kini dicatat per kelompok, bukan per orang, sehingga menaut ke satu
+        // baris panen dari halaman keluarga berarti menyiratkan panen itu
+        // miliknya sendiri - padahal satu poktan berisi banyak keluarga.
+        ->and($transmigran)->toContain(route('poktan.detail', 1));
 
     // Sebaliknya, rincian rumah dan lahan menaut balik ke pemiliknya.
     expect($this->get(route('rumah.detail', 1))->getContent())
@@ -1521,8 +1526,8 @@ it('menyamakan daftar izin dengan kamus data dan rules', function () {
         'Penilaian kondisi SP' => 'penilaian_kondisi', 'Lahan' => 'lahan',
         'Dokumen lahan (HPL/SHM)' => 'dokumen_lahan', 'Kelompok tani' => 'poktan',
         'Anggota poktan' => 'anggota_poktan', 'Alsintan' => 'alsintan', 'Saprotan' => 'saprotan',
-        'Komoditas' => 'komoditas', 'Musim tanam' => 'musim_tanam',
-        'Riwayat tanam' => 'riwayat_tanam', 'Hasil panen' => 'hasil_panen',
+        'Komoditas' => 'komoditas',
+        'Penanaman' => 'penanaman', 'Hasil panen' => 'hasil_panen',
         'Infrastruktur SP' => 'infrastruktur', 'Pengaduan' => 'pengaduan',
         'Penanganan pengaduan' => 'penanganan_pengaduan', 'Dashboard' => 'dashboard',
     ];
@@ -1741,33 +1746,48 @@ it('menjaga aturan modul pada form yang mudah tergeser', function () {
         ->toContain('Sudah Keluar')
         ->and($sumber('poktan/form-anggota.blade.php'))->not->toContain('name="hapus"');
 
-    // Penyaluran saprotan hanya untuk anggota aktif.
-    expect($sumber('saprotan/form.blade.php'))->toContain("'status'] === 'Aktif'");
+    // Penerima saprotan SELALU poktan, tidak pernah perorangan. Aturan lama
+    // "hanya anggota aktif" ikut hilang bersama pilihan penerima individu:
+    // yang menerima kini kelompok, dan pembagian ke anggota diatur poktan
+    // sendiri di luar sistem.
+    expect($sumber('saprotan/form.blade.php'))
+        ->not->toContain('name="jenis_penerima"')
+        ->and($sumber('saprotan/form.blade.php'))->not->toContain('nama="transmigran_id"');
 
     // Infrastruktur adalah pendataan aset, bukan pelaporan kerusakan.
     expect($sumber('infrastruktur/form.blade.php'))
         ->not->toContain('Lapor Kerusakan')
         ->and($sumber('infrastruktur/form.blade.php'))->toContain('fitur pengaduan');
 
-    // Alsintan menampilkan pemilik bergantian, tidak pernah keduanya.
-    expect($sumber('alsintan/form.blade.php'))->toContain('KepemilikanAlsintan::Pribadi->value');
+    // Alsintan tidak lagi menanyakan jenis kepemilikan: pemiliknya selalu
+    // kelompok tani sejak 2026-08-22, sehingga radio pilihan dan isian
+    // transmigran pemilik ikut dicabut.
+    expect($sumber('alsintan/form.blade.php'))
+        ->not->toContain('name="kepemilikan"')
+        ->and($sumber('alsintan/form.blade.php'))->not->toContain('nama="transmigran_id"');
 });
 
 it('memakai nilai enum pada data contoh, bukan teks yang menyerupainya', function () {
-    // Data contoh alsintan sempat memakai 'Milik Pribadi' sedangkan enumnya
-    // bernilai 'Pribadi', sehingga filter kepemilikan pada halaman daftar
+    // Data contoh alsintan sempat memakai ''Milik Pribadi'' sedangkan enumnya
+    // bernilai ''Pribadi'', sehingga filter kepemilikan pada halaman daftar
     // tidak pernah cocok dan selalu menghasilkan nol baris. Cacat semacam ini
     // tidak terlihat pada tampilan biasa, hanya muncul ketika filter dipakai.
-    $sah = array_column(KepemilikanAlsintan::cases(), 'value');
-
-    foreach (DummyData::alsintan() as $baris) {
-        expect($sah)->toContain($baris['kepemilikan']);
-    }
-
+    //
+    // Kepemilikan sendiri sudah dicabut 2026-08-22, tetapi cacat yang sama
+    // ternyata masih bersembunyi pada kolom lain: ''Pembelian Sendiri'' pada
+    // 'sumber_perolehan' juga bukan nilai enum mana pun. Uji ini karena itu
+    // dialihkan ke sana, bukan dihapus.
+    $sumberSah = array_column(SumberDana::cases(), 'value');
     $kondisiSah = array_column(Kondisi::cases(), 'value');
 
     foreach (DummyData::alsintan() as $baris) {
+        expect($sumberSah)->toContain($baris['sumber_perolehan']);
         expect($kondisiSah)->toContain($baris['kondisi']);
+    }
+
+    // Saprotan memakai kolom bernama lain untuk hal yang sama.
+    foreach (DummyData::saprotan() as $baris) {
+        expect($sumberSah)->toContain($baris['sumber']);
     }
 });
 
@@ -2173,7 +2193,7 @@ it('menyamakan jumlah kolom judul dengan jumlah sel pada halaman daftar', functi
     // tampak bergeser, sekalipun seluruh tagnya berpasangan dengan benar.
     $halaman = [
         'sp.index', 'sp.inventaris', 'sp.fasilitas', 'poktan.index',
-        'musim-tanam', 'riwayat-tanam', 'master.satuan',
+        'penanaman', 'master.satuan',
         'alsintan.index', 'saprotan.index', 'komoditas.index',
         'infrastruktur.index', 'pengguna.index',
         'transmigran.index', 'rumah.index', 'lahan.index',
@@ -2500,7 +2520,7 @@ it('menyediakan tombol impor pada modul berdata banyak', function (string $url, 
     ['/rumah', 'imporRumah'],
     ['/lahan', 'imporLahan'],
     ['/panen', 'imporPanen'],
-    ['/riwayat-tanam', 'imporRiwayatTanam'],
+    ['/penanaman', 'imporPenanaman'],
     ['/infrastruktur', 'imporInfrastruktur'],
     ['/sp/inventaris', 'imporInventaris'],
     ['/wilayah', 'imporWilayah'],
@@ -2510,11 +2530,9 @@ it('menyediakan tombol impor pada modul berdata banyak', function (string $url, 
     ['/saprotan', 'imporSaprotan'],
     ['/sp/fasilitas', 'imporFasilitas'],
     ['/komoditas', 'imporKomoditas'],
-    // Ditambahkan 2026-08-19: musim tanam sempat dikecualikan dengan alasan
-    // "jumlah barisnya sedikit", padahal ia bertambah dua kali setahun tanpa
-    // henti sehingga justru paling terpengaruh waktu. Alasan itu menghitung
-    // baris data contoh, dan itu dilarang rules.md 19a.
-    ['/musim-tanam', 'imporMusimTanam'],
+    // Musim tanam sempat berada di daftar ini sejak 2026-08-19. Ikut hilang
+    // 2026-08-22 bersama fiturnya, bukan karena aturannya berubah.
+    ['/penanaman', 'imporPenanaman'],
 ]);
 
 it('tidak menyediakan impor pada modul yang tidak boleh diisi massal', function (string $url) {
@@ -2530,9 +2548,8 @@ it('tidak menyediakan impor pada modul yang tidak boleh diisi massal', function 
     //   enam SP, dan empat role bawaan. Angkanya berasal dari dokumen acuan,
     //   bukan dari menghitung baris data contoh.
     //
-    // Musim Tanam DIKELUARKAN dari daftar ini pada 2026-08-19. Ia sempat
-    // disamaratakan dengan ketiga modul di atas, padahal jumlahnya bertambah
-    // dua kali setahun tanpa henti sehingga justru paling terpengaruh waktu.
+    // Musim Tanam sempat dikeluarkan dari daftar ini pada 2026-08-19, lalu
+    // fiturnya sendiri dicabut 2026-08-22.
     $isi = $this->get($url)->assertOk()->getContent();
 
     expect($isi)->not->toContain("buka-modal', 'impor");
@@ -2999,8 +3016,7 @@ it('menandai wajib setiap isian yang kolomnya tidak boleh kosong', function () {
         'alsintan/form' => 'alsintan',
         'saprotan/form' => 'saprotan',
         'komoditas/form' => 'komoditas',
-        'komoditas/form-musim-tanam' => 'musim_tanam',
-        'komoditas/form-riwayat-tanam' => 'riwayat_tanam',
+        'komoditas/form-penanaman' => 'penanaman',
         'panen/form' => 'hasil_panen',
         'infrastruktur/form' => 'infrastruktur',
         'pengaduan/form' => 'pengaduan',
@@ -3020,7 +3036,6 @@ it('menandai wajib setiap isian yang kolomnya tidak boleh kosong', function () {
         'inventaris_sp' => ['status_penyerahan'],
         'fasilitas_sp' => ['status_penyerahan'],
         'infrastruktur' => ['kondisi'],
-        'alsintan' => ['kepemilikan'],
         'rumah' => ['kode_rumah'],
     ];
 
@@ -3894,7 +3909,7 @@ it('menyediakan pencarian pada setiap halaman berisian pilih-cari', function () 
     // seluruhnya wajib menampilkan kotak pencarian meski data contoh pendek.
     $halaman = [
         '/poktan', '/alsintan', '/saprotan', '/lahan',
-        '/panen', '/rumah', '/riwayat-tanam', '/poktan/1',
+        '/panen', '/rumah', '/penanaman', '/poktan/1',
     ];
 
     foreach ($halaman as $jalur) {
@@ -3934,10 +3949,14 @@ it('memakai pilih-cari pada setiap pilihan yang bersumber tabel data', function 
     // yang daftarnya tumbuh mengikuti data, meski data contoh masih pendek:
     // begitu data nyata masuk, pencariannya sudah ada tanpa menyunting form.
     $peta = [
-        'alsintan/form' => ['poktan_id', 'transmigran_id'],
-        'saprotan/form' => ['poktan_id', 'transmigran_id'],
-        'komoditas/form-riwayat-tanam' => ['lahan_id', 'musim_tanam_id'],
-        'panen/form' => ['transmigran_id', 'riwayat_tanam_id'],
+        // Alsintan tanpa `transmigran_id`: pemiliknya selalu poktan sejak
+        // 2026-08-22, sehingga isian transmigran pemilik sudah tidak ada.
+        'alsintan/form' => ['poktan_id'],
+        // Saprotan tanpa `transmigran_id`: penerimanya selalu poktan sejak
+        // 2026-08-22, sehingga isian penerima perorangan sudah tidak ada.
+        'saprotan/form' => ['poktan_id'],
+        'komoditas/form-penanaman' => ['poktan_id'],
+        'panen/form' => ['penanaman_id'],
         'rumah/form' => ['transmigran_id'],
         'lahan/form' => ['transmigran_id'],
         'poktan/form' => ['ketua_transmigran_id'],
@@ -3970,22 +3989,131 @@ it('memakai pilih-cari pada setiap pilihan yang bersumber tabel data', function 
 
 it('membaca catatan tanam pada form panen dari data, bukan dari daftar tertulis', function () {
     // Isian ini sempat memuat tiga label musim harfiah sementara namanya
-    // `riwayat_tanam_id`. Dua hal keliru sekaligus: nilai yang terkirim berupa
-    // teks label bukan id, dan daftarnya tidak pernah bertambah ketika musim
-    // tanam baru didata - sehingga panen musim berikutnya tidak dapat dicatat.
+    // `penanaman_id`. Dua hal keliru sekaligus: nilai yang terkirim berupa
+    // teks label bukan id, dan daftarnya tidak pernah bertambah ketika
+    // penanaman baru didata - sehingga panen berikutnya tidak dapat dicatat.
     $sumber = file_get_contents(resource_path('views/pages/panen/form.blade.php'));
 
     expect($sumber)->not->toContain("'MT1 2026', 'MT2 2025', 'MT1 2025'")
-        ->and($sumber)->toContain('DummyData::riwayatTanam()');
+        ->and($sumber)->toContain('DummyData::penanaman()');
 
     // Nilai yang ditawarkan wajib berupa id yang benar-benar ada.
     $isi = $this->get('/panen')->assertOk()->getContent();
 
-    foreach (DummyData::riwayatTanam() as $baris) {
-        $label = $baris['kode_lahan'].' - '.$baris['musim_tanam'].' - '.$baris['komoditas'];
+    foreach (DummyData::penanaman() as $baris) {
+        // Bulan tanam menggantikan label musim sejak 2026-08-22. Ia yang
+        // membedakan dua penanaman komoditas yang sama oleh kelompok yang sama.
+        $label = $baris['komoditas'].' - '.$baris['poktan']
+            .' - '.Carbon::parse($baris['periode_tanam'].'-01')->translatedFormat('M Y');
 
         expect($isi)->toContain($label);
     }
+});
+
+it('meniadakan seluruh jejak musim tanam', function () {
+    // Fitur musim tanam dicabut 2026-08-22: poktan menanam secara fleksibel,
+    // tidak mengikuti periode baku MT1/MT2 yang ditetapkan dari meja.
+    //
+    // Diperiksa dari sumbernya, bukan dari tampilan, sebab sisa rute atau
+    // method yang tertinggal tidak selalu memerahkan halaman mana pun - ia
+    // hanya menunggu sampai ada yang memanggilnya.
+    expect(method_exists(DummyData::class, 'musimTanam'))->toBeFalse();
+
+    expect(Route::has('musim-tanam'))->toBeFalse()
+        ->and(Route::has('musim-tanam.detail'))->toBeFalse()
+        ->and(Route::has('musim-tanam.simpan'))->toBeFalse()
+        ->and(Route::has('musim-tanam.perbarui'))->toBeFalse()
+        ->and(Route::has('musim-tanam.hapus'))->toBeFalse();
+
+    $this->get('/musim-tanam')->assertNotFound();
+
+    // Halamannya benar-benar dihapus, bukan sekadar tidak terhubung rute.
+    foreach (['musim-tanam', 'form-musim-tanam', 'detail-musim-tanam'] as $berkas) {
+        expect(file_exists(resource_path("views/pages/komoditas/{$berkas}.blade.php")))
+            ->toBeFalse("berkas {$berkas} masih ada");
+    }
+
+    // Izinnya ikut lepas, sebab izin yatim tetap dapat dicentang Admin pada
+    // halaman role dan menyiratkan fitur yang tidak ada.
+    $kunci = [];
+    foreach (DummyData::daftarIzin() as $kelompok) {
+        $kunci = array_merge($kunci, array_column($kelompok['modul'], 'kunci'));
+    }
+
+    expect($kunci)->not->toContain('musim_tanam');
+
+    // Menu tidak lagi menawarkannya.
+    expect(json_encode(MenuHelper::definisiMenu()))->not->toContain('musim-tanam');
+
+    // Rekap panen kehilangan pengelompokan per musim, tetapi rekap per periode
+    // yang diwajibkan rules.md 8b.8 tetap ada lewat penyaringan tahun.
+    $this->get('/panen/rekap/musim')->assertNotFound();
+    $this->get('/panen/rekap/komoditas')->assertOk();
+});
+
+it('memakai nama Penanaman, bukan Riwayat Tanam', function () {
+    // Diubah 2026-08-22 atas keberatan pemilik proyek: kata "riwayat"
+    // menyiratkan catatan masa lalu, padahal barisnya justru dibuat ketika
+    // penanaman baru dimulai dan panennya belum ada.
+    //
+    // Rename setengah jalan lebih buruk daripada tidak sama sekali: alamat
+    // yang masih `/riwayat-tanam` sementara menunya berbunyi "Penanaman"
+    // membuat petugas dan petugas berikutnya menyebut satu hal dengan dua
+    // nama. Karena itu yang dijaga bukan hanya labelnya, melainkan seluruh
+    // lapisan sekaligus.
+    expect(method_exists(DummyData::class, 'penanaman'))->toBeTrue()
+        ->and(method_exists(DummyData::class, 'riwayatTanam'))->toBeFalse();
+
+    // Kunci larik ikut berganti, sebab nama kolom inilah yang kelak menjadi
+    // kolom sungguhan pada Tahap 7.
+    foreach (DummyData::penanaman() as $baris) {
+        expect($baris)->toHaveKey('id_penanaman')
+            ->and($baris)->not->toHaveKey('id_riwayat_tanam');
+    }
+
+    // Alamat dan nama rute.
+    expect(Route::has('penanaman'))->toBeTrue()
+        ->and(Route::has('penanaman.detail'))->toBeTrue()
+        ->and(Route::has('riwayat-tanam'))->toBeFalse()
+        ->and(Route::has('riwayat-tanam.detail'))->toBeFalse();
+
+    $this->get('/penanaman')->assertOk();
+    $this->get('/riwayat-tanam')->assertNotFound();
+
+    // Berkas blade benar-benar berpindah nama.
+    foreach (['penanaman', 'form-penanaman', 'detail-penanaman'] as $ada) {
+        expect(file_exists(resource_path("views/pages/komoditas/{$ada}.blade.php")))
+            ->toBeTrue("berkas {$ada} tidak ada");
+    }
+
+    foreach (['riwayat-tanam', 'form-riwayat-tanam', 'detail-riwayat-tanam'] as $tiada) {
+        expect(file_exists(resource_path("views/pages/komoditas/{$tiada}.blade.php")))
+            ->toBeFalse("berkas {$tiada} masih ada");
+    }
+
+    // Kunci izin, sebab ia dipakai menyusun matriks role.
+    $kunci = [];
+    foreach (DummyData::daftarIzin() as $kelompok) {
+        $kunci = array_merge($kunci, array_column($kelompok['modul'], 'kunci'));
+    }
+
+    expect($kunci)->toContain('penanaman')
+        ->and($kunci)->not->toContain('riwayat_tanam');
+
+    // Menu dan remah roti. Remah dibaca dari MenuHelper, sehingga label yang
+    // tertinggal di satu tempat akan terbawa ke seluruh halaman modul ini.
+    $menu = json_encode(MenuHelper::definisiMenu());
+
+    expect($menu)->toContain('Penanaman')
+        ->and($menu)->not->toContain('Riwayat Tanam')
+        ->and($menu)->not->toContain('riwayat-tanam');
+
+    // Panen menaut ke penanaman, dan nama isiannya ikut berganti. Bila ini
+    // tertinggal, form panen mengirim kolom yang tidak dikenal peladen.
+    $formPanen = file_get_contents(resource_path('views/pages/panen/form.blade.php'));
+
+    expect($formPanen)->toContain('nama="penanaman_id"')
+        ->and($formPanen)->not->toContain('riwayat_tanam_id');
 });
 
 it('mengirim nilai lewat isian bernama kolomnya, bukan lewat panel', function () {
@@ -4292,7 +4420,7 @@ it('memisahkan agregat kawasan dari transaksi panen contoh', function () {
 
     $transaksi = 0.0;
     foreach (DummyData::hasilPanen() as $panen) {
-        $transaksi += DummyData::keTon((float) $panen['volume'], $panen['satuan']);
+        $transaksi += DummyData::keTon((float) $panen['produksi'], $panen['satuan']);
     }
 
     expect($agregat)->toBeGreaterThan($transaksi * 10);
@@ -4540,7 +4668,6 @@ it('memakai nama submenu yang sama persis dengan sidebar', function () {
         '/poktan' => ['Poktan & Sarana', 'Kelompok Tani'],
         '/infrastruktur' => ['Wilayah & SP', 'Infrastruktur SP'],
         '/sp/inventaris' => ['Wilayah & SP', 'Inventaris SP'],
-        '/musim-tanam' => ['Produksi Pertanian', 'Musim Tanam'],
         '/wilayah' => ['Data Master', 'Wilayah'],
     ];
 
@@ -4595,8 +4722,7 @@ it('menyediakan isian catatan pada setiap modul yang kolomnya ada di kamus data'
     'lahan/form',
     'transmigran/form',
     'panen/form',
-    'komoditas/form-musim-tanam',
-    'komoditas/form-riwayat-tanam',
+    'komoditas/form-penanaman',
     'poktan/form-anggota',
 ]);
 

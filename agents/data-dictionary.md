@@ -41,7 +41,7 @@ Aturan berikut berlaku untuk **seluruh tabel**, sehingga tidak diulang pada tiap
 
 Tabel yang memakai soft delete: `user`, `kawasan_transmigrasi`, `satuan_permukiman`, `inventaris_sp`, `fasilitas_sp`, `transmigran`, `rumah`, `lahan`, `poktan`, `anggota_poktan`, `alsintan`, `saprotan`, `komoditas`, `hasil_panen`, `infrastruktur`, `pengaduan`.
 
-Tabel referensi wilayah (`provinsi`, `kabupaten`, `kecamatan`, `desa`), `satuan`, `musim_tanam`, `riwayat_penghunian`, `riwayat_kepala_keluarga`, `riwayat_tanam`, `penanganan_pengaduan`, dan `audit_log` **tidak** memakai soft delete: tabel referensi dilindungi `RESTRICT`, sedangkan tabel riwayat memang tidak boleh dihapus.
+Tabel referensi wilayah (`provinsi`, `kabupaten`, `kecamatan`, `desa`), `satuan`, `riwayat_penghunian`, `riwayat_kepala_keluarga`, `penanaman`, `penanganan_pengaduan`, dan `audit_log` **tidak** memakai soft delete: tabel referensi dilindungi `RESTRICT`, sedangkan tabel riwayat memang tidak boleh dihapus.
 
 `kawasan_transmigrasi` memakai soft delete karena merupakan data yang dikelola pengguna, bukan referensi administratif baku.
 
@@ -412,20 +412,13 @@ Satu baris per komoditas, menggantikan pola kolom berulang `_1`, `_2`, `_3` pada
 
 **Catatan:** `satuan_id` menetapkan satuan baku, misalnya jagung dalam ton dan cabai dalam kilogram (`rules.md` §8.4).
 
-### 5.3 `musim_tanam`
+### 5.3 `musim_tanam` — DICABUT 2026-08-22
 
-| Kolom | Tipe | Null | Kunci | Keterangan |
-|---|---|---|---|---|
-| `id_musim_tanam` | `BIGINT UNSIGNED AUTO_INCREMENT` | TIDAK | PK | |
-| `nama` | `VARCHAR(50)` | TIDAK | UQ¹ | MT1, MT2 |
-| `tahun` | `YEAR` | TIDAK | UQ¹, IDX | Pemisah antar-tahun |
-| `tanggal_mulai` | `DATE` | YA | | |
-| `tanggal_selesai` | `DATE` | YA | | |
-| `keterangan` | `TEXT` | YA | | |
+Tabel ini **dihapus** beserta seluruh rute, halaman, menu, dan izinnya.
 
-¹ UNIQUE gabungan `(nama, tahun)`, sehingga "MT1 2026" dan "MT1 2027" adalah dua baris berbeda.
+Alasannya keadaan lapangan, bukan penyederhanaan teknis: poktan menanam secara **fleksibel**, tidak mengikuti periode baku MT1/MT2 yang ditetapkan dari meja. Memaksa setiap penanaman memilih salah satu musim membuat petugas menebak, lalu tebakan itu dipakai sebagai dasar rekap seolah-olah data terukur.
 
-**Catatan:** SQL referensi hanya menyediakan kolom `keterangan` bertipe teks. Kolom `tahun` ditambahkan karena grafik volume panen per tahun mustahil dihitung dari teks bebas (`erd.md` §8.2 nomor 22).
+Sumbu waktunya kini `penanaman.periode_tanam` dan `hasil_panen.periode_panen`. Keduanya sudah ada, memang dicatat petugas, dan tidak memerlukan tabel tersendiri. Rekap per periode yang diwajibkan `rules.md` §8b.8 tetap terpenuhi lewat penyaringan **Tahun Tanam** dan **Tahun Panen** yang dihitung dari kedua kolom itu.
 
 ---
 
@@ -753,18 +746,23 @@ Alat dan mesin pertanian.
 | Kolom | Tipe | Null | Kunci | Keterangan |
 |---|---|---|---|---|
 | `id_alsintan` | `BIGINT UNSIGNED AUTO_INCREMENT` | TIDAK | PK | |
-| `transmigran_id` | `BIGINT UNSIGNED` | YA | FK, IDX | Diisi bila milik pribadi |
-| `poktan_id` | `BIGINT UNSIGNED` | YA | FK, IDX | Diisi bila bantuan lewat poktan |
+| `satuan_permukiman_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | Selalu mengikuti SP poktan pemiliknya |
+| `poktan_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | Kelompok tani pemilik |
 | `nama_alat` | `VARCHAR(255)` | TIDAK | | Traktor, sprayer, cultivator |
 | `jumlah` | `INT UNSIGNED` | TIDAK | | Bawaan 1 |
 | `tahun_perolehan` | `YEAR` | YA | IDX | |
-| `kepemilikan` | `ENUM` | TIDAK | IDX | Lihat §11.17 |
 | `sumber_perolehan` | `ENUM` | YA | | Lihat §11.3 |
 | `kondisi` | `ENUM` | YA | | Lihat §11.5 |
 | `dokumen_pendukung` | `VARCHAR(255)` | YA | | |
 | `keterangan` | `TEXT` | YA | | |
 
-**Aturan wajib:** tepat satu di antara `transmigran_id` dan `poktan_id` harus terisi, sesuai nilai `kepemilikan`. Bila `kepemilikan` = Pribadi maka `transmigran_id` wajib; bila Bantuan Poktan maka `poktan_id` wajib. Aturan ini divalidasi di sisi aplikasi karena MySQL 5.7 belum mendukung `CHECK` constraint.
+**Pemilik selalu kelompok tani.** Kolom `kepemilikan` dan `transmigran_id` **dicabut 2026-08-22** bersama enum `KepemilikanAlsintan` (dahulu §11.17), dan `poktan_id` berubah dari nullable menjadi wajib. Seluruh menu Pertanian mencatat kelompok, bukan individu.
+
+Sebelumnya dua jalur pemilik disediakan sekaligus, dan akibatnya terlihat pada data: alat berkepemilikan pribadi **tidak dapat dijangkau dari halaman mana pun** kecuali daftar alsintan itu sendiri. Ia tidak muncul pada rincian poktan sebab `poktan_id`-nya kosong, sedangkan halaman transmigran tidak pernah punya tab alsintan.
+
+Alat yang dibeli dari iuran anggota tetap tercatat atas nama kelompok, dengan `sumber_perolehan` bernilai `Swadaya` (§11.3).
+
+`satuan_permukiman_id` **tidak dipilih petugas**, melainkan terbaca dari poktan pemiliknya. Dropdown terpisah memungkinkan satu alat tercatat pada SP yang berbeda dari kelompoknya tanpa penjaga apa pun.
 
 ### 8.4 `saprotan`
 
@@ -772,20 +770,49 @@ Sarana produksi pertanian: benih, pupuk, pestisida, mulsa.
 
 | Kolom | Tipe | Null | Kunci | Keterangan |
 |---|---|---|---|---|
+| Kolom | Tipe | Null | Kunci | Keterangan |
+|---|---|---|---|---|
 | `id_saprotan` | `BIGINT UNSIGNED AUTO_INCREMENT` | TIDAK | PK | |
-| `transmigran_id` | `BIGINT UNSIGNED` | YA | FK, IDX | Penerima perorangan |
-| `poktan_id` | `BIGINT UNSIGNED` | YA | FK, IDX | Penerima kelompok |
+| `poktan_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | Kelompok tani penerima |
+| `satuan_permukiman_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | Selalu mengikuti SP poktan penerimanya |
 | `satuan_id` | `BIGINT UNSIGNED` | TIDAK | FK | Satuan jumlah yang disalurkan |
+| `komoditas_id` | `BIGINT UNSIGNED` | YA | FK, IDX | **Wajib bila `jenis` = Benih**, kosong bagi jenis lain |
 | `jenis` | `ENUM` | TIDAK | IDX | Lihat §11.18 |
 | `nama` | `VARCHAR(255)` | TIDAK | | Contoh: Urea, benih jagung hibrida |
-| `jumlah` | `DECIMAL(12,3)` | TIDAK | | |
+| `jumlah` | `DECIMAL(12,3)` | TIDAK | | Jumlah yang **diterima**, bukan yang tersisa |
 | `tahun_perolehan` | `YEAR` | YA | IDX | |
 | `tanggal_penyaluran` | `DATE` | YA | | |
 | `sumber_dana` | `ENUM` | YA | | Lihat §11.3 |
 | `dokumen_pendukung` | `VARCHAR(255)` | YA | | Berita acara penyaluran |
 | `keterangan` | `TEXT` | YA | | |
 
-**Aturan wajib:** minimal satu di antara `transmigran_id` dan `poktan_id` terisi. Penyaluran kepada anggota poktan hanya diperbolehkan untuk anggota berstatus Aktif (`rules.md` §7c.4).
+**Penerima selalu kelompok tani.** Kolom `transmigran_id` **dicabut 2026-08-22** bersama pilihan "Jenis Penerima" pada formnya, dan `poktan_id` berubah dari nullable menjadi wajib. Seluruh pencatatan Produksi Pertanian berpusat pada poktan; pembagian kepada anggota diatur kelompok sendiri di luar sistem. Menyediakan dua jalur penerima membuat sebagian bantuan tercatat atas nama orang dan sebagian atas nama kelompok, sehingga rekap per poktan tidak pernah utuh.
+
+Aturan lama "penyaluran hanya untuk anggota berstatus Aktif" ikut gugur: yang menerima kini kelompok, bukan perorangan.
+
+`satuan_permukiman_id` **tidak lagi dipilih petugas**, melainkan terbaca dari poktan penerimanya. Dropdown terpisah memungkinkan satu penyaluran tercatat pada SP yang berbeda dari SP poktannya tanpa penjaga apa pun.
+
+#### Benih dan komoditasnya
+
+`komoditas_id` ditambahkan 2026-08-22. Sebelumnya kaitan benih ke komoditas hanya tersirat dari teks `nama`, sehingga sistem tidak tahu "BENIH JAGUNG HIBRIDA" itu benih jagung: tidak ada cara menyaringnya, dan petugas dapat memilih benih padi untuk penanaman jagung tanpa ditegur.
+
+Pupuk, pestisida, dan mulsa sengaja **tidak** diwajibkan berkomoditas. Urea dipakai tanaman apa pun, dan memaksanya memilih satu komoditas berarti mengarang data yang tidak ada di lapangan.
+
+#### Sisa stok benih
+
+**Tidak disimpan sebagai kolom.** Nilainya dihitung:
+
+```
+sisa = saprotan.jumlah − SUM(penanaman.volume_benih WHERE saprotan_id = ini)
+```
+
+Rumus ini **mengoreksi dirinya sendiri** ketika baris penanaman disunting, dan itulah alasannya tidak ada mekanisme "pengembalian stok" di mana pun. Alur nyatanya: poktan menerima 150 kg untuk 10 ha, petugas mencatat penanaman dengan alokasi penuh sehingga sisanya nol; saat ditinjau ulang ternyata baru 3 ha yang ditanam memakai 45 kg, petugas menyunting baris itu, dan sisanya kembali menjadi 105 kg dengan sendirinya. Menyunting baris adalah CRUD biasa, bukan peristiwa yang perlu ditangani khusus.
+
+Menyimpannya sebagai kolom berarti angka itu harus dikoreksi setiap kali satu baris penanaman disunting, dan koreksi yang terlewat tidak akan pernah ketahuan.
+
+**Benih habis sekali pakai, tetapi penguncian terjadi ketika STOKNYA HABIS, bukan ketika pertama kali dipakai.** Mengunci pada pemakaian pertama akan mematahkan penanaman bertahap: laporan Polri MT.II 2025 menunjukkan satu poktan menanam 3 ha lalu 7 ha dari jatah yang sama, dan penanaman kedua itu tidak akan dapat dicatat sama sekali — petugas terpaksa mengarang entri penyaluran baru untuk bantuan yang tidak pernah datang.
+
+Dropdown benih pada form penanaman karena itu hanya menawarkan baris yang `sisa > 0`, berlabel `"BENIH JAGUNG HIBRIDA — sisa 105 kg"`. Petugas perlu tahu berapa yang masih dapat dialokasikan **sebelum** memilih, bukan setelah formnya ditolak.
 
 ---
 
@@ -803,21 +830,60 @@ Tabel pivot: satu poktan dapat mengusahakan banyak komoditas, dan sebaliknya.
 
 ¹ UNIQUE gabungan `(poktan_id, komoditas_id)`.
 
-### 9.2 `riwayat_tanam`
+### 9.2 `penanaman`
 
-Catatan penanaman: lahan mana, musim apa, komoditas apa.
+Catatan penanaman: kelompok tani mana, menanam komoditas apa, kapan, seluas berapa.
+
+**Dahulu bernama `riwayat_tanam`, diubah 2026-08-22** atas keberatan pemilik proyek. Kata "riwayat" menyiratkan catatan masa lalu, padahal barisnya dibuat justru ketika penanaman baru dimulai dan panennya belum ada — bahkan kolom `tanggal_panen` pada §9.3 masih kosong pada saat itu. Lebih menyesatkan lagi, `hasil_panen` menaut ke tabel inilah: menyebut induk dari panen sebagai "riwayat" membuat orang mengira penanaman yang sedang berjalan dicatat di tempat lain.
 
 | Kolom | Tipe | Null | Kunci | Keterangan |
 |---|---|---|---|---|
-| `id_riwayat_tanam` | `BIGINT UNSIGNED AUTO_INCREMENT` | TIDAK | PK | |
-| `lahan_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX, UQ¹ | |
-| `musim_tanam_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX, UQ¹ | |
+| `id_penanaman` | `BIGINT UNSIGNED AUTO_INCREMENT` | TIDAK | PK | |
+| `poktan_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX, UQ¹ | Kelompok tani pelaksana |
 | `komoditas_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX, UQ¹ | |
-| `luas_tanam` | `DECIMAL(12,2)` | YA | | Hektare; bisa lebih kecil dari luas lahan |
-| `tanggal_tanam` | `DATE` | YA | | |
+| `saprotan_id` | `BIGINT UNSIGNED` | YA | FK, IDX | Benih yang dipakai; boleh kosong |
+| `volume_benih` | `DECIMAL(12,3)` | YA | | Wajib bila `saprotan_id` terisi |
+| `realisasi_tanam` | `DECIMAL(12,2)` | TIDAK | | Hektare yang benar-benar ditanami |
+| `periode_tanam` | `CHAR(7)` | TIDAK | IDX, UQ¹ | Bulan tanam, bentuk `YYYY-MM` |
+| `dokumen_pendukung` | `VARCHAR(255)` | YA | | Berita acara tanam atau foto hamparan |
 | `keterangan` | `TEXT` | YA | | |
 
-¹ UNIQUE gabungan `(lahan_id, musim_tanam_id, komoditas_id)`.
+¹ UNIQUE gabungan `(poktan_id, komoditas_id, periode_tanam)`.
+
+#### Berpusat pada poktan, bukan lahan perorangan
+
+**Kolom `lahan_id` dan `petani` dicabut 2026-08-22**, digantikan `poktan_id`. Seluruh pencatatan Produksi Pertanian berpusat pada kelompok, dan lapangan membenarkannya: laporan Polri MT.II 2025 mencatat satu baris per **poktan**, bukan per bidang lahan.
+
+Rantai lokasinya tetap utuh tanpa lahan: `penanaman → poktan → satuan_permukiman`, sebab poktan sudah menyimpan SP-nya sendiri.
+
+Akibat yang perlu disadari: halaman Lahan kehilangan tab penanaman, dan halaman Transmigran kehilangan data panen per orang. Keduanya diganti tautan ke poktan tempat keluarga itu bernaung.
+
+`luas_tanam` berganti nama menjadi **`realisasi_tanam`** dan berubah menjadi wajib. Penggantian nama itu bukan kosmetik: ia mencegahnya tertukar dengan **luas lahan poktan**, yang merupakan angka terhitung dan bukan isian.
+
+#### Tiga angka yang TIDAK disimpan di sini
+
+| Angka | Dihitung dari |
+|---|---|
+| Jumlah anggota | Anggota berstatus Aktif pada poktan itu, beserta ketuanya |
+| Luas lahan kelompok | Akumulasi lahan ketua dan seluruh anggota aktif |
+| Belum ditanam | Lahan tersedia dikurangi `realisasi_tanam` |
+
+Ketiganya turunan dari data yang sudah ada. Menyimpannya berarti angka itu menjadi basi begitu satu anggota keluar atau satu bidang lahan dibetulkan, dan kebasian itu tidak pernah memerahkan apa pun. Kolom `luas_lahan_kelompok` sudah dicabut 2026-08-20 karena persis alasan ini (`erd.md` §7.3).
+
+#### Lahan kembali, benih tidak
+
+Perbedaan sifat yang disengaja:
+
+- **Benih habis selamanya** begitu ditabur (§8.4).
+- **Lahan kembali tersedia** setelah panennya tercatat.
+
+Karena itu perhitungan lahan tersedia hanya mengurangkan penanaman yang **belum tuntas dipanen**. Mengurangkan seluruh penanaman sepanjang sejarah akan membuat lahan poktan tampak habis setelah beberapa musim, padahal bidang yang sama memang ditanami berulang kali tiap tahun.
+
+**`saprotan_id` dan `volume_benih` ditambahkan 2026-08-22.** Keduanya menautkan penanaman ke benih yang dipakainya, sehingga sisa stok dapat dihitung tanpa mekanisme apa pun selain satu pengurangan (§8.4).
+
+`volume_benih` sengaja **disimpan**, bukan dihitung dari `realisasi_tanam` memakai rasio baku. Laporan Polri MT.II 2025 memang memakai 15 kg/ha pada 92 dari 96 barisnya, tetapi rasio itu keputusan program pada satu bantuan, bukan hukum alam: benih swadaya dan komoditas lain memakai takaran berbeda. Menghitungnya otomatis membuat angka karangan tampil seolah-olah hasil pendataan.
+
+Keduanya **boleh kosong**: penanaman dari benih yang tidak tercatat pada modul saprotan tetap harus dapat didata, sebab menolaknya berarti memaksa petugas mengarang penyaluran yang tidak pernah terjadi. Bila `saprotan_id` terisi, komoditas benihnya wajib sama dengan `komoditas_id` di sini.
 
 ### 9.3 `hasil_panen`
 
@@ -826,21 +892,50 @@ Catatan penanaman: lahan mana, musim apa, komoditas apa.
 | Kolom | Tipe | Null | Kunci | Keterangan |
 |---|---|---|---|---|
 | `id_hasil_panen` | `BIGINT UNSIGNED AUTO_INCREMENT` | TIDAK | PK | |
-| `riwayat_tanam_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | Menentukan lahan, musim, dan komoditas |
+| `penanaman_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | Menentukan poktan dan komoditas |
+| `poktan_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | Disalin dari penanamannya |
 | `satuan_id` | `BIGINT UNSIGNED` | TIDAK | FK | Disalin dari komoditas saat penyimpanan |
-| `tanggal_panen` | `DATE` | TIDAK | IDX | Dasar grafik volume panen per tahun |
-| `volume` | `DECIMAL(12,3)` | TIDAK | | Disimpan apa adanya, tanpa konversi |
-| `kualitas` | `ENUM` | YA | | Lihat §11.19 |
-| `harga_jual` | `DECIMAL(15,2)` | YA | | Rupiah per satuan |
+| `periode_panen` | `CHAR(7)` | TIDAK | IDX | Bulan panen, bentuk `YYYY-MM` |
+| `realisasi_panen` | `DECIMAL(12,2)` | TIDAK | | Hektare yang benar-benar dipanen |
+| `puso` | `DECIMAL(12,2)` | YA | | Hektare yang gagal panen |
+| `produktivitas` | `DECIMAL(12,3)` | TIDAK | | Per hektare, dalam satuan baku komoditas |
+| `produksi` | `DECIMAL(12,3)` | TIDAK | | Disimpan apa adanya, tanpa konversi |
+| `harga_jual` | `DECIMAL(15,2)` | YA | | Rupiah per satuan baku |
 | `keterangan_satuan_lokal` | `VARCHAR(255)` | YA | | Contoh: "setara 40 karung" |
 | `dokumen_pendukung` | `VARCHAR(255)` | YA | | Foto panen |
 | `keterangan` | `TEXT` | YA | | |
 
+#### Dua identitas aritmetika
+
+Keduanya terbukti pada 96 baris laporan Polri MT.II 2025 dan WAJIB berlaku:
+
+```
+realisasi_panen + puso + belum_dipanen = penanaman.realisasi_tanam
+produksi                              = realisasi_panen x produktivitas
+```
+
+**`belum_dipanen` TIDAK disimpan**; ia selisih dari identitas pertama, dan dijumlahkan dari SELURUH panen milik penanaman itu. Menyimpannya berarti tiga angka yang saling menentukan disimpan terpisah, dan ketiganya dapat berbeda tanpa ada yang menegur.
+
+Penjumlahan lintas baris itu penting: satu penanaman dapat dipanen **bertahap**, sebagian bulan ini dan sisanya bulan depan. Membaca satu baris saja akan menyatakan lahan masih tersisa padahal panen berikutnya sudah tercatat.
+
+**`produksi` tetap disimpan** meski dapat dihitung dari dua kolom lain: ia angka yang dilaporkan ke dinas, dan pembulatan hasil perkalian dapat berbeda tipis dari angka yang benar-benar ditimbang.
+
+#### Perubahan 2026-08-22
+
+| Kolom | Nasib | Alasan |
+|---|---|---|
+| `volume` | Berganti nama menjadi `produksi` | Sejalan istilah laporan, dan tidak tertukar dengan `volume_benih` pada penanaman |
+| `kualitas` | **Dicabut** beserta enumnya | Keputusan pemilik proyek. Digantikan `produktivitas` yang terukur, bukan label mutu |
+| `tanggal_panen` | Berganti `periode_panen` (bulan) | Panen satu hamparan berlangsung berhari-hari; menuntut satu tanggal pasti membuat petugas menebak |
+| `petani` | **Dicabut** | Panen dicatat per poktan, bukan per orang |
+
 **Catatan penting:**
-- `volume` disimpan dalam satuan baku komoditasnya, **tidak** dikonversi saat penyimpanan (`rules.md` §8a.4).
-- Agregasi lintas komoditas memakai `SUM(volume × satuan.faktor_ke_ton)` dan hanya dilakukan saat rekap (`rules.md` §8a.5).
+- `produksi` disimpan dalam satuan baku komoditasnya, **tidak** dikonversi saat penyimpanan (`rules.md` 8a.4).
+- Agregasi lintas komoditas memakai `SUM(produksi x satuan.faktor_ke_ton)` dan hanya dilakukan saat rekap (`rules.md` 8a.5).
+- `produktivitas` memakai **satuan baku komoditasnya**, bukan selalu ton: jagung ton/ha, cabai kg/ha. Memaksanya ton membuat harga jual cabai per ton menjadi angka yang tidak pernah dipakai siapa pun di lapangan.
 - `satuan_id` sengaja disalin dari komoditas, bukan sekadar dibaca lewat relasi, agar data historis tetap sahih bila satuan baku komoditas kelak diubah.
-- Lokasi produksi tidak disimpan di sini; dibaca lewat rantai `riwayat_tanam → lahan → satuan_permukiman`.
+- Lokasi produksi tidak disimpan di sini; dibaca lewat rantai `penanaman -> poktan -> satuan_permukiman`.
+
 
 ---
 
@@ -955,13 +1050,15 @@ Role `Transmigran` dan `Ketua Poktan` pada rancangan semula **dihapus**, karena 
 ### 11.3 Sumber dana / sumber perolehan
 `APBN` · `APBD Provinsi` · `APBD Kabupaten` · `Dinas Transmigrasi Kabupaten` · `Dinas Pertanian Kabupaten` · `Lembaga Swadaya Masyarakat` · `Swadaya` · `Lainnya`
 
-Nilai disederhanakan dari SQL referensi yang menuliskan awalan berulang "Sumber Perolehan Dana ...". Nilai `Swadaya` ditambahkan untuk alsintan milik pribadi.
+Nilai disederhanakan dari SQL referensi yang menuliskan awalan berulang "Sumber Perolehan Dana ...". Nilai `Swadaya` dipakai alsintan maupun saprotan yang dibeli kelompok dari iuran anggotanya. Dahulu ditambahkan untuk alsintan milik pribadi; sejak kepemilikan pribadi dicabut 2026-08-22, maknanya bergeser ke pembelian swadaya kelompok.
 
 ### 11.4 Status penyerahan
 `Sudah Diserahkan` · `Belum Diserahkan` · `Dalam Proses`
 
 ### 11.5 Kondisi (barang, fasilitas, alsintan, infrastruktur)
-`Baik` · `Rusak Ringan` · `Rusak Berat`
+`Baik` · `Rusak Ringan` · `Rusak Berat` · `Hilang`
+
+`Hilang` ditambahkan 2026-08-22. Bukan tingkat kerusakan melainkan **ketiadaan**: barang yang tidak lagi ditemukan saat pendataan. Sebelumnya petugas terpaksa memilih `Rusak Berat`, sehingga inventaris yang lenyap tetap terhitung ada dan dinilai 0,2 alih-alih 0 (lihat §11.28).
 
 ### 11.6 Tipe komoditas
 `Pangan` · `Palawija` · `Hortikultura`
@@ -970,7 +1067,9 @@ Nilai disederhanakan dari SQL referensi yang menuliskan awalan berulang "Sumber 
 `Tidak Sekolah` · `SD` · `SMP` · `SMA/SMK` · `Diploma` · `S1` · `S2` · `S3`
 
 ### 11.8 Status tinggal transmigran
-`Aktif` · `Pindah` · `Tidak Aktif` · `Meninggal`
+`Aktif` · `Pindah Penduduk` · `Tidak Aktif`
+
+Diubah 2026-08-22: `Pindah` menjadi `Pindah Penduduk`, dan `Meninggal` **dicabut**. Status ini melekat pada **keluarga**, bukan orang, sehingga kematian kepala keluarga tidak membubarkan barisnya: kedudukan berpindah ke ahli waris dan keluarganya tetap `Aktif`. Peristiwa kematian direkam `AlasanPergantianKK` (§11.36), yang memang mencatat orang. Menyediakan `Meninggal` di kedua tempat membuat petugas menandai keluarga yang penghuninya masih ada, dan rumah, lahan, serta keanggotaan poktan keluarga itu ikut hilang dari rekap. Keluarga yang benar-benar tidak lagi berpenghuni cukup ditandai `Tidak Aktif`.
 
 ### 11.9 Kondisi rumah
 `Tidak Rusak` · `Rusak Ringan` · `Rusak Berat`
@@ -1011,16 +1110,19 @@ Nilai `Ketua` **dicabut 2026-08-17**. Ketua ditetapkan pada tabel `poktan` lewat
 ### 11.16 Status keaktifan anggota
 `Aktif` · `Tidak Aktif` · `Sudah Keluar`
 
-### 11.17 Kepemilikan alsintan
-`Pribadi` · `Bantuan Poktan`
+### 11.17 Kepemilikan alsintan — DICABUT 2026-08-22
 
+Nilainya dahulu `Pribadi` · `Bantuan Poktan`.
+
+**Dicabut atas keputusan pemilik proyek**, mengikuti aturan bahwa seluruh menu Pertanian mencatat **kelompok**, bukan individu. Enum bernilai tunggal tidak menerangkan apa pun, sehingga ia dihapus seluruhnya alih-alih disisakan satu nilai. Kolom `alsintan.kepemilikan` dan `alsintan.transmigran_id` ikut lepas (§8.3).
 ### 11.18 Jenis saprotan
 `Benih` · `Pupuk` · `Pestisida` · `Mulsa` · `Lainnya`
 
-### 11.19 Kualitas panen
-`Sangat Baik` · `Baik` · `Cukup` · `Kurang`
+### 11.19 Kualitas panen — DICABUT 2026-08-22
 
-Pada SQL referensi kolom ini bertipe `VARCHAR` bebas; dijadikan ENUM agar dapat direkap (`notes.md` §1.6).
+Nilainya dahulu `Sangat Baik` · `Baik` · `Cukup` · `Kurang`, dan sempat dijadikan ENUM agar dapat direkap (`notes.md` §1.6).
+
+**Dicabut atas keputusan pemilik proyek.** Kolom `hasil_panen.kualitas` ikut hilang, digantikan `produktivitas` yang merupakan angka terukur. Label mutu menuntut penilaian yang tidak dapat diverifikasi, sedangkan produktivitas per hektare dihitung dari timbangan.
 
 ### 11.20 Jenis infrastruktur
 `Air` · `Irigasi` · `Listrik` · `Jalan Produksi` · `Telekomunikasi` · `Gudang` · `Lainnya`
@@ -1030,7 +1132,7 @@ Pada SQL referensi kolom ini bertipe `VARCHAR` bebas; dijadikan ENUM agar dapat 
 
 Tiga perubahan pada 2026-08-19: nilai `Peralatan dan Perlengkapan` **dipecah** menjadi `Inventaris SP` dan `Fasilitas SP`, sebab satu kategori menaungi dua daftar berbeda sehingga petugas tidak dapat mengetahui yang mana dimaksud pelapor; `Saprotan` **ditambahkan** agar keluhan bibit, pupuk, serta obat tidak menumpang pada `Produksi Panen`; dan `Kelompok Tani` **ditambahkan** sebab poktan adalah modul penuh tetapi keluhan atasnya tidak punya kategori sendiri.
 
-**Daftar kategori memetakan modul yang dapat diadukan warga.** Penyisiran 2026-08-19 atas 26 fitur berkewenangan (§13.1) menyimpulkan pemetaannya kini lengkap dua arah. Modul yang sengaja **tidak** berkategori: `pengguna`, `role`, `audit_log`, `dashboard` (urusan internal sistem); `wilayah`, `kawasan`, `sp`, `satuan` (data referensi, bukan benda yang dapat rusak); `transmigran`, `riwayat_penghunian`, `riwayat_kepala_keluarga`, `dokumen_lahan`, `anggota_poktan`, `penanganan_pengaduan` (catatan administratif tentang warga; warga mengadukan masalah, bukan sesama warga, dan kekeliruan pencatatan diperbaiki lewat petugas bukan lewat kanal pengaduan); serta `komoditas`, `musim_tanam`, `riwayat_tanam` (data master pertanian yang keluhannya bermuara ke `Produksi Panen`).
+**Daftar kategori memetakan modul yang dapat diadukan warga.** Penyisiran 2026-08-19 atas 26 fitur berkewenangan (§13.1) menyimpulkan pemetaannya kini lengkap dua arah. Modul yang sengaja **tidak** berkategori: `pengguna`, `role`, `audit_log`, `dashboard` (urusan internal sistem); `wilayah`, `kawasan`, `sp`, `satuan` (data referensi, bukan benda yang dapat rusak); `transmigran`, `riwayat_penghunian`, `riwayat_kepala_keluarga`, `dokumen_lahan`, `anggota_poktan`, `penanganan_pengaduan` (catatan administratif tentang warga; warga mengadukan masalah, bukan sesama warga, dan kekeliruan pencatatan diperbaiki lewat petugas bukan lewat kanal pengaduan); serta `komoditas` dan `penanaman` (data master pertanian yang keluhannya bermuara ke `Produksi Panen`).
 
 ### 11.22 Bidang pengaduan
 `Ketransmigrasian` · `Pertanian`
@@ -1111,9 +1213,11 @@ Enum ini diperlukan agar penilaian kondisi SP dapat menghitung otomatis. Nama sp
 
 ### 11.33 Nilai kondisi pada penilaian SP
 
-`Baik` = 1,0 · `Rusak Ringan` = 0,5 · `Rusak Berat` = 0,2 · `Tidak Ada` = 0
+`Baik` = 1,0 · `Rusak Ringan` = 0,5 · `Rusak Berat` = 0,2 · `Hilang` = 0 · `Tidak Ada` = 0
 
 `Tidak Ada` **bukan** nilai enum tersendiri pada tabel `infrastruktur` maupun `fasilitas_sp`, melainkan keadaan ketika tidak ditemukan satu pun aset yang bersesuaian. Ketiadaan dan kerusakan wajib dibedakan karena berbeda penanganannya: yang satu memerlukan pembangunan, yang lain perbaikan (`rules.md` 10c.4 poin 9).
+
+`Hilang` (§11.5) bernilai **sama dengan** `Tidak Ada`, yaitu 0, dan itu disengaja. Aset yang lenyap tidak melayani siapa pun, persis seperti aset yang tidak pernah ada. Nilainya wajib tepat 0, bukan sekadar lebih kecil daripada `Rusak Berat`: aturan primer nol membandingkan **tepat** terhadap konstanta `NILAI_TIDAK_ADA`, sehingga skor 0,1 akan membuat satu-satunya sumur bor yang hilang gagal menjatuhkan status SP dan kehilangan itu lolos sebagai `Berkembang`.
 
 ### 11.34 Asal wakil poktan
 
@@ -1169,7 +1273,7 @@ Aturan berikut ditulis satu kali di `app/Support/ValidationRules.php` dan dipaka
 | `password` | minimal 8 karakter, mengandung huruf dan angka | "Kata sandi minimal 8 karakter dan mengandung huruf serta angka." |
 | `tahun` | 4 digit, antara 1900 dan tahun berjalan | "Tahun tidak valid." |
 | `luas` | angka, lebih besar dari 0, maksimal 2 desimal | "Luas harus lebih dari 0." |
-| `volume` | angka, lebih besar dari 0, maksimal 3 desimal | "Volume panen harus lebih dari 0." |
+| `produksi` | angka, lebih besar dari 0, maksimal 3 desimal | "Produksi harus lebih dari 0." |
 | `uang` | angka bulat, minimal 0 | "Nilai tidak boleh negatif." |
 | `lintang` | opsional, antara −90 dan 90 | "Lintang harus antara −90 dan 90." |
 | `bujur` | opsional, antara −180 dan 180 | "Bujur harus antara −180 dan 180." |
@@ -1182,13 +1286,13 @@ Aturan berikut ditulis satu kali di `app/Support/ValidationRules.php` dan dipaka
 | 1 | `alasan_tidak_dihuni` wajib bila `status_hunian` = Tidak Dihuni | `rumah` |
 | 2 | `tanggal_keluar` wajib bila `status` = Sudah Keluar | `anggota_poktan` |
 | 3 | `tanggal_keluar` tidak boleh mendahului `tanggal_masuk` | `anggota_poktan`, `riwayat_penghunian` |
-| 4 | `transmigran_id` wajib bila `kepemilikan` = Pribadi; `poktan_id` wajib bila Bantuan Poktan | `alsintan` |
-| 5 | Minimal satu di antara `transmigran_id` dan `poktan_id` terisi | `saprotan` |
+| 4 | `poktan_id` wajib terisi; pemilik selalu kelompok tani | `alsintan` |
+| 5 | `poktan_id` wajib terisi; penerima selalu kelompok tani | `saprotan` |
 | 6 | `luas_kering` dan `luas_basah` wajib bila peruntukannya lahan usaha, dan jumlah keduanya sama dengan `luas` | `lahan` |
 | 7 | Pilihan rumah hanya menampilkan baris dengan `transmigran_id` bernilai `NULL` | `rumah` |
 | 8 | Perubahan status pengaduan wajib mengikuti urutan yang ditetapkan | `pengaduan` |
-| 9 | Penerima saprotan lewat poktan wajib berstatus keaktifan Aktif | `saprotan` |
-| 10 | `tanggal_panen` tidak boleh mendahului `tanggal_tanam` pada riwayat tanam terkait | `hasil_panen` |
+| 9 | `satuan_permukiman_id` wajib sama dengan SP poktan penerimanya | `saprotan` |
+| 10 | `periode_panen` tidak boleh mendahului `periode_tanam` pada penanaman terkait | `hasil_panen` |
 | 11 | `email` dan `username` wajib terisi dan unik antar-akun | `user` |
 | 12 | `username` hanya boleh huruf kecil, angka, titik, dan garis bawah, panjang 3 sampai 50 karakter | `user` |
 | 13 | Akun berrole bercakupan `Per SP` wajib memiliki minimal satu penugasan SP | `user_satuan_permukiman` |
@@ -1208,6 +1312,17 @@ Aturan berikut ditulis satu kali di `app/Support/ValidationRules.php` dan dipaka
 | 28 | `nik_baru` tidak boleh sama dengan `nik_lama` pada baris yang sama | `riwayat_kepala_keluarga` |
 | 29 | `tanggal_pergantian` tidak boleh mendahului `tahun_kedatangan` keluarganya, dan tidak boleh melampaui hari ini | `riwayat_kepala_keluarga` |
 | 30 | Suksesi wajib menyetel ulang `poktan.ketua_transmigran_id` bila keluarga tersebut menjabat ketua lewat jalur `Kepala Keluarga`; jabatan ketua tidak diwariskan | `poktan` |
+| 31 | `komoditas_id` wajib bila `jenis` = Benih, dan wajib `NULL` bagi jenis lain | `saprotan` |
+| 32 | `volume_benih` wajib bila `saprotan_id` terisi, dan wajib `NULL` bila kosong | `penanaman` |
+| 33 | `saprotan_id` hanya boleh menunjuk baris berjenis Benih milik `poktan_id` yang sama | `penanaman` |
+| 34 | Komoditas benih wajib sama dengan `komoditas_id` penanamannya | `penanaman`, `saprotan` |
+| 35 | Jumlah `volume_benih` seluruh penanaman tidak boleh melebihi `saprotan.jumlah` | `penanaman`, `saprotan` |
+| 36 | `realisasi_tanam` tidak boleh melebihi luas lahan poktannya | `penanaman`, `poktan` |
+| 37 | Lahan yang penanamannya sudah tuntas dipanen kembali tersedia untuk penanaman berikutnya | `penanaman`, `hasil_panen` |
+| 38 | `penanaman_id` wajib terisi; komoditas dan poktannya wajib sejalan dengan penanamannya | `hasil_panen` |
+| 39 | `realisasi_panen` + `puso` + belum dipanen wajib sama dengan `penanaman.realisasi_tanam` | `hasil_panen`, `penanaman` |
+| 40 | `produksi` wajib sama dengan `realisasi_panen` dikali `produktivitas` | `hasil_panen` |
+| 41 | `periode_panen` tidak boleh mendahului `periode_tanam` penanamannya | `hasil_panen`, `penanaman` |
 
 ---
 
@@ -1245,17 +1360,16 @@ Tanda centang berarti kewenangan tersebut dibuat untuk fitur bersangkutan.
 | `alsintan` | v | v | v | v |
 | `saprotan` | v | v | v | v |
 | `komoditas` | v | v | v | v |
-| `musim_tanam` | v | v | v | v |
-| `riwayat_tanam` | v | v | v | v |
+| `penanaman` | v | v | v | v |
 | `hasil_panen` | v | v | v | v |
 | `infrastruktur` | v | v | v | v |
 | `pengaduan` | v | v | v | v |
 | `penanganan_pengaduan` | v | v | v |   |
 | `dashboard` | v |   |   |   |
 
-Total **101 kewenangan** dari 28 fitur, dihitung dari tabel di atas.
+Total **99 kewenangan** dari 28 fitur, dihitung dari tabel di atas. Turun dari 101 pada 2026-08-22, ketika modul `musim_tanam` beserta empat kewenangannya dicabut dan `saprotan` tetap utuh.
 
-Jumlah kewenangan yang benar-benar dipegang tiap role bawaan lebih sedikit, sesuai susunan pada `rules.md` 5.1: Admin 101, Dinas Transmigrasi 48, Dinas Pertanian 47, Operator SP 51.
+Jumlah kewenangan yang benar-benar dipegang tiap role bawaan lebih sedikit, sesuai susunan pada `rules.md` 5.1: Admin 99, Dinas Transmigrasi 49, Dinas Pertanian 45, Operator SP 51.
 
 ### 13.2 Kelompok fitur pada antarmuka
 
@@ -1268,7 +1382,7 @@ Agar halaman pengaturan role mudah dibaca, kewenangan dikelompokkan sesuai struk
 | Kependudukan | `transmigran`, `rumah`, `riwayat_penghunian`, `riwayat_kepala_keluarga` |
 | Lahan | `lahan`, `dokumen_lahan` |
 | Kelembagaan | `poktan`, `anggota_poktan`, `alsintan`, `saprotan` |
-| Pertanian | `komoditas`, `musim_tanam`, `riwayat_tanam`, `hasil_panen` |
+| Pertanian | `komoditas`, `penanaman`, `hasil_panen` |
 | Infrastruktur | `infrastruktur` |
 | Pengaduan | `pengaduan`, `penanganan_pengaduan` |
 | Pemantauan | `dashboard` |

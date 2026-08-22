@@ -1,9 +1,9 @@
 {{--
     Daftar alat dan mesin pertanian.
 
-    Sistem membedakan alsintan milik pribadi transmigran dan bantuan
-    pemerintah yang disalurkan lewat poktan (agents/rules.md bagian 7b poin 1),
-    karena keduanya berbeda pemilik dan berbeda jalur pertanggungjawabannya.
+    PEMILIK SELALU KELOMPOK TANI (agents/rules.md bagian 7b poin 1).
+    Kepemilikan pribadi dicabut 2026-08-22 mengikuti keputusan pemilik proyek
+    bahwa seluruh menu Pertanian mencatat kelompok, bukan individu.
 --}}
 @extends('layouts.app')
 
@@ -15,18 +15,14 @@
 
         $cari = trim((string) request('cari', ''));
         $filterSp = request('sp');
-        $filterKepemilikan = request('kepemilikan');
         $filterKondisi = request('kondisi');
 
-        $baris = array_values(array_filter($semua, function ($a) use ($cari, $filterSp, $filterKepemilikan, $filterKondisi) {
+        $baris = array_values(array_filter($semua, function ($a) use ($cari, $filterSp, $filterKondisi) {
             if ($cari !== '' && ! str_contains(mb_strtolower($a['nama_alat']), mb_strtolower($cari))
                 && ! str_contains(mb_strtolower($a['pemilik']), mb_strtolower($cari))) {
                 return false;
             }
             if ($filterSp && (string) $a['satuan_permukiman_id'] !== (string) $filterSp) {
-                return false;
-            }
-            if ($filterKepemilikan && $a['kepemilikan'] !== $filterKepemilikan) {
                 return false;
             }
             if ($filterKondisi && $a['kondisi'] !== $filterKondisi) {
@@ -36,14 +32,19 @@
             return true;
         }));
 
-        $adaFilter = $cari !== '' || $filterSp || $filterKepemilikan || $filterKondisi;
+        $adaFilter = $cari !== '' || $filterSp || $filterKondisi;
         $totalUnit = array_sum(array_column($semua, 'jumlah'));
-        $bantuan = count(array_filter($semua, fn ($a) => $a['kepemilikan'] === \App\Enums\KepemilikanAlsintan::BantuanPoktan->value));
+
+        // Cacah poktan pemilik, menggantikan kartu Bantuan Pemerintah.
+        // Kartu lama menghitung baris berkepemilikan bantuan; kini seluruh
+        // alat memang milik kelompok, sehingga angkanya akan selalu sama
+        // dengan jumlah seluruh data dan tidak menerangkan apa pun.
+        $poktanPemilik = count(array_unique(array_column($semua, 'poktan_id')));
         $rusak = count(array_filter($semua, fn ($a) => $a['kondisi'] !== 'Baik'));
     @endphp
 
     <x-sim.halaman-daftar judul="Alsintan"
-        keterangan="Alat dan mesin pertanian milik pribadi maupun bantuan lewat kelompok tani."
+        keterangan="Alat dan mesin pertanian milik kelompok tani."
         :remah="\App\Helpers\RemahHelper::untuk('/alsintan')"
         :jumlah="count($baris)" :kata-kunci="$cari" :aksi-url="route('alsintan.index')"
         placeholder-cari="Cari nama alat atau pemilik" judul-kosong="Belum ada data alsintan"
@@ -77,14 +78,14 @@
         <x-slot:ringkasan>
             <x-sim.stat-card label="Jenis Alat" :nilai="count($semua)" />
             <x-sim.stat-card label="Total Unit" :nilai="number_format($totalUnit, 0, ',', '.')" />
-            <x-sim.stat-card label="Bantuan Pemerintah" :nilai="$bantuan"
-                keterangan="Disalurkan lewat kelompok tani" />
+            <x-sim.stat-card label="Poktan Pemilik" :nilai="$poktanPemilik"
+                keterangan="Kelompok yang memiliki alat" />
             <x-sim.stat-card label="Perlu Perbaikan" :nilai="$rusak"
                 keterangan="Rusak ringan atau rusak berat" />
         </x-slot:ringkasan>
 
         <x-slot:filter>
-            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <div>
                     <label for="filter_sp"
                         class="mb-1.5 block text-theme-xs font-medium text-gray-700 dark:text-gray-400">Satuan Permukiman</label>
@@ -94,17 +95,6 @@
                         @foreach (DummyData::satuanPermukiman() as $sp)
                             <option value="{{ $sp['id_satuan_permukiman'] }}"
                                 @selected($filterSp == $sp['id_satuan_permukiman'])>{{ $sp['nama'] }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label for="filter_kepemilikan"
-                        class="mb-1.5 block text-theme-xs font-medium text-gray-700 dark:text-gray-400">Kepemilikan</label>
-                    <select id="filter_kepemilikan" name="kepemilikan"
-                        class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
-                        <option value="">Semua kepemilikan</option>
-                        @foreach (\App\Enums\KepemilikanAlsintan::opsi() as $nilai => $label)
-                            <option value="{{ $nilai }}" @selected($filterKepemilikan === $nilai)>{{ $label }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -136,7 +126,7 @@
 
         <x-slot:kepala>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Nama Alat</th>
-            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Kepemilikan</th>
+            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Satuan Permukiman</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Pemilik</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Jumlah</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Tahun</th>
@@ -147,26 +137,24 @@
         @foreach ($baris as $a)
             <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                 <td class="px-5 py-3 text-theme-sm font-medium text-gray-800 dark:text-white/90">{{ $a['nama_alat'] }}</td>
-                <td class="px-5 py-3">
-                    <span class="rounded-full px-2.5 py-1 text-theme-xs font-medium {{ $a['kepemilikan'] === \App\Enums\KepemilikanAlsintan::BantuanPoktan->value ? 'bg-teal-50 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300' : 'bg-gray-100 text-gray-700 dark:bg-white/5 dark:text-gray-300' }}">
-                        {{ $a['kepemilikan'] }}
-                    </span>
+                {{--
+                    Kolom Kepemilikan diganti Satuan Permukiman 2026-08-22.
+                    Kepemilikan kini selalu kelompok tani, sehingga kolomnya
+                    akan menampilkan nilai yang sama pada setiap baris. SP
+                    sebelumnya hanya muncul sebagai subteks kecil di bawah
+                    nama pemilik.
+                --}}
+                <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
+                    <a href="{{ route('dashboard.sp', $a['satuan_permukiman_id']) }}"
+                        class="rounded text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
+                        {{ $a['satuan_permukiman'] }}
+                    </a>
                 </td>
                 <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
-                    @if ($a['poktan_id'])
-                        <a href="{{ route('poktan.detail', $a['poktan_id']) }}"
-                            class="rounded text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
-                            {{ $a['pemilik'] }}
-                        </a>
-                    @elseif ($a['transmigran_id'])
-                        <a href="{{ route('transmigran.detail', $a['transmigran_id']) }}"
-                            class="rounded text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
-                            {{ $a['pemilik'] }}
-                        </a>
-                    @else
+                    <a href="{{ route('poktan.detail', $a['poktan_id']) }}"
+                        class="rounded text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
                         {{ $a['pemilik'] }}
-                    @endif
-                    <p class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">{{ $a['satuan_permukiman'] }}</p>
+                    </a>
                 </td>
                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">{{ $a['jumlah'] }}</td>
                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
@@ -206,7 +194,7 @@
     </x-sim.modal-form>
 
     <x-sim.modal-form nama="formUbahAlsintanBaris" judul="Ubah Data Alsintan"
-        keterangan="Pemilik menyesuaikan jenis kepemilikan yang dipilih."
+        keterangan="Satuan permukiman mengikuti kelompok tani yang dipilih."
         pola-aksi="/alsintan/:id" metode="PUT" ukuran="lg"
         label-simpan="Simpan Perubahan">
         @include('pages.alsintan.form', ['awalan' => 'ubahBaris'])

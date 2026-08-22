@@ -1,10 +1,10 @@
 {{--
     Rincian satu unit alsintan.
 
-    Alsintan membedakan milik pribadi dan bantuan lewat poktan, karena berbeda
-    pemilik dan berbeda jalur pertanggungjawabannya (agents/rules.md bagian 7c).
-    Tautan pemilik karena itu menuju halaman poktan atau halaman transmigran,
-    mengikuti jenis kepemilikannya.
+    PEMILIK SELALU KELOMPOK TANI (agents/rules.md bagian 7b). Kepemilikan
+    pribadi dicabut 2026-08-22 mengikuti keputusan pemilik proyek bahwa seluruh
+    menu Pertanian mencatat kelompok, bukan individu. Tautan pemilik karena itu
+    selalu menuju halaman poktan.
 
     Tombol Ubah diletakkan di sini, bukan di halaman daftar, mengikuti pola
     yang sudah baku sejak Task 2.7.
@@ -77,12 +77,12 @@
         </aside>
 
         {{-- Kolom kanan: tab rincian --}}
-        <div x-data="hashTabs('kepemilikan')" class="min-w-0">
+        <div x-data="hashTabs('pemilik')" class="min-w-0">
             <div class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
                 <div class="flex gap-1 overflow-x-auto border-b border-gray-200 px-2 pt-2 dark:border-gray-800"
                     role="tablist" aria-label="Rincian alsintan">
                     @foreach ([
-                        'kepemilikan' => 'Kepemilikan',
+                        'pemilik' => 'Pemilik',
                         'kondisi' => 'Kondisi Alat',
                         'log' => 'Catatan Log',
                     ] as $kunci => $label)
@@ -97,39 +97,26 @@
                     @endforeach
                 </div>
 
-                {{-- Kepemilikan, bagian yang membedakan modul ini dari pendataan aset biasa --}}
-                <div x-show="tab === 'kepemilikan'" role="tabpanel" class="p-5 sm:p-6">
+                {{-- Pemilik, selalu kelompok tani sejak 2026-08-22 --}}
+                <div x-show="tab === 'pemilik'" role="tabpanel" class="p-5 sm:p-6">
                     <div class="flex flex-wrap items-center gap-3">
                         <span
-                            class="rounded-full px-2.5 py-1 text-theme-xs font-medium {{ $data['kepemilikan'] === \App\Enums\KepemilikanAlsintan::BantuanPoktan->value ? 'bg-teal-50 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300' : 'bg-gray-100 text-gray-700 dark:bg-white/5 dark:text-gray-300' }}">
-                            {{ $data['kepemilikan'] }}
+                            class="rounded-full bg-teal-50 px-2.5 py-1 text-theme-xs font-medium text-teal-700 dark:bg-teal-500/15 dark:text-teal-300">
+                            Kelompok Tani
                         </span>
 
                         <span class="text-theme-sm text-gray-800 dark:text-white/90">
-                            @if ($data['poktan_id'])
-                                <a href="{{ route('poktan.detail', $data['poktan_id']) }}"
-                                    class="rounded font-medium text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
-                                    {{ $data['pemilik'] }}
-                                </a>
-                            @elseif ($data['transmigran_id'])
-                                <a href="{{ route('transmigran.detail', $data['transmigran_id']) }}"
-                                    class="rounded font-medium text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
-                                    {{ $data['pemilik'] }}
-                                </a>
-                            @else
+                            <a href="{{ route('poktan.detail', $data['poktan_id']) }}"
+                                class="rounded font-medium text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
                                 {{ $data['pemilik'] }}
-                            @endif
+                            </a>
                         </span>
                     </div>
 
                     <p class="mt-4 rounded-lg bg-gray-50 p-3.5 text-theme-xs text-gray-600 dark:bg-white/[0.03] dark:text-gray-400">
-                        @if ($data['kepemilikan'] === \App\Enums\KepemilikanAlsintan::BantuanPoktan->value)
-                            Alat bantuan tercatat atas nama kelompok tani, sehingga pemakaiannya bergilir antar-anggota
-                            dan pertanggungjawabannya melekat pada pengurus poktan.
-                        @else
-                            Alat milik pribadi tercatat atas nama transmigran yang bersangkutan, terpisah dari inventaris
-                            kelompok tani.
-                        @endif
+                        Alat tercatat atas nama kelompok tani, sehingga pemakaiannya bergilir antar-anggota
+                        dan pertanggungjawabannya melekat pada pengurus poktan. Alat yang dibeli dari iuran
+                        anggota pun tercatat atas nama kelompok, dengan sumber perolehan Swadaya.
                     </p>
 
                     {{--

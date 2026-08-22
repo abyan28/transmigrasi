@@ -344,7 +344,7 @@
                         <x-sim.empty-state judul="Belum ada data panen"
                             pesan="Hasil panen akan tampil di sini setelah dicatat." />
                     @else
-                        <x-sim.tabel-ringkas :kolom="['Komoditas', 'Petani', 'Musim Tanam', 'Volume']">
+                        <x-sim.tabel-ringkas :kolom="['Komoditas', 'Kelompok Tani', 'Periode Panen', 'Produksi']">
                             @foreach ($panen as $baris)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                                     <td class="px-5 py-3">
@@ -354,13 +354,13 @@
                                         </a>
                                     </td>
                                     <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
-                                        {{ $baris['petani'] }}
+                                        {{ $baris['poktan'] }}
                                     </td>
                                     <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
-                                        {{ $baris['musim_tanam'] }}
+                                        {{ \Illuminate\Support\Carbon::parse($baris['periode_panen'] . '-01')->translatedFormat('F Y') }}
                                     </td>
                                     <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
-                                        {{ number_format($baris['volume'], 3, ',', '.') }} {{ $baris['satuan'] }}
+                                        {{ number_format($baris['produksi'], 3, ',', '.') }} {{ $baris['satuan'] }}
                                     </td>
                                 </tr>
                             @endforeach

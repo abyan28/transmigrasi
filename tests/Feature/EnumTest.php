@@ -10,6 +10,7 @@
 
 use App\Enums\AksiAuditLog;
 use App\Enums\AksiPermission;
+use App\Enums\AlasanPergantianKK;
 use App\Enums\BidangPengaduan;
 use App\Enums\CakupanData;
 use App\Enums\JenisInfrastruktur;
@@ -18,7 +19,10 @@ use App\Enums\Kondisi;
 use App\Enums\KondisiRumah;
 use App\Enums\PrioritasPengaduan;
 use App\Enums\StatusPengaduan;
+use App\Enums\StatusTinggal;
 use App\Enums\SumberDana;
+use App\Support\DummyData;
+use App\Support\PenilaianKondisiSp;
 
 /*
 |--------------------------------------------------------------------------
@@ -32,7 +36,7 @@ it('memuat seluruh nilai baku sesuai kamus data', function (string $enum, array 
     'status pengaduan' => [StatusPengaduan::class, ['Menunggu Diterima', 'Diterima', 'Diproses', 'Selesai']],
     'prioritas pengaduan' => [PrioritasPengaduan::class, ['Rendah', 'Sedang', 'Tinggi', 'Mendesak']],
     'kondisi rumah' => [KondisiRumah::class, ['Tidak Rusak', 'Rusak Ringan', 'Rusak Berat']],
-    'kondisi aset' => [Kondisi::class, ['Baik', 'Rusak Ringan', 'Rusak Berat']],
+    'kondisi aset' => [Kondisi::class, ['Baik', 'Rusak Ringan', 'Rusak Berat', 'Hilang']],
     'bidang pengaduan' => [BidangPengaduan::class, ['Ketransmigrasian', 'Pertanian']],
     'cakupan data' => [CakupanData::class, ['Semua', 'Per SP', 'Per Bidang']],
     'aksi permission' => [AksiPermission::class, ['lihat', 'tambah', 'ubah', 'hapus']],
@@ -43,6 +47,31 @@ it('membedakan kondisi rumah dari kondisi aset lain', function () {
     // sedangkan aset lain memakai "Baik".
     expect(KondisiRumah::TidakRusak->value)->toBe('Tidak Rusak')
         ->and(Kondisi::Baik->value)->toBe('Baik');
+});
+
+it('menilai aset hilang nol, bukan sekadar di bawah rusak berat', function () {
+    // "Hilang" bukan tingkat kerusakan melainkan ketiadaan. Nilainya WAJIB
+    // sama dengan NILAI_TIDAK_ADA, sebab aturan primer nol pada
+    // PenilaianKondisiSp membandingkan tepat terhadap konstanta itu. Bila
+    // skornya sekadar kecil, misalnya 0.1, satu-satunya sumur bor yang
+    // hilang tidak akan menjatuhkan status SP dan kehilangan itu lolos
+    // sebagai "Berkembang".
+    $skor = DummyData::skorKondisi();
+
+    expect($skor)->toHaveKey('Hilang')
+        ->and($skor['Hilang'])->toBe(PenilaianKondisiSp::NILAI_TIDAK_ADA)
+        ->and($skor['Hilang'])->toBeLessThan($skor['Rusak Berat']);
+});
+
+it('meniadakan status tinggal Meninggal dan memakai Pindah Penduduk', function () {
+    // Status tinggal melekat pada KELUARGA, bukan orang. Kematian kepala
+    // keluarga direkam AlasanPergantianKK, dan keluarganya tetap Aktif sebab
+    // kedudukan berpindah ke ahli waris. Menyediakan "Meninggal" di kedua
+    // enum membuat petugas membubarkan keluarga yang penghuninya masih ada.
+    expect(StatusTinggal::nilai())->toBe(['Aktif', 'Pindah Penduduk', 'Tidak Aktif'])
+        ->and(StatusTinggal::tryFrom('Meninggal'))->toBeNull()
+        ->and(StatusTinggal::tryFrom('Pindah'))->toBeNull()
+        ->and(AlasanPergantianKK::Meninggal->value)->toBe('Meninggal');
 });
 
 it('memuat dua belas kategori pengaduan tanpa spasi berlebih', function () {

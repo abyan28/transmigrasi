@@ -1,16 +1,22 @@
 {{--
     Isian data alsintan, dipakai bersama modal tambah dan modal ubah.
 
-    Aturan yang dijaga di sini: kolom pemilik BERUBAH mengikuti jenis
-    kepemilikan (agents/rules.md bagian 7c). Alat bantuan tercatat atas nama
-    kelompok tani, alat pribadi atas nama transmigran. Menampilkan kedua
-    pilihan sekaligus membuat petugas dapat mengisi keduanya, sehingga
-    pemiliknya menjadi ganda dan pertanggungjawabannya kabur.
+    PEMILIK SELALU KELOMPOK TANI (agents/rules.md bagian 7b). Kepemilikan
+    pribadi dicabut 2026-08-22 mengikuti keputusan pemilik proyek bahwa
+    seluruh menu Pertanian mencatat KELOMPOK, bukan individu.
+
+    Sebelumnya form ini menyodorkan dua jalur pemilik yang tampil bergantian,
+    dan akibatnya terlihat pada data: alat pribadi tidak dapat dijangkau dari
+    halaman mana pun kecuali daftar alsintan itu sendiri. Ia tidak muncul pada
+    rincian poktan sebab tidak berpoktan, dan halaman transmigran tidak pernah
+    punya tab alsintan.
+
+    Alat yang dibeli dari iuran anggota tetap tercatat atas nama kelompok,
+    dengan sumber perolehan bernilai Swadaya.
 
     Nama kolom mengikuti agents/data-dictionary.md bagian 8.3.
 --}}
 @php
-    use App\Enums\KepemilikanAlsintan;
     use App\Enums\Kondisi;
     use App\Enums\SumberDana;
     use App\Support\DummyData;
@@ -22,13 +28,35 @@
     $kelasLabel = 'mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400';
     $kelasBagian = 'text-theme-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400';
 
-    $daftarSp = DummyData::satuanPermukiman();
     $daftarPoktan = DummyData::poktan();
-    $daftarTransmigran = DummyData::transmigran();
+
+    // Peta poktan ke satuan permukimannya, dibaca Alpine untuk mengisi kolom
+    // SP begitu poktan dipilih. Dahulu ada dua peta terpisah sebab kepemilikan
+    // pribadi menunjuk transmigran; peta transmigran ikut lepas bersama
+    // pencabutan kepemilikan itu.
+    $petaSpPoktan = [];
+    foreach ($daftarPoktan as $p) {
+        $petaSpPoktan[(string) $p['id_poktan']] = [
+            'id' => (string) $p['satuan_permukiman_id'],
+            'nama' => $p['satuan_permukiman'],
+        ];
+    }
 @endphp
 
+{{--
+    SATUAN PERMUKIMAN MENGIKUTI PEMILIK, tidak dipilih sendiri.
+
+    Poktan sudah menyimpan SP-nya sendiri. Membiarkan petugas memilih SP
+    secara terpisah memungkinkan satu alat tercatat di SP yang berbeda dari
+    pemiliknya, dan tidak ada penjaga apa pun yang menangkapnya.
+--}}
 <div class="space-y-6"
-    x-data="{ kepemilikan: @js(old('kepemilikan', $data['kepemilikan'] ?? KepemilikanAlsintan::BantuanPoktan->value)) }">
+    x-data="{
+        poktanId: @js((string) old('poktan_id', $data['poktan_id'] ?? '')),
+        petaSpPoktan: @js($petaSpPoktan),
+
+        get spTerpilih() { return this.petaSpPoktan[this.poktanId] ?? null; },
+    }">
 
     {{-- Bagian 1: identitas alat --}}
     <section>
@@ -81,75 +109,43 @@
         </div>
     </section>
 
-    {{-- Bagian 2: kepemilikan --}}
+    {{-- Bagian 2: pemilik --}}
     <section>
-        <h3 class="{{ $kelasBagian }}">Kepemilikan</h3>
+        <h3 class="{{ $kelasBagian }}">Pemilik</h3>
         <div class="mt-3 space-y-4">
-            <div>
-                <span class="{{ $kelasLabel }}">Jenis Kepemilikan</span>
-                <div class="flex flex-wrap gap-4">
-                    @foreach (KepemilikanAlsintan::cases() as $kp)
-                        <label class="flex items-center gap-2.5">
-                            <input type="radio" name="kepemilikan" value="{{ $kp->value }}"
-                                x-model="kepemilikan"
-                                class="h-4 w-4 border-gray-300 text-brand-500 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700" />
-                            <span class="text-theme-sm text-gray-700 dark:text-gray-300">{{ $kp->value }}</span>
-                        </label>
-                    @endforeach
-                </div>
-            </div>
-
             {{--
-                Pemilik ditampilkan bergantian, tidak pernah keduanya sekaligus,
-                agar satu alat tidak berakhir memiliki dua pemilik.
-            --}}
-            {{--
-                Wajib bersyarat. Bintang dipasang statis sebab isian ini hanya
-                muncul ketika syaratnya berlaku, sedangkan `required` menyala
-                mengikuti pilihan kepemilikan agar isian yang tersembunyi tidak
-                menghalangi pengiriman form (pola sama dengan rumah/form).
-            --}}
-            <div x-show="kepemilikan === @js(KepemilikanAlsintan::BantuanPoktan->value)" x-cloak x-transition>
-                {{--
-                    Memakai `pilih-cari` meski data contoh hanya 4 poktan.
-                    Ambangnya sendiri yang menentukan kapan kotak pencarian
-                    muncul, sehingga pada data contoh ia tetap tampil sebagai
-                    dropdown biasa. Yang penting: begitu data nyata masuk dan
-                    poktan mencapai puluhan, pencariannya sudah ada tanpa perlu
-                    menyunting halaman ini lagi.
-                --}}
-                <x-sim.pilih-cari nama="poktan_id" label="Kelompok Tani Pemilik" :wajib="true"
-                    :awalan="$awalan" :opsi="$daftarPoktan" kunci="id_poktan"
-                    teks="nama" keterangan-opsi="satuan_permukiman"
-                    :terpilih="old('poktan_id', $data['poktan_id'] ?? null)"
-                    placeholder="Pilih kelompok tani"
-                    keterangan="Alat bantuan dipakai bergilir antar-anggota, sehingga tercatat atas nama kelompok."
-                    :required="'kepemilikan === ' . json_encode(KepemilikanAlsintan::BantuanPoktan->value)" />
-            </div>
+                SATU JALUR PEMILIK, tidak lagi bercabang.
 
-            <div x-show="kepemilikan === @js(KepemilikanAlsintan::Pribadi->value)" x-cloak x-transition>
-                {{-- Wajib hanya saat kepemilikan Pribadi, sebab bagian ini
-                     ikut tersembunyi untuk alsintan bantuan poktan. --}}
-                <x-sim.pilih-cari nama="transmigran_id" label="Transmigran Pemilik" :wajib="true"
-                    :awalan="$awalan" :opsi="$daftarTransmigran" kunci="id_transmigran"
-                    teks="nama_kepala_keluarga" keterangan-opsi="satuan_permukiman"
-                    :terpilih="old('transmigran_id', $data['transmigran_id'] ?? null)"
-                    placeholder="Pilih transmigran"
-                    :required="'kepemilikan === ' . json_encode(KepemilikanAlsintan::Pribadi->value)" />
-            </div>
+                Radio "Jenis Kepemilikan" beserta isian Transmigran Pemilik
+                dicabut 2026-08-22: seluruh menu Pertanian mencatat kelompok,
+                bukan individu. Alat yang dibeli dari iuran anggota tetap
+                tercatat atas nama kelompok, dengan sumber perolehan Swadaya.
 
+                Memakai `pilih-cari` meski data contoh hanya 4 poktan.
+                Ambangnya sendiri yang menentukan kapan kotak pencarian
+                muncul, sehingga pada data contoh ia tetap tampil sebagai
+                dropdown biasa. Yang penting: begitu data nyata masuk dan
+                poktan mencapai puluhan, pencariannya sudah ada tanpa perlu
+                menyunting halaman ini lagi.
+            --}}
+            <x-sim.pilih-cari nama="poktan_id" label="Kelompok Tani Pemilik" :wajib="true"
+                :awalan="$awalan" :opsi="$daftarPoktan" kunci="id_poktan"
+                teks="nama" keterangan-opsi="satuan_permukiman"
+                :terpilih="old('poktan_id', $data['poktan_id'] ?? null)"
+                placeholder="Pilih kelompok tani"
+                keterangan="Alat dipakai bergilir antar-anggota, sehingga tercatat atas nama kelompok."
+                @change="poktanId = $event.target.value" />
+
+            {{-- Terbaca dari poktan, bukan dipilih. Alasannya di kepala berkas. --}}
             <div>
-                <label for="{{ $awalan }}_satuan_permukiman_id" class="{{ $kelasLabel }}">Satuan Permukiman</label>
-                <select id="{{ $awalan }}_satuan_permukiman_id" name="satuan_permukiman_id"
-                    class="{{ $kelasKontrol }}">
-                    <option value="">Pilih satuan permukiman</option>
-                    @foreach ($daftarSp as $sp)
-                        <option value="{{ $sp['id_satuan_permukiman'] }}"
-                            @selected((string) old('satuan_permukiman_id', $data['satuan_permukiman_id'] ?? '') === (string) $sp['id_satuan_permukiman'])>
-                            {{ $sp['nama'] }}
-                        </option>
-                    @endforeach
-                </select>
+                <span class="{{ $kelasLabel }}">Satuan Permukiman</span>
+                <p class="flex h-11 items-center rounded-lg bg-gray-50 px-4 text-theme-sm text-gray-600 dark:bg-white/5 dark:text-gray-400">
+                    <span x-show="spTerpilih" x-text="spTerpilih?.nama"></span>
+                    <span x-show="! spTerpilih" x-cloak class="text-gray-400 dark:text-white/30">
+                        Terisi otomatis setelah kelompok tani dipilih
+                    </span>
+                </p>
+                <input type="hidden" name="satuan_permukiman_id" :value="spTerpilih?.id ?? ''" />
             </div>
         </div>
     </section>

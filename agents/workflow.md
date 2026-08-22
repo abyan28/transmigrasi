@@ -61,7 +61,7 @@ Dikerjakan dalam **dua gelombang** agar revisi hasil validasi tidak membongkar s
 6. Melakukan validasi bersama tim dan dinas atas pola tata letak, alur form, dan penamaan field sebelum melanjutkan.
 
 *Gelombang 2 — halaman sisanya (±31 halaman):*
-7. Membangun halaman data master wilayah/SP/inventaris/fasilitas/satuan, rekap kependudukan, poktan dan anggota, alsintan, saprotan, komoditas, musim tanam, riwayat tanam, infrastruktur, laporan, template luring, pengguna, dan audit log.
+7. Membangun halaman data master wilayah/SP/inventaris/fasilitas/satuan, rekap kependudukan, poktan dan anggota, alsintan, saprotan, komoditas, musim tanam, penanaman, infrastruktur, laporan, template luring, pengguna, dan audit log.
 8. Menyusun struktur menu untuk kelima role beserta status halaman kosong, memuat, galat, dan tanpa kewenangan.
 9. Memastikan tampilan berjalan baik pada ponsel dan desktop, diuji pada lebar 360px dan 1280px.
 
@@ -72,7 +72,7 @@ Dikerjakan dalam **dua gelombang** agar revisi hasil validasi tidak membongkar s
 13. Implementasi fitur kependudukan kawasan: transmigran dan keluarga, rumah dan kondisi hunian, riwayat penghunian, status tinggal/pindah/aktif, serta rekap kependudukan.
 14. Implementasi fitur lahan: lahan pekarangan dan lahan usaha, kategori lahan, dokumen HPL/SHM, dan koordinat lahan.
 15. Implementasi fitur kelembagaan dan sarana pertanian: profil poktan, daftar anggota, alsintan, dan saprotan.
-16. Implementasi fitur produksi pertanian: komoditas, musim tanam, riwayat tanam, hasil panen, volume produksi, harga, dan kualitas panen.
+16. Implementasi fitur produksi pertanian: komoditas, penanaman, hasil panen, produksi, produktivitas, dan harga.
 17. Implementasi fitur infrastruktur SP sebagai pendataan aset beserta dokumentasi dan koordinat.
 18. Implementasi fitur pengaduan: kategori pengaduan, alur status penanganan, riwayat penanganan, dan dokumen pendukung.
 19. Penggantian data dummy dashboard dengan data nyata beserta filter wilayah dan periode.
@@ -165,7 +165,7 @@ Tersedia dua jalur. Keduanya berakhir sama: kata sandi sementara yang wajib diga
 2. Data transmigran dan keluarga diinput, lalu ditautkan ke satu rumah kosong dan ke lahan miliknya.
 3. Data lahan pekarangan dan lahan usaha diisi beserta dokumen status lahan (HPL/SHM).
 4. Profil poktan, daftar anggota, alsintan, dan saprotan dicatat.
-5. Data komoditas, musim tanam, hasil panen, dan infrastruktur SP dilengkapi.
+5. Data komoditas, penanaman, hasil panen, dan infrastruktur SP dilengkapi.
 6. Data awal dari desa/SP prioritas masuk ke sistem sebagai baseline monitoring.
 7. Dokumentasi lapangan berupa foto dan koordinat lokasi dilampirkan bila tersedia, mengikuti batas ukuran dan aturan penamaan file.
 
@@ -232,7 +232,7 @@ Untuk lokasi dengan sinyal lemah:
 ### 4.5 Fitur Lahan
 1. Input identitas lahan: jenis (pekarangan atau usaha), luas, lokasi, koordinat, status, dan tujuan pemanfaatan.
 2. Unggah dokumen status lahan (HPL/SHM).
-3. Untuk lahan usaha, catat kategori lahan (basah/kering), pola tanam, musim tanam, peralatan, dan kendala.
+3. Untuk lahan usaha, catat kategori lahan (basah/kering), pola tanam, peralatan, dan kendala. Waktu tanam dicatat pada penanaman.
 4. Hubungkan lahan dengan transmigran, poktan, dan komoditas. Satu transmigran dapat mendaftarkan **beberapa lahan usaha**, sehingga penambahan lahan baru tidak menimpa lahan yang sudah ada.
 5. Rekap luas lahan dihitung dengan menjumlahkan seluruh lahan milik transmigran atau wilayah terkait.
 6. Gunakan data lahan untuk analisis produksi dan perencanaan.
@@ -245,9 +245,9 @@ Untuk lokasi dengan sinyal lemah:
 5. Unggah dokumen pendukung dan tampilkan rekap per desa/SP.
 
 ### 4.7 Fitur Alsintan
-1. Pilih jenis kepemilikan: milik pribadi transmigran atau bantuan pemerintah melalui poktan.
+1. Pilih kelompok tani pemilik. Satuan permukiman terisi otomatis mengikuti kelompok itu.
 2. Input nama alat, jumlah, tahun perolehan, sumber perolehan, dan kondisi.
-3. Tautkan ke poktan penerima atau transmigran pemilik.
+3. Alat yang dibeli dari iuran anggota dicatat dengan sumber perolehan Swadaya, tetap atas nama kelompok.
 4. Unggah dokumen pendukung.
 5. Rekap alsintan ditampilkan per desa/SP, per poktan, dan per jenis alat.
 
@@ -267,10 +267,10 @@ Untuk lokasi dengan sinyal lemah:
 
 ### 4.10 Fitur Hasil Panen
 1. Pilih komoditas; sistem otomatis menampilkan satuan baku komoditas tersebut.
-2. Input volume panen sesuai satuan baku, kualitas panen, harga jual, musim tanam, dan lokasi produksi.
+2. Input hasil panen, puso, dan produktivitas sesuai satuan baku komoditasnya, beserta harga jual dan periode panen. Kelompok tani, komoditas, dan luas yang ditanam terbaca dari penanamannya.
 3. Isi keterangan tambahan bila di lapangan memakai satuan lokal seperti karung atau ikat.
 4. Validasi data panen.
-5. Simpan riwayat tanam dan riwayat panen apa adanya, tanpa konversi saat penyimpanan.
+5. Simpan penanaman dan riwayat panen apa adanya, tanpa konversi saat penyimpanan.
 6. Saat merekap, sistem mengonversi volume ke ton memakai faktor konversi pada data master satuan.
 7. Rekap berdasarkan wilayah, transmigran, poktan, komoditas, atau periode.
 
@@ -340,7 +340,7 @@ Role bersifat dinamis (`rules.md` bagian 5), sehingga alur di bawah menggambarka
 
 ### 5.4 Operator SP
 1. Masuk dengan cakupan data terbatas pada SP yang ditugaskan kepadanya.
-2. Memasukkan dan memperbarui data transmigran, rumah, lahan, riwayat tanam, dan hasil panen di SP tersebut.
+2. Memasukkan dan memperbarui data transmigran, rumah, lahan, penanaman, dan hasil panen di SP tersebut.
 3. Mencatatkan pengaduan warga yang disampaikan lisan, atas nama warga bersangkutan.
 4. Memperbaiki data yang ditolak dinas sesuai alasan penolakan yang tertulis.
 5. Tidak berwenang menghapus data maupun mengakses manajemen pengguna dan audit log.

@@ -12,6 +12,7 @@ use App\Enums\BidangPengaduan;
 use App\Enums\CakupanData;
 use App\Enums\JenisDokumenLahan;
 use App\Enums\JenisInfrastruktur;
+use App\Enums\JenisSaprotan;
 use App\Enums\KategoriPengaduan;
 use App\Enums\Kondisi;
 use App\Enums\KondisiRumah;
@@ -450,4 +451,406 @@ it('menjaga deret SP tidak melebihi deret kawasan', function () {
 
 it('mengembalikan deret kosong untuk SP yang tidak ada', function () {
     expect(DummyData::deretTahunanSp(99)['tahun'])->toBe([]);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Saprotan: kaitan benih ke komoditas dan sisa stok
+|--------------------------------------------------------------------------
+*/
+
+it('mewajibkan komoditas pada benih dan mengosongkannya pada jenis lain', function () {
+    // Benih selalu benih SESUATU. Tanpa kolom ini kaitannya hanya tersirat
+    // dari teks namanya, sehingga sistem tidak tahu "BENIH JAGUNG HIBRIDA"
+    // itu benih jagung dan form penanaman tidak dapat menyaringnya.
+    //
+    // Sebaliknya pupuk dan pestisida sengaja TIDAK berkomoditas: urea dipakai
+    // tanaman apa pun, dan mengisinya berarti mengarang data.
+    foreach (DummyData::saprotan() as $baris) {
+        expect($baris)->toHaveKey('komoditas_id');
+
+        if ($baris['jenis'] === JenisSaprotan::Benih->value) {
+            expect($baris['komoditas_id'])->not->toBeNull("benih {$baris['nama']} tanpa komoditas");
+
+            // Menunjuk komoditas yang benar-benar ada, bukan id karangan.
+            $komoditas = collect(DummyData::komoditas())
+                ->firstWhere('id_komoditas', $baris['komoditas_id']);
+
+            expect($komoditas)->not->toBeNull()
+                ->and($baris['komoditas'])->toBe($komoditas['nama']);
+        } else {
+            expect($baris['komoditas_id'])->toBeNull("{$baris['jenis']} {$baris['nama']} tidak boleh berkomoditas");
+        }
+    }
+});
+
+it('menghitung sisa benih dari jumlah dikurangi pemakaian penanaman', function () {
+    // Rumusnya satu pengurangan, dan itu yang membuatnya mengoreksi diri
+    // sendiri ketika baris penanaman disunting. Bila kelak diganti kolom
+    // tersimpan, angka ini harus dikoreksi setiap penyuntingan dan koreksi
+    // yang terlewat tidak akan pernah ketahuan.
+    foreach (DummyData::saprotan() as $baris) {
+        $terpakai = 0.0;
+
+        foreach (DummyData::penanaman() as $tanam) {
+            if (($tanam['saprotan_id'] ?? null) === $baris['id_saprotan']) {
+                $terpakai += (float) ($tanam['volume_benih'] ?? 0);
+            }
+        }
+
+        $harapan = max(0.0, round((float) $baris['jumlah'] - $terpakai, 3));
+
+        expect(DummyData::sisaBenih($baris['id_saprotan']))->toBe($harapan);
+    }
+});
+
+it('tidak pernah mengembalikan sisa benih bertanda minus', function () {
+    // Pemakaian melebihi stok ditolak penjaga pada form, tetapi data lama
+    // yang terlanjur begitu tidak boleh membuat halaman menampilkan minus.
+    foreach (DummyData::saprotan() as $baris) {
+        expect(DummyData::sisaBenih($baris['id_saprotan']))->toBeGreaterThanOrEqual(0.0);
+    }
+
+    // Baris yang tidak ada tetap menjawab angka, bukan melempar galat.
+    expect(DummyData::sisaBenih(9999))->toBe(0.0);
+});
+
+it('menyembunyikan benih yang stoknya habis dari daftar tersedia', function () {
+    // INTI ATURAN STOK. Benih habis sekali pakai, tetapi penguncian terjadi
+    // ketika STOKNYA HABIS, bukan ketika pertama kali dipakai. Mengunci pada
+    // pemakaian pertama akan mematahkan penanaman bertahap: satu poktan
+    // menanam 3 ha lalu 7 ha dari jatah yang sama, dan penanaman kedua itu
+    // tidak akan dapat dicatat sama sekali.
+    $habis = collect(DummyData::saprotan())
+        ->first(fn ($s) => $s['jenis'] === JenisSaprotan::Benih->value
+            && DummyData::sisaBenih($s['id_saprotan']) <= 0);
+
+    expect($habis)->not->toBeNull('data contoh wajib memuat satu benih yang habis');
+
+    $tersedia = collect(DummyData::benihTersedia())->pluck('id_saprotan');
+
+    expect($tersedia)->not->toContain($habis['id_saprotan']);
+
+    // Sebaliknya, yang masih bersisa wajib muncul.
+    $bersisa = collect(DummyData::saprotan())
+        ->first(fn ($s) => $s['jenis'] === JenisSaprotan::Benih->value
+            && DummyData::sisaBenih($s['id_saprotan']) > 0);
+
+    expect($tersedia)->toContain($bersisa['id_saprotan']);
+});
+
+it('menyaring benih tersedia menurut poktan dan komoditasnya', function () {
+    // Inilah yang membuat petugas tidak dapat memilih benih padi untuk
+    // penanaman jagung, maupun memakai benih milik poktan lain.
+    foreach (DummyData::benihTersedia(1, 1) as $benih) {
+        expect($benih['poktan_id'])->toBe(1)
+            ->and($benih['komoditas_id'])->toBe(1)
+            ->and($benih['jenis'])->toBe(JenisSaprotan::Benih->value);
+    }
+
+    // Poktan yang tidak memegang benih apa pun menerima daftar kosong,
+    // bukan seluruh benih milik orang lain.
+    expect(DummyData::benihTersedia(3))->toBe([]);
+
+    // Label menyebut sisanya, sebab petugas perlu tahu berapa yang masih
+    // dapat dialokasikan SEBELUM memilih, bukan setelah formnya ditolak.
+    foreach (DummyData::benihTersedia() as $benih) {
+        expect($benih)->toHaveKey('sisa_benih')
+            ->and($benih['label_benih'])->toContain('sisa')
+            ->and($benih['label_benih'])->toContain($benih['nama']);
+    }
+});
+
+it('menautkan volume benih penanaman ke baris saprotan yang sah', function () {
+    // Volume benih disimpan, bukan dihitung dari luas tanam memakai rasio
+    // baku. Rasio 15 kg/ha pada laporan Polri adalah keputusan program pada
+    // satu bantuan, bukan hukum alam: benih swadaya dan komoditas lain
+    // memakai takaran berbeda.
+    foreach (DummyData::penanaman() as $tanam) {
+        expect($tanam)->toHaveKey('saprotan_id')
+            ->and($tanam)->toHaveKey('volume_benih');
+
+        if ($tanam['saprotan_id'] === null) {
+            // Boleh kosong: penanaman dari benih yang tidak tercatat pada
+            // modul saprotan tetap harus dapat didata.
+            expect($tanam['volume_benih'])->toBeNull();
+
+            continue;
+        }
+
+        $benih = collect(DummyData::saprotan())
+            ->firstWhere('id_saprotan', $tanam['saprotan_id']);
+
+        expect($benih)->not->toBeNull()
+            ->and($benih['jenis'])->toBe(JenisSaprotan::Benih->value)
+            ->and($tanam['volume_benih'])->toBeGreaterThan(0);
+
+        // Komoditas benih wajib cocok dengan komoditas yang ditanam.
+        expect($benih['komoditas'])->toBe($tanam['komoditas']);
+    }
+});
+
+it('menjaga pemakaian benih tidak melebihi jumlah yang disalurkan', function () {
+    // Sebelum kolom ini ada, tidak ada apa pun yang mencegah 150 kg benih
+    // dipakai untuk penanaman senilai 400 kg.
+    foreach (DummyData::saprotan() as $baris) {
+        $terpakai = 0.0;
+
+        foreach (DummyData::penanaman() as $tanam) {
+            if (($tanam['saprotan_id'] ?? null) === $baris['id_saprotan']) {
+                $terpakai += (float) ($tanam['volume_benih'] ?? 0);
+            }
+        }
+
+        expect($terpakai)->toBeLessThanOrEqual(
+            (float) $baris['jumlah'],
+            "pemakaian {$baris['nama']} melebihi jumlah yang disalurkan"
+        );
+    }
+});
+
+/*
+|--------------------------------------------------------------------------
+| Penanaman berpusat pada poktan
+|--------------------------------------------------------------------------
+*/
+
+it('memusatkan penanaman pada poktan, bukan lahan perorangan', function () {
+    // Seluruh pencatatan Produksi Pertanian berpusat pada kelompok, dan
+    // lapangan membenarkannya: laporan Polri MT.II 2025 mencatat satu baris
+    // per POKTAN, bukan per bidang lahan.
+    foreach (DummyData::penanaman() as $baris) {
+        expect($baris)->toHaveKey('poktan_id')
+            ->and($baris)->not->toHaveKey('lahan_id')
+            ->and($baris)->not->toHaveKey('petani')
+            ->and($baris)->not->toHaveKey('luas_tanam');
+
+        // Menunjuk poktan yang benar-benar ada.
+        $poktan = collect(DummyData::poktan())->firstWhere('id_poktan', $baris['poktan_id']);
+
+        expect($poktan)->not->toBeNull()
+            ->and($baris['poktan'])->toBe($poktan['nama']);
+
+        // Rantai lokasi tetap utuh tanpa lahan: penanaman -> poktan -> SP.
+        expect($baris['satuan_permukiman_id'])->toBe($poktan['satuan_permukiman_id']);
+    }
+});
+
+it('menghitung kekuatan poktan dari anggota aktif dan lahannya', function () {
+    // Angka yang ditulis tangan menjadi basi begitu satu anggota keluar atau
+    // satu bidang lahan dibetulkan, dan kebasian itu tidak pernah memerahkan
+    // apa pun. Kolom `luas_lahan_kelompok` sudah dicabut karena alasan itu.
+    foreach (DummyData::poktan() as $poktan) {
+        $rekap = DummyData::rekapLahanPoktan($poktan['id_poktan']);
+
+        expect($rekap)->toHaveKeys(['jumlah_anggota', 'luas_kering', 'luas_basah', 'luas_total']);
+
+        // Total selalu jumlah keduanya, tidak pernah dihitung terpisah.
+        expect($rekap['luas_total'])->toBe(round($rekap['luas_kering'] + $rekap['luas_basah'], 2));
+
+        // Anggota yang sudah keluar TIDAK dihitung: lahannya tidak lagi
+        // digarap kelompok ini.
+        $aktif = collect(DummyData::anggotaPoktan($poktan['id_poktan']))
+            ->where('status', 'Aktif')
+            ->count();
+
+        expect($rekap['jumlah_anggota'])->toBeGreaterThanOrEqual($aktif);
+    }
+
+    // Poktan yang tidak ada menjawab nol, bukan melempar galat.
+    expect(DummyData::rekapLahanPoktan(9999)['jumlah_anggota'])->toBe(0);
+});
+
+it('mengembalikan lahan poktan setelah panennya tercatat', function () {
+    // BEDA SIFAT dari sisa benih, dan perbedaan itu disengaja: benih habis
+    // selamanya begitu ditabur, sedangkan lahan kembali tersedia setelah
+    // dipanen. Menghitung seluruh penanaman sepanjang sejarah akan membuat
+    // lahan poktan tampak habis setelah beberapa musim, padahal bidang yang
+    // sama memang ditanami berulang kali tiap tahun.
+    // Yang masih menahan lahan hanyalah bagian yang BELUM dipanen, bukan
+    // seluruh penanaman yang belum pernah disentuh panen. Panen bertahap
+    // melepaskan lahannya sedikit demi sedikit.
+    foreach (DummyData::poktan() as $poktan) {
+        $id = $poktan['id_poktan'];
+        $rekap = DummyData::rekapLahanPoktan($id);
+
+        $belum = 0.0;
+
+        foreach (DummyData::penanaman() as $tanam) {
+            if ($tanam['poktan_id'] === $id) {
+                $belum += DummyData::belumDipanen($tanam['id_penanaman']);
+            }
+        }
+
+        $harapan = max(0.0, round($rekap['luas_total'] - $belum, 2));
+
+        expect(DummyData::lahanTersedia($id))->toBe($harapan);
+    }
+});
+
+it('tidak pernah mengembalikan lahan tersedia bertanda minus', function () {
+    foreach (DummyData::poktan() as $poktan) {
+        expect(DummyData::lahanTersedia($poktan['id_poktan']))->toBeGreaterThanOrEqual(0.0);
+    }
+
+    expect(DummyData::lahanTersedia(9999))->toBe(0.0);
+});
+
+it('menautkan hasil panen ke penanaman lewat id, bukan pencocokan teks', function () {
+    // Pencocokan lewat pasangan komoditas dan petani menyatukan dua penanaman
+    // berbeda yang kebetulan sama, sehingga volumenya terhitung dua kali.
+    foreach (DummyData::hasilPanen() as $panen) {
+        expect($panen)->toHaveKey('penanaman_id');
+
+        $tanam = collect(DummyData::penanaman())
+            ->firstWhere('id_penanaman', $panen['penanaman_id']);
+
+        expect($tanam)->not->toBeNull("panen {$panen['id_hasil_panen']} menunjuk penanaman yang tidak ada");
+
+        // Komoditas dan poktannya wajib sejalan dengan penanamannya, sebab
+        // panen memang kelanjutan dari penanaman itu.
+        expect($panen['komoditas'])->toBe($tanam['komoditas'])
+            ->and($panen['poktan_id'])->toBe($tanam['poktan_id']);
+    }
+});
+
+it('menjaga realisasi tanam tidak melebihi luas lahan poktannya', function () {
+    // Sebelum kolom ini berpusat pada poktan, tidak ada apa pun yang mencegah
+    // satu kelompok mencatat penanaman melebihi lahan yang dimilikinya.
+    foreach (DummyData::poktan() as $poktan) {
+        $luas = DummyData::rekapLahanPoktan($poktan['id_poktan'])['luas_total'];
+
+        foreach (DummyData::penanaman() as $tanam) {
+            if ($tanam['poktan_id'] !== $poktan['id_poktan']) {
+                continue;
+            }
+
+            expect((float) $tanam['realisasi_tanam'])->toBeLessThanOrEqual(
+                $luas,
+                "penanaman {$tanam['id_penanaman']} melebihi lahan {$poktan['nama']}"
+            );
+        }
+    }
+});
+
+/*
+|--------------------------------------------------------------------------
+| Hasil panen: dua identitas aritmetika
+|--------------------------------------------------------------------------
+*/
+
+it('menjaga hasil panen ditambah puso ditambah belum dipanen sama dengan realisasi tanam', function () {
+    // Identitas pertama, terbukti pada 96 baris laporan Polri MT.II 2025.
+    //
+    // `belum_dipanen` TIDAK disimpan; ia selisih dari identitas ini.
+    // Menyimpannya berarti tiga angka yang saling menentukan disimpan
+    // terpisah, dan ketiganya dapat berbeda tanpa ada yang menegur.
+    foreach (DummyData::penanaman() as $tanam) {
+        $panen = 0.0;
+        $puso = 0.0;
+
+        foreach (DummyData::hasilPanen() as $p) {
+            if (($p['penanaman_id'] ?? null) !== $tanam['id_penanaman']) {
+                continue;
+            }
+
+            $panen += (float) $p['realisasi_panen'];
+            $puso += (float) ($p['puso'] ?? 0);
+        }
+
+        $belum = DummyData::belumDipanen($tanam['id_penanaman']);
+        $total = round($panen + $puso + $belum, 2);
+
+        expect($total)->toBe(round((float) $tanam['realisasi_tanam'], 2),
+            "penanaman {$tanam['id_penanaman']} timpang");
+    }
+});
+
+it('menjaga produksi sama dengan hasil panen dikali produktivitas', function () {
+    // Identitas kedua. Produksi tetap DISIMPAN meski dapat dihitung: ia
+    // angka yang dilaporkan ke dinas, dan pembulatan hasil perkalian dapat
+    // berbeda tipis dari angka yang benar-benar ditimbang. Yang dijaga di
+    // sini adalah selisihnya tetap dalam batas pembulatan yang wajar.
+    foreach (DummyData::hasilPanen() as $p) {
+        $hitung = (float) $p['realisasi_panen'] * (float) $p['produktivitas'];
+
+        expect(abs($hitung - (float) $p['produksi']))->toBeLessThan(0.01,
+            "panen {$p['id_hasil_panen']} tidak sejalan dengan produktivitasnya");
+    }
+});
+
+it('meniadakan kualitas panen dan memakai istilah produksi', function () {
+    // Kualitas dicabut 2026-08-22 atas keputusan pemilik proyek, dan
+    // `volume` berganti nama menjadi `produksi` agar tidak tertukar dengan
+    // `volume_benih` pada penanaman.
+    foreach (DummyData::hasilPanen() as $p) {
+        expect($p)->toHaveKey('produksi')
+            ->and($p)->toHaveKey('realisasi_panen')
+            ->and($p)->toHaveKey('produktivitas')
+            ->and($p)->toHaveKey('periode_panen')
+            ->and($p)->not->toHaveKey('kualitas')
+            ->and($p)->not->toHaveKey('volume')
+            ->and($p)->not->toHaveKey('petani')
+            ->and($p)->not->toHaveKey('tanggal_panen');
+
+        // Periode berbentuk YYYY-MM, bukan tanggal penuh.
+        expect($p['periode_panen'])->toMatch('/^\d{4}-\d{2}'.'/');
+    }
+
+    // Enumnya ikut dihapus, bukan sekadar tidak dipakai.
+    expect(enum_exists('App\Enums\KualitasPanen'))->toBeFalse();
+});
+
+it('menahan lahan yang masih berdiri tanaman meski sudah dipanen sebagian', function () {
+    // Diperhalus 2026-08-22: sebelumnya satu baris panen dianggap
+    // menuntaskan SELURUH penanaman. Itu keliru sejak panen dapat
+    // bertahap - penanaman 10 ha yang baru dipanen 3 ha akan langsung
+    // melepaskan seluruh 10 ha, sehingga lahan yang masih berdiri tanaman
+    // tampak siap ditanami lagi.
+    foreach (DummyData::poktan() as $poktan) {
+        $id = $poktan['id_poktan'];
+        $belum = 0.0;
+
+        foreach (DummyData::penanaman() as $tanam) {
+            if ($tanam['poktan_id'] === $id) {
+                $belum += DummyData::belumDipanen($tanam['id_penanaman']);
+            }
+        }
+
+        $harapan = max(0.0, round(DummyData::rekapLahanPoktan($id)['luas_total'] - $belum, 2));
+
+        expect(DummyData::lahanTersedia($id))->toBe($harapan);
+    }
+});
+
+it('mencatat penanaman dan panen memakai periode bulan, bukan tanggal', function () {
+    // Penanaman maupun panen satu hamparan berlangsung berhari-hari,
+    // sehingga menuntut satu tanggal pasti membuat petugas menebak - dan
+    // tebakan itu lalu dipakai sebagai dasar rekap seolah-olah data
+    // terukur. Bulan sudah cukup halus untuk seluruh rekap yang ada.
+    foreach (DummyData::penanaman() as $t) {
+        expect($t)->toHaveKey('periode_tanam')
+            ->and($t)->not->toHaveKey('tanggal_tanam');
+
+        expect($t['periode_tanam'])->toMatch('/^\d{4}-\d{2}'.'/');
+    }
+
+    foreach (DummyData::hasilPanen() as $p) {
+        expect($p['periode_panen'])->toMatch('/^\d{4}-\d{2}'.'/');
+    }
+});
+
+it('tidak memanen sebelum bulan tanamnya', function () {
+    // Aturan integritas nomor 41. Panen yang mendahului tanam adalah
+    // kekeliruan pencatatan yang tidak akan pernah terlihat pada tampilan
+    // mana pun, sebab keduanya dirender pada halaman berbeda.
+    foreach (DummyData::hasilPanen() as $p) {
+        $tanam = collect(DummyData::penanaman())
+            ->firstWhere('id_penanaman', $p['penanaman_id']);
+
+        expect($p['periode_panen'])->toBeGreaterThanOrEqual(
+            $tanam['periode_tanam'],
+            "panen {$p['id_hasil_panen']} mendahului bulan tanamnya"
+        );
+    }
 });

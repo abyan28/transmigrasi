@@ -17,9 +17,12 @@
 
         $bolehUbah = true;
 
+        // Dicocokkan lewat `komoditas_id`, bukan nama. Pencocokan teks putus
+        // begitu Admin membetulkan ejaan satu komoditas, dan putusnya tidak
+        // memerahkan apa pun: tabnya sekadar berubah menjadi kosong.
         $riwayat = array_values(array_filter(
-            DummyData::riwayatTanam(),
-            fn ($r) => $r['komoditas'] === $data['nama'],
+            DummyData::penanaman(),
+            fn ($r) => $r['komoditas_id'] === $data['id_komoditas'],
         ));
     @endphp
 
@@ -64,7 +67,7 @@
                         <dd class="text-right font-medium text-gray-800 dark:text-white/90">{{ $data['satuan'] }}</dd>
                     </div>
                     <div class="flex justify-between gap-3">
-                        <dt class="text-gray-500 dark:text-gray-400">Riwayat tanam</dt>
+                        <dt class="text-gray-500 dark:text-gray-400">Penanaman</dt>
                         <dd class="text-right font-medium tabular-nums text-gray-800 dark:text-white/90">
                             {{ count($riwayat) }} catatan</dd>
                     </div>
@@ -84,7 +87,7 @@
                         if ($data['deskripsi']) {
                             $tab['keterangan'] = 'Keterangan';
                         }
-                        $tab['riwayat'] = 'Riwayat Tanam (' . count($riwayat) . ')';
+                        $tab['riwayat'] = 'Penanaman (' . count($riwayat) . ')';
                         $tab['log'] = 'Catatan Log';
                     @endphp
                     @foreach ($tab as $kunci => $label)
@@ -118,25 +121,27 @@
                     </div>
                 @endif
 
-                {{-- Riwayat tanam --}}
+                {{-- Penanaman --}}
                 <div x-show="tab === 'riwayat'" x-cloak role="tabpanel">
                     @if ($riwayat === [])
-                        <x-sim.empty-state judul="Belum ada riwayat tanam"
+                        <x-sim.empty-state judul="Belum ada penanaman"
                             pesan="Catatan penanaman komoditas ini akan tampil setelah petugas mendatanya." />
                     @else
-                        <x-sim.tabel-ringkas :kolom="['Kode Lahan', 'Petani', 'Musim Tanam', 'Luas Tanam', 'Tanggal Tanam']">
+                        <x-sim.tabel-ringkas :kolom="['Kelompok Tani', 'Satuan Permukiman', 'Realisasi Tanam', 'Tanggal Tanam']">
                             @foreach ($riwayat as $r)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                                     <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">
-                                        {{ $r['kode_lahan'] }}</td>
+                                        <a href="{{ route('penanaman.detail', $r['id_penanaman']) }}"
+                                            class="rounded hover:text-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:hover:text-brand-400">
+                                            {{ $r['poktan'] }}
+                                        </a>
+                                    </td>
                                     <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
-                                        {{ $r['petani'] }}</td>
-                                    <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
-                                        {{ $r['musim_tanam'] }}</td>
+                                        {{ $r['satuan_permukiman'] }}</td>
                                     <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
-                                        {{ number_format($r['luas_tanam'], 2, ',', '.') }} ha</td>
+                                        {{ number_format($r['realisasi_tanam'], 2, ',', '.') }} ha</td>
                                     <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
-                                        {{ \Illuminate\Support\Carbon::parse($r['tanggal_tanam'])->translatedFormat('d M Y') }}
+                                        {{ \Illuminate\Support\Carbon::parse($r['periode_tanam'] . '-01')->translatedFormat('d M Y') }}
                                     </td>
                                 </tr>
                             @endforeach

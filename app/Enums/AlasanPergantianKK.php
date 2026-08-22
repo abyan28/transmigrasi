@@ -14,8 +14,11 @@ use App\Enums\Concerns\PunyaLabel;
  * Perbedaannya terlihat pada kasus yang paling lazim: ketika kepala keluarga
  * meninggal lalu istrinya menggantikan, keluarganya tetap `Aktif` sebab
  * istrinya masih hidup dan menempati rumah yang sama. Kematian itu hanya
- * terekam di sini. Karena itu rekap "Meninggal" pada status tinggal hanya
- * menghitung keluarga yang bubar, bukan orang yang meninggal.
+ * terekam di sini.
+ *
+ * Karena itu `StatusTinggal` TIDAK memiliki nilai `Meninggal` (dicabut
+ * 2026-08-22): satu-satunya tempat kematian dicatat adalah enum ini, dan
+ * keluarga yang tidak lagi berpenghuni cukup ditandai `Tidak Aktif`.
  *
  * Nilai `Pindah atau Merantau` sengaja tidak dipecah dua: dari sisi pendataan
  * keduanya sama, yaitu kepala keluarga tidak lagi berada di kawasan sementara

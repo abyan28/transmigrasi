@@ -8,8 +8,8 @@ use App\Enums\CakupanData;
 use App\Enums\HubunganKeluarga;
 use App\Enums\JenisInfrastruktur;
 use App\Enums\JenisReferensi;
+use App\Enums\JenisSaprotan;
 use App\Enums\KategoriPengaduan;
-use App\Enums\KepemilikanAlsintan;
 use App\Enums\Kondisi;
 use App\Enums\KondisiRumah;
 use App\Enums\PeruntukanLahan;
@@ -273,7 +273,7 @@ class DummyData
                 'pendapatan_per_bulan' => 1950000,
                 'daerah_asal' => 'BELU',
                 'tahun_kedatangan' => 2017,
-                'status_tinggal' => StatusTinggal::Pindah->value,
+                'status_tinggal' => StatusTinggal::PindahPenduduk->value,
                 'status_anggota_poktan' => 'Ya',
                 'telepon' => '081234567805',
                 'satuan_permukiman' => 'SP Weoe / Uluk Lubuk',
@@ -856,8 +856,31 @@ class DummyData
     /**
      * Daftar hasil panen.
      *
-     * Volume disimpan apa adanya sesuai satuan baku komoditas, konversi ke ton
-     * hanya dilakukan saat rekap (agents/rules.md bagian 8a).
+     * Produksi disimpan apa adanya sesuai satuan baku komoditas, konversi ke
+     * ton hanya dilakukan saat rekap (agents/rules.md bagian 8a).
+     *
+     * DIROMBAK 2026-08-22 mengikuti kolom laporan lapangan. Tiga hal berubah:
+     *
+     * 1. `volume` berganti nama menjadi `produksi`, sejalan dengan istilah
+     *    laporan dan agar tidak tertukar dengan `volume_benih` pada penanaman.
+     * 2. Ditambahkan `realisasi_panen`, `puso`, dan `produktivitas`. Ketiganya
+     *    yang membuat panen bertahap dapat dicatat: satu penanaman dapat
+     *    dipanen sebagian, sebagian lagi puso, sisanya menyusul.
+     * 3. `kualitas` DICABUT atas keputusan pemilik proyek.
+     *
+     * Dua identitas aritmetika yang WAJIB berlaku, keduanya terbukti pada 96
+     * baris laporan Polri MT.II 2025:
+     *
+     *     realisasi_panen + puso + belum_dipanen = penanaman.realisasi_tanam
+     *     produksi                               = realisasi_panen x produktivitas
+     *
+     * `belum_dipanen` TIDAK disimpan; ia selisih dari identitas pertama.
+     * Menyimpannya berarti tiga angka yang saling menentukan disimpan
+     * terpisah, dan ketiganya dapat berbeda tanpa ada yang menegur.
+     *
+     * `produksi` sengaja tetap disimpan meski dapat dihitung dari dua kolom
+     * lain: ia angka yang dilaporkan ke dinas, dan pembulatan hasil perkalian
+     * dapat berbeda tipis dari angka yang benar-benar ditimbang.
      *
      * CAKUPANNYA BEBERAPA TRANSAKSI CONTOH, bukan seluruh panen kawasan.
      * Isinya sengaja sedikit dan beragam satuan agar tampilan tabel, konversi
@@ -873,73 +896,133 @@ class DummyData
     public static function hasilPanen(): array
     {
         return [
+            // Panen sebagian beserta puso: 1,25 + 0,25 = 1,50 ha yang ditanam.
+            // Sengaja ada agar cabang puso ikut terlihat saat peninjauan.
             [
                 'id_hasil_panen' => 1,
+                'penanaman_id' => 1,
+                'poktan_id' => 1,
+                'poktan' => 'POKTAN MEKAR JAYA',
                 'komoditas' => 'JAGUNG',
                 'satuan' => 'Ton',
-                'petani' => 'YOHANES BERE',
                 'satuan_permukiman' => 'SP Kapitan Meo',
                 'satuan_permukiman_id' => 1,
-                'musim_tanam' => 'MT1 2026',
-                'tanggal_panen' => '2026-04-18',
-                'volume' => 4.250,
-                'kualitas' => 'Baik',
+                'periode_panen' => '2026-04',
+                'realisasi_panen' => 1.25,
+                'puso' => 0.25,
+                'produktivitas' => 3.400,
+                'produksi' => 4.250,
                 'harga_jual' => 4500000,
             ],
             [
                 'id_hasil_panen' => 2,
+                'penanaman_id' => 3,
+                'poktan_id' => 1,
+                'poktan' => 'POKTAN MEKAR JAYA',
                 'komoditas' => 'JAGUNG',
                 'satuan' => 'Ton',
-                'petani' => 'MARIA DA COSTA',
                 'satuan_permukiman' => 'SP Kapitan Meo',
                 'satuan_permukiman_id' => 1,
-                'musim_tanam' => 'MT1 2026',
-                'tanggal_panen' => '2026-04-20',
-                'volume' => 5.800,
-                'kualitas' => 'Sangat Baik',
+                'periode_panen' => '2026-04',
+                'realisasi_panen' => 1.20,
+                'puso' => 0.00,
+                'produktivitas' => 2.900,
+                'produksi' => 3.480,
                 'harga_jual' => 4750000,
             ],
             [
                 'id_hasil_panen' => 3,
+                'penanaman_id' => 2,
+                'poktan_id' => 1,
+                'poktan' => 'POKTAN MEKAR JAYA',
                 'komoditas' => 'PADI',
                 'satuan' => 'Ton',
-                'petani' => 'YOHANES BERE',
                 'satuan_permukiman' => 'SP Kapitan Meo',
                 'satuan_permukiman_id' => 1,
-                'musim_tanam' => 'MT1 2026',
-                'tanggal_panen' => '2026-05-02',
-                'volume' => 2.100,
-                'kualitas' => 'Baik',
+                'periode_panen' => '2026-05',
+                'realisasi_panen' => 0.75,
+                'puso' => 0.00,
+                'produktivitas' => 2.800,
+                'produksi' => 2.100,
                 'harga_jual' => 5200000,
             ],
+            // Satuan kilogram, sehingga produktivitasnya pun kg/ha. Satuan
+            // TIDAK dipaksa ton: cabai memang ditimbang kilogram, dan
+            // memaksanya membuat harga jual per ton menjadi angka yang tidak
+            // pernah dipakai siapa pun di lapangan.
             [
                 'id_hasil_panen' => 4,
+                'penanaman_id' => 4,
+                'poktan_id' => 3,
+                'poktan' => 'POKTAN TANI BERSATU',
                 'komoditas' => 'CABAI',
                 'satuan' => 'Kilogram',
-                'petani' => 'PETRUS NAHAK',
                 'satuan_permukiman' => 'SP Tniumanu',
                 'satuan_permukiman_id' => 2,
-                'musim_tanam' => 'MT1 2026',
-                'tanggal_panen' => '2026-03-28',
-                'volume' => 320.500,
-                'kualitas' => 'Cukup',
+                'periode_panen' => '2026-03',
+                'realisasi_panen' => 0.25,
+                'puso' => 0.05,
+                'produktivitas' => 1282.000,
+                'produksi' => 320.500,
                 'harga_jual' => 28000,
                 'keterangan_satuan_lokal' => 'Setara 13 karung ukuran sedang',
             ],
             [
                 'id_hasil_panen' => 5,
+                'penanaman_id' => 5,
+                'poktan_id' => 1,
+                'poktan' => 'POKTAN MEKAR JAYA',
                 'komoditas' => 'JAGUNG',
                 'satuan' => 'Ton',
-                'petani' => 'GABRIEL LEKI',
-                'satuan_permukiman' => 'SP Weain',
-                'satuan_permukiman_id' => 6,
-                'musim_tanam' => 'MT2 2025',
-                'tanggal_panen' => '2025-11-15',
-                'volume' => 3.900,
-                'kualitas' => 'Baik',
+                'satuan_permukiman' => 'SP Kapitan Meo',
+                'satuan_permukiman_id' => 1,
+                'periode_panen' => '2025-11',
+                'realisasi_panen' => 1.30,
+                'puso' => 0.20,
+                'produktivitas' => 3.000,
+                'produksi' => 3.900,
                 'harga_jual' => 4300000,
             ],
         ];
+    }
+
+    /**
+     * Luas yang belum dipanen dari satu penanaman.
+     *
+     * TIDAK DISIMPAN, melainkan selisih dari identitas yang wajib berlaku:
+     *
+     *     realisasi_panen + puso + belum_dipanen = realisasi_tanam
+     *
+     * Menyimpannya berarti tiga angka yang saling menentukan disimpan
+     * terpisah, dan ketiganya dapat berbeda tanpa ada yang menegur.
+     *
+     * Menjumlahkan SELURUH panen milik penanaman itu, bukan satu baris, sebab
+     * satu penanaman dapat dipanen bertahap: sebagian bulan ini, sisanya bulan
+     * depan. Membaca satu baris saja akan menyatakan lahan masih tersisa
+     * padahal panen berikutnya sudah tercatat.
+     *
+     * @param  int  $penanamanId  Nilai id_penanaman
+     * @return float Sisa luas dalam hektare, tidak pernah negatif
+     */
+    public static function belumDipanen(int $penanamanId): float
+    {
+        $tanam = collect(self::penanaman())->firstWhere('id_penanaman', $penanamanId);
+
+        if ($tanam === null) {
+            return 0.0;
+        }
+
+        $sudah = 0.0;
+
+        foreach (self::hasilPanen() as $panen) {
+            if (($panen['penanaman_id'] ?? null) !== $penanamanId) {
+                continue;
+            }
+
+            $sudah += (float) ($panen['realisasi_panen'] ?? 0) + (float) ($panen['puso'] ?? 0);
+        }
+
+        return max(0.0, round((float) $tanam['realisasi_tanam'] - $sudah, 2));
     }
 
     /**
@@ -1569,11 +1652,10 @@ class DummyData
                 'Sudah Diserahkan', 'Dalam Proses', 'Belum Diserahkan',
             ],
             // Berskor: nilainya dipakai menghitung kondisi SP (rules.md 10c).
-            JenisReferensi::Kondisi->value => ['Baik', 'Rusak Ringan', 'Rusak Berat'],
+            JenisReferensi::Kondisi->value => ['Baik', 'Rusak Ringan', 'Rusak Berat', 'Hilang'],
             JenisReferensi::KondisiRumah->value => ['Tidak Rusak', 'Rusak Ringan', 'Rusak Berat'],
             JenisReferensi::StatusHunian->value => ['Dihuni', 'Tidak Dihuni'],
             JenisReferensi::TipeKomoditas->value => ['Pangan', 'Palawija', 'Hortikultura'],
-            JenisReferensi::KualitasPanen->value => ['Sangat Baik', 'Baik', 'Cukup', 'Kurang'],
             // Berjenjang: urutannya dipakai menyortir daftar pengaduan.
             JenisReferensi::PrioritasPengaduan->value => ['Rendah', 'Sedang', 'Tinggi', 'Mendesak'],
             JenisReferensi::JenisDokumenLahan->value => ['HPL', 'SHM'],
@@ -1621,7 +1703,12 @@ class DummyData
         // Skor kondisi, dipisah dari daftar di atas agar daftar nilainya tetap
         // terbaca sebagai satu baris. Nilai ini yang menggantikan konstanta
         // NILAI_KONDISI pada PenilaianKondisiSp.
-        $skor = ['Baik' => 1.0, 'Rusak Ringan' => 0.5, 'Rusak Berat' => 0.2];
+        //
+        // "Hilang" bernilai 0.0, bukan sekadar lebih kecil dari "Rusak Berat":
+        // barang yang lenyap tidak melayani siapa pun, sedangkan barang rusak
+        // berat masih dapat diperbaiki. Menyamakan keduanya membuat SP yang
+        // kehilangan inventarisnya tetap terhitung memiliki layanan itu.
+        $skor = ['Baik' => 1.0, 'Rusak Ringan' => 0.5, 'Rusak Berat' => 0.2, 'Hilang' => 0.0];
 
         // Satu nilai sengaja dinonaktifkan agar keadaan itu ikut terlihat saat
         // peninjauan: ia tetap terbaca pada data lama, hanya tidak lagi
@@ -2222,41 +2309,253 @@ class DummyData
     }
 
     /**
+     * Rekap kekuatan satu poktan: cacah anggota aktif dan luas lahannya.
+     *
+     * SELURUHNYA DIHITUNG, tidak satu pun disimpan. Angka yang ditulis tangan
+     * menjadi basi begitu satu anggota keluar atau satu bidang lahan
+     * dibetulkan, dan kebasian itu tidak pernah memerahkan apa pun. Kolom
+     * `luas_lahan_kelompok` sudah dicabut 2026-08-20 karena persis alasan itu
+     * (agents/erd.md 7.3).
+     *
+     * Luas lahan menjumlahkan bidang milik ketua DAN seluruh anggota aktif.
+     * Ketua diperlakukan terpisah sebab ia belum tentu terdaftar sebagai
+     * anggota: pada jalur `Bukan Transmigran` lahannya bahkan tidak terdata
+     * pada modul Lahan sehingga nilainya diketik pada profil poktan.
+     *
+     * Hanya anggota berstatus Aktif yang dihitung. Anggota yang sudah keluar
+     * tetap tersimpan pada riwayat keanggotaan, tetapi lahannya tidak lagi
+     * digarap kelompok ini.
+     *
+     * @param  int  $poktanId  Nilai id_poktan
+     * @return array{jumlah_anggota: int, luas_kering: float, luas_basah: float, luas_total: float}
+     */
+    public static function rekapLahanPoktan(int $poktanId): array
+    {
+        $kosong = ['jumlah_anggota' => 0, 'luas_kering' => 0.0, 'luas_basah' => 0.0, 'luas_total' => 0.0];
+
+        $poktan = collect(self::poktan())->firstWhere('id_poktan', $poktanId);
+
+        if ($poktan === null) {
+            return $kosong;
+        }
+
+        $anggotaAktif = array_values(array_filter(
+            self::anggotaPoktan($poktanId),
+            fn ($a) => $a['status'] === 'Aktif',
+        ));
+
+        $kering = array_sum(array_column($anggotaAktif, 'luas_kering'));
+        $basah = array_sum(array_column($anggotaAktif, 'luas_basah'));
+
+        // Lahan ketua. Dua jalur pertama membacanya dari bidang milik
+        // keluarganya; jalur `Bukan Transmigran` memakai nilai yang diketik
+        // pada profil poktan, sebab lahannya memang tidak terdata.
+        $asalKetua = AsalWakilPoktan::tryFrom($poktan['asal_ketua'] ?? '');
+
+        $lahanKetua = $asalKetua !== null && $asalKetua->dariKeluargaTransmigran()
+            ? self::rekapLahanKeluarga($poktan['ketua_transmigran_id'] ?? null)
+            : ['kering' => (float) ($poktan['luas_kering_ketua'] ?? 0), 'basah' => (float) ($poktan['luas_basah_ketua'] ?? 0)];
+
+        // Ketua yang JUGA terdaftar sebagai anggota tidak dihitung dua kali.
+        $ketuaSudahTerhitung = collect($anggotaAktif)
+            ->contains('transmigran_id', $poktan['ketua_transmigran_id'] ?? null);
+
+        if (! $ketuaSudahTerhitung) {
+            $kering += $lahanKetua['kering'];
+            $basah += $lahanKetua['basah'];
+        }
+
+        return [
+            // Ketua ikut dihitung sebagai orang meski tidak terdaftar pada
+            // tabel keanggotaan: ia tetap menggarap lahannya sendiri.
+            'jumlah_anggota' => count($anggotaAktif) + ($ketuaSudahTerhitung ? 0 : 1),
+            'luas_kering' => round($kering, 2),
+            'luas_basah' => round($basah, 2),
+            'luas_total' => round($kering + $basah, 2),
+        ];
+    }
+
+    /**
      * Alat dan mesin pertanian.
      *
-     * Dibedakan antara milik pribadi transmigran dan bantuan pemerintah yang
-     * disalurkan lewat poktan (agents/rules.md bagian 7b poin 1).
+     * PEMILIK SELALU KELOMPOK TANI. Kepemilikan pribadi dicabut 2026-08-22
+     * bersama enum `KepemilikanAlsintan`, mengikuti keputusan pemilik proyek
+     * bahwa seluruh menu Pertanian mencatat KELOMPOK, bukan individu.
+     *
+     * Karena itu `kepemilikan` dan `transmigran_id` tidak lagi ada di sini,
+     * sedangkan `poktan_id` menjadi wajib. Alat yang dibeli dari iuran anggota
+     * tetap tercatat atas nama kelompok, dengan `sumber_perolehan` bernilai
+     * `Swadaya`.
+     *
+     * Sebelumnya dua jalur pemilik disediakan sekaligus, dan akibatnya terlihat
+     * pada data: dua baris pribadi tidak dapat dijangkau dari halaman mana pun
+     * kecuali daftar alsintan itu sendiri. Ia tidak muncul pada rincian poktan
+     * sebab `poktan_id`-nya kosong, dan halaman transmigran tidak pernah punya
+     * tab alsintan.
      *
      * @return array<int, array<string, mixed>> Data alsintan
      */
     public static function alsintan(): array
     {
         return [
-            ['id_alsintan' => 1, 'nama_alat' => 'TRAKTOR RODA DUA', 'jumlah' => 2, 'tahun_perolehan' => 2018, 'sumber_perolehan' => 'APBN', 'kepemilikan' => KepemilikanAlsintan::BantuanPoktan->value, 'pemilik' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'transmigran_id' => null, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'kondisi' => 'Baik', 'keterangan' => 'Servis berkala terakhir Maret 2026.', 'dokumen_pendukung' => 'berita-acara-traktor.pdf'],
-            ['id_alsintan' => 2, 'nama_alat' => 'POMPA AIR', 'jumlah' => 3, 'tahun_perolehan' => 2019, 'sumber_perolehan' => 'APBD Kabupaten', 'kepemilikan' => KepemilikanAlsintan::BantuanPoktan->value, 'pemilik' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'transmigran_id' => null, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'kondisi' => 'Rusak Ringan'],
-            ['id_alsintan' => 3, 'nama_alat' => 'HAND SPRAYER', 'jumlah' => 1, 'tahun_perolehan' => 2021, 'sumber_perolehan' => 'Pembelian Sendiri', 'kepemilikan' => KepemilikanAlsintan::Pribadi->value, 'pemilik' => 'YOHANES BERE', 'poktan_id' => null, 'transmigran_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'kondisi' => 'Baik'],
-            ['id_alsintan' => 4, 'nama_alat' => 'MESIN PERONTOK JAGUNG', 'jumlah' => 1, 'tahun_perolehan' => 2020, 'sumber_perolehan' => 'Dinas Pertanian Kabupaten', 'kepemilikan' => KepemilikanAlsintan::BantuanPoktan->value, 'pemilik' => 'POKTAN TANI BERSATU', 'poktan_id' => 3, 'transmigran_id' => null, 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'kondisi' => 'Rusak Berat'],
-            ['id_alsintan' => 5, 'nama_alat' => 'CANGKUL', 'jumlah' => 8, 'tahun_perolehan' => 2019, 'sumber_perolehan' => 'Pembelian Sendiri', 'kepemilikan' => KepemilikanAlsintan::Pribadi->value, 'pemilik' => 'GABRIEL LEKI', 'poktan_id' => null, 'transmigran_id' => 7, 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain', 'kondisi' => 'Baik'],
+            ['id_alsintan' => 1, 'nama_alat' => 'TRAKTOR RODA DUA', 'jumlah' => 2, 'tahun_perolehan' => 2018, 'sumber_perolehan' => 'APBN', 'pemilik' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'kondisi' => 'Baik', 'keterangan' => 'Servis berkala terakhir Maret 2026.', 'dokumen_pendukung' => 'berita-acara-traktor.pdf'],
+            ['id_alsintan' => 2, 'nama_alat' => 'POMPA AIR', 'jumlah' => 3, 'tahun_perolehan' => 2019, 'sumber_perolehan' => 'APBD Kabupaten', 'pemilik' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'kondisi' => 'Rusak Ringan'],
+            // Dahulu tercatat atas nama YOHANES BERE sebagai milik pribadi.
+            // Dialihkan ke poktan tempatnya bernaung, dan `sumber_perolehan`
+            // dibetulkan dari 'Pembelian Sendiri' menjadi `Swadaya`: teks lama
+            // bukan nilai enum SumberDana mana pun, sehingga penyaringnya
+            // tidak pernah cocok. Maknanya bergeser wajar, dari dibeli
+            // seorang anggota menjadi dibeli kelompok dari iuran anggotanya.
+            ['id_alsintan' => 3, 'nama_alat' => 'HAND SPRAYER', 'jumlah' => 1, 'tahun_perolehan' => 2021, 'sumber_perolehan' => 'Swadaya', 'pemilik' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'kondisi' => 'Baik'],
+            ['id_alsintan' => 4, 'nama_alat' => 'MESIN PERONTOK JAGUNG', 'jumlah' => 1, 'tahun_perolehan' => 2020, 'sumber_perolehan' => 'Dinas Pertanian Kabupaten', 'pemilik' => 'POKTAN TANI BERSATU', 'poktan_id' => 3, 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'kondisi' => 'Rusak Berat'],
+            // Dahulu atas nama GABRIEL LEKI, dialihkan ke POKTAN HARAPAN
+            // BARU tempatnya bernaung; SP-nya memang sudah sama.
+            ['id_alsintan' => 5, 'nama_alat' => 'CANGKUL', 'jumlah' => 8, 'tahun_perolehan' => 2019, 'sumber_perolehan' => 'Swadaya', 'pemilik' => 'POKTAN HARAPAN BARU', 'poktan_id' => 4, 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain', 'kondisi' => 'Baik'],
         ];
     }
 
     /**
      * Penyaluran sarana produksi pertanian.
      *
-     * Penyaluran kepada anggota poktan hanya untuk anggota berstatus aktif
-     * (agents/rules.md bagian 7c poin 4).
+     * PENERIMA SELALU POKTAN. Penyaluran kepada perorangan dicabut 2026-08-22
+     * bersama pilihan "Jenis Penerima" pada formnya: seluruh pencatatan
+     * Produksi Pertanian berpusat pada kelompok tani, dan pembagian kepada
+     * anggota diatur poktan sendiri di luar sistem.
+     *
+     * Karena itu `transmigran_id` dan `jenis_penerima` tidak lagi ada di sini,
+     * sedangkan `poktan_id` menjadi wajib. Satuan permukiman tetap disimpan
+     * sebab dipakai penyaringan daftar, tetapi nilainya selalu mengikuti SP
+     * poktan penerimanya.
+     *
+     * `komoditas_id` ditambahkan 2026-08-22, WAJIB bila jenisnya Benih dan
+     * kosong bagi jenis lain. Sebelumnya kaitan benih ke komoditas hanya
+     * tersirat dari teks namanya, sehingga sistem tidak tahu "BENIH JAGUNG
+     * HIBRIDA" itu benih jagung: tidak ada cara menyaringnya, dan petugas
+     * dapat memilih benih padi untuk penanaman jagung tanpa ditegur.
+     *
+     * Pupuk, pestisida, dan mulsa sengaja TIDAK diwajibkan berkomoditas.
+     * Urea dipakai tanaman apa pun, dan memaksanya memilih satu komoditas
+     * berarti mengarang data yang tidak ada di lapangan.
      *
      * @return array<int, array<string, mixed>> Data saprotan
      */
     public static function saprotan(): array
     {
         return [
-            ['id_saprotan' => 1, 'jenis' => 'Benih', 'nama' => 'BENIH JAGUNG HIBRIDA', 'jumlah' => 250.0, 'satuan' => 'Kilogram', 'tanggal_perolehan' => '2026-01-15', 'sumber' => 'Dinas Pertanian Kabupaten', 'penerima' => 'POKTAN MEKAR JAYA', 'jenis_penerima' => 'Poktan', 'poktan_id' => 1, 'transmigran_id' => null, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'keterangan' => 'Disalurkan menjelang musim tanam MT1.', 'dokumen_pendukung' => 'bast-benih-jagung.pdf'],
-            ['id_saprotan' => 2, 'jenis' => 'Pupuk', 'nama' => 'PUPUK UREA', 'jumlah' => 1200.0, 'satuan' => 'Kilogram', 'tanggal_perolehan' => '2026-01-20', 'sumber' => 'APBN', 'penerima' => 'POKTAN MEKAR JAYA', 'jenis_penerima' => 'Poktan', 'poktan_id' => 1, 'transmigran_id' => null, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo'],
-            ['id_saprotan' => 3, 'jenis' => 'Pestisida', 'nama' => 'INSEKTISIDA CAIR', 'jumlah' => 40.0, 'satuan' => 'Liter', 'tanggal_perolehan' => '2026-02-08', 'sumber' => 'Dinas Pertanian Kabupaten', 'penerima' => 'POKTAN TANI BERSATU', 'jenis_penerima' => 'Poktan', 'poktan_id' => 3, 'transmigran_id' => null, 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu'],
-            ['id_saprotan' => 4, 'jenis' => 'Benih', 'nama' => 'BENIH PADI IR64', 'jumlah' => 80.0, 'satuan' => 'Kilogram', 'tanggal_perolehan' => '2026-02-12', 'sumber' => 'APBD Provinsi', 'penerima' => 'YOHANES BERE', 'jenis_penerima' => 'Individu', 'poktan_id' => null, 'transmigran_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo'],
-            ['id_saprotan' => 5, 'jenis' => 'Mulsa', 'nama' => 'MULSA PLASTIK HITAM PERAK', 'jumlah' => 15.0, 'satuan' => 'Rol', 'tanggal_perolehan' => '2026-03-02', 'sumber' => 'Lembaga Swadaya Masyarakat', 'penerima' => 'POKTAN HARAPAN BARU', 'jenis_penerima' => 'Poktan', 'poktan_id' => 4, 'transmigran_id' => null, 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain'],
+            ['id_saprotan' => 1, 'jenis' => 'Benih', 'nama' => 'BENIH JAGUNG HIBRIDA', 'komoditas_id' => 1, 'komoditas' => 'JAGUNG', 'jumlah' => 250.0, 'satuan' => 'Kilogram', 'tanggal_perolehan' => '2026-01-15', 'sumber' => 'Dinas Pertanian Kabupaten', 'penerima' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'keterangan' => 'Disalurkan menjelang penanaman awal tahun.', 'dokumen_pendukung' => 'bast-benih-jagung.pdf'],
+            ['id_saprotan' => 2, 'jenis' => 'Pupuk', 'nama' => 'PUPUK UREA', 'komoditas_id' => null, 'komoditas' => null, 'jumlah' => 1200.0, 'satuan' => 'Kilogram', 'tanggal_perolehan' => '2026-01-20', 'sumber' => 'APBN', 'penerima' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo'],
+            ['id_saprotan' => 3, 'jenis' => 'Pestisida', 'nama' => 'INSEKTISIDA CAIR', 'komoditas_id' => null, 'komoditas' => null, 'jumlah' => 40.0, 'satuan' => 'Liter', 'tanggal_perolehan' => '2026-02-08', 'sumber' => 'Dinas Pertanian Kabupaten', 'penerima' => 'POKTAN TANI BERSATU', 'poktan_id' => 3, 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu'],
+            // Sebelumnya tercatat atas nama YOHANES BERE sebagai penerima
+            // perorangan. Dialihkan ke poktan tempatnya bernaung, sebab
+            // penyaluran perorangan sudah tidak ada lagi.
+            ['id_saprotan' => 4, 'jenis' => 'Benih', 'nama' => 'BENIH PADI IR64', 'komoditas_id' => 2, 'komoditas' => 'PADI', 'jumlah' => 80.0, 'satuan' => 'Kilogram', 'tanggal_perolehan' => '2026-02-12', 'sumber' => 'APBD Provinsi', 'penerima' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo'],
+            ['id_saprotan' => 5, 'jenis' => 'Mulsa', 'nama' => 'MULSA PLASTIK HITAM PERAK', 'komoditas_id' => null, 'komoditas' => null, 'jumlah' => 15.0, 'satuan' => 'Rol', 'tanggal_perolehan' => '2026-03-02', 'sumber' => 'Lembaga Swadaya Masyarakat', 'penerima' => 'POKTAN HARAPAN BARU', 'poktan_id' => 4, 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain'],
+            // Benih jagung kedua bagi poktan yang sama, sengaja ada agar
+            // keadaan "satu poktan memegang dua benih komoditas yang sama"
+            // ikut terlihat saat peninjauan. Seluruh isinya sudah terpakai,
+            // sehingga ia TIDAK boleh muncul pada pilihan benih di form
+            // penanaman - dan itulah yang dijaga uji sisa stok.
+            ['id_saprotan' => 6, 'jenis' => 'Benih', 'nama' => 'BENIH JAGUNG LOKAL', 'komoditas_id' => 1, 'komoditas' => 'JAGUNG', 'jumlah' => 30.0, 'satuan' => 'Kilogram', 'tanggal_perolehan' => '2025-05-20', 'sumber' => 'Swadaya', 'penerima' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'keterangan' => 'Benih swadaya anggota, habis dipakai penanaman Juni 2025.'],
         ];
+    }
+
+    /**
+     * Sisa benih yang belum terpakai pada satu baris saprotan.
+     *
+     * Rumusnya satu pengurangan, dan ia MENGOREKSI DIRINYA SENDIRI ketika
+     * baris penanaman disunting:
+     *
+     *     sisa = saprotan.jumlah - SUM(penanaman.volume_benih)
+     *
+     * Itulah sebabnya tidak ada mekanisme "pengembalian stok" di mana pun.
+     * Alur nyatanya begini: poktan menerima 150 kg untuk 10 ha, lalu petugas
+     * mencatat penanaman dengan alokasi penuh sehingga sisanya nol. Saat
+     * ditinjau ulang ternyata baru 3 ha yang ditanam memakai 45 kg; petugas
+     * menyunting baris itu, dan sisanya kembali menjadi 105 kg dengan
+     * sendirinya. Menyunting baris adalah CRUD biasa, bukan peristiwa khusus.
+     *
+     * Benih HABIS SEKALI PAKAI, tetapi penguncian terjadi ketika STOKNYA
+     * HABIS, bukan ketika pertama kali dipakai. Mengunci pada pemakaian
+     * pertama akan mematahkan penanaman bertahap: laporan Polri MT.II 2025
+     * menunjukkan satu poktan menanam 3 ha lalu 7 ha dari jatah yang sama,
+     * dan penanaman kedua itu tidak akan dapat dicatat sama sekali.
+     *
+     * @param  int  $saprotanId  Nilai id_saprotan
+     * @return float Sisa dalam satuan aslinya, tidak pernah negatif
+     */
+    public static function sisaBenih(int $saprotanId): float
+    {
+        $baris = collect(self::saprotan())->firstWhere('id_saprotan', $saprotanId);
+
+        if ($baris === null) {
+            return 0.0;
+        }
+
+        $terpakai = 0.0;
+
+        foreach (self::penanaman() as $tanam) {
+            if (($tanam['saprotan_id'] ?? null) === $saprotanId) {
+                $terpakai += (float) ($tanam['volume_benih'] ?? 0);
+            }
+        }
+
+        // Tidak pernah negatif. Pemakaian melebihi stok memang ditolak
+        // penjaga pada form, tetapi data lama yang terlanjur begitu tidak
+        // boleh membuat halaman menampilkan sisa bertanda minus.
+        return max(0.0, round((float) $baris['jumlah'] - $terpakai, 3));
+    }
+
+    /**
+     * Benih milik satu poktan untuk satu komoditas yang stoknya masih ada.
+     *
+     * Dipakai form penanaman: begitu poktan dan komoditas dipilih, hanya
+     * benih yang benar-benar dapat ditanam yang ditawarkan. Menyaringnya di
+     * sini, bukan di tampilan, membuat aturan yang sama berlaku bagi setiap
+     * pemanggil.
+     *
+     * Benih yang stoknya habis SENGAJA tidak muncul. Petugas yang hendak
+     * mencatat penanaman berikutnya harus mendata penyaluran baru lebih dulu,
+     * sebab benih memang tidak muncul dari ketiadaan.
+     *
+     * @param  int|null  $poktanId  Penyaring poktan, null berarti semua
+     * @param  int|null  $komoditasId  Penyaring komoditas, null berarti semua
+     * @return array<int, array<string, mixed>> Baris saprotan beserta sisanya
+     */
+    public static function benihTersedia(?int $poktanId = null, ?int $komoditasId = null): array
+    {
+        $hasil = [];
+
+        foreach (self::saprotan() as $baris) {
+            if ($baris['jenis'] !== JenisSaprotan::Benih->value) {
+                continue;
+            }
+
+            if ($poktanId !== null && $baris['poktan_id'] !== $poktanId) {
+                continue;
+            }
+
+            if ($komoditasId !== null && ($baris['komoditas_id'] ?? null) !== $komoditasId) {
+                continue;
+            }
+
+            $sisa = self::sisaBenih($baris['id_saprotan']);
+
+            if ($sisa <= 0) {
+                continue;
+            }
+
+            // Label menyebut sisanya, bukan hanya namanya. Petugas perlu tahu
+            // berapa yang masih dapat dialokasikan sebelum memilih, bukan
+            // setelah formnya ditolak.
+            $hasil[] = $baris + [
+                'sisa_benih' => $sisa,
+                'label_benih' => $baris['nama'].' - sisa '
+                    .rtrim(rtrim(number_format($sisa, 2, ',', '.'), '0'), ',')
+                    .' '.$baris['satuan'],
+            ];
+        }
+
+        return $hasil;
     }
 
     /*
@@ -2285,36 +2584,121 @@ class DummyData
     }
 
     /**
-     * Musim tanam.
+     * Penanaman: lahan mana, ditanami apa, kapan.
      *
-     * Nama dan tahun dipisah agar grafik per tahun dapat dihitung; SQL
-     * referensi hanya menyediakan teks bebas (agents/erd.md 8.2 nomor 22).
+     * DAHULU BERNAMA "RIWAYAT TANAM", diubah 2026-08-22 atas keberatan pemilik
+     * proyek. Kata "riwayat" menyiratkan catatan masa lalu, padahal barisnya
+     * dibuat justru ketika penanaman baru dimulai dan hasil panennya belum
+     * ada. Lebih menyesatkan lagi, `hasil_panen` menaut ke tabel inilah:
+     * menyebut induk dari panen sebagai "riwayat" membuat orang mengira
+     * penanaman yang sedang berjalan dicatat di tempat lain.
      *
-     * @return array<int, array<string, mixed>> Data musim tanam
+     * TANPA MUSIM TANAM. Fitur itu dicabut pada hari yang sama atas keputusan
+     * pemilik proyek: di lapangan poktan menanam secara fleksibel, tidak
+     * mengikuti periode baku MT1/MT2 yang ditetapkan dari meja. Memaksa setiap
+     * penanaman memilih salah satu musim membuat petugas menebak, dan tebakan
+     * itu lalu dipakai sebagai dasar rekap.
+     *
+     * Sumbu waktunya kini `periode_tanam` di sini dan `periode_panen` pada
+     * hasil panen. Keduanya sudah ada, memang dicatat petugas, dan tidak
+     * memerlukan tabel tersendiri.
+     *
+     * KEDUANYA BULAN, bukan tanggal penuh (diubah 2026-08-22). Penanaman satu
+     * hamparan berlangsung berhari-hari, sehingga menuntut satu tanggal pasti
+     * membuat petugas menebak - dan tebakan itu lalu dipakai sebagai dasar
+     * rekap seolah-olah data terukur. Bulan sudah cukup halus untuk seluruh
+     * rekap yang ada.
+     *
+     * `saprotan_id` dan `volume_benih` ditambahkan 2026-08-22. Keduanya
+     * menautkan penanaman ke benih yang dipakainya, sehingga sisa stok dapat
+     * dihitung tanpa mekanisme apa pun selain satu pengurangan (lihat
+     * `sisaBenih()`).
+     *
+     * Volume benih SENGAJA disimpan di sini, bukan dihitung dari luas tanam
+     * memakai rasio baku. Laporan Polri MT.II 2025 memang memakai 15 kg/ha di
+     * hampir seluruh barisnya, tetapi rasio itu keputusan program pada satu
+     * bantuan, bukan hukum alam: benih swadaya dan komoditas lain memakai
+     * takaran berbeda. Menghitungnya otomatis membuat angka karangan tampil
+     * seolah-olah hasil pendataan.
+     *
+     * Keduanya boleh kosong: penanaman dari benih yang tidak tercatat pada
+     * modul saprotan tetap harus dapat didata, sebab menolaknya berarti
+     * memaksa petugas mengarang penyaluran yang tidak pernah terjadi.
+     *
+     * BERPUSAT PADA POKTAN, bukan lahan perorangan (diubah 2026-08-22).
+     * Kolom `lahan_id` dan `petani` dicabut; `poktan_id` menggantikannya
+     * sebagai penentu pelaku sekaligus lokasi. Seluruh pencatatan Produksi
+     * Pertanian memang berpusat pada kelompok, dan lapangan membenarkannya:
+     * laporan Polri MT.II 2025 mencatat satu baris per POKTAN, bukan per
+     * bidang lahan.
+     *
+     * Rantai lokasinya tetap utuh tanpa lahan: `penanaman -> poktan ->
+     * satuan_permukiman`, sebab poktan sudah menyimpan SP-nya sendiri.
+     *
+     * `luas_tanam` berganti nama menjadi `realisasi_tanam` agar sejalan
+     * dengan istilah laporan, dan agar tidak tertukar dengan LUAS LAHAN milik
+     * poktan yang merupakan angka terhitung, bukan isian.
+     *
+     * @return array<int, array<string, mixed>> Data penanaman
      */
-    public static function musimTanam(): array
+    public static function penanaman(): array
     {
         return [
-            ['id_musim_tanam' => 1, 'nama' => 'MT1', 'tahun' => 2026, 'label' => 'MT1 2026', 'tanggal_mulai' => '2025-11-01', 'tanggal_selesai' => '2026-05-31', 'jumlah_tanam' => 4, 'keterangan' => 'Musim hujan, penanaman utama jagung.'],
-            ['id_musim_tanam' => 2, 'nama' => 'MT2', 'tahun' => 2025, 'label' => 'MT2 2025', 'tanggal_mulai' => '2025-06-01', 'tanggal_selesai' => '2025-10-31', 'jumlah_tanam' => 2, 'keterangan' => 'Musim kemarau, bergantung irigasi.'],
-            ['id_musim_tanam' => 3, 'nama' => 'MT1', 'tahun' => 2025, 'label' => 'MT1 2025', 'tanggal_mulai' => '2024-11-01', 'tanggal_selesai' => '2025-05-31', 'jumlah_tanam' => 3, 'keterangan' => null],
+            ['id_penanaman' => 1, 'poktan_id' => 1, 'poktan' => 'POKTAN MEKAR JAYA', 'komoditas_id' => 1, 'komoditas' => 'JAGUNG', 'saprotan_id' => 1, 'volume_benih' => 22.5, 'realisasi_tanam' => 1.50, 'periode_tanam' => '2025-11', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'keterangan' => null, 'dokumen_pendukung' => 'bast-tanam-jagung-nov-2025.pdf'],
+            ['id_penanaman' => 2, 'poktan_id' => 1, 'poktan' => 'POKTAN MEKAR JAYA', 'komoditas_id' => 2, 'komoditas' => 'PADI', 'saprotan_id' => 4, 'volume_benih' => 20.0, 'realisasi_tanam' => 0.75, 'periode_tanam' => '2025-12', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'keterangan' => null],
+            ['id_penanaman' => 3, 'poktan_id' => 1, 'poktan' => 'POKTAN MEKAR JAYA', 'komoditas_id' => 1, 'komoditas' => 'JAGUNG', 'saprotan_id' => 1, 'volume_benih' => 30.0, 'realisasi_tanam' => 2.00, 'periode_tanam' => '2025-11', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'keterangan' => 'Penanaman bertahap, sisa lahan menyusul.'],
+            // Tanpa benih tercatat: cabai ditanam dari bibit swadaya yang
+            // tidak pernah masuk modul saprotan. Sengaja ada agar cabang
+            // nullable ikut terlihat saat peninjauan.
+            ['id_penanaman' => 4, 'poktan_id' => 3, 'poktan' => 'POKTAN TANI BERSATU', 'komoditas_id' => 5, 'komoditas' => 'CABAI', 'saprotan_id' => null, 'volume_benih' => null, 'realisasi_tanam' => 0.30, 'periode_tanam' => '2025-12', 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'keterangan' => 'Bibit swadaya anggota, tidak melalui penyaluran.'],
+            // Menghabiskan seluruh 30 kg BENIH JAGUNG LOKAL, sehingga benih
+            // itu tidak lagi muncul sebagai pilihan pada penanaman berikutnya.
+            ['id_penanaman' => 5, 'poktan_id' => 1, 'poktan' => 'POKTAN MEKAR JAYA', 'komoditas_id' => 1, 'komoditas' => 'JAGUNG', 'saprotan_id' => 6, 'volume_benih' => 30.0, 'realisasi_tanam' => 1.50, 'periode_tanam' => '2025-06', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'keterangan' => null],
         ];
     }
 
     /**
-     * Riwayat penanaman: lahan mana, musim apa, komoditas apa.
+     * Luas lahan poktan yang BELUM ditanami pada saat ini.
      *
-     * @return array<int, array<string, mixed>> Data riwayat tanam
+     * Berbeda sifat dari sisa benih, dan perbedaan itu disengaja:
+     *
+     * - Benih HABIS selamanya begitu ditabur.
+     * - Lahan KEMBALI TERSEDIA setelah panennya tuntas.
+     *
+     * Karena itu yang dikurangkan hanyalah penanaman yang belum tuntas
+     * dipanen. Menghitung seluruh penanaman sepanjang sejarah akan membuat
+     * lahan poktan tampak habis setelah beberapa musim, padahal bidang yang
+     * sama memang ditanami berulang kali tiap tahun.
+     *
+     * Sebuah penanaman dianggap TUNTAS bila sudah memiliki catatan panen.
+     * Pada Tahap 6 kriterianya diperhalus menjadi `belum_dipanen = 0`, sebab
+     * panen pun dapat bertahap.
+     *
+     * @param  int  $poktanId  Nilai id_poktan
+     * @return float Sisa luas dalam hektare, tidak pernah negatif
      */
-    public static function riwayatTanam(): array
+    public static function lahanTersedia(int $poktanId): float
     {
-        return [
-            ['id_riwayat_tanam' => 1, 'lahan_id' => 2, 'kode_lahan' => 'LU-001', 'petani' => 'YOHANES BERE', 'musim_tanam' => 'MT1 2026', 'komoditas' => 'JAGUNG', 'luas_tanam' => 1.50, 'tanggal_tanam' => '2025-11-20', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo'],
-            ['id_riwayat_tanam' => 2, 'lahan_id' => 3, 'kode_lahan' => 'LU-002', 'petani' => 'YULITA HOAR', 'musim_tanam' => 'MT1 2026', 'komoditas' => 'PADI', 'luas_tanam' => 0.75, 'tanggal_tanam' => '2025-12-05', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo'],
-            ['id_riwayat_tanam' => 3, 'lahan_id' => 5, 'kode_lahan' => 'LU-003', 'petani' => 'MARIA DA COSTA', 'musim_tanam' => 'MT1 2026', 'komoditas' => 'JAGUNG', 'luas_tanam' => 2.00, 'tanggal_tanam' => '2025-11-18', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo'],
-            ['id_riwayat_tanam' => 4, 'lahan_id' => 6, 'kode_lahan' => 'LU-004', 'petani' => 'PETRUS NAHAK', 'musim_tanam' => 'MT1 2026', 'komoditas' => 'CABAI', 'luas_tanam' => 0.30, 'tanggal_tanam' => '2025-12-01', 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu'],
-            ['id_riwayat_tanam' => 5, 'lahan_id' => 2, 'kode_lahan' => 'LU-001', 'petani' => 'YOHANES BERE', 'musim_tanam' => 'MT2 2025', 'komoditas' => 'JAGUNG', 'luas_tanam' => 1.50, 'tanggal_tanam' => '2025-06-10', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo'],
-        ];
+        $rekap = self::rekapLahanPoktan($poktanId);
+
+        // Yang masih menahan lahan hanyalah bagian yang BELUM dipanen.
+        //
+        // Diperhalus 2026-08-22: sebelumnya satu baris panen dianggap
+        // menuntaskan seluruh penanaman. Itu keliru sejak panen dapat
+        // bertahap - penanaman 10 ha yang baru dipanen 3 ha akan langsung
+        // melepaskan seluruh 10 ha, sehingga lahan yang masih berdiri tanaman
+        // tampak siap ditanami lagi.
+        $terpakai = 0.0;
+
+        foreach (self::penanaman() as $tanam) {
+            if ($tanam['poktan_id'] !== $poktanId) {
+                continue;
+            }
+
+            $terpakai += self::belumDipanen($tanam['id_penanaman']);
+        }
+
+        return max(0.0, round($rekap['luas_total'] - $terpakai, 2));
     }
 
     /*
@@ -2350,10 +2734,10 @@ class DummyData
     public static function role(): array
     {
         return [
-            ['id_role' => 1, 'nama' => 'Admin', 'deskripsi' => 'Akses penuh termasuk manajemen pengguna, role, dan audit log.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => true, 'is_aktif' => true, 'jumlah_izin' => 103, 'jumlah_pengguna' => 1],
-            ['id_role' => 2, 'nama' => 'Dinas Transmigrasi', 'deskripsi' => 'Mengelola data wilayah, transmigran, rumah, lahan, dan infrastruktur.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 50, 'jumlah_pengguna' => 1],
-            ['id_role' => 3, 'nama' => 'Dinas Pertanian', 'deskripsi' => 'Mengelola data poktan, komoditas, panen, alsintan, dan saprotan.', 'cakupan_data' => CakupanData::PerBidang->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 48, 'jumlah_pengguna' => 1],
-            ['id_role' => 4, 'nama' => 'Operator SP', 'deskripsi' => 'Memasukkan data pada satuan permukiman yang ditugaskan. Tanpa kewenangan hapus.', 'cakupan_data' => CakupanData::PerSp->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 52, 'jumlah_pengguna' => 2],
+            ['id_role' => 1, 'nama' => 'Admin', 'deskripsi' => 'Akses penuh termasuk manajemen pengguna, role, dan audit log.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => true, 'is_aktif' => true, 'jumlah_izin' => 99, 'jumlah_pengguna' => 1],
+            ['id_role' => 2, 'nama' => 'Dinas Transmigrasi', 'deskripsi' => 'Mengelola data wilayah, transmigran, rumah, lahan, dan infrastruktur.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 49, 'jumlah_pengguna' => 1],
+            ['id_role' => 3, 'nama' => 'Dinas Pertanian', 'deskripsi' => 'Mengelola data poktan, komoditas, panen, alsintan, dan saprotan.', 'cakupan_data' => CakupanData::PerBidang->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 45, 'jumlah_pengguna' => 1],
+            ['id_role' => 4, 'nama' => 'Operator SP', 'deskripsi' => 'Memasukkan data pada satuan permukiman yang ditugaskan. Tanpa kewenangan hapus.', 'cakupan_data' => CakupanData::PerSp->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 51, 'jumlah_pengguna' => 2],
 
             // Role buatan Admin, bukan bawaan sistem. Sengaja dibuat tanpa
             // pengguna agar keadaan "dapat dihapus" ikut terlihat pada
@@ -2594,9 +2978,12 @@ class DummyData
     {
         return [
             StatusTinggal::Aktif->value => 1063,
-            StatusTinggal::Pindah->value => 54,
-            StatusTinggal::TidakAktif->value => 17,
-            StatusTinggal::Meninggal->value => 6,
+            StatusTinggal::PindahPenduduk->value => 54,
+            // Enam keluarga yang sebelumnya berstatus `Meninggal` dilebur ke
+            // sini, sehingga jumlah seluruhnya tetap 1140 KK. Statusnya memang
+            // Tidak Aktif: yang membubarkan keluarga bukan kematian kepalanya,
+            // melainkan tidak adanya lagi penghuni yang meneruskan.
+            StatusTinggal::TidakAktif->value => 23,
         ];
     }
 
@@ -2879,8 +3266,7 @@ class DummyData
                 'kelompok' => 'Pertanian',
                 'modul' => [
                     ['kunci' => 'komoditas', 'nama' => 'Komoditas', 'aksi' => $penuh],
-                    ['kunci' => 'musim_tanam', 'nama' => 'Musim tanam', 'aksi' => $penuh],
-                    ['kunci' => 'riwayat_tanam', 'nama' => 'Riwayat tanam', 'aksi' => $penuh],
+                    ['kunci' => 'penanaman', 'nama' => 'Penanaman', 'aksi' => $penuh],
                     ['kunci' => 'hasil_panen', 'nama' => 'Hasil panen', 'aksi' => $penuh],
                 ],
             ],
@@ -2940,7 +3326,7 @@ class DummyData
                 'riwayat_kepala_keluarga' => $ltu,
                 'lahan' => $k, 'dokumen_lahan' => $k,
                 'poktan' => $k, 'anggota_poktan' => $ltu, 'alsintan' => $k, 'saprotan' => $k,
-                'komoditas' => $k, 'musim_tanam' => $k, 'riwayat_tanam' => $k, 'hasil_panen' => $k,
+                'komoditas' => $k, 'penanaman' => $k, 'hasil_panen' => $k,
                 'infrastruktur' => $k, 'pengaduan' => $k, 'penanganan_pengaduan' => $ltu,
                 'dashboard' => $l,
                 // Akun tidak pernah dihapus, hanya dinonaktifkan, sehingga
@@ -2957,7 +3343,7 @@ class DummyData
                 'riwayat_kepala_keluarga' => $lt,
                 'lahan' => $ltu, 'dokumen_lahan' => $lt,
                 'poktan' => $l, 'anggota_poktan' => $l, 'alsintan' => $l, 'saprotan' => $l,
-                'komoditas' => $l, 'musim_tanam' => $l, 'riwayat_tanam' => $l, 'hasil_panen' => $l,
+                'komoditas' => $l, 'penanaman' => $l, 'hasil_panen' => $l,
                 'infrastruktur' => $ltu, 'pengaduan' => $ltu, 'penanganan_pengaduan' => $ltu,
                 'dashboard' => $l,
             ],
@@ -2971,8 +3357,8 @@ class DummyData
                 'riwayat_kepala_keluarga' => $l,
                 'lahan' => $l, 'dokumen_lahan' => $l,
                 'poktan' => $ltu, 'anggota_poktan' => $ltu, 'alsintan' => $ltu, 'saprotan' => $ltu,
-                'komoditas' => $ltu, 'musim_tanam' => $ltu,
-                'riwayat_tanam' => $ltu, 'hasil_panen' => $ltu,
+                'komoditas' => $ltu,
+                'penanaman' => $ltu, 'hasil_panen' => $ltu,
                 'infrastruktur' => $ltu, 'pengaduan' => $ltu, 'penanganan_pengaduan' => $ltu,
                 'dashboard' => $l,
             ],
@@ -2987,7 +3373,7 @@ class DummyData
                 'riwayat_kepala_keluarga' => $l,
                 'lahan' => $ltu, 'dokumen_lahan' => $lt,
                 'poktan' => $ltu, 'anggota_poktan' => $ltu, 'alsintan' => $ltu, 'saprotan' => $ltu,
-                'komoditas' => $l, 'musim_tanam' => $l, 'riwayat_tanam' => $ltu, 'hasil_panen' => $ltu,
+                'komoditas' => $l, 'penanaman' => $ltu, 'hasil_panen' => $ltu,
                 'infrastruktur' => $ltu, 'pengaduan' => $lt,
                 'dashboard' => $l,
             ],
@@ -2999,7 +3385,7 @@ class DummyData
                 'transmigran' => $l, 'rumah' => $l, 'riwayat_penghunian' => $l,
                 'lahan' => $l, 'poktan' => $l, 'anggota_poktan' => $l,
                 'alsintan' => $l, 'saprotan' => $l, 'komoditas' => $l,
-                'riwayat_tanam' => $l, 'hasil_panen' => $l,
+                'penanaman' => $l, 'hasil_panen' => $l,
                 'infrastruktur' => $l, 'dashboard' => $l,
             ],
         ];

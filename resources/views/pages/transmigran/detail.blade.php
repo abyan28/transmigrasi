@@ -24,10 +24,28 @@
             fn ($l) => $l['transmigran_id'] === $data['id_transmigran']
         ));
 
-        $panen = array_values(array_filter(
-            DummyData::hasilPanen(),
-            fn ($p) => $p['petani'] === $data['nama_kepala_keluarga']
+        // TAB HASIL PANEN DICABUT 2026-08-22.
+        //
+        // Panen kini dicatat per POKTAN, bukan per orang, sehingga tidak ada
+        // lagi cara yang sahih untuk menyaringnya bagi satu keluarga.
+        // Pencocokan lewat nama penggarap sempat dipakai, tetapi itu menebak:
+        // satu poktan berisi banyak keluarga, dan hasil panennya milik
+        // kelompok.
+        //
+        // Digantikan tautan ke poktan tempat keluarga ini bernaung. Angka
+        // panennya dapat dibaca di sana, tanpa mengarang pembagian per orang
+        // yang tidak pernah didata.
+        $poktanBernaung = array_values(array_filter(
+            DummyData::anggotaPoktan(),
+            fn ($a) => $a['transmigran_id'] === $data['id_transmigran']
+                && $a['status'] === 'Aktif'
         ));
+
+        // Peta poktan ke SP-nya, disusun sekali di sini. Mencarinya di dalam
+        // perulangan berarti menyusuri seluruh daftar poktan untuk tiap baris.
+        $spPoktan = collect(DummyData::poktan())
+            ->pluck('satuan_permukiman', 'id_poktan')
+            ->all();
 
         $totalLuas = array_sum(array_column($lahan, 'luas'));
 
@@ -167,7 +185,10 @@
                         'biodata' => 'Biodata',
                         'rumah' => 'Rumah',
                         'lahan' => 'Lahan (' . count($lahan) . ')',
-                        'panen' => 'Hasil Panen (' . count($panen) . ')',
+                        // Tab Hasil Panen dicabut 2026-08-22: panen kini
+                        // dicatat per poktan, bukan per orang. Diganti tautan
+                        // ke kelompok tempat keluarga ini bernaung.
+                        'poktan' => 'Kelompok Tani (' . count($poktanBernaung) . ')',
                         'dokumen' => 'Dokumen',
                         // Catatan Log wajib tetap paling kanan (ui-spec.md 5.1c),
                         // sehingga riwayat suksesi disisipkan sebelum itu.
@@ -338,36 +359,49 @@
                     @endif
                 </div>
 
-                {{-- Hasil panen --}}
-                <div x-show="tab === 'panen'" x-cloak role="tabpanel">
-                    @if (empty($panen))
-                        <x-sim.empty-state judul="Belum ada catatan panen"
-                            pesan="Hasil panen keluarga ini akan tampil di sini setelah dicatat petugas." />
+                {{--
+                    Kelompok tani tempat keluarga ini bernaung.
+
+                    MENGGANTIKAN TAB HASIL PANEN yang dicabut 2026-08-22.
+                    Panen kini dicatat per poktan, bukan per orang, sehingga
+                    tidak ada lagi cara yang sahih menyaringnya bagi satu
+                    keluarga: satu poktan berisi banyak keluarga, dan hasil
+                    panennya milik kelompok.
+
+                    Menautkan ke poktan lebih jujur daripada mengarang
+                    pembagian per orang yang tidak pernah didata.
+                --}}
+                <div x-show="tab === 'poktan'" x-cloak role="tabpanel">
+                    @if (empty($poktanBernaung))
+                        <x-sim.empty-state judul="Belum tergabung kelompok tani"
+                            pesan="Keanggotaan poktan keluarga ini akan tampil di sini setelah didata petugas." />
                     @else
-                        <x-sim.tabel-ringkas :kolom="['Komoditas', 'Musim Tanam', 'Tanggal Panen', 'Volume', 'Kualitas']">
-                            @foreach ($panen as $p)
+                        <x-sim.tabel-ringkas :kolom="['Kelompok Tani', 'Jabatan', 'Tanggal Masuk', 'Satuan Permukiman']">
+                            @foreach ($poktanBernaung as $a)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                                     <td class="px-5 py-3">
-                                        <a href="{{ route('panen.detail', $p['id_hasil_panen']) }}"
-                                            class="rounded text-theme-sm text-gray-800 hover:text-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-white/90 dark:hover:text-brand-400">
-                                            {{ $p['komoditas'] }}
+                                        <a href="{{ route('poktan.detail', $a['poktan_id']) }}"
+                                            class="rounded text-theme-sm font-medium text-gray-800 hover:text-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-white/90 dark:hover:text-brand-400">
+                                            {{ $a['poktan'] }}
                                         </a>
                                     </td>
                                     <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
-                                        {{ $p['musim_tanam'] }}
+                                        {{ $a['jabatan'] }}
                                     </td>
                                     <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
-                                        {{ \Illuminate\Support\Carbon::parse($p['tanggal_panen'])->translatedFormat('d M Y') }}
-                                    </td>
-                                    <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
-                                        {{ number_format($p['volume'], 3, ',', '.') }} {{ $p['satuan'] }}
+                                        {{ \Illuminate\Support\Carbon::parse($a['tanggal_masuk'])->translatedFormat('d M Y') }}
                                     </td>
                                     <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
-                                        {{ $p['kualitas'] }}
+                                        {{ $spPoktan[$a['poktan_id']] ?? '-' }}
                                     </td>
                                 </tr>
                             @endforeach
                         </x-sim.tabel-ringkas>
+
+                        <p class="border-t border-gray-200 px-5 py-4 text-theme-xs text-gray-500 dark:border-gray-800 dark:text-gray-400">
+                            Penanaman dan hasil panen dicatat atas nama kelompok, bukan perorangan. Angkanya dapat
+                            dibaca pada halaman kelompok tani di atas.
+                        </p>
                     @endif
                 </div>
 

@@ -10,16 +10,19 @@
 @section('content')
     @php
         use App\Support\DummyData;
-        $setaraTon = DummyData::keTon($data['volume'], $data['satuan']);
-        $nilaiJual = ($data['harga_jual'] ?? 0) * $data['volume'];
+        $setaraTon = DummyData::keTon($data['produksi'], $data['satuan']);
+        $nilaiJual = ($data['harga_jual'] ?? 0) * $data['produksi'];
 
-        $petani = collect(DummyData::transmigran())->firstWhere('nama_kepala_keluarga', $data['petani']);
+        // Penanaman asal panen ini, dibaca lewat relasi. Menyediakan tautan
+        // balik sekaligus menunjukkan berapa luas yang belum dipanen.
+        $tanam = collect(DummyData::penanaman())->firstWhere('id_penanaman', $data['penanaman_id']);
+        $belumDipanen = DummyData::belumDipanen($data['penanaman_id']);
 
         $bolehUbah = true;
     @endphp
 
     <x-sim.page-header :judul="'Panen ' . $data['komoditas']"
-        :keterangan="'Dipanen ' . \Illuminate\Support\Carbon::parse($data['tanggal_panen'])->translatedFormat('d F Y') . ' oleh ' . $data['petani'] . '.'"
+        :keterangan="'Dipanen ' . \Illuminate\Support\Carbon::parse($data['periode_panen'] . '-01')->translatedFormat('F Y') . ' oleh ' . $data['poktan'] . '.'"
         :remah="\App\Helpers\RemahHelper::untuk('/panen', $data['komoditas'])">
         <x-slot:aksi>
             @if ($bolehUbah)
@@ -40,10 +43,10 @@
         <aside class="lg:sticky lg:top-24 lg:self-start">
             <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
                 <p class="motif-judul-kartu text-theme-xs font-medium text-gray-500 dark:text-gray-400">
-                    Volume Panen
+                    Produksi
                 </p>
                 <p class="mt-1 text-title-sm font-bold tabular-nums text-gray-800 dark:text-white/90">
-                    {{ number_format($data['volume'], 3, ',', '.') }}
+                    {{ number_format($data['produksi'], 3, ',', '.') }}
                     <span class="text-theme-sm font-normal text-gray-500 dark:text-gray-400">{{ $data['satuan'] }}</span>
                 </p>
                 @if ($data['satuan'] !== 'Ton')
@@ -57,16 +60,12 @@
 
                 <dl class="mt-5 space-y-3 border-t border-gray-200 pt-5 text-theme-sm dark:border-gray-800">
                     <div class="flex justify-between gap-3">
-                        <dt class="text-gray-500 dark:text-gray-400">Petani</dt>
+                        <dt class="text-gray-500 dark:text-gray-400">Kelompok tani</dt>
                         <dd class="text-right font-medium text-gray-800 dark:text-white/90">
-                            @if ($petani)
-                                <a href="{{ route('transmigran.detail', $petani['id_transmigran']) }}"
-                                    class="rounded text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
-                                    {{ $data['petani'] }}
-                                </a>
-                            @else
-                                {{ $data['petani'] }}
-                            @endif
+                            <a href="{{ route('poktan.detail', $data['poktan_id']) }}"
+                                class="rounded text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
+                                {{ $data['poktan'] }}
+                            </a>
                         </dd>
                     </div>
                     <div class="flex justify-between gap-3">
@@ -78,14 +77,25 @@
                             </a>
                         </dd>
                     </div>
+                    {{--
+                        Tautan balik ke penanamannya. Kualitas panen dicabut
+                        2026-08-22 dan digantikan rincian ini: penanaman asal
+                        jauh lebih berguna ditelusuri daripada satu label mutu.
+                    --}}
                     <div class="flex justify-between gap-3">
-                        <dt class="text-gray-500 dark:text-gray-400">Musim tanam</dt>
-                        <dd class="text-right font-medium text-gray-800 dark:text-white/90">{{ $data['musim_tanam'] }}</dd>
+                        <dt class="text-gray-500 dark:text-gray-400">Penanaman</dt>
+                        <dd class="text-right font-medium text-gray-800 dark:text-white/90">
+                            @if ($tanam)
+                                <a href="{{ route('penanaman.detail', $tanam['id_penanaman']) }}"
+                                    class="rounded text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
+                                    {{ \Illuminate\Support\Carbon::parse($tanam['periode_tanam'] . '-01')->translatedFormat('M Y') }}
+                                </a>
+                            @else
+                                &mdash;
+                            @endif
+                        </dd>
                     </div>
-                    <div class="flex justify-between gap-3">
-                        <dt class="text-gray-500 dark:text-gray-400">Kualitas</dt>
-                        <dd class="text-right font-medium text-gray-800 dark:text-white/90">{{ $data['kualitas'] }}</dd>
-                    </div>
+
                 </dl>
             </div>
         </aside>
@@ -114,9 +124,39 @@
                 <div x-show="tab === 'rincian'" role="tabpanel" class="p-5 sm:p-6">
                     <dl class="grid gap-x-6 gap-y-4 sm:grid-cols-2">
                         <div>
-                            <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Tanggal panen</dt>
+                            <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Periode panen</dt>
                             <dd class="mt-0.5 text-theme-sm text-gray-800 dark:text-white/90">
-                                {{ \Illuminate\Support\Carbon::parse($data['tanggal_panen'])->translatedFormat('d F Y') }}
+                                {{ \Illuminate\Support\Carbon::parse($data['periode_panen'] . '-01')->translatedFormat('F Y') }}
+                            </dd>
+                        </div>
+                        {{--
+                            Tiga angka luas yang saling menentukan:
+                            hasil panen + puso + belum dipanen = realisasi tanam.
+                            Yang terakhir DIHITUNG, tidak disimpan.
+                        --}}
+                        <div>
+                            <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Hasil panen</dt>
+                            <dd class="mt-0.5 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
+                                {{ number_format($data['realisasi_panen'], 2, ',', '.') }} ha
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Puso</dt>
+                            <dd class="mt-0.5 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
+                                {{ number_format($data['puso'] ?? 0, 2, ',', '.') }} ha
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Belum dipanen</dt>
+                            <dd class="mt-0.5 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
+                                {{ number_format($belumDipanen, 2, ',', '.') }} ha
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Produktivitas</dt>
+                            <dd class="mt-0.5 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
+                                {{ rtrim(rtrim(number_format($data['produktivitas'], 3, ',', '.'), '0'), ',') }}
+                                {{ $data['satuan'] }}/ha
                             </dd>
                         </div>
                         <div>
@@ -129,6 +169,7 @@
                                 @endif
                             </dd>
                         </div>
+
                         <div>
                             <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Perkiraan nilai jual</dt>
                             <dd class="mt-0.5 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">

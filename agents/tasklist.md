@@ -314,7 +314,7 @@ Dikerjakan **dua gelombang**. Gelombang 1 membangun alur inti agar dapat divalid
   * Volume tetap disimpan apa adanya; setara tonnya ditampilkan sebagai keterangan agar operator melihat dua angka sekaligus, yang ia catat di lapangan dan yang dipakai sistem
   * Satuan lokal seperti karung dicatat pada kolom keterangan, bukan sebagai satuan baku (`rules.md` 8a poin 6)
   * **Halaman rekap adalah jenis komposisi KEEMPAT** pada dial RITME 2: tabel agregat dengan baris total ditegaskan, **tanpa kartu statistik** (`ui-spec.md` 2.2). Diuji bahwa `motif-judul-kartu` memang tidak muncul di sana
-  * Rekap dapat dikelompokkan per SP, komoditas, musim tanam, atau petani lewat query string
+  * Rekap dapat dikelompokkan per SP, komoditas, atau petani lewat query string (kelompok musim dicabut 2026-08-22)
   * **Rute `/panen/rekap` didaftarkan sebelum `/panen/{id}`**, karena Laravel mencocokkan rute menurut urutan pendaftaran; tanpa itu rekap akan tertangkap sebagai id
   * Menambah `DummyData::faktorKonversiTon()` dan `keTon()`
 
@@ -384,14 +384,14 @@ Dikerjakan **dua gelombang**. Gelombang 1 membangun alur inti agar dapat divalid
   * Kontak poktan diseragamkan menjadi **kontak ketua** (`telepon_ketua`, `email_ketua`, `alamat_ketua`), menyusul kenyataan bahwa `DummyData` sejak awal memang memperlakukannya demikian.
   * Huruf **H** dicabut dari matriks kewenangan Anggota poktan karena bertentangan dengan larangan hapus; total kewenangan 96 menjadi **95**.
 - [✓] ✅ Task 2.16 - Halaman alsintan dan saprotan `[Sedang]` (Selesai)
-  * Alsintan **membedakan milik pribadi dan bantuan lewat poktan**, karena berbeda pemilik dan berbeda jalur pertanggungjawaban
-  * Kolom pemilik menaut ke poktan atau transmigran sesuai jenis kepemilikannya
-  * Saprotan mencatat penerima berupa poktan maupun individu
-- [✓] ✅ Task 2.17 - Halaman komoditas, musim tanam, riwayat tanam `[Sedang]` (Selesai)
+  * ~~Alsintan **membedakan milik pribadi dan bantuan lewat poktan**, karena berbeda pemilik dan berbeda jalur pertanggungjawaban~~ **DICABUT 2026-08-22:** pemilik alsintan selalu kelompok tani
+  * ~~Kolom pemilik menaut ke poktan atau transmigran sesuai jenis kepemilikannya~~ **DICABUT 2026-08-22:** selalu menaut ke poktan
+  * ~~Saprotan mencatat penerima berupa poktan maupun individu~~ **DICABUT 2026-08-22:** penerima saprotan selalu poktan
+- [✓] ✅ Task 2.17 - Halaman komoditas, musim tanam, riwayat tanam `[Sedang]` (Selesai; 2026-08-22 halaman musim tanam dihapus dan riwayat tanam berganti nama menjadi **Penanaman**)
   * Komoditas menegaskan **satuan panen baku per komoditas**, yang dipakai form panen dan tidak dapat diubah operator
   * Komoditas unggulan ditandai **aksen gold**, salah satu dari empat pemakaian sah
-  * Musim tanam memisahkan nama dan tahun, bukan teks bebas, agar grafik per tahun dapat dihitung
-  * Riwayat tanam menjadi jembatan lahan ke hasil panen; lokasi produksi terbaca lewat rantai riwayat tanam, lahan, SP
+  * ~~Musim tanam memisahkan nama dan tahun, bukan teks bebas, agar grafik per tahun dapat dihitung~~ **FITURNYA DICABUT 2026-08-22:** poktan menanam fleksibel, tidak mengikuti periode baku MT1/MT2. Grafik per tahun dihitung dari `tanggal_tanam` dan `tanggal_panen`
+  * Penanaman menjadi jembatan lahan ke hasil panen; lokasi produksi terbaca lewat rantai penanaman, lahan, SP (bernama "riwayat tanam" sampai 2026-08-22)
 - [✓] ✅ Task 2.18 - Halaman infrastruktur `[Sedang]` (Selesai)
   * **Modul pendataan aset, bukan pelaporan masalah.** Halaman sengaja tidak menyediakan tombol lapor kerusakan, melainkan menaut ke modul Pengaduan (`rules.md` 10 poin 1)
   * Dilengkapi rekap kondisi per jenis, sumber indikator ke-12 dashboard
@@ -535,9 +535,9 @@ Diperbaiki dengan uji yang **membuka setiap tujuan menu ke aplikasi sungguhan**.
 - [✓] ✅ Task 2.29 - Halaman rincian alsintan, saprotan, komoditas, infrastruktur `[Sedang]` (Selesai)
   * Empat modul sebelumnya hanya punya halaman daftar, sehingga tidak ada tempat menaruh tombol Ubah
   * Mengikuti pola baku sejak Task 2.7: **Tambah di halaman daftar, Ubah di halaman rincian**
-  * Alsintan menampilkan kepemilikan bercabang; tautan pemilik menuju poktan atau transmigran sesuai jenisnya
+  * ~~Alsintan menampilkan kepemilikan bercabang; tautan pemilik menuju poktan atau transmigran sesuai jenisnya~~ **DICABUT 2026-08-22**
   * Saprotan menegaskan bahwa penyaluran hanya untuk anggota aktif, beserta alasannya
-  * Komoditas menegaskan satuan panen baku beserta riwayat tanamnya
+  * Komoditas menegaskan satuan panen baku beserta penanamannya
   * Infrastruktur menegaskan batas modul: pendataan aset, bukan pelaporan kerusakan, dengan tautan ke modul pengaduan
 
 **Cacat yang ditemukan saat pengerjaan:** data contoh alsintan memakai `'Milik Pribadi'` sedangkan enum `KepemilikanAlsintan` bernilai `'Pribadi'`. Filter kepemilikan pada halaman daftar membandingkan keduanya, sehingga memilih Pribadi **selalu menghasilkan nol baris**. Data kini memakai nilai enum langsung.
@@ -547,13 +547,13 @@ Diperbaiki dengan uji yang **membuka setiap tujuan menu ke aplikasi sungguhan**.
   * Akibatnya 14 modul berhalaman daftar baca-saja, dan form-nya menyatu di task CRUD Tahap 4 sampai 8
   * Tahap 4: SP, inventaris SP, fasilitas SP, kawasan, satuan, wilayah
   * Tahap 6: poktan, anggota poktan, alsintan, saprotan
-  * Tahap 7: komoditas, musim tanam, riwayat tanam
+  * Tahap 7: komoditas, penanaman
   * Tahap 8: infrastruktur
   * **Form SP** meminta desa dan kawasan terpisah, sebab satu SP menempel pada dua hierarki sekaligus
   * **Form satuan** menampilkan pratinjau konversi 1/10/100 satuan ke ton, agar faktor keliru terlihat saat mengisi bukan berbulan kemudian
   * **Form anggota poktan** tidak menyediakan opsi hapus; yang berhenti ditandai Sudah Keluar beserta tanggal dan alasannya
   * **Form saprotan** menyaring penerima individu hanya anggota aktif, dengan keterangan mengapa nama tertentu tidak muncul
-  * **Form alsintan** menampilkan pemilik bergantian menurut jenis kepemilikan, tidak pernah keduanya sekaligus
+  * ~~**Form alsintan** menampilkan pemilik bergantian menurut jenis kepemilikan, tidak pernah keduanya sekaligus~~ **DICABUT 2026-08-22:** satu jalur pemilik, selalu poktan
   * **Form fasilitas SP** memakai enum `jenis_fasilitas` agar terbaca penilaian kondisi SP, sementara `nama_fasilitas` tetap teks bebas
   * **Form wilayah** satu form untuk empat tingkat; induk berubah mengikuti tingkat, dan provinsi tidak memilikinya
   * Menambah 20 rute closure `POST`/`PUT` mengikuti pola `transmigran.simpan`
@@ -641,7 +641,7 @@ Butir tindak lanjut 9 pada `notes.md` bagian 4, dikerjakan atas permintaan pemil
 
 **Dua pertanyaan lapangan dijawab pemilik proyek, bukan disimpulkan:** poktan tidak punya kontak sendiri (keputusan bertahan, alasan diperbaiki), dan dinas perlu impor massal musim tanam (pengecualian dicabut, fitur ditambahkan).
 
-**Perubahan fungsional:** impor musim tanam. Modul berimpor 14 → **15**; daftar pengecualian 6 → **5**.
+**Perubahan fungsional:** impor musim tanam (fiturnya dicabut 2026-08-22). Modul berimpor 14 → **15**; daftar pengecualian 6 → **5**.
 
 **Perubahan dokumen:** bagian 1c diperluas dari 3 jadi 5 pelanggaran plus bagian 1c.4 dan 1c.5; alasan cacat pada dokumen lahan dan ambang dropdown ditandai dicabut; `rules.md` 19a ditambah poin 13 dan 14; tiga butir tindak lanjut baru.
 
@@ -739,7 +739,7 @@ Butir tindak lanjut 9 pada `notes.md` bagian 4, dikerjakan atas permintaan pemil
   * Tampilan form sudah selesai pada Task 2.30
 - [ ] Task 6.5 - CRUD daftar anggota poktan + status keaktifan `[Sedang]`
   * Tampilan form sudah selesai pada Task 2.30, termasuk aturan tandai keluar bukan hapus
-- [ ] Task 6.6 - CRUD alsintan (milik pribadi dan bantuan via poktan) `[Sedang]`
+- [ ] Task 6.6 - CRUD alsintan (selalu milik poktan) `[Sedang]`
   * Tampilan form dan halaman rincian sudah selesai pada Task 2.29 dan 2.30
 - [ ] Task 6.7 - CRUD saprotan + penyaluran ke anggota aktif `[Sedang]`
   * Tampilan form dan halaman rincian sudah selesai pada Task 2.29 dan 2.30
@@ -749,9 +749,9 @@ Butir tindak lanjut 9 pada `notes.md` bagian 4, dikerjakan atas permintaan pemil
 - [ ] Task 7.1 - Migration dan model komoditas (dinormalisasi) `[Sedang]`
 - [ ] Task 7.2 - CRUD komoditas + penanda unggulan + satuan baku per komoditas `[Sedang]`
   * Tampilan form dan halaman rincian sudah selesai pada Task 2.29 dan 2.30
-- [ ] Task 7.3 - CRUD musim tanam dan riwayat tanam `[Sedang]`
+- [ ] Task 7.3 - CRUD penanaman `[Sedang]`
   * Tampilan kedua form sudah selesai pada Task 2.30
-- [ ] Task 7.4 - CRUD hasil panen (volume, kualitas, harga, lokasi) `[Sulit]`
+- [ ] Task 7.4 - CRUD hasil panen (produksi, produktivitas, puso, harga) `[Sulit]`
   * Satuan mengikuti komoditas terpilih; `DECIMAL(12,3)`; kolom keterangan satuan lokal
 - [ ] Task 7.5 - Helper konversi volume panen ke ton `[Sedang]`
   * Dipakai seluruh rekap dan dashboard agar agregasi lintas komoditas konsisten

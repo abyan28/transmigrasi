@@ -167,7 +167,7 @@ Sistem harus dapat:
 
 ### 7.6 Hasil panen
 Sistem harus dapat:
-- mencatat volume panen, periode/musim tanam, jenis komoditas, kualitas panen, harga jual, dan lokasi produksi;
+- mencatat produksi, periode panen, jenis komoditas, produktivitas per hektare, harga jual, dan lokasi produksi;
 - mencatat volume panen menggunakan **satuan baku milik komoditas** yang bersangkutan, dengan kolom catatan tambahan untuk satuan lokal (karung, ikat, dan sejenisnya);
 - mengonversi seluruh volume panen ke satuan **ton** saat melakukan rekap dan agregasi lintas komoditas, memakai faktor konversi yang tersimpan pada data master satuan;
 - menyimpan riwayat panen per transmigran petani, lahan, atau desa/SP;
@@ -224,16 +224,16 @@ Rekap indikator kawasan untuk kementerian diekspor dari dashboard, sebab tidak m
 
 ### 7.10 Data Alsintan (Alat dan Mesin Pertanian)
 Sistem harus dapat:
-- mencatat alsintan yg dimiliki oleh petani pribadi (contoh: traktor, sprayer, cultivator, dll).
+- mencatat alsintan milik kelompok tani, baik bantuan pemerintah maupun hasil pembelian swadaya kelompok (contoh: traktor, sprayer, cultivator, dll). **Diubah 2026-08-22:** semula mencatat alsintan milik petani pribadi, tetapi seluruh menu Pertanian kini berpusat pada kelompok.
 - mencatat alsintan yg berasal dari bantuan pemerintah yg disalurkan melalui kelompok tani (poktan) beserta tahun perolehannya;
 - upload dokumen pendukung;
-- menautkan ke kelompok tani (poktan) dan individu transmigran petani.
+- menautkan ke kelompok tani (poktan) pemiliknya.
 
 ### 7.11 Data Saprotan (Sarana Produksi Pertanian)
 Sistem harus dapat:
 - mencatat saprotan yg dibagikan ke kelompok tani dan individu transmigran petani (contoh: benih, pupuk, pestisida, mulsa, dll) beserta kapan perolehannya.
 - upload dokumen pendukung;
-- menautkan ke kelompok tani (poktan) dan individu transmigran petani.
+- menautkan ke kelompok tani (poktan) pemiliknya.
 
 ### 7.12 Data Poktan (Kelompok Tani)
 Sistem harus dapat:
@@ -309,7 +309,7 @@ Minimal entitas data yang dikelola sistem:
 - alsintan
 - saprotan
 - komoditas
-- musim tanam dan riwayat tanam
+- penanaman
 - hasil panen
 - infrastruktur SP
 - penghuni kawasan

@@ -141,14 +141,9 @@ class MenuHelper
                                 'permission' => 'komoditas.lihat',
                             ],
                             [
-                                'name' => 'Musim Tanam',
-                                'path' => '/musim-tanam',
-                                'permission' => 'musim_tanam.lihat',
-                            ],
-                            [
-                                'name' => 'Riwayat Tanam',
-                                'path' => '/riwayat-tanam',
-                                'permission' => 'riwayat_tanam.lihat',
+                                'name' => 'Penanaman',
+                                'path' => '/penanaman',
+                                'permission' => 'penanaman.lihat',
                             ],
                             [
                                 'name' => 'Hasil Panen',

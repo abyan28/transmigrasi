@@ -1,12 +1,9 @@
 {{--
     Rincian satu catatan sarana produksi pertanian.
 
-    Saprotan mencatat penerima berupa poktan maupun individu (agents/rules.md
-    bagian 7c), sehingga tautan penerima menuju halaman yang sesuai.
-
-    Penyaluran hanya boleh kepada anggota berstatus aktif. Aturan itu dijaga
-    pada form, dan di sini ditampilkan sebagai keterangan agar petugas paham
-    alasan sebuah nama tidak muncul pada pilihan.
+    PENERIMA SELALU KELOMPOK TANI (agents/rules.md bagian 7c). Penyaluran
+    kepada perorangan dicabut 2026-08-22, sehingga tautan penerima selalu
+    menuju halaman poktan.
 --}}
 @extends('layouts.app')
 
@@ -47,11 +44,54 @@
                         <dt class="text-gray-500 dark:text-gray-400">Jenis</dt>
                         <dd class="text-right font-medium text-gray-800 dark:text-white/90">{{ $data['jenis'] }}</dd>
                     </div>
+                    @if (! empty($data['komoditas']))
+                        <div class="flex justify-between gap-3">
+                            <dt class="text-gray-500 dark:text-gray-400">Komoditas</dt>
+                            <dd class="text-right font-medium text-gray-800 dark:text-white/90">
+                                <a href="{{ route('komoditas.detail', $data['komoditas_id']) }}"
+                                    class="rounded text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
+                                    {{ $data['komoditas'] }}
+                                </a>
+                            </dd>
+                        </div>
+                    @endif
                     <div class="flex justify-between gap-3">
-                        <dt class="text-gray-500 dark:text-gray-400">Jumlah</dt>
+                        <dt class="text-gray-500 dark:text-gray-400">Jumlah diterima</dt>
                         <dd class="text-right font-medium tabular-nums text-gray-800 dark:text-white/90">
                             {{ number_format($data['jumlah'], 0, ',', '.') }} {{ $data['satuan'] }}</dd>
                     </div>
+
+                    {{--
+                        Sisa dan terpakai hanya untuk benih.
+
+                        Keduanya DIHITUNG, bukan disimpan: sisa selalu sama
+                        dengan jumlah dikurangi seluruh pemakaian pada
+                        penanaman. Menyimpannya sebagai kolom berarti angka itu
+                        harus dikoreksi setiap kali satu baris penanaman
+                        disunting, dan koreksi yang terlewat tidak akan pernah
+                        ketahuan.
+                    --}}
+                    @if ($data['jenis'] === \App\Enums\JenisSaprotan::Benih->value)
+                        @php($sisaBenih = \App\Support\DummyData::sisaBenih($data['id_saprotan']))
+                        @php($terpakai = $data['jumlah'] - $sisaBenih)
+
+                        <div class="flex justify-between gap-3">
+                            <dt class="text-gray-500 dark:text-gray-400">Terpakai</dt>
+                            <dd class="text-right font-medium tabular-nums text-gray-800 dark:text-white/90">
+                                {{ rtrim(rtrim(number_format($terpakai, 2, ',', '.'), '0'), ',') }} {{ $data['satuan'] }}
+                            </dd>
+                        </div>
+                        <div class="flex justify-between gap-3">
+                            <dt class="text-gray-500 dark:text-gray-400">Sisa</dt>
+                            <dd class="text-right font-medium tabular-nums {{ $sisaBenih > 0 ? 'text-gray-800 dark:text-white/90' : 'text-error-500' }}">
+                                @if ($sisaBenih > 0)
+                                    {{ rtrim(rtrim(number_format($sisaBenih, 2, ',', '.'), '0'), ',') }} {{ $data['satuan'] }}
+                                @else
+                                    Habis
+                                @endif
+                            </dd>
+                        </div>
+                    @endif
                     <div class="flex justify-between gap-3">
                         <dt class="text-gray-500 dark:text-gray-400">Tanggal perolehan</dt>
                         <dd class="text-right font-medium text-gray-800 dark:text-white/90">
@@ -99,18 +139,13 @@
                 <div x-show="tab === 'penerima'" role="tabpanel" class="p-5 sm:p-6">
                     <div class="flex flex-wrap items-center gap-3">
                         <span
-                            class="rounded-full px-2.5 py-1 text-theme-xs font-medium {{ $data['jenis_penerima'] === 'Poktan' ? 'bg-teal-50 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300' : 'bg-gray-100 text-gray-700 dark:bg-white/5 dark:text-gray-300' }}">
-                            {{ $data['jenis_penerima'] }}
+                            class="rounded-full bg-teal-50 px-2.5 py-1 text-theme-xs font-medium text-teal-700 dark:bg-teal-500/15 dark:text-teal-300">
+                            Kelompok Tani
                         </span>
 
                         <span class="text-theme-sm text-gray-800 dark:text-white/90">
                             @if ($data['poktan_id'])
                                 <a href="{{ route('poktan.detail', $data['poktan_id']) }}"
-                                    class="rounded font-medium text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
-                                    {{ $data['penerima'] }}
-                                </a>
-                            @elseif ($data['transmigran_id'])
-                                <a href="{{ route('transmigran.detail', $data['transmigran_id']) }}"
                                     class="rounded font-medium text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
                                     {{ $data['penerima'] }}
                                 </a>
@@ -121,8 +156,8 @@
                     </div>
 
                     <p class="mt-4 rounded-lg bg-gray-50 p-3.5 text-theme-xs text-gray-600 dark:bg-white/[0.03] dark:text-gray-400">
-                        Penyaluran hanya dapat ditujukan kepada anggota berstatus aktif. Anggota yang sudah keluar
-                        tetap tersimpan pada riwayat keanggotaan, tetapi tidak muncul sebagai calon penerima.
+                        Seluruh penyaluran tercatat atas nama kelompok tani, tidak pernah perorangan. Pembagian
+                        kepada anggota diatur poktan sendiri di luar sistem.
                     </p>
 
                     {{--

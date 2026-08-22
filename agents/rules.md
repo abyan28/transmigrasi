@@ -56,7 +56,7 @@
    - data alsintan,
    - data saprotan,
    - data komoditas,
-   - hasil panen dan riwayat tanam,
+   - hasil panen dan penanaman,
    - infrastruktur SP,
    - penghuni/data kependudukan kawasan,
    - pengaduan dan penanganannya,
@@ -135,7 +135,7 @@ Alamat URL **tidak menampilkan primary key berurutan**. Pola berurutan seperti `
    - alsintan,
    - saprotan,
    - komoditas,
-   - musim tanam dan riwayat tanam,
+   - penanaman,
    - hasil panen,
    - infrastruktur SP,
    - penghuni/kawasan,
@@ -265,8 +265,7 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **-*
 | Alsintan | L T U H | L | L T U | L T U |
 | Saprotan | L T U H | L | L T U | L T U |
 | Komoditas | L T U H | L | L T U | L |
-| Musim tanam | L T U H | L | L T U | L |
-| Riwayat tanam | L T U H | L | L T U | L T U |
+| Penanaman | L T U H | L | L T U | L T U |
 | Hasil panen | L T U H | L | L T U | L T U |
 | Infrastruktur SP | L T U H | L T U | L T U | L T U |
 | Pengaduan | L T U H | L T U | L T U | L T |
@@ -338,7 +337,7 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **-*
 4a. **Status hak atas tanah bukan status kepemilikan** (diperbaiki 2026-08-18). Nilainya `Belum Bersertifikat`, `Hak Milik`, `Hak Milik Bersama`, `Hak Pakai`, `Sewa`, `Garapan`. **HPL dan SHM dicabut dari daftar ini**: HPL adalah Hak Pengelolaan milik instansi atas tanah kawasan sehingga tidak pernah menjadi hak seorang transmigran, sedangkan SHM adalah nama sertifikatnya, bukan nama haknya. Keduanya menjadi jenis dokumen. Rantainya: tanah kawasan berstatus Hak Pengelolaan, lalu bidangnya dibagikan dengan status Hak Milik; sebelum sertifikat terbit, sandarannya surat keterangan pembagian tanah.
 6. Dokumen status lahan wajib dapat diunggah dan ditautkan ke data lahan. **Dokumen pertama diisi langsung pada form lahan**, sedangkan tab pada halaman rincian melayani dokumen kedua dan seterusnya. Sebelum 2026-08-18 seluruh dokumen hanya dapat diunggah lewat tab, dan itu memaksa dua langkah untuk keadaan yang paling lazim: tidak satu pun bidang pada data memiliki lebih dari satu dokumen.
 6a. Keterangan dokumen (`jenis_dokumen`, `nomor_dokumen`, `tanggal_terbit`) **wajib dipertahankan** dan tidak boleh disederhanakan menjadi satu kolom unggahan seperti modul lain. Nomor sertifikat adalah data legal yang harus dapat dicari, bukan sekadar lampiran.
-7. Lahan usaha juga mencatat pola tanam, musim tanam, peralatan/perlengkapan pertanian, dan kendala yang dihadapi.
+7. Lahan usaha juga mencatat pola tanam, peralatan/perlengkapan pertanian, dan kendala yang dihadapi. Waktu tanamnya sendiri dicatat pada penanaman, bukan di sini: satu bidang ditanami berulang kali, sehingga menempelkan satu periode pada bidangnya hanya menyimpan penanaman yang terakhir.
 8. **Satu transmigran umumnya menerima satu lahan pekarangan dan satu lahan usaha** (dikoreksi 2026-08-18 atas keterangan lapangan pemilik proyek). Keputusan 2026-08-10 sebelumnya menyatakan "boleh memiliki lebih dari satu lahan usaha" dengan alasan kondisi lapangan, dan itu **keliru**.
 9. **Jumlah pada poin 8 adalah jumlah yang wajar, bukan batas yang ditegakkan sistem.** Relasi tetap satu-ke-banyak dengan foreign key pada tabel `lahan`, sebab satu KK memang memegang dua bidang berbeda peruntukan sehingga satu-ke-satu tidak mungkin. Sistem juga tidak menolak bidang ketiga: bila satu jatah lahan usaha terletak pada dua petak berkoordinat berbeda, keduanya tetap perlu dicatat tersendiri karena dokumen dan letaknya berbeda. Yang dijaga adalah kewajaran data, bukan penolakan di tingkat isian.
 10. Rekap luas lahan per transmigran, per poktan, maupun per desa/SP wajib memakai penjumlahan seluruh lahan terkait, bukan mengambil satu baris data saja.
@@ -370,23 +369,39 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **-*
 8. **Keanggotaan poktan ditetapkan dari sisi poktan, bukan dari form transmigran.** Kolom `status_anggota_poktan` pada transmigran adalah **penanda turunan** yang dihitung dari keanggotaan berstatus Aktif, bukan isian mandiri. Menyediakannya sebagai isian membuat dua sumber kebenaran yang tidak pernah tersinkron.
 
 ### 7b. Aturan Fitur Alsintan
-1. Sistem membedakan alsintan **milik pribadi transmigran** dan **bantuan pemerintah yang disalurkan melalui poktan**.
+1. **Alsintan selalu milik kelompok tani.** Kepemilikan pribadi dicabut 2026-08-22: seluruh menu Pertanian mencatat kelompok, bukan individu. Alat yang dibeli dari iuran anggota tetap tercatat atas nama kelompok, dengan sumber perolehan Swadaya.
 2. Setiap alsintan wajib mencatat nama alat, jumlah, tahun perolehan, sumber perolehan, dan kondisi.
-3. Alsintan bantuan wajib ditautkan ke poktan penerima; alsintan pribadi ditautkan ke transmigran pemilik.
+3. Setiap alsintan wajib ditautkan ke poktan pemiliknya. **Satuan permukiman mengikuti poktan itu**, tidak dipilih terpisah, sebab isian mandiri hanya membuka peluang satu alat tercatat di SP yang berbeda dari kelompoknya.
 4. Setiap alsintan dapat dilampiri dokumen pendukung.
 5. Alsintan harus dapat direkap per desa/SP, per poktan, dan per jenis alat.
 
 ### 7c. Aturan Fitur Saprotan
 1. Saprotan mencatat sarana produksi pertanian seperti benih, pupuk, pestisida, dan mulsa.
 2. Setiap penyaluran wajib mencatat jenis saprotan, jumlah, satuan, dan waktu perolehan.
-3. Penerima saprotan dapat berupa kelompok tani maupun individu transmigran, dan wajib ditautkan ke penerimanya.
-4. Penyaluran kepada anggota poktan hanya untuk anggota berstatus aktif.
+3. **Penerima saprotan selalu kelompok tani**, dan wajib ditautkan ke poktan penerimanya. Penyaluran kepada individu transmigran dicabut 2026-08-22: seluruh pencatatan Produksi Pertanian berpusat pada poktan, dan pembagian kepada anggota diatur kelompok sendiri di luar sistem.
+4. **Satuan permukiman mengikuti poktan penerimanya**, tidak dipilih terpisah. Poktan sudah menyimpan SP-nya, sehingga isian mandiri hanya membuka peluang satu penyaluran tercatat di SP yang berbeda dari kelompoknya.
 5. Setiap penyaluran dapat dilampiri dokumen pendukung.
 6. Saprotan harus dapat direkap per periode, per poktan, dan per desa/SP.
+7. **Benih wajib menyebut komoditasnya**, jenis lain tidak. Benih selalu benih sesuatu, dan tanpa kaitan itu sistem tidak dapat menyaring benih mana yang boleh dipakai satu penanaman. Pupuk, pestisida, dan mulsa sengaja tidak ditanya: urea dipakai tanaman apa pun, dan memaksanya memilih satu komoditas berarti mengarang data.
+8. **Sisa benih dihitung, tidak disimpan.** Nilainya adalah jumlah yang disalurkan dikurangi seluruh pemakaian pada penanaman. Menyimpannya sebagai kolom menuntut koreksi setiap kali satu baris penanaman disunting, dan koreksi yang terlewat tidak akan pernah ketahuan.
+9. **Benih yang stoknya habis tidak lagi ditawarkan** pada form penanaman; petugas harus mendata penyaluran baru lebih dulu. Penguncian terjadi ketika stoknya habis, **bukan** ketika pertama kali dipakai — sebab satu bantuan lazim dipakai bertahap untuk beberapa kali tanam, dan mengunci pada pemakaian pertama membuat penanaman berikutnya mustahil dicatat.
+10. Pemakaian benih tidak boleh melebihi jumlah yang disalurkan.
+
+### 7d. Aturan Fitur Penanaman
+1. Penanaman dicatat **per kelompok tani**, bukan per bidang lahan maupun per petani (ditetapkan 2026-08-22). Lapangan membenarkannya: laporan bantuan benih mencatat satu baris per poktan.
+2. Setiap penanaman wajib mencatat kelompok tani, komoditas, realisasi tanam, dan tanggal tanam.
+3. **Jumlah anggota dan luas lahan kelompok dihitung, tidak diketik.** Keduanya turunan dari keanggotaan aktif dan data lahan, sehingga angka yang diketik akan menjadi basi begitu satu anggota keluar atau satu bidang dibetulkan — dan kebasian itu tidak pernah terlihat.
+4. Luas lahan kelompok adalah akumulasi lahan ketua beserta seluruh anggota **aktif**. Anggota yang sudah keluar tidak dihitung, sebab lahannya tidak lagi digarap kelompok ini.
+5. **Realisasi tanam tidak boleh melebihi lahan yang belum ditanami.**
+6. **Lahan kembali tersedia setelah panennya tuntas**, berbeda dari benih yang habis selamanya. Tanpa aturan ini, lahan poktan akan tampak habis setelah beberapa musim padahal bidang yang sama memang ditanami berulang kali tiap tahun.
+7. Benih yang ditawarkan hanya milik kelompok itu, untuk komoditas itu, dan yang stoknya masih ada.
+8. **Penanaman tanpa benih tercatat tetap sah.** Bibit swadaya anggota memang tidak melalui modul saprotan, dan menolaknya berarti memaksa petugas mengarang penyaluran yang tidak pernah terjadi.
+9. **Periode tanam dicatat sebagai bulan**, bukan tanggal. Penanaman satu hamparan berlangsung berhari-hari, sehingga menuntut satu tanggal pasti membuat petugas menebak.
+10. Setiap penanaman dapat dilampiri dokumen pendukung: berita acara tanam, foto hamparan, atau bukti penyaluran benih. Tidak dibatasi gambar saja, sebab berita acara lazimnya PDF hasil pindaian.
 
 ### 8. Aturan Fitur Komoditas
 1. Sistem harus mendukung komoditas unggulan kawasan, terutama komoditas utama yang disebut dalam proposal, yaitu jagung.
-2. Komoditas harus dapat dikaitkan dengan transmigran, poktan, lahan, dan hasil panen.
+2. Komoditas harus dapat dikaitkan dengan poktan, penanaman, dan hasil panen.
 3. Sistem harus mendukung penandaan komoditas unggulan.
 3a. **Unggulan ditandai petugas, bukan dihitung sistem** (ditegaskan 2026-08-18). Dasarnya proposal atau kebijakan dinas, sebagaimana poin 1 yang menyebut jagung "disebut dalam proposal" â€” penetapannya mendahului data panen mana pun. Menghitungnya dari volume terbesar akan menutup kasus yang justru paling perlu ditandai: komoditas prioritas program yang volumenya masih kecil karena baru dirintis. Perhitungan otomatis juga membuat jumlah penanda aksen gold tidak terkendali, bertentangan dengan `ui-spec.md` 2.4 yang membatasi pemakaiannya.
 3b. Form komoditas **menampilkan volume tercatat sebagai bahan pertimbangan**, beserta peringatan bila yang ditandai bukan bervolume terbesar. Peringatan itu **tidak menghalangi penyimpanan**: unggulan bervolume kecil adalah keadaan yang sah, yang tidak boleh terjadi hanyalah petugas menandainya tanpa menyadari keadaan itu.
@@ -396,10 +411,10 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **-*
 6. Komoditas harus bisa dianalisis per desa/SP atau per periode.
 
 ### 8a. Aturan Data Master Satuan
-1. Sistem menyediakan data master satuan untuk volume panen dan penyaluran saprotan.
+1. Sistem menyediakan data master satuan untuk produksi panen dan penyaluran saprotan.
 2. Setiap satuan wajib menyimpan nama, simbol, dan **faktor konversi ke ton** sebagai satuan agregasi baku.
 3. Contoh faktor konversi: ton = 1; kuintal = 0,1; kilogram = 0,001.
-4. Volume panen disimpan apa adanya sesuai satuan baku komoditasnya, tanpa dikonversi saat penyimpanan.
+4. Produksi disimpan apa adanya sesuai satuan baku komoditasnya, tanpa dikonversi saat penyimpanan.
 5. Konversi ke ton hanya dilakukan pada saat rekap, agregasi, dan penyajian dashboard, agar data asli lapangan tetap terjaga.
 6. Satuan lokal seperti karung dan ikat tidak dipakai sebagai satuan baku, melainkan dicatat pada kolom keterangan tambahan.
 7. Penambahan satuan baru cukup menambah baris data, tanpa mengubah struktur tabel.
@@ -408,18 +423,25 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **-*
 1. Hasil panen harus dicatat per periode.
 2. Minimal data panen yang dicatat:
    - jenis komoditas,
-   - volume panen,
+   - produksi,
    - satuan panen,
-   - kualitas panen,
+   - produktivitas per hektare,
    - harga jual,
-   - periode/musim tanam,
+   - periode panen,
    - lokasi produksi.
-3. Volume panen dicatat memakai **satuan baku milik komoditas** yang bersangkutan, mengacu pada data master satuan.
+3. Produksi dicatat memakai **satuan baku milik komoditas** yang bersangkutan, mengacu pada data master satuan.
 4. Satuan lokal seperti karung atau ikat dicatat pada kolom keterangan tambahan agar rekap tetap konsisten.
 5. Rekap dan agregasi lintas komoditas wajib dikonversi terlebih dahulu ke satuan **ton** memakai faktor konversi pada data master.
-6. Nilai volume panen disimpan dengan presisi desimal yang cukup agar panen berskala kecil tidak hilang saat pembulatan.
+6. Nilai produksi disimpan dengan presisi desimal yang cukup agar panen berskala kecil tidak hilang saat pembulatan.
 7. Riwayat panen harus dapat dipantau untuk melihat potensi produksi kawasan.
-8. Hasil panen harus dapat direkap per desa/SP, per transmigran, per poktan, per komoditas, dan per periode.
+8. Hasil panen harus dapat direkap per desa/SP, per poktan, per komoditas, dan per periode. Rekap per transmigran dicabut 2026-08-22: panen dicatat per kelompok, sehingga membaginya per orang berarti mengarang angka yang tidak pernah didata.
+9. **Panen dapat bertahap.** Satu penanaman boleh dipanen sebagian, sebagian lagi puso, sisanya menyusul bulan berikutnya. Karena itu tiga angka luas wajib memenuhi: hasil panen + puso + belum dipanen = realisasi tanam.
+10. **Belum dipanen dihitung, tidak diketik.** Ia selisih dari identitas pada poin 9, dijumlahkan dari seluruh panen milik penanaman itu. Menyimpannya sebagai isian berarti tiga angka yang saling menentukan diketik terpisah, dan ketiganya dapat berbeda tanpa ada yang menegur.
+11. **Produksi = hasil panen dikali produktivitas.** Nilainya tetap disimpan meski dapat dihitung, sebab ia angka yang dilaporkan ke dinas dan pembulatan perkalian dapat berbeda tipis dari timbangan sebenarnya.
+12. **Produktivitas memakai satuan baku komoditasnya**, bukan selalu ton per hektare. Jagung ton/ha, cabai kg/ha. Memaksanya ton membuat harga jual cabai per ton menjadi angka yang tidak pernah dipakai siapa pun di lapangan.
+13. **Kualitas panen dicabut 2026-08-22** atas keputusan pemilik proyek, digantikan produktivitas. Label mutu menuntut penilaian yang tidak dapat diverifikasi, sedangkan produktivitas per hektare dihitung dari timbangan.
+14. **Periode panen dicatat sebagai bulan**, bukan tanggal. Panen satu hamparan berlangsung berhari-hari, sehingga menuntut satu tanggal pasti membuat petugas menebak.
+15. Setiap catatan panen dapat dilampiri dokumen pendukung: berita acara panen, foto hamparan, atau bukti timbangan.
 
 ### 10. Aturan Fitur Infrastruktur SP
 1. Fitur infrastruktur berisi **pendataan aset**, bukan pelaporan masalah. Pelaporan kerusakan ditangani fitur Pengaduan (Â§10b).

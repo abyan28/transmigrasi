@@ -71,7 +71,7 @@
                     // Yang paling spesifik menang. Tanpa pemeriksaan ini, membuka
                     // /sp/inventaris menyorot Satuan Permukiman DAN Inventaris SP
                     // sekaligus, sebab keduanya berawalan sp.
-                    const semuaJalur = ['', 'kawasan', 'sp', 'sp/inventaris', 'sp/fasilitas', 'infrastruktur', 'transmigran', 'rumah', 'lahan', 'kependudukan/rekap', 'poktan', 'alsintan', 'saprotan', 'komoditas', 'musim-tanam', 'riwayat-tanam', 'panen', 'panen/rekap', 'pengaduan', 'pengaduan/rekap', 'laporan', 'wilayah', 'master/satuan', 'pengguna', 'pengaturan/role', 'audit-log'];
+                    const semuaJalur = ['', 'kawasan', 'sp', 'sp/inventaris', 'sp/fasilitas', 'infrastruktur', 'transmigran', 'rumah', 'lahan', 'kependudukan/rekap', 'poktan', 'alsintan', 'saprotan', 'komoditas', 'penanaman', 'panen', 'panen/rekap', 'pengaduan', 'pengaduan/rekap', 'laporan', 'wilayah', 'master/satuan', 'pengguna', 'pengaturan/role', 'audit-log'];
                     const paling = semuaJalur
                         .filter((j) => j !== '' && (sekarang === j || sekarang.startsWith(j + '/')))
                         .sort((a, b) => b.length - a.length)[0];

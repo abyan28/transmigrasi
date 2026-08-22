@@ -20,17 +20,21 @@
 
         // Dasar pengelompokan datang dari dua arah: segmen rute yang menjadi
         // tautan tetap, dan kueri `?kelompok=` milik tautan lama. Yang pertama
-        // membuat keempat tab tetap dapat dibuka pada build statis.
+        // membuat ketiga tab tetap dapat dibuka pada build statis.
         $kelompok = $kelompokRute ?? request('kelompok', 'sp');
 
         // Menyusun rekap menurut kolom pengelompokan yang dipilih.
+        //
+        // Kelompok `musim` dicabut 2026-08-22 bersama fitur musim tanam.
+        // Rekap per periode yang diwajibkan rules.md 8b.8 tetap terpenuhi
+        // lewat penyaringan Tahun Panen pada halaman daftar, yang dihitung
+        // dari `tanggal_panen` alih-alih label musim.
         $peta = [];
 
         foreach ($semua as $p) {
             $kunci = match ($kelompok) {
                 'komoditas' => $p['komoditas'],
-                'musim' => $p['musim_tanam'],
-                'petani' => $p['petani'],
+                'poktan' => $p['poktan'],
                 default => $p['satuan_permukiman'],
             };
 
@@ -40,16 +44,16 @@
                     'jumlah_catatan' => 0,
                     'volume_ton' => 0.0,
                     'nilai_jual' => 0.0,
-                    // Hanya terpakai pada rekap per petani. Dihimpun sebagai
-                    // himpunan agar tetap benar bila kelak satu petani memiliki
+                    // Hanya terpakai pada rekap per poktan. Dihimpun sebagai
+                    // himpunan agar tetap benar bila kelak satu poktan memiliki
                     // lahan di lebih dari satu satuan permukiman.
                     'satuan_permukiman' => [],
                 ];
             }
 
             $peta[$kunci]['jumlah_catatan']++;
-            $peta[$kunci]['volume_ton'] += DummyData::keTon($p['volume'], $p['satuan']);
-            $peta[$kunci]['nilai_jual'] += ($p['harga_jual'] ?? 0) * $p['volume'];
+            $peta[$kunci]['volume_ton'] += DummyData::keTon($p['produksi'], $p['satuan']);
+            $peta[$kunci]['nilai_jual'] += ($p['harga_jual'] ?? 0) * $p['produksi'];
 
             if (! in_array($p['satuan_permukiman'], $peta[$kunci]['satuan_permukiman'], true)) {
                 $peta[$kunci]['satuan_permukiman'][] = $p['satuan_permukiman'];
@@ -67,8 +71,7 @@
         $labelKelompok = [
             'sp' => 'Satuan Permukiman',
             'komoditas' => 'Komoditas',
-            'musim' => 'Musim Tanam',
-            'petani' => 'Petani',
+            'poktan' => 'Kelompok Tani',
         ];
     @endphp
 
@@ -123,12 +126,12 @@
                                 {{ $labelKelompok[$kelompok] ?? 'Satuan Permukiman' }}
                             </th>
                             {{--
-                                Asal satuan permukiman hanya ditampilkan pada rekap per petani.
+                                Asal satuan permukiman hanya ditampilkan pada rekap per poktan.
                                 Pada rekap lain kolom ini mubazir: per SP sudah menjadi kolom
-                                pertama, sedangkan per komoditas dan per musim menghimpun data
-                                lintas SP sehingga isinya selalu daftar panjang tanpa makna.
+                                pertama, sedangkan per komoditas menghimpun data lintas SP
+                                sehingga isinya selalu daftar panjang tanpa makna.
                             --}}
-                            @if ($kelompok === 'petani')
+                            @if ($kelompok === 'poktan')
                                 <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">
                                     Satuan Permukiman
                                 </th>
@@ -150,7 +153,7 @@
                                 <td class="px-5 py-3 text-theme-sm font-medium text-gray-800 dark:text-white/90">
                                     {{ $r['nama'] }}
                                 </td>
-                                @if ($kelompok === 'petani')
+                                @if ($kelompok === 'poktan')
                                     <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
                                         {{ implode(', ', $r['satuan_permukiman']) }}
                                     </td>
@@ -173,7 +176,7 @@
                         <tr class="motif-baris-total">
                             <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">Total</td>
                             {{-- Sel kosong penyeimbang kolom asal SP di atasnya --}}
-                            @if ($kelompok === 'petani')
+                            @if ($kelompok === 'poktan')
                                 <td class="px-5 py-3"></td>
                             @endif
                             <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">

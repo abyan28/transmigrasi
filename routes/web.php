@@ -499,16 +499,18 @@ Route::get('/panen/rekap', function () {
     return view('pages.panen.rekap', ['title' => 'Rekap Hasil Panen']);
 })->name('panen.rekap');
 
-// Tautan tetap per dasar pengelompokan. Membuat keempat tab dapat ditandai,
+// Tautan tetap per dasar pengelompokan. Membuat ketiga tab dapat ditandai,
 // dibagikan, dan ikut tergilas pada build statis GitHub Pages yang tidak dapat
 // melayani kueri `?kelompok=`. Lihat agents/notes.md bagian 1b.
 // Wajib berada SEBELUM /panen/{id} agar tidak tertangkap sebagai id.
+//
+// Kelompok `musim` dicabut 2026-08-22 bersama fitur musim tanam.
 Route::get('/panen/rekap/{kelompok}', function (string $kelompok) {
     return view('pages.panen.rekap', [
         'title' => 'Rekap Hasil Panen',
         'kelompokRute' => $kelompok,
     ]);
-})->where('kelompok', 'sp|komoditas|musim|petani')->name('panen.rekap.kelompok');
+})->where('kelompok', 'sp|komoditas|poktan')->name('panen.rekap.kelompok');
 
 Route::get('/panen/{id}', function (int $id) {
     $data = collect(\App\Support\DummyData::hasilPanen())->firstWhere('id_hasil_panen', $id);
@@ -784,56 +786,43 @@ Route::put('/komoditas/{id}', function (int $id) {
         ->with('sukses', 'Perubahan data komoditas tersimpan.');
 })->where('id', '[0-9]+')->name('komoditas.perbarui');
 
-Route::get('/musim-tanam', function () {
-    return view('pages.komoditas.musim-tanam', ['title' => 'Musim Tanam']);
-})->name('musim-tanam');
-
-Route::get('/riwayat-tanam', function () {
-    return view('pages.komoditas.riwayat-tanam', ['title' => 'Riwayat Tanam']);
-})->name('riwayat-tanam');
+Route::get('/penanaman', function () {
+    return view('pages.komoditas.penanaman', ['title' => 'Penanaman']);
+})->name('penanaman');
 
 /*
- * Halaman rincian musim tanam dan riwayat tanam.
+ * Halaman rincian penanaman.
  *
- * Ditambahkan 2026-08-20 agar keduanya memiliki tab Catatan Log seperti modul
- * lain. Sebelumnya keduanya hanya punya halaman daftar, sehingga perubahan
- * datanya tidak dapat ditelusuri dari tempat datanya sendiri.
+ * Ditambahkan 2026-08-20 agar modul ini memiliki tab Catatan Log seperti modul
+ * lain. Sebelumnya hanya ada halaman daftar, sehingga perubahan datanya tidak
+ * dapat ditelusuri dari tempat datanya sendiri.
  *
  * Rute rincian didaftarkan SETELAH rute daftarnya, mengikuti catatan lama pada
  * berkas ini bahwa alamat beruas dua dapat tertangkap sebagai id.
+ *
+ * Alamatnya `/penanaman`, DAHULU `/riwayat-tanam` (diubah 2026-08-22). Tidak
+ * disediakan pengalihan dari alamat lama: Tahap 2 belum pernah terbit sebagai
+ * sistem yang dipakai, sehingga tidak ada tautan lama yang perlu dijaga.
+ *
+ * Rute musim tanam DIHAPUS pada tanggal yang sama bersama fiturnya.
  */
-Route::get('/musim-tanam/{id}', function (int $id) {
-    $data = collect(\App\Support\DummyData::musimTanam())->firstWhere('id_musim_tanam', $id);
+Route::get('/penanaman/{id}', function (int $id) {
+    $data = collect(\App\Support\DummyData::penanaman())->firstWhere('id_penanaman', $id);
 
     abort_if($data === null, 404);
 
-    return view('pages.komoditas.detail-musim-tanam', ['title' => $data['label'], 'data' => $data]);
-})->where('id', '[0-9]+')->name('musim-tanam.detail');
-
-Route::get('/riwayat-tanam/{id}', function (int $id) {
-    $data = collect(\App\Support\DummyData::riwayatTanam())->firstWhere('id_riwayat_tanam', $id);
-
-    abort_if($data === null, 404);
-
-    return view('pages.komoditas.detail-riwayat-tanam', [
-        'title' => $data['kode_lahan'] . ' - ' . $data['musim_tanam'],
+    return view('pages.komoditas.detail-penanaman', [
+        'title' => $data['komoditas'].' - '.$data['poktan'],
         'data' => $data,
     ]);
-})->where('id', '[0-9]+')->name('riwayat-tanam.detail');
+})->where('id', '[0-9]+')->name('penanaman.detail');
 
-Route::post('/musim-tanam', function () {
-    // Tahap 7: nama dan tahun disimpan pada dua kolom terpisah agar rekap
-    // per tahun dapat dihitung tanpa mengurai teks gabungan.
-    return redirect()->route('musim-tanam')
-        ->with('sukses', 'Data musim tanam tersimpan.');
-})->name('musim-tanam.simpan');
-
-Route::post('/riwayat-tanam', function () {
+Route::post('/penanaman', function () {
     // Tahap 7: lahan_id wajib, sebab lokasi produksi hasil panen dibaca
-    // lewat rantai riwayat tanam ke lahan ke satuan permukiman.
-    return redirect()->route('riwayat-tanam')
+    // lewat rantai penanaman ke lahan ke satuan permukiman.
+    return redirect()->route('penanaman')
         ->with('sukses', 'Catatan penanaman tersimpan.');
-})->name('riwayat-tanam.simpan');
+})->name('penanaman.simpan');
 
 Route::get('/infrastruktur', function () {
     return view('pages.infrastruktur.index', ['title' => 'Infrastruktur SP']);
@@ -1027,21 +1016,13 @@ Route::delete('/poktan/{id}', function (int $id) {
     return redirect()->route('poktan.index')->with('sukses', 'Kelompok tani dihapus.');
 })->where('id', '[0-9]+')->name('poktan.hapus');
 
-Route::put('/musim-tanam/{id}', function (int $id) {
-    return redirect()->route('musim-tanam')->with('sukses', 'Perubahan musim tanam tersimpan.');
-})->where('id', '[0-9]+')->name('musim-tanam.perbarui');
+Route::put('/penanaman/{id}', function (int $id) {
+    return redirect()->route('penanaman')->with('sukses', 'Perubahan catatan penanaman tersimpan.');
+})->where('id', '[0-9]+')->name('penanaman.perbarui');
 
-Route::delete('/musim-tanam/{id}', function (int $id) {
-    return redirect()->route('musim-tanam')->with('sukses', 'Musim tanam dihapus.');
-})->where('id', '[0-9]+')->name('musim-tanam.hapus');
-
-Route::put('/riwayat-tanam/{id}', function (int $id) {
-    return redirect()->route('riwayat-tanam')->with('sukses', 'Perubahan catatan penanaman tersimpan.');
-})->where('id', '[0-9]+')->name('riwayat-tanam.perbarui');
-
-Route::delete('/riwayat-tanam/{id}', function (int $id) {
-    return redirect()->route('riwayat-tanam')->with('sukses', 'Catatan penanaman dihapus.');
-})->where('id', '[0-9]+')->name('riwayat-tanam.hapus');
+Route::delete('/penanaman/{id}', function (int $id) {
+    return redirect()->route('penanaman')->with('sukses', 'Catatan penanaman dihapus.');
+})->where('id', '[0-9]+')->name('penanaman.hapus');
 
 Route::delete('/alsintan/{id}', function (int $id) {
     return redirect()->route('alsintan.index')->with('sukses', 'Data alsintan dihapus.');
@@ -1052,7 +1033,7 @@ Route::delete('/saprotan/{id}', function (int $id) {
 })->where('id', '[0-9]+')->name('saprotan.hapus');
 
 Route::delete('/komoditas/{id}', function (int $id) {
-    // Tahap 7: tolak bila masih dipakai riwayat tanam atau hasil panen.
+    // Tahap 7: tolak bila masih dipakai penanaman atau hasil panen.
     return redirect()->route('komoditas.index')->with('sukses', 'Data komoditas dihapus.');
 })->where('id', '[0-9]+')->name('komoditas.hapus');
 

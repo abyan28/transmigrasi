@@ -34,8 +34,12 @@
         }));
 
         $adaFilter = $cari !== '' || $filterSp || $filterJenis;
-        $kePoktan = count(array_filter($semua, fn ($s) => $s['jenis_penerima'] === 'Poktan'));
         $jenisUnik = array_values(array_unique(array_column($semua, 'jenis')));
+
+        // Banyaknya poktan yang pernah menerima, menggantikan pasangan kartu
+        // "Kepada Poktan" dan "Kepada Individu". Penerima kini selalu poktan,
+        // sehingga kartu lama hanya menampilkan seluruh data dan angka nol.
+        $poktanPenerima = count(array_unique(array_column($semua, 'poktan_id')));
     @endphp
 
     <x-sim.halaman-daftar judul="Saprotan"
@@ -73,8 +77,7 @@
         <x-slot:ringkasan>
             <x-sim.stat-card label="Catatan Penyaluran" :nilai="count($semua)" />
             <x-sim.stat-card label="Jenis Saprotan" :nilai="count($jenisUnik)" />
-            <x-sim.stat-card label="Kepada Poktan" :nilai="$kePoktan" />
-            <x-sim.stat-card label="Kepada Individu" :nilai="count($semua) - $kePoktan" />
+            <x-sim.stat-card label="Poktan Penerima" :nilai="$poktanPenerima" />
         </x-slot:ringkasan>
 
         <x-slot:filter>
@@ -130,24 +133,41 @@
         @foreach ($baris as $s)
             <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                 <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ $s['jenis'] }}</td>
-                <td class="px-5 py-3 text-theme-sm font-medium text-gray-800 dark:text-white/90">{{ $s['nama'] }}</td>
+                <td class="px-5 py-3 text-theme-sm font-medium text-gray-800 dark:text-white/90">
+                    {{ $s['nama'] }}
+                    {{-- Komoditas hanya ada pada benih, sehingga barisnya
+                         tidak selalu tampil. --}}
+                    @if (! empty($s['komoditas']))
+                        <p class="mt-0.5 text-theme-xs font-normal text-gray-500 dark:text-gray-400">
+                            {{ $s['komoditas'] }}
+                        </p>
+                    @endif
+                </td>
+                {{--
+                    Sisa stok ditampilkan HANYA untuk benih, sebab hanya benih
+                    yang dikurangi pemakaiannya oleh penanaman. Menampilkannya
+                    pada pupuk berarti menjanjikan penghitungan yang tidak
+                    pernah dilakukan.
+                --}}
                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
-                    {{ number_format($s['jumlah'], 0, ',', '.') }} {{ $s['satuan'] }}</td>
+                    {{ number_format($s['jumlah'], 0, ',', '.') }} {{ $s['satuan'] }}
+                    @if ($s['jenis'] === \App\Enums\JenisSaprotan::Benih->value)
+                        @php($sisa = \App\Support\DummyData::sisaBenih($s['id_saprotan']))
+                        <p class="mt-0.5 text-theme-xs {{ $sisa > 0 ? 'text-gray-500 dark:text-gray-400' : 'text-error-500' }}">
+                            {{ $sisa > 0 ? 'sisa ' . rtrim(rtrim(number_format($sisa, 2, ',', '.'), '0'), ',') . ' ' . $s['satuan'] : 'habis' }}
+                        </p>
+                    @endif
+                </td>
                 <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
                     @if ($s['poktan_id'])
                         <a href="{{ route('poktan.detail', $s['poktan_id']) }}"
                             class="rounded text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
                             {{ $s['penerima'] }}
                         </a>
-                    @elseif ($s['transmigran_id'])
-                        <a href="{{ route('transmigran.detail', $s['transmigran_id']) }}"
-                            class="rounded text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
-                            {{ $s['penerima'] }}
-                        </a>
                     @else
                         {{ $s['penerima'] }}
                     @endif
-                    <p class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">{{ $s['jenis_penerima'] }}</p>
+                    <p class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">{{ $s['satuan_permukiman'] }}</p>
                 </td>
                 <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
                     {{ \Illuminate\Support\Carbon::parse($s['tanggal_perolehan'])->translatedFormat('d M Y') }}</td>

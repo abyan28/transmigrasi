@@ -3,13 +3,14 @@
 
     Dua aturan yang dijaga di sini:
 
-    1. Penerima berubah mengikuti jenis penerima: kelompok tani atau individu
-       (agents/rules.md bagian 7c). Tidak pernah keduanya sekaligus.
-    2. Pilihan penerima individu HANYA memuat anggota berstatus aktif.
-       Anggota yang sudah keluar tetap tersimpan pada riwayat keanggotaan,
-       tetapi bantuan tidak boleh disalurkan kepadanya. Menyaringnya di sini
-       mencegah kekeliruan penyaluran sejak dari isian, bukan setelah
-       tersimpan.
+    1. PENERIMA SELALU KELOMPOK TANI. Pilihan penerima individu dicabut
+       2026-08-22: seluruh pencatatan Produksi Pertanian berpusat pada poktan,
+       bukan perorangan. Menyediakan dua jalur membuat sebagian bantuan
+       tercatat atas nama orang dan sebagian atas nama kelompok, sehingga
+       rekap per poktan tidak pernah utuh.
+    2. SATUAN PERMUKIMAN MENGIKUTI POKTAN, tidak dipilih sendiri. Poktan sudah
+       menyimpan SP-nya, dan membiarkan petugas memilih SP secara terpisah
+       memungkinkan bantuan tercatat di SP yang berbeda dari poktannya.
 
     Nama kolom mengikuti agents/data-dictionary.md bagian 8.4.
 --}}
@@ -25,19 +26,30 @@
     $kelasLabel = 'mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400';
     $kelasBagian = 'text-theme-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400';
 
-    $daftarSp = DummyData::satuanPermukiman();
     $daftarPoktan = DummyData::poktan();
     $daftarSatuan = DummyData::satuan();
+    $daftarKomoditas = DummyData::komoditas();
 
-    // Hanya anggota aktif yang boleh menerima penyaluran (rules.md 7c poin 4).
-    $anggotaAktif = array_values(array_filter(
-        DummyData::anggotaPoktan(),
-        fn ($a) => $a['status'] === 'Aktif',
-    ));
+    // Peta poktan ke satuan permukimannya, dibaca Alpine untuk mengisi kolom
+    // SP begitu poktan dipilih. Disusun di sini, bukan di dalam markup, agar
+    // pencariannya tidak diulang setiap kali pilihan berubah.
+    $petaSpPoktan = [];
+    foreach ($daftarPoktan as $p) {
+        $petaSpPoktan[(string) $p['id_poktan']] = [
+            'id' => (string) $p['satuan_permukiman_id'],
+            'nama' => $p['satuan_permukiman'],
+        ];
+    }
 @endphp
 
 <div class="space-y-6"
-    x-data="{ jenisPenerima: @js(old('jenis_penerima', $data['jenis_penerima'] ?? 'Poktan')) }">
+    x-data="{
+        poktanId: @js((string) old('poktan_id', $data['poktan_id'] ?? '')),
+        petaSp: @js($petaSpPoktan),
+        jenis: @js(old('jenis', $data['jenis'] ?? '')),
+        get spTerpilih() { return this.petaSp[this.poktanId] ?? null; },
+        get benih() { return this.jenis === @js(JenisSaprotan::Benih->value); },
+    }">
 
     {{-- Bagian 1: identitas sarana --}}
     <section>
@@ -45,7 +57,7 @@
         <div class="mt-3 grid gap-4 sm:grid-cols-2">
             <div>
                 <label for="{{ $awalan }}_jenis" class="{{ $kelasLabel }}">Jenis Saprotan<span class="text-error-500">*</span></label>
-                <select id="{{ $awalan }}_jenis" name="jenis" required class="{{ $kelasKontrol }}">
+                <select id="{{ $awalan }}_jenis" name="jenis" required x-model="jenis" class="{{ $kelasKontrol }}">
                     <option value="">Pilih jenis</option>
                     @foreach (JenisSaprotan::cases() as $j)
                         <option value="{{ $j->value }}" @selected(old('jenis', $data['jenis'] ?? '') === $j->value)>
@@ -60,6 +72,42 @@
                 <input type="text" id="{{ $awalan }}_nama" name="nama" required
                     value="{{ old('nama', $data['nama'] ?? '') }}" maxlength="100"
                     placeholder="Contoh: BENIH JAGUNG HIBRIDA" class="{{ $kelasKontrol }}" />
+            </div>
+
+            {{--
+                KOMODITAS, MUNCUL HANYA UNTUK BENIH.
+
+                Benih selalu benih SESUATU, dan tanpa kolom ini kaitannya
+                hanya tersirat dari teks namanya: sistem tidak tahu "BENIH
+                JAGUNG HIBRIDA" itu benih jagung, sehingga form penanaman
+                tidak dapat menyaringnya dan petugas bebas memilih benih padi
+                untuk penanaman jagung.
+
+                Pupuk, pestisida, dan mulsa TIDAK ditanya: urea dipakai
+                tanaman apa pun, dan memaksanya memilih satu komoditas berarti
+                mengarang data yang tidak ada di lapangan.
+
+                `:required` mengikuti jenis, bukan dipasang tetap, sebab isian
+                yang sedang tersembunyi tetap menghalangi pengiriman form bila
+                `required`-nya menyala (pola sama dengan form lahan dan rumah).
+            --}}
+            <div x-show="benih" x-cloak x-transition class="sm:col-span-2">
+                <label for="{{ $awalan }}_komoditas_id" class="{{ $kelasLabel }}">
+                    Komoditas<span class="text-error-500">*</span>
+                </label>
+                <select id="{{ $awalan }}_komoditas_id" name="komoditas_id"
+                    :required="benih" :disabled="! benih" class="{{ $kelasKontrol }}">
+                    <option value="">Pilih komoditas</option>
+                    @foreach ($daftarKomoditas as $k)
+                        <option value="{{ $k['id_komoditas'] }}"
+                            @selected((string) old('komoditas_id', $data['komoditas_id'] ?? '') === (string) $k['id_komoditas'])>
+                            {{ $k['nama'] }}
+                        </option>
+                    @endforeach
+                </select>
+                <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                    Menentukan penanaman mana yang boleh memakai benih ini. Hanya ditanyakan untuk jenis Benih.
+                </p>
             </div>
 
             <div>
@@ -107,63 +155,36 @@
     <section>
         <h3 class="{{ $kelasBagian }}">Penerima</h3>
         <div class="mt-3 space-y-4">
-            <div>
-                <span class="{{ $kelasLabel }}">Jenis Penerima</span>
-                <div class="flex flex-wrap gap-4">
-                    @foreach (['Poktan', 'Individu'] as $jp)
-                        <label class="flex items-center gap-2.5">
-                            <input type="radio" name="jenis_penerima" value="{{ $jp }}"
-                                x-model="jenisPenerima"
-                                class="h-4 w-4 border-gray-300 text-brand-500 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700" />
-                            <span class="text-theme-sm text-gray-700 dark:text-gray-300">{{ $jp }}</span>
-                        </label>
-                    @endforeach
-                </div>
-            </div>
+            <x-sim.pilih-cari nama="poktan_id" label="Kelompok Tani Penerima" :wajib="true"
+                :awalan="$awalan" :opsi="$daftarPoktan" kunci="id_poktan"
+                teks="nama" keterangan-opsi="satuan_permukiman"
+                :terpilih="old('poktan_id', $data['poktan_id'] ?? null)"
+                placeholder="Pilih kelompok tani"
+                keterangan="Seluruh penyaluran tercatat atas nama kelompok. Pembagian kepada anggota diatur poktan sendiri."
+                @change="poktanId = $event.target.value" />
 
             {{--
-                Wajib bersyarat. Bintang dipasang statis sebab isian ini hanya
-                muncul ketika syaratnya berlaku, sedangkan `required` menyala
-                mengikuti jenis penerima agar isian yang tersembunyi tidak
-                menghalangi pengiriman form (pola sama dengan rumah/form).
+                SATUAN PERMUKIMAN TERBACA, BUKAN DIPILIH.
+
+                Sebelumnya berupa dropdown terpisah, sehingga satu penyaluran
+                dapat tercatat pada SP yang berbeda dari SP poktan penerimanya
+                tanpa ada yang menegur. Nilainya memang sudah ditentukan begitu
+                poktan dipilih, jadi menanyakannya lagi hanya membuka peluang
+                salah isi.
+
+                Nilai tetap dikirim lewat `<input type="hidden">`, sebab kolom
+                `satuan_permukiman_id` tetap ada pada kamus data 8.4 dan dipakai
+                penyaringan daftar.
             --}}
-            <div x-show="jenisPenerima === 'Poktan'" x-cloak x-transition>
-                <x-sim.pilih-cari nama="poktan_id" label="Kelompok Tani Penerima" :wajib="true"
-                    :awalan="$awalan" :opsi="$daftarPoktan" kunci="id_poktan"
-                    teks="nama" keterangan-opsi="satuan_permukiman"
-                    :terpilih="old('poktan_id', $data['poktan_id'] ?? null)"
-                    placeholder="Pilih kelompok tani"
-                    :required="'jenisPenerima === ' . json_encode('Poktan')" />
-            </div>
-
-            <div x-show="jenisPenerima === 'Individu'" x-cloak x-transition>
-                {{--
-                    Kuncinya `transmigran_id`, bukan `id_anggota_poktan`: yang
-                    disimpan `saprotan` adalah penerimanya, sedangkan daftar ini
-                    kebetulan berasal dari tabel keanggotaan karena hanya
-                    anggota aktif yang boleh menerima (rules.md 7c.4).
-                --}}
-                <x-sim.pilih-cari nama="transmigran_id" label="Anggota Penerima" :wajib="true"
-                    :awalan="$awalan" :opsi="$anggotaAktif" kunci="transmigran_id"
-                    teks="nama" keterangan-opsi="poktan"
-                    :terpilih="old('transmigran_id', $data['transmigran_id'] ?? null)"
-                    placeholder="Pilih anggota"
-                    keterangan="Hanya anggota berstatus aktif yang dapat menerima penyaluran. Anggota yang sudah keluar tetap tersimpan pada riwayat keanggotaan, tetapi tidak muncul di sini."
-                    :required="'jenisPenerima === ' . json_encode('Individu')" />
-            </div>
-
             <div>
-                <label for="{{ $awalan }}_satuan_permukiman_id" class="{{ $kelasLabel }}">Satuan Permukiman</label>
-                <select id="{{ $awalan }}_satuan_permukiman_id" name="satuan_permukiman_id"
-                    class="{{ $kelasKontrol }}">
-                    <option value="">Pilih satuan permukiman</option>
-                    @foreach ($daftarSp as $sp)
-                        <option value="{{ $sp['id_satuan_permukiman'] }}"
-                            @selected((string) old('satuan_permukiman_id', $data['satuan_permukiman_id'] ?? '') === (string) $sp['id_satuan_permukiman'])>
-                            {{ $sp['nama'] }}
-                        </option>
-                    @endforeach
-                </select>
+                <span class="{{ $kelasLabel }}">Satuan Permukiman</span>
+                <p class="flex h-11 items-center rounded-lg bg-gray-50 px-4 text-theme-sm text-gray-600 dark:bg-white/5 dark:text-gray-400">
+                    <span x-show="spTerpilih" x-text="spTerpilih?.nama"></span>
+                    <span x-show="! spTerpilih" x-cloak class="text-gray-400 dark:text-white/30">
+                        Terisi otomatis setelah kelompok tani dipilih
+                    </span>
+                </p>
+                <input type="hidden" name="satuan_permukiman_id" :value="spTerpilih?.id ?? ''" />
             </div>
         </div>
     </section>

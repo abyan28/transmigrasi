@@ -156,12 +156,12 @@ async function main() {
             });
         })()`));
 
-        periksa('empat belas daftar dirender sebagai kartu', indeks.jumlahKartu === 14, `dapat ${indeks.jumlahKartu}`);
+        periksa('tiga belas daftar dirender sebagai kartu', indeks.jumlahKartu === 13, `dapat ${indeks.jumlahKartu}`);
 
         // INTI UJI INI. Sebelumnya empat dari empat belas; sekarang seluruhnya.
         periksa(
             'seluruh kartu terlihat tanpa perlu menggulir',
-            indeks.kartuTerlihat === 14,
+            indeks.kartuTerlihat === 13,
             `terlihat ${indeks.kartuTerlihat} dari ${indeks.jumlahKartu}`
         );
 

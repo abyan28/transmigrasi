@@ -119,8 +119,7 @@ class DaftarTautanStatis extends Command
             'saprotan' => ['saprotan', 'id_saprotan'],
             'komoditas' => ['komoditas', 'id_komoditas'],
             'infrastruktur' => ['infrastruktur', 'id_infrastruktur'],
-            'musim-tanam' => ['musimTanam', 'id_musim_tanam'],
-            'riwayat-tanam' => ['riwayatTanam', 'id_riwayat_tanam'],
+            'penanaman' => ['penanaman', 'id_penanaman'],
             'sp/inventaris' => ['inventarisSp', 'id_inventaris_sp'],
             'sp/fasilitas' => ['fasilitasSp', 'id_fasilitas_sp'],
             'dashboard/sp' => ['satuanPermukiman', 'id_satuan_permukiman'],
@@ -158,7 +157,7 @@ class DaftarTautanStatis extends Command
         // Tautan tetap tab rekap panen. Nilainya terbatas dan ditentukan
         // tampilan, bukan data, sehingga disebut langsung. Daftar ini wajib
         // sejalan dengan batasan `where` pada rute `panen.rekap.kelompok`.
-        foreach (['sp', 'komoditas', 'musim', 'petani'] as $kelompok) {
+        foreach (['sp', 'komoditas', 'poktan'] as $kelompok) {
             $hasil[] = '/panen/rekap/'.$kelompok;
         }
 

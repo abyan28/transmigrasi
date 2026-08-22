@@ -1,11 +1,19 @@
 {{--
-    Riwayat penanaman.
+    Penanaman.
 
-    Mencatat lahan mana ditanami komoditas apa pada musim apa. Menjadi jembatan
-    antara lahan dan hasil panen: hasil panen menaut ke riwayat tanam, bukan
+    Mencatat lahan mana ditanami komoditas apa dan kapan. Menjadi jembatan
+    antara lahan dan hasil panen: hasil panen menaut ke penanaman, bukan
     langsung ke lahan, sehingga lokasi produksi terbaca lewat rantai
-    riwayat tanam, lahan, satuan permukiman
-    (agents/data-dictionary.md bagian 9.3).
+    penanaman, lahan, satuan permukiman
+    (agents/data-dictionary.md bagian 9.2).
+
+    DAHULU BERNAMA "RIWAYAT TANAM", diubah 2026-08-22. Kata "riwayat"
+    menyiratkan catatan masa lalu, padahal barisnya justru dibuat ketika
+    penanaman baru dimulai dan panennya belum ada.
+
+    TANPA MUSIM TANAM sejak tanggal yang sama. Penyaringan periode kini
+    memakai TAHUN TANAM yang dihitung dari `periode_tanam`, bukan label musim
+    yang harus ditetapkan lebih dulu di tabel tersendiri.
 --}}
 @extends('layouts.app')
 
@@ -13,22 +21,29 @@
     @php
         use App\Support\DummyData;
 
-        $semua = DummyData::riwayatTanam();
+        $semua = DummyData::penanaman();
 
         $cari = trim((string) request('cari', ''));
         $filterSp = request('sp');
-        $filterMusim = request('musim_tanam');
+        $filterTahun = request('tahun');
         $filterKomoditas = request('komoditas');
 
-        $baris = array_values(array_filter($semua, function ($r) use ($cari, $filterSp, $filterMusim, $filterKomoditas) {
-            if ($cari !== '' && ! str_contains(mb_strtolower($r['petani']), mb_strtolower($cari))
-                && ! str_contains(mb_strtolower($r['kode_lahan']), mb_strtolower($cari))) {
+        // Tahun tanam diturunkan dari tanggalnya, bukan disimpan terpisah.
+        // Menyimpannya sebagai kolom sendiri membuat nilainya dapat berbeda
+        // dari tanggal yang menjadi sumbernya.
+        $tahunTanam = fn ($r) => $r['periode_tanam']
+            ? \Illuminate\Support\Carbon::parse($r['periode_tanam'] . '-01')->year
+            : null;
+
+        $baris = array_values(array_filter($semua, function ($r) use ($cari, $filterSp, $filterTahun, $filterKomoditas, $tahunTanam) {
+            if ($cari !== '' && ! str_contains(mb_strtolower($r['poktan']), mb_strtolower($cari))
+                && ! str_contains(mb_strtolower($r['komoditas']), mb_strtolower($cari))) {
                 return false;
             }
             if ($filterSp && (string) $r['satuan_permukiman_id'] !== (string) $filterSp) {
                 return false;
             }
-            if ($filterMusim && $r['musim_tanam'] !== $filterMusim) {
+            if ($filterTahun && (string) $tahunTanam($r) !== (string) $filterTahun) {
                 return false;
             }
             if ($filterKomoditas && $r['komoditas'] !== $filterKomoditas) {
@@ -38,17 +53,20 @@
             return true;
         }));
 
-        $adaFilter = $cari !== '' || $filterSp || $filterMusim || $filterKomoditas;
-        $totalLuas = array_sum(array_column($baris, 'luas_tanam'));
-        $daftarMusim = array_values(array_unique(array_column($semua, 'musim_tanam')));
+        $adaFilter = $cari !== '' || $filterSp || $filterTahun || $filterKomoditas;
+        $totalLuas = array_sum(array_column($baris, 'realisasi_tanam'));
+
+        $daftarTahun = array_values(array_filter(array_unique(array_map($tahunTanam, $semua))));
+        rsort($daftarTahun);
+
         $daftarKomoditas = array_values(array_unique(array_column($semua, 'komoditas')));
     @endphp
 
-    <x-sim.halaman-daftar judul="Riwayat Tanam"
-        keterangan="Catatan penanaman per lahan, musim, dan komoditas."
-        :remah="\App\Helpers\RemahHelper::untuk('/riwayat-tanam')"
-        :jumlah="count($baris)" :kata-kunci="$cari" :aksi-url="route('riwayat-tanam')"
-        placeholder-cari="Cari petani atau kode lahan" judul-kosong="Belum ada riwayat tanam"
+    <x-sim.halaman-daftar judul="Penanaman"
+        keterangan="Catatan penanaman per kelompok tani, komoditas, dan waktu tanam."
+        :remah="\App\Helpers\RemahHelper::untuk('/penanaman')"
+        :jumlah="count($baris)" :kata-kunci="$cari" :aksi-url="route('penanaman')"
+        placeholder-cari="Cari kelompok tani atau komoditas" judul-kosong="Belum ada penanaman"
         pesan-kosong="Catatan penanaman akan tampil di sini setelah dicatat petugas.">
 
         <x-slot:aksi>
@@ -57,7 +75,7 @@
                 sekunder, sebab menambah satu data tetap tindakan yang paling
                 sering dipakai (PRD 8.1).
             --}}
-            <button type="button" @click="$dispatch('buka-modal', 'imporRiwayatTanam')"
+            <button type="button" @click="$dispatch('buka-modal', 'imporPenanaman')"
                 class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-theme-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"
                     aria-hidden="true">
@@ -66,7 +84,7 @@
                 </svg>
                 Impor Data
             </button>
-            <button type="button" @click="$dispatch('buka-modal', 'formTambahRiwayatTanam')"
+            <button type="button" @click="$dispatch('buka-modal', 'formTambahPenanaman')"
                 class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
                     aria-hidden="true">
@@ -77,10 +95,10 @@
         </x-slot:aksi>
 
         <x-slot:ringkasan>
-            <x-sim.stat-card label="Catatan Tanam" :nilai="count($semua)" />
-            <x-sim.stat-card label="Luas Ditanami"
-                :nilai="number_format(array_sum(array_column($semua, 'luas_tanam')), 2, ',', '.')" satuan="ha" />
-            <x-sim.stat-card label="Musim Tercatat" :nilai="count($daftarMusim)" />
+            <x-sim.stat-card label="Catatan Penanaman" :nilai="count($semua)" />
+            <x-sim.stat-card label="Realisasi Tanam"
+                :nilai="number_format(array_sum(array_column($semua, 'realisasi_tanam')), 2, ',', '.')" satuan="ha" />
+            <x-sim.stat-card label="Tahun Tercatat" :nilai="count($daftarTahun)" />
             <x-sim.stat-card label="Komoditas Ditanam" :nilai="count($daftarKomoditas)" />
         </x-slot:ringkasan>
 
@@ -99,13 +117,13 @@
                     </select>
                 </div>
                 <div>
-                    <label for="filter_musim"
-                        class="mb-1.5 block text-theme-xs font-medium text-gray-700 dark:text-gray-400">Musim Tanam</label>
-                    <select id="filter_musim" name="musim_tanam"
+                    <label for="filter_tahun"
+                        class="mb-1.5 block text-theme-xs font-medium text-gray-700 dark:text-gray-400">Tahun Tanam</label>
+                    <select id="filter_tahun" name="tahun"
                         class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
-                        <option value="">Semua musim</option>
-                        @foreach ($daftarMusim as $m)
-                            <option value="{{ $m }}" @selected($filterMusim === $m)>{{ $m }}</option>
+                        <option value="">Semua tahun</option>
+                        @foreach ($daftarTahun as $t)
+                            <option value="{{ $t }}" @selected((string) $filterTahun === (string) $t)>{{ $t }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -126,7 +144,7 @@
                         Terapkan Filter
                     </button>
                     @if ($adaFilter)
-                        <a href="{{ route('riwayat-tanam') }}"
+                        <a href="{{ route('penanaman') }}"
                             class="flex h-10 items-center rounded-lg border border-gray-300 px-3 text-theme-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
                             Bersihkan
                         </a>
@@ -136,46 +154,52 @@
         </x-slot:filter>
 
         <x-slot:kepala>
-            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Lahan</th>
-            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Petani</th>
-            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Musim Tanam</th>
+            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Kelompok Tani</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Komoditas</th>
-            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Luas Tanam (ha)</th>
-            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Tanggal Tanam</th>
+            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Volume Benih</th>
+            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Realisasi Tanam (ha)</th>
+            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Periode Tanam</th>
             <th scope="col" class="px-5 py-3 text-right text-theme-xs font-medium text-gray-500 dark:text-gray-400">Aksi</th>
         </x-slot:kepala>
 
         @foreach ($baris as $r)
             <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                 <td class="px-5 py-3">
-                    <a href="{{ route('lahan.detail', $r['lahan_id']) }}"
+                    <a href="{{ route('poktan.detail', $r['poktan_id']) }}"
                         class="rounded text-theme-sm font-medium text-gray-800 hover:text-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-white/90 dark:hover:text-brand-400">
-                        {{ $r['kode_lahan'] }}
+                        {{ $r['poktan'] }}
                     </a>
                     <p class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">{{ $r['satuan_permukiman'] }}</p>
                 </td>
-                <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ $r['petani'] }}</td>
-                <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ $r['musim_tanam'] }}</td>
                 <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">{{ $r['komoditas'] }}</td>
+                {{-- Boleh kosong: bibit swadaya tidak melalui modul saprotan. --}}
                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
-                    {{ number_format($r['luas_tanam'], 2, ',', '.') }}</td>
+                    @if ($r['volume_benih'])
+                        {{ rtrim(rtrim(number_format($r['volume_benih'], 2, ',', '.'), '0'), ',') }} kg
+                    @else
+                        <span class="text-gray-400 dark:text-white/30">&mdash;</span>
+                    @endif
+                </td>
+                <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
+                    {{ number_format($r['realisasi_tanam'], 2, ',', '.') }}</td>
                 <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
-                    {{ \Illuminate\Support\Carbon::parse($r['tanggal_tanam'])->translatedFormat('d M Y') }}</td>
+                    {{ \Illuminate\Support\Carbon::parse($r['periode_tanam'] . '-01')->translatedFormat('F Y') }}</td>
                 <td class="px-5 py-3">
-                                <x-sim.aksi-baris :rincian-url="route('riwayat-tanam.detail', $r['id_riwayat_tanam'])"
-                                    modal-ubah="formUbahRiwayatBaris"
-                        :data-baris="$r + ['id' => $r['id_riwayat_tanam']]"
-                        :hapus-url="'/riwayat-tanam/' . $r['id_riwayat_tanam']"
-                        konfirmasi-hapus="hapusRiwayat"
-                        :label="$r['komoditas']" />
+                    <x-sim.aksi-baris :rincian-url="route('penanaman.detail', $r['id_penanaman'])"
+                        modal-ubah="formUbahPenanamanBaris"
+                        :data-baris="$r + ['id' => $r['id_penanaman']]"
+                        :hapus-url="'/penanaman/' . $r['id_penanaman']"
+                        konfirmasi-hapus="hapusPenanaman"
+                        :label="$r['komoditas'] . ' oleh ' . $r['poktan']" />
                 </td>
             </tr>
         @endforeach
 
         <x-slot:kaki>
             <tr class="motif-baris-total">
-                <td colspan="4" class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">
-                    Total luas ditanami</td>
+                {{-- Tiga kolom pertama: Kelompok Tani, Komoditas, Volume Benih. --}}
+                <td colspan="3" class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">
+                    Total realisasi tanam</td>
                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
                     {{ number_format($totalLuas, 2, ',', '.') }}</td>
                 {{-- Dua sel kosong: kolom Tanggal Tanam dan kolom Aksi tidak punya total --}}
@@ -188,33 +212,34 @@
             @foreach ($baris as $r)
                 <div class="p-4">
                     <p class="text-theme-sm font-medium text-gray-800 dark:text-white/90">
-                        {{ $r['komoditas'] }} di {{ $r['kode_lahan'] }}
+                        {{ $r['komoditas'] }} oleh {{ $r['poktan'] }}
                     </p>
                     <p class="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
-                        {{ $r['musim_tanam'] }} &middot; {{ number_format($r['luas_tanam'], 2, ',', '.') }} ha
+                        {{ \Illuminate\Support\Carbon::parse($r['periode_tanam'] . '-01')->translatedFormat('F Y') }}
+                        &middot; {{ number_format($r['realisasi_tanam'], 2, ',', '.') }} ha
                     </p>
                 </div>
             @endforeach
         </x-slot:kartu>
     </x-sim.halaman-daftar>
 
-    <x-sim.modal-form nama="formTambahRiwayatTanam" judul="Catat Riwayat Tanam"
-        keterangan="Lahan menentukan lokasi produksi yang dibaca hasil panen."
-        :aksi="route('riwayat-tanam.simpan')" ukuran="lg" label-simpan="Simpan Data">
-        @include('pages.komoditas.form-riwayat-tanam', ['awalan' => 'tambah'])
+    <x-sim.modal-form nama="formTambahPenanaman" judul="Catat Penanaman"
+        keterangan="Kelompok tani menentukan lokasi, luas lahan, dan benih yang boleh dipakai."
+        :aksi="route('penanaman.simpan')" ukuran="lg" label-simpan="Simpan Data">
+        @include('pages.komoditas.form-penanaman', ['awalan' => 'tambah'])
     </x-sim.modal-form>
 
-    <x-sim.modal-form nama="formUbahRiwayatBaris" judul="Ubah Riwayat Tanam"
+    <x-sim.modal-form nama="formUbahPenanamanBaris" judul="Ubah Penanaman"
         keterangan="Perubahan tercatat pada audit log."
-        pola-aksi="/riwayat-tanam/:id" metode="PUT" ukuran="lg" label-simpan="Simpan Perubahan">
-        @include('pages.komoditas.form-riwayat-tanam', ['awalan' => 'ubahBaris'])
+        pola-aksi="/penanaman/:id" metode="PUT" ukuran="lg" label-simpan="Simpan Perubahan">
+        @include('pages.komoditas.form-penanaman', ['awalan' => 'ubahBaris'])
     </x-sim.modal-form>
 
-    <x-sim.confirm-dialog nama="hapusRiwayat" judul="Hapus catatan penanaman ini?"
+    <x-sim.confirm-dialog nama="hapusPenanaman" judul="Hapus catatan penanaman ini?"
         pesan="Hasil panen yang menaut catatan ini akan kehilangan lokasi produksinya." label-setuju="Hapus" />
 
     {{-- Impor massal, lihat komponennya untuk alur tiga langkah --}}
-    <x-sim.modal-impor nama="imporRiwayatTanam" judul="Impor Riwayat Tanam"
-        entitas="riwayat-tanam"
-        :kolom-wajib="['lahan', 'komoditas', 'musim_tanam', 'tanggal_tanam', 'luas_tanam_ha']" />
+    <x-sim.modal-impor nama="imporPenanaman" judul="Impor Penanaman"
+        entitas="penanaman"
+            :kolom-wajib="['kelompok_tani', 'komoditas', 'periode_tanam', 'realisasi_tanam_ha']" />
 @endsection

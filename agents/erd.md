@@ -60,7 +60,7 @@ Total **37 tabel**, dikelompokkan menjadi 9 domain.
 | 5 | Kependudukan | `transmigran`, `rumah`, `riwayat_penghunian`, `riwayat_kepala_keluarga` |
 | 6 | Lahan | `lahan`, `dokumen_lahan` |
 | 7 | Kelembagaan & Sarana | `poktan`, `anggota_poktan`, `alsintan`, `saprotan` |
-| 8 | Produksi Pertanian | `musim_tanam`, `riwayat_tanam`, `hasil_panen`, `komoditas_poktan` |
+| 8 | Produksi Pertanian | `penanaman`, `hasil_panen`, `komoditas_poktan` |
 | 9 | Infrastruktur & Pengaduan | `infrastruktur`, `pengaduan`, `penanganan_pengaduan` |
 
 ---
@@ -128,11 +128,11 @@ Hierarki bercabang dua dari `kabupaten`. Cabang **administratif** mencatat pemba
 â””â”€â”€â”¬â”€â”€â”€â”˜â”‚    â”‚    â”‚    â”‚    â”‚                    â”‚  N:1    â””â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”˜
    â”‚1:N â”‚    â”‚    â”‚    â”‚    â”‚                    â”‚                â”‚ N:1
 â”Œâ”€â”€â–¼â”€â”€â”€â”€â–¼â”€â”€â” â”‚    â”‚    â”‚    â”‚            â”Œâ”€â”€â”€â”€â”€â”€â”€â–¼â”€â”€â”€â”€â”€â”€â”  â”Œâ”€â”€â”€â”€â”€â”€â–¼â”€â”€â”€â”€â”€â”
-â”‚ riwayat_ â”‚ â”‚    â”‚    â”‚    â”‚            â”‚ riwayat_tanamâ”‚  â”‚   satuan   â”‚
+â”‚ riwayat_ â”‚ â”‚    â”‚    â”‚    â”‚            â”‚ penanaman    â”‚  â”‚   satuan   â”‚
 â”‚penghunianâ”‚ â”‚    â”‚    â”‚    â”‚            â””â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”˜  â””â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”˜
 â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜ â”‚    â”‚    â”‚    â”‚                â”‚ N:1  â”‚ 1:N         â”‚ N:1
              â”‚    â”‚    â”‚    â”‚       â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â–¼â”€â”€â”€â”  â”‚      â”Œâ”€â”€â”€â”€â”€â”€â–¼â”€â”€â”€â”€â”€â”
-        â”Œâ”€â”€â”€â”€â–¼â”€â”€â” â”‚    â”‚    â”‚       â”‚ musim_tanamâ”‚  â””â”€â”€â”€â”€â”€â”€â–º hasil_panenâ”‚
+        â”Œâ”€â”€â”€â”€â–¼â”€â”€â” â”‚    â”‚    â”‚       â”‚            â”‚  â””â”€â”€â”€â”€â”€â”€â–º hasil_panenâ”‚
         â”‚ lahan â”‚ â”‚    â”‚    â”‚       â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜         â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
         â””â”€â”€â”€â”¬â”€â”€â”€â”˜ â”‚    â”‚    â”‚                                     â–²
             â”‚1:N  â”‚    â”‚    â”‚                                     â”‚ N:1
@@ -191,18 +191,20 @@ Kolom "Aturan hapus" memakai istilah SQL: `RESTRICT` mencegah penghapusan induk 
 > **Nullable karena ketua tidak selalu transmigran** (2026-08-17). Diperluas 2026-08-20: bila `asal_ketua` bernilai `Bukan Transmigran`, kolom ini `NULL` dan identitas ketua disimpan pada `nama_ketua` beserta `nik_ketua`. Pada nilai `Anggota Keluarga`, FK ini **tetap terisi** sebab yang ditunjuk adalah keluarga yang diwakili, bukan orangnya. Banyak poktan diketuai penduduk setempat yang bukan peserta program, sehingga mewajibkan FK ini membuat poktan semacam itu tidak dapat didata. Lihat `data-dictionary.md` Â§8.1.
 | 20 | `anggota_poktan` | `poktan_id` | `poktan` | N:1 | CASCADE |
 | 21 | `anggota_poktan` | `transmigran_id` | `transmigran` | N:1 | RESTRICT |
-| 22 | `alsintan` | `transmigran_id` | `transmigran` | N:1 (nullable) | SET NULL |
-| 23 | `alsintan` | `poktan_id` | `poktan` | N:1 (nullable) | SET NULL |
-| 24 | `saprotan` | `transmigran_id` | `transmigran` | N:1 (nullable) | SET NULL |
-| 25 | `saprotan` | `poktan_id` | `poktan` | N:1 (nullable) | SET NULL |
+| 22 | `alsintan` | `satuan_permukiman_id` | `satuan_permukiman` | N:1 | RESTRICT |
+| 23 | `alsintan` | `poktan_id` | `poktan` | N:1 | RESTRICT |
+| 24 | `saprotan` | `satuan_permukiman_id` | `satuan_permukiman` | N:1 | RESTRICT |
+| 25 | `saprotan` | `poktan_id` | `poktan` | N:1 | RESTRICT |
 | 26 | `saprotan` | `satuan_id` | `satuan` | N:1 | RESTRICT |
+| 26a | `saprotan` | `komoditas_id` | `komoditas` | N:1 (nullable) | RESTRICT |
 | 27 | `komoditas` | `satuan_id` | `satuan` | N:1 | RESTRICT |
 | 28 | `komoditas_poktan` | `komoditas_id` | `komoditas` | N:M | CASCADE |
 | 29 | `komoditas_poktan` | `poktan_id` | `poktan` | N:M | CASCADE |
-| 30 | `riwayat_tanam` | `lahan_id` | `lahan` | N:1 | CASCADE |
-| 31 | `riwayat_tanam` | `musim_tanam_id` | `musim_tanam` | N:1 | RESTRICT |
-| 32 | `riwayat_tanam` | `komoditas_id` | `komoditas` | N:1 | RESTRICT |
-| 33 | `hasil_panen` | `riwayat_tanam_id` | `riwayat_tanam` | N:1 | CASCADE |
+| 30 | `penanaman` | `poktan_id` | `poktan` | N:1 | CASCADE |
+| 32 | `penanaman` | `komoditas_id` | `komoditas` | N:1 | RESTRICT |
+| 32a | `penanaman` | `saprotan_id` | `saprotan` | N:1 (nullable) | SET NULL |
+| 33 | `hasil_panen` | `penanaman_id` | `penanaman` | N:1 | CASCADE |
+| 33a | `hasil_panen` | `poktan_id` | `poktan` | N:1 | RESTRICT |
 | 34 | `hasil_panen` | `satuan_id` | `satuan` | N:1 | RESTRICT |
 | 35 | `infrastruktur` | `satuan_permukiman_id` | `satuan_permukiman` | N:1 | RESTRICT |
 | 36 | `infrastruktur` | `poktan_id` | `poktan` | N:1 (nullable) | SET NULL |
@@ -240,7 +242,7 @@ Aturan berikut **tidak boleh** hanya divalidasi di form, karena dapat ditembus l
 | 9 | Nama wilayah unik dalam induknya | `UNIQUE (kecamatan_id, nama)` pada `desa`, dan seterusnya berjenjang |
 | 9a | Nama kawasan unik dalam kabupatennya | `UNIQUE (kabupaten_id, nama)` pada `kawasan_transmigrasi` |
 | 9b | Satu SP hanya berdiri di satu desa dan satu kawasan | `desa_id` dan `kawasan_id` keduanya `NOT NULL` |
-| 10 | Satu lahan hanya satu komoditas per musim tanam | `UNIQUE (lahan_id, musim_tanam_id, komoditas_id)` pada `riwayat_tanam` |
+| 10 | Satu poktan hanya satu komoditas per periode tanam | `UNIQUE (poktan_id, komoditas_id, periode_tanam)` pada `penanaman` |
 
 **Catatan aturan 1 dan 2:** FK sengaja diletakkan pada `rumah`, bukan pada `transmigran`. Dengan begitu satu constraint `UNIQUE` sudah cukup menjamin relasi satu-ke-satu dua arah, sekaligus membuat kolom penghuni bersifat nullable â€” nilai `NULL` berarti rumah kosong (`rules.md` Â§6a.7).
 
@@ -258,13 +260,14 @@ Dashboard dan halaman daftar mengandalkan filter wilayah dan periode, sehingga i
 | `rumah` | `satuan_permukiman_id`, `status_hunian`, `kondisi` | Rekap rumah terhuni per SP |
 | `riwayat_penghunian` | `rumah_id`, `transmigran_id`, `tanggal_masuk`, `tanggal_keluar` | Grafik KK masuk dan keluar per tahun |
 | `lahan` | `transmigran_id`, `satuan_permukiman_id`, `peruntukan_lahan` | Rekap luas lahan per SP dan per jenis |
-| `riwayat_tanam` | `lahan_id`, `musim_tanam_id`, `komoditas_id` | Rekap tanam per musim dan komoditas |
-| `hasil_panen` | `riwayat_tanam_id`, `tanggal_panen` | Grafik volume panen per tahun |
+| `penanaman` | `poktan_id`, `komoditas_id`, `periode_tanam`, `saprotan_id` | Rekap tanam per periode dan komoditas; `saprotan_id` dipakai menghitung sisa benih |
+| `hasil_panen` | `penanaman_id`, `poktan_id`, `periode_panen` | Grafik produksi per tahun dan rekap per poktan |
 | `anggota_poktan` | `poktan_id`, `transmigran_id`, `status` | Daftar anggota aktif |
 | `pengaduan` | `satuan_permukiman_id`, `kategori`, `status`, `prioritas`, `tanggal_pengaduan` | Rekap isu prioritas per SP |
 | `penanganan_pengaduan` | `pengaduan_id`, `tanggal_penanganan` | Riwayat penanganan berurutan |
 | `infrastruktur` | `satuan_permukiman_id`, `jenis`, `kondisi` | Grafik status infrastruktur |
-| `alsintan`, `saprotan` | `transmigran_id`, `poktan_id`, `tahun_perolehan` | Rekap per pemilik dan periode |
+| `alsintan` | `poktan_id`, `satuan_permukiman_id`, `tahun_perolehan` | Rekap per kelompok dan periode; pemilik selalu poktan sejak 2026-08-22 |
+| `saprotan` | `poktan_id`, `satuan_permukiman_id`, `tahun_perolehan`, `komoditas_id` | Rekap per kelompok dan periode; `komoditas_id` dipakai menyaring benih pada form penanaman |
 | `audit_log` | `user_id`, `nama_tabel`, `created_at` | Penelusuran audit |
 | `user` | `email`, `username`, `role_id`, `is_aktif` | Pencarian kredensial saat login dan penyaringan daftar pengguna |
 | `role_permission` | `role_id`, `permission_id` | Pemeriksaan kewenangan pada setiap permintaan halaman |
@@ -314,7 +317,7 @@ Penyaring cakupan wajib diterapkan pada **level query**, bukan sekadar menyembun
 **Perlindungan:** role bertanda `is_bawaan = TRUE` tidak dapat dihapus. Role Admin tidak dapat dihapus maupun dikurangi kewenangannya, agar sistem tidak pernah kehilangan jalur administrasi.
 
 ### 7.1 Satuan dan konversi panen
-`komoditas.satuan_id` menetapkan satuan baku tiap komoditas. `hasil_panen.volume` disimpan **apa adanya** dalam satuan tersebut, tanpa dikonversi. Agregasi lintas komoditas mengalikan `volume Ã— satuan.faktor_ke_ton` **hanya saat rekap** (`rules.md` Â§8a.4â€“5). `hasil_panen.satuan_id` disalin dari komoditas saat penyimpanan agar riwayat tetap sahih bila satuan baku komoditas kelak diubah.
+`komoditas.satuan_id` menetapkan satuan baku tiap komoditas. `hasil_panen.produksi` disimpan **apa adanya** dalam satuan tersebut, tanpa dikonversi. Agregasi lintas komoditas mengalikan `volume Ã— satuan.faktor_ke_ton` **hanya saat rekap** (`rules.md` Â§8a.4â€“5). `hasil_panen.satuan_id` disalin dari komoditas saat penyimpanan agar riwayat tetap sahih bila satuan baku komoditas kelak diubah.
 
 ### 7.2 Status pengaduan
 `pengaduan.status` menyimpan status **terkini** saja. Seluruh perubahan status dicatat sebagai baris baru pada `penanganan_pengaduan` (`notes.md` Â§1.5). Tidak ada kolom `catatan_penanganan` pada `pengaduan`.
@@ -367,14 +370,14 @@ Bagian ini merangkum seluruh penyimpangan yang disengaja dari berkas SQL referen
 
 | # | Kondisi pada SQL referensi | Keputusan pada skema final | Alasan |
 |---|---|---|---|
-| 15 | Data panen (`volumen_panen`, `harga_jual`, `kualitas_panen`, `musim_tanam`) menempel sebagai kolom di `lahan_usaha_sp` | Dipindah ke tabel `hasil_panen` tersendiri, ditaut lewat `riwayat_tanam` | Struktur lama membatasi satu lahan hanya punya satu panen selamanya, sedangkan PRD Â§7.6 mewajibkan riwayat panen per periode dan grafik volume per tahun |
+| 15 | Data panen (`volumen_panen`, `harga_jual`, `kualitas_panen`, `musim_tanam`) menempel sebagai kolom di `lahan_usaha_sp` | Dipindah ke tabel `hasil_panen` tersendiri, ditaut lewat `penanaman` | Struktur lama membatasi satu lahan hanya punya satu panen selamanya, sedangkan PRD Â§7.6 mewajibkan riwayat panen per periode dan grafik volume per tahun |
 | 16 | Koordinat memakai tipe `GEOMETRY` | Dua kolom `lintang` dan `bujur` bertipe `DECIMAL(10,7)` | Eloquent tidak mendukung `GEOMETRY` secara natif sehingga butuh raw query atau paket tambahan, padahal kebutuhan hanya menampilkan lintang/bujur 6 desimal (`ui-spec.md` Â§10). Presisi 7 desimal setara Â±1 cm, jauh melebihi kebutuhan lapangan |
 | 17 | Tabel `koordinat_lokasi_sp` berisi 4 kolom TEXT bernama Utara/Timur/Selatan/Barat | Dilebur menjadi 4 kolom `batas_utara`, `batas_timur`, `batas_selatan`, `batas_barat` pada `satuan_permukiman` | Isinya deskripsi batas wilayah, bukan koordinat. Relasinya 1:1 wajib, sehingga tabel terpisah hanya menambah join tanpa manfaat | **Keempat kolom itu kemudian dicabut seluruhnya pada 2026-08-18** sebab isinya tidak pernah dipakai perhitungan maupun peta; peleburan tabelnya tetap sah, hanya kolomnya yang tidak jadi disimpan.
 | 18 | Empat tabel untuk satu konsep lahan: `lahan_sp`, `lahan_usaha_sp`, `kategori_lahan_sp`, `kategori_lahan` | Digabung menjadi satu tabel `lahan` dengan kolom `jenis_lahan` (Pekarangan/Usaha) dan `kategori_lahan` (Basah/Kering) | `kategori_lahan_sp` dan `lahan_sp` sama-sama memuat ENUM identik (`notes.md` Â§1.7). Kolom khusus lahan usaha dibuat nullable, diisi hanya bila `jenis_lahan` = Usaha. **Peleburannya tetap benar, tetapi `kategori_lahan` dicabut 2026-08-20** dan digantikan kolom `luas_kering` serta `luas_basah`, sebab sifat pengairan ternyata komposisi luas bukan sifat bidang (`data-dictionary.md` 7.1) |
 | 19 | `saprotan` tidak menyimpan jenis, jumlah, maupun satuan | Ditambahkan `jenis`, `jumlah`, `satuan_id` | `rules.md` Â§7c.2 mewajibkan pencatatan jenis, jumlah, dan satuan tiap penyaluran |
 | 20 | `alsintan` tidak menyimpan jumlah, kondisi, maupun sumber perolehan | Ditambahkan `jumlah`, `kondisi`, `sumber_perolehan` | `rules.md` Â§7b.2 mewajibkan keempat data tersebut |
 | 21 | `infrastruktur_pertanian` tidak menyimpan jenis, kondisi, maupun sumber dana | Ditambahkan `jenis`, `kondisi`, `sumber_dana`, `lintang`, `bujur` | `rules.md` Â§10.2â€“4 mewajibkan jenis (air, irigasi, listrik, jalan produksi, telekomunikasi, gudang), kondisi terkini, sumber dana, dan titik koordinat |
-| 22 | `musim_tanam` hanya punya kolom `keterangan` | Ditambahkan `nama`, `tahun`, `tanggal_mulai`, `tanggal_selesai` | Grafik panen per tahun membutuhkan periode yang terstruktur, bukan teks bebas |
+| 22 | ~~`musim_tanam` hanya punya kolom `keterangan`~~ **DIBATALKAN 2026-08-22** | Tabelnya **dihapus seluruhnya**, bukan diperbaiki | Penyelesaian 2026-08-10 menambahkan `nama`, `tahun`, `tanggal_mulai`, `tanggal_selesai` demi grafik panen per tahun. Keterangan lapangan pemilik proyek membatalkannya: poktan menanam **fleksibel**, tidak mengikuti periode baku MT1/MT2, sehingga memaksa setiap penanaman memilih satu musim membuat petugas menebak. Grafik per tahun tetap dapat dihitung dari `penanaman.periode_tanam` dan `hasil_panen.periode_panen` — dua kolom yang memang dicatat dan tidak perlu ditebak. Lihat kamus data §5.3 |
 | 23 | `inventaris_sp` dan `fasilitas_sp` tidak menyimpan status penyerahan | Ditambahkan `status_penyerahan` dan `jumlah` | `rules.md` Â§4b.4 mewajibkan pencatatan status penyerahan |
 | 24 | `transmigran` tidak menyimpan tahun kedatangan | Ditambahkan `tahun_kedatangan` dan `status_tinggal` | PRD Â§7.8 meminta grafik jumlah transmigran/KK/petani per tahun; tanpa kolom ini agregasi per tahun mustahil |
 | 25 | `poktan` menyimpan `nama_ketua_poktan`, `nik_ketua_poktan` sebagai teks sekaligus `id_transmigran` | Cukup `ketua_transmigran_id` menunjuk `transmigran` | Data ketua sudah ada pada tabel transmigran; menyalinnya berisiko tidak sinkron. **Diperluas 2026-08-20:** kolom teks itu ternyata tetap diperlukan bagi ketua yang bukan kepala keluarga maupun bukan transmigran, sebab keduanya tidak punya baris yang dapat dibaca. Yang tetap berlaku adalah larangan menyalin: pada jalur `Kepala Keluarga` kolom teks itu wajib `NULL` |
@@ -446,7 +449,6 @@ Urutan berikut wajib dipatuhi agar foreign key selalu menemukan tabel induknya.
 5.  kawasan_transmigrasi         (butuh kabupaten)
 6.  satuan
 7.  komoditas                    (butuh satuan)
-8.  musim_tanam
 8a. parameter_penilaian_sp
 9.  role
 10. permission
@@ -465,11 +467,11 @@ Urutan berikut wajib dipatuhi agar foreign key selalu menemukan tabel induknya.
 22. anggota_poktan               (butuh poktan, transmigran)
 23. lahan                        (butuh transmigran, satuan_permukiman, poktan)
 24. dokumen_lahan                (butuh lahan)
-25. alsintan                     (butuh transmigran, poktan)
-26. saprotan                     (butuh transmigran, poktan, satuan)
+25. alsintan                     (butuh poktan, satuan_permukiman)
+26. saprotan                     (butuh poktan, satuan_permukiman, satuan, komoditas)
 27. komoditas_poktan             (butuh komoditas, poktan)
-28. riwayat_tanam                (butuh lahan, musim_tanam, komoditas)
-29. hasil_panen                  (butuh riwayat_tanam, satuan)
+28. penanaman                    (butuh poktan, komoditas, saprotan)
+29. hasil_panen                  (butuh penanaman, poktan, satuan)
 30. infrastruktur                (butuh satuan_permukiman, poktan)
 31. pengaduan                    (butuh user, satuan_permukiman)
 32. penanganan_pengaduan         (butuh pengaduan, user)
@@ -509,7 +511,6 @@ Pemetaan SP terhadap kedua cabang hierarki:
 
 Tabel ini memperlihatkan alasan kawasan dipisah dari hierarki administratif: satu kawasan menaungi SP yang tersebar di **4 kecamatan berbeda**.
 | `satuan` | Ton (t, 1), Kuintal (kw, 0,1), Kilogram (kg, 0,001) |
-| `musim_tanam` | MT1 dan MT2 untuk tahun berjalan |
 | `komoditas` | Jagung (Pangan, satuan Ton, unggulan) sebagai komoditas utama kawasan |
 | `permission` | Seluruh kewenangan baku sistem, lihat `data-dictionary.md` Â§13 |
 | `role` | 4 role bawaan, lihat tabel di bawah |
