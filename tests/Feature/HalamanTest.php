@@ -3890,6 +3890,12 @@ it('menyediakan unggahan dokumen pada modul yang kolomnya sudah ada', function (
     ['/poktan', 'dokumen_pendukung'],
     ['/alsintan', 'dokumen_pendukung'],
     ['/saprotan', 'dokumen_pendukung'],
+    // Alsintan dan saprotan ikut memisahkan foto dari dokumen sejak
+    // 2026-08-22. Satu slot untuk keduanya memaksa petugas memilih salah
+    // satu, dan yang mengunggah dokumen setelah foto kehilangan fotonya
+    // tanpa peringatan apa pun.
+    ['/alsintan', 'foto'],
+    ['/saprotan', 'foto'],
 ]);
 
 it('mengirim unggahan lewat form yang benar-benar menerima berkas', function () {
@@ -4787,3 +4793,54 @@ it('menyediakan cara membuka berkas dari halaman rincian modulnya', function (st
     ['/sp/inventaris/2', 2],
     ['/sp/fasilitas/3', 2],
 ]);
+
+it('menaruh catatan sebelum unggahan pada setiap form', function () {
+    // Isian berkas menuntut perhatian lebih lama daripada isian teks:
+    // petugas berhenti mengetik, membuka penjelajah berkas, mencari, lalu
+    // kembali. Menaruhnya di tengah memutus alur pengisian, dan catatan
+    // yang berada sesudahnya kerap terlewat.
+    //
+    // Tujuh form sempat menempatkannya terbalik (ui-spec.md 6.4a poin 5).
+    // Diperiksa dari sumbernya sebab yang dijaga adalah URUTAN MARKUP,
+    // bukan keberadaan isiannya.
+    $terbalik = [];
+
+    foreach (File::allFiles(resource_path('views/pages')) as $berkas) {
+        if (! str_starts_with($berkas->getFilename(), 'form')) {
+            continue;
+        }
+
+        $isi = file_get_contents($berkas->getPathname());
+
+        $posUnggah = strpos($isi, 'x-sim.file-upload');
+        $posCatatan = strpos($isi, 'name="keterangan"');
+
+        // Hanya form yang punya KEDUANYA yang dapat dinilai urutannya.
+        if ($posUnggah === false || $posCatatan === false) {
+            continue;
+        }
+
+        if ($posCatatan > $posUnggah) {
+            $terbalik[] = $berkas->getRelativePathname();
+        }
+    }
+
+    expect($terbalik)->toBe([]);
+});
+
+it('meniadakan keterangan satuan lokal dari hasil panen', function () {
+    // Dicabut 2026-08-22 atas keputusan pemilik proyek. Padanan satuan
+    // setempat kini ditulis pada kolom catatan biasa bila memang perlu.
+    //
+    // Kolomnya dahulu satu dari tiga pengecualian penamaan "Catatan" pada
+    // ui-spec.md 6.4a, sehingga pencabutannya menyentuh dokumen acuan pula.
+    foreach (DummyData::hasilPanen() as $p) {
+        expect($p)->not->toHaveKey('keterangan_satuan_lokal');
+    }
+
+    $form = file_get_contents(resource_path('views/pages/panen/form.blade.php'));
+    $detail = file_get_contents(resource_path('views/pages/panen/detail.blade.php'));
+
+    expect($form)->not->toContain('keterangan_satuan_lokal')
+        ->and($detail)->not->toContain('keterangan_satuan_lokal');
+});

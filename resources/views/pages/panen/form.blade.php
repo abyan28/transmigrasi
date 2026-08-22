@@ -377,20 +377,6 @@
             </div>
 
 
-            <div class="sm:col-span-2">
-                <label for="{{ $awalan }}_satuan_lokal" class="{{ $kelasLabel }}">Keterangan Satuan Lokal</label>
-                <input type="text" id="{{ $awalan }}_satuan_lokal" name="keterangan_satuan_lokal"
-                    value="{{ old('keterangan_satuan_lokal', $data['keterangan_satuan_lokal'] ?? '') }}"
-                    maxlength="255" placeholder="Contoh: setara 13 karung ukuran sedang"
-                    class="{{ $kelasKontrol }}" />
-                {{--
-                    Satuan lokal dicatat sebagai keterangan, bukan sebagai satuan
-                    baku, agar rekap tetap konsisten (rules.md bagian 8a poin 6).
-                --}}
-                <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
-                    Satuan lokal seperti karung atau ikat dicatat di sini, bukan sebagai satuan panen.
-                </p>
-            </div>
 
             <div class="sm:col-span-2">
                 <label for="{{ $awalan }}_keterangan" class="{{ $kelasLabel }}">Catatan</label>

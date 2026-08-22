@@ -965,7 +965,6 @@ class DummyData
                 'produktivitas' => 1282.000,
                 'produksi' => 320.500,
                 'harga_jual' => 28000,
-                'keterangan_satuan_lokal' => 'Setara 13 karung ukuran sedang',
             ],
             [
                 'id_hasil_panen' => 5,
@@ -2398,7 +2397,7 @@ class DummyData
     public static function alsintan(): array
     {
         return [
-            ['id_alsintan' => 1, 'nama_alat' => 'TRAKTOR RODA DUA', 'jumlah' => 2, 'tahun_perolehan' => 2018, 'sumber_perolehan' => 'APBN', 'pemilik' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'kondisi' => 'Baik', 'keterangan' => 'Servis berkala terakhir Maret 2026.', 'dokumen_pendukung' => 'berita-acara-traktor.pdf'],
+            ['id_alsintan' => 1, 'nama_alat' => 'TRAKTOR RODA DUA', 'jumlah' => 2, 'tahun_perolehan' => 2018, 'sumber_perolehan' => 'APBN', 'pemilik' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'kondisi' => 'Baik', 'keterangan' => 'Servis berkala terakhir Maret 2026.', 'foto' => 'foto-traktor-roda-dua.jpg', 'dokumen_pendukung' => 'berita-acara-traktor.pdf'],
             ['id_alsintan' => 2, 'nama_alat' => 'POMPA AIR', 'jumlah' => 3, 'tahun_perolehan' => 2019, 'sumber_perolehan' => 'APBD Kabupaten', 'pemilik' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'kondisi' => 'Rusak Ringan'],
             // Dahulu tercatat atas nama YOHANES BERE sebagai milik pribadi.
             // Dialihkan ke poktan tempatnya bernaung, dan `sumber_perolehan`
@@ -2442,7 +2441,7 @@ class DummyData
     public static function saprotan(): array
     {
         return [
-            ['id_saprotan' => 1, 'jenis' => 'Benih', 'nama' => 'BENIH JAGUNG HIBRIDA', 'komoditas_id' => 1, 'komoditas' => 'JAGUNG', 'jumlah' => 250.0, 'satuan' => 'Kilogram', 'tanggal_perolehan' => '2026-01-15', 'sumber' => 'Dinas Pertanian Kabupaten', 'penerima' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'keterangan' => 'Disalurkan menjelang penanaman awal tahun.', 'dokumen_pendukung' => 'bast-benih-jagung.pdf'],
+            ['id_saprotan' => 1, 'jenis' => 'Benih', 'nama' => 'BENIH JAGUNG HIBRIDA', 'komoditas_id' => 1, 'komoditas' => 'JAGUNG', 'jumlah' => 250.0, 'satuan' => 'Kilogram', 'tanggal_perolehan' => '2026-01-15', 'sumber' => 'Dinas Pertanian Kabupaten', 'penerima' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'keterangan' => 'Disalurkan menjelang penanaman awal tahun.', 'foto' => 'foto-benih-jagung.jpg', 'dokumen_pendukung' => 'bast-benih-jagung.pdf'],
             ['id_saprotan' => 2, 'jenis' => 'Pupuk', 'nama' => 'PUPUK UREA', 'komoditas_id' => null, 'komoditas' => null, 'jumlah' => 1200.0, 'satuan' => 'Kilogram', 'tanggal_perolehan' => '2026-01-20', 'sumber' => 'APBN', 'penerima' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo'],
             ['id_saprotan' => 3, 'jenis' => 'Pestisida', 'nama' => 'INSEKTISIDA CAIR', 'komoditas_id' => null, 'komoditas' => null, 'jumlah' => 40.0, 'satuan' => 'Liter', 'tanggal_perolehan' => '2026-02-08', 'sumber' => 'Dinas Pertanian Kabupaten', 'penerima' => 'POKTAN TANI BERSATU', 'poktan_id' => 3, 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu'],
             // Sebelumnya tercatat atas nama YOHANES BERE sebagai penerima

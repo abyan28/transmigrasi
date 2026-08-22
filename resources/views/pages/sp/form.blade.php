@@ -129,6 +129,20 @@
         </div>
     </section>
 
+    <section>
+        <h3 class="{{ $kelasBagian }}">Catatan</h3>
+        <div class="mt-3">
+            {{-- Label ditambahkan 2026-08-20. Sebelumnya isian ini satu-satunya
+                 yang sama sekali tanpa `<label>`, sehingga pembaca layar hanya
+                 mengumumkan sebuah kotak teks tanpa memberi tahu isinya apa. --}}
+            <label for="{{ $awalan }}_keterangan_sp" class="{{ $kelasLabel }}">Catatan</label>
+            <textarea id="{{ $awalan }}_keterangan_sp" name="keterangan" rows="2" maxlength="255"
+                placeholder="Catatan tambahan mengenai satuan permukiman ini."
+                class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30">{{ old('keterangan', $data['keterangan'] ?? '') }}</textarea>
+        </div>
+    </section>
+
+    {{-- Bagian 5: catatan --}}
     {{--
         Dokumen pendukung. Kolomnya sudah lama ada pada data-dictionary.md 3.6,
         tetapi belum pernah punya isian, sehingga SK penetapan SP tidak dapat
@@ -141,20 +155,6 @@
                 nama-dokumen="Dokumen SP" :nama-pemilik="$data['nama'] ?? null"
                 :berkas-saat-ini="$data['dokumen_pendukung'] ?? null"
                 keterangan="SK penetapan, peta wilayah, atau berita acara penyerahan." />
-        </div>
-    </section>
-
-    {{-- Bagian 5: catatan --}}
-    <section>
-        <h3 class="{{ $kelasBagian }}">Catatan</h3>
-        <div class="mt-3">
-            {{-- Label ditambahkan 2026-08-20. Sebelumnya isian ini satu-satunya
-                 yang sama sekali tanpa `<label>`, sehingga pembaca layar hanya
-                 mengumumkan sebuah kotak teks tanpa memberi tahu isinya apa. --}}
-            <label for="{{ $awalan }}_keterangan_sp" class="{{ $kelasLabel }}">Catatan</label>
-            <textarea id="{{ $awalan }}_keterangan_sp" name="keterangan" rows="2" maxlength="255"
-                placeholder="Catatan tambahan mengenai satuan permukiman ini."
-                class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30">{{ old('keterangan', $data['keterangan'] ?? '') }}</textarea>
         </div>
     </section>
 </div>

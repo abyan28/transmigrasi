@@ -150,28 +150,12 @@
         </div>
     </section>
 
-    {{--
-        Dokumen pendukung. Kolomnya sudah ada pada data-dictionary.md 8.3
-        tetapi belum pernah punya isian, sehingga bukti penyerahan alsintan
-        bantuan tidak dapat diunggah ke mana pun.
-    --}}
-    <section>
-        <h3 class="{{ $kelasBagian }}">Dokumen Pendukung</h3>
-        <div class="mt-3">
-            <x-sim.file-upload nama="dokumen_pendukung" label="Dokumen atau Foto Alat"
-                nama-dokumen="Dokumen Alsintan" :nama-pemilik="$data['nama_alat'] ?? null"
-                :berkas-saat-ini="$data['dokumen_pendukung'] ?? null"
-                keterangan="Berita acara penyerahan, bukti pembelian, atau foto alat." />
-        </div>
-    </section>
-    {{--
-        Catatan. Kolom `keterangan` sudah lama ada pada kamus data 8.3 tetapi
-        belum pernah punya isian, sehingga hal-hal yang tidak tertampung kolom
-        baku tidak dapat dicatat ke mana pun.
 
-        Labelnya "Catatan", diseragamkan 2026-08-20 dari empat penamaan berbeda
-        yang sempat dipakai bergantian: Keterangan, Catatan, Catatan Hunian, dan
-        Keterangan Satuan Lokal.
+    {{--
+        Catatan diletakkan SEBELUM unggahan, dan unggahan selalu paling
+        bawah (ui-spec.md 6.4a poin 5). Isian berkas menuntut perhatian
+        lebih lama daripada isian teks, sehingga menaruhnya di tengah
+        memutus alur pengisian.
     --}}
     <section>
         <h3 class="{{ $kelasBagian }}">Catatan</h3>
@@ -180,6 +164,33 @@
             <textarea id="{{ $awalan }}_keterangan" name="keterangan" rows="3" maxlength="1000"
                 placeholder="Contoh: mesin sering panas setelah dua jam pemakaian."
                 class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30">{{ old('keterangan', $data['keterangan'] ?? '') }}</textarea>
+        </div>
+    </section>
+
+    {{--
+        DUA KOLOM TERPISAH: foto dan dokumen.
+
+        Keduanya menjawab hal berbeda. Foto merekam wujud dan kondisi
+        barang saat pendataan, dokumen menyimpan berkas administratifnya.
+        Satu slot untuk keduanya memaksa petugas memilih salah satu, dan
+        yang mengunggah dokumen setelah foto akan kehilangan fotonya tanpa
+        peringatan apa pun.
+
+        Pola ini mengikuti inventaris, fasilitas, dan infrastruktur SP
+        yang sudah lebih dulu memisahkan keduanya.
+    --}}
+    <section>
+        <h3 class="{{ $kelasBagian }}">Dokumentasi</h3>
+        <div class="mt-3 grid gap-4 sm:grid-cols-2">
+            <x-sim.file-upload nama="foto" label="Foto Alat" :hanya-gambar="true"
+                nama-dokumen="Foto Alsintan" :nama-pemilik="$data['nama_alat'] ?? null"
+                :berkas-saat-ini="$data['foto'] ?? null"
+                keterangan="Dokumentasi wujud dan kondisi alat saat pendataan." />
+
+            <x-sim.file-upload nama="dokumen_pendukung" label="Dokumen Pendukung"
+                nama-dokumen="Dokumen Alsintan" :nama-pemilik="$data['nama_alat'] ?? null"
+                :berkas-saat-ini="$data['dokumen_pendukung'] ?? null"
+                keterangan="Berita acara penyerahan atau bukti pengadaan." />
         </div>
     </section>
 </div>

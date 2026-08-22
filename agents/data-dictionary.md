@@ -395,7 +395,7 @@ Satuan berat beserta faktor konversi ke ton (`rules.md` §8a).
 | `simbol` | `VARCHAR(10)` | TIDAK | | t, kw, kg |
 | `faktor_ke_ton` | `DECIMAL(10,6)` | TIDAK | | Ton = 1; Kuintal = 0,1; Kilogram = 0,001 |
 
-**Catatan:** satuan lokal seperti karung dan ikat **tidak** dimasukkan ke tabel ini karena beratnya tidak baku. Satuan lokal dicatat pada kolom `keterangan_satuan_lokal` di `hasil_panen` (`rules.md` §8a.6).
+**Catatan:** satuan lokal seperti karung dan ikat **tidak** dimasukkan ke tabel ini karena beratnya tidak baku. Kolom `hasil_panen.keterangan_satuan_lokal` yang dahulu menampungnya **dicabut 2026-08-22**; padanan satuan setempat kini ditulis pada kolom `keterangan` biasa bila memang perlu dicatat.
 
 ### 5.2 `komoditas`
 
@@ -753,7 +753,8 @@ Alat dan mesin pertanian.
 | `tahun_perolehan` | `YEAR` | YA | IDX | |
 | `sumber_perolehan` | `ENUM` | YA | | Lihat §11.3 |
 | `kondisi` | `ENUM` | YA | | Lihat §11.5 |
-| `dokumen_pendukung` | `VARCHAR(255)` | YA | | |
+| `foto` | `VARCHAR(255)` | YA | | Dokumentasi kondisi alat |
+| `dokumen_pendukung` | `VARCHAR(255)` | YA | | Berita acara atau bukti pengadaan |
 | `keterangan` | `TEXT` | YA | | |
 
 **Pemilik selalu kelompok tani.** Kolom `kepemilikan` dan `transmigran_id` **dicabut 2026-08-22** bersama enum `KepemilikanAlsintan` (dahulu §11.17), dan `poktan_id` berubah dari nullable menjadi wajib. Seluruh menu Pertanian mencatat kelompok, bukan individu.
@@ -783,6 +784,7 @@ Sarana produksi pertanian: benih, pupuk, pestisida, mulsa.
 | `tahun_perolehan` | `YEAR` | YA | IDX | |
 | `tanggal_penyaluran` | `DATE` | YA | | |
 | `sumber_dana` | `ENUM` | YA | | Lihat §11.3 |
+| `foto` | `VARCHAR(255)` | YA | | Dokumentasi barang saat diterima |
 | `dokumen_pendukung` | `VARCHAR(255)` | YA | | Berita acara penyaluran |
 | `keterangan` | `TEXT` | YA | | |
 
@@ -901,7 +903,6 @@ Keduanya **boleh kosong**: penanaman dari benih yang tidak tercatat pada modul s
 | `produktivitas` | `DECIMAL(12,3)` | TIDAK | | Per hektare, dalam satuan baku komoditas |
 | `produksi` | `DECIMAL(12,3)` | TIDAK | | Disimpan apa adanya, tanpa konversi |
 | `harga_jual` | `DECIMAL(15,2)` | YA | | Rupiah per satuan baku |
-| `keterangan_satuan_lokal` | `VARCHAR(255)` | YA | | Contoh: "setara 40 karung" |
 | `dokumen_pendukung` | `VARCHAR(255)` | YA | | Foto panen |
 | `keterangan` | `TEXT` | YA | | |
 
@@ -928,6 +929,7 @@ Penjumlahan lintas baris itu penting: satu penanaman dapat dipanen **bertahap**,
 | `kualitas` | **Dicabut** beserta enumnya | Keputusan pemilik proyek. Digantikan `produktivitas` yang terukur, bukan label mutu |
 | `tanggal_panen` | Berganti `periode_panen` (bulan) | Panen satu hamparan berlangsung berhari-hari; menuntut satu tanggal pasti membuat petugas menebak |
 | `petani` | **Dicabut** | Panen dicatat per poktan, bukan per orang |
+| `keterangan_satuan_lokal` | **Dicabut** | Padanan satuan setempat ditulis pada `keterangan` biasa; kolom tersendiri jarang terisi dan menambah satu isian yang harus dilewati |
 
 **Catatan penting:**
 - `produksi` disimpan dalam satuan baku komoditasnya, **tidak** dikonversi saat penyimpanan (`rules.md` 8a.4).

@@ -416,7 +416,7 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **-*
 3. Contoh faktor konversi: ton = 1; kuintal = 0,1; kilogram = 0,001.
 4. Produksi disimpan apa adanya sesuai satuan baku komoditasnya, tanpa dikonversi saat penyimpanan.
 5. Konversi ke ton hanya dilakukan pada saat rekap, agregasi, dan penyajian dashboard, agar data asli lapangan tetap terjaga.
-6. Satuan lokal seperti karung dan ikat tidak dipakai sebagai satuan baku, melainkan dicatat pada kolom keterangan tambahan.
+6. Satuan lokal seperti karung dan ikat tidak dipakai sebagai satuan baku. **Kolom keterangan tambahan tersendiri dicabut 2026-08-22**; bila padanan satuan setempat memang perlu dicatat, tempatnya pada kolom catatan biasa.
 7. Penambahan satuan baru cukup menambah baris data, tanpa mengubah struktur tabel.
 
 ### 9. Aturan Fitur Hasil Panen
@@ -430,7 +430,7 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **-*
    - periode panen,
    - lokasi produksi.
 3. Produksi dicatat memakai **satuan baku milik komoditas** yang bersangkutan, mengacu pada data master satuan.
-4. Satuan lokal seperti karung atau ikat dicatat pada kolom keterangan tambahan agar rekap tetap konsisten.
+4. Satuan lokal seperti karung atau ikat **tidak** dipakai sebagai satuan panen; produksi selalu dicatat dalam satuan baku komoditasnya agar rekap tetap konsisten.
 5. Rekap dan agregasi lintas komoditas wajib dikonversi terlebih dahulu ke satuan **ton** memakai faktor konversi pada data master.
 6. Nilai produksi disimpan dengan presisi desimal yang cukup agar panen berskala kecil tidak hilang saat pembulatan.
 7. Riwayat panen harus dapat dipantau untuk melihat potensi produksi kawasan.

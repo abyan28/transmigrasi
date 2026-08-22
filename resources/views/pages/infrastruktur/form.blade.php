@@ -112,24 +112,6 @@
             </div>
         </div>
 
-        {{--
-            Dua kolom terpisah pada data-dictionary.md 10.1, dan keduanya
-            menjawab hal berbeda: `foto` merekam kondisi lapangan saat
-            pendataan, sedangkan `dokumen_pendukung` menyimpan berkas
-            administratifnya. Menggabungkan keduanya membuat foto kondisi
-            tertimpa dokumen pengadaan, atau sebaliknya.
-        --}}
-        <div class="mt-4 grid gap-4 sm:grid-cols-2">
-            <x-sim.file-upload nama="foto" label="Foto Kondisi" :hanya-gambar="true"
-                nama-dokumen="Foto Infrastruktur" :nama-pemilik="$data['nama'] ?? null"
-                :berkas-saat-ini="$data['foto'] ?? null"
-                keterangan="Dokumentasi kondisi aset saat pendataan." />
-
-            <x-sim.file-upload nama="dokumen_pendukung" label="Dokumen Pendukung"
-                nama-dokumen="Dokumen Infrastruktur" :nama-pemilik="$data['nama'] ?? null"
-                :berkas-saat-ini="$data['dokumen_pendukung'] ?? null"
-                keterangan="Dokumen pembangunan, serah terima, atau pemeliharaan." />
-        </div>
 
         {{--
             Penegasan batas modul, diletakkan di dalam form agar terbaca saat
@@ -157,6 +139,35 @@
             <textarea id="{{ $awalan }}_keterangan" name="keterangan" rows="3" maxlength="1000"
                 placeholder="Contoh: bagian hilir saluran tertimbun longsor sejak Januari."
                 class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30">{{ old('keterangan', $data['keterangan'] ?? '') }}</textarea>
+        </div>
+    </section>
+
+
+    {{--
+        Unggahan diletakkan PALING BAWAH, setelah catatan (ui-spec.md 6.4a
+        poin 5). Sebelumnya ia menumpang seksi Pendanaan dan Kondisi, dan
+        posisinya di tengah memutus alur pengisian: isian berkas menuntut
+        perhatian lebih lama daripada isian teks.
+    --}}
+    <section>
+        <h3 class="{{ $kelasBagian }}">Dokumentasi</h3>
+        {{--
+            Dua kolom terpisah pada data-dictionary.md 10.1, dan keduanya
+            menjawab hal berbeda: `foto` merekam kondisi lapangan saat
+            pendataan, sedangkan `dokumen_pendukung` menyimpan berkas
+            administratifnya. Menggabungkan keduanya membuat foto kondisi
+            tertimpa dokumen pengadaan, atau sebaliknya.
+        --}}
+        <div class="mt-4 grid gap-4 sm:grid-cols-2">
+            <x-sim.file-upload nama="foto" label="Foto Kondisi" :hanya-gambar="true"
+                nama-dokumen="Foto Infrastruktur" :nama-pemilik="$data['nama'] ?? null"
+                :berkas-saat-ini="$data['foto'] ?? null"
+                keterangan="Dokumentasi kondisi aset saat pendataan." />
+
+            <x-sim.file-upload nama="dokumen_pendukung" label="Dokumen Pendukung"
+                nama-dokumen="Dokumen Infrastruktur" :nama-pemilik="$data['nama'] ?? null"
+                :berkas-saat-ini="$data['dokumen_pendukung'] ?? null"
+                keterangan="Dokumen pembangunan, serah terima, atau pemeliharaan." />
         </div>
     </section>
 </div>

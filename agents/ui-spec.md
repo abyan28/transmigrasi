@@ -784,10 +784,13 @@ Kartu indikator dashboard: label, angka besar, ikon, tren, dan tautan drill-down
 1. **Namanya "Catatan", bukan "Keterangan".** Sebelum 2026-08-20 empat penamaan dipakai bergantian pada satu maksud yang sama, dan tiga di antaranya bahkan pada modul yang berdampingan. Kolom databasenya tetap `keterangan` mengikuti kamus data; yang diseragamkan adalah teks yang dibaca petugas.
 2. **Setiap modul yang kolomnya ada di kamus data wajib punya isiannya.** Empat modul sempat memiliki kolom `keterangan` tanpa satu pun isian, sehingga hal yang tidak tertampung kolom baku tidak dapat dicatat ke mana pun.
 3. **Nilainya wajib ditampilkan kembali pada halaman rincian.** Catatan yang hanya dapat diketik tetapi tidak pernah terbaca sama saja dengan tidak dicatat. Keadaan kosong dinyatakan apa adanya, bukan disembunyikan.
-4. **Tiga pengecualian, sebab maknanya memang berbeda** dan menyamakan namanya justru menyesatkan:
+4. **Dua pengecualian, sebab maknanya memang berbeda** dan menyamakan namanya justru menyesatkan:
    - `rumah.catatan_hunian` berlabel "Catatan Hunian" — kolomnya memang bernama demikian dan isinya khusus keadaan hunian.
-   - `hasil_panen.keterangan_satuan_lokal` berlabel "Keterangan Satuan Lokal" — kolom tersendiri di samping `keterangan`, isinya padanan satuan setempat.
    - `pengaduan.deskripsi` berlabel "Uraian Masalah" — isi laporan yang wajib diisi, bukan catatan tambahan.
+
+5. **Catatan diletakkan SEBELUM isian unggahan, dan unggahan selalu paling bawah** (ditetapkan 2026-08-22). Isian berkas menuntut perhatian lebih lama daripada isian teks: petugas berhenti mengetik, membuka penjelajah berkas, mencari, lalu kembali. Menaruhnya di tengah memutus alur pengisian, dan catatan yang berada sesudahnya kerap terlewat. Tujuh form sempat menempatkannya terbalik.
+
+   Modul yang memiliki **foto dan dokumen terpisah** menempatkan keduanya berdampingan dalam satu grid dua kolom pada bagian terakhir: inventaris SP, fasilitas SP, infrastruktur, alsintan, saprotan, dan rumah.
 
 ### 6.5 `<x-wilayah-picker>`
 

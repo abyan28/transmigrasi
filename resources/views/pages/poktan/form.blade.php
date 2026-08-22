@@ -351,6 +351,23 @@
     </section>
 
     {{--
+        Catatan. Kolom `keterangan` sudah lama ada pada kamus data 8.1 tetapi
+        belum pernah punya isian, sehingga hal-hal yang tidak tertampung kolom
+        baku tidak dapat dicatat ke mana pun.
+
+        Labelnya "Catatan", diseragamkan 2026-08-20 dari empat penamaan
+        berbeda yang sempat dipakai bergantian.
+    --}}
+    <section>
+        <h3 class="{{ $kelasBagian }}">Catatan</h3>
+        <div class="mt-3">
+            <label for="{{ $awalan }}_keterangan" class="{{ $kelasLabel }}">Catatan</label>
+            <textarea id="{{ $awalan }}_keterangan" name="keterangan" rows="3" maxlength="1000"
+                placeholder="Contoh: kelompok aktif mengikuti pelatihan penyuluh."
+                class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30">{{ old('keterangan', $data['keterangan'] ?? '') }}</textarea>
+        </div>
+    </section>
+    {{--
         Dokumen pendukung. Kolomnya sudah lama ada pada data-dictionary.md 8.1
         dengan keterangan "SK pembentukan", tetapi belum pernah punya isian.
     --}}
@@ -361,24 +378,6 @@
                 nama-dokumen="SK Poktan" :nama-pemilik="$data['nama'] ?? null"
                 :berkas-saat-ini="$data['dokumen_pendukung'] ?? null"
                 keterangan="Surat keputusan pembentukan atau pengukuhan kelompok tani." />
-        </div>
-    </section>
-    {{--
-        Catatan. Kolom `keterangan` sudah lama ada pada kamus data 8.1 tetapi
-        belum pernah punya isian, sehingga hal-hal yang tidak tertampung kolom
-        baku tidak dapat dicatat ke mana pun.
-
-        Labelnya "Catatan", diseragamkan 2026-08-20 dari empat penamaan berbeda
-        yang sempat dipakai bergantian: Keterangan, Catatan, Catatan Hunian, dan
-        Keterangan Satuan Lokal.
-    --}}
-    <section>
-        <h3 class="{{ $kelasBagian }}">Catatan</h3>
-        <div class="mt-3">
-            <label for="{{ $awalan }}_keterangan" class="{{ $kelasLabel }}">Catatan</label>
-            <textarea id="{{ $awalan }}_keterangan" name="keterangan" rows="3" maxlength="1000"
-                placeholder="Contoh: kelompok aktif mengikuti pelatihan penyuluh."
-                class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30">{{ old('keterangan', $data['keterangan'] ?? '') }}</textarea>
         </div>
     </section>
 </div>

@@ -187,12 +187,6 @@
                             </dd>
                         </div>
                         <div class="sm:col-span-2">
-                            <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Keterangan satuan lokal</dt>
-                            <dd class="mt-0.5 text-theme-sm text-gray-800 dark:text-white/90">
-                                {{ $data['keterangan_satuan_lokal'] ?? '-' }}
-                            </dd>
-                        </div>
-                        <div class="sm:col-span-2">
                             <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Keterangan</dt>
                             <dd class="mt-0.5 text-theme-sm text-gray-800 dark:text-white/90">
                                 {{ $data['keterangan'] ?? '-' }}
