@@ -19,6 +19,7 @@ use App\Enums\KondisiRumah;
 use App\Enums\PeruntukanLahan;
 use App\Enums\PrioritasPengaduan;
 use App\Enums\StatusHunian;
+use App\Enums\StatusPanen;
 use App\Enums\StatusPengaduan;
 use App\Enums\StatusTinggal;
 use App\Enums\SumberLaporan;
@@ -777,6 +778,116 @@ it('menjaga produksi sama dengan hasil panen dikali produktivitas', function () 
         expect(abs($hitung - (float) $p['produksi']))->toBeLessThan(0.01,
             "panen {$p['id_hasil_panen']} tidak sejalan dengan produktivitasnya");
     }
+});
+
+/*
+|--------------------------------------------------------------------------
+| Status panen: diturunkan, tidak disimpan
+|--------------------------------------------------------------------------
+*/
+
+it('menyimpulkan status panen dari sisa luas, bukan dari kolom tersimpan', function () {
+    // Status DITURUNKAN agar tidak pernah basi. Menyimpannya sebagai kolom
+    // berarti nilainya menjadi salah begitu satu baris panen disunting atau
+    // dihapus, dan kesalahan itu tidak pernah memerahkan apa pun.
+    foreach (DummyData::penanaman() as $tanam) {
+        expect($tanam)->not->toHaveKey('status_panen');
+    }
+
+    // Yang diperiksa perilakunya, bukan keberadaan methodnya: tiap penanaman
+    // dibandingkan dengan keadaan yang benar-benar dihitung dari datanya.
+    foreach (DummyData::penanaman() as $tanam) {
+        $id = $tanam['id_penanaman'];
+
+        $adaPanen = collect(DummyData::hasilPanen())
+            ->contains(fn ($p) => ($p['penanaman_id'] ?? null) === $id);
+
+        $harusnya = match (true) {
+            ! $adaPanen => StatusPanen::BelumDipanen,
+            DummyData::belumDipanen($id) > 0 => StatusPanen::DipanenSebagian,
+            default => StatusPanen::SelesaiDipanen,
+        };
+
+        expect(DummyData::statusPanen($id))->toBe($harusnya, "penanaman {$id}");
+    }
+});
+
+it('membedakan penanaman yang belum disentuh dari yang dipanen nol hektare', function () {
+    // Keduanya sama-sama menyisakan SELURUH luasnya, sehingga sisa saja tidak
+    // cukup membedakannya. Tanpa pemeriksaan keberadaan baris panen, penanaman
+    // yang sudah didatangi petugas dan yang belum akan tampak serupa.
+    $belum = DummyData::statusPanen(6);
+
+    expect($belum)->toBe(StatusPanen::BelumDipanen)
+        ->and(DummyData::belumDipanen(6))->toBe(1.0);
+
+    // Sisanya sama-sama penuh, tetapi keduanya keadaan yang berbeda.
+    $adaPanen = collect(DummyData::hasilPanen())
+        ->contains(fn ($p) => ($p['penanaman_id'] ?? null) === 6);
+
+    expect($adaPanen)->toBeFalse();
+});
+
+it('menyediakan contoh untuk ketiga status agar seluruhnya dapat ditinjau', function () {
+    // Status yang tidak punya benda nyata tidak akan pernah tampil di layar,
+    // dan ujinya hanya menguji dirinya sendiri. Sebelum 2026-08-24 seluruh
+    // penanaman sudah dipanen, sehingga lencana Belum Dipanen tidak pernah
+    // terlihat siapa pun.
+    // Dibandingkan sebagai daftar nilai, bukan lewat toContain berargumen
+    // pesan: Pest memperlakukan argumen kedua toContain sebagai nilai lain
+    // yang ikut dicari, sehingga pesannya sendiri akan ikut diperiksa.
+    $terpakai = collect(DummyData::penanaman())
+        ->map(fn ($t) => DummyData::statusPanen($t['id_penanaman'])->value)
+        ->unique()
+        ->sort()
+        ->values()
+        ->all();
+
+    expect($terpakai)->toBe(collect(StatusPanen::cases())
+        ->map(fn ($s) => $s->value)
+        ->sort()
+        ->values()
+        ->all());
+});
+
+it('menganggap penanaman yang seluruhnya puso sebagai selesai dipanen', function () {
+    // Ditetapkan pemilik proyek 2026-08-24: puso adalah KOLOM tersendiri,
+    // bukan status keempat, mengikuti bentuk laporan lapangan yang menaruh
+    // Realisasi Panen dan Puso sebagai dua kolom bersebelahan.
+    //
+    // Konsekuensinya diuji terang-terangan di sini, bukan dibiarkan sebagai
+    // kejutan: lahan yang gagal total menyisakan nol, sehingga statusnya sama
+    // dengan yang berhasil penuh. Pembedanya kolom puso.
+    expect(StatusPanen::cases())->toHaveCount(3);
+
+    foreach (StatusPanen::cases() as $status) {
+        expect($status->value)->not->toContain('Puso');
+    }
+});
+
+it('meniadakan pilihan Belum Dipanen pada penyaring hasil panen', function () {
+    // Penanaman yang belum dipanen tidak punya satu pun baris panen, sehingga
+    // pilihan itu selalu menghasilkan tabel kosong - kontrol mati yang
+    // dilarang ui-spec.md R-26.
+    expect(StatusPanen::penyaringPanen())
+        ->toBe([StatusPanen::DipanenSebagian, StatusPanen::SelesaiDipanen])
+        ->not->toContain(StatusPanen::BelumDipanen);
+
+    // Dibuktikan pada datanya, bukan diandaikan: tidak satu pun baris panen
+    // dapat berstatus Belum Dipanen.
+    foreach (DummyData::hasilPanen() as $p) {
+        expect(DummyData::statusPanen($p['penanaman_id']))
+            ->not->toBe(StatusPanen::BelumDipanen, "panen {$p['id_hasil_panen']}");
+    }
+});
+
+it('memberi warna badge yang berbeda untuk tiap status panen', function () {
+    $warna = collect(StatusPanen::cases())->map(fn ($s) => $s->warna());
+
+    expect($warna->unique())->toHaveCount(3)
+        ->and(StatusPanen::BelumDipanen->warna())->toBe('gray')
+        ->and(StatusPanen::DipanenSebagian->warna())->toBe('warning')
+        ->and(StatusPanen::SelesaiDipanen->warna())->toBe('success');
 });
 
 it('meniadakan kualitas panen dan memakai istilah produksi', function () {

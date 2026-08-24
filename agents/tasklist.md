@@ -753,9 +753,12 @@ Butir tindak lanjut 9 pada `notes.md` bagian 4, dikerjakan atas permintaan pemil
   * Tampilan kedua form sudah selesai pada Task 2.30
 - [ ] Task 7.4 - CRUD hasil panen (produksi, produktivitas, puso, harga) `[Sulit]`
   * Satuan mengikuti komoditas terpilih; `DECIMAL(12,3)`; kolom keterangan satuan lokal
+  * **Status panen tidak ikut jadi kolom.** Ia diturunkan lewat `StatusPanen` beserta `statusPanen()`, tampilannya sudah selesai 2026-08-24 (`rules.md` 7d.11)
 - [ ] Task 7.5 - Helper konversi volume panen ke ton `[Sedang]`
   * Dipakai seluruh rekap dan dashboard agar agregasi lintas komoditas konsisten
 - [ ] Task 7.6 - Rekap panen per wilayah, poktan, komoditas, dan periode `[Sedang]`
+  * Tampilannya sudah dirombak 2026-08-24: basis **penanaman** bukan hasil panen, terikat satu tahun tanam
+  * Saat backend masuk, `DummyData::rekapPanen()` diganti kueri agregat. Aturannya pada `rules.md` 9.8a-8f; yang paling mudah keliru adalah produktivitas tertimbang (8d) dan pembulatan (8e)
 
 ## Tahap 8 — Backend Infrastruktur dan Pengaduan
 

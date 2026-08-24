@@ -26,7 +26,28 @@
             fn ($p) => ($p['penanaman_id'] ?? null) === $data['id_penanaman'],
         ));
 
-        $volume = array_sum(array_column($panen, 'volume'));
+        /*
+         * DIPERBAIKI 2026-08-24: sebelumnya menjumlahkan kunci `volume` yang
+         * sudah dihapus pada perombakan 2026-08-22, sehingga baris "Total
+         * volume" SELALU 0,00. Perombakan itu tidak menyisir halaman ini, dan
+         * uji yang ada memeriksa keberadaan string alih-alih kebenaran angka.
+         *
+         * Dijumlahkan setelah konversi ke ton, bukan angka mentah: satu
+         * penanaman memang satu komoditas, tetapi menuliskannya begini membuat
+         * halaman ini tidak menjadi pengecualian dari rules.md 8a.5.
+         */
+        $produksiTon = array_sum(array_map(
+            fn ($p) => DummyData::keTon($p['produksi'], $p['satuan']),
+            $panen
+        ));
+
+        $luasDipanen = array_sum(array_column($panen, 'realisasi_panen'));
+        $luasPuso = array_sum(array_map(fn ($p) => (float) ($p['puso'] ?? 0), $panen));
+
+        // Tiga angka turunan, seluruhnya dihitung bukan disimpan.
+        $belumDipanen = DummyData::belumDipanen($data['id_penanaman']);
+        $status = DummyData::statusPanen($data['id_penanaman']);
+        $belumDitanam = DummyData::lahanTersedia($data['poktan_id']);
 
         // Kekuatan poktan pada saat halaman dibuka. Dihitung, bukan disimpan,
         // sehingga selalu mengikuti keanggotaan dan lahan terbaru.
@@ -41,8 +62,14 @@
         $bolehUbah = true;
     @endphp
 
+    {{--
+        Bulan saja, TANPA tanggal. Sebelumnya tercetak "01 November 2025", dan
+        angka 01 itu presisi palsu: ia berasal dari imbuhan '-01' yang dipakai
+        Carbon membaca CHAR(7), bukan dari pendataan. Justru itulah yang hendak
+        dihindari keputusan bulan-saja (rules.md 7d.9).
+    --}}
     <x-sim.page-header :judul="$judul"
-        :keterangan="'Ditanam ' . \Illuminate\Support\Carbon::parse($data['periode_tanam'] . '-01')->translatedFormat('d F Y') . ' di ' . $data['satuan_permukiman'] . '.'"
+        :keterangan="'Ditanam ' . \Illuminate\Support\Carbon::parse($data['periode_tanam'] . '-01')->translatedFormat('F Y') . ' di ' . $data['satuan_permukiman'] . '.'"
         :remah="\App\Helpers\RemahHelper::untuk('/penanaman', $judul)">
         <x-slot:aksi>
             @if ($bolehUbah)
@@ -69,6 +96,16 @@
                     {{ number_format($data['realisasi_tanam'], 2, ',', '.') }}
                     <span class="text-theme-sm font-normal text-gray-500 dark:text-gray-400">ha ditanam</span>
                 </p>
+
+                {{-- Status beserta sisanya, agar terbaca tanpa membuka tab panen --}}
+                <div class="mt-4">
+                    <x-sim.status-badge :status="$status" />
+                    @if ($belumDipanen > 0)
+                        <p class="mt-1.5 text-theme-xs tabular-nums text-gray-500 dark:text-gray-400">
+                            {{ number_format($belumDipanen, 2, ',', '.') }} ha masih berdiri tanaman
+                        </p>
+                    @endif
+                </div>
 
                 <dl class="mt-5 space-y-3 border-t border-gray-200 pt-5 text-theme-sm dark:border-gray-800">
                     <div class="flex justify-between gap-3">
@@ -133,10 +170,13 @@
 
                 <div x-show="tab === 'rincian'" role="tabpanel" class="p-5 sm:p-6">
                     <dl class="space-y-4">
+                        {{-- Label "Tanggal tanam" diganti 2026-08-24: kolomnya
+                             CHAR(7) berisi bulan, dan halaman daftar sudah
+                             memakai istilah "Periode Tanam". --}}
                         <div>
-                            <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Tanggal tanam</dt>
+                            <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Periode tanam</dt>
                             <dd class="mt-0.5 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
-                                {{ \Illuminate\Support\Carbon::parse($data['periode_tanam'] . '-01')->translatedFormat('d F Y') }}
+                                {{ \Illuminate\Support\Carbon::parse($data['periode_tanam'] . '-01')->translatedFormat('F Y') }}
                             </dd>
                         </div>
                         <div>
@@ -145,6 +185,22 @@
                                 {{ number_format($data['realisasi_tanam'], 2, ',', '.') }} ha
                                 <span class="text-theme-xs text-gray-500 dark:text-gray-400">
                                     dari {{ number_format($rekapPoktan['luas_total'], 2, ',', '.') }} ha lahan kelompok
+                                </span>
+                            </dd>
+                        </div>
+                        {{--
+                            Belum Ditanam ada di form tetapi tidak pernah tampil
+                            di halaman rincian, padahal angka inilah yang
+                            menentukan apakah kelompok masih dapat menanam lagi.
+                            Sifatnya berbeda dari Belum Dipanen: yang ini milik
+                            POKTAN, yang itu milik penanaman ini saja.
+                        --}}
+                        <div>
+                            <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Belum ditanam</dt>
+                            <dd class="mt-0.5 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
+                                {{ number_format($belumDitanam, 2, ',', '.') }} ha
+                                <span class="text-theme-xs text-gray-500 dark:text-gray-400">
+                                    sisa lahan kelompok yang masih dapat ditanami
                                 </span>
                             </dd>
                         </div>
@@ -178,6 +234,20 @@
                                 {{ $data['keterangan'] ?? 'Tidak ada catatan tambahan.' }}
                             </dd>
                         </div>
+                        {{--
+                            Unggahan yang tidak punya jalan dibuka adalah
+                            kontrol mati (ui-spec.md R-26 dan 780): petugas
+                            mengunggah berita acara tanam lalu tidak menemukan
+                            cara membacanya. Berkasnya sudah ada di data sejak
+                            2026-08-22, hanya tautannya yang belum pernah dibuat.
+                        --}}
+                        <div>
+                            <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Dokumen atau foto penanaman</dt>
+                            <dd class="mt-0.5 text-theme-sm text-gray-800 dark:text-white/90">
+                                <x-sim.tautan-dokumen modul="penanaman" :id="$data['id_penanaman']"
+                                    :berkas="$data['dokumen_pendukung'] ?? null" />
+                            </dd>
+                        </div>
                     </dl>
                 </div>
 
@@ -186,17 +256,32 @@
                         <x-sim.empty-state judul="Belum ada panen tercatat"
                             pesan="Hasil panen dari penanaman ini akan tampil di sini setelah dicatat." />
                     @else
-                        <x-sim.tabel-ringkas :kolom="['Periode Panen', 'Hasil Panen', 'Produksi', 'Harga Jual']">
+                        {{--
+                            URUTAN KOLOM DIPERBAIKI 2026-08-24. Sebelumnya
+                            header berbunyi "Hasil Panen" lalu "Produksi",
+                            sedangkan selnya mencetak produksi lalu hasil panen:
+                            angka ton tampil di bawah judul hektare. Header dan
+                            sel kini sejajar, dan satuannya ikut dicetak agar
+                            ketidakcocokan semacam itu terlihat mata.
+                        --}}
+                        <x-sim.tabel-ringkas :kolom="['Periode Panen', 'Hasil Panen (ha)', 'Puso (ha)', 'Produksi', 'Harga Jual']">
                             @foreach ($panen as $p)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                                     <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">
-                                        {{ \Illuminate\Support\Carbon::parse($p['periode_panen'] . '-01')->translatedFormat('F Y') }}
+                                        <a href="{{ route('panen.detail', $p['id_hasil_panen']) }}"
+                                            class="rounded text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
+                                            {{ \Illuminate\Support\Carbon::parse($p['periode_panen'] . '-01')->translatedFormat('F Y') }}
+                                        </a>
+                                    </td>
+                                    <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
+                                        {{ number_format($p['realisasi_panen'], 2, ',', '.') }}
+                                    </td>
+                                    <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
+                                        {{ number_format($p['puso'] ?? 0, 2, ',', '.') }}
                                     </td>
                                     <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
                                         {{ number_format($p['produksi'], 2, ',', '.') }} {{ $p['satuan'] }}
                                     </td>
-                                    <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
-                                        {{ number_format($p['realisasi_panen'], 2, ',', '.') }} ha</td>
                                     <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
                                         {{ $p['harga_jual'] ? 'Rp ' . number_format($p['harga_jual'], 0, ',', '.') : '-' }}
                                     </td>
@@ -204,13 +289,31 @@
                             @endforeach
 
                             <tr class="motif-baris-total">
-                                <td class="px-5 py-3 text-theme-sm text-gray-700 dark:text-gray-300">Total volume</td>
+                                <td class="px-5 py-3 text-theme-sm text-gray-700 dark:text-gray-300">Total</td>
                                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
-                                    {{ number_format($volume, 2, ',', '.') }}
+                                    {{ number_format($luasDipanen, 2, ',', '.') }}
                                 </td>
-                                <td colspan="2"></td>
+                                <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
+                                    {{ number_format($luasPuso, 2, ',', '.') }}
+                                </td>
+                                <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
+                                    {{ number_format($produksiTon, 3, ',', '.') }} ton
+                                </td>
+                                <td></td>
                             </tr>
                         </x-sim.tabel-ringkas>
+
+                        {{--
+                            Identitas luas ditampilkan terang-terangan, sebab
+                            inilah yang membuat panen bertahap dapat diperiksa
+                            ulang petugas tanpa menghitung sendiri.
+                        --}}
+                        <p class="px-5 py-4 text-theme-xs text-gray-500 dark:text-gray-400">
+                            {{ number_format($luasDipanen, 2, ',', '.') }} ha dipanen
+                            + {{ number_format($luasPuso, 2, ',', '.') }} ha puso
+                            + {{ number_format($belumDipanen, 2, ',', '.') }} ha belum dipanen
+                            = {{ number_format($data['realisasi_tanam'], 2, ',', '.') }} ha realisasi tanam.
+                        </p>
                     @endif
                 </div>
 

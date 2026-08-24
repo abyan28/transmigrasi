@@ -18,6 +18,9 @@
         $tanam = collect(DummyData::penanaman())->firstWhere('id_penanaman', $data['penanaman_id']);
         $belumDipanen = DummyData::belumDipanen($data['penanaman_id']);
 
+        // Status milik PENANAMAN induknya, bukan milik catatan panen ini.
+        $status = DummyData::statusPanen($data['penanaman_id']);
+
         $bolehUbah = true;
     @endphp
 
@@ -55,7 +58,34 @@
                     </p>
                 @endif
 
+                {{--
+                    Diisi 2026-08-24. Sebelumnya div ini KOSONG, sisa kualitas
+                    panen yang dicabut 2026-08-22 dan tidak ikut dibersihkan.
+
+                    Status yang ditandai milik PENANAMAN induknya, karena itu
+                    diberi keterangan; tanpa itu ia terbaca sebagai "catatan
+                    panen ini belum lengkap".
+                --}}
                 <div class="mt-4">
+                    <x-sim.status-badge :status="$status" />
+                    {{--
+                        Kalimatnya dirakit di PHP, bukan dengan @if menempel
+                        pada teks. `asalnya@if` tidak dikenali Blade dan
+                        melempar ParseError yang menunjuk AKHIR berkas, bukan
+                        baris yang keliru - jebakan yang sudah pernah tercatat
+                        pada bentuk ringkas `@php(...)`.
+                    --}}
+                    @php
+                        $keteranganStatus = 'Status penanaman asalnya';
+
+                        if ($belumDipanen > 0) {
+                            $keteranganStatus .= ', menyisakan '
+                                . number_format($belumDipanen, 2, ',', '.') . ' ha';
+                        }
+                    @endphp
+                    <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                        {{ $keteranganStatus }}
+                    </p>
                 </div>
 
                 <dl class="mt-5 space-y-3 border-t border-gray-200 pt-5 text-theme-sm dark:border-gray-800">
@@ -133,7 +163,17 @@
                             Tiga angka luas yang saling menentukan:
                             hasil panen + puso + belum dipanen = realisasi tanam.
                             Yang terakhir DIHITUNG, tidak disimpan.
+
+                            Realisasi tanam ikut ditampilkan sebagai PENYEBUTNYA.
+                            Tanpa angka itu ketiganya melayang tanpa acuan, dan
+                            pembaca tidak dapat memeriksa identitasnya sendiri.
                         --}}
+                        <div>
+                            <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Realisasi tanam</dt>
+                            <dd class="mt-0.5 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
+                                {{ $tanam ? number_format($tanam['realisasi_tanam'], 2, ',', '.') . ' ha' : '-' }}
+                            </dd>
+                        </div>
                         <div>
                             <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Hasil panen</dt>
                             <dd class="mt-0.5 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
@@ -180,16 +220,29 @@
                                 @endif
                             </dd>
                         </div>
-                        <div>
-                            <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Setara ton</dt>
-                            <dd class="mt-0.5 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
-                                {{ number_format($setaraTon, 3, ',', '.') }} ton
+                        {{--
+                            "Setara ton" DIHAPUS dari sini 2026-08-24, sebab
+                            kartu ringkasan di kiri sudah mencetaknya. Dua
+                            tempat untuk satu angka membuat pembaca mengira
+                            keduanya berbeda dan mencari-cari bedanya.
+                        --}}
+                        <div class="sm:col-span-2">
+                            <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Catatan</dt>
+                            <dd class="mt-0.5 text-theme-sm leading-relaxed text-gray-800 dark:text-white/90">
+                                {{ $data['keterangan'] ?? 'Tidak ada catatan tambahan.' }}
                             </dd>
                         </div>
+                        {{--
+                            Isian unggahan sudah ada di form sejak 2026-08-22,
+                            tetapi kolomnya tidak pernah ada di data dan
+                            tautannya tidak pernah dibuat. Petugas mengunggah
+                            berita acara lalu tidak menemukan cara membacanya.
+                        --}}
                         <div class="sm:col-span-2">
-                            <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Keterangan</dt>
+                            <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Dokumen atau foto panen</dt>
                             <dd class="mt-0.5 text-theme-sm text-gray-800 dark:text-white/90">
-                                {{ $data['keterangan'] ?? '-' }}
+                                <x-sim.tautan-dokumen modul="panen" :id="$data['id_hasil_panen']"
+                                    :berkas="$data['dokumen_pendukung'] ?? null" />
                             </dd>
                         </div>
                     </dl>

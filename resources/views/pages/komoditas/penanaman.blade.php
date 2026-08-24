@@ -27,6 +27,7 @@
         $filterSp = request('sp');
         $filterTahun = request('tahun');
         $filterKomoditas = request('komoditas');
+        $filterStatus = request('status');
 
         // Tahun tanam diturunkan dari tanggalnya, bukan disimpan terpisah.
         // Menyimpannya sebagai kolom sendiri membuat nilainya dapat berbeda
@@ -35,7 +36,15 @@
             ? \Illuminate\Support\Carbon::parse($r['periode_tanam'] . '-01')->year
             : null;
 
-        $baris = array_values(array_filter($semua, function ($r) use ($cari, $filterSp, $filterTahun, $filterKomoditas, $tahunTanam) {
+        // Status panen DITURUNKAN dari sisa luas, tidak disimpan sebagai kolom
+        // (agents/rules.md bagian 7d poin 11). Disusun sekali di sini agar
+        // penyaring, kolom tabel, dan kartu ringkasan membaca sumber yang sama.
+        $statusPanen = [];
+        foreach ($semua as $r) {
+            $statusPanen[$r['id_penanaman']] = DummyData::statusPanen($r['id_penanaman']);
+        }
+
+        $baris = array_values(array_filter($semua, function ($r) use ($cari, $filterSp, $filterTahun, $filterKomoditas, $filterStatus, $tahunTanam, $statusPanen) {
             if ($cari !== '' && ! str_contains(mb_strtolower($r['poktan']), mb_strtolower($cari))
                 && ! str_contains(mb_strtolower($r['komoditas']), mb_strtolower($cari))) {
                 return false;
@@ -49,12 +58,23 @@
             if ($filterKomoditas && $r['komoditas'] !== $filterKomoditas) {
                 return false;
             }
+            if ($filterStatus && $statusPanen[$r['id_penanaman']]->value !== $filterStatus) {
+                return false;
+            }
 
             return true;
         }));
 
-        $adaFilter = $cari !== '' || $filterSp || $filterTahun || $filterKomoditas;
+        $adaFilter = $cari !== '' || $filterSp || $filterTahun || $filterKomoditas || $filterStatus;
         $totalLuas = array_sum(array_column($baris, 'realisasi_tanam'));
+
+        // Sisa luas yang masih berdiri tanaman, dijumlahkan dari seluruh
+        // penanaman yang belum tuntas dipanen. Inilah "sisa tanam" pada
+        // laporan lapangan, dan ia tidak dapat dibaca dari satu kolom mana pun.
+        $totalBelumDipanen = array_sum(array_map(
+            fn ($r) => DummyData::belumDipanen($r['id_penanaman']),
+            $semua
+        ));
 
         $daftarTahun = array_values(array_filter(array_unique(array_map($tahunTanam, $semua))));
         rsort($daftarTahun);
@@ -98,12 +118,19 @@
             <x-sim.stat-card label="Catatan Penanaman" :nilai="count($semua)" />
             <x-sim.stat-card label="Realisasi Tanam"
                 :nilai="number_format(array_sum(array_column($semua, 'realisasi_tanam')), 2, ',', '.')" satuan="ha" />
-            <x-sim.stat-card label="Tahun Tercatat" :nilai="count($daftarTahun)" />
+            {{--
+                Menggantikan kartu "Tahun Tercatat" 2026-08-24. Cacah tahun
+                hanya menyatakan seberapa lama sistem dipakai, sedangkan sisa
+                tanam menyatakan berapa hektare yang masih berdiri tanaman dan
+                karena itu masih menunggu panen.
+            --}}
+            <x-sim.stat-card label="Belum Dipanen" :nilai="number_format($totalBelumDipanen, 2, ',', '.')" satuan="ha"
+                keterangan="Luas yang masih berdiri tanaman" />
             <x-sim.stat-card label="Komoditas Ditanam" :nilai="count($daftarKomoditas)" />
         </x-slot:ringkasan>
 
         <x-slot:filter>
-            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
                 <div>
                     <label for="filter_sp"
                         class="mb-1.5 block text-theme-xs font-medium text-gray-700 dark:text-gray-400">Satuan Permukiman</label>
@@ -138,6 +165,23 @@
                         @endforeach
                     </select>
                 </div>
+                {{--
+                    KETIGA status ditawarkan di sini, berbeda dari halaman
+                    Hasil Panen yang hanya menawarkan dua. Menemukan penanaman
+                    yang belum dipanen sama sekali adalah tugas halaman inilah,
+                    sebab di sinilah barisnya ada.
+                --}}
+                <div>
+                    <label for="filter_status"
+                        class="mb-1.5 block text-theme-xs font-medium text-gray-700 dark:text-gray-400">Status Panen</label>
+                    <select id="filter_status" name="status"
+                        class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
+                        <option value="">Semua status</option>
+                        @foreach (\App\Enums\StatusPanen::cases() as $s)
+                            <option value="{{ $s->value }}" @selected($filterStatus === $s->value)>{{ $s->label() }}</option>
+                        @endforeach
+                    </select>
+                </div>
                 <div class="flex items-end gap-2">
                     <button type="submit"
                         class="h-10 flex-1 rounded-lg bg-brand-500 px-4 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
@@ -159,6 +203,7 @@
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Volume Benih</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Realisasi Tanam (ha)</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Periode Tanam</th>
+            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Status Panen</th>
             <th scope="col" class="px-5 py-3 text-right text-theme-xs font-medium text-gray-500 dark:text-gray-400">Aksi</th>
         </x-slot:kepala>
 
@@ -184,6 +229,19 @@
                     {{ number_format($r['realisasi_tanam'], 2, ',', '.') }}</td>
                 <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
                     {{ \Illuminate\Support\Carbon::parse($r['periode_tanam'] . '-01')->translatedFormat('F Y') }}</td>
+                {{--
+                    Sisa luas ikut disebut pada status Dipanen Sebagian. Tanpa
+                    angkanya, petugas tahu ada yang tersisa tetapi tidak tahu
+                    berapa, dan harus membuka halaman rincian untuk itu.
+                --}}
+                <td class="px-5 py-3">
+                    <x-sim.status-badge :status="$statusPanen[$r['id_penanaman']]" />
+                    @if ($statusPanen[$r['id_penanaman']] === \App\Enums\StatusPanen::DipanenSebagian)
+                        <p class="mt-0.5 text-theme-xs tabular-nums text-gray-500 dark:text-gray-400">
+                            sisa {{ number_format(DummyData::belumDipanen($r['id_penanaman']), 2, ',', '.') }} ha
+                        </p>
+                    @endif
+                </td>
                 <td class="px-5 py-3">
                     <x-sim.aksi-baris :rincian-url="route('penanaman.detail', $r['id_penanaman'])"
                         modal-ubah="formUbahPenanamanBaris"
@@ -202,7 +260,13 @@
                     Total realisasi tanam</td>
                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
                     {{ number_format($totalLuas, 2, ',', '.') }}</td>
-                {{-- Dua sel kosong: kolom Tanggal Tanam dan kolom Aksi tidak punya total --}}
+                {{--
+                    Tiga sel kosong: Periode Tanam, Status Panen, dan Aksi.
+                    Naik dari dua sejak kolom status ditambahkan 2026-08-24;
+                    luput menyesuaikannya membuat baris total bergeser satu
+                    kolom tanpa memerahkan uji mana pun.
+                --}}
+                <td></td>
                 <td></td>
                 <td></td>
             </tr>
@@ -211,9 +275,12 @@
         <x-slot:kartu>
             @foreach ($baris as $r)
                 <div class="p-4">
-                    <p class="text-theme-sm font-medium text-gray-800 dark:text-white/90">
-                        {{ $r['komoditas'] }} oleh {{ $r['poktan'] }}
-                    </p>
+                    <div class="flex items-start justify-between gap-3">
+                        <p class="min-w-0 text-theme-sm font-medium text-gray-800 dark:text-white/90">
+                            {{ $r['komoditas'] }} oleh {{ $r['poktan'] }}
+                        </p>
+                        <x-sim.status-badge :status="$statusPanen[$r['id_penanaman']]" ukuran="sm" class="shrink-0" />
+                    </div>
                     <p class="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
                         {{ \Illuminate\Support\Carbon::parse($r['periode_tanam'] . '-01')->translatedFormat('F Y') }}
                         &middot; {{ number_format($r['realisasi_tanam'], 2, ',', '.') }} ha

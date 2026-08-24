@@ -16,6 +16,7 @@ use App\Enums\BidangPengaduan;
 use App\Enums\JabatanAnggotaPoktan;
 use App\Enums\Kondisi;
 use App\Enums\PeruntukanLahan;
+use App\Enums\StatusPanen;
 use App\Enums\StatusPengaduan;
 use App\Enums\SumberDana;
 use App\Helpers\MenuHelper;
@@ -504,6 +505,365 @@ it('tidak menganggap rekap sebagai id panen', function () {
 
 it('membalas 404 untuk catatan panen yang tidak ada', function () {
     $this->get('/panen/99')->assertNotFound();
+});
+
+/*
+|--------------------------------------------------------------------------
+| Rekap panen berbasis penanaman
+|--------------------------------------------------------------------------
+*/
+
+it('menampilkan poktan yang sudah menanam meski belum panen sama sekali', function () {
+    // INILAH ALASAN basisnya penanaman, bukan hasil panen. Pada basis lama,
+    // kelompok yang sudah menanam tetapi belum panen HILANG dari rekap,
+    // sehingga dinas membaca "tidak ada masalah" justru pada keadaan yang
+    // paling perlu ditengok.
+    //
+    // POKTAN SUBUR MAKMUR menanam 1 ha pada 2026 dan belum panen sama sekali.
+    $rekap = DummyData::rekapPanen('poktan', 2026);
+    $baris = collect($rekap)->firstWhere('nama', 'POKTAN SUBUR MAKMUR');
+
+    expect($baris)->not->toBeNull()
+        ->and($baris['realisasi_tanam'])->toBe(1.0)
+        ->and($baris['hasil_panen'])->toBe(0.0)
+        ->and($baris['belum_dipanen'])->toBe(1.0)
+        ->and($baris['produksi_ton'])->toBe(0.0);
+
+    // Dibuktikan pula pada halamannya, bukan hanya pada helpernya.
+    $this->get(route('panen.rekap.kelompok', ['kelompok' => 'poktan']).'?tahun=2026')
+        ->assertOk()
+        ->assertSee('POKTAN SUBUR MAKMUR');
+});
+
+it('mengikat rekap panen pada satu tahun tanam, bukan seluruh riwayat', function () {
+    // Total kumulatif menyesatkan pada dua hal: ia hanya dapat naik sehingga
+    // musim yang hancur pun tampak sebagai kabar baik, dan LUAS tidak boleh
+    // dijumlahkan lintas tahun sebab bidang yang sama ditanami berulang kali.
+    $tanam2025 = array_sum(array_column(DummyData::rekapPanen('sp', 2025), 'realisasi_tanam'));
+    $tanam2026 = array_sum(array_column(DummyData::rekapPanen('sp', 2026), 'realisasi_tanam'));
+
+    // Keduanya berisi data, sehingga perbedaannya bermakna.
+    expect($tanam2025)->toBeGreaterThan(0.0)
+        ->and($tanam2026)->toBeGreaterThan(0.0)
+        ->and($tanam2025)->not->toBe($tanam2026);
+
+    // Periode wajib tertulis pada halamannya, bukan tersembunyi di penyaring:
+    // angka rekap tanpa periodenya tidak dapat disalin ke laporan mana pun.
+    $this->get(route('panen.rekap.kelompok', ['kelompok' => 'sp']).'?tahun=2025')
+        ->assertOk()
+        ->assertSee('Tahun Tanam 2025')
+        ->assertSee('Total tahun tanam 2025');
+});
+
+it('menyaring rekap panen memakai tahun tanam, bukan tahun panen', function () {
+    // Penanaman yang belum dipanen tidak punya periode panen sama sekali,
+    // sehingga menyaring dengan tahun panen akan membuangnya - dan justru
+    // baris itulah yang hendak ditampilkan.
+    //
+    // Penanaman #6 ditanam 2026-06 dan belum dipanen. Ia WAJIB muncul pada
+    // tahun 2026, meski tidak punya satu pun catatan panen bertahun itu.
+    $nama2026 = array_column(DummyData::rekapPanen('poktan', 2026), 'nama');
+
+    expect($nama2026)->toContain('POKTAN SUBUR MAKMUR');
+
+    // Sebaliknya, panen April 2026 milik penanaman November 2025 tetap
+    // terhitung pada tahun tanam 2025, tidak terbelah dua.
+    $mekar2025 = collect(DummyData::rekapPanen('poktan', 2025))->firstWhere('nama', 'POKTAN MEKAR JAYA');
+
+    expect($mekar2025['produksi_ton'])->toBeGreaterThan(0.0);
+});
+
+it('menghitung produktivitas rekap secara tertimbang, bukan rata-rata kolom', function () {
+    // Merata-ratakan kolom produktivitas mencampur ton/ha dengan kg/ha:
+    // jagung 3,4 ton/ha dan cabai 1.282 kg/ha dirata-rata menjadi 642 ton/ha,
+    // angka yang tidak ada di alam.
+    foreach (DummyData::rekapPanen('sp', 2025) as $baris) {
+        if ($baris['hasil_panen'] <= 0) {
+            continue;
+        }
+
+        $benar = round($baris['produksi_ton'] / $baris['hasil_panen'], 3);
+
+        expect($baris['produktivitas_ton'])->toBe($benar, "produktivitas {$baris['nama']}");
+    }
+
+    /*
+     * Rata-rata naif dihitung terang-terangan lalu dibuktikan BERBEDA JAUH,
+     * agar uji ini memerah bila kelak seseorang menggantinya.
+     *
+     * CABAI dipilih sebab satuannya kilogram: 1.282 kg/ha menjadi 1,282
+     * ton/ha setelah dikonversi, seribu kali lebih kecil. Merata-ratakannya
+     * bersama jagung ton/ha karena itu menghasilkan angka yang tidak ada di
+     * lapangan.
+     */
+    $cabai = collect(DummyData::rekapPanen('komoditas', 2025))->firstWhere('nama', 'CABAI');
+    $panenCabai = collect(DummyData::hasilPanen())->firstWhere('komoditas', 'CABAI');
+
+    expect($cabai['produktivitas_ton'])->toBeLessThan((float) $panenCabai['produktivitas'] / 100);
+
+    // Rata-rata naif lintas komoditas dihitung, lalu dibuktikan menghasilkan
+    // angka yang mustahil: ratusan ton per hektare.
+    $rataNaif = collect(DummyData::hasilPanen())->avg('produktivitas');
+
+    expect($rataNaif)->toBeGreaterThan(100.0);
+
+    $totalTertimbang = collect(DummyData::rekapPanen('sp', 2025))->sum('produksi_ton')
+        / collect(DummyData::rekapPanen('sp', 2025))->sum('hasil_panen');
+
+    expect($totalTertimbang)->toBeLessThan(10.0);
+});
+
+it('menghitung cacah poktan dari himpunan, bukan dari jumlah baris penanaman', function () {
+    // POKTAN MEKAR JAYA memiliki empat penanaman pada 2025. Menghitung baris
+    // akan menyatakan "4 poktan" di SP Kapitan Meo, padahal hanya satu.
+    $sp = collect(DummyData::rekapPanen('sp', 2025))->firstWhere('nama', 'SP Kapitan Meo');
+
+    $penanamanDiSp = collect(DummyData::penanaman())
+        ->filter(fn ($t) => $t['satuan_permukiman'] === 'SP Kapitan Meo'
+            && str_starts_with($t['periode_tanam'], '2025'))
+        ->count();
+
+    expect($sp['jumlah_poktan'])->toBe(1)
+        ->and($penanamanDiSp)->toBeGreaterThan(1);
+});
+
+it('meniadakan kolom jumlah catatan pada rekap panen', function () {
+    // Cacah catatan menghitung baris entri, bukan besaran lapangan: poktan
+    // yang panen bertahap tiga kali tampak "lebih banyak" daripada yang panen
+    // sekali, meski luasnya lebih kecil.
+    $isi = $this->get(route('panen.rekap'))->assertOk()->getContent();
+
+    expect($isi)->not->toContain('Jumlah Catatan')
+        ->and($isi)->toContain('Belum Dipanen (ha)')
+        ->and($isi)->toContain('Realisasi Tanam (ha)')
+        ->and($isi)->toContain('Produktivitas (ton/ha)');
+});
+
+it('menawarkan tahun berjalan meski belum ada penanamannya', function () {
+    // Bawaan halaman ini tahun berjalan. Bila tahun itu tidak ikut di dalam
+    // daftar pilihan, pilihan yang sedang aktif justru tidak ada pada
+    // penyaringnya sendiri setiap awal tahun.
+    $isi = $this->get(route('panen.rekap'))->assertOk()->getContent();
+
+    expect($isi)->toContain('value="'.date('Y').'"');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Status panen pada kedua daftar
+|--------------------------------------------------------------------------
+*/
+
+it('menyaring daftar penanaman menurut status panennya', function () {
+    // Yang diuji PERILAKUNYA, bukan keberadaan markup penyaring. Uji string
+    // akan tetap hijau meski penyaringnya tidak menyaring apa pun, dan
+    // kekeliruan seperti itu sudah dua kali lolos (notes.md b799 dan 1d.2).
+    //
+    // Yang dihitung TAUTAN RINCIAN tiap baris, bukan nama poktannya. Nama
+    // poktan juga muncul pada dropdown di dalam modal form, sehingga
+    // assertDontSee atasnya akan memerah meski penyaringnya bekerja benar.
+    $barisTampil = function (array $kueri): array {
+        $isi = $this->get(route('penanaman', $kueri))->assertOk()->getContent();
+        $ada = [];
+
+        foreach (DummyData::penanaman() as $tanam) {
+            if (str_contains($isi, route('penanaman.detail', $tanam['id_penanaman']))) {
+                $ada[] = $tanam['id_penanaman'];
+            }
+        }
+
+        return $ada;
+    };
+
+    // Penanaman #6 milik SUBUR MAKMUR satu-satunya yang belum dipanen.
+    expect($barisTampil(['status' => StatusPanen::BelumDipanen->value]))->toBe([6]);
+
+    // Penanaman #3 milik MEKAR JAYA dipanen bertahap, menyisakan 0,80 ha.
+    expect($barisTampil(['status' => StatusPanen::DipanenSebagian->value]))->toBe([3]);
+
+    expect($barisTampil(['status' => StatusPanen::SelesaiDipanen->value]))->toBe([1, 2, 4, 5]);
+
+    // Tanpa penyaring, keenamnya tampil. Menjaga uji di atas tidak lolos
+    // secara kebetulan karena halamannya kosong.
+    expect($barisTampil([]))->toHaveCount(6);
+});
+
+it('menyaring daftar hasil panen menurut status penanaman induknya', function () {
+    $barisTampil = function (array $kueri): array {
+        $isi = $this->get(route('panen.index', $kueri))->assertOk()->getContent();
+        $ada = [];
+
+        foreach (DummyData::hasilPanen() as $p) {
+            if (str_contains($isi, route('panen.detail', $p['id_hasil_panen']))) {
+                $ada[] = $p['id_hasil_panen'];
+            }
+        }
+
+        return $ada;
+    };
+
+    // Panen #2 berasal dari penanaman #3 yang masih menyisakan 0,80 ha.
+    expect($barisTampil(['status' => StatusPanen::DipanenSebagian->value]))->toBe([2]);
+
+    // Sisanya berasal dari penanaman yang sudah tuntas.
+    expect($barisTampil(['status' => StatusPanen::SelesaiDipanen->value]))->toBe([1, 3, 4, 5]);
+
+    expect($barisTampil([]))->toHaveCount(5);
+});
+
+it('tidak menawarkan penyaring Belum Dipanen pada daftar hasil panen', function () {
+    // Pilihan itu selalu menghasilkan tabel kosong, sebab penanaman yang belum
+    // dipanen memang tidak punya baris panen. Merendernya berarti memasang
+    // kontrol mati yang dilarang ui-spec.md R-26.
+    $isi = $this->get(route('panen.index'))->assertOk()->getContent();
+
+    expect($isi)->toContain('value="'.StatusPanen::DipanenSebagian->value.'"')
+        ->and($isi)->toContain('value="'.StatusPanen::SelesaiDipanen->value.'"')
+        ->and($isi)->not->toContain('value="'.StatusPanen::BelumDipanen->value.'"');
+
+    // Halaman Penanaman justru WAJIB menawarkan ketiganya, sebab di sanalah
+    // penanaman yang belum dipanen dapat ditemukan.
+    $penanaman = $this->get(route('penanaman'))->assertOk()->getContent();
+
+    foreach (StatusPanen::cases() as $status) {
+        expect($penanaman)->toContain('value="'.$status->value.'"');
+    }
+});
+
+it('menyebut sisa luas pada penanaman yang baru dipanen sebagian', function () {
+    // Tanpa angkanya, petugas tahu ada yang tersisa tetapi tidak tahu berapa,
+    // dan harus membuka halaman rincian hanya untuk membacanya.
+    $this->get(route('penanaman'))
+        ->assertOk()
+        ->assertSee('sisa 0,80 ha');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Halaman rincian penanaman dan panen
+|--------------------------------------------------------------------------
+*/
+
+it('menjumlahkan panen pada rincian penanaman memakai kunci yang benar', function () {
+    // CACAT NYATA yang diperbaiki 2026-08-24: halaman ini menjumlahkan kunci
+    // `volume` yang sudah dihapus pada perombakan 2026-08-22, sehingga baris
+    // "Total volume" SELALU 0,00 sejak hari itu.
+    //
+    // Yang diuji ANGKANYA, bukan keberadaan string. Uji lama tetap hijau
+    // meski angkanya nol, sebab yang diperiksa hanya markup barisnya.
+    $panen = array_values(array_filter(
+        DummyData::hasilPanen(),
+        fn ($p) => ($p['penanaman_id'] ?? null) === 3,
+    ));
+
+    $ton = array_sum(array_map(
+        fn ($p) => DummyData::keTon($p['produksi'], $p['satuan']),
+        $panen
+    ));
+
+    // Penjagaan terhadap ujinya sendiri: bila datanya berubah menjadi nol,
+    // uji di bawah akan lolos secara palsu.
+    expect($ton)->toBeGreaterThan(0);
+
+    $this->get(route('penanaman.detail', 3))
+        ->assertOk()
+        ->assertSee(number_format($ton, 3, ',', '.').' ton');
+});
+
+it('menyejajarkan judul kolom dengan isinya pada rincian penanaman', function () {
+    // CACAT NYATA: header berbunyi "Hasil Panen" lalu "Produksi", sedangkan
+    // selnya mencetak produksi lalu hasil panen. Angka ton tampil di bawah
+    // judul hektare tanpa ada yang menegur.
+    $penuh = $this->get(route('penanaman.detail', 3))->assertOk()->getContent();
+
+    /*
+     * Dipotong ke tabelnya saja, dan "Puso (ha)" dipakai sebagai penanda awal
+     * alih-alih "Hasil Panen". Dua sebab, keduanya sudah memerahkan uji ini:
+     *
+     * - "Produksi" juga muncul pada menu sidebar "Produksi Pertanian",
+     * - "Hasil Panen" juga muncul sebagai label tab beserta cacahnya.
+     *
+     * Keduanya membuat perbandingan posisi mengukur benda yang salah.
+     */
+    $awal = strpos($penuh, 'Puso (ha)');
+    expect($awal)->not->toBeFalse();
+
+    $isi = substr($penuh, $awal, 3000);
+
+    $posisiProduksi = strpos($isi, 'Produksi');
+    $posisiHarga = strpos($isi, 'Harga Jual');
+
+    // Urutan header wajib Puso -> Produksi -> Harga Jual.
+    expect($posisiProduksi)->not->toBeFalse()
+        ->and($posisiHarga)->not->toBeFalse()
+        ->and($posisiProduksi)->toBeLessThan($posisiHarga);
+
+    // Kolom hasil panen wajib mendahului puso pada barisan header.
+    $header = substr($penuh, 0, $awal);
+    expect(strrpos($header, 'Hasil Panen'))->not->toBeFalse();
+
+    // Satuannya ikut tercetak pada sel produksi, sehingga tertukarnya kolom
+    // akan terlihat mata alih-alih menjadi angka yang diam-diam salah.
+    $panen = collect(DummyData::hasilPanen())->firstWhere('penanaman_id', 3);
+
+    expect($isi)->toContain(number_format($panen['produksi'], 2, ',', '.').' '.$panen['satuan']);
+});
+
+it('mencetak periode tanam sebagai bulan, bukan tanggal karangan', function () {
+    // Kolomnya CHAR(7) berisi bulan. Mencetaknya 'd F Y' memunculkan tanggal
+    // 01 yang berasal dari imbuhan Carbon, bukan dari pendataan - presisi
+    // palsu yang justru dihindari keputusan bulan-saja (rules.md 7d.9).
+    $isi = $this->get(route('penanaman.detail', 1))->assertOk()->getContent();
+
+    expect($isi)->toContain('November 2025')
+        ->and($isi)->not->toContain('01 November 2025')
+        ->and($isi)->not->toContain('Tanggal tanam');
+});
+
+it('menampilkan seluruh isian form pada rincian penanaman dan panen', function () {
+    // R-26: isian yang tidak punya tempat tampil membuat petugas mengetik
+    // sesuatu lalu tidak menemukannya lagi.
+    $penanaman = $this->get(route('penanaman.detail', 1))->assertOk()->getContent();
+
+    expect($penanaman)->toContain('Belum ditanam')
+        ->and($penanaman)->toContain('bast-tanam-jagung-nov-2025.pdf');
+
+    $panen = collect(DummyData::hasilPanen())->firstWhere('id_hasil_panen', 1);
+    $isi = $this->get(route('panen.detail', 1))->assertOk()->getContent();
+
+    expect($isi)->toContain($panen['keterangan'])
+        ->and($isi)->toContain($panen['dokumen_pendukung'])
+        ->and($isi)->toContain('Realisasi tanam');
+});
+
+it('menyediakan catatan dan dokumen pada setiap baris hasil panen', function () {
+    // Kamus data 9.3 SUDAH mencantumkan keduanya dan form SUDAH punya
+    // isiannya, tetapi datanya tidak pernah memilikinya. Halaman rincian
+    // membacanya lewat `?? '-'`, sehingga selalu bertuliskan "-" tanpa
+    // pernah memerah: petugas mengetik catatan, menyimpan, dan catatannya
+    // lenyap tanpa pesan apa pun.
+    foreach (DummyData::hasilPanen() as $p) {
+        expect($p)->toHaveKey('keterangan')
+            ->and($p)->toHaveKey('dokumen_pendukung');
+    }
+
+    // Sekurang-kurangnya satu baris benar-benar terisi, agar tampilan
+    // terisinya ikut teruji dan bukan hanya cabang kosongnya.
+    $berdokumen = collect(DummyData::hasilPanen())->filter(fn ($p) => $p['dokumen_pendukung'] !== null);
+
+    expect($berdokumen)->not->toBeEmpty();
+});
+
+it('tidak mencetak setara ton dua kali pada rincian panen', function () {
+    // Dua tempat untuk satu angka membuat pembaca mengira keduanya berbeda
+    // lalu mencari-cari bedanya.
+    $isi = $this->get(route('panen.detail', 4))->assertOk()->getContent();
+
+    // Yang dihitung KALIMAT KONVERSINYA, bukan kata "setara" begitu saja:
+    // kata itu juga muncul pada catatan kaki yang menerangkan aturan
+    // konversi, dan kalimat itu memang boleh ada.
+    expect(substr_count($isi, 'Setara ton'))->toBe(0)
+        ->and(substr_count($isi, 'ton saat direkap'))->toBe(1);
 });
 
 /*

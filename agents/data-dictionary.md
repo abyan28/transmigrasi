@@ -869,8 +869,9 @@ Akibat yang perlu disadari: halaman Lahan kehilangan tab penanaman, dan halaman 
 | Jumlah anggota | Anggota berstatus Aktif pada poktan itu, beserta ketuanya |
 | Luas lahan kelompok | Akumulasi lahan ketua dan seluruh anggota aktif |
 | Belum ditanam | Lahan tersedia dikurangi `realisasi_tanam` |
+| **Status panen** | Keberadaan catatan panen beserta sisa luasnya (lihat di bawah) |
 
-Ketiganya turunan dari data yang sudah ada. Menyimpannya berarti angka itu menjadi basi begitu satu anggota keluar atau satu bidang lahan dibetulkan, dan kebasian itu tidak pernah memerahkan apa pun. Kolom `luas_lahan_kelompok` sudah dicabut 2026-08-20 karena persis alasan ini (`erd.md` §7.3).
+Keempatnya turunan dari data yang sudah ada. Menyimpannya berarti angka itu menjadi basi begitu satu anggota keluar atau satu bidang lahan dibetulkan, dan kebasian itu tidak pernah memerahkan apa pun. Kolom `luas_lahan_kelompok` sudah dicabut 2026-08-20 karena persis alasan ini (`erd.md` §7.3).
 
 #### Lahan kembali, benih tidak
 
@@ -880,6 +881,22 @@ Perbedaan sifat yang disengaja:
 - **Lahan kembali tersedia** setelah panennya tercatat.
 
 Karena itu perhitungan lahan tersedia hanya mengurangkan penanaman yang **belum tuntas dipanen**. Mengurangkan seluruh penanaman sepanjang sejarah akan membuat lahan poktan tampak habis setelah beberapa musim, padahal bidang yang sama memang ditanami berulang kali tiap tahun.
+
+#### Status panen (ditambahkan 2026-08-24)
+
+**Tidak ada kolom `status_panen`.** Nilainya diturunkan lewat `DummyData::statusPanen()`, memakai enum `App\Enums\StatusPanen`:
+
+| Status | Syarat | Warna badge |
+|---|---|---|
+| `Belum Dipanen` | tidak ada satu pun baris `hasil_panen` yang menaut ke sini | gray |
+| `Dipanen Sebagian` | ada catatan panen, tetapi `belum_dipanen > 0` | warning |
+| `Selesai Dipanen` | `belum_dipanen = 0` | success |
+
+Keadaan pertama **tidak dapat disimpulkan dari sisa luas saja**: penanaman yang belum disentuh dan penanaman yang dipanen nol hektare sama-sama menyisakan seluruh luasnya. Keberadaan barisnya karena itu diperiksa tersendiri, dan pembedaan ini dijaga uji tersendiri pula.
+
+**Puso bukan status keempat.** Penanaman yang seluruhnya gagal panen menyisakan nol, sehingga berstatus `Selesai Dipanen` sama seperti yang berhasil penuh; yang membedakan keduanya kolom `puso` pada §9.3. Bentuk ini mengikuti laporan lapangan yang menaruh Realisasi Panen dan Puso sebagai dua kolom bersebelahan, bukan dua nilai pada satu kolom status (`rules.md` 7d.11b).
+
+Alasan tidak menyimpannya sama dengan `belum_dipanen` pada §9.3: kolom tersimpan menjadi salah begitu satu baris panen disunting atau dihapus, dan kesalahan itu tidak pernah memerahkan apa pun.
 
 **`saprotan_id` dan `volume_benih` ditambahkan 2026-08-22.** Keduanya menautkan penanaman ke benih yang dipakainya, sehingga sisa stok dapat dihitung tanpa mekanisme apa pun selain satu pengurangan (§8.4).
 
@@ -903,8 +920,10 @@ Keduanya **boleh kosong**: penanaman dari benih yang tidak tercatat pada modul s
 | `produktivitas` | `DECIMAL(12,3)` | TIDAK | | Per hektare, dalam satuan baku komoditas |
 | `produksi` | `DECIMAL(12,3)` | TIDAK | | Disimpan apa adanya, tanpa konversi |
 | `harga_jual` | `DECIMAL(15,2)` | YA | | Rupiah per satuan baku |
-| `dokumen_pendukung` | `VARCHAR(255)` | YA | | Foto panen |
+| `dokumen_pendukung` | `VARCHAR(255)` | YA | | Berita acara panen, foto hamparan, atau bukti timbangan |
 | `keterangan` | `TEXT` | YA | | |
+
+> **Catatan 2026-08-24.** Kedua kolom terakhir sudah tercantum di sini dan sudah punya isian di form sejak 2026-08-22, tetapi **tidak pernah ada pada data**. Halaman rincian membacanya lewat `?? '-'`, sehingga selalu bertuliskan "-" tanpa pernah memerahkan apa pun: petugas mengetik catatan, menekan simpan, dan catatannya lenyap tanpa pesan. Keterangan `dokumen_pendukung` ikut dibetulkan dari "Foto panen", sebab pembatasan gambar-saja sudah dicabut pada tanggal yang sama.
 
 #### Dua identitas aritmetika
 
@@ -937,6 +956,22 @@ Penjumlahan lintas baris itu penting: satu penanaman dapat dipanen **bertahap**,
 - `produktivitas` memakai **satuan baku komoditasnya**, bukan selalu ton: jagung ton/ha, cabai kg/ha. Memaksanya ton membuat harga jual cabai per ton menjadi angka yang tidak pernah dipakai siapa pun di lapangan.
 - `satuan_id` sengaja disalin dari komoditas, bukan sekadar dibaca lewat relasi, agar data historis tetap sahih bila satuan baku komoditas kelak diubah.
 - Lokasi produksi tidak disimpan di sini; dibaca lewat rantai `penanaman -> poktan -> satuan_permukiman`.
+
+#### Rekap dihitung dari penanaman, bukan dari tabel ini (2026-08-24)
+
+Halaman rekap panen **tidak** menjadikan tabel ini sebagai baris dasarnya, melainkan `penanaman` (§9.2). Sebabnya satu: baris di sini hanya ada bila panennya sudah tercatat, sehingga kelompok yang sudah menanam tetapi belum panen **hilang sama sekali** dari rekap — dan justru keadaan itulah yang paling perlu ditengok dinas. Laporan lapangan memilih basis yang sama; kolom "Sisa Tanam" pada laporan itu mustahil ada bila barisnya bukan poktan yang menanam.
+
+Konsekuensi yang mengikutinya:
+
+| Hal | Aturan |
+|---|---|
+| Periode | Selalu terikat **satu tahun tanam**, tertulis pada judul dan baris total (`rules.md` 9.8b) |
+| Penyaring | **Tahun tanam**, bukan tahun panen (`rules.md` 9.8c) |
+| Produktivitas agregat | Total produksi dibagi total luas dipanen, **tertimbang** (`rules.md` 9.8d) |
+| Angka turunan | Dihitung dari nilai yang **sudah dibulatkan** seperti yang tampil (`rules.md` 9.8e) |
+| Cacah | Cacah **poktan** sebagai himpunan; cacah catatan tidak dipakai (`rules.md` 9.8f) |
+
+Luas **tidak pernah** dijumlahkan lintas tahun: bidang 2 ha yang ditanami tiga tahun berturut-turut akan terbaca "6 ha", dan pembaca menyangka kelompok itu memiliki 6 ha lahan.
 
 
 ---
@@ -1220,6 +1255,18 @@ Enum ini diperlukan agar penilaian kondisi SP dapat menghitung otomatis. Nama sp
 `Tidak Ada` **bukan** nilai enum tersendiri pada tabel `infrastruktur` maupun `fasilitas_sp`, melainkan keadaan ketika tidak ditemukan satu pun aset yang bersesuaian. Ketiadaan dan kerusakan wajib dibedakan karena berbeda penanganannya: yang satu memerlukan pembangunan, yang lain perbaikan (`rules.md` 10c.4 poin 9).
 
 `Hilang` (§11.5) bernilai **sama dengan** `Tidak Ada`, yaitu 0, dan itu disengaja. Aset yang lenyap tidak melayani siapa pun, persis seperti aset yang tidak pernah ada. Nilainya wajib tepat 0, bukan sekadar lebih kecil daripada `Rusak Berat`: aturan primer nol membandingkan **tepat** terhadap konstanta `NILAI_TIDAK_ADA`, sehingga skor 0,1 akan membuat satu-satunya sumur bor yang hilang gagal menjatuhkan status SP dan kehilangan itu lolos sebagai `Berkembang`.
+
+### 11.33a Status panen
+
+`Belum Dipanen` · `Dipanen Sebagian` · `Selesai Dipanen`
+
+**Bukan kolom database.** Diturunkan dari catatan panen milik satu penanaman, lihat §9.2. Ditambahkan 2026-08-24 agar petugas dapat menemukan penanaman mana yang masih menunggu panen tanpa membuka satu per satu.
+
+Warna badge: Belum Dipanen `gray` · Dipanen Sebagian `warning` · Selesai Dipanen `success`.
+
+**Puso tidak menjadi nilai keempat** (`rules.md` 7d.11b). Penanaman yang seluruhnya gagal panen berstatus `Selesai Dipanen`; pembedanya kolom `puso` pada §9.3.
+
+Daftar Hasil Panen hanya menawarkan **dua nilai terakhir** sebagai penyaring, sebab penanaman yang belum dipanen tidak punya baris panen untuk ditampilkan. Pembatasannya tinggal pada `StatusPanen::penyaringPanen()`, bukan ditulis ulang sebagai pengecualian di view.
 
 ### 11.34 Asal wakil poktan
 
