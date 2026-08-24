@@ -206,30 +206,69 @@
         </div>
 
         {{--
-            Langkah 3: benih, TERSARING dan boleh kosong.
+            Langkah 3: benih, TERSARING dan WAJIB.
 
-            Kosong bukan kelalaian melainkan keadaan yang sah: bibit swadaya
-            anggota memang tidak pernah masuk modul saprotan, dan menolaknya
-            berarti memaksa petugas mengarang penyaluran yang tidak terjadi.
+            DIWAJIBKAN 2026-08-24. Sebelumnya boleh kosong dengan alasan
+            "bibit swadaya tidak melalui modul saprotan", dan alasan itu
+            KELIRU: enum sumber perolehan sudah memuat `Swadaya` sejak awal,
+            dan satu baris data contoh sudah memakainya. Yang kurang hanyalah
+            keseragaman pemakaian.
 
-            Ketika poktan sudah dipilih tetapi tidak ada benihnya, yang tampil
-            adalah keterangan, bukan dropdown kosong yang membingungkan.
+            Mewajibkannya membuat benih swadaya ikut punya STOK. Tanpa itu ia
+            seolah tak terbatas: poktan dapat mencatat penanaman sebanyak apa
+            pun tanpa ada yang menegur.
+
+            Ketika belum ada benih yang dapat dipakai, yang tampil adalah
+            KETERANGAN BESERTA TAUTAN ke form saprotan - bukan dropdown kosong
+            yang membingungkan, dan bukan pula jalan buntu. Dropdown yang tidak
+            dapat dipilih apa pun adalah kontrol mati (ui-spec.md R-26).
         --}}
         <div>
-            <label for="{{ $awalan }}_saprotan_id" class="{{ $kelasLabel }}">Benih Dipakai</label>
+            <label for="{{ $awalan }}_saprotan_id" class="{{ $kelasLabel }}">
+                Benih Dipakai<span class="text-error-500">*</span>
+            </label>
 
             <select id="{{ $awalan }}_saprotan_id" name="saprotan_id" x-model="saprotanId"
-                x-show="benihTersedia.length > 0" x-cloak class="{{ $kelasKontrol }}">
-                <option value="">Tanpa benih tercatat</option>
+                x-show="benihTersedia.length > 0" x-cloak
+                :required="benihTersedia.length > 0" class="{{ $kelasKontrol }}">
+                <option value="">Pilih benih</option>
                 <template x-for="b in benihTersedia" :key="b.id">
                     <option :value="b.id" x-text="b.label"></option>
                 </template>
             </select>
 
-            <p x-show="benihTersedia.length === 0" x-cloak class="{{ $kelasTerkunci }} text-gray-400 dark:text-white/30">
-                <span x-show="! poktanId || ! komoditasId">Pilih kelompok tani dan komoditas lebih dulu</span>
-                <span x-show="poktanId && komoditasId" x-cloak>Tidak ada benih tersisa untuk komoditas ini</span>
+            {{-- Belum memilih poktan atau komoditas: belum ada yang dapat disaring --}}
+            <p x-show="benihTersedia.length === 0 && (! poktanId || ! komoditasId)" x-cloak
+                class="{{ $kelasTerkunci }} text-gray-400 dark:text-white/30">
+                Pilih kelompok tani dan komoditas lebih dulu
             </p>
+
+            {{--
+                Sudah memilih keduanya tetapi benihnya tidak ada. Inilah
+                keadaan yang dahulu diselesaikan dengan "Tanpa benih tercatat".
+                Kini diselesaikan dengan menuntun petugas mendaftarkannya,
+                sebab benih apa pun - bantuan maupun swadaya - memang milik
+                poktan dan layak tercatat.
+            --}}
+            <div x-show="benihTersedia.length === 0 && poktanId && komoditasId" x-cloak
+                class="rounded-lg border border-gray-300 bg-gray-50 p-3.5 dark:border-gray-700 dark:bg-white/[0.03]">
+                <p class="text-theme-sm text-gray-700 dark:text-gray-300">
+                    Belum ada benih terdaftar untuk komoditas ini pada kelompok tersebut.
+                </p>
+                <p class="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
+                    Benih swadaya pun didaftarkan lebih dulu sebagai penyaluran bersumber
+                    <strong>Swadaya</strong>, agar stoknya ikut terhitung.
+                </p>
+                <a href="{{ route('saprotan.index') }}"
+                    class="mt-2.5 inline-flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-theme-xs font-medium text-gray-700 transition hover:bg-white focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
+                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                        stroke-width="1.5" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                    </svg>
+                    Daftarkan Benih di Saprotan
+                </a>
+            </div>
 
             <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
                 Hanya benih milik kelompok ini yang stoknya masih ada. Benih yang habis perlu didata ulang
@@ -261,7 +300,6 @@
                 <span x-text="benihTerpilih?.satuan"></span>.
             </p>
         </div>
-
         {{-- Langkah 4: realisasi tanam --}}
         <div>
             <label for="{{ $awalan }}_realisasi_tanam" class="{{ $kelasLabel }}">

@@ -843,8 +843,8 @@ Catatan penanaman: kelompok tani mana, menanam komoditas apa, kapan, seluas bera
 | `id_penanaman` | `BIGINT UNSIGNED AUTO_INCREMENT` | TIDAK | PK | |
 | `poktan_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX, UQ¹ | Kelompok tani pelaksana |
 | `komoditas_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX, UQ¹ | |
-| `saprotan_id` | `BIGINT UNSIGNED` | YA | FK, IDX | Benih yang dipakai; boleh kosong |
-| `volume_benih` | `DECIMAL(12,3)` | YA | | Wajib bila `saprotan_id` terisi |
+| `saprotan_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | Benih yang dipakai; **wajib sejak 2026-08-24** |
+| `volume_benih` | `DECIMAL(12,3)` | TIDAK | | **Wajib sejak 2026-08-24** |
 | `realisasi_tanam` | `DECIMAL(12,2)` | TIDAK | | Hektare yang benar-benar ditanami |
 | `periode_tanam` | `CHAR(7)` | TIDAK | IDX, UQ¹ | Bulan tanam, bentuk `YYYY-MM` |
 | `dokumen_pendukung` | `VARCHAR(255)` | YA | | Berita acara tanam atau foto hamparan |
@@ -902,7 +902,13 @@ Alasan tidak menyimpannya: kolom tersimpan menjadi salah begitu satu baris panen
 
 `volume_benih` sengaja **disimpan**, bukan dihitung dari `realisasi_tanam` memakai rasio baku. Laporan Polri MT.II 2025 memang memakai 15 kg/ha pada 92 dari 96 barisnya, tetapi rasio itu keputusan program pada satu bantuan, bukan hukum alam: benih swadaya dan komoditas lain memakai takaran berbeda. Menghitungnya otomatis membuat angka karangan tampil seolah-olah hasil pendataan.
 
-Keduanya **boleh kosong**: penanaman dari benih yang tidak tercatat pada modul saprotan tetap harus dapat didata, sebab menolaknya berarti memaksa petugas mengarang penyaluran yang tidak pernah terjadi. Bila `saprotan_id` terisi, komoditas benihnya wajib sama dengan `komoditas_id` di sini.
+**Keduanya WAJIB sejak 2026-08-24**, termasuk untuk bibit swadaya. Komoditas benihnya wajib sama dengan `komoditas_id` di sini.
+
+> **Koreksi.** Kedua kolom dahulu nullable, dengan alasan "penanaman dari benih yang tidak tercatat pada modul saprotan tetap harus dapat didata". Alasan itu **keliru**: enum sumber perolehan pada §8.4 sudah memuat `Swadaya` sejak awal, dan satu baris data contoh sudah memakainya. Bibit swadaya bukan benih yang mustahil didata — ia benih yang kebetulan belum didaftarkan.
+>
+> Manfaat pewajibannya bukan kerapian data semata: **benih swadaya jadi ikut punya stok**. Tanpa itu ia seolah tak terbatas, dan poktan dapat mencatat penanaman sebanyak apa pun tanpa ada yang menegur (`rules.md` §7d.8b).
+>
+> Konsekuensi yang diterima sadar: petugas wajib mendaftarkan benih lebih dulu sebelum mencatat penanaman. Peredamnya pesan menuntun beserta tautan ke form saprotan (`rules.md` §7d.8c); tanpa itu, isian wajib tanpa jalan mengisinya justru mendorong petugas mengarang entri.
 
 ### 9.3 `hasil_panen`
 
@@ -1368,7 +1374,7 @@ Aturan berikut ditulis satu kali di `app/Support/ValidationRules.php` dan dipaka
 | 29 | `tanggal_pergantian` tidak boleh mendahului `tahun_kedatangan` keluarganya, dan tidak boleh melampaui hari ini | `riwayat_kepala_keluarga` |
 | 30 | Suksesi wajib menyetel ulang `poktan.ketua_transmigran_id` bila keluarga tersebut menjabat ketua lewat jalur `Kepala Keluarga`; jabatan ketua tidak diwariskan | `poktan` |
 | 31 | `komoditas_id` wajib bila `jenis` = Benih, dan wajib `NULL` bagi jenis lain | `saprotan` |
-| 32 | `volume_benih` wajib bila `saprotan_id` terisi, dan wajib `NULL` bila kosong | `penanaman` |
+| 32 | `saprotan_id` dan `volume_benih` **wajib terisi**, termasuk untuk bibit swadaya yang didaftarkan bersumber `Swadaya` | `penanaman` |
 | 33 | `saprotan_id` hanya boleh menunjuk baris berjenis Benih milik `poktan_id` yang sama | `penanaman` |
 | 34 | Komoditas benih wajib sama dengan `komoditas_id` penanamannya | `penanaman`, `saprotan` |
 | 35 | Jumlah `volume_benih` seluruh penanaman tidak boleh melebihi `saprotan.jumlah` | `penanaman`, `saprotan` |

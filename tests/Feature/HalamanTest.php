@@ -727,6 +727,276 @@ it('menawarkan tahun berjalan meski belum ada penanamannya', function () {
     expect($isi)->toContain('value="'.date('Y').'"');
 });
 
+it('menyusun kolom rekap sesuai dasar pengelompokannya', function () {
+    /*
+     * Kolom kedua BERBEDA tiap tab (ditetapkan pemilik proyek 2026-08-24):
+     *
+     * - Per SP dan Per Poktan -> Luas Lahan, sebab lahan memang milik poktan
+     * - Per Komoditas         -> Volume Benih
+     *
+     * Luas lahan sengaja TIDAK ada pada tab komoditas: satu poktan menanam
+     * beberapa komoditas, sehingga lahannya terhitung berkali-kali dan
+     * totalnya melampaui luas kawasan yang sebenarnya.
+     */
+    $harapan = [
+        'sp' => ['ada' => ['Poktan', 'Luas Lahan (ha)'], 'tiada' => ['Volume Benih (kg)']],
+        'komoditas' => ['ada' => ['Poktan', 'Volume Benih (kg)'], 'tiada' => ['Luas Lahan (ha)']],
+        // Cacah poktan tidak dirender pada tab poktan: nilainya selalu satu.
+        'poktan' => ['ada' => ['Luas Lahan (ha)'], 'tiada' => ['Volume Benih (kg)']],
+    ];
+
+    foreach ($harapan as $tab => $periksa) {
+        $isi = $this->get(route('panen.rekap.kelompok', ['kelompok' => $tab]))
+            ->assertOk()
+            ->getContent();
+
+        foreach ($periksa['ada'] as $teks) {
+            expect($isi)->toContain($teks);
+        }
+
+        foreach ($periksa['tiada'] as $teks) {
+            expect($isi)->not->toContain($teks);
+        }
+
+        // Kolom tetap yang wajib ada pada ketiga tab.
+        foreach (['Realisasi Tanam (ha)', 'Realisasi Panen (ha)', 'Puso (ha)',
+            'Menunggu Panen (ha)', 'Produktivitas (ton/ha)', 'Produksi (ton)'] as $teks) {
+            expect($isi)->toContain($teks);
+        }
+    }
+});
+
+it('menyejajarkan cacah kolom header, badan, dan baris total pada rekap', function () {
+    /*
+     * Baris total yang bergeser satu kolom tidak memerahkan apa pun tanpa
+     * penjagaan ini - kekeliruan yang sudah pernah terjadi saat kolom Musim
+     * dicabut. Bahayanya berlipat sejak kolom kedua berbeda tiap tab.
+     */
+    foreach (['sp', 'komoditas', 'poktan'] as $tab) {
+        $isi = $this->get(route('panen.rekap.kelompok', ['kelompok' => $tab]))
+            ->assertOk()
+            ->getContent();
+
+        preg_match('/<thead.*?<\/thead>/s', $isi, $kepala);
+        preg_match('/<tfoot.*?<\/tfoot>/s', $isi, $kaki);
+        preg_match('/<tbody.*?<\/tbody>/s', $isi, $badan);
+
+        $cacahKepala = preg_match_all('/<th\s/', $kepala[0] ?? '');
+        $cacahKaki = preg_match_all('/<td\s/', $kaki[0] ?? '');
+
+        // Baris pertama badan saja; seluruh baris berbentuk sama.
+        $barisPertama = explode('</tr>', $badan[0] ?? '')[0];
+        $cacahBadan = preg_match_all('/<td\s/', $barisPertama);
+
+        expect($cacahKepala)->toBeGreaterThan(0)
+            ->and($cacahKaki)->toBe($cacahKepala)
+            ->and($cacahBadan)->toBe($cacahKepala);
+    }
+});
+
+it('menyisipkan satuan permukiman di bawah nama poktan pada rekap', function () {
+    // Nama poktan tidak menyatakan lokasinya, sehingga tanpa keterangan ini
+    // pembaca harus mengingat sendiri kelompok mana ada di SP mana.
+    $isi = $this->get(route('panen.rekap.kelompok', ['kelompok' => 'poktan']))
+        ->assertOk()
+        ->getContent();
+
+    $rekap = DummyData::rekapPanen('poktan', (int) date('Y'));
+
+    expect($rekap)->not->toBeEmpty();
+
+    foreach ($rekap as $baris) {
+        expect($isi)->toContain($baris['nama']);
+
+        foreach ($baris['sp'] as $sp) {
+            expect($isi)->toContain($sp);
+        }
+    }
+});
+
+it('menghitung luas lahan rekap dari himpunan poktan, bukan tiap penanaman', function () {
+    /*
+     * POKTAN MEKAR JAYA memiliki beberapa penanaman pada tahun yang sama.
+     * Menjumlahkan luas lahannya per baris penanaman akan menghitung lahan
+     * yang sama berkali-kali, dan totalnya melampaui luas kawasan.
+     */
+    $sp = collect(DummyData::rekapPanen('sp', 2026))->firstWhere('nama', 'SP Kapitan Meo');
+
+    // Dua poktan di SP itu: MEKAR JAYA 4,25 ha + SUBUR MAKMUR 2,00 ha.
+    expect($sp['jumlah_poktan'])->toBe(2)
+        ->and($sp['luas_lahan'])->toBe(6.25);
+
+    // Penanamannya lebih banyak daripada poktannya, sehingga perbedaan cara
+    // menghitung benar-benar terasa.
+    $cacahPenanaman = collect(DummyData::penanaman())
+        ->filter(fn ($t) => $t['satuan_permukiman'] === 'SP Kapitan Meo'
+            && DummyData::tahunRekapPanen($t['id_penanaman']) === 2026)
+        ->count();
+
+    expect($cacahPenanaman)->toBeGreaterThan($sp['jumlah_poktan']);
+});
+
+it('menuntun petugas mendaftarkan benih ketika belum ada yang tersedia', function () {
+    /*
+     * Benih wajib sejak 2026-08-24, sehingga dropdown yang kosong menjadi
+     * jalan buntu - kontrol mati yang dilarang ui-spec.md R-26.
+     *
+     * Yang tampil karena itu keterangan beserta TAUTAN ke form saprotan,
+     * bukan sekadar dropdown kosong.
+     */
+    $isi = $this->get(route('penanaman'))->assertOk()->getContent();
+
+    expect($isi)->toContain('Belum ada benih terdaftar')
+        ->and($isi)->toContain(route('saprotan.index'))
+        ->and($isi)->toContain('Daftarkan Benih di Saprotan');
+
+    // Pilihan lama yang membiarkan penanaman tanpa benih sudah dicabut.
+    expect($isi)->not->toContain('Tanpa benih tercatat');
+});
+
+it('menyaring rekap panen secara silang menurut sp dan komoditas', function () {
+    /*
+     * Tab menentukan baris APA, penyaring menentukan baris MANA. Dua sumbu
+     * terpisah, dan justru gabungannya yang berguna: "berapa produksi jagung
+     * di SP Weain" tidak dapat dijawab tanpa keduanya.
+     *
+     * Yang diuji PERILAKUNYA - cacah baris benar-benar menyempit - bukan
+     * keberadaan markup penyaring. Penyaring yang tidak menyaring apa pun
+     * tetap merender dropdown yang tampak sehat.
+     */
+    $semua = DummyData::rekapPanen('sp', 2026);
+    $jagung = DummyData::rekapPanen('sp', 2026, null, 'JAGUNG');
+
+    expect($semua)->not->toBeEmpty()
+        ->and(count($jagung))->toBeLessThan(count($semua))
+        ->and($jagung)->not->toBeEmpty();
+
+    // Angkanya ikut menyempit, bukan hanya barisnya.
+    $tanamSemua = array_sum(array_column($semua, 'realisasi_tanam'));
+    $tanamJagung = array_sum(array_column($jagung, 'realisasi_tanam'));
+
+    expect($tanamJagung)->toBeLessThan($tanamSemua);
+
+    // Penyaring SP pada tab komoditas.
+    $weain = DummyData::rekapPanen('komoditas', 2026, 'SP Weain');
+
+    expect($weain)->toHaveCount(1)
+        ->and($weain[0]['nama'])->toBe('PADI');
+
+    // Tab poktan menerima kedua penyaring sekaligus.
+    $keduanya = DummyData::rekapPanen('poktan', 2026, 'SP Kapitan Meo', 'JAGUNG');
+
+    foreach ($keduanya as $baris) {
+        expect($baris['sp'])->toBe(['SP Kapitan Meo']);
+    }
+
+    expect($keduanya)->not->toBeEmpty();
+});
+
+it('menyusun pilihan penyaring rekap dari data, bukan dari master', function () {
+    /*
+     * Master memuat enam satuan permukiman dan lima komoditas, sedangkan
+     * tahun 2025 hanya memiliki satu dari masing-masing. Menawarkan sisanya
+     * berarti menyuguhkan pilihan yang DIJAMIN menghasilkan tabel kosong -
+     * kontrol mati yang dilarang ui-spec.md R-26.
+     */
+    $opsi2025 = DummyData::opsiFilterRekapPanen(2025);
+    $opsi2026 = DummyData::opsiFilterRekapPanen(2026);
+
+    expect($opsi2025['sp'])->toBe(['SP Kapitan Meo'])
+        ->and($opsi2025['komoditas'])->toBe(['JAGUNG']);
+
+    // Tahun berbeda menghasilkan daftar berbeda; bila sama, uji ini tidak
+    // membuktikan bahwa opsinya benar-benar dihitung dari data.
+    expect($opsi2026['sp'])->not->toBe($opsi2025['sp'])
+        ->and(count($opsi2026['komoditas']))->toBeGreaterThan(count($opsi2025['komoditas']));
+
+    // Lebih sedikit daripada master, dan itu memang maksudnya.
+    expect(count($opsi2026['sp']))->toBeLessThan(count(DummyData::satuanPermukiman()))
+        ->and(count($opsi2026['komoditas']))->toBeLessThan(count(DummyData::komoditas()));
+
+    // Seluruh opsi benar-benar menghasilkan baris, bukan tabel kosong.
+    foreach ($opsi2026['komoditas'] as $nama) {
+        expect(DummyData::rekapPanen('sp', 2026, null, $nama))->not->toBeEmpty();
+    }
+});
+
+it('merender penyaring rekap sesuai tabnya', function () {
+    /*
+     * Menyaring SP pada tab Per SP hanya menyisakan satu baris yang sudah
+     * terlihat sejak awal; kontrol yang tidak berguna sama saja dengan
+     * kontrol mati.
+     */
+    $harapan = [
+        'sp' => ['ada' => ['name="komoditas"'], 'tiada' => ['name="sp"']],
+        'komoditas' => ['ada' => ['name="sp"'], 'tiada' => ['name="komoditas"']],
+        'poktan' => ['ada' => ['name="sp"', 'name="komoditas"'], 'tiada' => []],
+    ];
+
+    foreach ($harapan as $tab => $periksa) {
+        $isi = $this->get(route('panen.rekap.kelompok', ['kelompok' => $tab]))
+            ->assertOk()
+            ->getContent();
+
+        foreach ($periksa['ada'] as $teks) {
+            expect($isi)->toContain($teks);
+        }
+
+        foreach ($periksa['tiada'] as $teks) {
+            expect($isi)->not->toContain($teks);
+        }
+
+        // Penyaring tahun selalu ada pada ketiga tab.
+        expect($isi)->toContain('name="tahun"');
+    }
+});
+
+it('melepas penyaring rekap yang tidak tersedia pada tahun terpilih', function () {
+    /*
+     * Keadaannya nyata: petugas menyaring CABAI pada 2026, lalu berpindah ke
+     * 2025 - dan cabai tidak ditanam tahun itu.
+     *
+     * Tanpa pelepasan ini halaman tampak rusak; tanpa pemberitahuannya,
+     * petugas mengira penyaringnya yang tidak bekerja.
+     */
+    expect(DummyData::opsiFilterRekapPanen(2025)['komoditas'])->not->toContain('CABAI');
+
+    $isi = $this->get(route('panen.rekap.kelompok', ['kelompok' => 'poktan']).'?tahun=2025&komoditas=CABAI')
+        ->assertOk()
+        ->getContent();
+
+    expect($isi)->toContain('dilepas')
+        ->and($isi)->toContain('CABAI');
+
+    // Yang penting: tabelnya TIDAK kosong. Penyaring dilepas, bukan
+    // dipertahankan lalu menyisakan tabel hampa.
+    expect(DummyData::rekapPanen('poktan', 2025))->not->toBeEmpty();
+});
+
+it('menyebut cakupan penyaring pada judul dan baris total rekap', function () {
+    /*
+     * Baris total IKUT MENYEMPIT ketika penyaring aktif. Tanpa keterangan
+     * ini, angkanya dapat disalin ke laporan sebagai total kawasan padahal
+     * hanya mencakup satu komoditas.
+     */
+    $isi = $this->get(route('panen.rekap.kelompok', ['kelompok' => 'sp']).'?tahun=2026&komoditas=JAGUNG')
+        ->assertOk()
+        ->getContent();
+
+    expect($isi)->toContain('Tahun Panen 2026')
+        ->and($isi)->toContain('JAGUNG saja')
+        ->and($isi)->toContain('hanya mencakup penyaring');
+
+    // Tanpa penyaring, keterangan itu tidak muncul - kalau selalu muncul, ia
+    // berhenti menjadi peringatan.
+    $tanpa = $this->get(route('panen.rekap.kelompok', ['kelompok' => 'sp']).'?tahun=2026')
+        ->assertOk()
+        ->getContent();
+
+    expect($tanpa)->not->toContain('hanya mencakup penyaring')
+        ->and($tanpa)->not->toContain('saja');
+});
+
 /*
 |--------------------------------------------------------------------------
 | Status panen pada kedua daftar

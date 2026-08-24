@@ -1128,6 +1128,48 @@ class DummyData
     }
 
     /**
+     * Pilihan penyaring rekap panen untuk satu tahun.
+     *
+     * DIHITUNG DARI PENANAMAN pada tahun itu, bukan dari data master. Bedanya
+     * besar dan menentukan: master memuat enam satuan permukiman dan lima
+     * komoditas, sedangkan tahun 2025 hanya memiliki satu dari masing-masing.
+     *
+     * Menawarkan pilihan dari master berarti menyuguhkan opsi yang DIJAMIN
+     * menghasilkan tabel kosong - kontrol mati yang dilarang `ui-spec.md`
+     * R-26. Bukan tombol yang tidak berfungsi, melainkan pilihan yang sia-sia
+     * sejak sebelum diklik.
+     *
+     * Konsekuensinya disengaja: mengganti tahun mengubah isi kedua daftar,
+     * dan nilai penyaring yang tidak lagi tersedia wajib dilepas beserta
+     * pemberitahuannya (lihat pemakaiannya pada halaman rekap).
+     *
+     * @param  int|null  $tahun  Tahun panen; null berarti seluruh tahun
+     * @return array<string, array<int, string>> Dua daftar: `sp` dan `komoditas`
+     */
+    public static function opsiFilterRekapPanen(?int $tahun = null): array
+    {
+        $sp = [];
+        $komoditas = [];
+
+        foreach (self::penanaman() as $tanam) {
+            if ($tahun !== null && self::tahunRekapPanen($tanam['id_penanaman']) !== $tahun) {
+                continue;
+            }
+
+            $sp[$tanam['satuan_permukiman']] = true;
+            $komoditas[$tanam['komoditas']] = true;
+        }
+
+        $sp = array_keys($sp);
+        $komoditas = array_keys($komoditas);
+
+        sort($sp);
+        sort($komoditas);
+
+        return ['sp' => $sp, 'komoditas' => $komoditas];
+    }
+
+    /**
      * Rekap panen, DIHITUNG DARI PENANAMAN dan bukan dari catatan panen.
      *
      * Perbedaan basis ini menentukan dan disengaja. Bila dihitung dari
@@ -1147,12 +1189,28 @@ class DummyData
      * panen April 2026 dari penanaman November 2025 tidak terlihat sama sekali
      * pada rekap 2026, padahal timbangannya nyata terjadi tahun itu.
      *
+     * PENYARING SILANG (ditambahkan 2026-08-24). Tab menentukan baris APA,
+     * penyaring menentukan baris MANA - dua sumbu terpisah yang berguna justru
+     * ketika digabung: "berapa produksi jagung di SP Weain" tidak dapat
+     * dijawab tanpa keduanya.
+     *
+     * Penyaring dicocokkan terhadap PENANAMAN, bukan terhadap kunci
+     * pengelompokan. Bedanya terasa pada tab poktan: menyaring komoditas di
+     * sana berarti "poktan yang menanam komoditas itu", dan angkanya hanya
+     * mencakup penanaman komoditas tersebut - bukan seluruh penanaman poktan.
+     *
      * @param  string  $kelompok  Dasar pengelompokan: sp, komoditas, atau poktan
      * @param  int|null  $tahun  Tahun panen; null berarti seluruh tahun
+     * @param  string|null  $filterSp  Nama satuan permukiman; null berarti seluruhnya
+     * @param  string|null  $filterKomoditas  Nama komoditas; null berarti seluruhnya
      * @return array<int, array<string, mixed>> Baris rekap, produksi terbesar dulu
      */
-    public static function rekapPanen(string $kelompok = 'sp', ?int $tahun = null): array
-    {
+    public static function rekapPanen(
+        string $kelompok = 'sp',
+        ?int $tahun = null,
+        ?string $filterSp = null,
+        ?string $filterKomoditas = null,
+    ): array {
         // Panen dikelompokkan lebih dulu menurut penanamannya, agar tiap
         // penanaman cukup sekali disusuri.
         $panenPer = [];
@@ -1168,6 +1226,14 @@ class DummyData
                 continue;
             }
 
+            if ($filterSp !== null && $tanam['satuan_permukiman'] !== $filterSp) {
+                continue;
+            }
+
+            if ($filterKomoditas !== null && $tanam['komoditas'] !== $filterKomoditas) {
+                continue;
+            }
+
             $kunci = match ($kelompok) {
                 'komoditas' => $tanam['komoditas'],
                 'poktan' => $tanam['poktan'],
@@ -1178,6 +1244,9 @@ class DummyData
                 $peta[$kunci] = [
                     'nama' => $kunci,
                     'poktan' => [],
+                    'sp' => [],
+                    'luas_lahan' => 0.0,
+                    'volume_benih' => 0.0,
                     'realisasi_tanam' => 0.0,
                     'hasil_panen' => 0.0,
                     'puso' => 0.0,
@@ -1189,11 +1258,30 @@ class DummyData
 
             $baris = &$peta[$kunci];
 
-            // Cacah poktan dihitung dari himpunan, bukan jumlah baris:
-            // satu poktan dapat memiliki banyak penanaman.
+            /*
+             * Cacah poktan dan luas lahan dihitung dari HIMPUNAN, bukan jumlah
+             * baris: satu poktan dapat memiliki banyak penanaman, dan luas
+             * lahannya akan terhitung berkali-kali bila dijumlahkan per baris.
+             *
+             * Luas lahan hanya mencakup poktan yang MENANAM pada tahun itu,
+             * sejalan dengan kolom cacah poktan di sebelahnya. Bila mencakup
+             * seluruh poktan di SP, pembaca yang membagi luas dengan cacah
+             * poktan akan mendapat angka yang tidak masuk akal.
+             */
             if (! in_array($tanam['poktan'], $baris['poktan'], true)) {
                 $baris['poktan'][] = $tanam['poktan'];
+                $baris['luas_lahan'] += self::rekapLahanPoktan($tanam['poktan_id'])['luas_total'];
             }
+
+            // SP asal, dipakai tab Per Kelompok Tani. Dihimpun agar tetap
+            // benar bila kelak satu poktan menggarap lintas SP.
+            if (! in_array($tanam['satuan_permukiman'], $baris['sp'], true)) {
+                $baris['sp'][] = $tanam['satuan_permukiman'];
+            }
+
+            // Volume benih dijumlahkan per PENANAMAN, sebab satu poktan dapat
+            // memakai beberapa benih pada musim yang sama.
+            $baris['volume_benih'] += (float) ($tanam['volume_benih'] ?? 0);
 
             $baris['realisasi_tanam'] += (float) $tanam['realisasi_tanam'];
 
@@ -1218,7 +1306,7 @@ class DummyData
         foreach ($peta as $baris) {
             $baris['jumlah_poktan'] = count($baris['poktan']);
 
-            foreach (['realisasi_tanam', 'hasil_panen', 'puso', 'belum_dipanen'] as $kolom) {
+            foreach (['luas_lahan', 'volume_benih', 'realisasi_tanam', 'hasil_panen', 'puso', 'belum_dipanen'] as $kolom) {
                 $baris[$kolom] = round($baris[$kolom], 2);
             }
 
@@ -2678,6 +2766,20 @@ class DummyData
             // sehingga ia TIDAK boleh muncul pada pilihan benih di form
             // penanaman - dan itulah yang dijaga uji sisa stok.
             ['id_saprotan' => 6, 'jenis' => 'Benih', 'nama' => 'BENIH JAGUNG LOKAL', 'komoditas_id' => 1, 'komoditas' => 'JAGUNG', 'jumlah' => 30.0, 'satuan' => 'Kilogram', 'tanggal_perolehan' => '2025-05-20', 'sumber' => 'Swadaya', 'penerima' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'keterangan' => 'Benih swadaya anggota, habis dipakai penanaman Juni 2025.'],
+            // TIGA BENIH SWADAYA, ditambahkan 2026-08-24.
+            //
+            // Sebelumnya ketiga penanaman yang memakainya dicatat TANPA benih
+            // sama sekali, dengan alasan "bibit swadaya tidak melalui modul
+            // saprotan". Alasan itu keliru: enum sumber perolehan sudah memuat
+            // `Swadaya` sejak awal, dan BENIH JAGUNG LOKAL di atas sudah
+            // memakainya. Yang kurang hanyalah keseragaman.
+            //
+            // Mendaftarkannya di sini membuat benih swadaya ikut punya STOK.
+            // Tanpa itu ia seolah tak terbatas: poktan dapat mencatat
+            // penanaman sebanyak apa pun tanpa ada yang menegur.
+            ['id_saprotan' => 7, 'jenis' => 'Benih', 'nama' => 'BIBIT CABAI SEMAI SENDIRI', 'komoditas_id' => 5, 'komoditas' => 'CABAI', 'jumlah' => 1.5, 'satuan' => 'Kilogram', 'tanggal_perolehan' => '2025-11-28', 'sumber' => 'Swadaya', 'penerima' => 'POKTAN TANI BERSATU', 'poktan_id' => 3, 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'keterangan' => 'Disemai anggota dari buah panen sebelumnya.'],
+            ['id_saprotan' => 8, 'jenis' => 'Benih', 'nama' => 'BENIH JAGUNG SWADAYA KELOMPOK', 'komoditas_id' => 1, 'komoditas' => 'JAGUNG', 'jumlah' => 15.0, 'satuan' => 'Kilogram', 'tanggal_perolehan' => '2026-05-30', 'sumber' => 'Swadaya', 'penerima' => 'POKTAN SUBUR MAKMUR', 'poktan_id' => 2, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'keterangan' => 'Dibeli kelompok dari kas iuran anggota.'],
+            ['id_saprotan' => 9, 'jenis' => 'Benih', 'nama' => 'BENIH PADI LOKAL SWADAYA', 'komoditas_id' => 2, 'komoditas' => 'PADI', 'jumlah' => 12.0, 'satuan' => 'Kilogram', 'tanggal_perolehan' => '2025-12-20', 'sumber' => 'Swadaya', 'penerima' => 'POKTAN HARAPAN BARU', 'poktan_id' => 4, 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain', 'keterangan' => 'Sisa gabah panen lalu yang disisihkan untuk benih.'],
         ];
     }
 
@@ -2872,7 +2974,7 @@ class DummyData
             // Tanpa benih tercatat: cabai ditanam dari bibit swadaya yang
             // tidak pernah masuk modul saprotan. Sengaja ada agar cabang
             // nullable ikut terlihat saat peninjauan.
-            ['id_penanaman' => 4, 'poktan_id' => 3, 'poktan' => 'POKTAN TANI BERSATU', 'komoditas_id' => 5, 'komoditas' => 'CABAI', 'saprotan_id' => null, 'volume_benih' => null, 'realisasi_tanam' => 0.30, 'periode_tanam' => '2025-12', 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'keterangan' => 'Bibit swadaya anggota, tidak melalui penyaluran.'],
+            ['id_penanaman' => 4, 'poktan_id' => 3, 'poktan' => 'POKTAN TANI BERSATU', 'komoditas_id' => 5, 'komoditas' => 'CABAI', 'saprotan_id' => 7, 'volume_benih' => 1.5, 'realisasi_tanam' => 0.30, 'periode_tanam' => '2025-12', 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'keterangan' => 'Bibit swadaya anggota, didaftarkan lebih dulu pada penyaluran saprotan.'],
             // Menghabiskan seluruh 30 kg BENIH JAGUNG LOKAL, sehingga benih
             // itu tidak lagi muncul sebagai pilihan pada penanaman berikutnya.
             ['id_penanaman' => 5, 'poktan_id' => 1, 'poktan' => 'POKTAN MEKAR JAYA', 'komoditas_id' => 1, 'komoditas' => 'JAGUNG', 'saprotan_id' => 6, 'volume_benih' => 30.0, 'realisasi_tanam' => 1.50, 'periode_tanam' => '2025-06', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'keterangan' => null],
@@ -2887,14 +2989,14 @@ class DummyData
             // BUKAN pada POKTAN MEKAR JAYA: lahan tersedia milik Mekar Jaya
             // sudah dikunci uji peramban pada angka 3,45 ha, dan menambah
             // penanaman di sana akan memerahkannya tanpa ada yang rusak.
-            ['id_penanaman' => 6, 'poktan_id' => 2, 'poktan' => 'POKTAN SUBUR MAKMUR', 'komoditas_id' => 1, 'komoditas' => 'JAGUNG', 'saprotan_id' => null, 'volume_benih' => null, 'realisasi_tanam' => 1.00, 'periode_tanam' => '2026-06', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'keterangan' => 'Tanaman masih berdiri, panen diperkirakan tiga bulan lagi.'],
+            ['id_penanaman' => 6, 'poktan_id' => 2, 'poktan' => 'POKTAN SUBUR MAKMUR', 'komoditas_id' => 1, 'komoditas' => 'JAGUNG', 'saprotan_id' => 8, 'volume_benih' => 15.0, 'realisasi_tanam' => 1.00, 'periode_tanam' => '2026-06', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'keterangan' => 'Tanaman masih berdiri, panen diperkirakan tiga bulan lagi.'],
             // GAGAL TOTAL, satu-satunya pada data contoh. Panennya tercatat
             // 0 ha dengan puso menutup seluruh luas, sehingga cabang itu
             // ikut terlihat saat peninjauan dan punya benda nyata untuk
             // diuji. Ditaruh pada POKTAN HARAPAN BARU yang belum pernah
             // menanam, agar tidak mengganggu perhitungan lahan poktan lain
             // yang sudah dikunci uji peramban.
-            ['id_penanaman' => 7, 'poktan_id' => 4, 'poktan' => 'POKTAN HARAPAN BARU', 'komoditas_id' => 2, 'komoditas' => 'PADI', 'saprotan_id' => null, 'volume_benih' => null, 'realisasi_tanam' => 0.50, 'periode_tanam' => '2026-01', 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain', 'keterangan' => 'Bibit swadaya anggota.'],
+            ['id_penanaman' => 7, 'poktan_id' => 4, 'poktan' => 'POKTAN HARAPAN BARU', 'komoditas_id' => 2, 'komoditas' => 'PADI', 'saprotan_id' => 9, 'volume_benih' => 12.0, 'realisasi_tanam' => 0.50, 'periode_tanam' => '2026-01', 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain', 'keterangan' => 'Benih swadaya kelompok, disisihkan dari gabah panen sebelumnya.'],
         ];
     }
 

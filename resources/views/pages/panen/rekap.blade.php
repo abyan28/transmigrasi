@@ -39,10 +39,62 @@
         $daftarTahun = DummyData::tahunPanenTercatat();
         $tahunPanen = (int) request('tahun', date('Y'));
 
-        $rekap = DummyData::rekapPanen($kelompok, $tahunPanen);
+        /*
+         * PENYARING SILANG (ditambahkan 2026-08-24). Tab menentukan baris APA,
+         * penyaring menentukan baris MANA. Keduanya sumbu terpisah, dan justru
+         * gabungannya yang berguna: "berapa produksi jagung di SP Weain" tidak
+         * dapat dijawab tanpa keduanya.
+         *
+         * Penyaring yang dirender berbeda tiap tab, sebab menyaring SP pada
+         * tab Per SP tidak menyaring apa pun yang berarti - ia hanya
+         * menyisakan satu baris yang sudah terlihat sejak awal.
+         */
+        $filterSp = $kelompok !== 'sp' ? request('sp') : null;
+        $filterKomoditas = $kelompok !== 'komoditas' ? request('komoditas') : null;
 
-        // Tab Tahun tidak ada; urutannya seragam menurut produksi terbesar.
+        /*
+         * Opsi dihitung dari PENANAMAN pada tahun terpilih, bukan dari data
+         * master. Master memuat enam SP dan lima komoditas, sedangkan tahun
+         * 2025 hanya memiliki satu dari masing-masing; menawarkan sisanya
+         * berarti menyuguhkan pilihan yang DIJAMIN menghasilkan tabel kosong.
+         */
+        $opsiFilter = DummyData::opsiFilterRekapPanen($tahunPanen);
+
+        /*
+         * Nilai yang tidak lagi tersedia DILEPAS, bukan dibiarkan menghasilkan
+         * tabel kosong tanpa penjelasan.
+         *
+         * Keadaannya nyata: petugas menyaring CABAI pada 2026, lalu berpindah
+         * ke 2025 - dan cabai tidak ditanam tahun itu. Tanpa pelepasan ini
+         * halaman tampak rusak; tanpa pemberitahuannya, petugas mengira
+         * penyaringnya yang tidak bekerja.
+         */
+        $filterDilepas = [];
+
+        if ($filterSp !== null && $filterSp !== '' && ! in_array($filterSp, $opsiFilter['sp'], true)) {
+            $filterDilepas[] = 'Satuan Permukiman '.$filterSp;
+            $filterSp = null;
+        }
+
+        if ($filterKomoditas !== null && $filterKomoditas !== '' && ! in_array($filterKomoditas, $opsiFilter['komoditas'], true)) {
+            $filterDilepas[] = 'Komoditas '.$filterKomoditas;
+            $filterKomoditas = null;
+        }
+
+        // String kosong berarti "semua", bukan penyaring bernilai kosong.
+        $filterSp = $filterSp !== '' ? $filterSp : null;
+        $filterKomoditas = $filterKomoditas !== '' ? $filterKomoditas : null;
+
+        $rekap = DummyData::rekapPanen($kelompok, $tahunPanen, $filterSp, $filterKomoditas);
+
+        // Dipakai judul tabel dan baris total. Angka rekap tanpa cakupannya
+        // tidak dapat disalin ke laporan mana pun.
+        $cakupanFilter = array_values(array_filter([$filterSp, $filterKomoditas]));
+        $adaFilter = $cakupanFilter !== [];
+
         $totalPoktan = array_sum(array_column($rekap, 'jumlah_poktan'));
+        $totalLuas = array_sum(array_column($rekap, 'luas_lahan'));
+        $totalBenih = array_sum(array_column($rekap, 'volume_benih'));
         $totalTanam = array_sum(array_column($rekap, 'realisasi_tanam'));
         $totalPanen = array_sum(array_column($rekap, 'hasil_panen'));
         $totalPuso = array_sum(array_column($rekap, 'puso'));
@@ -50,7 +102,15 @@
         $totalProduksi = array_sum(array_column($rekap, 'produksi_ton'));
         $totalNilai = array_sum(array_column($rekap, 'nilai_jual'));
 
-        // Produktivitas total pun TERTIMBANG, bukan rata-rata kolomnya.
+        /*
+         * Produktivitas total pun TERTIMBANG, bukan rata-rata kolomnya.
+         *
+         * Contoh nyata pada tahun 2026: produksi 10,151 ton dibagi luas
+         * dipanen 3,45 ha menghasilkan 2,942 ton/ha. Rata-rata naif ketiga
+         * baris justru 1,452 - tertarik turun oleh baris yang gagal total dan
+         * berproduktivitas nol, padahal luas panennya nol pula sehingga tidak
+         * seharusnya ikut menimbang.
+         */
         $produktivitasTotal = $totalPanen > 0 ? $totalProduksi / $totalPanen : 0.0;
 
         /*
@@ -65,8 +125,26 @@
             'poktan' => 'Kelompok Tani',
         ];
 
-        // Kolom cacah poktan mubazir pada tab poktan: nilainya selalu 1.
+        /*
+         * KOLOM KEDUA BERBEDA TIAP TAB, ditetapkan pemilik proyek 2026-08-24.
+         *
+         * - Per SP dan Per Poktan  -> Luas Lahan, sebab lahan memang milik poktan
+         * - Per Komoditas          -> Volume Benih
+         *
+         * Luas lahan sengaja TIDAK ditampilkan pada tab komoditas: satu poktan
+         * menanam beberapa komoditas, sehingga lahannya akan terhitung
+         * berkali-kali dan totalnya melampaui luas kawasan yang sebenarnya.
+         *
+         * Cacah poktan tidak ditampilkan pada tab poktan, sebab nilainya
+         * selalu satu.
+         */
         $tampilkanCacahPoktan = $kelompok !== 'poktan';
+        $tampilkanLuasLahan = $kelompok !== 'komoditas';
+        $tampilkanVolumeBenih = $kelompok === 'komoditas';
+
+        // Cacah kolom, dipakai memeriksa kesejajaran baris total. Tetap: nama,
+        // 4 kolom luas, produktivitas, produksi, nilai jual.
+        $cacahKolom = 8 + (int) $tampilkanCacahPoktan + (int) $tampilkanLuasLahan + (int) $tampilkanVolumeBenih;
     @endphp
 
     <x-sim.page-header judul="Rekap Hasil Panen"
@@ -98,59 +176,133 @@
     </nav>
 
     {{--
-        Penyaring periode. Formulir GET biasa, sehingga tetap bekerja tanpa
-        JavaScript. Tahun terpilih ikut dibawa saat berpindah tab lewat isian
-        tersembunyi pada tiap tautan? Tidak - tautan tab sengaja TIDAK membawa
-        tahunnya, sebab tab dan periode adalah dua sumbu terpisah dan
-        menggabungkannya membuat alamat tautan tetap tidak lagi dapat digilas
-        menjadi berkas statis.
+        Penyaring. Formulir GET biasa, sehingga tetap bekerja tanpa JavaScript.
+
+        Tautan tab sengaja TIDAK membawa penyaringnya: tab dan penyaring adalah
+        dua sumbu terpisah, dan menggabungkannya membuat alamat tautan tetap
+        tidak lagi dapat digilas menjadi berkas statis.
     --}}
     <form method="GET" action="{{ route('panen.rekap.kelompok', ['kelompok' => $kelompok]) }}"
-        class="mb-6 flex flex-wrap items-end gap-3 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
-        <div>
-            <select id="filter_tahun" name="tahun"
-                class="h-10 w-56 rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
-                {{--
-                    Tahun berjalan selalu ditawarkan meski belum ada
-                    penanamannya, sebab itulah bawaan halaman ini. Tanpa
-                    baris ini, pilihan yang sedang aktif justru tidak ada di
-                    dalam daftarnya sendiri setiap awal tahun.
-                --}}
-                @foreach (array_unique(array_merge([(int) date('Y')], $daftarTahun)) as $t)
-                    <option value="{{ $t }}" @selected($tahunPanen === $t)>{{ $t }}</option>
-                @endforeach
-            </select>
+        class="mb-6 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+        <div class="flex flex-wrap items-end gap-3">
+            <div>
+                <label for="filter_tahun"
+                    class="mb-1.5 block text-theme-xs font-medium text-gray-700 dark:text-gray-400">
+                    Tahun Panen
+                </label>
+                <select id="filter_tahun" name="tahun"
+                    class="h-10 w-40 rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
+                    {{--
+                        Tahun berjalan selalu ditawarkan meski belum ada
+                        penanamannya, sebab itulah bawaan halaman ini. Tanpa
+                        baris ini, pilihan yang sedang aktif justru tidak ada di
+                        dalam daftarnya sendiri setiap awal tahun.
+                    --}}
+                    @foreach (array_unique(array_merge([(int) date('Y')], $daftarTahun)) as $t)
+                        <option value="{{ $t }}" @selected($tahunPanen === $t)>{{ $t }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{--
+                Penyaring SP tidak dirender pada tab Per SP: menyaringnya di
+                sana hanya menyisakan satu baris yang sudah terlihat sejak awal,
+                dan kontrol yang tidak berguna sama saja dengan kontrol mati.
+            --}}
+            @if ($kelompok !== 'sp')
+                <div>
+                    <label for="filter_sp"
+                        class="mb-1.5 block text-theme-xs font-medium text-gray-700 dark:text-gray-400">
+                        Satuan Permukiman
+                    </label>
+                    <select id="filter_sp" name="sp"
+                        class="h-10 w-52 rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
+                        <option value="">Semua SP</option>
+                        @foreach ($opsiFilter['sp'] as $nama)
+                            <option value="{{ $nama }}" @selected($filterSp === $nama)>{{ $nama }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            @endif
+
+            @if ($kelompok !== 'komoditas')
+                <div>
+                    <label for="filter_komoditas"
+                        class="mb-1.5 block text-theme-xs font-medium text-gray-700 dark:text-gray-400">
+                        Komoditas
+                    </label>
+                    <select id="filter_komoditas" name="komoditas"
+                        class="h-10 w-48 rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
+                        <option value="">Semua komoditas</option>
+                        @foreach ($opsiFilter['komoditas'] as $nama)
+                            <option value="{{ $nama }}" @selected($filterKomoditas === $nama)>{{ $nama }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            @endif
+
+            <button type="submit"
+                class="h-10 rounded-lg bg-brand-500 px-4 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
+                Terapkan Filter
+            </button>
+
+            @if ($adaFilter)
+                <a href="{{ route('panen.rekap.kelompok', ['kelompok' => $kelompok]) }}?tahun={{ $tahunPanen }}"
+                    class="flex h-10 items-center rounded-lg border border-gray-300 px-3 text-theme-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
+                    Bersihkan Filter
+                </a>
+            @endif
         </div>
 
-        <button type="submit"
-            class="h-10 rounded-lg bg-brand-500 px-4 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
-            Terapkan Tahun
-        </button>
+        {{--
+            Penyaring yang DILEPAS wajib diberitahukan. Tanpa ini petugas yang
+            berpindah tahun akan melihat penyaringnya kembali ke "Semua" tanpa
+            tahu sebabnya, dan mengira sistem mengabaikan pilihannya.
+        --}}
+        @if ($filterDilepas !== [])
+            <p class="mt-3 rounded-lg bg-yellow-50 p-3 text-theme-xs text-yellow-800 dark:bg-yellow-500/10 dark:text-yellow-400">
+                Filter {{ implode(' dan ', $filterDilepas) }} dilepas,
+                sebab tidak ada penanamannya pada tahun panen {{ $tahunPanen }}.
+            </p>
+        @endif
 
-        <p class="ml-auto max-w-md text-theme-xs text-gray-500 dark:text-gray-400">
-            Rekap selalu terikat satu tahun panen. Luas tidak dijumlahkan lintas tahun,
+        <p class="mt-3 text-theme-xs text-gray-500 dark:text-gray-400">
+            Pilihan penyaring hanya memuat yang benar-benar ada pada tahun terpilih.
+            Rekap selalu terikat satu tahun panen; luas tidak dijumlahkan lintas tahun,
             sebab bidang yang sama memang ditanami berulang kali.
         </p>
     </form>
-
     {{-- Tabel agregat, tanpa kartu statistik --}}
     <div class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
         <div class="border-b border-gray-200 p-5 dark:border-gray-800">
-            {{-- Periode ditulis pada JUDUL, bukan disembunyikan di penyaring:
-                 angka rekap tanpa periodenya tidak dapat disalin ke laporan
-                 mana pun. --}}
+            {{--
+                Periode DAN penyaring ditulis pada JUDUL, bukan disembunyikan
+                di formulir: angka rekap tanpa cakupannya tidak dapat disalin
+                ke laporan mana pun, dan pembaca yang menyalinnya akan mengira
+                itu angka seluruh kawasan.
+            --}}
             <h2 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">
                 Rekap per {{ $labelKelompok[$kelompok] ?? 'Satuan Permukiman' }}
                 &middot; Tahun Panen {{ $tahunPanen }}
+                @if ($adaFilter)
+                    @foreach ($cakupanFilter as $nilai)
+                        &middot; {{ $nilai }}
+                    @endforeach
+                @endif
             </h2>
             <p class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
                 {{ count($rekap) }} kelompok, diurutkan dari produksi terbesar.
+                @if ($adaFilter)
+                    Seluruh angka pada tabel ini hanya mencakup penyaring di atas.
+                @endif
             </p>
         </div>
 
         @if (empty($rekap))
-            <x-sim.empty-state judul="Belum ada panen pada tahun {{ $tahunPanen }}"
-                pesan="Pilih tahun lain, atau catat hasil panen lebih dulu." />
+            <x-sim.empty-state judul="Tidak ada data yang cocok"
+                :pesan="$adaFilter
+                    ? 'Tidak ada penanaman pada tahun ' . $tahunPanen . ' yang cocok dengan penyaring ' . implode(' dan ', $cakupanFilter) . '.'
+                    : 'Belum ada penanaman pada tahun ' . $tahunPanen . '. Pilih tahun lain, atau catat hasil panen lebih dulu.'" />
         @else
             <div class="overflow-x-auto">
                 <table class="w-full text-left">
@@ -170,6 +322,30 @@
                             @if ($tampilkanCacahPoktan)
                                 <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">
                                     Poktan
+                                </th>
+                            @endif
+                            {{--
+                                Luas Lahan hanya pada tab SP dan Poktan. Pada
+                                tab komoditas ia mustahil benar: satu poktan
+                                menanam beberapa komoditas, sehingga lahannya
+                                terhitung berkali-kali dan totalnya melampaui
+                                luas kawasan yang sebenarnya.
+                            --}}
+                            @if ($tampilkanLuasLahan)
+                                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">
+                                    Luas Lahan (ha)
+                                </th>
+                            @endif
+                            {{--
+                                Volume Benih menggantikannya pada tab komoditas.
+                                Di situ ia justru bermakna: takaran benih per
+                                komoditas dapat dibandingkan antarbaris, dan
+                                seluruh benih kini tercatat sebab yang swadaya
+                                pun wajib didaftarkan lebih dulu.
+                            --}}
+                            @if ($tampilkanVolumeBenih)
+                                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">
+                                    Volume Benih (kg)
                                 </th>
                             @endif
                             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">
@@ -203,10 +379,10 @@
                                 Menunggu Panen (ha)
                             </th>
                             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">
-                                Produksi (ton)
+                                Produktivitas (ton/ha)
                             </th>
                             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">
-                                Produktivitas (ton/ha)
+                                Produksi (ton)
                             </th>
                             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">
                                 Perkiraan Nilai Jual
@@ -216,12 +392,34 @@
                     <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
                         @foreach ($rekap as $r)
                             <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
+                                {{--
+                                    Pada tab Kelompok Tani, SP asal disisipkan
+                                    di bawah nama poktan. Nama poktan sendiri
+                                    tidak menyatakan lokasinya, sehingga tanpa
+                                    keterangan ini pembaca harus mengingat
+                                    sendiri kelompok mana ada di SP mana.
+                                --}}
                                 <td class="px-5 py-3 text-theme-sm font-medium text-gray-800 dark:text-white/90">
                                     {{ $r['nama'] }}
+                                    @if ($kelompok === 'poktan' && $r['sp'] !== [])
+                                        <p class="mt-0.5 text-theme-xs font-normal text-gray-500 dark:text-gray-400">
+                                            {{ implode(', ', $r['sp']) }}
+                                        </p>
+                                    @endif
                                 </td>
                                 @if ($tampilkanCacahPoktan)
                                     <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
                                         {{ number_format($r['jumlah_poktan'], 0, ',', '.') }}
+                                    </td>
+                                @endif
+                                @if ($tampilkanLuasLahan)
+                                    <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
+                                        {{ number_format($r['luas_lahan'], 2, ',', '.') }}
+                                    </td>
+                                @endif
+                                @if ($tampilkanVolumeBenih)
+                                    <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
+                                        {{ number_format($r['volume_benih'], 2, ',', '.') }}
                                     </td>
                                 @endif
                                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
@@ -241,11 +439,11 @@
                                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
                                     {{ number_format($r['belum_dipanen'], 2, ',', '.') }}
                                 </td>
-                                <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
-                                    {{ number_format($r['produksi_ton'], 3, ',', '.') }}
-                                </td>
                                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
                                     {{ number_format($r['produktivitas_ton'], 3, ',', '.') }}
+                                </td>
+                                <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
+                                    {{ number_format($r['produksi_ton'], 3, ',', '.') }}
                                 </td>
                                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
                                     Rp {{ number_format($r['nilai_jual'], 0, ',', '.') }}
@@ -259,12 +457,33 @@
                         {{-- "Total tahun ini", BUKAN "Total" saja: yang kedua
                              terbaca sebagai total sejak sistem berdiri. --}}
                         <tr class="motif-baris-total">
+                            {{--
+                                Baris total IKUT MENYEMPIT ketika penyaring aktif,
+                                dan itu wajib dinyatakan. Tanpa keterangan ini,
+                                angkanya dapat disalin ke laporan sebagai total
+                                kawasan padahal hanya mencakup satu komoditas.
+                            --}}
                             <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">
                                 Total tahun panen {{ $tahunPanen }}
+                                @if ($adaFilter)
+                                    <span class="block text-theme-xs font-normal text-gray-500 dark:text-gray-400">
+                                        {{ implode(', ', $cakupanFilter) }} saja
+                                    </span>
+                                @endif
                             </td>
                             @if ($tampilkanCacahPoktan)
                                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
                                     {{ number_format($totalPoktan, 0, ',', '.') }}
+                                </td>
+                            @endif
+                            @if ($tampilkanLuasLahan)
+                                <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
+                                    {{ number_format($totalLuas, 2, ',', '.') }}
+                                </td>
+                            @endif
+                            @if ($tampilkanVolumeBenih)
+                                <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
+                                    {{ number_format($totalBenih, 2, ',', '.') }}
                                 </td>
                             @endif
                             <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
@@ -279,12 +498,19 @@
                             <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
                                 {{ number_format($totalBelum, 2, ',', '.') }}
                             </td>
-                            <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
-                                {{ number_format($totalProduksi, 3, ',', '.') }}
-                            </td>
-                            {{-- Tertimbang, bukan rata-rata kolom di atasnya --}}
+                            {{--
+                                TERTIMBANG, bukan rata-rata kolom di atasnya.
+                                Total produksi dibagi total luas dipanen; pada
+                                2026 menghasilkan 10,151 / 3,45 = 2,942 ton/ha,
+                                sedangkan rata-rata naif ketiga barisnya hanya
+                                1,452 - tertarik turun oleh baris gagal total
+                                yang luas panennya nol.
+                            --}}
                             <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
                                 {{ number_format($produktivitasTotal, 3, ',', '.') }}
+                            </td>
+                            <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
+                                {{ number_format($totalProduksi, 3, ',', '.') }}
                             </td>
                             <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
                                 Rp {{ number_format($totalNilai, 0, ',', '.') }}

@@ -568,16 +568,19 @@ it('menautkan volume benih penanaman ke baris saprotan yang sah', function () {
     // satu bantuan, bukan hukum alam: benih swadaya dan komoditas lain
     // memakai takaran berbeda.
     foreach (DummyData::penanaman() as $tanam) {
-        expect($tanam)->toHaveKey('saprotan_id')
-            ->and($tanam)->toHaveKey('volume_benih');
-
-        if ($tanam['saprotan_id'] === null) {
-            // Boleh kosong: penanaman dari benih yang tidak tercatat pada
-            // modul saprotan tetap harus dapat didata.
-            expect($tanam['volume_benih'])->toBeNull();
-
-            continue;
-        }
+        /*
+         * BENIH WAJIB sejak 2026-08-24, termasuk yang swadaya.
+         *
+         * Sebelumnya boleh kosong dengan alasan "bibit swadaya tidak melalui
+         * modul saprotan". Alasan itu keliru: enum sumber perolehan sudah
+         * memuat `Swadaya` sejak awal, dan satu baris data contoh sudah
+         * memakainya. Yang kurang hanyalah keseragaman.
+         *
+         * Mewajibkannya membuat benih swadaya ikut punya stok; tanpa itu ia
+         * seolah tak terbatas.
+         */
+        expect($tanam['saprotan_id'])->not->toBeNull("penanaman {$tanam['id_penanaman']} tanpa benih")
+            ->and($tanam['volume_benih'])->not->toBeNull();
 
         $benih = collect(DummyData::saprotan())
             ->firstWhere('id_saprotan', $tanam['saprotan_id']);
