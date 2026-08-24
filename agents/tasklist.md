@@ -784,6 +784,9 @@ Butir tindak lanjut 9 pada `notes.md` bagian 4, dikerjakan atas permintaan pemil
 ## Tahap 9 — Dashboard dengan Data Nyata
 
 - [ ] Task 9.1 - Ganti data dummy dashboard dengan query nyata `[Sulit]`
+  * **Lima agregat produksi wajib ikut diganti**, ditambahkan 2026-08-24 sebagai indikator 17: `realisasi_tanam_ha`, `hasil_panen_ha`, `puso_ha`, `belum_dipanen_ha`, `produktivitas_ton_ha`
+  * Kedua identitas pada `rules.md` 9.9 dan 9.11 wajib tetap berlaku setelah diganti kueri, dan sudah dijaga uji. Produktivitas **tertimbang** (9.8d), bukan rata-rata kolom
+  * Angka agregat sekarang berskala kawasan, **bukan** penjumlahan `penanaman()` yang hanya beberapa baris contoh (`rules.md` 9.8g)
 - [ ] Task 9.2 - Filter wilayah dan periode terhubung ke seluruh visualisasi `[Sedang]`
 - [ ] Task 9.3 - Drill-down klik grafik menuju rincian per SP `[Sulit]`
 - [ ] Task 9.4 - Optimasi query dashboard (indeks, agregasi, eager loading) `[Sulit]`

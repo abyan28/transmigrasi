@@ -905,6 +905,7 @@ Indikator PRD §7.8 dipetakan ke jenis visualisasi:
 | 14 | Rekap penghuni kawasan | Kartu statistik | Ya → per SP |
 | 15 | Status kondisi SP | Kartu statistik + tabel berbadge | Ya → per SP |
 | 16 | Pengaduan per status | Donat | Ya &mdash; daftar pengaduan |
+| 17 | Produksi pertanian kawasan | Kartu statistik | Belum &mdash; lihat rekap panen |
 
 **Aturan dashboard:**
 1. Filter global wilayah dan periode di bagian atas, memengaruhi seluruh visualisasi. Tingkatan filter: Kawasan → Kecamatan → Desa → SP, seluruhnya opsional.
@@ -918,6 +919,17 @@ Indikator PRD §7.8 dipetakan ke jenis visualisasi:
 9. **Visualisasi dikelompokkan menurut topik, bukan menurut nomor indikator.** Dashboard memuat lebih dari dua puluh blok; mengurutkannya menurut nomor indikator membuat pembaca dilempar antartopik dan satu pokok bahasan terpecah di beberapa tempat berjauhan. Urutan bagiannya: Ringkasan Kawasan, Kependudukan, Pertanian dan Ekonomi, Infrastruktur dan Layanan, lalu Perbandingan Antar SP.
 10. Tiap bagian diawali `x-sim.judul-bagian` yang memakai `<h2>`, sehingga hierarki tajuk tidak melompat dari `<h1>` halaman ke `<h3>` kartu grafik.
 11. **Tiap baris grid wajib genap.** Lebar kartu disetel agar tidak menyisakan kolom menganggur di ujung baris; kartu yang berdiri sendiri diletakkan selebar halaman, di luar grid.
+
+**Indikator 17, produksi pertanian kawasan** (ditambahkan 2026-08-24). Empat kartu statistik pada bagian Ringkasan Kawasan: Realisasi Tanam, Hasil Panen, Puso, dan Produktivitas Rata-rata.
+
+Lahir dari perombakan menu Pertanian. Sebelumnya dashboard hanya menyebut **volume panen**, sehingga pembaca tahu berapa ton dihasilkan tetapi tidak tahu dari berapa hektare, berapa yang gagal, dan berapa yang masih menunggu panen.
+
+- Diletakkan di **Ringkasan Kawasan**, bukan bagian Pertanian. Bagian itu berisi `chart-card` bergrid tiga kolom, dan menyisipkan kartu statistik ke sana memecah polanya.
+- Empat kartu tepat satu baris, memenuhi poin 11 di atas.
+- **Angka mutlak wajib disertai porsinya.** Puso 24,60 ha tidak dapat dinilai pembaca tanpa penyebutnya: terdengar kecil bagi kawasan 3.250 ha, padahal yang menentukan adalah luas yang benar-benar ditanam.
+- **Produktivitas tertimbang**, yaitu total produksi dibagi luas dipanen (`rules.md` §9.8d). Bukan rata-rata produktivitas tiap komoditas.
+- Keempat angkanya wajib memenuhi dua identitas pada `rules.md` §9.9 dan §9.11. Tanpa itu, dua kartu bersebelahan dapat saling membantah.
+- Belum memiliki drill-down per SP; rinciannya dibaca pada halaman rekap panen yang sudah menyajikan keempat angka itu per SP, komoditas, dan poktan.
 
 **Indikator 15, status kondisi SP.** Menampilkan kesiapan layanan dasar tiap satuan permukiman sebagai satu label yang mudah dibaca pemangku kepentingan (`rules.md` §10c).
 

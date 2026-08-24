@@ -39,8 +39,12 @@
     $namaKomoditas = $data['nama'] ?? null;
     $volumeTerbesar = $sebaran === [] ? null : array_key_first($sebaran);
 
-    // Pencocokan tidak peka huruf besar-kecil: data komoditas memakai huruf
-    // kapital seluruhnya, sedangkan sebaran memakai huruf judul.
+    // Pencocokan tetap tidak peka huruf besar-kecil sebagai jaring pengaman.
+    //
+    // Sejak 2026-08-24 kunci sebaran sudah sama persis dengan nama pada data
+    // master, sehingga pencocokan langsung pun akan berhasil. Yang dijaga di
+    // sini keadaan berbeda: nama komoditas yang BARU diketik petugas belum
+    // tentu berhuruf kapital pada saat form dirender.
     $volumeKomoditas = null;
     foreach ($sebaran as $nama => $ton) {
         if ($namaKomoditas !== null && mb_strtolower($nama) === mb_strtolower($namaKomoditas)) {

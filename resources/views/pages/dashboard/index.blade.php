@@ -39,6 +39,28 @@
 
         $persenHuni = round($ringkasan['rumah_terhuni'] / $ringkasan['rumah_total'] * 100);
 
+        /*
+         * Tahun terakhir yang terdata, dipakai melabeli kartu volume panen.
+         *
+         * Dibaca dari deret, BUKAN dari `date('Y')`. Yang dapat dijamin benar
+         * adalah "angka ini milik tahun terakhir yang terdata"; menyebutnya
+         * tahun berjalan menjanjikan hal yang belum tentu benar begitu tahun
+         * berganti sementara datanya belum masuk.
+         */
+        $tahunTerakhir = end($deret['tahun']);
+        reset($deret['tahun']);
+
+        // Porsi produksi terhadap penyebutnya masing-masing. Angka mutlak
+        // tanpa porsi tidak dapat dinilai pembaca: 24 ha puso terdengar kecil
+        // bagi kawasan 3.250 ha, padahal yang menentukan luas yang ditanam.
+        //
+        // Diformat memakai `number_format`, bukan `round`: round menghasilkan
+        // "19.5" bertitik, sedangkan seluruh angka lain di halaman ini memakai
+        // koma sebagai pemisah desimal. Satu angka bertitik di antara puluhan
+        // angka berkoma terbaca sebagai kekeliruan cetak.
+        $persenTanam = number_format($ringkasan['realisasi_tanam_ha'] / $ringkasan['luas_lahan_total'] * 100, 1, ',', '.');
+        $persenPuso = number_format($ringkasan['puso_ha'] / $ringkasan['realisasi_tanam_ha'] * 100, 1, ',', '.');
+
         // Komoditas dengan volume terbesar, dipakai kartu komoditas utama.
         //
         // Dipilih berdasarkan NILAI, bukan urutan larik. `array_key_first()`
@@ -204,7 +226,20 @@
 
     {{-- Baris kedua kartu: produksi dan pengaduan --}}
     <div class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <x-sim.stat-card label="Volume Panen Tahun Ini"
+        {{--
+            TAHUNNYA DISEBUT, bukan "Tahun Ini" (diperbaiki 2026-08-24).
+
+            Angkanya tetap dan kebetulan cocok hanya karena deret berakhir
+            pada tahun berjalan. Begitu tahun berganti, label "Tahun Ini"
+            berbohong tanpa ada yang menegur - persis sifat cacat yang sudah
+            diperbaiki pada rekap panen.
+
+            Diambil dari tahun TERAKHIR DERET, bukan `date('Y')`. Yang dapat
+            dijamin benar adalah "angka ini milik tahun terakhir yang
+            terdata"; menyebutnya tahun berjalan menjanjikan hal yang belum
+            tentu benar.
+        --}}
+        <x-sim.stat-card :label="'Volume Panen ' . $tahunTerakhir"
             :nilai="number_format($ringkasan['volume_panen_ton'], 3, ',', '.')" satuan="ton"
             keterangan="Hasil konversi seluruh komoditas ke ton" url="/panen" />
 
@@ -219,6 +254,52 @@
         <x-sim.stat-card label="Pengaduan Belum Selesai"
             :nilai="number_format($ringkasan['pengaduan_terbuka'], 0, ',', '.')"
             keterangan="Menunggu ditindaklanjuti petugas" url="/pengaduan" />
+    </div>
+
+    {{--
+        Baris ketiga: produksi pertanian kawasan, indikator 17 (ditambahkan
+        2026-08-24).
+
+        Keempatnya berasal dari perombakan menu Pertanian dan sebelumnya tidak
+        terwakili sama sekali di dashboard: yang tampil hanya volume panen,
+        sehingga pembaca tahu berapa ton dihasilkan tetapi tidak tahu dari
+        berapa hektare, berapa yang gagal, dan berapa yang masih menunggu.
+
+        Empat kartu, satu baris genap sesuai ui-spec.md 9 poin 11.
+
+        Diletakkan di Ringkasan Kawasan, BUKAN di bagian Pertanian: bagian itu
+        berisi chart-card bergrid tiga kolom, dan menyisipkan kartu statistik
+        ke sana memecah polanya.
+    --}}
+    <div class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <x-sim.stat-card label="Realisasi Tanam"
+            :nilai="number_format($ringkasan['realisasi_tanam_ha'], 2, ',', '.')" satuan="ha"
+            :keterangan="$persenTanam . '% dari ' . number_format($ringkasan['luas_lahan_total'], 2, ',', '.') . ' ha lahan tergarap'"
+            url="/penanaman" />
+
+        <x-sim.stat-card label="Hasil Panen"
+            :nilai="number_format($ringkasan['hasil_panen_ha'], 2, ',', '.')" satuan="ha"
+            :keterangan="number_format($ringkasan['belum_dipanen_ha'], 2, ',', '.') . ' ha belum dipanen'"
+            url="/panen/rekap" />
+
+        {{--
+            Puso disertai porsinya, sebab angka mutlaknya sendiri tidak dapat
+            dinilai: 24 ha terdengar kecil bagi kawasan 3.250 ha, tetapi
+            besar-kecilnya baru bermakna terhadap luas yang benar-benar
+            ditanam.
+        --}}
+        <x-sim.stat-card label="Puso"
+            :nilai="number_format($ringkasan['puso_ha'], 2, ',', '.')" satuan="ha"
+            :keterangan="$persenPuso . '% dari luas yang ditanam'" />
+
+        {{--
+            TERTIMBANG, bukan rata-rata produktivitas tiap komoditas
+            (rules.md 9.8d). Merata-ratakannya mencampur ton per hektare
+            dengan kilogram per hektare.
+        --}}
+        <x-sim.stat-card label="Produktivitas Rata-rata"
+            :nilai="number_format($ringkasan['produktivitas_ton_ha'], 3, ',', '.')" satuan="ton/ha"
+            keterangan="Total produksi dibagi luas yang dipanen" />
     </div>
 
     <x-sim.judul-bagian judul="Kependudukan"

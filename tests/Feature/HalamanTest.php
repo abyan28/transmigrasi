@@ -4771,7 +4771,133 @@ it('memilih komoditas utama dashboard menurut nilai, bukan urutan larik', functi
     // Hasilnya tetap benar: jagung memang bervolume terbesar.
     $sebaran = DummyData::sebaranKomoditas();
 
-    expect(array_search(max($sebaran), $sebaran, true))->toBe('Jagung');
+    expect(array_search(max($sebaran), $sebaran, true))->toBe('JAGUNG');
+});
+
+it('menyamakan nama komoditas pada sebaran dengan data master', function () {
+    // Ketidakcocokan penamaan memaksa tiap pemakainya menormalkan huruf
+    // sendiri-sendiri, dan salah satunya keliru: `/komoditas` memakai
+    // `ucfirst(mb_strtolower(...))` yang hanya mengapitalkan huruf PERTAMA,
+    // sehingga KACANG TANAH dicari sebagai `Kacang tanah` dan tidak ketemu.
+    $master = array_column(DummyData::komoditas(), 'nama');
+
+    foreach (array_keys(DummyData::sebaranKomoditas()) as $nama) {
+        // `Lainnya` penampung sisa, bukan komoditas, sehingga memang tidak
+        // ada pada data master.
+        if ($nama === 'Lainnya') {
+            continue;
+        }
+
+        expect($master)->toContain($nama);
+    }
+});
+
+it('menampilkan volume tercatat untuk setiap komoditas, termasuk nama dua kata', function () {
+    // KACANG TANAH dan UBI KAYU sempat menampilkan tanda hubung seolah belum
+    // pernah panen, padahal keduanya tercatat 118,4 dan 68,2 ton. Yang gagal
+    // hanya nama dua kata; nama satu kata kebetulan berhasil, sehingga
+    // kekeliruannya tidak terlihat pada pemeriksaan sepintas.
+    //
+    // KEGAGALANNYA SENYAP: tanda hubung terbaca sebagai "belum ada panen",
+    // padahal artinya "kodenya tidak menemukan datanya". Dua keadaan berbeda
+    // ditampilkan sama, persis pola yang sudah tercatat pada notes.md 1b.6a.
+    $isi = $this->get(route('komoditas.index'))->assertOk()->getContent();
+    $sebaran = DummyData::sebaranKomoditas();
+
+    $duaKata = 0;
+
+    foreach (DummyData::komoditas() as $k) {
+        expect($sebaran)->toHaveKey($k['nama']);
+
+        // Angkanya benar-benar terender, bukan sekadar ada di larik.
+        expect($isi)->toContain(number_format($sebaran[$k['nama']], 1, ',', '.').' ton');
+
+        if (str_contains($k['nama'], ' ')) {
+            $duaKata++;
+        }
+    }
+
+    // Penjagaan terhadap ujinya sendiri: bila kelak seluruh komoditas
+    // bernama satu kata, uji di atas tidak lagi menguji apa pun.
+    expect($duaKata)->toBeGreaterThan(0);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Indikator produksi kawasan pada dashboard
+|--------------------------------------------------------------------------
+*/
+
+it('menjaga agregat produksi kawasan memenuhi kedua identitas aritmetika', function () {
+    // Identitas yang sama seperti pada tabel transaksi (rules.md 9.9 dan
+    // 9.11), tetapi pada tingkat kawasan. Tanpa penjagaan ini, dua kartu yang
+    // bersebelahan dapat saling membantah tanpa ada yang menegur.
+    $r = DummyData::ringkasanDashboard();
+
+    // realisasi tanam = hasil panen + puso + belum dipanen
+    $jumlah = $r['hasil_panen_ha'] + $r['puso_ha'] + $r['belum_dipanen_ha'];
+
+    expect(abs($jumlah - $r['realisasi_tanam_ha']))->toBeLessThan(0.01);
+
+    // volume panen = hasil panen x produktivitas
+    $produksi = $r['hasil_panen_ha'] * $r['produktivitas_ton_ha'];
+
+    expect(abs($produksi - $r['volume_panen_ton']))->toBeLessThan(0.5);
+});
+
+it('menjaga luas tanam kawasan tidak melebihi lahan yang tergarap', function () {
+    // Realisasi tanam yang melampaui luas lahan mustahil, dan angka semacam
+    // itu akan lolos tanpa terasa sebab keduanya sama-sama ratusan hektare.
+    $r = DummyData::ringkasanDashboard();
+
+    expect($r['realisasi_tanam_ha'])->toBeLessThan($r['luas_lahan_total']);
+
+    // Puso pun tidak dapat melebihi luas yang ditanam.
+    expect($r['puso_ha'])->toBeLessThan($r['realisasi_tanam_ha']);
+});
+
+it('menampilkan keempat indikator produksi kawasan pada dashboard', function () {
+    // Keempatnya lahir dari perombakan menu Pertanian dan sebelumnya tidak
+    // terwakili sama sekali: dashboard hanya menyebut volume panen, sehingga
+    // pembaca tahu berapa ton dihasilkan tetapi tidak tahu dari berapa
+    // hektare, berapa yang gagal, dan berapa yang masih menunggu.
+    $r = DummyData::ringkasanDashboard();
+    $isi = $this->get(route('beranda'))->assertOk()->getContent();
+
+    expect($isi)->toContain('Realisasi Tanam')
+        ->and($isi)->toContain('Puso')
+        ->and($isi)->toContain('Produktivitas Rata-rata');
+
+    // Angkanya benar-benar terender, bukan hanya labelnya.
+    foreach (['realisasi_tanam_ha', 'hasil_panen_ha', 'puso_ha'] as $kunci) {
+        expect($isi)->toContain(number_format($r[$kunci], 2, ',', '.'));
+    }
+
+    expect($isi)->toContain(number_format($r['produktivitas_ton_ha'], 3, ',', '.'));
+});
+
+it('memakai koma sebagai pemisah desimal pada porsi produksi', function () {
+    // `round()` menghasilkan "19.5" bertitik, sedangkan seluruh angka lain di
+    // halaman ini memakai koma. Satu angka bertitik di antara puluhan angka
+    // berkoma terbaca sebagai kekeliruan cetak.
+    $isi = $this->get(route('beranda'))->assertOk()->getContent();
+
+    expect($isi)->toContain('19,5% dari')
+        ->and($isi)->not->toContain('19.5% dari');
+});
+
+it('menyebut tahun pada kartu volume panen, bukan mengatakan tahun ini', function () {
+    // Angkanya tetap dan kebetulan cocok hanya karena deret berakhir pada
+    // tahun berjalan. Begitu tahun berganti, label "Tahun Ini" berbohong
+    // tanpa ada yang menegur - sifat cacat yang sama dengan baris total rekap
+    // yang sudah diperbaiki.
+    $deret = DummyData::deretTahunan();
+    $tahunTerakhir = end($deret['tahun']);
+
+    $isi = $this->get(route('beranda'))->assertOk()->getContent();
+
+    expect($isi)->toContain('Volume Panen '.$tahunTerakhir)
+        ->and($isi)->not->toContain('Volume Panen Tahun Ini');
 });
 
 it('memisahkan agregat kawasan dari transaksi panen contoh', function () {

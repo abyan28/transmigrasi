@@ -3153,6 +3153,28 @@ class DummyData
     /**
      * Angka ringkasan untuk kartu statistik dashboard.
      *
+     * CAKUPANNYA AGREGAT KAWASAN, bukan penjumlahan tabel transaksi. Angka di
+     * sini mencerminkan seluruh keluarga di kawasan; `penanaman()` dan
+     * `hasilPanen()` hanya memuat beberapa baris contoh untuk menguji tampilan,
+     * dan totalnya karena itu ratusan kali lebih kecil.
+     *
+     * Keduanya BUKAN dua versi dari angka yang sama. Menurunkan yang satu dari
+     * yang lain akan membuat dashboard menyatakan kawasan berisi ribuan
+     * keluarga hanya menanam 7 hektare.
+     *
+     * EMPAT ANGKA PRODUKSI ditambahkan 2026-08-24, menutup indikator 17 pada
+     * ui-spec.md 9. Keempatnya WAJIB memenuhi dua identitas yang sama seperti
+     * pada tabel transaksi (rules.md 9.9 dan 9.11):
+     *
+     *     realisasi_tanam = hasil_panen + puso + belum_dipanen
+     *     volume_panen    = hasil_panen x produktivitas
+     *
+     * Urutan penyusunannya sengaja begitu: produktivitas ditetapkan lebih
+     * dulu sebagai angka yang wajar bagi kawasan berbasis jagung, lalu luas
+     * panen DITURUNKAN darinya. Menetapkan luas lebih dulu akan menghasilkan
+     * produktivitas berkoma panjang yang tampak seperti hasil pengukuran,
+     * padahal justru angka sisa pembagian.
+     *
      * @return array<string, mixed> Ringkasan indikator kawasan
      */
     public static function ringkasanDashboard(): array
@@ -3167,6 +3189,17 @@ class DummyData
             'volume_panen_ton' => 1847.500,
             'harga_rata_rata' => 4520000,
             'pengaduan_terbuka' => 12,
+            // Produksi pertanian kawasan, indikator 17.
+            //
+            // Realisasi tanam 635,21 ha dari 3.250,75 ha lahan tergarap, atau
+            // sekitar 19,5%. Angka itu wajar dan memang tidak mendekati 100%:
+            // satu bidang tidak ditanami sepanjang tahun, dan sebagian lahan
+            // diberakan atau ditanami tanaman keras.
+            'realisasi_tanam_ha' => 635.21,
+            'hasil_panen_ha' => 568.46,
+            'puso_ha' => 24.60,
+            'belum_dipanen_ha' => 42.15,
+            'produktivitas_ton_ha' => 3.250,
         ];
     }
 
@@ -3244,16 +3277,31 @@ class DummyData
      * `deretTahunan()['volume_panen']`. Mengubah salah satunya tanpa yang lain
      * membuat dashboard menampilkan angka yang saling bertentangan.
      *
+     * KUNCINYA WAJIB SAMA PERSIS dengan `komoditas()['nama']`, yaitu huruf
+     * kapital seluruhnya (diseragamkan 2026-08-24). Sebelumnya memakai huruf
+     * judul, dan ketidakcocokan itu memaksa dua berkas menormalkan huruf
+     * sendiri-sendiri - salah satunya keliru.
+     *
+     * Akibatnya nyata dan senyap: `/komoditas` mencocokkan lewat
+     * `ucfirst(mb_strtolower(...))` yang hanya mengapitalkan huruf PERTAMA,
+     * sehingga `KACANG TANAH` dicari sebagai `Kacang tanah` dan tidak pernah
+     * ketemu. Kolom Volume Tercatat lalu menampilkan tanda hubung, dan tanda
+     * itu terbaca sebagai "belum ada panen" padahal artinya "kodenya tidak
+     * menemukan datanya". Dua keadaan yang berbeda ditampilkan sama.
+     *
+     * `Lainnya` sengaja TIDAK berhuruf kapital: ia bukan komoditas, melainkan
+     * penampung sisa yang memang tidak ada pada data master.
+     *
      * @return array<string, float> Peta komoditas ke volume dalam ton
      */
     public static function sebaranKomoditas(): array
     {
         return [
-            'Jagung' => 1284.5,
-            'Padi' => 342.8,
-            'Kacang Tanah' => 118.4,
-            'Ubi Kayu' => 68.2,
-            'Cabai' => 21.6,
+            'JAGUNG' => 1284.5,
+            'PADI' => 342.8,
+            'KACANG TANAH' => 118.4,
+            'UBI KAYU' => 68.2,
+            'CABAI' => 21.6,
             'Lainnya' => 12.0,
         ];
     }

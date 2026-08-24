@@ -148,7 +148,18 @@
                 <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ $k['tipe'] }}</td>
                 <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">{{ $k['satuan'] }}</td>
                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
-                    @php $vol = $sebaran[ucfirst(mb_strtolower($k['nama']))] ?? null; @endphp
+                    {{--
+                        Dicocokkan LANGSUNG sejak 2026-08-24, sebab kunci
+                        sebaran kini sama persis dengan nama pada data master.
+
+                        Sebelumnya memakai `ucfirst(mb_strtolower(...))` yang
+                        hanya mengapitalkan huruf PERTAMA, sehingga KACANG
+                        TANAH dan UBI KAYU tidak pernah ketemu dan tampil
+                        sebagai tanda hubung - terbaca "belum ada panen"
+                        padahal artinya "kodenya tidak menemukan datanya".
+                        Hanya nama satu kata yang kebetulan berhasil.
+                    --}}
+                    @php $vol = $sebaran[$k['nama']] ?? null; @endphp
                     {{ $vol !== null ? number_format($vol, 1, ',', '.') . ' ton' : '-' }}
                 </td>
                 <td class="px-5 py-3 text-theme-xs text-gray-500 dark:text-gray-400">{{ $k['deskripsi'] ?? '-' }}</td>
