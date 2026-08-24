@@ -14,12 +14,12 @@
         $nilaiJual = ($data['harga_jual'] ?? 0) * $data['produksi'];
 
         // Penanaman asal panen ini, dibaca lewat relasi. Menyediakan tautan
-        // balik sekaligus menunjukkan berapa luas yang belum dipanen.
+        // balik ke penanaman asalnya.
         $tanam = collect(DummyData::penanaman())->firstWhere('id_penanaman', $data['penanaman_id']);
-        $belumDipanen = DummyData::belumDipanen($data['penanaman_id']);
 
-        // Status milik PENANAMAN induknya, bukan milik catatan panen ini.
-        $status = DummyData::statusPanen($data['penanaman_id']);
+        // Gagal total: seluruh luas puso, tidak ada yang dipanen. Keadaan sah,
+        // dan pada keadaan itu produktivitas memang nol.
+        $gagalTotal = (float) $data['realisasi_panen'] === 0.0 && (float) ($data['puso'] ?? 0) > 0;
 
         $bolehUbah = true;
     @endphp
@@ -67,27 +67,24 @@
                     panen ini belum lengkap".
                 --}}
                 <div class="mt-4">
-                    <x-sim.status-badge :status="$status" />
-                    {{--
-                        Kalimatnya dirakit di PHP, bukan dengan @if menempel
-                        pada teks. `asalnya@if` tidak dikenali Blade dan
-                        melempar ParseError yang menunjuk AKHIR berkas, bukan
-                        baris yang keliru - jebakan yang sudah pernah tercatat
-                        pada bentuk ringkas `@php(...)`.
-                    --}}
-                    @php
-                        $keteranganStatus = 'Status penanaman asalnya';
-
-                        if ($belumDipanen > 0) {
-                            $keteranganStatus .= ', menyisakan '
-                                . number_format($belumDipanen, 2, ',', '.') . ' ha';
-                        }
-                    @endphp
-                    <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
-                        {{ $keteranganStatus }}
-                    </p>
+                    @if ($gagalTotal)
+                        <x-sim.status-badge teks="Gagal Total" warna="error" />
+                        <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                            Seluruh {{ number_format($data['puso'], 2, ',', '.') }} ha puso, tidak ada yang dipanen
+                        </p>
+                    @elseif (($data['puso'] ?? 0) > 0)
+                        <x-sim.status-badge teks="Panen Sebagian Gagal" warna="warning" />
+                        <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                            {{ number_format($data['puso'], 2, ',', '.') }} ha puso dari
+                            {{ $tanam ? number_format($tanam['realisasi_tanam'], 2, ',', '.') : '-' }} ha yang ditanam
+                        </p>
+                    @else
+                        <x-sim.status-badge teks="Panen Penuh" warna="success" />
+                        <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                            Seluruh luas yang ditanam berhasil dipanen
+                        </p>
+                    @endif
                 </div>
-
                 <dl class="mt-5 space-y-3 border-t border-gray-200 pt-5 text-theme-sm dark:border-gray-800">
                     <div class="flex justify-between gap-3">
                         <dt class="text-gray-500 dark:text-gray-400">Kelompok tani</dt>
@@ -160,12 +157,15 @@
                             </dd>
                         </div>
                         {{--
-                            Tiga angka luas yang saling menentukan:
-                            hasil panen + puso + belum dipanen = realisasi tanam.
-                            Yang terakhir DIHITUNG, tidak disimpan.
+                            DUA angka luas yang saling menentukan:
+                            realisasi panen + puso = realisasi tanam.
+
+                            Suku "belum dipanen" dicabut 2026-08-24 bersama
+                            panen bertahap: satu panen selalu menutup seluruh
+                            luas yang ditanam.
 
                             Realisasi tanam ikut ditampilkan sebagai PENYEBUTNYA.
-                            Tanpa angka itu ketiganya melayang tanpa acuan, dan
+                            Tanpa angka itu keduanya melayang tanpa acuan, dan
                             pembaca tidak dapat memeriksa identitasnya sendiri.
                         --}}
                         <div>
@@ -175,21 +175,15 @@
                             </dd>
                         </div>
                         <div>
-                            <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Hasil panen</dt>
+                            <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Realisasi panen</dt>
                             <dd class="mt-0.5 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
                                 {{ number_format($data['realisasi_panen'], 2, ',', '.') }} ha
                             </dd>
                         </div>
                         <div>
                             <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Puso</dt>
-                            <dd class="mt-0.5 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
+                            <dd class="mt-0.5 text-theme-sm tabular-nums {{ ($data['puso'] ?? 0) > 0 ? 'font-medium text-error-500' : 'text-gray-800 dark:text-white/90' }}">
                                 {{ number_format($data['puso'] ?? 0, 2, ',', '.') }} ha
-                            </dd>
-                        </div>
-                        <div>
-                            <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Belum dipanen</dt>
-                            <dd class="mt-0.5 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
-                                {{ number_format($belumDipanen, 2, ',', '.') }} ha
                             </dd>
                         </div>
                         <div>

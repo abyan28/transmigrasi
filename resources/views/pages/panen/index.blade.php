@@ -18,16 +18,17 @@
         $filterSp = request('sp');
         $filterKomoditas = request('komoditas');
         $filterTahun = request('tahun');
-        $filterStatus = request('status');
 
-        // Status milik PENANAMAN INDUKNYA, bukan milik baris panen ini.
-        // Satu penanaman dapat dipanen bertahap, sehingga dua baris panen yang
-        // berbeda dapat berbagi status yang sama. Karena itu kolomnya berjudul
-        // "Status Penanaman", bukan "Status" - lihat komentar pada kepala tabel.
-        $statusPanen = [];
-        foreach ($semua as $p) {
-            $statusPanen[$p['id_hasil_panen']] = DummyData::statusPanen($p['penanaman_id']);
-        }
+        /*
+         * KOLOM STATUS DICABUT 2026-08-24 bersama panen bertahap.
+         *
+         * Setiap baris di sini pasti berasal dari penanaman yang sudah selesai
+         * dipanen - sebab barisnya sendiri yang menuntaskannya. Kolom yang
+         * seluruh isinya sama tidak membedakan apa pun.
+         *
+         * Yang menggantikannya kolom Puso, dan itu memang yang membedakan:
+         * panen mulus, gagal sebagian, atau gagal total.
+         */
 
         // Tahun panen diturunkan dari tanggalnya, menggantikan penyaringan per
         // musim tanam yang dicabut 2026-08-22 bersama fiturnya.
@@ -35,7 +36,7 @@
             ? (int) substr($p['periode_panen'], 0, 4)
             : null;
 
-        $baris = array_values(array_filter($semua, function ($p) use ($cari, $filterSp, $filterKomoditas, $filterTahun, $filterStatus, $tahunPanen, $statusPanen) {
+        $baris = array_values(array_filter($semua, function ($p) use ($cari, $filterSp, $filterKomoditas, $filterTahun, $tahunPanen) {
             if ($cari !== '') {
                 $cocok = str_contains(mb_strtolower($p['poktan']), mb_strtolower($cari))
                     || str_contains(mb_strtolower($p['komoditas']), mb_strtolower($cari));
@@ -57,14 +58,10 @@
                 return false;
             }
 
-            if ($filterStatus && $statusPanen[$p['id_hasil_panen']]->value !== $filterStatus) {
-                return false;
-            }
-
             return true;
         }));
 
-        $adaFilter = $cari !== '' || $filterSp || $filterKomoditas || $filterTahun || $filterStatus;
+        $adaFilter = $cari !== '' || $filterSp || $filterKomoditas || $filterTahun;
 
         // Total dihitung setelah konversi ke ton, bukan menjumlahkan volume mentah.
         $totalTonTampil = array_sum(array_map(
@@ -181,30 +178,18 @@
                     </div>
 
                     {{--
-                        HANYA DUA PILIHAN, sengaja tanpa "Belum Dipanen".
+                        PENYARING STATUS DICABUT 2026-08-24.
 
-                        Menurut definisinya, penanaman yang belum dipanen tidak
-                        memiliki satu pun baris panen untuk ditampilkan,
-                        sehingga pilihan itu SELALU menghasilkan tabel kosong.
-                        Merendernya berarti memasang kontrol mati yang dilarang
-                        ui-spec.md R-26. Daftarnya dibaca dari
-                        StatusPanen::penyaringPanen() agar aturan itu tinggal di
-                        satu tempat, bukan diulang sebagai pengecualian di sini.
+                        Sejak panen bertahap ditiadakan, setiap baris pada
+                        halaman ini pasti berasal dari penanaman yang sudah
+                        selesai dipanen - sebab barisnya sendiri yang
+                        menuntaskannya. Penyaring dengan satu-satunya nilai yang
+                        mungkin tidak menyaring apa pun, dan itu kontrol mati
+                        yang dilarang ui-spec.md R-26.
+
+                        Halaman Penanaman tetap memilikinya, dan di sana masih
+                        bermakna: penanaman yang belum dipanen memang ada.
                     --}}
-                    <div>
-                        <label for="filter_status"
-                            class="mb-1.5 block text-theme-xs font-medium text-gray-700 dark:text-gray-400">
-                            Status Penanaman
-                        </label>
-                        <select id="filter_status" name="status"
-                            class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
-                            <option value="">Semua status</option>
-                            @foreach (\App\Enums\StatusPanen::penyaringPanen() as $s)
-                                <option value="{{ $s->value }}" @selected($filterStatus === $s->value)>{{ $s->label() }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-
                     <div class="flex items-end gap-2">
                         <button type="submit"
                             class="h-10 flex-1 rounded-lg bg-brand-500 px-4 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
@@ -250,16 +235,13 @@
                 <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Volume</th>
                 <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Produktivitas</th>
                 {{--
-                    "Status PENANAMAN", bukan "Status" saja.
-
-                    Yang ditandai adalah keadaan penanaman induknya, bukan
-                    kelengkapan catatan panen ini. Judul "Status" akan terbaca
-                    sebagai "catatan panen ini belum selesai diisi", padahal
-                    artinya "lahan yang ditanam masih menyisakan yang belum
-                    dipanen".
+                    PUSO menggantikan kolom Status 2026-08-24. Status kini
+                    seragam pada seluruh baris - semuanya selesai dipanen -
+                    sehingga tidak membedakan apa pun. Puso justru yang
+                    membedakan: mulus, gagal sebagian, atau gagal total.
                 --}}
                 <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">
-                    Status Penanaman
+                    Puso (ha)
                 </th>
                 <th scope="col" class="px-5 py-3 text-right text-theme-xs font-medium text-gray-500 dark:text-gray-400">
                     Aksi
@@ -298,12 +280,18 @@
                         {{ rtrim(rtrim(number_format($p['produktivitas'], 3, ',', '.'), '0'), ',') }}
                         {{ $p['satuan'] }}/ha
                     </td>
-                    <td class="px-5 py-3">
-                        <x-sim.status-badge :status="$statusPanen[$p['id_hasil_panen']]" />
-                        @if ($statusPanen[$p['id_hasil_panen']] === \App\Enums\StatusPanen::DipanenSebagian)
-                            <p class="mt-0.5 text-theme-xs tabular-nums text-gray-500 dark:text-gray-400">
-                                sisa {{ number_format(DummyData::belumDipanen($p['penanaman_id']), 2, ',', '.') }} ha
-                            </p>
+                    {{-- Puso ditegaskan bila ada, agar kegagalan tidak
+                         tenggelam sebagai angka nol di antara angka lain. --}}
+                    <td class="px-5 py-3 text-theme-sm tabular-nums {{ '' }}">
+                        @if (($p['puso'] ?? 0) > 0)
+                            <span class="font-medium text-error-500">
+                                {{ number_format($p['puso'], 2, ',', '.') }}
+                            </span>
+                            @if ($p['realisasi_panen'] == 0)
+                                <p class="mt-0.5 text-theme-xs text-error-500">gagal total</p>
+                            @endif
+                        @else
+                            <span class="text-gray-400 dark:text-white/30">0,00</span>
                         @endif
                     </td>
                     <td class="px-5 py-3">
@@ -367,8 +355,7 @@
                     <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
                         {{ number_format($totalTonTampil, 3, ',', '.') }} ton
                     </td>
-                    {{-- Produktivitas, Status Penanaman, dan Aksi. Naik dari 2
-                         sejak kolom status ditambahkan 2026-08-24. --}}
+                    {{-- Produktivitas, Puso, dan Aksi. --}}
                     <td colspan="3"></td>
                 </tr>
             </x-slot:kaki>
@@ -392,7 +379,11 @@
                             {{ \Illuminate\Support\Carbon::parse($p['periode_panen'] . '-01')->translatedFormat('F Y') }}
                             &middot; {{ $p['satuan_permukiman'] }}
                         </p>
-                        <x-sim.status-badge :status="$statusPanen[$p['id_hasil_panen']]" ukuran="sm" class="mt-2" />
+                        @if (($p['puso'] ?? 0) > 0)
+                            <p class="mt-2 text-theme-xs font-medium text-error-500">
+                                Puso {{ number_format($p['puso'], 2, ',', '.') }} ha{{ $p['realisasi_panen'] == 0 ? ', gagal total' : '' }}
+                            </p>
+                        @endif
                     </div>
                 @endforeach
             </x-slot:kartu>

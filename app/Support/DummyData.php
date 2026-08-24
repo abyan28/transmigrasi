@@ -935,12 +935,19 @@ class DummyData
                 'satuan_permukiman' => 'SP Kapitan Meo',
                 'satuan_permukiman_id' => 1,
                 'periode_panen' => '2026-04',
+                // DIBETULKAN 2026-08-24. Sebelumnya panen 1,20 ha dari
+                // penanaman seluas 2,00 ha, menyisakan 0,80 ha yang tercatat
+                // "belum dipanen" sejak November 2025 - sepuluh bulan tanpa
+                // pernah ditutup. Jagung tidak berdiri selama itu; angka itu
+                // pencatatan yang menggantung, bukan tanaman yang masih hidup.
+                //
+                // Kini luasnya ditutup penuh: 1,20 ha dipanen, 0,80 ha puso.
                 'realisasi_panen' => 1.20,
-                'puso' => 0.00,
+                'puso' => 0.80,
                 'produktivitas' => 2.900,
                 'produksi' => 3.480,
                 'harga_jual' => 4750000,
-                'keterangan' => null,
+                'keterangan' => 'Sebagian hamparan diserang hama tikus menjelang panen.',
                 'dokumen_pendukung' => null,
             ],
             [
@@ -1003,69 +1010,50 @@ class DummyData
                 'keterangan' => null,
                 'dokumen_pendukung' => null,
             ],
+            // GAGAL TOTAL: seluruh luas tercatat puso, tidak ada yang dipanen.
+            //
+            // Produktivitas dan produksi bernilai nol, dan itu SAH: tidak ada
+            // yang ditimbang, sehingga memaksa angka di sini berarti mengarang
+            // hasil yang tidak pernah ada. Harga jual pun kosong.
+            //
+            // Sengaja ada agar cabang gagal total ikut terlihat saat
+            // peninjauan; tanpa baris ini, keadaan itu hanya teori.
+            [
+                'id_hasil_panen' => 6,
+                'penanaman_id' => 7,
+                'poktan_id' => 4,
+                'poktan' => 'POKTAN HARAPAN BARU',
+                'komoditas' => 'PADI',
+                'satuan' => 'Ton',
+                'satuan_permukiman' => 'SP Weain',
+                'satuan_permukiman_id' => 6,
+                'periode_panen' => '2026-05',
+                'realisasi_panen' => 0.00,
+                'puso' => 0.50,
+                'produktivitas' => 0.000,
+                'produksi' => 0.000,
+                'harga_jual' => null,
+                'keterangan' => 'Hamparan terendam banjir sebelum sempat dipanen.',
+                'dokumen_pendukung' => null,
+            ],
         ];
     }
 
     /**
-     * Luas yang belum dipanen dari satu penanaman.
+     * Apakah sebuah penanaman sudah dipanen.
      *
-     * TIDAK DISIMPAN, melainkan selisih dari identitas yang wajib berlaku:
+     * DITURUNKAN dari ada atau tidaknya catatan panen, bukan disimpan sebagai
+     * kolom. Menyimpannya berarti nilainya menjadi salah begitu satu baris
+     * panen dihapus, dan kesalahan itu tidak pernah memerahkan apa pun.
      *
-     *     realisasi_panen + puso + belum_dipanen = realisasi_tanam
+     * DISEDERHANAKAN 2026-08-24 bersama pencabutan panen bertahap. Sebelumnya
+     * memeriksa sisa luas untuk membedakan `Dipanen Sebagian`; keadaan itu
+     * kini tidak lagi mungkin ada, sebab satu penanaman hanya boleh memiliki
+     * satu panen yang menutup seluruh luasnya.
      *
-     * Menyimpannya berarti tiga angka yang saling menentukan disimpan
-     * terpisah, dan ketiganya dapat berbeda tanpa ada yang menegur.
-     *
-     * Menjumlahkan SELURUH panen milik penanaman itu, bukan satu baris, sebab
-     * satu penanaman dapat dipanen bertahap: sebagian bulan ini, sisanya bulan
-     * depan. Membaca satu baris saja akan menyatakan lahan masih tersisa
-     * padahal panen berikutnya sudah tercatat.
-     *
-     * @param  int  $penanamanId  Nilai id_penanaman
-     * @return float Sisa luas dalam hektare, tidak pernah negatif
-     */
-    public static function belumDipanen(int $penanamanId): float
-    {
-        $tanam = collect(self::penanaman())->firstWhere('id_penanaman', $penanamanId);
-
-        if ($tanam === null) {
-            return 0.0;
-        }
-
-        $sudah = 0.0;
-
-        foreach (self::hasilPanen() as $panen) {
-            if (($panen['penanaman_id'] ?? null) !== $penanamanId) {
-                continue;
-            }
-
-            $sudah += (float) ($panen['realisasi_panen'] ?? 0) + (float) ($panen['puso'] ?? 0);
-        }
-
-        return max(0.0, round((float) $tanam['realisasi_tanam'] - $sudah, 2));
-    }
-
-    /**
-     * Sejauh mana sebuah penanaman sudah dipanen.
-     *
-     * DITURUNKAN dari `belumDipanen()`, tidak disimpan sebagai kolom. Alasannya
-     * sama dengan angka itu sendiri: menyimpannya berarti nilainya basi begitu
-     * satu baris panen disunting atau dihapus, dan kebasian itu tidak pernah
-     * memerahkan apa pun.
-     *
-     * Tiga keadaan yang dibedakan:
-     *
-     * - Belum ada baris panen sama sekali    -> Belum Dipanen
-     * - Ada panen, tetapi masih bersisa      -> Dipanen Sebagian
-     * - Sisanya nol                          -> Selesai Dipanen
-     *
-     * Keadaan pertama TIDAK dapat disimpulkan dari sisa saja: penanaman yang
-     * belum disentuh dan penanaman yang baru dipanen nol hektare sama-sama
-     * menyisakan seluruh luasnya. Keberadaan barisnya karena itu diperiksa
-     * tersendiri.
-     *
-     * Penanaman yang seluruhnya PUSO berstatus Selesai Dipanen, sebab sisanya
-     * memang nol. Pembedanya kolom Puso, bukan status; lihat StatusPanen.
+     * Penanaman yang GAGAL TOTAL tetap berstatus Selesai Dipanen: barisnya
+     * ada, hanya seluruh luasnya tercatat sebagai puso. Pembedanya kolom puso,
+     * bukan status.
      *
      * @param  int  $penanamanId  Nilai id_penanaman
      * @return StatusPanen Status yang berlaku saat ini
@@ -1075,29 +1063,27 @@ class DummyData
         $adaPanen = collect(self::hasilPanen())
             ->contains(fn ($p) => ($p['penanaman_id'] ?? null) === $penanamanId);
 
-        if (! $adaPanen) {
-            return StatusPanen::BelumDipanen;
-        }
-
-        return self::belumDipanen($penanamanId) > 0
-            ? StatusPanen::DipanenSebagian
-            : StatusPanen::SelesaiDipanen;
+        return $adaPanen ? StatusPanen::SelesaiDipanen : StatusPanen::BelumDipanen;
     }
 
     /**
-     * Tahun tanam yang tercatat, terbesar lebih dulu.
+     * Tahun panen yang tercatat, terbesar lebih dulu.
      *
-     * Diturunkan dari `periode_tanam`, bukan disimpan sebagai kolom. Kolom
-     * tersendiri dapat berbeda dari tanggal yang menjadi sumbernya.
+     * BERBASIS TAHUN PANEN, bukan tahun tanam (diubah 2026-08-24). Lihat
+     * `rekapPanen()` untuk alasannya.
+     *
+     * Tahun berjalan selalu ikut, sebab penanaman yang belum dipanen memang
+     * digolongkan ke sana - dan tanpa baris ini, tahun itu dapat tidak muncul
+     * pada daftar pilihan meski memiliki isi.
      *
      * @return array<int, int> Daftar tahun
      */
-    public static function tahunTanamTercatat(): array
+    public static function tahunPanenTercatat(): array
     {
-        $tahun = [];
+        $tahun = [(int) date('Y')];
 
-        foreach (self::penanaman() as $tanam) {
-            $tahun[] = (int) substr($tanam['periode_tanam'], 0, 4);
+        foreach (self::hasilPanen() as $panen) {
+            $tahun[] = (int) substr($panen['periode_panen'], 0, 4);
         }
 
         $tahun = array_values(array_unique($tahun));
@@ -1107,33 +1093,65 @@ class DummyData
     }
 
     /**
+     * Tahun rekap sebuah penanaman.
+     *
+     * SATU PENANAMAN HANYA MUNCUL DI SATU TAHUN, dan tahun itu adalah tahun
+     * panennya - bukan tahun tanamnya. Ditetapkan pemilik proyek 2026-08-24
+     * dengan alasan yang tepat: ini rekap PANEN, bukan rekap penanaman.
+     *
+     * Aturannya dua:
+     *
+     * 1. Sudah dipanen  -> tahun panen itu.
+     * 2. Belum dipanen   -> tahun berjalan, sebab di situlah panennya masih
+     *    mungkin terjadi.
+     *
+     * Akibat aturan kedua, baris yang belum dipanen BERPINDAH mengikuti waktu.
+     * Penanaman Oktober 2026 yang belum dipanen tampil pada rekap 2026 selama
+     * tahun itu masih berjalan; begitu sistem memasuki 2027 dan panennya tetap
+     * belum tercatat, ia pindah ke 2027. Perpindahan itu disengaja: peluang
+     * panen pada tahun sebelumnya memang sudah tertutup.
+     *
+     * Penanaman yang sudah dipanen TIDAK pernah berpindah lagi.
+     *
+     * @param  int  $penanamanId  Nilai id_penanaman
+     * @return int Tahun tempat penanaman ini direkap
+     */
+    public static function tahunRekapPanen(int $penanamanId): int
+    {
+        foreach (self::hasilPanen() as $panen) {
+            if (($panen['penanaman_id'] ?? null) === $penanamanId) {
+                return (int) substr($panen['periode_panen'], 0, 4);
+            }
+        }
+
+        return (int) date('Y');
+    }
+
+    /**
      * Rekap panen, DIHITUNG DARI PENANAMAN dan bukan dari catatan panen.
      *
      * Perbedaan basis ini menentukan dan disengaja. Bila dihitung dari
      * `hasilPanen()`, poktan yang sudah menanam tetapi belum panen sama sekali
      * HILANG dari rekap, sehingga dinas membaca "tidak ada masalah" justru
-     * pada keadaan yang paling perlu ditengok. Laporan lapangan memilih basis
-     * yang sama, dan judulnya menyatakannya terang-terangan: "Panen Sisa
-     * Tanam" hanya dapat disusun bila barisnya poktan yang menanam.
+     * pada keadaan yang paling perlu ditengok.
      *
      * TERIKAT PERIODE, tidak pernah kumulatif sejak awal waktu. Dua sebab:
      *
      * 1. Luas TIDAK BOLEH dijumlahkan lintas tahun. Bidang 2 ha yang ditanami
-     *    tiga tahun berturut-turut akan terbaca "6 ha", dan pembaca menyangka
-     *    kelompok itu memiliki 6 ha lahan.
+     *    tiga tahun berturut-turut akan terbaca "6 ha".
      * 2. Total kumulatif hanya dapat naik, sehingga musim yang hancur pun
      *    tetap tampak sebagai kabar baik.
      *
-     * Penyaringnya memakai TAHUN TANAM, bukan tahun panen. Penanaman yang
-     * belum dipanen tidak punya periode panen, sehingga menyaringnya dengan
-     * tahun panen akan membuangnya - dan justru itulah yang hendak ditampilkan.
-     * Satu baris karena itu berarti "musim tanam tahun ini".
+     * PENGGOLONGAN TAHUNNYA MEMAKAI TAHUN PANEN (diubah 2026-08-24), lihat
+     * `tahunRekapPanen()`. Sebelumnya memakai tahun tanam, dan itu keliru:
+     * panen April 2026 dari penanaman November 2025 tidak terlihat sama sekali
+     * pada rekap 2026, padahal timbangannya nyata terjadi tahun itu.
      *
      * @param  string  $kelompok  Dasar pengelompokan: sp, komoditas, atau poktan
-     * @param  int|null  $tahunTanam  Tahun tanam; null berarti seluruh tahun
-     * @return array<int, array<string, mixed>> Baris rekap, volume terbesar dulu
+     * @param  int|null  $tahun  Tahun panen; null berarti seluruh tahun
+     * @return array<int, array<string, mixed>> Baris rekap, produksi terbesar dulu
      */
-    public static function rekapPanen(string $kelompok = 'sp', ?int $tahunTanam = null): array
+    public static function rekapPanen(string $kelompok = 'sp', ?int $tahun = null): array
     {
         // Panen dikelompokkan lebih dulu menurut penanamannya, agar tiap
         // penanaman cukup sekali disusuri.
@@ -1146,7 +1164,7 @@ class DummyData
         $peta = [];
 
         foreach (self::penanaman() as $tanam) {
-            if ($tahunTanam !== null && (int) substr($tanam['periode_tanam'], 0, 4) !== $tahunTanam) {
+            if ($tahun !== null && self::tahunRekapPanen($tanam['id_penanaman']) !== $tahun) {
                 continue;
             }
 
@@ -1178,7 +1196,12 @@ class DummyData
             }
 
             $baris['realisasi_tanam'] += (float) $tanam['realisasi_tanam'];
-            $baris['belum_dipanen'] += self::belumDipanen($tanam['id_penanaman']);
+
+            // Penanaman yang belum dipanen menyisakan SELURUH luasnya. Sisa
+            // parsial tidak lagi mungkin ada sejak panen bertahap dicabut.
+            if (! isset($panenPer[$tanam['id_penanaman']])) {
+                $baris['belum_dipanen'] += (float) $tanam['realisasi_tanam'];
+            }
 
             foreach ($panenPer[$tanam['id_penanaman']] ?? [] as $panen) {
                 $baris['hasil_panen'] += (float) $panen['realisasi_panen'];
@@ -1193,14 +1216,6 @@ class DummyData
         $hasil = [];
 
         foreach ($peta as $baris) {
-            /*
-             * PRODUKTIVITAS TERTIMBANG, bukan rata-rata kolom produktivitas.
-             *
-             * Merata-ratakannya menghasilkan angka yang tidak ada di alam:
-             * jagung 3,4 ton/ha dan cabai 1.282 kg/ha dirata-rata menjadi 642
-             * ton/ha. Yang benar total produksi dibagi total luas dipanen,
-             * seluruhnya setelah dikonversi ke ton.
-             */
             $baris['jumlah_poktan'] = count($baris['poktan']);
 
             foreach (['realisasi_tanam', 'hasil_panen', 'puso', 'belum_dipanen'] as $kolom) {
@@ -1210,15 +1225,15 @@ class DummyData
             $baris['produksi_ton'] = round($baris['produksi_ton'], 3);
 
             /*
-             * Dihitung dari angka yang SUDAH dibulatkan, bukan dari angka
-             * mentah sebelumnya. Bedanya kecil tetapi menentukan: pembaca
-             * mengalikan dua kolom yang tampil di layar untuk memeriksa
-             * ulang, dan bila produktivitasnya diturunkan dari angka lain,
-             * hasilnya tidak akan pernah cocok.
+             * PRODUKTIVITAS TERTIMBANG, bukan rata-rata kolom produktivitas.
              *
-             * Nyata pada data contoh: CABAI menghasilkan 1,284 bila dihitung
-             * dari produksi mentah, sedangkan kolom yang tampil 0,321 dibagi
-             * 0,25 menghasilkan 1,282.
+             * Merata-ratakannya menghasilkan angka yang tidak ada di alam:
+             * jagung 3,4 ton/ha dan cabai 1.282 kg/ha dirata-rata menjadi 642
+             * ton/ha. Yang benar total produksi dibagi total luas dipanen,
+             * seluruhnya setelah dikonversi ke ton.
+             *
+             * Dihitung dari angka yang SUDAH dibulatkan, sebab pembaca
+             * mengalikan dua kolom yang tampil di layar untuk memeriksa ulang.
              */
             $baris['produktivitas_ton'] = $baris['hasil_panen'] > 0
                 ? round($baris['produksi_ton'] / $baris['hasil_panen'], 3)
@@ -1227,11 +1242,6 @@ class DummyData
             $hasil[] = $baris;
         }
 
-        /*
-         * Tab Tahun diurutkan kronologis, sisanya menurut produksi terbesar.
-         * Mengurutkan tahun menurut produksi membuat deretnya melompat-lompat
-         * dan perkembangan antarwaktu tidak terbaca.
-         */
         usort($hasil, fn ($a, $b) => $b['produksi_ton'] <=> $a['produksi_ton']);
 
         return $hasil;
@@ -2878,6 +2888,13 @@ class DummyData
             // sudah dikunci uji peramban pada angka 3,45 ha, dan menambah
             // penanaman di sana akan memerahkannya tanpa ada yang rusak.
             ['id_penanaman' => 6, 'poktan_id' => 2, 'poktan' => 'POKTAN SUBUR MAKMUR', 'komoditas_id' => 1, 'komoditas' => 'JAGUNG', 'saprotan_id' => null, 'volume_benih' => null, 'realisasi_tanam' => 1.00, 'periode_tanam' => '2026-06', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'keterangan' => 'Tanaman masih berdiri, panen diperkirakan tiga bulan lagi.'],
+            // GAGAL TOTAL, satu-satunya pada data contoh. Panennya tercatat
+            // 0 ha dengan puso menutup seluruh luas, sehingga cabang itu
+            // ikut terlihat saat peninjauan dan punya benda nyata untuk
+            // diuji. Ditaruh pada POKTAN HARAPAN BARU yang belum pernah
+            // menanam, agar tidak mengganggu perhitungan lahan poktan lain
+            // yang sudah dikunci uji peramban.
+            ['id_penanaman' => 7, 'poktan_id' => 4, 'poktan' => 'POKTAN HARAPAN BARU', 'komoditas_id' => 2, 'komoditas' => 'PADI', 'saprotan_id' => null, 'volume_benih' => null, 'realisasi_tanam' => 0.50, 'periode_tanam' => '2026-01', 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain', 'keterangan' => 'Bibit swadaya anggota.'],
         ];
     }
 
@@ -2887,16 +2904,18 @@ class DummyData
      * Berbeda sifat dari sisa benih, dan perbedaan itu disengaja:
      *
      * - Benih HABIS selamanya begitu ditabur.
-     * - Lahan KEMBALI TERSEDIA setelah panennya tuntas.
+     * - Lahan KEMBALI TERSEDIA setelah panennya tercatat.
      *
-     * Karena itu yang dikurangkan hanyalah penanaman yang belum tuntas
-     * dipanen. Menghitung seluruh penanaman sepanjang sejarah akan membuat
-     * lahan poktan tampak habis setelah beberapa musim, padahal bidang yang
-     * sama memang ditanami berulang kali tiap tahun.
+     * Karena itu yang dikurangkan hanyalah penanaman yang belum dipanen.
+     * Menghitung seluruh penanaman sepanjang sejarah akan membuat lahan poktan
+     * tampak habis setelah beberapa musim, padahal bidang yang sama memang
+     * ditanami berulang kali tiap tahun.
      *
-     * Sebuah penanaman dianggap TUNTAS bila sudah memiliki catatan panen.
-     * Pada Tahap 6 kriterianya diperhalus menjadi `belum_dipanen = 0`, sebab
-     * panen pun dapat bertahap.
+     * DISEDERHANAKAN 2026-08-24. Kriterianya kembali menjadi "sudah punya
+     * catatan panen", bukan "sisa luasnya nol". Penghalusan 2026-08-22 dibuat
+     * untuk menangani panen bertahap, dan panen bertahap kini dicabut: satu
+     * penanaman selalu dipanen sekali dan sekaligus menutup seluruh luasnya,
+     * entah sebagai hasil panen, puso, atau campuran keduanya.
      *
      * @param  int  $poktanId  Nilai id_poktan
      * @return float Sisa luas dalam hektare, tidak pernah negatif
@@ -2905,13 +2924,7 @@ class DummyData
     {
         $rekap = self::rekapLahanPoktan($poktanId);
 
-        // Yang masih menahan lahan hanyalah bagian yang BELUM dipanen.
-        //
-        // Diperhalus 2026-08-22: sebelumnya satu baris panen dianggap
-        // menuntaskan seluruh penanaman. Itu keliru sejak panen dapat
-        // bertahap - penanaman 10 ha yang baru dipanen 3 ha akan langsung
-        // melepaskan seluruh 10 ha, sehingga lahan yang masih berdiri tanaman
-        // tampak siap ditanami lagi.
+        // Yang masih menahan lahan hanyalah penanaman yang belum dipanen.
         $terpakai = 0.0;
 
         foreach (self::penanaman() as $tanam) {
@@ -2919,12 +2932,13 @@ class DummyData
                 continue;
             }
 
-            $terpakai += self::belumDipanen($tanam['id_penanaman']);
+            if (self::statusPanen($tanam['id_penanaman']) === StatusPanen::BelumDipanen) {
+                $terpakai += (float) $tanam['realisasi_tanam'];
+            }
         }
 
         return max(0.0, round($rekap['luas_total'] - $terpakai, 2));
     }
-
     /*
     |--------------------------------------------------------------------------
     | Sistem: pengguna, role, audit log

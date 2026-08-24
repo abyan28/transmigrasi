@@ -880,7 +880,9 @@ Perbedaan sifat yang disengaja:
 - **Benih habis selamanya** begitu ditabur (§8.4).
 - **Lahan kembali tersedia** setelah panennya tercatat.
 
-Karena itu perhitungan lahan tersedia hanya mengurangkan penanaman yang **belum tuntas dipanen**. Mengurangkan seluruh penanaman sepanjang sejarah akan membuat lahan poktan tampak habis setelah beberapa musim, padahal bidang yang sama memang ditanami berulang kali tiap tahun.
+Karena itu perhitungan lahan tersedia hanya mengurangkan penanaman yang **belum dipanen**. Mengurangkan seluruh penanaman sepanjang sejarah akan membuat lahan poktan tampak habis setelah beberapa musim, padahal bidang yang sama memang ditanami berulang kali tiap tahun.
+
+Kriterianya "sudah punya catatan panen", bukan "sisa luasnya nol". Penghalusan 2026-08-22 yang melepaskan lahan sedikit demi sedikit dibuat untuk menangani panen bertahap, dan **gugur bersamanya** pada 2026-08-24: satu penanaman kini menahan lahan seluruhnya atau tidak sama sekali.
 
 #### Status panen (ditambahkan 2026-08-24)
 
@@ -889,15 +891,13 @@ Karena itu perhitungan lahan tersedia hanya mengurangkan penanaman yang **belum 
 | Status | Syarat | Warna badge |
 |---|---|---|
 | `Belum Dipanen` | tidak ada satu pun baris `hasil_panen` yang menaut ke sini | gray |
-| `Dipanen Sebagian` | ada catatan panen, tetapi `belum_dipanen > 0` | warning |
-| `Selesai Dipanen` | `belum_dipanen = 0` | success |
+| `Selesai Dipanen` | sudah ada catatan panennya | success |
 
-Keadaan pertama **tidak dapat disimpulkan dari sisa luas saja**: penanaman yang belum disentuh dan penanaman yang dipanen nol hektare sama-sama menyisakan seluruh luasnya. Keberadaan barisnya karena itu diperiksa tersendiri, dan pembedaan ini dijaga uji tersendiri pula.
+**DUA NILAI, bukan tiga.** Nilai `Dipanen Sebagian` sempat ada pada hari yang sama lalu dicabut bersama seluruh konsep panen bertahap (`rules.md` §9.9a): keadaan itu tidak lagi mungkin ada, sebab satu panen selalu menutup seluruh luas yang ditanam.
 
-**Puso bukan status keempat.** Penanaman yang seluruhnya gagal panen menyisakan nol, sehingga berstatus `Selesai Dipanen` sama seperti yang berhasil penuh; yang membedakan keduanya kolom `puso` pada §9.3. Bentuk ini mengikuti laporan lapangan yang menaruh Realisasi Panen dan Puso sebagai dua kolom bersebelahan, bukan dua nilai pada satu kolom status (`rules.md` 7d.11b).
+Penanaman yang **gagal total** tetap `Selesai Dipanen`: barisnya ada, hanya seluruh luasnya tercatat sebagai puso. Pembedanya kolom `puso` pada §9.3, bukan status. Bentuk ini mengikuti laporan lapangan yang menaruh Realisasi Panen dan Puso sebagai dua kolom bersebelahan.
 
-Alasan tidak menyimpannya sama dengan `belum_dipanen` pada §9.3: kolom tersimpan menjadi salah begitu satu baris panen disunting atau dihapus, dan kesalahan itu tidak pernah memerahkan apa pun.
-
+Alasan tidak menyimpannya: kolom tersimpan menjadi salah begitu satu baris panen dihapus, dan kesalahan itu tidak pernah memerahkan apa pun.
 **`saprotan_id` dan `volume_benih` ditambahkan 2026-08-22.** Keduanya menautkan penanaman ke benih yang dipakainya, sehingga sisa stok dapat dihitung tanpa mekanisme apa pun selain satu pengurangan (§8.4).
 
 `volume_benih` sengaja **disimpan**, bukan dihitung dari `realisasi_tanam` memakai rasio baku. Laporan Polri MT.II 2025 memang memakai 15 kg/ha pada 92 dari 96 barisnya, tetapi rasio itu keputusan program pada satu bantuan, bukan hukum alam: benih swadaya dan komoditas lain memakai takaran berbeda. Menghitungnya otomatis membuat angka karangan tampil seolah-olah hasil pendataan.
@@ -915,7 +915,7 @@ Keduanya **boleh kosong**: penanaman dari benih yang tidak tercatat pada modul s
 | `poktan_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | Disalin dari penanamannya |
 | `satuan_id` | `BIGINT UNSIGNED` | TIDAK | FK | Disalin dari komoditas saat penyimpanan |
 | `periode_panen` | `CHAR(7)` | TIDAK | IDX | Bulan panen, bentuk `YYYY-MM` |
-| `realisasi_panen` | `DECIMAL(12,2)` | TIDAK | | Hektare yang benar-benar dipanen |
+| `realisasi_panen` | `DECIMAL(12,2)` | TIDAK | | Hektare yang benar-benar dipanen; tampil sebagai **"Realisasi Panen"** (`rules.md` §9.8j) |
 | `puso` | `DECIMAL(12,2)` | YA | | Hektare yang gagal panen |
 | `produktivitas` | `DECIMAL(12,3)` | TIDAK | | Per hektare, dalam satuan baku komoditas |
 | `produksi` | `DECIMAL(12,3)` | TIDAK | | Disimpan apa adanya, tanpa konversi |
@@ -927,16 +927,20 @@ Keduanya **boleh kosong**: penanaman dari benih yang tidak tercatat pada modul s
 
 #### Dua identitas aritmetika
 
-Keduanya terbukti pada 96 baris laporan Polri MT.II 2025 dan WAJIB berlaku:
+Keduanya WAJIB berlaku:
 
 ```
-realisasi_panen + puso + belum_dipanen = penanaman.realisasi_tanam
-produksi                              = realisasi_panen x produktivitas
+realisasi_panen + puso = penanaman.realisasi_tanam
+produksi               = realisasi_panen x produktivitas
 ```
 
-**`belum_dipanen` TIDAK disimpan**; ia selisih dari identitas pertama, dan dijumlahkan dari SELURUH panen milik penanaman itu. Menyimpannya berarti tiga angka yang saling menentukan disimpan terpisah, dan ketiganya dapat berbeda tanpa ada yang menegur.
+> **Koreksi 2026-08-24.** Identitas pertama dahulu bersuku tiga, dengan `belum_dipanen` sebagai selisihnya, dan dokumen ini menyatakannya **"terbukti pada 96 baris laporan Polri MT.II 2025"**. Klaim itu terlalu jauh: laporan tersebut **tidak memiliki kolom belum dipanen** sama sekali — kolomnya hanya Realisasi Tanam, Realisasi Panen, dan Puso. Yang terbukti di sana adalah identitas **dua suku**; suku ketiga adalah tambahan sistem yang lalu disebut sebagai temuan lapangan.
+>
+> Dicatat sebagai koreksi, bukan dihapus diam-diam: ini bentuk lain dari pola yang sudah enam kali tercatat pada `notes.md` §1c, yaitu kesimpulan yang dinyatakan seolah temuan. Bentuk dua suku yang berlaku sekarang justru **sesuai** laporan itu.
 
-Penjumlahan lintas baris itu penting: satu penanaman dapat dipanen **bertahap**, sebagian bulan ini dan sisanya bulan depan. Membaca satu baris saja akan menyatakan lahan masih tersisa padahal panen berikutnya sudah tercatat.
+**Satu penanaman hanya boleh memiliki satu baris panen** (`rules.md` §9.9). Baris kedua pada penanaman yang sama membuat luasnya terhitung dua kali pada rekap, dan itu tidak akan memerahkan apa pun tanpa penjagaan tersendiri.
+
+**Gagal total** dicatat sebagai `realisasi_panen` nol dengan `puso` menutup seluruh luas. Pada keadaan itu `produktivitas` dan `produksi` bernilai nol, dan itu sah: tidak ada yang ditimbang.
 
 **`produksi` tetap disimpan** meski dapat dihitung dari dua kolom lain: ia angka yang dilaporkan ke dinas, dan pembulatan hasil perkalian dapat berbeda tipis dari angka yang benar-benar ditimbang.
 
@@ -1258,15 +1262,17 @@ Enum ini diperlukan agar penilaian kondisi SP dapat menghitung otomatis. Nama sp
 
 ### 11.33a Status panen
 
-`Belum Dipanen` · `Dipanen Sebagian` · `Selesai Dipanen`
+`Belum Dipanen` · `Selesai Dipanen`
 
-**Bukan kolom database.** Diturunkan dari catatan panen milik satu penanaman, lihat §9.2. Ditambahkan 2026-08-24 agar petugas dapat menemukan penanaman mana yang masih menunggu panen tanpa membuka satu per satu.
+**Bukan kolom database.** Diturunkan dari ada tidaknya catatan panen milik satu penanaman, lihat §9.2. Ditambahkan 2026-08-24 agar petugas dapat menemukan penanaman mana yang masih menunggu panen tanpa membuka satu per satu.
 
-Warna badge: Belum Dipanen `gray` · Dipanen Sebagian `warning` · Selesai Dipanen `success`.
+Warna badge: Belum Dipanen `gray` · Selesai Dipanen `success`.
 
-**Puso tidak menjadi nilai keempat** (`rules.md` 7d.11b). Penanaman yang seluruhnya gagal panen berstatus `Selesai Dipanen`; pembedanya kolom `puso` pada §9.3.
+**DUA NILAI, bukan tiga.** Nilai `Dipanen Sebagian` sempat ada pada hari yang sama lalu dicabut bersama panen bertahap (`rules.md` §9.9a): satu panen kini selalu menutup seluruh luas yang ditanam, sehingga keadaan setengah tidak lagi mungkin.
 
-Daftar Hasil Panen hanya menawarkan **dua nilai terakhir** sebagai penyaring, sebab penanaman yang belum dipanen tidak punya baris panen untuk ditampilkan. Pembatasannya tinggal pada `StatusPanen::penyaringPanen()`, bukan ditulis ulang sebagai pengecualian di view.
+**Puso tidak menjadi nilai ketiga.** Penanaman yang gagal total berstatus `Selesai Dipanen`; pembedanya kolom `puso` pada §9.3.
+
+**Daftar Hasil Panen tidak lagi memiliki penyaring status.** Setiap barisnya pasti berasal dari penanaman yang sudah selesai dipanen — sebab barisnya sendiri yang menuntaskannya — sehingga penyaring dengan satu-satunya nilai yang mungkin tidak menyaring apa pun (`ui-spec.md` R-26). Daftar Penanaman tetap memilikinya.
 
 ### 11.34 Asal wakil poktan
 
@@ -1369,7 +1375,7 @@ Aturan berikut ditulis satu kali di `app/Support/ValidationRules.php` dan dipaka
 | 36 | `realisasi_tanam` tidak boleh melebihi luas lahan poktannya | `penanaman`, `poktan` |
 | 37 | Lahan yang penanamannya sudah tuntas dipanen kembali tersedia untuk penanaman berikutnya | `penanaman`, `hasil_panen` |
 | 38 | `penanaman_id` wajib terisi; komoditas dan poktannya wajib sejalan dengan penanamannya | `hasil_panen` |
-| 39 | `realisasi_panen` + `puso` + belum dipanen wajib sama dengan `penanaman.realisasi_tanam` | `hasil_panen`, `penanaman` |
+| 39 | `realisasi_panen` + `puso` wajib **tepat** sama dengan `penanaman.realisasi_tanam`; satu penanaman hanya boleh punya satu baris panen | `hasil_panen`, `penanaman` |
 | 40 | `produksi` wajib sama dengan `realisasi_panen` dikali `produktivitas` | `hasil_panen` |
 | 41 | `periode_panen` tidak boleh mendahului `periode_tanam` penanamannya | `hasil_panen`, `penanaman` |
 

@@ -753,12 +753,15 @@ Butir tindak lanjut 9 pada `notes.md` bagian 4, dikerjakan atas permintaan pemil
   * Tampilan kedua form sudah selesai pada Task 2.30
 - [ ] Task 7.4 - CRUD hasil panen (produksi, produktivitas, puso, harga) `[Sulit]`
   * Satuan mengikuti komoditas terpilih; `DECIMAL(12,3)`; kolom keterangan satuan lokal
-  * **Status panen tidak ikut jadi kolom.** Ia diturunkan lewat `StatusPanen` beserta `statusPanen()`, tampilannya sudah selesai 2026-08-24 (`rules.md` 7d.11)
+  * **Status panen tidak ikut jadi kolom.** Ia diturunkan lewat `StatusPanen` beserta `statusPanen()`, dua nilai saja (`rules.md` 9.10)
+  * **Validasi wajib: `realisasi_panen` + `puso` tepat sama dengan `penanaman.realisasi_tanam`**, dan satu penanaman hanya boleh punya satu baris panen (`rules.md` 9.9). Tampilannya sudah menegakkan ini sejak 2026-08-24; peladen wajib menegakkannya juga, sebab penjagaan di sisi peramban dapat dilewati
+  * **Gagal total sah:** `realisasi_panen` 0 dengan `puso` menutup seluruh luas. Pada keadaan itu `produktivitas` tidak diwajibkan (`rules.md` 9.9b)
 - [ ] Task 7.5 - Helper konversi volume panen ke ton `[Sedang]`
   * Dipakai seluruh rekap dan dashboard agar agregasi lintas komoditas konsisten
 - [ ] Task 7.6 - Rekap panen per wilayah, poktan, komoditas, dan periode `[Sedang]`
-  * Tampilannya sudah dirombak 2026-08-24: basis **penanaman** bukan hasil panen, terikat satu tahun tanam
-  * Saat backend masuk, `DummyData::rekapPanen()` diganti kueri agregat. Aturannya pada `rules.md` 9.8a-8f; yang paling mudah keliru adalah produktivitas tertimbang (8d) dan pembulatan (8e)
+  * Tampilannya sudah dirombak 2026-08-24: basis **penanaman** bukan hasil panen, terikat satu **tahun panen**
+  * Saat backend masuk, `DummyData::rekapPanen()` diganti kueri agregat. Aturannya pada `rules.md` 9.8a-8i; yang paling mudah keliru adalah produktivitas tertimbang (8d) dan pembulatan (8e)
+  * **Penggolongan tahunnya bukan kolom melainkan turunan** (`tahunRekapPanen()`): sudah dipanen ikut tahun panennya, belum dipanen ikut tahun berjalan. Yang kedua **berpindah sendiri** saat tahun berganti, sehingga kueri wajib menghitungnya tiap kali dijalankan, bukan menyimpannya (`rules.md` 9.8c-1 dan 8c-2)
 
 ## Tahap 8 — Backend Infrastruktur dan Pengaduan
 

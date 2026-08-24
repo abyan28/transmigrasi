@@ -4,17 +4,29 @@
     SATU PILIHAN MENGISI DELAPAN ISIAN (dirombak 2026-08-22). Petugas memilih
     penanaman, lalu kelompok tani, jumlah anggota, luas lahan, volume benih,
     realisasi tanam, komoditas, satuan, dan bulan tanam terbaca dengan
-    sendirinya. Yang benar-benar diketik hanya lima: Hasil Panen, Puso,
-    Produktivitas, Harga Jual, dan Catatan.
+    sendirinya.
 
-    Dua identitas aritmetika yang dijaga, keduanya terbukti pada 96 baris
-    laporan Polri MT.II 2025:
+    SATU PENANAMAN HANYA BOLEH SATU PANEN (ditetapkan 2026-08-24). Luas yang
+    ditanam wajib tertutup habis pada satu pencatatan:
 
-        Hasil Panen + Puso + Belum Dipanen = Realisasi Tanam
-        Produksi                           = Hasil Panen x Produktivitas
+        Realisasi Panen + Puso = Realisasi Tanam
+        Produksi               = Realisasi Panen x Produktivitas
 
-    Belum Dipanen dan Produksi karena itu TIDAK diketik; keduanya terhitung
-    dan ditampilkan terkunci.
+    Identitas pertama dahulu bersuku tiga, dengan Belum Dipanen sebagai
+    selisihnya. Suku itu DICABUT bersama seluruh konsep panen bertahap, atas
+    keterangan pemilik proyek bahwa satu penanaman tidak dapat dipanen
+    1,5 ha lalu menyusul 0,5 ha. Bentuk dua suku ini pula yang dipakai laporan
+    lapangan, yang kolomnya hanya Realisasi Tanam, Realisasi Panen, dan Puso.
+
+    Akibatnya REALISASI PANEN DAN PUSO SALING MENGISI: mengetik salah satunya
+    menghitung yang lain, sebab jumlah keduanya sudah tertentu. Petugas yang
+    tahu 0,25 ha gagal tidak perlu menghitung sendiri sisanya, dan angka yang
+    tidak menutup luas menjadi mustahil terjadi.
+
+    GAGAL TOTAL adalah keadaan yang sah: realisasi panen 0 ha dengan puso menutup
+    seluruh luas. Pada keadaan itu produktivitas TIDAK diwajibkan, sebab tidak
+    ada yang ditimbang dan memaksa angka berarti mengarang hasil yang tidak
+    pernah ada.
 
     Satuan MENGIKUTI komoditas penanamannya, tidak dipilih bebas operator
     (agents/rules.md bagian 9 poin 3). Produktivitas ikut satuan itu pula,
@@ -53,10 +65,25 @@
     // membedakan dua penanaman komoditas yang sama oleh kelompok yang sama,
     // sehingga tanpa itu keduanya tampil sebagai pilihan yang bunyinya
     // identik.
+    // HANYA PENANAMAN YANG BELUM DIPANEN yang ditawarkan (sejak 2026-08-24).
+    // Satu penanaman hanya boleh satu panen, sehingga menawarkan yang sudah
+    // dipanen berarti mengundang baris kedua yang tidak sah - dan luasnya
+    // akan terhitung dua kali pada rekap.
+    //
+    // Baris yang sedang DISUNTING tetap ditawarkan; tanpa itu, membuka modal
+    // ubah akan menemukan pilihannya sendiri lenyap dari daftar.
+    $penanamanTerpilih = $data['penanaman_id'] ?? null;
+
     $daftarPenanaman = [];
     $petaPenanaman = [];
 
     foreach (DummyData::penanaman() as $r) {
+        $belumDipanen = DummyData::statusPanen($r['id_penanaman']) === \App\Enums\StatusPanen::BelumDipanen;
+
+        if (! $belumDipanen && (string) $r['id_penanaman'] !== (string) $penanamanTerpilih) {
+            continue;
+        }
+
         $label = $r['komoditas'].' - '.$r['poktan']
             .' - '.\Illuminate\Support\Carbon::parse($r['periode_tanam'] . '-01')->translatedFormat('M Y');
 
@@ -75,9 +102,6 @@
             'satuan' => $satuanKomoditas[$r['komoditas_id']] ?? '',
             'bulan_tanam' => \Illuminate\Support\Carbon::parse($r['periode_tanam'] . '-01')->translatedFormat('F Y'),
             'sp' => $r['satuan_permukiman'],
-            // Sisa yang belum dipanen, sudah memperhitungkan panen sebelumnya
-            // pada penanaman yang sama. Inilah batas atas isian di bawah.
-            'belum_dipanen' => DummyData::belumDipanen($r['id_penanaman']),
         ];
     }
 @endphp
@@ -95,28 +119,61 @@
         get angkaPanen() { return parseFloat(this.panen) || 0; },
         get angkaPuso() { return parseFloat(this.puso) || 0; },
 
-        /*
-            Belum Dipanen: sisa dari identitas pertama.
-
-            Dihitung dari `belum_dipanen` milik penanamannya, BUKAN dari
-            realisasi tanam mentah. Keduanya berbeda begitu penanaman itu
-            sudah pernah dipanen sebagian: memakai realisasi tanam akan
-            menawarkan lahan yang sebenarnya sudah habis dipanen.
-        */
-        get belumDipanen() {
-            if (! this.tanam) {
-                return null;
-            }
-
-            return Math.max(0, Math.round((this.tanam.belum_dipanen - this.angkaPanen - this.angkaPuso) * 100) / 100);
+        /* Luas yang wajib tertutup habis oleh panen dan puso. */
+        get luasTanam() {
+            return this.tanam ? this.tanam.realisasi_tanam : 0;
         },
 
-        get melebihiLahan() {
-            if (! this.tanam) {
-                return false;
-            }
+        /*
+            SALING MENGISI. Jumlah panen dan puso sudah tertentu, yaitu seluruh
+            luas yang ditanam, sehingga mengetik salah satunya menentukan yang
+            lain. Petugas yang tahu 0,25 ha gagal tidak perlu menghitung
+            sisanya sendiri, dan angka yang tidak menutup luas menjadi mustahil.
 
-            return (this.angkaPanen + this.angkaPuso) > this.tanam.belum_dipanen + 0.001;
+            Dibulatkan dua desimal karena pengurangan pecahan biner kerap
+            menyisakan ekor panjang: 2 - 1.2 menghasilkan 0.7999999999999998,
+            dan angka itu akan tampil apa adanya pada isian.
+        */
+        bulat(nilai) {
+            return Math.max(0, Math.round(nilai * 100) / 100);
+        },
+
+        isiDariPanen() {
+            if (this.tanam) {
+                this.puso = String(this.bulat(this.luasTanam - this.angkaPanen));
+            }
+        },
+
+        isiDariPuso() {
+            if (this.tanam) {
+                this.panen = String(this.bulat(this.luasTanam - this.angkaPuso));
+            }
+        },
+
+        /*
+            Begitu penanaman dipilih, seluruh luasnya langsung dianggap
+            dipanen. Puso menjadi nol, dan petugas tinggal mengubahnya bila
+            memang ada yang gagal - keadaan yang lebih jarang daripada panen
+            yang mulus.
+        */
+        pilihPenanaman(nilai) {
+            this.penanamanId = nilai;
+
+            if (this.tanam) {
+                this.panen = String(this.luasTanam);
+                this.puso = '0';
+            }
+        },
+
+        /*
+            GAGAL TOTAL: seluruh luas puso, tidak ada yang dipanen.
+
+            Produktivitas tidak diwajibkan pada keadaan ini, sebab tidak ada
+            yang ditimbang. Memaksanya berarti menuntut petugas mengarang
+            hasil yang tidak pernah ada.
+        */
+        get gagalTotal() {
+            return this.tanam !== null && this.angkaPanen === 0 && this.angkaPuso > 0;
         },
 
         /* Produksi: identitas kedua. Terkunci, tidak pernah diketik. */
@@ -152,8 +209,8 @@
                     teks="label_tanam" keterangan-opsi="satuan_permukiman"
                     :terpilih="old('penanaman_id', $data['penanaman_id'] ?? null)"
                     placeholder="Pilih penanaman"
-                    keterangan="Menentukan kelompok tani, komoditas, satuan, dan luas yang ditanam sekaligus."
-                    @change="penanamanId = $event.target.value" />
+                    keterangan="Hanya penanaman yang belum dipanen. Menentukan kelompok tani, komoditas, satuan, dan luas sekaligus."
+                    @change="pilihPenanaman($event.target.value)" />
             </div>
 
             {{--
@@ -271,75 +328,109 @@
                     class="{{ $kelasKontrol }}" />
             </div>
 
+            {{--
+                REALISASI PANEN dan PUSO SALING MENGISI. Jumlah keduanya sudah
+                tertentu, yaitu seluruh luas yang ditanam, sehingga mengetik
+                salah satunya menentukan yang lain.
+
+                Tanpa ini petugas harus menghitung sendiri, dan angka yang
+                tidak menutup luas dapat tersimpan tanpa ada yang menegur -
+                persis yang dahulu melahirkan sisa menggantung berbulan-bulan.
+            --}}
+            {{--
+                "Realisasi Panen", bukan "Hasil Panen" (diganti 2026-08-24).
+
+                Sejajar dengan REALISASI TANAM tepat di atasnya, dan sama
+                persis dengan kolom laporan lapangan yang berbunyi Realisasi
+                Tanam, Realisasi Panen, Puso. Nama isiannya memang sudah
+                `realisasi_panen` sejak awal; hanya labelnya yang tertinggal.
+            --}}
             <div>
                 <label for="{{ $awalan }}_realisasi_panen" class="{{ $kelasLabel }}">
-                    Hasil Panen<span class="text-error-500">*</span>
+                    Realisasi Panen<span class="text-error-500">*</span>
                 </label>
                 <div class="relative">
                     <input type="number" id="{{ $awalan }}_realisasi_panen" name="realisasi_panen" required
-                        x-model="panen" min="0" step="0.01" :max="tanam?.belum_dipanen"
+                        x-model="panen" @input="isiDariPanen()" min="0" step="0.01" :max="luasTanam"
                         placeholder="3.00" class="{{ $kelasKontrol }} tabular-nums pr-12" />
                     <span class="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-theme-sm text-gray-500 dark:text-gray-400">ha</span>
                 </div>
                 <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
                     Luas yang benar-benar dipanen, bukan volume hasilnya.
-                </p>
-            </div>
-
-            <div>
-                <label for="{{ $awalan }}_puso" class="{{ $kelasLabel }}">Puso</label>
-                <div class="relative">
-                    <input type="number" id="{{ $awalan }}_puso" name="puso"
-                        x-model="puso" min="0" step="0.01" :max="tanam?.belum_dipanen"
-                        placeholder="0.00" class="{{ $kelasKontrol }} tabular-nums pr-12" />
-                    <span class="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-theme-sm text-gray-500 dark:text-gray-400">ha</span>
-                </div>
-                <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
-                    Luas yang gagal panen. Ikut mengurangi sisa yang belum dipanen.
+                    Isi <strong>0</strong> bila seluruh hamparan gagal.
                 </p>
             </div>
 
             {{--
-                BELUM DIPANEN: terkunci, sisa dari identitas
-                Hasil Panen + Puso + Belum Dipanen = Realisasi Tanam.
+                PUSO kini WAJIB, bukan lagi opsional. Dialah yang menerangkan
+                mengapa luas panen kurang dari luas tanam; tanpa isian ini,
+                selisihnya menggantung tanpa penjelasan.
 
-                Menyimpannya sebagai isian berarti tiga angka yang saling
-                menentukan diketik terpisah, dan ketiganya dapat berbeda
-                tanpa ada yang menegur.
+                Boleh bernilai nol, dan nol itu bermakna: tidak ada yang gagal.
             --}}
             <div>
-                <span class="{{ $kelasLabel }}">Belum Dipanen</span>
-                <p class="{{ $kelasTerkunci }}">
-                    <span x-show="tanam" x-cloak>
-                        <span x-text="angka(belumDipanen)"></span> ha
-                    </span>
-                    <span x-show="! tanam" class="text-gray-400 dark:text-white/30">&mdash;</span>
-                </p>
-                <p x-show="melebihiLahan" x-cloak class="mt-1.5 text-theme-xs text-error-500">
-                    Hasil panen dan puso melebihi luas yang belum dipanen, yaitu
-                    <span x-text="angka(tanam?.belum_dipanen)"></span> ha.
+                <label for="{{ $awalan }}_puso" class="{{ $kelasLabel }}">
+                    Puso<span class="text-error-500">*</span>
+                </label>
+                <div class="relative">
+                    <input type="number" id="{{ $awalan }}_puso" name="puso" required
+                        x-model="puso" @input="isiDariPuso()" min="0" step="0.01" :max="luasTanam"
+                        placeholder="0.00" class="{{ $kelasKontrol }} tabular-nums pr-12" />
+                    <span class="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-theme-sm text-gray-500 dark:text-gray-400">ha</span>
+                </div>
+                <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                    Luas yang gagal panen. Terisi sendiri dari sisa luas yang ditanam.
                 </p>
             </div>
 
+            {{--
+                Penegasan bahwa luasnya sudah tertutup habis. Bukan isian,
+                hanya pengingat bahwa kedua angka di atas menutup seluruh luas
+                yang ditanam - identitas yang dahulu memerlukan suku ketiga.
+            --}}
+            <div class="sm:col-span-2">
+                <p x-show="tanam" x-cloak
+                    class="rounded-lg bg-gray-50 p-3.5 text-theme-xs text-gray-600 dark:bg-white/[0.03] dark:text-gray-400">
+                    <span x-text="angka(angkaPanen)"></span> ha dipanen
+                    + <span x-text="angka(angkaPuso)"></span> ha puso
+                    = <span x-text="angka(luasTanam)"></span> ha yang ditanam.
+                    <span x-show="gagalTotal" class="font-medium text-error-500">
+                        Seluruh hamparan gagal panen.
+                    </span>
+                </p>
+            </div>
+
+            {{--
+                PRODUKTIVITAS tidak diwajibkan pada gagal total, sebab tidak
+                ada yang ditimbang. Memaksanya berarti menuntut petugas
+                mengarang hasil yang tidak pernah ada.
+
+                `:required` DAN `:disabled` dipakai bersama: isian wajib yang
+                sedang tidak berlaku akan menahan pengiriman sambil menunjuk
+                elemen yang tampak sehat, sehingga form seolah menolak diam-diam.
+                Jebakan yang sama sudah tercatat pada isian komoditas saprotan.
+            --}}
             <div>
                 <label for="{{ $awalan }}_produktivitas" class="{{ $kelasLabel }}">
-                    Produktivitas<span class="text-error-500">*</span>
+                    Produktivitas<span x-show="! gagalTotal" class="text-error-500">*</span>
                 </label>
                 <div class="relative">
-                    <input type="number" id="{{ $awalan }}_produktivitas" name="produktivitas" required
+                    <input type="number" id="{{ $awalan }}_produktivitas" name="produktivitas"
+                        :required="! gagalTotal" :disabled="gagalTotal"
                         x-model="produktivitas" min="0" step="0.001"
-                        placeholder="2.800" class="{{ $kelasKontrol }} tabular-nums pr-20" />
+                        placeholder="2.800" class="{{ $kelasKontrol }} tabular-nums pr-20 disabled:opacity-50" />
                     <span class="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-theme-sm text-gray-500 dark:text-gray-400">
                         <span x-text="tanam?.satuan ?? ''"></span>/ha
                     </span>
                 </div>
                 <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
-                    Satuannya mengikuti komoditas, bukan selalu ton.
+                    <span x-show="! gagalTotal">Satuannya mengikuti komoditas, bukan selalu ton.</span>
+                    <span x-show="gagalTotal" x-cloak>Tidak diisi: tidak ada hasil yang ditimbang.</span>
                 </p>
             </div>
 
             {{--
-                PRODUKSI: terkunci, hasil Hasil Panen x Produktivitas.
+                PRODUKSI: terkunci, hasil Realisasi Panen x Produktivitas.
 
                 Tetap dikirim lewat isian tersembunyi sebab kolomnya memang
                 disimpan: ia angka yang dilaporkan ke dinas, dan pembulatan
@@ -357,7 +448,7 @@
                 </p>
                 <input type="hidden" name="produksi" :value="produksi" />
                 <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
-                    Hasil panen dikali produktivitas.
+                    Realisasi panen dikali produktivitas.
                 </p>
             </div>
 

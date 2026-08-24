@@ -45,7 +45,6 @@
         $luasPuso = array_sum(array_map(fn ($p) => (float) ($p['puso'] ?? 0), $panen));
 
         // Tiga angka turunan, seluruhnya dihitung bukan disimpan.
-        $belumDipanen = DummyData::belumDipanen($data['id_penanaman']);
         $status = DummyData::statusPanen($data['id_penanaman']);
         $belumDitanam = DummyData::lahanTersedia($data['poktan_id']);
 
@@ -97,12 +96,12 @@
                     <span class="text-theme-sm font-normal text-gray-500 dark:text-gray-400">ha ditanam</span>
                 </p>
 
-                {{-- Status beserta sisanya, agar terbaca tanpa membuka tab panen --}}
+                {{-- Status, agar terbaca tanpa membuka tab panen --}}
                 <div class="mt-4">
                     <x-sim.status-badge :status="$status" />
-                    @if ($belumDipanen > 0)
+                    @if ($status === \App\Enums\StatusPanen::BelumDipanen)
                         <p class="mt-1.5 text-theme-xs tabular-nums text-gray-500 dark:text-gray-400">
-                            {{ number_format($belumDipanen, 2, ',', '.') }} ha masih berdiri tanaman
+                            Seluruh {{ number_format($data['realisasi_tanam'], 2, ',', '.') }} ha masih berdiri tanaman
                         </p>
                     @endif
                 </div>
@@ -192,8 +191,10 @@
                             Belum Ditanam ada di form tetapi tidak pernah tampil
                             di halaman rincian, padahal angka inilah yang
                             menentukan apakah kelompok masih dapat menanam lagi.
-                            Sifatnya berbeda dari Belum Dipanen: yang ini milik
-                            POKTAN, yang itu milik penanaman ini saja.
+
+                            Milik POKTAN, bukan milik penanaman ini: ia sisa
+                            lahan kelompok setelah dikurangi seluruh penanaman
+                            yang belum dipanen.
                         --}}
                         <div>
                             <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Belum ditanam</dt>
@@ -258,13 +259,13 @@
                     @else
                         {{--
                             URUTAN KOLOM DIPERBAIKI 2026-08-24. Sebelumnya
-                            header berbunyi "Hasil Panen" lalu "Produksi",
-                            sedangkan selnya mencetak produksi lalu hasil panen:
+                            header berbunyi "Realisasi Panen" lalu "Produksi",
+                            sedangkan selnya mencetak produksi lalu luas panen:
                             angka ton tampil di bawah judul hektare. Header dan
                             sel kini sejajar, dan satuannya ikut dicetak agar
                             ketidakcocokan semacam itu terlihat mata.
                         --}}
-                        <x-sim.tabel-ringkas :kolom="['Periode Panen', 'Hasil Panen (ha)', 'Puso (ha)', 'Produksi', 'Harga Jual']">
+                        <x-sim.tabel-ringkas :kolom="['Periode Panen', 'Realisasi Panen (ha)', 'Puso (ha)', 'Produksi', 'Harga Jual']">
                             @foreach ($panen as $p)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                                     <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">
@@ -304,14 +305,17 @@
                         </x-sim.tabel-ringkas>
 
                         {{--
-                            Identitas luas ditampilkan terang-terangan, sebab
-                            inilah yang membuat panen bertahap dapat diperiksa
-                            ulang petugas tanpa menghitung sendiri.
+                            Identitas luas ditampilkan terang-terangan agar
+                            petugas dapat memeriksanya sendiri tanpa menghitung.
+
+                            DUA SUKU sejak 2026-08-24. Suku "belum dipanen"
+                            dicabut bersama panen bertahap: satu panen selalu
+                            menutup seluruh luas yang ditanam, entah sebagai
+                            realisasi panen, puso, atau campuran keduanya.
                         --}}
                         <p class="px-5 py-4 text-theme-xs text-gray-500 dark:text-gray-400">
                             {{ number_format($luasDipanen, 2, ',', '.') }} ha dipanen
                             + {{ number_format($luasPuso, 2, ',', '.') }} ha puso
-                            + {{ number_format($belumDipanen, 2, ',', '.') }} ha belum dipanen
                             = {{ number_format($data['realisasi_tanam'], 2, ',', '.') }} ha realisasi tanam.
                         </p>
                     @endif

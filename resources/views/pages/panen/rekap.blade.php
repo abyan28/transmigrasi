@@ -25,18 +25,21 @@
          * PERIODE SELALU TERIKAT, tidak pernah kumulatif sejak awal waktu.
          *
          * Bawaannya TAHUN BERJALAN sesuai keputusan pemilik proyek 2026-08-24.
-         * Konsekuensinya diterima sadar: setiap awal tahun halaman ini nyaris
-         * kosong sampai penanaman pertama dicatat, dan itu jujur - memang
-         * belum ada yang ditanam tahun itu.
          *
-         * Memakai TAHUN TANAM, bukan tahun panen. Penanaman yang belum
-         * dipanen tidak punya periode panen, sehingga menyaringnya dengan
-         * tahun panen justru membuang baris yang paling perlu terlihat.
+         * MEMAKAI TAHUN PANEN, bukan tahun tanam (diubah 2026-08-24). Ini
+         * rekap PANEN, sehingga yang menggolongkan adalah peristiwa panennya.
+         * Bentuk lama membuang panen April 2026 dari rekap 2026 hanya karena
+         * penanamannya bermula November 2025, padahal timbangannya nyata
+         * terjadi tahun itu.
+         *
+         * Penanaman yang belum dipanen digolongkan ke tahun berjalan, sebab
+         * di situlah panennya masih mungkin terjadi. Lihat
+         * DummyData::tahunRekapPanen().
          */
-        $daftarTahun = DummyData::tahunTanamTercatat();
-        $tahunTanam = (int) request('tahun', date('Y'));
+        $daftarTahun = DummyData::tahunPanenTercatat();
+        $tahunPanen = (int) request('tahun', date('Y'));
 
-        $rekap = DummyData::rekapPanen($kelompok, $tahunTanam);
+        $rekap = DummyData::rekapPanen($kelompok, $tahunPanen);
 
         // Tab Tahun tidak ada; urutannya seragam menurut produksi terbesar.
         $totalPoktan = array_sum(array_column($rekap, 'jumlah_poktan'));
@@ -105,9 +108,6 @@
     <form method="GET" action="{{ route('panen.rekap.kelompok', ['kelompok' => $kelompok]) }}"
         class="mb-6 flex flex-wrap items-end gap-3 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
         <div>
-            <label for="filter_tahun" class="mb-1.5 block text-theme-xs font-medium text-gray-700 dark:text-gray-400">
-                Tahun Tanam
-            </label>
             <select id="filter_tahun" name="tahun"
                 class="h-10 w-56 rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
                 {{--
@@ -117,7 +117,7 @@
                     dalam daftarnya sendiri setiap awal tahun.
                 --}}
                 @foreach (array_unique(array_merge([(int) date('Y')], $daftarTahun)) as $t)
-                    <option value="{{ $t }}" @selected($tahunTanam === $t)>{{ $t }}</option>
+                    <option value="{{ $t }}" @selected($tahunPanen === $t)>{{ $t }}</option>
                 @endforeach
             </select>
         </div>
@@ -128,7 +128,7 @@
         </button>
 
         <p class="ml-auto max-w-md text-theme-xs text-gray-500 dark:text-gray-400">
-            Rekap selalu terikat satu tahun tanam. Luas tidak dijumlahkan lintas tahun,
+            Rekap selalu terikat satu tahun panen. Luas tidak dijumlahkan lintas tahun,
             sebab bidang yang sama memang ditanami berulang kali.
         </p>
     </form>
@@ -141,7 +141,7 @@
                  mana pun. --}}
             <h2 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">
                 Rekap per {{ $labelKelompok[$kelompok] ?? 'Satuan Permukiman' }}
-                &middot; Tahun Tanam {{ $tahunTanam }}
+                &middot; Tahun Panen {{ $tahunPanen }}
             </h2>
             <p class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
                 {{ count($rekap) }} kelompok, diurutkan dari produksi terbesar.
@@ -149,8 +149,8 @@
         </div>
 
         @if (empty($rekap))
-            <x-sim.empty-state judul="Belum ada penanaman pada tahun {{ $tahunTanam }}"
-                pesan="Pilih tahun tanam lain, atau catat penanaman lebih dulu pada menu Penanaman." />
+            <x-sim.empty-state judul="Belum ada panen pada tahun {{ $tahunPanen }}"
+                pesan="Pilih tahun lain, atau catat hasil panen lebih dulu." />
         @else
             <div class="overflow-x-auto">
                 <table class="w-full text-left">
@@ -176,13 +176,31 @@
                                 Realisasi Tanam (ha)
                             </th>
                             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">
-                                Hasil Panen (ha)
+                                Realisasi Panen (ha)
                             </th>
                             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">
                                 Puso (ha)
                             </th>
+                            {{--
+                                "Menunggu Panen", bukan "Belum Dipanen"
+                                (diganti 2026-08-24).
+
+                                Istilah lama dicabut dari form dan halaman
+                                rincian bersama panen bertahap, dan memakainya
+                                di sini dengan arti yang BERBEDA justru
+                                membingungkan: di sana ia berarti sisa dari
+                                panen yang setengah jalan, sedangkan di sini
+                                berarti penanaman yang belum dipanen sama
+                                sekali.
+
+                                Kunci array `belum_dipanen` sengaja tidak ikut
+                                diganti: ia nama teknis, dan menggantinya
+                                menyeret helper beserta ujinya tanpa manfaat
+                                setara. Yang membingungkan petugas adalah label
+                                di layar, bukan nama kunci.
+                            --}}
                             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">
-                                Belum Dipanen (ha)
+                                Menunggu Panen (ha)
                             </th>
                             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">
                                 Produksi (ton)
@@ -242,7 +260,7 @@
                              terbaca sebagai total sejak sistem berdiri. --}}
                         <tr class="motif-baris-total">
                             <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">
-                                Total tahun tanam {{ $tahunTanam }}
+                                Total tahun panen {{ $tahunPanen }}
                             </td>
                             @if ($tampilkanCacahPoktan)
                                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">

@@ -68,11 +68,18 @@
         $adaFilter = $cari !== '' || $filterSp || $filterTahun || $filterKomoditas || $filterStatus;
         $totalLuas = array_sum(array_column($baris, 'realisasi_tanam'));
 
-        // Sisa luas yang masih berdiri tanaman, dijumlahkan dari seluruh
-        // penanaman yang belum tuntas dipanen. Inilah "sisa tanam" pada
-        // laporan lapangan, dan ia tidak dapat dibaca dari satu kolom mana pun.
+        /*
+         * Luas yang masih berdiri tanaman, yaitu seluruh penanaman yang belum
+         * dipanen sama sekali.
+         *
+         * DISEDERHANAKAN 2026-08-24: sebelumnya menjumlahkan sisa parsial tiap
+         * penanaman. Sisa parsial kini tidak lagi mungkin ada, sebab satu
+         * panen selalu menutup seluruh luas yang ditanam.
+         */
         $totalBelumDipanen = array_sum(array_map(
-            fn ($r) => DummyData::belumDipanen($r['id_penanaman']),
+            fn ($r) => $statusPanen[$r['id_penanaman']] === \App\Enums\StatusPanen::BelumDipanen
+                ? (float) $r['realisasi_tanam']
+                : 0.0,
             $semua
         ));
 
@@ -230,17 +237,13 @@
                 <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
                     {{ \Illuminate\Support\Carbon::parse($r['periode_tanam'] . '-01')->translatedFormat('F Y') }}</td>
                 {{--
-                    Sisa luas ikut disebut pada status Dipanen Sebagian. Tanpa
-                    angkanya, petugas tahu ada yang tersisa tetapi tidak tahu
-                    berapa, dan harus membuka halaman rincian untuk itu.
+                    Dua nilai saja sejak 2026-08-24. Keterangan "sisa sekian
+                    hektare" ikut dicabut: penanaman yang belum dipanen
+                    menyisakan SELURUH luasnya, dan angka itu sudah tertulis
+                    pada kolom Realisasi Tanam di sebelahnya.
                 --}}
                 <td class="px-5 py-3">
                     <x-sim.status-badge :status="$statusPanen[$r['id_penanaman']]" />
-                    @if ($statusPanen[$r['id_penanaman']] === \App\Enums\StatusPanen::DipanenSebagian)
-                        <p class="mt-0.5 text-theme-xs tabular-nums text-gray-500 dark:text-gray-400">
-                            sisa {{ number_format(DummyData::belumDipanen($r['id_penanaman']), 2, ',', '.') }} ha
-                        </p>
-                    @endif
                 </td>
                 <td class="px-5 py-3">
                     <x-sim.aksi-baris :rincian-url="route('penanaman.detail', $r['id_penanaman'])"

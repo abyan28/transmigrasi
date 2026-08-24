@@ -182,6 +182,11 @@ async function main() {
                 satuanTersembunyi: ambil('satuan_id') ? ambil('satuan_id').value : null,
                 poktanTersembunyi: ambil('poktan_id') ? ambil('poktan_id').value : null,
                 maxPanen: ambil('realisasi_panen') ? ambil('realisasi_panen').getAttribute('max') : null,
+                nilaiPanen: ambil('realisasi_panen') ? ambil('realisasi_panen').value : null,
+                nilaiPuso: ambil('puso') ? ambil('puso').value : null,
+                pusoWajib: ambil('puso') ? ambil('puso').required : null,
+                produktivitasLumpuh: ambil('produktivitas') ? ambil('produktivitas').disabled : null,
+                adaBelumDipanen: modal.innerText.includes('Belum Dipanen'),
                 adaKualitas: !! ambil('kualitas'),
                 adaVolume: !! ambil('volume'),
                 adaPetani: !! ambil('transmigran_id'),
@@ -220,7 +225,9 @@ async function main() {
             'ajakan mengisi wajib tampil, bukan angka nol yang menyesatkan'
         );
 
-        const hasil = await pilihPenanaman(2);
+        // Dropdown kini HANYA menawarkan penanaman yang belum dipanen
+        // (sejak 2026-08-24), sehingga indeks 0 adalah satu-satunya pilihan.
+        const hasil = await pilihPenanaman(0);
         periksa('opsi penanaman dapat diklik', hasil === 'ok', String(hasil));
 
         const sesudah = await keadaan();
@@ -237,23 +244,56 @@ async function main() {
             sesudah.poktanTersembunyi !== '' && sesudah.poktanTersembunyi !== null,
             `poktan_id=${sesudah.poktanTersembunyi}`
         );
+
+        // Penanaman #6 seluas 1 ha. Memilihnya langsung mengisi hasil panen
+        // dengan seluruh luas dan puso nol: panen mulus lebih lazim daripada
+        // gagal, sehingga itulah bawaan yang paling jarang perlu diubah.
         periksa(
-            'hasil panen dibatasi luas yang belum dipanen',
-            sesudah.maxPanen !== null,
-            `max=${sesudah.maxPanen}`
+            'memilih penanaman langsung menutup seluruh luasnya',
+            sesudah.nilaiPanen === '1' && sesudah.nilaiPuso === '0',
+            `panen=${sesudah.nilaiPanen}, puso=${sesudah.nilaiPuso}, seharusnya 1 dan 0`
         );
 
+        periksa(
+            'hasil panen dibatasi luas yang ditanam',
+            sesudah.maxPanen === '1',
+            `max=${sesudah.maxPanen}, seharusnya 1`
+        );
 
-        await isiKontrol('realisasi_panen', '0.50');
-        await isiKontrol('puso', '0.10');
+        // ------------------------------------------------------------------
+        // SALING MENGISI: mengetik salah satu menentukan yang lain.
+        //
+        // Inilah yang menggantikan isian "Belum Dipanen" yang dicabut. Dahulu
+        // luas boleh tidak tertutup habis, dan sisanya mengambang tanpa batas
+        // waktu - penanaman November 2025 masih menyisakan 0,80 ha sampai
+        // Agustus 2026, padahal jagung tidak berdiri sepuluh bulan.
+        // ------------------------------------------------------------------
+        await isiKontrol('realisasi_panen', '0.6');
         await tidur(400);
 
-        const sesudahLuas = await keadaan();
+        const sesudahPanen = await keadaan();
 
         periksa(
-            'belum dipanen terhitung dari sisa penanaman, bukan realisasi tanam',
-            sesudahLuas.teks.includes('0,2 ha') || sesudahLuas.teks.includes('0.2 ha'),
-            'penanaman #3 menyisakan 0,80 ha; dikurangi 0,50 panen dan 0,10 puso jadi 0,20 - bukan 2,00 ha realisasi tanamnya'
+            'mengetik hasil panen mengisi puso',
+            sesudahPanen.nilaiPuso === '0.4',
+            `puso=${sesudahPanen.nilaiPuso}, seharusnya 1 - 0,6 = 0,4`
+        );
+
+        await isiKontrol('puso', '0.25');
+        await tidur(400);
+
+        const sesudahPuso = await keadaan();
+
+        periksa(
+            'mengetik puso mengisi hasil panen',
+            sesudahPuso.nilaiPanen === '0.75',
+            `panen=${sesudahPuso.nilaiPanen}, seharusnya 1 - 0,25 = 0,75`
+        );
+
+        periksa(
+            'identitas luas tertulis terang-terangan',
+            sesudahPuso.teks.includes('ha yang ditanam'),
+            'petugas perlu dapat memeriksa sendiri bahwa luasnya tertutup habis'
         );
 
         await isiKontrol('produktivitas', '3');
@@ -263,19 +303,37 @@ async function main() {
 
         periksa(
             'produksi terhitung dari hasil panen dikali produktivitas',
-            sesudahProd.produksiTersembunyi === '1.5',
-            `produksi=${sesudahProd.produksiTersembunyi}, seharusnya 0,50 x 3 = 1,5`
+            sesudahProd.produksiTersembunyi === '2.25',
+            `produksi=${sesudahProd.produksiTersembunyi}, seharusnya 0,75 x 3 = 2,25`
         );
 
-        await isiKontrol('realisasi_panen', '99');
+        // ------------------------------------------------------------------
+        // GAGAL TOTAL: seluruh luas puso, tidak ada yang dipanen.
+        //
+        // Produktivitas dilumpuhkan pada keadaan ini, sebab tidak ada yang
+        // ditimbang. Memaksanya berarti menuntut petugas mengarang hasil.
+        // ------------------------------------------------------------------
+        await isiKontrol('realisasi_panen', '0');
         await tidur(400);
 
-        const melebihi = await keadaan();
+        const gagalTotal = await keadaan();
 
         periksa(
-            'panen melebihi sisa penanaman ditegur',
-            melebihi.teks.includes('melebihi luas yang belum dipanen'),
-            'tanpa teguran, angka mustahil tersimpan tanpa ada yang menyadari'
+            'gagal total mengalihkan seluruh luas ke puso',
+            gagalTotal.nilaiPuso === '1',
+            `puso=${gagalTotal.nilaiPuso}, seharusnya seluruh 1 ha`
+        );
+
+        periksa(
+            'produktivitas dilumpuhkan saat gagal total',
+            gagalTotal.produktivitasLumpuh === true,
+            'tidak ada yang ditimbang, sehingga memaksa angka berarti mengarang hasil'
+        );
+
+        periksa(
+            'gagal total dinyatakan terang-terangan',
+            gagalTotal.teks.includes('Seluruh hamparan gagal panen'),
+            'petugas perlu tahu bahwa yang ia catat adalah kegagalan penuh'
         );
 
         soket.close();

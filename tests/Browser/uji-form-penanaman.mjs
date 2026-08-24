@@ -290,8 +290,8 @@ async function main() {
 
         periksa(
             'realisasi tanam dibatasi lahan yang tersedia',
-            sesudahPoktan.realisasiMax === '3.45',
-            `max=${sesudahPoktan.realisasiMax}, 4,25 ha lahan dikurangi 0,80 ha yang masih berdiri tanaman`
+            sesudahPoktan.realisasiMax === '4.25',
+            `max=${sesudahPoktan.realisasiMax}, seluruh 4,25 ha kembali tersedia sebab semua panennya sudah tuntas`
         );
 
         // ------------------------------------------------------------------
@@ -372,11 +372,13 @@ async function main() {
 
         const sesudahRealisasi = await keadaan();
 
-        // 4,25 ha tersedia dikurangi 1,25 ha yang ditanam = 3 ha.
+        // 4,25 ha tersedia dikurangi 1,45 ha yang ditanam = 2,8 ha.
+        // Naik dari 3,45 sejak panen bertahap dicabut 2026-08-24: penanaman
+        // #3 kini tuntas dipanen, sehingga lahannya kembali seluruhnya.
         periksa(
             'belum ditanam terhitung dari lahan tersedia',
-            sesudahRealisasi.teks.includes('2 ha'),
-            '3,45 ha tersedia dikurangi 1,45 ha yang ditanam = 2 ha, tampil tanpa diketik petugas'
+            sesudahRealisasi.teks.includes('2,8 ha'),
+            '4,25 ha tersedia dikurangi 1,45 ha yang ditanam = 2,8 ha, tampil tanpa diketik petugas'
         );
 
         // Melebihi lahan wajib ditegur, bukan diterima diam-diam.

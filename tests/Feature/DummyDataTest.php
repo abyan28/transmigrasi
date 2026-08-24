@@ -668,9 +668,10 @@ it('mengembalikan lahan poktan setelah panennya tercatat', function () {
     // dipanen. Menghitung seluruh penanaman sepanjang sejarah akan membuat
     // lahan poktan tampak habis setelah beberapa musim, padahal bidang yang
     // sama memang ditanami berulang kali tiap tahun.
-    // Yang masih menahan lahan hanyalah bagian yang BELUM dipanen, bukan
-    // seluruh penanaman yang belum pernah disentuh panen. Panen bertahap
-    // melepaskan lahannya sedikit demi sedikit.
+    // Yang masih menahan lahan hanyalah penanaman yang BELUM DIPANEN sama
+    // sekali. Kriteria itu disederhanakan kembali 2026-08-24: penghalusan
+    // "sisa luasnya nol" dahulu dibuat untuk menangani panen bertahap, dan
+    // panen bertahap kini dicabut.
     foreach (DummyData::poktan() as $poktan) {
         $id = $poktan['id_poktan'];
         $rekap = DummyData::rekapLahanPoktan($id);
@@ -678,8 +679,9 @@ it('mengembalikan lahan poktan setelah panennya tercatat', function () {
         $belum = 0.0;
 
         foreach (DummyData::penanaman() as $tanam) {
-            if ($tanam['poktan_id'] === $id) {
-                $belum += DummyData::belumDipanen($tanam['id_penanaman']);
+            if ($tanam['poktan_id'] === $id
+                && DummyData::statusPanen($tanam['id_penanaman']) === StatusPanen::BelumDipanen) {
+                $belum += (float) $tanam['realisasi_tanam'];
             }
         }
 
@@ -740,38 +742,59 @@ it('menjaga realisasi tanam tidak melebihi luas lahan poktannya', function () {
 |--------------------------------------------------------------------------
 */
 
-it('menjaga hasil panen ditambah puso ditambah belum dipanen sama dengan realisasi tanam', function () {
-    // Identitas pertama, terbukti pada 96 baris laporan Polri MT.II 2025.
+it('menjaga hasil panen ditambah puso sama dengan realisasi tanam', function () {
+    // IDENTITAS DUA SUKU (diubah 2026-08-24). Suku "belum dipanen" dicabut
+    // bersama panen bertahap, atas keterangan pemilik proyek: satu penanaman
+    // hanya bisa satu panen, dan realisasi tanam 2 ha berarti panen ditambah
+    // puso juga tepat 2 ha.
     //
-    // `belum_dipanen` TIDAK disimpan; ia selisih dari identitas ini.
-    // Menyimpannya berarti tiga angka yang saling menentukan disimpan
-    // terpisah, dan ketiganya dapat berbeda tanpa ada yang menegur.
+    // Bentuk ini pula yang dipakai laporan lapangan rujukan, yang kolomnya
+    // memang hanya Realisasi Tanam, Realisasi Panen, dan Puso.
     foreach (DummyData::penanaman() as $tanam) {
         $panen = 0.0;
         $puso = 0.0;
+        $ada = false;
 
         foreach (DummyData::hasilPanen() as $p) {
             if (($p['penanaman_id'] ?? null) !== $tanam['id_penanaman']) {
                 continue;
             }
 
+            $ada = true;
             $panen += (float) $p['realisasi_panen'];
             $puso += (float) ($p['puso'] ?? 0);
         }
 
-        $belum = DummyData::belumDipanen($tanam['id_penanaman']);
-        $total = round($panen + $puso + $belum, 2);
+        // Penanaman yang belum dipanen tidak dituntut apa pun.
+        if (! $ada) {
+            continue;
+        }
 
-        expect($total)->toBe(round((float) $tanam['realisasi_tanam'], 2),
-            "penanaman {$tanam['id_penanaman']} timpang");
+        expect(round($panen + $puso, 2))->toBe(round((float) $tanam['realisasi_tanam'], 2),
+            "penanaman {$tanam['id_penanaman']} tidak tertutup habis");
+    }
+});
+
+it('menjaga satu penanaman hanya memiliki satu panen', function () {
+    // Panen bertahap dicabut 2026-08-24. Dua baris panen pada penanaman yang
+    // sama berarti luasnya terhitung dua kali pada rekap, dan itu tidak akan
+    // memerahkan apa pun tanpa uji ini.
+    $cacah = [];
+
+    foreach (DummyData::hasilPanen() as $p) {
+        $id = $p['penanaman_id'];
+        $cacah[$id] = ($cacah[$id] ?? 0) + 1;
+    }
+
+    foreach ($cacah as $id => $jumlah) {
+        expect($jumlah)->toBe(1, "penanaman {$id} memiliki lebih dari satu panen");
     }
 });
 
 it('menjaga produksi sama dengan hasil panen dikali produktivitas', function () {
     // Identitas kedua. Produksi tetap DISIMPAN meski dapat dihitung: ia
     // angka yang dilaporkan ke dinas, dan pembulatan hasil perkalian dapat
-    // berbeda tipis dari angka yang benar-benar ditimbang. Yang dijaga di
-    // sini adalah selisihnya tetap dalam batas pembulatan yang wajar.
+    // berbeda tipis dari angka yang benar-benar ditimbang.
     foreach (DummyData::hasilPanen() as $p) {
         $hitung = (float) $p['realisasi_panen'] * (float) $p['produktivitas'];
 
@@ -786,56 +809,40 @@ it('menjaga produksi sama dengan hasil panen dikali produktivitas', function () 
 |--------------------------------------------------------------------------
 */
 
-it('menyimpulkan status panen dari sisa luas, bukan dari kolom tersimpan', function () {
-    // Status DITURUNKAN agar tidak pernah basi. Menyimpannya sebagai kolom
-    // berarti nilainya menjadi salah begitu satu baris panen disunting atau
-    // dihapus, dan kesalahan itu tidak pernah memerahkan apa pun.
+it('menyimpulkan status panen dari ada tidaknya catatan panen', function () {
+    // DITURUNKAN agar tidak pernah basi. Menyimpannya sebagai kolom berarti
+    // nilainya menjadi salah begitu satu baris panen dihapus.
     foreach (DummyData::penanaman() as $tanam) {
         expect($tanam)->not->toHaveKey('status_panen');
-    }
 
-    // Yang diperiksa perilakunya, bukan keberadaan methodnya: tiap penanaman
-    // dibandingkan dengan keadaan yang benar-benar dihitung dari datanya.
-    foreach (DummyData::penanaman() as $tanam) {
         $id = $tanam['id_penanaman'];
 
         $adaPanen = collect(DummyData::hasilPanen())
             ->contains(fn ($p) => ($p['penanaman_id'] ?? null) === $id);
 
-        $harusnya = match (true) {
-            ! $adaPanen => StatusPanen::BelumDipanen,
-            DummyData::belumDipanen($id) > 0 => StatusPanen::DipanenSebagian,
-            default => StatusPanen::SelesaiDipanen,
-        };
+        $harusnya = $adaPanen ? StatusPanen::SelesaiDipanen : StatusPanen::BelumDipanen;
 
         expect(DummyData::statusPanen($id))->toBe($harusnya, "penanaman {$id}");
     }
 });
 
-it('membedakan penanaman yang belum disentuh dari yang dipanen nol hektare', function () {
-    // Keduanya sama-sama menyisakan SELURUH luasnya, sehingga sisa saja tidak
-    // cukup membedakannya. Tanpa pemeriksaan keberadaan baris panen, penanaman
-    // yang sudah didatangi petugas dan yang belum akan tampak serupa.
-    $belum = DummyData::statusPanen(6);
+it('meniadakan status Dipanen Sebagian', function () {
+    // Dicabut 2026-08-24 bersama panen bertahap: keadaan itu tidak lagi
+    // mungkin ada, sebab satu panen selalu menutup seluruh luas yang ditanam.
+    expect(StatusPanen::cases())->toHaveCount(2);
 
-    expect($belum)->toBe(StatusPanen::BelumDipanen)
-        ->and(DummyData::belumDipanen(6))->toBe(1.0);
+    foreach (StatusPanen::cases() as $status) {
+        expect($status->value)->not->toContain('Sebagian');
+    }
 
-    // Sisanya sama-sama penuh, tetapi keduanya keadaan yang berbeda.
-    $adaPanen = collect(DummyData::hasilPanen())
-        ->contains(fn ($p) => ($p['penanaman_id'] ?? null) === 6);
-
-    expect($adaPanen)->toBeFalse();
+    // Metode penyaring khusus daftar panen ikut gugur: seluruh barisnya kini
+    // berstatus sama, sehingga penyaringnya tidak menyaring apa pun.
+    expect(method_exists(StatusPanen::class, 'penyaringPanen'))->toBeFalse();
 });
 
-it('menyediakan contoh untuk ketiga status agar seluruhnya dapat ditinjau', function () {
+it('menyediakan contoh untuk kedua status agar seluruhnya dapat ditinjau', function () {
     // Status yang tidak punya benda nyata tidak akan pernah tampil di layar,
-    // dan ujinya hanya menguji dirinya sendiri. Sebelum 2026-08-24 seluruh
-    // penanaman sudah dipanen, sehingga lencana Belum Dipanen tidak pernah
-    // terlihat siapa pun.
-    // Dibandingkan sebagai daftar nilai, bukan lewat toContain berargumen
-    // pesan: Pest memperlakukan argumen kedua toContain sebagai nilai lain
-    // yang ikut dicari, sehingga pesannya sendiri akan ikut diperiksa.
+    // dan ujinya hanya menguji dirinya sendiri.
     $terpakai = collect(DummyData::penanaman())
         ->map(fn ($t) => DummyData::statusPanen($t['id_penanaman'])->value)
         ->unique()
@@ -850,43 +857,31 @@ it('menyediakan contoh untuk ketiga status agar seluruhnya dapat ditinjau', func
         ->all());
 });
 
-it('menganggap penanaman yang seluruhnya puso sebagai selesai dipanen', function () {
-    // Ditetapkan pemilik proyek 2026-08-24: puso adalah KOLOM tersendiri,
-    // bukan status keempat, mengikuti bentuk laporan lapangan yang menaruh
-    // Realisasi Panen dan Puso sebagai dua kolom bersebelahan.
-    //
-    // Konsekuensinya diuji terang-terangan di sini, bukan dibiarkan sebagai
-    // kejutan: lahan yang gagal total menyisakan nol, sehingga statusnya sama
-    // dengan yang berhasil penuh. Pembedanya kolom puso.
-    expect(StatusPanen::cases())->toHaveCount(3);
+it('menganggap penanaman yang gagal total sebagai selesai dipanen', function () {
+    // GAGAL TOTAL: panen 0 ha, puso menutup seluruh luas. Keadaan sah, dan
+    // statusnya tetap Selesai Dipanen sebab barisnya ada - yang membedakan
+    // kolom puso, bukan status.
+    $gagalTotal = collect(DummyData::hasilPanen())
+        ->filter(fn ($p) => (float) $p['realisasi_panen'] === 0.0 && (float) ($p['puso'] ?? 0) > 0);
 
-    foreach (StatusPanen::cases() as $status) {
-        expect($status->value)->not->toContain('Puso');
-    }
-});
+    // Sekurang-kurangnya satu contoh wajib ada, agar cabang ini teruji.
+    expect($gagalTotal)->not->toBeEmpty();
 
-it('meniadakan pilihan Belum Dipanen pada penyaring hasil panen', function () {
-    // Penanaman yang belum dipanen tidak punya satu pun baris panen, sehingga
-    // pilihan itu selalu menghasilkan tabel kosong - kontrol mati yang
-    // dilarang ui-spec.md R-26.
-    expect(StatusPanen::penyaringPanen())
-        ->toBe([StatusPanen::DipanenSebagian, StatusPanen::SelesaiDipanen])
-        ->not->toContain(StatusPanen::BelumDipanen);
+    foreach ($gagalTotal as $p) {
+        expect(DummyData::statusPanen($p['penanaman_id']))->toBe(StatusPanen::SelesaiDipanen);
 
-    // Dibuktikan pada datanya, bukan diandaikan: tidak satu pun baris panen
-    // dapat berstatus Belum Dipanen.
-    foreach (DummyData::hasilPanen() as $p) {
-        expect(DummyData::statusPanen($p['penanaman_id']))
-            ->not->toBe(StatusPanen::BelumDipanen, "panen {$p['id_hasil_panen']}");
+        // Produktivitas dan produksi nol, dan itu SAH: tidak ada yang
+        // ditimbang, sehingga memaksa angka berarti mengarang hasil.
+        expect((float) $p['produktivitas'])->toBe(0.0)
+            ->and((float) $p['produksi'])->toBe(0.0);
     }
 });
 
 it('memberi warna badge yang berbeda untuk tiap status panen', function () {
     $warna = collect(StatusPanen::cases())->map(fn ($s) => $s->warna());
 
-    expect($warna->unique())->toHaveCount(3)
+    expect($warna->unique())->toHaveCount(2)
         ->and(StatusPanen::BelumDipanen->warna())->toBe('gray')
-        ->and(StatusPanen::DipanenSebagian->warna())->toBe('warning')
         ->and(StatusPanen::SelesaiDipanen->warna())->toBe('success');
 });
 
@@ -912,26 +907,39 @@ it('meniadakan kualitas panen dan memakai istilah produksi', function () {
     expect(enum_exists('App\Enums\KualitasPanen'))->toBeFalse();
 });
 
-it('menahan lahan yang masih berdiri tanaman meski sudah dipanen sebagian', function () {
-    // Diperhalus 2026-08-22: sebelumnya satu baris panen dianggap
-    // menuntaskan SELURUH penanaman. Itu keliru sejak panen dapat
-    // bertahap - penanaman 10 ha yang baru dipanen 3 ha akan langsung
-    // melepaskan seluruh 10 ha, sehingga lahan yang masih berdiri tanaman
-    // tampak siap ditanami lagi.
+it('melepaskan lahan seketika begitu panennya tercatat', function () {
+    // Sejak panen bertahap dicabut 2026-08-24, sebuah penanaman menahan lahan
+    // SELURUHNYA atau tidak sama sekali - tidak ada keadaan setengah.
+    //
+    // Penghalusan 2026-08-22 yang melepaskan lahan sedikit demi sedikit
+    // dibuat untuk menangani panen bertahap, dan kini gugur bersamanya.
     foreach (DummyData::poktan() as $poktan) {
         $id = $poktan['id_poktan'];
-        $belum = 0.0;
+        $luas = DummyData::rekapLahanPoktan($id)['luas_total'];
+
+        $tertahan = 0.0;
 
         foreach (DummyData::penanaman() as $tanam) {
-            if ($tanam['poktan_id'] === $id) {
-                $belum += DummyData::belumDipanen($tanam['id_penanaman']);
+            if ($tanam['poktan_id'] !== $id) {
+                continue;
+            }
+
+            // Yang menahan hanyalah penanaman tanpa catatan panen.
+            if (DummyData::statusPanen($tanam['id_penanaman']) === StatusPanen::BelumDipanen) {
+                $tertahan += (float) $tanam['realisasi_tanam'];
             }
         }
 
-        $harapan = max(0.0, round(DummyData::rekapLahanPoktan($id)['luas_total'] - $belum, 2));
-
-        expect(DummyData::lahanTersedia($id))->toBe($harapan);
+        expect(DummyData::lahanTersedia($id))->toBe(max(0.0, round($luas - $tertahan, 2)));
     }
+
+    // POKTAN MEKAR JAYA seluruh panennya sudah tuntas, sehingga lahannya
+    // kembali utuh. Angka nyata dipakai agar uji tidak sekadar mengulang
+    // rumus yang sama dengan kodenya.
+    expect(DummyData::lahanTersedia(1))->toBe(DummyData::rekapLahanPoktan(1)['luas_total']);
+
+    // POKTAN SUBUR MAKMUR menahan 1 ha yang belum dipanen dari 2 ha lahannya.
+    expect(DummyData::lahanTersedia(2))->toBe(1.0);
 });
 
 it('mencatat penanaman dan panen memakai periode bulan, bukan tanggal', function () {
