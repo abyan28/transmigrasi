@@ -13,19 +13,41 @@
     @php
         use App\Support\DummyData;
 
-        $kelompok = request('kelompok', 'tahun');
+        /*
+         * Dasar pengelompokan datang dari dua arah: segmen rute yang menjadi
+         * tautan tetap, dan kueri `?kelompok=` milik tautan lama. Yang pertama
+         * membuat seluruh tab tetap dapat dibuka pada build statis.
+         *
+         * Sebelum 2026-08-25 hanya kueri yang ada, sehingga di situs terbit
+         * HANYA tab Tahun yang terbuka - lima tab lain tidak dapat dicapai
+         * sama sekali. Cacat yang sama pernah ditemukan pada rekap panen
+         * (notes.md 1b.6a) dan diperbaiki, tetapi kependudukan terlewat.
+         */
+        $kelompok = $kelompokRute ?? request('kelompok', 'tahun');
+
         $perTahun = DummyData::rekapKependudukan();
         $perSp = DummyData::rekapPerSp();
         $penghuni = DummyData::rekapPenghuni();
         $pekerjaan = DummyData::sebaranPekerjaan();
+        $daerahAsal = DummyData::sebaranDaerahAsal();
+        $pendidikan = DummyData::sebaranPendidikan();
 
         $ringkasan = DummyData::ringkasanDashboard();
 
+        /*
+         * Daftar ini WAJIB sejalan dengan batasan `where` pada rute
+         * `kependudukan.rekap.kelompok` dan larik pada DaftarTautanStatis.
+         * Ketiganya mengunci hal yang sama, dan mengubah salah satunya saja
+         * membuat halaman terbit membalas 404 tanpa penjaga apa pun
+         * (notes.md 1e.5).
+         */
         $labelKelompok = [
             'tahun' => 'Tahun',
             'sp' => 'Satuan Permukiman',
             'status' => 'Status Tinggal',
             'pekerjaan' => 'Pekerjaan',
+            'asal' => 'Daerah Asal',
+            'pendidikan' => 'Pendidikan',
         ];
     @endphp
 
@@ -41,7 +63,9 @@
         class="mb-6 flex flex-wrap gap-2 rounded-2xl border border-gray-200 bg-white p-2 dark:border-gray-800 dark:bg-white/[0.03]">
         @foreach ($labelKelompok as $nilai => $label)
             @php $aktif = $kelompok === $nilai; @endphp
-            <a href="{{ route('kependudukan.rekap', ['kelompok' => $nilai]) }}"
+            {{-- Tautan tetap, bukan kueri, agar tiap tab punya halamannya
+                 sendiri saat digilas menjadi berkas statis. --}}
+            <a href="{{ route('kependudukan.rekap.kelompok', ['kelompok' => $nilai]) }}"
                 @if ($aktif) aria-current="page" @endif
                 class="rounded-lg px-3 py-2 text-theme-sm font-medium transition focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 {{ $aktif ? 'bg-brand-500 text-white' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5' }}">
                 Per {{ $label }}
@@ -155,6 +179,83 @@
                             <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">Total</td>
                             <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
                                 {{ number_format($totalKerja, 0, ',', '.') }}</td>
+                            <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">100,0%</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            {{--
+                Dua tab tambahan 2026-08-25 atas permintaan pemilik proyek.
+
+                Keduanya menutup isian form yang selama ini diketik petugas
+                lalu tidak pernah terlihat kembali sebagai angka. Daerah asal
+                khas program transmigrasi: ia menjawab "dari mana warga
+                berasal", pertanyaan yang tidak dijawab tab mana pun.
+            --}}
+            @elseif ($kelompok === 'asal')
+                <table class="w-full text-left">
+                    <thead class="bg-gray-50 dark:bg-white/[0.02]">
+                        <tr class="border-b border-gray-200 dark:border-gray-800">
+                            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Daerah Asal</th>
+                            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Jumlah KK</th>
+                            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Porsi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
+                        @php $totalAsal = array_sum($daerahAsal); @endphp
+                        @foreach ($daerahAsal as $nama => $jumlah)
+                            <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
+                                <td class="px-5 py-3 text-theme-sm font-medium text-gray-800 dark:text-white/90">{{ $nama }}</td>
+                                <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
+                                    {{ number_format($jumlah, 0, ',', '.') }}</td>
+                                <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
+                                    {{ number_format($jumlah / $totalAsal * 100, 1, ',', '.') }}%</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                    <tfoot>
+                        <tr class="motif-baris-total">
+                            <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">Total</td>
+                            <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
+                                {{ number_format($totalAsal, 0, ',', '.') }}</td>
+                            <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">100,0%</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            {{--
+                Pendidikan diurutkan menurut JENJANG, bukan menurut jumlah:
+                mengurutkannya menurut jumlah membuat SD mendahului Tidak
+                Sekolah dan pembaca kehilangan bentuk piramidanya.
+
+                Jenjang tanpa penghuni tetap ditampilkan bernilai nol. Baris
+                yang hilang membuat pembaca tidak dapat membedakan "tidak ada"
+                dari "belum didata".
+            --}}
+            @elseif ($kelompok === 'pendidikan')
+                <table class="w-full text-left">
+                    <thead class="bg-gray-50 dark:bg-white/[0.02]">
+                        <tr class="border-b border-gray-200 dark:border-gray-800">
+                            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Pendidikan Terakhir</th>
+                            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Jumlah KK</th>
+                            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Porsi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
+                        @php $totalDidik = array_sum($pendidikan); @endphp
+                        @foreach ($pendidikan as $nama => $jumlah)
+                            <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
+                                <td class="px-5 py-3 text-theme-sm font-medium text-gray-800 dark:text-white/90">{{ $nama }}</td>
+                                <td class="px-5 py-3 text-theme-sm tabular-nums {{ $jumlah > 0 ? 'text-gray-800 dark:text-white/90' : 'text-gray-400 dark:text-white/30' }}">
+                                    {{ number_format($jumlah, 0, ',', '.') }}</td>
+                                <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
+                                    {{ number_format($jumlah / $totalDidik * 100, 1, ',', '.') }}%</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                    <tfoot>
+                        <tr class="motif-baris-total">
+                            <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">Total</td>
+                            <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
+                                {{ number_format($totalDidik, 0, ',', '.') }}</td>
                             <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">100,0%</td>
                         </tr>
                     </tfoot>

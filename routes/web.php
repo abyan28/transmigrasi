@@ -659,6 +659,28 @@ Route::get('/kependudukan/rekap', function () {
     return view('pages.kependudukan.rekap', ['title' => 'Rekap Kependudukan']);
 })->name('kependudukan.rekap');
 
+/*
+ * Tautan tetap pemilih kelompok rekap kependudukan.
+ *
+ * Ditambahkan 2026-08-25. Sebelumnya tab hanya dipilih lewat `?kelompok=`,
+ * dan kueri TIDAK dilayani berkas statis di GitHub Pages - sehingga di situs
+ * terbit hanya tab Tahun yang terbuka dan lima tab lain tidak dapat dicapai
+ * sama sekali.
+ *
+ * Cacat yang sama pernah ditemukan pada rekap panen (notes.md 1b.6a) lalu
+ * diperbaiki, tetapi kependudukan terlewat. Polanya menyalin `/panen/rekap/`.
+ *
+ * Batasan `where` di bawah WAJIB sejalan dengan $labelKelompok pada viewnya
+ * dan larik pada DaftarTautanStatis. Mengubah salah satunya saja membuat
+ * halaman terbit membalas 404 tanpa penjaga apa pun.
+ */
+Route::get('/kependudukan/rekap/{kelompok}', function (string $kelompok) {
+    return view('pages.kependudukan.rekap', [
+        'title' => 'Rekap Kependudukan',
+        'kelompokRute' => $kelompok,
+    ]);
+})->where('kelompok', 'tahun|sp|status|pekerjaan|asal|pendidikan')->name('kependudukan.rekap.kelompok');
+
 Route::get('/poktan', function () {
     return view('pages.poktan.index', ['title' => 'Kelompok Tani']);
 })->name('poktan.index');

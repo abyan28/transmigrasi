@@ -445,7 +445,7 @@ Dua halaman berikut dapat diakses siapa pun tanpa akun, sebagai kanal pengaduan 
 | Daftar rumah | `GET /rumah` | A, DT |
 | Detail rumah | `GET /rumah/{id}` | A, DT |
 | Riwayat penghunian | tab pada detail rumah | A, DT |
-| Rekap kependudukan | `GET /kependudukan/rekap` | A, DT |
+| Rekap kependudukan | `GET /kependudukan/rekap` beserta `/{kelompok}` | A, DT |
 
 ### 4.5 Lahan
 

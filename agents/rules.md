@@ -570,6 +570,11 @@ Parameter dikelompokkan menurut satu pertanyaan: **tanpa ini, apakah tempat ters
 2. Data penghuni wajib tertaut ke data rumah, mencakup kondisi rumah, foto rumah, koordinat lokasi, riwayat kepemilikan, dan catatan tambahan.
 3. Data penghuni harus tertaut ke desa/SP dan dapat difilter per lokus.
 4. Sistem harus menyediakan rekap kependudukan kawasan, termasuk KK masuk dan keluar per tahun.
+4a. Rekap kependudukan dikelompokkan menurut **enam dasar**: tahun, satuan permukiman, status tinggal, pekerjaan, daerah asal, dan pendidikan terakhir. Daerah asal ditambahkan 2026-08-25 sebab ia khas program transmigrasi — menjawab "dari mana warga berasal", pertanyaan yang tidak dijawab pengelompokan lain.
+4b. **Keenam pengelompokan wajib menghasilkan total jumlah KK yang sama.** Seluruhnya membagi keluarga yang sama menurut sudut pandang berbeda; total yang berlainan berarti salah satu pembagiannya bocor, dan pembaca yang berpindah tab akan mengira salah satunya rusak.
+4c. **Pendidikan diurutkan menurut jenjang, bukan menurut jumlah.** Pendidikan bertingkat, sehingga mengurutkannya menurut jumlah membuat `SD` mendahului `Tidak Sekolah` dan pembaca kehilangan bentuk piramidanya. Jenjang tanpa penghuni **tetap ditampilkan bernilai nol**: baris yang hilang membuat pembaca tidak dapat membedakan "tidak ada" dari "belum didata".
+4d. **Tiap dasar pengelompokan wajib punya tautan tetap**, bukan hanya kueri `?kelompok=`. Kueri tidak dilayani berkas statis, sehingga tanpa tautan tetap hanya tab bawaan yang terbuka di situs terbit. Berlaku bagi seluruh halaman rekap; aturan ini ditulis setelah rekap kependudukan ditemukan terlewat pada 2026-08-25, padahal rekap panen sudah diperbaiki jauh sebelumnya.
+4e. Beberapa isian form transmigran **sengaja belum direkap**: jenis kelamin, usia, dan jumlah anggota keluarga. Bukan kelalaian melainkan keputusan; pendapatan sudah terwakili lewat kolom pendapatan rata-rata pada rekap per tahun.
 5. Data penghuni bersifat sensitif dan wajib dibatasi oleh RBAC serta ditampilkan agregat bagi pihak terbatas.
 
 ### 10b. Aturan Fitur Pengaduan

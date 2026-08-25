@@ -322,7 +322,7 @@
                     min="0.01" step="0.01" :max="benihTerpilih?.sisa"
                     :required="!! benihTerpilih" :disabled="! benihTerpilih"
                     placeholder="45" class="{{ $kelasKontrol }} tabular-nums pr-16" />
-                <span class="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-theme-sm text-gray-500 dark:text-gray-400"
+                <span class="pointer-events-none absolute top-1/2 right-10 -translate-y-1/2 text-theme-sm text-gray-500 dark:text-gray-400"
                     x-text="benihTerpilih?.simbol"></span>
             </div>
             {{-- Keterangan di bawah tetap memakai NAMA PENUH: ruangnya lapang,

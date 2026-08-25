@@ -444,7 +444,7 @@
                         akan terdorong ke LUAR kotak isian tanpa terlihat pada
                         markup.
                     --}}
-                    <span class="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-theme-sm text-gray-500 dark:text-gray-400">
+                    <span class="pointer-events-none absolute top-1/2 right-10 -translate-y-1/2 text-theme-sm text-gray-500 dark:text-gray-400">
                         <span x-text="tanam?.simbol ?? ''"></span>/ha
                     </span>
                 </div>

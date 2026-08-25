@@ -15,6 +15,7 @@ use App\Enums\AsalWakilPoktan;
 use App\Enums\BidangPengaduan;
 use App\Enums\JabatanAnggotaPoktan;
 use App\Enums\Kondisi;
+use App\Enums\PendidikanTerakhir;
 use App\Enums\PeruntukanLahan;
 use App\Enums\StatusPanen;
 use App\Enums\StatusPengaduan;
@@ -725,6 +726,117 @@ it('menawarkan tahun berjalan meski belum ada penanamannya', function () {
     $isi = $this->get(route('panen.rekap'))->assertOk()->getContent();
 
     expect($isi)->toContain('value="'.date('Y').'"');
+});
+
+it('menjaga keenam tab rekap kependudukan membagi jumlah KK yang sama', function () {
+    /*
+     * Keenam tab membagi KELUARGA YANG SAMA menurut sudut pandang berbeda,
+     * sehingga totalnya wajib sama. Total yang berlainan berarti salah satu
+     * pembagiannya bocor - dan pembaca yang berpindah tab akan mengira
+     * salah satunya rusak.
+     */
+    $target = DummyData::ringkasanDashboard()['jumlah_kk'];
+
+    $tab = [
+        'status' => DummyData::rekapPenghuni(),
+        'pekerjaan' => DummyData::sebaranPekerjaan(),
+        'asal' => DummyData::sebaranDaerahAsal(),
+        'pendidikan' => DummyData::sebaranPendidikan(),
+    ];
+
+    foreach ($tab as $nama => $peta) {
+        expect(array_sum($peta))->toBe($target, "tab {$nama}");
+    }
+});
+
+it('mengurutkan pendidikan menurut jenjang, bukan menurut jumlah', function () {
+    /*
+     * Pendidikan bertingkat. Mengurutkannya menurut jumlah membuat SD
+     * mendahului Tidak Sekolah, dan pembaca kehilangan bentuk piramidanya.
+     */
+    $punya = array_keys(DummyData::sebaranPendidikan());
+
+    expect($punya)->toBe(PendidikanTerakhir::nilai());
+
+    // Bila diurutkan menurut jumlah, urutannya AKAN berbeda - sehingga uji
+    // di atas benar-benar menguji sesuatu.
+    $menurutJumlah = DummyData::sebaranPendidikan();
+    arsort($menurutJumlah);
+
+    expect(array_keys($menurutJumlah))->not->toBe($punya);
+});
+
+it('menampilkan jenjang pendidikan yang kosong sebagai nol', function () {
+    // "Tidak ada lulusan S3 di kawasan ini" adalah informasi; baris yang
+    // hilang membuat pembaca tidak dapat membedakannya dari data yang
+    // belum didata.
+    $peta = DummyData::sebaranPendidikan();
+
+    expect($peta)->toHaveCount(count(PendidikanTerakhir::nilai()));
+
+    $kosong = array_filter($peta, fn ($j) => $j === 0);
+
+    expect($kosong)->not->toBeEmpty();
+
+    $isi = $this->get(route('kependudukan.rekap.kelompok', ['kelompok' => 'pendidikan']))
+        ->assertOk()
+        ->getContent();
+
+    foreach (array_keys($kosong) as $jenjang) {
+        expect($isi)->toContain($jenjang);
+    }
+});
+
+it('menyediakan tautan tetap bagi tiap tab rekap kependudukan', function () {
+    /*
+     * Kueri `?kelompok=` TIDAK dilayani berkas statis di GitHub Pages,
+     * sehingga tanpa tautan tetap hanya tab bawaan yang terbuka di situs
+     * terbit - lima tab lain tidak dapat dicapai sama sekali.
+     *
+     * Cacat yang sama pernah ditemukan pada rekap panen (notes.md 1b.6a)
+     * lalu diperbaiki, tetapi kependudukan terlewat sampai 2026-08-25.
+     */
+    $tab = ['tahun', 'sp', 'status', 'pekerjaan', 'asal', 'pendidikan'];
+
+    foreach ($tab as $kelompok) {
+        $this->get(route('kependudukan.rekap.kelompok', ['kelompok' => $kelompok]))
+            ->assertOk()
+            ->assertSee('Rekap per');
+    }
+
+    // Kelompok karangan membalas 404, bukan halaman kosong: daftar yang
+    // tidak ada dan daftar yang kebetulan kosong adalah dua keadaan
+    // berbeda, dan menyamakannya membuat salah ketik tampak seperti data
+    // yang belum diisi.
+    $this->get('/kependudukan/rekap/karangan')->assertNotFound();
+
+    // Alamat lama tetap bekerja, sehingga tautan yang sudah tersebar tidak
+    // mendadak mati.
+    $this->get(route('kependudukan.rekap', ['kelompok' => 'asal']))->assertOk();
+});
+
+it('merender keenam tab rekap kependudukan beserta isinya', function () {
+    // Yang diperiksa BARISNYA terender, bukan sekadar halaman membalas 200:
+    // tab yang tabelnya kosong tetap membalas 200 dan tampak sehat.
+    $harapan = [
+        'asal' => DummyData::sebaranDaerahAsal(),
+        'pendidikan' => DummyData::sebaranPendidikan(),
+        'pekerjaan' => DummyData::sebaranPekerjaan(),
+    ];
+
+    foreach ($harapan as $kelompok => $peta) {
+        $isi = $this->get(route('kependudukan.rekap.kelompok', ['kelompok' => $kelompok]))
+            ->assertOk()
+            ->getContent();
+
+        foreach (array_keys($peta) as $nama) {
+            expect($isi)->toContain($nama);
+        }
+
+        // Baris totalnya ikut terender, memakai motif identitas rekap.
+        expect($isi)->toContain('motif-baris-total')
+            ->and($isi)->toContain(number_format(array_sum($peta), 0, ',', '.'));
+    }
 });
 
 it('menyusun kolom rekap sesuai dasar pengelompokannya', function () {

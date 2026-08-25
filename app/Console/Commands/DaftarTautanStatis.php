@@ -168,6 +168,13 @@ class DaftarTautanStatis extends Command
             $hasil[] = '/pengaduan/rekap/'.$kelompok;
         }
 
+        // Tautan tetap tab rekap kependudukan, mengikuti pola yang sama.
+        // Daftar ini wajib sejalan dengan batasan `where` pada rute
+        // `kependudukan.rekap.kelompok` dan $labelKelompok pada viewnya.
+        foreach (['tahun', 'sp', 'status', 'pekerjaan', 'asal', 'pendidikan'] as $kelompok) {
+            $hasil[] = '/kependudukan/rekap/'.$kelompok;
+        }
+
         // Halaman satu daftar referensi. Dibaca dari enumnya, bukan disebut
         // satu per satu: jenis baru wajib ikut terperiksa dengan sendirinya,
         // sebab halaman yang tidak masuk daftar ini tidak pernah tergilas dan

@@ -3383,6 +3383,74 @@ class DummyData
     }
 
     /**
+     * Sebaran daerah asal kepala keluarga.
+     *
+     * CAKUPANNYA AGREGAT KAWASAN, bukan penghitungan `transmigran()`. Alasannya
+     * sama dengan `sebaranPekerjaan()` di atas: data contoh hanya memuat 8 KK,
+     * sedangkan kawasan berisi 1.140. Menghitungnya dari sana akan membuat
+     * rekap menampilkan "8 KK" di sebelah tab lain yang menampilkan "1.140 KK",
+     * dan pembaca wajar mengira salah satunya rusak.
+     *
+     * TOTALNYA WAJIB SAMA dengan `ringkasanDashboard()['jumlah_kk']`. Keenam tab
+     * rekap kependudukan membagi keluarga yang sama menurut sudut pandang
+     * berbeda; totalnya yang berlainan berarti salah satu pembagiannya bocor.
+     *
+     * Diurutkan dari jumlah terbesar, dengan `Lainnya` sebagai penampung sisa -
+     * pola yang sama dengan `sebaranKomoditas()`.
+     *
+     * CATATAN UNTUK TAHAP BACKEND: `transmigran.daerah_asal` adalah isian TEKS
+     * BEBAS, bukan pilihan dari data master. Pada data nyata ejaannya akan
+     * beragam - "KUPANG", "Kab. Kupang", dan "KABUPATEN KUPANG" menjadi tiga
+     * baris berbeda meski menunjuk tempat yang sama. Middleware UppercaseInput
+     * menyeragamkan huruf besarnya, tetapi tidak ejaannya. Agregat di sini
+     * mengandaikan penyeragaman itu sudah dilakukan.
+     *
+     * @return array<string, int> Peta daerah asal ke jumlah KK
+     */
+    public static function sebaranDaerahAsal(): array
+    {
+        return [
+            'MALAKA' => 402,
+            'BELU' => 286,
+            'TIMOR TENGAH UTARA' => 178,
+            'KUPANG' => 145,
+            'TIMOR TENGAH SELATAN' => 96,
+            'Lainnya' => 33,
+        ];
+    }
+
+    /**
+     * Sebaran pendidikan terakhir kepala keluarga.
+     *
+     * Agregat kawasan, lihat keterangan pada `sebaranDaerahAsal()`.
+     *
+     * DIURUTKAN MENURUT JENJANG, bukan menurut jumlah. Pendidikan bertingkat,
+     * sehingga mengurutkannya menurut jumlah membuat `SD` muncul mendahului
+     * `Tidak Sekolah` dan pembaca kehilangan bentuk piramidanya. Urutannya
+     * mengikuti enum `PendidikanTerakhir`.
+     *
+     * Jenjang yang tidak berpenghuni TETAP ditampilkan bernilai nol. "Tidak ada
+     * lulusan S3 di kawasan ini" adalah informasi; baris yang hilang sama
+     * sekali membuat pembaca tidak dapat membedakannya dari data yang belum
+     * didata.
+     *
+     * @return array<string, int> Peta jenjang pendidikan ke jumlah KK
+     */
+    public static function sebaranPendidikan(): array
+    {
+        return [
+            'Tidak Sekolah' => 61,
+            'SD' => 402,
+            'SMP' => 331,
+            'SMA/SMK' => 274,
+            'Diploma' => 38,
+            'S1' => 32,
+            'S2' => 2,
+            'S3' => 0,
+        ];
+    }
+
+    /**
      * Sebaran komoditas utama untuk grafik donat.
      *
      * CAKUPANNYA AGREGAT KAWASAN SETAHUN, bukan penjumlahan `hasilPanen()`.

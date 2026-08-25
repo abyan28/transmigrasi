@@ -1590,3 +1590,27 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
   * Dijaga **4 pemeriksaan peramban baru** pada dua berkas uji, seluruhnya mengukur GEOMETRI bukan markup: sufiks memakai simbol, dan jaraknya dari tepi kanan menyisakan ruang bagi tombol naik-turun.
   * Dibuktikan lewat **tiga mutasi**: nama penuh dikembalikan pada volume benih, `right-4` dikembalikan, dan nama penuh dikembalikan pada produktivitas. Seluruhnya memerah.
   * Diperiksa juga di luar uji: **600 uji Pest** hijau, **202 alamat statis** seluruhnya 200, dan **192 pemeriksaan peramban** pada sebelas berkas hijau.
+
+- [done] Bisa coba cek rekap kependudukan? Apakah sudah sesuai dengan data yg ada (cek dari form yg disediakan, bukan dari data dummy)? Lalu apakah perlu halaman rekap SP juga?
+  * **Jawaban singkat: belum sesuai, dan halaman rekap SP TIDAK perlu.**
+  * Form transmigran memuat 14 isian; yang terekap hanya **tiga** - tahun kedatangan, status tinggal, dan pekerjaan. Enam isian lain diketik petugas lalu tidak pernah terlihat kembali sebagai angka: jenis kelamin, pendidikan, daerah asal, jumlah anggota keluarga, pendapatan, dan usia.
+  * **Daerah asal yang paling disayangkan.** Ia satu-satunya yang menjawab `dari mana warga berasal` - pertanyaan khas program transmigrasi, bukan pertanyaan kependudukan umum.
+  * **Halaman rekap SP tidak perlu, sebab sudah ada dan lebih baik bentuknya.** `/dashboard/sp/{id}` menyajikan 4 kartu statistik beserta 6 tab - jauh lebih kaya daripada satu baris tabel rekap.
+  * Tab `Per SP` yang memuat Luas Lahan dan Volume Panen **sengaja dipertahankan** atas keputusanmu, sebagai ringkasan lintas domain per wilayah.
+  **Dua tab baru: Daerah Asal dan Pendidikan.**
+  * Angkanya **agregat kawasan**, bukan dihitung dari `transmigran()`. Kedua versi kuhitung dan kutunjukkan berdampingan sebelum kau memilih: versi hitungan menghasilkan **8 KK** di sebelah empat tab lain yang menampilkan **1.140 KK**, dan pembaca yang berpindah tab wajar mengira salah satunya rusak.
+  * Versi hitungan juga **menghilangkan empat jenjang pendidikan** - Tidak Sekolah, S1, S2, S3 tidak muncul sama sekali sebab kebetulan tidak ada pada 8 baris contoh. Baris yang hilang membuat pembaca tidak dapat membedakan `tidak ada` dari `belum didata`.
+  * Lebih jauh, versi hitungan **menyesatkan soal daerah asal**: ia menyatakan Kupang, Belu, dan Malaka sama-sama 25% - kesimpulan tentang asal-usul 1.140 keluarga yang ditarik dari 8 baris karangan. Persis yang dilarang `rules.md` 19a.
+  * **Angka agregatnya tetap karangan**, dan itu diakui terang-terangan: Malaka 402, Belu 286, dan seterusnya tidak punya dasar lapangan apa pun. Yang dijaga hanya konsistensi aritmetikanya. Bedanya dengan versi hitungan: yang ini **jujur mengaku karangan** dan sudah punya dua belas saudara di sistem ini, sedangkan versi hitungan **tampak seperti data nyata** padahal sama-sama berasal dari baris karangan.
+  * **Pendidikan diurutkan menurut JENJANG, bukan jumlah.** Mengurutkannya menurut jumlah membuat SD mendahului Tidak Sekolah dan pembaca kehilangan bentuk piramidanya. Jenjang tanpa penghuni tetap ditampilkan bernilai nol, ditandai warna redup.
+  * Keempat tab yang membagi KK - status, pekerjaan, asal, pendidikan - **wajib bertotal sama** yaitu 1.140. Total yang berlainan berarti salah satu pembagiannya bocor.
+  **Temuan tambahan: lima dari enam tab tidak dapat dibuka di situs terbit.**
+  * Rekap kependudukan hanya punya kueri `?kelompok=`, tanpa tautan tetap. Kueri **tidak dilayani berkas statis**, sehingga di GitHub Pages hanya tab Tahun yang terbuka.
+  * Cacat yang **sama persis** pernah ditemukan pada rekap panen dan diperbaiki (1b.6a), lalu ditiru rekap pengaduan - tetapi kependudukan terlewat. Menambah dua tab tanpa memperbaiki ini berarti enam tab yang lima di antaranya tak terjangkau.
+  * Ditambahkan `/kependudukan/rekap/{kelompok}` mengikuti pola yang sudah ada. Alamat lama tetap bekerja. Aturannya kini ditulis umum pada `rules.md` 10a.4d agar berlaku bagi seluruh halaman rekap, bukan diperbaiki satu per satu setiap kali ketahuan.
+  * Dijaga **5 uji Pest baru**, dibuktikan lewat **empat mutasi**: total daerah asal ditimpangkan, urutan pendidikan diacak, jenjang kosong dibuang, dan dua tab baru dicabut dari batasan rute. Seluruhnya memerah.
+  * **Uji peramban menangkap regresi yang kubuat sendiri.** Setelah rangkaian mutasi, `right-10` pada sufiks satuan tertinggal sebagai `right-4` karena pemulihan berkas yang tidak lengkap. Dua pemeriksaan geometri langsung memerah dengan bunyi `jarak dari tepi kanan 16px`. Tanpa uji itu, cacat yang baru saja diperbaiki akan kembali diam-diam dalam sesi yang sama.
+  * Diukur di peramban: **keenam tab muat sebaris** tanpa gulir mendatar, tab aktif tertandai benar, dan kedua tabel baru bertotal 1.140.
+  * Diperiksa juga di luar uji: **605 uji Pest** hijau, **208 alamat statis** seluruhnya 200 - naik dari 202, persis enam tab baru - dan **192 pemeriksaan peramban** hijau.
+  * **Yang sengaja TIDAK dikerjakan** dan dicatat sebagai kesenjangan yang diketahui, bukan kelalaian: jenis kelamin, usia, dan jumlah anggota keluarga tetap tidak direkap. Pendapatan sudah terwakili lewat kolom Pendapatan Rata-rata pada tab Tahun.
+  * Dokumen ikut diselaraskan: `rules.md` 10a.4a sampai 4e, dan `ui-spec.md` daftar rute.
