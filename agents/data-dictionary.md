@@ -1031,7 +1031,7 @@ Pendataan **aset** infrastruktur. Pelaporan kerusakan ditangani fitur Pengaduan 
 | `prioritas` | `ENUM` | TIDAK | IDX | Lihat §11.24 |
 | `lintang` | `DECIMAL(10,7)` | YA | | Titik kejadian |
 | `bujur` | `DECIMAL(10,7)` | YA | | Titik kejadian |
-| `dokumen_pendukung` | `VARCHAR(255)` | YA | | Foto bukti |
+| `dokumen_pendukung` | `VARCHAR(255)` | YA | | Foto bukti dari **pelapor**, diserahkan saat melapor. Berbeda dari `penanganan_pengaduan.dokumen_tindak_lanjut` yang diunggah **petugas**; keduanya tampil terpisah pada halaman rincian beserta label yang menyebut siapa penyerahnya |
 
 **Catatan:**
 - Kolom `catatan_penanganan` dan `id_status_penanganan` pada SQL referensi **dihapus**; keduanya duplikatif (`notes.md` §1.5).

@@ -299,7 +299,11 @@ Hal yang sama berlaku saat memakai terowongan Cloudflare: jangan jalankan `npm r
 ### 1b.5 Yang tidak berfungsi pada versi statis
 
 1. **Seluruh tombol simpan, ubah, dan hapus.** 70 rute POST/PUT/DELETE hanya `return back()` tanpa menyimpan apa pun. Pada versi ber-PHP tombol memunculkan pesan; pada versi statis tidak terjadi apa-apa. **Bukan kemunduran**, sebab keduanya sama-sama tidak menyimpan.
-2. **Pencarian dan penyaringan tabel.** Memang belum berfungsi sejak awal.
+2. **Pencarian dan penyaringan tabel.** **DIKOREKSI 2026-08-25.** Keterangan semula berbunyi "memang belum berfungsi sejak awal", dan itu **sudah tidak benar**: sejak gelombang 2 seluruh halaman daftar menyaring sungguhan lewat `request()` di blok PHP masing-masing. Terverifikasi, `/alsintan` menampilkan 10 baris sedangkan `/alsintan?kondisi=Baik` menampilkan 8.
+
+   Yang tidak berfungsi adalah **versi statisnya**, dan sebabnya struktural: GitHub Pages tidak menjalankan PHP, sedangkan langkah penggilasan hanya mengambil alamat tanpa query string. Maka yang terbit hanyalah `/alsintan/index.html` versi tanpa saringan, dan menekan Cari mengubah alamat di bilah peramban tanpa mengubah isi halaman.
+
+   Sengaja **tidak diakali**. Pola tautan tetap yang menolong lacak pengaduan dan tab rekap panen tidak dapat dipakai di sini, sebab kombinasi filter berlipat: SP dikali kondisi dikali kategori menghasilkan ratusan halaman untuk isi yang sama. Batasan ini lenyap sendiri saat Tahap 3 pindah ke hosting ber-PHP, sesuai 1b.7.
 3. **Penyaring dashboard.** Formulir GET yang belum menyaring apa pun.
 
 ### 1b.6 Lacak pengaduan dan utang yang ditinggalkan
@@ -572,6 +576,75 @@ Ketahuan hanya karena satu penggantian teks gagal mencocokkan pola. Berkas dipul
 
 ---
 
+## 1f. Field Form Tanpa Tempat Tampil (2026-08-25)
+
+Diminta pemilik proyek: menyisir seluruh form dan memastikan setiap isian punya tempat tampil di halaman rinciannya. Pemicunya temuan sebelumnya, yaitu catatan dan unggahan yang dapat diisi tetapi tidak pernah terbaca kembali.
+
+Diperiksa **24 berkas form** terhadap halaman rincian pasangannya. Ditemukan **8 field** yang tersimpan tetapi tidak punya tempat tampil sama sekali, tersebar di 7 modul.
+
+### 1f.1 Delapan temuan
+
+| # | Modul | Field | Diisi di | Keadaan sebelumnya |
+|---|---|---|---|---|
+| 1 | Saprotan | `foto` | `form.blade.php` baris 224 | Rincian hanya menautkan `dokumen_pendukung` |
+| 2 | Alsintan | `foto` | `form.blade.php` | Sama, hanya satu tautan dari dua berkas |
+| 3 | Pengaduan | `dokumen_pendukung` | form petugas dan form warga | Rincian hanya menautkan `dokumen_tindak_lanjut` milik petugas, sedangkan bukti dari **pelapor** tidak pernah dapat dibuka |
+| 4 | Poktan | `alamat_ketua` | `form.blade.php` baris 343 | Kartu ketua memuat nama, NIK, telepon, lahan, email, tanpa alamat |
+| 5 | Poktan anggota | `telepon_wakil` | `form-anggota.blade.php` baris 173 | Sudah disiapkan `anggotaPoktan()` sebagai kunci `telepon`, tetapi tidak dipasang di kolom mana pun |
+| 6 | Poktan anggota | `alasan_keluar`, `keterangan` | `form-anggota.blade.php` baris 298 | Tabel anggota hanya menampilkan badge status, sehingga **sebab** seseorang berhenti tidak terbaca |
+| 7 | SP dan Kawasan | `keterangan`, `dokumen_pendukung` | `form.blade.php`, `form-kawasan.blade.php` | Keduanya tidak punya tempat tampil di mana pun |
+| 8 | Pengaduan publik | `email_pelapor` | `publik/pengaduan.blade.php` baris 179 | Dipakai sekali pada pesan konfirmasi lalu hilang, tidak pernah tersimpan maupun tampil |
+
+Dua sisa refactor ikut dibersihkan: `saprotan/detail.blade.php` memuat judul **Status** diikuti wadah kosong, dan `poktan/detail.blade.php` memuat wadah kosong serupa. Pola yang sama sudah pernah ditambal di `panen/detail.blade.php` pada 2026-08-24 tetapi tidak disisir ke modul lain.
+
+### 1f.2 Akar masalahnya
+
+**Form dan halaman rincian dikerjakan sebagai dua pekerjaan terpisah.** Menambah kolom ke form terasa selesai begitu isiannya tampil dan tersimpan, sedangkan sisi tampil menuntut membuka berkas lain yang tidak sedang dikerjakan.
+
+Tambalan 2026-08-20 sudah membereskan `keterangan` dan `dokumen_pendukung` di enam modul, dan komentarnya masih terbaca pada berkas rincian alsintan dan saprotan. Tambalan itu **melewatkan `foto`**, sebab pemisahan kolom `foto` dari `dokumen_pendukung` terjadi pada pekerjaan yang sama tetapi hanya diteruskan ke inventaris dan fasilitas. Dua modul yang menerima pemisahan belakangan tidak ikut disisir.
+
+Pola ini sejenis dengan yang sudah tercatat pada 1d: fitur lulus uji tetapi tidak dapat dipakai. Bedanya, di sana isian yang tidak memadai; di sini isian sudah benar tetapi hasilnya tidak punya jalan pulang.
+
+**Yang paling menohok:** seluruh kolom yang hilang tampilnya **sudah tertulis lengkap pada `data-dictionary.md` sejak awal**, termasuk `satuan_permukiman.keterangan`, `kawasan_transmigrasi.dokumen_pendukung`, dan `pengaduan.email_pelapor` beserta keterangan "bila diisi, nomor pengaduan dikirim juga ke sini". Tidak satu pun perlu ditambahkan saat pencatatan hasil audit ini.
+
+Jadi kamus datanya benar, migrasinya benar, formnya benar, dan hanya sisi tampil yang tertinggal. Ini menyingkirkan dugaan bahwa penyebabnya kolom yang tidak terpikirkan; yang terjadi adalah **janji dokumen yang tidak ditepati kode**, persis frasa yang sudah dipakai komentar `DummyData` pada tambalan 2026-08-20 untuk kasus yang sama.
+
+### 1f.3 Mengapa 605 uji tidak menangkapnya
+
+Uji `menyediakan cara membuka berkas dari halaman rincian modulnya` sudah ada dan justru menyasar persis masalah ini. Yang membuatnya tidak menolong adalah **angka ekspektasinya**:
+
+```php
+['/alsintan/1', 1],   // padahal modulnya punya dua berkas
+['/saprotan/1', 1],   // sama
+['/infrastruktur/1', 2],
+```
+
+Angka `1` ditulis dengan membaca keadaan halaman saat itu, bukan dengan menghitung berapa berkas yang **seharusnya** dapat dibuka. Uji karena itu mengunci keadaan cacat sebagai kebenaran, dan akan tetap hijau selamanya sekalipun cacatnya tidak pernah diperbaiki.
+
+Ini varian dari sebab yang sudah dicatat pada 1d.2: yang diuji adalah apa yang dibangun, bukan apa yang dijanjikan. Bentuknya di sini lebih halus, sebab ujinya ada, namanya tepat, dan warnanya hijau.
+
+> **Aturan:** uji yang mengunci jumlah wajib menyebut alasan angkanya pada komentar. Angka yang ditulis dari hasil pengamatan, bukan dari kewajiban, mengabadikan keadaan yang sedang berlaku.
+
+### 1f.4 Yang diperbaiki
+
+Seluruh delapan temuan ditutup. Foto dipasang berdampingan dengan dokumen mengikuti pola `sp/detail-inventaris.blade.php` yang sudah benar sejak awal. Bukti pelapor dipisahkan tegas dari dokumen tindak lanjut, masing-masing diberi label yang menyebut **siapa** yang menyerahkannya.
+
+`DummyData` menerima kunci baru agar setiap tempat tampil punya contoh isi: `satuan_permukiman` dan `kawasan_transmigrasi` memperoleh `keterangan` dan `dokumen_pendukung`, `pengaduan` memperoleh `email_pelapor` dan `dokumen_pendukung`.
+
+Penjaganya diperluas: daftar uji berkas kini memuat `/dashboard/sp/1` dan `/pengaduan/1`, dan angka alsintan serta saprotan dinaikkan menjadi dua beserta komentar yang menyebut alasannya.
+
+### 1f.5 Kekeliruan diksi pada pekerjaan yang sama
+
+Label email pelapor semula ditulis **"Surel"**, melanggar `ui-spec.md` 10.1 yang menetapkan "email" untuk seluruh teks yang dilihat pengguna.
+
+Larangan itu sudah punya uji penjaga, dan ujinya benar. Yang kurang adalah **cakupannya**: daftar `with()` hanya memuat sembilan halaman auth dan publik, tidak satu pun halaman rincian. Kesalahan karena itu lolos tanpa memerahkan apa pun.
+
+Daftar diperluas ke `/pengaduan/1` dan `/poktan/1`. Dibuktikan lewat mutasi: mengembalikan label ke "Surel" membuat uji memerah.
+
+> **Aturan:** uji yang menjaga konvensi teks wajib menjangkau halaman rincian, bukan hanya halaman auth dan publik. Sebagian besar teks yang dilihat pengguna justru berada di sana.
+
+---
+
 ## 2. Catatan Dokumen Proposal
 
 Lembar pengesahan pada `docs/Revisi_Proposal_Budi_TEP ITS 2026_Kobalima_Timur_Upload_10_6_2026_a.pdf` masih memuat judul dan pengusul dari proposal lain:
@@ -714,6 +787,10 @@ Seharusnya: "Digitalisasi Monitoring Pertanian dan Tata Kelola Data Kawasan Tran
 | 2026-08-18 | Penguncian gulir **dipusatkan pada satu modul**, bukan disalin ke tiap lapisan | Pola lama tersalin ke delapan berkas dan satu komponen justru terlewat tidak mengunci sama sekali. Modul bersama memakai penghitung lapisan agar modal bertumpuk tidak saling membuka kunci lebih awal |
 | 2026-08-18 | Setiap `tutup()` diberi penjaga **keadaan terbuka** | `tutup-modal.window` disiarkan ke seluruh modal di halaman sekaligus. Tanpa penjaga, puluhan modal yang sedang tertutup ikut melepas kunci dan penghitung lapisan jatuh ke bawah nol |
 | 2026-08-18 | Kolom asal SP **hanya muncul pada rekap per petani** | Pada rekap per SP kolom itu mengulang kolom pertama, sedangkan pada rekap per komoditas dan per musim isinya selalu daftar panjang lintas SP yang tidak menjawab pertanyaan apa pun. Disimpan sebagai himpunan agar tetap benar bila kelak satu petani berlahan di lebih dari satu SP |
+| 2026-08-25 | Setiap field yang diterima form **wajib punya tempat tampil** pada halaman rinciannya | Delapan field di tujuh modul dapat diisi tetapi tidak pernah terbaca kembali, termasuk foto barang dan bukti dari pelapor. Unggahan yang tidak punya jalan dibuka adalah kontrol mati (R-26), dan catatan yang hilang dari pandangan sama saja dengan tidak dicatat. Lihat bagian 1f |
+| 2026-08-25 | Uji yang mengunci **jumlah** wajib menyebut alasan angkanya | Ekspektasi "1 tautan berkas" pada alsintan dan saprotan ditulis dari hasil pengamatan, bukan dari kewajiban, sehingga uji tetap hijau selamanya sekalipun separuh berkasnya tidak dapat dibuka. Angka yang tidak beralasan mengabadikan keadaan yang sedang berlaku |
+| 2026-08-25 | Uji penjaga konvensi teks wajib menjangkau **halaman rincian**, bukan hanya auth dan publik | Label "Surel" lolos ke rincian pengaduan meski larangannya sudah ada pada `ui-spec.md` 10.1 beserta ujinya, sebab daftar halaman yang diperiksa tidak memuat satu pun halaman rincian. Sebagian besar teks yang dilihat pengguna justru berada di sana |
+| 2026-08-25 | Filter pada situs statis **dibiarkan tidak berfungsi**, hanya dicatat sebagai batasan | Penyaringan bekerja sungguhan di server sejak gelombang 2. Yang tidak bekerja adalah versi GitHub Pages, sebab query string tidak dilayani berkas statis. Pola tautan tetap tidak dapat dipakai karena kombinasi filter berlipat menjadi ratusan halaman untuk isi yang sama, dan batasannya lenyap sendiri saat Tahap 3 pindah ke hosting ber-PHP |
 
 ---
 

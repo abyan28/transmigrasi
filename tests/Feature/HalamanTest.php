@@ -4136,6 +4136,14 @@ it('memakai istilah email, bukan surel, pada teks yang dilihat pengguna', functi
     '/lacak-pengaduan',
     '/profil',
     '/profil/kata-sandi',
+    /*
+     * Halaman RINCIAN menyusul 2026-08-25. Daftar semula hanya memuat halaman
+     * auth dan publik, sehingga label "Surel" yang sempat ditulis pada rincian
+     * pengaduan lolos tanpa memerahkan satu uji pun. Larangannya sudah benar;
+     * yang kurang adalah tempat ia diperiksa.
+     */
+    '/pengaduan/1',
+    '/poktan/1',
 ]);
 
 it('menuliskan baris total tanpa penanda cakupan', function (string $jalur) {

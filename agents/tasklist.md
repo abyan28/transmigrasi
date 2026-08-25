@@ -647,6 +647,22 @@ Butir tindak lanjut 9 pada `notes.md` bagian 4, dikerjakan atas permintaan pemil
 
 **Verifikasi:** seluruh uji hijau, `pint` tidak menambah utang, build hijau, halaman digilas seluruhnya 200.
 
+### Audit field form tanpa tempat tampil (2026-08-25) ✅
+
+Diminta pemilik proyek menyusul temuan catatan dan unggahan yang dapat diisi tetapi tidak pernah terbaca kembali. Seluruh **24 berkas form** disisir terhadap halaman rincian pasangannya.
+
+**Hasil:** **8 field** tersimpan tanpa tempat tampil, tersebar di 7 modul. Foto pada saprotan dan alsintan, bukti dari pelapor pada pengaduan, alamat ketua pada poktan, telepon serta alasan keluar pada anggota poktan, catatan dan dokumen pada SP serta kawasan, dan `email_pelapor` yang bahkan tidak pernah tersimpan.
+
+**Akar masalahnya** form dan rincian dikerjakan terpisah. Tambalan 2026-08-20 sudah membereskan `keterangan` dan `dokumen_pendukung` di enam modul, tetapi melewatkan kolom `foto` yang pemisahannya menyusul dan hanya diteruskan ke inventaris serta fasilitas.
+
+**Mengapa 605 uji tidak menangkapnya:** uji penjaganya sudah ada dan namanya tepat, tetapi angka ekspektasinya ditulis dari hasil pengamatan. "1 tautan berkas" pada alsintan dan saprotan mengunci keadaan cacat sebagai kebenaran.
+
+**Perubahan:** 6 berkas rincian dan 1 halaman daftar disunting; dua sisa refactor berupa judul tanpa isi dibersihkan di saprotan dan poktan; `DummyData` menerima 6 kunci baru agar setiap tempat tampil punya contoh isi.
+
+**Kekeliruan diksi pada pekerjaan yang sama:** label ditulis "Surel", melanggar `ui-spec.md` 10.1. Lolos karena daftar uji anti-surel hanya memuat halaman auth dan publik, tanpa satu pun halaman rincian. Diperbaiki beserta cakupan ujinya.
+
+**Verifikasi:** 607 uji hijau, dua mutasi memerah sebagaimana mestinya. Terverifikasi pula di halaman terender, bukan hanya pada berkas sumber.
+
 ## Tahap 3 — Autentikasi dan Hak Akses
 
 > **Peringatan penerbitan statis.** Begitu login aktif, halaman berpelindung membalas pengalihan ke `/login`, bukan 200, sehingga `.github/workflows/deploy.yml` **gagal** dan situs GitHub Pages berhenti diperbarui. Putuskan lebih dulu: batasi `sim:tautan-statis` hanya ke halaman publik, atau hentikan penerbitan statis sama sekali. Lihat `notes.md` bagian 1b.7.

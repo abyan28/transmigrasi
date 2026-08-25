@@ -129,14 +129,16 @@
                         </dd>
                     </div>
                     {{--
-                        Surel pelapor, ditambahkan 2026-08-25. Form pengaduan
+                        Email pelapor, ditambahkan 2026-08-25. Form pengaduan
                         publik sudah lama memintanya, tetapi nilainya hanya
                         dipakai sekali pada pesan konfirmasi lalu hilang. Tanpa
                         ditampilkan di sini, petugas tidak punya jalur balasan
                         tertulis ketika nomor telepon tidak dapat dihubungi.
+
+                        Istilahnya "Email", bukan "Surel" (ui-spec.md 10.1).
                     --}}
                     <div class="flex justify-between gap-3">
-                        <dt class="text-gray-500 dark:text-gray-400">Surel</dt>
+                        <dt class="text-gray-500 dark:text-gray-400">Email</dt>
                         <dd class="text-right font-medium break-all text-gray-800 dark:text-white/90">
                             {{ $data['email_pelapor'] ?? '-' }}
                         </dd>
