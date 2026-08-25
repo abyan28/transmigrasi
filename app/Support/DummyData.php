@@ -1245,6 +1245,7 @@ class DummyData
                     'nama' => $kunci,
                     'poktan' => [],
                     'sp' => [],
+                    'jumlah_anggota' => 0,
                     'luas_lahan' => 0.0,
                     'volume_benih' => 0.0,
                     'realisasi_tanam' => 0.0,
@@ -1270,7 +1271,10 @@ class DummyData
              */
             if (! in_array($tanam['poktan'], $baris['poktan'], true)) {
                 $baris['poktan'][] = $tanam['poktan'];
-                $baris['luas_lahan'] += self::rekapLahanPoktan($tanam['poktan_id'])['luas_total'];
+
+                $kekuatan = self::rekapLahanPoktan($tanam['poktan_id']);
+                $baris['luas_lahan'] += $kekuatan['luas_total'];
+                $baris['jumlah_anggota'] += $kekuatan['jumlah_anggota'];
             }
 
             // SP asal, dipakai tab Per Kelompok Tani. Dihimpun agar tetap

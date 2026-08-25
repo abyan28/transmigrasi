@@ -44,6 +44,19 @@
             $statusPanen[$r['id_penanaman']] = DummyData::statusPanen($r['id_penanaman']);
         }
 
+        /*
+         * Kekuatan tiap poktan: cacah anggota aktif dan luas lahannya.
+         *
+         * DIHITUNG, tidak disimpan (rules.md 7d.3). Disusun sekali per poktan
+         * di sini, bukan dipanggil ulang pada tiap baris - satu poktan dapat
+         * memiliki banyak penanaman, dan perhitungannya menyusuri seluruh
+         * keanggotaan beserta lahannya.
+         */
+        $kekuatanPoktan = [];
+        foreach ($semua as $r) {
+            $kekuatanPoktan[$r['poktan_id']] ??= DummyData::rekapLahanPoktan($r['poktan_id']);
+        }
+
         $baris = array_values(array_filter($semua, function ($r) use ($cari, $filterSp, $filterTahun, $filterKomoditas, $filterStatus, $tahunTanam, $statusPanen) {
             if ($cari !== '' && ! str_contains(mb_strtolower($r['poktan']), mb_strtolower($cari))
                 && ! str_contains(mb_strtolower($r['komoditas']), mb_strtolower($cari))) {
@@ -206,8 +219,17 @@
 
         <x-slot:kepala>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Kelompok Tani</th>
+            {{--
+                Jumlah Anggota dan Luas Lahan DIHITUNG, tidak disimpan
+                (rules.md 7d.3). Keduanya turunan dari keanggotaan aktif dan
+                data lahan, sehingga angka yang disimpan akan basi begitu satu
+                anggota keluar atau satu bidang dibetulkan - dan kebasian itu
+                tidak pernah memerahkan apa pun.
+            --}}
+            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Jumlah Anggota</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Komoditas</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Volume Benih</th>
+            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Luas Lahan (ha)</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Realisasi Tanam (ha)</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Periode Tanam</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Status Panen</th>
@@ -223,14 +245,17 @@
                     </a>
                     <p class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">{{ $r['satuan_permukiman'] }}</p>
                 </td>
-                <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">{{ $r['komoditas'] }}</td>
-                {{-- Boleh kosong: bibit swadaya tidak melalui modul saprotan. --}}
+                {{-- Kekuatan poktan saat halaman dibuka, bukan saat penanaman
+                     dicatat: keduanya dihitung ulang setiap kali. --}}
                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
-                    @if ($r['volume_benih'])
-                        {{ rtrim(rtrim(number_format($r['volume_benih'], 2, ',', '.'), '0'), ',') }} kg
-                    @else
-                        <span class="text-gray-400 dark:text-white/30">&mdash;</span>
-                    @endif
+                    {{ $kekuatanPoktan[$r['poktan_id']]['jumlah_anggota'] }}
+                </td>
+                <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">{{ $r['komoditas'] }}</td>
+                <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
+                    {{ rtrim(rtrim(number_format($r['volume_benih'], 2, ',', '.'), '0'), ',') }} kg
+                </td>
+                <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
+                    {{ number_format($kekuatanPoktan[$r['poktan_id']]['luas_total'], 2, ',', '.') }}
                 </td>
                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
                     {{ number_format($r['realisasi_tanam'], 2, ',', '.') }}</td>
@@ -258,15 +283,23 @@
 
         <x-slot:kaki>
             <tr class="motif-baris-total">
-                {{-- Tiga kolom pertama: Kelompok Tani, Komoditas, Volume Benih. --}}
-                <td colspan="3" class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">
+                {{--
+                    LIMA kolom pertama: Kelompok Tani, Jumlah Anggota,
+                    Komoditas, Volume Benih, dan Luas Lahan. Naik dari tiga
+                    sejak Jumlah Anggota dan Luas Lahan ditambahkan 2026-08-25.
+
+                    Luas Lahan sengaja TIDAK dijumlahkan pada baris total:
+                    satu poktan muncul pada beberapa baris penanaman, sehingga
+                    menjumlahkannya per baris menghitung lahan yang sama
+                    berkali-kali. Alasan yang sama dengan rekap panen.
+                --}}
+                <td colspan="5" class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">
                     Total realisasi tanam</td>
                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
                     {{ number_format($totalLuas, 2, ',', '.') }}</td>
                 {{--
                     Tiga sel kosong: Periode Tanam, Status Panen, dan Aksi.
-                    Naik dari dua sejak kolom status ditambahkan 2026-08-24;
-                    luput menyesuaikannya membuat baris total bergeser satu
+                    Luput menyesuaikannya membuat baris total bergeser satu
                     kolom tanpa memerahkan uji mana pun.
                 --}}
                 <td></td>

@@ -1,4 +1,4 @@
-﻿# notes.md
+# notes.md
 ## Catatan Teknis dan Temuan
 
 Dokumen ini berisi catatan temuan, keputusan, dan hal yang perlu ditindaklanjuti selama penyusunan dokumen dan pengembangan sistem.
@@ -17,17 +17,17 @@ Beberapa `ALTER TABLE` memasang FK pada tabel induk yang menunjuk ke tabel anak,
 
 | Baris SQL | Kondisi sekarang | Seharusnya |
 |---|---|---|
-| `inventaris_sp` | `inventaris_sp.id_inventaris_sp` → `satuan_permukiman.id_inventaris_sp` | `inventaris_sp.no_sp` → `satuan_permukiman.no_sp` |
-| `fasilitas_sp` | `satuan_permukiman.id_fasilitas_sp` → `fasilitas_sp.id_fasilitas_sp` | `fasilitas_sp.no_sp` → `satuan_permukiman.no_sp` |
-| `kategori_lahan_sp` | `kategori_lahan_sp.id_kategori_lahan_sp` → `rumah_sp` dan → `lahan_usaha_sp` | `rumah_sp` dan `lahan_usaha_sp` yang menunjuk ke `kategori_lahan_sp` |
-| `daftar_anggota` | `daftar_anggota.id_daftar_anggota` → `profil_poktan.id_daftar_anggota` | `daftar_anggota.id_profil` → `profil_poktan.id_profil` |
+| `inventaris_sp` | `inventaris_sp.id_inventaris_sp` ? `satuan_permukiman.id_inventaris_sp` | `inventaris_sp.no_sp` ? `satuan_permukiman.no_sp` |
+| `fasilitas_sp` | `satuan_permukiman.id_fasilitas_sp` ? `fasilitas_sp.id_fasilitas_sp` | `fasilitas_sp.no_sp` ? `satuan_permukiman.no_sp` |
+| `kategori_lahan_sp` | `kategori_lahan_sp.id_kategori_lahan_sp` ? `rumah_sp` dan ? `lahan_usaha_sp` | `rumah_sp` dan `lahan_usaha_sp` yang menunjuk ke `kategori_lahan_sp` |
+| `daftar_anggota` | `daftar_anggota.id_daftar_anggota` ? `profil_poktan.id_daftar_anggota` | `daftar_anggota.id_profil` ? `profil_poktan.id_profil` |
 | `kategori_lahan`, `komoditas` | menunjuk ke `profil_poktan` dan `riwayat_tanam` | dibalik, tabel referensi tidak boleh menunjuk ke tabel transaksi |
 | `alsintan`, `infrastruktur_pertanian`, `profil_poktan` | menunjuk ke `pertanian` | dibalik atau `pertanian` dihapus (lihat 1.2) |
-| `transmigran` | `transmigran.id_transmigran` → `saprotan`, → `profil_poktan`, → `pengaduan` | ketiga tabel itu yang menunjuk ke `transmigran` |
-| `lahan_sp` | `transmigran.id_lahan_sp` → `lahan_sp.id_lahan_sp` | `lahan_sp.id_transmigran` → `transmigran.id_transmigran`. Wajib dibalik karena satu transmigran boleh punya lebih dari satu lahan usaha (lihat keputusan 2026-08-10) |
-| `rumah_sp` | `transmigran.id_rumah_sp` → `rumah_sp.id_rumah_sp` | `rumah_sp.id_transmigran` → `transmigran.id_transmigran`, **UNIQUE nullable**. Relasi satu-ke-satu, NULL berarti rumah kosong |
-| `user` | `user.id_user` → `transmigran.id_transmigran` dan → `status_penanganan.id_user` | `transmigran.id_user` → `user.id_user`; `status_penanganan.id_user` → `user.id_user` |
-| `satuan_permukiman` | `satuan_permukiman.no_sp` → `transmigran.no_sp` | `transmigran.no_sp` → `satuan_permukiman.no_sp` |
+| `transmigran` | `transmigran.id_transmigran` ? `saprotan`, ? `profil_poktan`, ? `pengaduan` | ketiga tabel itu yang menunjuk ke `transmigran` |
+| `lahan_sp` | `transmigran.id_lahan_sp` ? `lahan_sp.id_lahan_sp` | `lahan_sp.id_transmigran` ? `transmigran.id_transmigran`. Wajib dibalik karena satu transmigran boleh punya lebih dari satu lahan usaha (lihat keputusan 2026-08-10) |
+| `rumah_sp` | `transmigran.id_rumah_sp` ? `rumah_sp.id_rumah_sp` | `rumah_sp.id_transmigran` ? `transmigran.id_transmigran`, **UNIQUE nullable**. Relasi satu-ke-satu, NULL berarti rumah kosong |
+| `user` | `user.id_user` ? `transmigran.id_transmigran` dan ? `status_penanganan.id_user` | `transmigran.id_user` ? `user.id_user`; `status_penanganan.id_user` ? `user.id_user` |
+| `satuan_permukiman` | `satuan_permukiman.no_sp` ? `transmigran.no_sp` | `transmigran.no_sp` ? `satuan_permukiman.no_sp` |
 
 **Aturan umum:** sisi "banyak" yang menyimpan FK, bukan sisi "satu".
 
@@ -41,7 +41,7 @@ Beberapa `ALTER TABLE` memasang FK pada tabel induk yang menunjuk ke tabel anak,
 
 `satuan_permukiman.nama_sp`, `provinsi`, `kabupaten`, `kecamatan`, dan `desa` memakai ENUM berisi nama wilayah spesifik. Masalahnya:
 - menambah desa/SP baru berarti mengubah struktur tabel (`ALTER TABLE`), bukan sekadar menambah baris;
-- bertentangan dengan `rules.md` §4a.4 yang mewajibkan struktur wilayah dapat ditambah tanpa mengubah skema agar sistem dapat direplikasi ke kawasan transmigrasi lain;
+- bertentangan dengan `rules.md` �4a.4 yang mewajibkan struktur wilayah dapat ditambah tanpa mengubah skema agar sistem dapat direplikasi ke kawasan transmigrasi lain;
 - `desa` pada `satuan_permukiman` hanya memuat 2 nilai (`Kapitan Meo`, `Weain`), sedangkan pada `profil_poktan` memuat 6 nilai. Tidak konsisten.
 
 **Saran:** buat tabel referensi bertingkat `provinsi`, `kabupaten`, `kecamatan`, `desa`, lalu `satuan_permukiman` cukup menyimpan `id_desa`. Nilai awal diisi lewat seeder.
@@ -50,8 +50,8 @@ Beberapa `ALTER TABLE` memasang FK pada tabel induk yang menunjuk ke tabel anak,
 
 | Kolom | Sekarang | Saran | Alasan |
 |---|---|---|---|
-| `dokumen_pendukung` (semua tabel) | `BLOB` | `VARCHAR(255)` berisi path file | PRD §16 mewajibkan file disimpan di `storage/app/private/...`, bukan di dalam database. BLOB membuat backup berat dan query lambat. |
-| `lahan_usaha_sp.volumen_panen` | `VARCHAR(255)` | `DECIMAL(12,3)` + FK `id_satuan` | Angka harus dapat dijumlahkan untuk dashboard. Presisi 3 desimal agar panen kecil tetap terekam (0,001 ton = 1 kg). Sekaligus perbaiki salah ketik `volumen` → `volume`. |
+| `dokumen_pendukung` (semua tabel) | `BLOB` | `VARCHAR(255)` berisi path file | PRD �16 mewajibkan file disimpan di `storage/app/private/...`, bukan di dalam database. BLOB membuat backup berat dan query lambat. |
+| `lahan_usaha_sp.volumen_panen` | `VARCHAR(255)` | `DECIMAL(12,3)` + FK `id_satuan` | Angka harus dapat dijumlahkan untuk dashboard. Presisi 3 desimal agar panen kecil tetap terekam (0,001 ton = 1 kg). Sekaligus perbaiki salah ketik `volumen` ? `volume`. |
 | `lahan_usaha_sp.harga_jual` | `VARCHAR(255)` | `DECIMAL(15,2)` | Perlu dihitung rata-ratanya di dashboard. |
 | `profil_poktan.jumlah_anggota` | `VARCHAR(255)` | `INTEGER UNSIGNED` | Nilai numerik, atau lebih baik dihitung otomatis dari `daftar_anggota`. |
 | `satuan_permukiman.luas_lahan`, `profil_poktan.luas_lahan` | `VARCHAR(255)` | `DECIMAL(12,2)` | Perlu dijumlahkan. |
@@ -84,16 +84,16 @@ Alasan tidak menyimpan langsung dalam ton: nilai asli lapangan tetap terjaga dan
 
 | Kebutuhan PRD | Status di SQL |
 |---|---|
-| Nomor KK (§7.3) | belum ada di `transmigran` |
-| Jumlah anggota keluarga (§7.3) | belum ada di `transmigran` |
-| Status keanggotaan poktan (§7.3) | ada di `lahan_usaha_sp`, sebaiknya dipindah/diduplikasi ke `transmigran` |
-| Status penyerahan inventaris (§7.2) | belum ada di `inventaris_sp` dan `fasilitas_sp` |
+| Nomor KK (�7.3) | belum ada di `transmigran` |
+| Jumlah anggota keluarga (�7.3) | belum ada di `transmigran` |
+| Status keanggotaan poktan (�7.3) | ada di `lahan_usaha_sp`, sebaiknya dipindah/diduplikasi ke `transmigran` |
+| Status penyerahan inventaris (�7.2) | belum ada di `inventaris_sp` dan `fasilitas_sp` |
 | Kualitas panen sebagai data terstruktur | ada sebagai `VARCHAR` bebas, sebaiknya ENUM |
-| Audit log perubahan data (§8.2) | belum ada tabelnya |
+| Audit log perubahan data (�8.2) | belum ada tabelnya |
 | Timestamps (`created_at`, `updated_at`) | belum ada di seluruh tabel |
 | Soft delete | belum ada, padahal data lapangan rawan terhapus tidak sengaja |
 | Kolom `password` pada `user` | belum ada, padahal sistem butuh login |
-| UNIQUE constraint pada `rumah_sp.id_transmigran` | belum ada, padahal relasi rumah–KK bersifat satu-ke-satu |
+| UNIQUE constraint pada `rumah_sp.id_transmigran` | belum ada, padahal relasi rumah�KK bersifat satu-ke-satu |
 | Tabel `riwayat_penghunian` (id_rumah, id_transmigran, tanggal masuk, tanggal keluar, alasan) | belum ada, padahal pergantian penghuni harus tersimpan tanpa menimpa data lama |
 | Tabel `satuan` beserta `faktor_ke_ton` | belum ada, lihat bagian 1.4a |
 
@@ -104,22 +104,22 @@ Alasan tidak menyimpan langsung dalam ton: nilai asli lapangan tetap terjaga dan
 - `profil_poktan` menyimpan `komoditas` sebagai `VARCHAR` sekaligus `id_komoditas` sebagai FK. Pilih salah satu.
 - `satuan_permukiman` menyimpan `id_transmigran`, padahal relasinya satu SP ke banyak transmigran. FK seharusnya ada di `transmigran`.
 - `lahan_sp` dan `kategori_lahan_sp` sama-sama memuat ENUM `('Lahan Usaha', 'Lahan Pekarangan')`. Redundan, cukup salah satu.
-- Belum ada indeks pada kolom yang sering difilter (`no_sp`, `id_transmigran`, `id_profil`, tanggal). Dashboard akan lambat tanpa indeks ini (`rules.md` §11.7).
+- Belum ada indeks pada kolom yang sering difilter (`no_sp`, `id_transmigran`, `id_profil`, tanggal). Dashboard akan lambat tanpa indeks ini (`rules.md` �11.7).
 
 ---
 
 ## 1a. Temuan Tambahan (2026-08-11)
 
-Temuan berikut muncul saat menyusun skema final dan tidak tercakup pada bagian 1. Seluruhnya sudah diterapkan pada `erd.md` §8.2.
+Temuan berikut muncul saat menyusun skema final dan tidak tercakup pada bagian 1. Seluruhnya sudah diterapkan pada `erd.md` �8.2.
 
 ### 1a.1 Data panen menempel di tabel lahan (prioritas tinggi)
 
-`lahan_usaha_sp` menyimpan `volumen_panen`, `harga_jual`, `kualitas_panen`, dan `musim_tanam` sebagai kolom biasa. Akibatnya **satu lahan hanya bisa memiliki satu catatan panen selamanya** — panen musim berikutnya akan menimpa data sebelumnya.
+`lahan_usaha_sp` menyimpan `volumen_panen`, `harga_jual`, `kualitas_panen`, dan `musim_tanam` sebagai kolom biasa. Akibatnya **satu lahan hanya bisa memiliki satu catatan panen selamanya** � panen musim berikutnya akan menimpa data sebelumnya.
 
 Ini bertabrakan langsung dengan:
-- PRD §7.6 yang mewajibkan penyimpanan riwayat panen per periode,
-- PRD §7.8 yang meminta grafik total volume panen tiap tahun,
-- `rules.md` §9.1 yang menyatakan hasil panen harus dicatat per periode.
+- PRD �7.6 yang mewajibkan penyimpanan riwayat panen per periode,
+- PRD �7.8 yang meminta grafik total volume panen tiap tahun,
+- `rules.md` �9.1 yang menyatakan hasil panen harus dicatat per periode.
 
 **Keputusan:** dibuat tabel `hasil_panen` tersendiri, ditaut lewat `riwayat_tanam` (lahan + musim tanam + komoditas). Dengan begitu satu lahan dapat memiliki banyak panen lintas musim dan lintas tahun.
 
@@ -127,9 +127,9 @@ Ini bertabrakan langsung dengan:
 
 `satuan_permukiman.koordinat_lokasi`, `lahan_usaha_sp.koordinat_lokasi_lahan`, `rumah_sp.koordinat_lokasi`, dan `profil_poktan.titik_koordinat_lahan` memakai tipe `GEOMETRY`.
 
-Masalahnya, Eloquent tidak mendukung tipe spasial secara natif. Setiap pembacaan dan penulisan butuh raw query `ST_AsText()`/`ST_GeomFromText()` atau paket pihak ketiga. Padahal kebutuhan sistem hanya menampilkan lintang dan bujur dengan 6 angka desimal (`ui-spec.md` §10), tanpa query spasial apa pun seperti pencarian radius atau perpotongan poligon.
+Masalahnya, Eloquent tidak mendukung tipe spasial secara natif. Setiap pembacaan dan penulisan butuh raw query `ST_AsText()`/`ST_GeomFromText()` atau paket pihak ketiga. Padahal kebutuhan sistem hanya menampilkan lintang dan bujur dengan 6 angka desimal (`ui-spec.md` �10), tanpa query spasial apa pun seperti pencarian radius atau perpotongan poligon.
 
-**Keputusan:** diganti dua kolom `lintang` dan `bujur` bertipe `DECIMAL(10,7)`. Presisi 7 desimal setara ketelitian ±1 cm. Bila kelak dibutuhkan query spasial, kolom `POINT` dapat ditambahkan sebagai kolom turunan tanpa membongkar data.
+**Keputusan:** diganti dua kolom `lintang` dan `bujur` bertipe `DECIMAL(10,7)`. Presisi 7 desimal setara ketelitian �1 cm. Bila kelak dibutuhkan query spasial, kolom `POINT` dapat ditambahkan sebagai kolom turunan tanpa membongkar data.
 
 ### 1a.3 Tabel `koordinat_lokasi_sp` salah nama dan tidak perlu
 
@@ -141,19 +141,19 @@ Tabel ini berisi empat kolom `TEXT` bernama `Utara`, `Timur`, `Selatan`, dan `Ba
 
 `lahan_sp`, `lahan_usaha_sp`, `kategori_lahan_sp`, dan `kategori_lahan` semuanya menggambarkan lahan. Dua di antaranya (`lahan_sp.jenis_lahan` dan `kategori_lahan_sp.nama_lahan`) bahkan memuat ENUM yang identik.
 
-**Keputusan:** digabung menjadi satu tabel `lahan` dengan kolom `jenis_lahan` (Pekarangan/Usaha) dan `kategori_lahan` (Basah/Kering). Kolom khusus lahan usaha — pola tanam, peralatan, kendala — dibuat nullable dan hanya diisi bila jenisnya lahan usaha.
+**Keputusan:** digabung menjadi satu tabel `lahan` dengan kolom `jenis_lahan` (Pekarangan/Usaha) dan `kategori_lahan` (Basah/Kering). Kolom khusus lahan usaha � pola tanam, peralatan, kendala � dibuat nullable dan hanya diisi bila jenisnya lahan usaha.
 
 ### 1a.5 Field wajib menurut `rules.md` yang belum ada di SQL
 
 | Tabel | Field yang ditambahkan | Dasar |
 |---|---|---|
-| `transmigran` | `tahun_kedatangan`, `status_tinggal` | PRD §7.8 meminta grafik per tahun; tanpa kolom ini agregasi per tahun mustahil |
-| `alsintan` | `jumlah`, `kondisi`, `sumber_perolehan`, `kepemilikan` | `rules.md` §7b.2 |
-| `saprotan` | `jenis_saprotan`, `nama_saprotan`, `jumlah`, `satuan_id` | `rules.md` §7c.2 |
-| `infrastruktur` | `jenis`, `kondisi`, `sumber_dana`, `lintang`, `bujur` | `rules.md` §10.2–4 |
+| `transmigran` | `tahun_kedatangan`, `status_tinggal` | PRD �7.8 meminta grafik per tahun; tanpa kolom ini agregasi per tahun mustahil |
+| `alsintan` | `jumlah`, `kondisi`, `sumber_perolehan`, `kepemilikan` | `rules.md` �7b.2 |
+| `saprotan` | `jenis_saprotan`, `nama_saprotan`, `jumlah`, `satuan_id` | `rules.md` �7c.2 |
+| `infrastruktur` | `jenis`, `kondisi`, `sumber_dana`, `lintang`, `bujur` | `rules.md` �10.2�4 |
 | `musim_tanam` | `nama`, `tahun`, `tanggal_mulai`, `tanggal_selesai` | Grafik panen per tahun butuh periode terstruktur |
-| `inventaris_sp`, `fasilitas_sp` | `status_penyerahan`, `jumlah`, `kondisi` | `rules.md` §4b.4 |
-| `pengaduan` | `nomor_pengaduan`, `bidang`, `prioritas`, `judul` | `rules.md` §10b.6–7 |
+| `inventaris_sp`, `fasilitas_sp` | `status_penyerahan`, `jumlah`, `kondisi` | `rules.md` �4b.4 |
+| `pengaduan` | `nomor_pengaduan`, `bidang`, `prioritas`, `judul` | `rules.md` �10b.6�7 |
 
 ### 1a.6 Data ketua poktan terduplikasi
 
@@ -169,21 +169,21 @@ Tabel ini berisi empat kolom `TEXT` bernama `Utara`, `Timur`, `Selatan`, dan `Ba
 
 ### 1a.8 Kawasan transmigrasi tidak punya wujud di database (prioritas tinggi)
 
-Pada SQL referensi, `satuan_permukiman` langsung menyimpan kolom `desa`, sehingga hierarkinya `provinsi → kabupaten → kecamatan → desa → SP`. Kawasan transmigrasi sama sekali tidak terwakili, padahal ia adalah subjek utama seluruh sistem: "Kawasan Transmigrasi Kobalima Timur" hanya hidup di judul dokumen.
+Pada SQL referensi, `satuan_permukiman` langsung menyimpan kolom `desa`, sehingga hierarkinya `provinsi ? kabupaten ? kecamatan ? desa ? SP`. Kawasan transmigrasi sama sekali tidak terwakili, padahal ia adalah subjek utama seluruh sistem: "Kawasan Transmigrasi Kobalima Timur" hanya hidup di judul dokumen.
 
 Dua akibatnya:
 
 1. **Kawasan tidak dapat direkap sebagai satu kesatuan.** Untuk menghitung total kawasan, sistem harus mengandaikan bahwa keenam SP tersebut memang milik kawasan yang sama, tanpa dasar data apa pun.
-2. **Replikasi ke kawasan lain mustahil**, padahal diwajibkan `rules.md` §4a.4.
+2. **Replikasi ke kawasan lain mustahil**, padahal diwajibkan `rules.md` �4a.4.
 
 Masalah tambahannya, kawasan transmigrasi adalah wilayah **perencanaan** yang memotong batas administratif. Kobalima Timur menaungi 6 SP yang tersebar di **4 kecamatan** berbeda. Hierarki administratif tunggal tidak mungkin mewakili pengelompokan semacam ini.
 
 **Keputusan (2026-08-11):** hierarki dibuat bercabang dua di tingkat kabupaten.
 
 ```
-provinsi → kabupaten ─┬─ kecamatan → desa ─────┐
-                      │  (cabang administratif) │
-                      └─ kawasan_transmigrasi ──┴─→ satuan_permukiman
+provinsi ? kabupaten --- kecamatan ? desa -----+
+                      �  (cabang administratif) �
+                      +- kawasan_transmigrasi ----? satuan_permukiman
                          (cabang program)
 ```
 
@@ -201,7 +201,7 @@ Contohnya, dua operator dengan role "Operator SP" yang sama:
 
 Keduanya memiliki izin identik: `transmigran.lihat`, `transmigran.tambah`, `transmigran.ubah`. Bila hanya izin yang diatur, keduanya akan melihat **seluruh 1.200 KK dari 6 SP**, dan Maria dapat mengubah data warga SP Weain yang tidak pernah ia temui.
 
-Ini melanggar `rules.md` §5 tentang pembatasan data pribadi, sekaligus membuka risiko salah ubah data.
+Ini melanggar `rules.md` �5 tentang pembatasan data pribadi, sekaligus membuka risiko salah ubah data.
 
 **Keputusan:** cakupan data dijadikan atribut tersendiri pada tabel `role`, dengan tiga nilai:
 
@@ -219,7 +219,7 @@ Tanda `*` pada matriks kewenangan lama (misalnya `L T U*`) sebenarnya sudah meny
 
 > **DIBATALKAN 2026-08-14.** Seluruh fitur verifikasi dicabut atas kesepakatan tim. Bagian 1a.10 dan 1a.11 di bawah **tidak lagi berlaku**, tetapi sengaja dipertahankan sebagai jejak keputusan: keduanya menjelaskan mengapa tabel `verifikasi` dan aturan `rules.md` 5.2 pernah ada, sehingga pembaca berikutnya tidak mengira keduanya hilang tanpa sebab. Ringkasan pencabutannya ada pada tabel keputusan bertanggal 2026-08-14.
 
-Matriks kewenangan `rules.md` §5.1 memberi hak verifikasi (`V`) pada **17 modul**, dan `prd.md` menyebut verifikasi sebagai fungsi utama kedua dinas. Namun pemeriksaan menyeluruh menunjukkan **tidak ada satu pun kolom verifikasi** di seluruh tabel: tidak ada `status_verifikasi`, `diverifikasi_oleh`, maupun `tanggal_verifikasi`.
+Matriks kewenangan `rules.md` �5.1 memberi hak verifikasi (`V`) pada **17 modul**, dan `prd.md` menyebut verifikasi sebagai fungsi utama kedua dinas. Namun pemeriksaan menyeluruh menunjukkan **tidak ada satu pun kolom verifikasi** di seluruh tabel: tidak ada `status_verifikasi`, `diverifikasi_oleh`, maupun `tanggal_verifikasi`.
 
 Artinya hak tersebut tertulis di dokumen tetapi tidak mungkin diimplementasikan.
 
@@ -285,8 +285,8 @@ Penyamaan skema perlu karena penggilasan berjalan lewat `php artisan serve` yang
 
 Peninggalan template TailAdmin berupa **24 path absolut** di 11 berkas (`src="/images/..."`, `href="/"`, favicon) diganti menjadi `asset()` dan `route()`. Ditemukan pula dua sumber lain saat pengujian:
 
-- **`layouts/sidebar.blade.php`** — 25 alamat menu dari `MenuHelper` dipakai mentah sebagai `href`. Dibungkus `url()`. Nilai `path` di `MenuHelper` **sengaja dibiarkan relatif**, sebab dipakai juga untuk membandingkan status menu aktif; mengubahnya menjadi alamat lengkap akan merusak penandaan itu.
-- **`components/sim/stat-card.blade.php`** — atribut `url` dipakai mentah. Dibungkus `url()`, dengan pengecualian untuk alamat yang sudah memuat skema.
+- **`layouts/sidebar.blade.php`** � 25 alamat menu dari `MenuHelper` dipakai mentah sebagai `href`. Dibungkus `url()`. Nilai `path` di `MenuHelper` **sengaja dibiarkan relatif**, sebab dipakai juga untuk membandingkan status menu aktif; mengubahnya menjadi alamat lengkap akan merusak penandaan itu.
+- **`components/sim/stat-card.blade.php`** � atribut `url` dipakai mentah. Dibungkus `url()`, dengan pengecualian untuk alamat yang sudah memuat skema.
 
 **Aturan untuk pengerjaan selanjutnya: jangan pernah menulis `href="/sesuatu"` atau `src="/images/..."` secara langsung.** Selalu lewat `route()`, `url()`, atau `asset()`. Bila tidak, tautannya akan rusak di GitHub Pages sementara tetap tampak benar di localhost, dan kesalahan seperti ini tidak tertangkap uji berbasis HTTP.
 
@@ -349,7 +349,7 @@ Begitu Tahap 3 dan seterusnya berjalan, sistem memerlukan PHP dan basis data yan
 
 ### 1b.8 Ketergantungan yang perlu diingat
 
-Pengaturan GitHub Pages harus disetel sekali secara manual: **Settings → Pages → Source: GitHub Actions**. Tanpa itu alur kerja berjalan tetapi hasilnya tidak terbit.
+Pengaturan GitHub Pages harus disetel sekali secara manual: **Settings ? Pages ? Source: GitHub Actions**. Tanpa itu alur kerja berjalan tetapi hasilnya tidak terbit.
 
 ---
 
@@ -387,7 +387,7 @@ Yang memberatkan: `PGD-2026-0004` justru dikutip sendiri pada paragraf sebelumny
 
 **Inilah satu-satunya yang kerusakannya sudah nyata, bukan potensi.** Enum dipasang, data contoh disesuaikan, lalu dicabut pada hari yang sama setelah pemilik proyek menyatakan keadaan sebenarnya: satu transmigran menerima **satu** pekarangan dan **satu** lahan usaha.
 
-Yang membuatnya lebih dalam: keterangan lapangan itu sekaligus membatalkan keputusan **2026-08-10** yang berbunyi "boleh lebih dari satu lahan usaha, kondisi lapangan" — yang ternyata juga tidak pernah berdasar lapangan. Satu penalaran melingkar menutupi penalaran melingkar lain selama delapan hari, dan keduanya baru terbongkar oleh satu kalimat pemilik proyek.
+Yang membuatnya lebih dalam: keterangan lapangan itu sekaligus membatalkan keputusan **2026-08-10** yang berbunyi "boleh lebih dari satu lahan usaha, kondisi lapangan" � yang ternyata juga tidak pernah berdasar lapangan. Satu penalaran melingkar menutupi penalaran melingkar lain selama delapan hari, dan keduanya baru terbongkar oleh satu kalimat pemilik proyek.
 
 **Kelima, kontak poktan (2026-08-17).** Kolom kontak kelompok diganti menjadi kontak ketua dengan alasan "kontak poktan **ternyata sudah lama menjadi kontak ketua di dalam kode**, hanya dokumennya yang menyebut lain".
 
@@ -408,13 +408,13 @@ Pemilik proyek yang membongkarnya, dan pertanyaannya menohok tepat pada lingkara
 Ada dua kekeliruan bertumpuk di sini, dan yang kedua lebih halus:
 
 1. **Ambangnya dibandingkan terhadap data karangan sendiri.** Ini bentuk pertama pada 1c.1, sudah dikenali dan tetap terulang.
-2. **Pertanyaan pengguna dijawab dengan fakta tentang kode.** Pemilik proyek bertanya "mana yang belum searchable" — pertanyaan tentang **yang terlihat di layar**. Yang dijawab adalah "mana yang belum memakai komponen `pilih-cari`" — pertanyaan tentang **kode**. Keduanya terdengar sama tetapi berbeda jawabannya, sebab komponen yang terpasang pun tidak menampilkan kotak pencarian selama di bawah ambang. Catatan hasil pengerjaan lalu menyatakan dua isian "sudah searchable", dan pernyataan itu **benar tentang kode tetapi menyesatkan tentang layar**.
+2. **Pertanyaan pengguna dijawab dengan fakta tentang kode.** Pemilik proyek bertanya "mana yang belum searchable" � pertanyaan tentang **yang terlihat di layar**. Yang dijawab adalah "mana yang belum memakai komponen `pilih-cari`" � pertanyaan tentang **kode**. Keduanya terdengar sama tetapi berbeda jawabannya, sebab komponen yang terpasang pun tidak menampilkan kotak pencarian selama di bawah ambang. Catatan hasil pengerjaan lalu menyatakan dua isian "sudah searchable", dan pernyataan itu **benar tentang kode tetapi menyesatkan tentang layar**.
 
 Usulan pertama untuk memperbaikinya juga keliru arah: "perbanyak data contoh menjadi 8 agar kotak pencarian muncul". Itu mengarang data agar cocok dengan ambang, bukan memperbaiki ambang yang memang tidak berdasar.
 
-**Kriteria yang benar dirumuskan pemilik proyek sendiri:** *"ketika ada kemungkinan data/opsi di dropdown itu bertambah dari tambah data, maka sudah sewajarnya pakai searchable dropdown."* Itu pertanyaan tentang **sifat sumbernya**, bukan tentang jumlah barisnya hari ini — dan ternyata **sudah menjadi kalimat pembuka `ui-spec.md` 6.0a sejak awal**. Ambang pada butir 5 bertentangan dengan kalimat pembukanya sendiri selama tiga hari tanpa ada yang menyadarinya.
+**Kriteria yang benar dirumuskan pemilik proyek sendiri:** *"ketika ada kemungkinan data/opsi di dropdown itu bertambah dari tambah data, maka sudah sewajarnya pakai searchable dropdown."* Itu pertanyaan tentang **sifat sumbernya**, bukan tentang jumlah barisnya hari ini � dan ternyata **sudah menjadi kalimat pembuka `ui-spec.md` 6.0a sejak awal**. Ambang pada butir 5 bertentangan dengan kalimat pembukanya sendiri selama tiga hari tanpa ada yang menyadarinya.
 
-**Pelajaran yang berbeda dari lima pelanggaran sebelumnya:** kelimanya ditemukan lewat audit terhadap dokumen. Yang keenam ini hanya dapat ditemukan oleh **orang yang benar-benar memakai sistemnya**, sebab gejalanya tidak tertulis di mana pun — ia hanya terlihat sebagai dropdown yang tidak punya kotak cari. Audit dokumen tidak akan pernah menangkapnya.
+**Pelajaran yang berbeda dari lima pelanggaran sebelumnya:** kelimanya ditemukan lewat audit terhadap dokumen. Yang keenam ini hanya dapat ditemukan oleh **orang yang benar-benar memakai sistemnya**, sebab gejalanya tidak tertulis di mana pun � ia hanya terlihat sebagai dropdown yang tidak punya kotak cari. Audit dokumen tidak akan pernah menangkapnya.
 
 ### 1c.3 Mengapa pelajaran 2026-08-18 tidak menahannya
 
@@ -431,7 +431,7 @@ Seluruh 992 baris `notes.md` disisir terhadap `rules.md` 19a. **36 keputusan** m
 | **Cacat, menyangkut struktur data** | 5 | Alasannya diperbaiki atau ditandai dicabut |
 | Ragu, menyangkut struktur data | 4 | Ditinjau; seluruhnya bertahan dengan alasan yang sah |
 | Cacat atau ragu, hanya tampilan | 4 | Satu ditandai perlu tinjau ulang saat data nyata masuk |
-| **Sah** — menjawab pertanyaan tentang kode | 23 | Tidak perlu tindakan |
+| **Sah** � menjawab pertanyaan tentang kode | 23 | Tidak perlu tindakan |
 
 Dua puluh tiga yang sah menunjukkan aturan ini **tidak melarang memakai data contoh**, hanya melarang memakainya untuk pertanyaan yang salah. Menghitung "96 pemakaian `x-cloak` mati", "19 dari 41 rute tidak pernah diuji", atau "nilai enum `'Milik Pribadi'` tidak cocok dengan `'Pribadi'`" seluruhnya sah, sebab ketiganya pertanyaan tentang kode.
 
@@ -465,7 +465,7 @@ Ditemukan pemilik proyek beberapa saat setelah tautan objek pengaduan dinyatakan
 | 3 | Form ubah pengaduan tanpa isian objek | Menyunting laporan tidak menyentuh objeknya |
 | 4 | Tidak ada tombol mencabut tautan | Salah taut bersifat permanen |
 
-Cacat 1 yang paling telak. Data contohnya jamak, tabelnya jamak, tampilan rinciannya jamak, uji integritasnya memeriksa kejamakan — **hanya isiannya yang tunggal**. Petugas tidak akan pernah dapat menghasilkan data seperti `PGD-2026-0004` yang justru dipajang sebagai contoh pembenaran tabel ini.
+Cacat 1 yang paling telak. Data contohnya jamak, tabelnya jamak, tampilan rinciannya jamak, uji integritasnya memeriksa kejamakan � **hanya isiannya yang tunggal**. Petugas tidak akan pernah dapat menghasilkan data seperti `PGD-2026-0004` yang justru dipajang sebagai contoh pembenaran tabel ini.
 
 Cacat 2 lebih memalukan lagi: aturan `rules.md` 10b.6h yang berbunyi *"tautan boleh disunting kapan saja, tidak dikunci status"* ditulis pada hari yang sama, lalu dilanggar pada berkas berikutnya.
 
@@ -478,7 +478,7 @@ expect($isi)->toContain('name="objek_tipe"');     // ada? ya. jamak? tidak diper
 expect($isi)->toContain('value="belum_terdata"'); // ada? ya
 ```
 
-Tidak satu pun menanyakan apakah petugas dapat **menambah objek kedua**. Ini persis kekeliruan yang sudah tercatat pada butir b799 pada 2026-08-17 — *"uji Pest hanya memastikan sebuah string ada di HTML, bukan bahwa tampilannya masuk akal"* — dan terulang dua hari kemudian.
+Tidak satu pun menanyakan apakah petugas dapat **menambah objek kedua**. Ini persis kekeliruan yang sudah tercatat pada butir b799 pada 2026-08-17 � *"uji Pest hanya memastikan sebuah string ada di HTML, bukan bahwa tampilannya masuk akal"* � dan terulang dua hari kemudian.
 
 **Sebab kedua, id contoh yang kebetulan menguntungkan.** Uji membaca `/pengaduan/1` yang berstatus Diproses, sehingga modal penanganannya dirender dan isian objeknya ikut terbaca. Bila membaca `/pengaduan/5` yang berstatus Selesai, uji yang sama akan memerah. Memilih satu baris contoh tanpa alasan berarti menguji keadaan yang paling ramah, bukan keadaan yang paling mungkin gagal.
 
@@ -558,13 +558,13 @@ Sebabnya kelalaian bertanya. Pada penetapan peta bidang, pemilik proyek menulis 
 
 Akibatnya bukan sekadar pilihan yang kurang. Keluhan soal kelompok tani terpaksa masuk kategori `Lainnya`, dan `Lainnya` justru **berbidang kosong** sehingga setiap laporan semacam itu menambah antrean penyaringan Dinas Transmigrasi, padahal urusannya jelas milik Dinas Pertanian.
 
-**Penyisiran menyeluruh** atas 26 fitur berkewenangan lalu dilakukan atas permintaan pemilik proyek, dan hasilnya **tepat satu yang terlewat**. Modul yang sengaja tidak berkategori beserta alasannya kini tercatat pada `data-dictionary.md` §11.21, dan kewajiban pemetaan lengkap dua arah pada `rules.md` 10b.3a. Ditambah uji penjaga yang mengadu daftar modul dengan daftar kategori, sehingga modul baru yang dapat dikeluhkan warga tidak dapat lagi lolos tanpa kategorinya.
+**Penyisiran menyeluruh** atas 26 fitur berkewenangan lalu dilakukan atas permintaan pemilik proyek, dan hasilnya **tepat satu yang terlewat**. Modul yang sengaja tidak berkategori beserta alasannya kini tercatat pada `data-dictionary.md` �11.21, dan kewajiban pemetaan lengkap dua arah pada `rules.md` 10b.3a. Ditambah uji penjaga yang mengadu daftar modul dengan daftar kategori, sehingga modul baru yang dapat dikeluhkan warga tidak dapat lagi lolos tanpa kategorinya.
 
 > **Pelajaran:** ketika pemilik proyek menyebut sederet nilai, **seluruhnya wajib diperiksa terhadap keadaan sistem**, bukan hanya yang kebetulan menarik perhatian lebih dulu. Satu ketidakcocokan yang ditemukan justru pertanda daftar itu perlu diperiksa sampai habis.
 
 ### 1e.7 Kekeliruan encoding yang hampir lolos
 
-Penyuntingan `data-dictionary.md` lewat `Set-Content` PowerShell **merusak seluruh karakter non-ASCII** pada berkas: 259 kemunculan mojibake menggantikan separator `·`, tanda `§`, `±`, dan em dash. Kerusakannya menyebar ke ratusan baris yang sama sekali tidak berhubungan dengan pekerjaan hari itu.
+Penyuntingan `data-dictionary.md` lewat `Set-Content` PowerShell **merusak seluruh karakter non-ASCII** pada berkas: 259 kemunculan mojibake menggantikan separator `�`, tanda `�`, `�`, dan em dash. Kerusakannya menyebar ke ratusan baris yang sama sekali tidak berhubungan dengan pekerjaan hari itu.
 
 Ketahuan hanya karena satu penggantian teks gagal mencocokkan pola. Berkas dipulihkan lewat `git checkout HEAD`, lalu seluruh suntingan diterapkan ulang memakai perkakas penyuntingan yang menjaga encoding.
 
@@ -594,9 +594,9 @@ Seharusnya: "Digitalisasi Monitoring Pertanian dan Tata Kelola Data Kawasan Tran
 | 2026-08-10 | Satuan panen ditetapkan per komoditas pada data master, dengan ton sebagai satuan agregasi | Komoditas hortikultura lazim dihitung kilogram, sedangkan jagung dalam ton; konversi dilakukan saat rekap |
 | 2026-08-11 | Berkas `.sql` diperlakukan sebagai referensi, bukan skema final; database dibangun ulang dari nol | Ditegaskan oleh user. Skema final dituangkan pada `erd.md` dan `data-dictionary.md` |
 | 2026-08-11 | Fondasi antarmuka memakai TailAdmin Laravel (MIT) | Sudah menyediakan layout, sidebar, komponen form, tabel, modal, dan ApexCharts; berlisensi MIT sehingga aman untuk instansi pemerintah |
-| 2026-08-11 | Design token ditulis di `resources/css/app.css` lewat blok `@theme` | TailAdmin memakai Tailwind v4 yang meniadakan `tailwind.config.js`. Rencana awal pada `ui-spec.md` §3.1 disesuaikan |
+| 2026-08-11 | Design token ditulis di `resources/css/app.css` lewat blok `@theme` | TailAdmin memakai Tailwind v4 yang meniadakan `tailwind.config.js`. Rencana awal pada `ui-spec.md` �3.1 disesuaikan |
 | 2026-08-11 | Font antarmuka Outfit, bukan Inter | Seluruh komponen TailAdmin sudah ditata dengan metrik Outfit; mengganti font akan menggeser tinggi baris di banyak komponen tanpa manfaat sepadan |
-| 2026-08-11 | Laravel 12.x di atas PHP 8.2.12 milik XAMPP | PHP di PATH adalah 8.5.8, di luar rentang dukungan resmi Laravel 12 (8.2–8.4). Memakai PHP XAMPP sekaligus menyamakan lingkungan dengan hosting |
+| 2026-08-11 | Laravel 12.x di atas PHP 8.2.12 milik XAMPP | PHP di PATH adalah 8.5.8, di luar rentang dukungan resmi Laravel 12 (8.2�8.4). Memakai PHP XAMPP sekaligus menyamakan lingkungan dengan hosting |
 | 2026-08-11 | Basis data MySQL/MariaDB XAMPP dipakai sejak awal | Diminta user; menghindari migrasi ulang dari SQLite saat memasuki tahap backend |
 | 2026-08-11 | Konvensi kunci: PK `id_transmigran`, FK `transmigran_id` | Diminta user agar kode lebih mudah dibaca. Konsekuensinya setiap model wajib menyetel `$primaryKey` dan setiap relasi menyebut kunci secara eksplisit |
 | 2026-08-11 | Koordinat memakai dua kolom `lintang` dan `bujur` DECIMAL(10,7) | Eloquent tidak mendukung GEOMETRY secara natif, sedangkan kebutuhan hanya menampilkan lintang/bujur. Lihat bagian 1a.2 |
@@ -607,7 +607,7 @@ Seharusnya: "Digitalisasi Monitoring Pertanian dan Tata Kelola Data Kawasan Tran
 | 2026-08-11 | `ANTISLOP-ID.md` diadopsi sebagai filter desain, R-02 hanya berlaku untuk teks antarmuka | Dokumen `agents/` tidak dilihat pengguna akhir, sehingga menyisir 121 em dash di dalamnya tidak menambah nilai |
 | 2026-08-11 | Dial desain ditetapkan ENERGI 1 / RITME 2 / GERAK 1 | Sistem pendataan harian menuntut ketenangan, tetapi keseragaman penuh berisiko jatuh ke Sterile Default. RITME 2 menjadikan variasi komposisi sebagai penanda orientasi antar-jenis halaman |
 | 2026-08-11 | Mode gelap dipertahankan sebagai toggle dua mode | Dipilih user. Konsekuensi R-34: seluruh komponen, 15 grafik, dan seluruh badge wajib diuji di kedua mode, dan tabel kontras WCAG disusun untuk masing-masing mode |
-| 2026-08-11 | Tidak ada pendaftaran mandiri; akun hanya dibuat Admin | Ditegaskan user. Sistem memuat data kependudukan, sehingga pendaftaran terbuka berarti siapa pun dapat membuat akun. Sudah selaras dengan `prd.md` §7.1 ("akun yang diberikan") dan matriks `rules.md` §5.1 |
+| 2026-08-11 | Tidak ada pendaftaran mandiri; akun hanya dibuat Admin | Ditegaskan user. Sistem memuat data kependudukan, sehingga pendaftaran terbuka berarti siapa pun dapat membuat akun. Sudah selaras dengan `prd.md` �7.1 ("akun yang diberikan") dan matriks `rules.md` �5.1 |
 | 2026-08-11 | ~~Pemulihan kata sandi lewat Admin, bukan tautan surel~~ **Sebagian dicabut 2026-08-12** | Tidak semua transmigran memiliki alamat surel yang dapat diakses, dan jaringan di lokus tidak selalu memungkinkan penerimaan surel tepat waktu. Tabel `password_reset_tokens` bawaan Laravel tidak dipakai. **Alasan pertama gugur** setelah ditetapkan warga tidak memiliki akun sama sekali, sehingga seluruh pemegang akun adalah petugas bersurel dinas. Alasan kedua tetap berlaku, dan itulah sebabnya jalur Admin dipertahankan |
 | 2026-08-11 | Kredensial dua jenis pada satu kolom isian: email untuk dinas, NIK untuk transmigran | NIK pasti dimiliki setiap penduduk, sedangkan surel belum tentu. Kolom `user.email` menjadi nullable, ditambah kolom `nik` |
 | 2026-08-11 | Kata sandi hasil setel ulang wajib diganti saat masuk berikutnya | Kolom `password_harus_diganti` mencegah kata sandi sementara buatan Admin dipakai terus-menerus |
@@ -637,7 +637,7 @@ Seharusnya: "Digitalisasi Monitoring Pertanian dan Tata Kelola Data Kawasan Tran
 | 2026-08-12 | Jalur Admin **dipertahankan** meski jalur surel ditambahkan | Jaringan di lokus tidak selalu memadai, dan jalur Admin satu-satunya yang bekerja tanpa sambungan surel. Menghapusnya berarti menyisakan satu titik kegagalan pada satu-satunya cara masuk kembali ke sistem |
 | 2026-08-12 | Halaman lupa sandi **tidak memberi tahu apakah akun terdaftar** | Pesan yang membedakan "terkirim" dan "tidak ditemukan" menjadikan halaman publik ini alat memeriksa siapa saja yang memiliki akun di dinas. Pesannya karena itu selalu sama |
 | 2026-08-12 | Kode disimpan sebagai **sidik, bukan angka aslinya** | Basis data yang bocor tidak boleh langsung memberi jalan masuk. Alasannya sama dengan kata sandi, dan berlaku meski kode hanya hidup 15 menit |
-| 2026-08-12 | `jumlah_izin` pada data contoh dikoreksi 120/68/64/32 → **119/68/74/50** | Angka lama tidak pernah dicocokkan dengan tabel izin. Setelah dihitung ulang, tiga dari empat meleset, dan Dinas Pertanian ternyata memegang izin lebih banyak daripada yang tercatat. **Koreksi pertama hari ini (114/63/72/47) juga keliru** karena modul `fasilitas_sp` terlewat; angka 68 milik Dinas Transmigrasi ternyata sudah benar sejak awal |
+| 2026-08-12 | `jumlah_izin` pada data contoh dikoreksi 120/68/64/32 ? **119/68/74/50** | Angka lama tidak pernah dicocokkan dengan tabel izin. Setelah dihitung ulang, tiga dari empat meleset, dan Dinas Pertanian ternyata memegang izin lebih banyak daripada yang tercatat. **Koreksi pertama hari ini (114/63/72/47) juga keliru** karena modul `fasilitas_sp` terlewat; angka 68 milik Dinas Transmigrasi ternyata sudah benar sejak awal |
 | 2026-08-12 | `inventaris_sp` dan `fasilitas_sp` **dipisah** menjadi dua modul berizin | `rules.md` 5.1 menggabungkan keduanya jadi satu baris, sementara `data-dictionary.md` 13.1, `erd.md`, dan `ui-spec.md` sejak awal memisahkan: dua tabel, dua halaman, dua izin. `rules.md` yang menyimpang, dan itulah yang diperbaiki. Pemisahan juga memungkinkan Admin memberi kewenangan berbeda antara aset bergerak dan bangunan fasilitas |
 | 2026-08-12 | Pembanding izin mengadu dengan **tiga sumber**, bukan satu | Audit pertama hanya membandingkan dengan `rules.md` 5.1, sehingga modul yang hilang dari kamus data tidak pernah tertangkap dan hasilnya sempat dinyatakan "cocok sempurna" padahal kurang satu modul. Memeriksa satu sumber saja memberi rasa aman yang keliru ketika sumber-sumbernya sendiri belum sejalan |
 | 2026-08-12 | Form isian **tertinggal untuk 14 modul** sejak Tahap 2 | Task 2.13 sampai 2.18 hanya menulis Membuat halaman, sehingga form tidak pernah masuk lingkupnya dan menyatu ke task CRUD Tahap 4 sampai 8. Akibatnya 14 halaman daftar hanya dapat dibaca. Petunjuknya sudah ada sejak awal: `ui-spec.md` mencantumkan Form SP modal, tetapi berkasnya tidak pernah dibuat |
@@ -721,12 +721,12 @@ Seharusnya: "Digitalisasi Monitoring Pertanian dan Tata Kelola Data Kawasan Tran
 
 Poin 1 dan 2 sudah selesai pada 2026-08-11.
 
-1. ~~Susun ulang ERD berdasarkan koreksi pada bagian 1, sebelum menulis migration Laravel.~~ **Selesai** → `erd.md`
-2. ~~Buat data dictionary sebagai deliverable Fase 2 (`workflow.md` §2.2).~~ **Selesai** → `data-dictionary.md`
+1. ~~Susun ulang ERD berdasarkan koreksi pada bagian 1, sebelum menulis migration Laravel.~~ **Selesai** ? `erd.md`
+2. ~~Buat data dictionary sebagai deliverable Fase 2 (`workflow.md` �2.2).~~ **Selesai** ? `data-dictionary.md`
 3. Konfirmasi ke tim lapangan: daftar satuan yang benar-benar dipakai per komoditas, untuk mengisi data master `satuan` dan menetapkan satuan baku tiap komoditas. *Sementara memakai Ton, Kuintal, Kilogram.*
 4. Konfirmasi apakah lahan pekarangan juga dapat lebih dari satu per KK, atau dipastikan selalu satu. *Saat ini struktur dibuat one-to-many agar fleksibel.*
 5. Pastikan penanganan kasus rumah yang ditinggalkan sementara: apakah tetap berstatus Dihuni dengan penghuni terdaftar, atau dilepas menjadi kosong. *Sementara tetap Dihuni, dicatat pada `rumah.catatan_hunian`.*
-6. Konfirmasi apakah satu transmigran dapat menjadi anggota lebih dari satu poktan. *Sementara diasumsikan tidak, mengikuti `rules.md` §6.4.*
+6. Konfirmasi apakah satu transmigran dapat menjadi anggota lebih dari satu poktan. *Sementara diasumsikan tidak, mengikuti `rules.md` �6.4.*
 7. Konfirmasi spesifikasi hosting/VPS target, khususnya versi PHP yang tersedia, sebelum tahap deployment.
 8. Putuskan apakah mode gelap bawaan TailAdmin dipertahankan atau dimatikan, setelah uji coba bersama operator lapangan.
 9. ~~**Audit keputusan lama yang bersandar pada data contoh** (disepakati 2026-08-19).~~ **Selesai 2026-08-19.** Seluruh 992 baris `notes.md` disisir; 36 keputusan menyebut data contoh sebagai alasan, **5 di antaranya cacat dan menyangkut struktur data**. Dua pertanyaan lapangan yang muncul dijawab pemilik proyek, bukan disimpulkan. Hasil lengkapnya pada bagian 1c.4, dan dua pelanggaran baru yang ditemukan tercatat pada 1c.2 sebagai pelanggaran keempat dan kelima.
@@ -739,9 +739,9 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
 - [done] Untuk lebih lengkapnya, hirarkinya kira-kira begini: Provinsi --> Kabupaten --> Kawasan Transmigrasi X --> Satuan Pemukiman (SP). Di mana nanti untuk SP memuat informasi seperti: Nama SP, kecamatan SP, desa SP, koordinat SP, Inventaris SP, dan fasilitas SP.
 - [done] rute aplikasi sim transmigrasinya pindah ke folder sistem informasi transmigrasi, jadi bukan dalam folder sistem informasi transmigrasi lalu buat folder app dan menaruh semua folder dan file proyeknya di dalam folder app.
 - [done] apakah sudah ada halaman login dan lupa password? Oh iya, ini gak ada halaman signup ya, sebab nanti untuk pembuatan akun ada di role admin di manajemen akun. Bagaimana menurutmu untuk sistem ini?
-  * Keputusan: tanpa pendaftaran mandiri, tanpa pemulihan lewat surel. Kredensial dua jenis (email untuk dinas, NIK untuk transmigran). Rincian pada `rules.md` §14b.
+  * Keputusan: tanpa pendaftaran mandiri, tanpa pemulihan lewat surel. Kredensial dua jenis (email untuk dinas, NIK untuk transmigran). Rincian pada `rules.md` �14b.
 - [done] bahas role kira2 apa saja
-  * Keputusan: role dinamis lewat tabel `role`, `permission`, `role_permission`. Empat role bawaan: Admin (terkunci), Dinas Transmigrasi, Dinas Pertanian, Operator SP. Role Transmigran dan Ketua Poktan dihapus, pengaduan warga lewat kanal publik tanpa login. Rincian pada `rules.md` §5.
+  * Keputusan: role dinamis lewat tabel `role`, `permission`, `role_permission`. Empat role bawaan: Admin (terkunci), Dinas Transmigrasi, Dinas Pertanian, Operator SP. Role Transmigran dan Ketua Poktan dihapus, pengaduan warga lewat kanal publik tanpa login. Rincian pada `rules.md` �5.
 - [done] di form dropdown pada halaman dahsboard saat di dark mode, warna latar gulirannya putih dan font-nya juga putih, sehingga tidak terlihat. perbaiki semua form dropdown yg terdapat pada sistem ini misal saat di dark mode, warna latar gulirannya putih dan font-nya putih juga, sehingga tidak terlihat. Soalnya saya cek di beberapa halaman lainnya, kasusnya mirip di for dropdown pada halaman dashboard saat di dark mode.
   * Keputusan: diperbaiki lewat **satu aturan CSS global** di `app.css`, bukan menambal 111 `<select>` satu per satu. Cacat ini luput lama karena verifikasi visual hanya melihat select dalam keadaan tertutup; yang tertutup selalu tampak baik sebab yang dirender adalah kotaknya, bukan daftarnya. `ui-spec.md` 3.2.3 kini mewajibkan dropdown dibuka saat verifikasi.
 - [done] hyperlink lupa kata sandi di halaman login harusnya ada di kata "Lupa kata sandi?", bukan di "Minta kode verifikasi".
@@ -904,34 +904,34 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
   * **Cacat lama ikut diperbaiki.** ``pengguna/detail.blade.php`` menyaring riwayat hanya dengan ``nama_tabel``, tanpa mencocokkan ``record_id``, sehingga setiap akun menampilkan riwayat akun orang lain. Komentar lamanya bahkan mengaku mencocokkan nomor baris padahal kodenya tidak melakukannya. Penyaringan dipindah ke sisi klien, sebab satu modal melayani seluruh baris secara bergantian.
   - [done] form angka harusnya cuma bisa input angka saja. jadi buat validasi di sisi client.
     * Dibuat ``resources/js/input-angka.js`` yang dipasang **sekali** lewat satu pendengar di tingkat dokumen, bukan disalin ke tiap isian. Isian angka pada sistem ini tersebar di puluhan form, dan menempelkan penjaga per isian berarti setiap form baru harus mengingatnya.
-    * Yang disaring bukan sekadar huruf. ``type="number"`` bawaan peramban **sudah** menolak huruf, sehingga menulis ulang penolakan itu tidak menambah apa pun. Yang lolos justru ``e`` (notasi ilmiah), ``+``, ``-``, dan **tempelan teks** — ketiganya membuat isian tampak wajar tetapi terkirim sebagai nilai tak terduga.
+    * Yang disaring bukan sekadar huruf. ``type="number"`` bawaan peramban **sudah** menolak huruf, sehingga menulis ulang penolakan itu tidak menambah apa pun. Yang lolos justru ``e`` (notasi ilmiah), ``+``, ``-``, dan **tempelan teks** � ketiganya membuat isian tampak wajar tetapi terkirim sebagai nilai tak terduga.
     * Isian berlangkah pecahan (luas lahan, tonase panen) tetap menerima koma desimal; tahun dan jumlah unit tidak. Pembedanya diambil dari atribut ``step`` yang sudah ada, bukan dari daftar nama isian yang harus dirawat.
     * **Ini lapisan kenyamanan, bukan pengaman.** Validasi sisi server tetap wajib dan tidak dikurangi sedikit pun; penjaga ini hanya mencegah petugas mengisi satu form penuh sebelum tahu isiannya ditolak.
   - [done] admin kan tidak bisa dihapus. di halaman pengguna, khusus untuk role admin ada tampilan (admin terakhir). Nah, bagaimana kalau itu dihapus dan dihilangkan saja tombol nonaktifnya gitu.
     * Label ``(admin terakhir)`` pada baris tabel dihapus, tombol nonaktifkan ikut ditiadakan untuk baris tersebut.
     * **Keterangan di bawah tabel sengaja dipertahankan.** Tanpa label, hilangnya tombol pada satu baris menjadi tidak dapat dijelaskan; petugas akan mengira tampilannya rusak. Perbedaannya: label mengulang informasi di setiap baris, sedangkan keterangan menjelaskan aturannya satu kali.
-    * Aturan yang ditegakkan tetap sama — sistem menolak penonaktifan Admin aktif terakhir. Yang berubah hanya cara menyampaikannya.
+    * Aturan yang ditegakkan tetap sama � sistem menolak penonaktifan Admin aktif terakhir. Yang berubah hanya cara menyampaikannya.
   - [done] kata-kata "modul" di sistem ini bagaimana kalau diubah jadi "fitur"? Atau mungkin ada padanan kata lain yg formal namun lebih umum?
   - [done] Diksi "izin" pada fitur hak akses, bagaimana kalau diubah jadi "hak akses"? Soalnya kok agak kurang cocok memakai diksi izin gitu.
-    * Kedua permintaan dikerjakan bersama sebab menyentuh teks yang sama. "modul" → **fitur**; "izin" → **kewenangan**.
-    * **"hak akses" sengaja tidak dipakai** meski itu yang diminta. Menu induknya sendiri bernama *Role dan Hak Akses*, sehingga memakai istilah itu untuk salah satu isinya membuat pembaca mengira keduanya hal yang sama. Sistem ini memisahkan **kewenangan** (boleh melakukan apa) dari **cakupan data** (boleh melihat data siapa) — keduanya adalah hak akses, jadi istilah itu terlalu luas untuk menamai salah satunya.
+    * Kedua permintaan dikerjakan bersama sebab menyentuh teks yang sama. "modul" ? **fitur**; "izin" ? **kewenangan**.
+    * **"hak akses" sengaja tidak dipakai** meski itu yang diminta. Menu induknya sendiri bernama *Role dan Hak Akses*, sehingga memakai istilah itu untuk salah satu isinya membuat pembaca mengira keduanya hal yang sama. Sistem ini memisahkan **kewenangan** (boleh melakukan apa) dari **cakupan data** (boleh melihat data siapa) � keduanya adalah hak akses, jadi istilah itu terlalu luas untuk menamai salah satunya.
     * **Nama di dalam kode tidak ikut diubah.** Tabel ``permission``, kolom ``permission.modul``, dan parameter rute ``{modul}`` mengikuti konvensi Laravel serta menyentuh skema dan URL; menggantinya adalah migrasi basis data demi kata yang tak pernah dibaca pengguna. Batas ini dicatat pada ``ui-spec.md`` butir 8.
     * **"Izin lokasi" pada peta juga tetap**, sebab itu istilah dialog peramban (Geolocation API). Menggantinya membuat pesan sistem tidak cocok dengan yang benar-benar dilihat pengguna.
-    * Uji penjaga memeriksa **teks terender**, bukan berkas sumber — atribut seperti ``type="module"`` memang harus tetap teknis. Diuji lewat mutasi: mengembalikan satu judul ke "Izin per Modul" membuat uji merah.
+    * Uji penjaga memeriksa **teks terender**, bukan berkas sumber � atribut seperti ``type="module"`` memang harus tetap teknis. Diuji lewat mutasi: mengembalikan satu judul ke "Izin per Modul" membuat uji merah.
   - [done] Nama "Budi Santoso" yg terdapat di sistem ini ganti dengan "Nara Wijaya".
     * Diganti di seluruh rujukan, termasuk bentuk kapital ``NARA WIJAYA`` pada avatar dan inisial ``NW`` yang sebelumnya ``BS``. Inisial adalah yang paling mudah terlewat sebab tidak memuat nama aslinya.
   - [done] toggle role aktif di floating modal pada halaman role bagaimana kalau dihapus saja?
-    * Dihapus. Alasan yang menguatkan: status aktif sudah dapat diubah dari daftar role, sehingga modal menyediakan jalan kedua untuk hal yang sama — dan dua tempat mengubah satu nilai adalah sumber kebingungan, bukan kemudahan.
+    * Dihapus. Alasan yang menguatkan: status aktif sudah dapat diubah dari daftar role, sehingga modal menyediakan jalan kedua untuk hal yang sama � dan dua tempat mengubah satu nilai adalah sumber kebingungan, bukan kemudahan.
   - [done] Buat highlight color di halaman role pada bagian isi dari Jumlah Izin, Jumlah Akun, Dapat Dihapus. Sekalian rename "Dipakai akun" -> "Jumlah Akun"
-    * "Dipakai akun" → **Jumlah Akun**; "Jumlah Izin" ikut menjadi **Jumlah Kewenangan** menyesuaikan istilah baru.
-    * Warna dipilih menurut **makna, bukan sekadar pembeda**: Dapat Dihapus memakai hijau/abu sebab menyatakan boleh-tidaknya suatu tindakan, sedangkan dua kolom jumlah memakai warna netral — angka yang besar tidak berarti baik atau buruk, dan mewarnainya seolah begitu akan menyesatkan.
+    * "Dipakai akun" ? **Jumlah Akun**; "Jumlah Izin" ikut menjadi **Jumlah Kewenangan** menyesuaikan istilah baru.
+    * Warna dipilih menurut **makna, bukan sekadar pembeda**: Dapat Dihapus memakai hijau/abu sebab menyatakan boleh-tidaknya suatu tindakan, sedangkan dua kolom jumlah memakai warna netral � angka yang besar tidak berarti baik atau buruk, dan mewarnainya seolah begitu akan menyesatkan.
   - [done] "email dinas"/"surel dinas" ganti jadi "email" saja.
     * Diganti pada label, placeholder, dan teks bantuan. Sejalan dengan ``ui-spec.md`` yang sudah lebih dulu memutuskan **email** (bukan "surel") sebagai istilah baku sistem ini.
   - [batal] banner "Data contoh. Seluruh angka dan nama pada halaman ini adalah contoh untuk keperluan pembangunan tampilan, bukan data lapangan yang sebenarnya." dihilangkan saja.
     * **Dibatalkan atas keputusan pemilik proyek** setelah konflik dilaporkan; banner tetap apa adanya.
     * Banner ini bukan hiasan melainkan **kewajiban aturan proyek**: ``rules.md`` R-17/R-38 mensyaratkan setiap halaman menampilkan penanda "Data contoh" selama tahap dummy, agar angka di layar tidak disalahartikan sebagai data lapangan.
     * Cakupan penghapusan karena itu jauh lebih luas dari satu blok Blade: mengubah ``rules.md`` dan ``ui-spec.md``, membongkar tiga uji penjaga (``HalamanTest.php`` b53 dan b1009, ``DummyDataTest.php`` b235), serta mencatat ulang ``delivery-gate-gelombang-1.md`` yang memakai penanda ini sebagai bukti lolos audit R-38.
-    * Bila kelak ingin dikerjakan, jalan yang paling murah adalah **meringkasnya menjadi lencana kecil di header** — kewajiban tetap terpenuhi tanpa memakan ruang tiap halaman. Penghapusan total sebaiknya menunggu ``MEMAKAI_DATA_CONTOH`` menjadi ``false``, sebab saat itu banner hilang dengan sendirinya tanpa menyentuh aturan apa pun.
+    * Bila kelak ingin dikerjakan, jalan yang paling murah adalah **meringkasnya menjadi lencana kecil di header** � kewajiban tetap terpenuhi tanpa memakan ruang tiap halaman. Penghapusan total sebaiknya menunggu ``MEMAKAI_DATA_CONTOH`` menjadi ``false``, sebab saat itu banner hilang dengan sendirinya tanpa menyentuh aturan apa pun.
 
 - [done] Bagaimana kalau fitur laporan ekspor itu ditaruh di tiap datatabel yg berkaitan?
   * **Idenya justru menutup pelanggaran aturan yang sudah ada.** `rules.md` 12 poin 5 mewajibkan laporan dapat difilter sebelum diekspor, dan halaman `/laporan` tidak pernah memenuhinya: ia hanya memuat sembilan kartu unduhan tanpa satu pun kontrol filter, sehingga petugas selalu menerima seluruh isi tabel. Sementara 17 halaman daftar sudah memiliki pencarian dan filter yang bekerja lewat query string. Jadi ini bukan memindahkan fitur, melainkan menaruhnya di satu-satunya tempat yang filternya memang ada.
@@ -961,12 +961,12 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
   * Keputusan lama 2026-08-11 yang melebur `koordinat_lokasi_sp` menjadi empat kolom ini **tetap benar pada bagian peleburannya**; yang keliru adalah menyimpan isinya sama sekali. Catatan pada bagian 1a.3 ditandai dicabut, bukan dihapus.
 - [done] Bagaimana kalau topik pengaduan warga bisa ditautkan ke inventaris, fasilitas, dan infrastruktur SP? Begitupun juga ditautkan ke poktan, alsintan, saprotan, hasil panen, rumah transmigran? Mungkin ini yg menautkannya admin? Atau masyarakat?
   * **Yang menautkan petugas, bukan warga.** Warga melapor lewat ponsel berjaringan terbatas dan tidak mengetahui id aset; meminta ia memilih dari 1.140 KK akan menutup kanal yang justru paling perlu terbuka. Petugas melengkapinya saat meninjau, pola yang sama dengan koordinat pada `rules.md` 10b.6c. Form publik **tidak disentuh sama sekali**.
-  * Dibuat tabel **`pengaduan_objek`**, bukan dua kolom pada `pengaduan`. Alasannya disusun dari lapangan: kategori `Bencana` memang untuk kejadian yang merusak banyak hal sekaligus, dan infrastruktur di kawasan transmigrasi dipakai bersama sehingga satu irigasi rusak menghambat puluhan bidang. Bila hanya satu objek dapat ditaut, objek kedua akan ditulis ke `deskripsi` sebagai teks bebas dan **tidak terhitung pada rekap** — kegagalan yang berlangsung diam-diam.
+  * Dibuat tabel **`pengaduan_objek`**, bukan dua kolom pada `pengaduan`. Alasannya disusun dari lapangan: kategori `Bencana` memang untuk kejadian yang merusak banyak hal sekaligus, dan infrastruktur di kawasan transmigrasi dipakai bersama sehingga satu irigasi rusak menghambat puluhan bidang. Bila hanya satu objek dapat ditaut, objek kedua akan ditulis ke `deskripsi` sebagai teks bebas dan **tidak terhitung pada rekap** � kegagalan yang berlangsung diam-diam.
   * **Kewajiban tanpa memaksa berbohong.** Objek wajib dinyatakan sebelum status maju ke Diproses, dipenuhi salah satu dari tiga cara: ditautkan, ditandai `belum_terdata`, atau ditandai `tidak_ada`. Memaksa memilih dari daftar akan membuat petugas menaut ke aset yang sekadar mirip demi dapat melanjutkan, dan rekap lalu menuduh aset yang tidak bersalah. Penandaan `belum_terdata` sekaligus menjadi daftar kerja pendataan.
   * **Batas ketelitian diakui terbuka.** Inventaris didata per jenis, sehingga satu baris "MEJA KANTOR" mewakili 12 unit dan sistem tidak sanggup menunjuk meja yang mana. Cacat ini sudah ada sebelum tautan objek: data contoh sendiri menulis kursi plastik berkondisi "Rusak Ringan" dengan keterangan *"sebagian retak"*, dan kata "sebagian" itulah pengakuan bahwa modelnya tidak sanggup menyimpan kondisi per unit. Unit spesifik ditulis pada `keterangan`. Pemecahan per unit **tidak dikerjakan**, sebab menuntut penomoran dan pelabelan fisik di lapangan.
   * **Tiga temuan privasi, seluruhnya ditutup.** Halaman lacak publik tidak menampilkan objek sama sekali (`10b.6i`), sebab siapa pun yang tahu nomor pengaduan akan ikut mengetahui alamat keluarga yang bersangkutan. Rumah, lahan, hasil panen, dan alsintan hanya tampil sebagai **angka gabungan** pada rekap (`10b.8b`), sebab menyebut unitnya mengumumkan keluarga mana yang paling sering mengeluh. Daftar objek pada dropdown wajib disaring cakupan data (`10b.6j`), sebab dropdown adalah jalur baru yang dapat melewati pembatasan Per SP.
   * **Rekap dipecah dua tabel**, bukan satu. "Aset belum terdata" bukan nama aset; menaruhnya pada tabel peringkat membuatnya bersaing dengan aset sungguhan. Tabel kedua **wajib ditampilkan**: bila sebagian besar laporan masuk ke sana, peringkatnya tidak mewakili keadaan dan pembaca berhak tahu sebelum memakainya menyusun anggaran.
-  * Kolom **jumlah unit** ditampilkan berdampingan, tanpa rasio otomatis. Kursi plastik 60 unit wajar lebih sering diadukan daripada genset 1 unit, tetapi angka turunan yang tampak berwibawa cenderung diterima tanpa ditinjau — alasan yang sama dengan penolakan prioritas otomatis (10b.6a) dan unggulan otomatis (8.3).
+  * Kolom **jumlah unit** ditampilkan berdampingan, tanpa rasio otomatis. Kursi plastik 60 unit wajar lebih sering diadukan daripada genset 1 unit, tetapi angka turunan yang tampak berwibawa cenderung diterima tanpa ditinjau � alasan yang sama dengan penolakan prioritas otomatis (10b.6a) dan unggulan otomatis (8.3).
   * **Satu cacat lama ikut diperbaiki.** Tab "Pengaduan" pada rincian infrastruktur selama ini menampilkan **seluruh pengaduan se-SP**, dan komentarnya sendiri mengakui *"bukan daftar keluhan atas aset ini, sebab pengaduan tidak menaut ke id infrastruktur"*. Akibatnya keluhan atas jalan produksi ikut muncul di halaman sumur bor.
   * **Dua halaman rincian baru** dibuat untuk Inventaris SP dan Fasilitas SP, sebab keduanya hanya punya halaman daftar sehingga keluhan atas sebuah barang tidak punya tempat ditampilkan. Uji penjaga berbasis daftar rute langsung menuntut keduanya bertab dan ber-Catatan Log tanpa ujinya disunting, dan itu memang gunanya.
   * Kategori `Peralatan dan Perlengkapan` **dipecah** menjadi `Inventaris SP` dan `Fasilitas SP`. Ternyata murah: nilai lama tidak dipakai satu pun data contoh dan seluruh view membacanya lewat `::opsi()`.
@@ -1027,8 +1027,8 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
   * **Ketua sempat dapat ditetapkan di dua tempat sekaligus:** `poktan.ketua_transmigran_id` dan `anggota_poktan.jabatan = 'Ketua'`, tanpa satu pun validasi silang maupun batas satu ketua per poktan. Nilai `Ketua` karena itu dicabut dari enum jabatan; ketua kini hanya hidup di profil poktan.
   * **Ketua tidak selalu transmigran, dan itu keadaan lapangan yang nyata.** Form kini bercabang lewat `is_ketua_transmigran`: bila ya, dipilih dari daftar agar NIK dan tautan profilnya sahih; bila tidak, `nama_ketua` dan `nik_ketua` diketik langsung. Data contoh POKTAN HARAPAN BARU sengaja dibuat berketua non-transmigran agar cabang kedua ikut terlihat saat peninjauan.
   * **Kontak poktan adalah kontak ketua, bukan kontak kelompok.** Penamaan diseragamkan menjadi `telepon_ketua`, `email_ketua`, `alamat_ketua`.
-  * **ALASAN DIPERBAIKI 2026-08-19.** Alasan yang semula ditulis bersandar pada bentuk `DummyData` — "kontak poktan ternyata sudah lama menjadi kontak ketua di dalam kode, hanya dokumennya yang menyebut lain" — dan itu **penalaran melingkar**: data contoh dikarang AI sendiri, sehingga ia tidak dapat membuktikan apa pun tentang keadaan lapangan (`rules.md` 19a). Lebih buruk lagi, alasan itu membatalkan keterangan lapangan yang sudah ditulis benar pada bagian 1a.6 yaitu "kontak kelompok bisa berbeda dari kontak pribadi ketua", sehingga arah penalarannya terbalik: dokumen disesuaikan ke data karangan, bukan sebaliknya.
-  * Keputusannya **kebetulan tetap benar**, dan kini berdasar keterangan pemilik proyek (2026-08-19): kelompok tani di Kobalima Timur **tidak memiliki kontak sendiri** yang berbeda dari kontak ketuanya. Itulah dasar yang sah, bukan bentuk `DummyData`. Yang sebenarnya ditemukan pada kode hanyalah **ketidakcocokan penamaan** — form mengirim `name="telepon"` tetapi membaca `$data['telepon_ketua']` — dan itu pertanyaan tentang kode yang memang boleh dijawab dari data contoh.
+  * **ALASAN DIPERBAIKI 2026-08-19.** Alasan yang semula ditulis bersandar pada bentuk `DummyData` � "kontak poktan ternyata sudah lama menjadi kontak ketua di dalam kode, hanya dokumennya yang menyebut lain" � dan itu **penalaran melingkar**: data contoh dikarang AI sendiri, sehingga ia tidak dapat membuktikan apa pun tentang keadaan lapangan (`rules.md` 19a). Lebih buruk lagi, alasan itu membatalkan keterangan lapangan yang sudah ditulis benar pada bagian 1a.6 yaitu "kontak kelompok bisa berbeda dari kontak pribadi ketua", sehingga arah penalarannya terbalik: dokumen disesuaikan ke data karangan, bukan sebaliknya.
+  * Keputusannya **kebetulan tetap benar**, dan kini berdasar keterangan pemilik proyek (2026-08-19): kelompok tani di Kobalima Timur **tidak memiliki kontak sendiri** yang berbeda dari kontak ketuanya. Itulah dasar yang sah, bukan bentuk `DummyData`. Yang sebenarnya ditemukan pada kode hanyalah **ketidakcocokan penamaan** � form mengirim `name="telepon"` tetapi membaca `$data['telepon_ketua']` � dan itu pertanyaan tentang kode yang memang boleh dijawab dari data contoh.
   * `email_ketua` **menjadi satu-satunya tempat email ketua dapat disimpan**, sebab tabel `transmigran` tidak memiliki kolom email padahal `rules.md` 7a.2 mewajibkannya. Telepon terisi sendiri dari data transmigran tetapi tetap dapat disunting, karena petugas kerap memegang nomor yang lebih baru daripada yang tercatat.
   * **Perpindahan anggota dicatat sebagai dua baris**, bukan dengan memindahkan `poktan_id`. Memindahkan baris yang sama akan menghapus jejak keanggotaan di poktan lama seolah tidak pernah ada. Ditambah aturan bahwa seorang transmigran hanya boleh **Aktif di satu poktan**; UNIQUE `(poktan_id, transmigran_id)` tidak menangkap ini sebab poktannya memang berbeda.
   * **Field poktan pada form transmigran dijadikan turunan, bukan isian.** Benar seperti dugaan: `status_anggota_poktan` tidak pernah tersinkron dengan `anggota_poktan`, sehingga petugas dapat menyatakan "Ya" tanpa seorang pun mendaftarkannya ke kelompok mana pun. Keanggotaan kini ditetapkan dari sisi poktan saja.
@@ -1059,22 +1059,22 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
 
 - [done] Ketika klik data master wilayah, kenapa url-nya langsung menuju ke tab kecamatan?
   * **Tidak ada alasannya.** `hashTabs('kecamatan')` ditulis tanpa pertimbangan, dan keliru pada dua hal sekaligus: pembacaannya melompati dua tingkat pertama sehingga susunan hierarki yang baru saja dijelaskan di kepala halaman tidak terlihat, dan pengunjung yang mengklik menu langsung mendapat alamat `?tab=kecamatan` seolah ia pernah memilihnya sendiri. Diubah menjadi `provinsi`.
-  * **Satu cacat kecil ikut terlihat begitu bawaannya diperbaiki.** Panel provinsi satu-satunya yang tanpa `x-cloak`, sementara bawaannya kecamatan — sehingga panel provinsi justru **berkedip terlihat** lalu tergantikan. Keduanya kini sejalan: panel bawaan sengaja tanpa `x-cloak` agar halaman tidak kosong sesaat, tiga lainnya memakainya.
+  * **Satu cacat kecil ikut terlihat begitu bawaannya diperbaiki.** Panel provinsi satu-satunya yang tanpa `x-cloak`, sementara bawaannya kecamatan � sehingga panel provinsi justru **berkedip terlihat** lalu tergantikan. Keduanya kini sejalan: panel bawaan sengaja tanpa `x-cloak` agar halaman tidak kosong sesaat, tiga lainnya memakainya.
 - [done] Pada form tambah wilayah, kenapa field Tingkat wilayah otomatis terisi desa?
   * **Tingkat bawaan kini mengikuti tab yang sedang dibuka**, bukan nilai tetap. Sebelumnya selalu `desa`, sehingga petugas yang membuka tab Kecamatan lalu menekan Tambah mendapat form bertingkat Desa dan harus menggantinya setiap kali. Tab yang sedang dibuka adalah pernyataan paling jelas tentang apa yang hendak ditambahkan.
   * Nilai tab **disaring** terhadap daftar yang sah; alamat yang dikarang seperti `?tab=ngawur` jatuh ke tingkat teratas, bukan diteruskan apa adanya.
-  * **CACAT BESAR IKUT DITEMUKAN: form ini tidak pernah dapat dikirim untuk tingkat apa pun.** Ketiga isian induk saling meniadakan, tetapi ketiganya bertanda `required` **tetap**. Peramban karena itu menuntut ketiganya terisi sekaligus, padahal dua di antaranya selalu tersembunyi. Lebih buruk lagi, pesan galatnya menunjuk elemen tersembunyi sehingga petugas **tidak melihat apa yang kurang** — form seolah menolak diam-diam. Diganti pasangan `:required`/`:disabled` bersyarat, pola yang sudah dipakai form poktan dan form lahan.
+  * **CACAT BESAR IKUT DITEMUKAN: form ini tidak pernah dapat dikirim untuk tingkat apa pun.** Ketiga isian induk saling meniadakan, tetapi ketiganya bertanda `required` **tetap**. Peramban karena itu menuntut ketiganya terisi sekaligus, padahal dua di antaranya selalu tersembunyi. Lebih buruk lagi, pesan galatnya menunjuk elemen tersembunyi sehingga petugas **tidak melihat apa yang kurang** � form seolah menolak diam-diam. Diganti pasangan `:required`/`:disabled` bersyarat, pola yang sudah dipakai form poktan dan form lahan.
   * Ditemukan hanya karena uji peramban menanyakan `checkValidity()`, bukan apakah atributnya tertulis. Mutasi membuktikannya: mengembalikan satu `required` tetap langsung memerahkan dua pemeriksaan, salah satunya berbunyi *"form dapat dikirim untuk tingkat provinsi"*.
   * `@selected` ditambahkan di samping `x-model` pada keempat isian, sebab tanpa itu tidak ada option yang terpilih ketika JavaScript gagal dimuat.
 - [done] di form tambah Kawasan trans, sebelum form kabupaten, bukankah harusnya ada form provinsi dan lalu baru form kabupaten (multilevel dropdown)?
   * **Benar, dan alasannya bukan sekadar kerapian.** Menyodorkan daftar kabupaten se-Indonesia tanpa menanyakan provinsinya membuat petugas mencari di antara lima ratusan nama yang sebagian besar tidak pernah relevan, dan **nama kabupaten tidak selalu unik antar-provinsi**. Kawasan memang hierarki program yang memotong batas kecamatan, tetapi pangkalnya tetap sama: kabupaten berada di bawah provinsi.
-  * **Provinsi tidak disimpan.** `kawasan` hanya menyimpan `kabupaten_id`; provinsinya terbaca lewat rantai itu. Menyimpannya terpisah membuka peluang data tidak sinkron — kekeliruan yang sama sudah dihindari saat memutuskan SP tidak menyimpan `kecamatan_id` (1a.8). Isian provinsi karena itu **tidak bertanda wajib**: ia hanya menyaring.
+  * **Provinsi tidak disimpan.** `kawasan` hanya menyimpan `kabupaten_id`; provinsinya terbaca lewat rantai itu. Menyimpannya terpisah membuka peluang data tidak sinkron � kekeliruan yang sama sudah dihindari saat memutuskan SP tidak menyimpan `kecamatan_id` (1a.8). Isian provinsi karena itu **tidak bertanda wajib**: ia hanya menyaring.
   * **Penyaringan di sisi klien**, seluruh kabupaten dirender lalu disaring `x-for`. Dipilih agar tidak ada permintaan tambahan ke peladen, sejalan dengan pola autofill form poktan. Bila kelak daftarnya ribuan baris, barulah pemuatan bertahap sepadan.
   * Kabupaten **terkunci** selama provinsi belum dipilih, dengan ajakan "Pilih provinsi lebih dulu". Dropdown yang tampak dapat dibuka tetapi tidak menawarkan apa pun menyesatkan.
   * Jaminan tanpa JavaScript mengikuti pola `pilih-cari`: `<noscript>` merender daftar penuh beserta nama provinsinya, dan aturan gayanya menyembunyikan kedua select bertingkat agar tidak ada dua kontrol berebut satu nama.
 
-  * **Satu uji peramban yang saya tulis sendiri ternyata menguji hal yang salah, dan mutasi yang membongkarnya.** Pemeriksaan "kabupaten dilepas saat provinsi berganti" membaca `.value` DOM, padahal peramban **mengosongkan `.value` dengan sendirinya** ketika opsi terpilih lenyap dari daftar. Uji itu karena itu selalu hijau — termasuk ketika pelepasannya sengaja dilumpuhkan. Yang sesungguhnya bermasalah adalah `x-model` yang masih memegang id lama, dan nilai itulah yang ikut terkirim begitu isian kembali punya opsi yang cocok. Pembacaannya dipindah ke state Alpine, dan mutasi yang sama kini memerah.
-  * **Pelajarannya menambah catatan 1d.2:** uji perilaku pun dapat menguji hal yang salah bila yang dibaca adalah gejala yang kebetulan ikut berubah, bukan keadaan yang benar-benar menentukan. Mutasi bukan formalitas — di sini ia satu-satunya yang membedakan uji yang menjaga dari uji yang menemani.
+  * **Satu uji peramban yang saya tulis sendiri ternyata menguji hal yang salah, dan mutasi yang membongkarnya.** Pemeriksaan "kabupaten dilepas saat provinsi berganti" membaca `.value` DOM, padahal peramban **mengosongkan `.value` dengan sendirinya** ketika opsi terpilih lenyap dari daftar. Uji itu karena itu selalu hijau � termasuk ketika pelepasannya sengaja dilumpuhkan. Yang sesungguhnya bermasalah adalah `x-model` yang masih memegang id lama, dan nilai itulah yang ikut terkirim begitu isian kembali punya opsi yang cocok. Pembacaannya dipindah ke state Alpine, dan mutasi yang sama kini memerah.
+  * **Pelajarannya menambah catatan 1d.2:** uji perilaku pun dapat menguji hal yang salah bila yang dibaca adalah gejala yang kebetulan ikut berubah, bukan keadaan yang benar-benar menentukan. Mutasi bukan formalitas � di sini ia satu-satunya yang membedakan uji yang menjaga dari uji yang menemani.
   * Ketiganya dijaga **5 uji Pest baru** dan `tests/Browser/uji-master-wilayah.mjs` berisi **19 pemeriksaan perilaku**.
 - [done] coba cek lagi untuk beberapa halaman detail dari sebuah data (view detail) di github page itu masih ada yg gak bisa dibuka
   * **Bukan bug kode, melainkan situs yang basi dua hari.** Penerbitan terakhir (`9ea3918`, 19 Agustus) **gagal**, sehingga GitHub Pages masih menyajikan hasil 18 Agustus yaitu sebelum halaman rincian Inventaris SP dan Fasilitas SP ada. Terverifikasi: keduanya 404 di situs sementara halaman daftarnya 200, dan seluruh 153 alamat lolos 200 di lokal.
@@ -1103,10 +1103,10 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
 - [done] fitur upload dokumen pada halaman inventaris dan fasilitas itu bisa upload banyak dokumen/foto atau cuma 1 doang? Kalau cuma 1, bagaimana kalau tambah fitur upload foto seperti infrastruktur.
   * **Jawabannya: cuma satu.** Komponen `x-sim.file-upload` memang satu berkas per instansi, tanpa atribut `multiple`, dan mengunggah berkas baru **mengganti** yang lama.
   * Ditambahkan kolom `foto` pada `inventaris_sp` dan `fasilitas_sp`, mengikuti pola `infrastruktur` yang sejak awal memisahkan keduanya. Dipilih dua kolom, bukan tabel anak seperti `dokumen_lahan`, sebab yang diperlukan memang dua berkas berbeda jenis, bukan banyak berkas sejenis.
-  * **Cacat yang membuatnya mendesak:** label fasilitas berbunyi *"Dokumen atau Foto Fasilitas"* dengan keterangan yang menawarkan tiga kemungkinan isi, padahal slotnya cuma satu. Petugas yang mengunggah berita acara setelah foto akan **kehilangan fotonya tanpa peringatan apa pun** — form tetap tersimpan, hanya berkasnya yang tertimpa.
+  * **Cacat yang membuatnya mendesak:** label fasilitas berbunyi *"Dokumen atau Foto Fasilitas"* dengan keterangan yang menawarkan tiga kemungkinan isi, padahal slotnya cuma satu. Petugas yang mengunggah berita acara setelah foto akan **kehilangan fotonya tanpa peringatan apa pun** � form tetap tersimpan, hanya berkasnya yang tertimpa.
 
-  * **TEMUAN YANG LEBIH BESAR: ketiga halaman aset tidak pernah menampilkan berkasnya sama sekali.** Bukan hanya inventaris dan fasilitas — **infrastruktur juga**, padahal ia satu-satunya yang sejak awal punya dua kolom terpisah. Ketiganya menerima unggahan lewat form lalu tidak menyediakan cara membukanya. Itu kontrol mati yang dilarang R-26: petugas mengunggah berita acara, lalu tidak menemukan cara membacanya.
-  * **Uji penjaganya sendiri melewatkan ini dengan diam.** Uji `menyediakan cara membuka setiap berkas yang sudah diunggah` hanya memeriksa berkas Blade yang memuat `basename(`. Halaman yang **tidak menampilkan apa pun** karena itu tidak pernah masuk pemeriksaan — penjaga yang hanya mengawasi yang sudah benar.
+  * **TEMUAN YANG LEBIH BESAR: ketiga halaman aset tidak pernah menampilkan berkasnya sama sekali.** Bukan hanya inventaris dan fasilitas � **infrastruktur juga**, padahal ia satu-satunya yang sejak awal punya dua kolom terpisah. Ketiganya menerima unggahan lewat form lalu tidak menyediakan cara membukanya. Itu kontrol mati yang dilarang R-26: petugas mengunggah berita acara, lalu tidak menemukan cara membacanya.
+  * **Uji penjaganya sendiri melewatkan ini dengan diam.** Uji `menyediakan cara membuka setiap berkas yang sudah diunggah` hanya memeriksa berkas Blade yang memuat `basename(`. Halaman yang **tidak menampilkan apa pun** karena itu tidak pernah masuk pemeriksaan � penjaga yang hanya mengawasi yang sudah benar.
   * Keenam halaman rincian kini menampilkan berkasnya lewat `x-sim.tautan-dokumen`: alsintan, saprotan, poktan masing-masing satu berkas; infrastruktur, inventaris SP, fasilitas SP masing-masing dua. Dijaga uji berbasis daftar yang **menghitung jumlah tautan**, sehingga satu berkas yang lupa ditampilkan langsung memerah.
   * Aturannya ditulis pada `ui-spec.md` 6.4: satu instansi satu berkas, modul yang perlu foto sekaligus dokumen memasang dua instansi, dan berkas yang dapat diunggah **wajib dapat dibuka kembali**.
 - [done] pada semua form dropdown statis di semua halaman yang ada form dropdown statisnya, apakah memungkinkan jika dibuatkan data master untuk CRUD pilihan pada form dropdown-nya? Atau kalau gak dibuatkan data master, mungkin bisa dibuat CRUD nya itu di halaman yg bersangkutan biar gak terlalu bingung. Namun aku bingung nanti letaknya di mana agar tidak terlalu mengganggu estetika halaman yg sudah jadi. Coba kita diskusikan ini.
@@ -1134,12 +1134,12 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
   * **Yang tersimpan tetap TEKS, bukan id.** Kolom-kolom pemakainya bertipe ENUM pada SQL referensi dan sudah dipakai puluhan tampilan tanpa join; mengubahnya menjadi FK berarti membongkar seluruhnya demi keuntungan yang tidak ada. Pengecualiannya hanya `parameter_penilaian_sp.jenis_rujukan` pada Fase 4 nanti, sebab di sanalah penggantian teks berakibat fatal.
 
   **Tiga hal yang ikut ditemukan saat mengerjakan:**
-  * **`kondisi_rumah` ternyata TIDAK dipakai perhitungan apa pun.** Ia tampak sebagai kembaran `kondisi` — skala kerusakan yang sama persis — tetapi hanya `kondisi` yang dibaca `PenilaianKondisiSp`. Karena itu hanya `kondisi` yang diberi kolom `nilai_skor`. Memberikannya kepada `kondisi_rumah` berarti menyediakan isian yang tidak menentukan apa pun, dan Admin yang menyuntingnya akan menyangka skor SP ikut berubah.
-  * **Skor kondisi dicabut dari konstanta kode.** `PenilaianKondisiSp::NILAI_KONDISI` (Baik 1,0 / Rusak Ringan 0,5 / Rusak Berat 0,2) berpindah ke kolom `nilai_skor`. Sebelumnya **bobot parameter dapat disunting Admin tetapi nilai kondisinya tidak**, padahal keduanya sama-sama menentukan skor akhir — separuh perhitungan dapat diatur, separuhnya terkunci.
+  * **`kondisi_rumah` ternyata TIDAK dipakai perhitungan apa pun.** Ia tampak sebagai kembaran `kondisi` � skala kerusakan yang sama persis � tetapi hanya `kondisi` yang dibaca `PenilaianKondisiSp`. Karena itu hanya `kondisi` yang diberi kolom `nilai_skor`. Memberikannya kepada `kondisi_rumah` berarti menyediakan isian yang tidak menentukan apa pun, dan Admin yang menyuntingnya akan menyangka skor SP ikut berubah.
+  * **Skor kondisi dicabut dari konstanta kode.** `PenilaianKondisiSp::NILAI_KONDISI` (Baik 1,0 / Rusak Ringan 0,5 / Rusak Berat 0,2) berpindah ke kolom `nilai_skor`. Sebelumnya **bobot parameter dapat disunting Admin tetapi nilai kondisinya tidak**, padahal keduanya sama-sama menentukan skor akhir � separuh perhitungan dapat diatur, separuhnya terkunci.
   * **Penilaian lama tidak ikut berubah**, sesuai keputusanmu menyimpan salinan. Ternyata strukturnya **sudah ada**: `penilaian_sp.rincian` sejak awal menyalin bobot, kondisi, dan nilai yang berlaku saat penilaian dibuat, beserta alasan yang merujuk preseden `hasil_panen.satuan_id`. Yang perlu dikerjakan hanya memastikan sumbernya master, bukan konstanta.
 
   * Kewenangan menjadi fitur ke-28: **98 menjadi 101**, per role 101/48/47/51. Admin dan Dinas Transmigrasi sama-sama `L T U`, sesuai prinsipmu bahwa keduanya hampir setara kecuali fitur sistem.
-  * Dijaga **8 uji baru** pada `tests/Feature/ReferensiTest.php`, salah satunya menyisir seluruh berkas view dan memerah bila ada yang kembali memakai enum lama — sebab enum yang tertinggal menjadi sumber kedua yang diam-diam berbeda begitu Admin menambah satu nilai. Dibuktikan lewat tiga mutasi.
+  * Dijaga **8 uji baru** pada `tests/Feature/ReferensiTest.php`, salah satunya menyisir seluruh berkas view dan memerah bila ada yang kembali memakai enum lama � sebab enum yang tertinggal menjadi sumber kedua yang diam-diam berbeda begitu Admin menambah satu nilai. Dibuktikan lewat tiga mutasi.
   * Saat Fase 1 sampai 3 selesai, **kategori dan bidang pengaduan belum boleh ikut** (Fase 5): `BidangPengaduan::dariKategori()` masih `match` tanpa `default`, sehingga kategori baru akan meruntuhkan form pengaduan. Begitu pula `jenis_infrastruktur` dan `jenis_fasilitas` (Fase 4), sebab keduanya dipakai sebagai `jenis_rujukan` pada 13 parameter penilaian SP. Keduanya dikerjakan berikutnya, dan halangan itulah yang lebih dulu dibereskan.
   * **Fase 4 dan 5 dikerjakan bersama**, sebab keduanya menyentuh berkas yang sama. Empat jenis ditambahkan sehingga totalnya menjadi 14 daftar dan 68 nilai: `jenis_infrastruktur`, `jenis_fasilitas`, `bidang_pengaduan`, dan `kategori_pengaduan`.
   * **`jenis_rujukan` menjadi `referensi_id`**, satu-satunya kolom yang menyimpan id, bukan teks. Alasannya justru dampaknya: daftar lain hanya menampilkan teksnya kembali, sedangkan dua daftar ini menentukan hasil perhitungan. Kalau Admin memperbaiki ejaan `Air` menjadi `Air Bersih`, rujukan berbasis teks putus tanpa pesan apa pun, dan parameter `air_bersih` diam-diam menilai SETIAP SP sebagai tidak punya air. Karena itu parameter primer, status seluruh SP jatuh menjadi Perlu Perhatian gara-gara satu penyuntingan ejaan.
@@ -1157,40 +1157,40 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
   * **`StatusTinggal` tetap ditunda** menunggu rincian revisi darimu.
   * `status_tinggal` ditunda atas permintaanmu, menunggu butir revisi yang lebih rinci.
 - [done] kan mayoritas pada form tambah data ada kolom catatan, cek apakah pada halaman detail data sudah menyediakan field untuk menampilkan catatan tersebut. Oh iya, semua catatan itu misal diubah/diupdate, maka data sebelumnya masih ada ya, bukan ditimpa.
-  * **Lima halaman rincian tidak menampilkannya**: alsintan, infrastruktur, saprotan, poktan, dan pengguna. Keempat yang pertama punya kolom `keterangan` di kamus data, jadi catatannya memang dapat diketik tetapi **tidak pernah terbaca kembali** — sama saja dengan tidak dicatat.
+  * **Lima halaman rincian tidak menampilkannya**: alsintan, infrastruktur, saprotan, poktan, dan pengguna. Keempat yang pertama punya kolom `keterangan` di kamus data, jadi catatannya memang dapat diketik tetapi **tidak pernah terbaca kembali** � sama saja dengan tidak dicatat.
   * Kelimanya kini menampilkan catatan beserta berkasnya. Keadaan kosong dinyatakan apa adanya ("Tidak ada catatan tambahan."), bukan disembunyikan, sebab bagian yang lenyap terbaca sebagai data gagal termuat.
   * **Soal catatan lama: benar, tidak tertimpa.** `audit_log` menyimpan `data_lama` dan `data_baru` per kolom yang berubah (kamus data 2.2), sehingga isi catatan sebelum penyuntingan tetap tersimpan dan dapat ditelusuri lewat tab Catatan Log. Keterangan itu kini ditulis di layar, bukan hanya di dokumen.
-  * **UTANG TAHAP 4 YANG PERLU DIINGAT.** Komponen `catatan-log` merender `$jejak['ringkasan']`, padahal tabel `audit_log` **tidak punya kolom bernama itu** — yang ada `data_lama`/`data_baru`. Pada Tahap 2 hal ini tidak terlihat sebab `DummyData::auditLog()` mengarang kuncinya. Begitu backend masuk, tampilan wajib dibangun dari pasangan nilai lama dan baru; bila tidak, tab log pada **dua belas halaman rincian** akan kosong atau melempar galat. Ditulis sebagai peringatan di kepala komponennya.
-- [done] Aku cek ada beberapa form tambah/ubah data yg belum dikasih kolom catatan. Coba cek pada form di halaman apa saja yg belum ada. Sekalian ubah penamaannya agar seragam semua  Catatan/Keterangan/jika ada penamaan yg mirip, di-rename jadi Catatan. Agar semuanya seragam.
+  * **UTANG TAHAP 4 YANG PERLU DIINGAT.** Komponen `catatan-log` merender `$jejak['ringkasan']`, padahal tabel `audit_log` **tidak punya kolom bernama itu** � yang ada `data_lama`/`data_baru`. Pada Tahap 2 hal ini tidak terlihat sebab `DummyData::auditLog()` mengarang kuncinya. Begitu backend masuk, tampilan wajib dibangun dari pasangan nilai lama dan baru; bila tidak, tab log pada **dua belas halaman rincian** akan kosong atau melempar galat. Ditulis sebagai peringatan di kepala komponennya.
+- [done] Aku cek ada beberapa form tambah/ubah data yg belum dikasih kolom catatan. Coba cek pada form di halaman apa saja yg belum ada. Sekalian ubah penamaannya agar seragam semua ? Catatan/Keterangan/jika ada penamaan yg mirip, di-rename jadi Catatan. Agar semuanya seragam.
   * **Tujuh form tidak punya isian catatan sama sekali**, dan empat di antaranya justru punya kolomnya di kamus data: alsintan (8.3), infrastruktur (10.1), poktan (8.1), saprotan (8.4). Keempatnya kini punya. Tiga sisanya memang tidak punya kolom catatan: master satuan, master wilayah, dan pengguna.
   * **Empat penamaan berbeda dipakai bergantian** untuk satu maksud yang sama: Keterangan, Catatan, Catatan Hunian, dan Keterangan Satuan Lokal. Diseragamkan menjadi **Catatan** pada sembilan form. Kolom databasenya tetap `keterangan` mengikuti kamus data; yang diseragamkan adalah teks yang dibaca petugas.
   * **Tiga pengecualian sengaja dipertahankan** (menjadi DUA sejak 2026-08-22, `keterangan_satuan_lokal` dicabut seluruhnya), sebab maknanya memang berbeda dan menyamakannya justru menyesatkan: `rumah.catatan_hunian` ("Catatan Hunian", kolomnya memang bernama demikian), `hasil_panen.keterangan_satuan_lokal` ("Keterangan Satuan Lokal", kolom tersendiri di samping `keterangan`), dan `pengaduan.deskripsi` ("Uraian Masalah", isi laporan yang wajib diisi bukan catatan tambahan).
-  * **Dua cacat kecil ikut diperbaiki.** Label pada form lahan berkelas `sr-only` sehingga tidak tampak, dan form SP **sama sekali tanpa `<label>`** — satu-satunya isian catatan yang demikian, sehingga pembaca layar hanya mengumumkan sebuah kotak teks tanpa memberi tahu isinya apa.
+  * **Dua cacat kecil ikut diperbaiki.** Label pada form lahan berkelas `sr-only` sehingga tidak tampak, dan form SP **sama sekali tanpa `<label>`** � satu-satunya isian catatan yang demikian, sehingga pembaca layar hanya mengumumkan sebuah kotak teks tanpa memberi tahu isinya apa.
   * Dijaga tiga uji berbasis daftar: keberadaan isian pada 14 form, keseragaman labelnya, dan tampilannya pada 8 halaman rincian. Aturannya ditulis pada `ui-spec.md` 6.4a beserta ketiga pengecualiannya.
 - [done] Ini kita mau diskusi. Misal ada suatu kasus di mana kepala keluarga (suami) meninggal, kan admin bakal update datanya dan mengubah agar yg jadi kepala keluarga itu istrinya. Namun gimana agar system mencatat perubahan tersebut secara detail ya? Apakah via log atau bagaimana?
-  * **Jawabannya: audit log tidak cukup, dan sebabnya satu kalimat.** Audit log memang merekam bahwa `nama_kepala_keluarga` berubah, tetapi ia **tidak dapat membedakan suksesi dari perbaikan salah ketik** — keduanya berbentuk aksi `Ubah` pada kolom yang sama. Data contoh audit log sendiri sudah memuat contoh yang kedua: *"Memperbaiki ejaan nama YOHANES BERE"*. Dibuat tabel `riwayat_kepala_keluarga`.
+  * **Jawabannya: audit log tidak cukup, dan sebabnya satu kalimat.** Audit log memang merekam bahwa `nama_kepala_keluarga` berubah, tetapi ia **tidak dapat membedakan suksesi dari perbaikan salah ketik** � keduanya berbentuk aksi `Ubah` pada kolom yang sama. Data contoh audit log sendiri sudah memuat contoh yang kedua: *"Memperbaiki ejaan nama YOHANES BERE"*. Dibuat tabel `riwayat_kepala_keluarga`.
   * **Barisnya disunting, bukan diganti baris baru.** Satu baris `transmigran` adalah satu **rumah tangga**, bukan satu orang, sehingga rumah tangganya berlanjut dan yang berganti kepalanya. Alasannya bukan kepraktisan: jatah rumah dan lahan diberikan kepada **KK**, bukan kepada suaminya secara pribadi, sehingga ketujuh relasi yang menaut ke `transmigran` memang seharusnya tetap utuh. Jalan sebaliknya menuntut melepas UNIQUE `no_kk`, memindahkan tujuh FK manual (dua di antaranya ber-RESTRICT sehingga justru memblokir), dan membuat setiap hitungan "jumlah KK" pada dashboard menghitung ganda.
-  * **Suksesi adalah tindakan tersendiri, bukan efek samping form ubah.** Tombol dan modal terpisah, rute `POST` tersendiri. Bila ia lahir dari penyuntingan nama pada form biasa, setiap perbaikan ejaan akan mengotori riwayat suksesi — persis kekaburan yang tabel ini dibuat untuk menutupnya. Halaman rumah memakai pola efek-samping, dan **sengaja tidak diikuti** di sini.
+  * **Suksesi adalah tindakan tersendiri, bukan efek samping form ubah.** Tombol dan modal terpisah, rute `POST` tersendiri. Bila ia lahir dari penyuntingan nama pada form biasa, setiap perbaikan ejaan akan mengotori riwayat suksesi � persis kekaburan yang tabel ini dibuat untuk menutupnya. Halaman rumah memakai pola efek-samping, dan **sengaja tidak diikuti** di sini.
   * **Kedua sisi identitas disimpan**, bukan hanya yang lama. Merangkai nama pengganti dari baris berikutnya menghemat tiga kolom tetapi menukarnya dengan kueri berantai yang rapuh dan riwayat yang tidak dapat dibaca berdiri sendiri.
   * **Nomor KK ikut disimpan dua sisi**, sebab Dukcapil menerbitkan KK baru ketika kepala keluarganya berganti (dikonfirmasi pemilik proyek). Bila tidak berubah, keduanya diisi sama, dan tampilannya menulis "tidak berubah" alih-alih dua nomor identik yang membuat pembaca menduga ada perubahan yang tidak ada.
   * **Urutan pengganti tidak ditegakkan sistem.** Aturan istri lalu anak pertama adalah ketentuan Dukcapil; sistem tidak mendata anggota keluarga satu per satu (`erd.md` 7.4) sehingga tidak punya baris untuk memvalidasinya. Identitas pengganti diketik petugas: sistem merekam siapa penggantinya, **bukan menebaknya**.
 
   **Penyisiran skenario (`rules.md` 20a) menemukan dua cacat, dan keduanya berlawanan arah:**
-  * **Jabatan ketua poktan TIDAK boleh diwariskan.** Tanpa penjaga, menyunting baris transmigran membuat istri **otomatis menjadi ketua poktan** tanpa seorang pun memutuskan, padahal ketua dipilih anggota. Modal karena itu menuntut petugas memilih: kosongkan jabatan, atau teruskan. Pilihan itu `required`, dan hanya dirender bila keluarga tersebut memang menjabat — kontrol yang tidak menentukan apa pun adalah kontrol mati (R-26).
+  * **Jabatan ketua poktan TIDAK boleh diwariskan.** Tanpa penjaga, menyunting baris transmigran membuat istri **otomatis menjadi ketua poktan** tanpa seorang pun memutuskan, padahal ketua dipilih anggota. Modal karena itu menuntut petugas memilih: kosongkan jabatan, atau teruskan. Pilihan itu `required`, dan hanya dirender bila keluarga tersebut memang menjabat � kontrol yang tidak menentukan apa pun adalah kontrol mati (R-26).
   * **Keanggotaan poktan JUSTRU mengikuti, dan itu benar.** Sejak Fase A keanggotaan melekat pada keluarga, bukan pada kepala keluarganya, sehingga petugas cukup **diberi tahu**, tidak diminta memutuskan. Perbedaan perlakuan inilah hasil penyisirannya: satu perlu keputusan, satu tidak.
   * **Ketua berjalur `Anggota Keluarga` tidak ikut terpengaruh** sama sekali, sebab ia punya nama dan NIK tersendiri. Pemeriksaannya karena itu menyaring `asal_ketua === Kepala Keluarga`, bukan sekadar mencocokkan `ketua_transmigran_id`.
   * **Kejujuran angka:** setelah suksesi, `status_tinggal` keluarga tetap `Aktif` sebab istrinya masih hidup dan menempati rumah yang sama. Akibatnya rekap "Meninggal" pada status tinggal hanya menghitung **keluarga yang bubar**, bukan orang yang meninggal. Ditulis eksplisit pada kamus data 11.36 agar tidak terbaca keliru; angka kematian sesungguhnya dihitung dari tabel riwayat ini. Pemilik proyek sudah menyatakan nilai `Meninggal` pada status tinggal akan dicabut pada revisi berikutnya.
-  * **Privasi:** riwayat memuat NIK lama dan baru, tetapi hanya hidup sebagai tab pada rincian transmigran yang sudah tersaring cakupan data. Tidak ditampilkan pada rekap kependudukan mana pun — nama pasangan almarhum bukan angka agregat.
+  * **Privasi:** riwayat memuat NIK lama dan baru, tetapi hanya hidup sebagai tab pada rincian transmigran yang sudah tersaring cakupan data. Tidak ditampilkan pada rekap kependudukan mana pun � nama pasangan almarhum bukan angka agregat.
   * **Alasan pergantian adalah enum tersendiri**, bukan berbagi dengan `StatusTinggal`. Keduanya menjawab pertanyaan berbeda: yang satu keadaan terkini sebuah keluarga, yang lain peristiwa bertanggal. `Pindah atau Merantau` sengaja tidak dipecah dua, sebab membedakannya menuntut petugas menilai niat kepergian dan itu tidak dapat diverifikasi.
 
   * Kewenangan menjadi fitur ke-27: **95 kewenangan menjadi 98**, per role 98/45/46/50. **Tanpa hapus bagi siapa pun termasuk Admin**, sebab riwayat suksesi menyatakan siapa pemegang jatah lahan pada rentang waktu tertentu. Admin tetap memegang `ubah` untuk membetulkan salah ketik; tanpa itu petugas akan mencatat suksesi kedua sebagai penebus kekeliruan yang pertama.
   * Tab riwayat disisipkan **sebelum** Catatan Log, sebab log wajib tetap paling kanan (`ui-spec.md` 5.1c). Disajikan sebagai garis waktu mengikuti riwayat penghunian.
   * Data contoh memuat dua suksesi yang sengaja berbeda cabang: keluarga 6 (`YAKOBUS BRIA` meninggal, nomor KK berganti) dan keluarga 4 (`LUKAS SERAN` merantau, nomor KK tetap). Dijaga uji yang menuntut sisi baru riwayat **selalu cocok** dengan data transmigran terkini, sebab riwayat yang tidak selaras akan bertentangan dengan kartu profil di halaman yang sama.
   * Dijaga **9 uji Pest baru** dan `tests/Browser/uji-suksesi-kk.mjs` berisi **19 pemeriksaan perilaku**. Dibuktikan lewat mutasi: menghapus penyaring jalur ketua memerahkan uji Pest, dan mencabut `required` pada pilihan nasib jabatan memerahkan uji peramban.
-  * **Tersisa untuk Tahap 5:** rutenya masih stub. Saat backend masuk, ketiga langkah wajib satu transaksi — sunting baris transmigran, tambah baris riwayat, terapkan pilihan nasib jabatan ketua.
+  * **Tersisa untuk Tahap 5:** rutenya masih stub. Saat backend masuk, ketiga langkah wajib satu transaksi � sunting baris transmigran, tambah baris riwayat, terapkan pilihan nasib jabatan ketua.
 - [done] Bagian alur yg ada di tiap halaman (contoh "Beranda/Dashboard"), tolong seragamkan dengan format seperti ini: [Beranda/{nama_menu}/{sub_menu}/{detail_data}/ dan seterusnya]. Contoh: Beranda/Wilayah & SP/Infrastruktur/Sumur Bor.
   * **Remah kini dibaca otomatis dari `MenuHelper`** lewat `RemahHelper::untuk()`, bukan ditulis tangan per halaman. Dipasang pada **42 halaman**.
-  * **Ketidakseragamannya ternyata total: tidak satu pun ruas pertama cocok dengan menu yang benar-benar dipakai.** Transmigran menulis "Kependudukan" padahal menunya "Penduduk & Lahan"; poktan menulis "Kelembagaan" padahal menunya "Poktan & Sarana"; lahan menulis "Lahan" padahal ia berada di bawah "Penduduk & Lahan". Yang paling telak: halaman **daftar** inventaris menulis "Wilayah dan SP" sedangkan halaman **rinciannya sendiri** menulis "Wilayah dan Aset SP" — dua nama berbeda untuk satu modul, pada dua halaman yang saling bertautan.
+  * **Ketidakseragamannya ternyata total: tidak satu pun ruas pertama cocok dengan menu yang benar-benar dipakai.** Transmigran menulis "Kependudukan" padahal menunya "Penduduk & Lahan"; poktan menulis "Kelembagaan" padahal menunya "Poktan & Sarana"; lahan menulis "Lahan" padahal ia berada di bawah "Penduduk & Lahan". Yang paling telak: halaman **daftar** inventaris menulis "Wilayah dan SP" sedangkan halaman **rinciannya sendiri** menulis "Wilayah dan Aset SP" � dua nama berbeda untuk satu modul, pada dua halaman yang saling bertautan.
   * **Remah yang tidak sejalan dengan menu lebih buruk daripada tidak ada remah sama sekali**, sebab ia menyatakan pengguna berada pada cabang yang tidak pernah ia lewati. Menulisnya tangan berarti setiap halaman baru berpeluang mengarang nama baru lagi, dan itulah yang terjadi berulang kali.
   * Bentuknya **tiga ruas** sesuai permintaan: `Beranda / {submenu} / {halaman} / {rincian}`. Judul kelompok menu seperti "Transmigrasi" sengaja tidak diikutkan; empat ruas terlalu panjang pada layar sempit, dan yang benar-benar menolong adalah nama submenu tempat halaman itu hidup. Hasilnya persis contoh yang diminta: `Beranda / Wilayah & Aset SP / Infrastruktur SP / SALURAN IRIGASI BLOK A`.
   * Dua penyimpangan sengaja dipertahankan beserta alasannya: **dashboard SP** menempel pada Dashboard bukan pada menu Satuan Permukiman, sebab ia menyajikan rekap kawasan per SP bukan data SP-nya; dan **halaman di luar sidebar** (profil, galeri komponen) labelnya disusun dari alamatnya sendiri, sebab remah kosong menghilangkan penunjuk posisi sama sekali.
@@ -1220,29 +1220,29 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
 - [done] **Wakil keluarga di poktan: keanggotaan melekat pada keluarga, bukan pada kepala keluarga** (dari keterangan pemilik proyek, 2026-08-20)
   * **Keadaan lapangannya:** yang terdaftar di poktan adalah orang yang benar-benar menggarap dan menghadiri pertemuan, dan ia tidak selalu kepala keluarga. Bila kepala keluarga merantau, istri atau anaknya yang mewakili. Kalimat pemilik proyek yang menentukan: *"tautan ke data transmigran-nya berupa KK, bukan NIK kepala keluarga"*.
   * **Sebelumnya mustahil didata.** `anggota_poktan` hanya punya `transmigran_id` tanpa kolom identitas sendiri, dan catatan kamus datanya berbunyi *"nama dan NIK anggota dibaca lewat relasi, tidak disalin"*. Padahal `transmigran` adalah satu baris per kepala keluarga. Pilihan petugas dua-duanya buruk: membiarkan nama kepala keluarga yang tidak ada di kawasan, atau tidak mendaftarkan keluarga itu sama sekali dan menutup aksesnya ke saprotan.
-  * **Boolean digantikan enum tiga nilai.** `poktan.is_ketua_transmigran` → `asal_ketua` bertipe `AsalWakilPoktan`: `Kepala Keluarga`, `Anggota Keluarga`, `Bukan Transmigran`. Boolean hanya sanggup membedakan dua keadaan, sedangkan keadaan lapangan ada tiga. Enum yang sama dipakai `anggota_poktan.asal_wakil`, dengan nilai ketiga dilarang di tingkat aplikasi sebab seluruh anggota wajib berasal dari keluarga transmigran.
-  * **Dua penurunan sengaja dibedakan, dan menyatukannya adalah kekeliruan yang membuat jalur kedua mustahil dilayani.** `identitasDariRelasi()` menjawab "apakah nama dan NIK dapat dibaca lewat relasi" — hanya kepala keluarga. `dariKeluargaTransmigran()` menjawab "apakah luas lahan dapat dibaca dari bidang keluarga" — dua jalur pertama. Jalur `Anggota Keluarga` bernilai **beda** pada keduanya: identitasnya diketik, tetapi lahannya tetap terbaca.
+  * **Boolean digantikan enum tiga nilai.** `poktan.is_ketua_transmigran` ? `asal_ketua` bertipe `AsalWakilPoktan`: `Kepala Keluarga`, `Anggota Keluarga`, `Bukan Transmigran`. Boolean hanya sanggup membedakan dua keadaan, sedangkan keadaan lapangan ada tiga. Enum yang sama dipakai `anggota_poktan.asal_wakil`, dengan nilai ketiga dilarang di tingkat aplikasi sebab seluruh anggota wajib berasal dari keluarga transmigran.
+  * **Dua penurunan sengaja dibedakan, dan menyatukannya adalah kekeliruan yang membuat jalur kedua mustahil dilayani.** `identitasDariRelasi()` menjawab "apakah nama dan NIK dapat dibaca lewat relasi" � hanya kepala keluarga. `dariKeluargaTransmigran()` menjawab "apakah luas lahan dapat dibaca dari bidang keluarga" � dua jalur pertama. Jalur `Anggota Keluarga` bernilai **beda** pada keduanya: identitasnya diketik, tetapi lahannya tetap terbaca.
   * **`transmigran_id` tetap terisi pada jalur kedua**, sebab yang ditunjuk adalah **keluarga** yang diwakili, bukan orangnya. Inilah yang membuat luas lahan tetap terbaca meski wakilnya tidak punya baris sendiri.
-  * **Luas lahan dan koordinat diturunkan, bukan disimpan.** `DummyData::rekapLahanKeluarga()` menjumlahkan bidang lahan usaha milik keluarga. Menyimpannya sebagai kolom akan basi begitu petugas membetulkan luas di modul lahan — kekeliruan yang sama dengan `jumlah_anggota` yang sudah dicabut (`erd.md` 7.3). Satu-satunya pengecualian ketua `Bukan Transmigran`, yang lahannya memang tidak terdata sehingga wajib diketik.
+  * **Luas lahan dan koordinat diturunkan, bukan disimpan.** `DummyData::rekapLahanKeluarga()` menjumlahkan bidang lahan usaha milik keluarga. Menyimpannya sebagai kolom akan basi begitu petugas membetulkan luas di modul lahan � kekeliruan yang sama dengan `jumlah_anggota` yang sudah dicabut (`erd.md` 7.3). Satu-satunya pengecualian ketua `Bukan Transmigran`, yang lahannya memang tidak terdata sehingga wajib diketik.
   * **`poktan.luas_lahan_kelompok` ikut dihapus.** Ternyata kolom mati: **0 pemakaian di seluruh repo**, tidak ada isian, tidak ada tampilan, tidak ada uji, dan `DummyData::poktan()` bahkan tidak memuat kuncinya. Luas kelompok kini dijumlahkan dari lahan seluruh anggotanya, tampil sebagai baris total pada tabel anggota.
-  * **`alasan_keluar` dipisahkan dari `keterangan`.** Kolom `keterangan` dipakai dua maksud sekaligus: kamus data menyebutnya catatan umum, sedangkan form melabelinya "Alasan Keluar", sehingga catatan keanggotaan biasa **tidak punya tempat sama sekali**. Pemisahannya mengikuti `riwayat_penghunian` §6.3 yang sudah membedakan keduanya sejak awal.
-  * **Kardinalitas tidak berubah, dan itu kebetulan yang menguntungkan.** Satu wakil per keluarga per poktan, dan satu keluarga satu poktan — keduanya **sudah** ditegakkan UNIQUE `(poktan_id, transmigran_id)` yang ada, begitu `transmigran_id` bermakna keluarga. `rules.md` 7a.4d hanya perlu diperjelas kata-katanya dari "seorang transmigran" menjadi "satu keluarga", bukan diubah logikanya.
+  * **`alasan_keluar` dipisahkan dari `keterangan`.** Kolom `keterangan` dipakai dua maksud sekaligus: kamus data menyebutnya catatan umum, sedangkan form melabelinya "Alasan Keluar", sehingga catatan keanggotaan biasa **tidak punya tempat sama sekali**. Pemisahannya mengikuti `riwayat_penghunian` �6.3 yang sudah membedakan keduanya sejak awal.
+  * **Kardinalitas tidak berubah, dan itu kebetulan yang menguntungkan.** Satu wakil per keluarga per poktan, dan satu keluarga satu poktan � keduanya **sudah** ditegakkan UNIQUE `(poktan_id, transmigran_id)` yang ada, begitu `transmigran_id` bermakna keluarga. `rules.md` 7a.4d hanya perlu diperjelas kata-katanya dari "seorang transmigran" menjadi "satu keluarga", bukan diubah logikanya.
   * Data contoh diperluas agar ketiga cabang terlihat: POKTAN TANI BERSATU berketua istri (`YOVITA NAHAK`, mewakili keluarga `PETRUS NAHAK`), POKTAN HARAPAN BARU berketua penduduk setempat, dan satu anggota diwakili anak (`ANDREAS HOAR`, keluarga `YULITA HOAR`).
 
   **DUA CACAT LAMA DITEMUKAN SAAT PENGUJIAN PERAMBAN, keduanya berlangsung diam-diam sejak 2026-08-17:**
   * **`x-sim.pilih-cari` tidak pernah meneruskan `:required` dan `:disabled`.** Komponen membacanya lewat `$attributes->get(':required')`, padahal **Blade memperlakukan `:nama` sebagai atribut TERIKAT**: nilainya dievaluasi sebagai PHP lalu disimpan pada kunci `required` **tanpa titik dua**. Pembacaannya karena itu selalu menghasilkan null. Akibatnya nyata: isian pada cabang form yang sedang tersembunyi **tetap aktif dan ikut terkirim**, sehingga peladen menerima dua sumber identitas yang bertentangan.
   * **`@change` milik pemanggil hilang seluruhnya.** Komponen tidak pernah memanggil `$attributes->merge()` pada elemen mana pun, dan isian nilainya sendiri sudah memakai `@change="selaraskan()"`. Akibatnya **autofill telepon ketua poktan tidak pernah bekerja sejak ditulis**, padahal `rules.md` 7a.2b menjanjikannya dan satu uji Pest "menjaganya".
-  * **Keduanya lolos dari 443 uji hijau** sebab seluruh uji yang menyentuhnya hanya memeriksa keberadaan atribut `name` di HTML — persis kekeliruan yang sudah tercatat pada bagian 1d.2 dan butir b799, dan terulang untuk ketiga kalinya. Ditemukan hanya karena uji peramban menanyakan **apakah isiannya benar-benar nonaktif**, bukan apakah atributnya tertulis.
+  * **Keduanya lolos dari 443 uji hijau** sebab seluruh uji yang menyentuhnya hanya memeriksa keberadaan atribut `name` di HTML � persis kekeliruan yang sudah tercatat pada bagian 1d.2 dan butir b799, dan terulang untuk ketiga kalinya. Ditemukan hanya karena uji peramban menanyakan **apakah isiannya benar-benar nonaktif**, bukan apakah atributnya tertulis.
 
   * Dijaga **5 uji Pest baru** dan `tests/Browser/uji-wakil-poktan.mjs` berisi **20 pemeriksaan perilaku** lewat Edge headless tanpa dependensi. Nilainya dibuktikan lewat mutasi: mengembalikan pembacaan atribut ke bentuk lama langsung memerahkan uji Pest penjaga sekaligus satu pemeriksaan peramban, dan membuat rekap lahan ikut menghitung pekarangan memerahkan uji penurunan luas.
   * **Satu uji lama ikut diperbaiki.** Penjaga isian wajib memakai pola `name="..."[^>]*required`, dan pembatas `[^>]*` **putus** oleh tanda `>` di dalam nilai atribut Blade seperti `{{ $asal->value }}`. Uji melaporkan isian yang sebenarnya sudah bertanda wajib. Diganti jendela 200 karakter.
 - [done] Kolom export pada tabel kewenangan per fitur dihapus saja, karena kosong juga
   * **Kolomnya memang kosong, dan itu gejala, bukan penyebabnya.** Kewenangan `export` sudah dicabut 2026-08-17 dari enum `AksiPermission`, dari `daftarIzin()`, dari `izinRole()`, dan dari matriks `rules.md` 5.1. Tetapi `form-role.blade.php` **menyalin daftar aksi itu dengan tangan**, dan salinannya tidak tahu sumbernya sudah berubah. Kolom `export` bertahan tiga hari, kosong pada seluruh 28 fitur.
-  * **Tidak ada satu pun uji yang memerah**, padahal `HalamanTest` sudah punya uji khusus berjudul "mencabut kewenangan export dari seluruh sumber kebenaran". Uji itu menyisir empat sumber — enum, `daftarIzin()`, `izinRole()`, dan `rules.md` — lalu berhenti tepat sebelum sumber kelima, yaitu tampilan. Kolom kosong tidak membuat apa pun tampak rusak, sehingga tidak ada yang mencarinya.
+  * **Tidak ada satu pun uji yang memerah**, padahal `HalamanTest` sudah punya uji khusus berjudul "mencabut kewenangan export dari seluruh sumber kebenaran". Uji itu menyisir empat sumber � enum, `daftarIzin()`, `izinRole()`, dan `rules.md` � lalu berhenti tepat sebelum sumber kelima, yaitu tampilan. Kolom kosong tidak membuat apa pun tampak rusak, sehingga tidak ada yang mencarinya.
   * Perbaikannya bukan menghapus satu baris, melainkan **menghapus salinannya**: ditambahkan `AksiPermission::opsi()` dan view membaca dari sana. Daftar tulis-tangan yang menggandakan enum akan basi lagi pada pencabutan berikutnya, dan tidak ada alasan menyimpan dua daftar untuk satu kebenaran.
   * Ikut ditemukan pada halaman yang sama: kalimat pengantar `role.blade.php` masih berbunyi "melihat, menambah, mengubah, menghapus, **atau mengekspor** data", menjanjikan kewenangan yang sudah tidak ada kepada Admin yang membacanya.
-  * Uji "mencabut kewenangan export" diperluas ke sumber kelima, dan dibuktikan dengan mengembalikan kolomnya — uji memerah.
-  * **Ditambahkan `pint.json` yang mengecualikan `routes/`.** Tidak berkaitan dengan butir ini, tetapi ditemukan pada kesempatan yang sama: tanpa berkas konfigurasi, Pint memformat ulang `routes/web.php` seluruhnya setiap kali dijalankan — BOM, urutan import, spasi concat — sehingga diff-nya membengkak dan rute yang baru ditambahkan sempat hilang saat dipulihkan. Ini sudah tercatat sebagai jebakan berulang, dan sekarang penyebabnya dihapus, bukan dihindari.
+  * Uji "mencabut kewenangan export" diperluas ke sumber kelima, dan dibuktikan dengan mengembalikan kolomnya � uji memerah.
+  * **Ditambahkan `pint.json` yang mengecualikan `routes/`.** Tidak berkaitan dengan butir ini, tetapi ditemukan pada kesempatan yang sama: tanpa berkas konfigurasi, Pint memformat ulang `routes/web.php` seluruhnya setiap kali dijalankan � BOM, urutan import, spasi concat � sehingga diff-nya membengkak dan rute yang baru ditambahkan sempat hilang saat dipulihkan. Ini sudah tercatat sebagai jebakan berulang, dan sekarang penyebabnya dihapus, bukan dihindari.
 
 - [done] data master referensi apakah memungkinkan untuk dibuatkan per menu gitu? Jadi bukan per-tab hingga Panjang banget gitu sehingga user mana pun juga bakal bingung.
   * **Kekhawatiranmu terbukti, dan angkanya lebih buruk dari dugaan.** Diukur di peramban pada halaman yang berjalan: bar tab mencapai **2309px pada ruang 705px**, sehingga hanya **4 dari 14 tab yang terlihat** dan **10 tersembunyi** di balik gulir mendatar. Tidak ada yang tampak rusak, sebab keempat belas tab tetap ada di HTML dan `overflow-x-auto` bekerja persis seperti seharusnya.
@@ -1313,7 +1313,7 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
   * Kartu ringkasan "Kepada Poktan" dan "Kepada Individu" diganti satu kartu **"Poktan Penerima"**. Dipertahankan apa adanya, pasangan kartu itu akan menampilkan seluruh data pada yang satu dan angka nol tetap pada yang lain.
   * ~~Alsintan **tetap** memiliki kepemilikan pribadi: yang dicabut hanya penerima saprotan.~~ **KEPUTUSAN INI KELIRU DAN DIBATALKAN 2026-08-22.** Butir aslinya berbunyi "Di form Saprotan **dan alsintan**" - dua modul, bukan satu. Aku mengerjakan saprotan saja lalu memutuskan sendiri bahwa alsintan dikecualikan, dan menguburnya sebagai satu butir di antara belasan butir lain alih-alih menanyakannya. Pemilik proyek menemukannya sendiri tiga tahap kemudian. Alasan yang kupakai pun tidak bertahan: seluruh menu Pertanian mencatat KELOMPOK, dan data membuktikannya - dua alat berkepemilikan pribadi ternyata **yatim navigasi**, tidak dapat dijangkau dari rincian poktan maupun transmigran.
   * Dijaga **2 uji Pest baru** pada `EnumTest` dan `tests/Browser/uji-sp-otomatis.mjs` berisi **16 pemeriksaan perilaku**.
-  * **Uji peramban dipakai, bukan uji string, dan alasannya spesifik.** Yang dijaga di sini adalah perilaku: nilai `satuan_permukiman_id` kini dihitung Alpine, bukan diketik. Atribut `:value` yang salah tulis tetap **terlihat benar** di markup tetapi mengirim nilai kosong ke peladen — persis pola cacat `$modalData` yang dahulu lolos seluruh uji string (bagian 6).
+  * **Uji peramban dipakai, bukan uji string, dan alasannya spesifik.** Yang dijaga di sini adalah perilaku: nilai `satuan_permukiman_id` kini dihitung Alpine, bukan diketik. Atribut `:value` yang salah tulis tetap **terlihat benar** di markup tetapi mengirim nilai kosong ke peladen � persis pola cacat `$modalData` yang dahulu lolos seluruh uji string (bagian 6).
   * **Mutasi membuktikannya:** mencabut satu `@change` pada form saprotan langsung memerahkan tiga pemeriksaan dengan bunyi `sp ""`. Uji yang tidak pernah dapat memerah tidak menjaga apa pun.
   * Dokumen ikut diselaraskan: kamus data 8.4, 11.5, 11.8, 11.33 beserta tabel aturan integritas nomor 5 dan 9; `erd.md` relasi 24-26, daftar indeks, dan urutan migration; `rules.md` 7c.
 - [done] rename menu "Riwayat Tanam" menjadi "Penanaman" agar gak bingung, sebab diksi Riwayat Tanam itu seakan-akan kayak sudah melakukan penanaman.
@@ -1329,15 +1329,15 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
   * Catatan lama pada `tasklist.md` TIDAK ditulis ulang, hanya diberi keterangan penggantian nama. Menulis ulang riwayat keputusan membuat catatan itu berbohong tentang apa yang dahulu diputuskan.
 - [done] Fitur musim tanam dihapus saja, sebab realitanya poktan melakukan penanamannya secara fleksibel. Nanti untuk pencatatan kapan poktan mulai menanam dan kapan poktan panen ada di menu riwayat tanam dan hasil panen.
   * **Dihapus seluruhnya**, bukan disembunyikan: 5 rute, 3 halaman, item menu, izin `musim_tanam`, `DummyData::musimTanam()`, peta tautan statis, kelompok `musim` pada rekap panen, kolom tabel pada 6 halaman, dan 2 uji.
-  * **Sumbu waktunya berpindah ke tanggal yang memang sudah dicatat.** `penanaman.tanggal_tanam` dan `hasil_panen.tanggal_panen` sudah ada sejak awal, sehingga tidak ada data yang hilang — yang hilang hanyalah keharusan menebak penanaman itu masuk MT1 atau MT2.
+  * **Sumbu waktunya berpindah ke tanggal yang memang sudah dicatat.** `penanaman.tanggal_tanam` dan `hasil_panen.tanggal_panen` sudah ada sejak awal, sehingga tidak ada data yang hilang � yang hilang hanyalah keharusan menebak penanaman itu masuk MT1 atau MT2.
   * **`tanggal_tanam` naik status menjadi WAJIB.** Ia kini satu-satunya pembeda antara dua penanaman komoditas yang sama pada bidang yang sama. Kunci uniknya ikut berubah dari `(lahan_id, musim_tanam_id, komoditas_id)` menjadi `(lahan_id, komoditas_id, tanggal_tanam)`; tanpa itu kunci lama akan menolak penanaman kedua pada lahan yang sama, padahal satu bidang memang ditanami berulang kali.
   * **Rekap per periode tidak ikut hilang.** `rules.md` 8b.8 mewajibkannya, dan kewajiban itu tetap terpenuhi lewat penyaringan **Tahun Tanam** dan **Tahun Panen** yang dihitung dari tanggalnya. Tahun sengaja diturunkan, bukan disimpan sebagai kolom: kolom terpisah dapat berbeda dari tanggal yang menjadi sumbernya.
-  * **Kolom "Musim" pada tabel dihapus, bukan diganti tanggal.** Pada daftar riwayat tanam dan hasil panen, kolom tanggal sudah bersebelahan sehingga penggantian hanya akan menampilkan hal yang sama dua kali. `colspan` baris total ikut disesuaikan — luput menyesuaikannya membuat baris total bergeser satu kolom tanpa memerahkan uji mana pun.
+  * **Kolom "Musim" pada tabel dihapus, bukan diganti tanggal.** Pada daftar riwayat tanam dan hasil panen, kolom tanggal sudah bersebelahan sehingga penggantian hanya akan menampilkan hal yang sama dua kali. `colspan` baris total ikut disesuaikan � luput menyesuaikannya membuat baris total bergeser satu kolom tanpa memerahkan uji mana pun.
   * **Label pilihan catatan tanam pada form panen memakai bulan tanam**, bukan lagi label musim. Tanpa penanda waktu, dua penanaman pada lahan dan komoditas yang sama tampil sebagai dua pilihan yang bunyinya identik.
   * **Jumlah kewenangan turun 101 ke 99**, dan angka `jumlah_izin` keempat role bawaan ikut dibetulkan. Angka itu ditulis manual pada `DummyData::role()` dan dijaga uji yang membandingkannya dengan hasil hitungan.
   * Dijaga **1 uji Pest baru** yang menyisir seluruh jejaknya sekaligus: method `DummyData`, lima nama rute, respons 404, keberadaan ketiga berkas blade, kunci izin, definisi menu, dan kelompok rekap. **Mutasi membuktikannya**: menyisipkan kembali item menu musim tanam langsung memerahkannya.
   * Diperiksa juga di luar uji: **196 alamat** pada peta tautan statis seluruhnya membalas 200, dan **129 pemeriksaan peramban** pada tujuh berkas uji tetap hijau.
-  * Dokumen ikut diselaraskan: kamus data 5.3 (jadi nisan beserta alasannya), 9.2, 9.3, 13.1, 13.2; `erd.md` domain, diagram, relasi 31, aturan integritas 10, indeks, urutan migration, data awal, dan **penyelesaian nomor 22 ditandai DIBATALKAN** — di situlah keputusan lama menambah `nama`/`tahun` pada `musim_tanam` dicatat, sehingga membiarkannya membuat dokumen menjanjikan tabel yang tidak ada; `rules.md`; `prd.md`; `ui-spec.md`; `workflow.md`; `tasklist.md`.
+  * Dokumen ikut diselaraskan: kamus data 5.3 (jadi nisan beserta alasannya), 9.2, 9.3, 13.1, 13.2; `erd.md` domain, diagram, relasi 31, aturan integritas 10, indeks, urutan migration, data awal, dan **penyelesaian nomor 22 ditandai DIBATALKAN** � di situlah keputusan lama menambah `nama`/`tahun` pada `musim_tanam` dicatat, sehingga membiarkannya membuat dokumen menjanjikan tabel yang tidak ada; `rules.md`; `prd.md`; `ui-spec.md`; `workflow.md`; `tasklist.md`.
 - [done] Form tanggal pada riwayat tanam dan hasil panen, dibuat jadi Bulan-Tahun saja tanpa tanggal.
   * **`tanggal_tanam` menjadi `periode_tanam`**, sejajar dengan `periode_panen` yang sudah lebih dulu berbentuk bulan. Keduanya kini `CHAR(7)` berbentuk `YYYY-MM`, dan isiannya memakai `<input type="month">`.
   * Alasannya sama untuk keduanya: penanaman maupun panen satu hamparan berlangsung berhari-hari, sehingga menuntut satu tanggal pasti membuat petugas **menebak** - dan tebakan itu lalu dipakai sebagai dasar rekap seolah-olah data terukur.
@@ -1550,3 +1550,31 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
   * Diukur di peramban sungguhan, sebab lebar tabel tidak dapat dijawab uji string: **10 kolom pada tab SP dan Komoditas, 9 pada tab Poktan, seluruhnya muat tanpa gulir mendatar dan tanpa judul terpotong.**
   * Diperiksa juga di luar uji: **590 uji Pest** hijau, **202 alamat statis** seluruhnya 200, dan **188 pemeriksaan peramban** hijau.
   * Dokumen ikut diselaraskan: `rules.md` 7d.8 sampai 8c; kamus data 9.2 (kedua kolom menjadi wajib beserta koreksi alasannya) dan aturan integritas nomor 32.
+- [done] Revisi kolom datatabel pada halaman Penanaman: Ada tambahan 2 kolom, yaitu kolom "Jumlah Anggota" di antara kolom Kelompok Tani dan Komoditas serta kolom "Luas Lahan" di antara kolom Volume Benih dan Realisasi Tanam.
+- [done] Revisi kolom datatabel pada halaman Hasil Panen: Kelompok Tani (di bawahnya disisipkan asal SP), Komoditas, Volume Benih, Luas Lahan, Realisasi Panen, Puso, Periode Panen, Produksi, Perkiraan Nilai Jual. Cek dulu apakah kira2 muat tanpa memperjelek tampilan datatabelnya atau gak. Kalau malah memperjelek karena saking banyaknya kolom, amri kita diskusikan lagi kolom mana saja yg menurutmu paling penting untuk ditampilkan.
+- [done] Revisi kolom datatabel pada halaman Rekap Hasil Panen untuk tab Per Kelompok Tani: Ada tambahan 1 kolom saja, yaitu "Jumlah Anggota" setelah kolom Kelompok Tani dan sebelum kolom Luas Lahan.
+- [done] Coba cek untuk filter pada datatable di halaman Penanaman dan Hasil Panen, apakah bisa 4 dan 3 kolom filter + tombol "Terapkan Filter" yg ada pada 2 halaman tersebut dijadikan 1 line tanpa ada tulisan yg terpotong? Jika gak bisa, ya sudah tidak perlu diubah.
+  * **Keempat butir dikerjakan, tetapi pemeriksaannya lebih dulu menemukan cacat yang lebih besar.**
+  **CSS terbangun basi tiga hari, dan tidak ada yang menegur.**
+  * `public/build` terakhir dibangun **21 Agustus**, sedangkan seluruh perombakan pertanian terjadi 22-24 Agustus. Kelas seperti `grid-cols-5`, `bg-yellow-50` pada peringatan filter dilepas, `w-52`, dan `disabled:opacity-50` pada produktivitas saat gagal total **tidak ada sama sekali** di CSS - elemen itu dirender tanpa gaya.
+  * **Yang paling merugikan: pengukuran peramban berhari-hari ini sebagiannya mengukur halaman tanpa gaya lengkap.** Kesimpulan "tabel muat tanpa gulir" dan "grid genap" ternyata diambil dari halaman yang gridnya jatuh ke perilaku bawaan peramban.
+  * Butir filtermu justru yang menyingkapnya. Kusangka `lg:grid-cols-5` tidak muat, padahal **kelasnya tidak pernah ada**. Setelah `npm run build`, filter langsung sebaris - `barisFilter: [5]` pada Penanaman dan `[4]` pada Hasil Panen, tanpa satu pun label terpotong.
+  * **Jawaban butir keempat karena itu: sudah satu baris, tanpa perlu mengubah apa pun.** Yang perlu diperbaiki bukan tata letaknya melainkan kebiasaan membangun aset.
+  > **Jebakan yang dicatat:** uji peramban **tidak sahih bila aset basi**, dan tidak ada yang memerah. `npm run build` wajib dijalankan sebelum menyimpulkan pengukuran tampilan apa pun - sejajar dengan `php artisan view:clear` yang sudah tercatat sebelumnya.
+  * **Situs terbit TIDAK pernah terdampak**, dan itu diperiksa bukan diandaikan: `.github/workflows/deploy.yml` menjalankan `npm ci` beserta `npm run build` pada tiap penerbitan. Cacat ini murni lokal.
+  * Justru itu pula sebabnya ia lolos begitu lama. `public/build` masuk `.gitignore`, sehingga aset basi **tidak pernah tampak pada `git status`** dan tidak ada yang mengingatkan. Yang terpengaruh hanya pemeriksaan di mesin sendiri - dan pemeriksaan itulah yang kupakai menyimpulkan tampilan.
+  **Kolom ketiga halaman.**
+  * **Penanaman** menjadi 9 kolom dengan tambahan Jumlah Anggota dan Luas Lahan. Keduanya **dihitung** dari `rekapLahanPoktan()`, tidak disimpan (`rules.md` 7d.3), dan disusun sekali per poktan alih-alih dipanggil ulang tiap baris.
+  * **Hasil Panen** dirombak menjadi 10 kolom sesuai daftarmu. **Produktivitas dicabut** atas keputusanmu: nilainya dapat dihitung sendiri dari Produksi dibagi Realisasi Panen yang keduanya tampil di layar, sehingga tidak ada data yang hilang. Ia **tetap ada pada rekap**, sebab di sana agregat tertimbang tidak dapat dihitung ulang pembaca dari dua kolom mana pun.
+  * Volume Benih dan Luas Lahan pada Hasil Panen dibaca **lewat `penanaman_id`**, sebab keduanya milik penanaman dan poktan - bukan milik catatan panen. Menyalinnya ke tabel panen berarti dua tempat yang dapat berbeda diam-diam.
+  * **Rekap tab Kelompok Tani** mendapat Jumlah Anggota, menjadi 10 kolom. Sengaja hanya di tab itu: pada tab SP dan Komoditas ia menjumlahkan anggota beberapa poktan sekaligus - angka yang benar secara aritmetika tetapi tidak menjawab pertanyaan apa pun.
+  * **Volume Benih tidak perlu dikorbankan.** Kau menyiapkan pilihan itu bila kolomnya tidak muat; hasil pengukuran menunjukkan seluruhnya muat tanpa gulir mendatar, tanpa judul terpotong, dan tanpa sel terpotong.
+  **Mutasi ketiga menemukan cacat nyata yang lolos uji.**
+  * Mutasi yang menghitung jumlah anggota **per baris penanaman** alih-alih per himpunan poktan **tidak memerahkan apa pun**. Diperiksa manual: POKTAN MEKAR JAYA terbaca **9 anggota** padahal beranggota 3, sebab ia punya tiga penanaman pada tahun yang sama.
+  * Yang membuatnya berbahaya: **angka 9 tampak wajar sekilas**. Tidak ada yang mustahil pada kelompok tani beranggota sembilan orang, sehingga kekeliruannya tidak akan pernah menarik perhatian.
+  * Uji luas lahan yang sudah ada tidak menangkapnya, sebab luas dihimpun terpisah. Ditambahkan penjagaan tersendiri, dan mutasi yang sama kini memerah dengan bunyi `9 is identical to 3`.
+  * Dijaga **5 uji Pest baru**, dibuktikan lewat **empat mutasi**: `colspan` penanaman dikembalikan, Jumlah Anggota dirender di semua tab, jumlah anggota dihitung per baris penanaman, dan Produktivitas dikembalikan ke daftar panen. Seluruhnya memerah.
+  * **Satu uji sempat memerah karena penyebab yang benar:** "Produktivitas" masih ditemukan pada halaman panen - tetapi berasal dari **form modal** yang memang masih memuat isiannya. Yang dicabut kolom tabelnya, bukan isiannya; ujinya dipersempit ke kepala tabel saja.
+  * Diukur di peramban **setelah build**: Penanaman 9 kolom, Hasil Panen 10 kolom, Rekap tab Poktan 10 kolom - seluruhnya muat tanpa gulir mendatar dan tanpa satu pun judul atau sel terpotong.
+  * Diperiksa juga di luar uji: **600 uji Pest** hijau, **202 alamat statis** seluruhnya 200, dan **188 pemeriksaan peramban** hijau.
+  * Dokumen ikut diselaraskan: `rules.md` 9.8p sampai 8r.

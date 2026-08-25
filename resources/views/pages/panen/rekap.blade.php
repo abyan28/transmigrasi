@@ -93,6 +93,7 @@
         $adaFilter = $cakupanFilter !== [];
 
         $totalPoktan = array_sum(array_column($rekap, 'jumlah_poktan'));
+        $totalAnggota = array_sum(array_column($rekap, 'jumlah_anggota'));
         $totalLuas = array_sum(array_column($rekap, 'luas_lahan'));
         $totalBenih = array_sum(array_column($rekap, 'volume_benih'));
         $totalTanam = array_sum(array_column($rekap, 'realisasi_tanam'));
@@ -139,12 +140,23 @@
          * selalu satu.
          */
         $tampilkanCacahPoktan = $kelompok !== 'poktan';
+
+        /*
+         * Jumlah Anggota hanya pada tab Kelompok Tani (ditambahkan 2026-08-25).
+         *
+         * Pada tab SP dan Komoditas ia menjumlahkan anggota beberapa poktan
+         * sekaligus - angka yang benar secara aritmetika tetapi tidak
+         * menjawab pertanyaan apa pun, sebab yang dinilai di sana wilayah dan
+         * komoditas, bukan orangnya.
+         */
+        $tampilkanJumlahAnggota = $kelompok === 'poktan';
         $tampilkanLuasLahan = $kelompok !== 'komoditas';
         $tampilkanVolumeBenih = $kelompok === 'komoditas';
 
         // Cacah kolom, dipakai memeriksa kesejajaran baris total. Tetap: nama,
         // 4 kolom luas, produktivitas, produksi, nilai jual.
-        $cacahKolom = 8 + (int) $tampilkanCacahPoktan + (int) $tampilkanLuasLahan + (int) $tampilkanVolumeBenih;
+        $cacahKolom = 8 + (int) $tampilkanCacahPoktan + (int) $tampilkanJumlahAnggota
+            + (int) $tampilkanLuasLahan + (int) $tampilkanVolumeBenih;
     @endphp
 
     <x-sim.page-header judul="Rekap Hasil Panen"
@@ -331,6 +343,11 @@
                                 terhitung berkali-kali dan totalnya melampaui
                                 luas kawasan yang sebenarnya.
                             --}}
+                            @if ($tampilkanJumlahAnggota)
+                                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">
+                                    Jumlah Anggota
+                                </th>
+                            @endif
                             @if ($tampilkanLuasLahan)
                                 <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">
                                     Luas Lahan (ha)
@@ -412,6 +429,11 @@
                                         {{ number_format($r['jumlah_poktan'], 0, ',', '.') }}
                                     </td>
                                 @endif
+                                @if ($tampilkanJumlahAnggota)
+                                    <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
+                                        {{ number_format($r['jumlah_anggota'], 0, ',', '.') }}
+                                    </td>
+                                @endif
                                 @if ($tampilkanLuasLahan)
                                     <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
                                         {{ number_format($r['luas_lahan'], 2, ',', '.') }}
@@ -474,6 +496,11 @@
                             @if ($tampilkanCacahPoktan)
                                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
                                     {{ number_format($totalPoktan, 0, ',', '.') }}
+                                </td>
+                            @endif
+                            @if ($tampilkanJumlahAnggota)
+                                <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
+                                    {{ number_format($totalAnggota, 0, ',', '.') }}
                                 </td>
                             @endif
                             @if ($tampilkanLuasLahan)

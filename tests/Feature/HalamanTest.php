@@ -739,10 +739,26 @@ it('menyusun kolom rekap sesuai dasar pengelompokannya', function () {
      * totalnya melampaui luas kawasan yang sebenarnya.
      */
     $harapan = [
-        'sp' => ['ada' => ['Poktan', 'Luas Lahan (ha)'], 'tiada' => ['Volume Benih (kg)']],
-        'komoditas' => ['ada' => ['Poktan', 'Volume Benih (kg)'], 'tiada' => ['Luas Lahan (ha)']],
-        // Cacah poktan tidak dirender pada tab poktan: nilainya selalu satu.
-        'poktan' => ['ada' => ['Luas Lahan (ha)'], 'tiada' => ['Volume Benih (kg)']],
+        'sp' => [
+            'ada' => ['Poktan', 'Luas Lahan (ha)'],
+            'tiada' => ['Volume Benih (kg)', 'Jumlah Anggota'],
+        ],
+        'komoditas' => [
+            'ada' => ['Poktan', 'Volume Benih (kg)'],
+            'tiada' => ['Luas Lahan (ha)', 'Jumlah Anggota'],
+        ],
+        /*
+         * Cacah poktan tidak dirender pada tab poktan: nilainya selalu satu.
+         *
+         * Jumlah Anggota JUSTRU hanya di sini (ditambahkan 2026-08-25). Pada
+         * tab lain ia menjumlahkan anggota beberapa poktan sekaligus - angka
+         * yang benar secara aritmetika tetapi tidak menjawab pertanyaan apa
+         * pun, sebab yang dinilai di sana wilayah dan komoditas.
+         */
+        'poktan' => [
+            'ada' => ['Jumlah Anggota', 'Luas Lahan (ha)'],
+            'tiada' => ['Volume Benih (kg)'],
+        ],
     ];
 
     foreach ($harapan as $tab => $periksa) {
@@ -794,6 +810,117 @@ it('menyejajarkan cacah kolom header, badan, dan baris total pada rekap', functi
     }
 });
 
+it('menyejajarkan cacah kolom pada daftar penanaman dan hasil panen', function () {
+    /*
+     * Baris total yang bergeser satu kolom tidak memerahkan apa pun tanpa
+     * penjagaan ini - kekeliruan yang sudah pernah terjadi saat kolom Musim
+     * dicabut, dan berulang risikonya tiap kolom ditambah.
+     *
+     * `colspan` ikut dihitung, sebab baris total kedua halaman memakainya
+     * untuk merentang beberapa kolom sekaligus.
+     */
+    foreach ([route('penanaman'), route('panen.index')] as $alamat) {
+        $isi = $this->get($alamat)->assertOk()->getContent();
+
+        preg_match('/<thead.*?<\/thead>/s', $isi, $kepala);
+        preg_match('/<tfoot.*?<\/tfoot>/s', $isi, $kaki);
+        preg_match('/<tbody.*?<\/tbody>/s', $isi, $badan);
+
+        $cacahKepala = preg_match_all('/<th\s/', $kepala[0] ?? '');
+        $barisPertama = explode('</tr>', $badan[0] ?? '')[0];
+        $cacahBadan = preg_match_all('/<td\s/', $barisPertama);
+
+        // Sel bercolspan dihitung sesuai rentangnya, bukan sebagai satu sel.
+        preg_match_all('/<td(?:\s+colspan="(\d+)")?/', $kaki[0] ?? '', $sel);
+
+        $cacahKaki = 0;
+        foreach ($sel[1] as $rentang) {
+            $cacahKaki += $rentang === '' ? 1 : (int) $rentang;
+        }
+
+        expect($cacahKepala)->toBeGreaterThan(0)
+            ->and($cacahBadan)->toBe($cacahKepala)
+            ->and($cacahKaki)->toBe($cacahKepala);
+    }
+});
+
+it('menampilkan jumlah anggota dan luas lahan pada daftar penanaman', function () {
+    /*
+     * Keduanya DIHITUNG dari keanggotaan aktif dan data lahan, tidak disimpan
+     * pada tabel penanaman (rules.md 7d.3). Angka yang disimpan akan basi
+     * begitu satu anggota keluar atau satu bidang dibetulkan.
+     */
+    $isi = $this->get(route('penanaman'))->assertOk()->getContent();
+
+    expect($isi)->toContain('Jumlah Anggota')
+        ->and($isi)->toContain('Luas Lahan (ha)');
+
+    // Angkanya benar-benar terender, bukan sekadar judulnya.
+    foreach (DummyData::penanaman() as $tanam) {
+        $kekuatan = DummyData::rekapLahanPoktan($tanam['poktan_id']);
+
+        expect($isi)->toContain(number_format($kekuatan['luas_total'], 2, ',', '.'));
+    }
+
+    // Kolom itu memang turunan: tidak ada pada tabel penanaman.
+    foreach (DummyData::penanaman() as $tanam) {
+        expect($tanam)->not->toHaveKey('jumlah_anggota')
+            ->and($tanam)->not->toHaveKey('luas_lahan');
+    }
+});
+
+it('meniadakan kolom produktivitas dari daftar hasil panen', function () {
+    /*
+     * DICABUT 2026-08-25 atas keputusan pemilik proyek: nilainya dapat
+     * dihitung sendiri dari Produksi dibagi Realisasi Panen, sehingga tidak
+     * ada data yang hilang - yang hemat justru satu kolom pada tabel padat.
+     *
+     * Kolomnya tetap ada pada REKAP, sebab di sana ia agregat tertimbang yang
+     * tidak dapat dihitung ulang pembaca dari dua kolom di layar.
+     */
+    $isi = $this->get(route('panen.index'))->assertOk()->getContent();
+
+    /*
+     * Diperiksa pada KEPALA TABEL saja, bukan seluruh halaman: form modal
+     * ikut dirender di sini dan memang masih memuat isian produktivitas -
+     * yang dicabut kolom tabelnya, bukan isiannya.
+     */
+    preg_match('/<thead.*?<\/thead>/s', $isi, $kepala);
+
+    expect($kepala[0] ?? '')->not->toContain('Produktivitas');
+
+    // Kolom yang menggantikannya, sesuai daftar pemilik proyek.
+    foreach (['Kelompok Tani', 'Volume Benih', 'Luas Lahan (ha)',
+        'Realisasi Panen (ha)', 'Puso (ha)', 'Periode Panen',
+        'Produksi', 'Perkiraan Nilai Jual'] as $kolom) {
+        expect($isi)->toContain($kolom);
+    }
+
+    // Datanya tetap disimpan meski kolomnya tidak ditampilkan.
+    foreach (DummyData::hasilPanen() as $panen) {
+        expect($panen)->toHaveKey('produktivitas');
+    }
+});
+
+it('membaca volume benih daftar panen lewat penanamannya', function () {
+    /*
+     * Volume benih milik PENANAMAN, bukan milik catatan panen. Membacanya
+     * lewat relasi menjaga satu angka tetap punya satu sumber; menyalinnya
+     * ke tabel panen berarti dua tempat yang dapat berbeda diam-diam.
+     */
+    $panen = collect(DummyData::hasilPanen())->firstWhere('id_hasil_panen', 1);
+    $tanam = collect(DummyData::penanaman())->firstWhere('id_penanaman', $panen['penanaman_id']);
+
+    expect($panen)->not->toHaveKey('volume_benih')
+        ->and($tanam['volume_benih'])->not->toBeNull();
+
+    $isi = $this->get(route('panen.index'))->assertOk()->getContent();
+
+    $tampil = rtrim(rtrim(number_format($tanam['volume_benih'], 2, ',', '.'), '0'), ',');
+
+    expect($isi)->toContain($tampil.' kg');
+});
+
 it('menyisipkan satuan permukiman di bawah nama poktan pada rekap', function () {
     // Nama poktan tidak menyatakan lokasinya, sehingga tanpa keterangan ini
     // pembaca harus mengingat sendiri kelompok mana ada di SP mana.
@@ -812,6 +939,43 @@ it('menyisipkan satuan permukiman di bawah nama poktan pada rekap', function () 
             expect($isi)->toContain($sp);
         }
     }
+});
+
+it('menghitung jumlah anggota rekap dari himpunan poktan, bukan tiap penanaman', function () {
+    /*
+     * POKTAN MEKAR JAYA memiliki tiga penanaman pada tahun yang sama.
+     * Menjumlahkan anggotanya per baris penanaman menghasilkan 9 orang untuk
+     * kelompok yang sebenarnya beranggota 3 - dan angka itu tampak wajar
+     * sekilas, sehingga tidak akan ada yang menyadarinya.
+     *
+     * Cacat ini nyata dan lolos mutasi sebelumnya: uji luas lahan tidak
+     * menangkapnya, sebab luas memang dihimpun terpisah.
+     */
+    foreach (DummyData::rekapPanen('poktan', 2026) as $baris) {
+        // Pada tab poktan, satu baris berarti satu kelompok - sehingga
+        // angkanya wajib sama persis dengan kekuatan kelompok itu.
+        $poktan = collect(DummyData::poktan())->firstWhere('nama', $baris['nama']);
+
+        expect($poktan)->not->toBeNull();
+
+        $kekuatan = DummyData::rekapLahanPoktan($poktan['id_poktan']);
+
+        expect($baris['jumlah_anggota'])->toBe($kekuatan['jumlah_anggota'], $baris['nama']);
+    }
+
+    // MEKAR JAYA dipakai sebagai penjaga tersendiri: ia satu-satunya yang
+    // memiliki lebih dari satu penanaman, sehingga perbedaan cara menghitung
+    // benar-benar terasa di sana.
+    $mekar = collect(DummyData::rekapPanen('poktan', 2026))->firstWhere('nama', 'POKTAN MEKAR JAYA');
+
+    expect($mekar['jumlah_anggota'])->toBe(3);
+
+    $cacahPenanaman = collect(DummyData::penanaman())
+        ->filter(fn ($t) => $t['poktan'] === 'POKTAN MEKAR JAYA'
+            && DummyData::tahunRekapPanen($t['id_penanaman']) === 2026)
+        ->count();
+
+    expect($cacahPenanaman)->toBeGreaterThan(1);
 });
 
 it('menghitung luas lahan rekap dari himpunan poktan, bukan tiap penanaman', function () {

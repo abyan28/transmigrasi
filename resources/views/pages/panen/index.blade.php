@@ -76,6 +76,30 @@
 
         $daftarKomoditas = array_values(array_unique(array_column($semua, 'komoditas')));
 
+        /*
+         * Volume benih dan luas lahan dibaca LEWAT PENANAMAN, sebab keduanya
+         * milik penanaman dan poktan - bukan milik catatan panen.
+         *
+         * Disusun sekali di sini alih-alih dicari ulang pada tiap baris:
+         * pencarian penanaman beserta perhitungan lahan poktannya menyusuri
+         * seluruh keanggotaan, dan mengulanginya per baris membuat halaman
+         * menghitung hal yang sama berkali-kali.
+         */
+        $petaPenanaman = collect(DummyData::penanaman())->keyBy('id_penanaman');
+        $kekuatanPoktan = [];
+        $asalTanam = [];
+
+        foreach ($semua as $p) {
+            $tanam = $petaPenanaman[$p['penanaman_id']] ?? null;
+
+            $kekuatanPoktan[$p['poktan_id']] ??= DummyData::rekapLahanPoktan($p['poktan_id']);
+
+            $asalTanam[$p['id_hasil_panen']] = [
+                'volume_benih' => (float) ($tanam['volume_benih'] ?? 0),
+                'luas_lahan' => $kekuatanPoktan[$p['poktan_id']]['luas_total'],
+            ];
+        }
+
         $daftarTahun = array_values(array_filter(array_unique(array_map($tahunPanen, $semua))));
         rsort($daftarTahun);
 
@@ -228,21 +252,30 @@
                 @endif
             </x-slot:aksiKosong>
 
+            {{--
+                KOLOM DIROMBAK 2026-08-25 mengikuti daftar pemilik proyek.
+
+                Kelompok Tani menjadi kolom pertama beserta SP asalnya, sebab
+                seluruh pencatatan Produksi Pertanian berpusat pada kelompok.
+
+                PRODUKTIVITAS DICABUT atas keputusan pemilik proyek: nilainya
+                dapat dihitung sendiri dari Produksi dibagi Realisasi Panen,
+                sehingga tidak ada data yang hilang - yang hemat justru satu
+                kolom pada tabel yang sudah padat.
+
+                Volume Benih dan Luas Lahan dibaca LEWAT PENANAMAN, sebab
+                keduanya milik penanaman dan poktan, bukan milik catatan panen.
+            --}}
             <x-slot:kepala>
-                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Komoditas</th>
                 <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Kelompok Tani</th>
-                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Tanggal</th>
-                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Volume</th>
-                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Produktivitas</th>
-                {{--
-                    PUSO menggantikan kolom Status 2026-08-24. Status kini
-                    seragam pada seluruh baris - semuanya selesai dipanen -
-                    sehingga tidak membedakan apa pun. Puso justru yang
-                    membedakan: mulus, gagal sebagian, atau gagal total.
-                --}}
-                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">
-                    Puso (ha)
-                </th>
+                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Komoditas</th>
+                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Volume Benih</th>
+                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Luas Lahan (ha)</th>
+                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Realisasi Panen (ha)</th>
+                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Puso (ha)</th>
+                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Periode Panen</th>
+                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Produksi</th>
+                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Perkiraan Nilai Jual</th>
                 <th scope="col" class="px-5 py-3 text-right text-theme-xs font-medium text-gray-500 dark:text-gray-400">
                     Aksi
                 </th>
@@ -250,17 +283,42 @@
 
             @foreach ($baris as $p)
                 <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
+                    {{-- Kelompok tani beserta SP asalnya. Nama poktan sendiri
+                         tidak menyatakan lokasinya. --}}
                     <td class="px-5 py-3">
                         <a href="{{ route('panen.detail', $p['id_hasil_panen']) }}"
                             class="rounded text-theme-sm font-medium text-gray-800 hover:text-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-white/90 dark:hover:text-brand-400">
-                            {{ $p['komoditas'] }}
+                            {{ $p['poktan'] }}
                         </a>
                         <p class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
                             {{ $p['satuan_permukiman'] }}
                         </p>
                     </td>
-                    <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ $p['poktan'] }}</td>
+                    <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">{{ $p['komoditas'] }}</td>
                     <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
+                        {{ rtrim(rtrim(number_format($asalTanam[$p['id_hasil_panen']]['volume_benih'], 2, ',', '.'), '0'), ',') }} kg
+                    </td>
+                    <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
+                        {{ number_format($asalTanam[$p['id_hasil_panen']]['luas_lahan'], 2, ',', '.') }}
+                    </td>
+                    <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
+                        {{ number_format($p['realisasi_panen'], 2, ',', '.') }}
+                    </td>
+                    {{-- Puso ditegaskan bila ada, agar kegagalan tidak
+                         tenggelam sebagai angka nol di antara angka lain. --}}
+                    <td class="px-5 py-3 text-theme-sm tabular-nums">
+                        @if (($p['puso'] ?? 0) > 0)
+                            <span class="font-medium text-error-500">
+                                {{ number_format($p['puso'], 2, ',', '.') }}
+                            </span>
+                            @if ($p['realisasi_panen'] == 0)
+                                <p class="mt-0.5 text-theme-xs text-error-500">gagal total</p>
+                            @endif
+                        @else
+                            <span class="text-gray-400 dark:text-white/30">0,00</span>
+                        @endif
+                    </td>
+                    <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
                         {{ \Illuminate\Support\Carbon::parse($p['periode_panen'] . '-01')->translatedFormat('F Y') }}
                     </td>
                     <td class="px-5 py-3">
@@ -274,24 +332,11 @@
                             </p>
                         @endif
                     </td>
-                    {{-- Kualitas dicabut 2026-08-22, digantikan produktivitas:
-                         angka terukur lebih berguna daripada label mutu. --}}
                     <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
-                        {{ rtrim(rtrim(number_format($p['produktivitas'], 3, ',', '.'), '0'), ',') }}
-                        {{ $p['satuan'] }}/ha
-                    </td>
-                    {{-- Puso ditegaskan bila ada, agar kegagalan tidak
-                         tenggelam sebagai angka nol di antara angka lain. --}}
-                    <td class="px-5 py-3 text-theme-sm tabular-nums {{ '' }}">
-                        @if (($p['puso'] ?? 0) > 0)
-                            <span class="font-medium text-error-500">
-                                {{ number_format($p['puso'], 2, ',', '.') }}
-                            </span>
-                            @if ($p['realisasi_panen'] == 0)
-                                <p class="mt-0.5 text-theme-xs text-error-500">gagal total</p>
-                            @endif
+                        @if (! empty($p['harga_jual']))
+                            Rp {{ number_format($p['harga_jual'] * $p['produksi'], 0, ',', '.') }}
                         @else
-                            <span class="text-gray-400 dark:text-white/30">0,00</span>
+                            <span class="text-gray-400 dark:text-white/30">&mdash;</span>
                         @endif
                     </td>
                     <td class="px-5 py-3">
@@ -347,16 +392,26 @@
 
             <x-slot:kaki>
                 <tr class="motif-baris-total">
-                    {{-- Tiga kolom pertama: Komoditas, Kelompok Tani, Periode. Kolom
-                         Musim dicabut 2026-08-22, sehingga colspan turun dari 4. --}}
-                    <td colspan="3" class="px-5 py-3 text-theme-sm text-gray-700 dark:text-gray-300">
-                        Total volume yang ditampilkan, dikonversi ke ton
+                    {{--
+                        TUJUH kolom pertama: Kelompok Tani, Komoditas, Volume
+                        Benih, Luas Lahan, Realisasi Panen, Puso, dan Periode
+                        Panen. Disesuaikan 2026-08-25 mengikuti perombakan
+                        kolom; luput menyesuaikannya membuat baris total
+                        bergeser tanpa memerahkan uji mana pun.
+
+                        Luas Lahan dan Volume Benih sengaja TIDAK dijumlahkan:
+                        satu poktan muncul pada beberapa baris panen, sehingga
+                        menjumlahkannya per baris menghitung lahan yang sama
+                        berkali-kali.
+                    --}}
+                    <td colspan="7" class="px-5 py-3 text-theme-sm text-gray-700 dark:text-gray-300">
+                        Total produksi yang ditampilkan, dikonversi ke ton
                     </td>
                     <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
                         {{ number_format($totalTonTampil, 3, ',', '.') }} ton
                     </td>
-                    {{-- Produktivitas, Puso, dan Aksi. --}}
-                    <td colspan="3"></td>
+                    {{-- Perkiraan Nilai Jual dan Aksi. --}}
+                    <td colspan="2"></td>
                 </tr>
             </x-slot:kaki>
 
