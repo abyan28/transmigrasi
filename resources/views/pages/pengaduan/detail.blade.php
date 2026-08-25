@@ -128,6 +128,19 @@
                             {{ $data['kontak_pelapor'] }}
                         </dd>
                     </div>
+                    {{--
+                        Surel pelapor, ditambahkan 2026-08-25. Form pengaduan
+                        publik sudah lama memintanya, tetapi nilainya hanya
+                        dipakai sekali pada pesan konfirmasi lalu hilang. Tanpa
+                        ditampilkan di sini, petugas tidak punya jalur balasan
+                        tertulis ketika nomor telepon tidak dapat dihubungi.
+                    --}}
+                    <div class="flex justify-between gap-3">
+                        <dt class="text-gray-500 dark:text-gray-400">Surel</dt>
+                        <dd class="text-right font-medium break-all text-gray-800 dark:text-white/90">
+                            {{ $data['email_pelapor'] ?? '-' }}
+                        </dd>
+                    </div>
                     <div class="flex justify-between gap-3">
                         <dt class="text-gray-500 dark:text-gray-400">Sumber laporan</dt>
                         <dd class="text-right font-medium text-gray-800 dark:text-white/90">{{ $data['sumber_laporan'] }}</dd>
@@ -203,6 +216,20 @@
                             <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Uraian masalah</dt>
                             <dd class="mt-0.5 text-theme-sm leading-relaxed text-gray-800 dark:text-white/90">
                                 {{ $data['deskripsi'] }}
+                            </dd>
+                        </div>
+                        {{--
+                            Bukti dari PELAPOR, ditambahkan 2026-08-25. Berbeda
+                            dari dokumen tindak lanjut pada tab Riwayat yang
+                            diunggah PETUGAS: yang ini diserahkan warga saat
+                            melapor dan justru menjadi dasar peninjauan, tetapi
+                            sebelumnya tidak pernah dapat dibuka kembali.
+                        --}}
+                        <div>
+                            <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Bukti dari pelapor</dt>
+                            <dd class="mt-0.5 text-theme-sm text-gray-800 dark:text-white/90">
+                                <x-sim.tautan-dokumen modul="pengaduan" :id="$data['id_pengaduan']"
+                                    :berkas="$data['dokumen_pendukung'] ?? null" />
                             </dd>
                         </div>
                         <div>

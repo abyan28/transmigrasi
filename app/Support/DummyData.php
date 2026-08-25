@@ -66,6 +66,8 @@ class DummyData
                 'nomor_sk' => 'SK.123/MEN-TRANS/2015',
                 'luas_total' => 4250.75,
                 'jumlah_sp' => 6,
+                'keterangan' => 'Kawasan mencakup empat kecamatan, sehingga tidak dapat diwakili satu wilayah administratif.',
+                'dokumen_pendukung' => 'sk-penetapan-kobalima-timur.pdf',
             ],
         ];
     }
@@ -94,6 +96,8 @@ class DummyData
                 'jumlah_kk_terisi' => 218,
                 'lintang' => -9.5123450,
                 'bujur' => 124.9123450,
+                'keterangan' => 'SP tertua di kawasan, seluruh lahan usaha sudah dibagikan.',
+                'dokumen_pendukung' => 'sk-penempatan-kapitan-meo.pdf',
             ],
             [
                 'id_satuan_permukiman' => 2,
@@ -108,6 +112,8 @@ class DummyData
                 'jumlah_kk_terisi' => 187,
                 'lintang' => -9.4980120,
                 'bujur' => 124.8875600,
+                'keterangan' => null,
+                'dokumen_pendukung' => 'sk-penempatan-tniumanu.pdf',
             ],
             [
                 'id_satuan_permukiman' => 3,
@@ -122,6 +128,8 @@ class DummyData
                 'jumlah_kk_terisi' => 195,
                 'lintang' => -9.4551230,
                 'bujur' => 124.9450780,
+                'keterangan' => null,
+                'dokumen_pendukung' => null,
             ],
             [
                 'id_satuan_permukiman' => 4,
@@ -136,6 +144,8 @@ class DummyData
                 'jumlah_kk_terisi' => 176,
                 'lintang' => -9.4210900,
                 'bujur' => 124.9812340,
+                'keterangan' => null,
+                'dokumen_pendukung' => null,
             ],
             [
                 'id_satuan_permukiman' => 5,
@@ -150,6 +160,8 @@ class DummyData
                 'jumlah_kk_terisi' => 201,
                 'lintang' => -9.3987650,
                 'bujur' => 125.0123450,
+                'keterangan' => null,
+                'dokumen_pendukung' => null,
             ],
             [
                 'id_satuan_permukiman' => 6,
@@ -164,6 +176,8 @@ class DummyData
                 'jumlah_kk_terisi' => 163,
                 'lintang' => -9.3765430,
                 'bujur' => 125.0345670,
+                'keterangan' => 'SP terbaru, sebagian lahan usaha masih dalam proses penetapan.',
+                'dokumen_pendukung' => null,
             ],
         ];
     }
@@ -1353,6 +1367,7 @@ class DummyData
                 'tanggal_pengaduan' => '2026-08-02',
                 'nama_pelapor' => 'YOHANES BERE',
                 'kontak_pelapor' => '081234567801',
+                'email_pelapor' => 'yohanes.bere@example.id',
                 'sumber_laporan' => SumberLaporan::Publik->value,
                 'satuan_permukiman' => 'SP Kapitan Meo',
                 'satuan_permukiman_id' => 1,
@@ -1369,6 +1384,13 @@ class DummyData
                 'lintang' => -9.5131500,
                 'bujur' => 124.9139800,
                 'prioritas' => PrioritasPengaduan::Tinggi->value,
+                /*
+                 * Bukti yang dilampirkan PELAPOR saat melapor, berbeda dari
+                 * `dokumen_tindak_lanjut` pada penanganan yang diunggah
+                 * PETUGAS. Keduanya perlu terpisah agar terbaca siapa yang
+                 * menyerahkan berkas mana.
+                 */
+                'dokumen_pendukung' => 'foto-saluran-tersumbat.jpg',
             ],
             [
                 'id_pengaduan' => 2,
@@ -1434,6 +1456,7 @@ class DummyData
                 'tanggal_pengaduan' => '2026-07-28',
                 'nama_pelapor' => 'GABRIEL LEKI',
                 'kontak_pelapor' => '081234567807',
+                'email_pelapor' => 'gabriel.leki@example.id',
                 'sumber_laporan' => SumberLaporan::Publik->value,
                 'satuan_permukiman' => 'SP Weain',
                 'satuan_permukiman_id' => 6,
@@ -1443,6 +1466,7 @@ class DummyData
                 'deskripsi' => 'Sebagian tanaman jagung terserang hama ulat, mohon pendampingan penyuluh.',
                 'status' => StatusPengaduan::Selesai->value,
                 'prioritas' => PrioritasPengaduan::Tinggi->value,
+                'dokumen_pendukung' => 'foto-daun-jagung-terserang.jpg',
             ],
 
             /*

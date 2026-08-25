@@ -34,10 +34,14 @@
     <div class="grid gap-6 lg:grid-cols-[20rem_1fr]">
         <aside class="lg:sticky lg:top-24 lg:self-start">
             <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
-                <h2 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">Status</h2>
-
-                <div class="mt-3">
-                </div>
+                {{--
+                    Judul "Status" beserta wadah kosong di bawahnya dicabut
+                    2026-08-25: saprotan memang tidak punya kolom status maupun
+                    kondisi, sehingga judulnya menjanjikan isi yang tidak ada.
+                    Sisa pola yang sama sudah dibereskan lebih dulu di
+                    panen/detail.blade.php.
+                --}}
+                <h2 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">Rincian Penyaluran</h2>
 
                 <dl class="mt-5 space-y-3 border-t border-gray-200 pt-5 text-theme-sm dark:border-gray-800">
                     <div class="flex justify-between gap-3">
@@ -176,12 +180,28 @@
                                 {{ $data['keterangan'] ?? 'Tidak ada catatan tambahan.' }}
                             </dd>
                         </div>
-                        <div>
-                            <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Berita acara penyaluran</dt>
-                            <dd class="mt-0.5 text-theme-sm text-gray-800 dark:text-white/90">
-                                <x-sim.tautan-dokumen modul="saprotan" :id="$data['id_saprotan']"
-                                    :berkas="$data['dokumen_pendukung'] ?? null" />
-                            </dd>
+                        {{--
+                            Foto ditambahkan 2026-08-25. Kolom `foto` dipisah
+                            dari `dokumen_pendukung` di form mengikuti pola
+                            inventaris dan fasilitas, tetapi sisi rincian dulu
+                            hanya memasang satu tautan sehingga foto barang yang
+                            diunggah petugas tidak punya cara dibuka (R-26).
+                        --}}
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Foto barang</dt>
+                                <dd class="mt-0.5 text-theme-sm text-gray-800 dark:text-white/90">
+                                    <x-sim.tautan-dokumen modul="saprotan" :id="$data['id_saprotan']"
+                                        :berkas="$data['foto'] ?? null" />
+                                </dd>
+                            </div>
+                            <div>
+                                <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Berita acara penyaluran</dt>
+                                <dd class="mt-0.5 text-theme-sm text-gray-800 dark:text-white/90">
+                                    <x-sim.tautan-dokumen modul="saprotan" :id="$data['id_saprotan']"
+                                        :berkas="$data['dokumen_pendukung'] ?? null" />
+                                </dd>
+                            </div>
                         </div>
                     </dl>
                 </div>

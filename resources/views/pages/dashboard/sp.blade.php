@@ -121,7 +121,31 @@
                             {{ number_format($sp['jumlah_kk_rencana'], 0, ',', '.') }} KK
                         </dd>
                     </div>
+                    {{--
+                        Catatan dan dokumen penetapan, ditambahkan 2026-08-25.
+
+                        Form SP sudah lama menyediakan kedua isian ini, tetapi
+                        halaman rincian SP adalah halaman ini, dan ia tidak
+                        pernah menampilkannya. Akibatnya SK penempatan yang
+                        diunggah petugas tidak punya cara dibuka kembali, persis
+                        keadaan yang sudah dibereskan di modul lain (R-26).
+                    --}}
+                    <div class="flex justify-between gap-3">
+                        <dt class="text-gray-500 dark:text-gray-400">Dokumen penetapan</dt>
+                        <dd class="text-right font-medium text-gray-800 dark:text-white/90">
+                            <x-sim.tautan-dokumen modul="satuan_permukiman"
+                                :id="$sp['id_satuan_permukiman']"
+                                :berkas="$sp['dokumen_pendukung'] ?? null" />
+                        </dd>
+                    </div>
                 </dl>
+
+                <div class="mt-4 border-t border-gray-200 pt-4 dark:border-gray-800">
+                    <p class="text-theme-xs text-gray-500 dark:text-gray-400">Catatan</p>
+                    <p class="mt-0.5 text-theme-sm leading-relaxed text-gray-800 dark:text-white/90">
+                        {{ $sp['keterangan'] ?? 'Tidak ada catatan tambahan.' }}
+                    </p>
+                </div>
 
                 {{-- Keterisian ditampilkan sebagai batang, bukan grafik utuh,
                      karena hanya satu angka yang perlu dibandingkan --}}

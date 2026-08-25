@@ -135,12 +135,28 @@
                                 {{ $data['keterangan'] ?? 'Tidak ada catatan tambahan.' }}
                             </dd>
                         </div>
-                        <div>
-                            <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Dokumen pendukung</dt>
-                            <dd class="mt-0.5 text-theme-sm text-gray-800 dark:text-white/90">
-                                <x-sim.tautan-dokumen modul="alsintan" :id="$data['id_alsintan']"
-                                    :berkas="$data['dokumen_pendukung'] ?? null" />
-                            </dd>
+                        {{--
+                            Foto ditambahkan 2026-08-25, melengkapi tambalan
+                            2026-08-20 yang baru menjangkau `dokumen_pendukung`.
+                            Kolom `foto` sudah lama diisi lewat form tetapi
+                            tidak pernah punya tempat tampil, sehingga foto
+                            kondisi alat hanya menumpuk di penyimpanan.
+                        --}}
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Foto alat</dt>
+                                <dd class="mt-0.5 text-theme-sm text-gray-800 dark:text-white/90">
+                                    <x-sim.tautan-dokumen modul="alsintan" :id="$data['id_alsintan']"
+                                        :berkas="$data['foto'] ?? null" />
+                                </dd>
+                            </div>
+                            <div>
+                                <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Dokumen pendukung</dt>
+                                <dd class="mt-0.5 text-theme-sm text-gray-800 dark:text-white/90">
+                                    <x-sim.tautan-dokumen modul="alsintan" :id="$data['id_alsintan']"
+                                        :berkas="$data['dokumen_pendukung'] ?? null" />
+                                </dd>
+                            </div>
                         </div>
                     </dl>
                 </div>

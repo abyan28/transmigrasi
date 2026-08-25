@@ -63,9 +63,6 @@
             <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
                 <h2 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">Profil Poktan</h2>
 
-                <div class="mt-3">
-                </div>
-
                 <dl class="mt-5 space-y-3 border-t border-gray-200 pt-5 text-theme-sm dark:border-gray-800">
                     <div class="flex justify-between gap-3">
                         <dt class="text-gray-500 dark:text-gray-400">Ketua</dt>
@@ -104,8 +101,19 @@
                     </div>
                     <div class="flex justify-between gap-3">
                         <dt class="text-gray-500 dark:text-gray-400">Email</dt>
-                        <dd class="text-right font-medium text-gray-800 dark:text-white/90">
+                        <dd class="text-right font-medium break-all text-gray-800 dark:text-white/90">
                             {{ $data['email_ketua'] ?? '-' }}</dd>
+                    </div>
+                    {{--
+                        Alamat sekretariat, ditambahkan 2026-08-25. Form sudah
+                        lama memintanya sebagai titik temu penyuluh, tetapi
+                        nilainya tidak pernah ditampilkan kembali sehingga
+                        petugas lapangan tetap harus bertanya lewat telepon.
+                    --}}
+                    <div class="flex justify-between gap-3">
+                        <dt class="text-gray-500 dark:text-gray-400">Alamat sekretariat</dt>
+                        <dd class="text-right font-medium text-gray-800 dark:text-white/90">
+                            {{ $data['alamat_ketua'] ?? '-' }}</dd>
                     </div>
                     <div class="flex justify-between gap-3">
                         <dt class="text-gray-500 dark:text-gray-400">Satuan permukiman</dt>
@@ -185,7 +193,7 @@
                             pesan="Daftar anggota kelompok tani ini akan tampil setelah didata." />
                     @else
                         <x-sim.tabel-ringkas
-                            :kolom="['Wakil Keluarga', 'NIK', 'Jabatan', 'Lahan Usaha (ha)', 'Tanggal Masuk', 'Status', 'Aksi']">
+                            :kolom="['Wakil Keluarga', 'NIK', 'Telepon', 'Jabatan', 'Lahan Usaha (ha)', 'Tanggal Masuk', 'Status', 'Aksi']">
                             @foreach ($anggota as $a)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                                     <td class="px-5 py-3">
@@ -208,6 +216,14 @@
                                     </td>
                                     <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
                                         {{ $a['nik'] }}</td>
+                                    {{--
+                                        Telepon wakil, ditambahkan 2026-08-25.
+                                        Sudah lama disiapkan `anggotaPoktan()`
+                                        hasil percabangan tiga jalur, tetapi
+                                        tidak pernah dipasang di kolom mana pun.
+                                    --}}
+                                    <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
+                                        {{ $a['telepon'] ?? '-' }}</td>
                                     <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
                                         {{ $a['jabatan'] }}</td>
                                     <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
@@ -225,6 +241,24 @@
                                     <td class="px-5 py-3">
                                         <x-sim.status-badge
                                             :status="\App\Enums\StatusKeaktifanAnggota::from($a['status'])" />
+                                        {{--
+                                            Alasan keluar dan catatan, keduanya
+                                            ditambahkan 2026-08-25. Form anggota
+                                            sudah lama memintanya, tetapi tabel
+                                            ini hanya menampilkan badge status
+                                            sehingga SEBAB seseorang berhenti
+                                            tidak pernah terbaca kembali.
+                                        --}}
+                                        @if ($a['alasan_keluar'])
+                                            <p class="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
+                                                {{ $a['alasan_keluar'] }}
+                                            </p>
+                                        @endif
+                                        @if ($a['keterangan'])
+                                            <p class="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
+                                                {{ $a['keterangan'] }}
+                                            </p>
+                                        @endif
                                     </td>
                                     <td class="px-5 py-3">
                                         {{--
@@ -248,7 +282,7 @@
                                 sebab nilainya basi begitu luas dibetulkan di modul Lahan.
                             --}}
                             <tr class="motif-baris-total">
-                                <td colspan="3" class="px-5 py-3 text-theme-sm text-gray-700 dark:text-gray-300">
+                                <td colspan="4" class="px-5 py-3 text-theme-sm text-gray-700 dark:text-gray-300">
                                     Total lahan usaha kelompok
                                 </td>
                                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">

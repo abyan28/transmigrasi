@@ -58,7 +58,7 @@
                     </div>
             </div>
 
-            <dl class="mt-6 grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
+            <dl class="mt-6 grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-5">
                 <div>
                     <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Tahun penetapan</dt>
                     <dd class="mt-0.5 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
@@ -78,7 +78,29 @@
                     <dd class="mt-0.5 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
                         {{ $k['jumlah_sp'] }} SP di {{ count($kecamatan) }} kecamatan</dd>
                 </div>
+                {{--
+                    Salinan SK, ditambahkan 2026-08-25. Form kawasan sudah lama
+                    menyediakan isian unggahnya, tetapi kawasan tidak punya
+                    halaman rincian sendiri sehingga berkasnya tidak pernah
+                    punya tempat tampil di mana pun. Nomor SK saja tidak cukup:
+                    yang diminta saat pemeriksaan adalah salinannya.
+                --}}
+                <div>
+                    <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Salinan SK</dt>
+                    <dd class="mt-0.5 text-theme-sm text-gray-800 dark:text-white/90">
+                        <x-sim.tautan-dokumen modul="kawasan"
+                            :id="$k['id_kawasan_transmigrasi']"
+                            :berkas="$k['dokumen_pendukung'] ?? null" />
+                    </dd>
+                </div>
             </dl>
+
+            <div class="mt-4 border-t border-gray-200 pt-4 dark:border-gray-800">
+                <p class="text-theme-xs text-gray-500 dark:text-gray-400">Catatan</p>
+                <p class="mt-0.5 text-theme-sm leading-relaxed text-gray-800 dark:text-white/90">
+                    {{ $k['keterangan'] ?? 'Tidak ada catatan tambahan.' }}
+                </p>
+            </div>
         </div>
     @endforeach
 

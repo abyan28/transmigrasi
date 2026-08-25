@@ -5915,13 +5915,20 @@ it('menyediakan cara membuka berkas dari halaman rincian modulnya', function (st
 
     expect($cocok[0])->toHaveCount($jumlahBerkas, "berkas tertaut pada {$jalur} tidak sesuai");
 })->with([
-    ['/alsintan/1', 1],
-    ['/saprotan/1', 1],
     ['/poktan/1', 1],
-    // Ketiganya memisahkan foto dari dokumen, sehingga dua tautan.
+    // Kelimanya memisahkan foto dari dokumen, sehingga dua tautan. Alsintan
+    // dan saprotan menyusul 2026-08-25: kolom `foto` sudah lama terisi lewat
+    // form, tetapi halaman rincian dulu hanya memasang tautan dokumen.
+    ['/alsintan/1', 2],
+    ['/saprotan/1', 2],
     ['/infrastruktur/1', 2],
     ['/sp/inventaris/2', 2],
     ['/sp/fasilitas/3', 2],
+    // Rincian SP adalah halaman dashboard SP, satu-satunya tempat dokumen
+    // penetapan dapat dibuka.
+    ['/dashboard/sp/1', 1],
+    // Bukti dari pelapor, terpisah dari dokumen tindak lanjut milik petugas.
+    ['/pengaduan/1', 2],
 ]);
 
 it('menaruh catatan sebelum unggahan pada setiap form', function () {
