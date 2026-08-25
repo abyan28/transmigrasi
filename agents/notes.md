@@ -1578,3 +1578,15 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
   * Diukur di peramban **setelah build**: Penanaman 9 kolom, Hasil Panen 10 kolom, Rekap tab Poktan 10 kolom - seluruhnya muat tanpa gulir mendatar dan tanpa satu pun judul atau sel terpotong.
   * Diperiksa juga di luar uji: **600 uji Pest** hijau, **202 alamat statis** seluruhnya 200, dan **188 pemeriksaan peramban** hijau.
   * Dokumen ikut diselaraskan: `rules.md` 9.8p sampai 8r.
+
+- [done] Sufiks satuan pada form Penanaman menabrak tombol naik-turun (dilaporkan lewat tangkapan layar).
+  * Nama penuh **"Kilogram"** menempati sudut kanan yang sama dengan tombol naik-turun bawaan `input[type=number]`, sehingga keduanya bertumpuk dan angkanya sulit dibaca.
+  * Diganti **simbol** dari data master (`kg`), bukan disingkat sendiri lewat `substr` maupun daftar tulis tangan - satuan baru yang didata Admin ikut punya singkatan tanpa perlu disunting kode.
+  * Keterangan di bawah isian **tetap memakai nama penuh**: ruangnya lapang, dan "Tersisa 197,5 Kilogram" lebih jelas dibaca daripada singkatan.
+  * **Isian produktivitas pada form Hasil Panen punya cacat yang sama dan ikut diperbaiki**, malah lebih parah - sufiksnya "Kilogram/ha". Tidak dilaporkan, tetapi ditemukan saat menyisir isian sejenis.
+  > **Jebakan yang dicatat, dan ini yang paling berharga:** perbaikan pertama memakai `right-8`, nilai yang tampak masuk akal di antara `right-4` dan `right-10`. Kelas itu **tidak pernah dibangkitkan Tailwind pada proyek ini**, sehingga sufiksnya justru terdorong ke LUAR kotak isian. Markupnya tertulis rapi, halaman membalas 200, dan tidak ada yang memerah.
+  * Yang menangkapnya **uji geometri yang baru ditulis pada saat yang sama**: `jarak dari tepi kanan -15px`. Angka minus berarti sufiks berada di luar isian - keadaan yang mustahil terbaca dari markup.
+  * Pelajarannya bukan "periksa CSS dulu", melainkan **kelas Tailwind yang tidak dipakai di mana pun tidak ada di CSS**. Menebak nilai yang "sepertinya ada" berisiko sama dengan menulis kelas yang salah ketik.
+  * Dijaga **4 pemeriksaan peramban baru** pada dua berkas uji, seluruhnya mengukur GEOMETRI bukan markup: sufiks memakai simbol, dan jaraknya dari tepi kanan menyisakan ruang bagi tombol naik-turun.
+  * Dibuktikan lewat **tiga mutasi**: nama penuh dikembalikan pada volume benih, `right-4` dikembalikan, dan nama penuh dikembalikan pada produktivitas. Seluruhnya memerah.
+  * Diperiksa juga di luar uji: **600 uji Pest** hijau, **202 alamat statis** seluruhnya 200, dan **192 pemeriksaan peramban** pada sebelas berkas hijau.

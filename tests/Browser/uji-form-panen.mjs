@@ -260,6 +260,43 @@ async function main() {
             `max=${sesudah.maxPanen}, seharusnya 1`
         );
 
+        /*
+         * Sufiks produktivitas TIDAK menabrak tombol naik-turun.
+         *
+         * Nama penuh "Kilogram/ha" menempati sudut kanan yang sama dengan
+         * tombol bawaan input number, sehingga keduanya bertumpuk dan angkanya
+         * sulit dibaca. Ditemukan pemilik proyek lewat tangkapan layar pada
+         * isian sejenis di form penanaman.
+         *
+         * Uji string tidak akan pernah melihatnya - markupnya tertulis rapi.
+         * Yang membedakan hanya geometri di layar.
+         */
+        const sufiksProduktivitas = JSON.parse(await nilai(`(() => {
+            const modal = ${modalPanen};
+            const isian = modal.querySelector('[name="produktivitas"]');
+            const sufiks = isian.parentElement.querySelector('span');
+            const a = isian.getBoundingClientRect();
+            const b = sufiks.getBoundingClientRect();
+
+            return JSON.stringify({
+                teks: sufiks.textContent.trim().replace(/\\s+/g, ''),
+                // Tombol naik-turun Chromium selebar ~17px di tepi kanan.
+                jarakDariTepi: Math.round(a.right - b.right),
+            });
+        })()`));
+
+        periksa(
+            'sufiks produktivitas memakai simbol satuan',
+            sufiksProduktivitas.teks === 't/ha',
+            `sufiks="${sufiksProduktivitas.teks}", seharusnya "t/ha" - nama penuh menabrak tombol naik-turun`
+        );
+
+        periksa(
+            'sufiks produktivitas tidak menabrak tombol naik-turun',
+            sufiksProduktivitas.jarakDariTepi >= 20,
+            `jarak dari tepi kanan ${sufiksProduktivitas.jarakDariTepi}px, tombol naik-turun butuh sekitar 17px`
+        );
+
         // ------------------------------------------------------------------
         // SALING MENGISI: mengetik salah satu menentukan yang lain.
         //

@@ -51,6 +51,15 @@
     // Seluruh benih yang masih bersisa, dikelompokkan agar Alpine dapat
     // menyaringnya tanpa permintaan tambahan ke peladen. Benih yang stoknya
     // habis TIDAK ada di sini sama sekali (kamus data 8.4).
+    /*
+     * Simbol satuan dibaca dari data master, bukan disingkat sendiri di sini.
+     * Menyingkatnya lewat `substr` atau daftar tulis tangan berarti satuan
+     * baru yang didata Admin tidak akan pernah punya singkatan.
+     */
+    $simbolSatuan = collect(DummyData::satuan())
+        ->mapWithKeys(fn ($s) => [$s['nama'] => $s['simbol']])
+        ->all();
+
     $petaBenih = [];
     foreach (DummyData::benihTersedia() as $b) {
         $petaBenih[] = [
@@ -60,6 +69,9 @@
             'label' => $b['label_benih'],
             'sisa' => $b['sisa_benih'],
             'satuan' => $b['satuan'],
+            // Dipakai sebagai sufiks isian, yang ruangnya sempit: nama penuh
+            // "Kilogram" menabrak tombol naik-turun bawaan input number.
+            'simbol' => $simbolSatuan[$b['satuan']] ?? $b['satuan'],
         ];
     }
 @endphp
@@ -287,14 +299,34 @@
                 Volume Benih<span class="text-error-500">*</span>
             </label>
             <div class="relative">
+                {{--
+                    Sufiks memakai SIMBOL satuan, bukan nama penuhnya.
+
+                    Nama penuh "Kilogram" menabrak tombol naik-turun bawaan
+                    `input[type=number]`, sebab keduanya menempati sudut kanan
+                    yang sama. Simbolnya dibaca dari data master, sehingga
+                    satuan baru yang didata Admin ikut punya singkatan tanpa
+                    perlu daftar tulis tangan di sini.
+
+                    `right-10` menyisakan ruang bagi tombol itu; `right-4`
+                    membuat keduanya bertumpuk.
+
+                    Sempat dipakai `right-8`, dan itu KELIRU meski nilainya
+                    tampak masuk akal: kelas itu tidak pernah dibangkitkan
+                    Tailwind pada proyek ini, sehingga sufiksnya terdorong ke
+                    LUAR kotak isian. Terlihat hanya lewat pengukuran geometri
+                    di peramban - markupnya sendiri tertulis rapi.
+                --}}
                 <input type="number" id="{{ $awalan }}_volume_benih" name="volume_benih"
                     value="{{ old('volume_benih', $data['volume_benih'] ?? '') }}"
                     min="0.01" step="0.01" :max="benihTerpilih?.sisa"
                     :required="!! benihTerpilih" :disabled="! benihTerpilih"
                     placeholder="45" class="{{ $kelasKontrol }} tabular-nums pr-16" />
                 <span class="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-theme-sm text-gray-500 dark:text-gray-400"
-                    x-text="benihTerpilih?.satuan"></span>
+                    x-text="benihTerpilih?.simbol"></span>
             </div>
+            {{-- Keterangan di bawah tetap memakai NAMA PENUH: ruangnya lapang,
+                 dan nama penuh lebih jelas dibaca daripada singkatan. --}}
             <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
                 Tersisa <span x-text="angka(benihTerpilih?.sisa)"></span>
                 <span x-text="benihTerpilih?.satuan"></span>.

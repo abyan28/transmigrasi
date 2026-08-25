@@ -58,6 +58,18 @@
         ->pluck('satuan', 'id_komoditas')
         ->all();
 
+    /*
+     * Simbol satuan, dibaca dari data master. Dipakai pada sufiks isian yang
+     * ruangnya sempit: nama penuh "Kilogram/ha" menabrak tombol naik-turun
+     * bawaan input number.
+     *
+     * Tidak disingkat sendiri lewat `substr` atau daftar tulis tangan, sebab
+     * satuan baru yang didata Admin tidak akan pernah punya singkatan.
+     */
+    $simbolSatuan = collect(DummyData::satuan())
+        ->mapWithKeys(fn ($s) => [$s['nama'] => $s['simbol']])
+        ->all();
+
     // Penanaman sebagai sumber pilihan tunggal. Seluruh isian terkunci di
     // bawah dibaca dari baris yang dipilih di sini.
     //
@@ -100,6 +112,7 @@
             'realisasi_tanam' => (float) $r['realisasi_tanam'],
             'komoditas' => $r['komoditas'],
             'satuan' => $satuanKomoditas[$r['komoditas_id']] ?? '',
+            'simbol' => $simbolSatuan[$satuanKomoditas[$r['komoditas_id']] ?? ''] ?? '',
             'bulan_tanam' => \Illuminate\Support\Carbon::parse($r['periode_tanam'] . '-01')->translatedFormat('F Y'),
             'sp' => $r['satuan_permukiman'],
         ];
@@ -419,8 +432,20 @@
                         :required="! gagalTotal" :disabled="gagalTotal"
                         x-model="produktivitas" min="0" step="0.001"
                         placeholder="2.800" class="{{ $kelasKontrol }} tabular-nums pr-20 disabled:opacity-50" />
+                    {{--
+                        Sufiks memakai SIMBOL satuan, bukan nama penuh.
+
+                        "Kilogram/ha" menabrak tombol naik-turun bawaan input
+                        number, sebab keduanya menempati sudut kanan yang sama.
+                        `right-10` menyisakan ruang bagi tombol itu.
+
+                        Jangan memakai `right-8`: kelas itu tidak pernah
+                        dibangkitkan Tailwind pada proyek ini, dan sufiksnya
+                        akan terdorong ke LUAR kotak isian tanpa terlihat pada
+                        markup.
+                    --}}
                     <span class="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-theme-sm text-gray-500 dark:text-gray-400">
-                        <span x-text="tanam?.satuan ?? ''"></span>/ha
+                        <span x-text="tanam?.simbol ?? ''"></span>/ha
                     </span>
                 </div>
                 <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">

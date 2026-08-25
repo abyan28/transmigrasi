@@ -364,6 +364,42 @@ async function main() {
             `max=${sesudahBenih.volumeMax}, seharusnya 60`
         );
 
+        /*
+         * Sufiks satuan TIDAK menabrak tombol naik-turun bawaan input number.
+         *
+         * Ditemukan pemilik proyek lewat tangkapan layar: nama penuh
+         * "Kilogram" menempati sudut kanan yang sama dengan tombol itu,
+         * sehingga keduanya bertumpuk dan angkanya sulit dibaca.
+         *
+         * Uji string tidak akan pernah melihatnya - markupnya memang tertulis
+         * rapi. Yang membedakan hanya geometri di layar.
+         */
+        const geometriSufiks = JSON.parse(await nilai(`(() => {
+            const modal = ${modalPenanaman};
+            const isian = modal.querySelector('[name="volume_benih"]');
+            const sufiks = isian.parentElement.querySelector('span');
+            const a = isian.getBoundingClientRect();
+            const b = sufiks.getBoundingClientRect();
+
+            return JSON.stringify({
+                teks: sufiks.textContent.trim(),
+                // Tombol naik-turun Chromium selebar ~17px di tepi kanan.
+                jarakDariTepi: Math.round(a.right - b.right),
+            });
+        })()`));
+
+        periksa(
+            'sufiks satuan memakai simbol, bukan nama penuh',
+            geometriSufiks.teks === 'kg',
+            `sufiks="${geometriSufiks.teks}", seharusnya "kg" - nama penuh menabrak tombol naik-turun`
+        );
+
+        periksa(
+            'sufiks satuan tidak menabrak tombol naik-turun',
+            geometriSufiks.jarakDariTepi >= 20,
+            `jarak dari tepi kanan ${geometriSufiks.jarakDariTepi}px, tombol naik-turun butuh sekitar 17px`
+        );
+
         // ------------------------------------------------------------------
         // 5. Belum Ditanam terhitung sendiri
         // ------------------------------------------------------------------
