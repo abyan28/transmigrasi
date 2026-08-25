@@ -809,7 +809,7 @@ Route::put('/komoditas/{id}', function (int $id) {
 })->where('id', '[0-9]+')->name('komoditas.perbarui');
 
 Route::get('/penanaman', function () {
-    return view('pages.komoditas.penanaman', ['title' => 'Penanaman']);
+    return view('pages.penanaman.index', ['title' => 'Penanaman']);
 })->name('penanaman');
 
 /*
@@ -833,7 +833,7 @@ Route::get('/penanaman/{id}', function (int $id) {
 
     abort_if($data === null, 404);
 
-    return view('pages.komoditas.detail-penanaman', [
+    return view('pages.penanaman.detail', [
         'title' => $data['komoditas'].' - '.$data['poktan'],
         'data' => $data,
     ]);

@@ -329,13 +329,13 @@
     <x-sim.modal-form nama="formTambahPenanaman" judul="Catat Penanaman"
         keterangan="Kelompok tani menentukan lokasi, luas lahan, dan benih yang boleh dipakai."
         :aksi="route('penanaman.simpan')" ukuran="lg" label-simpan="Simpan Data">
-        @include('pages.komoditas.form-penanaman', ['awalan' => 'tambah'])
+        @include('pages.penanaman.form', ['awalan' => 'tambah'])
     </x-sim.modal-form>
 
     <x-sim.modal-form nama="formUbahPenanamanBaris" judul="Ubah Penanaman"
         keterangan="Perubahan tercatat pada audit log."
         pola-aksi="/penanaman/:id" metode="PUT" ukuran="lg" label-simpan="Simpan Perubahan">
-        @include('pages.komoditas.form-penanaman', ['awalan' => 'ubahBaris'])
+        @include('pages.penanaman.form', ['awalan' => 'ubahBaris'])
     </x-sim.modal-form>
 
     <x-sim.confirm-dialog nama="hapusPenanaman" judul="Hapus catatan penanaman ini?"

@@ -1614,3 +1614,19 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
   * Diperiksa juga di luar uji: **605 uji Pest** hijau, **208 alamat statis** seluruhnya 200 - naik dari 202, persis enam tab baru - dan **192 pemeriksaan peramban** hijau.
   * **Yang sengaja TIDAK dikerjakan** dan dicatat sebagai kesenjangan yang diketahui, bukan kelalaian: jenis kelamin, usia, dan jumlah anggota keluarga tetap tidak direkap. Pendapatan sudah terwakili lewat kolom Pendapatan Rata-rata pada tab Tahun.
   * Dokumen ikut diselaraskan: `rules.md` 10a.4a sampai 4e, dan `ui-spec.md` daftar rute.
+
+- [done] Kenapa halaman Penanaman lokasi file view-nya dijadikan satu di folder komoditas? Bisa tolong pisahkan agar lebih enak mempelajarinya?
+  * **Keberatanmu tepat, dan ini satu-satunya penyimpangan semacam itu di seluruh proyek.** Folder `komoditas/` memuat DUA modul: tiga berkas komoditas dan tiga berkas penanaman, yang belakangan diberi akhiran `-penanaman` agar tidak bertabrakan.
+  * Penanaman bahkan **lebih besar** daripada komoditas itu sendiri - 60 KB melawan 31 KB. Ia modul penuh dengan menu, rute, dan kewenangannya sendiri, tetapi menumpang di folder tetangga.
+  * **Yang paling menentukan: alamatnya `/penanaman`, bukan `/komoditas/penanaman`.** Foldernya bertentangan dengan alamatnya sendiri. Kuduga peninggalan masa ia masih bernama `riwayat tanam` dan dianggap bagian dari komoditas; setelah perombakan 2026-08-22 ia jelas berdiri sendiri.
+  * Dipindah ke `pages/penanaman/` sebagai `index`, `detail`, dan `form` - akhiran `-penanaman` dilepas sebab sudah dinyatakan nama foldernya, persis pola `panen/form.blade.php` yang bukan `panen/form-panen.blade.php`.
+  * Dipakai `git mv`, bukan salin-lalu-hapus. Ketiganya punya jejak keputusan panjang pada `git log` - penggantian nama riwayat tanam, pencabutan musim tanam, pencabutan panen bertahap - dan menyalinnya akan memutus riwayat itu.
+  * **Rute, nama rute, alamat URL, menu, breadcrumb, dan kewenangan TIDAK tersentuh.** Yang berpindah hanya letak berkas; seluruhnya membaca nama rute, bukan jalur view.
+  **Sisir menyeluruh atas permintaanmu: tiga folder lain berisi banyak berkas, tetapi TIDAK menumpang.**
+  * `sp/` memuat 10 berkas untuk empat hal, `master/` 10 berkas untuk empat daftar, `pengguna/` 7 berkas untuk tiga hal.
+  * Bedanya menentukan: ketiganya **berbagi awalan alamat** - `/sp/inventaris`, `/master/referensi`, `/pengguna/role`. Foldernya mencerminkan alamatnya, dan itu konsisten. Hanya penanaman yang foldernya membantah alamatnya.
+  * Karena itu ketiganya **sengaja tidak disentuh**. Memecah `sp/` menuntut keputusan lain lebih dulu - apakah Inventaris dan Fasilitas SP layak menjadi modul mandiri beralamat sendiri - dan itu pertanyaan tentang struktur menu, bukan tentang letak berkas.
+  * **Satu uji memerah dan itu benar**: `HalamanTest` mengunci keberadaan ketiga berkas di `views/pages/komoditas/`. Uji itu lahir saat penggantian nama riwayat tanam, untuk memastikan berkasnya benar-benar berpindah. Kini jalurnya disesuaikan, sekaligus **diperluas** - ia memeriksa berkas ada di folder baru DAN tidak tersisa di folder lama, termasuk nama lamanya.
+  * **Satu kekeliruanku tercatat:** batas potongan saat menyisipkan uji meleset satu baris, dan `php -l` menangkapnya. Pemulihan lewat `git checkout` lalu mengembalikan SELURUH berkas - termasuk tiga peta jalur yang sudah benar - sehingga ketiganya harus dikerjakan ulang. Pemulihan seberkas penuh terlalu kasar ketika sebagian suntingan sudah benar.
+  * Dibuktikan lewat **dua mutasi**: berkas lama dikembalikan ke folder komoditas, dan berkas index dihilangkan dari folder baru. Keduanya memerah.
+  * Diperiksa juga di luar uji: **605 uji Pest** hijau, **208 alamat statis** seluruhnya 200, dan uji peramban `uji-form-penanaman` beserta tiga berkas terkait tetap hijau. Ketiga modal form diperiksa benar-benar terender di peramban, sebab Blade tidak menegur `@include` yang salah sampai halamannya dibuka.

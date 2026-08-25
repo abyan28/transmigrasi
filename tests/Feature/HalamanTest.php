@@ -3992,7 +3992,7 @@ it('menandai wajib setiap isian yang kolomnya tidak boleh kosong', function () {
         'alsintan/form' => 'alsintan',
         'saprotan/form' => 'saprotan',
         'komoditas/form' => 'komoditas',
-        'komoditas/form-penanaman' => 'penanaman',
+        'penanaman/form' => 'penanaman',
         'panen/form' => 'hasil_panen',
         'infrastruktur/form' => 'infrastruktur',
         'pengaduan/form' => 'pengaduan',
@@ -4937,7 +4937,7 @@ it('memakai pilih-cari pada setiap pilihan yang bersumber tabel data', function 
         // Saprotan tanpa `transmigran_id`: penerimanya selalu poktan sejak
         // 2026-08-22, sehingga isian penerima perorangan sudah tidak ada.
         'saprotan/form' => ['poktan_id'],
-        'komoditas/form-penanaman' => ['poktan_id'],
+        'penanaman/form' => ['poktan_id'],
         'panen/form' => ['penanaman_id'],
         'rumah/form' => ['transmigran_id'],
         'lahan/form' => ['transmigran_id'],
@@ -5080,14 +5080,24 @@ it('memakai nama Penanaman, bukan Riwayat Tanam', function () {
     $this->get('/penanaman')->assertOk();
     $this->get('/riwayat-tanam')->assertNotFound();
 
-    // Berkas blade benar-benar berpindah nama.
-    foreach (['penanaman', 'form-penanaman', 'detail-penanaman'] as $ada) {
-        expect(file_exists(resource_path("views/pages/komoditas/{$ada}.blade.php")))
-            ->toBeTrue("berkas {$ada} tidak ada");
+    // Berkas blade berada di FOLDERNYA SENDIRI sejak 2026-08-25.
+    //
+    // Sebelumnya ketiganya menumpang di folder komoditas dengan akhiran
+    // `-penanaman` agar tidak bertabrakan. Penanaman adalah modul penuh
+    // beralamat `/penanaman`, bukan `/komoditas/penanaman`, sehingga
+    // foldernya dahulu bertentangan dengan alamatnya sendiri.
+    foreach (['index', 'form', 'detail'] as $ada) {
+        expect(file_exists(resource_path("views/pages/penanaman/{$ada}.blade.php")))
+            ->toBeTrue("berkas penanaman/{$ada} tidak ada");
     }
 
-    foreach (['riwayat-tanam', 'form-riwayat-tanam', 'detail-riwayat-tanam'] as $tiada) {
-        expect(file_exists(resource_path("views/pages/komoditas/{$tiada}.blade.php")))
+    // Tidak tersisa di tempat lamanya, dan nama lamanya pun tidak kembali.
+    foreach ([
+        'komoditas/penanaman', 'komoditas/form-penanaman', 'komoditas/detail-penanaman',
+        'komoditas/riwayat-tanam', 'komoditas/form-riwayat-tanam', 'komoditas/detail-riwayat-tanam',
+        'penanaman/riwayat-tanam',
+    ] as $tiada) {
+        expect(file_exists(resource_path("views/pages/{$tiada}.blade.php")))
             ->toBeFalse("berkas {$tiada} masih ada");
     }
 
@@ -5848,7 +5858,7 @@ it('menyediakan isian catatan pada setiap modul yang kolomnya ada di kamus data'
     'lahan/form',
     'transmigran/form',
     'panen/form',
-    'komoditas/form-penanaman',
+    'penanaman/form',
     'poktan/form-anggota',
 ]);
 

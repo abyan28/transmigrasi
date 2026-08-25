@@ -334,7 +334,7 @@
             keterangan="Perubahan tercatat pada audit log."
             :aksi="route('penanaman.perbarui', $data['id_penanaman'])" metode="PUT" ukuran="lg"
             label-simpan="Simpan Perubahan">
-            @include('pages.komoditas.form-penanaman', ['data' => $data, 'awalan' => 'ubah'])
+            @include('pages.penanaman.form', ['data' => $data, 'awalan' => 'ubah'])
         </x-sim.modal-form>
     @endif
 @endsection
