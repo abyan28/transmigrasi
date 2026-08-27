@@ -11,11 +11,7 @@
 @extends('layouts.app')
 
 @section('content')
-    @php
-        use App\Support\DummyData;
-
-        $wilayah = DummyData::wilayah();
-    @endphp
+    {{-- `$wilayah` datang dari rute `wilayah`. --}}
 
     <x-sim.page-header judul="Data Master Wilayah"
         keterangan="Wilayah administratif tempat kawasan transmigrasi berada."

@@ -13,41 +13,11 @@
 
 @section('content')
     @php
-        use App\Support\DummyData;
-
-        $semua = DummyData::pengguna();
-
-        $cari = trim((string) request('cari', ''));
-        $filterRole = request('role');
-        $filterAktif = request('aktif');
-
-        $baris = array_values(array_filter($semua, function ($u) use ($cari, $filterRole, $filterAktif) {
-            if ($cari !== '' && ! str_contains(mb_strtolower($u['nama']), mb_strtolower($cari))
-                && ! str_contains(mb_strtolower($u['username']), mb_strtolower($cari))) {
-                return false;
-            }
-            if ($filterRole && $u['role'] !== $filterRole) {
-                return false;
-            }
-            if ($filterAktif !== null && $filterAktif !== '' && (string) (int) $u['is_aktif'] !== $filterAktif) {
-                return false;
-            }
-
-            return true;
-        }));
-
-        $adaFilter = $cari !== '' || $filterRole || ($filterAktif !== null && $filterAktif !== '');
-        $aktif = count(array_filter($semua, fn ($u) => $u['is_aktif']));
-        $perluGanti = count(array_filter($semua, fn ($u) => $u['password_harus_diganti']));
-        $daftarRole = array_values(array_unique(array_column($semua, 'role')));
-
-        // Admin aktif terakhir tidak boleh dinonaktifkan (rules.md 14b poin 16),
-        // agar sistem tidak pernah kehilangan seluruh jalur administrasinya.
-        $jumlahAdminAktif = count(array_filter(
-            $semua,
-            fn ($u) => $u['role'] === 'Admin' && $u['is_aktif'],
-        ));
-
+        // Data, penyaringan, angka ringkasan, dan peta $inisial datang dari
+        // rute `pengguna.index`. Lihat routes/web.php.
+        //
+        // Penutup ini tetap di sini sebab hanya markup halaman ini yang
+        // memakainya, dan seluruh bahannya sudah dioper rute.
         $adminTerakhir = fn ($u) => $u['role'] === 'Admin'
             && $u['is_aktif']
             && $jumlahAdminAktif === 1;
@@ -215,7 +185,7 @@
                     <div class="flex items-center gap-2.5">
                         <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-500 text-theme-xs font-semibold text-white"
                             aria-hidden="true">
-                            {{ DummyData::inisial($u['nama']) }}
+                            {{ $inisial[$u['id_user']] }}
                         </span>
                         <div class="min-w-0">
                             <p class="text-theme-sm font-medium text-gray-800 dark:text-white/90">{{ $u['nama'] }}</p>

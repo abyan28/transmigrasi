@@ -35,8 +35,7 @@
     $kelasBagian = 'text-theme-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400';
     $kelasBantuan = 'mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400';
 
-    $daftarRole = DummyData::role();
-    $daftarSp = DummyData::satuanPermukiman();
+    // `$daftarRole` dan `$daftarSp` disuplai ViewServiceProvider.
 
     // Peta cakupan tiap role dibaca Alpine untuk menentukan kapan pilihan SP
     // perlu ditampilkan, tanpa perlu memanggil server.

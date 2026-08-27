@@ -41,7 +41,7 @@
         array_filter(JenisReferensi::cases(), fn (JenisReferensi $j) => $j->berbidang())
     ));
 
-    $daftarBidang = \App\Support\DummyData::referensi(JenisReferensi::BidangPengaduan, true);
+    // `$daftarBidang` disuplai ViewServiceProvider.
 @endphp
 
 <div class="space-y-6"

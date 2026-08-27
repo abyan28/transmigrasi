@@ -14,27 +14,18 @@
 @props(['nama' => 'detailPengguna'])
 
 @php
-    use App\Support\DummyData;
-
-    $daftarPengguna = DummyData::pengguna();
-
     /*
-        Riwayat tindakan pada akun.
+        `$daftarPengguna` dan `$riwayatAkun` disuplai ViewServiceProvider.
 
         Modal ini melayani seluruh baris secara bergantian, sehingga akun yang
         sedang dibuka baru diketahui Alpine saat modal dipanggil. Penyaringan
         per akun karena itu dilakukan di sisi klien memakai `record_id`, bukan
-        di sini.
+        di sisi peladen.
 
         Sebelumnya penyaringan hanya memakai `nama_tabel`, sehingga setiap akun
         menampilkan riwayat akun orang lain. Komentar lamanya bahkan mengaku
         mencocokkan nomor baris, padahal kodenya tidak melakukannya.
     */
-    $riwayatAkun = array_values(array_filter(
-        DummyData::auditLog(),
-        fn ($baris) => $baris['nama_tabel'] === 'user',
-    ));
-
     $kelasLabel = 'text-theme-xs text-gray-500 dark:text-gray-400';
     $kelasNilai = 'mt-0.5 text-theme-sm text-gray-800 dark:text-white/90';
 @endphp

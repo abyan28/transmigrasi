@@ -15,7 +15,7 @@
     4. Menonaktifkan role tidak menghapusnya, agar riwayat audit log yang
        menyebut role tersebut tetap terbaca.
 
-    Sumber daftar fitur adalah DummyData::daftarIzin(), yang menyalin tabel
+    Sumber daftar fitur adalah `$kelompokIzin`, yang menyalin tabel
     agents/rules.md bagian 5.1.
 --}}
 @php
@@ -29,11 +29,13 @@
     $kelasLabel = 'mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400';
     $kelasBagian = 'text-theme-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400';
 
-    $kelompokIzin = DummyData::daftarIzin();
+    // `$kelompokIzin` dan `$izinPerRole` disuplai ViewServiceProvider.
     $terkunci = (bool) ($data['is_terkunci'] ?? false);
 
+    // Role yang sedang disunting datang dari induk yang menyisipkan berkas
+    // ini, sehingga pemilihannya tetap di sini.
     $izinDimiliki = ! empty($data['id_role'])
-        ? DummyData::izinRole((int) $data['id_role'])
+        ? ($izinPerRole[(int) $data['id_role']] ?? [])
         : [];
 
     // Dibaca dari enum, tidak disalin dengan tangan: salinan lama sempat

@@ -15,11 +15,8 @@
 
 @section('content')
     @php
-        use App\Support\DummyData;
-
-        $baris = DummyData::referensi($jenis);
-        $jumlahNonaktif = count(array_filter($baris, fn ($b) => ! $b['is_aktif']));
-
+        // `$baris`, `$jumlahNonaktif`, dan peta `$nilaiBidang` datang dari rute
+        // `referensi.jenis`. Lihat routes/web.php.
         $bolehUbah = true;
     @endphp
 
@@ -100,7 +97,7 @@
                             @if ($b['bidang_id'] === null)
                                 <span class="text-gray-400 dark:text-gray-500">Ditetapkan petugas</span>
                             @else
-                                {{ DummyData::referensiNilai($b['bidang_id']) }}
+                                {{ $nilaiBidang[$b['bidang_id']] }}
                             @endif
                         </td>
                     @endif

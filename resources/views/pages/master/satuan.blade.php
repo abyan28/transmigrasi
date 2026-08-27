@@ -12,11 +12,7 @@
 @extends('layouts.app')
 
 @section('content')
-    @php
-        use App\Support\DummyData;
-
-        $satuan = DummyData::satuan();
-    @endphp
+    {{-- `$satuan` datang dari rute `master.satuan`. --}}
 
     <x-sim.page-header judul="Data Master Satuan"
         keterangan="Satuan panen beserta faktor konversinya ke ton."

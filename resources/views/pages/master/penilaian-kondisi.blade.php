@@ -18,21 +18,9 @@
     @php
         use App\Enums\StatusKondisiSp;
         use App\Enums\TingkatKebutuhan;
-        use App\Support\DummyData;
 
-        $parameter = DummyData::parameterPenilaian();
-        $status = DummyData::statusKondisiSp();
-
-        $dinilai = array_filter($parameter, fn ($p) => $p['is_dinilai']);
-        $totalBobot = array_sum(array_column($dinilai, 'bobot'));
-
-        // Dikelompokkan per sumber, sebab keduanya dibaca dari tabel berbeda
-        // dan petugas mencarinya lewat modul tempat ia mendata asetnya.
-        $perSumber = [];
-        foreach ($parameter as $p) {
-            $perSumber[$p['sumber']][] = $p;
-        }
-
+        // `$parameter`, `$status`, `$dinilai`, `$totalBobot`, dan `$perSumber`
+        // datang dari rute `master.penilaian-kondisi`.
         $bolehUbah = true;
     @endphp
 

@@ -176,11 +176,17 @@ Route::get('/uji-403', function () {
 |
 */
 Route::get('/wilayah', function () {
-    return view('pages.master.wilayah', ['title' => 'Data Master Wilayah']);
+    return view('pages.master.wilayah', [
+        'title' => 'Data Master Wilayah',
+        'wilayah' => DummyData::wilayah(),
+    ]);
 })->name('wilayah');
 
 Route::get('/master/satuan', function () {
-    return view('pages.master.satuan', ['title' => 'Data Master Satuan']);
+    return view('pages.master.satuan', [
+        'title' => 'Data Master Satuan',
+        'satuan' => DummyData::satuan(),
+    ]);
 })->name('master.satuan');
 
 /*
@@ -211,7 +217,26 @@ Route::get('/master/referensi', function () {
         return redirect()->route('referensi.jenis', ['jenis' => $tabLama->value], 301);
     }
 
-    return view('pages.master.referensi', ['title' => 'Data Master Referensi']);
+    $semua = DummyData::referensi();
+
+    // Dihitung sekali, dipakai seluruh kartu.
+    $jumlah = [];
+    $nonaktif = [];
+
+    foreach ($semua as $b) {
+        $jumlah[$b['jenis']] = ($jumlah[$b['jenis']] ?? 0) + 1;
+
+        if (! $b['is_aktif']) {
+            $nonaktif[$b['jenis']] = ($nonaktif[$b['jenis']] ?? 0) + 1;
+        }
+    }
+
+    return view('pages.master.referensi', [
+        'title' => 'Data Master Referensi',
+        'semua' => $semua,
+        'jumlah' => $jumlah,
+        'nonaktif' => $nonaktif,
+    ]);
 })->name('master.referensi');
 
 Route::get('/master/referensi/{jenis}', function (string $jenis) {
@@ -222,9 +247,28 @@ Route::get('/master/referensi/{jenis}', function (string $jenis) {
     // menyamakannya membuat salah ketik tampak seperti data yang belum diisi.
     abort_if($pilihan === null, 404);
 
+    $baris = DummyData::referensi($pilihan);
+
+    /*
+     * Nama bidang penanganan tiap baris, dikumpulkan sekali.
+     *
+     * Bentuk lamanya memanggil `referensiNilai()` DI DALAM perulangan tabel,
+     * yakni satu penelusuran seluruh data referensi untuk setiap baris yang
+     * berbidang.
+     */
+    $nilaiBidang = [];
+    foreach ($baris as $b) {
+        if ($b['bidang_id'] !== null) {
+            $nilaiBidang[$b['bidang_id']] ??= DummyData::referensiNilai($b['bidang_id']);
+        }
+    }
+
     return view('pages.master.detail-referensi', [
         'title' => $pilihan->label(),
         'jenis' => $pilihan,
+        'baris' => $baris,
+        'jumlahNonaktif' => count(array_filter($baris, fn ($b) => ! $b['is_aktif'])),
+        'nilaiBidang' => $nilaiBidang,
     ]);
 })->where('jenis', '[a-z_]+')->name('referensi.jenis');
 
@@ -274,7 +318,24 @@ Route::put('/master/referensi/{id}', function (int $id) {
  * tiga sebab `StatusKondisiSp::dariSkor()` hanya mengembalikan tiga keluaran.
  */
 Route::get('/master/penilaian-kondisi', function () {
-    return view('pages.master.penilaian-kondisi', ['title' => 'Penilaian Kondisi SP']);
+    $parameter = DummyData::parameterPenilaian();
+    $dinilai = array_filter($parameter, fn ($p) => $p['is_dinilai']);
+
+    // Dikelompokkan per sumber, sebab keduanya dibaca dari tabel berbeda dan
+    // petugas mencarinya lewat modul tempat ia mendata asetnya.
+    $perSumber = [];
+    foreach ($parameter as $p) {
+        $perSumber[$p['sumber']][] = $p;
+    }
+
+    return view('pages.master.penilaian-kondisi', [
+        'title' => 'Penilaian Kondisi SP',
+        'parameter' => $parameter,
+        'status' => DummyData::statusKondisiSp(),
+        'dinilai' => $dinilai,
+        'totalBobot' => array_sum(array_column($dinilai, 'bobot')),
+        'perSumber' => $perSumber,
+    ]);
 })->name('master.penilaian-kondisi');
 
 Route::put('/master/penilaian-kondisi/parameter/{id}', function (int $id) {
@@ -2005,7 +2066,52 @@ Route::put('/infrastruktur/{id}', function (int $id) {
 })->where('id', '[0-9]+')->name('infrastruktur.perbarui');
 
 Route::get('/pengguna', function () {
-    return view('pages.pengguna.index', ['title' => 'Manajemen Pengguna']);
+    $semua = DummyData::pengguna();
+
+    $cari = trim((string) request('cari', ''));
+    $filterRole = request('role');
+    $filterAktif = request('aktif');
+
+    $baris = array_values(array_filter($semua, function ($u) use ($cari, $filterRole, $filterAktif) {
+        if ($cari !== '' && ! str_contains(mb_strtolower($u['nama']), mb_strtolower($cari))
+            && ! str_contains(mb_strtolower($u['username']), mb_strtolower($cari))) {
+            return false;
+        }
+        if ($filterRole && $u['role'] !== $filterRole) {
+            return false;
+        }
+        if ($filterAktif !== null && $filterAktif !== '' && (string) (int) $u['is_aktif'] !== $filterAktif) {
+            return false;
+        }
+
+        return true;
+    }));
+
+    // Admin aktif terakhir tidak boleh dinonaktifkan (rules.md 14b poin 16),
+    // agar sistem tidak pernah kehilangan seluruh jalur administrasinya.
+    $jumlahAdminAktif = count(array_filter(
+        $semua,
+        fn ($u) => $u['role'] === 'Admin' && $u['is_aktif'],
+    ));
+
+    return view('pages.pengguna.index', [
+        'title' => 'Manajemen Pengguna',
+        'semua' => $semua,
+        'baris' => $baris,
+        'cari' => $cari,
+        'filterRole' => $filterRole,
+        'filterAktif' => $filterAktif,
+        'adaFilter' => $cari !== '' || $filterRole || ($filterAktif !== null && $filterAktif !== ''),
+        'aktif' => count(array_filter($semua, fn ($u) => $u['is_aktif'])),
+        'perluGanti' => count(array_filter($semua, fn ($u) => $u['password_harus_diganti'])),
+        'daftarRole' => array_values(array_unique(array_column($semua, 'role'))),
+        'jumlahAdminAktif' => $jumlahAdminAktif,
+
+        // Inisial avatar tiap baris, dahulu dihitung ulang di dalam perulangan.
+        'inisial' => collect($semua)
+            ->mapWithKeys(fn ($u) => [$u['id_user'] => DummyData::inisial($u['nama'])])
+            ->all(),
+    ]);
 })->name('pengguna.index');
 
 Route::post('/pengguna', function (Illuminate\Http\Request $permintaan) {
@@ -2058,7 +2164,11 @@ Route::post('/pengguna/{id}/aktifkan', function (int $id) {
 })->where('id', '[0-9]+')->name('pengguna.aktifkan');
 
 Route::get('/pengaturan/role', function () {
-    return view('pages.pengguna.role', ['title' => 'Role dan Hak Akses']);
+    return view('pages.pengguna.role', [
+        'title' => 'Role dan Hak Akses',
+        'role' => DummyData::role(),
+        'pengguna' => DummyData::pengguna(),
+    ]);
 })->name('pengaturan.role');
 
 Route::post('/pengaturan/role', function () {
@@ -2084,7 +2194,38 @@ Route::delete('/pengaturan/role/{id}', function (int $id) {
 })->where('id', '[0-9]+')->name('role.hapus');
 
 Route::get('/audit-log', function () {
-    return view('pages.pengguna.audit-log', ['title' => 'Audit Log']);
+    $semua = DummyData::auditLog();
+
+    $cari = trim((string) request('cari', ''));
+    $filterAksi = request('aksi');
+    $filterPengguna = request('pengguna');
+
+    $baris = array_values(array_filter($semua, function ($a) use ($cari, $filterAksi, $filterPengguna) {
+        if ($cari !== '' && ! str_contains(mb_strtolower($a['ringkasan']), mb_strtolower($cari))
+            && ! str_contains(mb_strtolower($a['nama_tabel']), mb_strtolower($cari))) {
+            return false;
+        }
+        if ($filterAksi && $a['aksi'] !== $filterAksi) {
+            return false;
+        }
+        if ($filterPengguna && $a['pengguna'] !== $filterPengguna) {
+            return false;
+        }
+
+        return true;
+    }));
+
+    return view('pages.pengguna.audit-log', [
+        'title' => 'Audit Log',
+        'semua' => $semua,
+        'baris' => $baris,
+        'cari' => $cari,
+        'filterAksi' => $filterAksi,
+        'filterPengguna' => $filterPengguna,
+        'adaFilter' => $cari !== '' || $filterAksi || $filterPengguna,
+        'daftarAksi' => array_values(array_unique(array_column($semua, 'aksi'))),
+        'daftarPengguna' => array_values(array_unique(array_column($semua, 'pengguna'))),
+    ]);
 })->name('audit-log');
 
 /*

@@ -20,21 +20,9 @@
 @section('content')
     @php
         use App\Enums\KelompokReferensi;
-        use App\Support\DummyData;
 
-        $semua = DummyData::referensi();
-
-        // Dihitung sekali, dipakai seluruh kartu.
-        $jumlah = [];
-        $nonaktif = [];
-
-        foreach ($semua as $b) {
-            $jumlah[$b['jenis']] = ($jumlah[$b['jenis']] ?? 0) + 1;
-
-            if (! $b['is_aktif']) {
-                $nonaktif[$b['jenis']] = ($nonaktif[$b['jenis']] ?? 0) + 1;
-            }
-        }
+        // `$semua`, `$jumlah`, dan `$nonaktif` datang dari rute
+        // `master.referensi`. Lihat routes/web.php.
     @endphp
 
     <x-sim.page-header judul="Data Master Referensi"

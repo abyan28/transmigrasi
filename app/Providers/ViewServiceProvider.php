@@ -55,6 +55,15 @@ class ViewServiceProvider extends ServiceProvider
         'pages.sp.form-kawasan' => ['daftarProvinsi', 'daftarKabupaten'],
         'pages.sp.form-inventaris' => ['daftarSp', 'opsiSumberDana', 'opsiStatusPenyerahan', 'opsiKondisi'],
         'pages.sp.form-fasilitas' => ['daftarSp', 'opsiJenisFasilitas', 'opsiSumberDana', 'opsiStatusPenyerahan', 'opsiKondisi'],
+        'pages.pengguna.form' => ['daftarRole', 'daftarSp'],
+
+        // Modal rincian akun, disisipkan halaman daftar. Berperilaku seperti
+        // berkas form: satu berkas melayani seluruh baris secara bergantian.
+        'pages.pengguna.detail' => ['daftarPengguna', 'riwayatAkun'],
+
+        'pages.pengguna.form-role' => ['kelompokIzin', 'izinPerRole'],
+        'pages.master.form-wilayah' => ['wilayah'],
+        'pages.master.form-referensi' => ['daftarBidang'],
     ];
 
     public function boot(): void
@@ -106,6 +115,42 @@ class ViewServiceProvider extends ServiceProvider
             'opsiJenisInfrastruktur' => DummyData::opsiReferensi(JenisReferensi::JenisInfrastruktur),
             'opsiTipeKomoditas' => DummyData::opsiReferensi(JenisReferensi::TipeKomoditas),
             'opsiJenisDokumenLahan' => DummyData::opsiReferensi(JenisReferensi::JenisDokumenLahan),
+            'daftarRole' => DummyData::role(),
+            'daftarPengguna' => DummyData::pengguna(),
+
+            /*
+             * Riwayat tindakan pada akun.
+             *
+             * Modal rinciannya melayani seluruh baris secara bergantian,
+             * sehingga akun yang sedang dibuka baru diketahui Alpine saat modal
+             * dipanggil. Penyaringan per akun karena itu dilakukan di sisi
+             * klien memakai `record_id`, bukan di sini.
+             */
+            'riwayatAkun' => array_values(array_filter(
+                DummyData::auditLog(),
+                fn ($baris) => $baris['nama_tabel'] === 'user',
+            )),
+
+            'wilayah' => DummyData::wilayah(),
+            'kelompokIzin' => DummyData::daftarIzin(),
+
+            // Termasuk yang NONAKTIF, sebab form referensi menampilkan bidang
+            // penanganan yang sudah tercatat pada baris lama.
+            'daftarBidang' => DummyData::referensi(JenisReferensi::BidangPengaduan, true),
+
+            /*
+             * Izin milik setiap role, dipetakan menurut id.
+             *
+             * Formnya membaca satu role saja, yakni yang sedang disunting,
+             * tetapi role itu hanya diketahui induk yang menyisipkan form.
+             * Memetakan seluruhnya lebih murah daripada memaksa tiga rute
+             * mengoper izin role yang berbeda-beda: jumlah role tetap menurut
+             * prd.md, dan daftarnya pendek.
+             */
+            'izinPerRole' => collect(DummyData::role())
+                ->mapWithKeys(fn ($r) => [(int) $r['id_role'] => DummyData::izinRole((int) $r['id_role'])])
+                ->all(),
+
             'opsiStatusPenyerahan' => DummyData::opsiReferensi(JenisReferensi::StatusPenyerahan),
             'opsiJenisFasilitas' => DummyData::opsiReferensi(JenisReferensi::JenisFasilitas),
             'daftarKawasan' => DummyData::kawasan(),

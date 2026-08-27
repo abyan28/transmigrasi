@@ -12,32 +12,8 @@
 
 @section('content')
     @php
-        use App\Support\DummyData;
-
-        $semua = DummyData::auditLog();
-
-        $cari = trim((string) request('cari', ''));
-        $filterAksi = request('aksi');
-        $filterPengguna = request('pengguna');
-
-        $baris = array_values(array_filter($semua, function ($a) use ($cari, $filterAksi, $filterPengguna) {
-            if ($cari !== '' && ! str_contains(mb_strtolower($a['ringkasan']), mb_strtolower($cari))
-                && ! str_contains(mb_strtolower($a['nama_tabel']), mb_strtolower($cari))) {
-                return false;
-            }
-            if ($filterAksi && $a['aksi'] !== $filterAksi) {
-                return false;
-            }
-            if ($filterPengguna && $a['pengguna'] !== $filterPengguna) {
-                return false;
-            }
-
-            return true;
-        }));
-
-        $adaFilter = $cari !== '' || $filterAksi || $filterPengguna;
-        $daftarAksi = array_values(array_unique(array_column($semua, 'aksi')));
-        $daftarPengguna = array_values(array_unique(array_column($semua, 'pengguna')));
+        // Data, penyaringan, dan daftar opsi datang dari rute `audit-log`.
+        // Lihat routes/web.php.
 
         // Warna badge per jenis aksi, agar aksi berisiko langsung terlihat
         $warnaAksi = [

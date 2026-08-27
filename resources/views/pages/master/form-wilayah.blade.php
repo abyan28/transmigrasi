@@ -26,7 +26,7 @@
     $kelasKontrol = 'h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30';
     $kelasLabel = 'mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400';
 
-    $wilayah = DummyData::wilayah();
+    // `$wilayah` disuplai ViewServiceProvider.
 
     $tingkatSah = ['provinsi', 'kabupaten', 'kecamatan', 'desa'];
 

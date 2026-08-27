@@ -14,12 +14,7 @@
 @extends('layouts.app')
 
 @section('content')
-    @php
-        use App\Support\DummyData;
-
-        $role = DummyData::role();
-        $pengguna = DummyData::pengguna();
-    @endphp
+    {{-- `$role` dan `$pengguna` datang dari rute `pengaturan.role`. --}}
 
     <x-sim.page-header judul="Role dan Hak Akses"
         keterangan="Susunan kewenangan yang dapat diberikan kepada akun petugas."
