@@ -49,8 +49,8 @@ class ViewServiceProvider extends ServiceProvider
         'pages.infrastruktur.form' => ['daftarSp', 'opsiJenisInfrastruktur', 'opsiSumberDana', 'opsiKondisi'],
         'pages.komoditas.form' => ['daftarSatuan', 'sebaran', 'opsiTipeKomoditas'],
         'pages.rumah.form' => ['transmigranTanpaRumah', 'daftarTransmigran', 'daftarSp', 'opsiKondisiRumah', 'opsiStatusHunian'],
-        'pages.poktan.form' => ['daftarSp', 'daftarTransmigran', 'kontakTransmigran', 'lahanTransmigran'],
-        'pages.poktan.form-anggota' => ['daftarTransmigran', 'kontakTransmigran', 'lahanTransmigran', 'opsiJabatanAnggota'],
+        'pages.poktan.form' => ['daftarSp', 'daftarTransmigran', 'kontakTransmigran', 'lahanTransmigran', 'anggotaKeluargaPerKeluarga'],
+        'pages.poktan.form-anggota' => ['daftarTransmigran', 'kontakTransmigran', 'lahanTransmigran', 'opsiJabatanAnggota', 'anggotaKeluargaPerKeluarga'],
         'pages.lahan.form' => ['daftarTransmigran', 'daftarSp', 'opsiJenisDokumenLahan'],
         'pages.transmigran.form' => ['daftarSp', 'saranPekerjaan', 'opsiAgama', 'opsiHubunganAnggota', 'opsiKegiatanAnggota', 'opsiPendidikan', 'opsiJenisKelamin'],
         'pages.panen.form' => ['satuanKomoditas', 'simbolSatuan', 'penanamanUntukPanen'],
@@ -226,6 +226,11 @@ class ViewServiceProvider extends ServiceProvider
             'opsiKegiatanAnggota' => KegiatanAnggota::opsi(),
             'opsiPendidikan' => PendidikanTerakhir::opsi(),
             'opsiJenisKelamin' => JenisKelamin::opsi(),
+
+            // Anggota keluarga dikelompokkan per keluarga, agar pilihan wakil
+            // maupun ketua poktan menyempit begitu keluarganya dipilih
+            // (Stage B2, 2026-08-28).
+            'anggotaKeluargaPerKeluarga' => DummyData::anggotaKeluargaPerKeluarga(),
 
             'kontakTransmigran' => self::petaKeluarga()['kontak'],
             'lahanTransmigran' => self::petaKeluarga()['lahan'],

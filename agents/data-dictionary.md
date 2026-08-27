@@ -704,9 +704,10 @@ Dokumen status lahan (HPL/SHM) dipisah ke tabel sendiri karena satu lahan dapat 
 | `satuan_permukiman_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | |
 | `asal_ketua` | `ENUM` | TIDAK | | Lihat 11.34; bawaan `Kepala Keluarga`. Menentukan jalur pengisian data ketua |
 | `ketua_transmigran_id` | `BIGINT UNSIGNED` | YA | FK | Keluarga yang diwakili ketua. Wajib bila `asal_ketua` bukan `Bukan Transmigran` |
-| `nama_ketua` | `VARCHAR(255)` | YA | | Wajib bila `asal_ketua` bukan `Kepala Keluarga`, selain itu `NULL` |
-| `nik_ketua` | `CHAR(16)` | YA | | Wajib bila `asal_ketua` bukan `Kepala Keluarga`; tepat 16 digit angka |
-| `hubungan_ketua` | `ENUM` | YA | | Lihat 11.35; wajib bila `asal_ketua` = `Anggota Keluarga`, selain itu `NULL` |
+| `ketua_anggota_keluarga_id` | `BIGINT UNSIGNED` | YA | FK | **Wajib bila `asal_ketua` = `Anggota Keluarga`**, selain itu `NULL`. Menunjuk baris `anggota_keluarga`; nama, NIK, dan hubungan dibaca dari sana. Ditambahkan 2026-08-28 (Stage B2) |
+| `nama_ketua` | `VARCHAR(255)` | YA | | **Hanya** bila `asal_ketua` = `Bukan Transmigran`, selain itu `NULL` (sejak Stage B2 jalur Anggota Keluarga memakai FK di atas) |
+| `nik_ketua` | `CHAR(16)` | YA | | **Hanya** bila `asal_ketua` = `Bukan Transmigran`; tepat 16 digit angka |
+| ~~`hubungan_ketua`~~ | ~~`ENUM`~~ | | | **Dicabut 2026-08-28 (Stage B2).** Dibaca dari `anggota_keluarga.hubungan` lewat `ketua_anggota_keluarga_id` |
 | `nama` | `VARCHAR(255)` | TIDAK | UQ | |
 | `tahun_berdiri` | `YEAR` | YA | | Tahun saja; tanggal pendirian poktan lama kerap tidak terdokumentasi |
 | `telepon_ketua` | `VARCHAR(20)` | YA | | Kontak ketua, bukan kontak kelompok |
@@ -722,14 +723,14 @@ Dokumen status lahan (HPL/SHM) dipisah ke tabel sendiri karena satu lahan dapat 
 **Catatan:**
 - **Ketua poktan punya tiga asal-usul, bukan dua** (diperluas 2026-08-20). Kolom `is_ketua_transmigran` bertipe boolean digantikan `asal_ketua` bertipe enum, sebab boolean hanya sanggup membedakan dua keadaan sedangkan keadaan lapangan ada tiga. Jalur pengisiannya:
 
-  | `asal_ketua` | `ketua_transmigran_id` | `nama_ketua`, `nik_ketua` | `hubungan_ketua` | Luas & koordinat |
+  | `asal_ketua` | `ketua_transmigran_id` | `ketua_anggota_keluarga_id` | `nama_ketua`, `nik_ketua` | Luas & koordinat |
   |---|---|---|---|---|
-  | `Kepala Keluarga` | wajib | `NULL`, dibaca lewat relasi | `NULL` | dari lahan keluarga |
-  | `Anggota Keluarga` | wajib | **wajib diketik** | wajib | dari lahan keluarga |
-  | `Bukan Transmigran` | `NULL` | **wajib diketik** | `NULL` | `luas_*_ketua` diketik |
+  | `Kepala Keluarga` | wajib | `NULL` | `NULL`, dibaca lewat relasi | dari lahan keluarga |
+  | `Anggota Keluarga` | wajib | **wajib** | `NULL`, dibaca dari anggota keluarga | dari lahan keluarga |
+  | `Bukan Transmigran` | `NULL` | `NULL` | **wajib diketik** | `luas_*_ketua` diketik |
 
   - Jalur pertama tidak menyalin nama dan NIK agar tidak ada dua versi data yang berpotensi tidak sinkron (`erd.md` §8.2 nomor 25).
-  - Jalur kedua **harus** mengetiknya: sistem tidak mendata anggota keluarga satu per satu (`erd.md` §7.4), sehingga tidak ada relasi yang dapat dibaca. `ketua_transmigran_id` tetap terisi karena yang ditunjuk adalah **keluarga** yang diwakili, bukan orangnya.
+  - **Jalur kedua sejak Stage B2 (2026-08-28) memilih dari daftar anggota keluarga**, bukan mengetik. `erd.md` §7.4 dibalik: sistem kini mendata anggota keluarga satu per satu (§6.1a). `ketua_transmigran_id` tetap terisi karena yang ditunjuk adalah **keluarga**; `ketua_anggota_keluarga_id` menunjuk orangnya di dalam keluarga itu. Hubungannya dibaca dari `anggota_keluarga.hubungan`.
   - Jalur ketiga ada sebab banyak poktan diketuai penduduk setempat yang bukan peserta program; membatasi pilihan pada daftar transmigran membuat poktan semacam itu tidak dapat didata sama sekali.
 - **Luas lahan ketua diturunkan, tidak disimpan** — kecuali bagi ketua non-transmigran. Untuk kedua jalur pertama, luas kering dan basah dijumlahkan dari bidang milik keluarga yang bersangkutan (`SUM` atas `lahan`), sejalan dengan `rules.md` §7.10. Menyimpannya sebagai kolom akan basi begitu petugas membetulkan luas di modul lahan, kekeliruan yang sama dengan `jumlah_anggota` (`erd.md` §7.3). Ketua non-transmigran tidak memiliki bidang terdata, sehingga hanya bagi merekalah kedua kolom itu terisi.
 - **Kolom `luas_lahan_kelompok` dihapus** (2026-08-20). Ia tidak pernah dipakai satu berkas pun di seluruh sistem: tidak ada isiannya di form, tidak ada tampilannya, tidak ada uji, dan `DummyData::poktan()` bahkan tidak memuat kuncinya. Luas lahan kelompok kini dijumlahkan dari lahan seluruh anggotanya.
@@ -745,10 +746,11 @@ Dokumen status lahan (HPL/SHM) dipisah ke tabel sendiri karena satu lahan dapat 
 | `poktan_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX, UQ¹ | |
 | `transmigran_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX, UQ¹ | **Keluarga** yang diwakili, bukan orangnya |
 | `asal_wakil` | `ENUM` | TIDAK | | Lihat 11.34; bawaan `Kepala Keluarga`. Nilai `Bukan Transmigran` tidak berlaku di sini |
-| `nama_wakil` | `VARCHAR(255)` | YA | | Wajib bila `asal_wakil` = `Anggota Keluarga`, selain itu `NULL` |
-| `nik_wakil` | `CHAR(16)` | YA | | Wajib bila `asal_wakil` = `Anggota Keluarga`; tepat 16 digit angka |
-| `telepon_wakil` | `VARCHAR(20)` | YA | | Kontak wakil; terisi sendiri dari transmigran bila wakilnya kepala keluarga |
-| `hubungan_dengan_kk` | `ENUM` | YA | | Lihat 11.35; wajib bila `asal_wakil` = `Anggota Keluarga` |
+| `anggota_keluarga_id` | `BIGINT UNSIGNED` | YA | FK | **Wajib bila `asal_wakil` = `Anggota Keluarga`**, selain itu `NULL`. Menunjuk baris `anggota_keluarga`; nama, NIK, telepon, dan hubungan dibaca dari sana. Ditambahkan 2026-08-28 (Stage B2) |
+| ~~`nama_wakil`~~ | ~~`VARCHAR(255)`~~ | | | **Dicabut 2026-08-28 (Stage B2).** Dibaca dari `anggota_keluarga` lewat `anggota_keluarga_id` |
+| ~~`nik_wakil`~~ | ~~`CHAR(16)`~~ | | | **Dicabut 2026-08-28 (Stage B2).** Idem |
+| `telepon_wakil` | `VARCHAR(20)` | YA | | Kontak wakil; boleh disunting. Terisi sendiri dari `anggota_keluarga.telepon` (jalur Anggota Keluarga) atau dari `transmigran` (jalur Kepala Keluarga) |
+| ~~`hubungan_dengan_kk`~~ | ~~`ENUM`~~ | | | **Dicabut 2026-08-28 (Stage B2).** Dibaca dari `anggota_keluarga.hubungan` |
 | `jabatan` | `ENUM` | TIDAK | | Lihat §11.15 |
 | `tanggal_masuk` | `DATE` | TIDAK | | |
 | `status` | `ENUM` | TIDAK | IDX | Lihat §11.16 |
@@ -761,8 +763,8 @@ Dokumen status lahan (HPL/SHM) dipisah ke tabel sendiri karena satu lahan dapat 
 **Catatan:**
 - Anggota yang berhenti **tidak dihapus**, melainkan ditandai `status = 'Sudah Keluar'` agar riwayat tetap utuh (`rules.md` §5.1 catatan 7).
 - **Keanggotaan melekat pada keluarga, bukan pada kepala keluarga** (ditetapkan 2026-08-20 atas keterangan pemilik proyek). Yang terdaftar adalah orang yang benar-benar menggarap dan menghadiri pertemuan, dan ia tidak selalu kepala keluarga: bila kepala keluarga merantau, istri atau anaknya yang mewakili. Karena itu `transmigran_id` menunjuk **keluarga** yang diwakili, sedangkan `asal_wakil` menyatakan siapa wakilnya.
-  - `Kepala Keluarga` → nama, NIK, dan telepon dibaca lewat relasi ke `transmigran`; ketiga kolom `*_wakil` dibiarkan `NULL`.
-  - `Anggota Keluarga` → ketiganya wajib diketik beserta `hubungan_dengan_kk`, sebab sistem tidak mendata anggota keluarga satu per satu (`erd.md` §7.4).
+  - `Kepala Keluarga` → nama, NIK, dan telepon dibaca lewat relasi ke `transmigran`; `anggota_keluarga_id` dibiarkan `NULL`.
+  - `Anggota Keluarga` → **`anggota_keluarga_id` dipilih dari daftar anggota keluarga** yang bersangkutan (Stage B2, 2026-08-28). Nama, NIK, telepon, dan hubungan dibaca dari baris itu. Sebelumnya diketik, sebab `erd.md` §7.4 menyatakan sistem tidak mendata anggota keluarga satu per satu; keputusan itu dibalik.
   - `Bukan Transmigran` **tidak berlaku** bagi anggota: seluruh anggota wajib berasal dari keluarga transmigran (`rules.md` §7a poin 3). Pembatasannya ditegakkan aplikasi, sebab ENUM database memuat ketiga nilai agar dapat dipakai bersama `poktan.asal_ketua`.
 - **Luas lahan dan koordinat anggota diturunkan, tidak disimpan.** Keduanya dijumlahkan dari bidang milik keluarga yang diwakili, sehingga tidak berubah ketika wakilnya berganti dan tidak pernah basi ketika luas dibetulkan di modul lahan.
 - **`alasan_keluar` dipisahkan dari `keterangan`** (2026-08-20). Sebelumnya `keterangan` dipakai dua maksud sekaligus: kamus data menyebutnya catatan umum, sedangkan form melabelinya "Alasan Keluar", sehingga catatan keanggotaan biasa tidak punya tempat. Pemisahan ini mengikuti `riwayat_penghunian` §6.3 yang sudah membedakan `alasan_keluar` dari `keterangan`.
@@ -1427,10 +1429,10 @@ Aturan berikut ditulis satu kali di `app/Support/ValidationRules.php` dan dipaka
 | 20 | `user_id` wajib kosong bila `sumber_laporan` bernilai Publik, dan wajib terisi bila Petugas | `pengaduan` |
 | 21 | Pengaduan publik dibatasi 3 laporan per jam untuk setiap alamat IP | `pengaduan` |
 | 22 | `bidang` wajib terisi sebelum status pengaduan maju ke `Diproses` | `pengaduan` |
-| 23 | `nama_wakil`, `nik_wakil`, dan `hubungan_dengan_kk` wajib bila `asal_wakil` = `Anggota Keluarga`, dan wajib `NULL` bila `Kepala Keluarga` | `anggota_poktan` |
+| 23 | `anggota_keluarga_id` wajib bila `asal_wakil` = `Anggota Keluarga`, dan wajib `NULL` bila `Kepala Keluarga`; anggota yang ditunjuk wajib milik keluarga `transmigran_id`. Kolom `nama_wakil`/`nik_wakil`/`hubungan_dengan_kk` dicabut 2026-08-28 (Stage B2) | `anggota_poktan` |
 | 24 | `asal_wakil` tidak boleh bernilai `Bukan Transmigran`; seluruh anggota wajib berasal dari keluarga transmigran | `anggota_poktan` |
 | 25 | `ketua_transmigran_id` wajib bila `asal_ketua` bukan `Bukan Transmigran`, dan wajib `NULL` bila `Bukan Transmigran` | `poktan` |
-| 26 | `nama_ketua` dan `nik_ketua` wajib bila `asal_ketua` bukan `Kepala Keluarga`, dan wajib `NULL` bila `Kepala Keluarga` | `poktan` |
+| 26 | `ketua_anggota_keluarga_id` wajib bila `asal_ketua` = `Anggota Keluarga` (selain itu `NULL`); `nama_ketua`/`nik_ketua` wajib **hanya** bila `asal_ketua` = `Bukan Transmigran` (selain itu `NULL`). `hubungan_ketua` dicabut 2026-08-28 (Stage B2) | `poktan` |
 | 27 | `luas_kering_ketua` dan `luas_basah_ketua` hanya terisi bila `asal_ketua` = `Bukan Transmigran`; selain itu diturunkan dari lahan keluarga | `poktan` |
 | 28 | `nik_baru` tidak boleh sama dengan `nik_lama` pada baris yang sama | `riwayat_kepala_keluarga` |
 | 29 | `tanggal_pergantian` tidak boleh mendahului `tahun_kedatangan` keluarganya, dan tidak boleh melampaui hari ini | `riwayat_kepala_keluarga` |

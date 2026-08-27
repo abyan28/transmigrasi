@@ -1189,14 +1189,41 @@ rombak suksesi KK. Dikerjakan bertahap:
 - Form transmigran: field Agama, usia read-only auto, `jumlah_anggota_keluarga` jadi teks turunan, section "Anggota Keluarga" dengan repeater Alpine (`x-for`, tambah/hapus, cabang `:required`/`:disabled` bersyarat menurut kegiatan).
 - Detail transmigran: Agama + Usia di biodata, tab "Anggota Keluarga (N)" baru berisi tabel.
 
-### 1p.3 Verifikasi
+### 1p.3 Stage B2: rombak wakil dan ketua poktan
 
-**654 uji hijau** (naik dari 648), `pint` tetap 31.
+Jalur "Anggota Keluarga" pada `anggota_poktan` dan `poktan.ketua` tidak lagi
+mengetik nama/NIK/hubungan; ia **memilih orangnya** dari daftar anggota
+keluarga yang bersangkutan.
+
+- Kolom baru `anggota_poktan.anggota_keluarga_id` dan
+  `poktan.ketua_anggota_keluarga_id` (nullable FK). Kolom
+  `nama_wakil`/`nik_wakil`/`hubungan_dengan_kk` dan `hubungan_ketua` dicabut
+  dari kamus; `nama_ketua`/`nik_ketua` menyusut ke jalur Bukan Transmigran.
+- `identitasWakil()` membaca dari `anggota_keluarga` bila id terisi.
+- `DummyData::poktan()` kini membungkus `array_map` yang menyelesaikan
+  `nama_ketua`/`nik_ketua`/`hubungan_ketua` lewat `identitasWakil` — pola
+  sama dengan `anggotaPoktan()`. **Efek samping baik:** halaman daftar poktan
+  yang selama ini menampilkan ketua kosong untuk poktan berketua kepala
+  keluarga (nilai `nama_ketua` memang null di data mentah) kini menampilkan
+  namanya.
+- Form: `poktan/form.blade` jalur Anggota Keluarga → `<select
+  ketua_anggota_keluarga_id>` dari `x-for`; `poktan/form-anggota.blade`
+  jalur Anggota Keluarga → `<select anggota_keluarga_id>`. Daftar menyempit
+  begitu keluarga dipilih (`anggotaKeluargaPerKeluarga` lewat composer).
+- Data contoh: ANDREAS HOAR (id 30) ditambahkan ke keluarga YULITA HOAR
+  sebagai adik dewasa yang mewakili di poktan; `anggota_poktan` id 3 dan
+  `poktan` id 3 menunjuk anggota keluarga lewat id.
+
+Tiga uji lama diperbarui (jalur berubah dari ketik ke pilih), dua uji baru.
+
+### 1p.4 Verifikasi
+
+**656 uji hijau**, `pint` tetap 31.
 
 Penjaga baru: jumlah anggota = turunan tanpa selisih; usia = hitungan Carbon
-di rincian; tiap kolom anggota punya tempat tampil; repeater punya template +
-tambah + hapus + cabang bersyarat pada keluaran terender; data contoh
-bervariasi sesuai cabang kegiatan; enum baru dikunci.
+di rincian; tiap kolom anggota punya tempat tampil; repeater bersyarat pada
+keluaran terender; data contoh bervariasi; enum dikunci; wakil/ketua poktan
+jalur Anggota Keluarga dibaca dari relasi.
 
 Satu jebakan `pint`: `\Illuminate\Support\Carbon::parse` inline di uji memicu
 `fully_qualified_strict_types`; `Carbon` sudah di-`use` di berkas itu, jadi

@@ -27,8 +27,7 @@
 --}}
 @php
     use App\Enums\AsalWakilPoktan;
-    use App\Enums\HubunganKeluarga;
-        use App\Enums\StatusKeaktifanAnggota;
+    use App\Enums\StatusKeaktifanAnggota;
 
     $awalan = $awalan ?? 'tambah';
     $data = $data ?? [];
@@ -51,15 +50,26 @@
         status: @js(old('status', $data['status'] ?? StatusKeaktifanAnggota::Aktif->value)),
         asal: @js(old('asal_wakil', $data['asal_wakil'] ?? $kepalaKeluarga)),
         keluargaId: '{{ old('transmigran_id', $data['transmigran_id'] ?? '') }}',
+        anggotaKeluargaId: '{{ old('anggota_keluarga_id', $data['anggota_keluarga_id'] ?? '') }}',
         telepon: @js(old('telepon_wakil', $data['telepon_wakil'] ?? '')),
         kontakTransmigran: @js($kontakTransmigran),
         lahanTransmigran: @js($lahanTransmigran),
+        anggotaKeluargaKeluarga: @js($anggotaKeluargaPerKeluarga),
 
         get wakilAnggotaKeluarga() {
             return this.asal === @js($anggotaKeluarga);
         },
         get lahanKeluarga() {
             return this.lahanTransmigran[this.keluargaId] ?? null;
+        },
+        get daftarAnggotaKeluarga() {
+            return this.anggotaKeluargaKeluarga[this.keluargaId] ?? [];
+        },
+        gantiKeluarga(id) {
+            this.keluargaId = id;
+            // Anggota yang tadi dipilih milik keluarga lain, jadi dikosongkan.
+            this.anggotaKeluargaId = '';
+            this.isiKontak();
         },
 
         {{--
@@ -90,7 +100,7 @@
                 :terpilih="old('transmigran_id', $data['transmigran_id'] ?? null)"
                 placeholder="Pilih keluarga transmigran"
                 keterangan="Keanggotaan melekat pada keluarga. Luas lahan dan titik koordinatnya dibaca dari bidang milik keluarga ini."
-                @change="keluargaId = $event.target.value; isiKontak()" />
+                @change="gantiKeluarga($event.target.value)" />
         </div>
 
         {{--
@@ -119,44 +129,35 @@
         </div>
 
         {{--
-            Identitas wakil, diketik hanya bila wakilnya bukan kepala keluarga.
-            Sistem tidak mendata anggota keluarga satu per satu (erd.md 7.4),
-            sehingga tidak ada relasi yang dapat dibaca.
+            Wakil dipilih dari daftar anggota keluarga yang bersangkutan
+            (Stage B2, 2026-08-28). Sebelumnya nama, NIK, dan hubungan
+            diketik, sebab sistem belum mendata anggota keluarga satu per satu
+            (erd.md 7.4, kini dibalik). Nama dan hubungannya kini dibaca dari
+            baris `anggota_keluarga` saat ditampilkan.
         --}}
-        <div class="grid gap-4 sm:col-span-2 sm:grid-cols-3" x-show="wakilAnggotaKeluarga" x-cloak>
-            <div>
-                <label for="{{ $awalan }}_nama_wakil" class="{{ $kelasLabel }}">Nama Wakil<span class="text-error-500">*</span></label>
-                <input type="text" id="{{ $awalan }}_nama_wakil" name="nama_wakil"
-                    value="{{ old('nama_wakil', $data['nama_wakil'] ?? '') }}" maxlength="255"
-                    :required="wakilAnggotaKeluarga" :disabled="! wakilAnggotaKeluarga"
-                    placeholder="Nama lengkap" class="{{ $kelasKontrol }}" />
-            </div>
-
-            <div>
-                <label for="{{ $awalan }}_nik_wakil" class="{{ $kelasLabel }}">NIK Wakil<span class="text-error-500">*</span></label>
-                <input type="text" inputmode="numeric" id="{{ $awalan }}_nik_wakil" name="nik_wakil"
-                    value="{{ old('nik_wakil', $data['nik_wakil'] ?? '') }}"
-                    minlength="16" maxlength="16" pattern="[0-9]{16}"
-                    :required="wakilAnggotaKeluarga" :disabled="! wakilAnggotaKeluarga"
-                    placeholder="16 digit angka" class="{{ $kelasKontrol }} tabular-nums" />
-            </div>
-
-            <div>
-                <label for="{{ $awalan }}_hubungan_dengan_kk" class="{{ $kelasLabel }}">
-                    Hubungan dengan KK<span class="text-error-500">*</span>
-                </label>
-                <select id="{{ $awalan }}_hubungan_dengan_kk" name="hubungan_dengan_kk"
-                    :required="wakilAnggotaKeluarga" :disabled="! wakilAnggotaKeluarga"
-                    class="{{ $kelasKontrol }}">
-                    <option value="">Pilih hubungan</option>
-                    @foreach (HubunganKeluarga::opsi() as $nilai => $label)
-                        <option value="{{ $nilai }}"
-                            @selected(old('hubungan_dengan_kk', $data['hubungan_dengan_kk'] ?? '') === $nilai)>
-                            {{ $label }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
+        <div class="sm:col-span-2" x-show="wakilAnggotaKeluarga" x-cloak>
+            <label for="{{ $awalan }}_anggota_keluarga_id" class="{{ $kelasLabel }}">
+                Anggota yang Mewakili<span class="text-error-500">*</span>
+            </label>
+            <select id="{{ $awalan }}_anggota_keluarga_id" name="anggota_keluarga_id"
+                x-model="anggotaKeluargaId"
+                :required="wakilAnggotaKeluarga" :disabled="! wakilAnggotaKeluarga || keluargaId === ''"
+                class="{{ $kelasKontrol }}">
+                <option value="">
+                    <span x-text="keluargaId === '' ? 'Pilih keluarga transmigran lebih dulu' : 'Pilih anggota keluarga'"></span>
+                </option>
+                <template x-for="a in daftarAnggotaKeluarga" :key="a.id">
+                    <option :value="a.id" x-text="a.nama + ' (' + a.hubungan + ')'"></option>
+                </template>
+            </select>
+            <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                <span x-show="keluargaId !== '' && daftarAnggotaKeluarga.length === 0" x-cloak>
+                    Keluarga ini belum memiliki anggota keluarga terdata. Tambahkan lebih dulu lewat modul Transmigran.
+                </span>
+                <span x-show="daftarAnggotaKeluarga.length > 0">
+                    Daftar diambil dari anggota keluarga yang sudah dicatat pada data transmigran.
+                </span>
+            </p>
         </div>
 
         <div class="sm:col-span-2">

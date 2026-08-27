@@ -5,10 +5,11 @@
 
       1. Kepala keluarga  - dipilih dari daftar; nama, NIK, dan telepon dibaca
                             lewat relasi agar tidak ada dua versi data.
-      2. Anggota keluarga - keluarganya dipilih dari daftar, tetapi nama, NIK,
-                            dan hubungannya WAJIB diketik. Sistem tidak mendata
-                            anggota keluarga satu per satu (erd.md 7.4),
-                            sehingga tidak ada relasi yang dapat dibaca.
+      2. Anggota keluarga - keluarganya dipilih dari daftar, lalu ORANGNYA
+                            dipilih dari daftar anggota keluarga itu
+                            (`ketua_anggota_keluarga_id`). Nama, NIK, dan
+                            hubungan dibaca dari baris anggota_keluarga
+                            (Stage B2, 2026-08-28; erd.md 7.4 dibalik).
       3. Bukan transmigran - penduduk setempat. Nama, NIK, dan luas lahannya
                             diketik seluruhnya.
 
@@ -30,7 +31,6 @@
 --}}
 @php
     use App\Enums\AsalWakilPoktan;
-    use App\Enums\HubunganKeluarga;
 
     $awalan = $awalan ?? 'tambah';
     $data = $data ?? [];
@@ -84,9 +84,11 @@
     <section x-data="{
         asal: @js($asalKetua),
         ketuaId: '{{ old('ketua_transmigran_id', $data['ketua_transmigran_id'] ?? '') }}',
+        ketuaAnggotaKeluargaId: '{{ old('ketua_anggota_keluarga_id', $data['ketua_anggota_keluarga_id'] ?? '') }}',
         telepon: @js(old('telepon_ketua', $data['telepon_ketua'] ?? '')),
         kontakTransmigran: @js($kontakTransmigran),
         lahanTransmigran: @js($lahanTransmigran),
+        anggotaKeluargaKeluarga: @js($anggotaKeluargaPerKeluarga),
 
         {{--
             Dua penurunan yang perlu dibedakan:
@@ -108,6 +110,17 @@
         },
         get perluHubungan() {
             return this.asal === @js(AsalWakilPoktan::AnggotaKeluarga->value);
+        },
+        get ketuaBukanTransmigran() {
+            return this.asal === @js(AsalWakilPoktan::BukanTransmigran->value);
+        },
+        get daftarAnggotaKeluarga() {
+            return this.anggotaKeluargaKeluarga[this.ketuaId] ?? [];
+        },
+        gantiKeluarga(id) {
+            this.ketuaId = id;
+            this.ketuaAnggotaKeluargaId = '';
+            this.isiKontak();
         },
         get lahanKeluarga() {
             return this.lahanTransmigran[this.ketuaId] ?? null;
@@ -176,7 +189,7 @@
                 :terpilih="old('ketua_transmigran_id', $data['ketua_transmigran_id'] ?? null)"
                 placeholder="Pilih keluarga transmigran"
                 keterangan="Keluarga yang diwakili ketua. Luas lahan dan titik koordinatnya dibaca dari bidang milik keluarga ini."
-                @change="ketuaId = $event.target.value; isiKontak()"
+                @change="gantiKeluarga($event.target.value)"
                 {{-- Ekspresi Alpine dikirim sebagai STRING berkutip: Blade
                      mengevaluasi `:atribut` sebagai PHP, sehingga tanpa kutip
                      `dariKeluarga` terbaca sebagai konstanta PHP yang tidak ada. --}}
@@ -184,16 +197,44 @@
         </div>
 
         {{--
-            Nama dan NIK diketik pada dua jalur terakhir. Kepala keluarga
-            dikecualikan sebab keduanya dibaca lewat relasi; menyalinnya akan
-            melahirkan dua versi data yang berpotensi tidak sinkron.
+            Jalur Anggota Keluarga: ketua DIPILIH dari daftar anggota keluarga
+            yang bersangkutan (Stage B2, 2026-08-28). Nama, NIK, dan
+            hubungannya dibaca dari baris `anggota_keluarga`, tidak diketik.
         --}}
-        <div class="mt-4 grid gap-4 sm:grid-cols-2" x-show="! identitasDariRelasi" x-cloak>
+        <div class="mt-4" x-show="perluHubungan" x-cloak>
+            <label for="{{ $awalan }}_ketua_anggota_keluarga_id" class="{{ $kelasLabel }}">
+                Anggota yang Menjadi Ketua<span class="text-error-500">*</span>
+            </label>
+            <select id="{{ $awalan }}_ketua_anggota_keluarga_id" name="ketua_anggota_keluarga_id"
+                x-model="ketuaAnggotaKeluargaId"
+                :required="perluHubungan" :disabled="! perluHubungan || ketuaId === ''"
+                class="{{ $kelasKontrol }}">
+                <option value="">Pilih anggota keluarga</option>
+                <template x-for="a in daftarAnggotaKeluarga" :key="a.id">
+                    <option :value="a.id" x-text="a.nama + ' (' + a.hubungan + ')'"></option>
+                </template>
+            </select>
+            <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                <span x-show="ketuaId !== '' && daftarAnggotaKeluarga.length === 0" x-cloak>
+                    Keluarga ini belum memiliki anggota keluarga terdata. Tambahkan lebih dulu lewat modul Transmigran.
+                </span>
+                <span x-show="daftarAnggotaKeluarga.length > 0">
+                    Daftar diambil dari anggota keluarga yang sudah dicatat pada data transmigran.
+                </span>
+            </p>
+        </div>
+
+        {{--
+            Jalur Bukan Transmigran: nama dan NIK ketua diketik, sebab penduduk
+            setempat tidak punya baris di modul mana pun. Kepala Keluarga
+            dikecualikan sebab keduanya dibaca lewat relasi.
+        --}}
+        <div class="mt-4 grid gap-4 sm:grid-cols-2" x-show="ketuaBukanTransmigran" x-cloak>
             <div>
                 <label for="{{ $awalan }}_nama_ketua" class="{{ $kelasLabel }}">Nama Ketua<span class="text-error-500">*</span></label>
                 <input type="text" id="{{ $awalan }}_nama_ketua" name="nama_ketua"
                     value="{{ old('nama_ketua', $data['nama_ketua'] ?? '') }}" maxlength="255"
-                    :required="! identitasDariRelasi" :disabled="identitasDariRelasi"
+                    :required="ketuaBukanTransmigran" :disabled="! ketuaBukanTransmigran"
                     placeholder="Nama lengkap ketua" class="{{ $kelasKontrol }}" />
             </div>
 
@@ -202,25 +243,8 @@
                 <input type="text" inputmode="numeric" id="{{ $awalan }}_nik_ketua" name="nik_ketua"
                     value="{{ old('nik_ketua', $data['nik_ketua'] ?? '') }}"
                     minlength="16" maxlength="16" pattern="[0-9]{16}"
-                    :required="! identitasDariRelasi" :disabled="identitasDariRelasi"
+                    :required="ketuaBukanTransmigran" :disabled="! ketuaBukanTransmigran"
                     placeholder="16 digit angka" class="{{ $kelasKontrol }} tabular-nums" />
-            </div>
-
-            {{-- Hubungan hanya berlaku bagi anggota keluarga. --}}
-            <div x-show="perluHubungan" x-cloak>
-                <label for="{{ $awalan }}_hubungan_ketua" class="{{ $kelasLabel }}">
-                    Hubungan dengan Kepala Keluarga<span class="text-error-500">*</span>
-                </label>
-                <select id="{{ $awalan }}_hubungan_ketua" name="hubungan_ketua"
-                    :required="perluHubungan" :disabled="! perluHubungan" class="{{ $kelasKontrol }}">
-                    <option value="">Pilih hubungan</option>
-                    @foreach (HubunganKeluarga::opsi() as $nilai => $label)
-                        <option value="{{ $nilai }}"
-                            @selected(old('hubungan_ketua', $data['hubungan_ketua'] ?? '') === $nilai)>
-                            {{ $label }}
-                        </option>
-                    @endforeach
-                </select>
             </div>
         </div>
 

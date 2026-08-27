@@ -5079,11 +5079,13 @@ it('menyediakan tiga jalur pengisian ketua poktan', function () {
         ->and($isi)->not->toContain('name="is_ketua_transmigran"')
         // Keluarga yang diwakili, terisi pada dua jalur pertama.
         ->and($isi)->toContain('name="ketua_transmigran_id"')
-        // Diketik pada dua jalur terakhir.
+        // Sejak Stage B2: jalur Anggota Keluarga MEMILIH orangnya dari daftar,
+        // tidak mengetik. Kolom hubungan_ketua dicabut.
+        ->and($isi)->toContain('name="ketua_anggota_keluarga_id"')
+        ->and($isi)->not->toContain('name="hubungan_ketua"')
+        // nama_ketua / nik_ketua hanya untuk jalur Bukan Transmigran.
         ->and($isi)->toContain('name="nama_ketua"')
         ->and($isi)->toContain('name="nik_ketua"')
-        // Hanya jalur anggota keluarga.
-        ->and($isi)->toContain('name="hubungan_ketua"')
         // Hanya jalur non-transmigran.
         ->and($isi)->toContain('name="luas_kering_ketua"')
         ->and($isi)->toContain('name="luas_basah_ketua"');
@@ -5115,7 +5117,9 @@ it('meneruskan required, disabled, dan change milik pemanggil pilih-cari', funct
         ->and($tag)->toContain(':disabled="! dariKeluarga"')
         // `@change` pemanggil digabung setelah `selaraskan()`, bukan menimpanya.
         ->and($tag)->toContain('selaraskan();')
-        ->and($tag)->toContain('isiKontak()');
+        // Sejak Stage B2 pemanggil memanggil gantiKeluarga(), yang mengganti
+        // keluarga, mengosongkan pilihan anggota lama, lalu isiKontak().
+        ->and($tag)->toContain('gantiKeluarga(');
 });
 
 it('membatasi wakil anggota poktan pada keluarga transmigran', function () {
@@ -5144,30 +5148,89 @@ it('membatasi wakil anggota poktan pada keluarga transmigran', function () {
 
 it('menautkan keanggotaan poktan ke keluarga, bukan ke kepala keluarga', function () {
     // Ditetapkan 2026-08-20: yang terdaftar adalah orang yang benar-benar
-    // menggarap, dan ia tidak selalu kepala keluarga (rules.md 7a.3a).
+    // menggarap, dan ia tidak selalu kepala keluarga (rules.md 7a.3a). Sejak
+    // Stage B2 (2026-08-28) wakil non-kepala-keluarga DIPILIH dari daftar
+    // anggota keluarga, tidak diketik.
     $isi = $this->get(route('poktan.detail', 1))->assertOk()->getContent();
 
     expect($isi)->toContain('name="asal_wakil"')
-        ->and($isi)->toContain('name="nama_wakil"')
-        ->and($isi)->toContain('name="nik_wakil"')
+        ->and($isi)->toContain('name="anggota_keluarga_id"')
         ->and($isi)->toContain('name="telepon_wakil"')
-        ->and($isi)->toContain('name="hubungan_dengan_kk"');
+        // Kolom yang dulu diketik sudah dicabut.
+        ->and($isi)->not->toContain('name="nama_wakil"')
+        ->and($isi)->not->toContain('name="nik_wakil"')
+        ->and($isi)->not->toContain('name="hubungan_dengan_kk"');
 
     // Data contoh wajib memuat satu wakil non-kepala-keluarga, jika tidak
     // cabang kedua tidak pernah terlihat saat peninjauan.
     $anggota = DummyData::anggotaPoktan();
-    $wakilKeluarga = array_filter(
+    $wakilKeluarga = array_values(array_filter(
         $anggota,
         fn ($a) => $a['asal_wakil'] === AsalWakilPoktan::AnggotaKeluarga->value
-    );
+    ));
 
     expect($wakilKeluarga)->not->toBeEmpty('data contoh wajib memuat wakil bukan kepala keluarga');
 
-    // Namanya yang tampil adalah nama wakil, bukan nama kepala keluarganya.
-    $wakil = array_values($wakilKeluarga)[0];
+    // Identitas yang tampil dibaca dari baris anggota_keluarga yang ditunjuk,
+    // bukan dari kepala keluarganya.
+    $wakil = $wakilKeluarga[0];
+    $anggotaKeluarga = DummyData::cariAnggotaKeluarga($wakil['anggota_keluarga_id']);
 
-    expect($wakil['nama'])->toBe($wakil['nama_wakil'])
-        ->and($wakil['nik'])->toBe($wakil['nik_wakil']);
+    expect($anggotaKeluarga)->not->toBeNull('anggota_keluarga_id wajib menunjuk baris yang ada');
+    expect($wakil['nama'])->toBe($anggotaKeluarga['nama_lengkap'])
+        ->and($wakil['nik'])->toBe($anggotaKeluarga['nik'])
+        ->and($wakil['hubungan_wakil'])->toBe($anggotaKeluarga['hubungan']);
+
+    // Namanya BUKAN nama kepala keluarganya.
+    $kepala = collect(DummyData::transmigran())->firstWhere('id_transmigran', $wakil['transmigran_id']);
+    expect($wakil['nama'])->not->toBe($kepala['nama_kepala_keluarga']);
+});
+
+it('memilih wakil dan ketua poktan dari daftar anggota keluarga', function () {
+    // Stage B2 (2026-08-28): jalur "Anggota Keluarga" tidak lagi mengetik
+    // nama dan NIK; ia memilih orangnya dari daftar anggota keluarga yang
+    // bersangkutan, yang menyempit begitu keluarganya dipilih.
+
+    // Form profil poktan (di halaman daftar): pilih ketua dari daftar.
+    $index = $this->get(route('poktan.index'))->assertOk()->getContent();
+    expect($index)
+        ->toContain('name="ketua_anggota_keluarga_id"')
+        ->toContain('x-for="a in daftarAnggotaKeluarga"')
+        ->toContain('anggotaKeluargaKeluarga');
+
+    // Form anggota poktan (di halaman rincian): pilih wakil dari daftar.
+    $detail = $this->get(route('poktan.detail', 1))->assertOk()->getContent();
+    expect($detail)
+        ->toContain('name="anggota_keluarga_id"')
+        ->toContain('x-for="a in daftarAnggotaKeluarga"');
+
+    // Peta yang menyempitkan daftar dikelompokkan per keluarga.
+    $peta = DummyData::anggotaKeluargaPerKeluarga();
+    expect($peta)->toHaveKey(1);
+    expect($peta[1][0])->toHaveKeys(['id', 'nama', 'hubungan']);
+});
+
+it('membaca identitas ketua poktan jalur Anggota Keluarga dari relasi', function () {
+    // POKTAN TANI BERSATU (id 3) diketuai anggota keluarga PETRUS NAHAK.
+    $poktan = collect(DummyData::poktan())->firstWhere('id_poktan', 3);
+
+    expect($poktan['asal_ketua'])->toBe(AsalWakilPoktan::AnggotaKeluarga->value);
+    expect($poktan['ketua_anggota_keluarga_id'])->not->toBeNull();
+
+    // DummyData::poktan() sudah menyelesaikan identitasnya; yang tampil harus
+    // sama dengan baris anggota_keluarga yang ditunjuk, bukan PETRUS NAHAK.
+    $anggota = DummyData::cariAnggotaKeluarga($poktan['ketua_anggota_keluarga_id']);
+
+    expect($poktan['nama_ketua'])->toBe($anggota['nama_lengkap'])
+        ->and($poktan['nik_ketua'])->toBe($anggota['nik'])
+        ->and($poktan['hubungan_ketua'])->toBe($anggota['hubungan']);
+
+    $kepala = collect(DummyData::transmigran())->firstWhere('id_transmigran', $poktan['ketua_transmigran_id']);
+    expect($poktan['nama_ketua'])->not->toBe($kepala['nama_kepala_keluarga']);
+
+    // Halaman rincian menampilkan nama itu.
+    $isi = $this->get(route('poktan.detail', 3))->assertOk()->getContent();
+    expect($isi)->toContain($anggota['nama_lengkap']);
 });
 
 it('menurunkan luas lahan wakil poktan dari bidang milik keluarganya', function () {

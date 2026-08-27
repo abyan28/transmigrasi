@@ -178,9 +178,9 @@
                                     <td class="px-5 py-3">
                                         {{--
                                             Tautan menuju KELUARGA yang diwakili, bukan orangnya:
-                                            wakil yang bukan kepala keluarga tidak punya halaman
-                                            rincian sendiri sebab sistem tidak mendata anggota
-                                            keluarga satu per satu.
+                                            anggota keluarga tidak punya halaman rincian sendiri,
+                                            datanya tampil di dalam halaman keluarganya (tab
+                                            Anggota Keluarga).
                                         --}}
                                         <a href="{{ route('transmigran.detail', $a['transmigran_id']) }}"
                                             class="rounded text-theme-sm text-gray-800 hover:text-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-white/90 dark:hover:text-brand-400">
@@ -188,7 +188,7 @@
                                         </a>
                                         @if ($a['asal_wakil'] !== \App\Enums\AsalWakilPoktan::KepalaKeluarga->value)
                                             <p class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
-                                                {{ $a['hubungan_dengan_kk'] }} dari
+                                                {{ $a['hubungan_wakil'] ?? 'Anggota keluarga' }} dari
                                                 {{ $namaKkWakil[$a['transmigran_id']] ?? '-' }}
                                             </p>
                                         @endif

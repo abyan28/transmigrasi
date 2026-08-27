@@ -148,11 +148,11 @@ Kolom `jumlah_anggota_keluarga` di kamus ditandai "diturunkan, tidak diisi".
   detail tab, penjaga. 654 uji hijau, pint 31. `erd.md` §7.4 direvisi
   berjejak, `data-dictionary.md` §6.1a + §11.38-40, `rules.md` §6 poin
   2a/2b/9-9d.
-- **Stage B2** - rombak `anggota_poktan`: kolom `anggota_keluarga_id`
-  (nullable FK), `form-anggota` memilih dari daftar anggota keluarga bila
-  `asal_wakil` = Anggota Keluarga; `poktan.form` jalur ketua Anggota
-  Keluarga ikut; `nama_wakil`/`nik_wakil`/`hubungan` jadi turunan bila id
-  terisi. Docs + penjaga. Commit.
+- **Stage B2 SELESAI** (commit) - `anggota_poktan.anggota_keluarga_id` +
+  `poktan.ketua_anggota_keluarga_id`; kedua form memilih orangnya dari
+  daftar; `nama_wakil`/`nik_wakil`/`hubungan_dengan_kk`/`hubungan_ketua`
+  dicabut. `DummyData::poktan()` menyelesaikan identitas ketua. 656 uji
+  hijau, pint 31. data-dictionary §6.5/§8.2, rules §7a.2a/3a, notes 1p.3.
 - **Stage B3** - rombak suksesi KK: pengganti dipilih dari daftar anggota
   keluarga; datanya "naik" menggantikan baris transmigran; peristiwa
   direkam `riwayat_kepala_keluarga`. `rules.md` §6.5, detail suksesi UI,

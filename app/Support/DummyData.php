@@ -633,6 +633,14 @@ class DummyData
 
             // Keluarga 8 - YULITA HOAR (P, tanpa pasangan): dua anak.
             [
+                'id_anggota_keluarga' => 30, 'transmigran_id' => 8, 'hubungan' => 'Famili Lain',
+                'nama_lengkap' => 'ANDREAS HOAR', 'nik' => '5321011803050108',
+                'jenis_kelamin' => 'Laki-laki', 'tempat_lahir' => 'BETUN', 'tanggal_lahir' => '1995-03-18',
+                'agama' => 'Katolik', 'kegiatan' => 'Bekerja', 'pendidikan_terakhir' => 'SMA/SMK',
+                'pekerjaan' => 'PETANI', 'pendapatan_per_bulan' => 1300000,
+                'telepon' => '081234567808', 'keterangan' => 'Adik kepala keluarga, mewakili keluarga di POKTAN MEKAR JAYA.',
+            ],
+            [
                 'id_anggota_keluarga' => 28, 'transmigran_id' => 8, 'hubungan' => 'Anak',
                 'nama_lengkap' => 'FIDELIS HOAR', 'nik' => '5321011106120081',
                 'jenis_kelamin' => 'Laki-laki', 'tempat_lahir' => 'BETUN', 'tanggal_lahir' => '2012-06-11',
@@ -649,6 +657,54 @@ class DummyData
                 'telepon' => null, 'keterangan' => null,
             ],
         ];
+    }
+
+    /**
+     * Satu anggota keluarga menurut idnya, atau null bila tidak ada.
+     *
+     * Dipakai saat wakil poktan atau ketua poktan memilih anggota keluarga
+     * dari daftar (Stage B2): nama, NIK, telepon, dan hubungannya dibaca dari
+     * baris ini, bukan diketik ulang.
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function cariAnggotaKeluarga(?int $id): ?array
+    {
+        if ($id === null) {
+            return null;
+        }
+
+        foreach (self::anggotaKeluarga() as $baris) {
+            if ($baris['id_anggota_keluarga'] === $id) {
+                return $baris;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Anggota keluarga dikelompokkan menurut keluarga (transmigran_id).
+     *
+     * Dibaca Alpine pada form poktan agar pilihan wakil/ketua menyempit ke
+     * anggota keluarga yang bersangkutan begitu keluarganya dipilih.
+     *
+     * @return array<int, array<int, array{id: int, nama: string, hubungan: string, nik: string|null}>>
+     */
+    public static function anggotaKeluargaPerKeluarga(): array
+    {
+        $peta = [];
+
+        foreach (self::anggotaKeluarga() as $a) {
+            $peta[$a['transmigran_id']][] = [
+                'id' => $a['id_anggota_keluarga'],
+                'nama' => $a['nama_lengkap'],
+                'hubungan' => $a['hubungan'],
+                'nik' => $a['nik'],
+            ];
+        }
+
+        return $peta;
     }
 
     /**
@@ -2859,22 +2915,39 @@ class DummyData
      */
     public static function poktan(): array
     {
-        return [
-            ['id_poktan' => 1, 'nama' => 'POKTAN MEKAR JAYA', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'asal_ketua' => AsalWakilPoktan::KepalaKeluarga->value, 'ketua_transmigran_id' => 1, 'nama_ketua' => null, 'nik_ketua' => null, 'hubungan_ketua' => null, 'telepon_ketua' => '081234567801', 'email_ketua' => 'yohanes.bere@example.id', 'alamat_ketua' => 'RT 02 RW 01, SP Kapitan Meo', 'tahun_berdiri' => 2016, 'jumlah_anggota' => 24, 'luas_kering_ketua' => null, 'luas_basah_ketua' => null, 'lintang' => -9.5127800, 'bujur' => 124.9131400, 'keterangan' => 'Kelompok aktif mengikuti pelatihan penyuluh setiap musim.', 'dokumen_pendukung' => 'sk-pembentukan-mekar-jaya.pdf'],
-            ['id_poktan' => 2, 'nama' => 'POKTAN SUBUR MAKMUR', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'asal_ketua' => AsalWakilPoktan::KepalaKeluarga->value, 'ketua_transmigran_id' => 2, 'nama_ketua' => null, 'nik_ketua' => null, 'hubungan_ketua' => null, 'telepon_ketua' => '081234567802', 'email_ketua' => null, 'alamat_ketua' => null, 'tahun_berdiri' => 2017, 'jumlah_anggota' => 18, 'luas_kering_ketua' => null, 'luas_basah_ketua' => null, 'lintang' => -9.5476500, 'bujur' => 124.8882300],
+        $data = [
+            ['id_poktan' => 1, 'nama' => 'POKTAN MEKAR JAYA', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'asal_ketua' => AsalWakilPoktan::KepalaKeluarga->value, 'ketua_transmigran_id' => 1, 'ketua_anggota_keluarga_id' => null, 'nama_ketua' => null, 'nik_ketua' => null, 'hubungan_ketua' => null, 'telepon_ketua' => '081234567801', 'email_ketua' => 'yohanes.bere@example.id', 'alamat_ketua' => 'RT 02 RW 01, SP Kapitan Meo', 'tahun_berdiri' => 2016, 'jumlah_anggota' => 24, 'luas_kering_ketua' => null, 'luas_basah_ketua' => null, 'lintang' => -9.5127800, 'bujur' => 124.9131400, 'keterangan' => 'Kelompok aktif mengikuti pelatihan penyuluh setiap musim.', 'dokumen_pendukung' => 'sk-pembentukan-mekar-jaya.pdf'],
+            ['id_poktan' => 2, 'nama' => 'POKTAN SUBUR MAKMUR', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'asal_ketua' => AsalWakilPoktan::KepalaKeluarga->value, 'ketua_transmigran_id' => 2, 'ketua_anggota_keluarga_id' => null, 'nama_ketua' => null, 'nik_ketua' => null, 'hubungan_ketua' => null, 'telepon_ketua' => '081234567802', 'email_ketua' => null, 'alamat_ketua' => null, 'tahun_berdiri' => 2017, 'jumlah_anggota' => 18, 'luas_kering_ketua' => null, 'luas_basah_ketua' => null, 'lintang' => -9.5476500, 'bujur' => 124.8882300],
             // Ketua diwakili anggota keluarga, bukan kepala keluarganya.
             // Keadaan lapangannya: kepala keluarga PETRUS NAHAK merantau,
             // sehingga istrinya yang menggarap dan memimpin kelompok. FK
-            // keluarga TETAP terisi, sebab yang ditunjuk adalah keluarganya;
-            // nama dan NIK diketik sebab sistem tidak mendata anggota
-            // keluarga satu per satu. Luas lahan tetap terbaca dari bidang
-            // milik keluarga PETRUS NAHAK.
-            ['id_poktan' => 3, 'nama' => 'POKTAN TANI BERSATU', 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'asal_ketua' => AsalWakilPoktan::AnggotaKeluarga->value, 'ketua_transmigran_id' => 3, 'nama_ketua' => 'YOVITA NAHAK', 'nik_ketua' => '5321015208820103', 'hubungan_ketua' => HubunganKeluarga::IstriSuami->value, 'telepon_ketua' => '081234567803', 'email_ketua' => null, 'alamat_ketua' => null, 'tahun_berdiri' => 2017, 'jumlah_anggota' => 21, 'luas_kering_ketua' => null, 'luas_basah_ketua' => null, 'lintang' => -9.4988700, 'bujur' => 124.9425600],
+            // keluarga TETAP terisi, sebab yang ditunjuk adalah keluarganya.
+            // Sejak Stage B2 identitas ketua DIPILIH dari daftar anggota
+            // keluarga (`ketua_anggota_keluarga_id` = 8, YOVITA NAHAK SERAN),
+            // tidak diketik. Luas lahan tetap terbaca dari bidang milik
+            // keluarga PETRUS NAHAK.
+            ['id_poktan' => 3, 'nama' => 'POKTAN TANI BERSATU', 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'asal_ketua' => AsalWakilPoktan::AnggotaKeluarga->value, 'ketua_transmigran_id' => 3, 'ketua_anggota_keluarga_id' => 8, 'nama_ketua' => null, 'nik_ketua' => null, 'hubungan_ketua' => null, 'telepon_ketua' => '081234567803', 'email_ketua' => null, 'alamat_ketua' => null, 'tahun_berdiri' => 2017, 'jumlah_anggota' => 21, 'luas_kering_ketua' => null, 'luas_basah_ketua' => null, 'lintang' => -9.4988700, 'bujur' => 124.9425600],
             // Ketua bukan transmigran, melainkan penduduk setempat. Satu-satunya
             // jalur yang mengetik luas lahannya sendiri, sebab bidangnya memang
             // tidak terdata pada tabel lahan.
-            ['id_poktan' => 4, 'nama' => 'POKTAN HARAPAN BARU', 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain', 'asal_ketua' => AsalWakilPoktan::BukanTransmigran->value, 'ketua_transmigran_id' => null, 'nama_ketua' => 'YOSEPH KLAU', 'nik_ketua' => '5321010207700099', 'hubungan_ketua' => null, 'telepon_ketua' => '081234567890', 'email_ketua' => null, 'alamat_ketua' => 'Desa Weain, Kobalima Timur', 'tahun_berdiri' => 2019, 'jumlah_anggota' => 15, 'luas_kering_ketua' => 0.80, 'luas_basah_ketua' => 0.20, 'lintang' => -9.5731200, 'bujur' => 124.8654900],
+            ['id_poktan' => 4, 'nama' => 'POKTAN HARAPAN BARU', 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain', 'asal_ketua' => AsalWakilPoktan::BukanTransmigran->value, 'ketua_transmigran_id' => null, 'ketua_anggota_keluarga_id' => null, 'nama_ketua' => 'YOSEPH KLAU', 'nik_ketua' => '5321010207700099', 'hubungan_ketua' => null, 'telepon_ketua' => '081234567890', 'email_ketua' => null, 'alamat_ketua' => 'Desa Weain, Kobalima Timur', 'tahun_berdiri' => 2019, 'jumlah_anggota' => 15, 'luas_kering_ketua' => 0.80, 'luas_basah_ketua' => 0.20, 'lintang' => -9.5731200, 'bujur' => 124.8654900],
         ];
+
+        // Nama, NIK, dan hubungan ketua DISELESAIKAN di sini lewat identitasWakil,
+        // agar setiap tempat yang menampilkannya (daftar, rincian, laporan)
+        // membaca nilai yang sama tanpa mengulang percabangan tiga jalur.
+        // Jalur Kepala Keluarga membacanya dari relasi transmigran; jalur
+        // Anggota Keluarga dari baris anggota_keluarga (Stage B2); jalur Bukan
+        // Transmigran memakai nilai yang diketik.
+        return array_map(function (array $p): array {
+            $identitas = self::identitasWakil($p, 'ketua');
+
+            return array_merge($p, [
+                'nama_ketua' => $identitas['nama'],
+                'nik_ketua' => $identitas['nik'] === '-' ? null : $identitas['nik'],
+                'hubungan_ketua' => $identitas['hubungan'],
+            ]);
+        }, $data);
     }
 
     /**
@@ -2885,30 +2958,54 @@ class DummyData
      * percabangan yang sama, dan satu di antaranya pasti terlewat saat aturannya
      * berubah.
      *
+     * Sejak Stage B2 (2026-08-28), jalur `Anggota Keluarga` tidak lagi
+     * mengetik nama dan NIK: bila `anggota_keluarga_id` (atau
+     * `ketua_anggota_keluarga_id`) terisi, keduanya beserta telepon dan
+     * hubungan dibaca dari baris `anggota_keluarga`. Nilai yang diketik hanya
+     * dipakai sebagai cadangan bagi data lama yang belum menunjuk id.
+     *
      * @param  array<string, mixed>  $baris  Baris poktan atau anggota_poktan
      * @param  string  $awalan  `ketua` untuk poktan, `wakil` untuk anggota
-     * @return array{nama: string, nik: string, telepon: string|null, asal: AsalWakilPoktan}
+     * @return array{nama: string, nik: string, telepon: string|null, hubungan: string|null, asal: AsalWakilPoktan}
      */
     public static function identitasWakil(array $baris, string $awalan): array
     {
         $asal = AsalWakilPoktan::from($baris["asal_{$awalan}"] ?? $baris['asal_wakil'] ?? $baris['asal_ketua']);
         $keluarga = self::cariTransmigran($baris['ketua_transmigran_id'] ?? $baris['transmigran_id'] ?? null);
 
-        // Jalur Kepala Keluarga membaca lewat relasi; dua jalur lain memakai
-        // nilai yang diketik petugas.
+        // Jalur Kepala Keluarga membaca lewat relasi keluarga.
         if ($asal->identitasDariRelasi() && $keluarga !== null) {
             return [
                 'nama' => $keluarga['nama_kepala_keluarga'],
                 'nik' => $keluarga['nik'],
                 'telepon' => $baris["telepon_{$awalan}"] ?? $keluarga['telepon'] ?? null,
+                'hubungan' => null,
                 'asal' => $asal,
             ];
         }
 
+        // Jalur Anggota Keluarga yang sudah menunjuk baris anggota_keluarga.
+        $anggota = self::cariAnggotaKeluarga(
+            $baris['anggota_keluarga_id'] ?? $baris['ketua_anggota_keluarga_id'] ?? null
+        );
+
+        if ($asal === AsalWakilPoktan::AnggotaKeluarga && $anggota !== null) {
+            return [
+                'nama' => $anggota['nama_lengkap'],
+                'nik' => $anggota['nik'] ?? '-',
+                'telepon' => $anggota['telepon'] ?? ($keluarga['telepon'] ?? null),
+                'hubungan' => $anggota['hubungan'],
+                'asal' => $asal,
+            ];
+        }
+
+        // Cadangan: jalur Bukan Transmigran, atau Anggota Keluarga data lama
+        // yang identitasnya masih diketik.
         return [
             'nama' => $baris["nama_{$awalan}"] ?? '-',
             'nik' => $baris["nik_{$awalan}"] ?? '-',
             'telepon' => $baris["telepon_{$awalan}"] ?? null,
+            'hubungan' => $baris['hubungan_dengan_kk'] ?? $baris['hubungan_ketua'] ?? null,
             'asal' => $asal,
         ];
     }
@@ -2957,11 +3054,12 @@ class DummyData
         $data = [
             ['id_anggota_poktan' => 1, 'poktan_id' => 1, 'poktan' => 'POKTAN MEKAR JAYA', 'transmigran_id' => 1, 'asal_wakil' => $kk, 'nama_wakil' => null, 'nik_wakil' => null, 'telepon_wakil' => null, 'hubungan_dengan_kk' => null, 'jabatan' => 'Anggota', 'tanggal_masuk' => '2016-08-01', 'tanggal_keluar' => null, 'status' => 'Aktif', 'alasan_keluar' => null, 'keterangan' => null],
             ['id_anggota_poktan' => 2, 'poktan_id' => 1, 'poktan' => 'POKTAN MEKAR JAYA', 'transmigran_id' => 2, 'asal_wakil' => $kk, 'nama_wakil' => null, 'nik_wakil' => null, 'telepon_wakil' => null, 'hubungan_dengan_kk' => null, 'jabatan' => 'Sekretaris', 'tanggal_masuk' => '2016-08-01', 'tanggal_keluar' => null, 'status' => 'Aktif', 'alasan_keluar' => null, 'keterangan' => null],
-            // Diwakili anak, sebab kepala keluarganya sudah sepuh. Sengaja ada
-            // agar cabang kedua ikut terlihat saat peninjauan: nama dan NIK
-            // diketik, sedangkan luas lahannya tetap terbaca dari bidang milik
-            // keluarga YULITA HOAR.
-            ['id_anggota_poktan' => 3, 'poktan_id' => 1, 'poktan' => 'POKTAN MEKAR JAYA', 'transmigran_id' => 8, 'asal_wakil' => $anggotaKeluarga, 'nama_wakil' => 'ANDREAS HOAR', 'nik_wakil' => '5321011803050108', 'telepon_wakil' => '081234567808', 'hubungan_dengan_kk' => HubunganKeluarga::Anak->value, 'jabatan' => 'Anggota', 'tanggal_masuk' => '2019-03-12', 'tanggal_keluar' => null, 'status' => 'Aktif', 'alasan_keluar' => null, 'keterangan' => 'Mewakili keluarga sejak 2019.'],
+            // Diwakili adik kepala keluarga, sebab YULITA HOAR mengurus dua
+            // anak kecil. Sejak Stage B2 identitasnya DIPILIH dari daftar
+            // anggota keluarga (`anggota_keluarga_id` = 30), tidak diketik;
+            // nama, NIK, telepon, dan hubungan dibaca dari baris itu. Luas
+            // lahan tetap terbaca dari bidang milik keluarga YULITA HOAR.
+            ['id_anggota_poktan' => 3, 'poktan_id' => 1, 'poktan' => 'POKTAN MEKAR JAYA', 'transmigran_id' => 8, 'asal_wakil' => $anggotaKeluarga, 'anggota_keluarga_id' => 30, 'nama_wakil' => null, 'nik_wakil' => null, 'telepon_wakil' => null, 'hubungan_dengan_kk' => null, 'jabatan' => 'Anggota', 'tanggal_masuk' => '2019-03-12', 'tanggal_keluar' => null, 'status' => 'Aktif', 'alasan_keluar' => null, 'keterangan' => 'Mewakili keluarga sejak 2019.'],
             ['id_anggota_poktan' => 4, 'poktan_id' => 1, 'poktan' => 'POKTAN MEKAR JAYA', 'transmigran_id' => 5, 'asal_wakil' => $kk, 'nama_wakil' => null, 'nik_wakil' => null, 'telepon_wakil' => null, 'hubungan_dengan_kk' => null, 'jabatan' => 'Anggota', 'tanggal_masuk' => '2017-05-20', 'tanggal_keluar' => '2025-09-30', 'status' => 'Sudah Keluar', 'alasan_keluar' => 'Pindah mengikuti keluarga ke SP Weoe.', 'keterangan' => null],
             ['id_anggota_poktan' => 5, 'poktan_id' => 3, 'poktan' => 'POKTAN TANI BERSATU', 'transmigran_id' => 3, 'asal_wakil' => $kk, 'nama_wakil' => null, 'nik_wakil' => null, 'telepon_wakil' => null, 'hubungan_dengan_kk' => null, 'jabatan' => 'Anggota', 'tanggal_masuk' => '2017-02-15', 'tanggal_keluar' => null, 'status' => 'Aktif', 'alasan_keluar' => null, 'keterangan' => null],
             ['id_anggota_poktan' => 6, 'poktan_id' => 4, 'poktan' => 'POKTAN HARAPAN BARU', 'transmigran_id' => 7, 'asal_wakil' => $kk, 'nama_wakil' => null, 'nik_wakil' => null, 'telepon_wakil' => null, 'hubungan_dengan_kk' => null, 'jabatan' => 'Anggota', 'tanggal_masuk' => '2019-01-10', 'tanggal_keluar' => null, 'status' => 'Aktif', 'alasan_keluar' => null, 'keterangan' => null],
@@ -2975,9 +3073,12 @@ class DummyData
             $lahan = self::rekapLahanKeluarga($baris['transmigran_id']);
 
             return $baris + [
+                // Kolom sejak Stage B2; baris lama tidak menunjuk anggota.
+                'anggota_keluarga_id' => $baris['anggota_keluarga_id'] ?? null,
                 'nama' => $identitas['nama'],
                 'nik' => $identitas['nik'],
                 'telepon' => $identitas['telepon'],
+                'hubungan_wakil' => $identitas['hubungan'],
                 'luas_kering' => $lahan['kering'],
                 'luas_basah' => $lahan['basah'],
                 'lintang' => $lahan['lintang'],
