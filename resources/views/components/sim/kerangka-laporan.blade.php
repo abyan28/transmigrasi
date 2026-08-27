@@ -8,11 +8,15 @@
     - judul dokumen,
     - pernyataan cakupan sebagai TEKS di kepala dokumen, bukan kontrol filter
       (rules.md 12 poin 8): wilayah yang dilaporkan dan dasar periodenya,
-    - tempat tabel. Format kolomnya menyusul dari dinas, jadi untuk sekarang
-      hanya penampung berlabel jujur,
+    - tabelnya, dioper lewat slot bawaan. Bila slot kosong, penampung
+      berlabel jujur "format menyusul" yang tampil (untuk laporan yang
+      kolomnya belum ditetapkan).
     - tombol unduh yang jujur "segera hadir": pembangkitan PDF dan Excel
       dikerjakan Tahap 10, sehingga dirender sebagai teks, bukan tombol yang
       tampak berfungsi (ANTISLOP-ID R-26).
+
+    Setiap tabel di dalam slot WAJIB memuat caption sebagai anak pertama
+    (penjaga Temuan 6). Bungkus tabel lebar dengan div overflow-x-auto.
 
     Halaman laporan TIDAK punya penyaring sendiri. Penyaringan diwarisi dari
     halaman daftar pasangan lewat pintasan (belum dipasang per 2026-08-28)
@@ -102,20 +106,27 @@
     </div>
 @endisset
 
-{{-- Tempat tabel. Format kolomnya belum ditetapkan dinas. --}}
-<div class="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center dark:border-gray-700 dark:bg-white/[0.02]">
-    <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-        stroke-width="1.5" aria-hidden="true">
-        <path stroke-linecap="round" stroke-linejoin="round"
-            d="M3.75 6A2.25 2.25 0 016 3.75h12A2.25 2.25 0 0120.25 6v12A2.25 2.25 0 0118 20.25H6A2.25 2.25 0 013.75 18V6zM3.75 9h16.5M9 20.25V9" />
-    </svg>
-    <p class="mt-3 text-theme-sm font-medium text-gray-700 dark:text-gray-300">
-        Format kolom laporan ini sedang disusun bersama dinas.
-    </p>
-    <p class="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
-        Tabel dengan data contoh akan tampil di sini setelah susunan kolomnya ditetapkan.
-    </p>
-</div>
+{{--
+    Isi laporan. Bila halaman mengoper tabelnya lewat slot, itulah yang
+    tampil; bila tidak, penampung jujur "format menyusul".
+--}}
+@if (trim($slot ?? '') !== '')
+    {{ $slot }}
+@else
+    <div class="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center dark:border-gray-700 dark:bg-white/[0.02]">
+        <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+            stroke-width="1.5" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                d="M3.75 6A2.25 2.25 0 016 3.75h12A2.25 2.25 0 0120.25 6v12A2.25 2.25 0 0118 20.25H6A2.25 2.25 0 013.75 18V6zM3.75 9h16.5M9 20.25V9" />
+        </svg>
+        <p class="mt-3 text-theme-sm font-medium text-gray-700 dark:text-gray-300">
+            Format kolom laporan ini sedang disusun bersama dinas.
+        </p>
+        <p class="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
+            Tabel dengan data contoh akan tampil di sini setelah susunan kolomnya ditetapkan.
+        </p>
+    </div>
+@endif
 
 {{-- Unduh: jujur "segera hadir", bukan tombol yang tampak berfungsi (R-26) --}}
 <div class="mt-6 flex flex-wrap gap-2">

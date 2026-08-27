@@ -796,9 +796,32 @@ Rombongan A butir 3–5 dari `notes.md` bagian 6. Kerangka saja; isi kolom tiap 
 
 **Verifikasi:** **635 uji hijau** (naik dari 623); penjaga baru untuk pencabutan tombol ekspor, menu Laporan, kerangka tiap laporan, dan penyaringan rentang; render nyata `/laporan` + 7 laporan + 3 halaman berfilter; `pint` tetap 31.
 
-**Ditunda:** Tahap 2c (isi kolom + data contoh tiap laporan, menunggu format dinas); pintasan laporan dari halaman daftar (bawa filter aktif); pemilih periode untuk laporan lintas modul.
+### Revisi Putaran 2c: isi kolom 7 halaman laporan (2026-08-28) ✅
 
-**Belum dibahas:** Rombongan B, Rombongan C, butir lain bagian 6.
+Lima laporan mengikuti berkas rujukan di `refs/` (dibaca lewat `pdftotext`, baca gambar, `antiword`, unzip xlsx); dua dirancang dari kolom data yang ada.
+
+**Yang dikerjakan:**
+- `app/Support/LaporanData.php` baru: 1 metode per laporan; view tetap tak memanggil `DummyData`
+- `x-sim.kerangka-laporan` merender tabel bila diisi lewat slot
+- Laporan Hasil Panen (kolom Polri MT. I 2025), dikelompokkan per SP + subtotal + total kawasan; Belum Dipanen = tanam - panen - puso
+- Laporan Alsintan (kolom berkas gambar), per SP + subtotal jumlah unit
+- Laporan Saprotan (kolom berkas gambar), **dua bagian**: benih penuh + non-benih penyalurannya saja
+- Laporan Monografi SP: satu baris indikator per SP (monografi penuh menunggu Rombongan C)
+- Rekap Indikator Kawasan: identitas kawasan + blok indikator + rincian per SP
+- Laporan Daftar Poktan (kolom xlsx): anggota per poktan + subtotal luas
+- Laporan Daftar Transmigran: tiga bagian (transmigran, rumah, lahan)
+
+**Ditemukan:** nama field alsintan (`tahun_perolehan` / `sumber_perolehan`) menyimpang dari saprotan (`tahun_pengadaan` / `sumber_dana`) dan dari kedua berkas rujukan. Laporan memakai label rujukan, baca field lama. Penyeragaman = usul revisi.
+
+**Verifikasi:** **648 uji hijau** (naik dari 635); penjaga baru untuk isi tabel, kolom kunci, konsistensi subtotal-total, pemisahan benih/pupuk. `pint` tetap 31.
+
+**Ditunda:**
+- Rombongan B: anggota keluarga (istri + anak) dynamic form + field usia/agama pada form transmigran
+- Rombongan C: field SP Bab II Monografi (untuk Laporan Monografi SP penuh)
+- Pintasan laporan dari halaman daftar (bawa filter aktif)
+- Pemilih periode untuk laporan lintas modul (Rekap Indikator Kawasan, Daftar Transmigran)
+- Penyeragaman nama field alsintan ke `tahun_pengadaan` / `sumber_dana`
+- Butir bagian 6 lain yang belum dibahas
 
 ## Tahap 3 — Autentikasi dan Hak Akses
 

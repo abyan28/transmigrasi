@@ -24,6 +24,7 @@ use App\Enums\SumberDana;
 use App\Helpers\MenuHelper;
 use App\Helpers\RemahHelper;
 use App\Support\DummyData;
+use App\Support\LaporanData;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
@@ -3090,8 +3091,10 @@ it('menyeragamkan kolom aksi berbentuk ikon di seluruh halaman daftar', function
         }
 
         // Hanya halaman utuh yang diperiksa. Berkas form adalah potongan yang
-        // di-include ke dalam modal, dan audit log memang hanya dibaca.
-        if (str_contains($nama, '/form') || str_contains($nama, 'audit-log')) {
+        // di-include ke dalam modal; audit log dan halaman di menu Laporan
+        // memang hanya dibaca, tanpa penyuntingan baris.
+        if (str_contains($nama, '/form') || str_contains($nama, 'audit-log')
+            || str_contains($nama, 'laporan/')) {
             continue;
         }
 
@@ -4350,6 +4353,161 @@ it('memisahkan Laporan Alsintan dari Laporan Saprotan', function () {
     // Judul dokumen keduanya berdiri sendiri.
     expect($this->get('/laporan/alsintan')->getContent())->toContain('<title>Laporan Alsintan |');
     expect($this->get('/laporan/saprotan')->getContent())->toContain('<title>Laporan Saprotan |');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Isi tabel tiap halaman laporan (Tahap 2c, 2026-08-28)
+|--------------------------------------------------------------------------
+|
+| Lima laporan mengikuti berkas rujukan di refs/, dua dirancang dari kolom
+| data yang ada. Datanya disusun App\Support\LaporanData (bukan DummyData di
+| view). Setiap tabel wajib punya <caption> - dijaga terpisah oleh penjaga
+| "memberi nama pada setiap tabel", tetapi diulang di sini agar kegagalan
+| menunjuk laporan yang salah.
+*/
+
+it('mengisi tiap halaman laporan dengan tabel berdata, bukan penampung kosong', function (string $slug) {
+    $isi = $this->get('/laporan/'.$slug)->assertOk()->getContent();
+
+    // Penampung "format menyusul" TIDAK boleh muncul lagi.
+    expect($isi)->not->toContain('Format kolom laporan ini sedang disusun');
+
+    // Ada tabel, dan tiap tabel punya caption sebagai anak pertama.
+    expect(substr_count($isi, '<table'))->toBeGreaterThan(0);
+    expect(substr_count($isi, '<caption'))->toBe(substr_count($isi, '<table'));
+
+    // Cakupan tetap dinyatakan sebagai teks (rules.md 12 poin 8).
+    expect($isi)->toContain('Cakupan laporan')->toContain('segera hadir');
+})->with(['hasil-panen', 'monografi-sp', 'alsintan', 'saprotan', 'indikator-kawasan', 'poktan', 'transmigran']);
+
+it('memuat kolom kunci tiap laporan sesuai berkas rujukannya', function () {
+    // Laporan Hasil Panen: kolom Polri MT. I 2025.
+    expect($this->get('/laporan/hasil-panen')->getContent())
+        ->toContain('Volume Benih')
+        ->toContain('Realisasi Tanam')
+        ->toContain('Realisasi Panen')
+        ->toContain('Puso')
+        ->toContain('Produktivitas')
+        ->toContain('Produksi (ton)')
+        ->toContain('Tahun Pengadaan');
+
+    // Laporan Alsintan: kolom berkas gambar.
+    expect($this->get('/laporan/alsintan')->getContent())
+        ->toContain('Jenis Alat')
+        ->toContain('Sumber Dana')
+        ->toContain('Tahun Pengadaan')
+        ->toContain('Poktan Penerima')
+        ->toContain('Jumlah (Unit)');
+
+    // Laporan Saprotan: dua bagian, kolom berkas gambar.
+    $saprotan = $this->get('/laporan/saprotan')->getContent();
+    expect($saprotan)
+        ->toContain('Bantuan benih')
+        ->toContain('Varietas Benih')
+        ->toContain('Volume Benih')
+        ->toContain('Jadwal Tanam')
+        ->toContain('pupuk, pestisida, dan mulsa');
+
+    // Laporan Daftar Poktan: kolom xlsx.
+    expect($this->get('/laporan/poktan')->getContent())
+        ->toContain('Nama Petani')
+        ->toContain('Sawah (Basah)')
+        ->toContain('Titik Koordinat');
+
+    // Laporan Daftar Transmigran: tiga bagian dari data yang ada.
+    expect($this->get('/laporan/transmigran')->getContent())
+        ->toContain('Kepala Keluarga Transmigran')
+        ->toContain('Data Rumah')
+        ->toContain('Data Lahan');
+});
+
+it('menjumlahkan hasil panen per SP lalu ke total kawasan tanpa selisih', function () {
+    $data = LaporanData::hasilPanen();
+
+    expect($data['kelompok'])->not->toBeEmpty();
+
+    // Total kawasan = jumlah seluruh subtotal SP, untuk tiap kolom angka.
+    foreach (['realisasi_tanam', 'realisasi_panen', 'puso', 'produksi_ton', 'volume_benih'] as $kolom) {
+        $jumlahSubtotal = array_sum(array_column(
+            array_column($data['kelompok'], 'subtotal'), $kolom
+        ));
+        expect(round($jumlahSubtotal, 2))->toBe(round($data['total'][$kolom], 2), "kolom {$kolom} tidak konsisten");
+    }
+
+    // Belum Dipanen = realisasi tanam - realisasi panen - puso, tak pernah negatif.
+    foreach ($data['kelompok'] as $grup) {
+        foreach ($grup['baris'] as $b) {
+            $harusnya = max(0.0, round($b['realisasi_tanam'] - $b['realisasi_panen'] - $b['puso'], 2));
+            expect($b['belum_dipanen'])->toBe($harusnya);
+            expect($b['belum_dipanen'])->toBeGreaterThanOrEqual(0);
+        }
+    }
+});
+
+it('menelusuri varietas dan tahun pengadaan laporan panen sampai ke saprotan benih', function () {
+    // Inti rules.md 9 poin 16: dasar laporan panen adalah tahun pengadaan
+    // BANTUAN, dibaca lewat penanaman.saprotan_id -> saprotan.tahun_pengadaan.
+    $saprotan = collect(DummyData::saprotan())->keyBy('id_saprotan');
+    $penanaman = collect(DummyData::penanaman())->keyBy('id_penanaman');
+
+    $adaVarietas = false;
+
+    // Pembuktian langsung pada satu baris: panen id 1 -> penanaman 1 -> saprotan 1.
+    $benih = $saprotan[$penanaman[1]['saprotan_id']];
+    expect($benih['tahun_pengadaan'])->not->toBeNull();
+    expect($benih['varietas'])->not->toBeNull();
+
+    // Setidaknya satu baris laporan membawa varietas dari benihnya.
+    foreach (LaporanData::hasilPanen()['kelompok'] as $grup) {
+        foreach ($grup['baris'] as $b) {
+            if ($b['varietas'] !== '-' && $b['tahun_pengadaan'] !== null) {
+                $adaVarietas = true;
+            }
+        }
+    }
+    expect($adaVarietas)->toBeTrue();
+});
+
+it('memisahkan bantuan benih dari pupuk pada Laporan Saprotan', function () {
+    // rules.md 9 poin 16, notes 1m.4: pupuk tidak tertaut ke penanaman,
+    // jadi hanya penyalurannya yang dilaporkan, di bagian terpisah.
+    $data = LaporanData::saprotan();
+
+    expect($data['benih'])->not->toBeEmpty();
+    expect($data['nonBenih'])->not->toBeEmpty();
+
+    // Tiap baris benih membawa varietas (wajib bila jenis Benih).
+    foreach ($data['benih'] as $b) {
+        expect($b['varietas'])->not->toBe('-');
+        expect($b['volume_benih'])->toBeGreaterThan(0);
+    }
+
+    // Bagian non-benih tidak boleh memuat jenis Benih.
+    foreach ($data['nonBenih'] as $n) {
+        expect($n['jenis'])->not->toBe('Benih');
+    }
+});
+
+it('menjumlahkan luas lahan anggota tiap poktan pada Laporan Daftar Poktan', function () {
+    $data = LaporanData::poktan();
+
+    expect($data['poktan'])->not->toBeEmpty();
+
+    foreach ($data['poktan'] as $p) {
+        $basah = round(array_sum(array_column($p['anggota'], 'luas_basah')), 2);
+        $kering = round(array_sum(array_column($p['anggota'], 'luas_kering')), 2);
+        expect($p['jumlah_basah'])->toBe($basah);
+        expect($p['jumlah_kering'])->toBe($kering);
+    }
+});
+
+it('menyusun Laporan Daftar Transmigran dari tiga modul tanpa kehilangan baris', function () {
+    $data = LaporanData::transmigran();
+
+    expect(count($data['transmigran']))->toBe(count(DummyData::transmigran()));
+    expect(count($data['rumah']))->toBe(count(DummyData::rumah()));
+    expect(count($data['lahan']))->toBe(count(DummyData::lahan()));
 });
 
 /*

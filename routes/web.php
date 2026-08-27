@@ -9,9 +9,11 @@ use App\Enums\StatusPanen;
 use App\Enums\StatusPengaduan;
 use App\Http\Controllers\DokumenController;
 use App\Support\DummyData;
+use App\Support\LaporanData;
 use App\Support\PenilaianKondisiSp;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 
 /*
 |--------------------------------------------------------------------------
@@ -2511,10 +2513,18 @@ Route::get('/laporan', function () use ($daftarLaporan) {
 
 foreach ($daftarLaporan as $slug => $judul) {
     Route::get('/laporan/'.$slug, function () use ($slug, $judul) {
-        return view('pages.laporan.'.$slug, [
+        // Data tiap laporan disusun di App\Support\LaporanData, satu metode
+        // per laporan (nama slug di-camelCase), agar view tidak memanggil
+        // DummyData langsung (penjaga Ide C).
+        $metode = Str::camel($slug);
+        $data = method_exists(LaporanData::class, $metode)
+            ? LaporanData::$metode()
+            : [];
+
+        return view('pages.laporan.'.$slug, array_merge([
             'title' => $judul,
             'slug' => $slug,
-        ]);
+        ], $data));
     })->name('laporan.'.$slug);
 }
 

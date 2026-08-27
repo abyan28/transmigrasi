@@ -21,8 +21,8 @@
         <p class="text-theme-sm text-gray-600 dark:text-gray-400">
             Tiap laporan adalah satu halaman berformat tetap dengan kolom yang
             ditentukan dinas. Cakupan wilayah dan periodenya ditulis di kepala
-            dokumen, bukan disaring di halaman laporan. Susunan kolomnya sedang
-            disiapkan, sehingga halaman di bawah baru memuat kerangkanya.
+            dokumen, bukan disaring di halaman laporan. Isi tabelnya memakai
+            data contoh sampai sistem tersambung ke data lapangan.
         </p>
 
         <ul class="mt-5 grid gap-3 sm:grid-cols-2">

@@ -1105,6 +1105,59 @@ Render nyata: `/laporan` + 7 halaman laporan, serta `/panen`, `/penanaman`, `/au
 
 ---
 
+## 1o. Tahap 2c: Isi Kolom 7 Halaman Laporan (2026-08-28)
+
+Mengisi kerangka 7 halaman laporan dengan kolom dan data contoh.
+
+### 1o.1 Lima berkas rujukan berhasil dibaca
+
+Mesin ini ternyata **punya** alat ekstraksi yang sebelumnya dikira tidak ada:
+
+| Berkas | Alat | Hasil |
+|---|---|---|
+| `Lap. Akhir Panen Jagung Polri MT. I 2025.pdf` | `pdftotext -layout` | kolom lengkap terbaca |
+| `laporan alsintan.jpeg`, `laporan saprotan.jpeg` | baca gambar | kolom lengkap terbaca |
+| `LAPORAN MONOGRAFI UPT KAPITAN MEO 2025.doc` | `antiword` | 21 halaman naratif terbaca |
+| `Poktan Wilayah Transmigrasi.xlsx` | unzip + regex | ternyata **form kosong**, bukan data terisi |
+
+Catatan `session-notes.md` Putaran 1 sempat menyatakan "mesin tak punya perender PDF"; itu hanya benar untuk **render halaman ke gambar** (`pdftoppm`). Ekstraksi teks berlapis (`pdftotext`) tersedia.
+
+### 1o.2 Pengelompokan per SP, bukan per kecamatan
+
+Berkas rujukan Polri dan alsintan dikelompokkan per **kecamatan** (laporan kabupaten). Sistem ini berpusat pada **Satuan Permukiman** dan hanya memuat satu kawasan (Kobalima Timur), jadi laporan dikelompokkan per SP dengan kolom Kecamatan dan Desa tetap tampil. Subtotal per SP, lalu total kawasan.
+
+### 1o.3 Monografi SP: yang bisa dan yang belum
+
+Monografi UPT asli lima bab, memuat letak astronomis, topografi, iklim, sertifikat tanah, KB, agama, kelembagaan desa. **Tidak satu pun ada di sistem.** Laporan Monografi SP untuk sekarang satu baris indikator per SP (kependudukan, lahan tergarap, produksi, pengaduan). Monografi penuh menunggu field Bab II Keadaan Wilayah (Rombongan C).
+
+### 1o.4 Penyimpangan nama field alsintan ditemukan (belum diperbaiki)
+
+`saprotan` memakai `tahun_pengadaan` / `sumber_dana` (diseragamkan Putaran 1). `alsintan` masih memakai `tahun_perolehan` / `sumber_perolehan`. Kedua berkas rujukan (`laporan alsintan.jpeg`, `laporan saprotan.jpeg`) memakai label "Tahun Pengadaan" / "Sumber Dana". Laporan Alsintan memakai label rujukan sambil membaca field lama. **Penyeragaman nama field alsintan = usul revisi tersendiri**, dicatat di daftar tunggu.
+
+### 1o.5 Dua adaptasi model saprotan
+
+Berkas rujukan saprotan satu baris per poktan dengan kolom "Volume Benih" dan "Volume Pupuk NPK" bersanding. Model kita menyimpan benih dan pupuk sebagai baris terpisah. Laporan Saprotan karena itu **dua bagian**: bagian benih (satu baris per saprotan Benih, kolom penuh dari rujukan) dan bagian non-benih (pupuk/pestisida/mulsa, hanya penyalurannya). Sejalan dengan "dua bagian terpisah" pada rules §9 poin 16.
+
+### 1o.6 Susunan teknis
+
+`app/Support/LaporanData.php` baru: satu metode per laporan, mengembalikan larik untuk view. Rute laporan memanggil `LaporanData::{camelCase(slug)}()`. View tetap tidak memanggil `DummyData` (penjaga Ide C hijau). `x-sim.kerangka-laporan` kini merender `$slot` bila diisi, penampung "format menyusul" hanya bila kosong.
+
+### 1o.7 Verifikasi
+
+**648 uji hijau** (naik dari 635), `pint` tetap 31.
+
+Penjaga baru:
+- Tiap halaman laporan memuat tabel berdata (bukan penampung "format menyusul"), tiap tabel punya `<caption>`.
+- Kolom kunci tiap laporan hadir sesuai berkas rujukannya.
+- Total kawasan Laporan Hasil Panen = jumlah subtotal SP, tanpa selisih; Belum Dipanen tak pernah negatif.
+- Laporan Saprotan memisahkan benih dari pupuk; tiap baris benih membawa varietas.
+- Subtotal luas lahan tiap poktan = jumlah luas anggotanya.
+- Laporan Daftar Transmigran menyusun tiga modul tanpa kehilangan baris.
+
+Satu jebakan: penjaga `<caption>` memindai `<table` juga di dalam komentar Blade (beda dari penjaga `DummyData` yang mengabaikan komentar). Kata `<table>` di doc-comment `kerangka-laporan` sempat memerahkannya; diganti kata biasa.
+
+---
+
 ## 2. Catatan Dokumen Proposal
 
 Lembar pengesahan pada `docs/Revisi_Proposal_Budi_TEP ITS 2026_Kobalima_Timur_Upload_10_6_2026_a.pdf` masih memuat judul dan pengusul dari proposal lain:
@@ -2202,15 +2255,16 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
   * **Selesai 2026-08-27.** `rules.md` §20b baru berisi dua poin: rencana lengkap wajib ditulis ke `session-notes.md` sebelum kode disentuh, dan rencana itu boleh ditimpa tiap sesi sedangkan yang permanen tetap `notes.md` dan `tasklist.md`. Lahir dari sesi yang terhenti di tengah audit tanpa jejak rencana (1g.8). Lihat bagian 1m.6.
 - Pada form di halaman transmigran, tambahkan field usia di mana auto hitung dari field tanggal lahir yg diinputkan oleh user. Tiap tahun nanti usia juga otomatis bertambah. Tambahkan field Agama juga.
 - [done] fitur export/ekspor kita ganti dengan fitur laporan. Jadi nanti ketika klik tombol laporan, redirect ke halaman laporan dan nanti bisa unduh as pdf/excel gitu. Bagaimana menurutmu?
-  * **Kerangka selesai 2026-08-28.** Keputusan 2026-08-17 (tombol ekspor menempel di tiap tabel) dibalik: ternyata belasan kontrol mati R-26. Menu "Laporan" jadi rumah dokumen bernama; komponen `tombol-ekspor` dihapus dari `halaman-daftar` + 9 halaman. `rules.md` §12 ditulis ulang. Isi kolom (Tahap 2c) menunggu format dinas. Lihat bagian 1n.1.
+  * **Kerangka selesai 2026-08-28.** Keputusan 2026-08-17 (tombol ekspor menempel di tiap tabel) dibalik: ternyata belasan kontrol mati R-26. Menu "Laporan" jadi rumah dokumen bernama; komponen `tombol-ekspor` dihapus dari `halaman-daftar` + 9 halaman. `rules.md` §12 ditulis ulang. Lihat bagian 1n.1.
+  * **Isi kolom selesai 2026-08-28 (Tahap 2c).** Ketujuh laporan kini bertabel berisi data contoh; lima mengikuti berkas rujukan di `refs/`. Lihat bagian 1o.
 - [done] kita diskusi apakah perlu menambahkan 1 filter tahun tambahan (2 filter tahun) sehingga nanti muncul data dalam rentang tahun tersebut dalam tiap datatable yg ada. Bagaimana menurutmu?
   * **Selesai 2026-08-28, tetapi TIDAK "tiap datatable".** Hanya daftar transaksi bersumbu waktu yang aman: `/panen`, `/penanaman`, `/audit-log`. Rekap agregat dikecualikan tegas (§9 poin 8b: luas terhitung ganda lintas tahun). `/panen` dan `/penanaman` yang sudah punya tahun tunggal diganti sepasang dari–sampai; `/audit-log` baru dapat filter tahun. Dipusatkan di `DummyData::saringRentangTahun()`. Lihat bagian 1n.3.
 - [fondasi selesai] Kita diskusikan dulu ya hasil pertemuan kemarin kami dengan dinas pertanian terkait format pelaporan hasil panen. Jadi format pelaporannya itu berdasarkan bantuan benih dan pupuk yg dihibahkan dari pemerintah ke poktan. Misal bantuan tersebut menggunakan APBD/APBN tahun 2025, maka walaupun penanaman dan panennya di tahun 2026 semua, maka laporan mereka itu nanti masuknya tetep tahun 2025. Bagaimana menurutmu? Coba kita diskusikan.
   * **Diskusi selesai, fondasi datanya selesai 2026-08-27; halaman laporannya BELUM.** Kolom `saprotan.tahun_pengadaan` (tahun anggaran, diisi petugas), rantai penelusuran `hasil_panen → penanaman.saprotan_id → saprotan.tahun_pengadaan`, dan aturan pengelompokan (`rules.md` §9 poin 16) sudah berdiri, dijaga uji lintas tahun. Basis tahun dipisah menurut tujuan: rekap tetap tahun panen, laporan pakai tahun pengadaan. Pupuk dilaporkan sebagai bagian terpisah sebab tidak tertaut ke penanaman. Lihat bagian 1m.2 sampai 1m.4.
-  * **Kerangka halaman Laporan Hasil Panen berdiri 2026-08-28** bersama enam laporan lain di menu "Laporan" (bagian 1n.2). Dasar periodenya tertulis sebagai teks: "menurut tahun pengadaan bantuan, bukan tahun panen", dengan catatan pupuk sebagai bagian terpisah. Isi kolomnya (Tahap 2c) masih menunggu format dari dinas.
+  * **Halaman Laporan Hasil Panen selesai 2026-08-28** bersama enam laporan lain di menu "Laporan" (bagian 1n.2, 1o). Kolomnya mengikuti "Lap. Akhir Panen Jagung Polri MT. I 2025": identitas poktan, volume benih, varietas, realisasi tanam sampai produksi, dikelompokkan per SP + subtotal + total kawasan. Dasar periode tetap tahun pengadaan bantuan, dengan pupuk di Laporan Saprotan bagian terpisah.
 - Bagaimana menurutmu kalau sistem ini ditambahkan untuk pengisian anggota keluarga? Jika iya, nanti saat pengisian data kepala keluarga di halaman transmigran, ditambah dengan pengisian anggota keluarga (istri + anak2) dengan model tambah form gitu (dynamic form fields). Lalu untuk field form-nya, untuk istri mirip dengan suami (minus field nomor KK), sedangkan untuk anaknya Nama Lengkap, NIK, Jenis Kelamin, Tempat Lahir, Tanggal Lahir, Agama, Pendidikan/Kerja [multi level dropdown] (jika pilih kerja, munculkan form pendidikan terakhir, pekerjaan, dan pendapatan perbulan).
 - [done] Apakah mungkin untuk masing-masing halaman laporan dibuat sekarang? Untuk datanya kita buat dummy dulu agar setidaknya kita bisa menentukan kolom-kolomnya. Kalau kamu setuju, nanti untuk beberapa halaman laporan tertentu akan aku kasih format kolom laporannya.
-  * **Kerangka tujuh halaman selesai 2026-08-28** (bagian 1n.2): judul, pernyataan cakupan, penampung tabel, tombol unduh jujur. Data contoh dan susunan kolom (Tahap 2c) menunggu format kolom dari pemilik proyek untuk beberapa laporan tertentu.
+  * **Tujuh halaman laporan selesai berisi 2026-08-28** (bagian 1n.2, 1o): judul, cakupan sebagai teks, tabel berdata contoh, tombol unduh jujur. Lima mengikuti berkas rujukan (`refs/`), dua (Rekap Indikator Kawasan, Daftar Transmigran) dirancang dari kolom data yang ada. Yang tersisa: monografi SP penuh (Rombongan C), pintasan pembawa filter, pemilih periode laporan lintas modul.
 - [done] Pada halaman saprotan, saat user klik benih, munculkan field form “Varietas”. Tambahkan juga field form “Jadwal Tanam” (Bulan+Tahun). Lalu untuk field form “Tanggal Perolehan”,  ganti dengan Tahun Pengadaan (Tahun).
   * **Selesai 2026-08-27.** `varietas` (VARCHAR, wajib bila jenis Benih — bersyarat sejajar dengan komoditas), `jadwal_tanam` (`CHAR(7)` bentuk `YYYY-MM`, rencana dari berita acara), dan `tahun_pengadaan` (YEAR wajib) menggantikan `tanggal_perolehan`. Sekalian membereskan penyimpangan nama: `tanggal_perolehan` tak pernah ada di kamus data, dan `sumber` diseragamkan menjadi `sumber_dana`. Penjaga varietas dibuktikan lewat mutasi. Lihat bagian 1m.1 dan 1m.7.
 - [done] Pada halaman alsintan, tambahkan field form “Penerima” dari Poktan (bisa dari ketua/anggota).
