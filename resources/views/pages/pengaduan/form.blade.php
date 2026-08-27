@@ -6,7 +6,7 @@
     itu `sumber_laporan` bernilai Petugas (agents/rules.md bagian 10b poin 1a).
 
     Aturan khusus modul ini: bidang penanganan terisi otomatis dari kategori
-    lewat DummyData::petaBidangKategori(), tetapi SELALU DAPAT DITIMPA petugas
+    lewat peta `$petaBidang`, tetapi SELALU DAPAT DITIMPA petugas
     (agents/rules.md bagian 10b poin 7c). Empat kategori sengaja tidak dapat
     disimpulkan bidangnya dan wajib dipilih manual.
 
