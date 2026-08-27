@@ -55,8 +55,10 @@
     x-data="{
         poktanId: @js((string) old('poktan_id', $data['poktan_id'] ?? '')),
         petaSpPoktan: @js($petaSpPoktan),
+        anggotaPerPoktan: @js($anggotaPerPoktan),
 
         get spTerpilih() { return this.petaSpPoktan[this.poktanId] ?? null; },
+        get daftarPenerima() { return this.anggotaPerPoktan[this.poktanId] ?? []; },
     }">
 
     {{-- Bagian 1: identitas alat --}}
@@ -147,6 +149,34 @@
                     </span>
                 </p>
                 <input type="hidden" name="satuan_permukiman_id" :value="spTerpilih?.id ?? ''" />
+            </div>
+
+            {{--
+                Penanda tangan serah terima, BUKAN pemilik. Alat tetap milik
+                kelompok (rules.md 7b poin 1); yang dicatat hanya siapa yang
+                mewakili saat barang diterima, dari berita acara.
+
+                Pilihannya ikut poktan yang dipilih, dan hanya anggota aktif —
+                ketua maupun anggota biasa. Kosong dibiarkan sah, sebab data
+                lama lahir sebelum kolom ini ada.
+            --}}
+            <div>
+                <label for="{{ $awalan }}_penanda_terima_id" class="{{ $kelasLabel }}">
+                    Penerima (Penanda Tangan Serah Terima)
+                </label>
+                <select id="{{ $awalan }}_penanda_terima_id" name="penanda_terima_id"
+                    :disabled="! poktanId" class="{{ $kelasKontrol }}">
+                    <option value="">Belum dicatat</option>
+                    <template x-for="anggota in daftarPenerima" :key="anggota.id">
+                        <option :value="anggota.id"
+                            :selected="anggota.id === @js((string) old('penanda_terima_id', $data['penanda_terima_id'] ?? ''))"
+                            x-text="anggota.nama + ' - ' + anggota.jabatan"></option>
+                    </template>
+                </select>
+                <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400"
+                    x-show="! poktanId" x-cloak>
+                    Pilih kelompok tani lebih dulu.
+                </p>
             </div>
         </div>
     </section>

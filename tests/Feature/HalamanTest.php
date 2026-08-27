@@ -14,6 +14,7 @@ use App\Enums\AlasanPergantianKK;
 use App\Enums\AsalWakilPoktan;
 use App\Enums\BidangPengaduan;
 use App\Enums\JabatanAnggotaPoktan;
+use App\Enums\JenisSaprotan;
 use App\Enums\Kondisi;
 use App\Enums\PendidikanTerakhir;
 use App\Enums\PeruntukanLahan;
@@ -2785,9 +2786,10 @@ it('memakai nilai enum pada data contoh, bukan teks yang menyerupainya', functio
         expect($kondisiSah)->toContain($baris['kondisi']);
     }
 
-    // Saprotan memakai kolom bernama lain untuk hal yang sama.
+    // Saprotan memakai `sumber_dana`, diseragamkan dari `sumber` 2026-08-27
+    // agar sama dengan kamus data 8.4.
     foreach (DummyData::saprotan() as $baris) {
-        expect($sumberSah)->toContain($baris['sumber']);
+        expect($sumberSah)->toContain($baris['sumber_dana']);
     }
 });
 
@@ -6437,6 +6439,77 @@ it('tidak mengirimkan aksi ke alamat berakar domain', function () {
     // uji ini hijau tanpa membuktikan apa pun.
     expect($diperiksa)->toBeGreaterThan(40);
     expect($galat)->toBe([]);
+});
+
+it('menanyakan varietas hanya untuk benih, seperti komoditas', function () {
+    /*
+        Revisi 2026-08-27: benih wajib menyebut varietasnya, jenis lain tidak
+        (rules.md 7c poin 12). Aturannya sama persis dengan komoditas
+        (poin 7), sehingga penjaganya pun sejajar.
+
+        DIPERIKSA PADA KELUARAN TERENDER, bukan pada berkas sumber: yang
+        dijaga adalah kedua field muncul di halaman dan bersyarat pada jenis
+        yang sama. Bentuk kodenya boleh berubah selama perilakunya tetap.
+    */
+    $html = $this->get('/saprotan')->assertOk()->getContent();
+
+    // Kedua field ada, dan keduanya bersyarat pada `benih` yang sama.
+    foreach (['komoditas_id', 'varietas'] as $nama) {
+        expect($html)->toContain('name="'.$nama.'"');
+
+        preg_match('/<(?:input|select)[^>]*name="'.$nama.'"[^>]*>/', $html, $tag);
+        expect($tag[0] ?? '')->toContain(':required="benih"');
+        expect($tag[0] ?? '')->toContain(':disabled="! benih"');
+    }
+
+    // Data contoh: setiap benih punya varietas, jenis lain kosong.
+    foreach (DummyData::saprotan() as $b) {
+        if ($b['jenis'] === JenisSaprotan::Benih->value) {
+            expect($b['varietas'])->not->toBeNull("benih {$b['nama']} tanpa varietas");
+        } else {
+            expect($b['varietas'])->toBeNull("{$b['jenis']} {$b['nama']} punya varietas");
+        }
+    }
+});
+
+it('mengelompokkan laporan panen menurut tahun pengadaan bantuannya', function () {
+    /*
+        Revisi 2026-08-27, dari pertemuan dengan Dinas Pertanian: laporan
+        hasil panen dikelompokkan menurut TAHUN ANGGARAN bantuan benihnya,
+        bukan tahun panen. Bantuan beranggaran 2025 yang dipanen 2026 tetap
+        capaian 2025.
+
+        Yang dibuktikan di sini RANTAI PENELUSURANNYA, bukan halaman laporan
+        (belum dibuat): hasil_panen -> penanaman -> saprotan.tahun_pengadaan
+        wajib menghasilkan tahun yang benar, termasuk untuk kasus lintas
+        tahun.
+    */
+    $penanaman = collect(DummyData::penanaman())->keyBy('id_penanaman');
+    $saprotan = collect(DummyData::saprotan())->keyBy('id_saprotan');
+
+    $lintasThn = 0;
+
+    foreach (DummyData::hasilPanen() as $panen) {
+        $tanam = $penanaman[$panen['penanaman_id']] ?? null;
+        expect($tanam)->not->toBeNull("panen {$panen['id_hasil_panen']} tanpa penanaman");
+
+        $benih = $saprotan[$tanam['saprotan_id']] ?? null;
+        expect($benih)->not->toBeNull("penanaman {$tanam['id_penanaman']} tanpa benih");
+
+        $thnPengadaan = $benih['tahun_pengadaan'];
+        expect($thnPengadaan)->toBeInt();
+
+        // Tahun panen, untuk membandingkan.
+        $thnPanen = $panen['periode_panen'] ? (int) substr($panen['periode_panen'], 0, 4) : null;
+
+        if ($thnPanen !== null && $thnPanen !== $thnPengadaan) {
+            $lintasThn++;
+        }
+    }
+
+    // Data contoh WAJIB memuat minimal satu kasus lintas tahun, sebab tanpa
+    // itu penggantian sumbu tahun tidak membuktikan apa pun.
+    expect($lintasThn)->toBeGreaterThan(0);
 });
 
 it('memberi nama pada setiap tabel', function () {

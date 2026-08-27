@@ -2735,9 +2735,9 @@ class DummyData
      */
     public static function alsintan(): array
     {
-        return [
-            ['id_alsintan' => 1, 'nama_alat' => 'TRAKTOR RODA DUA', 'jumlah' => 2, 'tahun_perolehan' => 2018, 'sumber_perolehan' => 'APBN', 'pemilik' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'kondisi' => 'Baik', 'keterangan' => 'Servis berkala terakhir Maret 2026.', 'foto' => 'foto-traktor-roda-dua.jpg', 'dokumen_pendukung' => 'berita-acara-traktor.pdf'],
-            ['id_alsintan' => 2, 'nama_alat' => 'POMPA AIR', 'jumlah' => 3, 'tahun_perolehan' => 2019, 'sumber_perolehan' => 'APBD Kabupaten', 'pemilik' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'kondisi' => 'Rusak Ringan'],
+        $data = [
+            ['id_alsintan' => 1, 'nama_alat' => 'TRAKTOR RODA DUA', 'jumlah' => 2, 'penanda_terima_id' => 1, 'tahun_perolehan' => 2018, 'sumber_perolehan' => 'APBN', 'pemilik' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'kondisi' => 'Baik', 'keterangan' => 'Servis berkala terakhir Maret 2026.', 'foto' => 'foto-traktor-roda-dua.jpg', 'dokumen_pendukung' => 'berita-acara-traktor.pdf'],
+            ['id_alsintan' => 2, 'nama_alat' => 'POMPA AIR', 'jumlah' => 3, 'penanda_terima_id' => 2, 'tahun_perolehan' => 2019, 'sumber_perolehan' => 'APBD Kabupaten', 'pemilik' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'kondisi' => 'Rusak Ringan'],
             // Dahulu tercatat atas nama YOHANES BERE sebagai milik pribadi.
             // Dialihkan ke poktan tempatnya bernaung, dan `sumber_perolehan`
             // dibetulkan dari 'Pembelian Sendiri' menjadi `Swadaya`: teks lama
@@ -2745,11 +2745,25 @@ class DummyData
             // tidak pernah cocok. Maknanya bergeser wajar, dari dibeli
             // seorang anggota menjadi dibeli kelompok dari iuran anggotanya.
             ['id_alsintan' => 3, 'nama_alat' => 'HAND SPRAYER', 'jumlah' => 1, 'tahun_perolehan' => 2021, 'sumber_perolehan' => 'Swadaya', 'pemilik' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'kondisi' => 'Baik'],
-            ['id_alsintan' => 4, 'nama_alat' => 'MESIN PERONTOK JAGUNG', 'jumlah' => 1, 'tahun_perolehan' => 2020, 'sumber_perolehan' => 'Dinas Pertanian Kabupaten', 'pemilik' => 'POKTAN TANI BERSATU', 'poktan_id' => 3, 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'kondisi' => 'Rusak Berat'],
+            ['id_alsintan' => 4, 'nama_alat' => 'MESIN PERONTOK JAGUNG', 'jumlah' => 1, 'penanda_terima_id' => 5, 'tahun_perolehan' => 2020, 'sumber_perolehan' => 'Dinas Pertanian Kabupaten', 'pemilik' => 'POKTAN TANI BERSATU', 'poktan_id' => 3, 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'kondisi' => 'Rusak Berat'],
             // Dahulu atas nama GABRIEL LEKI, dialihkan ke POKTAN HARAPAN
             // BARU tempatnya bernaung; SP-nya memang sudah sama.
             ['id_alsintan' => 5, 'nama_alat' => 'CANGKUL', 'jumlah' => 8, 'tahun_perolehan' => 2019, 'sumber_perolehan' => 'Swadaya', 'pemilik' => 'POKTAN HARAPAN BARU', 'poktan_id' => 4, 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain', 'kondisi' => 'Baik'],
         ];
+
+        // Nama penanda tangan serah terima dihitung dari anggotaPoktan(),
+        // tidak disimpan: sama alasannya dengan nama wakil pada anggotaPoktan
+        // itu sendiri, yakni agar view tidak mengulang pencarian yang sama.
+        $namaAnggota = [];
+        foreach (self::anggotaPoktan() as $a) {
+            $namaAnggota[$a['id_anggota_poktan']] = $a['nama'];
+        }
+
+        return array_map(function (array $baris) use ($namaAnggota): array {
+            $id = $baris['penanda_terima_id'] ?? null;
+
+            return $baris + ['penanda_terima' => $id === null ? null : ($namaAnggota[$id] ?? null)];
+        }, $data);
     }
 
     /**
@@ -2780,20 +2794,20 @@ class DummyData
     public static function saprotan(): array
     {
         return [
-            ['id_saprotan' => 1, 'jenis' => 'Benih', 'nama' => 'BENIH JAGUNG HIBRIDA', 'komoditas_id' => 1, 'komoditas' => 'JAGUNG', 'jumlah' => 250.0, 'satuan' => 'Kilogram', 'tanggal_perolehan' => '2026-01-15', 'sumber' => 'Dinas Pertanian Kabupaten', 'penerima' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'keterangan' => 'Disalurkan menjelang penanaman awal tahun.', 'foto' => 'foto-benih-jagung.jpg', 'dokumen_pendukung' => 'bast-benih-jagung.pdf'],
-            ['id_saprotan' => 2, 'jenis' => 'Pupuk', 'nama' => 'PUPUK UREA', 'komoditas_id' => null, 'komoditas' => null, 'jumlah' => 1200.0, 'satuan' => 'Kilogram', 'tanggal_perolehan' => '2026-01-20', 'sumber' => 'APBN', 'penerima' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo'],
-            ['id_saprotan' => 3, 'jenis' => 'Pestisida', 'nama' => 'INSEKTISIDA CAIR', 'komoditas_id' => null, 'komoditas' => null, 'jumlah' => 40.0, 'satuan' => 'Liter', 'tanggal_perolehan' => '2026-02-08', 'sumber' => 'Dinas Pertanian Kabupaten', 'penerima' => 'POKTAN TANI BERSATU', 'poktan_id' => 3, 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu'],
+            ['id_saprotan' => 1, 'jenis' => 'Benih', 'nama' => 'BENIH JAGUNG HIBRIDA', 'komoditas_id' => 1, 'komoditas' => 'JAGUNG', 'varietas' => 'Hibrida Bisi-18', 'jadwal_tanam' => '2026-02', 'jumlah' => 250.0, 'satuan' => 'Kilogram', 'tahun_pengadaan' => 2025, 'sumber_dana' => 'Dinas Pertanian Kabupaten', 'penerima' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'keterangan' => 'Disalurkan menjelang penanaman awal tahun.', 'foto' => 'foto-benih-jagung.jpg', 'dokumen_pendukung' => 'bast-benih-jagung.pdf'],
+            ['id_saprotan' => 2, 'jenis' => 'Pupuk', 'nama' => 'PUPUK UREA', 'komoditas_id' => null, 'komoditas' => null, 'varietas' => null, 'jadwal_tanam' => null, 'jumlah' => 1200.0, 'satuan' => 'Kilogram', 'tahun_pengadaan' => 2025, 'sumber_dana' => 'APBN', 'penerima' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo'],
+            ['id_saprotan' => 3, 'jenis' => 'Pestisida', 'nama' => 'INSEKTISIDA CAIR', 'komoditas_id' => null, 'komoditas' => null, 'varietas' => null, 'jadwal_tanam' => null, 'jumlah' => 40.0, 'satuan' => 'Liter', 'tahun_pengadaan' => 2026, 'sumber_dana' => 'Dinas Pertanian Kabupaten', 'penerima' => 'POKTAN TANI BERSATU', 'poktan_id' => 3, 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu'],
             // Sebelumnya tercatat atas nama YOHANES BERE sebagai penerima
             // perorangan. Dialihkan ke poktan tempatnya bernaung, sebab
             // penyaluran perorangan sudah tidak ada lagi.
-            ['id_saprotan' => 4, 'jenis' => 'Benih', 'nama' => 'BENIH PADI IR64', 'komoditas_id' => 2, 'komoditas' => 'PADI', 'jumlah' => 80.0, 'satuan' => 'Kilogram', 'tanggal_perolehan' => '2026-02-12', 'sumber' => 'APBD Provinsi', 'penerima' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo'],
-            ['id_saprotan' => 5, 'jenis' => 'Mulsa', 'nama' => 'MULSA PLASTIK HITAM PERAK', 'komoditas_id' => null, 'komoditas' => null, 'jumlah' => 15.0, 'satuan' => 'Rol', 'tanggal_perolehan' => '2026-03-02', 'sumber' => 'Lembaga Swadaya Masyarakat', 'penerima' => 'POKTAN HARAPAN BARU', 'poktan_id' => 4, 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain'],
+            ['id_saprotan' => 4, 'jenis' => 'Benih', 'nama' => 'BENIH PADI IR64', 'komoditas_id' => 2, 'komoditas' => 'PADI', 'varietas' => 'IR64', 'jadwal_tanam' => '2026-03', 'jumlah' => 80.0, 'satuan' => 'Kilogram', 'tahun_pengadaan' => 2025, 'sumber_dana' => 'APBD Provinsi', 'penerima' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo'],
+            ['id_saprotan' => 5, 'jenis' => 'Mulsa', 'nama' => 'MULSA PLASTIK HITAM PERAK', 'komoditas_id' => null, 'komoditas' => null, 'varietas' => null, 'jadwal_tanam' => null, 'jumlah' => 15.0, 'satuan' => 'Rol', 'tahun_pengadaan' => 2026, 'sumber_dana' => 'Lembaga Swadaya Masyarakat', 'penerima' => 'POKTAN HARAPAN BARU', 'poktan_id' => 4, 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain'],
             // Benih jagung kedua bagi poktan yang sama, sengaja ada agar
             // keadaan "satu poktan memegang dua benih komoditas yang sama"
             // ikut terlihat saat peninjauan. Seluruh isinya sudah terpakai,
             // sehingga ia TIDAK boleh muncul pada pilihan benih di form
             // penanaman - dan itulah yang dijaga uji sisa stok.
-            ['id_saprotan' => 6, 'jenis' => 'Benih', 'nama' => 'BENIH JAGUNG LOKAL', 'komoditas_id' => 1, 'komoditas' => 'JAGUNG', 'jumlah' => 30.0, 'satuan' => 'Kilogram', 'tanggal_perolehan' => '2025-05-20', 'sumber' => 'Swadaya', 'penerima' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'keterangan' => 'Benih swadaya anggota, habis dipakai penanaman Juni 2025.'],
+            ['id_saprotan' => 6, 'jenis' => 'Benih', 'nama' => 'BENIH JAGUNG LOKAL', 'komoditas_id' => 1, 'komoditas' => 'JAGUNG', 'varietas' => 'Lokal Kobalima', 'jadwal_tanam' => '2025-06', 'jumlah' => 30.0, 'satuan' => 'Kilogram', 'tahun_pengadaan' => 2025, 'sumber_dana' => 'Swadaya', 'penerima' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'keterangan' => 'Benih swadaya anggota, habis dipakai penanaman Juni 2025.'],
             // TIGA BENIH SWADAYA, ditambahkan 2026-08-24.
             //
             // Sebelumnya ketiga penanaman yang memakainya dicatat TANPA benih
@@ -2805,9 +2819,9 @@ class DummyData
             // Mendaftarkannya di sini membuat benih swadaya ikut punya STOK.
             // Tanpa itu ia seolah tak terbatas: poktan dapat mencatat
             // penanaman sebanyak apa pun tanpa ada yang menegur.
-            ['id_saprotan' => 7, 'jenis' => 'Benih', 'nama' => 'BIBIT CABAI SEMAI SENDIRI', 'komoditas_id' => 5, 'komoditas' => 'CABAI', 'jumlah' => 1.5, 'satuan' => 'Kilogram', 'tanggal_perolehan' => '2025-11-28', 'sumber' => 'Swadaya', 'penerima' => 'POKTAN TANI BERSATU', 'poktan_id' => 3, 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'keterangan' => 'Disemai anggota dari buah panen sebelumnya.'],
-            ['id_saprotan' => 8, 'jenis' => 'Benih', 'nama' => 'BENIH JAGUNG SWADAYA KELOMPOK', 'komoditas_id' => 1, 'komoditas' => 'JAGUNG', 'jumlah' => 15.0, 'satuan' => 'Kilogram', 'tanggal_perolehan' => '2026-05-30', 'sumber' => 'Swadaya', 'penerima' => 'POKTAN SUBUR MAKMUR', 'poktan_id' => 2, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'keterangan' => 'Dibeli kelompok dari kas iuran anggota.'],
-            ['id_saprotan' => 9, 'jenis' => 'Benih', 'nama' => 'BENIH PADI LOKAL SWADAYA', 'komoditas_id' => 2, 'komoditas' => 'PADI', 'jumlah' => 12.0, 'satuan' => 'Kilogram', 'tanggal_perolehan' => '2025-12-20', 'sumber' => 'Swadaya', 'penerima' => 'POKTAN HARAPAN BARU', 'poktan_id' => 4, 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain', 'keterangan' => 'Sisa gabah panen lalu yang disisihkan untuk benih.'],
+            ['id_saprotan' => 7, 'jenis' => 'Benih', 'nama' => 'BIBIT CABAI SEMAI SENDIRI', 'komoditas_id' => 5, 'komoditas' => 'CABAI', 'varietas' => 'Semai Sendiri', 'jadwal_tanam' => '2025-12', 'jumlah' => 1.5, 'satuan' => 'Kilogram', 'tahun_pengadaan' => 2025, 'sumber_dana' => 'Swadaya', 'penerima' => 'POKTAN TANI BERSATU', 'poktan_id' => 3, 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'keterangan' => 'Disemai anggota dari buah panen sebelumnya.'],
+            ['id_saprotan' => 8, 'jenis' => 'Benih', 'nama' => 'BENIH JAGUNG SWADAYA KELOMPOK', 'komoditas_id' => 1, 'komoditas' => 'JAGUNG', 'varietas' => 'Lokal Kobalima', 'jadwal_tanam' => '2026-06', 'jumlah' => 15.0, 'satuan' => 'Kilogram', 'tahun_pengadaan' => 2026, 'sumber_dana' => 'Swadaya', 'penerima' => 'POKTAN SUBUR MAKMUR', 'poktan_id' => 2, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'keterangan' => 'Dibeli kelompok dari kas iuran anggota.'],
+            ['id_saprotan' => 9, 'jenis' => 'Benih', 'nama' => 'BENIH PADI LOKAL SWADAYA', 'komoditas_id' => 2, 'komoditas' => 'PADI', 'varietas' => 'Lokal Kobalima', 'jadwal_tanam' => '2026-01', 'jumlah' => 12.0, 'satuan' => 'Kilogram', 'tahun_pengadaan' => 2025, 'sumber_dana' => 'Swadaya', 'penerima' => 'POKTAN HARAPAN BARU', 'poktan_id' => 4, 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain', 'keterangan' => 'Sisa gabah panen lalu yang disisihkan untuk benih.'],
         ];
     }
 

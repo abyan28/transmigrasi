@@ -310,7 +310,7 @@
                         <x-sim.empty-state judul="Belum ada penyaluran saprotan"
                             pesan="Penyaluran benih, pupuk, atau pestisida akan tampil di sini." />
                     @else
-                        <x-sim.tabel-ringkas judul="Saprotan yang diterima kelompok tani ini" :kolom="['Jenis', 'Nama', 'Jumlah', 'Tanggal']">
+                        <x-sim.tabel-ringkas judul="Saprotan yang diterima kelompok tani ini" :kolom="['Jenis', 'Nama', 'Jumlah', 'Tahun Pengadaan']">
                             @foreach ($saprotan as $s)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                                     <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
@@ -319,8 +319,8 @@
                                         {{ $s['nama'] }}</td>
                                     <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
                                         {{ number_format($s['jumlah'], 0, ',', '.') }} {{ $s['satuan'] }}</td>
-                                    <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
-                                        {{ \Illuminate\Support\Carbon::parse($s['tanggal_perolehan'])->translatedFormat('d M Y') }}
+                                    <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
+                                        {{ $s['tahun_pengadaan'] }}
                                     </td>
                                 </tr>
                             @endforeach

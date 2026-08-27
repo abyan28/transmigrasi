@@ -750,6 +750,7 @@ Alat dan mesin pertanian.
 | `poktan_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | Kelompok tani pemilik |
 | `nama_alat` | `VARCHAR(255)` | TIDAK | | Traktor, sprayer, cultivator |
 | `jumlah` | `INT UNSIGNED` | TIDAK | | Bawaan 1 |
+| `penanda_terima_id` | `BIGINT UNSIGNED` | YA | FK, IDX | Anggota poktan pemilik yang **menandatangani serah terima**, dari berita acara. BUKAN pemilik: alat tetap milik kelompok (`rules.md` §7b poin 1). Menunjuk `anggota_poktan.id`; ketua maupun anggota biasa sama-sama sah |
 | `tahun_perolehan` | `YEAR` | YA | IDX | |
 | `sumber_perolehan` | `ENUM` | YA | | Lihat §11.3 |
 | `kondisi` | `ENUM` | YA | | Lihat §11.5 |
@@ -771,8 +772,6 @@ Sarana produksi pertanian: benih, pupuk, pestisida, mulsa.
 
 | Kolom | Tipe | Null | Kunci | Keterangan |
 |---|---|---|---|---|
-| Kolom | Tipe | Null | Kunci | Keterangan |
-|---|---|---|---|---|
 | `id_saprotan` | `BIGINT UNSIGNED AUTO_INCREMENT` | TIDAK | PK | |
 | `poktan_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | Kelompok tani penerima |
 | `satuan_permukiman_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | Selalu mengikuti SP poktan penerimanya |
@@ -781,12 +780,15 @@ Sarana produksi pertanian: benih, pupuk, pestisida, mulsa.
 | `jenis` | `ENUM` | TIDAK | IDX | Lihat §11.18 |
 | `nama` | `VARCHAR(255)` | TIDAK | | Contoh: Urea, benih jagung hibrida |
 | `jumlah` | `DECIMAL(12,3)` | TIDAK | | Jumlah yang **diterima**, bukan yang tersisa |
-| `tahun_perolehan` | `YEAR` | YA | IDX | |
-| `tanggal_penyaluran` | `DATE` | YA | | |
+| `varietas` | `VARCHAR(120)` | YA | | **Wajib bila `jenis` = Benih**, kosong bagi jenis lain. Contoh: Hibrida Bisi-18, IR64 |
+| `jadwal_tanam` | `CHAR(7)` | YA | | Rencana tanam bantuan ini dalam bentuk `YYYY-MM`, dari berita acara. Disamakan dengan `penanaman.periode_tanam` agar rencana dan realisasi dapat dibandingkan |
+| `tahun_pengadaan` | `YEAR` | TIDAK | IDX | **Tahun anggaran APBD/APBN yang membiayai bantuan ini**, diisi petugas dari berita acara. BUKAN tahun barang diterima: bantuan anggaran 2025 dapat diserahkan Januari 2026, dan laporan hasil panennya tetap dihitung 2025. Menjadi sumbu pengelompokan laporan panen |
 | `sumber_dana` | `ENUM` | YA | | Lihat §11.3 |
 | `foto` | `VARCHAR(255)` | YA | | Dokumentasi barang saat diterima |
 | `dokumen_pendukung` | `VARCHAR(255)` | YA | | Berita acara penyaluran |
 | `keterangan` | `TEXT` | YA | | |
+
+> **`tahun_perolehan` dan `tanggal_penyaluran` dicabut 2026-08-27.** Keduanya tidak pernah diimplementasikan: form dan data contoh memakai `tanggal_perolehan`, nama yang tak pernah ada di kamus, untuk hal yang berbeda. `tahun_pengadaan` menggantikan keduanya dengan makna yang tegas. Bila dinas kelak memerlukan tanggal serah terima yang persis, `tanggal_penyaluran` dikembalikan sebagai `DATE` nullable beserta tempatnya di form.
 
 **Penerima selalu kelompok tani.** Kolom `transmigran_id` **dicabut 2026-08-22** bersama pilihan "Jenis Penerima" pada formnya, dan `poktan_id` berubah dari nullable menjadi wajib. Seluruh pencatatan Produksi Pertanian berpusat pada poktan; pembagian kepada anggota diatur kelompok sendiri di luar sistem. Menyediakan dua jalur penerima membuat sebagian bantuan tercatat atas nama orang dan sebagian atas nama kelompok, sehingga rekap per poktan tidak pernah utuh.
 

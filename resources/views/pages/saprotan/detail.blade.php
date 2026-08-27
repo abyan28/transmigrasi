@@ -59,6 +59,20 @@
                             </dd>
                         </div>
                     @endif
+                    @if (! empty($data['varietas']))
+                        <div class="flex justify-between gap-3">
+                            <dt class="text-gray-500 dark:text-gray-400">Varietas</dt>
+                            <dd class="text-right font-medium text-gray-800 dark:text-white/90">{{ $data['varietas'] }}</dd>
+                        </div>
+                    @endif
+                    @if (! empty($data['jadwal_tanam']))
+                        <div class="flex justify-between gap-3">
+                            <dt class="text-gray-500 dark:text-gray-400">Jadwal tanam</dt>
+                            <dd class="text-right font-medium text-gray-800 dark:text-white/90">
+                                {{ \Illuminate\Support\Carbon::parse($data['jadwal_tanam'] . '-01')->translatedFormat('F Y') }}
+                            </dd>
+                        </div>
+                    @endif
                     <div class="flex justify-between gap-3">
                         <dt class="text-gray-500 dark:text-gray-400">Jumlah diterima</dt>
                         <dd class="text-right font-medium tabular-nums text-gray-800 dark:text-white/90">
@@ -97,14 +111,14 @@
                         </div>
                     @endif
                     <div class="flex justify-between gap-3">
-                        <dt class="text-gray-500 dark:text-gray-400">Tanggal perolehan</dt>
-                        <dd class="text-right font-medium text-gray-800 dark:text-white/90">
-                            {{ \Illuminate\Support\Carbon::parse($data['tanggal_perolehan'])->translatedFormat('d F Y') }}
+                        <dt class="text-gray-500 dark:text-gray-400">Tahun pengadaan</dt>
+                        <dd class="text-right font-medium tabular-nums text-gray-800 dark:text-white/90">
+                            {{ $data['tahun_pengadaan'] }}
                         </dd>
                     </div>
                     <div class="flex justify-between gap-3">
-                        <dt class="text-gray-500 dark:text-gray-400">Sumber</dt>
-                        <dd class="text-right font-medium text-gray-800 dark:text-white/90">{{ $data['sumber'] }}</dd>
+                        <dt class="text-gray-500 dark:text-gray-400">Sumber dana</dt>
+                        <dd class="text-right font-medium text-gray-800 dark:text-white/90">{{ $data['sumber_dana'] ?? '-' }}</dd>
                     </div>
                     <div class="flex justify-between gap-3">
                         <dt class="text-gray-500 dark:text-gray-400">Satuan permukiman</dt>

@@ -109,6 +109,21 @@
                 </p>
             </div>
 
+            {{--
+                Varietas hanya ditanya untuk benih, alasan yang sama dengan
+                komoditas (rules.md 7c poin 12). Ia menentukan perlakuan tanam;
+                pupuk dan pestisida tidak punya varietas.
+            --}}
+            <div x-show="benih" x-cloak x-transition>
+                <label for="{{ $awalan }}_varietas" class="{{ $kelasLabel }}">
+                    Varietas<span class="text-error-500">*</span>
+                </label>
+                <input type="text" id="{{ $awalan }}_varietas" name="varietas"
+                    :required="benih" :disabled="! benih" maxlength="120"
+                    value="{{ old('varietas', $data['varietas'] ?? '') }}"
+                    placeholder="Contoh: Hibrida Bisi-18, IR64" class="{{ $kelasKontrol }}" />
+            </div>
+
             <div>
                 <label for="{{ $awalan }}_jumlah" class="{{ $kelasLabel }}">Jumlah<span class="text-error-500">*</span></label>
                 <input type="number" id="{{ $awalan }}_jumlah" name="jumlah" required
@@ -130,18 +145,34 @@
             </div>
 
             <div>
-                <label for="{{ $awalan }}_tanggal_perolehan" class="{{ $kelasLabel }}">Tanggal Perolehan</label>
-                <input type="date" id="{{ $awalan }}_tanggal_perolehan" name="tanggal_perolehan"
-                    value="{{ old('tanggal_perolehan', $data['tanggal_perolehan'] ?? '') }}"
-                    max="{{ date('Y-m-d') }}" class="{{ $kelasKontrol }}" />
+                <label for="{{ $awalan }}_tahun_pengadaan" class="{{ $kelasLabel }}">
+                    Tahun Pengadaan<span class="text-error-500">*</span>
+                </label>
+                <input type="number" id="{{ $awalan }}_tahun_pengadaan" name="tahun_pengadaan" required
+                    value="{{ old('tahun_pengadaan', $data['tahun_pengadaan'] ?? '') }}" min="2000"
+                    max="{{ date('Y') }}" class="{{ $kelasKontrol }} tabular-nums" />
+                <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                    Tahun anggaran APBD/APBN yang membiayai bantuan ini, dari berita acara.
+                    BUKAN tahun barang diterima: laporan hasil panen mengikuti tahun ini.
+                </p>
             </div>
 
             <div>
-                <label for="{{ $awalan }}_sumber" class="{{ $kelasLabel }}">Sumber Dana</label>
-                <select id="{{ $awalan }}_sumber" name="sumber" class="{{ $kelasKontrol }}">
+                <label for="{{ $awalan }}_jadwal_tanam" class="{{ $kelasLabel }}">Jadwal Tanam</label>
+                <input type="month" id="{{ $awalan }}_jadwal_tanam" name="jadwal_tanam"
+                    value="{{ old('jadwal_tanam', $data['jadwal_tanam'] ?? '') }}"
+                    class="{{ $kelasKontrol }}" />
+                <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                    Rencana tanam dari berita acara. Realisasinya dicatat terpisah saat penanaman.
+                </p>
+            </div>
+
+            <div>
+                <label for="{{ $awalan }}_sumber_dana" class="{{ $kelasLabel }}">Sumber Dana</label>
+                <select id="{{ $awalan }}_sumber_dana" name="sumber_dana" class="{{ $kelasKontrol }}">
                     <option value="">Pilih sumber</option>
                     @foreach ($opsiSumberDana as $nilaiRef => $labelRef)
-                        <option value="{{ $nilaiRef }}" @selected(old('sumber', $data['sumber'] ?? '') === $nilaiRef)>
+                        <option value="{{ $nilaiRef }}" @selected(old('sumber_dana', $data['sumber_dana'] ?? '') === $nilaiRef)>
                             {{ $nilaiRef }}
                         </option>
                     @endforeach

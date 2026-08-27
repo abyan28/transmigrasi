@@ -374,10 +374,11 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **-*
 3. Setiap alsintan wajib ditautkan ke poktan pemiliknya. **Satuan permukiman mengikuti poktan itu**, tidak dipilih terpisah, sebab isian mandiri hanya membuka peluang satu alat tercatat di SP yang berbeda dari kelompoknya.
 4. Setiap alsintan dapat dilampiri dokumen pendukung.
 5. Alsintan harus dapat direkap per desa/SP, per poktan, dan per jenis alat.
+6. **Penanda tangan serah terima dicatat, dan itu bukan kepemilikan.** Field "Penerima" pada form menunjuk anggota poktan pemilik yang menandatangani berita acara. Alat tetap milik kelompok (poin 1); yang direkam hanya siapa yang mewakili saat barang diterima. Pilihannya dibatasi anggota poktan yang bersangkutan, ketua maupun anggota biasa.
 
 ### 7c. Aturan Fitur Saprotan
 1. Saprotan mencatat sarana produksi pertanian seperti benih, pupuk, pestisida, dan mulsa.
-2. Setiap penyaluran wajib mencatat jenis saprotan, jumlah, satuan, dan waktu perolehan.
+2. Setiap penyaluran wajib mencatat jenis saprotan, jumlah, satuan, dan **tahun pengadaan**.
 3. **Penerima saprotan selalu kelompok tani**, dan wajib ditautkan ke poktan penerimanya. Penyaluran kepada individu transmigran dicabut 2026-08-22: seluruh pencatatan Produksi Pertanian berpusat pada poktan, dan pembagian kepada anggota diatur kelompok sendiri di luar sistem.
 4. **Satuan permukiman mengikuti poktan penerimanya**, tidak dipilih terpisah. Poktan sudah menyimpan SP-nya, sehingga isian mandiri hanya membuka peluang satu penyaluran tercatat di SP yang berbeda dari kelompoknya.
 5. Setiap penyaluran dapat dilampiri dokumen pendukung.
@@ -386,6 +387,9 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **-*
 8. **Sisa benih dihitung, tidak disimpan.** Nilainya adalah jumlah yang disalurkan dikurangi seluruh pemakaian pada penanaman. Menyimpannya sebagai kolom menuntut koreksi setiap kali satu baris penanaman disunting, dan koreksi yang terlewat tidak akan pernah ketahuan.
 9. **Benih yang stoknya habis tidak lagi ditawarkan** pada form penanaman; petugas harus mendata penyaluran baru lebih dulu. Penguncian terjadi ketika stoknya habis, **bukan** ketika pertama kali dipakai — sebab satu bantuan lazim dipakai bertahap untuk beberapa kali tanam, dan mengunci pada pemakaian pertama membuat penanaman berikutnya mustahil dicatat.
 10. Pemakaian benih tidak boleh melebihi jumlah yang disalurkan.
+11. **Tahun pengadaan adalah tahun anggaran, bukan tahun barang diterima.** Bantuan APBD/APBN 2025 dapat diserahkan Januari 2026; laporan hasil panennya tetap masuk 2025 (ditetapkan Dinas Pertanian). Diisi petugas dari berita acara, tidak diturunkan dari tanggal apa pun. Menjadi sumbu pengelompokan laporan hasil panen (§8d).
+12. **Benih wajib menyebut varietasnya**, jenis lain tidak. Alasannya sama dengan poin 7: benih selalu benih varietas tertentu, dan varietas menentukan perlakuan tanam. Pupuk dan pestisida tidak punya varietas.
+13. **Jadwal tanam bersifat rencana**, dicatat dari berita acara dalam bentuk `YYYY-MM`. Ia BUKAN realisasi: kapan bantuan benar-benar ditanam dicatat `penanaman.periode_tanam`. Selisih keduanya justru berguna dilaporkan.
 
 ### 7d. Aturan Fitur Penanaman
 1. Penanaman dicatat **per kelompok tani**, bukan per bidang lahan maupun per petani (ditetapkan 2026-08-22). Lapangan membenarkannya: laporan bantuan benih mencatat satu baris per poktan.
@@ -474,6 +478,9 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **-*
 13. **Kualitas panen dicabut 2026-08-22** atas keputusan pemilik proyek, digantikan produktivitas. Label mutu menuntut penilaian yang tidak dapat diverifikasi, sedangkan produktivitas per hektare dihitung dari timbangan.
 14. **Periode panen dicatat sebagai bulan**, bukan tanggal. Panen satu hamparan berlangsung berhari-hari, sehingga menuntut satu tanggal pasti membuat petugas menebak.
 15. Setiap catatan panen dapat dilampiri dokumen pendukung: berita acara panen, foto hamparan, atau bukti timbangan.
+16. **Laporan hasil panen untuk Dinas Pertanian dikelompokkan menurut `saprotan.tahun_pengadaan`**, bukan tahun panen (ditetapkan dari pertemuan dengan Dinas Pertanian). Bantuan benih beranggaran 2025 yang ditanam dan dipanen 2026 tetap dilaporkan sebagai capaian 2025. Penelusurannya lewat rantai yang sudah ada: `hasil_panen.penanaman_id` -> `penanaman.saprotan_id` -> `saprotan.tahun_pengadaan`.
+16a. **Sumbu ini KHUSUS laporan, tidak menggantikan rekap.** Rekap panen dan dashboard tetap memakai tahun panen (§9 poin 8c) sebab menjawab pertanyaan berbeda: rekap menjawab "apa yang terjadi tahun ini", laporan menjawab "apa hasil dari bantuan anggaran 2025". Masing-masing wajib menyebut basisnya pada judul agar angka yang sama tidak tertukar.
+16b. **Pupuk, pestisida, dan mulsa tidak tertaut ke penanaman**, sehingga laporannya berdiri sebagai bagian terpisah: penyalurannya per poktan per tahun pengadaan, tanpa rantai ke hasil panen. Menyatukannya paksa dengan bagian benih berarti mengarang kaitan yang tidak didata.
 
 ### 10. Aturan Fitur Infrastruktur SP
 1. Fitur infrastruktur berisi **pendataan aset**, bukan pelaporan masalah. Pelaporan kerusakan ditangani fitur Pengaduan (Â§10b).
@@ -940,3 +947,8 @@ Setiap kali selesai mengerjakan satu tugas/fitur, AI wajib memperbarui `agents/t
 | **Teknis** | Dampak ke impor, ekspor, halaman statis, middleware, dan uji penjaga yang berbasis daftar rute |
 
 11. Hasil penyisiran disampaikan **sebelum** kode ditulis, dengan menandai mana yang butuh keputusan pemilik proyek dan mana yang sudah ada usulan penanganannya. Tujuannya menekan revisi susulan akibat kasus yang sebenarnya dapat diperkirakan sejak awal.
+
+#### 20b. Menulis rencana sebelum eksekusi
+
+12. **Sebelum menyentuh kode, AI wajib menuliskan rencana pengerjaan yang lengkap ke `agents/session-notes.md`**: berkas yang akan disunting, keputusan yang sudah diambil pemilik proyek, penjaga yang wajib dipatuhi, dan cara verifikasinya. Rencana yang hanya hidup di kepala AI hilang begitu sesi berganti atau terputus, dan agent berikutnya harus menebak-nebak dari diff yang setengah jadi. Aturan ini lahir dari sesi yang terhenti di tengah audit tanpa jejak rencana yang dapat dibaca (`notes.md` 1g.8).
+13. Rencana di `session-notes.md` bersifat sementara dan boleh ditimpa tiap sesi; yang permanen tetap `notes.md` dan `tasklist.md`.

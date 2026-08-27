@@ -72,6 +72,12 @@
                             </a>
                         </dd>
                     </div>
+                    <div class="flex justify-between gap-3">
+                        <dt class="text-gray-500 dark:text-gray-400">Penerima serah terima</dt>
+                        <dd class="text-right font-medium text-gray-800 dark:text-white/90">
+                            {{ $data['penanda_terima'] ?? 'Belum dicatat' }}
+                        </dd>
+                    </div>
                 </dl>
             </div>
         </aside>

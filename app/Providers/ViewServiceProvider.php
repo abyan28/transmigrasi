@@ -39,7 +39,7 @@ class ViewServiceProvider extends ServiceProvider
      * @var array<string, list<string>>
      */
     private const RUJUKAN_FORM = [
-        'pages.alsintan.form' => ['daftarPoktan', 'opsiKondisi', 'opsiSumberDana'],
+        'pages.alsintan.form' => ['daftarPoktan', 'opsiKondisi', 'opsiSumberDana', 'anggotaPerPoktan'],
         'pages.saprotan.form' => ['daftarPoktan', 'daftarSatuan', 'daftarKomoditas', 'opsiSumberDana'],
         'pages.infrastruktur.form' => ['daftarSp', 'opsiJenisInfrastruktur', 'opsiSumberDana', 'opsiKondisi'],
         'pages.komoditas.form' => ['daftarSatuan', 'sebaran', 'opsiTipeKomoditas'],
@@ -251,6 +251,25 @@ class ViewServiceProvider extends ServiceProvider
                 ->all(),
 
             'petaBenih' => self::petaBenih(),
+
+            /*
+             * Anggota AKTIF tiap poktan, dipetakan menurut id poktannya.
+             *
+             * Dibaca Alpine pada form alsintan agar pilihan "Penerima" ikut
+             * berubah begitu kelompok tani dipilih, tanpa permintaan tambahan
+             * ke peladen. Anggota yang sudah keluar tidak ditawarkan sebagai
+             * penanda tangan serah terima baru.
+             */
+            'anggotaPerPoktan' => collect(DummyData::anggotaPoktan())
+                ->filter(fn ($a) => $a['status'] === 'Aktif')
+                ->groupBy(fn ($a) => (string) $a['poktan_id'])
+                ->map(fn ($grup) => $grup->map(fn ($a) => [
+                    'id' => (string) $a['id_anggota_poktan'],
+                    'nama' => $a['nama'],
+                    'jabatan' => $a['jabatan'],
+                ])->values()->all())
+                ->all(),
+
             default => throw new \InvalidArgumentException("Kunci rujukan tidak dikenal: {$kunci}"),
         };
     }
