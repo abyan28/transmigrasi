@@ -284,7 +284,13 @@ Route::post('/atur-ulang-sandi', function () {
 })->name('atur-ulang-sandi');
 
 Route::get('/profil', function () {
-    return view('pages.profil.index', ['title' => 'Profil Saya']);
+    $pengguna = DummyData::penggunaSaatIni();
+
+    return view('pages.profil.index', [
+        'title' => 'Profil Saya',
+        'pengguna' => $pengguna,
+        'inisialPengguna' => DummyData::inisial($pengguna['nama']),
+    ]);
 })->name('profil');
 
 Route::put('/profil', function () {
@@ -305,7 +311,17 @@ Route::put('/profil/kata-sandi', function () {
 // Galeri komponen bersama, halaman internal untuk pengembangan.
 // Dihapus sebelum penyerahan akhir.
 Route::get('/galeri-komponen', function () {
-    return view('pages.galeri-komponen', ['title' => 'Galeri Komponen']);
+    // Halaman peninjauan komponen, dijadwalkan dihapus bersama `uji-403`.
+    // Tetap disisir ide C agar penjaga "view tidak mengambil datanya sendiri"
+    // tidak perlu memuat pengecualian yang lalu terlupa dicabut.
+    return view('pages.galeri-komponen', [
+        'title' => 'Galeri Komponen',
+        'ringkasan' => DummyData::ringkasanDashboard(),
+        'transmigran' => DummyData::transmigran(),
+        'daftarSp' => DummyData::satuanPermukiman(),
+        'opsiPrioritasPengaduan' => DummyData::opsiReferensi(JenisReferensi::PrioritasPengaduan),
+        'opsiKondisiRumah' => DummyData::opsiReferensi(JenisReferensi::KondisiRumah),
+    ]);
 })->name('galeri-komponen');
 
 // Pemicu halaman 403 untuk peninjauan tampilan. RBAC yang memicunya secara
@@ -1373,7 +1389,11 @@ Route::delete('/panen/{id}', function () {
 |
 */
 Route::get('/pengaduan-warga', function () {
-    return view('pages.publik.pengaduan', ['title' => 'Kirim Pengaduan']);
+    return view('pages.publik.pengaduan', [
+        'title' => 'Kirim Pengaduan',
+        'daftarSp' => DummyData::satuanPermukiman(),
+        'opsiKategoriPengaduan' => DummyData::opsiReferensi(JenisReferensi::KategoriPengaduan),
+    ]);
 })->name('pengaduan-warga');
 
 Route::post('/pengaduan-warga', function (Illuminate\Http\Request $permintaan) {
@@ -1390,20 +1410,44 @@ Route::post('/pengaduan-warga', function (Illuminate\Http\Request $permintaan) {
         ->with('email_pelapor', $permintaan->input('email_pelapor'));
 })->name('pengaduan-warga.kirim');
 
-Route::get('/lacak-pengaduan', function () {
-    return view('pages.publik.lacak', ['title' => 'Lacak Pengaduan']);
-})->name('lacak-pengaduan');
+/*
+ * Pelacakan pengaduan, dipakai DUA rute.
+ *
+ * Nomor dapat datang dari dua arah: kueri `?nomor=` milik formulir, dan segmen
+ * rute `/lacak-pengaduan/{nomor}` yang menjadi tautan tetap. Keduanya sah, dan
+ * yang kedua membuat halaman ini tetap berfungsi pada build statis yang tidak
+ * dapat melayani kueri.
+ */
+$susunLacakPengaduan = function (?string $nomorRute = null) {
+    $nomor = trim((string) ($nomorRute ?? request('nomor', '')));
+    $pengaduan = null;
+    $riwayat = [];
+
+    if ($nomor !== '') {
+        $pengaduan = collect(DummyData::pengaduan())
+            ->firstWhere('nomor_pengaduan', mb_strtoupper($nomor));
+
+        if ($pengaduan) {
+            $riwayat = DummyData::penangananPengaduan($pengaduan['nomor_pengaduan']);
+        }
+    }
+
+    return view('pages.publik.lacak', [
+        'title' => 'Lacak Pengaduan',
+        'nomor' => $nomor,
+        'pengaduan' => $pengaduan,
+        'riwayat' => $riwayat,
+    ]);
+};
+
+Route::get('/lacak-pengaduan', fn () => $susunLacakPengaduan())->name('lacak-pengaduan');
 
 // Tautan tetap per nomor pengaduan. Hasil pencarian menjadi dapat ditandai dan
 // dibagikan, dan inilah yang membuat halaman lacak tetap bekerja pada build
 // statis GitHub Pages, tempat kueri `?nomor=` tidak dapat dilayani.
 // Lihat agents/notes.md bagian 1b.
-Route::get('/lacak-pengaduan/{nomor}', function (string $nomor) {
-    return view('pages.publik.lacak', [
-        'title' => 'Lacak Pengaduan',
-        'nomorRute' => $nomor,
-    ]);
-})->where('nomor', '[A-Za-z0-9\-]+')->name('lacak-pengaduan.nomor');
+Route::get('/lacak-pengaduan/{nomor}', fn (string $nomor) => $susunLacakPengaduan($nomor))
+    ->where('nomor', '[A-Za-z0-9\-]+')->name('lacak-pengaduan.nomor');
 
 /*
 |--------------------------------------------------------------------------
@@ -1585,9 +1629,40 @@ Route::delete('/pengaduan/{id}', function () {
 | dibungkus komponen x-sim.halaman-daftar agar tidak menyalin markup.
 |
 */
-Route::get('/kependudukan/rekap', function () {
-    return view('pages.kependudukan.rekap', ['title' => 'Rekap Kependudukan']);
-})->name('kependudukan.rekap');
+/*
+ * Rekap kependudukan, dipakai DUA rute seperti rekap panen dan rekap pengaduan.
+ */
+$susunRekapKependudukan = function (?string $kelompokRute = null) {
+    return view('pages.kependudukan.rekap', [
+        'title' => 'Rekap Kependudukan',
+        'kelompok' => $kelompokRute ?? request('kelompok', 'tahun'),
+        'perTahun' => DummyData::rekapKependudukan(),
+        'perSp' => DummyData::rekapPerSp(),
+        'penghuni' => DummyData::rekapPenghuni(),
+        'pekerjaan' => DummyData::sebaranPekerjaan(),
+        'daerahAsal' => DummyData::sebaranDaerahAsal(),
+        'pendidikan' => DummyData::sebaranPendidikan(),
+        'ringkasan' => DummyData::ringkasanDashboard(),
+
+        /*
+         * Daftar ini WAJIB sejalan dengan batasan `where` pada rute
+         * `kependudukan.rekap.kelompok` dan larik pada DaftarTautanStatis.
+         * Ketiganya mengunci hal yang sama, dan mengubah salah satunya saja
+         * membuat halaman terbit membalas 404 tanpa penjaga apa pun
+         * (notes.md 1e.5).
+         */
+        'labelKelompok' => [
+            'tahun' => 'Tahun',
+            'sp' => 'Satuan Permukiman',
+            'status' => 'Status Tinggal',
+            'pekerjaan' => 'Pekerjaan',
+            'asal' => 'Daerah Asal',
+            'pendidikan' => 'Pendidikan',
+        ],
+    ]);
+};
+
+Route::get('/kependudukan/rekap', fn () => $susunRekapKependudukan())->name('kependudukan.rekap');
 
 /*
  * Tautan tetap pemilih kelompok rekap kependudukan.
@@ -1604,12 +1679,8 @@ Route::get('/kependudukan/rekap', function () {
  * dan larik pada DaftarTautanStatis. Mengubah salah satunya saja membuat
  * halaman terbit membalas 404 tanpa penjaga apa pun.
  */
-Route::get('/kependudukan/rekap/{kelompok}', function (string $kelompok) {
-    return view('pages.kependudukan.rekap', [
-        'title' => 'Rekap Kependudukan',
-        'kelompokRute' => $kelompok,
-    ]);
-})->where('kelompok', 'tahun|sp|status|pekerjaan|asal|pendidikan')->name('kependudukan.rekap.kelompok');
+Route::get('/kependudukan/rekap/{kelompok}', fn (string $kelompok) => $susunRekapKependudukan($kelompok))
+    ->where('kelompok', 'tahun|sp|status|pekerjaan|asal|pendidikan')->name('kependudukan.rekap.kelompok');
 
 Route::get('/poktan', function () {
     $semua = DummyData::poktan();

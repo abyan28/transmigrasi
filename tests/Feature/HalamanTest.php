@@ -6244,3 +6244,40 @@ it('menuliskan seluruh teks antarmuka dalam bahasa Indonesia', function () {
 
     expect(array_values(array_unique($galat)))->toBe([]);
 });
+
+it('melarang view mengambil datanya sendiri', function () {
+    /*
+        Penjaga hasil ide C, ditambahkan 2026-08-27.
+
+        View menampilkan; rute dan ViewServiceProvider yang mengambil data.
+        Aturannya bukan soal kerapian melainkan biaya Tahap 4: selama view
+        memanggil sendiri sumber datanya, mengganti `DummyData` dengan Eloquent
+        berarti menyunting berkas viewnya, dan setiap pemanggilan yang berada
+        di dalam perulangan berubah menjadi satu kueri per baris.
+
+        Penyisiran ini menemukan tujuh N+1 nyata, seluruhnya berbentuk sama:
+        satu pemanggilan yang menelusuri seluruh tabel, diletakkan di dalam
+        `@foreach`.
+
+        Larangan ini WAJIB punya penjaga, sebab pelanggarannya tidak
+        memerahkan apa pun. View yang memanggil datanya sendiri tetap merender
+        halaman yang benar; yang membusuk hanya biaya penggantiannya kelak.
+        Itu persis bentuk yang sudah tercatat pada notes.md 1g.5.
+    */
+    $galat = [];
+
+    foreach (BerkasBlade::semua() as $path) {
+        $isi = file_get_contents($path);
+        $nama = BerkasBlade::namaPendek($path);
+
+        foreach (preg_split('/\r?\n/', $isi) as $nomor => $baris) {
+            // Hanya pemanggilan sungguhan; penyebutan di dalam komentar
+            // penjelas dibiarkan, sebab yang dilarang adalah pengambilan data.
+            if (preg_match('/DummyData::\w+\s*\(/', $baris) === 1) {
+                $galat[] = $nama.':'.($nomor + 1).' '.trim($baris);
+            }
+        }
+    }
+
+    expect($galat)->toBe([]);
+});

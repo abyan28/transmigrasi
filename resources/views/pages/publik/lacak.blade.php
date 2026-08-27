@@ -16,25 +16,11 @@
 
 @section('content')
     @php
-        use App\Support\DummyData;
         use App\Enums\StatusPengaduan;
 
-        // Nomor dapat datang dari dua arah: kueri `?nomor=` milik formulir, dan
-        // segmen rute `/lacak-pengaduan/{nomor}` yang menjadi tautan tetap.
-        // Keduanya sah, dan yang kedua membuat halaman ini tetap berfungsi pada
-        // build statis yang tidak dapat melayani kueri.
-        $nomor = trim((string) ($nomorRute ?? request('nomor', '')));
-        $pengaduan = null;
-        $riwayat = [];
-
-        if ($nomor !== '') {
-            $pengaduan = collect(DummyData::pengaduan())
-                ->firstWhere('nomor_pengaduan', mb_strtoupper($nomor));
-
-            if ($pengaduan) {
-                $riwayat = DummyData::penangananPengaduan($pengaduan['nomor_pengaduan']);
-            }
-        }
+        // `$nomor`, `$pengaduan`, dan `$riwayat` datang dari closure
+        // `susunLacakPengaduan` pada routes/web.php, yang dipakai bersama rute
+        // `lacak-pengaduan` dan `lacak-pengaduan.nomor`.
     @endphp
 
     <div class="mb-6">

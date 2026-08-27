@@ -25,7 +25,7 @@
 
     UTANG TAHAP 4 YANG PERLU DIINGAT: komponen ini merender `$jejak['ringkasan']`,
     padahal tabel `audit_log` TIDAK memiliki kolom bernama `ringkasan`. Pada
-    Tahap 2 hal itu tidak terlihat sebab `DummyData::auditLog()` mengarang kunci
+    Tahap 2 hal itu tidak terlihat sebab data contoh `auditLog` mengarang kunci
     tersebut. Begitu backend masuk, tampilan ini wajib dibangun dari pasangan
     `data_lama`/`data_baru`; bila tidak, tab log pada dua belas halaman rincian
     akan kosong atau melempar galat.
@@ -39,7 +39,8 @@
 ])
 
 @php
-    $riwayat = \App\Support\DummyData::riwayatData($namaTabel, (int) $recordId);
+    // `$riwayat` disuplai ViewServiceProvider, yang membaca `namaTabel` dan
+    // `recordId` dari prop komponen ini.
 
     // Warna badge per jenis aksi, disamakan dengan halaman audit log agar
     // petugas tidak perlu belajar dua sandi warna yang berbeda.

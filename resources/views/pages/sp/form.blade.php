@@ -15,8 +15,6 @@
     Nama kolom mengikuti agents/data-dictionary.md bagian 3.6.
 --}}
 @php
-    use App\Support\DummyData;
-
     $awalan = $awalan ?? 'tambah';
     $data = $data ?? [];
 

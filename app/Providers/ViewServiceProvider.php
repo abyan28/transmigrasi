@@ -69,6 +69,51 @@ class ViewServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->suplaiRujukanForm();
+        $this->suplaiBerkasBersama();
+    }
+
+    /**
+     * Tata letak dan komponen yang dipakai LINTAS halaman.
+     *
+     * Ketiganya tidak dapat menerima data dari rute mana pun: `layouts.app`
+     * membungkus setiap halaman, sedangkan kedua komponen disisipkan dari
+     * tempat yang berbeda-beda. Menyalurkannya lewat rute berarti setiap rute
+     * wajib mengoper isian yang sama, dan satu yang terlewat menghasilkan
+     * halaman yang rusak tanpa galat.
+     */
+    private function suplaiBerkasBersama(): void
+    {
+        // Penanda data contoh, wajib tampil selama aplikasi belum tersambung
+        // ke data nyata (ANTISLOP-ID R-17 dan R-38). Saat Tahap 4 masuk, nilai
+        // ini berpindah menjadi pengaturan, bukan tetapan pada penyedia data.
+        View::composer('layouts.app', function ($tampilan): void {
+            $tampilan->with('memakaiDataContoh', DummyData::MEMAKAI_DATA_CONTOH);
+        });
+
+        View::composer('components.header.user-dropdown', function ($tampilan): void {
+            $pengguna = DummyData::penggunaSaatIni();
+
+            $tampilan->with('pengguna', $pengguna)
+                ->with('inisialPengguna', DummyData::inisial($pengguna['nama']));
+        });
+
+        /*
+         * Catatan log membaca PROPNYA SENDIRI, sehingga composernya menerima
+         * `namaTabel` dan `recordId` dari data view, bukan dari rute.
+         *
+         * Komponen ini melayani dua belas halaman rincian, dan baris yang
+         * ditampilkannya ditentukan pemanggilnya. Menyalurkannya lewat rute
+         * berarti dua belas rute wajib tahu tabel dan id apa yang sedang
+         * dirender komponen di dalam halamannya.
+         */
+        View::composer('components.sim.catatan-log', function ($tampilan): void {
+            $data = $tampilan->getData();
+
+            $tampilan->with('riwayat', DummyData::riwayatData(
+                $data['namaTabel'],
+                (int) $data['recordId'],
+            ));
+        });
     }
 
     /**

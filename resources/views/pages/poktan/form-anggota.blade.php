@@ -29,7 +29,6 @@
     use App\Enums\AsalWakilPoktan;
     use App\Enums\HubunganKeluarga;
         use App\Enums\StatusKeaktifanAnggota;
-    use App\Support\DummyData;
 
     $awalan = $awalan ?? 'tambah';
     $data = $data ?? [];

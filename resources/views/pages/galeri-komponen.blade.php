@@ -26,7 +26,7 @@
         <section>
             <h2 class="mb-3 text-lg font-semibold text-gray-800 dark:text-white/90">Kartu Statistik</h2>
             <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                @php $ringkasan = \App\Support\DummyData::ringkasanDashboard(); @endphp
+                {{-- `$ringkasan` datang dari rute `galeri-komponen`. --}}
                 <x-sim.stat-card label="Jumlah Kepala Keluarga"
                     :nilai="number_format($ringkasan['jumlah_kk'], 0, ',', '.')" satuan="KK"
                     keterangan="Naik 12 KK dari tahun lalu" tren="naik" url="/kependudukan/rekap" />
@@ -53,10 +53,10 @@
                     di atas tetap memakai enum sebab `StatusPengaduan` memang
                     tetap enum: ia membawa state machine.
                 --}}
-                @foreach (\App\Support\DummyData::opsiReferensi(\App\Enums\JenisReferensi::PrioritasPengaduan) as $nilaiRef => $labelRef)
+                @foreach ($opsiPrioritasPengaduan as $nilaiRef => $labelRef)
                     <x-sim.status-badge :teks="$labelRef" warna="warning" />
                 @endforeach
-                @foreach (\App\Support\DummyData::opsiReferensi(\App\Enums\JenisReferensi::KondisiRumah) as $nilaiRef => $labelRef)
+                @foreach ($opsiKondisiRumah as $nilaiRef => $labelRef)
                     <x-sim.status-badge :teks="$labelRef" warna="gray" />
                 @endforeach
             </div>
@@ -65,7 +65,7 @@
         {{-- Tabel data --}}
         <section>
             <h2 class="mb-3 text-lg font-semibold text-gray-800 dark:text-white/90">Tabel Data</h2>
-            @php $transmigran = \App\Support\DummyData::transmigran(); @endphp
+            {{-- `$transmigran` datang dari rute `galeri-komponen`. --}}
             <x-sim.data-table :jumlah="count($transmigran)" placeholder-cari="Cari nama atau NIK"
                 judul-kosong="Belum ada data transmigran">
                 <x-slot:filter>
@@ -76,7 +76,7 @@
                             </label>
                             <select class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm dark:border-gray-700 dark:text-white/90">
                                 <option>Semua SP</option>
-                                @foreach (\App\Support\DummyData::satuanPermukiman() as $sp)
+                                @foreach ($daftarSp as $sp)
                                     <option>{{ $sp['nama'] }}</option>
                                 @endforeach
                             </select>
@@ -195,7 +195,7 @@
                 <div>
                     <h3 class="mb-3 text-theme-sm font-medium text-gray-700 dark:text-gray-300">Pemilih Wilayah</h3>
                     <x-sim.wilayah-picker :daftar-kawasan="[['id' => 1, 'nama' => 'Kobalima Timur']]"
-                        :daftar-sp="collect(\App\Support\DummyData::satuanPermukiman())
+                        :daftar-sp="collect($daftarSp)
                             ->map(fn($s) => ['id' => $s['id_satuan_permukiman'], 'nama' => $s['nama'], 'kawasan_id' => 1])
                             ->all()" />
                 </div>

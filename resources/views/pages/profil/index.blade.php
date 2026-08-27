@@ -18,7 +18,7 @@
 
 @section('content')
     @php
-        $pengguna = \App\Support\DummyData::penggunaSaatIni();
+        // `$pengguna` dan `$inisialPengguna` datang dari rute `profil`.
         $role = $pengguna['role'];
         $cakupan = \App\Enums\CakupanData::dari($role['cakupan_data']);
     @endphp
@@ -52,7 +52,7 @@
                 <span
                     class="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-brand-500 text-title-sm font-bold text-white"
                     aria-hidden="true">
-                    {{ \App\Support\DummyData::inisial($pengguna['nama']) }}
+                    {{ $inisialPengguna }}
                 </span>
 
                 <h2 class="mt-4 text-lg font-semibold text-gray-800 dark:text-white/90">

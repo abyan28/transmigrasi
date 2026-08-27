@@ -9,7 +9,8 @@
     larangan kontrol mati (R-24 dan R-26).
 --}}
 @php
-    $pengguna = \App\Support\DummyData::penggunaSaatIni();
+    // `$pengguna` dan `$inisialPengguna` disuplai ViewServiceProvider, sebab
+    // header ini muncul pada setiap halaman berautentikasi.
 @endphp
 
 <div class="relative" x-data="{ terbuka: false }" @click.away="terbuka = false"
@@ -20,7 +21,7 @@
         <span
             class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-500 text-theme-sm font-semibold text-white"
             aria-hidden="true">
-            {{ \App\Support\DummyData::inisial($pengguna['nama']) }}
+            {{ $inisialPengguna }}
         </span>
 
         <span class="hidden text-left sm:block">

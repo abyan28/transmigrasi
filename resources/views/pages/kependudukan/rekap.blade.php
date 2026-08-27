@@ -10,46 +10,20 @@
 @extends('layouts.app')
 
 @section('content')
-    @php
-        use App\Support\DummyData;
+    {{--
+        Seluruh isian halaman ini datang dari closure `susunRekapKependudukan`
+        pada routes/web.php, yang dipakai bersama rute `kependudukan.rekap` dan
+        `kependudukan.rekap.kelompok`.
 
-        /*
-         * Dasar pengelompokan datang dari dua arah: segmen rute yang menjadi
-         * tautan tetap, dan kueri `?kelompok=` milik tautan lama. Yang pertama
-         * membuat seluruh tab tetap dapat dibuka pada build statis.
-         *
-         * Sebelum 2026-08-25 hanya kueri yang ada, sehingga di situs terbit
-         * HANYA tab Tahun yang terbuka - lima tab lain tidak dapat dicapai
-         * sama sekali. Cacat yang sama pernah ditemukan pada rekap panen
-         * (notes.md 1b.6a) dan diperbaiki, tetapi kependudukan terlewat.
-         */
-        $kelompok = $kelompokRute ?? request('kelompok', 'tahun');
+        Dasar pengelompokan datang dari dua arah: segmen rute yang menjadi
+        tautan tetap, dan kueri `?kelompok=` milik tautan lama. Yang pertama
+        membuat seluruh tab tetap dapat dibuka pada build statis.
 
-        $perTahun = DummyData::rekapKependudukan();
-        $perSp = DummyData::rekapPerSp();
-        $penghuni = DummyData::rekapPenghuni();
-        $pekerjaan = DummyData::sebaranPekerjaan();
-        $daerahAsal = DummyData::sebaranDaerahAsal();
-        $pendidikan = DummyData::sebaranPendidikan();
-
-        $ringkasan = DummyData::ringkasanDashboard();
-
-        /*
-         * Daftar ini WAJIB sejalan dengan batasan `where` pada rute
-         * `kependudukan.rekap.kelompok` dan larik pada DaftarTautanStatis.
-         * Ketiganya mengunci hal yang sama, dan mengubah salah satunya saja
-         * membuat halaman terbit membalas 404 tanpa penjaga apa pun
-         * (notes.md 1e.5).
-         */
-        $labelKelompok = [
-            'tahun' => 'Tahun',
-            'sp' => 'Satuan Permukiman',
-            'status' => 'Status Tinggal',
-            'pekerjaan' => 'Pekerjaan',
-            'asal' => 'Daerah Asal',
-            'pendidikan' => 'Pendidikan',
-        ];
-    @endphp
+        Sebelum 2026-08-25 hanya kueri yang ada, sehingga di situs terbit HANYA
+        tab Tahun yang terbuka - lima tab lain tidak dapat dicapai sama sekali.
+        Cacat yang sama pernah ditemukan pada rekap panen (notes.md 1b.6a) dan
+        diperbaiki, tetapi kependudukan terlewat.
+    --}}
 
     <x-sim.page-header judul="Rekap Kependudukan"
         keterangan="Perkembangan jumlah penduduk kawasan beserta perpindahannya."

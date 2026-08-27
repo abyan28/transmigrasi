@@ -20,7 +20,6 @@
 
 @section('content')
     @php
-        use App\Support\DummyData;
             @endphp
 
     {{-- Nomor pengaduan setelah berhasil kirim, ditampilkan besar dan jelas --}}
@@ -208,7 +207,7 @@
                         <select id="satuan_permukiman_id" name="satuan_permukiman_id" required
                             class="h-12 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-navy-700 dark:text-white/90">
                             <option value="">Pilih tempat tinggal Anda</option>
-                            @foreach (DummyData::satuanPermukiman() as $sp)
+                            @foreach ($daftarSp as $sp)
                                 <option value="{{ $sp['id_satuan_permukiman'] }}"
                                     @selected(old('satuan_permukiman_id') == $sp['id_satuan_permukiman'])>
                                     {{ $sp['nama'] }} ({{ $sp['desa'] }})
@@ -225,7 +224,7 @@
                         <select id="kategori" name="kategori" required
                             class="h-12 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-navy-700 dark:text-white/90">
                             <option value="">Pilih salah satu</option>
-                            @foreach (\App\Support\DummyData::opsiReferensi(\App\Enums\JenisReferensi::KategoriPengaduan) as $nilai => $label)
+                            @foreach ($opsiKategoriPengaduan as $nilai => $label)
                                 <option value="{{ $nilai }}" @selected(old('kategori') === $nilai)>{{ $label }}</option>
                             @endforeach
                         </select>
