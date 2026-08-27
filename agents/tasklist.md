@@ -829,7 +829,9 @@ Membalik `erd.md` §7.4 ("sistem tidak mendata anggota keluarga satu per satu") 
 
 - **Stage B1 ✅** — fondasi + modul transmigran: enum `Agama` / `HubunganAnggotaKeluarga` / `KegiatanAnggota`; tabel `anggota_keluarga` (29 baris contoh); `transmigran.agama`; `jumlah_anggota_keluarga` jadi turunan; usia dihitung; form repeater dinamis bersyarat; detail tab Anggota Keluarga. 654 uji hijau, pint 31. `erd.md` §7.4 direvisi berjejak. Lihat notes.md 1p.
 - **Stage B2 ✅** — `anggota_poktan.anggota_keluarga_id` + `poktan.ketua_anggota_keluarga_id` (FK); `form-anggota` + `poktan.form` jalur "Anggota Keluarga" memilih orangnya dari daftar (`x-for`, menyempit per keluarga); `nama_wakil`/`nik_wakil`/`hubungan_dengan_kk`/`hubungan_ketua` dicabut, dibaca dari `anggota_keluarga`. `DummyData::poktan()` kini menyelesaikan identitas ketua (memperbaiki ketua kosong di daftar poktan berketua kepala keluarga). 656 uji hijau, pint 31.
-- **Stage B3 ⬜** — suksesi KK: pengganti dipilih dari daftar anggota keluarga; datanya "naik" menimpa baris transmigran; `rules.md` §6.5 direvisi; `riwayat_kepala_keluarga` menaut ke anggota.
+- **Stage B3 ✅** — suksesi KK: `DummyData::calonPenggantiKk()` (pasangan lalu usia tertua); modal `<select pengganti_anggota_keluarga_id>` + isian tersembunyi dibaca dari pilihan; `riwayat_kepala_keluarga.hubungan_pengganti` beralih ke §11.39; rute Tahap 5 juga menghapus baris `anggota_keluarga` pengganti. `rules.md` §6.5d, `erd.md` §7.4a, `data-dictionary.md` §6.4/§11.35 direvisi berjejak. 657 uji hijau, pint 31.
+
+**Rombongan B SELESAI seluruhnya (B1+B2+B3).** `erd.md` §7.4 dibalik penuh: sistem kini mendata anggota keluarga satu per satu.
 
 ## Tahap 3 — Autentikasi dan Hak Akses
 

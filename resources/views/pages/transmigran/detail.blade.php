@@ -564,7 +564,14 @@
                 $kelasLabel = 'mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400';
             @endphp
 
-            <div class="space-y-6">
+            <div class="space-y-6"
+                x-data="{
+                    calon: @js($calonPengganti),
+                    penggantiId: '',
+                    get pengganti() {
+                        return this.calon.find(c => String(c.id) === String(this.penggantiId)) ?? null;
+                    },
+                }">
                 {{--
                     Kepala keluarga yang digantikan, ditampilkan sebagai bacaan
                     dan dikirim sebagai isian tersembunyi. Petugas tidak perlu
@@ -585,43 +592,55 @@
                 <input type="hidden" name="no_kk_lama" value="{{ $data['no_kk'] }}" />
 
                 {{--
-                    Identitas pengganti DIKETIK, tidak dipilih dari daftar.
-                    Sistem tidak mendata anggota keluarga satu per satu
-                    (erd.md 7.4), sehingga tidak ada daftar yang dapat
-                    ditawarkan. Urutan istri lalu anak pertama adalah ketentuan
-                    Dukcapil yang tidak dapat ditegakkan sistem: yang direkam
-                    adalah siapa penggantinya, bukan tebakan (rules.md 6.5d).
+                    Pengganti DIPILIH dari daftar anggota keluarga (Stage B3,
+                    2026-08-28; erd.md 7.4 dibalik). Nama, NIK, dan hubungannya
+                    "naik" menimpa baris transmigran ini, lalu baris
+                    anggota_keluarga pengganti dihapus. Urutan Dukcapil
+                    (pasangan lalu anak tertua) tidak ditegakkan; daftar
+                    diurutkan sebagai penunjuk, bukan aturan (rules.md 6.5d).
                 --}}
-                <div class="grid gap-4 sm:grid-cols-2">
-                    <div>
-                        <label for="suksesi_nama_baru" class="{{ $kelasLabel }}">
-                            Nama Kepala Keluarga Baru<span class="text-error-500">*</span>
-                        </label>
-                        <input type="text" id="suksesi_nama_baru" name="nama_baru" required maxlength="255"
-                            placeholder="Nama lengkap sesuai kartu keluarga" class="{{ $kelasKontrol }}" />
-                    </div>
-
-                    <div>
-                        <label for="suksesi_nik_baru" class="{{ $kelasLabel }}">
-                            NIK Kepala Keluarga Baru<span class="text-error-500">*</span>
-                        </label>
-                        <input type="text" inputmode="numeric" id="suksesi_nik_baru" name="nik_baru" required
-                            minlength="16" maxlength="16" pattern="[0-9]{16}"
-                            placeholder="16 digit angka" class="{{ $kelasKontrol }} tabular-nums" />
-                    </div>
-
-                    <div>
-                        <label for="suksesi_hubungan" class="{{ $kelasLabel }}">
-                            Hubungan dengan Kepala Keluarga Lama<span class="text-error-500">*</span>
-                        </label>
-                        <select id="suksesi_hubungan" name="hubungan_pengganti" required class="{{ $kelasKontrol }}">
-                            <option value="">Pilih hubungan</option>
-                            @foreach (\App\Enums\HubunganKeluarga::opsi() as $nilai => $label)
-                                <option value="{{ $nilai }}">{{ $label }}</option>
+                <div>
+                    <label for="suksesi_pengganti" class="{{ $kelasLabel }}">
+                        Pengganti<span class="text-error-500">*</span>
+                    </label>
+                    @if (empty($calonPengganti))
+                        <p class="rounded-lg border border-warning-200 bg-warning-50 p-3.5 text-theme-sm text-warning-800 dark:border-warning-500/30 dark:bg-warning-500/10 dark:text-warning-300">
+                            Keluarga ini belum memiliki anggota keluarga terdata. Tambahkan lebih dulu lewat
+                            tombol Ubah Data agar dapat dipilih sebagai pengganti.
+                        </p>
+                    @else
+                        <select id="suksesi_pengganti" name="pengganti_anggota_keluarga_id" required
+                            x-model="penggantiId" class="{{ $kelasKontrol }}">
+                            <option value="">Pilih anggota keluarga</option>
+                            @foreach ($calonPengganti as $c)
+                                <option value="{{ $c['id'] }}">
+                                    {{ $c['nama'] }} ({{ $c['hubungan'] }}{{ $c['usia'] !== null ? ', ' . $c['usia'] . ' tahun' : '' }})
+                                </option>
                             @endforeach
                         </select>
-                    </div>
+                    @endif
 
+                    {{-- Identitas pengganti, dibaca dari pilihan dan dikirim
+                         sebagai isian tersembunyi dengan nama yang sama seperti
+                         sebelumnya, agar rute Tahap 5 tidak berubah. --}}
+                    <input type="hidden" name="nama_baru" :value="pengganti?.nama ?? ''" />
+                    <input type="hidden" name="nik_baru" :value="pengganti?.nik ?? ''" />
+                    <input type="hidden" name="hubungan_pengganti" :value="pengganti?.hubungan ?? ''" />
+
+                    <div x-show="pengganti" x-cloak
+                        class="mt-2 rounded-lg border border-gray-200 bg-gray-50 p-3.5 text-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
+                        <p class="font-medium text-gray-800 dark:text-white/90" x-text="pengganti?.nama"></p>
+                        <p class="mt-0.5 text-theme-xs tabular-nums text-gray-500 dark:text-gray-400">
+                            <span x-text="pengganti?.hubungan"></span> dari kepala keluarga lama
+                            &middot; NIK <span x-text="pengganti?.nik ?? 'belum ada'"></span>
+                        </p>
+                        <p class="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
+                            Data ini akan menjadi data kepala keluarga, dan barisnya sebagai anggota keluarga dihapus.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="grid gap-4 sm:grid-cols-2">
                     {{--
                         Nomor KK terisi nilai lama dan dapat disunting. Dukcapil
                         menerbitkan KK baru ketika kepala keluarganya berganti,

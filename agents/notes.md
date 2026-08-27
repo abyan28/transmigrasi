@@ -1216,14 +1216,39 @@ keluarga yang bersangkutan.
 
 Tiga uji lama diperbarui (jalur berubah dari ketik ke pilih), dua uji baru.
 
-### 1p.4 Verifikasi
+### 1p.4 Stage B3: rombak suksesi kepala keluarga
 
-**656 uji hijau**, `pint` tetap 31.
+Modal "Ganti Kepala Keluarga" tidak lagi mengetik nama/NIK/hubungan
+pengganti; ia **memilih dari daftar anggota keluarga** keluarga itu.
+
+- `DummyData::calonPenggantiKk($id)` baru: anggota keluarga diurutkan
+  pasangan lebih dulu lalu usia menurun (penunjuk, bukan aturan).
+- Modal: `<select name="pengganti_anggota_keluarga_id">` + isian tersembunyi
+  `nama_baru`/`nik_baru`/`hubungan_pengganti` yang dibaca dari pilihan
+  (`:value="pengganti?.nama"` dst), sehingga rute Tahap 5 tak berubah.
+  Bila keluarga belum punya anggota, muncul peringatan.
+- `riwayat_kepala_keluarga.hubungan_pengganti` beralih dari enum §11.35
+  (kasar) ke §11.39. Dua baris riwayat contoh disesuaikan (Istri/Suami ->
+  Istri). `HubunganKeluarga` (§11.35) ditinggalkan seluruh pemakainya.
+- Rute suksesi Tahap 5 kini juga menghapus baris `anggota_keluarga`
+  pengganti setelah datanya naik ke `transmigran`.
+
+Satu uji lama dibalik (dari "diketik" ke "dipilih"), satu uji baru untuk
+pengurutan calon.
+
+### 1p.5 Verifikasi Rombongan B (B1+B2+B3)
+
+**657 uji hijau** (naik dari 648), `pint` tetap 31.
 
 Penjaga baru: jumlah anggota = turunan tanpa selisih; usia = hitungan Carbon
 di rincian; tiap kolom anggota punya tempat tampil; repeater bersyarat pada
 keluaran terender; data contoh bervariasi; enum dikunci; wakil/ketua poktan
-jalur Anggota Keluarga dibaca dari relasi.
+jalur Anggota Keluarga dibaca dari relasi; pengganti KK dipilih dari daftar
+terurut.
+
+`erd.md` §7.4 dan §7.4a keduanya dibalik dengan jejak (paragraf lama dicoret,
+bukan dihapus). `HubunganKeluarga` (§11.35) kini enum warisan tanpa pemakai
+aktif.
 
 Satu jebakan `pint`: `\Illuminate\Support\Carbon::parse` inline di uji memicu
 `fully_qualified_strict_types`; `Carbon` sudah di-`use` di berkas itu, jadi

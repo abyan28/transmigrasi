@@ -153,9 +153,9 @@ Kolom `jumlah_anggota_keluarga` di kamus ditandai "diturunkan, tidak diisi".
   daftar; `nama_wakil`/`nik_wakil`/`hubungan_dengan_kk`/`hubungan_ketua`
   dicabut. `DummyData::poktan()` menyelesaikan identitas ketua. 656 uji
   hijau, pint 31. data-dictionary §6.5/§8.2, rules §7a.2a/3a, notes 1p.3.
-- **Stage B3** - rombak suksesi KK: pengganti dipilih dari daftar anggota
-  keluarga; datanya "naik" menggantikan baris transmigran; peristiwa
-  direkam `riwayat_kepala_keluarga`. `rules.md` §6.5, detail suksesi UI,
-  penjaga. Commit.
+- **Stage B3 SELESAI** (commit) - suksesi KK: `calonPenggantiKk()` (pasangan
+  lalu usia); modal `<select pengganti_anggota_keluarga_id>` + isian
+  tersembunyi; `hubungan_pengganti` -> §11.39; rute Tahap 5 menghapus baris
+  anggota pengganti. rules §6.5d, erd §7.4a, dict §6.4/§11.35. 657 uji, pint 31.
 
-`erd.md` §7.4 direvisi berjejak pada Stage B1.
+**ROMBONGAN B SELESAI (B1+B2+B3).** `erd.md` §7.4 dan §7.4a dibalik berjejak.

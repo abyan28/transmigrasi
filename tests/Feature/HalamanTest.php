@@ -4915,21 +4915,47 @@ it('menyediakan suksesi sebagai tindakan tersendiri, bukan lewat form ubah', fun
         ->assertRedirect(route('transmigran.detail', ['id' => 1, 'tab' => 'riwayat-kk']));
 });
 
-it('meminta identitas pengganti diketik, bukan dipilih dari daftar', function () {
-    // Sistem tidak mendata anggota keluarga satu per satu (erd.md 7.4),
-    // sehingga tidak ada daftar yang dapat ditawarkan. Urutan istri lalu anak
-    // pertama adalah ketentuan Dukcapil yang tidak dapat ditegakkan sistem:
-    // yang direkam adalah siapa penggantinya, bukan tebakan (rules.md 6.5d).
+it('memilih pengganti kepala keluarga dari daftar anggota keluarga', function () {
+    // Sejak Stage B3 (2026-08-28) pengganti DIPILIH dari daftar anggota
+    // keluarga, tidak diketik (erd.md 7.4a dibalik). Identitasnya "naik"
+    // menimpa baris transmigran. Urutan Dukcapil (pasangan lalu anak tertua)
+    // hanya diurutkan sebagai penunjuk, bukan ditegakkan (rules.md 6.5d).
     $isi = $this->get(route('transmigran.detail', 1))->assertOk()->getContent();
 
-    foreach (['nama_baru', 'nik_baru', 'no_kk_baru', 'hubungan_pengganti', 'tanggal_pergantian', 'alasan'] as $isian) {
+    // Pilihan pengganti, dari daftar anggota keluarga keluarga ini.
+    expect($isi)->toContain('name="pengganti_anggota_keluarga_id"');
+
+    $calon = DummyData::calonPenggantiKk(1);
+    expect($calon)->not->toBeEmpty();
+    expect($isi)->toContain($calon[0]['nama']);
+
+    // nama_baru / nik_baru / hubungan_pengganti tetap terkirim dengan nama
+    // yang sama, tetapi sebagai isian tersembunyi yang dibaca dari pilihan.
+    foreach (['nama_baru', 'nik_baru', 'hubungan_pengganti', 'no_kk_baru', 'tanggal_pergantian', 'alasan'] as $isian) {
         expect($isi)->toContain('name="'.$isian.'"');
     }
+    expect($isi)->toContain(':value="pengganti?.nama');
 
     // Sisi lama dikirim tanpa diketik ulang, agar riwayat menyimpan keduanya.
     foreach (['nik_lama', 'nama_lama', 'no_kk_lama'] as $isian) {
         expect($isi)->toContain('name="'.$isian.'"');
     }
+});
+
+it('mengurutkan calon pengganti kepala keluarga: pasangan lalu usia tertua', function () {
+    $calon = DummyData::calonPenggantiKk(1);
+
+    // Keluarga 1: istri MARIA BERE HOAR lalu anak menurut usia menurun.
+    expect($calon[0]['hubungan'])->toBe('Istri');
+    $usiaAnak = array_values(array_filter(
+        array_column($calon, 'usia'),
+        fn ($u, $i) => $calon[$i]['hubungan'] !== 'Istri',
+        ARRAY_FILTER_USE_BOTH
+    ));
+    expect($usiaAnak)->toBe(collect($usiaAnak)->sortDesc()->values()->all());
+
+    // Tiap calon membawa NIK dan hubungan yang akan naik ke baris transmigran.
+    expect($calon[0])->toHaveKeys(['id', 'nama', 'nik', 'hubungan', 'usia']);
 });
 
 it('menuntut petugas memutuskan nasib jabatan ketua poktan saat suksesi', function () {

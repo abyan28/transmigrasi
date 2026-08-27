@@ -629,7 +629,7 @@ Jejak pergantian kedudukan kepala keluarga pada satu rumah tangga. Tidak pernah 
 | `no_kk_baru` | `CHAR(16)` | TIDAK | | Nomor KK sesudahnya; sama dengan yang lama bila KK tidak terbit ulang |
 | `tanggal_pergantian` | `DATE` | TIDAK | IDX | |
 | `alasan` | `ENUM` | TIDAK | IDX | Lihat 11.36 |
-| `hubungan_pengganti` | `ENUM` | TIDAK | | Lihat 11.35; kedudukan pengganti terhadap kepala keluarga lama |
+| `hubungan_pengganti` | `ENUM` | TIDAK | | Lihat 11.39 (sejak Stage B3, 2026-08-28; sebelumnya §11.35). Dibaca dari `anggota_keluarga.hubungan` pengganti yang dipilih |
 | `keterangan` | `TEXT` | YA | | |
 
 **Catatan:**
@@ -640,6 +640,7 @@ Jejak pergantian kedudukan kepala keluarga pada satu rumah tangga. Tidak pernah 
 - **`no_kk` ikut disimpan dua sisi** sebab Dukcapil menerbitkan KK baru ketika kepala keluarganya berganti. Bila nomornya tidak berubah, keduanya diisi sama.
 - Tanpa kolom `user_id`: pelaku suksesi sudah terekam `audit_log`, sama seperti `riwayat_penghunian`.
 - **Suksesi adalah tindakan tersendiri, bukan efek samping form ubah** (`rules.md` §6.5b). Bila ia lahir dari penyuntingan nama pada form biasa, setiap perbaikan ejaan akan mengotori riwayat suksesi — persis kekaburan yang tabel ini dibuat untuk menutupnya.
+- **Pengganti dipilih dari daftar anggota keluarga** (Stage B3, 2026-08-28; membalik `erd.md` §7.4a). Petugas memilih orangnya dari `anggota_keluarga` keluarga itu; `nama_baru`, `nik_baru`, dan `hubungan_pengganti` dibaca dari baris itu, lalu barisnya sebagai anggota keluarga **dihapus** sebab ia kini kepala keluarga. Data pada tabel ini tetap denormalisasi (kedua sisi identitas), jadi tidak ada FK ke `anggota_keluarga` yang akan menggantung setelah penghapusan.
 
 ---
 
@@ -1329,9 +1330,13 @@ Pemeriksaan "apakah identitasnya dapat dibaca lewat relasi" **dilarang** memband
 
 `Istri/Suami` · `Anak` · `Menantu` · `Lainnya`
 
-Diisi bila wakil keluarga di poktan bukan kepala keluarganya sendiri. Sengaja kasar dan tidak dirinci sampai urutan anak: yang perlu diketahui hanyalah kedudukan wakil terhadap kepala keluarga, agar petugas dapat menelusuri bila namanya tidak dikenali. Merincinya lebih jauh menuntut pendataan anggota keluarga yang memang di luar lingkup PRD (`erd.md` 7.4).
+> **DITINGGALKAN 2026-08-28 (Rombongan B).** Ketiga pemakainya
+> (`anggota_poktan.hubungan_dengan_kk`, `poktan.hubungan_ketua`,
+> `riwayat_kepala_keluarga.hubungan_pengganti`) kini membaca hubungan dari
+> baris `anggota_keluarga` (§11.39), sebab wakil, ketua, dan pengganti sama-sama
+> dipilih dari daftar itu. Enum ini dipertahankan hanya untuk membaca data lama.
 
-Dipakai bersama oleh `anggota_poktan.hubungan_dengan_kk`, `poktan.hubungan_ketua`, dan `riwayat_kepala_keluarga.hubungan_pengganti`.
+Dahulu: diisi bila wakil keluarga di poktan bukan kepala keluarganya sendiri. Sengaja kasar dan tidak dirinci, sebab sistem belum mendata anggota keluarga satu per satu (`erd.md` §7.4, kini dibalik).
 
 ### 11.37 Jenis referensi
 

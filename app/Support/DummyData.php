@@ -5,7 +5,7 @@ namespace App\Support;
 use App\Enums\AlasanPergantianKK;
 use App\Enums\AsalWakilPoktan;
 use App\Enums\CakupanData;
-use App\Enums\HubunganKeluarga;
+use App\Enums\HubunganAnggotaKeluarga;
 use App\Enums\JenisInfrastruktur;
 use App\Enums\JenisReferensi;
 use App\Enums\JenisSaprotan;
@@ -21,6 +21,7 @@ use App\Enums\StatusPengaduan;
 use App\Enums\StatusTinggal;
 use App\Enums\SumberLaporan;
 use App\Enums\TingkatKebutuhan;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 /**
@@ -708,6 +709,61 @@ class DummyData
     }
 
     /**
+     * Calon pengganti kepala keluarga: anggota keluarga yang ada.
+     *
+     * Dipakai modal suksesi (Stage B3, 2026-08-28). Pengganti dipilih dari
+     * daftar ini, bukan diketik; nama, NIK, dan hubungannya "naik" menimpa
+     * baris `transmigran`, lalu baris `anggota_keluarga` pengganti dihapus.
+     *
+     * Urutan Dukcapil (pasangan lalu anak tertua) tidak ditegakkan sistem;
+     * yang direkam adalah siapa yang benar-benar ditunjuk. Pasangan
+     * ditampilkan lebih dulu sebagai penunjuk lazim, sisanya menurut usia.
+     *
+     * @return array<int, array{id: int, nama: string, nik: string|null, hubungan: string, jenis_kelamin: string|null, usia: int|null}>
+     */
+    public static function calonPenggantiKk(int $transmigranId): array
+    {
+        $anggota = array_values(array_filter(
+            self::anggotaKeluarga(),
+            fn ($a) => $a['transmigran_id'] === $transmigranId
+        ));
+
+        $usia = function (?string $tanggal): ?int {
+            if ($tanggal === null) {
+                return null;
+            }
+
+            try {
+                return Carbon::parse($tanggal)->age;
+            } catch (\Throwable) {
+                return null;
+            }
+        };
+
+        $nilaiPasangan = array_map(fn ($h) => $h->value, HubunganAnggotaKeluarga::pasangan());
+
+        usort($anggota, function ($x, $y) use ($usia, $nilaiPasangan) {
+            $pasanganX = in_array($x['hubungan'], $nilaiPasangan, true);
+            $pasanganY = in_array($y['hubungan'], $nilaiPasangan, true);
+
+            if ($pasanganX !== $pasanganY) {
+                return $pasanganX ? -1 : 1;
+            }
+
+            return ($usia($y['tanggal_lahir']) ?? 0) <=> ($usia($x['tanggal_lahir']) ?? 0);
+        });
+
+        return array_map(fn ($a) => [
+            'id' => $a['id_anggota_keluarga'],
+            'nama' => $a['nama_lengkap'],
+            'nik' => $a['nik'],
+            'hubungan' => $a['hubungan'],
+            'jenis_kelamin' => $a['jenis_kelamin'] ?? null,
+            'usia' => $usia($a['tanggal_lahir'] ?? null),
+        ], $anggota);
+    }
+
+    /**
      * Daftar rumah beserta penghuninya.
      *
      * Satu rumah dihuni tepat satu KK, dan rumah kosong ditandai penghuni
@@ -914,7 +970,7 @@ class DummyData
                 'no_kk_baru' => '5321010102180006',
                 'tanggal_pergantian' => '2024-08-22',
                 'alasan' => AlasanPergantianKK::Meninggal->value,
-                'hubungan_pengganti' => HubunganKeluarga::IstriSuami->value,
+                'hubungan_pengganti' => HubunganAnggotaKeluarga::Istri->value,
                 'keterangan' => 'Akta kematian dan KK baru sudah diserahkan ke kantor SP.',
             ],
             // Kepala keluarga merantau, keluarganya tetap tinggal. Nomor KK
@@ -932,7 +988,7 @@ class DummyData
                 'no_kk_baru' => '5321010102170004',
                 'tanggal_pergantian' => '2025-02-10',
                 'alasan' => AlasanPergantianKK::PindahAtauMerantau->value,
-                'hubungan_pengganti' => HubunganKeluarga::IstriSuami->value,
+                'hubungan_pengganti' => HubunganAnggotaKeluarga::Istri->value,
                 'keterangan' => 'Bekerja di Kupang sejak awal 2025, keluarga tetap menggarap lahan.',
             ],
         ];

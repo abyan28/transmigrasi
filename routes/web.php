@@ -837,6 +837,10 @@ Route::get('/transmigran/{id}', function (int $id) {
         // peristiwanya direkam terpisah (rules.md 6 poin 5).
         'riwayatKk' => DummyData::riwayatKepalaKeluarga($data['id_transmigran']),
 
+        // Calon pengganti kepala keluarga: anggota keluarga yang ada. Dipilih
+        // dari sini pada modal suksesi, tidak diketik (Stage B3, 2026-08-28).
+        'calonPengganti' => DummyData::calonPenggantiKk($data['id_transmigran']),
+
         // Jabatan ketua poktan TIDAK diwariskan. Bila keluarga ini menjabat
         // ketua lewat jalur Kepala Keluarga, petugas wajib memutuskan nasib
         // jabatannya saat suksesi (rules.md 6 poin 5e).
@@ -874,9 +878,12 @@ Route::put('/transmigran/{id}', function (int $id) {
  * berbeda dari menyunting data, dan menyatukannya membuat setiap perbaikan
  * ejaan nama ikut tercatat sebagai pergantian kepala keluarga (rules.md 6.5b).
  *
- * Tahap 5: sunting baris transmigran (nama, NIK, no_kk), tambahkan baris
- * riwayat_kepala_keluarga, lalu terapkan pilihan nasib jabatan ketua poktan.
- * Ketiganya dalam satu transaksi.
+ * Tahap 5, satu transaksi:
+ *  1. baca pengganti dari `pengganti_anggota_keluarga_id`;
+ *  2. sunting baris transmigran (nama, NIK, no_kk) dengan data pengganti;
+ *  3. HAPUS baris `anggota_keluarga` pengganti (ia kini kepala keluarga);
+ *  4. tambahkan baris `riwayat_kepala_keluarga` (kedua sisi identitas);
+ *  5. terapkan pilihan nasib jabatan ketua poktan.
  */
 Route::post('/transmigran/{id}/ganti-kepala-keluarga', function (int $id) {
     return redirect()->route('transmigran.detail', ['id' => $id, 'tab' => 'riwayat-kk'])

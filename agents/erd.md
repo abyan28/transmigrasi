@@ -346,6 +346,8 @@ Satu baris `transmigran` adalah satu RUMAH TANGGA, bukan satu orang. Ketika kepa
 
 Peristiwanya direkam pada `riwayat_kepala_keluarga`, sebab `audit_log` tidak dapat membedakan suksesi dari perbaikan salah ketik — keduanya berbentuk aksi `Ubah` pada `nama_kepala_keluarga`. Lihat `data-dictionary.md` 6.4.
 
+**Sejak Stage B3 (2026-08-28)** pengganti **dipilih dari daftar `anggota_keluarga`** keluarga itu, tidak diketik (`erd.md` §7.4 sudah dibalik). Datanya menimpa baris `transmigran`, barisnya sebagai anggota keluarga dihapus, dan `riwayat_kepala_keluarga` menyimpan kedua sisi identitas secara denormalisasi (tanpa FK ke `anggota_keluarga` yang akan menggantung).
+
 ### 7.5 Riwayat penghunian
 Pergantian penghuni tidak menimpa data lama. Alurnya: baris `riwayat_penghunian` lama diisi `tanggal_keluar` dan `alasan_keluar`, `rumah.transmigran_id` diperbarui, lalu baris riwayat baru dibuat (`rules.md` Â§6a.9).
 
