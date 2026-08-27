@@ -5995,6 +5995,38 @@ it('mendata rute aksesibilitas SP sebagai daftar dinamis dengan tempat tampil', 
         ->toContain($sp1[0]['rute']);
 });
 
+it('menyusun Bab II Keadaan Wilayah per SP pada Laporan Monografi SP', function () {
+    // Stage C3 (2026-08-28): Laporan Monografi SP kini merender Bab II penuh
+    // per SP, bukan hanya satu baris indikator.
+    $data = LaporanData::monografiSp();
+
+    expect($data)->toHaveKeys(['baris', 'monografi']);
+    expect($data['monografi'])->toHaveCount(count(DummyData::satuanPermukiman()));
+
+    $kapitanMeo = collect($data['monografi'])->firstWhere('kode', 'SP-01');
+    expect($kapitanMeo)->not->toBeNull();
+    expect($kapitanMeo['ada_isi'])->toBeTrue();
+    expect(array_keys($kapitanMeo['kelompok']))
+        ->toBe(['Letak', 'Batas Wilayah', 'Luas dan Bentuk', 'Tanah dan Topografi', 'Iklim', 'Sumberdaya Air']);
+    expect($kapitanMeo['kelompok']['Batas Wilayah']['Sebelah Utara'])->toBe('Desa Tesa');
+    expect($kapitanMeo['kelompok']['Iklim']['Curah hujan rata-rata per tahun'])->toBe('1.607,18 mm');
+    expect($kapitanMeo['rute'])->not->toBeEmpty();
+
+    // Nilai kosong tetap dibawa sebagai null, bukan dibuang.
+    expect($kapitanMeo['kelompok']['Tanah dan Topografi'])->toHaveKey('pH tanah');
+
+    $html = $this->get(route('laporan.monografi-sp'))->assertOk()->getContent();
+    expect($html)
+        ->toContain('Keadaan Wilayah')
+        ->toContain('Batas-Batas Alam')
+        ->toContain('Aksesibilitas')
+        ->toContain('1.607,18 mm')
+        ->toContain('Cara pencapaian menuju SP Kapitan Meo');
+
+    // ANTISLOP-ID R-02: tanpa em dash.
+    expect(str_contains($html, "\xE2\x80\x94"))->toBeFalse('Laporan Monografi SP memuat em dash');
+});
+
 /*
 |--------------------------------------------------------------------------
 | Komoditas unggulan: penandaan manusia, bukan hitungan

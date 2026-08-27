@@ -817,7 +817,7 @@ Lima laporan mengikuti berkas rujukan di `refs/` (dibaca lewat `pdftotext`, baca
 
 **Ditunda:**
 - Rombongan B: anggota keluarga (istri + anak) dynamic form + field usia/agama pada form transmigran
-- ~~Rombongan C: field SP Bab II Monografi~~ — sedang dikerjakan, lihat di bawah
+- ~~Rombongan C: field SP Bab II Monografi~~ ✅ selesai (C1+C2+C3), lihat di bawah
 - Pintasan laporan dari halaman daftar (bawa filter aktif)
 - Pemilih periode untuk laporan lintas modul (Rekap Indikator Kawasan, Daftar Transmigran)
 - Penyeragaman nama field alsintan ke `tahun_pengadaan` / `sumber_dana`
@@ -839,7 +839,7 @@ Field Bab II Laporan Monografi (Keadaan Wilayah) pada modul SP.
 
 - **Stage C1 ✅** — 3 enum (`PolaPermukiman`/`TingkatKesuburanTanah`/`BentukWilayah`); ~35 kolom baru pada `satuan_permukiman` (letak astronomis kotak, jarak ekonomis, batas wilayah DIHIDUPKAN, SK pencadangan, pola, tanah, topografi, iklim min/maks/rata, sumber air); `keadaanWilayahSp()` di DummyData (Kapitan Meo dari berkas monografi); section "Keadaan Wilayah" pada form SP; blok tampil di `dashboard/sp`. 660 uji hijau, pint 31. `data-dictionary.md` §3.6/§3.6a/§11.41-43, `rules.md` §4a, `notes.md` bagian 6 batas + 1q.
 - **Stage C2 ✅** — tabel `rute_aksesibilitas_sp` (17 baris; SP Kapitan Meo 5 baris dari Tabel 2.1 monografi); dynamic repeater "Rute Aksesibilitas" pada form SP; tabel tampil (dengan `<caption>`) di `dashboard/sp`. Label catatan repeater = "Catatan" (penjaga label). 660 uji hijau, pint 31. `notes.md` 1q.5.
-- **Stage C3 ⬜** — Laporan Monografi SP: render Bab II penuh per SP (Letak, Batas, Luas & Bentuk, Tanah, Topografi, Iklim, Sumberdaya Air, Aksesibilitas).
+- **Stage C3 ✅** — Laporan Monografi SP merender Bab II penuh per SP (Letak, Batas, Luas & Bentuk, Tanah, Topografi, Iklim, Sumberdaya Air, Aksesibilitas), didahului tabel ikhtisar indikator. `LaporanData::monografiSp()` kembalikan `baris` + `monografi`; helper `angka()`/`rentang()`/`bab2()`. Nilai kosong -> "belum dicatat". 661 uji hijau, pint 31. `notes.md` 1q.6. **Rombongan C selesai.**
 
 ## Tahap 3 — Autentikasi dan Hak Akses
 

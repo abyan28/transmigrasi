@@ -132,7 +132,30 @@ Enum baru:
 - **C2 SELESAI** (commit) - tabel `rute_aksesibilitas_sp` (17 baris, SP
   Kapitan Meo 5 baris Tabel 2.1), repeater "Rute Aksesibilitas" form SP,
   tabel tampil (caption) `dashboard/sp`. 660 uji, pint 31. `notes.md` 1q.5.
-- **C3** - Laporan Monografi SP: render Bab II penuh per SP. Commit.
+- **C3 SELESAI** (commit) - Laporan Monografi SP render Bab II penuh per SP.
+  `LaporanData::monografiSp()` -> `baris` + `monografi`; helper
+  `angka()`/`rentang()`/`bab2()`. View `laporan/monografi-sp` bagian
+  "Bab II. Keadaan Wilayah" (dl per kelompok + tabel rute bercaption).
+  661 uji hijau, pint 31. `notes.md` 1q.6. **Rombongan C tuntas.**
+  Rencana asal:
+  1. `LaporanData::monografiSp()` tambah kunci `monografi` (satu entri per SP):
+     identitas (sp, kode, desa, kecamatan, kabupaten, provinsi, tahun
+     penempatan, luas) + `kelompok` (Letak/Batas Wilayah/Luas dan Bentuk/
+     Tanah dan Topografi/Iklim/Sumberdaya Air, label => string|null,
+     format sama seperti blok `dashboard/sp`) + `rute` (dari
+     `DummyData::ruteAksesibilitasSp($id)`). Kunci `baris` (tabel indikator)
+     tetap sebagai ikhtisar di atas.
+  2. View `laporan/monografi-sp`: setelah tabel indikator, satu `<section>`
+     per SP berisi Bab II (`<dl>` per kelompok) + `<table>` rute (caption
+     anak pertama). Nilai kosong -> "belum dicatat". Tanpa em dash.
+  3. Hapus kalimat "menunggu Rombongan C" dari docblock view + `<x-slot:catatan>`
+     + docblock `LaporanData::monografiSp`.
+  4. Penjaga uji: `LaporanData::monografiSp()['monografi']` 6 entri, tiap
+     entri punya `kelompok['Letak']`, `kelompok['Iklim']`, `rute`; render
+     `/laporan/monografi-sp` memuat "Keadaan Wilayah", "Letak Astronomis",
+     "Batas-Batas Alam", nilai curah hujan SP Kapitan Meo, caption rute.
+  5. Catat: `notes.md` 1q.6 + 1131 + 2417, `tasklist.md` C3, `data-dictionary`
+     bila perlu.
 
 `data-dictionary.md` §3.6, `rules.md` §4a.4, `notes.md` bagian 6 butir batas
 disunting di C1 (pembalikan berjejak, alasan pencabutan dipertahankan).

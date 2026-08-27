@@ -1128,7 +1128,7 @@ Berkas rujukan Polri dan alsintan dikelompokkan per **kecamatan** (laporan kabup
 
 ### 1o.3 Monografi SP: yang bisa dan yang belum
 
-Monografi UPT asli lima bab, memuat letak astronomis, topografi, iklim, sertifikat tanah, KB, agama, kelembagaan desa. **Tidak satu pun ada di sistem.** Laporan Monografi SP untuk sekarang satu baris indikator per SP (kependudukan, lahan tergarap, produksi, pengaduan). Monografi penuh menunggu field Bab II Keadaan Wilayah (Rombongan C).
+Monografi UPT asli lima bab, memuat letak astronomis, topografi, iklim, sertifikat tanah, KB, agama, kelembagaan desa. Bab II (Keadaan Wilayah) **sudah dirender penuh per SP sejak Rombongan C Stage C3 (2026-08-28)**: letak, batas, luas dan bentuk, tanah, topografi, iklim, sumberdaya air, aksesibilitas, didahului satu tabel ikhtisar indikator (kependudukan, lahan tergarap, produksi, pengaduan). Bab kependudukan, sosial ekonomi, dan sosial budaya menyusul begitu modul terkait menyimpan datanya. Lihat bagian 1q.6.
 
 ### 1o.4 Penyimpangan nama field alsintan ditemukan (belum diperbaiki)
 
@@ -1325,6 +1325,30 @@ Tabel 2.1 Monografi ("Cara mencapai lokasi") jadi daftar rute per SP.
 
 **660 uji hijau**, `pint` 31. Satu uji baru
 (`mendata rute aksesibilitas SP sebagai daftar dinamis dengan tempat tampil`).
+
+### 1q.6 Stage C3: Laporan Monografi SP merender Bab II penuh
+
+Sebelumnya laporan ini hanya satu baris indikator per SP. Sekarang:
+
+- `LaporanData::monografiSp()` mengembalikan dua kunci: `baris` (tabel
+  ikhtisar lama, tetap sebagai pembuka) dan `monografi` (satu entri per SP:
+  identitas + `kelompok` Bab II + `rute`).
+- `kelompok` = Letak / Batas Wilayah / Luas dan Bentuk / Tanah dan Topografi
+  / Iklim / Sumberdaya Air. Tiap nilai berupa string terformat atau `null`;
+  view menandai `null` sebagai "belum dicatat". Rentang min/maks dirangkai
+  jadi "x sampai y satuan" (bukan tanda hubung; R-02).
+- Helper `LaporanData::angka()`, `::rentang()`, `::bab2()` (privat). Format
+  angka disamakan dengan blok Keadaan Wilayah `dashboard/sp`.
+- `rute` dari `DummyData::ruteAksesibilitasSp($id)`; dirender sebagai
+  `<table>` per SP dengan `<caption>` "Cara pencapaian menuju ...".
+- View `laporan/monografi-sp`: bagian "Bab II. Keadaan Wilayah", satu
+  `<section>` per SP (`<dl>` per kelompok + tabel rute). Docblock view,
+  `<x-slot:catatan>`, dan docblock `LaporanData::monografiSp` tidak lagi
+  menyebut "menunggu Rombongan C".
+
+**661 uji hijau**, `pint` 31. Satu uji baru
+(`menyusun Bab II Keadaan Wilayah per SP pada Laporan Monografi SP`).
+Rombongan C selesai (C1+C2+C3).
 
 ---
 
@@ -2435,7 +2459,7 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
   * **Halaman Laporan Hasil Panen selesai 2026-08-28** bersama enam laporan lain di menu "Laporan" (bagian 1n.2, 1o). Kolomnya mengikuti "Lap. Akhir Panen Jagung Polri MT. I 2025": identitas poktan, volume benih, varietas, realisasi tanam sampai produksi, dikelompokkan per SP + subtotal + total kawasan. Dasar periode tetap tahun pengadaan bantuan, dengan pupuk di Laporan Saprotan bagian terpisah.
 - Bagaimana menurutmu kalau sistem ini ditambahkan untuk pengisian anggota keluarga? Jika iya, nanti saat pengisian data kepala keluarga di halaman transmigran, ditambah dengan pengisian anggota keluarga (istri + anak2) dengan model tambah form gitu (dynamic form fields). Lalu untuk field form-nya, untuk istri mirip dengan suami (minus field nomor KK), sedangkan untuk anaknya Nama Lengkap, NIK, Jenis Kelamin, Tempat Lahir, Tanggal Lahir, Agama, Pendidikan/Kerja [multi level dropdown] (jika pilih kerja, munculkan form pendidikan terakhir, pekerjaan, dan pendapatan perbulan).
 - [done] Apakah mungkin untuk masing-masing halaman laporan dibuat sekarang? Untuk datanya kita buat dummy dulu agar setidaknya kita bisa menentukan kolom-kolomnya. Kalau kamu setuju, nanti untuk beberapa halaman laporan tertentu akan aku kasih format kolom laporannya.
-  * **Tujuh halaman laporan selesai berisi 2026-08-28** (bagian 1n.2, 1o): judul, cakupan sebagai teks, tabel berdata contoh, tombol unduh jujur. Lima mengikuti berkas rujukan (`refs/`), dua (Rekap Indikator Kawasan, Daftar Transmigran) dirancang dari kolom data yang ada. Yang tersisa: monografi SP penuh (Rombongan C), pintasan pembawa filter, pemilih periode laporan lintas modul.
+  * **Tujuh halaman laporan selesai berisi 2026-08-28** (bagian 1n.2, 1o): judul, cakupan sebagai teks, tabel berdata contoh, tombol unduh jujur. Lima mengikuti berkas rujukan (`refs/`), dua (Rekap Indikator Kawasan, Daftar Transmigran) dirancang dari kolom data yang ada. Laporan Monografi SP dilengkapi Bab II Keadaan Wilayah penuh per SP pada Rombongan C Stage C3 (bagian 1q.6). Yang tersisa: pintasan pembawa filter, pemilih periode laporan lintas modul.
 - [done] Pada halaman saprotan, saat user klik benih, munculkan field form “Varietas”. Tambahkan juga field form “Jadwal Tanam” (Bulan+Tahun). Lalu untuk field form “Tanggal Perolehan”,  ganti dengan Tahun Pengadaan (Tahun).
   * **Selesai 2026-08-27.** `varietas` (VARCHAR, wajib bila jenis Benih — bersyarat sejajar dengan komoditas), `jadwal_tanam` (`CHAR(7)` bentuk `YYYY-MM`, rencana dari berita acara), dan `tahun_pengadaan` (YEAR wajib) menggantikan `tanggal_perolehan`. Sekalian membereskan penyimpangan nama: `tanggal_perolehan` tak pernah ada di kamus data, dan `sumber` diseragamkan menjadi `sumber_dana`. Penjaga varietas dibuktikan lewat mutasi. Lihat bagian 1m.1 dan 1m.7.
 - [done] Pada halaman alsintan, tambahkan field form “Penerima” dari Poktan (bisa dari ketua/anggota).

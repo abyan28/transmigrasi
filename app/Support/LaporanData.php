@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use Illuminate\Support\Carbon;
+
 /**
  * Penyusun data untuk halaman-halaman di menu "Laporan".
  *
@@ -287,18 +289,109 @@ class LaporanData
     }
 
     /**
+     * Angka desimal ringkas: koma sebagai pemisah desimal, nol di ekor dibuang.
+     */
+    private static function angka(mixed $n, int $desimal = 2): string
+    {
+        return rtrim(rtrim(number_format((float) $n, $desimal, ',', '.'), '0'), ',');
+    }
+
+    /**
+     * Teks "min sampai maks satuan" untuk sepasang field numerik.
+     *
+     * Bentuk narasi Bab II Monografi ("kisaran 7,01-7,69"), tetapi tanda
+     * hubung diganti kata "sampai" (ANTISLOP-ID R-02, tanpa em dash).
+     */
+    private static function rentang(array $s, string $min, string $maks, string $satuan = ''): ?string
+    {
+        if (($s[$min] ?? null) === null && ($s[$maks] ?? null) === null) {
+            return null;
+        }
+
+        return trim(self::angka($s[$min] ?? 0).' sampai '.self::angka($s[$maks] ?? 0).' '.$satuan);
+    }
+
+    /**
+     * Bab II "Keadaan Wilayah" satu SP, dikelompokkan sesuai urutan monografi.
+     *
+     * Nilai yang belum diisi dibiarkan null; view menampilkannya sebagai
+     * "belum dicatat". Format angka disamakan dengan blok Keadaan Wilayah di
+     * halaman dashboard SP.
+     *
+     * @return array<string, array<string, ?string>>
+     */
+    private static function bab2(array $s): array
+    {
+        $km = fn (string $k) => ($s[$k] ?? null) !== null ? self::angka($s[$k], 1).' km' : null;
+        $rata = fn (string $k, string $satuan) => ($s[$k] ?? null) !== null
+            ? ', rata-rata '.self::angka($s[$k], 1).' '.$satuan : '';
+
+        $astronomis = ($s['lintang_utara'] ?? null) !== null
+            ? number_format((float) $s['lintang_utara'], 6).' sampai '.number_format((float) $s['lintang_selatan'], 6).' LS, '
+                .number_format((float) $s['bujur_barat'], 6).' sampai '.number_format((float) $s['bujur_timur'], 6).' BT'
+            : null;
+
+        $suhu = self::rentang($s, 'suhu_min_c', 'suhu_maks_c', 'derajat C');
+        $angin = self::rentang($s, 'angin_min_knot', 'angin_maks_knot', 'knot');
+        $sinar = self::rentang($s, 'penyinaran_min_persen', 'penyinaran_maks_persen', '%');
+
+        return [
+            'Letak' => [
+                'Letak astronomis' => $astronomis,
+                'Jarak ke Ibu Kota Kecamatan' => $km('jarak_ke_kecamatan_km'),
+                'Jarak ke Ibu Kota Kabupaten' => $km('jarak_ke_kabupaten_km'),
+                'Jarak ke Ibu Kota Provinsi' => $km('jarak_ke_provinsi_km'),
+            ],
+            'Batas Wilayah' => [
+                'Sebelah Utara' => $s['batas_utara'] ?? null,
+                'Sebelah Timur' => $s['batas_timur'] ?? null,
+                'Sebelah Selatan' => $s['batas_selatan'] ?? null,
+                'Sebelah Barat' => $s['batas_barat'] ?? null,
+            ],
+            'Luas dan Bentuk' => [
+                'Luas wilayah' => ($s['luas_lahan'] ?? null) !== null ? self::angka($s['luas_lahan']).' ha' : null,
+                'Nomor SK Pencadangan Areal' => $s['nomor_sk_pencadangan'] ?? null,
+                'Tanggal SK Pencadangan' => ($s['tanggal_sk_pencadangan'] ?? null)
+                    ? Carbon::parse($s['tanggal_sk_pencadangan'])->translatedFormat('d F Y') : null,
+                'Pola permukiman' => $s['pola_permukiman'] ?? null,
+            ],
+            'Tanah dan Topografi' => [
+                'Tingkat kesuburan tanah' => $s['tingkat_kesuburan_tanah'] ?? null,
+                'pH tanah' => self::rentang($s, 'ph_tanah_min', 'ph_tanah_maks'),
+                'Bentuk wilayah' => $s['bentuk_wilayah'] ?? null,
+                'Kemiringan lereng' => self::rentang($s, 'kemiringan_min_persen', 'kemiringan_maks_persen', '%'),
+            ],
+            'Iklim' => [
+                'Curah hujan rata-rata per tahun' => ($s['curah_hujan_tahunan_mm'] ?? null) !== null
+                    ? number_format((float) $s['curah_hujan_tahunan_mm'], 2, ',', '.').' mm' : null,
+                'Curah hujan bulanan' => self::rentang($s, 'curah_hujan_bulan_min_mm', 'curah_hujan_bulan_maks_mm', 'mm'),
+                'Suhu udara' => $suhu !== null ? $suhu.$rata('suhu_rata_c', 'derajat C') : null,
+                'Kecepatan angin' => $angin !== null ? $angin.$rata('angin_rata_knot', 'knot') : null,
+                'Penyinaran matahari' => $sinar !== null ? $sinar.$rata('penyinaran_rata_persen', '%') : null,
+            ],
+            'Sumberdaya Air' => [
+                'Sumber air bersih' => $s['sumber_air_bersih'] ?? null,
+                'Sumber air pertanian' => $s['sumber_air_pertanian'] ?? null,
+            ],
+        ];
+    }
+
+    /**
      * Laporan Monografi SP.
      *
-     * Monografi UPT asli sangat naratif (iklim, topografi, sertifikat tanah,
-     * KB, agama) dan data itu belum ada di sistem. Yang disajikan di sini
-     * indikator per SP yang memang kita punya. Monografi penuh per SP menyusul
-     * bersama field Bab II Monografi (Rombongan C).
+     * Dua lapis. `baris`: ikhtisar satu baris per SP (kependudukan, lahan,
+     * produksi, pengaduan). `monografi`: Bab II "Keadaan Wilayah" tiap SP
+     * (letak, batas, luas dan bentuk, tanah, topografi, iklim, sumberdaya
+     * air) berikut rute pencapaiannya (Tabel 2.1). SP Kapitan Meo memakai
+     * angka berkas monografi asli; SP lain nilai yang wajar. Bagian yang
+     * belum diisi dibiarkan kosong dan ditandai "belum dicatat" oleh view.
      *
-     * @return array{baris: array<int, array<string, mixed>>}
+     * @return array{baris: array<int, array<string, mixed>>, monografi: array<int, array<string, mixed>>}
      */
     public static function monografiSp(): array
     {
         $rekap = collect(DummyData::rekapPerSp())->keyBy('satuan_permukiman_id');
+        $kawasan = DummyData::kawasan()[0] ?? ['kabupaten' => '-', 'provinsi' => '-'];
 
         $poktanPerSp = [];
         foreach (DummyData::poktan() as $p) {
@@ -312,9 +405,11 @@ class LaporanData
         }
 
         $baris = [];
+        $monografi = [];
 
         foreach (DummyData::satuanPermukiman() as $s) {
-            $r = $rekap->get($s['id_satuan_permukiman']);
+            $id = $s['id_satuan_permukiman'];
+            $r = $rekap->get($id);
 
             $baris[] = [
                 'sp' => $s['nama'],
@@ -326,14 +421,40 @@ class LaporanData
                 'kk_rencana' => (int) $s['jumlah_kk_rencana'],
                 'kk_terisi' => (int) $s['jumlah_kk_terisi'],
                 'rumah_terhuni' => $r['rumah_terhuni'] ?? 0,
-                'poktan' => $poktanPerSp[$s['id_satuan_permukiman']] ?? 0,
-                'lahan_tergarap' => round($lahanTergarap[$s['id_satuan_permukiman']] ?? 0, 2),
+                'poktan' => $poktanPerSp[$id] ?? 0,
+                'lahan_tergarap' => round($lahanTergarap[$id] ?? 0, 2),
                 'produksi_ton' => $r['volume_panen'] ?? 0,
                 'pengaduan_terbuka' => $r['pengaduan_terbuka'] ?? 0,
             ];
+
+            $kelompok = self::bab2($s);
+            $adaIsi = collect($kelompok)->flatten()->contains(fn ($v) => $v !== null && trim((string) $v) !== '');
+
+            $rute = array_map(fn ($x) => [
+                'rute' => $x['rute'],
+                'jarak_km' => $x['jarak_km'],
+                'sarana_angkutan' => $x['sarana_angkutan'] ?? '-',
+                'kondisi_jalan' => $x['kondisi_jalan'] ?? '-',
+                'waktu_tempuh' => $x['waktu_tempuh'] ?? '-',
+                'ongkos_rp' => $x['ongkos_rp'],
+                'keterangan' => $x['keterangan'] ?? null,
+            ], DummyData::ruteAksesibilitasSp($id));
+
+            $monografi[] = [
+                'sp' => $s['nama'],
+                'kode' => $s['kode_sp'],
+                'desa' => $s['desa'],
+                'kecamatan' => $s['kecamatan'],
+                'kabupaten' => $kawasan['kabupaten'],
+                'provinsi' => $kawasan['provinsi'],
+                'tahun_penempatan' => $s['tahun_penempatan'],
+                'ada_isi' => $adaIsi,
+                'kelompok' => $kelompok,
+                'rute' => $rute,
+            ];
         }
 
-        return ['baris' => $baris];
+        return ['baris' => $baris, 'monografi' => $monografi];
     }
 
     /**
