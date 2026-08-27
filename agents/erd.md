@@ -328,9 +328,18 @@ Penyaring cakupan wajib diterapkan pada **level query**, bukan sekadar menyembun
 Alasan yang sama mencabut `luas_lahan_kelompok` pada 2026-08-20: luas lahan kelompok dijumlahkan dari bidang milik seluruh anggotanya, dan luas lahan ketua maupun anggota dijumlahkan dari bidang milik keluarga masing-masing. Menyimpannya sebagai kolom akan basi begitu petugas membetulkan luas di modul lahan. Pengecualiannya hanya ketua bertanda `Bukan Transmigran`, yang lahannya memang tidak terdata pada tabel `lahan`.
 
 ### 7.4 Jumlah anggota keluarga
-`transmigran.jumlah_anggota_keluarga` **disimpan** sebagai angka, karena sistem tidak mendata anggota keluarga satu per satu (di luar lingkup PRD).
 
-Keputusan itu berkonsekuensi pada suksesi kepala keluarga: istri dan anak tidak punya baris di mana pun, sehingga identitas pengganti **wajib diketik petugas**. Sistem merekam siapa penggantinya, bukan menebaknya dari daftar anggota keluarga yang memang tidak ada.
+> **DIBALIK 2026-08-28 (Rombongan B).** Atas permintaan pemilik proyek, sistem kini **mendata anggota keluarga satu per satu** lewat tabel `anggota_keluarga` (`data-dictionary.md` §6.1a). Alasannya: suksesi kepala keluarga dan pemilihan wakil poktan sebelumnya mengetik nama dan NIK dari nol, padahal orang yang sama sudah ada di keluarga itu. Paragraf lama di bawah dipertahankan sebagai jejak keputusan.
+
+Sesudah pembalikan:
+- `transmigran.jumlah_anggota_keluarga` **bukan lagi kolom**, melainkan diturunkan: 1 (kepala keluarga) + `COUNT(anggota_keluarga)`. Menyimpannya membuat nilainya dapat berselisih dengan daftar anggota, kekeliruan yang sama dengan `poktan.jumlah_anggota` (§7.3).
+- Suksesi kepala keluarga (§7.4a, `rules.md` §6.5) memilih pengganti **dari daftar anggota keluarga**; datanya "naik" menimpa baris `transmigran`.
+- `anggota_poktan` dan `poktan.ketua` jalur "Anggota Keluarga" memilih dari daftar yang sama alih-alih mengetik `nama_wakil`/`nik_wakil`.
+- `usia` tetap **tidak disimpan**, dihitung dari `tanggal_lahir`.
+
+~~`transmigran.jumlah_anggota_keluarga` **disimpan** sebagai angka, karena sistem tidak mendata anggota keluarga satu per satu (di luar lingkup PRD).~~
+
+~~Keputusan itu berkonsekuensi pada suksesi kepala keluarga: istri dan anak tidak punya baris di mana pun, sehingga identitas pengganti **wajib diketik petugas**. Sistem merekam siapa penggantinya, bukan menebaknya dari daftar anggota keluarga yang memang tidak ada.~~
 
 ### 7.4a Pergantian kepala keluarga
 Satu baris `transmigran` adalah satu RUMAH TANGGA, bukan satu orang. Ketika kepala keluarganya meninggal atau merantau, barisnya **disunting** dan ketujuh relasi yang menautinya tetap utuh: jatah rumah dan lahan diberikan kepada KK, bukan kepada suaminya secara pribadi.
@@ -339,7 +348,7 @@ Peristiwanya direkam pada `riwayat_kepala_keluarga`, sebab `audit_log` tidak dap
 
 ### 7.5 Riwayat penghunian
 Pergantian penghuni tidak menimpa data lama. Alurnya: baris `riwayat_penghunian` lama diisi `tanggal_keluar` dan `alasan_keluar`, `rumah.transmigran_id` diperbarui, lalu baris riwayat baru dibuat (`rules.md` Â§6a.9).
-
+
 
 ---
 

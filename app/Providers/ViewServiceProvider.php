@@ -2,7 +2,12 @@
 
 namespace App\Providers;
 
+use App\Enums\Agama;
+use App\Enums\HubunganAnggotaKeluarga;
+use App\Enums\JenisKelamin;
 use App\Enums\JenisReferensi;
+use App\Enums\KegiatanAnggota;
+use App\Enums\PendidikanTerakhir;
 use App\Enums\StatusPanen;
 use App\Support\DummyData;
 use Illuminate\Support\Carbon;
@@ -47,7 +52,7 @@ class ViewServiceProvider extends ServiceProvider
         'pages.poktan.form' => ['daftarSp', 'daftarTransmigran', 'kontakTransmigran', 'lahanTransmigran'],
         'pages.poktan.form-anggota' => ['daftarTransmigran', 'kontakTransmigran', 'lahanTransmigran', 'opsiJabatanAnggota'],
         'pages.lahan.form' => ['daftarTransmigran', 'daftarSp', 'opsiJenisDokumenLahan'],
-        'pages.transmigran.form' => ['daftarSp', 'saranPekerjaan'],
+        'pages.transmigran.form' => ['daftarSp', 'saranPekerjaan', 'opsiAgama', 'opsiHubunganAnggota', 'opsiKegiatanAnggota', 'opsiPendidikan', 'opsiJenisKelamin'],
         'pages.panen.form' => ['satuanKomoditas', 'simbolSatuan', 'penanamanUntukPanen'],
         'pages.penanaman.form' => ['daftarPoktan', 'daftarKomoditas', 'petaPoktan', 'petaBenih'],
         'pages.pengaduan.form' => ['petaBidang', 'opsiKategoriPengaduan', 'opsiBidang', 'opsiPrioritasPengaduan', 'daftarSp'],
@@ -212,6 +217,16 @@ class ViewServiceProvider extends ServiceProvider
             'petaBidang' => DummyData::petaBidangKategori(),
             'opsiSumberDana' => DummyData::opsiReferensi(JenisReferensi::SumberDana),
             'opsiJabatanAnggota' => DummyData::opsiReferensi(JenisReferensi::JabatanAnggotaPoktan),
+
+            // Enum langsung, bukan lewat data master: keenamnya baku dari
+            // Dukcapil dan tidak di-CRUD dinas (keputusan pemilik proyek
+            // 2026-08-28, Rombongan B).
+            'opsiAgama' => Agama::opsi(),
+            'opsiHubunganAnggota' => HubunganAnggotaKeluarga::opsi(),
+            'opsiKegiatanAnggota' => KegiatanAnggota::opsi(),
+            'opsiPendidikan' => PendidikanTerakhir::opsi(),
+            'opsiJenisKelamin' => JenisKelamin::opsi(),
+
             'kontakTransmigran' => self::petaKeluarga()['kontak'],
             'lahanTransmigran' => self::petaKeluarga()['lahan'],
 

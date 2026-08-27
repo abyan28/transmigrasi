@@ -823,6 +823,14 @@ Lima laporan mengikuti berkas rujukan di `refs/` (dibaca lewat `pdftotext`, baca
 - Penyeragaman nama field alsintan ke `tahun_pengadaan` / `sumber_dana`
 - Butir bagian 6 lain yang belum dibahas
 
+### Revisi Rombongan B: pendataan anggota keluarga (2026-08-28) — bertahap
+
+Membalik `erd.md` §7.4 ("sistem tidak mendata anggota keluarga satu per satu") atas permintaan pemilik proyek. Lingkup penuh: pendataan + jumlah turunan + rombak `anggota_poktan` + rombak suksesi KK.
+
+- **Stage B1 ✅** — fondasi + modul transmigran: enum `Agama` / `HubunganAnggotaKeluarga` / `KegiatanAnggota`; tabel `anggota_keluarga` (29 baris contoh); `transmigran.agama`; `jumlah_anggota_keluarga` jadi turunan; usia dihitung; form repeater dinamis bersyarat; detail tab Anggota Keluarga. 654 uji hijau, pint 31. `erd.md` §7.4 direvisi berjejak. Lihat notes.md 1p.
+- **Stage B2 ⬜** — `anggota_poktan`: kolom `anggota_keluarga_id`; `form-anggota` + `poktan.form` jalur "Anggota Keluarga" memilih dari daftar; `nama_wakil`/`nik_wakil`/`hubungan` jadi turunan bila id terisi.
+- **Stage B3 ⬜** — suksesi KK: pengganti dipilih dari daftar anggota keluarga; datanya "naik" menimpa baris transmigran; `rules.md` §6.5 direvisi; `riwayat_kepala_keluarga` menaut ke anggota.
+
 ## Tahap 3 — Autentikasi dan Hak Akses
 
 > **Peringatan penerbitan statis.** Begitu login aktif, halaman berpelindung membalas pengalihan ke `/login`, bukan 200, sehingga `.github/workflows/deploy.yml` **gagal** dan situs GitHub Pages berhenti diperbarui. Putuskan lebih dulu: batasi `sim:tautan-statis` hanya ke halaman publik, atau hentikan penerbitan statis sama sekali. Lihat `notes.md` bagian 1b.7.

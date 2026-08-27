@@ -7,8 +7,12 @@
     Nama kolom mengikuti agents/data-dictionary.md bagian 6.1, sehingga saat
     backend siap, Form Request tinggal membaca nama yang sama.
 
-    Isian dikelompokkan menjadi tiga bagian agar form tidak terasa padat
+    Isian dikelompokkan menjadi beberapa bagian agar form tidak terasa padat
     (agents/rules.md bagian 13.1 poin 2).
+
+    USIA tidak diisi: dihitung dari tanggal lahir dan bertambah sendiri tiap
+    tahun (Rombongan B, 2026-08-28). JUMLAH ANGGOTA KELUARGA juga tidak diisi:
+    dihitung 1 (kepala) + cacah baris pada bagian Anggota Keluarga.
 
     Pemakaian:
         @include('pages.transmigran.form', ['data' => $baris, 'awalan' => 'ubah'])
@@ -18,13 +22,54 @@
     // halaman. Tanpa ini label tidak lagi menunjuk isian yang benar.
     $awalan = $awalan ?? 'tambah';
     $data = $data ?? [];
+    $anggotaKeluargaData = $anggotaKeluargaData ?? [];
 
     $kelasKontrol = 'h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30';
     $kelasLabel = 'mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400';
     $kelasBagian = 'text-theme-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400';
 @endphp
 
-<div class="space-y-6">
+<div class="space-y-6"
+    x-data="{
+        tanggalLahirKk: @js($data['tanggal_lahir'] ?? ''),
+        anggota: @js(collect($anggotaKeluargaData)->map(fn ($a) => [
+            'hubungan' => $a['hubungan'] ?? '',
+            'nama_lengkap' => $a['nama_lengkap'] ?? '',
+            'nik' => $a['nik'] ?? '',
+            'jenis_kelamin' => $a['jenis_kelamin'] ?? '',
+            'tempat_lahir' => $a['tempat_lahir'] ?? '',
+            'tanggal_lahir' => $a['tanggal_lahir'] ?? '',
+            'agama' => $a['agama'] ?? '',
+            'kegiatan' => $a['kegiatan'] ?? '',
+            'pendidikan_terakhir' => $a['pendidikan_terakhir'] ?? '',
+            'pekerjaan' => $a['pekerjaan'] ?? '',
+            'pendapatan_per_bulan' => $a['pendapatan_per_bulan'] ?? '',
+            'telepon' => $a['telepon'] ?? '',
+            'keterangan' => $a['keterangan'] ?? '',
+        ])->values()->all()),
+        usiaDari(tanggal) {
+            if (! tanggal) return null;
+            const lahir = new Date(tanggal);
+            if (isNaN(lahir)) return null;
+            const kini = new Date();
+            let umur = kini.getFullYear() - lahir.getFullYear();
+            const belumUlangTahun = kini.getMonth() < lahir.getMonth()
+                || (kini.getMonth() === lahir.getMonth() && kini.getDate() < lahir.getDate());
+            if (belumUlangTahun) umur--;
+            return umur >= 0 ? umur : null;
+        },
+        get usiaKk() { return this.usiaDari(this.tanggalLahirKk); },
+        get jumlahAnggotaKeluarga() { return 1 + this.anggota.length; },
+        tambahAnggota() {
+            this.anggota.push({
+                hubungan: '', nama_lengkap: '', nik: '', jenis_kelamin: '',
+                tempat_lahir: '', tanggal_lahir: '', agama: '', kegiatan: '',
+                pendidikan_terakhir: '', pekerjaan: '', pendapatan_per_bulan: '',
+                telepon: '', keterangan: '',
+            });
+        },
+        hapusAnggota(i) { this.anggota.splice(i, 1); },
+    }">
     {{-- Bagian 1: identitas --}}
     <section>
         <h3 class="{{ $kelasBagian }}">Identitas Kepala Keluarga</h3>
@@ -66,8 +111,20 @@
                 <label for="{{ $awalan }}_jenis_kelamin" class="{{ $kelasLabel }}">Jenis Kelamin</label>
                 <select id="{{ $awalan }}_jenis_kelamin" name="jenis_kelamin" class="{{ $kelasKontrol }}">
                     <option value="">Pilih jenis kelamin</option>
-                    @foreach (\App\Enums\JenisKelamin::opsi() as $nilai => $label)
+                    @foreach ($opsiJenisKelamin as $nilai => $label)
                         <option value="{{ $nilai }}" @selected(old('jenis_kelamin', $data['jenis_kelamin'] ?? '') === $nilai)>
+                            {{ $label }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
+                <label for="{{ $awalan }}_agama" class="{{ $kelasLabel }}">Agama</label>
+                <select id="{{ $awalan }}_agama" name="agama" class="{{ $kelasKontrol }}">
+                    <option value="">Pilih agama</option>
+                    @foreach ($opsiAgama as $nilai => $label)
+                        <option value="{{ $nilai }}" @selected(old('agama', $data['agama'] ?? '') === $nilai)>
                             {{ $label }}
                         </option>
                     @endforeach
@@ -78,7 +135,7 @@
                 <label for="{{ $awalan }}_pendidikan" class="{{ $kelasLabel }}">Pendidikan Terakhir</label>
                 <select id="{{ $awalan }}_pendidikan" name="pendidikan_terakhir" class="{{ $kelasKontrol }}">
                     <option value="">Pilih pendidikan</option>
-                    @foreach (\App\Enums\PendidikanTerakhir::opsi() as $nilai => $label)
+                    @foreach ($opsiPendidikan as $nilai => $label)
                         <option value="{{ $nilai }}" @selected(old('pendidikan_terakhir', $data['pendidikan_terakhir'] ?? '') === $nilai)>
                             {{ $label }}
                         </option>
@@ -96,8 +153,24 @@
             <div>
                 <label for="{{ $awalan }}_tanggal_lahir" class="{{ $kelasLabel }}">Tanggal Lahir</label>
                 <input type="date" id="{{ $awalan }}_tanggal_lahir" name="tanggal_lahir"
+                    x-model="tanggalLahirKk"
                     value="{{ old('tanggal_lahir', $data['tanggal_lahir'] ?? '') }}" max="{{ date('Y-m-d') }}"
                     class="{{ $kelasKontrol }}" />
+            </div>
+
+            <div>
+                {{--
+                    Usia DIHITUNG dari tanggal lahir, tidak diisi dan tidak
+                    disimpan (Rombongan B). Tanpa `name`, sehingga tidak ikut
+                    terkirim; nilainya diturunkan ulang setiap kali data dibaca.
+                --}}
+                <span class="{{ $kelasLabel }}">Usia</span>
+                <p class="flex h-11 items-center rounded-lg bg-gray-50 px-4 text-theme-sm text-gray-600 dark:bg-white/[0.03] dark:text-gray-400">
+                    <span x-text="usiaKk !== null ? usiaKk + ' tahun' : 'Isi tanggal lahir lebih dulu'"></span>
+                </p>
+                <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                    Dihitung dari tanggal lahir, bertambah sendiri tiap tahun.
+                </p>
             </div>
 
             <div>
@@ -157,18 +230,8 @@
 
                 {{--
                     Keanggotaan poktan TIDAK diisi di sini (rules.md 7a.8).
-
-                    Sebelumnya bagian ini berupa pilihan Ya/Tidak, tetapi
-                    nilainya tidak pernah tersinkron dengan tabel
-                    `anggota_poktan`: petugas dapat menyatakan "Ya" tanpa
-                    seorang pun mendaftarkannya ke kelompok mana pun, dan
-                    sebaliknya. Dua sumber kebenaran untuk satu fakta selalu
-                    berakhir berbeda.
-
-                    Keanggotaan kini ditetapkan dari sisi poktan, dan nilai di
-                    bawah dibaca sebagai turunan dari keanggotaan berstatus
-                    Aktif. Ditampilkan sebagai keterangan, bukan isian, agar
-                    petugas tahu keadaannya tanpa dapat mengubahnya dari sini.
+                    Ditetapkan dari sisi poktan, dan nilai di bawah dibaca
+                    sebagai turunan dari keanggotaan berstatus Aktif.
                 --}}
                 <div>
                     <span class="{{ $kelasLabel }}">Anggota Kelompok Tani</span>
@@ -183,9 +246,9 @@
         </div>
     </section>
 
-    {{-- Bagian 3: keluarga dan ekonomi --}}
+    {{-- Bagian 3: penghidupan --}}
     <section class="border-t border-gray-200 pt-5 dark:border-gray-800">
-        <h3 class="{{ $kelasBagian }}">Keluarga dan Penghidupan</h3>
+        <h3 class="{{ $kelasBagian }}">Penghidupan</h3>
         <div class="mt-3 grid gap-4 sm:grid-cols-2">
             <div>
                 <label for="{{ $awalan }}_pekerjaan" class="{{ $kelasLabel }}">
@@ -194,7 +257,6 @@
                 {{--
                     Pekerjaan berupa teks bebas karena ragamnya di lapangan sulit
                     dibatasi di muka. Daftar saran menjaga konsistensi penulisan
-                    tanpa menutup kemungkinan pekerjaan baru
                     (agents/data-dictionary.md bagian 6.1).
                 --}}
                 <input type="text" id="{{ $awalan }}_pekerjaan" name="pekerjaan_kepala_keluarga"
@@ -208,19 +270,23 @@
             </div>
 
             <div>
-                <label for="{{ $awalan }}_jumlah_anggota" class="{{ $kelasLabel }}">
-                    Jumlah Anggota Keluarga<span class="text-error-500">*</span>
-                </label>
-                <input type="number" id="{{ $awalan }}_jumlah_anggota" name="jumlah_anggota_keluarga"
-                    value="{{ old('jumlah_anggota_keluarga', $data['jumlah_anggota_keluarga'] ?? '') }}" required
-                    min="1" max="30" class="{{ $kelasKontrol }} tabular-nums" />
+                {{--
+                    Jumlah anggota keluarga DIHITUNG 1 (kepala) + cacah baris
+                    pada bagian Anggota Keluarga, tidak diisi (Rombongan B).
+                    Sebelumnya diketik petugas dan dapat berselisih dengan
+                    daftar anggota yang sebenarnya (erd.md 7.4, dibalik).
+                --}}
+                <span class="{{ $kelasLabel }}">Jumlah Anggota Keluarga</span>
+                <p class="flex h-11 items-center rounded-lg bg-gray-50 px-4 text-theme-sm text-gray-600 dark:bg-white/[0.03] dark:text-gray-400">
+                    <span x-text="jumlahAnggotaKeluarga + ' orang'"></span>
+                </p>
                 <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
-                    Termasuk kepala keluarga.
+                    Termasuk kepala keluarga. Dihitung dari daftar anggota di bawah.
                 </p>
             </div>
 
             <div class="sm:col-span-2">
-                <label for="{{ $awalan }}_pendapatan" class="{{ $kelasLabel }}">Pendapatan per Bulan</label>
+                <label for="{{ $awalan }}_pendapatan" class="{{ $kelasLabel }}">Pendapatan Kepala Keluarga per Bulan</label>
                 <div class="relative">
                     <span
                         class="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-theme-sm text-gray-500 dark:text-gray-400">
@@ -242,7 +308,190 @@
         </div>
     </section>
 
-    {{-- Bagian 4: dokumen --}}
+    {{-- Bagian 4: anggota keluarga (dynamic) --}}
+    <section class="border-t border-gray-200 pt-5 dark:border-gray-800">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h3 class="{{ $kelasBagian }}">Anggota Keluarga</h3>
+                <p class="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
+                    Istri atau suami, anak, dan anggota lain selain kepala keluarga.
+                </p>
+            </div>
+            <button type="button" @click="tambahAnggota()"
+                class="inline-flex h-10 items-center gap-1.5 rounded-lg border border-gray-300 px-3 text-theme-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14" />
+                </svg>
+                Tambah Anggota
+            </button>
+        </div>
+
+        <p x-show="anggota.length === 0"
+            class="mt-4 rounded-lg bg-gray-50 px-4 py-6 text-center text-theme-sm text-gray-500 dark:bg-white/[0.03] dark:text-gray-400">
+            Belum ada anggota keluarga ditambahkan.
+        </p>
+
+        <template x-for="(a, i) in anggota" :key="i">
+            <fieldset class="mt-4 rounded-xl border border-gray-200 p-4 dark:border-gray-800">
+                <div class="flex items-center justify-between">
+                    <legend class="text-theme-sm font-medium text-gray-700 dark:text-gray-300">
+                        Anggota <span x-text="i + 1"></span>
+                        <span class="text-gray-400" x-text="a.nama_lengkap ? ' - ' + a.nama_lengkap : ''"></span>
+                    </legend>
+                    <button type="button" @click="hapusAnggota(i)"
+                        class="rounded p-1 text-gray-400 transition hover:text-error-500 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500"
+                        :aria-label="'Hapus anggota ' + (i + 1)">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 7h12M9 7V5h6v2m-7 0v12a1 1 0 001 1h6a1 1 0 001-1V7" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="mt-3 grid gap-4 sm:grid-cols-2">
+                    <div>
+                        <label class="{{ $kelasLabel }}" :for="'{{ $awalan }}_ak_hubungan_' + i">
+                            Hubungan<span class="text-error-500">*</span>
+                        </label>
+                        <select :id="'{{ $awalan }}_ak_hubungan_' + i" :name="`anggota_keluarga[${i}][hubungan]`"
+                            x-model="a.hubungan" required class="{{ $kelasKontrol }}">
+                            <option value="">Pilih hubungan</option>
+                            @foreach ($opsiHubunganAnggota as $nilai => $label)
+                                <option value="{{ $nilai }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="{{ $kelasLabel }}" :for="'{{ $awalan }}_ak_nama_' + i">
+                            Nama Lengkap<span class="text-error-500">*</span>
+                        </label>
+                        <input type="text" :id="'{{ $awalan }}_ak_nama_' + i" :name="`anggota_keluarga[${i}][nama_lengkap]`"
+                            x-model="a.nama_lengkap" required maxlength="255" class="{{ $kelasKontrol }}" />
+                    </div>
+
+                    <div>
+                        <label class="{{ $kelasLabel }}" :for="'{{ $awalan }}_ak_nik_' + i">NIK</label>
+                        <input type="text" :id="'{{ $awalan }}_ak_nik_' + i" :name="`anggota_keluarga[${i}][nik]`"
+                            x-model="a.nik" inputmode="numeric" pattern="[0-9]{16}" maxlength="16"
+                            placeholder="Kosongkan bila belum punya" class="{{ $kelasKontrol }} tabular-nums" />
+                        <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                            Boleh kosong bagi balita yang belum memiliki NIK.
+                        </p>
+                    </div>
+
+                    <div>
+                        <label class="{{ $kelasLabel }}" :for="'{{ $awalan }}_ak_jk_' + i">Jenis Kelamin</label>
+                        <select :id="'{{ $awalan }}_ak_jk_' + i" :name="`anggota_keluarga[${i}][jenis_kelamin]`"
+                            x-model="a.jenis_kelamin" class="{{ $kelasKontrol }}">
+                            <option value="">Pilih jenis kelamin</option>
+                            @foreach ($opsiJenisKelamin as $nilai => $label)
+                                <option value="{{ $nilai }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="{{ $kelasLabel }}" :for="'{{ $awalan }}_ak_tmp_' + i">Tempat Lahir</label>
+                        <input type="text" :id="'{{ $awalan }}_ak_tmp_' + i" :name="`anggota_keluarga[${i}][tempat_lahir]`"
+                            x-model="a.tempat_lahir" maxlength="100" class="{{ $kelasKontrol }}" />
+                    </div>
+
+                    <div>
+                        <label class="{{ $kelasLabel }}" :for="'{{ $awalan }}_ak_tgl_' + i">Tanggal Lahir</label>
+                        <input type="date" :id="'{{ $awalan }}_ak_tgl_' + i" :name="`anggota_keluarga[${i}][tanggal_lahir]`"
+                            x-model="a.tanggal_lahir" max="{{ date('Y-m-d') }}" class="{{ $kelasKontrol }}" />
+                        <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                            <span x-text="usiaDari(a.tanggal_lahir) !== null ? 'Usia ' + usiaDari(a.tanggal_lahir) + ' tahun' : 'Usia dihitung dari tanggal lahir'"></span>
+                        </p>
+                    </div>
+
+                    <div>
+                        <label class="{{ $kelasLabel }}" :for="'{{ $awalan }}_ak_agama_' + i">Agama</label>
+                        <select :id="'{{ $awalan }}_ak_agama_' + i" :name="`anggota_keluarga[${i}][agama]`"
+                            x-model="a.agama" class="{{ $kelasKontrol }}">
+                            <option value="">Pilih agama</option>
+                            @foreach ($opsiAgama as $nilai => $label)
+                                <option value="{{ $nilai }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="{{ $kelasLabel }}" :for="'{{ $awalan }}_ak_keg_' + i">
+                            Pendidikan atau Kerja<span class="text-error-500">*</span>
+                        </label>
+                        <select :id="'{{ $awalan }}_ak_keg_' + i" :name="`anggota_keluarga[${i}][kegiatan]`"
+                            x-model="a.kegiatan" required class="{{ $kelasKontrol }}">
+                            <option value="">Pilih kegiatan</option>
+                            @foreach ($opsiKegiatanAnggota as $nilai => $label)
+                                <option value="{{ $nilai }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    {{--
+                        Cabang isian menurut kegiatan (App\Enums\KegiatanAnggota):
+                        Belum Sekolah tidak menampilkan apa-apa; selain itu
+                        pendidikan tampil; Bekerja menambah pekerjaan dan
+                        pendapatan. `:required` bersyarat mengikuti pola form
+                        wilayah dan saprotan.
+                    --}}
+                    <div x-show="a.kegiatan && a.kegiatan !== 'Belum Sekolah'" x-cloak>
+                        <label class="{{ $kelasLabel }}" :for="'{{ $awalan }}_ak_pend_' + i">
+                            <span x-text="a.kegiatan === 'Masih Sekolah' ? 'Jenjang yang Sedang Ditempuh' : 'Pendidikan Terakhir'"></span>
+                            <span class="text-error-500">*</span>
+                        </label>
+                        <select :id="'{{ $awalan }}_ak_pend_' + i" :name="`anggota_keluarga[${i}][pendidikan_terakhir]`"
+                            x-model="a.pendidikan_terakhir"
+                            :required="a.kegiatan && a.kegiatan !== 'Belum Sekolah'"
+                            :disabled="! a.kegiatan || a.kegiatan === 'Belum Sekolah'"
+                            class="{{ $kelasKontrol }}">
+                            <option value="">Pilih pendidikan</option>
+                            @foreach ($opsiPendidikan as $nilai => $label)
+                                <option value="{{ $nilai }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div x-show="a.kegiatan === 'Bekerja'" x-cloak>
+                        <label class="{{ $kelasLabel }}" :for="'{{ $awalan }}_ak_kerja_' + i">
+                            Pekerjaan<span class="text-error-500">*</span>
+                        </label>
+                        <input type="text" :id="'{{ $awalan }}_ak_kerja_' + i" :name="`anggota_keluarga[${i}][pekerjaan]`"
+                            x-model="a.pekerjaan" list="saran-pekerjaan" maxlength="100"
+                            :required="a.kegiatan === 'Bekerja'" :disabled="a.kegiatan !== 'Bekerja'"
+                            class="{{ $kelasKontrol }}" />
+                    </div>
+
+                    <div x-show="a.kegiatan === 'Bekerja'" x-cloak>
+                        <label class="{{ $kelasLabel }}" :for="'{{ $awalan }}_ak_gaji_' + i">Pendapatan per Bulan</label>
+                        <div class="relative">
+                            <span class="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-theme-sm text-gray-500 dark:text-gray-400">Rp</span>
+                            <input type="number" :id="'{{ $awalan }}_ak_gaji_' + i" :name="`anggota_keluarga[${i}][pendapatan_per_bulan]`"
+                                x-model="a.pendapatan_per_bulan" :disabled="a.kegiatan !== 'Bekerja'"
+                                min="0" step="1000" placeholder="0" class="{{ $kelasKontrol }} tabular-nums pl-10" />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="{{ $kelasLabel }}" :for="'{{ $awalan }}_ak_telp_' + i">Nomor Telepon</label>
+                        <input type="tel" :id="'{{ $awalan }}_ak_telp_' + i" :name="`anggota_keluarga[${i}][telepon]`"
+                            x-model="a.telepon" inputmode="numeric" maxlength="20"
+                            placeholder="08xxxxxxxxxx" class="{{ $kelasKontrol }} tabular-nums" />
+                    </div>
+
+                    <div class="sm:col-span-2">
+                        <label class="{{ $kelasLabel }}" :for="'{{ $awalan }}_ak_ket_' + i">Catatan</label>
+                        <textarea :id="'{{ $awalan }}_ak_ket_' + i" :name="`anggota_keluarga[${i}][keterangan]`"
+                            x-model="a.keterangan" rows="2" maxlength="1000"
+                            class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90"></textarea>
+                    </div>
+                </div>
+            </fieldset>
+        </template>
+    </section>
+
+    {{-- Bagian 5: dokumen --}}
     <section class="border-t border-gray-200 pt-5 dark:border-gray-800">
         <h3 class="{{ $kelasBagian }}">Dokumen Pendukung</h3>
         <div class="mt-3">

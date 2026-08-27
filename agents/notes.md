@@ -1158,6 +1158,52 @@ Satu jebakan: penjaga `<caption>` memindai `<table` juga di dalam komentar Blade
 
 ---
 
+## 1p. Rombongan B: Pendataan Anggota Keluarga (2026-08-28)
+
+Menambahkan pendataan anggota keluarga (istri/suami, anak) satu per satu,
+plus field agama dan usia (dihitung) pada modul transmigran.
+
+### 1p.1 Ini membalik keputusan berlingkup PRD
+
+`erd.md` §7.4 dan `data-dictionary.md` menyatakan **berkali-kali** dan sengaja:
+"sistem tidak mendata anggota keluarga satu per satu (di luar lingkup PRD)".
+Keputusan itu menopang: `jumlah_anggota_keluarga` disimpan (bukan dihitung);
+wakil poktan dan pengganti KK diketik manual (tidak ada relasi untuk dibaca);
+enum `HubunganKeluarga` sengaja kasar.
+
+Pemilik proyek memintanya secara eksplisit (2026-08-28) dan memilih lingkup
+**penuh**: pendataan + `jumlah` jadi turunan + rombak `anggota_poktan` +
+rombak suksesi KK. Dikerjakan bertahap:
+- **Stage B1** (ini) — fondasi + modul transmigran.
+- **Stage B2** — rombak `anggota_poktan` memilih dari daftar.
+- **Stage B3** — rombak suksesi KK memilih dari daftar.
+
+`erd.md` §7.4 direvisi berjejak (paragraf lama dicoret, bukan dihapus).
+
+### 1p.2 Stage B1: yang dikerjakan
+
+- Tiga enum: `Agama` (6 agama Dukcapil, bukan data master), `HubunganAnggotaKeluarga` (Istri/Suami/Anak/Anak Angkat/Orang Tua/Famili Lain, BEDA dari `HubunganKeluarga` yang tetap kasar), `KegiatanAnggota` (Belum Sekolah/Masih Sekolah/Bekerja/Tidak Bekerja).
+- Tabel `anggota_keluarga` di DummyData: 29 baris untuk 8 keluarga, mencakup istri, suami, anak Bekerja, anak Masih Sekolah, anak tanpa NIK, Orang Tua, Anak Angkat, Famili Lain.
+- `transmigran.agama` kolom baru; `transmigran.jumlah_anggota_keluarga` jadi **turunan** (1 + cacah anggota) lewat `array_map` di `DummyData::transmigran()`, seperti pola `alsintan()`. Nilai turunannya persis sama dengan angka lama, jadi seluruh pembaca tetap jalan.
+- `usia` dihitung: form pakai getter Alpine `usiaDari()`; detail pakai `Carbon::age`. Tidak ada kolom, tidak ada `name="usia"`.
+- Form transmigran: field Agama, usia read-only auto, `jumlah_anggota_keluarga` jadi teks turunan, section "Anggota Keluarga" dengan repeater Alpine (`x-for`, tambah/hapus, cabang `:required`/`:disabled` bersyarat menurut kegiatan).
+- Detail transmigran: Agama + Usia di biodata, tab "Anggota Keluarga (N)" baru berisi tabel.
+
+### 1p.3 Verifikasi
+
+**654 uji hijau** (naik dari 648), `pint` tetap 31.
+
+Penjaga baru: jumlah anggota = turunan tanpa selisih; usia = hitungan Carbon
+di rincian; tiap kolom anggota punya tempat tampil; repeater punya template +
+tambah + hapus + cabang bersyarat pada keluaran terender; data contoh
+bervariasi sesuai cabang kegiatan; enum baru dikunci.
+
+Satu jebakan `pint`: `\Illuminate\Support\Carbon::parse` inline di uji memicu
+`fully_qualified_strict_types`; `Carbon` sudah di-`use` di berkas itu, jadi
+cukup dipendekkan.
+
+---
+
 ## 2. Catatan Dokumen Proposal
 
 Lembar pengesahan pada `docs/Revisi_Proposal_Budi_TEP ITS 2026_Kobalima_Timur_Upload_10_6_2026_a.pdf` masih memuat judul dan pengusul dari proposal lain:

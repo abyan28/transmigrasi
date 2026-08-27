@@ -185,11 +185,17 @@ class DummyData
     /**
      * Daftar transmigran beserta data kependudukannya.
      *
+     * `jumlah_anggota_keluarga` DITURUNKAN sejak 2026-08-28 (Rombongan B):
+     * 1 (kepala keluarga) + cacah baris `anggotaKeluarga()` untuk keluarga
+     * ini. Sebelumnya disimpan sebagai angka justru karena belum ada baris
+     * anggota untuk dihitung (erd.md 7.4, kini dibalik). Menyimpannya membuat
+     * nilainya dapat berselisih dengan daftar anggota yang sebenarnya.
+     *
      * @return array<int, array<string, mixed>> Data transmigran
      */
     public static function transmigran(): array
     {
-        return [
+        $data = [
             [
                 'id_transmigran' => 1,
                 'nik' => '5321011505800001',
@@ -197,10 +203,10 @@ class DummyData
                 'no_kk' => '5321010102150001',
                 'nama_kepala_keluarga' => 'YOHANES BERE',
                 'jenis_kelamin' => 'Laki-laki',
+                'agama' => 'Katolik',
                 'tanggal_lahir' => '1980-05-15',
                 'pendidikan_terakhir' => 'SMA/SMK',
                 'pekerjaan_kepala_keluarga' => 'PETANI',
-                'jumlah_anggota_keluarga' => 5,
                 'pendapatan_per_bulan' => 2350000,
                 'daerah_asal' => 'KUPANG',
                 'tahun_kedatangan' => 2016,
@@ -218,10 +224,10 @@ class DummyData
                 'no_kk' => '5321010102150002',
                 'nama_kepala_keluarga' => 'MARIA DA COSTA',
                 'jenis_kelamin' => 'Perempuan',
+                'agama' => 'Katolik',
                 'tanggal_lahir' => '1985-03-22',
                 'pendidikan_terakhir' => 'SMP',
                 'pekerjaan_kepala_keluarga' => 'PETANI',
-                'jumlah_anggota_keluarga' => 4,
                 'pendapatan_per_bulan' => 1850000,
                 'daerah_asal' => 'BELU',
                 'tahun_kedatangan' => 2016,
@@ -239,10 +245,10 @@ class DummyData
                 'no_kk' => '5321010102160003',
                 'nama_kepala_keluarga' => 'PETRUS NAHAK',
                 'jenis_kelamin' => 'Laki-laki',
+                'agama' => 'Katolik',
                 'tanggal_lahir' => '1978-09-08',
                 'pendidikan_terakhir' => 'SD',
                 'pekerjaan_kepala_keluarga' => 'PETANI',
-                'jumlah_anggota_keluarga' => 6,
                 'pendapatan_per_bulan' => 2100000,
                 'daerah_asal' => 'TIMOR TENGAH SELATAN',
                 'tahun_kedatangan' => 2016,
@@ -260,10 +266,10 @@ class DummyData
                 'no_kk' => '5321010102170004',
                 'nama_kepala_keluarga' => 'ANGELA SERAN',
                 'jenis_kelamin' => 'Perempuan',
+                'agama' => 'Katolik',
                 'tanggal_lahir' => '1990-12-17',
                 'pendidikan_terakhir' => 'SMA/SMK',
                 'pekerjaan_kepala_keluarga' => 'PEDAGANG',
-                'jumlah_anggota_keluarga' => 3,
                 'pendapatan_per_bulan' => 2750000,
                 'daerah_asal' => 'MALAKA',
                 'tahun_kedatangan' => 2017,
@@ -281,10 +287,10 @@ class DummyData
                 'no_kk' => '5321010102170005',
                 'nama_kepala_keluarga' => 'DOMINGGUS TAEK',
                 'jenis_kelamin' => 'Laki-laki',
+                'agama' => 'Kristen',
                 'tanggal_lahir' => '1982-04-03',
                 'pendidikan_terakhir' => 'SMP',
                 'pekerjaan_kepala_keluarga' => 'PETANI',
-                'jumlah_anggota_keluarga' => 5,
                 'pendapatan_per_bulan' => 1950000,
                 'daerah_asal' => 'BELU',
                 'tahun_kedatangan' => 2017,
@@ -302,10 +308,10 @@ class DummyData
                 'no_kk' => '5321010102180006',
                 'nama_kepala_keluarga' => 'FRANSISKA BRIA',
                 'jenis_kelamin' => 'Perempuan',
+                'agama' => 'Katolik',
                 'tanggal_lahir' => '1987-11-25',
                 'pendidikan_terakhir' => 'Diploma',
                 'pekerjaan_kepala_keluarga' => 'GURU',
-                'jumlah_anggota_keluarga' => 4,
                 'pendapatan_per_bulan' => 3200000,
                 'daerah_asal' => 'KUPANG',
                 'tahun_kedatangan' => 2018,
@@ -323,10 +329,10 @@ class DummyData
                 'no_kk' => '5321010102180007',
                 'nama_kepala_keluarga' => 'GABRIEL LEKI',
                 'jenis_kelamin' => 'Laki-laki',
+                'agama' => 'Katolik',
                 'tanggal_lahir' => '1975-07-01',
                 'pendidikan_terakhir' => 'SD',
                 'pekerjaan_kepala_keluarga' => 'PETANI',
-                'jumlah_anggota_keluarga' => 7,
                 'pendapatan_per_bulan' => 1700000,
                 'daerah_asal' => 'TIMOR TENGAH UTARA',
                 'tahun_kedatangan' => 2018,
@@ -344,10 +350,10 @@ class DummyData
                 'no_kk' => '5321010102190008',
                 'nama_kepala_keluarga' => 'YULITA HOAR',
                 'jenis_kelamin' => 'Perempuan',
+                'agama' => 'Katolik',
                 'tanggal_lahir' => '1991-09-14',
                 'pendidikan_terakhir' => 'SMA/SMK',
                 'pekerjaan_kepala_keluarga' => 'BURUH TANI',
-                'jumlah_anggota_keluarga' => 3,
                 'pendapatan_per_bulan' => 1450000,
                 'daerah_asal' => 'MALAKA',
                 'tahun_kedatangan' => 2019,
@@ -356,7 +362,291 @@ class DummyData
                 'telepon' => '081234567808',
                 'satuan_permukiman' => 'SP Kapitan Meo',
                 'satuan_permukiman_id' => 1,
-                'satuan_permukiman_id' => 1,
+            ],
+        ];
+
+        // Cacah anggota keluarga per keluarga, untuk menurunkan
+        // `jumlah_anggota_keluarga` (lihat docblock).
+        $cacahAnggota = [];
+        foreach (self::anggotaKeluarga() as $anggota) {
+            $cacahAnggota[$anggota['transmigran_id']] = ($cacahAnggota[$anggota['transmigran_id']] ?? 0) + 1;
+        }
+
+        return array_map(
+            fn ($t) => $t + [
+                'jumlah_anggota_keluarga' => 1 + ($cacahAnggota[$t['id_transmigran']] ?? 0),
+            ],
+            $data,
+        );
+    }
+
+    /**
+     * Anggota keluarga transmigran, satu baris per orang SELAIN kepala keluarga.
+     *
+     * Ditambahkan 2026-08-28 (Rombongan B). Membalik keputusan erd.md 7.4
+     * yang menyatakan sistem tidak mendata anggota keluarga satu per satu;
+     * pemilik proyek memintanya agar suksesi kepala keluarga dan pemilihan
+     * wakil poktan tidak lagi mengetik nama dari nol.
+     *
+     * `usia` TIDAK disimpan, dihitung dari `tanggal_lahir` (bertambah sendiri
+     * tiap tahun). `nik` boleh kosong bagi balita yang belum memilikinya.
+     *
+     * Cabang isian menurut `kegiatan` (lihat App\Enums\KegiatanAnggota):
+     * Bekerja mengisi `pendidikan_terakhir` + `pekerjaan` + `pendapatan_per_bulan`;
+     * Masih Sekolah mengisi `pendidikan_terakhir` sebagai jenjang berjalan;
+     * Belum Sekolah tidak mengisi apa-apa.
+     *
+     * @return array<int, array<string, mixed>> Data anggota keluarga
+     */
+    public static function anggotaKeluarga(): array
+    {
+        return [
+            // Keluarga 1 - YOHANES BERE (L): istri + tiga anak.
+            [
+                'id_anggota_keluarga' => 1, 'transmigran_id' => 1, 'hubungan' => 'Istri',
+                'nama_lengkap' => 'MARIA BERE HOAR', 'nik' => '5321015507830011',
+                'jenis_kelamin' => 'Perempuan', 'tempat_lahir' => 'BETUN', 'tanggal_lahir' => '1983-07-15',
+                'agama' => 'Katolik', 'kegiatan' => 'Bekerja', 'pendidikan_terakhir' => 'SMP',
+                'pekerjaan' => 'BURUH TANI', 'pendapatan_per_bulan' => 900000,
+                'telepon' => '081234567811', 'keterangan' => null,
+            ],
+            [
+                'id_anggota_keluarga' => 2, 'transmigran_id' => 1, 'hubungan' => 'Anak',
+                'nama_lengkap' => 'YOSEP BERE', 'nik' => '5321010204030012',
+                'jenis_kelamin' => 'Laki-laki', 'tempat_lahir' => 'KUPANG', 'tanggal_lahir' => '2003-04-02',
+                'agama' => 'Katolik', 'kegiatan' => 'Bekerja', 'pendidikan_terakhir' => 'SMA/SMK',
+                'pekerjaan' => 'PETANI', 'pendapatan_per_bulan' => 1200000,
+                'telepon' => '081234567812', 'keterangan' => null,
+            ],
+            [
+                'id_anggota_keluarga' => 3, 'transmigran_id' => 1, 'hubungan' => 'Anak',
+                'nama_lengkap' => 'ANANIA BERE', 'nik' => '5321014109100013',
+                'jenis_kelamin' => 'Perempuan', 'tempat_lahir' => 'KAPITAN MEO', 'tanggal_lahir' => '2010-09-01',
+                'agama' => 'Katolik', 'kegiatan' => 'Masih Sekolah', 'pendidikan_terakhir' => 'SMP',
+                'pekerjaan' => null, 'pendapatan_per_bulan' => null,
+                'telepon' => null, 'keterangan' => 'Kelas 3 SMP Negeri Kapitan Meo.',
+            ],
+            [
+                'id_anggota_keluarga' => 4, 'transmigran_id' => 1, 'hubungan' => 'Anak',
+                'nama_lengkap' => 'GERSON BERE', 'nik' => null,
+                'jenis_kelamin' => 'Laki-laki', 'tempat_lahir' => 'KAPITAN MEO', 'tanggal_lahir' => '2022-02-19',
+                'agama' => 'Katolik', 'kegiatan' => 'Belum Sekolah', 'pendidikan_terakhir' => null,
+                'pekerjaan' => null, 'pendapatan_per_bulan' => null,
+                'telepon' => null, 'keterangan' => 'Belum memiliki NIK, menunggu perekaman.',
+            ],
+
+            // Keluarga 2 - MARIA DA COSTA (P): suami + dua anak.
+            [
+                'id_anggota_keluarga' => 5, 'transmigran_id' => 2, 'hubungan' => 'Suami',
+                'nama_lengkap' => 'YOSEF DA COSTA', 'nik' => '5321011811820021',
+                'jenis_kelamin' => 'Laki-laki', 'tempat_lahir' => 'ATAMBUA', 'tanggal_lahir' => '1982-11-18',
+                'agama' => 'Katolik', 'kegiatan' => 'Bekerja', 'pendidikan_terakhir' => 'SMP',
+                'pekerjaan' => 'TUKANG KAYU', 'pendapatan_per_bulan' => 1600000,
+                'telepon' => '081234567821', 'keterangan' => null,
+            ],
+            [
+                'id_anggota_keluarga' => 6, 'transmigran_id' => 2, 'hubungan' => 'Anak',
+                'nama_lengkap' => 'FELISITAS DA COSTA', 'nik' => '5321015003090022',
+                'jenis_kelamin' => 'Perempuan', 'tempat_lahir' => 'KAPITAN MEO', 'tanggal_lahir' => '2009-03-10',
+                'agama' => 'Katolik', 'kegiatan' => 'Masih Sekolah', 'pendidikan_terakhir' => 'SMA/SMK',
+                'pekerjaan' => null, 'pendapatan_per_bulan' => null,
+                'telepon' => null, 'keterangan' => null,
+            ],
+            [
+                'id_anggota_keluarga' => 7, 'transmigran_id' => 2, 'hubungan' => 'Anak',
+                'nama_lengkap' => 'MARSEL DA COSTA', 'nik' => '5321012006130023',
+                'jenis_kelamin' => 'Laki-laki', 'tempat_lahir' => 'KAPITAN MEO', 'tanggal_lahir' => '2013-06-20',
+                'agama' => 'Katolik', 'kegiatan' => 'Masih Sekolah', 'pendidikan_terakhir' => 'SD',
+                'pekerjaan' => null, 'pendapatan_per_bulan' => null,
+                'telepon' => null, 'keterangan' => null,
+            ],
+
+            // Keluarga 3 - PETRUS NAHAK (L): istri + tiga anak + ibu.
+            [
+                'id_anggota_keluarga' => 8, 'transmigran_id' => 3, 'hubungan' => 'Istri',
+                'nama_lengkap' => 'YOVITA NAHAK SERAN', 'nik' => '5321016502800031',
+                'jenis_kelamin' => 'Perempuan', 'tempat_lahir' => 'SOE', 'tanggal_lahir' => '1980-02-25',
+                'agama' => 'Katolik', 'kegiatan' => 'Tidak Bekerja', 'pendidikan_terakhir' => 'SD',
+                'pekerjaan' => null, 'pendapatan_per_bulan' => null,
+                'telepon' => '081234567831', 'keterangan' => 'Mengurus rumah tangga.',
+            ],
+            [
+                'id_anggota_keluarga' => 9, 'transmigran_id' => 3, 'hubungan' => 'Anak',
+                'nama_lengkap' => 'AGUSTINUS NAHAK', 'nik' => '5321011708000032',
+                'jenis_kelamin' => 'Laki-laki', 'tempat_lahir' => 'SOE', 'tanggal_lahir' => '2000-08-17',
+                'agama' => 'Katolik', 'kegiatan' => 'Bekerja', 'pendidikan_terakhir' => 'SMA/SMK',
+                'pekerjaan' => 'PETANI', 'pendapatan_per_bulan' => 1400000,
+                'telepon' => '081234567832', 'keterangan' => null,
+            ],
+            [
+                'id_anggota_keluarga' => 10, 'transmigran_id' => 3, 'hubungan' => 'Anak',
+                'nama_lengkap' => 'REGINA NAHAK', 'nik' => '5321015512050033',
+                'jenis_kelamin' => 'Perempuan', 'tempat_lahir' => 'TNIUMANU', 'tanggal_lahir' => '2005-12-15',
+                'agama' => 'Katolik', 'kegiatan' => 'Tidak Bekerja', 'pendidikan_terakhir' => 'SMP',
+                'pekerjaan' => null, 'pendapatan_per_bulan' => null,
+                'telepon' => null, 'keterangan' => 'Membantu usaha tani keluarga tanpa upah tetap.',
+            ],
+            [
+                'id_anggota_keluarga' => 11, 'transmigran_id' => 3, 'hubungan' => 'Anak',
+                'nama_lengkap' => 'DAMIANUS NAHAK', 'nik' => null,
+                'jenis_kelamin' => 'Laki-laki', 'tempat_lahir' => 'TNIUMANU', 'tanggal_lahir' => '2021-10-05',
+                'agama' => 'Katolik', 'kegiatan' => 'Belum Sekolah', 'pendidikan_terakhir' => null,
+                'pekerjaan' => null, 'pendapatan_per_bulan' => null,
+                'telepon' => null, 'keterangan' => null,
+            ],
+            [
+                'id_anggota_keluarga' => 12, 'transmigran_id' => 3, 'hubungan' => 'Orang Tua',
+                'nama_lengkap' => 'ROSALIA SERAN', 'nik' => '5321014403520034',
+                'jenis_kelamin' => 'Perempuan', 'tempat_lahir' => 'SOE', 'tanggal_lahir' => '1952-03-04',
+                'agama' => 'Katolik', 'kegiatan' => 'Tidak Bekerja', 'pendidikan_terakhir' => 'Tidak Sekolah',
+                'pekerjaan' => null, 'pendapatan_per_bulan' => null,
+                'telepon' => null, 'keterangan' => 'Ibu kandung kepala keluarga, ikut tinggal sejak 2019.',
+            ],
+
+            // Keluarga 4 - ANGELA SERAN (P, tanpa pasangan): dua anak.
+            [
+                'id_anggota_keluarga' => 13, 'transmigran_id' => 4, 'hubungan' => 'Anak',
+                'nama_lengkap' => 'PATRISIA SERAN', 'nik' => '5321016009110041',
+                'jenis_kelamin' => 'Perempuan', 'tempat_lahir' => 'BETUN', 'tanggal_lahir' => '2011-09-20',
+                'agama' => 'Katolik', 'kegiatan' => 'Masih Sekolah', 'pendidikan_terakhir' => 'SMP',
+                'pekerjaan' => null, 'pendapatan_per_bulan' => null,
+                'telepon' => null, 'keterangan' => null,
+            ],
+            [
+                'id_anggota_keluarga' => 14, 'transmigran_id' => 4, 'hubungan' => 'Anak',
+                'nama_lengkap' => 'YANUARIUS SERAN', 'nik' => '5321010703160042',
+                'jenis_kelamin' => 'Laki-laki', 'tempat_lahir' => 'HAREKAKAE', 'tanggal_lahir' => '2016-03-07',
+                'agama' => 'Katolik', 'kegiatan' => 'Masih Sekolah', 'pendidikan_terakhir' => 'SD',
+                'pekerjaan' => null, 'pendapatan_per_bulan' => null,
+                'telepon' => null, 'keterangan' => null,
+            ],
+
+            // Keluarga 5 - DOMINGGUS TAEK (L, Pindah Penduduk): istri + dua anak + anak angkat.
+            [
+                'id_anggota_keluarga' => 15, 'transmigran_id' => 5, 'hubungan' => 'Istri',
+                'nama_lengkap' => 'BERNADETA TAEK', 'nik' => '5321015208850051',
+                'jenis_kelamin' => 'Perempuan', 'tempat_lahir' => 'ATAMBUA', 'tanggal_lahir' => '1985-08-12',
+                'agama' => 'Kristen', 'kegiatan' => 'Bekerja', 'pendidikan_terakhir' => 'SMP',
+                'pekerjaan' => 'PEDAGANG', 'pendapatan_per_bulan' => 1100000,
+                'telepon' => '081234567851', 'keterangan' => null,
+            ],
+            [
+                'id_anggota_keluarga' => 16, 'transmigran_id' => 5, 'hubungan' => 'Anak',
+                'nama_lengkap' => 'IMANUEL TAEK', 'nik' => '5321012501070052',
+                'jenis_kelamin' => 'Laki-laki', 'tempat_lahir' => 'BELU', 'tanggal_lahir' => '2007-01-25',
+                'agama' => 'Kristen', 'kegiatan' => 'Masih Sekolah', 'pendidikan_terakhir' => 'SMA/SMK',
+                'pekerjaan' => null, 'pendapatan_per_bulan' => null,
+                'telepon' => null, 'keterangan' => null,
+            ],
+            [
+                'id_anggota_keluarga' => 17, 'transmigran_id' => 5, 'hubungan' => 'Anak',
+                'nama_lengkap' => 'PRISKILA TAEK', 'nik' => '5321015504120053',
+                'jenis_kelamin' => 'Perempuan', 'tempat_lahir' => 'WEOE', 'tanggal_lahir' => '2012-04-15',
+                'agama' => 'Kristen', 'kegiatan' => 'Masih Sekolah', 'pendidikan_terakhir' => 'SD',
+                'pekerjaan' => null, 'pendapatan_per_bulan' => null,
+                'telepon' => null, 'keterangan' => null,
+            ],
+            [
+                'id_anggota_keluarga' => 18, 'transmigran_id' => 5, 'hubungan' => 'Anak Angkat',
+                'nama_lengkap' => 'OKTAVIANUS TAEK', 'nik' => '5321011010140054',
+                'jenis_kelamin' => 'Laki-laki', 'tempat_lahir' => 'WEOE', 'tanggal_lahir' => '2014-10-10',
+                'agama' => 'Kristen', 'kegiatan' => 'Masih Sekolah', 'pendidikan_terakhir' => 'SD',
+                'pekerjaan' => null, 'pendapatan_per_bulan' => null,
+                'telepon' => null, 'keterangan' => 'Anak dari keluarga kerabat, diasuh sejak 2017.',
+            ],
+
+            // Keluarga 6 - FRANSISKA BRIA (P, GURU): suami + dua anak.
+            [
+                'id_anggota_keluarga' => 19, 'transmigran_id' => 6, 'hubungan' => 'Suami',
+                'nama_lengkap' => 'GREGORIUS BRIA', 'nik' => '5321010906840061',
+                'jenis_kelamin' => 'Laki-laki', 'tempat_lahir' => 'KEFAMENANU', 'tanggal_lahir' => '1984-06-09',
+                'agama' => 'Katolik', 'kegiatan' => 'Bekerja', 'pendidikan_terakhir' => 'SMA/SMK',
+                'pekerjaan' => 'PETANI', 'pendapatan_per_bulan' => 1500000,
+                'telepon' => '081234567861', 'keterangan' => null,
+            ],
+            [
+                'id_anggota_keluarga' => 20, 'transmigran_id' => 6, 'hubungan' => 'Anak',
+                'nama_lengkap' => 'CLARA BRIA', 'nik' => '5321014712120062',
+                'jenis_kelamin' => 'Perempuan', 'tempat_lahir' => 'TUALARAN', 'tanggal_lahir' => '2012-12-07',
+                'agama' => 'Katolik', 'kegiatan' => 'Masih Sekolah', 'pendidikan_terakhir' => 'SD',
+                'pekerjaan' => null, 'pendapatan_per_bulan' => null,
+                'telepon' => null, 'keterangan' => null,
+            ],
+            [
+                'id_anggota_keluarga' => 21, 'transmigran_id' => 6, 'hubungan' => 'Anak',
+                'nama_lengkap' => 'DAVID BRIA', 'nik' => null,
+                'jenis_kelamin' => 'Laki-laki', 'tempat_lahir' => 'TUALARAN', 'tanggal_lahir' => '2020-05-30',
+                'agama' => 'Katolik', 'kegiatan' => 'Belum Sekolah', 'pendidikan_terakhir' => null,
+                'pekerjaan' => null, 'pendapatan_per_bulan' => null,
+                'telepon' => null, 'keterangan' => null,
+            ],
+
+            // Keluarga 7 - GABRIEL LEKI (L): istri + empat anak + keponakan.
+            [
+                'id_anggota_keluarga' => 22, 'transmigran_id' => 7, 'hubungan' => 'Istri',
+                'nama_lengkap' => 'ELISABETH LEKI', 'nik' => '5321014403780071',
+                'jenis_kelamin' => 'Perempuan', 'tempat_lahir' => 'KEFAMENANU', 'tanggal_lahir' => '1978-03-04',
+                'agama' => 'Katolik', 'kegiatan' => 'Bekerja', 'pendidikan_terakhir' => 'SD',
+                'pekerjaan' => 'BURUH TANI', 'pendapatan_per_bulan' => 850000,
+                'telepon' => '081234567871', 'keterangan' => null,
+            ],
+            [
+                'id_anggota_keluarga' => 23, 'transmigran_id' => 7, 'hubungan' => 'Anak',
+                'nama_lengkap' => 'YUSTINA LEKI', 'nik' => '5321015901990072',
+                'jenis_kelamin' => 'Perempuan', 'tempat_lahir' => 'TIMOR TENGAH UTARA', 'tanggal_lahir' => '1999-01-19',
+                'agama' => 'Katolik', 'kegiatan' => 'Bekerja', 'pendidikan_terakhir' => 'SMP',
+                'pekerjaan' => 'BURUH TANI', 'pendapatan_per_bulan' => 950000,
+                'telepon' => '081234567872', 'keterangan' => null,
+            ],
+            [
+                'id_anggota_keluarga' => 24, 'transmigran_id' => 7, 'hubungan' => 'Anak',
+                'nama_lengkap' => 'PAULUS LEKI', 'nik' => '5321012208040073',
+                'jenis_kelamin' => 'Laki-laki', 'tempat_lahir' => 'WEAIN', 'tanggal_lahir' => '2004-08-22',
+                'agama' => 'Katolik', 'kegiatan' => 'Bekerja', 'pendidikan_terakhir' => 'SMA/SMK',
+                'pekerjaan' => 'PETANI', 'pendapatan_per_bulan' => 1300000,
+                'telepon' => '081234567873', 'keterangan' => null,
+            ],
+            [
+                'id_anggota_keluarga' => 25, 'transmigran_id' => 7, 'hubungan' => 'Anak',
+                'nama_lengkap' => 'MARGARETHA LEKI', 'nik' => '5321016307100074',
+                'jenis_kelamin' => 'Perempuan', 'tempat_lahir' => 'WEAIN', 'tanggal_lahir' => '2010-07-23',
+                'agama' => 'Katolik', 'kegiatan' => 'Masih Sekolah', 'pendidikan_terakhir' => 'SMP',
+                'pekerjaan' => null, 'pendapatan_per_bulan' => null,
+                'telepon' => null, 'keterangan' => null,
+            ],
+            [
+                'id_anggota_keluarga' => 26, 'transmigran_id' => 7, 'hubungan' => 'Anak',
+                'nama_lengkap' => 'THOMAS LEKI', 'nik' => '5321011503170075',
+                'jenis_kelamin' => 'Laki-laki', 'tempat_lahir' => 'WEAIN', 'tanggal_lahir' => '2017-03-15',
+                'agama' => 'Katolik', 'kegiatan' => 'Masih Sekolah', 'pendidikan_terakhir' => 'SD',
+                'pekerjaan' => null, 'pendapatan_per_bulan' => null,
+                'telepon' => null, 'keterangan' => null,
+            ],
+            [
+                'id_anggota_keluarga' => 27, 'transmigran_id' => 7, 'hubungan' => 'Famili Lain',
+                'nama_lengkap' => 'KORNELIUS TAHU', 'nik' => '5321012409020076',
+                'jenis_kelamin' => 'Laki-laki', 'tempat_lahir' => 'KEFAMENANU', 'tanggal_lahir' => '2002-09-24',
+                'agama' => 'Katolik', 'kegiatan' => 'Bekerja', 'pendidikan_terakhir' => 'SMA/SMK',
+                'pekerjaan' => 'BURUH TANI', 'pendapatan_per_bulan' => 1000000,
+                'telepon' => '081234567876', 'keterangan' => 'Keponakan kepala keluarga, ikut menggarap lahan.',
+            ],
+
+            // Keluarga 8 - YULITA HOAR (P, tanpa pasangan): dua anak.
+            [
+                'id_anggota_keluarga' => 28, 'transmigran_id' => 8, 'hubungan' => 'Anak',
+                'nama_lengkap' => 'FIDELIS HOAR', 'nik' => '5321011106120081',
+                'jenis_kelamin' => 'Laki-laki', 'tempat_lahir' => 'BETUN', 'tanggal_lahir' => '2012-06-11',
+                'agama' => 'Katolik', 'kegiatan' => 'Masih Sekolah', 'pendidikan_terakhir' => 'SD',
+                'pekerjaan' => null, 'pendapatan_per_bulan' => null,
+                'telepon' => null, 'keterangan' => null,
+            ],
+            [
+                'id_anggota_keluarga' => 29, 'transmigran_id' => 8, 'hubungan' => 'Anak',
+                'nama_lengkap' => 'IRENA HOAR', 'nik' => null,
+                'jenis_kelamin' => 'Perempuan', 'tempat_lahir' => 'KAPITAN MEO', 'tanggal_lahir' => '2023-01-08',
+                'agama' => 'Katolik', 'kegiatan' => 'Belum Sekolah', 'pendidikan_terakhir' => null,
+                'pekerjaan' => null, 'pendapatan_per_bulan' => null,
+                'telepon' => null, 'keterangan' => null,
             ],
         ];
     }

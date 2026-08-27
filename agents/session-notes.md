@@ -1,137 +1,161 @@
-# Rencana Eksekusi — Tahap 2c: Isi Kolom 7 Halaman Laporan
+# Rencana Eksekusi — Rombongan B: Anggota Keluarga + Usia + Agama
 
-Ditulis 2026-08-28 sesuai `rules.md` §20b. Bersifat sementara, boleh ditimpa.
+Ditulis 2026-08-28 sesuai `rules.md` §20b. Sementara, boleh ditimpa.
 
-## Lingkup
+## Lingkup (dari `notes.md` bagian 6)
 
-Mengisi kerangka 7 halaman laporan (dibuat Putaran 2) dengan kolom dan data
-contoh. Lima laporan mengikuti berkas rujukan di `refs/`; dua dirancang dari
-kolom data yang sudah ada.
+- **B1** Field `usia` pada form transmigran, auto hitung dari `tanggal_lahir`,
+  bertambah sendiri tiap tahun. Field **Agama** juga.
+- **B2** Pendataan anggota keluarga (istri + anak) lewat dynamic form fields
+  saat mengisi/menyunting data kepala keluarga.
+  - Istri: field mirip suami, minus nomor KK.
+  - Anak: Nama Lengkap, NIK, Jenis Kelamin, Tempat Lahir, Tanggal Lahir,
+    Agama, "Pendidikan/Kerja" (multi-level: bila pilih Kerja, munculkan
+    pendidikan terakhir + pekerjaan + pendapatan per bulan).
 
-## Referensi yang terbaca
+## TEMUAN PENTING: ini membalik keputusan berlingkup PRD
 
-| Berkas | Alat | Dipakai untuk |
-|---|---|---|
-| `Lap. Akhir Panen Jagung Polri MT. I 2025.pdf` | pdftotext -layout | Laporan Hasil Panen |
-| `laporan alsintan.jpeg` | baca gambar | Laporan Alsintan |
-| `laporan saprotan.jpeg` | baca gambar | Laporan Saprotan |
-| `LAPORAN MONOGRAFI UPT KAPITAN MEO 2025.doc` | antiword | Laporan Monografi SP |
-| `Poktan Wilayah Transmigrasi.xlsx` | unzip + regex | Laporan Daftar Poktan |
+`erd.md` §7.4 dan `data-dictionary.md` (§6.1, §6.5, §11.35, dan tabel
+`anggota_poktan`) menyatakan **berkali-kali** dan sengaja:
 
-## Kolom tiap laporan
+> "sistem tidak mendata anggota keluarga satu per satu (di luar lingkup PRD)"
 
-### 1. Laporan Hasil Panen  (ref: POLRI MT. I 2025)
-Kolom ref: No, Kecamatan, Desa, Kelompok Tani, Ketua, Jumlah Anggota, Luas
-Lahan (ha), Volume Benih (kg), Varietas, Realisasi Tanam (ha), Rencana Tanam
-(bln), Realisasi Panen (ha), Puso (ha), Sisa belum dipanen (ha), Produktivitas
-(ton/ha), Produksi (ton). Dikelompokkan per kecamatan + subtotal + grand total.
+Keputusan itu menopang tiga hal:
+1. `transmigran.jumlah_anggota_keluarga` **disimpan** sebagai angka (bukan
+   dihitung) justru karena tidak ada baris anggota keluarga untuk dihitung.
+2. `anggota_poktan` (`nama_wakil`, `nik_wakil`, `hubungan_dengan_kk`) dan
+   `poktan.ketua` (`hubungan_ketua`) **wajib diketik petugas**, sebab "tidak
+   ada relasi yang dapat dibaca".
+3. `riwayat_kepala_keluarga.hubungan_pengganti` diketik petugas; identitas
+   pengganti tidak ditebak dari daftar anggota.
+4. Enum `HubunganKeluarga` "sengaja kasar, tidak dirinci sampai anak kedua".
 
-Adaptasi: satu baris per `hasil_panen`, dikelompokkan per **Satuan Permukiman**
-(unit sistem kita), kolom Kecamatan/Desa tetap tampil. Tambah kolom Komoditas
-dan Tahun Pengadaan. Belum Dipanen = realisasi_tanam - realisasi_panen - puso.
-Sumber: `hasilPanen` -> `penanaman` (penanaman_id) -> `poktan` + `saprotan`
-(penanaman.saprotan_id) + SP.
+Rombongan B menambahkan tabel anggota keluarga, sehingga alasan (1) gugur dan
+(2)(3) menjadi bisa-dibaca-dari-relasi. Pemilik proyek memintanya secara
+eksplisit; ini keputusannya. Yang WAJIB:
+- `erd.md` §7.4 + catatan lingkup PRD direvisi dengan jejak bertanggal
+  (tidak dihapus, ditandai dibalik 2026-08-28).
+- **Blast radius dibatasi putaran ini.** Yang dikerjakan: tabel anggota
+  keluarga + form + tampil + `jumlah_anggota_keluarga` jadi turunan.
+  DITUNDA (dicatat, bukan dikerjakan): mengubah `anggota_poktan` /
+  `poktan.ketua` / `riwayat_kepala_keluarga` agar memilih dari daftar
+  anggota. Ketiganya tetap diketik manual sampai putaran tersendiri.
 
-### 2. Laporan Monografi SP  (ref: Monografi Kapitan Meo, BAB II-V)
-Monografi asli sangat naratif (iklim, topografi, sertifikat, KB, agama) - data
-itu TIDAK ada di sistem. Yang dibuat: satu baris per SP dengan indikator yang
-kita punya: Kecamatan/Desa, Tahun Penempatan, Luas Wilayah, KK Rencana, KK
-Terisi, Rumah Terhuni, Poktan, Luas Lahan Tergarap, Produksi Panen (ton),
-Pengaduan Terbuka. Catatan jujur: monografi lengkap per SP menunggu field Bab
-II Monografi (Rombongan C). Sumber: `satuanPermukiman` + `rekapPerSp` + hitung
-poktan per SP.
+## Rancangan data (Tahap 2 = larik DummyData; skema untuk Tahap 3)
 
-### 3. Laporan Alsintan  (ref: laporan alsintan.jpeg)
-Kolom ref: No, Jenis Alat, Sumber Dana, Tahun Pengadaan, Poktan Penerima,
-Ketua Poktan, Alamat (Kec./Desa), Jumlah (Unit). Satu baris per alsintan,
-kelompok per SP, subtotal Jumlah + grand total.
-Sumber: `alsintan` + `poktan` + SP. CATATAN: field kita bernama
-`sumber_perolehan` / `tahun_perolehan`, sedangkan ref (dan saprotan) memakai
-"Sumber Dana" / "Tahun Pengadaan". Laporan memakai label ref, membaca field
-lama. Penyeragaman nama field alsintan = usul revisi terpisah, dicatat.
+### Tabel baru `anggota_keluarga`
+Satu baris per anggota selain kepala keluarga.
 
-### 4. Laporan Saprotan  (ref: laporan saprotan.jpeg)
-Kolom ref: No, Kecamatan, Desa, Kelompok Tani, Nama Ketua, NIK, No HP, Jumlah
-Anggota, Luas Lahan (ha), Volume Benih (Kg), Varietas Benih, Volume Pupuk NPK
-(Kg), Jadwal Tanam, Ket.
-Adaptasi: model kita menyimpan benih dan pupuk sebagai baris terpisah. Bagian 1
-= satu baris per saprotan Benih (SP, Kec, Desa, Poktan, Ketua, Kontak, Anggota,
-Luas Lahan, Komoditas, Varietas, Volume Benih kg, Thn Pengadaan, Sumber Dana,
-Jadwal Tanam). Bagian 2 = saprotan non-benih (pupuk/pestisida/mulsa): Poktan,
-Jenis, Volume, Thn Pengadaan, Sumber Dana. Sesuai "dua bagian terpisah"
-(rules §9 poin 16, notes 1m.4).
+| Kolom | Tipe | Null | Ket |
+|---|---|---|---|
+| `id_anggota_keluarga` | BIGINT UNSIGNED AI | TIDAK | PK |
+| `transmigran_id` | BIGINT UNSIGNED | TIDAK | FK, IDX; keluarga yang dinaungi |
+| `hubungan` | ENUM | TIDAK | Pasangan (Istri/Suami), Anak, Anak Angkat, Orang Tua, Famili Lain |
+| `nama_lengkap` | VARCHAR(255) | TIDAK | huruf kapital otomatis |
+| `nik` | CHAR(16) | YA | boleh kosong bagi bayi/balita yang belum punya NIK |
+| `jenis_kelamin` | ENUM | TIDAK | Laki-laki / Perempuan |
+| `tempat_lahir` | VARCHAR(100) | YA | |
+| `tanggal_lahir` | DATE | YA | sumber usia (dihitung, tidak disimpan) |
+| `agama` | ENUM | YA | lihat enum Agama |
+| `kegiatan` | ENUM | YA | Belum Sekolah / Masih Sekolah / Bekerja / Tidak Bekerja |
+| `pendidikan_terakhir` | ENUM | YA | wajib bila kegiatan Bekerja atau Tidak Bekerja atau (Masih Sekolah -> jenjang berjalan) |
+| `pekerjaan` | VARCHAR(100) | YA | wajib bila kegiatan Bekerja |
+| `pendapatan_per_bulan` | DECIMAL(12,2) | YA | hanya bila kegiatan Bekerja |
+| `telepon` | VARCHAR(20) | YA | opsional |
+| `keterangan` | VARCHAR(1000) | YA | |
 
-### 5. Rekap Indikator Kawasan  (tanpa ref, dirancang)
-Kepala: identitas kawasan (nama, kabupaten, provinsi, no SK, tahun penetapan,
-luas total, jumlah SP). Lalu blok indikator sebagai tabel:
-- Kependudukan: KK, jiwa, petani, rumah terhuni/total, tingkat hunian
-- Lahan & Produksi: luas lahan, realisasi tanam ha, hasil panen ha, puso ha,
-  belum dipanen ha, produktivitas ton/ha, volume panen ton, harga rata-rata
-- Kelembagaan: jumlah poktan, alsintan, saprotan
-- Pengaduan: terbuka
-- Rincian per SP (dari `rekapPerSp`): SP, KK, Rumah Terhuni, Luas Lahan,
-  Volume Panen, Pengaduan Terbuka.
-Sumber: `ringkasanDashboard` + `rekapPerSp` + `kawasan` + hitung kelembagaan.
-Dasar periode: tahun panen berjalan (indikator produksi), beda dari Laporan
-Hasil Panen yang pakai tahun pengadaan.
+Pasangan (Istri/Suami): pakai kolom yang sama; `kegiatan` juga berlaku
+(banyak istri berdagang / bertani), sehingga tidak perlu cabang terpisah -
+menyederhanakan "istri mirip suami".
 
-### 6. Laporan Daftar Poktan  (ref: Poktan Wilayah Transmigrasi.xlsx)
-Kepala per SP: SP, Desa, Kecamatan, Kabupaten. Tabel: No, Kelompok Tani, Nama
-Petani, NIK, No HP, Luas Lahan (Sawah/Basah | Kering), Titik Koordinat
-(Lintang | Bujur), Ket. Dikelompokkan per poktan, baris anggota dari
-`anggotaPoktan`, subtotal Luas per poktan. Sumber: `poktan` + `anggotaPoktan`
-+ SP.
+### `transmigran.jumlah_anggota_keluarga` -> turunan
+Tidak lagi diisi petugas. Dihitung: 1 (kepala) + jumlah baris
+`anggota_keluarga`. Ditampilkan di form sebagai keterangan read-only.
+Konsisten dengan `poktan.jumlah_anggota` dan `alsintan` yang sudah turunan.
+Kolom `jumlah_anggota_keluarga` di kamus ditandai "diturunkan, tidak diisi".
 
-### 7. Laporan Daftar Transmigran (+ Rumah + Lahan)  (tanpa ref, kolom yang ada)
-Tiga bagian dalam satu laporan:
-- Bagian A - Transmigran: No, NIK, Nama KK, No KK, JK, Tempat/Tgl Lahir,
-  Pendidikan, Pekerjaan, Jumlah Anggota, Pendapatan/bln, Daerah Asal, Tahun
-  Kedatangan, SP, Status Tinggal.
-- Bagian B - Rumah: No, No Rumah, SP, Penghuni, Kondisi, Status Hunian, Tahun
-  Pembangunan, Luas Bangunan.
-- Bagian C - Lahan: No, Kode Lahan, Pemilik, SP, Peruntukan, Luas, Luas
-  Kering, Luas Basah.
-Sumber: `transmigran` + `rumah` + `lahan`.
+### `transmigran.agama` -> kolom baru ENUM YA
+### Usia -> dihitung dari `tanggal_lahir`, TIDAK ada kolom
 
-## Rencana teknis
+## Enum baru
 
-1. `app/Support/LaporanData.php` baru - satu metode per laporan
-   (`hasilPanen()`, `monografiSp()`, `alsintan()`, `saprotan()`,
-   `indikatorKawasan()`, `poktan()`, `transmigran()`), masing-masing
-   mengembalikan larik data untuk view. View DILARANG memanggil `DummyData`
-   (guard Ide C) - semua lewat sini.
-2. `routes/web.php`: loop laporan memanggil `LaporanData::{camel(slug)}()`
-   dan menyatukan hasilnya ke `view(...)`.
-3. `x-sim.kerangka-laporan`: bila `$slot` berisi, render isinya (tabel
-   laporan) alih-alih penampung "format menyusul". Bagian cakupan + tombol
-   unduh tetap.
-4. 7 blade `pages/laporan/*` diisi tabel. Setiap `<table>` WAJIB `<caption>`
-   sebagai anak pertama (guard Temuan 6). Tanpa em dash (R-02). Angka:
-   `number_format(...,',','.')`, `translatedFormat` untuk tanggal.
-5. Uji `HalamanTest`: tiap laporan memuat kolom-kolom kuncinya pada keluaran
-   terender; `LaporanData` menghasilkan baris > 0; total = jumlah subtotal
-   (untuk yang berkelompok). Dibuktikan lewat mutasi bila datanya bisa
-   membedakan benar dari salah.
+- `App\Enums\Agama`: Islam, Kristen, Katolik, Hindu, Buddha, Konghucu.
+  (6 agama yang dilayani Dukcapil. "Penghayat Kepercayaan" = butir konfirmasi.)
+- `App\Enums\HubunganAnggotaKeluarga`: Istri, Suami, Anak, Anak Angkat,
+  Orang Tua, Famili Lain. (BEDA dari `HubunganKeluarga` yang dipakai
+  anggota_poktan/riwayat - itu "kasar" dan tetap.)
+- `App\Enums\KegiatanAnggota`: Belum Sekolah, Masih Sekolah, Bekerja,
+  Tidak Bekerja.
 
-## Status pelaksanaan (2026-08-28)
+## Berkas yang disentuh
 
-**SELESAI.** 648 uji hijau (naik dari 635), `pint` 31. `app/Support/LaporanData.php`
-baru; `x-sim.kerangka-laporan` render tabel bila diisi; 7 blade laporan berisi
-tabel data contoh. Render nyata 7 halaman diperiksa. Dicatat ke `notes.md` 1o
-dan `tasklist.md`. Berkas ini boleh ditimpa sesi berikutnya.
+**Dokumen**
+- `agents/data-dictionary.md` - tabel `anggota_keluarga` baru (§6.x), kolom
+  `transmigran.agama`, catatan `jumlah_anggota_keluarga` jadi turunan, enum
+  §11.x baru
+- `agents/erd.md` §7.4 - revisi berjejak, §7.x relasi baru
+- `agents/rules.md` §7a - aturan pendataan anggota keluarga + usia dihitung
+- `agents/ui-spec.md` §6.x - komponen dynamic repeater bila dibuat komponen
 
-## Verifikasi (tercapai)
-1. `vendor/bin/pest.bat` hijau, 648 (dari 635)
-2. `vendor/bin/pint.bat --test` = 31 berkas
-3. Render nyata 7 halaman laporan memuat tabel berisi
-4. Dicatat ke `notes.md` 1o + `tasklist.md`
+**Kode**
+- `app/Enums/{Agama,HubunganAnggotaKeluarga,KegiatanAnggota}.php` baru
+- `app/Support/DummyData.php` - `anggotaKeluarga()` baru, `agama` pada baris
+  transmigran, `jumlah_anggota_keluarga` dibaca dari cacah pada tampilan
+- `app/Providers/ViewServiceProvider.php` - kunci rujukan form transmigran
+  (`opsiAgama`, `opsiHubunganAnggota`, `opsiKegiatan`, `saranPekerjaan` sudah ada)
+- `routes/web.php` - rute `transmigran.detail` memuat `anggotaKeluarga`
+- `resources/views/pages/transmigran/form.blade.php` - field Agama, usia
+  read-only auto, section "Anggota Keluarga" dynamic (Alpine x-for repeater)
+- `resources/views/pages/transmigran/detail.blade.php` - tampil agama, usia,
+  daftar anggota keluarga
+- `tests/Feature/HalamanTest.php` - penjaga
 
-## Poin revisi yang BELUM dikerjakan setelah ini
-- Rombongan B: anggota keluarga (istri + anak) dynamic form + field usia/agama
-  pada form transmigran
-- Rombongan C: field SP dari Bab II Monografi (untuk Laporan Monografi SP penuh)
-- Pintasan laporan dari halaman daftar (bawa filter aktif)
-- Pemilih periode untuk laporan lintas modul
-- Penyeragaman nama field alsintan (`tahun_perolehan` -> `tahun_pengadaan`,
-  `sumber_perolehan` -> `sumber_dana`) mengikuti saprotan
-- Butir bagian 6 lain yang belum dibahas
+## Penjaga uji (rencana)
+- Usia dihitung dari tanggal lahir, tidak ada `name="usia"` yang dikirim
+  (input read-only tanpa name, atau `disabled`).
+- Tiap field anggota keluarga punya tempat tampil di detail (penjaga 1f
+  otomatis, tetapi ditegaskan).
+- `jumlah_anggota_keluarga` tidak lagi `<input name=...>` yang bisa diketik.
+- Anak berkegiatan Bekerja: pendidikan + pekerjaan + pendapatan `:required`
+  bersyarat, dibuktikan mutasi (pola varietas saprotan).
+- Repeater: minimal satu template `x-for`, tombol tambah dan hapus baris.
+- `anggota_keluarga` di DummyData: minimal satu keluarga punya istri + anak,
+  minimal satu anak berstatus Bekerja, satu anak tanpa NIK.
+- Dokumen: `erd.md` §7.4 memuat penanda "dibalik 2026-08-28".
+
+## Verifikasi
+1. `vendor/bin/pest.bat` hijau, >= 648
+2. `vendor/bin/pint.bat --test` <= 31
+3. Render nyata `/transmigran`, `/transmigran/1` (keluarga berisi), form
+   tambah + ubah dibuka, repeater diuji di peramban bila memungkinkan
+4. Catat ke `notes.md` 1p + `tasklist.md`
+
+## Keputusan pemilik proyek (2026-08-28)
+
+1. **Lingkup: opsi 1 + opsi 3.** Pendataan anggota keluarga + jumlah jadi
+   turunan, SEKALIGUS rombak `anggota_poktan` dan suksesi KK agar memilih
+   dari daftar anggota keluarga, bukan diketik manual.
+2. **Kegiatan anak: 4 opsi** - Belum Sekolah / Masih Sekolah / Bekerja /
+   Tidak Bekerja.
+3. **Agama: 6 agama Dukcapil** - Islam, Kristen, Katolik, Hindu, Buddha,
+   Konghucu. (Bukan data master, bukan + Penghayat.)
+
+## Pelaksanaan bertahap
+
+- **Stage B1 SELESAI** (commit) - fondasi + transmigran: 3 enum, tabel
+  `anggota_keluarga` (29 baris), `transmigran.agama`,
+  `jumlah_anggota_keluarga` jadi turunan, usia dihitung, form repeater +
+  detail tab, penjaga. 654 uji hijau, pint 31. `erd.md` §7.4 direvisi
+  berjejak, `data-dictionary.md` §6.1a + §11.38-40, `rules.md` §6 poin
+  2a/2b/9-9d.
+- **Stage B2** - rombak `anggota_poktan`: kolom `anggota_keluarga_id`
+  (nullable FK), `form-anggota` memilih dari daftar anggota keluarga bila
+  `asal_wakil` = Anggota Keluarga; `poktan.form` jalur ketua Anggota
+  Keluarga ikut; `nama_wakil`/`nik_wakil`/`hubungan` jadi turunan bila id
+  terisi. Docs + penjaga. Commit.
+- **Stage B3** - rombak suksesi KK: pengganti dipilih dari daftar anggota
+  keluarga; datanya "naik" menggantikan baris transmigran; peristiwa
+  direkam `riwayat_kepala_keluarga`. `rules.md` §6.5, detail suksesi UI,
+  penjaga. Commit.
+
+`erd.md` §7.4 direvisi berjejak pada Stage B1.

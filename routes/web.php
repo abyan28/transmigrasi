@@ -806,6 +806,13 @@ Route::get('/transmigran/{id}', function (int $id) {
         'lahan' => $lahan,
         'totalLuas' => array_sum(array_column($lahan, 'luas')),
 
+        // Anggota keluarga selain kepala keluarga (Rombongan B, 2026-08-28).
+        // Dibaca lewat id, sejalan dengan lahan.
+        'anggotaKeluarga' => array_values(array_filter(
+            DummyData::anggotaKeluarga(),
+            fn ($a) => $a['transmigran_id'] === $data['id_transmigran']
+        )),
+
         /*
          * TAB HASIL PANEN DICABUT 2026-08-22.
          *

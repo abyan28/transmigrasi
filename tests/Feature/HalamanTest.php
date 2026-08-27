@@ -9,12 +9,15 @@
  * (R-17 dan R-38).
  */
 
+use App\Enums\Agama;
 use App\Enums\AksiPermission;
 use App\Enums\AlasanPergantianKK;
 use App\Enums\AsalWakilPoktan;
 use App\Enums\BidangPengaduan;
+use App\Enums\HubunganAnggotaKeluarga;
 use App\Enums\JabatanAnggotaPoktan;
 use App\Enums\JenisSaprotan;
+use App\Enums\KegiatanAnggota;
 use App\Enums\Kondisi;
 use App\Enums\PendidikanTerakhir;
 use App\Enums\PeruntukanLahan;
@@ -301,9 +304,9 @@ it('memakai nama kolom kamus data pada isian form', function () {
     $isi = $this->get(route('transmigran.index'))->getContent();
 
     foreach ([
-        'nama_kepala_keluarga', 'nik', 'no_kk', 'jenis_kelamin', 'tempat_lahir',
+        'nama_kepala_keluarga', 'nik', 'no_kk', 'jenis_kelamin', 'agama', 'tempat_lahir',
         'tanggal_lahir', 'pendidikan_terakhir', 'pekerjaan_kepala_keluarga',
-        'jumlah_anggota_keluarga', 'pendapatan_per_bulan', 'daerah_asal',
+        'pendapatan_per_bulan', 'daerah_asal',
         'tahun_kedatangan', 'status_tinggal', 'telepon',
         'dokumen_pendukung', 'keterangan', 'satuan_permukiman_id',
     ] as $kolom) {
@@ -316,6 +319,138 @@ it('memakai nama kolom kamus data pada isian form', function () {
     // kebenaran yang tidak pernah tersinkron: petugas dapat menyatakan "Ya"
     // tanpa seorang pun mendaftarkannya ke kelompok mana pun.
     expect($isi)->not->toContain('name="status_anggota_poktan"');
+
+    // `jumlah_anggota_keluarga` DAN `usia` sengaja BUKAN isian sejak
+    // 2026-08-28 (Rombongan B). Keduanya diturunkan: jumlah dari cacah baris
+    // Anggota Keluarga, usia dari tanggal lahir. Menyediakannya sebagai isian
+    // membuat nilainya dapat berselisih dengan sumbernya (erd.md 7.4 dibalik).
+    expect($isi)->not->toContain('name="jumlah_anggota_keluarga"');
+    expect($isi)->not->toContain('name="usia"');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Anggota keluarga, usia, dan agama (Rombongan B, 2026-08-28)
+|--------------------------------------------------------------------------
+|
+| Membalik keputusan erd.md 7.4 ("sistem tidak mendata anggota keluarga satu
+| per satu") atas permintaan pemilik proyek. jumlah_anggota_keluarga jadi
+| turunan, usia dihitung dari tanggal lahir.
+*/
+
+it('menurunkan jumlah anggota keluarga dari cacah baris, bukan menyimpannya', function () {
+    $cacah = [];
+    foreach (DummyData::anggotaKeluarga() as $a) {
+        $cacah[$a['transmigran_id']] = ($cacah[$a['transmigran_id']] ?? 0) + 1;
+    }
+
+    foreach (DummyData::transmigran() as $t) {
+        $harusnya = 1 + ($cacah[$t['id_transmigran']] ?? 0);
+        expect($t['jumlah_anggota_keluarga'])->toBe($harusnya, "keluarga {$t['id_transmigran']}");
+    }
+
+    // Buktikan datanya bisa membedakan benar dari salah: minimal satu keluarga
+    // punya anggota, sehingga turunannya bukan sekadar 1 untuk semua.
+    expect(max(array_column(DummyData::transmigran(), 'jumlah_anggota_keluarga')))->toBeGreaterThan(1);
+});
+
+it('menghitung usia dari tanggal lahir pada halaman rincian transmigran', function () {
+    $data = collect(DummyData::transmigran())->firstWhere('id_transmigran', 1);
+    $usia = Carbon::parse($data['tanggal_lahir'])->age;
+
+    $isi = $this->get('/transmigran/1')->assertOk()->getContent();
+
+    // Usia tampil, dan nilainya persis hitungan Carbon (bukan angka tetap).
+    expect($isi)->toContain($usia.' tahun');
+
+    // Form tidak mengirim usia; ia dihitung ulang tiap kali dibaca.
+    expect($isi)->not->toContain('name="usia"');
+});
+
+it('menyediakan tempat tampil bagi setiap kolom anggota keluarga', function () {
+    // Penjaga 1f untuk tabel baru: tiap kolom yang diisi form wajib punya
+    // tempat tampil di halaman rincian.
+    $isi = $this->get('/transmigran/1')->assertOk()->getContent();
+
+    $keluarga = collect(DummyData::anggotaKeluarga())
+        ->firstWhere('transmigran_id', 1);
+
+    expect($isi)
+        ->toContain($keluarga['nama_lengkap'])
+        ->toContain($keluarga['hubungan'])
+        ->toContain('Kegiatan')
+        ->toContain('Agama')
+        ->toContain('NIK');
+
+    // Anggota tanpa NIK ditandai, bukan dibiarkan kosong.
+    $tanpaNik = collect(DummyData::anggotaKeluarga())
+        ->first(fn ($a) => $a['transmigran_id'] === 1 && $a['nik'] === null);
+    expect($tanpaNik)->not->toBeNull('Data contoh wajib memuat anggota tanpa NIK');
+});
+
+it('menyusun form anggota keluarga sebagai daftar dinamis bersyarat', function () {
+    $isi = $this->get(route('transmigran.index'))->assertOk()->getContent();
+
+    // Repeater: template x-for, tombol tambah, tombol hapus.
+    expect($isi)
+        ->toContain('x-for="(a, i) in anggota"')
+        ->toContain('tambahAnggota()')
+        ->toContain('hapusAnggota(i)');
+
+    // Nama isian berpola larik agar Form Request Tahap 5 membacanya sebagai
+    // `anggota_keluarga[i][kolom]`.
+    expect($isi)->toContain('anggota_keluarga[${i}][nama_lengkap]');
+
+    // Cabang bersyarat: pendidikan + pekerjaan + pendapatan hanya untuk yang
+    // Bekerja; pendidikan tetap tampil untuk yang bersekolah. Diperiksa pada
+    // keluaran terender, bukan sumber (pola penjaga varietas saprotan).
+    expect($isi)
+        ->toContain("a.kegiatan === 'Bekerja'")
+        ->toContain("a.kegiatan && a.kegiatan !== 'Belum Sekolah'");
+});
+
+it('memvariasikan data contoh anggota keluarga sesuai cabang kegiatannya', function () {
+    $anggota = DummyData::anggotaKeluarga();
+
+    $hubungan = array_column($anggota, 'hubungan');
+    expect($hubungan)->toContain('Istri')->toContain('Suami')->toContain('Anak');
+
+    $kegiatan = array_column($anggota, 'kegiatan');
+    expect($kegiatan)
+        ->toContain('Bekerja')
+        ->toContain('Masih Sekolah')
+        ->toContain('Belum Sekolah');
+
+    // Yang Bekerja mengisi pekerjaan + pendapatan; yang Belum Sekolah tidak.
+    foreach ($anggota as $a) {
+        if ($a['kegiatan'] === 'Bekerja') {
+            expect($a['pekerjaan'])->not->toBeNull("anggota {$a['id_anggota_keluarga']} Bekerja tanpa pekerjaan");
+            expect($a['pendapatan_per_bulan'])->not->toBeNull();
+        }
+        if ($a['kegiatan'] === 'Belum Sekolah') {
+            expect($a['pendidikan_terakhir'])->toBeNull();
+            expect($a['pekerjaan'])->toBeNull();
+        }
+    }
+
+    // Agama tiap baris (transmigran maupun anggota) memakai nilai enum yang sah.
+    $agamaSah = Agama::nilai();
+    foreach (DummyData::transmigran() as $t) {
+        expect($agamaSah)->toContain($t['agama']);
+    }
+    foreach ($anggota as $a) {
+        if ($a['agama'] !== null) {
+            expect($agamaSah)->toContain($a['agama']);
+        }
+    }
+});
+
+it('mengunci daftar enum baru Rombongan B', function () {
+    expect(Agama::nilai())->toBe(['Islam', 'Kristen', 'Katolik', 'Hindu', 'Buddha', 'Konghucu']);
+    expect(HubunganAnggotaKeluarga::nilai())
+        ->toBe(['Istri', 'Suami', 'Anak', 'Anak Angkat', 'Orang Tua', 'Famili Lain']);
+    expect(KegiatanAnggota::nilai())
+        ->toBe(['Belum Sekolah', 'Masih Sekolah', 'Bekerja', 'Tidak Bekerja']);
 });
 
 /*

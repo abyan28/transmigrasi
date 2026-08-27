@@ -290,10 +290,12 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **-*
    - nama kepala keluarga,
    - NIK,
    - nomor KK,
-   - jumlah anggota keluarga,
+   - agama,
    - pekerjaan kepala keluarga,
-   - jumlah pendapatan keluarga per bulan,
+   - jumlah pendapatan kepala keluarga per bulan,
    - status keanggotaan kelompok tani.
+2a. **`jumlah anggota keluarga` bukan lagi isian** (diubah 2026-08-28, Rombongan B). Dihitung 1 (kepala keluarga) + cacah baris `anggota_keluarga`. Diketik petugas, ia cepat berselisih dengan daftar anggota yang sebenarnya.
+2b. **`usia` tidak dicatat, dihitung dari `tanggal_lahir`.** Bertambah sendiri tiap tahun. Berlaku bagi kepala keluarga maupun tiap anggota keluarga.
 3. NIK wajib 16 digit dan divalidasi keunikannya; nomor KK divalidasi formatnya.
 4. Satu data transmigran harus bisa dikaitkan dengan desa/SP, rumah, lahan, komoditas, dan hasil panen, dengan kardinalitas:
    - satu transmigran dapat memiliki **banyak lahan usaha** (one-to-many),
@@ -309,6 +311,11 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **-*
 6. Setiap transmigran dapat dilampiri dokumen pendukung.
 7. Data transmigran harus bisa ditambah, diubah, dicari, difilter, dan diekspor.
 8. Data transmigran harus mendukung kebutuhan monitoring kawasan dan pendataan awal.
+9. **Anggota keluarga didata satu per satu** (ditetapkan 2026-08-28 atas permintaan pemilik proyek, membalik `erd.md` §7.4). Tabel `anggota_keluarga` menyimpan istri atau suami, anak, dan anggota lain selain kepala keluarga. Diisi lewat daftar dinamis pada form kepala keluarga.
+9a. **NIK anggota boleh kosong** bagi balita yang belum memilikinya; bila diisi, tetap 16 digit dan divalidasi keunikannya.
+9b. **Cabang isian anak menurut kegiatannya** (`Belum Sekolah` / `Masih Sekolah` / `Bekerja` / `Tidak Bekerja`). `Belum Sekolah` tidak menambah isian; `Masih Sekolah` mengisi jenjang berjalan; `Bekerja` mengisi pendidikan terakhir, pekerjaan, dan pendapatan; `Tidak Bekerja` mengisi pendidikan terakhir saja. Isian bersyarat memakai `:required`/`:disabled` Alpine, bukan `required` tetap.
+9c. **Tidak ada riwayat anggota keluarga.** Anggota yang meninggal atau pindah dihapus dari daftar. Peristiwa yang perlu jejak permanen adalah pergantian kepala keluarga (poin 5), bukan mutasi anggota biasa.
+9d. **Suksesi kepala keluarga memilih pengganti dari daftar anggota keluarga** (diubah 2026-08-28; menggantikan poin 5d yang mengharuskan mengetik). Baris `anggota_keluarga` sang pengganti dihapus, datanya menimpa baris `transmigran`, dan peristiwanya direkam `riwayat_kepala_keluarga`. Rincian alur pada §6.5 setelah Stage B3.
 
 ### 6a. Aturan Fitur Rumah dan Hunian
 1. Setiap rumah wajib tertaut ke SP dan dapat tertaut ke transmigran penghuninya.

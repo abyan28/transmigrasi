@@ -526,12 +526,13 @@ Data inti sistem, satu baris per **kepala keluarga**.
 | `no_kk` | `CHAR(16)` | TIDAK | UQ | Tepat 16 digit angka |
 | `nama_kepala_keluarga` | `VARCHAR(255)` | TIDAK | IDX | |
 | `jenis_kelamin` | `ENUM` | YA | | Laki-laki, Perempuan |
+| `agama` | `ENUM` | YA | | Lihat §11.38. Ditambahkan 2026-08-28 (Rombongan B) |
 | `tempat_lahir` | `VARCHAR(100)` | YA | | |
-| `tanggal_lahir` | `DATE` | YA | | |
+| `tanggal_lahir` | `DATE` | YA | | Sumber usia (dihitung, tidak disimpan) |
 | `pendidikan_terakhir` | `ENUM` | YA | | Lihat §11.7 |
 | `pekerjaan_kepala_keluarga` | `VARCHAR(100)` | TIDAK | IDX | Sumber histogram dashboard |
-| `jumlah_anggota_keluarga` | `TINYINT UNSIGNED` | TIDAK | | Termasuk kepala keluarga |
-| `pendapatan_per_bulan` | `DECIMAL(15,2)` | YA | | Rupiah |
+| ~~`jumlah_anggota_keluarga`~~ | ~~`TINYINT UNSIGNED`~~ | | | **Diturunkan sejak 2026-08-28, tidak lagi kolom.** 1 (kepala) + `COUNT(anggota_keluarga)`. Lihat catatan |
+| `pendapatan_per_bulan` | `DECIMAL(15,2)` | YA | | Rupiah; pendapatan kepala keluarga |
 | `daerah_asal` | `VARCHAR(255)` | YA | | Kabupaten/provinsi asal |
 | `tahun_kedatangan` | `YEAR` | TIDAK | IDX | Dasar grafik jumlah transmigran per tahun |
 | `status_tinggal` | `ENUM` | TIDAK | IDX | Lihat §11.8 |
@@ -544,6 +545,36 @@ Data inti sistem, satu baris per **kepala keluarga**.
 - `pekerjaan_kepala_keluarga` sengaja berupa `VARCHAR` bukan `ENUM`, karena ragam pekerjaan di lapangan sulit dibatasi di muka. Konsistensi dijaga lewat daftar saran pada antarmuka.
 - `tahun_kedatangan` wajib diisi karena menjadi sumbu grafik dashboard PRD §7.8.
 - `status_anggota_poktan` disimpan sebagai penanda cepat; kebenarannya tetap mengacu ke `anggota_poktan`.
+- **`jumlah_anggota_keluarga` dicabut sebagai kolom 2026-08-28 (Rombongan B).** Dahulu disimpan justru karena sistem tidak mendata anggota keluarga satu per satu (`erd.md` §7.4). Setelah tabel `anggota_keluarga` ada, menyimpannya membuat nilainya dapat berselisih dengan daftar anggota yang sebenarnya, kekeliruan yang sama dengan `poktan.jumlah_anggota`. Kini dihitung: 1 (kepala keluarga) + `COUNT(anggota_keluarga WHERE transmigran_id = ...)`. Seluruh pembaca lama tetap membacanya lewat nama yang sama, sebab `DummyData::transmigran()` menyisipkannya kembali sebagai turunan.
+- **`usia` tidak pernah menjadi kolom.** Dihitung dari `tanggal_lahir` dan bertambah sendiri tiap tahun. Menyimpannya berarti nilai yang basi tepat satu tahun setelah dicatat.
+- **`agama`** ditambahkan bersama pendataan anggota keluarga; berlaku pula bagi tiap baris `anggota_keluarga`.
+
+### 6.1a `anggota_keluarga`
+
+Satu baris per anggota keluarga transmigran **selain kepala keluarga**. Ditambahkan 2026-08-28 (Rombongan B). Membalik keputusan `erd.md` §7.4 ("sistem tidak mendata anggota keluarga satu per satu, di luar lingkup PRD") atas permintaan pemilik proyek, agar suksesi kepala keluarga dan pemilihan wakil poktan tidak lagi mengetik identitas dari nol.
+
+| Kolom | Tipe | Null | Kunci | Keterangan |
+|---|---|---|---|---|
+| `id_anggota_keluarga` | `BIGINT UNSIGNED AUTO_INCREMENT` | TIDAK | PK | |
+| `transmigran_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | Keluarga yang dinaungi; `ON DELETE CASCADE` |
+| `hubungan` | `ENUM` | TIDAK | | Lihat §11.39 |
+| `nama_lengkap` | `VARCHAR(255)` | TIDAK | IDX | Huruf kapital otomatis |
+| `nik` | `CHAR(16)` | YA | IDX | Tepat 16 digit bila diisi; `NULL` bagi balita yang belum memilikinya |
+| `jenis_kelamin` | `ENUM` | YA | | Laki-laki, Perempuan |
+| `tempat_lahir` | `VARCHAR(100)` | YA | | |
+| `tanggal_lahir` | `DATE` | YA | | Sumber usia (dihitung, tidak disimpan) |
+| `agama` | `ENUM` | YA | | Lihat §11.38 |
+| `kegiatan` | `ENUM` | YA | | Lihat §11.40; menentukan isian yang menyusul |
+| `pendidikan_terakhir` | `ENUM` | YA | | Lihat §11.7. Wajib bila `kegiatan` bukan `Belum Sekolah`; bagi `Masih Sekolah` berarti jenjang yang sedang ditempuh |
+| `pekerjaan` | `VARCHAR(100)` | YA | | Wajib bila `kegiatan` = `Bekerja` |
+| `pendapatan_per_bulan` | `DECIMAL(15,2)` | YA | | Hanya bila `kegiatan` = `Bekerja` |
+| `telepon` | `VARCHAR(20)` | YA | | |
+| `keterangan` | `VARCHAR(1000)` | YA | | |
+
+**Catatan:**
+- **Tidak ada tabel riwayat anggota keluarga.** Anggota yang meninggal atau pindah cukup dihapus dari sini; peristiwa yang perlu jejak permanen adalah pergantian **kepala keluarga**, dan itu direkam `riwayat_kepala_keluarga` (§6.4).
+- **Pasangan dipisah `Istri`/`Suami` pada `hubungan`** agar jenis kelamin tersirat dari hubungannya, dan agar suksesi dapat menawarkan "pasangan" sebagai calon pengganti pertama.
+- **Kepala keluarga sendiri tidak punya baris di sini.** Datanya ada di `transmigran`. Ketika terjadi suksesi, baris `anggota_keluarga` sang pengganti dihapus dan datanya "naik" menimpa baris `transmigran` (`rules.md` §6.5).
 
 ### 6.2 `rumah`
 
@@ -1319,6 +1350,35 @@ Pemeriksaan "apakah jenis ini berskor" dan "apakah urutannya bermakna" **dilaran
 Konsekuensi yang perlu disadari saat membaca dashboard: nilai `Meninggal` pada status tinggal hanya menghitung **keluarga yang bubar**, bukan orang yang meninggal. Angka kematian yang sesungguhnya dihitung dari tabel `riwayat_kepala_keluarga`.
 
 `Pindah atau Merantau` sengaja tidak dipecah dua. Dari sisi pendataan keduanya sama: kepala keluarga tidak lagi berada di kawasan sementara keluarganya tetap tinggal. Membedakannya menuntut petugas menilai niat kepergian, dan itu tidak dapat diverifikasi.
+
+### 11.38 Agama
+
+`Islam` · `Kristen` · `Katolik` · `Hindu` · `Buddha` · `Konghucu`
+
+Ditambahkan 2026-08-28 (Rombongan B). Enam agama yang dilayani pencatatan sipil dan tercetak pada KTP serta kartu keluarga. Dipakai `transmigran.agama` dan `anggota_keluarga.agama`.
+
+**Bukan data master.** Keenamnya baku dari Dukcapil dan tidak di-CRUD dinas (keputusan pemilik proyek). "Penghayat Kepercayaan terhadap Tuhan YME" sengaja belum diikutkan; bila dinas memerlukannya cukup satu case ditambahkan.
+
+### 11.39 Hubungan anggota keluarga
+
+`Istri` · `Suami` · `Anak` · `Anak Angkat` · `Orang Tua` · `Famili Lain`
+
+Dipakai `anggota_keluarga.hubungan`. **BEDA dari §11.35** (`HubunganKeluarga`), yang "sengaja kasar" dan dipakai `anggota_poktan` serta `riwayat_kepala_keluarga` saat sistem belum mendata anggota keluarga. Enum ini dipakai tabel yang memang mendata mereka satu per satu, sehingga boleh lebih rinci.
+
+Pasangan dipisah `Istri`/`Suami` agar jenis kelaminnya tersirat dari hubungan, dan agar suksesi kepala keluarga dapat menawarkan pasangan sebagai calon pengganti pertama. Tidak dirinci sampai "anak kedua": urutan kelahiran tidak dipakai perhitungan mana pun.
+
+### 11.40 Kegiatan anggota keluarga
+
+`Belum Sekolah` · `Masih Sekolah` · `Bekerja` · `Tidak Bekerja`
+
+Dipakai `anggota_keluarga.kegiatan`. Menggantikan pilihan "Pendidikan/Kerja" bercabang pada form. Isian yang menyusul:
+
+| Nilai | Isian tambahan |
+|---|---|
+| `Belum Sekolah` | tidak ada (balita) |
+| `Masih Sekolah` | `pendidikan_terakhir` sebagai jenjang yang sedang ditempuh |
+| `Bekerja` | `pendidikan_terakhir` + `pekerjaan` + `pendapatan_per_bulan` |
+| `Tidak Bekerja` | `pendidikan_terakhir` saja |
 
 ---
 

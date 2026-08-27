@@ -112,6 +112,12 @@
                         </dd>
                     </div>
                     <div class="flex justify-between gap-3">
+                        <dt class="text-gray-500 dark:text-gray-400">Agama</dt>
+                        <dd class="text-right font-medium text-gray-800 dark:text-white/90">
+                            {{ $data['agama'] ?? '-' }}
+                        </dd>
+                    </div>
+                    <div class="flex justify-between gap-3">
                         <dt class="text-gray-500 dark:text-gray-400">Telepon</dt>
                         <dd class="text-right font-medium tabular-nums text-gray-800 dark:text-white/90">
                             {{ $data['telepon'] ?? '-' }}
@@ -128,6 +134,7 @@
                     role="tablist" aria-label="Rincian data transmigran">
                     @foreach ([
                         'biodata' => 'Biodata',
+                        'keluarga' => 'Anggota Keluarga (' . count($anggotaKeluarga) . ')',
                         'rumah' => 'Rumah',
                         'lahan' => 'Lahan (' . count($lahan) . ')',
                         // Tab Hasil Panen dicabut 2026-08-22: panen kini
@@ -156,9 +163,15 @@
                     <dl class="grid gap-x-6 gap-y-4 sm:grid-cols-2">
                         @foreach ([
                             'Jenis kelamin' => $data['jenis_kelamin'] ?? null,
+                            'Agama' => $data['agama'] ?? null,
                             'Tempat lahir' => $data['tempat_lahir'] ?? null,
                             'Tanggal lahir' => isset($data['tanggal_lahir'])
                                 ? \Illuminate\Support\Carbon::parse($data['tanggal_lahir'])->translatedFormat('d F Y')
+                                : null,
+                            // Usia DIHITUNG dari tanggal lahir (Rombongan B),
+                            // tidak disimpan, sehingga selalu terkini.
+                            'Usia' => isset($data['tanggal_lahir'])
+                                ? \Illuminate\Support\Carbon::parse($data['tanggal_lahir'])->age . ' tahun'
                                 : null,
                             'Pendidikan terakhir' => $data['pendidikan_terakhir'] ?? null,
                             'Pekerjaan' => $data['pekerjaan_kepala_keluarga'] ?? null,
@@ -192,6 +205,65 @@
                             </dd>
                         </div>
                     </dl>
+                </div>
+
+                {{-- Anggota keluarga (Rombongan B, 2026-08-28) --}}
+                <div x-show="tab === 'keluarga'" x-cloak role="tabpanel">
+                    @if (count($anggotaKeluarga) === 0)
+                        <x-sim.empty-state judul="Belum ada anggota keluarga terdata"
+                            pesan="Selain kepala keluarga, belum ada istri, suami, anak, atau anggota lain yang dicatat. Tambahkan lewat tombol Ubah Data." />
+                    @else
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full text-theme-sm">
+                                <caption class="px-5 py-3 text-left text-theme-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Anggota keluarga {{ $data['nama_kepala_keluarga'] }} selain kepala keluarga
+                                </caption>
+                                <thead class="border-y border-gray-200 bg-gray-50 text-theme-xs text-gray-500 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400">
+                                    <tr>
+                                        <th scope="col" class="px-5 py-3 text-left">Nama</th>
+                                        <th scope="col" class="px-5 py-3 text-left">Hubungan</th>
+                                        <th scope="col" class="px-5 py-3 text-left">Jenis Kelamin</th>
+                                        <th scope="col" class="px-5 py-3 text-left">NIK</th>
+                                        <th scope="col" class="px-5 py-3 text-right">Usia</th>
+                                        <th scope="col" class="px-5 py-3 text-left">Agama</th>
+                                        <th scope="col" class="px-5 py-3 text-left">Kegiatan</th>
+                                        <th scope="col" class="px-5 py-3 text-left">Pendidikan</th>
+                                        <th scope="col" class="px-5 py-3 text-left">Pekerjaan</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                                    @foreach ($anggotaKeluarga as $a)
+                                        <tr class="text-gray-700 dark:text-gray-300">
+                                            <td class="px-5 py-3 font-medium text-gray-800 dark:text-white/90">
+                                                {{ $a['nama_lengkap'] }}
+                                                @if (! empty($a['keterangan']))
+                                                    <span class="mt-0.5 block text-theme-xs font-normal text-gray-500 dark:text-gray-400">{{ $a['keterangan'] }}</span>
+                                                @endif
+                                            </td>
+                                            <td class="px-5 py-3">{{ $a['hubungan'] }}</td>
+                                            <td class="px-5 py-3">{{ $a['jenis_kelamin'] ?? '-' }}</td>
+                                            <td class="px-5 py-3 tabular-nums">{{ $a['nik'] ?: 'Belum ada' }}</td>
+                                            <td class="px-5 py-3 text-right tabular-nums">
+                                                {{ ! empty($a['tanggal_lahir']) ? \Illuminate\Support\Carbon::parse($a['tanggal_lahir'])->age . ' th' : '-' }}
+                                            </td>
+                                            <td class="px-5 py-3">{{ $a['agama'] ?? '-' }}</td>
+                                            <td class="px-5 py-3">{{ $a['kegiatan'] ?? '-' }}</td>
+                                            <td class="px-5 py-3">{{ $a['pendidikan_terakhir'] ?? '-' }}</td>
+                                            <td class="px-5 py-3">
+                                                {{ $a['pekerjaan'] ?? '-' }}
+                                                @if (! empty($a['pendapatan_per_bulan']))
+                                                    <span class="mt-0.5 block text-theme-xs font-normal text-gray-500 dark:text-gray-400">Rp {{ number_format($a['pendapatan_per_bulan'], 0, ',', '.') }} per bulan</span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="px-5 py-3 text-theme-xs text-gray-500 dark:text-gray-400">
+                            Usia dihitung dari tanggal lahir dan bertambah sendiri tiap tahun.
+                        </p>
+                    @endif
                 </div>
 
                 {{-- Rumah --}}
@@ -674,7 +746,11 @@
             keterangan="Perubahan tercatat pada audit log."
             :aksi="route('transmigran.perbarui', $data['id_transmigran'])" metode="PUT" ukuran="xl"
             label-simpan="Simpan Perubahan">
-            @include('pages.transmigran.form', ['data' => $data, 'awalan' => 'ubah'])
+            @include('pages.transmigran.form', [
+                'data' => $data,
+                'awalan' => 'ubah',
+                'anggotaKeluargaData' => $anggotaKeluarga,
+            ])
         </x-sim.modal-form>
     @endif
 @endsection
