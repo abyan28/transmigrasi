@@ -4,8 +4,12 @@ use App\Enums\AsalWakilPoktan;
 use App\Enums\JenisReferensi;
 use App\Enums\JenisSaprotan;
 use App\Enums\PeruntukanLahan;
+use App\Enums\PrioritasPengaduan;
+use App\Enums\StatusPanen;
+use App\Enums\StatusPengaduan;
 use App\Http\Controllers\DokumenController;
 use App\Support\DummyData;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -760,12 +764,243 @@ Route::post('/lahan/{id}/dokumen', function (int $id) {
 |
 */
 Route::get('/panen', function () {
-    return view('pages.panen.index', ['title' => 'Hasil Panen']);
+    $semua = DummyData::hasilPanen();
+
+    $cari = trim((string) request('cari', ''));
+    $filterSp = request('sp');
+    $filterKomoditas = request('komoditas');
+    $filterTahun = request('tahun');
+
+    // Tahun panen diturunkan dari tanggalnya, menggantikan penyaringan per
+    // musim tanam yang dicabut 2026-08-22 bersama fiturnya.
+    $tahunPanen = fn ($p) => $p['periode_panen']
+        ? (int) substr($p['periode_panen'], 0, 4)
+        : null;
+
+    $baris = array_values(array_filter($semua, function ($p) use ($cari, $filterSp, $filterKomoditas, $filterTahun, $tahunPanen) {
+        if ($cari !== '') {
+            $cocok = str_contains(mb_strtolower($p['poktan']), mb_strtolower($cari))
+                || str_contains(mb_strtolower($p['komoditas']), mb_strtolower($cari));
+
+            if (! $cocok) {
+                return false;
+            }
+        }
+
+        if ($filterSp && (string) $p['satuan_permukiman_id'] !== (string) $filterSp) {
+            return false;
+        }
+
+        if ($filterKomoditas && $p['komoditas'] !== $filterKomoditas) {
+            return false;
+        }
+
+        if ($filterTahun && (string) $tahunPanen($p) !== (string) $filterTahun) {
+            return false;
+        }
+
+        return true;
+    }));
+
+    /*
+     * Volume benih dan luas lahan dibaca LEWAT PENANAMAN, sebab keduanya milik
+     * penanaman dan poktan, bukan milik catatan panen.
+     *
+     * Disusun sekali di sini alih-alih dicari ulang pada tiap baris: pencarian
+     * penanaman beserta perhitungan lahan poktannya menyusuri seluruh
+     * keanggotaan, dan mengulanginya per baris membuat halaman menghitung hal
+     * yang sama berkali-kali.
+     */
+    $petaPenanaman = collect(DummyData::penanaman())->keyBy('id_penanaman');
+    $kekuatanPoktan = [];
+    $asalTanam = [];
+
+    // Setara ton per baris, dahulu dihitung ulang di dalam perulangan tabel.
+    $setaraTon = [];
+
+    foreach ($semua as $p) {
+        $tanam = $petaPenanaman[$p['penanaman_id']] ?? null;
+
+        $kekuatanPoktan[$p['poktan_id']] ??= DummyData::rekapLahanPoktan($p['poktan_id']);
+
+        $asalTanam[$p['id_hasil_panen']] = [
+            'volume_benih' => (float) ($tanam['volume_benih'] ?? 0),
+            'luas_lahan' => $kekuatanPoktan[$p['poktan_id']]['luas_total'],
+        ];
+
+        $setaraTon[$p['id_hasil_panen']] = DummyData::keTon($p['produksi'], $p['satuan']);
+    }
+
+    $daftarTahun = array_values(array_filter(array_unique(array_map($tahunPanen, $semua))));
+    rsort($daftarTahun);
+
+    return view('pages.panen.index', [
+        'title' => 'Hasil Panen',
+        'semua' => $semua,
+        'baris' => $baris,
+        'cari' => $cari,
+        'filterSp' => $filterSp,
+        'filterKomoditas' => $filterKomoditas,
+        'filterTahun' => $filterTahun,
+        'adaFilter' => $cari !== '' || $filterSp || $filterKomoditas || $filterTahun,
+
+        // Total dihitung setelah konversi ke ton, bukan menjumlahkan volume
+        // mentah.
+        'totalTonTampil' => array_sum(array_map(fn ($p) => $setaraTon[$p['id_hasil_panen']], $baris)),
+        'totalTonSemua' => array_sum($setaraTon),
+
+        'setaraTon' => $setaraTon,
+        'asalTanam' => $asalTanam,
+        'kekuatanPoktan' => $kekuatanPoktan,
+        'daftarKomoditas' => array_values(array_unique(array_column($semua, 'komoditas'))),
+        'daftarTahun' => $daftarTahun,
+        'daftarSp' => DummyData::satuanPermukiman(),
+    ]);
 })->name('panen.index');
 
-Route::get('/panen/rekap', function () {
-    return view('pages.panen.rekap', ['title' => 'Rekap Hasil Panen']);
-})->name('panen.rekap');
+/*
+ * Penyusun rekap panen, dipakai DUA rute: tautan tetap per tab dan alamat lama
+ * ber-`?kelompok=`. Dipusatkan pada satu closure agar keduanya tidak menyimpang
+ * diam-diam; sebelum 2026-08-27 keduanya merender view yang menyusun datanya
+ * sendiri, sehingga tidak ada satu tempat pun yang dapat disebut sumbernya.
+ */
+$susunRekapPanen = function (?string $kelompokRute = null) {
+    // Dasar pengelompokan datang dari dua arah: segmen rute yang menjadi
+    // tautan tetap, dan kueri `?kelompok=` milik tautan lama. Yang pertama
+    // membuat ketiga tab tetap dapat dibuka pada build statis.
+    $kelompok = $kelompokRute ?? request('kelompok', 'sp');
+
+    /*
+     * PERIODE SELALU TERIKAT, tidak pernah kumulatif sejak awal waktu.
+     * Bawaannya TAHUN BERJALAN sesuai keputusan pemilik proyek 2026-08-24.
+     *
+     * MEMAKAI TAHUN PANEN, bukan tahun tanam. Ini rekap PANEN, sehingga yang
+     * menggolongkan adalah peristiwa panennya.
+     */
+    $daftarTahun = DummyData::tahunPanenTercatat();
+    $tahunPanen = (int) request('tahun', date('Y'));
+
+    /*
+     * PENYARING SILANG. Tab menentukan baris APA, penyaring menentukan baris
+     * MANA. Penyaring yang dirender berbeda tiap tab, sebab menyaring SP pada
+     * tab Per SP hanya menyisakan satu baris yang sudah terlihat sejak awal.
+     */
+    $filterSp = $kelompok !== 'sp' ? request('sp') : null;
+    $filterKomoditas = $kelompok !== 'komoditas' ? request('komoditas') : null;
+
+    /*
+     * Opsi dihitung dari PENANAMAN pada tahun terpilih, bukan dari data master.
+     * Master memuat enam SP dan lima komoditas, sedangkan tahun 2025 hanya
+     * memiliki satu dari masing-masing; menawarkan sisanya berarti menyuguhkan
+     * pilihan yang DIJAMIN menghasilkan tabel kosong.
+     */
+    $opsiFilter = DummyData::opsiFilterRekapPanen($tahunPanen);
+
+    /*
+     * Nilai yang tidak lagi tersedia DILEPAS, bukan dibiarkan menghasilkan
+     * tabel kosong tanpa penjelasan. Keadaannya nyata: petugas menyaring CABAI
+     * pada 2026, lalu berpindah ke 2025 - dan cabai tidak ditanam tahun itu.
+     */
+    $filterDilepas = [];
+
+    if ($filterSp !== null && $filterSp !== '' && ! in_array($filterSp, $opsiFilter['sp'], true)) {
+        $filterDilepas[] = 'Satuan Permukiman '.$filterSp;
+        $filterSp = null;
+    }
+
+    if ($filterKomoditas !== null && $filterKomoditas !== '' && ! in_array($filterKomoditas, $opsiFilter['komoditas'], true)) {
+        $filterDilepas[] = 'Komoditas '.$filterKomoditas;
+        $filterKomoditas = null;
+    }
+
+    // String kosong berarti "semua", bukan penyaring bernilai kosong.
+    $filterSp = $filterSp !== '' ? $filterSp : null;
+    $filterKomoditas = $filterKomoditas !== '' ? $filterKomoditas : null;
+
+    $rekap = DummyData::rekapPanen($kelompok, $tahunPanen, $filterSp, $filterKomoditas);
+
+    // Dipakai judul tabel dan baris total. Angka rekap tanpa cakupannya tidak
+    // dapat disalin ke laporan mana pun.
+    $cakupanFilter = array_values(array_filter([$filterSp, $filterKomoditas]));
+
+    $totalPanen = array_sum(array_column($rekap, 'hasil_panen'));
+    $totalProduksi = array_sum(array_column($rekap, 'produksi_ton'));
+
+    /*
+     * KOLOM KEDUA BERBEDA TIAP TAB, ditetapkan pemilik proyek 2026-08-24.
+     * Luas lahan sengaja TIDAK ditampilkan pada tab komoditas: satu poktan
+     * menanam beberapa komoditas, sehingga lahannya akan terhitung berkali-kali
+     * dan totalnya melampaui luas kawasan yang sebenarnya. Cacah poktan tidak
+     * ditampilkan pada tab poktan, sebab nilainya selalu satu.
+     *
+     * Jumlah Anggota hanya pada tab Kelompok Tani: pada tab SP dan Komoditas ia
+     * menjumlahkan anggota beberapa poktan sekaligus, angka yang benar secara
+     * aritmetika tetapi tidak menjawab pertanyaan apa pun.
+     */
+    $tampilkanCacahPoktan = $kelompok !== 'poktan';
+    $tampilkanJumlahAnggota = $kelompok === 'poktan';
+    $tampilkanLuasLahan = $kelompok !== 'komoditas';
+    $tampilkanVolumeBenih = $kelompok === 'komoditas';
+
+    return view('pages.panen.rekap', [
+        'title' => 'Rekap Hasil Panen',
+        'kelompok' => $kelompok,
+        'daftarTahun' => $daftarTahun,
+        'tahunPanen' => $tahunPanen,
+        'filterSp' => $filterSp,
+        'filterKomoditas' => $filterKomoditas,
+        'opsiFilter' => $opsiFilter,
+        'filterDilepas' => $filterDilepas,
+        'rekap' => $rekap,
+        'cakupanFilter' => $cakupanFilter,
+        'adaFilter' => $cakupanFilter !== [],
+
+        'totalPoktan' => array_sum(array_column($rekap, 'jumlah_poktan')),
+        'totalAnggota' => array_sum(array_column($rekap, 'jumlah_anggota')),
+        'totalLuas' => array_sum(array_column($rekap, 'luas_lahan')),
+        'totalBenih' => array_sum(array_column($rekap, 'volume_benih')),
+        'totalTanam' => array_sum(array_column($rekap, 'realisasi_tanam')),
+        'totalPanen' => $totalPanen,
+        'totalPuso' => array_sum(array_column($rekap, 'puso')),
+        'totalBelum' => array_sum(array_column($rekap, 'belum_dipanen')),
+        'totalProduksi' => $totalProduksi,
+        'totalNilai' => array_sum(array_column($rekap, 'nilai_jual')),
+
+        /*
+         * Produktivitas total pun TERTIMBANG, bukan rata-rata kolomnya. Contoh
+         * nyata pada 2026: produksi 10,151 ton dibagi luas dipanen 3,45 ha
+         * menghasilkan 2,942 ton/ha, sedangkan rata-rata naif ketiga baris
+         * justru 1,452 - tertarik turun oleh baris yang gagal total dan
+         * berproduktivitas nol, padahal luas panennya nol pula sehingga tidak
+         * seharusnya ikut menimbang.
+         */
+        'produktivitasTotal' => $totalPanen > 0 ? $totalProduksi / $totalPanen : 0.0,
+
+        /*
+         * Daftar ini WAJIB sejalan dengan batasan `where` pada rute
+         * `panen.rekap.kelompok` dan larik pada DaftarTautanStatis. Ketiganya
+         * mengunci hal yang sama, dan mengubah salah satunya saja membuat
+         * halaman terbit membalas 404 tanpa penjaga apa pun (notes.md 1e.5).
+         */
+        'labelKelompok' => [
+            'sp' => 'Satuan Permukiman',
+            'komoditas' => 'Komoditas',
+            'poktan' => 'Kelompok Tani',
+        ],
+
+        'tampilkanCacahPoktan' => $tampilkanCacahPoktan,
+        'tampilkanJumlahAnggota' => $tampilkanJumlahAnggota,
+        'tampilkanLuasLahan' => $tampilkanLuasLahan,
+        'tampilkanVolumeBenih' => $tampilkanVolumeBenih,
+
+        // Cacah kolom, dipakai memeriksa kesejajaran baris total. Tetap: nama,
+        // 4 kolom luas, produktivitas, produksi, nilai jual.
+        'cacahKolom' => 8 + (int) $tampilkanCacahPoktan + (int) $tampilkanJumlahAnggota
+            + (int) $tampilkanLuasLahan + (int) $tampilkanVolumeBenih,
+    ]);
+};
+
+Route::get('/panen/rekap', fn () => $susunRekapPanen())->name('panen.rekap');
 
 // Tautan tetap per dasar pengelompokan. Membuat ketiga tab dapat ditandai,
 // dibagikan, dan ikut tergilas pada build statis GitHub Pages yang tidak dapat
@@ -773,19 +1008,23 @@ Route::get('/panen/rekap', function () {
 // Wajib berada SEBELUM /panen/{id} agar tidak tertangkap sebagai id.
 //
 // Kelompok `musim` dicabut 2026-08-22 bersama fitur musim tanam.
-Route::get('/panen/rekap/{kelompok}', function (string $kelompok) {
-    return view('pages.panen.rekap', [
-        'title' => 'Rekap Hasil Panen',
-        'kelompokRute' => $kelompok,
-    ]);
-})->where('kelompok', 'sp|komoditas|poktan')->name('panen.rekap.kelompok');
+Route::get('/panen/rekap/{kelompok}', fn (string $kelompok) => $susunRekapPanen($kelompok))
+    ->where('kelompok', 'sp|komoditas|poktan')->name('panen.rekap.kelompok');
 
 Route::get('/panen/{id}', function (int $id) {
-    $data = collect(\App\Support\DummyData::hasilPanen())->firstWhere('id_hasil_panen', $id);
+    $data = collect(DummyData::hasilPanen())->firstWhere('id_hasil_panen', $id);
 
     abort_if($data === null, 404);
 
-    return view('pages.panen.detail', ['title' => 'Panen ' . $data['komoditas'], 'data' => $data]);
+    return view('pages.panen.detail', [
+        'title' => 'Panen '.$data['komoditas'],
+        'data' => $data,
+        'setaraTon' => DummyData::keTon($data['produksi'], $data['satuan']),
+
+        // Penanaman asal panen ini, dibaca lewat relasi. Menyediakan tautan
+        // balik ke penanaman asalnya.
+        'tanam' => collect(DummyData::penanaman())->firstWhere('id_penanaman', $data['penanaman_id']),
+    ]);
 })->where('id', '[0-9]+')->name('panen.detail');
 
 Route::post('/panen', function () {
@@ -865,12 +1104,116 @@ Route::get('/lacak-pengaduan/{nomor}', function (string $nomor) {
 |
 */
 Route::get('/pengaduan', function () {
-    return view('pages.pengaduan.index', ['title' => 'Pengaduan']);
+    $semua = DummyData::pengaduan();
+
+    $cari = trim((string) request('cari', ''));
+    $filterSp = request('sp');
+    $filterStatus = request('status');
+    $filterKategori = request('kategori');
+    $filterPrioritas = request('prioritas');
+
+    /*
+     * Filter bidang paling berguna bagi Admin dan Dinas Transmigrasi, sebab
+     * keduanya bercakupan Semua sehingga daftarnya memuat laporan kedua dinas
+     * sekaligus (rules.md 5.0b). Nilai khusus 'belum' menyaring laporan yang
+     * bidangnya belum ditetapkan, dan itulah antrean kerja penyaringan awal.
+     */
+    $filterBidang = request('bidang');
+
+    $baris = array_values(array_filter($semua, function ($p) use ($cari, $filterSp, $filterStatus, $filterKategori, $filterPrioritas, $filterBidang) {
+        if ($cari !== '') {
+            $cocok = str_contains(mb_strtolower($p['judul']), mb_strtolower($cari))
+                || str_contains(mb_strtolower($p['nomor_pengaduan']), mb_strtolower($cari))
+                || str_contains(mb_strtolower($p['nama_pelapor']), mb_strtolower($cari));
+
+            if (! $cocok) {
+                return false;
+            }
+        }
+
+        if ($filterSp && (string) $p['satuan_permukiman_id'] !== (string) $filterSp) {
+            return false;
+        }
+
+        if ($filterStatus && $p['status'] !== $filterStatus) {
+            return false;
+        }
+
+        if ($filterKategori && $p['kategori'] !== $filterKategori) {
+            return false;
+        }
+
+        if ($filterPrioritas && $p['prioritas'] !== $filterPrioritas) {
+            return false;
+        }
+
+        if ($filterBidang === 'belum' && ! empty($p['bidang'])) {
+            return false;
+        }
+
+        if ($filterBidang && $filterBidang !== 'belum' && ($p['bidang'] ?? null) !== $filterBidang) {
+            return false;
+        }
+
+        return true;
+    }));
+
+    // Yang belum selesai didahulukan, lalu diurutkan menurut kemendesakan.
+    $urutanPrioritas = ['Mendesak' => 0, 'Tinggi' => 1, 'Sedang' => 2, 'Rendah' => 3];
+    usort($baris, function ($a, $b) use ($urutanPrioritas) {
+        $selesaiA = $a['status'] === StatusPengaduan::Selesai->value ? 1 : 0;
+        $selesaiB = $b['status'] === StatusPengaduan::Selesai->value ? 1 : 0;
+
+        if ($selesaiA !== $selesaiB) {
+            return $selesaiA <=> $selesaiB;
+        }
+
+        return $urutanPrioritas[$a['prioritas']] <=> $urutanPrioritas[$b['prioritas']];
+    });
+
+    return view('pages.pengaduan.index', [
+        'title' => 'Pengaduan',
+        'semua' => $semua,
+        'baris' => $baris,
+        'cari' => $cari,
+        'filterSp' => $filterSp,
+        'filterStatus' => $filterStatus,
+        'filterKategori' => $filterKategori,
+        'filterPrioritas' => $filterPrioritas,
+        'filterBidang' => $filterBidang,
+        'adaFilter' => $cari !== '' || $filterSp || $filterStatus || $filterKategori || $filterPrioritas || $filterBidang,
+
+        // Antrean penyaringan awal, ditampilkan agar laporan tanpa bidang tidak
+        // menumpuk diam-diam menunggu dinas yang tidak pernah tahu.
+        'belumBerbidang' => count(array_filter($semua, fn ($p) => empty($p['bidang']))),
+
+        'belumSelesai' => count(array_filter($semua, fn ($p) => $p['status'] !== StatusPengaduan::Selesai->value)),
+        'menungguDiterima' => count(array_filter($semua, fn ($p) => $p['status'] === StatusPengaduan::MenungguDiterima->value)),
+        'mendesak' => count(array_filter($semua, fn ($p) => $p['prioritas'] === PrioritasPengaduan::Mendesak->value
+            && $p['status'] !== StatusPengaduan::Selesai->value)),
+
+        'daftarSp' => DummyData::satuanPermukiman(),
+        'opsiFilterBidang' => DummyData::opsiFilterReferensi(JenisReferensi::BidangPengaduan),
+        'opsiFilterKategori' => DummyData::opsiFilterReferensi(JenisReferensi::KategoriPengaduan),
+        'opsiFilterPrioritas' => DummyData::opsiFilterReferensi(JenisReferensi::PrioritasPengaduan),
+    ]);
 })->name('pengaduan.index');
 
-Route::get('/pengaduan/rekap', function () {
-    return view('pages.pengaduan.rekap', ['title' => 'Rekap Pengaduan']);
-})->name('pengaduan.rekap');
+/*
+ * Rekap pengaduan, dipakai dua rute seperti rekap panen: pemilih ber-`?kelompok=`
+ * dan tautan tetap per segmen.
+ */
+$susunRekapPengaduan = function (?string $kelompokRute = null) {
+    $kelompok = $kelompokRute ?? request('kelompok', 'kategori');
+
+    return view('pages.pengaduan.rekap', [
+        'title' => 'Rekap Pengaduan',
+        'kelompok' => $kelompok,
+        'rekap' => DummyData::rekapPengaduan($kelompok),
+    ]);
+};
+
+Route::get('/pengaduan/rekap', fn () => $susunRekapPengaduan())->name('pengaduan.rekap');
 
 /*
  * Tautan tetap pemilih kelompok rekap.
@@ -882,19 +1225,20 @@ Route::get('/pengaduan/rekap', function () {
  * Daftar nilai pada `where` WAJIB dijaga sejalan dengan $labelKelompok pada
  * viewnya; keduanya menyatakan hal yang sama di dua tempat.
  */
-Route::get('/pengaduan/rekap/{kelompok}', function (string $kelompok) {
-    return view('pages.pengaduan.rekap', [
-        'title' => 'Rekap Pengaduan',
-        'kelompok' => $kelompok,
-    ]);
-})->where('kelompok', 'kategori|status|sp|prioritas|bidang')->name('pengaduan.rekap.kelompok');
+Route::get('/pengaduan/rekap/{kelompok}', fn (string $kelompok) => $susunRekapPengaduan($kelompok))
+    ->where('kelompok', 'kategori|status|sp|prioritas|bidang')->name('pengaduan.rekap.kelompok');
 
 Route::get('/pengaduan/{id}', function (int $id) {
-    $data = collect(\App\Support\DummyData::pengaduan())->firstWhere('id_pengaduan', $id);
+    $data = collect(DummyData::pengaduan())->firstWhere('id_pengaduan', $id);
 
     abort_if($data === null, 404);
 
-    return view('pages.pengaduan.detail', ['title' => $data['nomor_pengaduan'], 'data' => $data]);
+    return view('pages.pengaduan.detail', [
+        'title' => $data['nomor_pengaduan'],
+        'data' => $data,
+        'riwayat' => DummyData::penangananPengaduan($data['nomor_pengaduan']),
+        'opsiBidang' => DummyData::opsiReferensi(JenisReferensi::BidangPengaduan),
+    ]);
 })->where('id', '[0-9]+')->name('pengaduan.detail');
 
 Route::post('/pengaduan', function () {
@@ -1309,7 +1653,99 @@ Route::put('/komoditas/{id}', function (int $id) {
 })->where('id', '[0-9]+')->name('komoditas.perbarui');
 
 Route::get('/penanaman', function () {
-    return view('pages.penanaman.index', ['title' => 'Penanaman']);
+    $semua = DummyData::penanaman();
+
+    $cari = trim((string) request('cari', ''));
+    $filterSp = request('sp');
+    $filterTahun = request('tahun');
+    $filterKomoditas = request('komoditas');
+    $filterStatus = request('status');
+
+    // Tahun tanam diturunkan dari tanggalnya, bukan disimpan terpisah.
+    // Menyimpannya sebagai kolom sendiri membuat nilainya dapat berbeda dari
+    // tanggal yang menjadi sumbernya.
+    $tahunTanam = fn ($r) => $r['periode_tanam']
+        ? Carbon::parse($r['periode_tanam'].'-01')->year
+        : null;
+
+    // Status panen DITURUNKAN dari sisa luas, tidak disimpan sebagai kolom
+    // (agents/rules.md bagian 7d poin 11). Disusun sekali di sini agar
+    // penyaring, kolom tabel, dan kartu ringkasan membaca sumber yang sama.
+    $statusPanen = [];
+    foreach ($semua as $r) {
+        $statusPanen[$r['id_penanaman']] = DummyData::statusPanen($r['id_penanaman']);
+    }
+
+    /*
+     * Kekuatan tiap poktan: cacah anggota aktif dan luas lahannya.
+     *
+     * DIHITUNG, tidak disimpan (rules.md 7d.3). Disusun sekali per poktan di
+     * sini, bukan dipanggil ulang pada tiap baris - satu poktan dapat memiliki
+     * banyak penanaman, dan perhitungannya menyusuri seluruh keanggotaan
+     * beserta lahannya.
+     */
+    $kekuatanPoktan = [];
+    foreach ($semua as $r) {
+        $kekuatanPoktan[$r['poktan_id']] ??= DummyData::rekapLahanPoktan($r['poktan_id']);
+    }
+
+    $baris = array_values(array_filter($semua, function ($r) use ($cari, $filterSp, $filterTahun, $filterKomoditas, $filterStatus, $tahunTanam, $statusPanen) {
+        if ($cari !== '' && ! str_contains(mb_strtolower($r['poktan']), mb_strtolower($cari))
+            && ! str_contains(mb_strtolower($r['komoditas']), mb_strtolower($cari))) {
+            return false;
+        }
+        if ($filterSp && (string) $r['satuan_permukiman_id'] !== (string) $filterSp) {
+            return false;
+        }
+        if ($filterTahun && (string) $tahunTanam($r) !== (string) $filterTahun) {
+            return false;
+        }
+        if ($filterKomoditas && $r['komoditas'] !== $filterKomoditas) {
+            return false;
+        }
+        if ($filterStatus && $statusPanen[$r['id_penanaman']]->value !== $filterStatus) {
+            return false;
+        }
+
+        return true;
+    }));
+
+    $daftarTahun = array_values(array_filter(array_unique(array_map($tahunTanam, $semua))));
+    rsort($daftarTahun);
+
+    return view('pages.penanaman.index', [
+        'title' => 'Penanaman',
+        'semua' => $semua,
+        'baris' => $baris,
+        'cari' => $cari,
+        'filterSp' => $filterSp,
+        'filterTahun' => $filterTahun,
+        'filterKomoditas' => $filterKomoditas,
+        'filterStatus' => $filterStatus,
+        'adaFilter' => $cari !== '' || $filterSp || $filterTahun || $filterKomoditas || $filterStatus,
+        'statusPanen' => $statusPanen,
+        'kekuatanPoktan' => $kekuatanPoktan,
+        'totalLuas' => array_sum(array_column($baris, 'realisasi_tanam')),
+
+        /*
+         * Luas yang masih berdiri tanaman, yaitu seluruh penanaman yang belum
+         * dipanen sama sekali.
+         *
+         * DISEDERHANAKAN 2026-08-24: sebelumnya menjumlahkan sisa parsial tiap
+         * penanaman. Sisa parsial kini tidak lagi mungkin ada, sebab satu panen
+         * selalu menutup seluruh luas yang ditanam.
+         */
+        'totalBelumDipanen' => array_sum(array_map(
+            fn ($r) => $statusPanen[$r['id_penanaman']] === StatusPanen::BelumDipanen
+                ? (float) $r['realisasi_tanam']
+                : 0.0,
+            $semua
+        )),
+
+        'daftarTahun' => $daftarTahun,
+        'daftarKomoditas' => array_values(array_unique(array_column($semua, 'komoditas'))),
+        'daftarSp' => DummyData::satuanPermukiman(),
+    ]);
 })->name('penanaman');
 
 /*
@@ -1329,13 +1765,54 @@ Route::get('/penanaman', function () {
  * Rute musim tanam DIHAPUS pada tanggal yang sama bersama fiturnya.
  */
 Route::get('/penanaman/{id}', function (int $id) {
-    $data = collect(\App\Support\DummyData::penanaman())->firstWhere('id_penanaman', $id);
+    $data = collect(DummyData::penanaman())->firstWhere('id_penanaman', $id);
 
     abort_if($data === null, 404);
+
+    /*
+     * Panen dari penanaman ini, dibaca lewat relasi `penanaman_id`.
+     *
+     * Sebelumnya dicocokkan lewat pasangan komoditas dan petani, sebab hasil
+     * panen belum menyimpan tautannya. Pencocokan teks semacam itu menyatukan
+     * dua penanaman berbeda yang kebetulan sama komoditas dan penggarapnya,
+     * sehingga volumenya terhitung dua kali.
+     */
+    $panen = array_values(array_filter(
+        DummyData::hasilPanen(),
+        fn ($p) => ($p['penanaman_id'] ?? null) === $data['id_penanaman'],
+    ));
 
     return view('pages.penanaman.detail', [
         'title' => $data['komoditas'].' - '.$data['poktan'],
         'data' => $data,
+        'panen' => $panen,
+
+        /*
+         * DIPERBAIKI 2026-08-24: sebelumnya menjumlahkan kunci `volume` yang
+         * sudah dihapus pada perombakan 2026-08-22, sehingga baris "Total
+         * volume" SELALU 0,00.
+         *
+         * Dijumlahkan setelah konversi ke ton, bukan angka mentah: satu
+         * penanaman memang satu komoditas, tetapi menuliskannya begini membuat
+         * halaman ini tidak menjadi pengecualian dari rules.md 8a.5.
+         */
+        'produksiTon' => array_sum(array_map(
+            fn ($p) => DummyData::keTon($p['produksi'], $p['satuan']),
+            $panen
+        )),
+
+        'luasDipanen' => array_sum(array_column($panen, 'realisasi_panen')),
+        'luasPuso' => array_sum(array_map(fn ($p) => (float) ($p['puso'] ?? 0), $panen)),
+
+        // Tiga angka turunan, seluruhnya dihitung bukan disimpan, sehingga
+        // selalu mengikuti keanggotaan dan lahan terbaru.
+        'status' => DummyData::statusPanen($data['id_penanaman']),
+        'belumDitanam' => DummyData::lahanTersedia($data['poktan_id']),
+        'rekapPoktan' => DummyData::rekapLahanPoktan($data['poktan_id']),
+
+        'benih' => $data['saprotan_id']
+            ? collect(DummyData::saprotan())->firstWhere('id_saprotan', $data['saprotan_id'])
+            : null,
     ]);
 })->where('id', '[0-9]+')->name('penanaman.detail');
 

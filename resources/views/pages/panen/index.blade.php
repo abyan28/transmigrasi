@@ -10,99 +10,20 @@
 
 @section('content')
     @php
-        use App\Support\DummyData;
-
-        $semua = DummyData::hasilPanen();
-
-        $cari = trim((string) request('cari', ''));
-        $filterSp = request('sp');
-        $filterKomoditas = request('komoditas');
-        $filterTahun = request('tahun');
-
         /*
-         * KOLOM STATUS DICABUT 2026-08-24 bersama panen bertahap.
-         *
-         * Setiap baris di sini pasti berasal dari penanaman yang sudah selesai
-         * dipanen - sebab barisnya sendiri yang menuntaskannya. Kolom yang
-         * seluruh isinya sama tidak membedakan apa pun.
-         *
-         * Yang menggantikannya kolom Puso, dan itu memang yang membedakan:
-         * panen mulus, gagal sebagian, atau gagal total.
-         */
+            KOLOM STATUS DICABUT 2026-08-24 bersama panen bertahap.
 
-        // Tahun panen diturunkan dari tanggalnya, menggantikan penyaringan per
-        // musim tanam yang dicabut 2026-08-22 bersama fiturnya.
-        $tahunPanen = fn ($p) => $p['periode_panen']
-            ? (int) substr($p['periode_panen'], 0, 4)
-            : null;
+            Setiap baris di sini pasti berasal dari penanaman yang sudah selesai
+            dipanen - sebab barisnya sendiri yang menuntaskannya. Kolom yang
+            seluruh isinya sama tidak membedakan apa pun.
 
-        $baris = array_values(array_filter($semua, function ($p) use ($cari, $filterSp, $filterKomoditas, $filterTahun, $tahunPanen) {
-            if ($cari !== '') {
-                $cocok = str_contains(mb_strtolower($p['poktan']), mb_strtolower($cari))
-                    || str_contains(mb_strtolower($p['komoditas']), mb_strtolower($cari));
+            Yang menggantikannya kolom Puso, dan itu memang yang membedakan:
+            panen mulus, gagal sebagian, atau gagal total.
+        */
 
-                if (! $cocok) {
-                    return false;
-                }
-            }
-
-            if ($filterSp && (string) $p['satuan_permukiman_id'] !== (string) $filterSp) {
-                return false;
-            }
-
-            if ($filterKomoditas && $p['komoditas'] !== $filterKomoditas) {
-                return false;
-            }
-
-            if ($filterTahun && (string) $tahunPanen($p) !== (string) $filterTahun) {
-                return false;
-            }
-
-            return true;
-        }));
-
-        $adaFilter = $cari !== '' || $filterSp || $filterKomoditas || $filterTahun;
-
-        // Total dihitung setelah konversi ke ton, bukan menjumlahkan volume mentah.
-        $totalTonTampil = array_sum(array_map(
-            fn ($p) => DummyData::keTon($p['produksi'], $p['satuan']),
-            $baris
-        ));
-
-        $totalTonSemua = array_sum(array_map(
-            fn ($p) => DummyData::keTon($p['produksi'], $p['satuan']),
-            $semua
-        ));
-
-        $daftarKomoditas = array_values(array_unique(array_column($semua, 'komoditas')));
-
-        /*
-         * Volume benih dan luas lahan dibaca LEWAT PENANAMAN, sebab keduanya
-         * milik penanaman dan poktan - bukan milik catatan panen.
-         *
-         * Disusun sekali di sini alih-alih dicari ulang pada tiap baris:
-         * pencarian penanaman beserta perhitungan lahan poktannya menyusuri
-         * seluruh keanggotaan, dan mengulanginya per baris membuat halaman
-         * menghitung hal yang sama berkali-kali.
-         */
-        $petaPenanaman = collect(DummyData::penanaman())->keyBy('id_penanaman');
-        $kekuatanPoktan = [];
-        $asalTanam = [];
-
-        foreach ($semua as $p) {
-            $tanam = $petaPenanaman[$p['penanaman_id']] ?? null;
-
-            $kekuatanPoktan[$p['poktan_id']] ??= DummyData::rekapLahanPoktan($p['poktan_id']);
-
-            $asalTanam[$p['id_hasil_panen']] = [
-                'volume_benih' => (float) ($tanam['volume_benih'] ?? 0),
-                'luas_lahan' => $kekuatanPoktan[$p['poktan_id']]['luas_total'],
-            ];
-        }
-
-        $daftarTahun = array_values(array_filter(array_unique(array_map($tahunPanen, $semua))));
-        rsort($daftarTahun);
-
+        // Data, penyaringan, dan seluruh angka turunan datang dari rute
+        // `panen.index`, termasuk peta $setaraTon dan $asalTanam yang dahulu
+        // dihitung ulang di dalam perulangan tabel. Lihat routes/web.php.
         $bolehTambah = true;
         $bolehUbah = true;
         $bolehHapus = true;
@@ -166,7 +87,7 @@
                         <select id="filter_sp" name="sp"
                             class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
                             <option value="">Semua SP</option>
-                            @foreach (DummyData::satuanPermukiman() as $sp)
+                            @foreach ($daftarSp as $sp)
                                 <option value="{{ $sp['id_satuan_permukiman'] }}"
                                     @selected($filterSp == $sp['id_satuan_permukiman'])>{{ $sp['nama'] }}</option>
                             @endforeach
@@ -328,7 +249,7 @@
                         {{-- Setara ton ditampilkan bila satuannya bukan ton --}}
                         @if ($p['satuan'] !== 'Ton')
                             <p class="mt-0.5 text-theme-xs tabular-nums text-gray-500 dark:text-gray-400">
-                                setara {{ number_format(DummyData::keTon($p['produksi'], $p['satuan']), 3, ',', '.') }} ton
+                                setara {{ number_format($setaraTon[$p['id_hasil_panen']], 3, ',', '.') }} ton
                             </p>
                         @endif
                     </td>

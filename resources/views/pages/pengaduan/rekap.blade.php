@@ -11,12 +11,9 @@
 
 @section('content')
     @php
-        use App\Support\DummyData;
-
-        $kelompok = $kelompok ?? request('kelompok', 'kategori');
-
-        $rekap = DummyData::rekapPengaduan($kelompok);
-
+        // `$kelompok` dan `$rekap` datang dari closure `susunRekapPengaduan`
+        // pada routes/web.php, yang dipakai bersama rute `pengaduan.rekap` dan
+        // `pengaduan.rekap.kelompok`.
         $totalJumlah = array_sum(array_column($rekap, 'jumlah'));
         $totalSelesai = array_sum(array_column($rekap, 'selesai'));
         $totalBelum = array_sum(array_column($rekap, 'belum_selesai'));

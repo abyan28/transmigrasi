@@ -13,49 +13,9 @@
 
 @section('content')
     @php
-        use App\Support\DummyData;
-
-        // Panen dari penanaman ini, dibaca lewat relasi `penanaman_id`.
-        //
-        // Sebelumnya dicocokkan lewat pasangan komoditas dan petani, sebab
-        // hasil panen belum menyimpan tautannya. Pencocokan teks semacam itu
-        // menyatukan dua penanaman berbeda yang kebetulan sama komoditas dan
-        // penggarapnya, sehingga volumenya terhitung dua kali.
-        $panen = array_values(array_filter(
-            DummyData::hasilPanen(),
-            fn ($p) => ($p['penanaman_id'] ?? null) === $data['id_penanaman'],
-        ));
-
-        /*
-         * DIPERBAIKI 2026-08-24: sebelumnya menjumlahkan kunci `volume` yang
-         * sudah dihapus pada perombakan 2026-08-22, sehingga baris "Total
-         * volume" SELALU 0,00. Perombakan itu tidak menyisir halaman ini, dan
-         * uji yang ada memeriksa keberadaan string alih-alih kebenaran angka.
-         *
-         * Dijumlahkan setelah konversi ke ton, bukan angka mentah: satu
-         * penanaman memang satu komoditas, tetapi menuliskannya begini membuat
-         * halaman ini tidak menjadi pengecualian dari rules.md 8a.5.
-         */
-        $produksiTon = array_sum(array_map(
-            fn ($p) => DummyData::keTon($p['produksi'], $p['satuan']),
-            $panen
-        ));
-
-        $luasDipanen = array_sum(array_column($panen, 'realisasi_panen'));
-        $luasPuso = array_sum(array_map(fn ($p) => (float) ($p['puso'] ?? 0), $panen));
-
-        // Tiga angka turunan, seluruhnya dihitung bukan disimpan.
-        $status = DummyData::statusPanen($data['id_penanaman']);
-        $belumDitanam = DummyData::lahanTersedia($data['poktan_id']);
-
-        // Kekuatan poktan pada saat halaman dibuka. Dihitung, bukan disimpan,
-        // sehingga selalu mengikuti keanggotaan dan lahan terbaru.
-        $rekapPoktan = DummyData::rekapLahanPoktan($data['poktan_id']);
-
-        $benih = $data['saprotan_id']
-            ? collect(DummyData::saprotan())->firstWhere('id_saprotan', $data['saprotan_id'])
-            : null;
-
+        // $panen, $produksiTon, $luasDipanen, $luasPuso, $status,
+        // $belumDitanam, $rekapPoktan, dan $benih datang dari rute
+        // `penanaman.detail`. Lihat routes/web.php.
         $judul = $data['komoditas'] . ' - ' . $data['poktan'];
 
         $bolehUbah = true;

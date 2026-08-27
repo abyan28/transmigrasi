@@ -9,13 +9,8 @@
 
 @section('content')
     @php
-        use App\Support\DummyData;
-        $setaraTon = DummyData::keTon($data['produksi'], $data['satuan']);
+        // `$setaraTon` dan `$tanam` datang dari rute `panen.detail`.
         $nilaiJual = ($data['harga_jual'] ?? 0) * $data['produksi'];
-
-        // Penanaman asal panen ini, dibaca lewat relasi. Menyediakan tautan
-        // balik ke penanaman asalnya.
-        $tanam = collect(DummyData::penanaman())->firstWhere('id_penanaman', $data['penanaman_id']);
 
         // Gagal total: seluruh luas puso, tidak ada yang dipanen. Keadaan sah,
         // dan pada keadaan itu produktivitas memang nol.

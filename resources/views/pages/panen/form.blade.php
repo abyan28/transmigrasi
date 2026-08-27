@@ -50,72 +50,36 @@
     $kelasBagian = 'text-theme-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400';
     $kelasTerkunci = 'flex h-11 items-center rounded-lg bg-gray-50 px-4 text-theme-sm text-gray-600 dark:bg-white/5 dark:text-gray-400';
 
-    // Peta satuan baku per komoditas, dibaca dari data master. Sebelumnya
-    // ditulis tangan sebagai larik harfiah di berkas ini, sehingga komoditas
-    // baru yang didata Admin tidak pernah punya satuan dan panennya tercatat
-    // tanpa satuan sama sekali.
-    $satuanKomoditas = collect(DummyData::komoditas())
-        ->pluck('satuan', 'id_komoditas')
-        ->all();
-
     /*
-     * Simbol satuan, dibaca dari data master. Dipakai pada sufiks isian yang
-     * ruangnya sempit: nama penuh "Kilogram/ha" menabrak tombol naik-turun
-     * bawaan input number.
+     * `$satuanKomoditas`, `$simbolSatuan`, dan `$penanamanUntukPanen` disuplai
+     * ViewServiceProvider. Yang terakhir sudah lengkap dengan label, status
+     * panen, dan rekap lahan poktannya, sebab menyusunnya menuntut
+     * `statusPanen()` serta `rekapLahanPoktan()` untuk SETIAP penanaman.
      *
-     * Tidak disingkat sendiri lewat `substr` atau daftar tulis tangan, sebab
-     * satuan baru yang didata Admin tidak akan pernah punya singkatan.
+     * Penyaringannya tetap di sini, dan itu memang tempatnya:
+     *
+     * HANYA PENANAMAN YANG BELUM DIPANEN yang ditawarkan (sejak 2026-08-24).
+     * Satu penanaman hanya boleh satu panen, sehingga menawarkan yang sudah
+     * dipanen berarti mengundang baris kedua yang tidak sah - dan luasnya akan
+     * terhitung dua kali pada rekap.
+     *
+     * Baris yang sedang DISUNTING tetap ditawarkan; tanpa itu, membuka modal
+     * ubah akan menemukan pilihannya sendiri lenyap dari daftar. Baris itu
+     * hanya diketahui induk yang menyisipkan form ini, sehingga penyaringannya
+     * tidak dapat dipindahkan ke composer.
      */
-    $simbolSatuan = collect(DummyData::satuan())
-        ->mapWithKeys(fn ($s) => [$s['nama'] => $s['simbol']])
-        ->all();
-
-    // Penanaman sebagai sumber pilihan tunggal. Seluruh isian terkunci di
-    // bawah dibaca dari baris yang dipilih di sini.
-    //
-    // Bulan tanam menggantikan label musim yang dicabut 2026-08-22. Ia yang
-    // membedakan dua penanaman komoditas yang sama oleh kelompok yang sama,
-    // sehingga tanpa itu keduanya tampil sebagai pilihan yang bunyinya
-    // identik.
-    // HANYA PENANAMAN YANG BELUM DIPANEN yang ditawarkan (sejak 2026-08-24).
-    // Satu penanaman hanya boleh satu panen, sehingga menawarkan yang sudah
-    // dipanen berarti mengundang baris kedua yang tidak sah - dan luasnya
-    // akan terhitung dua kali pada rekap.
-    //
-    // Baris yang sedang DISUNTING tetap ditawarkan; tanpa itu, membuka modal
-    // ubah akan menemukan pilihannya sendiri lenyap dari daftar.
     $penanamanTerpilih = $data['penanaman_id'] ?? null;
 
     $daftarPenanaman = [];
     $petaPenanaman = [];
 
-    foreach (DummyData::penanaman() as $r) {
-        $belumDipanen = DummyData::statusPanen($r['id_penanaman']) === \App\Enums\StatusPanen::BelumDipanen;
-
-        if (! $belumDipanen && (string) $r['id_penanaman'] !== (string) $penanamanTerpilih) {
+    foreach ($penanamanUntukPanen as $p) {
+        if (! $p['belum_dipanen'] && $p['id'] !== (string) $penanamanTerpilih) {
             continue;
         }
 
-        $label = $r['komoditas'].' - '.$r['poktan']
-            .' - '.\Illuminate\Support\Carbon::parse($r['periode_tanam'] . '-01')->translatedFormat('M Y');
-
-        $daftarPenanaman[] = $r + ['label_tanam' => $label];
-
-        $rekap = DummyData::rekapLahanPoktan($r['poktan_id']);
-
-        $petaPenanaman[(string) $r['id_penanaman']] = [
-            'poktan' => $r['poktan'],
-            'poktan_id' => (string) $r['poktan_id'],
-            'anggota' => $rekap['jumlah_anggota'],
-            'luas_lahan' => $rekap['luas_total'],
-            'volume_benih' => $r['volume_benih'],
-            'realisasi_tanam' => (float) $r['realisasi_tanam'],
-            'komoditas' => $r['komoditas'],
-            'satuan' => $satuanKomoditas[$r['komoditas_id']] ?? '',
-            'simbol' => $simbolSatuan[$satuanKomoditas[$r['komoditas_id']] ?? ''] ?? '',
-            'bulan_tanam' => \Illuminate\Support\Carbon::parse($r['periode_tanam'] . '-01')->translatedFormat('F Y'),
-            'sp' => $r['satuan_permukiman'],
-        ];
+        $daftarPenanaman[] = $p['baris'];
+        $petaPenanaman[$p['id']] = $p['peta'];
     }
 @endphp
 

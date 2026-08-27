@@ -29,51 +29,11 @@
     $kelasLabel = 'mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400';
     $kelasTerkunci = 'flex h-11 items-center rounded-lg bg-gray-50 px-4 text-theme-sm text-gray-600 dark:bg-white/5 dark:text-gray-400';
 
-    $daftarPoktan = DummyData::poktan();
-    $daftarKomoditas = DummyData::komoditas();
-
-    // Peta poktan ke kekuatannya: cacah anggota aktif, luas lahan, dan sisa
-    // lahan yang belum ditanami. Disusun sekali di sini, bukan dihitung ulang
-    // setiap kali pilihan berubah.
-    $petaPoktan = [];
-    foreach ($daftarPoktan as $p) {
-        $rekap = DummyData::rekapLahanPoktan($p['id_poktan']);
-
-        $petaPoktan[(string) $p['id_poktan']] = [
-            'sp_id' => (string) $p['satuan_permukiman_id'],
-            'sp_nama' => $p['satuan_permukiman'],
-            'anggota' => $rekap['jumlah_anggota'],
-            'luas' => $rekap['luas_total'],
-            'tersedia' => DummyData::lahanTersedia($p['id_poktan']),
-        ];
-    }
-
-    // Seluruh benih yang masih bersisa, dikelompokkan agar Alpine dapat
-    // menyaringnya tanpa permintaan tambahan ke peladen. Benih yang stoknya
-    // habis TIDAK ada di sini sama sekali (kamus data 8.4).
-    /*
-     * Simbol satuan dibaca dari data master, bukan disingkat sendiri di sini.
-     * Menyingkatnya lewat `substr` atau daftar tulis tangan berarti satuan
-     * baru yang didata Admin tidak akan pernah punya singkatan.
-     */
-    $simbolSatuan = collect(DummyData::satuan())
-        ->mapWithKeys(fn ($s) => [$s['nama'] => $s['simbol']])
-        ->all();
-
-    $petaBenih = [];
-    foreach (DummyData::benihTersedia() as $b) {
-        $petaBenih[] = [
-            'id' => (string) $b['id_saprotan'],
-            'poktan_id' => (string) $b['poktan_id'],
-            'komoditas_id' => (string) $b['komoditas_id'],
-            'label' => $b['label_benih'],
-            'sisa' => $b['sisa_benih'],
-            'satuan' => $b['satuan'],
-            // Dipakai sebagai sufiks isian, yang ruangnya sempit: nama penuh
-            // "Kilogram" menabrak tombol naik-turun bawaan input number.
-            'simbol' => $simbolSatuan[$b['satuan']] ?? $b['satuan'],
-        ];
-    }
+    // `$daftarPoktan`, `$daftarKomoditas`, `$petaPoktan`, dan `$petaBenih`
+    // disuplai ViewServiceProvider. Dua peta terakhir menuntut
+    // rekapLahanPoktan() serta lahanTersedia() untuk SETIAP poktan, sehingga
+    // menyusunnya di sini berarti mengulanginya tiap kali form dirender - dan
+    // form ini muncul dua kali pada halaman daftar.
 @endphp
 
 <div class="space-y-6"

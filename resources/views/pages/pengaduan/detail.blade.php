@@ -17,13 +17,12 @@
 
 @section('content')
     @php
-        use App\Support\DummyData;
-        use App\Enums\StatusPengaduan;
         use App\Enums\PrioritasPengaduan;
+        use App\Enums\StatusPengaduan;
 
+        // `$riwayat` dan `$opsiBidang` datang dari rute `pengaduan.detail`.
         $status = StatusPengaduan::from($data['status']);
         $prioritas = PrioritasPengaduan::from($data['prioritas']);
-        $riwayat = DummyData::penangananPengaduan($data['nomor_pengaduan']);
 
         // Satu-satunya status yang boleh dituju berikutnya. Bernilai null bila
         // pengaduan sudah selesai.
@@ -380,7 +379,7 @@
                     <select id="penanganan_bidang" name="bidang"
                         class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
                         <option value="">Belum ditentukan</option>
-                        @foreach (\App\Support\DummyData::opsiReferensi(\App\Enums\JenisReferensi::BidangPengaduan) as $nilai => $label)
+                        @foreach ($opsiBidang as $nilai => $label)
                             <option value="{{ $nilai }}" @selected(($data['bidang'] ?? null) === $nilai)>{{ $label }}</option>
                         @endforeach
                     </select>

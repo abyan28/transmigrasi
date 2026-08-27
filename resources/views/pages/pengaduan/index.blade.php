@@ -11,89 +11,11 @@
 
 @section('content')
     @php
-        use App\Support\DummyData;
-        use App\Enums\StatusPengaduan;
         use App\Enums\PrioritasPengaduan;
+        use App\Enums\StatusPengaduan;
 
-        $semua = DummyData::pengaduan();
-
-        $cari = trim((string) request('cari', ''));
-        $filterSp = request('sp');
-        $filterStatus = request('status');
-        $filterKategori = request('kategori');
-        $filterPrioritas = request('prioritas');
-
-        /*
-         * Filter bidang paling berguna bagi Admin dan Dinas Transmigrasi, sebab
-         * keduanya bercakupan Semua sehingga daftarnya memuat laporan kedua
-         * dinas sekaligus (rules.md 5.0b). Nilai khusus 'belum' menyaring
-         * laporan yang bidangnya belum ditetapkan, dan itulah antrean kerja
-         * penyaringan awal.
-         */
-        $filterBidang = request('bidang');
-
-        $baris = array_values(array_filter($semua, function ($p) use ($cari, $filterSp, $filterStatus, $filterKategori, $filterPrioritas, $filterBidang) {
-            if ($cari !== '') {
-                $cocok = str_contains(mb_strtolower($p['judul']), mb_strtolower($cari))
-                    || str_contains(mb_strtolower($p['nomor_pengaduan']), mb_strtolower($cari))
-                    || str_contains(mb_strtolower($p['nama_pelapor']), mb_strtolower($cari));
-
-                if (! $cocok) {
-                    return false;
-                }
-            }
-
-            if ($filterSp && (string) $p['satuan_permukiman_id'] !== (string) $filterSp) {
-                return false;
-            }
-
-            if ($filterStatus && $p['status'] !== $filterStatus) {
-                return false;
-            }
-
-            if ($filterKategori && $p['kategori'] !== $filterKategori) {
-                return false;
-            }
-
-            if ($filterPrioritas && $p['prioritas'] !== $filterPrioritas) {
-                return false;
-            }
-
-            if ($filterBidang === 'belum' && ! empty($p['bidang'])) {
-                return false;
-            }
-
-            if ($filterBidang && $filterBidang !== 'belum' && ($p['bidang'] ?? null) !== $filterBidang) {
-                return false;
-            }
-
-            return true;
-        }));
-
-        // Yang belum selesai didahulukan, lalu diurutkan menurut kemendesakan.
-        $urutanPrioritas = ['Mendesak' => 0, 'Tinggi' => 1, 'Sedang' => 2, 'Rendah' => 3];
-        usort($baris, function ($a, $b) use ($urutanPrioritas) {
-            $selesaiA = $a['status'] === StatusPengaduan::Selesai->value ? 1 : 0;
-            $selesaiB = $b['status'] === StatusPengaduan::Selesai->value ? 1 : 0;
-
-            if ($selesaiA !== $selesaiB) {
-                return $selesaiA <=> $selesaiB;
-            }
-
-            return $urutanPrioritas[$a['prioritas']] <=> $urutanPrioritas[$b['prioritas']];
-        });
-
-        $adaFilter = $cari !== '' || $filterSp || $filterStatus || $filterKategori || $filterPrioritas || $filterBidang;
-
-        // Antrean penyaringan awal, ditampilkan agar laporan tanpa bidang tidak
-        // menumpuk diam-diam menunggu dinas yang tidak pernah tahu.
-        $belumBerbidang = count(array_filter($semua, fn ($p) => empty($p['bidang'])));
-
-        $belumSelesai = count(array_filter($semua, fn ($p) => $p['status'] !== StatusPengaduan::Selesai->value));
-        $menungguDiterima = count(array_filter($semua, fn ($p) => $p['status'] === StatusPengaduan::MenungguDiterima->value));
-        $mendesak = count(array_filter($semua, fn ($p) => $p['prioritas'] === PrioritasPengaduan::Mendesak->value
-            && $p['status'] !== StatusPengaduan::Selesai->value));
-
+        // Data, penyaringan, pengurutan, dan angka ringkasan datang dari rute
+        // `pengaduan.index`. Lihat routes/web.php.
         $bolehCatat = true;
         $bolehUbah = true;
         $bolehHapus = true;
@@ -151,7 +73,7 @@
                         <select id="filter_bidang" name="bidang"
                             class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
                             <option value="">Semua bidang</option>
-                            @foreach (\App\Support\DummyData::opsiFilterReferensi(\App\Enums\JenisReferensi::BidangPengaduan) as $nilai => $label)
+                            @foreach ($opsiFilterBidang as $nilai => $label)
                                 <option value="{{ $nilai }}" @selected($filterBidang === $nilai)>{{ $label }}</option>
                             @endforeach
                             <option value="belum" @selected($filterBidang === 'belum')>
@@ -168,7 +90,7 @@
                         <select id="filter_sp" name="sp"
                             class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
                             <option value="">Semua SP</option>
-                            @foreach (DummyData::satuanPermukiman() as $sp)
+                            @foreach ($daftarSp as $sp)
                                 <option value="{{ $sp['id_satuan_permukiman'] }}"
                                     @selected($filterSp == $sp['id_satuan_permukiman'])>{{ $sp['nama'] }}</option>
                             @endforeach
@@ -197,7 +119,7 @@
                         <select id="filter_kategori" name="kategori"
                             class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
                             <option value="">Semua kategori</option>
-                            @foreach (\App\Support\DummyData::opsiFilterReferensi(\App\Enums\JenisReferensi::KategoriPengaduan) as $nilai => $label)
+                            @foreach ($opsiFilterKategori as $nilai => $label)
                                 <option value="{{ $nilai }}" @selected($filterKategori === $nilai)>{{ $label }}</option>
                             @endforeach
                         </select>
@@ -211,7 +133,7 @@
                         <select id="filter_prioritas" name="prioritas"
                             class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
                             <option value="">Semua prioritas</option>
-                            @foreach (\App\Support\DummyData::opsiFilterReferensi(\App\Enums\JenisReferensi::PrioritasPengaduan) as $nilai => $label)
+                            @foreach ($opsiFilterPrioritas as $nilai => $label)
                                 <option value="{{ $nilai }}" @selected($filterPrioritas === $nilai)>{{ $label }}</option>
                             @endforeach
                         </select>

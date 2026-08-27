@@ -18,89 +18,12 @@
 @extends('layouts.app')
 
 @section('content')
-    @php
-        use App\Support\DummyData;
-
-        $semua = DummyData::penanaman();
-
-        $cari = trim((string) request('cari', ''));
-        $filterSp = request('sp');
-        $filterTahun = request('tahun');
-        $filterKomoditas = request('komoditas');
-        $filterStatus = request('status');
-
-        // Tahun tanam diturunkan dari tanggalnya, bukan disimpan terpisah.
-        // Menyimpannya sebagai kolom sendiri membuat nilainya dapat berbeda
-        // dari tanggal yang menjadi sumbernya.
-        $tahunTanam = fn ($r) => $r['periode_tanam']
-            ? \Illuminate\Support\Carbon::parse($r['periode_tanam'] . '-01')->year
-            : null;
-
-        // Status panen DITURUNKAN dari sisa luas, tidak disimpan sebagai kolom
-        // (agents/rules.md bagian 7d poin 11). Disusun sekali di sini agar
-        // penyaring, kolom tabel, dan kartu ringkasan membaca sumber yang sama.
-        $statusPanen = [];
-        foreach ($semua as $r) {
-            $statusPanen[$r['id_penanaman']] = DummyData::statusPanen($r['id_penanaman']);
-        }
-
-        /*
-         * Kekuatan tiap poktan: cacah anggota aktif dan luas lahannya.
-         *
-         * DIHITUNG, tidak disimpan (rules.md 7d.3). Disusun sekali per poktan
-         * di sini, bukan dipanggil ulang pada tiap baris - satu poktan dapat
-         * memiliki banyak penanaman, dan perhitungannya menyusuri seluruh
-         * keanggotaan beserta lahannya.
-         */
-        $kekuatanPoktan = [];
-        foreach ($semua as $r) {
-            $kekuatanPoktan[$r['poktan_id']] ??= DummyData::rekapLahanPoktan($r['poktan_id']);
-        }
-
-        $baris = array_values(array_filter($semua, function ($r) use ($cari, $filterSp, $filterTahun, $filterKomoditas, $filterStatus, $tahunTanam, $statusPanen) {
-            if ($cari !== '' && ! str_contains(mb_strtolower($r['poktan']), mb_strtolower($cari))
-                && ! str_contains(mb_strtolower($r['komoditas']), mb_strtolower($cari))) {
-                return false;
-            }
-            if ($filterSp && (string) $r['satuan_permukiman_id'] !== (string) $filterSp) {
-                return false;
-            }
-            if ($filterTahun && (string) $tahunTanam($r) !== (string) $filterTahun) {
-                return false;
-            }
-            if ($filterKomoditas && $r['komoditas'] !== $filterKomoditas) {
-                return false;
-            }
-            if ($filterStatus && $statusPanen[$r['id_penanaman']]->value !== $filterStatus) {
-                return false;
-            }
-
-            return true;
-        }));
-
-        $adaFilter = $cari !== '' || $filterSp || $filterTahun || $filterKomoditas || $filterStatus;
-        $totalLuas = array_sum(array_column($baris, 'realisasi_tanam'));
-
-        /*
-         * Luas yang masih berdiri tanaman, yaitu seluruh penanaman yang belum
-         * dipanen sama sekali.
-         *
-         * DISEDERHANAKAN 2026-08-24: sebelumnya menjumlahkan sisa parsial tiap
-         * penanaman. Sisa parsial kini tidak lagi mungkin ada, sebab satu
-         * panen selalu menutup seluruh luas yang ditanam.
-         */
-        $totalBelumDipanen = array_sum(array_map(
-            fn ($r) => $statusPanen[$r['id_penanaman']] === \App\Enums\StatusPanen::BelumDipanen
-                ? (float) $r['realisasi_tanam']
-                : 0.0,
-            $semua
-        ));
-
-        $daftarTahun = array_values(array_filter(array_unique(array_map($tahunTanam, $semua))));
-        rsort($daftarTahun);
-
-        $daftarKomoditas = array_values(array_unique(array_column($semua, 'komoditas')));
-    @endphp
+    {{--
+        Seluruh isian halaman ini datang dari rute `penanaman`, termasuk peta
+        $statusPanen dan $kekuatanPoktan yang keduanya DIHITUNG dan tidak
+        pernah disimpan sebagai kolom (rules.md 7d poin 3 dan 11).
+        Lihat routes/web.php.
+    --}}
 
     <x-sim.halaman-daftar judul="Penanaman"
         keterangan="Catatan penanaman per kelompok tani, komoditas, dan waktu tanam."
@@ -157,7 +80,7 @@
                     <select id="filter_sp" name="sp"
                         class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
                         <option value="">Semua SP</option>
-                        @foreach (DummyData::satuanPermukiman() as $sp)
+                        @foreach ($daftarSp as $sp)
                             <option value="{{ $sp['id_satuan_permukiman'] }}"
                                 @selected($filterSp == $sp['id_satuan_permukiman'])>{{ $sp['nama'] }}</option>
                         @endforeach

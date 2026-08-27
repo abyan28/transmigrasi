@@ -4994,8 +4994,21 @@ it('membaca catatan tanam pada form panen dari data, bukan dari daftar tertulis'
     // penanaman baru didata - sehingga panen berikutnya tidak dapat dicatat.
     $sumber = file_get_contents(resource_path('views/pages/panen/form.blade.php'));
 
+    /*
+        Yang dijaga adalah pilihannya DIBANGKITKAN DARI KUMPULAN, bukan
+        ditulis satu per satu.
+
+        Sampai 2026-08-27 baris ini berbunyi `toContain('DummyData::penanaman()')`,
+        yakni mengunci dari MANA datanya diambil. Ketika pengambilan data
+        dipindahkan dari view ke ViewServiceProvider, uji ini memerah padahal
+        tidak ada satu pun perilaku yang berubah - halaman tetap menawarkan
+        penanaman yang sama persis, dan bagian kedua uji ini membuktikannya.
+
+        Itu bentuk yang sudah tercatat pada notes.md 1g.5: uji yang menjaga
+        tujuan wajib memeriksa tujuannya, bukan bentuk pemanggilannya.
+    */
     expect($sumber)->not->toContain("'MT1 2026', 'MT2 2025', 'MT1 2025'")
-        ->and($sumber)->toContain('DummyData::penanaman()');
+        ->and($sumber)->toContain(':opsi="$daftarPenanaman"');
 
     // Nilai yang ditawarkan wajib berupa id yang benar-benar ada.
     $isi = $this->get('/panen')->assertOk()->getContent();

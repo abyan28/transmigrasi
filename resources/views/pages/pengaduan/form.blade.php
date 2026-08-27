@@ -25,7 +25,8 @@
 
     // Peta kategori ke bidang, dipakai Alpine agar bidang terisi seketika saat
     // kategori dipilih. Kategori netral bernilai string kosong.
-    $petaBidang = \App\Support\DummyData::petaBidangKategori();
+    // `$petaBidang`, `$opsiKategoriPengaduan`, `$opsiBidang`,
+    // `$opsiPrioritasPengaduan`, dan `$daftarSp` disuplai ViewServiceProvider.
 @endphp
 
 <div class="space-y-6"
@@ -101,7 +102,7 @@
                     :value="kategori" @change="gantiKategori($event.target.value)"
                     class="{{ $kelasKontrol }}">
                     <option value="">Pilih kategori</option>
-                    @foreach (\App\Support\DummyData::opsiReferensi(\App\Enums\JenisReferensi::KategoriPengaduan) as $nilai => $label)
+                    @foreach ($opsiKategoriPengaduan as $nilai => $label)
                         <option value="{{ $nilai }}" @selected(($data['kategori'] ?? '') === $nilai)>{{ $label }}</option>
                     @endforeach
                 </select>
@@ -121,7 +122,7 @@
                     :value="bidang" @change="bidang = $event.target.value; disentuh = true"
                     class="{{ $kelasKontrol }}">
                     <option value="">Belum ditentukan</option>
-                    @foreach (\App\Support\DummyData::opsiReferensi(\App\Enums\JenisReferensi::BidangPengaduan) as $nilai => $label)
+                    @foreach ($opsiBidang as $nilai => $label)
                         <option value="{{ $nilai }}" :selected="bidang === '{{ $nilai }}'">{{ $label }}</option>
                     @endforeach
                 </select>
@@ -143,7 +144,7 @@
                     Prioritas<span class="text-error-500">*</span>
                 </label>
                 <select id="{{ $awalan }}_prioritas" name="prioritas" required class="{{ $kelasKontrol }}">
-                    @foreach (\App\Support\DummyData::opsiReferensi(\App\Enums\JenisReferensi::PrioritasPengaduan) as $nilai => $label)
+                    @foreach ($opsiPrioritasPengaduan as $nilai => $label)
                         <option value="{{ $nilai }}" @selected(old('prioritas', $data['prioritas'] ?? 'Sedang') === $nilai)>
                             {{ $label }}
                         </option>
@@ -163,7 +164,7 @@
             <div class="sm:col-span-2">
                 <x-sim.wilayah-picker
                     :daftar-kawasan="[['id' => 1, 'nama' => 'Kobalima Timur']]"
-                    :daftar-sp="collect(DummyData::satuanPermukiman())
+                    :daftar-sp="collect($daftarSp)
                         ->map(fn ($s) => ['id' => $s['id_satuan_permukiman'], 'nama' => $s['nama'], 'kawasan_id' => 1])
                         ->all()"
                     :sp-terpilih="old('satuan_permukiman_id', $data['satuan_permukiman_id'] ?? null)" />

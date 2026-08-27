@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Enums\JenisReferensi;
+use App\Enums\StatusPanen;
 use App\Support\DummyData;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -46,6 +48,9 @@ class ViewServiceProvider extends ServiceProvider
         'pages.poktan.form-anggota' => ['daftarTransmigran', 'kontakTransmigran', 'lahanTransmigran', 'opsiJabatanAnggota'],
         'pages.lahan.form' => ['daftarTransmigran', 'daftarSp', 'opsiJenisDokumenLahan'],
         'pages.transmigran.form' => ['daftarSp', 'saranPekerjaan'],
+        'pages.panen.form' => ['satuanKomoditas', 'simbolSatuan', 'penanamanUntukPanen'],
+        'pages.penanaman.form' => ['daftarPoktan', 'daftarKomoditas', 'petaPoktan', 'petaBenih'],
+        'pages.pengaduan.form' => ['petaBidang', 'opsiKategoriPengaduan', 'opsiBidang', 'opsiPrioritasPengaduan', 'daftarSp'],
     ];
 
     public function boot(): void
@@ -97,10 +102,55 @@ class ViewServiceProvider extends ServiceProvider
             'opsiJenisInfrastruktur' => DummyData::opsiReferensi(JenisReferensi::JenisInfrastruktur),
             'opsiTipeKomoditas' => DummyData::opsiReferensi(JenisReferensi::TipeKomoditas),
             'opsiJenisDokumenLahan' => DummyData::opsiReferensi(JenisReferensi::JenisDokumenLahan),
+            'opsiKategoriPengaduan' => DummyData::opsiReferensi(JenisReferensi::KategoriPengaduan),
+            'opsiBidang' => DummyData::opsiReferensi(JenisReferensi::BidangPengaduan),
+            'opsiPrioritasPengaduan' => DummyData::opsiReferensi(JenisReferensi::PrioritasPengaduan),
+
+            // Peta kategori ke bidang, dibaca Alpine agar bidang terisi seketika
+            // saat kategori dipilih. Kategori netral bernilai string kosong, dan
+            // nilainya SELALU dapat ditimpa petugas (rules.md 5.0b).
+            'petaBidang' => DummyData::petaBidangKategori(),
             'opsiSumberDana' => DummyData::opsiReferensi(JenisReferensi::SumberDana),
             'opsiJabatanAnggota' => DummyData::opsiReferensi(JenisReferensi::JabatanAnggotaPoktan),
             'kontakTransmigran' => self::petaKeluarga()['kontak'],
             'lahanTransmigran' => self::petaKeluarga()['lahan'],
+
+            /*
+             * Peta satuan baku per komoditas dan simbolnya, keduanya dibaca
+             * dari data master. Sebelumnya ditulis tangan sebagai larik harfiah
+             * di dalam form, sehingga komoditas maupun satuan baru yang didata
+             * Admin tidak pernah punya satuan maupun singkatan.
+             */
+            'satuanKomoditas' => collect(DummyData::komoditas())
+                ->pluck('satuan', 'id_komoditas')
+                ->all(),
+            'simbolSatuan' => collect(DummyData::satuan())
+                ->mapWithKeys(fn ($s) => [$s['nama'] => $s['simbol']])
+                ->all(),
+
+            'penanamanUntukPanen' => self::penanamanUntukPanen(),
+
+            /*
+             * Kekuatan tiap poktan: cacah anggota aktif, luas lahan, dan sisa
+             * lahan yang belum ditanami. Dibaca Alpine agar isian terkunci ikut
+             * berubah begitu poktan dipilih, tanpa permintaan tambahan ke
+             * peladen.
+             */
+            'petaPoktan' => collect(DummyData::poktan())
+                ->mapWithKeys(function ($p) {
+                    $rekap = DummyData::rekapLahanPoktan($p['id_poktan']);
+
+                    return [(string) $p['id_poktan'] => [
+                        'sp_id' => (string) $p['satuan_permukiman_id'],
+                        'sp_nama' => $p['satuan_permukiman'],
+                        'anggota' => $rekap['jumlah_anggota'],
+                        'luas' => $rekap['luas_total'],
+                        'tersedia' => DummyData::lahanTersedia($p['id_poktan']),
+                    ]];
+                })
+                ->all(),
+
+            'petaBenih' => self::petaBenih(),
             default => throw new \InvalidArgumentException("Kunci rujukan tidak dikenal: {$kunci}"),
         };
     }
@@ -139,5 +189,100 @@ class ViewServiceProvider extends ServiceProvider
         }
 
         return $peta = ['kontak' => $kontak, 'lahan' => $lahan];
+    }
+
+    /**
+     * Seluruh benih yang masih bersisa, dikelompokkan agar Alpine dapat
+     * menyaringnya tanpa permintaan tambahan ke peladen.
+     *
+     * Benih yang stoknya habis TIDAK ada di sini sama sekali (kamus data 8.4).
+     *
+     * @return list<array<string, mixed>>
+     */
+    private static function petaBenih(): array
+    {
+        /*
+         * Simbol satuan dibaca dari data master, bukan disingkat sendiri.
+         * Menyingkatnya lewat `substr` atau daftar tulis tangan berarti satuan
+         * baru yang didata Admin tidak akan pernah punya singkatan.
+         */
+        $simbol = collect(DummyData::satuan())->mapWithKeys(fn ($s) => [$s['nama'] => $s['simbol']])->all();
+
+        return collect(DummyData::benihTersedia())
+            ->map(fn ($b) => [
+                'id' => (string) $b['id_saprotan'],
+                'poktan_id' => (string) $b['poktan_id'],
+                'komoditas_id' => (string) $b['komoditas_id'],
+                'label' => $b['label_benih'],
+                'sisa' => $b['sisa_benih'],
+                'satuan' => $b['satuan'],
+
+                // Dipakai sebagai sufiks isian, yang ruangnya sempit: nama
+                // penuh "Kilogram" menabrak tombol naik-turun bawaan number.
+                'simbol' => $simbol[$b['satuan']] ?? $b['satuan'],
+            ])
+            ->all();
+    }
+
+    /**
+     * Penanaman sebagai bahan pilihan pada form panen, sudah lengkap dengan
+     * label, status panennya, dan rekap lahan poktannya.
+     *
+     * Yang MENYARING tetap viewnya, sebab baris yang sedang disunting wajib
+     * ikut ditawarkan meski sudah dipanen, dan baris itu hanya diketahui induk
+     * yang menyisipkan form. Yang dipindahkan ke sini adalah pengambilan
+     * datanya: `statusPanen()` dan `rekapLahanPoktan()` dahulu dipanggil di
+     * dalam perulangan seluruh penanaman, dan keduanya menyusuri catatan panen
+     * serta keanggotaan poktan setiap kali.
+     *
+     * @return list<array{id: string, belum_dipanen: bool, baris: array<string, mixed>, peta: array<string, mixed>}>
+     */
+    private static function penanamanUntukPanen(): array
+    {
+        static $hasil = null;
+
+        if ($hasil !== null) {
+            return $hasil;
+        }
+
+        $satuanKomoditas = collect(DummyData::komoditas())->pluck('satuan', 'id_komoditas')->all();
+        $simbolSatuan = collect(DummyData::satuan())->mapWithKeys(fn ($s) => [$s['nama'] => $s['simbol']])->all();
+
+        $hasil = [];
+
+        foreach (DummyData::penanaman() as $r) {
+            $rekap = DummyData::rekapLahanPoktan($r['poktan_id']);
+            $bulan = Carbon::parse($r['periode_tanam'].'-01');
+            $satuan = $satuanKomoditas[$r['komoditas_id']] ?? '';
+
+            /*
+             * Bulan tanam menggantikan label musim yang dicabut 2026-08-22. Ia
+             * yang membedakan dua penanaman komoditas yang sama oleh kelompok
+             * yang sama; tanpa itu keduanya tampil sebagai pilihan yang
+             * bunyinya identik.
+             */
+            $label = $r['komoditas'].' - '.$r['poktan'].' - '.$bulan->translatedFormat('M Y');
+
+            $hasil[] = [
+                'id' => (string) $r['id_penanaman'],
+                'belum_dipanen' => DummyData::statusPanen($r['id_penanaman']) === StatusPanen::BelumDipanen,
+                'baris' => $r + ['label_tanam' => $label],
+                'peta' => [
+                    'poktan' => $r['poktan'],
+                    'poktan_id' => (string) $r['poktan_id'],
+                    'anggota' => $rekap['jumlah_anggota'],
+                    'luas_lahan' => $rekap['luas_total'],
+                    'volume_benih' => $r['volume_benih'],
+                    'realisasi_tanam' => (float) $r['realisasi_tanam'],
+                    'komoditas' => $r['komoditas'],
+                    'satuan' => $satuan,
+                    'simbol' => $simbolSatuan[$satuan] ?? '',
+                    'bulan_tanam' => $bulan->translatedFormat('F Y'),
+                    'sp' => $r['satuan_permukiman'],
+                ],
+            ];
+        }
+
+        return $hasil;
     }
 }
