@@ -30,8 +30,7 @@
     $kelasLabel = 'mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400';
     $kelasBagian = 'text-theme-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400';
 
-    $daftarProvinsi = DummyData::wilayah()['provinsi'];
-    $daftarKabupaten = DummyData::wilayah()['kabupaten'];
+    // `$daftarProvinsi` dan `$daftarKabupaten` disuplai ViewServiceProvider.
 
     $kabupatenTerpilih = old('kabupaten_id', $data['kabupaten_id'] ?? '');
 

@@ -8,38 +8,10 @@
 @extends('layouts.app')
 
 @section('content')
-    @php
-        use App\Support\DummyData;
-
-        $semua = DummyData::satuanPermukiman();
-        $rekap = collect(DummyData::rekapPerSp())->keyBy('satuan_permukiman_id');
-
-        // Status kondisi layanan dasar tiap SP, indikator ke-16
-        $kondisi = collect(App\Support\PenilaianKondisiSp::nilaiSeluruhSp())->keyBy('satuan_permukiman_id');
-
-        $cari = trim((string) request('cari', ''));
-        $filterKecamatan = request('kecamatan');
-
-        $baris = array_values(array_filter($semua, function ($sp) use ($cari, $filterKecamatan) {
-            if ($cari !== '' && ! str_contains(mb_strtolower($sp['nama']), mb_strtolower($cari))
-                && ! str_contains(mb_strtolower($sp['desa']), mb_strtolower($cari))) {
-                return false;
-            }
-
-            if ($filterKecamatan && $sp['kecamatan'] !== $filterKecamatan) {
-                return false;
-            }
-
-            return true;
-        }));
-
-        $adaFilter = $cari !== '' || $filterKecamatan;
-        $daftarKecamatan = array_values(array_unique(array_column($semua, 'kecamatan')));
-
-        $totalLuas = array_sum(array_column($semua, 'luas_lahan'));
-        $totalRencana = array_sum(array_column($semua, 'jumlah_kk_rencana'));
-        $totalTerisi = array_sum(array_column($semua, 'jumlah_kk_terisi'));
-    @endphp
+    {{--
+        Seluruh isian halaman ini datang dari rute `sp.index`, termasuk peta
+        `$kondisi` berisi indikator ke-16. Lihat routes/web.php.
+    --}}
 
     <x-sim.halaman-daftar judul="Satuan Permukiman"
         keterangan="Enam satuan permukiman di Kawasan Transmigrasi Kobalima Timur."

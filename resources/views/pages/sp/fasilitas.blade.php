@@ -8,33 +8,10 @@
 @extends('layouts.app')
 
 @section('content')
-    @php
-        use App\Support\DummyData;
-
-        $semua = DummyData::fasilitasSp();
-
-        $cari = trim((string) request('cari', ''));
-        $filterSp = request('sp');
-        $filterKondisi = request('kondisi');
-
-        $baris = array_values(array_filter($semua, function ($b) use ($cari, $filterSp, $filterKondisi) {
-            if ($cari !== '' && ! str_contains(mb_strtolower($b['nama_fasilitas']), mb_strtolower($cari))) {
-                return false;
-            }
-            if ($filterSp && (string) $b['satuan_permukiman_id'] !== (string) $filterSp) {
-                return false;
-            }
-            if ($filterKondisi && $b['kondisi'] !== $filterKondisi) {
-                return false;
-            }
-
-            return true;
-        }));
-
-        $adaFilter = $cari !== '' || $filterSp || $filterKondisi;
-        $totalUnit = array_sum(array_column($semua, 'jumlah'));
-        $rusak = count(array_filter($semua, fn ($b) => $b['kondisi'] !== 'Baik'));
-    @endphp
+    {{--
+        Seluruh isian halaman ini datang dari rute `sp.fasilitas`.
+        Lihat routes/web.php.
+    --}}
 
     <x-sim.halaman-daftar judul="Fasilitas SP"
         keterangan="Bangunan dan sarana tetap milik satuan permukiman."
@@ -84,7 +61,7 @@
                     <select id="filter_sp" name="sp"
                         class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
                         <option value="">Semua SP</option>
-                        @foreach (DummyData::satuanPermukiman() as $sp)
+                        @foreach ($daftarSp as $sp)
                             <option value="{{ $sp['id_satuan_permukiman'] }}"
                                 @selected($filterSp == $sp['id_satuan_permukiman'])>{{ $sp['nama'] }}</option>
                         @endforeach
@@ -96,7 +73,7 @@
                     <select id="filter_kondisi" name="kondisi"
                         class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
                         <option value="">Semua kondisi</option>
-                        @foreach (\App\Support\DummyData::opsiFilterReferensi(\App\Enums\JenisReferensi::Kondisi) as $nilai => $label)
+                        @foreach ($opsiFilterKondisi as $nilai => $label)
                             <option value="{{ $nilai }}" @selected($filterKondisi === $nilai)>{{ $label }}</option>
                         @endforeach
                     </select>

@@ -8,16 +8,10 @@
 @extends('layouts.app')
 
 @section('content')
-    @php
-        use App\Support\DummyData;
-
-        $kawasan = DummyData::kawasan();
-        $daftarSp = DummyData::satuanPermukiman();
-        $rekap = DummyData::rekapPerSp();
-
-        $totalKk = array_sum(array_column($rekap, 'jumlah_kk'));
-        $kecamatan = array_unique(array_column($daftarSp, 'kecamatan'));
-    @endphp
+    {{--
+        Seluruh isian halaman ini datang dari rute `kawasan`.
+        Lihat routes/web.php.
+    --}}
 
     <x-sim.page-header judul="Kawasan Transmigrasi"
         keterangan="Wilayah perencanaan program yang menaungi satuan permukiman."

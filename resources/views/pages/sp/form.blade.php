@@ -24,9 +24,7 @@
     $kelasLabel = 'mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400';
     $kelasBagian = 'text-theme-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400';
 
-    $wilayah = DummyData::wilayah();
-    $daftarDesa = $wilayah['desa'];
-    $daftarKawasan = DummyData::kawasan();
+    // `$daftarDesa` dan `$daftarKawasan` disuplai ViewServiceProvider.
 @endphp
 
 <div class="space-y-6">

@@ -25,7 +25,8 @@
     $kelasLabel = 'mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400';
     $kelasBagian = 'text-theme-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400';
 
-    $daftarSp = DummyData::satuanPermukiman();
+    // `$daftarSp`, `$opsiJenisFasilitas`, `$opsiSumberDana`,
+    // `$opsiStatusPenyerahan`, dan `$opsiKondisi` disuplai ViewServiceProvider.
 @endphp
 
 <div class="space-y-6">
@@ -37,7 +38,7 @@
                 <label for="{{ $awalan }}_jenis_fasilitas" class="{{ $kelasLabel }}">Jenis Fasilitas<span class="text-error-500">*</span></label>
                 <select id="{{ $awalan }}_jenis_fasilitas" name="jenis_fasilitas" required class="{{ $kelasKontrol }}">
                     <option value="">Pilih jenis</option>
-                    @foreach (\App\Support\DummyData::opsiReferensi(\App\Enums\JenisReferensi::JenisFasilitas) as $nilaiJenis => $labelJenis)
+                    @foreach ($opsiJenisFasilitas as $nilaiJenis => $labelJenis)
                         <option value="{{ $nilaiJenis }}"
                             @selected(old('jenis_fasilitas', $data['jenis_fasilitas'] ?? '') === $nilaiJenis)>
                             {{ $labelJenis }}
@@ -95,7 +96,7 @@
                 <label for="{{ $awalan }}_sumber_dana_fasilitas" class="{{ $kelasLabel }}">Sumber Dana</label>
                 <select id="{{ $awalan }}_sumber_dana_fasilitas" name="sumber_dana" class="{{ $kelasKontrol }}">
                     <option value="">Pilih sumber dana</option>
-                    @foreach (\App\Support\DummyData::opsiReferensi(\App\Enums\JenisReferensi::SumberDana) as $nilaiRef => $labelRef)
+                    @foreach ($opsiSumberDana as $nilaiRef => $labelRef)
                         <option value="{{ $nilaiRef }}"
                             @selected(old('sumber_dana', $data['sumber_dana'] ?? '') === $nilaiRef)>
                             {{ $nilaiRef }}
@@ -108,7 +109,7 @@
                 <label for="{{ $awalan }}_status_penyerahan_fasilitas" class="{{ $kelasLabel }}">Status Penyerahan</label>
                 <select id="{{ $awalan }}_status_penyerahan_fasilitas" name="status_penyerahan"
                     class="{{ $kelasKontrol }}">
-                    @foreach (\App\Support\DummyData::opsiReferensi(\App\Enums\JenisReferensi::StatusPenyerahan) as $nilaiRef => $labelRef)
+                    @foreach ($opsiStatusPenyerahan as $nilaiRef => $labelRef)
                         <option value="{{ $nilaiRef }}"
                             @selected(old('status_penyerahan', $data['status_penyerahan'] ?? '') === $nilaiRef)>
                             {{ $nilaiRef }}
@@ -120,7 +121,7 @@
             <div>
                 <label for="{{ $awalan }}_kondisi_fasilitas" class="{{ $kelasLabel }}">Kondisi</label>
                 <select id="{{ $awalan }}_kondisi_fasilitas" name="kondisi" class="{{ $kelasKontrol }}">
-                    @foreach (\App\Support\DummyData::opsiReferensi(\App\Enums\JenisReferensi::Kondisi) as $nilaiRef => $labelRef)
+                    @foreach ($opsiKondisi as $nilaiRef => $labelRef)
                         <option value="{{ $nilaiRef }}" @selected(old('kondisi', $data['kondisi'] ?? '') === $nilaiRef)>
                             {{ $nilaiRef }}
                         </option>

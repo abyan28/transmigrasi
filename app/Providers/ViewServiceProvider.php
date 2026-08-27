@@ -51,6 +51,10 @@ class ViewServiceProvider extends ServiceProvider
         'pages.panen.form' => ['satuanKomoditas', 'simbolSatuan', 'penanamanUntukPanen'],
         'pages.penanaman.form' => ['daftarPoktan', 'daftarKomoditas', 'petaPoktan', 'petaBenih'],
         'pages.pengaduan.form' => ['petaBidang', 'opsiKategoriPengaduan', 'opsiBidang', 'opsiPrioritasPengaduan', 'daftarSp'],
+        'pages.sp.form' => ['daftarDesa', 'daftarKawasan'],
+        'pages.sp.form-kawasan' => ['daftarProvinsi', 'daftarKabupaten'],
+        'pages.sp.form-inventaris' => ['daftarSp', 'opsiSumberDana', 'opsiStatusPenyerahan', 'opsiKondisi'],
+        'pages.sp.form-fasilitas' => ['daftarSp', 'opsiJenisFasilitas', 'opsiSumberDana', 'opsiStatusPenyerahan', 'opsiKondisi'],
     ];
 
     public function boot(): void
@@ -102,6 +106,12 @@ class ViewServiceProvider extends ServiceProvider
             'opsiJenisInfrastruktur' => DummyData::opsiReferensi(JenisReferensi::JenisInfrastruktur),
             'opsiTipeKomoditas' => DummyData::opsiReferensi(JenisReferensi::TipeKomoditas),
             'opsiJenisDokumenLahan' => DummyData::opsiReferensi(JenisReferensi::JenisDokumenLahan),
+            'opsiStatusPenyerahan' => DummyData::opsiReferensi(JenisReferensi::StatusPenyerahan),
+            'opsiJenisFasilitas' => DummyData::opsiReferensi(JenisReferensi::JenisFasilitas),
+            'daftarKawasan' => DummyData::kawasan(),
+            'daftarProvinsi' => DummyData::wilayah()['provinsi'],
+            'daftarKabupaten' => DummyData::wilayah()['kabupaten'],
+            'daftarDesa' => DummyData::wilayah()['desa'],
             'opsiKategoriPengaduan' => DummyData::opsiReferensi(JenisReferensi::KategoriPengaduan),
             'opsiBidang' => DummyData::opsiReferensi(JenisReferensi::BidangPengaduan),
             'opsiPrioritasPengaduan' => DummyData::opsiReferensi(JenisReferensi::PrioritasPengaduan),

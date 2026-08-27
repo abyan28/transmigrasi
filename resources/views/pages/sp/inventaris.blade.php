@@ -7,34 +7,10 @@
 @extends('layouts.app')
 
 @section('content')
-    @php
-        use App\Support\DummyData;
-
-        $semua = DummyData::inventarisSp();
-
-        $cari = trim((string) request('cari', ''));
-        $filterSp = request('sp');
-        $filterStatus = request('status_penyerahan');
-
-        $baris = array_values(array_filter($semua, function ($b) use ($cari, $filterSp, $filterStatus) {
-            if ($cari !== '' && ! str_contains(mb_strtolower($b['nama_barang']), mb_strtolower($cari))) {
-                return false;
-            }
-            if ($filterSp && (string) $b['satuan_permukiman_id'] !== (string) $filterSp) {
-                return false;
-            }
-            if ($filterStatus && $b['status_penyerahan'] !== $filterStatus) {
-                return false;
-            }
-
-            return true;
-        }));
-
-        $adaFilter = $cari !== '' || $filterSp || $filterStatus;
-        $totalUnit = array_sum(array_column($semua, 'jumlah'));
-        $sudahDiserahkan = count(array_filter($semua, fn ($b) => $b['status_penyerahan'] === 'Sudah Diserahkan'));
-        $perluPerhatian = count(array_filter($semua, fn ($b) => $b['kondisi'] !== 'Baik'));
-    @endphp
+    {{--
+        Seluruh isian halaman ini datang dari rute `sp.inventaris`.
+        Lihat routes/web.php.
+    --}}
 
     <x-sim.halaman-daftar judul="Inventaris SP"
         keterangan="Barang bergerak milik satuan permukiman beserta status penyerahannya."
@@ -85,7 +61,7 @@
                     <select id="filter_sp" name="sp"
                         class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
                         <option value="">Semua SP</option>
-                        @foreach (DummyData::satuanPermukiman() as $sp)
+                        @foreach ($daftarSp as $sp)
                             <option value="{{ $sp['id_satuan_permukiman'] }}"
                                 @selected($filterSp == $sp['id_satuan_permukiman'])>{{ $sp['nama'] }}</option>
                         @endforeach
@@ -97,7 +73,7 @@
                     <select id="filter_status" name="status_penyerahan"
                         class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
                         <option value="">Semua status</option>
-                        @foreach (\App\Support\DummyData::opsiFilterReferensi(\App\Enums\JenisReferensi::StatusPenyerahan) as $nilai => $label)
+                        @foreach ($opsiFilterStatusPenyerahan as $nilai => $label)
                             <option value="{{ $nilai }}" @selected($filterStatus === $nilai)>{{ $label }}</option>
                         @endforeach
                     </select>

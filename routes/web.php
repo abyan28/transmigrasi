@@ -9,6 +9,7 @@ use App\Enums\StatusPanen;
 use App\Enums\StatusPengaduan;
 use App\Http\Controllers\DokumenController;
 use App\Support\DummyData;
+use App\Support\PenilaianKondisiSp;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Route;
 
@@ -295,16 +296,91 @@ Route::put('/master/penilaian-kondisi/status/{kode}', function (string $kode) {
 })->name('penilaian-kondisi.status');
 
 Route::get('/kawasan', function () {
-    return view('pages.sp.kawasan', ['title' => 'Kawasan Transmigrasi']);
+    $daftarSp = DummyData::satuanPermukiman();
+    $rekap = DummyData::rekapPerSp();
+
+    return view('pages.sp.kawasan', [
+        'title' => 'Kawasan Transmigrasi',
+        'kawasan' => DummyData::kawasan(),
+        'daftarSp' => $daftarSp,
+        'rekap' => $rekap,
+        'totalKk' => array_sum(array_column($rekap, 'jumlah_kk')),
+        'kecamatan' => array_unique(array_column($daftarSp, 'kecamatan')),
+    ]);
 })->name('kawasan');
 
 // Rute beruas dua didaftarkan sebelum /sp agar tidak tertukar.
 Route::get('/sp/inventaris', function () {
-    return view('pages.sp.inventaris', ['title' => 'Inventaris SP']);
+    $semua = DummyData::inventarisSp();
+
+    $cari = trim((string) request('cari', ''));
+    $filterSp = request('sp');
+    $filterStatus = request('status_penyerahan');
+
+    $baris = array_values(array_filter($semua, function ($b) use ($cari, $filterSp, $filterStatus) {
+        if ($cari !== '' && ! str_contains(mb_strtolower($b['nama_barang']), mb_strtolower($cari))) {
+            return false;
+        }
+        if ($filterSp && (string) $b['satuan_permukiman_id'] !== (string) $filterSp) {
+            return false;
+        }
+        if ($filterStatus && $b['status_penyerahan'] !== $filterStatus) {
+            return false;
+        }
+
+        return true;
+    }));
+
+    return view('pages.sp.inventaris', [
+        'title' => 'Inventaris SP',
+        'semua' => $semua,
+        'baris' => $baris,
+        'cari' => $cari,
+        'filterSp' => $filterSp,
+        'filterStatus' => $filterStatus,
+        'adaFilter' => $cari !== '' || $filterSp || $filterStatus,
+        'totalUnit' => array_sum(array_column($semua, 'jumlah')),
+        'sudahDiserahkan' => count(array_filter($semua, fn ($b) => $b['status_penyerahan'] === 'Sudah Diserahkan')),
+        'perluPerhatian' => count(array_filter($semua, fn ($b) => $b['kondisi'] !== 'Baik')),
+        'daftarSp' => DummyData::satuanPermukiman(),
+        'opsiFilterStatusPenyerahan' => DummyData::opsiFilterReferensi(JenisReferensi::StatusPenyerahan),
+    ]);
 })->name('sp.inventaris');
 
 Route::get('/sp/fasilitas', function () {
-    return view('pages.sp.fasilitas', ['title' => 'Fasilitas SP']);
+    $semua = DummyData::fasilitasSp();
+
+    $cari = trim((string) request('cari', ''));
+    $filterSp = request('sp');
+    $filterKondisi = request('kondisi');
+
+    $baris = array_values(array_filter($semua, function ($b) use ($cari, $filterSp, $filterKondisi) {
+        if ($cari !== '' && ! str_contains(mb_strtolower($b['nama_fasilitas']), mb_strtolower($cari))) {
+            return false;
+        }
+        if ($filterSp && (string) $b['satuan_permukiman_id'] !== (string) $filterSp) {
+            return false;
+        }
+        if ($filterKondisi && $b['kondisi'] !== $filterKondisi) {
+            return false;
+        }
+
+        return true;
+    }));
+
+    return view('pages.sp.fasilitas', [
+        'title' => 'Fasilitas SP',
+        'semua' => $semua,
+        'baris' => $baris,
+        'cari' => $cari,
+        'filterSp' => $filterSp,
+        'filterKondisi' => $filterKondisi,
+        'adaFilter' => $cari !== '' || $filterSp || $filterKondisi,
+        'totalUnit' => array_sum(array_column($semua, 'jumlah')),
+        'rusak' => count(array_filter($semua, fn ($b) => $b['kondisi'] !== 'Baik')),
+        'daftarSp' => DummyData::satuanPermukiman(),
+        'opsiFilterKondisi' => DummyData::opsiFilterReferensi(JenisReferensi::Kondisi),
+    ]);
 })->name('sp.fasilitas');
 
 /*
@@ -341,7 +417,41 @@ Route::get('/sp/fasilitas/{id}', function (int $id) {
 })->where('id', '[0-9]+')->name('sp.fasilitas.detail');
 
 Route::get('/sp', function () {
-    return view('pages.sp.index', ['title' => 'Satuan Permukiman']);
+    $semua = DummyData::satuanPermukiman();
+
+    $cari = trim((string) request('cari', ''));
+    $filterKecamatan = request('kecamatan');
+
+    $baris = array_values(array_filter($semua, function ($sp) use ($cari, $filterKecamatan) {
+        if ($cari !== '' && ! str_contains(mb_strtolower($sp['nama']), mb_strtolower($cari))
+            && ! str_contains(mb_strtolower($sp['desa']), mb_strtolower($cari))) {
+            return false;
+        }
+
+        if ($filterKecamatan && $sp['kecamatan'] !== $filterKecamatan) {
+            return false;
+        }
+
+        return true;
+    }));
+
+    return view('pages.sp.index', [
+        'title' => 'Satuan Permukiman',
+        'semua' => $semua,
+        'baris' => $baris,
+        'rekap' => collect(DummyData::rekapPerSp())->keyBy('satuan_permukiman_id'),
+
+        // Status kondisi layanan dasar tiap SP, indikator ke-16.
+        'kondisi' => collect(PenilaianKondisiSp::nilaiSeluruhSp())->keyBy('satuan_permukiman_id'),
+
+        'cari' => $cari,
+        'filterKecamatan' => $filterKecamatan,
+        'adaFilter' => $cari !== '' || $filterKecamatan,
+        'daftarKecamatan' => array_values(array_unique(array_column($semua, 'kecamatan'))),
+        'totalLuas' => array_sum(array_column($semua, 'luas_lahan')),
+        'totalRencana' => array_sum(array_column($semua, 'jumlah_kk_rencana')),
+        'totalTerisi' => array_sum(array_column($semua, 'jumlah_kk_terisi')),
+    ]);
 })->name('sp.index');
 
 /*
