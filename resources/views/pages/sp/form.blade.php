@@ -342,6 +342,116 @@
         </div>
     </section>
 
+    {{--
+        Bagian 4b: Rute Aksesibilitas (Tabel 2.1 Monografi), daftar dinamis.
+        Ditambahkan 2026-08-28 (Rombongan C, Stage C2).
+    --}}
+    <section class="border-t border-gray-200 pt-5 dark:border-gray-800"
+        x-data="{
+            rute: @js(collect($ruteAksesibilitasData ?? [])->map(fn ($r) => [
+                'rute' => $r['rute'] ?? '',
+                'jarak_km' => $r['jarak_km'] ?? '',
+                'sarana_angkutan' => $r['sarana_angkutan'] ?? '',
+                'tempat_pemberangkatan' => $r['tempat_pemberangkatan'] ?? '',
+                'kondisi_jalan' => $r['kondisi_jalan'] ?? '',
+                'waktu_tempuh' => $r['waktu_tempuh'] ?? '',
+                'ongkos_rp' => $r['ongkos_rp'] ?? '',
+                'keterangan' => $r['keterangan'] ?? '',
+            ])->values()->all()),
+            tambahRute() {
+                this.rute.push({ rute: '', jarak_km: '', sarana_angkutan: '', tempat_pemberangkatan: '', kondisi_jalan: '', waktu_tempuh: '', ongkos_rp: '', keterangan: '' });
+            },
+            hapusRute(i) { this.rute.splice(i, 1); },
+        }">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h3 class="{{ $kelasBagian }}">Rute Aksesibilitas</h3>
+                <p class="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
+                    Cara pencapaian menuju SP ini. Bahan Tabel 2.1 Laporan Monografi.
+                </p>
+            </div>
+            <button type="button" @click="tambahRute()"
+                class="inline-flex h-10 items-center gap-1.5 rounded-lg border border-gray-300 px-3 text-theme-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14" />
+                </svg>
+                Tambah Rute
+            </button>
+        </div>
+
+        <p x-show="rute.length === 0"
+            class="mt-4 rounded-lg bg-gray-50 px-4 py-6 text-center text-theme-sm text-gray-500 dark:bg-white/[0.03] dark:text-gray-400">
+            Belum ada rute ditambahkan.
+        </p>
+
+        <template x-for="(r, i) in rute" :key="i">
+            <fieldset class="mt-4 rounded-xl border border-gray-200 p-4 dark:border-gray-800">
+                <div class="flex items-center justify-between">
+                    <legend class="text-theme-sm font-medium text-gray-700 dark:text-gray-300">
+                        Rute <span x-text="i + 1"></span>
+                        <span class="text-gray-400" x-text="r.rute ? ' - ' + r.rute : ''"></span>
+                    </legend>
+                    <button type="button" @click="hapusRute(i)"
+                        class="rounded p-1 text-gray-400 transition hover:text-error-500 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500"
+                        :aria-label="'Hapus rute ' + (i + 1)">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 7h12M9 7V5h6v2m-7 0v12a1 1 0 001 1h6a1 1 0 001-1V7" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="mt-3 grid gap-4 sm:grid-cols-2">
+                    <div class="sm:col-span-2">
+                        <label class="{{ $kelasLabel }}" :for="'{{ $awalan }}_rute_' + i">Rute Perjalanan<span class="text-error-500">*</span></label>
+                        <input type="text" :id="'{{ $awalan }}_rute_' + i" :name="`rute_aksesibilitas[${i}][rute]`"
+                            x-model="r.rute" required maxlength="255" placeholder="Contoh: Kupang ke UPT" class="{{ $kelasKontrol }}" />
+                    </div>
+                    <div>
+                        <label class="{{ $kelasLabel }}" :for="'{{ $awalan }}_rute_jarak_' + i">Jarak Tempuh</label>
+                        <div class="relative">
+                            <input type="number" step="0.1" min="0" :id="'{{ $awalan }}_rute_jarak_' + i"
+                                :name="`rute_aksesibilitas[${i}][jarak_km]`" x-model="r.jarak_km" class="{{ $kelasKontrol }} tabular-nums pr-12" />
+                            <span class="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-theme-sm text-gray-500 dark:text-gray-400">km</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="{{ $kelasLabel }}" :for="'{{ $awalan }}_rute_sarana_' + i">Sarana Angkutan</label>
+                        <input type="text" :id="'{{ $awalan }}_rute_sarana_' + i" :name="`rute_aksesibilitas[${i}][sarana_angkutan]`"
+                            x-model="r.sarana_angkutan" maxlength="150" placeholder="Roda dua, angkutan darat, pesawat" class="{{ $kelasKontrol }}" />
+                    </div>
+                    <div>
+                        <label class="{{ $kelasLabel }}" :for="'{{ $awalan }}_rute_berangkat_' + i">Tempat Pemberangkatan</label>
+                        <input type="text" :id="'{{ $awalan }}_rute_berangkat_' + i" :name="`rute_aksesibilitas[${i}][tempat_pemberangkatan]`"
+                            x-model="r.tempat_pemberangkatan" maxlength="150" class="{{ $kelasKontrol }}" />
+                    </div>
+                    <div>
+                        <label class="{{ $kelasLabel }}" :for="'{{ $awalan }}_rute_jalan_' + i">Kondisi Jalan</label>
+                        <input type="text" :id="'{{ $awalan }}_rute_jalan_' + i" :name="`rute_aksesibilitas[${i}][kondisi_jalan]`"
+                            x-model="r.kondisi_jalan" maxlength="150" placeholder="Baik aspal, pengerasan, tanah" class="{{ $kelasKontrol }}" />
+                    </div>
+                    <div>
+                        <label class="{{ $kelasLabel }}" :for="'{{ $awalan }}_rute_waktu_' + i">Waktu Tempuh</label>
+                        <input type="text" :id="'{{ $awalan }}_rute_waktu_' + i" :name="`rute_aksesibilitas[${i}][waktu_tempuh]`"
+                            x-model="r.waktu_tempuh" maxlength="80" placeholder="6 jam, 45 menit" class="{{ $kelasKontrol }}" />
+                    </div>
+                    <div>
+                        <label class="{{ $kelasLabel }}" :for="'{{ $awalan }}_rute_ongkos_' + i">Ongkos</label>
+                        <div class="relative">
+                            <span class="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-theme-sm text-gray-500 dark:text-gray-400">Rp</span>
+                            <input type="number" step="1000" min="0" :id="'{{ $awalan }}_rute_ongkos_' + i"
+                                :name="`rute_aksesibilitas[${i}][ongkos_rp]`" x-model="r.ongkos_rp" class="{{ $kelasKontrol }} tabular-nums pl-10" />
+                        </div>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="{{ $kelasLabel }}" :for="'{{ $awalan }}_rute_ket_' + i">Catatan</label>
+                        <input type="text" :id="'{{ $awalan }}_rute_ket_' + i" :name="`rute_aksesibilitas[${i}][keterangan]`"
+                            x-model="r.keterangan" maxlength="255" class="{{ $kelasKontrol }}" />
+                    </div>
+                </div>
+            </fieldset>
+        </template>
+    </section>
+
     <section>
         <h3 class="{{ $kelasBagian }}">Catatan</h3>
         <div class="mt-3">

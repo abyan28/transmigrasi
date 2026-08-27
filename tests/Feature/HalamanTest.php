@@ -5966,6 +5966,35 @@ it('mengunci enum Keadaan Wilayah SP', function () {
         ->toBe(['Datar', 'Bergelombang', 'Berbukit', 'Bergunung']);
 });
 
+it('mendata rute aksesibilitas SP sebagai daftar dinamis dengan tempat tampil', function () {
+    // Stage C2 (2026-08-28): Tabel 2.1 Monografi jadi daftar rute per SP.
+    $semua = DummyData::ruteAksesibilitasSp();
+    expect($semua)->not->toBeEmpty();
+
+    $sp1 = DummyData::ruteAksesibilitasSp(1);
+    expect($sp1)->not->toBeEmpty();
+    foreach ($sp1 as $r) {
+        expect($r['satuan_permukiman_id'])->toBe(1);
+    }
+    // SP 1 dari Tabel 2.1 berkas monografi.
+    expect(collect($sp1)->pluck('rute')->implode(' | '))->toContain('Kupang');
+
+    // Form SP: repeater rute.
+    $form = $this->get(route('sp.index'))->assertOk()->getContent();
+    expect($form)
+        ->toContain('x-for="(r, i) in rute"')
+        ->toContain('tambahRute()')
+        ->toContain('hapusRute(i)')
+        ->toContain('rute_aksesibilitas[${i}][rute]');
+
+    // Halaman rincian SP menampilkan tabel rute berisi (dengan caption).
+    $rincian = $this->get(route('dashboard.sp', 1))->assertOk()->getContent();
+    expect($rincian)
+        ->toContain('Rute Aksesibilitas')
+        ->toContain('Cara pencapaian menuju')
+        ->toContain($sp1[0]['rute']);
+});
+
 /*
 |--------------------------------------------------------------------------
 | Komoditas unggulan: penandaan manusia, bukan hitungan

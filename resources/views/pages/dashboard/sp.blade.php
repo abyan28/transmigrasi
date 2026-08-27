@@ -317,6 +317,49 @@
                         @endforeach
                     </div>
                 @endif
+
+                {{-- Rute Aksesibilitas (Tabel 2.1 Monografi, Stage C2) --}}
+                <div class="mt-6 border-t border-gray-200 pt-5 dark:border-gray-800">
+                    <h3 class="text-theme-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Rute Aksesibilitas</h3>
+                    @if (count($ruteAksesibilitas) === 0)
+                        <p class="mt-2 text-theme-sm text-gray-500 dark:text-gray-400">Belum dicatat.</p>
+                    @else
+                        <div class="mt-3 overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
+                            <table class="min-w-full text-theme-sm">
+                                <caption class="px-4 py-2.5 text-left text-theme-xs text-gray-500 dark:text-gray-400">
+                                    Cara pencapaian menuju {{ $sp['nama'] }}
+                                </caption>
+                                <thead class="border-y border-gray-200 bg-gray-50 text-theme-xs text-gray-500 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400">
+                                    <tr>
+                                        <th scope="col" class="px-4 py-2 text-left">Rute</th>
+                                        <th scope="col" class="px-4 py-2 text-right">Jarak</th>
+                                        <th scope="col" class="px-4 py-2 text-left">Sarana</th>
+                                        <th scope="col" class="px-4 py-2 text-left">Kondisi Jalan</th>
+                                        <th scope="col" class="px-4 py-2 text-left">Waktu</th>
+                                        <th scope="col" class="px-4 py-2 text-right">Ongkos</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                                    @foreach ($ruteAksesibilitas as $r)
+                                        <tr class="text-gray-700 dark:text-gray-300">
+                                            <td class="px-4 py-2 font-medium text-gray-800 dark:text-white/90">
+                                                {{ $r['rute'] }}
+                                                @if (! empty($r['keterangan']))
+                                                    <span class="mt-0.5 block text-theme-xs font-normal text-gray-500 dark:text-gray-400">{{ $r['keterangan'] }}</span>
+                                                @endif
+                                            </td>
+                                            <td class="px-4 py-2 text-right tabular-nums">{{ $r['jarak_km'] !== null ? rtrim(rtrim(number_format((float) $r['jarak_km'], 1, ',', '.'), '0'), ',') . ' km' : '-' }}</td>
+                                            <td class="px-4 py-2">{{ $r['sarana_angkutan'] ?? '-' }}</td>
+                                            <td class="px-4 py-2">{{ $r['kondisi_jalan'] ?? '-' }}</td>
+                                            <td class="px-4 py-2">{{ $r['waktu_tempuh'] ?? '-' }}</td>
+                                            <td class="px-4 py-2 text-right tabular-nums">{{ $r['ongkos_rp'] !== null ? 'Rp ' . number_format((float) $r['ongkos_rp'], 0, ',', '.') : '-' }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
+                </div>
             </section>
 
             {{--

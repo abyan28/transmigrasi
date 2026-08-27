@@ -1305,6 +1305,27 @@ bukan menganggap `$b` pesan galat. Satu uji Rombongan B (`mencabut komponen
 tombol ekspor`) juga memakai pola keliru itu dan lolos secara kebetulan;
 keduanya diganti `expect(str_contains(...))->toBeFalse("pesan")`.
 
+### 1q.5 Stage C2: rute aksesibilitas SP
+
+Tabel 2.1 Monografi ("Cara mencapai lokasi") jadi daftar rute per SP.
+
+- `rute_aksesibilitas_sp` (`data-dictionary.md` §3.6a): 17 baris contoh,
+  SP Kapitan Meo 5 baris dari Tabel 2.1 berkas monografi
+  (Kupang->UPT 245 km, dst). `DummyData::ruteAksesibilitasSp(?int $spId)`
+  menyaring per SP bila id diberi.
+- Form SP: section "Rute Aksesibilitas" dynamic repeater Alpine
+  (`rute` array, `tambahRute()`/`hapusRute(i)`, `x-for="(r, i) in rute"`,
+  nama field `rute_aksesibilitas[${i}][kolom]`).
+- `dashboard/sp`: tabel rute dengan `<caption>` "Cara pencapaian menuju ...";
+  kosong -> "belum dicatat".
+- Rute `dashboard/sp/{id}` menyuplai `ruteAksesibilitas`.
+- Label field catatan pada repeater dipakai "Catatan" bukan "Keterangan"
+  (penjaga `menyeragamkan label isian catatan`: file form yang punya
+  `name="keterangan"` tak boleh memuat `>Keterangan</label>` di mana pun).
+
+**660 uji hijau**, `pint` 31. Satu uji baru
+(`mendata rute aksesibilitas SP sebagai daftar dinamis dengan tempat tampil`).
+
 ---
 
 ## 2. Catatan Dokumen Proposal

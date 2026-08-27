@@ -174,6 +174,9 @@ Route::get('/dashboard/sp/{sp}', function (int $sp) {
         'pengaduan' => DummyData::saringPerSp(DummyData::pengaduan(), $data['nama']),
         'infrastruktur' => DummyData::saringPerSp(DummyData::infrastruktur(), $data['nama']),
 
+        // Rute pencapaian menuju SP ini (Tabel 2.1 Monografi, Stage C2).
+        'ruteAksesibilitas' => DummyData::ruteAksesibilitasSp($data['id_satuan_permukiman']),
+
         'persenHuni' => $data['jumlah_kk_terisi'] > 0
             ? round($rekap['rumah_terhuni'] / $data['jumlah_kk_terisi'] * 100)
             : 0,

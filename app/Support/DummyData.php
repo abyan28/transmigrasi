@@ -336,6 +336,56 @@ class DummyData
     }
 
     /**
+     * Rute pencapaian menuju satu SP (Tabel 2.1 Laporan Monografi).
+     *
+     * Ditambahkan 2026-08-28 (Rombongan C, Stage C2). Satu SP punya beberapa
+     * baris. SP Kapitan Meo memakai isi Tabel 2.1 berkas Monografi; SP lain
+     * nilai yang wajar.
+     *
+     * @param  int|null  $satuanPermukimanId  Menyaring satu SP; null berarti seluruhnya
+     * @return array<int, array<string, mixed>>
+     */
+    public static function ruteAksesibilitasSp(?int $satuanPermukimanId = null): array
+    {
+        $data = [
+            // SP Kapitan Meo (id 1), dari Tabel 2.1 Monografi.
+            ['id_rute_aksesibilitas_sp' => 1, 'satuan_permukiman_id' => 1, 'rute' => 'Kupang (Ibu Kota Provinsi) ke UPT', 'jarak_km' => 245.0, 'sarana_angkutan' => 'Angkutan darat', 'tempat_pemberangkatan' => 'Terminal Kupang', 'kondisi_jalan' => 'Baik, aspal', 'waktu_tempuh' => '6 jam', 'ongkos_rp' => 125000.0, 'keterangan' => 'Alternatif pesawat ke Atambua lalu darat, 45 menit, Rp 516.000.'],
+            ['id_rute_aksesibilitas_sp' => 2, 'satuan_permukiman_id' => 1, 'rute' => 'UPT ke Ibu Kota Kabupaten (Betun)', 'jarak_km' => 20.0, 'sarana_angkutan' => 'Roda dua', 'tempat_pemberangkatan' => 'UPT', 'kondisi_jalan' => 'Baik, aspal', 'waktu_tempuh' => '2 jam', 'ongkos_rp' => 100000.0, 'keterangan' => 'Roda empat sekitar 2,5 jam, Rp 35.000 per orang.'],
+            ['id_rute_aksesibilitas_sp' => 3, 'satuan_permukiman_id' => 1, 'rute' => 'UPT ke Ibu Kota Kecamatan (Laen Manen)', 'jarak_km' => 2.0, 'sarana_angkutan' => 'Roda dua atau roda empat', 'tempat_pemberangkatan' => 'UPT', 'kondisi_jalan' => 'Baik, pengerasan dan aspal', 'waktu_tempuh' => '5 menit', 'ongkos_rp' => 5000.0, 'keterangan' => null],
+            ['id_rute_aksesibilitas_sp' => 4, 'satuan_permukiman_id' => 1, 'rute' => 'UPT ke pasar terdekat', 'jarak_km' => 3.0, 'sarana_angkutan' => 'Roda dua', 'tempat_pemberangkatan' => 'UPT', 'kondisi_jalan' => 'Aspal', 'waktu_tempuh' => '15 menit', 'ongkos_rp' => 10000.0, 'keterangan' => null],
+            ['id_rute_aksesibilitas_sp' => 5, 'satuan_permukiman_id' => 1, 'rute' => 'UPT ke pelabuhan terdekat', 'jarak_km' => 50.0, 'sarana_angkutan' => 'Roda dua atau roda empat', 'tempat_pemberangkatan' => 'UPT', 'kondisi_jalan' => 'Baik, aspal', 'waktu_tempuh' => '2 sampai 3 jam', 'ongkos_rp' => 100000.0, 'keterangan' => null],
+
+            // SP Tniumanu (id 2)
+            ['id_rute_aksesibilitas_sp' => 6, 'satuan_permukiman_id' => 2, 'rute' => 'Kupang ke UPT', 'jarak_km' => 243.0, 'sarana_angkutan' => 'Angkutan darat', 'tempat_pemberangkatan' => 'Terminal Kupang', 'kondisi_jalan' => 'Baik, aspal', 'waktu_tempuh' => '6 jam', 'ongkos_rp' => 125000.0, 'keterangan' => null],
+            ['id_rute_aksesibilitas_sp' => 7, 'satuan_permukiman_id' => 2, 'rute' => 'UPT ke Ibu Kota Kabupaten (Betun)', 'jarak_km' => 18.0, 'sarana_angkutan' => 'Roda dua', 'tempat_pemberangkatan' => 'UPT', 'kondisi_jalan' => 'Sebagian pengerasan', 'waktu_tempuh' => '1,5 jam', 'ongkos_rp' => 90000.0, 'keterangan' => null],
+            ['id_rute_aksesibilitas_sp' => 8, 'satuan_permukiman_id' => 2, 'rute' => 'UPT ke Ibu Kota Kecamatan', 'jarak_km' => 4.0, 'sarana_angkutan' => 'Roda dua', 'tempat_pemberangkatan' => 'UPT', 'kondisi_jalan' => 'Pengerasan', 'waktu_tempuh' => '10 menit', 'ongkos_rp' => 5000.0, 'keterangan' => null],
+
+            // SP Harekakae (id 3)
+            ['id_rute_aksesibilitas_sp' => 9, 'satuan_permukiman_id' => 3, 'rute' => 'Kupang ke UPT', 'jarak_km' => 238.0, 'sarana_angkutan' => 'Angkutan darat', 'tempat_pemberangkatan' => 'Terminal Kupang', 'kondisi_jalan' => 'Baik, aspal', 'waktu_tempuh' => '5,5 jam', 'ongkos_rp' => 120000.0, 'keterangan' => null],
+            ['id_rute_aksesibilitas_sp' => 10, 'satuan_permukiman_id' => 3, 'rute' => 'UPT ke Ibu Kota Kabupaten', 'jarak_km' => 15.0, 'sarana_angkutan' => 'Roda dua atau roda empat', 'tempat_pemberangkatan' => 'UPT', 'kondisi_jalan' => 'Baik, aspal', 'waktu_tempuh' => '30 menit', 'ongkos_rp' => 25000.0, 'keterangan' => null],
+
+            // SP Weoe / Uluk Lubuk (id 4)
+            ['id_rute_aksesibilitas_sp' => 11, 'satuan_permukiman_id' => 4, 'rute' => 'Kupang ke UPT', 'jarak_km' => 251.0, 'sarana_angkutan' => 'Angkutan darat', 'tempat_pemberangkatan' => 'Terminal Kupang', 'kondisi_jalan' => 'Baik, aspal', 'waktu_tempuh' => '6,5 jam', 'ongkos_rp' => 130000.0, 'keterangan' => null],
+            ['id_rute_aksesibilitas_sp' => 12, 'satuan_permukiman_id' => 4, 'rute' => 'UPT ke Ibu Kota Kabupaten', 'jarak_km' => 28.0, 'sarana_angkutan' => 'Roda dua', 'tempat_pemberangkatan' => 'UPT', 'kondisi_jalan' => 'Baik, aspal', 'waktu_tempuh' => '2 jam', 'ongkos_rp' => 100000.0, 'keterangan' => null],
+            ['id_rute_aksesibilitas_sp' => 13, 'satuan_permukiman_id' => 4, 'rute' => 'UPT ke pelabuhan penyeberangan', 'jarak_km' => 12.0, 'sarana_angkutan' => 'Roda dua atau roda empat', 'tempat_pemberangkatan' => 'UPT', 'kondisi_jalan' => 'Baik, aspal', 'waktu_tempuh' => '25 menit', 'ongkos_rp' => 15000.0, 'keterangan' => null],
+
+            // SP Tualaran (id 5)
+            ['id_rute_aksesibilitas_sp' => 14, 'satuan_permukiman_id' => 5, 'rute' => 'Kupang ke UPT', 'jarak_km' => 255.0, 'sarana_angkutan' => 'Angkutan darat', 'tempat_pemberangkatan' => 'Terminal Kupang', 'kondisi_jalan' => 'Baik, aspal berbukit', 'waktu_tempuh' => '7 jam', 'ongkos_rp' => 135000.0, 'keterangan' => null],
+            ['id_rute_aksesibilitas_sp' => 15, 'satuan_permukiman_id' => 5, 'rute' => 'UPT ke Ibu Kota Kecamatan (Rinhat)', 'jarak_km' => 5.0, 'sarana_angkutan' => 'Roda dua', 'tempat_pemberangkatan' => 'UPT', 'kondisi_jalan' => 'Pengerasan', 'waktu_tempuh' => '15 menit', 'ongkos_rp' => 7000.0, 'keterangan' => null],
+
+            // SP Weain (id 6)
+            ['id_rute_aksesibilitas_sp' => 16, 'satuan_permukiman_id' => 6, 'rute' => 'Kupang ke UPT', 'jarak_km' => 258.0, 'sarana_angkutan' => 'Angkutan darat', 'tempat_pemberangkatan' => 'Terminal Kupang', 'kondisi_jalan' => 'Sebagian pengerasan', 'waktu_tempuh' => '7,5 jam', 'ongkos_rp' => 140000.0, 'keterangan' => 'Ruas terakhir 7 km jalan tanah, sulit saat musim hujan.'],
+            ['id_rute_aksesibilitas_sp' => 17, 'satuan_permukiman_id' => 6, 'rute' => 'UPT ke Ibu Kota Kecamatan (Rinhat)', 'jarak_km' => 7.0, 'sarana_angkutan' => 'Roda dua', 'tempat_pemberangkatan' => 'UPT', 'kondisi_jalan' => 'Tanah dan pengerasan', 'waktu_tempuh' => '25 menit', 'ongkos_rp' => 10000.0, 'keterangan' => null],
+        ];
+
+        if ($satuanPermukimanId === null) {
+            return $data;
+        }
+
+        return array_values(array_filter($data, fn ($b) => $b['satuan_permukiman_id'] === $satuanPermukimanId));
+    }
+
+    /**
      * Daftar transmigran beserta data kependudukannya.
      *
      * `jumlah_anggota_keluarga` DITURUNKAN sejak 2026-08-28 (Rombongan B):

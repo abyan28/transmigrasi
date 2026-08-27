@@ -129,7 +129,9 @@ Enum baru:
 - **C1 SELESAI** (commit) - 3 enum, ~35 kolom, batas dihidupkan, DummyData
   6 SP, section form SP, blok tampil `dashboard/sp`. 660 uji, pint 31.
   Bug uji `->toContain($a,$b)` (multi-needle) ikut dibetulkan di 2 tempat.
-- **C2** - tabel `rute_aksesibilitas_sp` + repeater form SP + tampil. Commit.
+- **C2 SELESAI** (commit) - tabel `rute_aksesibilitas_sp` (17 baris, SP
+  Kapitan Meo 5 baris Tabel 2.1), repeater "Rute Aksesibilitas" form SP,
+  tabel tampil (caption) `dashboard/sp`. 660 uji, pint 31. `notes.md` 1q.5.
 - **C3** - Laporan Monografi SP: render Bab II penuh per SP. Commit.
 
 `data-dictionary.md` §3.6, `rules.md` §4a.4, `notes.md` bagian 6 butir batas
