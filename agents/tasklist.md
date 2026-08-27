@@ -745,7 +745,21 @@ Butir tindak lanjut 14. **26 berkas, 902 baris** dicabut: 13 komponen Blade bese
 
 **Verifikasi:** **620 uji hijau**; utang `pint` justru **berkurang** dari 32 menjadi 31, sebab `ui/Modal.php` termasuk yang selama ini gagal.
 
-**Sisa audit 1g:** tinggal ide B (angkat `x-sim.aksi-daftar` serta `x-sim.tombol-filter`).
+### Ide B audit: angkat blok tombol menjadi komponen (2026-08-27) ✅
+
+**Butir terakhir audit 2026-08-25. Seluruh auditnya kini tuntas.**
+
+`x-sim.aksi-daftar` menggantikan blok Impor + Tambah pada 14 halaman; `x-sim.tombol-filter` menggantikan blok Terapkan + Bersihkan pada 16 halaman. **445 baris hilang dari halaman**, ditukar dua komponen berisi 80 baris.
+
+**Yang dikejar satu sumber, bukan jumlah baris.** Duplikasi sepanjang dua ratus karakter kelas Tailwind tidak bertahan seragam: cukup satu halaman disunting sendiri dan sisanya menyimpang tanpa ada yang menyadari.
+
+**Variasi ditampung, bukan dipaksa seragam.** Penjaga izin `@if ($bolehTambah)` berpindah menjadi ekspresi pada prop; tautan "Lihat Rekap Panen" yang menyela kedua tombol diterima lewat slot di posisi aslinya; `panen/rekap` dikecualikan beserta alasannya sebab wujudnya memang berbeda.
+
+**Verifikasi terkuat:** seluruh **55 halaman terender dicuplik sebelum dan sesudah**, dan **tidak satu pun berbeda**. Penormalannya tidak langsung ketemu — percobaan pertama melaporkan 54 dari 55 berbeda akibat token CSRF, lalu tersisa 14 akibat id DOM `uniqid()` pada komponen peta. Kontrol dua cuplikan atas kode identik yang membuktikan selisih itu derau.
+
+**Satu uji penjaga diperbaiki**, yang ketiga dalam sehari yang mengunci mekanisme alih-alih tujuan.
+
+**Verifikasi:** **621 uji hijau**; penjaga baru menolak penulisan ulang kedua blok, dibuktikan lewat mutasi; `pint` tidak menambah utang.
 
 ## Tahap 3 — Autentikasi dan Hak Akses
 

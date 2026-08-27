@@ -941,6 +941,50 @@ Ditambah penjaga terhadap dirinya sendiri berupa ambang jumlah komponen terperik
 
 ---
 
+## 1l. Blok Tombol Diangkat Menjadi Komponen (2026-08-27)
+
+Ide B audit 1g, butir terakhir dari audit itu. **Seluruh audit 2026-08-25 kini tuntas.**
+
+Dua komponen baru: `x-sim.aksi-daftar` menggantikan blok tombol Impor beserta Tambah pada 14 halaman, `x-sim.tombol-filter` menggantikan blok Terapkan beserta Bersihkan pada 16 halaman. **445 baris hilang dari halaman**, ditukar dua komponen berisi 80 baris.
+
+### 1l.1 Yang dikejar bukan jumlah barisnya
+
+Duplikasi sepanjang dua ratus karakter kelas Tailwind **tidak bertahan seragam**. Cukup satu halaman disunting sendiri, dan tiga belas sisanya menyimpang tanpa ada yang menyadari — sebab tidak ada yang membandingkannya.
+
+Yang dikejar **satu sumber**: markupnya hidup di komponen, halaman menyebut nama modal atau alamat saja.
+
+### 1l.2 Dua bentuk berbeda ditangani tanpa memaksakan keseragaman
+
+Empat halaman membungkus tombol Tambah dengan penjaga izin `@if ($bolehTambah)`. Komponen menanganinya tanpa cabang tambahan: `modal-tambah` bernilai null berarti tombolnya tidak dirender sama sekali, sehingga penjaganya **berpindah menjadi ekspresi pada propnya**.
+
+Halaman Hasil Panen menyisipkan tautan "Lihat Rekap Panen" **di antara** kedua tombol. Komponen menerimanya lewat slot `tambahan` yang dirender di posisi itu, bukan di ujung. Memindahkannya ke ujung berarti mengubah tampilan demi kerapian kode.
+
+`panen/rekap` **sengaja tidak diikutkan**, dan pengecualiannya dicatat pada ujinya beserta alasannya: blok filternya tanpa `flex-1`, berlabel "Bersihkan Filter", dan alamat bersihnya membawa tahun terpilih.
+
+> **Aturan:** komponen bersama menampung **variasi yang nyata** lewat prop dan slot, tetapi tidak memaksa masuk bentuk yang memang berbeda. Refactor yang mengubah tampilan bukan lagi refactor.
+
+### 1l.3 Verifikasi terkuat: cuplikan render sebelum dan sesudah
+
+Seluruh **55 halaman terender dicuplik sebelum dan sesudah**, lalu dibandingkan. **Tidak satu pun berbeda.**
+
+Yang membuat pembandingan ini sahih adalah penormalannya, dan itu tidak langsung ketemu. Percobaan pertama melaporkan **54 dari 55 halaman berbeda** — termasuk halaman yang tidak disentuh sama sekali. Penyebabnya token CSRF yang berubah tiap sesi. Sesudah itu dinormalkan, masih tersisa **14 halaman yang berbeda tanpa sebab**, dan **kontrol berupa dua cuplikan berturut-turut atas kode yang sama persis menghasilkan 14 halaman yang identik daftarnya** — bukti bahwa selisihnya derau, bukan regresi.
+
+Sumbernya ditemukan dengan membandingkan dua render halaman yang sama byte demi byte: `aria-labelledby="judul-peta-lintang-6a8fcaaa2ecbf"`, id DOM hasil `uniqid()` pada komponen peta.
+
+> **Aturan:** pembandingan render wajib dibuktikan **deterministik lebih dulu**, lewat dua cuplikan atas kode yang sama. Tanpa kontrol itu, derau terbaca sebagai regresi — atau lebih buruk, regresi terbaca sebagai derau.
+
+### 1l.4 Satu uji penjaga diperbaiki, ketiga kalinya
+
+`menyediakan modal form pada setiap halaman daftar` mencari string harfiah `buka-modal`, sehingga memerah pada delapan halaman **padahal tombol Tambahnya terender persis seperti sebelumnya** — terbukti dari pembandingan render yang tidak berbeda satu byte pun. Sejak bloknya diangkat, halaman hanya menyebut nama modalnya lewat prop dan komponennyalah yang memuat dispatchnya.
+
+Ini uji ketiga dalam sehari yang mengunci mekanisme alih-alih tujuan, setelah `drilldownSp` pada 1h.5 dan komoditas utama pada 1h.5. Ketiganya lahir dari kebiasaan yang sama: menulis asersi dengan menyalin bentuk kode yang sedang berlaku.
+
+### 1l.5 Verifikasi
+
+621 uji hijau. Penjaga barunya menolak halaman yang menuliskan ulang kedua blok itu, dibuktikan lewat mutasi. `pint` tidak menambah utang.
+
+---
+
 ## 2. Catatan Dokumen Proposal
 
 Lembar pengesahan pada `docs/Revisi_Proposal_Budi_TEP ITS 2026_Kobalima_Timur_Upload_10_6_2026_a.pdf` masih memuat judul dan pengusul dari proposal lain:
@@ -1091,6 +1135,9 @@ Seharusnya: "Digitalisasi Monitoring Pertanian dan Tata Kelola Data Kawasan Tran
 | 2026-08-25 | Alamat dasar untuk modul JavaScript **wajib dioper dari Blade** | Berkas JavaScript tidak mengenal `url()`, sehingga alamat yang ditulis tetap di dalamnya selalu salah begitu situs berpindah ke sub-path. `chart-config.js` merusak penelusuran 17 grafik dashboard dengan cara ini, delapan hari setelah larangannya tertulis pada 1b.3 |
 | 2026-08-25 | Setiap larangan pada `notes.md` **wajib punya uji penjaga** | Larangan path absolut sudah tertulis sejak 2026-08-17 dan repo tetap kena masalah yang sama untuk ketiga kalinya. Aturan yang hanya tertulis terbukti tidak menahan apa pun; yang menahan adalah uji yang memerah |
 | 2026-08-25 | Laporan penelusur diperlakukan sebagai **kandidat**, bukan temuan | Dua dari sebelas laporan terbukti keliru saat diverifikasi terhadap berkas, yaitu form tanpa `@csrf` dan dua komponen yang disebut mati. Mengerjakannya berarti menghabiskan waktu atas masalah yang tidak ada |
+| 2026-08-27 | Blok tombol daftar dan filter **diangkat menjadi komponen**, 445 baris hilang dari halaman | Duplikasi sepanjang dua ratus karakter kelas Tailwind tidak bertahan seragam; cukup satu halaman disunting sendiri dan sisanya menyimpang tanpa ada yang menyadari. Yang dikejar satu sumber, bukan jumlah barisnya. Lihat bagian 1l |
+| 2026-08-27 | Komponen bersama menampung variasi lewat **prop dan slot**, tidak memaksa bentuk yang memang berbeda | Penjaga izin berpindah menjadi ekspresi pada prop; tautan yang menyela kedua tombol diterima lewat slot di posisi aslinya; `panen/rekap` dikecualikan sebab wujudnya berbeda. Refactor yang mengubah tampilan bukan lagi refactor |
+| 2026-08-27 | Pembandingan render wajib dibuktikan **deterministik lebih dulu** | Percobaan pertama melaporkan 54 dari 55 halaman berbeda, seluruhnya akibat token CSRF; sesudah dinormalkan masih tersisa 14 akibat id DOM `uniqid()` pada komponen peta. Kontrol dua cuplikan atas kode identik yang membedakan derau dari regresi. Tanpa kontrol itu, regresi dapat terbaca sebagai derau |
 | 2026-08-27 | 13 komponen bawaan TailAdmin **dicabut** beserta kelasnya, 902 baris | Polanya diserap ke `x-sim.*`, bukan dibungkus, sehingga basisnya mati sejak hari pertama pemakainya lahir. Komponen mati tidak merusak apa pun, dan justru itu sebabnya ia menumpuk tanpa ada yang menegur. `ui-spec.md` ikut disunting, sebab dokumen yang menjanjikan komponen yang sudah tidak ada lebih menyesatkan daripada berkas matinya. Lihat bagian 1k |
 | 2026-08-27 | Menghitung pemakaian wajib mengecualikan **rujukan diri** | Penyisiran pertama melaporkan nol yatim, sebab setiap kelas View Component menyebut nama viewnya sendiri dan itu terhitung pemakaian. Hasilnya bukan angka yang salah melainkan daftar yang sunyi, dan daftar sunyi jauh lebih sulit disadari |
 | 2026-08-27 | Alamat aksi dibungkus `url()` **di dalam komponennya**, bukan di 37 pemanggilnya | `aksi-baris` dan `modal-form` yang membereskan, mengikuti pola `stat-card`. Pemanggil tidak disentuh sama sekali, dan yang menambah pemanggil baru tidak perlu mengingat aturannya. Lihat bagian 1j |
