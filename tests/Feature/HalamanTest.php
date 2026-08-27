@@ -2674,7 +2674,21 @@ it('menyediakan modal form pada setiap halaman daftar', function () {
             continue;
         }
 
-        if (! str_contains($isi, 'buka-modal')) {
+        /*
+            Dua bentuk yang sama-sama sah, dan itu bukan kelonggaran.
+
+            Sampai 2026-08-27 halaman menuliskan sendiri tombolnya beserta
+            `$dispatch('buka-modal', ...)`. Sejak blok itu diangkat menjadi
+            `x-sim.aksi-daftar`, halaman hanya menyebut NAMA modalnya lewat
+            prop `modal-tambah`, dan komponennyalah yang memuat dispatchnya.
+
+            Uji ini karena itu sempat memerah pada delapan halaman padahal
+            tombol Tambahnya terender persis seperti sebelumnya - terbukti
+            lewat pembandingan render yang tidak berbeda satu byte pun.
+
+            Yang dijaga tetap sama: halaman daftar tidak boleh baca-saja.
+        */
+        if (! str_contains($isi, 'buka-modal') && ! str_contains($isi, 'modal-tambah')) {
             $tanpaForm[] = $nama;
         }
     }
@@ -6243,6 +6257,59 @@ it('menuliskan seluruh teks antarmuka dalam bahasa Indonesia', function () {
     }
 
     expect(array_values(array_unique($galat)))->toBe([]);
+});
+
+it('tidak menuliskan ulang blok tombol yang sudah punya komponen', function () {
+    /*
+        Penjaga ide B audit 1g, ditambahkan 2026-08-27.
+
+        Blok tombol Impor-Tambah dan blok tombol filter sempat ditulis identik
+        di empat belas dan tujuh belas halaman, lengkap dengan kelas Tailwind
+        sepanjang dua ratus karakter. Duplikasi sepanjang itu tidak bertahan
+        seragam: cukup satu halaman disunting sendiri, dan sisanya menyimpang
+        tanpa ada yang menyadari.
+
+        Yang dijaga bukan jumlah barisnya melainkan SATU SUMBER: markup itu
+        hidup di komponennya, dan halaman menyebut nama modal atau alamat
+        saja.
+    */
+    $penanda = [
+        'Terapkan Filter' => 'components/sim/tombol-filter.blade.php',
+        "buka-modal', 'impor" => 'components/sim/aksi-daftar.blade.php',
+    ];
+
+    /*
+        Satu pengecualian yang disengaja. Blok filter `panen/rekap` berbeda
+        wujudnya: tombolnya tanpa `flex-1`, labelnya "Bersihkan Filter" bukan
+        "Bersihkan", dan alamat bersihnya membawa tahun terpilih. Memaksanya
+        memakai komponen berarti mengubah tampilan demi kerapian kode, dan itu
+        harga yang tidak sepadan untuk sebuah refactor.
+    */
+    $dikecualikan = ['pages/panen/rekap.blade.php'];
+
+    $galat = [];
+
+    foreach (BerkasBlade::semua() as $path) {
+        $nama = str_replace('\\', '/', BerkasBlade::namaPendek($path));
+
+        if (in_array($nama, $dikecualikan, true)) {
+            continue;
+        }
+
+        $isi = file_get_contents($path);
+
+        foreach ($penanda as $cari => $rumah) {
+            if (str_contains($nama, $rumah)) {
+                continue;
+            }
+
+            if (str_contains($isi, $cari)) {
+                $galat[] = "{$nama} menuliskan sendiri '{$cari}'";
+            }
+        }
+    }
+
+    expect($galat)->toBe([]);
 });
 
 it('tidak menyimpan komponen yang tidak dipakai siapa pun', function () {

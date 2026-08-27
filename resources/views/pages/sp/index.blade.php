@@ -1,4 +1,4 @@
-{{--
+﻿{{--
     Daftar satuan permukiman.
 
     SP adalah simpul tempat kedua cabang hierarki wilayah bertemu, dan seluruh
@@ -51,18 +51,7 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="flex items-end gap-2">
-                    <button type="submit"
-                        class="h-10 flex-1 rounded-lg bg-brand-500 px-4 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
-                        Terapkan Filter
-                    </button>
-                    @if ($adaFilter)
-                        <a href="{{ route('sp.index') }}"
-                            class="flex h-10 items-center rounded-lg border border-gray-300 px-3 text-theme-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
-                            Bersihkan
-                        </a>
-                    @endif
-                </div>
+                <x-sim.tombol-filter :ada-filter="$adaFilter" :url-bersih="route('sp.index')" />
             </div>
         </x-slot:filter>
 

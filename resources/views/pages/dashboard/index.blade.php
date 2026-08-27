@@ -90,18 +90,13 @@
                 </select>
             </div>
 
-            <div class="flex items-end gap-2">
-                <button type="submit"
-                    class="h-10 flex-1 rounded-lg bg-brand-500 px-4 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
-                    Terapkan Filter
-                </button>
-                @if (request()->hasAny(['sp', 'tahun_awal', 'tahun_akhir']))
-                    <a href="{{ route('beranda') }}"
-                        class="flex h-10 items-center rounded-lg border border-gray-300 px-3 text-theme-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
-                        Bersihkan
-                    </a>
-                @endif
-            </div>
+            {{--
+                Penyaring aktif di sini dibaca dari query string, bukan dari
+                `$adaFilter`: dashboard menyaring lewat tiga parameter dan
+                belum punya variabel turunannya.
+            --}}
+            <x-sim.tombol-filter :ada-filter="request()->hasAny(['sp', 'tahun_awal', 'tahun_akhir'])"
+                :url-bersih="route('beranda')" />
         </div>
     </form>
 
