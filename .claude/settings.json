@@ -1,0 +1,20 @@
+{
+    "permissions": {
+        "allow": [
+            "PowerShell(vendor/bin/pest.bat*)",
+            "PowerShell(vendor/bin/pint.bat*)",
+            "PowerShell(php artisan test*)",
+            "PowerShell(php artisan route:list*)",
+            "PowerShell(php artisan about*)",
+            "PowerShell(php artisan --version*)",
+            "PowerShell(Get-ChildItem*)",
+            "PowerShell(Get-Content*)",
+            "PowerShell(Get-Item*)",
+            "PowerShell(Test-Path*)",
+            "PowerShell(Select-String*)",
+            "PowerShell(Get-FileHash*)",
+            "PowerShell(Get-Location*)",
+            "PowerShell(Resolve-Path*)"
+        ]
+    }
+}
