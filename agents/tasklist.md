@@ -816,7 +816,7 @@ Lima laporan mengikuti berkas rujukan di `refs/` (dibaca lewat `pdftotext`, baca
 **Verifikasi:** **648 uji hijau** (naik dari 635); penjaga baru untuk isi tabel, kolom kunci, konsistensi subtotal-total, pemisahan benih/pupuk. `pint` tetap 31.
 
 **Ditunda:**
-- Rombongan B: anggota keluarga (istri + anak) dynamic form + field usia/agama pada form transmigran
+- ~~Rombongan B: anggota keluarga + usia/agama~~ ✅ selesai (B1+B2+B3), lihat di bawah
 - ~~Rombongan C: field SP Bab II Monografi~~ ✅ selesai (C1+C2+C3), lihat di bawah
 - Pintasan laporan dari halaman daftar (bawa filter aktif)
 - Pemilih periode untuk laporan lintas modul (Rekap Indikator Kawasan, Daftar Transmigran)
