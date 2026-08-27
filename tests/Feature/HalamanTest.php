@@ -6245,6 +6245,65 @@ it('menuliskan seluruh teks antarmuka dalam bahasa Indonesia', function () {
     expect(array_values(array_unique($galat)))->toBe([]);
 });
 
+it('tidak menyimpan komponen yang tidak dipakai siapa pun', function () {
+    /*
+        Penjaga temuan 7 audit 1g, butir tindak lanjut 14, ditambahkan
+        2026-08-27.
+
+        Tiga belas komponen bawaan TailAdmin bertahan tanpa satu pun pemakai
+        selama berbulan-bulan, sebab polanya diserap ke `x-sim.*` alih-alih
+        dibungkus. Komponen mati tidak merusak apa pun, dan justru itu
+        sebabnya ia menumpuk: tidak ada yang memerah, tidak ada yang menegur.
+
+        Yang dihitung PEMAKAIAN NYATA, yakni tag komponennya dipakai berkas
+        lain. Kelas View Component tidak dihitung, sebab setiap kelas menyebut
+        viewnya sendiri dan penyebutan itu bukan pemakaian - persis jebakan
+        yang membuat penyisiran pertama saya melaporkan nol yatim.
+
+        `galeri-komponen` DIHITUNG sebagai pemakai yang sah. Ia halaman
+        peninjauan yang memang merender komponen, dan dijadwalkan dihapus;
+        saat itu tiba, `error-state` dan `skeleton` wajib ditimbang ulang
+        sebab hanya galeri yang memakainya.
+    */
+    $berkas = [];
+    $isiPer = [];
+
+    foreach (BerkasBlade::semua() as $path) {
+        $rapi = str_replace('\\', '/', $path);
+        $isiPer[$rapi] = file_get_contents($path);
+
+        if (str_contains($rapi, '/components/')) {
+            $berkas[] = $rapi;
+        }
+    }
+
+    $yatim = [];
+
+    foreach ($berkas as $path) {
+        $rel = substr($path, strpos($path, '/components/') + strlen('/components/'));
+        $tag = '<x-'.str_replace('/', '.', substr($rel, 0, -strlen('.blade.php')));
+
+        $dipakai = false;
+
+        foreach ($isiPer as $lain => $isi) {
+            // Pemakaian oleh dirinya sendiri tidak dihitung.
+            if ($lain !== $path && str_contains($isi, $tag)) {
+                $dipakai = true;
+                break;
+            }
+        }
+
+        if (! $dipakai) {
+            $yatim[] = $rel;
+        }
+    }
+
+    // Penjaga terhadap ujinya sendiri: bila pengumpulan berkasnya gagal,
+    // daftar yatimnya kosong dan uji ini hijau tanpa memeriksa apa pun.
+    expect(count($berkas))->toBeGreaterThan(25);
+    expect($yatim)->toBe([]);
+});
+
 it('tidak mengirimkan aksi ke alamat berakar domain', function () {
     /*
         Penjaga temuan 8 audit 1g, butir tindak lanjut 13, ditambahkan

@@ -43,6 +43,8 @@ Halaman contoh yang tidak relevan: dashboard e-commerce, kalender, dan seluruh h
 
 Dependensi npm yang dicabut karena tak terpakai: `@fullcalendar/*` (5 paket), `jsvectormap`, `swiper`, `prismjs`, `@popperjs/core`, `@floating-ui/dom`.
 
+**Pembersihan lanjutan 2026-08-27.** Komponen TailAdmin yang selamat dari pembersihan pertama ternyata tidak pernah dipakai satu kali pun sesudahnya, sebab polanya diserap ke `x-sim.*` alih-alih dibungkus. **13 komponen beserta kelasnya, 902 baris**, dicabut: `ui/alert`, `ui/avatar`, `ui/badge`, `ui/button`, `ui/modal`, `common/component-card`, `common/dropdown-menu`, `common/page-breadcrumb`, `common/table-dropdown`, `common/theme-toggle`, `form/date-picker`, `form/input/radio`, dan `form/select/multiple-select`. Daftar §1.1 di atas karena itu mencatat apa yang **dibawa template**, bukan apa yang ada sekarang. Lihat `notes.md` bagian 1k.
+
 Yang dipertahankan: `alpinejs`, `apexcharts`, `flatpickr`, `axios`, `tailwindcss`, `vite`, `laravel-vite-plugin`, `concurrently`.
 
 ### 1.3 Yang harus dibangun sendiri
@@ -672,6 +674,8 @@ Kelompok **Pengaturan** tidak muncul bagi ketiga role di atas, karena tidak satu
 
 Seluruh komponen dibuat sebagai Blade component di `resources/views/components/`. Kolom "Basis" menunjukkan komponen TailAdmin yang dijadikan fondasi.
 
+> **Basisnya sudah TIDAK ADA lagi di repositori (dicabut 2026-08-27).** Kolom di bawah mencatat **asal-usul**, bukan berkas yang dapat dibuka. Ketiga belas komponen TailAdmin yang tersisa tanpa satu pun pemakai — termasuk `ui/modal`, `ui/badge`, `ui/alert`, dan `common/page-breadcrumb` — dihapus beserta kelasnya, sebab polanya sudah sepenuhnya diserap ke `x-sim.*`. Yang bertahan hanya `common/preloader` dan `common/common-grid-shape`, keduanya memang masih dipakai. Lihat `notes.md` bagian 1k.
+
 | Komponen | Basis TailAdmin |
 |---|---|
 | `<x-data-table>` | `tables/basic-tables-one` |
@@ -820,7 +824,7 @@ Provinsi → Kabupaten → Kecamatan → Desa     (cabang administratif)
 **Filter dashboard** memakai tingkatan Kawasan → Kecamatan → Desa → SP, seluruhnya opsional. Kosong berarti seluruh kawasan.
 
 ### 6.6 `<x-status-badge>`
-Dibangun di atas `<x-ui.badge>` bawaan TailAdmin. Nilai teks wajib diambil dari PHP Enum di `app/Enums/`, bukan ditulis langsung di view (§11.7).
+Polanya berasal dari `<x-ui.badge>` bawaan TailAdmin, tetapi **tidak memakainya**: markupnya berdiri sendiri, dan komponen basis itu sudah dicabut 2026-08-27. Nilai teks wajib diambil dari PHP Enum di `app/Enums/`, bukan ditulis langsung di view (§11.7).
 
 Setiap warna badge wajib punya varian mode gelap: latar memakai tingkat gelap dengan opasitas rendah, teks memakai tingkat 300 sampai 400 agar memenuhi kontras pada §3.2.2.
 
