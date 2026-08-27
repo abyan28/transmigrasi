@@ -507,7 +507,8 @@ Kolom "Kewenangan" menggantikan kolom "Role" pada tabel-tabel sebelumnya, karena
 
 | Halaman | Rute | Kewenangan |
 |---|---|---|
-| Ekspor data tabel | tombol pada tiap halaman daftar | `[fitur].lihat` |
+| Ikhtisar laporan | `GET /laporan` | semua yang login |
+| Halaman laporan | `GET /laporan/{slug}` | kewenangan `lihat` modul sumbernya |
 | Unduh template luring | langkah pertama modal impor | `[fitur].tambah` |
 | Manajemen pengguna | `GET /pengguna` | `pengguna.lihat` |
 | Detail pengguna | modal | `pengguna.lihat` |
@@ -754,7 +755,7 @@ Isian wajib ditandai **dua hal yang selalu berpasangan**. Salah satu tanpa yang 
 > **Audit 2026-08-17.** Ditemukan 45 cacat: 43 isian berkolom `Null = TIDAK` tanpa penanda apa pun, dan 2 bintang tanpa `required` pada halaman masuk. Cacatnya **mengelompok**, bukan tersebar: seluruh form master dan aset belum pernah dilewati penandaan, sedangkan form kependudukan sudah benar sejak awal. Kelengkapannya kini dijaga uji yang membaca kamus data.
 
 ### 6.1 `<x-data-table>`
-Tabel dengan pencarian, filter, urutan, paginasi, dan tombol export.
+Tabel dengan pencarian, filter, urutan, dan paginasi. **Tanpa tombol export** (dicabut 2026-08-28, `rules.md` §12 poin 7): laporan kini dokumen bernama di menu "Laporan" tersendiri, bukan potret tabel yang sedang tersaring.
 - Pencarian di kanan atas, filter dalam laci yang bisa dilipat
 - Paginasi default **25 baris**, pilihan 10/25/50/100
 - Kolom aksi selalu di kanan, lebar tetap
@@ -846,6 +847,18 @@ Input lintang dan bujur, tombol "Ambil lokasi saat ini" (Geolocation API), serta
 
 ### 6.8 Komponen pelengkap
 `<x-breadcrumb>`, `<x-page-header>`, `<x-confirm-dialog>` (konfirmasi hapus), `<x-empty-state>`, `<x-toast>` (notifikasi hasil aksi).
+
+### 6.9 `<x-sim.kerangka-laporan>` (2026-08-28)
+
+Kerangka satu halaman laporan di menu "Laporan". Setiap laporan wajib memuat: judul dokumen, **pernyataan cakupan sebagai teks** di kepala dokumen (wilayah + dasar periode, bukan kontrol filter — `rules.md` §12 poin 8), penampung tabel berlabel "Format kolom sedang disusun", dan tombol unduh jujur "segera hadir" (R-26; pembangkitan PDF/Excel Tahap 10).
+
+Halaman laporan **tidak punya penyaring sendiri**. Cakupan diwarisi dari halaman daftar pasangan lewat pintasan (belum dipasang) atau lewat pemilih periode untuk laporan lintas modul. Judul dokumen dibaca dari `MenuHelper::definisiMenu()` agar nama laporan hanya ditulis di satu tempat.
+
+### 6.10 `<x-sim.filter-rentang-tahun>` (2026-08-28)
+
+Sepasang `<select>` (dari–sampai) untuk menyaring **daftar transaksi bersumbu waktu**: `/panen`, `/penanaman`, `/audit-log`. Menggantikan penyaring tahun tunggal pada dua yang pertama.
+
+**DILARANG pada halaman rekap agregat.** Rekap panen yang dijumlah lintas tahun membuat bidang 2 ha yang ditanami tiga tahun terbaca 6 ha (`rules.md` §9 poin 8b). Penyaringannya dipusatkan di `DummyData::saringRentangTahun()`: batas kosong berarti terbuka, batas terbalik ditukar, baris tanpa tahun tersaring keluar begitu satu batas dipasang.
 
 ---
 

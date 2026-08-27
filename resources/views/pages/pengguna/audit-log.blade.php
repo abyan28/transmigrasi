@@ -58,6 +58,8 @@
                         @endforeach
                     </select>
                 </div>
+                <x-sim.filter-rentang-tahun :daftar-tahun="$daftarTahun"
+                    :dari="$filterTahunDari" :sampai="$filterTahunSampai" label="Tahun" />
                 <x-sim.tombol-filter :ada-filter="$adaFilter" :url-bersih="route('audit-log')" />
             </div>
         </x-slot:filter>

@@ -749,6 +749,62 @@ class DummyData
     }
 
     /**
+     * Menyaring baris menurut rentang tahun (dari sampai).
+     *
+     * Ditambahkan 2026-08-28 untuk komponen `x-sim.filter-rentang-tahun`.
+     * Dipakai bersama oleh rute `/panen`, `/penanaman`, dan `/audit-log` agar
+     * ketiganya menyaring dengan cara yang sama, termasuk saat batasnya
+     * kosong atau terbalik.
+     *
+     * HANYA untuk daftar transaksi, tempat tiap baris berdiri sendiri.
+     * Dilarang dipakai menyaring rekap agregat lintas tahun (rules.md 9
+     * poin 8b): luas tertanam akan terhitung ganda.
+     *
+     * - Batas kosong berarti terbuka pada sisi itu.
+     * - Batas terbalik (`dari` > `sampai`) ditukar, bukan menghasilkan daftar
+     *   kosong tanpa penjelasan.
+     * - Baris tanpa tahun yang terbaca ikut tersaring keluar begitu salah
+     *   satu batas dipasang.
+     *
+     * @param  array<int, array<string, mixed>>  $baris
+     * @param  int|string|null  $dari
+     * @param  int|string|null  $sampai
+     * @param  callable  $ambilTahun  Menerima satu baris, mengembalikan int|null
+     * @return array<int, array<string, mixed>>
+     */
+    public static function saringRentangTahun(array $baris, $dari, $sampai, callable $ambilTahun): array
+    {
+        $dari = ($dari === null || $dari === '') ? null : (int) $dari;
+        $sampai = ($sampai === null || $sampai === '') ? null : (int) $sampai;
+
+        if ($dari !== null && $sampai !== null && $dari > $sampai) {
+            [$dari, $sampai] = [$sampai, $dari];
+        }
+
+        if ($dari === null && $sampai === null) {
+            return array_values($baris);
+        }
+
+        return array_values(array_filter($baris, function ($satu) use ($dari, $sampai, $ambilTahun) {
+            $tahun = $ambilTahun($satu);
+
+            if ($tahun === null) {
+                return false;
+            }
+
+            if ($dari !== null && $tahun < $dari) {
+                return false;
+            }
+
+            if ($sampai !== null && $tahun > $sampai) {
+                return false;
+            }
+
+            return true;
+        }));
+    }
+
+    /**
      * Daftar lahan milik transmigran.
      *
      * Satu transmigran umumnya menerima satu lahan pekarangan dan satu lahan

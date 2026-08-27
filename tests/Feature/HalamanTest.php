@@ -2880,6 +2880,7 @@ it('menyusun sidebar sesuai kelompok yang disepakati', function () {
         'Transmigrasi',
         'Pertanian',
         'Pengaduan',
+        'Laporan',
         'Administrasi Sistem',
     ]);
 
@@ -4241,17 +4242,21 @@ it('menyaring ketikan bukan angka pada isian angka', function () {
 });
 /*
 |--------------------------------------------------------------------------
-| Ekspor menempel pada tabel
+| Laporan adalah dokumen bernama, bukan ekspor tampilan tabel
 |--------------------------------------------------------------------------
+|
+| Dibalik 2026-08-28 (rules.md 12 poin 6, membalik keputusan 2026-08-17).
+| Keputusan lama menempelkan tombol ekspor pada tiap tabel; ternyata itu
+| belasan kontrol mati (R-26) tanpa laporan di baliknya. Kini tiap laporan
+| satu halaman bernama di menu "Laporan", dan cakupannya ditulis sebagai
+| teks di kepala dokumen, bukan sebagai kontrol filter (poin 8).
 */
 
-it('menyediakan tombol ekspor pada setiap halaman berdaftar', function (string $jalur) {
-    // rules.md 12 poin 5 mewajibkan laporan dapat difilter sebelum diekspor.
-    // Halaman laporan terpusat tidak pernah memenuhinya: ia hanya memuat
-    // kartu unduhan tanpa satu pun kontrol filter, sehingga petugas selalu
-    // menerima seluruh isi tabel. Karena itu ekspor dipindah ke halaman yang
-    // filternya memang sudah bekerja, dan halaman terpusatnya dihapus.
-    $this->get($jalur)->assertOk()->assertSee('data-ekspor', false);
+it('tidak lagi menempelkan tombol ekspor pada halaman daftar mana pun', function (string $jalur) {
+    // Kebalikan langsung dari penjaga lama. Atribut `data-ekspor` adalah
+    // penanda satu-satunya komponen tombol-ekspor; nol kemunculan berarti
+    // kontrol matinya benar-benar tercabut, bukan sekadar disembunyikan.
+    $this->get($jalur)->assertOk()->assertDontSee('data-ekspor', false);
 })->with([
     '/transmigran',
     '/rumah',
@@ -4272,56 +4277,172 @@ it('menyediakan tombol ekspor pada setiap halaman berdaftar', function (string $
     '/',
 ]);
 
-it('membawa filter yang sedang aktif ke dalam alamat ekspor', function () {
-    // Inti perubahan ini. Tombol yang tidak meneruskan filter menghasilkan
-    // berkas berisi seluruh kawasan padahal layar sedang menampilkan satu SP
-    // saja, dan selisihnya baru disadari setelah berkas dibuka di lapangan.
-    $isi = $this->get('/transmigran?cari=NARA&status_tinggal=Menetap')
-        ->assertOk()
-        ->getContent();
+it('mencabut komponen tombol ekspor beserta rujukannya di kerangka bersama', function () {
+    // Komponennya dihapus. Rujukan yang tertinggal di berkas Blade mana pun
+    // akan memerahkan penjaga komponen yatim dan menyesatkan pembaca
+    // berikutnya, jadi diperiksa langsung ke seluruh berkas.
+    expect(file_exists(resource_path('views/components/sim/tombol-ekspor.blade.php')))
+        ->toBeFalse('Berkas komponen tombol-ekspor masih ada');
 
-    preg_match('/data-parameter="([^"]*)"/', $isi, $cocok);
-
-    expect($cocok)->not->toBeEmpty('Atribut data-parameter tidak dirender');
-
-    $terurai = [];
-    parse_str(html_entity_decode($cocok[1]), $terurai);
-
-    expect($terurai)->toMatchArray([
-        'cari' => 'NARA',
-        'status_tinggal' => 'Menetap',
-    ]);
+    foreach (BerkasBlade::semua() as $path) {
+        expect(file_get_contents($path))
+            ->not->toContain('x-sim.tombol-ekspor', "Masih ada tag <x-sim.tombol-ekspor> di {$path}");
+    }
 });
 
-it('tidak membawa parameter apa pun ketika tabel belum disaring', function () {
-    // Kebalikannya juga wajib benar: tanpa filter, alamat ekspor harus bersih.
-    // Parameter sisa dari kunjungan sebelumnya akan menyaring diam-diam.
-    $isi = $this->get('/transmigran')->assertOk()->getContent();
+it('menyediakan menu Laporan berisi halaman laporan bernama', function () {
+    // Halaman `/laporan` DIHIDUPKAN kembali, kali ini sebagai kumpulan
+    // dokumen bernama, bukan kartu unduhan tanpa filter.
+    $this->get('/laporan')->assertOk();
 
-    preg_match('/data-parameter="([^"]*)"/', $isi, $cocok);
+    $kelompok = collect(MenuHelper::definisiMenu())->firstWhere('title', 'Laporan');
 
-    expect($cocok[1])->toBe('');
+    expect($kelompok)->not->toBeNull('Kelompok menu "Laporan" tidak ada');
+
+    $tautan = collect($kelompok['items'])
+        ->flatMap(fn ($i) => $i['subItems'] ?? [$i])
+        ->pluck('path')
+        ->all();
+
+    expect($tautan)->toContain('/laporan');
+
+    // Tiap butir menu Laporan wajib menunjuk rute terdaftar yang membalas
+    // 200. Menu ke halaman tidak ada melanggar R-24 dan baru ketahuan saat
+    // petugas mengkliknya.
+    foreach ($tautan as $path) {
+        $this->get($path)->assertOk("Menu Laporan menunjuk {$path} yang tidak membalas 200");
+    }
 });
 
-it('menghapus halaman laporan terpusat beserta jejaknya', function () {
-    // Halaman itu menyalahi aturannya sendiri: menawarkan sembilan unduhan
-    // tanpa filter. Setelah ekspor menempel pada tabel, mempertahankannya
-    // berarti dua jalan menuju satu hasil, dan yang satu lebih buruk.
-    $this->get('/laporan')->assertNotFound();
+it('memberi tiap halaman laporan judul, pernyataan cakupan, dan unduh yang jujur', function (string $slug, string $judul) {
+    $isi = $this->get('/laporan/'.$slug)->assertOk()->getContent();
 
-    // Menu yang menunjuk halaman tidak ada melanggar R-24, dan baru ketahuan
-    // saat petugas mengkliknya.
-    $tujuan = [];
-    foreach (MenuHelper::definisiMenu() as $kelompok) {
-        foreach ($kelompok['items'] as $item) {
-            $tujuan[] = $item['path'] ?? null;
-            foreach ($item['subItems'] ?? [] as $sub) {
-                $tujuan[] = $sub['path'] ?? null;
-            }
-        }
+    // Judul dokumen dipastikan lewat <title>, sebab nama tiap laporan juga
+    // muncul di sidebar sehingga str_contains biasa selalu benar.
+    expect($isi)
+        ->toContain('<title>'.$judul.' |')
+        ->toContain('Cakupan laporan')      // cakupan sebagai teks (poin 8)
+        ->toContain('Dasar periode')
+        ->toContain('segera hadir')         // unduh jujur, bukan tombol berfungsi (R-26)
+        ->toContain('Data contoh.');        // R-17 / R-38
+
+    // Tidak ada tombol ekspor di halaman laporan.
+    expect($isi)->not->toContain('data-ekspor');
+})->with([
+    ['hasil-panen', 'Laporan Hasil Panen'],
+    ['monografi-sp', 'Laporan Monografi SP'],
+    ['alsintan', 'Laporan Alsintan'],
+    ['saprotan', 'Laporan Saprotan'],
+    ['indikator-kawasan', 'Rekap Indikator Kawasan'],
+    ['poktan', 'Laporan Daftar Poktan'],
+    ['transmigran', 'Laporan Daftar Transmigran'],
+]);
+
+it('memisahkan Laporan Alsintan dari Laporan Saprotan', function () {
+    // Pemilik proyek menegaskan dua laporan terpisah, bukan satu gabungan,
+    // mengikuti dua berkas rujukan terpisah di refs/.
+    $tautan = collect(MenuHelper::definisiMenu())
+        ->firstWhere('title', 'Laporan')['items'][0]['subItems'];
+    $paths = collect($tautan)->pluck('path')->all();
+
+    expect($paths)->toContain('/laporan/alsintan')->toContain('/laporan/saprotan');
+
+    // Judul dokumen keduanya berdiri sendiri.
+    expect($this->get('/laporan/alsintan')->getContent())->toContain('<title>Laporan Alsintan |');
+    expect($this->get('/laporan/saprotan')->getContent())->toContain('<title>Laporan Saprotan |');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Filter rentang tahun pada halaman daftar bersumbu waktu
+|--------------------------------------------------------------------------
+|
+| Ditambahkan 2026-08-28 (rules.md 12 poin 12). Penyaring tahun tunggal pada
+| /panen dan /penanaman diganti sepasang dari-sampai; /audit-log memperoleh
+| penyaring tahun untuk pertama kalinya. Rekap agregat DIKECUALIKAN: rekap
+| panen yang dijumlah lintas tahun melanggar 9 poin 8b.
+*/
+
+it('menyaring helper rentang tahun pada batas kosong, terbalik, dan tahun hilang', function () {
+    $baris = [['t' => 2023], ['t' => 2025], ['t' => 2026], ['t' => null]];
+    $ambil = fn ($b) => $b['t'];
+
+    // Dua batas kosong: kembalikan apa adanya, tanpa menyentuh baris tak bertahun.
+    expect(DummyData::saringRentangTahun($baris, null, null, $ambil))->toHaveCount(4);
+
+    // Satu batas dipasang: baris tanpa tahun ikut tersaring keluar.
+    expect(DummyData::saringRentangTahun($baris, 2025, null, $ambil))->toEqual([['t' => 2025], ['t' => 2026]]);
+    expect(DummyData::saringRentangTahun($baris, null, 2025, $ambil))->toEqual([['t' => 2023], ['t' => 2025]]);
+
+    // Batas terbalik ditukar, bukan menghasilkan daftar kosong tanpa penjelasan.
+    expect(DummyData::saringRentangTahun($baris, 2026, 2023, $ambil))
+        ->toEqual(DummyData::saringRentangTahun($baris, 2023, 2026, $ambil));
+
+    // String kosong dari query diperlakukan seperti batas tak dipasang.
+    expect(DummyData::saringRentangTahun($baris, '', '', $ambil))->toHaveCount(4);
+});
+
+it('menyaring daftar panen menurut rentang tahun', function () {
+    // Data contoh: 5 panen 2026, 1 panen 2025.
+    $penuh = $this->get('/panen')->assertOk()->viewData('baris');
+    $r2025 = $this->get('/panen?tahun_dari=2025&tahun_sampai=2025')->assertOk()->viewData('baris');
+    $r2026 = $this->get('/panen?tahun_dari=2026&tahun_sampai=2026')->assertOk()->viewData('baris');
+
+    $tahun = fn ($rows) => collect($rows)
+        ->map(fn ($p) => (int) substr((string) $p['periode_panen'], 0, 4))
+        ->unique()->sort()->values()->all();
+
+    expect($tahun($r2025))->toBe([2025]);
+    expect($tahun($r2026))->toBe([2026]);
+    expect(count($r2025))->toBeGreaterThan(0);
+    expect(count($r2026))->toBeGreaterThan(0);
+    // Tiap baris jatuh tepat ke satu rentang: tidak ada yang hilang atau ganda.
+    expect(count($r2025) + count($r2026))->toBe(count($penuh));
+
+    // Kedua kolom penyaring dirender.
+    $this->get('/panen')->assertSee('name="tahun_dari"', false)->assertSee('name="tahun_sampai"', false);
+});
+
+it('menyaring daftar penanaman menurut rentang tahun dan menukar batas terbalik', function () {
+    $penuh = $this->get('/penanaman')->assertOk()->viewData('baris');
+    $benar = $this->get('/penanaman?tahun_dari=2025&tahun_sampai=2026')->assertOk()->viewData('baris');
+    $terbalik = $this->get('/penanaman?tahun_dari=2026&tahun_sampai=2025')->assertOk()->viewData('baris');
+    $hanya2026 = $this->get('/penanaman?tahun_dari=2026&tahun_sampai=2026')->assertOk()->viewData('baris');
+
+    expect(count($benar))->toBe(count($penuh));
+    expect(count($terbalik))->toBe(count($benar));
+    expect(count($hanya2026))->toBeGreaterThan(0)->toBeLessThan(count($penuh));
+});
+
+it('memberi audit log filter rentang tahun untuk pertama kalinya', function () {
+    $this->get('/audit-log')->assertOk()
+        ->assertSee('name="tahun_dari"', false)
+        ->assertSee('name="tahun_sampai"', false);
+
+    // Data contoh audit log belum lintas tahun, jadi wiringnya dibuktikan
+    // lewat rentang di luar jangkauan: daftar wajib kosong, bukan utuh.
+    expect($this->get('/audit-log?tahun_dari=2099')->assertOk()->viewData('baris'))->toBe([]);
+    expect($this->get('/audit-log?tahun_sampai=2000')->assertOk()->viewData('baris'))->toBe([]);
+});
+
+it('tidak memasang filter rentang tahun pada halaman rekap agregat', function () {
+    // rules.md 9 poin 8b: rekap panen tak boleh dijumlah lintas tahun, sebab
+    // luas 2 ha yang ditanami tiga tahun akan terbaca 6 ha.
+    $rekapPanen = $this->get('/panen/rekap')->assertOk();
+    $rekapPanen->assertDontSee('name="tahun_dari"', false)
+        ->assertDontSee('name="tahun_sampai"', false);
+
+    // Rekap panen tetap memakai penyaring tahun TUNGGAL.
+    $rekapPanen->assertSee('name="tahun"', false);
+
+    // Komponen rentang tak muncul di halaman rekap mana pun.
+    foreach (['/panen/rekap', '/pengaduan/rekap', '/kependudukan/rekap'] as $jalur) {
+        $this->get($jalur)->assertOk()->assertDontSee('filter_tahun_dari', false);
     }
 
-    expect($tujuan)->not->toContain('/laporan');
+    // Sumbernya pun tidak memanggil komponennya.
+    expect(file_get_contents(resource_path('views/pages/panen/rekap.blade.php')))
+        ->not->toContain('filter-rentang-tahun');
 });
 
 it('mencabut kewenangan export dari seluruh sumber kebenaran', function () {

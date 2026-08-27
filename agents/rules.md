@@ -676,12 +676,16 @@ Empat kategori terakhir sengaja dibiarkan kosong sebab pokok masalahnya dapat ja
    - infrastruktur,
    - pengaduan dan status penanganan,
    - indikator kawasan.
-5. Laporan harus bisa difilter sebelum diekspor.
-6. **Tombol ekspor diletakkan menempel pada tabel datanya**, bukan dikumpulkan pada satu halaman laporan tersendiri (ditetapkan 2026-08-17). Halaman terpusat `/laporan` dihapus karena melanggar poin 5 di atas: ia menawarkan sembilan unduhan tanpa satu pun kontrol filter, sehingga petugas selalu menerima seluruh isi tabel. Halaman daftar sudah memiliki pencarian dan filter yang bekerja, jadi di sanalah ekspor seharusnya berada.
-7. **Filter yang sedang aktif wajib ikut terbawa ke berkas hasil ekspor.** Query string halaman disalin apa adanya ke alamat ekspor, sehingga isi unduhan sama persis dengan yang terlihat di layar. Tanpa aturan ini petugas yang sudah menyaring satu SP tetap menerima berkas berisi seluruh kawasan, dan selisihnya baru disadari setelah berkas dibuka di lapangan.
-8. **Rekap indikator kawasan diekspor dari dashboard**, sebab dashboard memang sumber seluruh indikatornya dan tidak memiliki tabel padanan di modul mana pun.
-9. **Ekspor bukan kewenangan tersendiri.** Ia mengikuti kewenangan `lihat` pada fitur yang bersangkutan; lihat 5.1 catatan 5. Pembatasan sebaran data ditangani cakupan data, bukan dengan menahan tombol ekspor.
-10. Template isian luring tidak diletakkan pada halaman laporan, melainkan menjadi **langkah pertama modal impor** di tiap modul yang menerimanya. Menyediakannya di dua tempat berarti dua berkas template yang dapat berbeda diam-diam.
+5. Laporan harus bisa difilter sebelum dilihat atau diekspor. Penyaringnya **diwarisi dari halaman daftar pasangan** lewat pintasan (poin 9), atau berupa **pemilih periode** untuk laporan lintas-modul (poin 10). Halaman laporan sendiri tidak menaruh ulang kontrol filter.
+6. **Laporan adalah dokumen bernama, bukan potret tabel yang sedang tersaring** (ditetapkan 2026-08-28, membalik keputusan 2026-08-17 yang menempelkan tombol ekspor pada tiap tabel). Alasan pembalikan: berkas rujukan di `refs/` memang dokumen berformat tetap — "Lap. Akhir Panen Jagung Polri MT. I 2025", "LAPORAN MONOGRAFI UPT KAPITAN MEO 2025", "laporan alsintan", "laporan saprotan" — masing-masing dengan kolom baku yang ditentukan dinas, bukan cerminan tabel modul mana pun. Menu **"Laporan"** menjadi rumah seluruh laporan; tiap laporan satu halaman berformat tetap.
+7. **Tombol ekspor dicabut dari kerangka bersama `halaman-daftar`.** Sebelumnya ia berada di dalam komponen itu sehingga muncul otomatis pada setiap halaman daftar — belasan tombol, sebagian besar tanpa laporan di baliknya. Itu kontrol mati (ANTISLOP R-26).
+8. **Cakupan laporan dinyatakan sebagai teks di kepala dokumen, bukan sebagai kontrol.** Rentang waktu dan wilayah yang dilaporkan ditulis apa adanya. Ini memenuhi §9: "angka rekap tanpa cakupannya tidak dapat disalin ke laporan mana pun".
+9. **Pintasan ke laporan boleh dipasang di halaman daftar pasangannya**, membawa filter aktif lewat query string, sehingga petugas yang sudah menyaring Transmigran ke SP Kapitan Meo mendarat pada laporan bercakupan sama. Pintasan hanya dipasang di halaman yang benar-benar punya laporan pasangan. (Belum diimplementasikan per 2026-08-28; menu Laporan lebih dulu.)
+10. **Laporan lintas-modul** (Rekap Indikator Kawasan, Laporan Daftar Transmigran beserta Rumah dan Lahan) **memakai pemilih periode sendiri**, sebab tidak ada satu daftar asal yang dapat mewariskan filter.
+11. **Rekap indikator kawasan menjadi salah satu halaman laporan**; sumber angkanya tetap dashboard.
+12. **Filter rentang tahun dipasang di halaman daftar bersumbu waktu** (`/panen`, `/penanaman`, `/audit-log`), **bukan di halaman laporan dan bukan di halaman rekap agregat**. Rekap panen dikecualikan tegas: filter rentang tahun di sana melanggar §9 poin 8b (luas tertanam akan terhitung ganda lintas tahun).
+13. **Ekspor bukan kewenangan tersendiri.** Ia mengikuti kewenangan `lihat` pada fitur yang bersangkutan; lihat 5.1 catatan 5. Pembatasan sebaran data ditangani cakupan data, bukan dengan menahan tombol ekspor.
+14. Template isian luring tidak diletakkan pada halaman laporan, melainkan menjadi **langkah pertama modal impor** di tiap modul yang menerimanya. Menyediakannya di dua tempat berarti dua berkas template yang dapat berbeda diam-diam.
 
 ### 13. Aturan UI/UX
 

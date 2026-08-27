@@ -27,11 +27,11 @@
 
     <x-sim.page-header judul="Rekap Kependudukan"
         keterangan="Perkembangan jumlah penduduk kawasan beserta perpindahannya."
-        :remah="\App\Helpers\RemahHelper::untuk('/kependudukan/rekap')">
-        <x-slot:aksi>
-            <x-sim.tombol-ekspor />
-        </x-slot:aksi>
-    </x-sim.page-header>
+        :remah="\App\Helpers\RemahHelper::untuk('/kependudukan/rekap')" />
+    {{--
+        Tombol ekspor dicabut 2026-08-28 (rules.md 12 poin 7). Laporan
+        kependudukan kini dokumen bernama di menu "Laporan".
+    --}}
 
     <nav aria-label="Dasar pengelompokan rekap"
         class="mb-6 flex flex-wrap gap-2 rounded-2xl border border-gray-200 bg-white p-2 dark:border-gray-800 dark:bg-white/[0.03]">

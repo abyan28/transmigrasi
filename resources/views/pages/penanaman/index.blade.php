@@ -66,17 +66,8 @@
                         @endforeach
                     </select>
                 </div>
-                <div>
-                    <label for="filter_tahun"
-                        class="mb-1.5 block text-theme-xs font-medium text-gray-700 dark:text-gray-400">Tahun Tanam</label>
-                    <select id="filter_tahun" name="tahun"
-                        class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
-                        <option value="">Semua tahun</option>
-                        @foreach ($daftarTahun as $t)
-                            <option value="{{ $t }}" @selected((string) $filterTahun === (string) $t)>{{ $t }}</option>
-                        @endforeach
-                    </select>
-                </div>
+                <x-sim.filter-rentang-tahun :daftar-tahun="$daftarTahun"
+                    :dari="$filterTahunDari" :sampai="$filterTahunSampai" label="Tahun Tanam" />
                 <div>
                     <label for="filter_komoditas"
                         class="mb-1.5 block text-theme-xs font-medium text-gray-700 dark:text-gray-400">Komoditas</label>

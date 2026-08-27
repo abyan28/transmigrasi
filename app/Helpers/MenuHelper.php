@@ -181,6 +181,69 @@ class MenuHelper
                 ],
             ],
             [
+                /*
+                 * Menu Laporan ditambahkan 2026-08-28 (rules.md 12 poin 6,
+                 * membalik keputusan 2026-08-17). Laporan adalah dokumen
+                 * bernama berformat tetap, bukan potret tabel yang sedang
+                 * tersaring, sehingga ia punya rumah sendiri alih-alih tombol
+                 * ekspor yang menempel di tiap halaman daftar.
+                 *
+                 * Isi kolom tiap laporan menyusul dari dinas; halaman yang ada
+                 * sekarang baru kerangkanya (judul, pernyataan cakupan, tempat
+                 * tabel). Alsintan dan Saprotan sengaja dua laporan terpisah,
+                 * mengikuti dua berkas rujukan terpisah di refs/.
+                 */
+                'title' => 'Laporan',
+                'items' => [
+                    [
+                        'icon' => 'laporan',
+                        'name' => 'Laporan',
+                        'subItems' => [
+                            [
+                                'name' => 'Semua Laporan',
+                                'path' => '/laporan',
+                                'permission' => null,
+                            ],
+                            [
+                                'name' => 'Laporan Hasil Panen',
+                                'path' => '/laporan/hasil-panen',
+                                'permission' => 'hasil_panen.lihat',
+                            ],
+                            [
+                                'name' => 'Laporan Monografi SP',
+                                'path' => '/laporan/monografi-sp',
+                                'permission' => 'sp.lihat',
+                            ],
+                            [
+                                'name' => 'Laporan Alsintan',
+                                'path' => '/laporan/alsintan',
+                                'permission' => 'alsintan.lihat',
+                            ],
+                            [
+                                'name' => 'Laporan Saprotan',
+                                'path' => '/laporan/saprotan',
+                                'permission' => 'saprotan.lihat',
+                            ],
+                            [
+                                'name' => 'Rekap Indikator Kawasan',
+                                'path' => '/laporan/indikator-kawasan',
+                                'permission' => 'dashboard.lihat',
+                            ],
+                            [
+                                'name' => 'Laporan Daftar Poktan',
+                                'path' => '/laporan/poktan',
+                                'permission' => 'poktan.lihat',
+                            ],
+                            [
+                                'name' => 'Laporan Daftar Transmigran',
+                                'path' => '/laporan/transmigran',
+                                'permission' => 'transmigran.lihat',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            [
                 'title' => 'Administrasi Sistem',
                 'items' => [
                     /*
@@ -392,8 +455,12 @@ class MenuHelper
             // Produksi Pertanian: tunas bertumbuh, mewakili komoditas dan panen.
             'tanaman' => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 21V10M12 10C12 6.5 9.5 4 6 4c0 3.5 2.5 6 6 6zM12 13c0-3 2-5.5 5.5-5.5 0 3-2.5 5.5-5.5 5.5zM6 21h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
 
-            // Laporan & Pengaturan: roda gigi, lambang baku untuk konfigurasi.
+            // Pengaturan Sistem: roda gigi, lambang baku untuk konfigurasi.
             'pengaturan' => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" stroke-width="1.8"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 008 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 8a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+
+            // Laporan: papan jepit berisi baris teks, lambang dokumen resmi
+            // yang dicetak dan diserahkan ke dinas. Ditambahkan 2026-08-28.
+            'laporan' => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 4.5H7.5A1.5 1.5 0 006 6v13.5A1.5 1.5 0 007.5 21h9a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H15M9 4.5a1.5 1.5 0 011.5-1.5h3A1.5 1.5 0 0115 4.5M9 4.5A1.5 1.5 0 0010.5 6h3A1.5 1.5 0 0015 4.5M9 12h6M9 15.5h6M9 8.5h1.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
         ];
 
         return $icons[$iconName] ?? '<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor"/></svg>';

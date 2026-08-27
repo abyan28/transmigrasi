@@ -26,14 +26,12 @@
         keterangan="Ringkasan kependudukan, lahan, produksi, dan pengaduan di enam satuan permukiman."
         :remah="\App\Helpers\RemahHelper::untuk('/')">
         {{--
-            Rekap indikator kawasan untuk laporan kementerian (rules.md 12
-            poin 4). Dahulu berada di halaman laporan terpusat; dipindah ke
-            sini karena dashboard memang sumber seluruh indikatornya, dan
-            ekspor kini menempel pada data yang ditampilkan.
+            Tombol "Ekspor Laporan Kawasan" dicabut dari sini 2026-08-28
+            (rules.md 12 poin 6 dan 11). Rekap indikator kawasan kini menjadi
+            halaman laporan bernama di menu "Laporan"; sumber angkanya tetap
+            dashboard ini. Pintasan dari dashboard ke laporan itu dipasang
+            pada tahap berikutnya bersama pintasan laporan lainnya.
         --}}
-        <x-slot:aksi>
-            <x-sim.tombol-ekspor label="Ekspor Laporan Kawasan" />
-        </x-slot:aksi>
     </x-sim.page-header>
 
     {{--

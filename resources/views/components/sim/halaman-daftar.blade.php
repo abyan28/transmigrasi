@@ -71,12 +71,11 @@
             </button>
 
             {{--
-                Ekspor diletakkan bersebelahan dengan Cari sebab keduanya
-                bekerja atas hasil penyaringan yang sama. Halaman yang memakai
-                kerangka ini otomatis memperolehnya, sehingga tidak ada halaman
-                daftar yang luput.
+                Tombol ekspor DICABUT dari sini 2026-08-28 (rules.md 12 poin
+                7). Sebelumnya ia muncul otomatis di setiap halaman daftar,
+                belasan tombol tanpa laporan di baliknya (kontrol mati R-26).
+                Laporan kini dokumen bernama di menu "Laporan" tersendiri.
             --}}
-            <x-sim.tombol-ekspor />
         </x-slot:aksiKanan>
 
         @isset($aksiKosong)

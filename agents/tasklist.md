@@ -779,9 +779,26 @@ Rombongan A butir 1–2 dari `notes.md` bagian 6, ditambah butir mandiri D1 dan 
 
 **Verifikasi:** **623 uji hijau** (naik 2); dua penjaga baru — varietas bersyarat dan rantai laporan lintas tahun — dibuktikan lewat mutasi; render nyata 5 halaman diperiksa; `pint` tetap 31.
 
-**Ditunda ke putaran berikutnya:** A3 (ekspor→halaman laporan, menu Laporan tersendiri), A4 (penyaring rentang tahun di halaman bersumbu waktu), A5 (halaman laporan dgn data contoh). Keputusan yang sudah diambil tercatat di `notes.md` bagian 1l bawah.
-
 **Belum dibahas:** Rombongan B (anggota keluarga + usia/agama), Rombongan C (field SP dari Monografi), butir lain bagian 6.
+
+### Revisi Putaran 2: menu Laporan + filter rentang tahun (2026-08-28) ✅
+
+Rombongan A butir 3–5 dari `notes.md` bagian 6. Kerangka saja; isi kolom tiap laporan (Tahap 2c) menunggu format dari dinas.
+
+**Yang dikerjakan:**
+- `rules.md` §12 ditulis ulang (poin 5–14): keputusan 2026-08-17 dibalik — laporan adalah dokumen bernama, bukan tombol ekspor yang menempel di tiap tabel
+- Komponen `tombol-ekspor` dihapus dari kerangka `halaman-daftar` + 9 halaman, lalu berkasnya dihapus (kontrol mati R-26)
+- Menu "Laporan" baru (ikon `laporan`) berisi 8 tautan: ikhtisar `/laporan` + 7 halaman laporan
+- 7 halaman laporan kerangka lewat `x-sim.kerangka-laporan`: judul, cakupan sebagai teks, penampung tabel, tombol unduh jujur "segera hadir". Laporan Alsintan dan Saprotan **terpisah**
+- `x-sim.filter-rentang-tahun` (sepasang select dari–sampai) menggantikan penyaring tahun tunggal di `/panen` dan `/penanaman`; `/audit-log` dapat filter tahun untuk pertama kalinya
+- Penyaringan dipusatkan di `DummyData::saringRentangTahun()` (batas kosong / terbalik / tahun hilang ditangani seragam)
+- **Rekap agregat dikecualikan tegas** dari filter rentang (`/panen/rekap` tetap tahun tunggal): §9 poin 8b, luas terhitung ganda lintas tahun
+
+**Verifikasi:** **635 uji hijau** (naik dari 623); penjaga baru untuk pencabutan tombol ekspor, menu Laporan, kerangka tiap laporan, dan penyaringan rentang; render nyata `/laporan` + 7 laporan + 3 halaman berfilter; `pint` tetap 31.
+
+**Ditunda:** Tahap 2c (isi kolom + data contoh tiap laporan, menunggu format dinas); pintasan laporan dari halaman daftar (bawa filter aktif); pemilih periode untuk laporan lintas modul.
+
+**Belum dibahas:** Rombongan B, Rombongan C, butir lain bagian 6.
 
 ## Tahap 3 — Autentikasi dan Hak Akses
 

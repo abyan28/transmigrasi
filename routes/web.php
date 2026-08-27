@@ -1103,7 +1103,12 @@ Route::get('/panen', function () {
     $cari = trim((string) request('cari', ''));
     $filterSp = request('sp');
     $filterKomoditas = request('komoditas');
-    $filterTahun = request('tahun');
+
+    // Penyaring tahun tunggal diganti rentang dari-sampai 2026-08-28
+    // (rules.md 12 poin 12). Halaman daftar transaksi ini aman untuk rentang
+    // sebab tiap baris berdiri sendiri; rekap panen TIDAK, lihat 9 poin 8b.
+    $filterTahunDari = request('tahun_dari');
+    $filterTahunSampai = request('tahun_sampai');
 
     // Tahun panen diturunkan dari tanggalnya, menggantikan penyaringan per
     // musim tanam yang dicabut 2026-08-22 bersama fiturnya.
@@ -1111,7 +1116,7 @@ Route::get('/panen', function () {
         ? (int) substr($p['periode_panen'], 0, 4)
         : null;
 
-    $baris = array_values(array_filter($semua, function ($p) use ($cari, $filterSp, $filterKomoditas, $filterTahun, $tahunPanen) {
+    $baris = array_values(array_filter($semua, function ($p) use ($cari, $filterSp, $filterKomoditas) {
         if ($cari !== '') {
             $cocok = str_contains(mb_strtolower($p['poktan']), mb_strtolower($cari))
                 || str_contains(mb_strtolower($p['komoditas']), mb_strtolower($cari));
@@ -1129,12 +1134,10 @@ Route::get('/panen', function () {
             return false;
         }
 
-        if ($filterTahun && (string) $tahunPanen($p) !== (string) $filterTahun) {
-            return false;
-        }
-
         return true;
     }));
+
+    $baris = DummyData::saringRentangTahun($baris, $filterTahunDari, $filterTahunSampai, $tahunPanen);
 
     /*
      * Volume benih dan luas lahan dibaca LEWAT PENANAMAN, sebab keduanya milik
@@ -1175,8 +1178,9 @@ Route::get('/panen', function () {
         'cari' => $cari,
         'filterSp' => $filterSp,
         'filterKomoditas' => $filterKomoditas,
-        'filterTahun' => $filterTahun,
-        'adaFilter' => $cari !== '' || $filterSp || $filterKomoditas || $filterTahun,
+        'filterTahunDari' => $filterTahunDari,
+        'filterTahunSampai' => $filterTahunSampai,
+        'adaFilter' => $cari !== '' || $filterSp || $filterKomoditas || $filterTahunDari || $filterTahunSampai,
 
         // Total dihitung setelah konversi ke ton, bukan menjumlahkan volume
         // mentah.
@@ -2046,9 +2050,14 @@ Route::get('/penanaman', function () {
 
     $cari = trim((string) request('cari', ''));
     $filterSp = request('sp');
-    $filterTahun = request('tahun');
     $filterKomoditas = request('komoditas');
     $filterStatus = request('status');
+
+    // Penyaring tahun tunggal diganti rentang dari-sampai 2026-08-28
+    // (rules.md 12 poin 12). Daftar transaksi ini aman untuk rentang; rekap
+    // agregat tidak (9 poin 8b).
+    $filterTahunDari = request('tahun_dari');
+    $filterTahunSampai = request('tahun_sampai');
 
     // Tahun tanam diturunkan dari tanggalnya, bukan disimpan terpisah.
     // Menyimpannya sebagai kolom sendiri membuat nilainya dapat berbeda dari
@@ -2078,15 +2087,12 @@ Route::get('/penanaman', function () {
         $kekuatanPoktan[$r['poktan_id']] ??= DummyData::rekapLahanPoktan($r['poktan_id']);
     }
 
-    $baris = array_values(array_filter($semua, function ($r) use ($cari, $filterSp, $filterTahun, $filterKomoditas, $filterStatus, $tahunTanam, $statusPanen) {
+    $baris = array_values(array_filter($semua, function ($r) use ($cari, $filterSp, $filterKomoditas, $filterStatus, $statusPanen) {
         if ($cari !== '' && ! str_contains(mb_strtolower($r['poktan']), mb_strtolower($cari))
             && ! str_contains(mb_strtolower($r['komoditas']), mb_strtolower($cari))) {
             return false;
         }
         if ($filterSp && (string) $r['satuan_permukiman_id'] !== (string) $filterSp) {
-            return false;
-        }
-        if ($filterTahun && (string) $tahunTanam($r) !== (string) $filterTahun) {
             return false;
         }
         if ($filterKomoditas && $r['komoditas'] !== $filterKomoditas) {
@@ -2099,6 +2105,8 @@ Route::get('/penanaman', function () {
         return true;
     }));
 
+    $baris = DummyData::saringRentangTahun($baris, $filterTahunDari, $filterTahunSampai, $tahunTanam);
+
     $daftarTahun = array_values(array_filter(array_unique(array_map($tahunTanam, $semua))));
     rsort($daftarTahun);
 
@@ -2108,10 +2116,11 @@ Route::get('/penanaman', function () {
         'baris' => $baris,
         'cari' => $cari,
         'filterSp' => $filterSp,
-        'filterTahun' => $filterTahun,
+        'filterTahunDari' => $filterTahunDari,
+        'filterTahunSampai' => $filterTahunSampai,
         'filterKomoditas' => $filterKomoditas,
         'filterStatus' => $filterStatus,
-        'adaFilter' => $cari !== '' || $filterSp || $filterTahun || $filterKomoditas || $filterStatus,
+        'adaFilter' => $cari !== '' || $filterSp || $filterTahunDari || $filterTahunSampai || $filterKomoditas || $filterStatus,
         'statusPanen' => $statusPanen,
         'kekuatanPoktan' => $kekuatanPoktan,
         'totalLuas' => array_sum(array_column($baris, 'realisasi_tanam')),
@@ -2418,6 +2427,15 @@ Route::get('/audit-log', function () {
     $filterAksi = request('aksi');
     $filterPengguna = request('pengguna');
 
+    // Penyaring rentang tahun ditambahkan 2026-08-28 (rules.md 12 poin 12);
+    // audit log memperolehnya untuk pertama kalinya. Aman: tiap baris satu
+    // peristiwa, menyaring rentang hanya menyempitkan daftar.
+    $filterTahunDari = request('tahun_dari');
+    $filterTahunSampai = request('tahun_sampai');
+    $tahunPeristiwa = fn ($a) => $a['waktu']
+        ? (int) substr($a['waktu'], 0, 4)
+        : null;
+
     $baris = array_values(array_filter($semua, function ($a) use ($cari, $filterAksi, $filterPengguna) {
         if ($cari !== '' && ! str_contains(mb_strtolower($a['ringkasan']), mb_strtolower($cari))
             && ! str_contains(mb_strtolower($a['nama_tabel']), mb_strtolower($cari))) {
@@ -2433,6 +2451,11 @@ Route::get('/audit-log', function () {
         return true;
     }));
 
+    $baris = DummyData::saringRentangTahun($baris, $filterTahunDari, $filterTahunSampai, $tahunPeristiwa);
+
+    $daftarTahun = array_values(array_filter(array_unique(array_map($tahunPeristiwa, $semua))));
+    rsort($daftarTahun);
+
     return view('pages.pengguna.audit-log', [
         'title' => 'Audit Log',
         'semua' => $semua,
@@ -2440,11 +2463,60 @@ Route::get('/audit-log', function () {
         'cari' => $cari,
         'filterAksi' => $filterAksi,
         'filterPengguna' => $filterPengguna,
-        'adaFilter' => $cari !== '' || $filterAksi || $filterPengguna,
+        'filterTahunDari' => $filterTahunDari,
+        'filterTahunSampai' => $filterTahunSampai,
+        'adaFilter' => $cari !== '' || $filterAksi || $filterPengguna || $filterTahunDari || $filterTahunSampai,
         'daftarAksi' => array_values(array_unique(array_column($semua, 'aksi'))),
         'daftarPengguna' => array_values(array_unique(array_column($semua, 'pengguna'))),
+        'daftarTahun' => $daftarTahun,
     ]);
 })->name('audit-log');
+
+/*
+|--------------------------------------------------------------------------
+| Laporan
+|--------------------------------------------------------------------------
+|
+| Ditambahkan 2026-08-28 (rules.md 12 poin 6, membalik keputusan 2026-08-17).
+| Laporan adalah dokumen bernama berformat tetap yang dicetak dan diserahkan
+| ke dinas, bukan potret tabel yang sedang tersaring. Menu "Laporan" jadi
+| rumahnya; tombol ekspor yang dahulu menempel di tiap halaman daftar dicabut.
+|
+| Isi kolom tiap laporan menyusul dari dinas (refs/ memuat empat berkas
+| rujukan yang belum seluruhnya terbaca). Halaman yang ada sekarang baru
+| kerangkanya: judul, pernyataan cakupan sebagai teks, dan tempat tabel.
+| Pengisiannya dikerjakan pada Tahap 2c setelah format kolomnya pasti.
+|
+| Cakupan ditulis sebagai teks di kepala dokumen, BUKAN sebagai kontrol
+| filter (rules.md 12 poin 8). Halaman laporan tidak punya penyaring sendiri;
+| penyaringan diwarisi dari halaman daftar pasangan lewat pintasan (belum
+| dipasang) atau lewat pemilih periode untuk laporan lintas-modul.
+*/
+$daftarLaporan = [
+    'hasil-panen' => 'Laporan Hasil Panen',
+    'monografi-sp' => 'Laporan Monografi SP',
+    'alsintan' => 'Laporan Alsintan',
+    'saprotan' => 'Laporan Saprotan',
+    'indikator-kawasan' => 'Rekap Indikator Kawasan',
+    'poktan' => 'Laporan Daftar Poktan',
+    'transmigran' => 'Laporan Daftar Transmigran',
+];
+
+Route::get('/laporan', function () use ($daftarLaporan) {
+    return view('pages.laporan.index', [
+        'title' => 'Laporan',
+        'daftarLaporan' => $daftarLaporan,
+    ]);
+})->name('laporan.index');
+
+foreach ($daftarLaporan as $slug => $judul) {
+    Route::get('/laporan/'.$slug, function () use ($slug, $judul) {
+        return view('pages.laporan.'.$slug, [
+            'title' => $judul,
+            'slug' => $slug,
+        ]);
+    })->name('laporan.'.$slug);
+}
 
 /*
 |--------------------------------------------------------------------------

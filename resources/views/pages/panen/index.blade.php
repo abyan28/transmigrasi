@@ -94,19 +94,8 @@
                         </select>
                     </div>
 
-                    <div>
-                        <label for="filter_tahun"
-                            class="mb-1.5 block text-theme-xs font-medium text-gray-700 dark:text-gray-400">
-                            Tahun Panen
-                        </label>
-                        <select id="filter_tahun" name="tahun"
-                            class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
-                            <option value="">Semua tahun</option>
-                            @foreach ($daftarTahun as $t)
-                                <option value="{{ $t }}" @selected((string) $filterTahun === (string) $t)>{{ $t }}</option>
-                            @endforeach
-                        </select>
-                    </div>
+                    <x-sim.filter-rentang-tahun :daftar-tahun="$daftarTahun"
+                        :dari="$filterTahunDari" :sampai="$filterTahunSampai" label="Tahun Panen" />
 
                     {{--
                         PENYARING STATUS DICABUT 2026-08-24.
@@ -130,8 +119,6 @@
                     class="h-10 shrink-0 rounded-lg border border-gray-300 px-3 text-theme-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
                     Cari
                 </button>
-
-                    <x-sim.tombol-ekspor />
             </x-slot:aksiKanan>
 
             <x-slot:aksiKosong>
