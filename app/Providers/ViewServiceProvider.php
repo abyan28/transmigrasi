@@ -38,6 +38,7 @@ class ViewServiceProvider extends ServiceProvider
      */
     private const RUJUKAN_FORM = [
         'pages.alsintan.form' => ['daftarPoktan', 'opsiKondisi', 'opsiSumberDana'],
+        'pages.saprotan.form' => ['daftarPoktan', 'daftarSatuan', 'daftarKomoditas', 'opsiSumberDana'],
     ];
 
     public function boot(): void
@@ -72,6 +73,8 @@ class ViewServiceProvider extends ServiceProvider
     {
         return match ($kunci) {
             'daftarPoktan' => DummyData::poktan(),
+            'daftarSatuan' => DummyData::satuan(),
+            'daftarKomoditas' => DummyData::komoditas(),
             'opsiKondisi' => DummyData::opsiReferensi(JenisReferensi::Kondisi),
             'opsiSumberDana' => DummyData::opsiReferensi(JenisReferensi::SumberDana),
             default => throw new \InvalidArgumentException("Kunci rujukan tidak dikenal: {$kunci}"),

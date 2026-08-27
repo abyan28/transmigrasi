@@ -9,39 +9,11 @@
 @extends('layouts.app')
 
 @section('content')
-    @php
-        use App\Support\DummyData;
-
-        $semua = DummyData::saprotan();
-
-        $cari = trim((string) request('cari', ''));
-        $filterSp = request('sp');
-        $filterJenis = request('jenis');
-
-        $baris = array_values(array_filter($semua, function ($s) use ($cari, $filterSp, $filterJenis) {
-            if ($cari !== '' && ! str_contains(mb_strtolower($s['nama']), mb_strtolower($cari))
-                && ! str_contains(mb_strtolower($s['penerima']), mb_strtolower($cari))) {
-                return false;
-            }
-            if ($filterSp && (string) $s['satuan_permukiman_id'] !== (string) $filterSp) {
-                return false;
-            }
-            if ($filterJenis && $s['jenis'] !== $filterJenis) {
-                return false;
-            }
-
-            return true;
-        }));
-
-        $adaFilter = $cari !== '' || $filterSp || $filterJenis;
-        $jenisUnik = array_values(array_unique(array_column($semua, 'jenis')));
-
-        // Banyaknya poktan yang pernah menerima, menggantikan pasangan kartu
-        // "Kepada Poktan" dan "Kepada Individu". Penerima kini selalu poktan,
-        // sehingga kartu lama hanya menampilkan seluruh data dan angka nol.
-        $poktanPenerima = count(array_unique(array_column($semua, 'poktan_id')));
-    @endphp
-
+    {{--
+        Seluruh isian halaman ini datang dari rute `saprotan.index`, termasuk
+        penyaringan, angka ringkasan, dan peta `$sisaBenih` yang dahulu
+        dihitung ulang di dalam perulangan baris. Lihat routes/web.php.
+    --}}
     <x-sim.halaman-daftar judul="Saprotan"
         keterangan="Penyaluran benih, pupuk, pestisida, dan mulsa kepada petani."
         :remah="\App\Helpers\RemahHelper::untuk('/saprotan')"
@@ -88,7 +60,7 @@
                     <select id="filter_sp" name="sp"
                         class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
                         <option value="">Semua SP</option>
-                        @foreach (DummyData::satuanPermukiman() as $sp)
+                        @foreach ($daftarSp as $sp)
                             <option value="{{ $sp['id_satuan_permukiman'] }}"
                                 @selected($filterSp == $sp['id_satuan_permukiman'])>{{ $sp['nama'] }}</option>
                         @endforeach
@@ -152,7 +124,7 @@
                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
                     {{ number_format($s['jumlah'], 0, ',', '.') }} {{ $s['satuan'] }}
                     @if ($s['jenis'] === \App\Enums\JenisSaprotan::Benih->value)
-                        @php($sisa = \App\Support\DummyData::sisaBenih($s['id_saprotan']))
+                        @php($sisa = $sisaBenih[$s['id_saprotan']])
                         <p class="mt-0.5 text-theme-xs {{ $sisa > 0 ? 'text-gray-500 dark:text-gray-400' : 'text-error-500' }}">
                             {{ $sisa > 0 ? 'sisa ' . rtrim(rtrim(number_format($sisa, 2, ',', '.'), '0'), ',') . ' ' . $s['satuan'] : 'habis' }}
                         </p>

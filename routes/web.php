@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\JenisReferensi;
+use App\Enums\JenisSaprotan;
 use App\Http\Controllers\DokumenController;
 use App\Support\DummyData;
 use Illuminate\Support\Facades\Route;
@@ -840,15 +841,81 @@ Route::put('/alsintan/{id}', function (int $id) {
 })->where('id', '[0-9]+')->name('alsintan.perbarui');
 
 Route::get('/saprotan', function () {
-    return view('pages.saprotan.index', ['title' => 'Saprotan']);
+    $semua = DummyData::saprotan();
+
+    $cari = trim((string) request('cari', ''));
+    $filterSp = request('sp');
+    $filterJenis = request('jenis');
+
+    $baris = array_values(array_filter($semua, function ($s) use ($cari, $filterSp, $filterJenis) {
+        if ($cari !== '' && ! str_contains(mb_strtolower($s['nama']), mb_strtolower($cari))
+            && ! str_contains(mb_strtolower($s['penerima']), mb_strtolower($cari))) {
+            return false;
+        }
+        if ($filterSp && (string) $s['satuan_permukiman_id'] !== (string) $filterSp) {
+            return false;
+        }
+        if ($filterJenis && $s['jenis'] !== $filterJenis) {
+            return false;
+        }
+
+        return true;
+    }));
+
+    /*
+     * Sisa benih dihitung sekali di sini, bukan sekali per baris di dalam
+     * perulangan view. Bentuk lamanya adalah N+1 yang sesungguhnya: satu
+     * penelusuran seluruh catatan penanaman untuk SETIAP baris benih yang
+     * tampil. Selama sumbernya array hal itu hanya lambat; begitu Tahap 7
+     * menggantinya dengan kueri, ia menjadi satu kueri per baris.
+     *
+     * Hanya benih yang dihitung, sebab hanya benih yang dikurangi pemakaian
+     * penanaman. Menghitungnya untuk pupuk berarti menjanjikan angka yang
+     * tidak pernah dimaksudkan.
+     */
+    $sisaBenih = [];
+    foreach ($baris as $s) {
+        if ($s['jenis'] === JenisSaprotan::Benih->value) {
+            $sisaBenih[$s['id_saprotan']] = DummyData::sisaBenih($s['id_saprotan']);
+        }
+    }
+
+    return view('pages.saprotan.index', [
+        'title' => 'Saprotan',
+        'semua' => $semua,
+        'baris' => $baris,
+        'cari' => $cari,
+        'filterSp' => $filterSp,
+        'filterJenis' => $filterJenis,
+        'adaFilter' => $cari !== '' || $filterSp || $filterJenis,
+        'jenisUnik' => array_values(array_unique(array_column($semua, 'jenis'))),
+
+        // Banyaknya poktan yang pernah menerima, menggantikan pasangan kartu
+        // "Kepada Poktan" dan "Kepada Individu". Penerima kini selalu poktan,
+        // sehingga kartu lama hanya menampilkan seluruh data dan angka nol.
+        'poktanPenerima' => count(array_unique(array_column($semua, 'poktan_id'))),
+        'sisaBenih' => $sisaBenih,
+        'daftarSp' => DummyData::satuanPermukiman(),
+    ]);
 })->name('saprotan.index');
 
 Route::get('/saprotan/{id}', function (int $id) {
-    $data = collect(\App\Support\DummyData::saprotan())->firstWhere('id_saprotan', $id);
+    $data = collect(DummyData::saprotan())->firstWhere('id_saprotan', $id);
 
     abort_if($data === null, 404);
 
-    return view('pages.saprotan.detail', ['title' => $data['nama'], 'data' => $data]);
+    // Hanya benih yang punya sisa, sebab hanya benih yang dikurangi pemakaian
+    // penanaman. Bernilai null untuk jenis lain, dan viewnya memang tidak
+    // menampilkan blok itu.
+    $sisaBenih = $data['jenis'] === JenisSaprotan::Benih->value
+        ? DummyData::sisaBenih($data['id_saprotan'])
+        : null;
+
+    return view('pages.saprotan.detail', [
+        'title' => $data['nama'],
+        'data' => $data,
+        'sisaBenih' => $sisaBenih,
+    ]);
 })->where('id', '[0-9]+')->name('saprotan.detail');
 
 Route::post('/saprotan', function () {

@@ -26,9 +26,9 @@
     $kelasLabel = 'mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400';
     $kelasBagian = 'text-theme-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400';
 
-    $daftarPoktan = DummyData::poktan();
-    $daftarSatuan = DummyData::satuan();
-    $daftarKomoditas = DummyData::komoditas();
+    // `$daftarPoktan`, `$daftarSatuan`, `$daftarKomoditas`, dan
+    // `$opsiSumberDana` disuplai ViewServiceProvider, sebab berkas ini
+    // disisipkan dari halaman daftar maupun halaman rincian.
 
     // Peta poktan ke satuan permukimannya, dibaca Alpine untuk mengisi kolom
     // SP begitu poktan dipilih. Disusun di sini, bukan di dalam markup, agar
@@ -141,7 +141,7 @@
                 <label for="{{ $awalan }}_sumber" class="{{ $kelasLabel }}">Sumber Dana</label>
                 <select id="{{ $awalan }}_sumber" name="sumber" class="{{ $kelasKontrol }}">
                     <option value="">Pilih sumber</option>
-                    @foreach (\App\Support\DummyData::opsiReferensi(\App\Enums\JenisReferensi::SumberDana) as $nilaiRef => $labelRef)
+                    @foreach ($opsiSumberDana as $nilaiRef => $labelRef)
                         <option value="{{ $nilaiRef }}" @selected(old('sumber', $data['sumber'] ?? '') === $nilaiRef)>
                             {{ $nilaiRef }}
                         </option>

@@ -76,7 +76,7 @@
                         ketahuan.
                     --}}
                     @if ($data['jenis'] === \App\Enums\JenisSaprotan::Benih->value)
-                        @php($sisaBenih = \App\Support\DummyData::sisaBenih($data['id_saprotan']))
+                        {{-- `$sisaBenih` datang dari rute `saprotan.detail`. --}}
                         @php($terpakai = $data['jumlah'] - $sisaBenih)
 
                         <div class="flex justify-between gap-3">
