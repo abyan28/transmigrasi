@@ -731,7 +731,21 @@ Penanda `:id` pada pola aksi dibiarkan utuh dan itu diperiksa, bukan diasumsikan
 
 **Verifikasi:** **619 uji hijau**; terbukti pula `url()` mengikuti akar yang dipaksakan saat `ASSET_URL` terisi; `pint` tidak menambah utang.
 
-**Sisa audit 1g yang belum dikerjakan:** temuan 7 (15 komponen yatim, butir tindak lanjut 14) dan ide B (angkat `x-sim.aksi-daftar` serta `x-sim.tombol-filter`).
+### Temuan 7 audit: cabut komponen bawaan yang yatim (2026-08-27) ✅
+
+Butir tindak lanjut 14. **26 berkas, 902 baris** dicabut: 13 komponen Blade beserta 13 kelas View Component-nya. Direktori `ui/` dan `form/` ikut habis.
+
+**Jumlahnya 13, bukan 15** seperti tertulis audit. Penyisiran pertama bahkan sempat melaporkan **nol** yatim, dan itu keliru: setiap kelas View Component menyebut nama viewnya sendiri sehingga terhitung sebagai pemakai. Hasilnya bukan angka yang salah melainkan daftar yang sunyi.
+
+**Mengapa bertahan lama:** polanya diserap ke `x-sim.*`, bukan dibungkus. `status-badge` mengambil pola `ui/badge` lalu menulis markupnya sendiri, tidak pernah memanggilnya. Basisnya karena itu mati sejak hari pertama pemakainya lahir, dan komponen mati tidak memerahkan apa pun.
+
+**`ui-spec.md` ikut disunting di tiga tempat.** Satu klaimnya ternyata sudah keliru bahkan sebelum pencabutan ini: §6.6 menulis `status-badge` dibangun *di atas* `x-ui.badge`, padahal markupnya berdiri sendiri.
+
+**Penjaganya** menolak komponen tanpa pemakai, tidak menghitung kelas View Component sebagai pemakai, dan mencatat bahwa `error-state` serta `skeleton` wajib ditimbang ulang saat `galeri-komponen` dihapus (butir tindak lanjut 15 baru). Dibuktikan lewat mutasi.
+
+**Verifikasi:** **620 uji hijau**; utang `pint` justru **berkurang** dari 32 menjadi 31, sebab `ui/Modal.php` termasuk yang selama ini gagal.
+
+**Sisa audit 1g:** tinggal ide B (angkat `x-sim.aksi-daftar` serta `x-sim.tombol-filter`).
 
 ## Tahap 3 — Autentikasi dan Hak Akses
 

@@ -899,6 +899,48 @@ Karena itu penjaganya menyisir seluruh rute GET yang membalas 200 dan menolak du
 
 ---
 
+## 1k. Komponen Bawaan yang Tidak Pernah Dipakai (2026-08-27)
+
+Temuan 7 audit 1g, sekaligus butir tindak lanjut 14.
+
+**26 berkas, 902 baris** dicabut: 13 komponen Blade beserta 13 kelas View Component-nya. Direktori `ui/` dan `form/` ikut habis. Yang bertahan dari keluarga bawaan hanya `common/preloader` dan `common/common-grid-shape`, keduanya memang masih dipakai.
+
+### 1k.1 Penyisiran pertama saya melaporkan nol yatim, dan itu keliru
+
+Skrip pertama menghitung pemakaian dengan menyisir seluruh Blade **dan** seluruh PHP. Hasilnya: nol komponen yatim — bertentangan dengan audit.
+
+Sebabnya halus: **setiap kelas View Component menyebut nama viewnya sendiri** pada `render()`. `App\View\Components\ui\Modal` memuat string `components.ui.modal`, dan penyebutan itu terhitung sebagai pemakaian. Ketiga belas yatimnya karena itu lenyap dari daftar tanpa jejak — bukan dilaporkan salah, melainkan tidak dilaporkan sama sekali.
+
+> **Aturan:** menghitung pemakaian wajib mengecualikan **rujukan diri**. Berkas yang menyebut namanya sendiri, atau kelas yang menyebut viewnya sendiri, bukan pemakai. Kekeliruan ini tidak menghasilkan angka yang salah melainkan daftar yang sunyi, dan daftar sunyi jauh lebih sulit disadari.
+
+Jumlah sebenarnya **13**, bukan 15 seperti tertulis pada audit.
+
+### 1k.2 Mengapa mereka bertahan begitu lama
+
+Polanya **diserap, bukan dibungkus**. `x-sim.status-badge` mengambil pola dari `ui/badge` lalu menulis markupnya sendiri; ia tidak pernah memanggil `<x-ui.badge>`. Begitu pula `modal-form` terhadap `ui/modal`.
+
+Akibatnya komponen basisnya menjadi mati sejak hari pertama pemakainya lahir — tetapi tidak ada yang memerah, sebab komponen mati memang tidak merusak apa pun. Itulah yang membuatnya menumpuk.
+
+### 1k.3 Dokumennya ikut disunting, dan itu wajib
+
+`ui-spec.md` disunting di tiga tempat. Dokumen yang menjanjikan komponen yang sudah tidak ada lebih menyesatkan daripada berkas mati itu sendiri: pembacanya akan mencari, tidak menemukan, lalu ragu apakah dokumennya atau repositorinya yang benar.
+
+Satu klaim ternyata **sudah keliru bahkan sebelum pencabutan ini**: §6.6 menulis `status-badge` "dibangun di atas `<x-ui.badge>`", padahal markupnya berdiri sendiri. Tabel "Basis TailAdmin" diberi peringatan bahwa ia mencatat asal-usul, bukan berkas yang dapat dibuka.
+
+### 1k.4 Penjaganya
+
+Menolak komponen tanpa satu pun pemakai. Kelas View Component **sengaja tidak dihitung** sebagai pemakai, persis jebakan pada 1k.1.
+
+`galeri-komponen` dihitung sebagai pemakai yang sah — ia halaman peninjauan yang memang merender komponen. Dicatat pada ujinya: saat halaman itu dihapus kelak, `error-state` dan `skeleton` wajib ditimbang ulang sebab **hanya galeri yang memakainya**.
+
+Ditambah penjaga terhadap dirinya sendiri berupa ambang jumlah komponen terperiksa; tanpa itu, pengumpulan berkas yang gagal akan menghasilkan daftar kosong dan uji hijau palsu. Dibuktikan lewat mutasi.
+
+### 1k.5 Verifikasi
+
+620 uji hijau. **Utang `pint` justru berkurang**, 32 menjadi 31 berkas, sebab `app/View/Components/ui/Modal.php` termasuk yang selama ini gagal dan kini ikut terhapus.
+
+---
+
 ## 2. Catatan Dokumen Proposal
 
 Lembar pengesahan pada `docs/Revisi_Proposal_Budi_TEP ITS 2026_Kobalima_Timur_Upload_10_6_2026_a.pdf` masih memuat judul dan pengusul dari proposal lain:
@@ -1049,6 +1091,8 @@ Seharusnya: "Digitalisasi Monitoring Pertanian dan Tata Kelola Data Kawasan Tran
 | 2026-08-25 | Alamat dasar untuk modul JavaScript **wajib dioper dari Blade** | Berkas JavaScript tidak mengenal `url()`, sehingga alamat yang ditulis tetap di dalamnya selalu salah begitu situs berpindah ke sub-path. `chart-config.js` merusak penelusuran 17 grafik dashboard dengan cara ini, delapan hari setelah larangannya tertulis pada 1b.3 |
 | 2026-08-25 | Setiap larangan pada `notes.md` **wajib punya uji penjaga** | Larangan path absolut sudah tertulis sejak 2026-08-17 dan repo tetap kena masalah yang sama untuk ketiga kalinya. Aturan yang hanya tertulis terbukti tidak menahan apa pun; yang menahan adalah uji yang memerah |
 | 2026-08-25 | Laporan penelusur diperlakukan sebagai **kandidat**, bukan temuan | Dua dari sebelas laporan terbukti keliru saat diverifikasi terhadap berkas, yaitu form tanpa `@csrf` dan dua komponen yang disebut mati. Mengerjakannya berarti menghabiskan waktu atas masalah yang tidak ada |
+| 2026-08-27 | 13 komponen bawaan TailAdmin **dicabut** beserta kelasnya, 902 baris | Polanya diserap ke `x-sim.*`, bukan dibungkus, sehingga basisnya mati sejak hari pertama pemakainya lahir. Komponen mati tidak merusak apa pun, dan justru itu sebabnya ia menumpuk tanpa ada yang menegur. `ui-spec.md` ikut disunting, sebab dokumen yang menjanjikan komponen yang sudah tidak ada lebih menyesatkan daripada berkas matinya. Lihat bagian 1k |
+| 2026-08-27 | Menghitung pemakaian wajib mengecualikan **rujukan diri** | Penyisiran pertama melaporkan nol yatim, sebab setiap kelas View Component menyebut nama viewnya sendiri dan itu terhitung pemakaian. Hasilnya bukan angka yang salah melainkan daftar yang sunyi, dan daftar sunyi jauh lebih sulit disadari |
 | 2026-08-27 | Alamat aksi dibungkus `url()` **di dalam komponennya**, bukan di 37 pemanggilnya | `aksi-baris` dan `modal-form` yang membereskan, mengikuti pola `stat-card`. Pemanggil tidak disentuh sama sekali, dan yang menambah pemanggil baru tidak perlu mengingat aturannya. Lihat bagian 1j |
 | 2026-08-27 | Periksa **keluaran** bila benar dan salah berbeda hasilnya; periksa **sumber** hanya bila hasilnya sama | Temuan 8 wajib diperiksa dari keluaran, sebab sejak komponennya membereskan, alamat mentah di pemanggil tidak lagi keliru dan uji berbasis sumber akan melarang kode yang benar. Kebalikannya berlaku pada komoditas utama 1h.5. Pertanyaan itu wajib dijawab sebelum ujinya ditulis |
 | 2026-08-27 | Angka pada temuan audit adalah **batas bawah**, bukan jumlah | Temuan 8 menyebut 37, penjaganya menemukan 5 lagi yang memanggil `buka-konfirmasi` langsung. Temuan 6 menaksir 2 komponen, nyatanya 26 tabel tidak lewat komponen mana pun. Yang memastikan kelengkapan adalah penjaga yang menyisir keluaran |
@@ -1080,7 +1124,8 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
 11. **Ulangi audit `rules.md` 19a secara berkala**, tidak cukup sekali. Audit 2026-08-19 menemukan dua pelanggaran yang terjadi **setelah** aturannya berlaku, salah satunya melanggar prinsip yang tertulis 400 baris di atasnya pada dokumen yang sama. Lihat bagian 1c.5.
 12. ~~**Putuskan ide C sebelum Tahap 4 dibuka**, yaitu memindahkan pengambilan data dari view ke rute selagi isinya masih array.~~ **SELESAI 2026-08-27.** Jumlah sebenarnya **212 pemanggilan di 65 berkas**, bukan 272 di 67 seperti tertulis semula; angka lama datang dari penghitungan yang ikut menyertakan rute dan berkas pendukung. Seluruhnya dipindahkan dalam sembilan batch dan kini bernilai **nol**, dijaga uji. Penyisirannya menemukan **tujuh N+1 nyata** yang tidak satu pun terlihat sebelumnya. Lihat bagian 1h.
 13. ~~**Perluas penjaga path absolut ke prop aksi Blade.**~~ **SELESAI 2026-08-27.** Diperbaiki di akarnya, dua komponen saja, tanpa menyentuh 37 pemanggilnya. Penjaganya memeriksa keluaran terender, bukan sumber, sebab alamat mentah di pemanggil kini justru sah. Penjaga itu menemukan **lima kemunculan lagi** yang tidak tercatat audit. Lihat bagian 1j.
-14. **Sisir ulang `ui-spec.md` saat 15 komponen yatim dicabut.** Empat di antaranya masih tercatat di sana sebagai komponen basis, sehingga menghapus berkasnya saja akan meninggalkan dokumen yang menjanjikan sesuatu yang tidak ada. Lihat bagian 1g.7 temuan 7.
+14. ~~**Sisir ulang `ui-spec.md` saat 15 komponen yatim dicabut.**~~ **SELESAI 2026-08-27.** Jumlah sebenarnya **13**, bukan 15. `ui-spec.md` disunting di tiga tempat, dan salah satu klaimnya ternyata sudah keliru bahkan sebelum pencabutan ini. Lihat bagian 1k.
+15. **Timbang ulang `error-state` dan `skeleton` saat `galeri-komponen` dihapus.** Keduanya hidup hanya karena galeri memakainya; begitu halaman itu pergi, keduanya menjadi yatim dan penjaga komponen akan memerah. Putuskan saat itu: dipakai sungguhan di suatu tempat, atau ikut dicabut.
 
 
 ## 5. Catatan Ide
