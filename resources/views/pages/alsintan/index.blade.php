@@ -8,41 +8,10 @@
 @extends('layouts.app')
 
 @section('content')
-    @php
-        use App\Support\DummyData;
-
-        $semua = DummyData::alsintan();
-
-        $cari = trim((string) request('cari', ''));
-        $filterSp = request('sp');
-        $filterKondisi = request('kondisi');
-
-        $baris = array_values(array_filter($semua, function ($a) use ($cari, $filterSp, $filterKondisi) {
-            if ($cari !== '' && ! str_contains(mb_strtolower($a['nama_alat']), mb_strtolower($cari))
-                && ! str_contains(mb_strtolower($a['pemilik']), mb_strtolower($cari))) {
-                return false;
-            }
-            if ($filterSp && (string) $a['satuan_permukiman_id'] !== (string) $filterSp) {
-                return false;
-            }
-            if ($filterKondisi && $a['kondisi'] !== $filterKondisi) {
-                return false;
-            }
-
-            return true;
-        }));
-
-        $adaFilter = $cari !== '' || $filterSp || $filterKondisi;
-        $totalUnit = array_sum(array_column($semua, 'jumlah'));
-
-        // Cacah poktan pemilik, menggantikan kartu Bantuan Pemerintah.
-        // Kartu lama menghitung baris berkepemilikan bantuan; kini seluruh
-        // alat memang milik kelompok, sehingga angkanya akan selalu sama
-        // dengan jumlah seluruh data dan tidak menerangkan apa pun.
-        $poktanPemilik = count(array_unique(array_column($semua, 'poktan_id')));
-        $rusak = count(array_filter($semua, fn ($a) => $a['kondisi'] !== 'Baik'));
-    @endphp
-
+    {{--
+        Seluruh isian halaman ini datang dari rute `alsintan.index`, termasuk
+        penyaringan dan angka ringkasannya. Lihat routes/web.php.
+    --}}
     <x-sim.halaman-daftar judul="Alsintan"
         keterangan="Alat dan mesin pertanian milik kelompok tani."
         :remah="\App\Helpers\RemahHelper::untuk('/alsintan')"
@@ -92,7 +61,7 @@
                     <select id="filter_sp" name="sp"
                         class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
                         <option value="">Semua SP</option>
-                        @foreach (DummyData::satuanPermukiman() as $sp)
+                        @foreach ($daftarSp as $sp)
                             <option value="{{ $sp['id_satuan_permukiman'] }}"
                                 @selected($filterSp == $sp['id_satuan_permukiman'])>{{ $sp['nama'] }}</option>
                         @endforeach
@@ -104,7 +73,7 @@
                     <select id="filter_kondisi" name="kondisi"
                         class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
                         <option value="">Semua kondisi</option>
-                        @foreach (\App\Support\DummyData::opsiFilterReferensi(\App\Enums\JenisReferensi::Kondisi) as $nilai => $label)
+                        @foreach ($opsiFilterKondisi as $nilai => $label)
                             <option value="{{ $nilai }}" @selected($filterKondisi === $nilai)>{{ $label }}</option>
                         @endforeach
                     </select>

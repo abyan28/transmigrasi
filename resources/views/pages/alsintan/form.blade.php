@@ -16,19 +16,20 @@
 
     Nama kolom mengikuti agents/data-dictionary.md bagian 8.3.
 --}}
+{{--
+    `$daftarPoktan`, `$opsiKondisi`, dan `$opsiSumberDana` disuplai
+    ViewServiceProvider, bukan oleh induk yang menyisipkan berkas ini.
+    Berkas form dipakai tiga modal sekaligus — tambah dan ubah pada halaman
+    daftar, serta ubah pada halaman rincian — sehingga menyalurkannya lewat
+    rute menuntut tiga rute mengoper isian yang sama persis.
+--}}
 @php
-    use App\Enums\Kondisi;
-    use App\Enums\SumberDana;
-    use App\Support\DummyData;
-
     $awalan = $awalan ?? 'tambah';
     $data = $data ?? [];
 
     $kelasKontrol = 'h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30';
     $kelasLabel = 'mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400';
     $kelasBagian = 'text-theme-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400';
-
-    $daftarPoktan = DummyData::poktan();
 
     // Peta poktan ke satuan permukimannya, dibaca Alpine untuk mengisi kolom
     // SP begitu poktan dipilih. Dahulu ada dua peta terpisah sebab kepemilikan
@@ -86,7 +87,7 @@
             <div>
                 <label for="{{ $awalan }}_kondisi" class="{{ $kelasLabel }}">Kondisi</label>
                 <select id="{{ $awalan }}_kondisi" name="kondisi" class="{{ $kelasKontrol }}">
-                    @foreach (\App\Support\DummyData::opsiReferensi(\App\Enums\JenisReferensi::Kondisi) as $nilaiRef => $labelRef)
+                    @foreach ($opsiKondisi as $nilaiRef => $labelRef)
                         <option value="{{ $nilaiRef }}" @selected(old('kondisi', $data['kondisi'] ?? '') === $nilaiRef)>
                             {{ $nilaiRef }}
                         </option>
@@ -98,7 +99,7 @@
                 <label for="{{ $awalan }}_sumber_perolehan" class="{{ $kelasLabel }}">Sumber Perolehan</label>
                 <select id="{{ $awalan }}_sumber_perolehan" name="sumber_perolehan" class="{{ $kelasKontrol }}">
                     <option value="">Pilih sumber</option>
-                    @foreach (\App\Support\DummyData::opsiReferensi(\App\Enums\JenisReferensi::SumberDana) as $nilaiRef => $labelRef)
+                    @foreach ($opsiSumberDana as $nilaiRef => $labelRef)
                         <option value="{{ $nilaiRef }}"
                             @selected(old('sumber_perolehan', $data['sumber_perolehan'] ?? '') === $nilaiRef)>
                             {{ $nilaiRef }}

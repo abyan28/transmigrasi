@@ -1,6 +1,8 @@
 <?php
 
+use App\Enums\JenisReferensi;
 use App\Http\Controllers\DokumenController;
+use App\Support\DummyData;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -761,8 +763,59 @@ Route::put('/anggota-poktan/{id}', function (string $id) {
     return redirect()->back()
         ->with('sukses', 'Perubahan data anggota tersimpan.');
 })->where('id', '[0-9]+')->name('anggota-poktan.perbarui');
+/*
+ * Daftar alsintan. Pengambilan dan penyaringan datanya dipindahkan ke sini
+ * 2026-08-27; sebelumnya dikerjakan blok `@php` di dalam view.
+ *
+ * Alasannya bukan kerapian melainkan biaya Tahap 4: selama view mengambil
+ * datanya sendiri, mengganti `DummyData` dengan Eloquent berarti menyunting
+ * viewnya, dan setiap perulangan di dalamnya berubah menjadi N+1. Lihat
+ * agents/notes.md butir tindak lanjut 12.
+ */
 Route::get('/alsintan', function () {
-    return view('pages.alsintan.index', ['title' => 'Alsintan']);
+    $semua = DummyData::alsintan();
+
+    $cari = trim((string) request('cari', ''));
+    $filterSp = request('sp');
+    $filterKondisi = request('kondisi');
+
+    $baris = array_values(array_filter($semua, function ($a) use ($cari, $filterSp, $filterKondisi) {
+        if ($cari !== '' && ! str_contains(mb_strtolower($a['nama_alat']), mb_strtolower($cari))
+            && ! str_contains(mb_strtolower($a['pemilik']), mb_strtolower($cari))) {
+            return false;
+        }
+        if ($filterSp && (string) $a['satuan_permukiman_id'] !== (string) $filterSp) {
+            return false;
+        }
+        if ($filterKondisi && $a['kondisi'] !== $filterKondisi) {
+            return false;
+        }
+
+        return true;
+    }));
+
+    return view('pages.alsintan.index', [
+        'title' => 'Alsintan',
+        'semua' => $semua,
+        'baris' => $baris,
+        'cari' => $cari,
+        'filterSp' => $filterSp,
+        'filterKondisi' => $filterKondisi,
+        'adaFilter' => $cari !== '' || $filterSp || $filterKondisi,
+        'totalUnit' => array_sum(array_column($semua, 'jumlah')),
+
+        // Cacah poktan pemilik, menggantikan kartu Bantuan Pemerintah. Kartu
+        // lama menghitung baris berkepemilikan bantuan; kini seluruh alat
+        // memang milik kelompok, sehingga angkanya akan selalu sama dengan
+        // jumlah seluruh data dan tidak menerangkan apa pun.
+        'poktanPemilik' => count(array_unique(array_column($semua, 'poktan_id'))),
+        'rusak' => count(array_filter($semua, fn ($a) => $a['kondisi'] !== 'Baik')),
+
+        // Dropdown penyaring, bukan dropdown form: memakai varian yang ikut
+        // memuat nilai nonaktif, sebab data lama masih memakainya.
+        'daftarSp' => DummyData::satuanPermukiman(),
+        'opsiFilterKondisi' => DummyData::opsiFilterReferensi(JenisReferensi::Kondisi),
+    ]);
 })->name('alsintan.index');
 
 Route::get('/alsintan/{id}', function (int $id) {
