@@ -703,6 +703,22 @@ Butir tindak lanjut 12 pada `notes.md`, yaitu ide C hasil audit 1g.7. Disetujui 
 
 **Verifikasi:** **617 uji hijau**; seluruh **55 rute GET** yang membalas 200 disisir dan tidak satu pun memuat variabel hilang, `<select>` kosong, maupun sisa `DummyData` pada keluaran; `pint` tidak menambah utang di seluruh batch.
 
+### Temuan 6 audit: setiap tabel diberi nama (2026-08-27) ✅
+
+Nol `<caption>` menjadi seluruh tabel bernama, dijaga uji. Dua tahap, dua commit.
+
+**Taksiran audit meleset.** Audit menulis "akarnya cuma 2 komponen"; nyatanya **26 dari 46 tabel ditulis langsung di halaman**, tiga belas di antaranya pada dashboard kawasan saja. Tabel mentah justru lebih banyak daripada yang lewat komponen.
+
+**Tahap 1:** `data-table` dan `tabel-ringkas` menerima prop `judul`. Penyalurannya murah pada yang pertama — `halaman-daftar` sudah memegang judul halaman, sehingga seluruh halaman daftar memperoleh caption tanpa satu pun disunting. Ke-19 pemanggil `tabel-ringkas` diberi judul satu per satu.
+
+**Tahap 2:** 26 tabel mentah, ditambah penjaganya.
+
+**Penjaganya memeriksa POSISI**, sebab `<caption>` wajib anak pertama `<table>`; yang diletakkan sesudah `<thead>` diabaikan sebagian pembaca layar, dan itu kegagalan yang tidak terlihat sama sekali. Dibuktikan lewat mutasi.
+
+**Verifikasi:** **618 uji hijau**; lima halaman terender diperiksa dan jumlah `<table>` selalu sama dengan jumlah `<caption>`; `pint` tidak menambah utang.
+
+**Sisa audit 1g yang belum dikerjakan:** temuan 7 (15 komponen yatim), temuan 8 (37 path absolut beserta penjaganya, butir tindak lanjut 13), dan ide B (angkat `x-sim.aksi-daftar` serta `x-sim.tombol-filter`).
+
 ## Tahap 3 — Autentikasi dan Hak Akses
 
 > **Peringatan penerbitan statis.** Begitu login aktif, halaman berpelindung membalas pengalihan ke `/login`, bukan 200, sehingga `.github/workflows/deploy.yml` **gagal** dan situs GitHub Pages berhenti diperbarui. Putuskan lebih dulu: batasi `sim:tautan-statis` hanya ke halaman publik, atau hentikan penerbitan statis sama sekali. Lihat `notes.md` bagian 1b.7.

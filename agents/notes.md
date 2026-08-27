@@ -827,6 +827,42 @@ Uji bertambah dari 616 menjadi **617**.
 
 ---
 
+## 1i. Setiap Tabel Diberi Nama (2026-08-27)
+
+Temuan 6 audit 1g. Dikerjakan dalam dua tahap, keduanya diuji dan dicommit terpisah.
+
+Keadaan awal: **nol `<caption>`** di seluruh sistem. Keadaan akhir: seluruh tabel bernama, dijaga uji.
+
+### 1i.1 Taksiran audit meleset
+
+Audit menulis temuan ini "akarnya cuma 2 komponen yang melayani 28 pemakaian". Penyisiran menunjukkan lain: **20 tabel lewat komponen** (`data-table` dan 19 pemanggil `tabel-ringkas`), tetapi **26 tabel lagi ditulis langsung di halaman** — tiga belas di antaranya pada dashboard kawasan saja.
+
+Jadi tabel mentah justru **lebih banyak** daripada yang lewat komponen. Taksiran audit terbentuk dari melihat dua komponen tabel lalu menganggap seluruh tabel melewatinya; yang tidak diperiksa adalah `<table>` yang ditulis langsung.
+
+> **Aturan:** taksiran ukuran temuan wajib berasal dari penghitungan, bukan dari menyimpulkan bahwa semua pemakaian melewati komponen bersama. Yang tidak melewatinya justru tidak akan terlihat dari komponen itu.
+
+### 1i.2 Penyaluran otomatis, tanpa menyentuh pemanggil
+
+`x-sim.data-table` menerima prop `judul` baru. Yang membuatnya murah: `x-sim.halaman-daftar` **sudah** memegang judul halaman, sehingga cukup meneruskannya. Seluruh halaman daftar memperoleh caption tanpa satu pun disunting.
+
+`x-sim.tabel-ringkas` menerima prop yang sama, tetapi ke-19 pemanggilnya harus diberi judul satu per satu — komponen itu tidak punya sumber nama sendiri.
+
+Judulnya menyebut **cakupan barisnya**, bukan mengulang judul halaman: "Alsintan milik kelompok tani ini", bukan "Alsintan". Caption yang hanya mengulang judul halaman tidak menambah apa pun bagi pembaca layar yang baru saja mendengar judul itu.
+
+### 1i.3 Penjaganya memeriksa POSISI, bukan keberadaan
+
+`<caption>` wajib menjadi **anak pertama** `<table>`. Caption yang diletakkan sesudah `<thead>` diabaikan sebagian pembaca layar, dan itu kegagalan yang sepenuhnya tidak terlihat.
+
+Ujinya karena itu memeriksa jarak dari tag pembuka, bukan sekadar apakah kata `<caption>` ada di suatu tempat dalam berkas. Dua komponen bersama merender captionnya dari prop sehingga tidak tertulis harfiah; keduanya diperiksa lewat keberadaan prop itu.
+
+Dibuktikan lewat mutasi: membuang satu caption memerahkan uji, memulihkannya menghijaukan kembali.
+
+### 1i.4 Verifikasi
+
+618 uji hijau. Lima halaman terender diperiksa dan **jumlah `<table>` selalu sama dengan jumlah `<caption>`**, termasuk dashboard yang memuat tiga belas tabel. Caption halaman daftar terbukti memakai judul halamannya. `pint` tidak menambah utang.
+
+---
+
 ## 2. Catatan Dokumen Proposal
 
 Lembar pengesahan pada `docs/Revisi_Proposal_Budi_TEP ITS 2026_Kobalima_Timur_Upload_10_6_2026_a.pdf` masih memuat judul dan pengusul dari proposal lain:
@@ -977,6 +1013,8 @@ Seharusnya: "Digitalisasi Monitoring Pertanian dan Tata Kelola Data Kawasan Tran
 | 2026-08-25 | Alamat dasar untuk modul JavaScript **wajib dioper dari Blade** | Berkas JavaScript tidak mengenal `url()`, sehingga alamat yang ditulis tetap di dalamnya selalu salah begitu situs berpindah ke sub-path. `chart-config.js` merusak penelusuran 17 grafik dashboard dengan cara ini, delapan hari setelah larangannya tertulis pada 1b.3 |
 | 2026-08-25 | Setiap larangan pada `notes.md` **wajib punya uji penjaga** | Larangan path absolut sudah tertulis sejak 2026-08-17 dan repo tetap kena masalah yang sama untuk ketiga kalinya. Aturan yang hanya tertulis terbukti tidak menahan apa pun; yang menahan adalah uji yang memerah |
 | 2026-08-25 | Laporan penelusur diperlakukan sebagai **kandidat**, bukan temuan | Dua dari sebelas laporan terbukti keliru saat diverifikasi terhadap berkas, yaitu form tanpa `@csrf` dan dua komponen yang disebut mati. Mengerjakannya berarti menghabiskan waktu atas masalah yang tidak ada |
+| 2026-08-27 | Setiap tabel **wajib punya `<caption>`** sebagai anak pertama | Nol caption di seluruh sistem, sedangkan dashboard memuat tiga belas tabel dalam satu halaman sehingga pembaca layar mustahil menebak tabel mana yang sedang dibacanya. Halaman daftar memperolehnya otomatis dari judul halaman; sisanya diberi judul yang menyebut cakupan barisnya. Lihat bagian 1i |
+| 2026-08-27 | Taksiran ukuran temuan wajib dari **penghitungan**, bukan dari komponen bersamanya | Audit menaksir temuan 6 berakar pada 2 komponen; nyatanya 26 dari 46 tabel ditulis langsung di halaman dan tidak melewati komponen mana pun. Yang tidak melewati komponen justru tidak terlihat dari komponen itu |
 | 2026-08-27 | Pengambilan data **dipindahkan dari view ke rute**, selagi sumbernya masih array | Selama view mengambil datanya sendiri, migrasi ke Eloquent pada Tahap 4 bukan pekerjaan controller melainkan penyuntingan 65 view, dan setiap pemanggilan di dalam perulangan berubah menjadi satu kueri per baris. Penyisirannya menemukan tujuh N+1 nyata yang tidak satu pun terlihat sebelumnya. Lihat bagian 1h |
 | 2026-08-27 | Berkas form dan komponen bersama disuplai **composer**, bukan rute | Satu berkas form disisipkan tiga modal sekaligus, sehingga menyalurkannya lewat rute menuntut tiga rute mengoper isian yang sama persis dan satu yang terlewat menghasilkan dropdown kosong tanpa galat. Opsinya melekat pada FORM, bukan pada siapa yang menyisipkannya |
 | 2026-08-27 | Yang dipindahkan adalah **akses data**, bukan penalaran yang memakainya | `rumah/form` dan `panen/form` tetap menyaring sendiri, sebab hasilnya bergantung pada baris yang sedang disunting dan baris itu hanya diketahui induknya. Memaksakan penyaringan itu ke composer berarti composer harus menebak konteks pemanggilnya |
