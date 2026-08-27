@@ -42,6 +42,21 @@
 ])
 
 @php
+    /*
+        Pola aksi dilewatkan `url()` agar tetap benar pada sub-path, mengikuti
+        pola `stat-card`.
+
+        Penanda `:id` DIBIARKAN UTUH, sebab yang menggantinya Alpine di sisi
+        klien sesudah alamat ini terbentuk. `url()` hanya menambahkan akar di
+        depannya dan tidak menyentuh ruas belakang.
+
+        Dua puluh dua pemanggil mengoper pola mentah semacam '/alsintan/:id';
+        tanpa pembungkus ini seluruhnya mengirim ke akar domain.
+    */
+    $polaAksiPenuh = $polaAksi === null || str_contains($polaAksi, '://')
+        ? $polaAksi
+        : url($polaAksi);
+
     $lebar = [
         'sm' => 'sm:max-w-md',
         'md' => 'sm:max-w-lg',
@@ -53,7 +68,7 @@
 <div x-data="{
         terbuka: false,
         mengirim: false,
-        polaAksi: @js($polaAksi),
+        polaAksi: @js($polaAksiPenuh),
         aksiStatis: @js($aksi),
         baris: null,
 

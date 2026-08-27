@@ -273,7 +273,7 @@
                         --}}
                         @if ($u['is_aktif'] && ! $adminTerakhir($u))
                             <button type="button"
-                                @click="$dispatch('buka-konfirmasi', { nama: 'nonaktifkanPengguna', aksi: '/pengguna/{{ $u['id_user'] }}/nonaktifkan' })"
+                                @click="$dispatch('buka-konfirmasi', { nama: 'nonaktifkanPengguna', aksi: '{{ url('/pengguna/' . $u['id_user'] . '/nonaktifkan') }}' })"
                                 aria-label="Nonaktifkan akun {{ $u['nama'] }}"
                                 class="rounded-lg p-2 text-gray-500 transition focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10">
                                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
@@ -289,7 +289,7 @@
                                 tidak pernah dihapus dan tidak ada jalur lain menyalakannya.
                             --}}
                             <button type="button"
-                                @click="$dispatch('buka-konfirmasi', { nama: 'aktifkanPengguna', aksi: '/pengguna/{{ $u['id_user'] }}/aktifkan' })"
+                                @click="$dispatch('buka-konfirmasi', { nama: 'aktifkanPengguna', aksi: '{{ url('/pengguna/' . $u['id_user'] . '/aktifkan') }}' })"
                                 aria-label="Aktifkan kembali akun {{ $u['nama'] }}"
                                 class="rounded-lg p-2 text-gray-500 transition focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-gray-400 hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-500/10">
                                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">

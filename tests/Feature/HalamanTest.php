@@ -6245,6 +6245,74 @@ it('menuliskan seluruh teks antarmuka dalam bahasa Indonesia', function () {
     expect(array_values(array_unique($galat)))->toBe([]);
 });
 
+it('tidak mengirimkan aksi ke alamat berakar domain', function () {
+    /*
+        Penjaga temuan 8 audit 1g, butir tindak lanjut 13, ditambahkan
+        2026-08-27.
+
+        37 pemanggil mengoper alamat mentah semacam '/alsintan/3' pada
+        `:hapus-url` dan `pola-aksi`. Pada penyajian statis yang berada di
+        sub-path `/transmigrasi/`, seluruhnya mengirim ke akar domain dan
+        tidak pernah sampai.
+
+        DIPERIKSA PADA KELUARAN TERENDER, bukan pada bentuk kode pemanggilnya.
+
+        Sejak alamatnya dibungkus `url()` di dalam `aksi-baris` dan
+        `modal-form`, mengoper alamat mentah dari pemanggil TIDAK LAGI keliru;
+        komponennya yang membereskan. Uji yang melarang bentuk itu di
+        pemanggil justru akan melarang kode yang benar. Yang wajib dijaga
+        adalah hasilnya, dan hasilnya hanya terlihat setelah dirender.
+
+        Ini kebalikan dari penjaga komoditas utama pada 1h.5, yang justru
+        wajib memeriksa sumber sebab datanya tidak dapat membedakan benar dari
+        salah. Pembedanya satu pertanyaan: apakah keluarannya berbeda.
+    */
+    $galat = [];
+    $diperiksa = 0;
+
+    foreach (Route::getRoutes() as $rute) {
+        if (! in_array('GET', $rute->methods(), true)) {
+            continue;
+        }
+
+        $uri = $rute->uri();
+        $uri = preg_replace('/\{jenis\??\}/', 'kondisi', $uri);
+        $uri = preg_replace('/\{kelompok\??\}/', 'sp', $uri);
+        $uri = preg_replace('/\{nomor\??\}/', 'PGD-2026-0001', $uri);
+        $uri = preg_replace('/\{[a-zA-Z_]+\??\}/', '1', $uri);
+
+        if (str_contains($uri, '{')) {
+            continue;
+        }
+
+        $res = $this->get('/'.ltrim($uri, '/'));
+
+        // Bukan 200 berarti bukan halaman; 403 dan 404 di sini disengaja.
+        if ($res->getStatusCode() !== 200) {
+            continue;
+        }
+
+        $diperiksa++;
+        $html = $res->getContent();
+
+        /*
+            Dua bentuk yang dicari. Yang pertama alamat hapus pada tombol
+            baris, tertulis apa adanya. Yang kedua pola aksi modal, dikeluarkan
+            `@js()` sehingga garis miringnya ter-escape.
+        */
+        foreach (["aksi: '/", "polaAksi: '\\/"] as $pola) {
+            if (str_contains($html, $pola)) {
+                $galat[] = "/{$uri} memuat {$pola}";
+            }
+        }
+    }
+
+    // Penjaga terhadap ujinya sendiri: bila tidak ada halaman yang terperiksa,
+    // uji ini hijau tanpa membuktikan apa pun.
+    expect($diperiksa)->toBeGreaterThan(40);
+    expect($galat)->toBe([]);
+});
+
 it('memberi nama pada setiap tabel', function () {
     /*
         Penjaga temuan 6 audit 1g, ditambahkan 2026-08-27.

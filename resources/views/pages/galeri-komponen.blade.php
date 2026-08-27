@@ -223,12 +223,12 @@
                     Buka Modal Form
                 </button>
                 <button type="button"
-                    @click="$dispatch('buka-konfirmasi', { nama: 'contohHapus', aksi: '/contoh' })"
+                    @click="$dispatch('buka-konfirmasi', { nama: 'contohHapus', aksi: '{{ url('/contoh') }}' })"
                     class="rounded-lg border border-red-300 px-4 py-2.5 text-theme-sm font-medium text-red-600 hover:bg-red-50 dark:border-red-500/40 dark:hover:bg-red-500/10">
                     Buka Konfirmasi Hapus
                 </button>
                 <button type="button"
-                    @click="$dispatch('buka-konfirmasi', { nama: 'contohBeralasan', aksi: '/contoh' })"
+                    @click="$dispatch('buka-konfirmasi', { nama: 'contohBeralasan', aksi: '{{ url('/contoh') }}' })"
                     class="rounded-lg border border-gray-300 px-4 py-2.5 text-theme-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
                     Konfirmasi Beralasan
                 </button>

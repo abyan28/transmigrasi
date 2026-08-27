@@ -1,4 +1,4 @@
-{{--
+﻿{{--
     Kolom aksi baku untuk satu baris tabel: Rincian, Ubah, Hapus.
 
     Dibuat setelah audit menemukan kolom aksi berbeda-beda di sembilan belas
@@ -36,6 +36,19 @@
 
 @php
     $kelasIkon = 'rounded-lg p-2 text-gray-500 transition focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-gray-400';
+
+    /*
+        Alamat hapus dilewatkan `url()` agar tetap benar ketika sistem
+        disajikan pada sub-path, misalnya build statis GitHub Pages.
+
+        Lima belas pemanggil mengoper alamat mentah semacam '/alsintan/3',
+        dan tanpa pembungkus ini seluruhnya menuju akar domain. Pemanggil yang
+        sudah mengoper `route()` menghasilkan alamat lengkap bersekema, dan itu
+        dibiarkan apa adanya. Pola yang sama dipakai `stat-card`.
+    */
+    $hapusUrlPenuh = $hapusUrl === null || str_contains($hapusUrl, '://')
+        ? $hapusUrl
+        : url($hapusUrl);
 @endphp
 
 <div class="flex items-center justify-end gap-1">
@@ -72,7 +85,7 @@
     {{-- Hapus, selalu paling kanan agar tidak tertukar dengan tindakan lain --}}
     @if ($hapusUrl && $konfirmasiHapus)
         <button type="button"
-            @click.prevent="$dispatch('buka-konfirmasi', { nama: '{{ $konfirmasiHapus }}', aksi: '{{ $hapusUrl }}' })"
+            @click.prevent="$dispatch('buka-konfirmasi', { nama: '{{ $konfirmasiHapus }}', aksi: '{{ $hapusUrlPenuh }}' })"
             aria-label="Hapus data {{ $label }}"
             class="{{ $kelasIkon }} hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10">
             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"

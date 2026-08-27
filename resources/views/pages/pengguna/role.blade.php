@@ -139,7 +139,7 @@
                     --}}
                     @if (! $r['is_bawaan'] && $r['jumlah_pengguna'] === 0)
                         <button type="button"
-                            @click="$dispatch('buka-konfirmasi', { nama: 'hapusRole', aksi: '/pengaturan/role/{{ $r['id_role'] }}' })"
+                            @click="$dispatch('buka-konfirmasi', { nama: 'hapusRole', aksi: '{{ url('/pengaturan/role/' . $r['id_role']) }}' })"
                             class="rounded-lg border border-red-300 px-3 py-2 text-theme-xs font-medium text-red-600 transition hover:bg-red-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-red-500/40 dark:text-red-400 dark:hover:bg-red-500/10">
                             Hapus Role
                         </button>
