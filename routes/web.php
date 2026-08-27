@@ -51,6 +51,35 @@ Route::get('/login', function () {
     return view('pages.auth.signin', ['title' => 'Masuk']);
 })->name('login');
 
+/*
+ * Penerima kredensial. DITAMBAHKAN 2026-08-25.
+ *
+ * Sebelumnya form masuk sama sekali tidak dirangkai: tanpa `action`, tanpa
+ * `method`, dan tanpa rute penerima, sehingga tombol Masuk hanya memuat ulang
+ * halaman. Tiga form autentikasi lainnya sudah lengkap sejak awal, jadi ini
+ * bukan penundaan yang disengaja melainkan satu form yang terlewat.
+ */
+Route::post('/login', function () {
+    // Tahap 3: Auth::attempt() menerima email MAUPUN username pada satu kolom
+    // yang sama, sehingga pencocokan dilakukan dua kali terhadap kolom berbeda.
+    //
+    // Yang wajib ikut dikerjakan, seluruhnya sudah punya tempat di tampilan:
+    // - tolak akun ber-`is_aktif` FALSE beserta pesan yang membedakannya dari
+    //   kredensial salah, sebab petugas yang akunnya dinonaktifkan perlu tahu
+    //   harus menghubungi Admin, bukan mencoba lagi;
+    // - batasi percobaan agar kata sandi tidak dapat ditebak beruntun
+    //   (rules.md 14b);
+    // - regenerasi sesi setelah berhasil, mencegah session fixation;
+    // - catat `last_login_at`, dipakai halaman rincian pengguna;
+    // - bila `password_harus_diganti` bernilai TRUE, alihkan ke
+    //   `ganti-kata-sandi`, BUKAN ke beranda. Rutenya sudah ada dan halamannya
+    //   sudah jadi, tetapi belum ada satu pun jalur yang menuju ke sana.
+    //
+    // Kegagalan wajib kembali dengan galat bernama `kredensial`, sebab itulah
+    // kunci yang dibaca @error pada signin.blade.php.
+    return redirect()->route('beranda');
+})->name('login.kirim');
+
 Route::post('/logout', function () {
     // Tahap 3: Auth::logout() beserta invalidasi sesi.
     return redirect()->route('login')->with('sukses', 'Anda sudah keluar dari sistem.');

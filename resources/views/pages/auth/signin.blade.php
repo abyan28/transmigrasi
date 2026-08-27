@@ -32,7 +32,25 @@
                             </p>
                         </div>
 
-                        <form>
+                        {{--
+                            Pesan galat kredensial, sengaja TIDAK menyebut apakah
+                            yang salah email atau kata sandinya. Membedakan
+                            keduanya menjadikan halaman ini alat memeriksa siapa
+                            saja yang memiliki akun, alasan yang sama dengan
+                            balasan seragam pada lupa kata sandi (rules.md 14b
+                            poin 9).
+                        --}}
+                        @error('kredensial')
+                            <div class="mb-5 rounded-lg border border-error-300 bg-error-50 p-4 dark:border-error-500/40 dark:bg-error-500/10"
+                                role="alert">
+                                <p class="text-sm text-error-600 dark:text-error-400">{{ $message }}</p>
+                            </div>
+                        @enderror
+
+                        <form action="{{ route('login.kirim') }}" method="POST"
+                            x-data="{ mengirim: false }" @submit="mengirim = true">
+                            @csrf
+
                             <div class="space-y-5">
                                 {{-- Satu kolom kredensial, menerima email maupun username --}}
                                 <div>
@@ -42,6 +60,7 @@
                                     </label>
                                     <input type="text" id="kredensial" name="kredensial" autocomplete="username"
                                         required placeholder="Masukkan email atau username"
+                                        value="{{ old('kredensial') }}"
                                         class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30" />
                                 </div>
 
@@ -102,8 +121,11 @@
 
                                 {{-- Tombol masuk --}}
                                 <div>
-                                    <button type="submit"
-                                        class="bg-brand-500 shadow-theme-xs hover:bg-brand-600 flex w-full items-center justify-center rounded-lg px-4 py-3 text-sm font-medium text-white transition focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
+                                    <button type="submit" :disabled="mengirim"
+                                        class="bg-brand-500 shadow-theme-xs hover:bg-brand-600 flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-medium text-white transition disabled:opacity-60 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
+                                        <span x-show="mengirim" x-cloak
+                                            class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
+                                            aria-hidden="true"></span>
                                         Masuk
                                     </button>
                                 </div>

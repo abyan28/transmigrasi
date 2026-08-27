@@ -145,9 +145,19 @@ it('menautkan dashboard kawasan ke rincian setiap SP', function () {
 });
 
 it('memasang penelusuran klik pada grafik bersumbu satuan permukiman', function () {
+    /*
+        Alamat dasar wajib ikut dioper. Sebelum 2026-08-25 uji ini mengunci
+        `drilldownSp(data.spId)` tanpa argumen kedua, sehingga tetap hijau
+        selama bertahun halaman meski modul JavaScript menuju alamat mutlak
+        yang membalas 404 pada penyajian statis bersub-path.
+
+        Yang diperiksa kini alamat hasil `url()`, bukan sekadar nama
+        fungsinya, sebab di situlah letak kekeliruannya.
+    */
     $this->get(route('beranda'))
         ->assertSee('id="grafikPerSp"', false)
-        ->assertSee('drilldownSp(data.spId)', false);
+        ->assertSee('drilldownSp(data.spId,', false)
+        ->assertSee(url('/dashboard/sp'), false);
 });
 
 it('menyediakan tautan pindah antar SP pada halaman rincian', function () {
@@ -5988,4 +5998,206 @@ it('meniadakan keterangan satuan lokal dari hasil panen', function () {
 
     expect($form)->not->toContain('keterangan_satuan_lokal')
         ->and($detail)->not->toContain('keterangan_satuan_lokal');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Penjaga hasil audit menyeluruh 2026-08-25
+|--------------------------------------------------------------------------
+|
+| Kelima uji berikut menjaga KELAS kekeliruan, bukan satu kejadiannya saja.
+| Masing-masing lahir dari cacat nyata yang lolos dari 609 uji sebelumnya,
+| dan seluruhnya diperiksa dari berkas sumber sebab yang dijaga adalah
+| markup serta pemanggilan, bukan hasil render satu halaman.
+|
+*/
+
+it('merangkai setiap form autentikasi sampai dapat dikirim', function (string $berkas, string $rute) {
+    /*
+        Halaman masuk sempat memuat `<form>` telanjang: tanpa `action`, tanpa
+        `method`, tanpa `@csrf`, dan tanpa rute penerima. Tombol Masuk hanya
+        memuat ulang halaman.
+
+        Yang membuatnya luput bukan kerumitan, melainkan tidak adanya yang
+        memeriksa. Tiga form autentikasi lain sudah lengkap sejak awal,
+        sehingga kekeliruannya tampak seperti keputusan yang disengaja.
+
+        Diperiksa dari sumber, sebab `action` kosong tetap merender `<form>`
+        yang sah dan tidak memerahkan uji berbasis HTTP mana pun.
+    */
+    $isi = file_get_contents(resource_path("views/pages/auth/{$berkas}.blade.php"));
+
+    /*
+        Ketiga syarat dikumpulkan lebih dulu, bukan diperiksa satu per satu
+        lewat `toContain` berantai. `toContain` pada Pest memperlakukan
+        argumen kedua sebagai NILAI yang ikut dicari, bukan pesan galat,
+        sehingga rantai berpesan justru memerah pada berkas yang sehat.
+    */
+    $kurang = [];
+
+    if (! str_contains($isi, 'method="POST"')) {
+        $kurang[] = 'method="POST"';
+    }
+
+    if (! str_contains($isi, "route('{$rute}')")) {
+        $kurang[] = "action ke route('{$rute}')";
+    }
+
+    if (! str_contains($isi, '@csrf')) {
+        $kurang[] = '@csrf';
+    }
+
+    // Rutenya wajib benar-benar ada, bukan sekadar tertulis di markup.
+    if (! Route::has($rute)) {
+        $kurang[] = "rute {$rute} belum terdaftar";
+    }
+
+    expect($kurang)->toBe([]);
+})->with([
+    ['signin', 'login.kirim'],
+    ['lupa-kata-sandi', 'lupa-kata-sandi.kirim'],
+    ['ganti-kata-sandi', 'ganti-kata-sandi.simpan'],
+]);
+
+it('menyediakan tempat menampilkan galat pada halaman masuk', function () {
+    /*
+        Tanpa ini, kegagalan masuk pada Tahap 3 akan tampak seperti tombol
+        rusak: halaman termuat ulang, isian terisi kembali lewat `old()`,
+        dan tidak ada satu pun keterangan mengapa. Persis kontrol mati yang
+        dilarang R-26.
+
+        Kunci galatnya `kredensial`, sama dengan nama isiannya, agar rute
+        Tahap 3 tahu persis nama apa yang harus dipakai saat menolak.
+    */
+    $isi = file_get_contents(resource_path('views/pages/auth/signin.blade.php'));
+
+    expect($isi)->toContain("@error('kredensial')")
+        ->and($isi)->toContain("old('kredensial')");
+});
+
+it('tidak menuliskan alamat mutlak pada modul JavaScript', function () {
+    /*
+        `chart-config.js` sempat memuat '/dashboard/sp/' secara harfiah,
+        sehingga penelusuran 17 grafik dashboard membalas 404 pada penyajian
+        statis yang berada di sub-path `/transmigrasi/`.
+
+        Berkas JavaScript tidak mengenal `url()`, jadi satu-satunya sumber
+        alamat yang benar adalah Blade. Larangannya sudah tertulis pada
+        notes.md 1b.3 sejak 2026-08-17, tetapi tidak pernah punya penjaga,
+        dan justru itulah sebabnya pelanggaran ini bertahan.
+
+        Diperiksa pada `window.location`, `fetch`, dan `axios`, yakni tiga
+        cara sebuah modul dapat menuju alamat sendiri.
+    */
+    $galat = [];
+
+    foreach (glob(resource_path('js/*.js')) as $berkas) {
+        $isi = file_get_contents($berkas);
+        $nama = basename($berkas);
+
+        foreach (preg_split('/\r?\n/', $isi) as $nomor => $baris) {
+            if (! preg_match('/(window\.location\S*\s*=|fetch\(|axios\.\w+\()/', $baris)) {
+                continue;
+            }
+
+            /*
+                Alamat mutlak yang diketik langsung, contoh '/dashboard/sp/'.
+                Diawali kutip lalu garis miring, lalu HURUF.
+
+                Syarat huruf itu yang membedakannya dari '/' telanjang sebagai
+                pemisah ruas, dan dari '//' milik protokol. Tanpa syarat itu
+                penggabungan alamat yang sudah benar pun ikut memerah.
+            */
+            if (preg_match("#['\"]/[A-Za-z]#", $baris)) {
+                $galat[] = $nama.':'.($nomor + 1).' '.trim($baris);
+            }
+        }
+    }
+
+    expect($galat)->toBe([]);
+});
+
+it('memberi nama pada setiap tombol yang isinya hanya ikon', function () {
+    /*
+        Empat tombol pada header bersama tidak punya nama sama sekali:
+        menu aplikasi, ganti tema, lonceng notifikasi, dan tutup notifikasi.
+        Header itu muncul di SELURUH halaman berautentikasi, sehingga
+        pembaca layar hanya mengumumkan "tombol" sebanyak empat kali di
+        setiap halaman.
+
+        Diperiksa pada layout dan komponen header saja, yakni tempat tombol
+        ikon polos memang lazim. Tombol di dalam halaman umumnya berteks,
+        dan memaksakan pemeriksaan ke seluruh 128 berkas akan menghasilkan
+        positif palsu pada tombol yang namanya datang dari teks isinya.
+    */
+    $berkas = array_merge(
+        glob(resource_path('views/layouts/*.blade.php')),
+        glob(resource_path('views/components/header/*.blade.php')),
+    );
+
+    $galat = [];
+
+    foreach ($berkas as $path) {
+        $isi = file_get_contents($path);
+        $nama = BerkasBlade::namaPendek($path);
+
+        // Setiap <button ...> beserta isinya sampai penutupnya.
+        preg_match_all('/<button\b([^>]*)>([\s\S]*?)<\/button>/i', $isi, $cocok, PREG_SET_ORDER);
+
+        foreach ($cocok as $tombol) {
+            [$utuh, $atribut, $dalam] = $tombol;
+
+            $punyaNama = preg_match('/(:?aria-label|aria-labelledby)\s*=/i', $atribut) === 1
+                || str_contains($dalam, 'sr-only');
+
+            if ($punyaNama) {
+                continue;
+            }
+
+            // Teks yang benar-benar terbaca, setelah SVG dan komentar dibuang.
+            $teks = trim(strip_tags(BerkasBlade::bersihkan($dalam)));
+
+            if ($teks === '') {
+                $galat[] = $nama.': '.trim(preg_replace('/\s+/', ' ', substr($utuh, 0, 60)));
+            }
+        }
+    }
+
+    expect($galat)->toBe([]);
+});
+
+it('menuliskan seluruh teks antarmuka dalam bahasa Indonesia', function () {
+    /*
+        Komponen lonceng notifikasi masih memuat "Notification" warisan
+        TailAdmin, terlihat di setiap halaman. Melanggar ui-spec.md 11.2.
+
+        Daftar kata sengaja pendek dan menyasar sisa template, bukan mencoba
+        mendeteksi bahasa Inggris secara umum. Uji yang terlalu pintar di
+        sini akan memerah pada nama kelas dan atribut.
+    */
+    $terlarang = ['Notification', 'View All', 'Search', 'Settings', 'Sign In', 'Sign Out', 'Dashboard Overview'];
+    $galat = [];
+
+    foreach (BerkasBlade::semua() as $path) {
+        $nama = BerkasBlade::namaPendek($path);
+
+        if (str_contains($nama, 'galeri-komponen')) {
+            continue;
+        }
+
+        $isi = BerkasBlade::bersihkan(file_get_contents($path));
+
+        // Hanya teks di antara tag, bukan atribut maupun nama kelas.
+        preg_match_all('/>([^<>{}]+)</', $isi, $cocok);
+
+        foreach ($cocok[1] as $teks) {
+            foreach ($terlarang as $kata) {
+                if (str_contains($teks, $kata)) {
+                    $galat[] = "{$nama}: {$kata}";
+                }
+            }
+        }
+    }
+
+    expect(array_values(array_unique($galat)))->toBe([]);
 });

@@ -663,6 +663,26 @@ Diminta pemilik proyek menyusul temuan catatan dan unggahan yang dapat diisi tet
 
 **Verifikasi:** 607 uji hijau, dua mutasi memerah sebagaimana mestinya. Terverifikasi pula di halaman terender, bukan hanya pada berkas sumber.
 
+### Audit menyeluruh antarmuka (2026-08-25) ✅
+
+Diminta pemilik proyek: memeriksa seluruh pekerjaan sampai titik ini. Lingkupnya antarmuka saja, sebab Tahap 2 belum menyentuh backend. Disisir **128 Blade** (22K baris), **132 rute**, **609 uji**, dan `DummyData` 3.879 baris lewat empat penelusur paralel, lalu setiap temuan diverifikasi ulang sendiri.
+
+**Yang sudah benar, dicatat lebih dulu:** tautan mati nol, `scope="col"` lengkap 100%, warna sebagai satu-satunya makna nol, tab kosong nol, `@csrf` lengkap, 57 rute GET seluruhnya tersentuh uji.
+
+**Hasil:** **9 temuan**. Tiga kritis — form masuk tidak dapat dikirim, penelusuran 17 grafik dashboard 404 di situs terbit, dan fondasi tabel `user` bertabrakan dengan kamus data. Dua berdampak luas — empat tombol ikon tanpa nama di header yang muncul di semua halaman, dan focus trap hilang di dialog **hapus** yang dipakai 21 halaman. Empat sisanya kebersihan.
+
+**Dikerjakan paket temuan 1, 2, 4, 5** atas persetujuan pemilik proyek. Form masuk dirangkai **tanpa autentikasi**, mengikuti pola ketiga form auth tetangganya; alamat dasar grafik dioper dari Blade; empat `aria-label` ditambah beserta penggantian "Notification" dan pencabutan dua `console.log`; focus trap disalin dari `modal-form` yang sudah terbukti.
+
+**Ditunda dengan sengaja:** fondasi `user` ke Tahap 3, ditambah `<caption>` nol, 15 komponen yatim, dan 37 path absolut pada prop aksi. Seluruhnya beserta alasannya tercatat pada `notes.md` 1g.7, dan tiga butir tindak lanjut baru ditambahkan.
+
+**Mengapa 609 uji tidak menangkapnya:** ketiganya lolos lewat sebab berbeda, dan hanya satu menyangkut kerumitan. Yang terpenting, uji lama justru **mengunci** kekeliruan grafik — ia memeriksa nama pemanggilan `drilldownSp(data.spId)`, bukan alamat yang dituju, sehingga akan tetap hijau selamanya. Larangan path absolutnya sendiri sudah tertulis di `notes.md` 1b.3 sejak 2026-08-17 tanpa satu pun penjaga.
+
+**Perubahan:** 5 berkas antarmuka dan 1 rute disunting; **5 penjaga baru** (7 kasus uji) ditambahkan, seluruhnya diperiksa dari berkas sumber dan dibuktikan lewat mutasi.
+
+**Verifikasi:** **616 uji hijau** (609 → 616), 3.728 asersi. `npm run build` sukses dan bundel terbukti sudah bersih dari alamat mutlak.
+
+**Catatan:** sesi pengerjaannya terputus karena galat penyedia model tepat sebelum pencatatan. Dokumentasi disusun ulang 2026-08-27 dari riwayat sesi, lalu dicocokkan terhadap keadaan berkas yang sebenarnya. Lihat `notes.md` 1g.8.
+
 ## Tahap 3 — Autentikasi dan Hak Akses
 
 > **Peringatan penerbitan statis.** Begitu login aktif, halaman berpelindung membalas pengalihan ke `/login`, bukan 200, sehingga `.github/workflows/deploy.yml` **gagal** dan situs GitHub Pages berhenti diperbarui. Putuskan lebih dulu: batasi `sim:tautan-statis` hanya ke halaman publik, atau hentikan penerbitan statis sama sekali. Lihat `notes.md` bagian 1b.7.

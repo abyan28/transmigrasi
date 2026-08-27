@@ -71,7 +71,24 @@
             aria-hidden="true"></div>
 
         <div class="flex h-full items-start justify-center overflow-hidden p-4">
-            <div x-show="terbuka" x-transition
+            {{--
+                Fokus dikurung di dalam panel, DITAMBAHKAN 2026-08-25.
+
+                Sebelumnya Tab dapat keluar dari dialog menuju tombol di halaman
+                belakangnya, termasuk tombol Hapus milik baris LAIN. Pada dialog
+                yang justru menanyakan penghapusan, kebocoran fokus semacam itu
+                paling berbahaya. Pola disalin dari `modal-form` yang sudah
+                memakainya sejak awal (ui-spec.md 6.2, R-32).
+            --}}
+            <div x-ref="panel" x-show="terbuka" x-transition
+                @keydown.tab="
+                    const fokusable = $refs.panel.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])');
+                    if (fokusable.length === 0) return;
+                    const pertama = fokusable[0];
+                    const terakhir = fokusable[fokusable.length - 1];
+                    if ($event.shiftKey && document.activeElement === pertama) { $event.preventDefault(); terakhir.focus(); }
+                    else if (!$event.shiftKey && document.activeElement === terakhir) { $event.preventDefault(); pertama.focus(); }
+                "
                 class="relative my-auto flex max-h-full w-full max-w-md flex-col overflow-y-auto rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-900">
 
                 <form :action="aksi" method="POST" @submit="mengirim = true">

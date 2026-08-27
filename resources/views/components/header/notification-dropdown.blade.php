@@ -1,4 +1,11 @@
-{{-- Notification Dropdown Component --}}
+{{--
+    Lonceng notifikasi pada header.
+
+    Dua penangan klik butir, `handleItemClick` dan `handleViewAllClick`,
+    DICABUT 2026-08-25. Keduanya hanya memanggil `console.log` peninggalan
+    TailAdmin dan sudah tidak punya pemanggil sejak daftar notifikasi diganti
+    keadaan kosong yang jujur.
+--}}
 <div class="relative" x-data="{
     dropdownOpen: false,
     notifying: true,
@@ -8,26 +15,21 @@
     },
     closeDropdown() {
         this.dropdownOpen = false;
-    },
-    handleItemClick() {
-        console.log('Notification item clicked');
-        this.closeDropdown();
-    },
-    handleViewAllClick() {
-        console.log('View All Notifications clicked');
-        this.closeDropdown();
     }
-}" @click.away="closeDropdown()">
+}" @click.away="closeDropdown()" @keydown.escape.window="closeDropdown()">
     <!-- Notification Button -->
     <button
         class="relative flex items-center justify-center text-gray-500 transition-colors bg-white border border-gray-200 rounded-full hover:text-dark-900 h-11 w-11 hover:bg-gray-100 hover:text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
         @click="toggleDropdown()"
         type="button"
+        :aria-label="notifying ? 'Notifikasi, ada pemberitahuan baru' : 'Notifikasi'"
+        :aria-expanded="dropdownOpen ? 'true' : 'false'"
     >
         <!-- Notification Badge -->
         <span
             x-show="notifying"
             class="absolute right-0 top-0.5 z-1 h-2 w-2 rounded-full bg-orange-400"
+            aria-hidden="true"
         >
             <span
                 class="absolute inline-flex w-full h-full bg-orange-400 rounded-full opacity-75 -z-1 animate-ping"
@@ -66,9 +68,10 @@
     >
         <!-- Dropdown Header -->
         <div class="flex items-center justify-between pb-3 mb-3 border-b border-gray-100 dark:border-gray-800">
-            <h5 class="text-lg font-semibold text-gray-800 dark:text-white/90">Notification</h5>
+            <h5 class="text-lg font-semibold text-gray-800 dark:text-white/90">Notifikasi</h5>
 
-            <button @click="closeDropdown()" class="text-gray-500 dark:text-gray-400" type="button">
+            <button @click="closeDropdown()" class="text-gray-500 dark:text-gray-400" type="button"
+                aria-label="Tutup notifikasi">
                 <svg
                     class="fill-current"
                     width="24"

@@ -57,6 +57,8 @@
 
             <!-- Application Menu Toggle (mobile only) -->
             <button @click="toggleApplicationMenu()"
+                aria-label="Buka atau tutup menu aplikasi"
+                :aria-expanded="isApplicationMenuOpen ? 'true' : 'false'"
                 class="flex items-center justify-center w-10 h-10 text-gray-700 rounded-lg z-99999 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 xl:hidden">
                 <!-- Dots Icon -->
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -79,7 +81,13 @@
             class="items-center justify-between w-full gap-4 px-5 py-4 xl:flex shadow-theme-md xl:justify-end xl:px-0 xl:shadow-none">
             <div class="flex items-center gap-2 2xsm:gap-3">
                 <!-- Theme Toggle Button -->
+                {{--
+                    Label ikut berganti bersama modenya, sebab tombol ini
+                    menyatakan TUJUAN bukan keadaan: saat gelap aktif, yang
+                    ditawarkan adalah beralih ke terang.
+                --}}
                 <button
+                    :aria-label="$store.theme.theme === 'dark' ? 'Aktifkan mode terang' : 'Aktifkan mode gelap'"
                     class="relative flex items-center justify-center text-gray-500 transition-colors bg-white border border-gray-200 rounded-full hover:text-dark-900 h-11 w-11 hover:bg-gray-100 hover:text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
                     @click="$store.theme.toggle()">
                     <svg class="hidden dark:block" width="20" height="20" viewBox="0 0 20 20" fill="none"

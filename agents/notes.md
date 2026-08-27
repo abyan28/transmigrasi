@@ -645,6 +645,108 @@ Daftar diperluas ke `/pengaduan/1` dan `/poktan/1`. Dibuktikan lewat mutasi: men
 
 ---
 
+## 1g. Audit Menyeluruh Antarmuka (2026-08-25)
+
+Diminta pemilik proyek: memeriksa seluruh pekerjaan sampai titik ini, mencari yang kurang maupun yang rusak. Lingkupnya **antarmuka saja**, sebab Tahap 2 memang belum menyentuh backend.
+
+Disisir **128 berkas Blade** (22 ribu baris), **132 rute**, **609 uji**, dan `DummyData` 3.879 baris. Penyisiran disebar ke empat penelusur paralel — kesiapan Tahap 3, konsistensi UI, integritas data contoh, serta aksesibilitas dan mutu uji — lalu setiap temuan diverifikasi ulang sendiri sebelum diakui.
+
+### 1g.1 Yang sudah benar
+
+Dicatat lebih dulu, sebab audit yang hanya menyebut cacat memberi gambaran yang keliru tentang keadaan sistem:
+
+Tautan mati **nol**. `scope="col"` **lengkap 100%**. Warna sebagai satu-satunya pembawa makna **nol** — `status-badge` selalu membawa teks beserta titik. Tab kosong **nol**. `@csrf` **lengkap** pada seluruh form tulis. Seluruh **57 rute GET** tersentuh uji.
+
+### 1g.2 Sembilan temuan
+
+| # | Tingkat | Temuan | Ukuran kerusakan |
+|---|---|---|---|
+| 1 | 🔴 | `auth/signin.blade.php` memuat `<form>` telanjang: tanpa `action`, `method`, maupun `@csrf`, dan `POST /login` tidak terdaftar | Tombol Masuk hanya memuat ulang halaman |
+| 2 | 🔴 | `chart-config.js` menulis `window.location.href = '/dashboard/sp/' + id` | Penelusuran **17 grafik** dashboard membalas 404 di situs terbit |
+| 3 | 🔴 | Migration membuat `users` (jamak, PK `id`, kolom `name`), kamus data mewajibkan `user` (tunggal, PK `id_user`, kolom `nama`) | **0 dari 36** tabel punya migration; **1 dari ~36** model ada; **0 validasi** aktif di 75 rute tulis |
+| 4 | 🟠 | Empat tombol ikon tanpa nama di header, ditambah teks "Notification" dan dua `console.log` | Header muncul di **seluruh** halaman berautentikasi |
+| 5 | 🟠 | Focus trap hilang di `confirm-dialog` | Dipakai **21 halaman**, dan yang bocor adalah dialog **hapus** |
+| 6 | 🟠 | `<caption>` **nol** di seluruh tabel | Akarnya 2 komponen yang melayani 28 pemakaian |
+| 7 | 🟡 | 15 komponen TailAdmin yatim: 612 baris Blade, nol pemakaian | Kebersihan |
+| 8 | 🟡 | **37 path absolut** pada prop aksi: `:hapus-url` 15, `pola-aksi` 22 | Akarnya **2 komponen**, bukan 37 halaman |
+| 9 | 🟡 | Tidak ada uji penjaga path absolut sama sekali | Inilah sebab nomor 2 dan 8 dapat masuk tanpa ketahuan |
+
+Temuan 2 dibuktikan, tidak disimpulkan: dengan `ASSET_URL` aktif, `route()` menghasilkan `https://abyan28.github.io/transmigrasi/...` sedangkan literal itu menuju `/dashboard/sp/1`. Bedanya dengan temuan 8 menentukan urutan pengerjaan — nomor 2 adalah navigasi **GET** sehingga benar-benar rusak, sedangkan nomor 8 melekat pada form POST yang memang sudah mati di versi statis.
+
+### 1g.3 Dua laporan penelusur yang terbukti salah
+
+Penelusur melaporkan form tanpa `@csrf` dan menyebut `error-state` serta `skeleton` sebagai kode mati. Keduanya diperiksa dan **tidak benar**: `@csrf` lengkap, dan kedua komponen itu dipakai `galeri-komponen`. Tidak satu pun dimasukkan ke daftar temuan.
+
+> **Aturan:** laporan penelusur adalah kandidat temuan, bukan temuan. Setiap butir wajib diverifikasi sendiri terhadap berkas sebelum diakui, sebab dua dari sebelas laporan terbukti keliru dan keduanya akan menghasilkan pekerjaan atas masalah yang tidak ada.
+
+### 1g.4 Yang diperbaiki
+
+Disepakati pemilik proyek sebagai satu paket: temuan **1, 2, 4, 5**, beserta penjaganya.
+
+**Temuan 1** ditutup dengan merangkai formnya saja, **tanpa autentikasi**. Itu tetap pekerjaan Tahap 3. Yang dikerjakan adalah menyamakan signin dengan ketiga tetangganya — `lupa-kata-sandi`, `verifikasi-kode`, dan `ganti-kata-sandi` sudah punya `action`, `@csrf`, dan rute POST berisi komentar "Tahap 3" beserta redirect kosong, persis gaya 74 rute tulis lain di sistem ini. Signin satu-satunya yang tidak. Rute `login.kirim` karena itu berisi nol `Auth::`, nol kueri, hanya redirect dan daftar apa yang harus dikerjakan Tahap 3. Ditambah blok `@error('kredensial')` dan `old('kredensial')`, sebab tanpa tempat menampilkan galat, validasi Tahap 3 akan gagal senyap dan halamannya menjadi kontrol mati (R-26).
+
+**Temuan 2** ditutup dengan mengoper alamat dasar dari Blade: `drilldownSp(idSp)` menjadi `drilldownSp(idSp, basisUrl)`, pemanggilnya mengirim `url('/dashboard/sp')`. Berkas JavaScript tidak mengenal `url()`, jadi Blade adalah satu-satunya sumber alamat yang benar.
+
+**Temuan 4** ditutup dengan empat nama tombol, penggantian "Notification" menjadi "Notifikasi", dan pencabutan dua `console.log` — satu-satunya di seluruh repo. Label tombol tema sengaja dibuat berganti mengikuti modenya, sebab tombol itu menyatakan **tujuan** bukan keadaan: saat gelap aktif, yang ditawarkan adalah beralih ke terang. Kedua penangan klik `handleItemClick` dan `handleViewAllClick` ikut dicabut, sebab keduanya hanya memanggil `console.log` peninggalan TailAdmin dan sudah kehilangan pemanggil sejak daftar notifikasi diganti keadaan kosong yang jujur.
+
+**Temuan 5** ditutup dengan menyalin blok `@keydown.tab` dari `modal-form.blade.php` yang sudah terbukti sejak awal.
+
+### 1g.5 Mengapa 609 uji tidak menangkapnya
+
+Ketiganya lolos lewat sebab yang berbeda, dan hanya satu yang menyangkut kerumitan:
+
+**Temuan 1 — tidak ada yang memeriksa.** `<form>` tanpa `action` tetap merender markup yang sah dan membalas 200. Tidak ada uji berbasis HTTP yang dapat memerah karenanya. Yang membuatnya luput bukan kesulitan, melainkan ketiadaan penjaga; kekeliruannya bahkan tampak seperti keputusan yang disengaja, sebab tetangganya lengkap.
+
+**Temuan 2 — larangannya tertulis, penjaganya tidak ada.** Larangan path absolut sudah tercatat pada bagian 1b.3 sejak **2026-08-17**, dan repo ini sudah dua kali kena masalah yang sama (1b.3 dan 1b.6a). Uji lama justru **mengunci kekeliruannya**: ia memeriksa `assertSee('drilldownSp(data.spId)')`, yakni nama pemanggilan, bukan alamat yang dituju. Uji itu akan tetap hijau selamanya sekalipun alamatnya salah.
+
+**Temuan 4 — tidak pernah masuk cakupan.** Aksesibilitas tombol ikon polos tidak punya uji sama sekali, padahal tempatnya justru di header bersama yang tampil di setiap halaman.
+
+> **Aturan:** setiap larangan yang tertulis pada `notes.md` wajib punya uji penjaga. Larangan tanpa penjaga terbukti tidak menahan apa pun — yang ini bertahan delapan hari setelah ditulis, di berkas yang sama sekali tidak disentuh sejak larangannya berlaku.
+
+> **Aturan:** uji yang menjaga tujuan wajib memeriksa **tujuannya**, bukan bentuk pemanggilannya. `assertSee('drilldownSp(data.spId)')` mengunci nama fungsi; yang perlu dijaga adalah alamat yang dihasilkannya.
+
+### 1g.6 Lima penjaga baru
+
+Seluruhnya diperiksa dari **berkas sumber**, sebab yang dijaga adalah markup dan pemanggilan, bukan hasil render satu halaman. Masing-masing dibuktikan lewat mutasi.
+
+| Penjaga | Kelas kekeliruan yang ditangkap |
+|---|---|
+| Setiap form auth punya `method`, `action` ke rute yang **benar-benar terdaftar**, dan `@csrf` | Temuan 1, untuk ketiga form sekaligus |
+| Halaman masuk punya `@error('kredensial')` dan `old('kredensial')` | Kegagalan senyap pada Tahap 3 |
+| Tidak ada alamat mutlak pada `window.location`, `fetch`, maupun `axios` di `resources/js` | Temuan 2 |
+| Tombol yang isinya hanya ikon wajib punya `aria-label` atau `sr-only` | Temuan 4 |
+| Tidak ada sisa teks Inggris TailAdmin pada teks antarmuka | `ui-spec.md` 11.2 |
+
+Dua jebakan ditemui saat menulisnya dan keduanya layak diingat. Pertama, `toContain` pada Pest memperlakukan argumen kedua sebagai **nilai yang ikut dicari**, bukan pesan galat, sehingga rantai berpesan justru memerahkan berkas yang sehat. Kedua, pola pencari alamat mutlak wajib mensyaratkan **huruf** sesudah garis miring; tanpa itu, `'/'` sebagai pemisah ruas dan `'//'` milik protokol ikut memerah.
+
+Penjaga alamat mutlak sengaja dibatasi ke `resources/js` dan penjaga nama tombol ke layout serta komponen header. Memaksakan keduanya ke seluruh 128 berkas menghasilkan positif palsu pada tombol yang namanya memang datang dari teks isinya.
+
+### 1g.7 Yang sengaja belum dikerjakan
+
+Dicatat di sini agar tidak hilang bersama sesinya.
+
+**Temuan 3 — fondasi `user`.** Ditunda ke Tahap 3 atas pilihan pemilik proyek. Yang perlu diingat saat tahap itu dibuka: `ValidationRules.php` (425 baris) sudah **hardcode** `unique:user,email,...,id_user` mengikuti kamus data, sedangkan migration yang ada masih membuat `users` bawaan Laravel. Berkas itu belum pernah dipanggil sekali pun dari rute, jadi pertentangannya belum menimbulkan galat — dan justru itu yang membuatnya mudah terlewat.
+
+**Temuan 6 — `<caption>` nol.** Belum dikerjakan. Perbaikannya kecil dan terpusat: 2 komponen, `data-table` dan `tabel-ringkas`, melayani 28 pemakaian.
+
+**Temuan 7 — 15 komponen yatim.** Belum dikerjakan. `ui/modal`, `ui/badge`, `ui/alert`, dan `common/page-breadcrumb` masih tercatat pada `ui-spec.md` sebagai komponen basis, padahal polanya sudah diserap seluruhnya ke `x-sim.*`. Pencabutannya wajib disertai penyuntingan `ui-spec.md`, bukan penghapusan berkas begitu saja.
+
+**Temuan 8 — 37 path absolut pada prop aksi.** Belum dikerjakan, dan **penjaganya pun belum ada**: uji baru hanya menyisir `resources/js`, tidak menyentuh prop aksi Blade. Diverifikasi ulang 2026-08-27, jumlahnya masih tepat 37. Akarnya dua komponen, `aksi-baris.blade.php` dan `modal-form.blade.php`, dan pola `url()` yang benar sudah ada di `stat-card.blade.php`.
+
+**Ide B — angkat `x-sim.aksi-daftar` dan `x-sim.tombol-filter`.** Blok tombol Impor beserta Tambah identik 21 baris di 14 berkas; blok filter identik 16 baris di 11 berkas. Sekitar **470 baris duplikat** berisi kelas Tailwind panjang yang akan menyimpang satu per satu.
+
+**Ide C — pindahkan pengambilan data ke rute sebelum Tahap 3.** Ini yang paling menentukan biaya tahap berikutnya. Ada **272 pemanggilan `DummyData::`** tersebar di **67 berkas Blade**. Selama view mengambil datanya sendiri, migrasi ke Eloquent bukan pekerjaan controller melainkan penyuntingan 67 view, dan setiap perulangan menjadi N+1. Mengubah `return view('x')` menjadi `return view('x', ['baris' => ...])` **sekarang**, selagi isinya masih array, jauh lebih murah daripada sesudah Eloquent masuk.
+
+### 1g.8 Sesi terputus, catatan disusun belakangan
+
+Perbaikan dikerjakan 2026-08-25 dan seluruhnya selesai, tetapi sesinya terputus karena galat penyedia model tepat sebelum pencatatan. Bagian ini karena itu ditulis **2026-08-27**, disusun ulang dari riwayat sesi beserta daftar tugasnya yang masih tersimpan, lalu dicocokkan terhadap keadaan berkas yang sebenarnya.
+
+Pencocokan itu bukan formalitas: ia yang memastikan angka 37 masih berlaku, membuktikan bundel `public/build` sudah memuat perbaikan, dan menemukan komentar pengantar uji yang masih menyebut "Ketiga uji" padahal yang ditulis lima.
+
+> **Aturan:** pencatatan adalah bagian dari pekerjaan, bukan penutupnya. Selama belum dicatat, hasil audit hanya hidup di dalam sesi yang mengerjakannya — dan sesi dapat mati kapan saja.
+
+---
+
 ## 2. Catatan Dokumen Proposal
 
 Lembar pengesahan pada `docs/Revisi_Proposal_Budi_TEP ITS 2026_Kobalima_Timur_Upload_10_6_2026_a.pdf` masih memuat judul dan pengusul dari proposal lain:
@@ -791,6 +893,11 @@ Seharusnya: "Digitalisasi Monitoring Pertanian dan Tata Kelola Data Kawasan Tran
 | 2026-08-25 | Uji yang mengunci **jumlah** wajib menyebut alasan angkanya | Ekspektasi "1 tautan berkas" pada alsintan dan saprotan ditulis dari hasil pengamatan, bukan dari kewajiban, sehingga uji tetap hijau selamanya sekalipun separuh berkasnya tidak dapat dibuka. Angka yang tidak beralasan mengabadikan keadaan yang sedang berlaku |
 | 2026-08-25 | Uji penjaga konvensi teks wajib menjangkau **halaman rincian**, bukan hanya auth dan publik | Label "Surel" lolos ke rincian pengaduan meski larangannya sudah ada pada `ui-spec.md` 10.1 beserta ujinya, sebab daftar halaman yang diperiksa tidak memuat satu pun halaman rincian. Sebagian besar teks yang dilihat pengguna justru berada di sana |
 | 2026-08-25 | Filter pada situs statis **dibiarkan tidak berfungsi**, hanya dicatat sebagai batasan | Penyaringan bekerja sungguhan di server sejak gelombang 2. Yang tidak bekerja adalah versi GitHub Pages, sebab query string tidak dilayani berkas statis. Pola tautan tetap tidak dapat dipakai karena kombinasi filter berlipat menjadi ratusan halaman untuk isi yang sama, dan batasannya lenyap sendiri saat Tahap 3 pindah ke hosting ber-PHP |
+| 2026-08-25 | Form masuk **dirangkai sekarang**, tetapi tetap tanpa autentikasi | Tiga form auth lain sudah punya `action`, `@csrf`, dan rute POST berisi komentar "Tahap 3" beserta redirect kosong. Signin satu-satunya yang tidak, sehingga ini bukan pekerjaan yang belum waktunya melainkan satu form yang terlewat dari pola yang sudah ditetapkan. Tahap 3 tinggal mengisi badan rutenya, tidak perlu merangkai form dari nol. Lihat bagian 1g |
+| 2026-08-25 | Alamat dasar untuk modul JavaScript **wajib dioper dari Blade** | Berkas JavaScript tidak mengenal `url()`, sehingga alamat yang ditulis tetap di dalamnya selalu salah begitu situs berpindah ke sub-path. `chart-config.js` merusak penelusuran 17 grafik dashboard dengan cara ini, delapan hari setelah larangannya tertulis pada 1b.3 |
+| 2026-08-25 | Setiap larangan pada `notes.md` **wajib punya uji penjaga** | Larangan path absolut sudah tertulis sejak 2026-08-17 dan repo tetap kena masalah yang sama untuk ketiga kalinya. Aturan yang hanya tertulis terbukti tidak menahan apa pun; yang menahan adalah uji yang memerah |
+| 2026-08-25 | Laporan penelusur diperlakukan sebagai **kandidat**, bukan temuan | Dua dari sebelas laporan terbukti keliru saat diverifikasi terhadap berkas, yaitu form tanpa `@csrf` dan dua komponen yang disebut mati. Mengerjakannya berarti menghabiskan waktu atas masalah yang tidak ada |
+| 2026-08-25 | Temuan 6, 7, dan 8 **ditunda dengan sengaja**, bukan terlupa | Ketiganya nyata tetapi tidak merusak apa pun yang sedang dipakai: `<caption>` menyangkut pembaca layar, komponen yatim menyangkut kebersihan, dan 37 path absolut melekat pada form POST yang toh sudah mati di versi statis. Dicatat lengkap pada 1g.7 agar tidak hilang bersama sesinya |
 
 ---
 
@@ -809,6 +916,9 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
 9. ~~**Audit keputusan lama yang bersandar pada data contoh** (disepakati 2026-08-19).~~ **Selesai 2026-08-19.** Seluruh 992 baris `notes.md` disisir; 36 keputusan menyebut data contoh sebagai alasan, **5 di antaranya cacat dan menyangkut struktur data**. Dua pertanyaan lapangan yang muncul dijawab pemilik proyek, bukan disimpulkan. Hasil lengkapnya pada bagian 1c.4, dan dua pelanggaran baru yang ditemukan tercatat pada 1c.2 sebagai pelanggaran keempat dan kelima.
 10. ~~**Tinjau ulang ambang searchable dropdown setelah data nyata masuk**, khusus `/rumah` dan `/riwayat-tanam`.~~ **SELESAI 2026-08-20, dengan cara yang berbeda dari yang direncanakan di sini.** Butir ini menulis `Ambang 8 opsinya sendiri tidak bermasalah`, dan kalimat itu ternyata keliru: ambangnya justru yang bermasalah, sebab ia membandingkan terhadap jumlah baris data contoh yang dikarang sendiri. Ambang dicabut seluruhnya dan kriterianya menjadi sifat sumber. Tidak ada lagi yang perlu ditinjau saat data nyata masuk. Lihat bagian 1c.2 pelanggaran keenam.
 11. **Ulangi audit `rules.md` 19a secara berkala**, tidak cukup sekali. Audit 2026-08-19 menemukan dua pelanggaran yang terjadi **setelah** aturannya berlaku, salah satunya melanggar prinsip yang tertulis 400 baris di atasnya pada dokumen yang sama. Lihat bagian 1c.5.
+12. **Putuskan ide C sebelum Tahap 4 dibuka**, yaitu memindahkan pengambilan data dari view ke rute selagi isinya masih array. 272 pemanggilan `DummyData::` tersebar di 67 berkas Blade; selama view mengambil datanya sendiri, migrasi ke Eloquent berubah menjadi penyuntingan 67 view beserta N+1 di setiap perulangan. Biayanya hanya naik seiring waktu. Lihat bagian 1g.7.
+13. **Perluas penjaga path absolut ke prop aksi Blade.** Uji yang dibuat 2026-08-25 hanya menyisir `resources/js`, sedangkan 37 kemunculan pada `:hapus-url` dan `pola-aksi` masih ada dan belum dijaga apa pun. Akarnya dua komponen saja. Lihat bagian 1g.7 temuan 8.
+14. **Sisir ulang `ui-spec.md` saat 15 komponen yatim dicabut.** Empat di antaranya masih tercatat di sana sebagai komponen basis, sehingga menghapus berkasnya saja akan meninggalkan dokumen yang menjanjikan sesuatu yang tidak ada. Lihat bagian 1g.7 temuan 7.
 
 
 ## 5. Catatan Ide

@@ -991,7 +991,8 @@
                 chart: {
                     type: 'bar',
                     height: 360,
-                    events: { dataPointSelection: drilldownSp(data.spId) },
+                    {{-- Alamat dasar datang dari Blade, sebab modul JS tidak mengenal url() --}}
+                    events: { dataPointSelection: drilldownSp(data.spId, @js(url('/dashboard/sp'))) },
                 },
                 series: [
                     { name: 'Kepala Keluarga', data: data.spKk },

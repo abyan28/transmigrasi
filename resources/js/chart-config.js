@@ -320,15 +320,23 @@ export function pantauTema() {
  * gabungan dapat ditelusuri ke rincian per SP (agents/rules.md bagian 11
  * poin 5).
  *
+ * ALAMAT DASAR WAJIB DIOPER DARI BLADE, tidak boleh ditulis tetap di sini.
+ * Sebelum 2026-08-25 modul ini memuat '/dashboard/sp/' secara harfiah,
+ * sehingga seluruh penelusuran grafik membalas 404 pada penyajian statis yang
+ * berada di sub-path `/transmigrasi/`. Berkas JavaScript tidak mengenal
+ * `url()`, jadi satu-satunya sumber alamat yang benar adalah Blade
+ * (agents/notes.md bagian 1b.3).
+ *
  * @param {Array<number|string>} idSp Daftar id SP berurutan sesuai kategori grafik
+ * @param {string} basisUrl Alamat dasar rincian SP, hasil url('/dashboard/sp')
  * @returns {Function} Penangan peristiwa ApexCharts
  */
-export function drilldownSp(idSp) {
+export function drilldownSp(idSp, basisUrl) {
     return function (event, konteks, konfigurasi) {
         const id = idSp[konfigurasi.dataPointIndex];
 
         if (id !== undefined && id !== null) {
-            window.location.href = '/dashboard/sp/' + id;
+            window.location.href = basisUrl.replace(/\/$/, '') + '/' + id;
         }
     };
 }
