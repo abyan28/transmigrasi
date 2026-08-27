@@ -83,7 +83,7 @@ class DummyData
      */
     public static function satuanPermukiman(): array
     {
-        return [
+        $data = [
             [
                 'id_satuan_permukiman' => 1,
                 'nama' => 'SP Kapitan Meo',
@@ -179,6 +179,158 @@ class DummyData
                 'bujur' => 125.0345670,
                 'keterangan' => 'SP terbaru, sebagian lahan usaha masih dalam proses penetapan.',
                 'dokumen_pendukung' => null,
+            ],
+        ];
+
+        // Field "Keadaan Wilayah" (Bab II Monografi) disatukan di sini agar
+        // baris identitas di atas tetap terbaca sekali pandang. Rombongan C,
+        // 2026-08-28. SP Kapitan Meo memakai nilai persis dari berkas
+        // "LAPORAN MONOGRAFI UPT KAPITAN MEO 2025"; SP lain nilai yang wajar.
+        $keadaan = self::keadaanWilayahSp();
+
+        return array_map(
+            fn ($sp) => $sp + ($keadaan[$sp['id_satuan_permukiman']] ?? self::keadaanWilayahKosong()),
+            $data,
+        );
+    }
+
+    /**
+     * Kolom kosong "Keadaan Wilayah", agar setiap SP punya kunci yang sama
+     * meski datanya belum diisi.
+     *
+     * @return array<string, null>
+     */
+    private static function keadaanWilayahKosong(): array
+    {
+        return array_fill_keys([
+            'lintang_utara', 'lintang_selatan', 'bujur_barat', 'bujur_timur',
+            'jarak_ke_kecamatan_km', 'jarak_ke_kabupaten_km', 'jarak_ke_provinsi_km',
+            'batas_utara', 'batas_timur', 'batas_selatan', 'batas_barat',
+            'nomor_sk_pencadangan', 'tanggal_sk_pencadangan',
+            'pola_permukiman', 'tingkat_kesuburan_tanah', 'ph_tanah_min', 'ph_tanah_maks',
+            'bentuk_wilayah', 'kemiringan_min_persen', 'kemiringan_maks_persen',
+            'curah_hujan_tahunan_mm', 'curah_hujan_bulan_min_mm', 'curah_hujan_bulan_maks_mm',
+            'suhu_min_c', 'suhu_maks_c', 'suhu_rata_c',
+            'angin_min_knot', 'angin_maks_knot', 'angin_rata_knot',
+            'penyinaran_min_persen', 'penyinaran_maks_persen', 'penyinaran_rata_persen',
+            'sumber_air_bersih', 'sumber_air_pertanian',
+        ], null);
+    }
+
+    /**
+     * Data "Keadaan Wilayah" per SP, menurut id.
+     *
+     * Bab II Laporan Monografi: letak, batas, luas dan bentuk, tanah,
+     * topografi, iklim, dan sumberdaya air. Seluruhnya dokumenter (dipakai
+     * laporan, tidak dihitung). Batas wilayah dihidupkan kembali di sini
+     * setelah dicabut 2026-08-18, sebab Monografi memerlukannya.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private static function keadaanWilayahSp(): array
+    {
+        return [
+            1 => [
+                'lintang_utara' => -9.5043200, 'lintang_selatan' => -9.5216800,
+                'bujur_barat' => 124.9051200, 'bujur_timur' => 124.9189700,
+                'jarak_ke_kecamatan_km' => 2.0, 'jarak_ke_kabupaten_km' => 22.0, 'jarak_ke_provinsi_km' => 245.0,
+                'batas_utara' => 'Desa Tesa', 'batas_timur' => 'Desa Tniumanu',
+                'batas_selatan' => 'Desa Uabau', 'batas_barat' => 'Desa Kusa',
+                'nomor_sk_pencadangan' => '79/HK/2018', 'tanggal_sk_pencadangan' => '2018-02-13',
+                'pola_permukiman' => 'Konsentris', 'tingkat_kesuburan_tanah' => 'Subur',
+                'ph_tanah_min' => 7.01, 'ph_tanah_maks' => 7.69,
+                'bentuk_wilayah' => 'Datar', 'kemiringan_min_persen' => 8.0, 'kemiringan_maks_persen' => 15.0,
+                'curah_hujan_tahunan_mm' => 1607.18, 'curah_hujan_bulan_min_mm' => 100.0, 'curah_hujan_bulan_maks_mm' => 200.0,
+                'suhu_min_c' => 23.0, 'suhu_maks_c' => 31.0, 'suhu_rata_c' => 27.7,
+                'angin_min_knot' => 4.0, 'angin_maks_knot' => 4.6, 'angin_rata_knot' => 4.3,
+                'penyinaran_min_persen' => 45.0, 'penyinaran_maks_persen' => 74.4, 'penyinaran_rata_persen' => 55.6,
+                'sumber_air_bersih' => 'Perpipaan dan mata air',
+                'sumber_air_pertanian' => 'Air hujan dan embung',
+            ],
+            2 => [
+                'lintang_utara' => -9.4905400, 'lintang_selatan' => -9.5061300,
+                'bujur_barat' => 124.8801100, 'bujur_timur' => 124.8951800,
+                'jarak_ke_kecamatan_km' => 4.0, 'jarak_ke_kabupaten_km' => 20.0, 'jarak_ke_provinsi_km' => 243.0,
+                'batas_utara' => 'Desa Tniumanu', 'batas_timur' => 'Sungai Benanain',
+                'batas_selatan' => 'Desa Alas', 'batas_barat' => 'Desa Kapitan Meo',
+                'nomor_sk_pencadangan' => '79/HK/2018', 'tanggal_sk_pencadangan' => '2018-02-13',
+                'pola_permukiman' => 'Konsentris', 'tingkat_kesuburan_tanah' => 'Sedang',
+                'ph_tanah_min' => 6.50, 'ph_tanah_maks' => 7.20,
+                'bentuk_wilayah' => 'Bergelombang', 'kemiringan_min_persen' => 8.0, 'kemiringan_maks_persen' => 25.0,
+                'curah_hujan_tahunan_mm' => 1550.00, 'curah_hujan_bulan_min_mm' => 90.0, 'curah_hujan_bulan_maks_mm' => 210.0,
+                'suhu_min_c' => 22.5, 'suhu_maks_c' => 31.5, 'suhu_rata_c' => 27.5,
+                'angin_min_knot' => 3.8, 'angin_maks_knot' => 4.7, 'angin_rata_knot' => 4.2,
+                'penyinaran_min_persen' => 43.0, 'penyinaran_maks_persen' => 73.0, 'penyinaran_rata_persen' => 54.0,
+                'sumber_air_bersih' => 'Sumur bor dan mata air',
+                'sumber_air_pertanian' => 'Air hujan dan embung',
+            ],
+            3 => [
+                'lintang_utara' => -9.4478900, 'lintang_selatan' => -9.4623500,
+                'bujur_barat' => 124.9381200, 'bujur_timur' => 124.9520400,
+                'jarak_ke_kecamatan_km' => 6.0, 'jarak_ke_kabupaten_km' => 15.0, 'jarak_ke_provinsi_km' => 238.0,
+                'batas_utara' => 'Desa Naets', 'batas_timur' => 'Desa Kereana',
+                'batas_selatan' => 'Desa Harekakae Induk', 'batas_barat' => 'Kawasan hutan produksi',
+                'nomor_sk_pencadangan' => '112/HK/2016', 'tanggal_sk_pencadangan' => '2016-05-04',
+                'pola_permukiman' => 'Papan Catur', 'tingkat_kesuburan_tanah' => 'Subur',
+                'ph_tanah_min' => 6.80, 'ph_tanah_maks' => 7.40,
+                'bentuk_wilayah' => 'Datar', 'kemiringan_min_persen' => 3.0, 'kemiringan_maks_persen' => 12.0,
+                'curah_hujan_tahunan_mm' => 1720.00, 'curah_hujan_bulan_min_mm' => 110.0, 'curah_hujan_bulan_maks_mm' => 230.0,
+                'suhu_min_c' => 23.2, 'suhu_maks_c' => 30.8, 'suhu_rata_c' => 27.4,
+                'angin_min_knot' => 4.1, 'angin_maks_knot' => 4.9, 'angin_rata_knot' => 4.5,
+                'penyinaran_min_persen' => 46.0, 'penyinaran_maks_persen' => 75.0, 'penyinaran_rata_persen' => 56.5,
+                'sumber_air_bersih' => 'Perpipaan gravitasi',
+                'sumber_air_pertanian' => 'Irigasi setengah teknis dan air hujan',
+            ],
+            4 => [
+                'lintang_utara' => -9.4135600, 'lintang_selatan' => -9.4288900,
+                'bujur_barat' => 124.9741200, 'bujur_timur' => 124.9887300,
+                'jarak_ke_kecamatan_km' => 3.0, 'jarak_ke_kabupaten_km' => 28.0, 'jarak_ke_provinsi_km' => 251.0,
+                'batas_utara' => 'Laut Timor', 'batas_timur' => 'Desa Badarai',
+                'batas_selatan' => 'Desa Weoe Induk', 'batas_barat' => 'Desa Halibasar',
+                'nomor_sk_pencadangan' => '112/HK/2016', 'tanggal_sk_pencadangan' => '2016-05-04',
+                'pola_permukiman' => 'Linear', 'tingkat_kesuburan_tanah' => 'Sedang',
+                'ph_tanah_min' => 6.20, 'ph_tanah_maks' => 7.00,
+                'bentuk_wilayah' => 'Datar', 'kemiringan_min_persen' => 2.0, 'kemiringan_maks_persen' => 8.0,
+                'curah_hujan_tahunan_mm' => 1480.00, 'curah_hujan_bulan_min_mm' => 80.0, 'curah_hujan_bulan_maks_mm' => 195.0,
+                'suhu_min_c' => 24.0, 'suhu_maks_c' => 32.5, 'suhu_rata_c' => 28.4,
+                'angin_min_knot' => 4.5, 'angin_maks_knot' => 6.2, 'angin_rata_knot' => 5.1,
+                'penyinaran_min_persen' => 48.0, 'penyinaran_maks_persen' => 78.0, 'penyinaran_rata_persen' => 58.0,
+                'sumber_air_bersih' => 'Sumur bor dangkal',
+                'sumber_air_pertanian' => 'Air hujan',
+            ],
+            5 => [
+                'lintang_utara' => -9.3901200, 'lintang_selatan' => -9.4074100,
+                'bujur_barat' => 125.0051200, 'bujur_timur' => 125.0195600,
+                'jarak_ke_kecamatan_km' => 5.0, 'jarak_ke_kabupaten_km' => 32.0, 'jarak_ke_provinsi_km' => 255.0,
+                'batas_utara' => 'Desa Biudukfoho', 'batas_timur' => 'Desa Webetun',
+                'batas_selatan' => 'Desa Naet Induk', 'batas_barat' => 'Kawasan hutan lindung',
+                'nomor_sk_pencadangan' => '145/HK/2017', 'tanggal_sk_pencadangan' => '2017-09-18',
+                'pola_permukiman' => 'Konsentris', 'tingkat_kesuburan_tanah' => 'Subur',
+                'ph_tanah_min' => 6.90, 'ph_tanah_maks' => 7.50,
+                'bentuk_wilayah' => 'Berbukit', 'kemiringan_min_persen' => 15.0, 'kemiringan_maks_persen' => 30.0,
+                'curah_hujan_tahunan_mm' => 1850.00, 'curah_hujan_bulan_min_mm' => 120.0, 'curah_hujan_bulan_maks_mm' => 260.0,
+                'suhu_min_c' => 21.8, 'suhu_maks_c' => 29.5, 'suhu_rata_c' => 26.2,
+                'angin_min_knot' => 3.5, 'angin_maks_knot' => 4.4, 'angin_rata_knot' => 3.9,
+                'penyinaran_min_persen' => 42.0, 'penyinaran_maks_persen' => 71.0, 'penyinaran_rata_persen' => 53.0,
+                'sumber_air_bersih' => 'Mata air pegunungan dan perpipaan',
+                'sumber_air_pertanian' => 'Mata air dan air hujan',
+            ],
+            6 => [
+                'lintang_utara' => -9.3678900, 'lintang_selatan' => -9.3851200,
+                'bujur_barat' => 125.0271200, 'bujur_timur' => 125.0420100,
+                'jarak_ke_kecamatan_km' => 7.0, 'jarak_ke_kabupaten_km' => 35.0, 'jarak_ke_provinsi_km' => 258.0,
+                'batas_utara' => 'Desa Weain Induk', 'batas_timur' => 'Sungai Motamauk',
+                'batas_selatan' => 'Desa Fatuklaran', 'batas_barat' => 'Desa Nanaet',
+                'nomor_sk_pencadangan' => '145/HK/2017', 'tanggal_sk_pencadangan' => '2017-09-18',
+                'pola_permukiman' => 'Menyebar', 'tingkat_kesuburan_tanah' => 'Kurang Subur',
+                'ph_tanah_min' => 5.80, 'ph_tanah_maks' => 6.60,
+                'bentuk_wilayah' => 'Bergelombang', 'kemiringan_min_persen' => 10.0, 'kemiringan_maks_persen' => 22.0,
+                'curah_hujan_tahunan_mm' => 1390.00, 'curah_hujan_bulan_min_mm' => 70.0, 'curah_hujan_bulan_maks_mm' => 185.0,
+                'suhu_min_c' => 23.5, 'suhu_maks_c' => 32.0, 'suhu_rata_c' => 27.9,
+                'angin_min_knot' => 4.2, 'angin_maks_knot' => 5.0, 'angin_rata_knot' => 4.6,
+                'penyinaran_min_persen' => 44.0, 'penyinaran_maks_persen' => 72.5, 'penyinaran_rata_persen' => 55.0,
+                'sumber_air_bersih' => 'Sumur gali dan penampungan air hujan',
+                'sumber_air_pertanian' => 'Air hujan',
             ],
         ];
     }

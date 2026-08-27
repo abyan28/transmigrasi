@@ -224,6 +224,102 @@
             <x-sim.rincian-kondisi-sp :penilaian="$penilaian" />
 
             {{--
+                Keadaan Wilayah (Bab II Laporan Monografi), ditambahkan
+                2026-08-28 (Rombongan C). Seluruhnya dokumenter dan opsional;
+                bagian yang belum diisi tetap dirender sebagai "belum dicatat"
+                agar petugas tahu apa yang kurang untuk laporan.
+            --}}
+            @php
+                $adaKeadaan = collect([
+                    'lintang_utara', 'jarak_ke_kecamatan_km', 'batas_utara', 'nomor_sk_pencadangan',
+                    'pola_permukiman', 'tingkat_kesuburan_tanah', 'bentuk_wilayah', 'curah_hujan_tahunan_mm',
+                    'suhu_rata_c', 'sumber_air_bersih',
+                ])->contains(fn ($k) => ($sp[$k] ?? null) !== null && $sp[$k] !== '');
+
+                $rentang = fn ($min, $maks, $satuan = '') => ($sp[$min] ?? null) !== null || ($sp[$maks] ?? null) !== null
+                    ? trim(rtrim(rtrim(number_format((float) ($sp[$min] ?? 0), 2, ',', '.'), '0'), ',')
+                        . ' sampai ' . rtrim(rtrim(number_format((float) ($sp[$maks] ?? 0), 2, ',', '.'), '0'), ',') . ' ' . $satuan)
+                    : null;
+            @endphp
+            <section class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] sm:p-6">
+                <h2 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">Keadaan Wilayah</h2>
+                <p class="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
+                    Bahan Bab II Laporan Monografi SP. Bagian yang belum diisi ditandai "belum dicatat".
+                </p>
+
+                @if (! $adaKeadaan)
+                    <p class="mt-4 rounded-lg bg-gray-50 px-4 py-6 text-center text-theme-sm text-gray-500 dark:bg-white/[0.03] dark:text-gray-400">
+                        Data keadaan wilayah belum dicatat. Lengkapi lewat tombol Ubah agar Laporan Monografi SP lengkap.
+                    </p>
+                @else
+                    @php
+                        $kelompokKeadaan = [
+                            'Letak' => [
+                                'Letak astronomis' => ($sp['lintang_utara'] ?? null) !== null
+                                    ? number_format((float) $sp['lintang_utara'], 6) . ' sampai ' . number_format((float) $sp['lintang_selatan'], 6) . ' LS, '
+                                        . number_format((float) $sp['bujur_barat'], 6) . ' sampai ' . number_format((float) $sp['bujur_timur'], 6) . ' BT'
+                                    : null,
+                                'Jarak ke Ibu Kota Kecamatan' => ($sp['jarak_ke_kecamatan_km'] ?? null) !== null ? rtrim(rtrim(number_format((float) $sp['jarak_ke_kecamatan_km'], 1, ',', '.'), '0'), ',') . ' km' : null,
+                                'Jarak ke Ibu Kota Kabupaten' => ($sp['jarak_ke_kabupaten_km'] ?? null) !== null ? rtrim(rtrim(number_format((float) $sp['jarak_ke_kabupaten_km'], 1, ',', '.'), '0'), ',') . ' km' : null,
+                                'Jarak ke Ibu Kota Provinsi' => ($sp['jarak_ke_provinsi_km'] ?? null) !== null ? rtrim(rtrim(number_format((float) $sp['jarak_ke_provinsi_km'], 1, ',', '.'), '0'), ',') . ' km' : null,
+                            ],
+                            'Batas Wilayah' => [
+                                'Sebelah Utara' => $sp['batas_utara'] ?? null,
+                                'Sebelah Timur' => $sp['batas_timur'] ?? null,
+                                'Sebelah Selatan' => $sp['batas_selatan'] ?? null,
+                                'Sebelah Barat' => $sp['batas_barat'] ?? null,
+                            ],
+                            'Luas dan Bentuk' => [
+                                'Nomor SK Pencadangan Areal' => $sp['nomor_sk_pencadangan'] ?? null,
+                                'Tanggal SK Pencadangan' => ($sp['tanggal_sk_pencadangan'] ?? null)
+                                    ? \Illuminate\Support\Carbon::parse($sp['tanggal_sk_pencadangan'])->translatedFormat('d F Y') : null,
+                                'Pola permukiman' => $sp['pola_permukiman'] ?? null,
+                            ],
+                            'Tanah dan Topografi' => [
+                                'Tingkat kesuburan tanah' => $sp['tingkat_kesuburan_tanah'] ?? null,
+                                'pH tanah' => $rentang('ph_tanah_min', 'ph_tanah_maks'),
+                                'Bentuk wilayah' => $sp['bentuk_wilayah'] ?? null,
+                                'Kemiringan lereng' => $rentang('kemiringan_min_persen', 'kemiringan_maks_persen', '%'),
+                            ],
+                            'Iklim' => [
+                                'Curah hujan rata-rata per tahun' => ($sp['curah_hujan_tahunan_mm'] ?? null) !== null
+                                    ? number_format((float) $sp['curah_hujan_tahunan_mm'], 2, ',', '.') . ' mm' : null,
+                                'Curah hujan bulanan' => $rentang('curah_hujan_bulan_min_mm', 'curah_hujan_bulan_maks_mm', 'mm'),
+                                'Suhu udara' => $rentang('suhu_min_c', 'suhu_maks_c', 'derajat C')
+                                    . (($sp['suhu_rata_c'] ?? null) !== null ? ', rata-rata ' . rtrim(rtrim(number_format((float) $sp['suhu_rata_c'], 1, ',', '.'), '0'), ',') . ' derajat C' : ''),
+                                'Kecepatan angin' => $rentang('angin_min_knot', 'angin_maks_knot', 'knot')
+                                    . (($sp['angin_rata_knot'] ?? null) !== null ? ', rata-rata ' . rtrim(rtrim(number_format((float) $sp['angin_rata_knot'], 1, ',', '.'), '0'), ',') . ' knot' : ''),
+                                'Penyinaran matahari' => $rentang('penyinaran_min_persen', 'penyinaran_maks_persen', '%')
+                                    . (($sp['penyinaran_rata_persen'] ?? null) !== null ? ', rata-rata ' . rtrim(rtrim(number_format((float) $sp['penyinaran_rata_persen'], 1, ',', '.'), '0'), ',') . '%' : ''),
+                            ],
+                            'Sumberdaya Air' => [
+                                'Sumber air bersih' => $sp['sumber_air_bersih'] ?? null,
+                                'Sumber air pertanian' => $sp['sumber_air_pertanian'] ?? null,
+                            ],
+                        ];
+                    @endphp
+
+                    <div class="mt-4 grid gap-x-8 gap-y-5 sm:grid-cols-2">
+                        @foreach ($kelompokKeadaan as $judulKelompok => $isi)
+                            <div>
+                                <h3 class="text-theme-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{{ $judulKelompok }}</h3>
+                                <dl class="mt-2 space-y-2 text-theme-sm">
+                                    @foreach ($isi as $label => $nilai)
+                                        <div class="flex justify-between gap-4">
+                                            <dt class="text-gray-500 dark:text-gray-400">{{ $label }}</dt>
+                                            <dd class="text-right font-medium text-gray-800 dark:text-white/90">
+                                                {{ $nilai !== null && trim((string) $nilai) !== '' ? $nilai : 'belum dicatat' }}
+                                            </dd>
+                                        </div>
+                                    @endforeach
+                                </dl>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+            </section>
+
+            {{--
                 Rincian data SP dalam tab, agar halaman tidak memanjang
                 (agents/rules.md bagian 13.2 poin 2).
             --}}

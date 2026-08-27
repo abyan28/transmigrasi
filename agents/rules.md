@@ -162,7 +162,10 @@ Alamat URL **tidak menampilkan primary key berurutan**. Pola berurutan seperti `
 
 2. **Cabang administratif** mencatat pembagian pemerintahan. **Cabang program** mencatat kawasan transmigrasi, yaitu wilayah perencanaan yang dapat memotong batas kecamatan. Keduanya bertemu di SP.
 3. Setiap SP wajib menaut ke **satu desa** dan **satu kawasan transmigrasi** sekaligus. Informasi kecamatan tidak disimpan langsung pada SP, melainkan dibaca lewat desanya.
-4. Setiap SP wajib menyimpan: nama SP, desa, kawasan, titik koordinat, luas lahan, dokumen pendukung, dan penanggung jawab data. Inventaris dan fasilitas SP dikelola sebagai daftar terpisah yang menempel pada SP (Â§4b). **Batas wilayah Utara/Timur/Selatan/Barat dicabut 2026-08-18** karena isinya sebutan naratif yang tidak pernah dipakai perhitungan, indikator, maupun peta; lihat `notes.md` bagian 6.
+4. Setiap SP wajib menyimpan: nama SP, desa, kawasan, titik koordinat, luas lahan, dokumen pendukung, dan penanggung jawab data. Inventaris dan fasilitas SP dikelola sebagai daftar terpisah yang menempel pada SP (Â§4b).
+4a. **SP menyimpan field "Keadaan Wilayah"** (letak astronomis dan ekonomis, batas wilayah, SK pencadangan, pola permukiman, tanah, topografi, iklim, sumberdaya air) untuk Laporan Monografi SP. Seluruhnya opsional dan dokumenter: dipakai laporan, tidak dihitung. Angka rentang disimpan sebagai pasangan min/maks, bukan teks. Ditambahkan 2026-08-28 (Rombongan C), mengikuti Bab II Laporan Monografi.
+4b. **Batas wilayah Utara/Timur/Selatan/Barat dihidupkan kembali 2026-08-28** setelah dicabut 2026-08-18. Alasan pencabutan (isinya sebutan naratif, tak dipakai hitungan/indikator/peta) tetap benar, tetapi Bab II Laporan Monografi memuatnya sehingga dinas memerlukannya. Riwayat pencabutan dipertahankan pada `notes.md` bagian 6.
+4c. **Rute aksesibilitas SP** (rute perjalanan menuju SP: jarak, sarana angkutan, kondisi jalan, waktu tempuh, ongkos) disimpan sebagai daftar terpisah `rute_aksesibilitas_sp`, mengikuti Tabel 2.1 Monografi.
 5. Lokus awal sistem adalah **Kawasan Transmigrasi Kobalima Timur**, Kabupaten Malaka, Nusa Tenggara Timur, yang menaungi 6 SP tersebar di 4 kecamatan:
 
    | Satuan Permukiman / Lokus | Desa | Kecamatan |

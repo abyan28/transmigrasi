@@ -1256,6 +1256,57 @@ cukup dipendekkan.
 
 ---
 
+## 1q. Rombongan C: Field Keadaan Wilayah SP (2026-08-28)
+
+Menambah field Bab II Laporan Monografi (Keadaan Wilayah) pada modul SP.
+Dikerjakan bertahap: C1 field, C2 tabel rute aksesibilitas, C3 Laporan
+Monografi SP penuh.
+
+### 1q.1 Batas wilayah dihidupkan kembali
+
+Empat kolom `batas_*` dicabut 2026-08-18 (isinya naratif, tak dipakai
+hitungan/indikator/peta). Catatan pencabutan menuliskan jalan menghidupkannya
+"bila dinas memerlukannya". Bab II Monografi memuat Batas-Batas Alam,
+sehingga dinas kini memerlukannya. Pembalikan berjejak: alasan pencabutan
+dipertahankan pada `notes.md` bagian 6; keduanya benar pada waktunya.
+`rules.md` §4a poin 4b mencatatnya. `prd.md`/`workflow.md` tidak menyebut
+batas dicabut, jadi tidak ada yang dikembalikan di sana.
+
+### 1q.2 Keputusan format: min/maks numerik
+
+Pemilik proyek memilih memecah rentang jadi pasangan angka, bukan teks:
+letak astronomis jadi kotak `lintang_utara`/`lintang_selatan`/`bujur_barat`/
+`bujur_timur`; pH, kemiringan jadi min/maks; suhu, angin, penyinaran jadi
+min/maks/rata; curah hujan jadi tahunan + bulanan min/maks. ~35 kolom baru,
+semua NULLable dan dokumenter.
+
+### 1q.3 Stage C1: yang dikerjakan
+
+- 3 enum: `PolaPermukiman`, `TingkatKesuburanTanah`, `BentukWilayah`.
+- `satuanPermukiman()` dibungkus `array_map` yang menyatukan sub-array
+  Keadaan Wilayah per SP (`keadaanWilayahSp()`), agar baris identitas tetap
+  terbaca. SP Kapitan Meo memakai angka persis dari berkas monografi
+  (curah hujan 1607,18 mm; suhu rata 27,7; SK 79/HK/2018); SP lain nilai
+  wajar.
+- Form SP: section "Keadaan Wilayah" 6 fieldset (letak, batas, luas & bentuk,
+  tanah & topografi, iklim, sumberdaya air).
+- `dashboard/sp`: blok tampil per kelompok Bab II; bagian kosong ditandai
+  "belum dicatat".
+- `data-dictionary.md` §3.6 (kolom + catatan batas) + §3.6a
+  (`rute_aksesibilitas_sp`, dipakai C2) + §11.41-43.
+
+### 1q.4 Verifikasi
+
+**660 uji hijau**, `pint` 31. Satu uji lama dibalik (`mencabut batas
+wilayah` -> `menghidupkan kembali batas wilayah`); dua uji baru.
+
+Bug uji ikut ditemukan: Pest `->toContain($a, $b)` memeriksa KEDUA needle,
+bukan menganggap `$b` pesan galat. Satu uji Rombongan B (`mencabut komponen
+tombol ekspor`) juga memakai pola keliru itu dan lolos secara kebetulan;
+keduanya diganti `expect(str_contains(...))->toBeFalse("pesan")`.
+
+---
+
 ## 2. Catatan Dokumen Proposal
 
 Lembar pengesahan pada `docs/Revisi_Proposal_Budi_TEP ITS 2026_Kobalima_Timur_Upload_10_6_2026_a.pdf` masih memuat judul dan pengusul dari proposal lain:
@@ -1664,8 +1715,9 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
 - buat cache/cookies/pwa untuk atasi sinyal ketika kirim data tapi sinyal jelek/putus. dikerjakan setelah backend selesai.
 
 ## 6. Revisi
-- [done] Batas utara, timur, selatan, barat pada form tambah dan ubah di halaman SP dihapus saja.
-  * **Dihapus sepenuhnya**, bukan hanya dari form: kolom kamus data, tampilan dashboard SP, 24 nilai data contoh, dan pengecualian pada `UppercaseInput` ikut dicabut.
+- [done, lalu DIBALIK 2026-08-28] Batas utara, timur, selatan, barat pada form tambah dan ubah di halaman SP dihapus saja.
+  * **DIHIDUPKAN KEMBALI 2026-08-28 (Rombongan C).** Bab II Laporan Monografi memuat Batas-Batas Alam, sehingga dinas kini memerlukannya. Empat kolom `batas_*` dikembalikan ke `data-dictionary.md` §3.6, satu bagian ("Keadaan Wilayah") pada `sp/form`, dan blok tampilan pada `dashboard/sp` - persis jalan yang dituliskan pada butir "Nilainya dokumenter" di bawah. `rules.md` §4a poin 4b mencatat pembalikan. Alasan pencabutan di bawah dipertahankan sebagai riwayat: keduanya benar pada waktunya masing-masing. Lihat bagian 1q.
+  * **Dihapus sepenuhnya** (2026-08-18), bukan hanya dari form: kolom kamus data, tampilan dashboard SP, 24 nilai data contoh, dan pengecualian pada `UppercaseInput` ikut dicabut.
   * **Alasan yang membuat penghapusan aman:** keempat kolom dipakai **0 perhitungan, 0 indikator dashboard, 0 parameter penilaian kondisi SP, 0 fitur peta, dan 0 uji**. Menghapusnya tidak memerahkan satu uji pun, dan itu sendiri pertanda tidak ada yang bergantung padanya.
   * Isinya memang bukan geometri melainkan sebutan naratif seperti `Hutan lindung` atau `Sungai Benanain`, sehingga mustahil dipakai menggambar batas. `peta.js` hanya memplot titik dan tidak memiliki `polygon` maupun `geojson`.
   * **Bentrok dokumen diselesaikan, bukan diabaikan.** `rules.md` 4a.4 sempat menulis batas wilayah sebagai hal yang "wajib disimpan", diikuti `prd.md` dan `workflow.md`. Ketiganya disunting agar tidak menjanjikan isian yang sudah tidak ada.

@@ -3,12 +3,15 @@
 namespace App\Providers;
 
 use App\Enums\Agama;
+use App\Enums\BentukWilayah;
 use App\Enums\HubunganAnggotaKeluarga;
 use App\Enums\JenisKelamin;
 use App\Enums\JenisReferensi;
 use App\Enums\KegiatanAnggota;
 use App\Enums\PendidikanTerakhir;
+use App\Enums\PolaPermukiman;
 use App\Enums\StatusPanen;
+use App\Enums\TingkatKesuburanTanah;
 use App\Support\DummyData;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\View;
@@ -56,7 +59,7 @@ class ViewServiceProvider extends ServiceProvider
         'pages.panen.form' => ['satuanKomoditas', 'simbolSatuan', 'penanamanUntukPanen'],
         'pages.penanaman.form' => ['daftarPoktan', 'daftarKomoditas', 'petaPoktan', 'petaBenih'],
         'pages.pengaduan.form' => ['petaBidang', 'opsiKategoriPengaduan', 'opsiBidang', 'opsiPrioritasPengaduan', 'daftarSp'],
-        'pages.sp.form' => ['daftarDesa', 'daftarKawasan'],
+        'pages.sp.form' => ['daftarDesa', 'daftarKawasan', 'opsiPolaPermukiman', 'opsiKesuburanTanah', 'opsiBentukWilayah'],
         'pages.sp.form-kawasan' => ['daftarProvinsi', 'daftarKabupaten'],
         'pages.sp.form-inventaris' => ['daftarSp', 'opsiSumberDana', 'opsiStatusPenyerahan', 'opsiKondisi'],
         'pages.sp.form-fasilitas' => ['daftarSp', 'opsiJenisFasilitas', 'opsiSumberDana', 'opsiStatusPenyerahan', 'opsiKondisi'],
@@ -226,6 +229,12 @@ class ViewServiceProvider extends ServiceProvider
             'opsiKegiatanAnggota' => KegiatanAnggota::opsi(),
             'opsiPendidikan' => PendidikanTerakhir::opsi(),
             'opsiJenisKelamin' => JenisKelamin::opsi(),
+
+            // Enum "Keadaan Wilayah" SP (Rombongan C, 2026-08-28), baku dari
+            // format Monografi, bukan data master.
+            'opsiPolaPermukiman' => PolaPermukiman::opsi(),
+            'opsiKesuburanTanah' => TingkatKesuburanTanah::opsi(),
+            'opsiBentukWilayah' => BentukWilayah::opsi(),
 
             // Anggota keluarga dikelompokkan per keluarga, agar pilihan wakil
             // maupun ketua poktan menyempit begitu keluarganya dipilih

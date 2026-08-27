@@ -13,6 +13,7 @@ use App\Enums\Agama;
 use App\Enums\AksiPermission;
 use App\Enums\AlasanPergantianKK;
 use App\Enums\AsalWakilPoktan;
+use App\Enums\BentukWilayah;
 use App\Enums\BidangPengaduan;
 use App\Enums\HubunganAnggotaKeluarga;
 use App\Enums\JabatanAnggotaPoktan;
@@ -21,9 +22,11 @@ use App\Enums\KegiatanAnggota;
 use App\Enums\Kondisi;
 use App\Enums\PendidikanTerakhir;
 use App\Enums\PeruntukanLahan;
+use App\Enums\PolaPermukiman;
 use App\Enums\StatusPanen;
 use App\Enums\StatusPengaduan;
 use App\Enums\SumberDana;
+use App\Enums\TingkatKesuburanTanah;
 use App\Helpers\MenuHelper;
 use App\Helpers\RemahHelper;
 use App\Support\DummyData;
@@ -4423,8 +4426,8 @@ it('mencabut komponen tombol ekspor beserta rujukannya di kerangka bersama', fun
         ->toBeFalse('Berkas komponen tombol-ekspor masih ada');
 
     foreach (BerkasBlade::semua() as $path) {
-        expect(file_get_contents($path))
-            ->not->toContain('x-sim.tombol-ekspor', "Masih ada tag <x-sim.tombol-ekspor> di {$path}");
+        expect(str_contains(file_get_contents($path), 'x-sim.tombol-ekspor'))
+            ->toBeFalse("Masih ada tag <x-sim.tombol-ekspor> di {$path}");
     }
 });
 
@@ -5885,34 +5888,82 @@ it('menjumlahkan luas lahan usaha dari seluruh tahapnya', function () {
         ->assertSee(number_format($luasUsaha, 2, ',', '.'));
 });
 
-it('mencabut batas wilayah SP dari seluruh sumber', function () {
-    // Keempat kolom `batas_*` menyimpan sebutan naratif seperti "Hutan
-    // lindung", bukan koordinat, sehingga tidak pernah dipakai perhitungan,
-    // indikator dashboard, penilaian kondisi SP, maupun peta. Satu-satunya
-    // kegunaannya menyalin isi berkas penetapan.
+it('menghidupkan kembali batas wilayah SP secara lengkap, bukan sebagian', function () {
+    // Keempat kolom `batas_*` dicabut 2026-08-18 (isinya naratif, tak dipakai
+    // hitungan/peta), lalu DIHIDUPKAN KEMBALI 2026-08-28 (Rombongan C) sebab
+    // Bab II Laporan Monografi memuat Batas-Batas Alam.
     //
-    // Uji ini menjaga agar isian yang sudah dicabut tidak kembali sebagian:
-    // form tanpa kolom, atau kolom tanpa form, sama-sama menyesatkan.
+    // Uji ini menjaga agar kebangkitannya utuh: form tanpa kolom, atau kolom
+    // tanpa form, atau kamus tanpa keduanya, sama-sama menyesatkan.
     $arah = ['batas_utara', 'batas_timur', 'batas_selatan', 'batas_barat'];
 
     $formSp = $this->get(route('sp.index'))->assertOk()->getContent();
     $rincianSp = $this->get(route('dashboard.sp', 1))->assertOk()->getContent();
 
     foreach ($arah as $kolom) {
-        expect($formSp)->not->toContain('name="'.$kolom.'"')
-            ->and($rincianSp)->not->toContain($kolom);
+        expect($formSp)->toContain('name="'.$kolom.'"');
     }
+    // Rincian menampilkan nilainya (SP 1 dari berkas monografi).
+    expect($rincianSp)->toContain('Batas Wilayah')->toContain('Desa Tesa');
 
-    // Data contoh dan kamus data ikut bersih, agar tidak ada kolom yatim yang
-    // tersimpan tanpa pernah dapat diisi.
+    // Data contoh memuat keempat kunci pada setiap SP.
     foreach (DummyData::satuanPermukiman() as $sp) {
         foreach ($arah as $kolom) {
-            expect($sp)->not->toHaveKey($kolom);
+            expect($sp)->toHaveKey($kolom);
         }
     }
 
+    // Kamus data mencatatnya kembali.
     expect(file_get_contents(base_path('agents/data-dictionary.md')))
-        ->not->toContain('| `batas_utara` |');
+        ->toContain('`batas_utara`');
+});
+
+it('menyediakan tempat tampil bagi setiap field Keadaan Wilayah SP', function () {
+    // Penjaga 1f untuk field baru Rombongan C: tiap isian yang diisi form SP
+    // wajib punya tempat tampil di halaman rincian SP.
+    $form = $this->get(route('sp.index'))->assertOk()->getContent();
+    $rincian = $this->get(route('dashboard.sp', 1))->assertOk()->getContent();
+
+    // Setiap isian Keadaan Wilayah pada form terender wajib punya name=.
+    $isianWajib = [
+        'lintang_utara', 'bujur_timur', 'jarak_ke_provinsi_km',
+        'batas_utara', 'batas_barat', 'nomor_sk_pencadangan', 'tanggal_sk_pencadangan',
+        'pola_permukiman', 'tingkat_kesuburan_tanah', 'ph_tanah_min', 'ph_tanah_maks',
+        'bentuk_wilayah', 'kemiringan_min_persen', 'curah_hujan_tahunan_mm',
+        'curah_hujan_bulan_maks_mm', 'suhu_rata_c', 'angin_rata_knot',
+        'penyinaran_rata_persen', 'sumber_air_bersih', 'sumber_air_pertanian',
+    ];
+    foreach ($isianWajib as $nama) {
+        expect(str_contains($form, 'name="'.$nama.'"'))->toBeTrue("isian {$nama} tidak ada di form SP");
+    }
+
+    // Blok tampilnya di halaman rincian, per kelompok Bab II.
+    $wajibTampil = [
+        'Letak astronomis', 'Jarak ke Ibu Kota', 'Batas Wilayah', 'SK Pencadangan',
+        'Pola permukiman', 'kesuburan tanah', 'pH tanah', 'Bentuk wilayah',
+        'Kemiringan lereng', 'Curah hujan', 'Suhu udara', 'Kecepatan angin',
+        'Penyinaran matahari', 'Sumber air bersih', 'Sumber air pertanian',
+    ];
+    foreach ($wajibTampil as $label) {
+        expect($rincian)->toContain($label);
+    }
+
+    // SP 1 memakai angka persis dari berkas Monografi Kapitan Meo, dan
+    // nilainya benar-benar dirender.
+    $sp1 = collect(DummyData::satuanPermukiman())->firstWhere('id_satuan_permukiman', 1);
+    expect($sp1['curah_hujan_tahunan_mm'])->toBe(1607.18)
+        ->and($sp1['suhu_rata_c'])->toBe(27.7)
+        ->and($sp1['nomor_sk_pencadangan'])->toBe('79/HK/2018');
+    expect($rincian)->toContain('79/HK/2018')->toContain('Desa Tesa');
+});
+
+it('mengunci enum Keadaan Wilayah SP', function () {
+    expect(PolaPermukiman::nilai())
+        ->toBe(['Konsentris', 'Papan Catur', 'Linear', 'Menyebar']);
+    expect(TingkatKesuburanTanah::nilai())
+        ->toBe(['Subur', 'Sedang', 'Kurang Subur']);
+    expect(BentukWilayah::nilai())
+        ->toBe(['Datar', 'Bergelombang', 'Berbukit', 'Bergunung']);
 });
 
 /*

@@ -817,7 +817,7 @@ Lima laporan mengikuti berkas rujukan di `refs/` (dibaca lewat `pdftotext`, baca
 
 **Ditunda:**
 - Rombongan B: anggota keluarga (istri + anak) dynamic form + field usia/agama pada form transmigran
-- Rombongan C: field SP Bab II Monografi (untuk Laporan Monografi SP penuh)
+- ~~Rombongan C: field SP Bab II Monografi~~ — sedang dikerjakan, lihat di bawah
 - Pintasan laporan dari halaman daftar (bawa filter aktif)
 - Pemilih periode untuk laporan lintas modul (Rekap Indikator Kawasan, Daftar Transmigran)
 - Penyeragaman nama field alsintan ke `tahun_pengadaan` / `sumber_dana`
@@ -832,6 +832,14 @@ Membalik `erd.md` §7.4 ("sistem tidak mendata anggota keluarga satu per satu") 
 - **Stage B3 ✅** — suksesi KK: `DummyData::calonPenggantiKk()` (pasangan lalu usia tertua); modal `<select pengganti_anggota_keluarga_id>` + isian tersembunyi dibaca dari pilihan; `riwayat_kepala_keluarga.hubungan_pengganti` beralih ke §11.39; rute Tahap 5 juga menghapus baris `anggota_keluarga` pengganti. `rules.md` §6.5d, `erd.md` §7.4a, `data-dictionary.md` §6.4/§11.35 direvisi berjejak. 657 uji hijau, pint 31.
 
 **Rombongan B SELESAI seluruhnya (B1+B2+B3).** `erd.md` §7.4 dibalik penuh: sistem kini mendata anggota keluarga satu per satu.
+
+### Revisi Rombongan C: field Keadaan Wilayah SP (2026-08-28) — bertahap
+
+Field Bab II Laporan Monografi (Keadaan Wilayah) pada modul SP.
+
+- **Stage C1 ✅** — 3 enum (`PolaPermukiman`/`TingkatKesuburanTanah`/`BentukWilayah`); ~35 kolom baru pada `satuan_permukiman` (letak astronomis kotak, jarak ekonomis, batas wilayah DIHIDUPKAN, SK pencadangan, pola, tanah, topografi, iklim min/maks/rata, sumber air); `keadaanWilayahSp()` di DummyData (Kapitan Meo dari berkas monografi); section "Keadaan Wilayah" pada form SP; blok tampil di `dashboard/sp`. 660 uji hijau, pint 31. `data-dictionary.md` §3.6/§3.6a/§11.41-43, `rules.md` §4a, `notes.md` bagian 6 batas + 1q.
+- **Stage C2 ⬜** — tabel `rute_aksesibilitas_sp` + dynamic repeater pada form SP + tampil rincian.
+- **Stage C3 ⬜** — Laporan Monografi SP: render Bab II penuh per SP (Letak, Batas, Luas & Bentuk, Tanah, Topografi, Iklim, Sumberdaya Air, Aksesibilitas).
 
 ## Tahap 3 — Autentikasi dan Hak Akses
 

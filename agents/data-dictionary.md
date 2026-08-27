@@ -323,10 +323,54 @@ Satuan Permukiman (SP), unit lokus utama sistem. Seluruh data operasional bermua
 | `dokumen_pendukung` | `VARCHAR(255)` | YA | | Path berkas |
 | `keterangan` | `TEXT` | YA | | Catatan bebas |
 
+**Field Keadaan Wilayah** (Bab II Laporan Monografi; ditambahkan 2026-08-28, Rombongan C). Semuanya `NULL`-able dan dokumenter: dipakai laporan, tidak dihitung. Angka rentang disimpan sebagai pasangan min/maks.
+
+| Kolom | Tipe | Keterangan |
+|---|---|---|
+| `lintang_utara`, `lintang_selatan`, `bujur_barat`, `bujur_timur` | `DECIMAL(10,7)` | Kotak letak astronomis |
+| `jarak_ke_kecamatan_km`, `jarak_ke_kabupaten_km`, `jarak_ke_provinsi_km` | `DECIMAL(6,1)` | Letak ekonomis |
+| `batas_utara`, `batas_timur`, `batas_selatan`, `batas_barat` | `VARCHAR(150)` | **Dihidupkan kembali 2026-08-28**, lihat catatan |
+| `nomor_sk_pencadangan` | `VARCHAR(100)` | SK Pencadangan Areal SP |
+| `tanggal_sk_pencadangan` | `DATE` | |
+| `pola_permukiman` | `ENUM` | Lihat §11.41 |
+| `tingkat_kesuburan_tanah` | `ENUM` | Lihat §11.42 |
+| `ph_tanah_min`, `ph_tanah_maks` | `DECIMAL(4,2)` | Kisaran pH |
+| `bentuk_wilayah` | `ENUM` | Lihat §11.43 |
+| `kemiringan_min_persen`, `kemiringan_maks_persen` | `DECIMAL(5,2)` | Kemiringan lereng |
+| `curah_hujan_tahunan_mm` | `DECIMAL(8,2)` | Rata-rata tahunan |
+| `curah_hujan_bulan_min_mm`, `curah_hujan_bulan_maks_mm` | `DECIMAL(7,2)` | Bulanan terendah dan tertinggi |
+| `suhu_min_c`, `suhu_maks_c`, `suhu_rata_c` | `DECIMAL(4,1)` | Temperatur udara |
+| `angin_min_knot`, `angin_maks_knot`, `angin_rata_knot` | `DECIMAL(4,1)` | Kecepatan angin |
+| `penyinaran_min_persen`, `penyinaran_maks_persen`, `penyinaran_rata_persen` | `DECIMAL(5,2)` | Lama penyinaran matahari |
+| `sumber_air_bersih`, `sumber_air_pertanian` | `VARCHAR(255)` | Teks bebas |
+
+Sub-bagian 2.2 Aksesibilitas (rute perjalanan) disimpan pada tabel tersendiri `rute_aksesibilitas_sp` (§3.6a).
+
 **Catatan:**
-- Empat kolom `batas_utara`, `batas_timur`, `batas_selatan`, dan `batas_barat` **dicabut 2026-08-18**. Keempatnya menggantikan tabel `koordinat_lokasi_sp` pada SQL referensi, tetapi isinya berupa sebutan naratif seperti "Berbatasan dengan Desa Naet", bukan koordinat, sehingga tidak pernah dipakai perhitungan, indikator dashboard, penilaian kondisi SP, maupun peta mana pun. Rinciannya pada `notes.md` bagian 6.
+- **Batas wilayah dihidupkan kembali 2026-08-28 (Rombongan C).** Keempat kolom `batas_utara`/`batas_timur`/`batas_selatan`/`batas_barat` sempat **dicabut 2026-08-18** karena isinya sebutan naratif ("Berbatasan dengan Desa Naet"), bukan koordinat, dan tidak dipakai perhitungan, indikator, penilaian kondisi SP, maupun peta mana pun. Catatan pencabutan sendiri menuliskan jalan menghidupkannya: "tambahkan kembali 4 kolom pada kamus data 3.6, satu bagian pada sp/form, dan satu blok tampilan pada dashboard/sp". Bab II Laporan Monografi memuatnya, sehingga dinas kini memerlukannya. Alasan pencabutan dipertahankan sebagai riwayat pada `notes.md` bagian 6.
 - **Kolom `kecamatan_id` sengaja tidak ada.** Kecamatan dibaca lewat rantai `desa_id → desa → kecamatan`. Menyimpannya secara terpisah membuka peluang data tidak sinkron bila desa berpindah kecamatan.
 - SP menyimpan **dua** foreign key wilayah yang saling melengkapi: `kawasan_id` menjawab "bagian dari program mana", `desa_id` menjawab "berdiri di wilayah administratif mana". Keduanya wajib diisi.
+
+### 3.6a `rute_aksesibilitas_sp`
+
+Rute pencapaian ke satu SP (Bab II sub-bagian 2.2 Laporan Monografi, Tabel 2.1). Ditambahkan 2026-08-28 (Rombongan C). Satu SP punya beberapa baris; diisi lewat daftar dinamis pada form SP.
+
+| Kolom | Tipe | Null | Kunci | Keterangan |
+|---|---|---|---|---|
+| `id_rute_aksesibilitas_sp` | `BIGINT UNSIGNED AUTO_INCREMENT` | TIDAK | PK | |
+| `satuan_permukiman_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | `ON DELETE CASCADE` |
+| `rute` | `VARCHAR(255)` | TIDAK | | Contoh: "Kupang ke UPT", "UPT ke Kabupaten" |
+| `jarak_km` | `DECIMAL(7,1)` | YA | | |
+| `sarana_angkutan` | `VARCHAR(150)` | YA | | Contoh: "Roda dua", "Angkutan darat", "Pesawat" |
+| `tempat_pemberangkatan` | `VARCHAR(150)` | YA | | |
+| `kondisi_jalan` | `VARCHAR(150)` | YA | | Contoh: "Baik, aspal", "Pengerasan" |
+| `waktu_tempuh` | `VARCHAR(80)` | YA | | Teks bebas: "6 jam", "45 menit" |
+| `ongkos_rp` | `DECIMAL(12,2)` | YA | | Rupiah |
+| `keterangan` | `VARCHAR(255)` | YA | | |
+
+**Catatan:**
+- `waktu_tempuh` sengaja teks: berkas monografi menulisnya beragam ("6 jam", "2 JAM", "2,5"), dan menyeragamkannya menjadi menit menuntut petugas mengurai sendiri.
+- Tidak ada tabel riwayat: rute yang berubah cukup disunting atau dihapus.
 
 ---
 
@@ -1386,6 +1430,24 @@ Dipakai `anggota_keluarga.kegiatan`. Menggantikan pilihan "Pendidikan/Kerja" ber
 | `Masih Sekolah` | `pendidikan_terakhir` sebagai jenjang yang sedang ditempuh |
 | `Bekerja` | `pendidikan_terakhir` + `pekerjaan` + `pendapatan_per_bulan` |
 | `Tidak Bekerja` | `pendidikan_terakhir` saja |
+
+### 11.41 Pola permukiman
+
+`Konsentris` · `Papan Catur` · `Linear` · `Menyebar`
+
+Dipakai `satuan_permukiman.pola_permukiman`. Bab II sub-bagian 3.2 Laporan Monografi (Rombongan C, 2026-08-28). "Konsentris" berarti permukiman terpusat lalu dikelilingi lahan pekarangan dan lahan usaha.
+
+### 11.42 Tingkat kesuburan tanah
+
+`Subur` · `Sedang` · `Kurang Subur`
+
+Dipakai `satuan_permukiman.tingkat_kesuburan_tanah`. Bab II sub-bagian 4. Kisaran pH disimpan terpisah pada `ph_tanah_min` / `ph_tanah_maks`.
+
+### 11.43 Bentuk wilayah
+
+`Datar` · `Bergelombang` · `Berbukit` · `Bergunung`
+
+Dipakai `satuan_permukiman.bentuk_wilayah`. Bab II sub-bagian 5 (topografi). Persentase kemiringan lereng disimpan terpisah pada `kemiringan_min_persen` / `kemiringan_maks_persen`.
 
 ---
 
