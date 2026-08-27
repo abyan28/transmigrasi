@@ -1,4 +1,4 @@
-# notes.md
+﻿# notes.md
 ## Catatan Teknis dan Temuan
 
 Dokumen ini berisi catatan temuan, keputusan, dan hal yang perlu ditindaklanjuti selama penyusunan dokumen dan pengembangan sistem.
@@ -982,6 +982,76 @@ Ini uji ketiga dalam sehari yang mengunci mekanisme alih-alih tujuan, setelah `d
 ### 1l.5 Verifikasi
 
 621 uji hijau. Penjaga barunya menolak halaman yang menuliskan ulang kedua blok itu, dibuktikan lewat mutasi. `pint` tidak menambah utang.
+
+---
+
+## 1m. Revisi Putaran 1: Fondasi Pelaporan Panen (2026-08-27)
+
+Rombongan A butir 1 dan 2 dari `notes.md` bagian 6, ditambah butir mandiri D1 dan D2. Pemicunya pertemuan dengan **Dinas Pertanian** yang menetapkan laporan hasil panen dikelompokkan menurut **tahun anggaran bantuan**, bukan tahun panen.
+
+Putaran ini mengerjakan **fondasi datanya saja** — kolom, form, tempat tampil, dan penjaganya. Halaman laporan dan penyaring rentang tahun ditunda ke putaran berikutnya, supaya kolom laporan tidak ditebak di atas data yang belum ada.
+
+### 1m.1 Penyimpangan nama field yang sudah lama berjalan
+
+Ditemukan saat menyisir `saprotan` sebelum menambah kolom. Tiga nama menyimpang antara kamus data dan kode:
+
+| Kamus data §8.4 (lama) | Kode (form + `DummyData`) | Kenyataannya |
+|---|---|---|
+| `tahun_perolehan` (YEAR) | tidak dipakai | — |
+| `tanggal_penyaluran` (DATE) | tidak dipakai sama sekali | janji yang tak pernah ditepati |
+| `sumber_dana` | `sumber` | dua nama satu hal |
+| — | `tanggal_perolehan` (`type="date"`) | nama yang tak pernah ada di kamus |
+
+Ini pola yang sudah tercatat pada 1f: **janji dokumen yang tidak ditepati kode**. Yang membuatnya bertahan: tidak ada penjaga yang mengadu nama field form dengan kamus data.
+
+`tahun_perolehan` dan `tanggal_penyaluran` **dicabut** dari kamus. `tahun_pengadaan` (YEAR, wajib) menggantikan keduanya dengan makna tegas. `sumber` diseragamkan menjadi `sumber_dana`. Bila dinas kelak perlu tanggal serah terima yang persis, `tanggal_penyaluran` dikembalikan.
+
+> **Aturan:** setiap kali menyentuh satu tabel untuk menambah kolom, sisir dulu nama field yang sudah ada terhadap kamus data. Penyimpangan nama tidak memerahkan apa pun sampai ada yang mencari kolom yang salah nama.
+
+### 1m.2 Tahun pengadaan ≠ tahun perolehan, dan itu inti masalahnya
+
+`saprotan` menyimpan kapan barang *diterima*. Bantuan APBN 2025 dapat diserahkan Januari 2026. Tidak ada rumus yang bisa menebak 2025 dari tanggal terima 2026 — karena itu `tahun_pengadaan` **field baru yang diisi petugas dari berita acara**, bukan diturunkan.
+
+Rantai penelusuran laporannya **sudah ada, tanpa kolom penghubung baru**:
+
+```
+hasil_panen.penanaman_id -> penanaman.saprotan_id -> saprotan.tahun_pengadaan
+```
+
+`penanaman.saprotan_id` wajib sejak 2026-08-24, sehingga setiap panen pasti tertelusur ke satu benih.
+
+### 1m.3 Basis tahun dipisah menurut tujuan, bukan diganti
+
+Rekap panen memakai **tahun panen** (§9 poin 8c, diubah 2026-08-24). Laporan memakai **tahun pengadaan**. Keduanya menjawab pertanyaan berbeda:
+
+- Rekap: "apa yang terjadi tahun ini"
+- Laporan: "apa hasil dari bantuan anggaran 2025"
+
+Masing-masing wajib menyebut basisnya di judul agar angka yang sama tidak tertukar. Menariknya, keberatan asli terhadap tahun panen — penanaman yang belum dipanen tidak punya periode panen — **terjawab** oleh tahun pengadaan, sebab tahun anggaran diketahui sejak sebelum tanam.
+
+### 1m.4 Pupuk tidak tertaut, dan laporannya jujur soal itu
+
+`penanaman.saprotan_id` menunjuk **benih**. Pupuk, pestisida, mulsa tercatat sebagai baris saprotan lepas. Laporan panen karena itu **dua bagian terpisah**: bagian benih menampilkan rantai penuh sampai hasil panen; bagian pupuk hanya penyalurannya per poktan per tahun pengadaan. Menyatukannya paksa berarti mengarang kaitan yang tidak didata.
+
+### 1m.5 Penerima alsintan: penanda tangan, bukan pemilik
+
+Butir D2 sempat berisiko membatalkan keputusan 2026-08-22 ("alsintan selalu milik kelompok"). Dikonfirmasi pemilik proyek: yang dimaksud **siapa yang menandatangani berita acara serah terima**, bukan kepemilikan.
+
+Kolom `penanda_terima_id` menunjuk `anggota_poktan.id` — ketua maupun anggota biasa. Alat tetap milik kelompok; `rules.md` 7b.1 tidak disentuh. Nama penanda tangan **dihitung** dari `anggotaPoktan()`, tidak disimpan, sama alasannya dengan nama wakil pada `anggotaPoktan` itu sendiri.
+
+### 1m.6 Aturan menulis rencana (D1)
+
+`rules.md` §20b baru: sebelum menyentuh kode, AI wajib menulis rencana lengkap ke `session-notes.md`. Lahir dari sesi yang terhenti di tengah audit tanpa jejak rencana yang dapat dibaca (1g.8).
+
+### 1m.7 Verifikasi
+
+**623 uji hijau** (naik 2), `pint` tidak menambah utang (tetap 31).
+
+Dua penjaga baru:
+- **Varietas bersyarat pada benih**, sejajar dengan komoditas. Diperiksa pada keluaran terender — kedua field muncul dan `:required="benih"` sama. Dibuktikan lewat mutasi.
+- **Rantai laporan panen**: dari setiap `hasil_panen`, telusuri sampai `saprotan.tahun_pengadaan`, dan pastikan data contoh memuat **minimal satu kasus lintas tahun** — tanpa itu penggantian sumbu tidak membuktikan apa pun.
+
+Render nyata: `/saprotan`, `/saprotan/1`, `/alsintan`, `/alsintan/1`, `/poktan/1` dibuka dan diperiksa memuat setiap field baru serta tidak lagi memuat field lama.
 
 ---
 
@@ -2071,3 +2141,21 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
   * **Satu kekeliruanku tercatat:** batas potongan saat menyisipkan uji meleset satu baris, dan `php -l` menangkapnya. Pemulihan lewat `git checkout` lalu mengembalikan SELURUH berkas - termasuk tiga peta jalur yang sudah benar - sehingga ketiganya harus dikerjakan ulang. Pemulihan seberkas penuh terlalu kasar ketika sebagian suntingan sudah benar.
   * Dibuktikan lewat **dua mutasi**: berkas lama dikembalikan ke folder komoditas, dan berkas index dihilangkan dari folder baru. Keduanya memerah.
   * Diperiksa juga di luar uji: **605 uji Pest** hijau, **208 alamat statis** seluruhnya 200, dan uji peramban `uji-form-penanaman` beserta tiga berkas terkait tetap hijau. Ketiga modal form diperiksa benar-benar terender di peramban, sebab Blade tidak menegur `@include` yang salah sampai halamannya dibuka.
+
+
+
+------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+- tambahkan di rules.md, sebelum eksekusi, tulis lengkap plan pengerjaan yg akan dikerjakan di session-notes.md
+- Pada form di halaman transmigran, tambahkan field usia di mana auto hitung dari field tanggal lahir yg diinputkan oleh user. Tiap tahun nanti usia juga otomatis bertambah. Tambahkan field Agama juga.
+- fitur export/ekspor kita ganti dengan fitur laporan. Jadi nanti ketika klik tombol laporan, redirect ke halaman laporan dan nanti bisa unduh as pdf/excel gitu. Bagaimana menurutmu?
+- kita diskusi apakah perlu menambahkan 1 filter tahun tambahan (2 filter tahun) sehingga nanti muncul data dalam rentang tahun tersebut dalam tiap datatable yg ada. Bagaimana menurutmu?
+- Kita diskusikan dulu ya hasil pertemuan kemarin kami dengan dinas pertanian terkait format pelaporan hasil panen. Jadi format pelaporannya itu berdasarkan bantuan benih dan pupuk yg dihibahkan dari pemerintah ke poktan. Misal bantuan tersebut menggunakan APBD/APBN tahun 2025, maka walaupun penanaman dan panennya di tahun 2026 semua, maka laporan mereka itu nanti masuknya tetep tahun 2025. Bagaimana menurutmu? Coba kita diskusikan.
+- Bagaimana menurutmu kalau sistem ini ditambahkan untuk pengisian anggota keluarga? Jika iya, nanti saat pengisian data kepala keluarga di halaman transmigran, ditambah dengan pengisian anggota keluarga (istri + anak2) dengan model tambah form gitu (dynamic form fields). Lalu untuk field form-nya, untuk istri mirip dengan suami (minus field nomor KK), sedangkan untuk anaknya Nama Lengkap, NIK, Jenis Kelamin, Tempat Lahir, Tanggal Lahir, Agama, Pendidikan/Kerja [multi level dropdown] (jika pilih kerja, munculkan form pendidikan terakhir, pekerjaan, dan pendapatan perbulan).
+- Apakah mungkin untuk masing-masing halaman laporan dibuat sekarang? Untuk datanya kita buat dummy dulu agar setidaknya kita bisa menentukan kolom-kolomnya. Kalau kamu setuju, nanti untuk beberapa halaman laporan tertentu akan aku kasih format kolom laporannya.
+- Pada halaman saprotan, saat user klik benih, munculkan field form “Varietas”. Tambahkan juga field form “Jadwal Tanam” (Bulan+Tahun). Lalu untuk field form “Tanggal Perolehan”,  ganti dengan Tahun Pengadaan (Tahun).
+- Pada halaman alsintan, tambahkan field form “Penerima” dari Poktan (bisa dari ketua/anggota).
+- Lalu sepertinya untuk halaman Satuan Pemukiman bakal ada tambahan kolom/field form baru. Untuk field form-nya bisa coba kita diskusikan dulu berdasarkan Bab II Keadaan Wilayah pada Laporan Monografi di folder refs. Soalnya nanti datanya ini mau disajikan sebagai sebuah laporan gitu.
+- Jangan lupa jika ada penambahan field form, sediakan juga tempat untuk menampilkan datanya di halaman detail datanya.

@@ -761,6 +761,28 @@ Butir tindak lanjut 14. **26 berkas, 902 baris** dicabut: 13 komponen Blade bese
 
 **Verifikasi:** **621 uji hijau**; penjaga baru menolak penulisan ulang kedua blok, dibuktikan lewat mutasi; `pint` tidak menambah utang.
 
+### Revisi Putaran 1: fondasi pelaporan panen (2026-08-27) ✅
+
+Rombongan A butir 1–2 dari `notes.md` bagian 6, ditambah butir mandiri D1 dan D2. Pemicunya pertemuan dengan Dinas Pertanian: laporan hasil panen dikelompokkan menurut **tahun anggaran bantuan**, bukan tahun panen.
+
+**Fondasi datanya saja.** Halaman laporan dan penyaring rentang tahun ditunda ke putaran berikutnya.
+
+**Yang dikerjakan:**
+- `saprotan` dapat kolom `tahun_pengadaan` (YEAR wajib), `varietas` (wajib bila benih), `jadwal_tanam` (rencana, `YYYY-MM`)
+- Penyimpangan nama field saprotan dibereskan: `tanggal_perolehan`→`tahun_pengadaan`, `sumber`→`sumber_dana`; `tahun_perolehan` dan `tanggal_penyaluran` dicabut dari kamus (tak pernah diimplementasikan)
+- `alsintan` dapat kolom `penanda_terima_id` — penanda tangan serah terima, BUKAN pemilik; `rules.md` 7b.1 tidak disentuh
+- `rules.md` §20b baru: rencana lengkap wajib ditulis ke `session-notes.md` sebelum eksekusi
+
+**Rantai laporan tidak perlu kolom penghubung baru:** `hasil_panen → penanaman.saprotan_id → saprotan.tahun_pengadaan`, seluruhnya sudah ada.
+
+**Basis tahun dipisah, bukan diganti:** rekap tetap tahun panen ("apa yang terjadi tahun ini"), laporan pakai tahun pengadaan ("apa hasil bantuan 2025").
+
+**Verifikasi:** **623 uji hijau** (naik 2); dua penjaga baru — varietas bersyarat dan rantai laporan lintas tahun — dibuktikan lewat mutasi; render nyata 5 halaman diperiksa; `pint` tetap 31.
+
+**Ditunda ke putaran berikutnya:** A3 (ekspor→halaman laporan, menu Laporan tersendiri), A4 (penyaring rentang tahun di halaman bersumbu waktu), A5 (halaman laporan dgn data contoh). Keputusan yang sudah diambil tercatat di `notes.md` bagian 1l bawah.
+
+**Belum dibahas:** Rombongan B (anggota keluarga + usia/agama), Rombongan C (field SP dari Monografi), butir lain bagian 6.
+
 ## Tahap 3 — Autentikasi dan Hak Akses
 
 > **Peringatan penerbitan statis.** Begitu login aktif, halaman berpelindung membalas pengalihan ke `/login`, bukan 200, sehingga `.github/workflows/deploy.yml` **gagal** dan situs GitHub Pages berhenti diperbarui. Putuskan lebih dulu: batasi `sim:tautan-statis` hanya ke halaman publik, atau hentikan penerbitan statis sama sekali. Lihat `notes.md` bagian 1b.7.
