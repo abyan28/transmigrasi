@@ -8,45 +8,8 @@
 
 @section('content')
     @php
-        use App\Support\DummyData;
-
-        $semua = DummyData::rumah();
-
-        $cari = trim((string) request('cari', ''));
-        $filterSp = request('sp');
-        $filterKondisi = request('kondisi');
-        $filterHunian = request('status_hunian');
-
-        $baris = array_values(array_filter($semua, function ($r) use ($cari, $filterSp, $filterKondisi, $filterHunian) {
-            if ($cari !== '') {
-                $cocok = str_contains(mb_strtolower((string) $r['no_rumah']), mb_strtolower($cari))
-                    || str_contains(mb_strtolower((string) ($r['penghuni'] ?? '')), mb_strtolower($cari));
-
-                if (! $cocok) {
-                    return false;
-                }
-            }
-
-            if ($filterSp && (string) $r['satuan_permukiman_id'] !== (string) $filterSp) {
-                return false;
-            }
-
-            if ($filterKondisi && $r['kondisi'] !== $filterKondisi) {
-                return false;
-            }
-
-            if ($filterHunian && $r['status_hunian'] !== $filterHunian) {
-                return false;
-            }
-
-            return true;
-        }));
-
-        $adaFilter = $cari !== '' || $filterSp || $filterKondisi || $filterHunian;
-
-        $jumlahDihuni = count(array_filter($semua, fn ($r) => $r['status_hunian'] === 'Dihuni'));
-        $jumlahRusak = count(array_filter($semua, fn ($r) => $r['kondisi'] !== 'Tidak Rusak'));
-
+        // Data, penyaringan, dan angka ringkasan datang dari rute
+        // `rumah.index`. Lihat routes/web.php.
         $bolehTambah = true;
         $bolehUbah = true;
         $bolehHapus = true;
@@ -108,7 +71,7 @@
                         <select id="filter_sp" name="sp"
                             class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
                             <option value="">Semua SP</option>
-                            @foreach (DummyData::satuanPermukiman() as $sp)
+                            @foreach ($daftarSp as $sp)
                                 <option value="{{ $sp['id_satuan_permukiman'] }}"
                                     @selected($filterSp == $sp['id_satuan_permukiman'])>{{ $sp['nama'] }}</option>
                             @endforeach
@@ -123,7 +86,7 @@
                         <select id="filter_kondisi" name="kondisi"
                             class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
                             <option value="">Semua kondisi</option>
-                            @foreach (\App\Support\DummyData::opsiFilterReferensi(\App\Enums\JenisReferensi::KondisiRumah) as $nilai => $label)
+                            @foreach ($opsiFilterKondisiRumah as $nilai => $label)
                                 <option value="{{ $nilai }}" @selected($filterKondisi === $nilai)>{{ $label }}</option>
                             @endforeach
                         </select>
@@ -137,7 +100,7 @@
                         <select id="filter_hunian" name="status_hunian"
                             class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
                             <option value="">Semua status</option>
-                            @foreach (\App\Support\DummyData::opsiFilterReferensi(\App\Enums\JenisReferensi::StatusHunian) as $nilai => $label)
+                            @foreach ($opsiFilterStatusHunian as $nilai => $label)
                                 <option value="{{ $nilai }}" @selected($filterHunian === $nilai)>{{ $label }}</option>
                             @endforeach
                         </select>

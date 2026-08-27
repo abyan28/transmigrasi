@@ -10,9 +10,7 @@
 
 @section('content')
     @php
-        use App\Support\DummyData;
-
-        $riwayat = DummyData::riwayatPenghunian($data['id_rumah']);
+        // `$riwayat` datang dari rute `rumah.detail`.
 
         // Penghuni sekarang dibaca dari riwayat yang belum punya tanggal keluar,
         // bukan dari kolom penghuni, agar keduanya selalu sepadan.

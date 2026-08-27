@@ -39,6 +39,9 @@ class ViewServiceProvider extends ServiceProvider
     private const RUJUKAN_FORM = [
         'pages.alsintan.form' => ['daftarPoktan', 'opsiKondisi', 'opsiSumberDana'],
         'pages.saprotan.form' => ['daftarPoktan', 'daftarSatuan', 'daftarKomoditas', 'opsiSumberDana'],
+        'pages.infrastruktur.form' => ['daftarSp', 'opsiJenisInfrastruktur', 'opsiSumberDana', 'opsiKondisi'],
+        'pages.komoditas.form' => ['daftarSatuan', 'sebaran', 'opsiTipeKomoditas'],
+        'pages.rumah.form' => ['transmigranTanpaRumah', 'daftarTransmigran', 'daftarSp', 'opsiKondisiRumah', 'opsiStatusHunian'],
     ];
 
     public function boot(): void
@@ -75,7 +78,15 @@ class ViewServiceProvider extends ServiceProvider
             'daftarPoktan' => DummyData::poktan(),
             'daftarSatuan' => DummyData::satuan(),
             'daftarKomoditas' => DummyData::komoditas(),
+            'daftarSp' => DummyData::satuanPermukiman(),
+            'daftarTransmigran' => DummyData::transmigran(),
+            'transmigranTanpaRumah' => DummyData::transmigranTanpaRumah(),
+            'sebaran' => DummyData::sebaranKomoditas(),
             'opsiKondisi' => DummyData::opsiReferensi(JenisReferensi::Kondisi),
+            'opsiKondisiRumah' => DummyData::opsiReferensi(JenisReferensi::KondisiRumah),
+            'opsiStatusHunian' => DummyData::opsiReferensi(JenisReferensi::StatusHunian),
+            'opsiJenisInfrastruktur' => DummyData::opsiReferensi(JenisReferensi::JenisInfrastruktur),
+            'opsiTipeKomoditas' => DummyData::opsiReferensi(JenisReferensi::TipeKomoditas),
             'opsiSumberDana' => DummyData::opsiReferensi(JenisReferensi::SumberDana),
             default => throw new \InvalidArgumentException("Kunci rujukan tidak dikenal: {$kunci}"),
         };

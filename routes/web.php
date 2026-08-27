@@ -450,15 +450,66 @@ Route::delete('/transmigran/{id}', function () {
 |
 */
 Route::get('/rumah', function () {
-    return view('pages.rumah.index', ['title' => 'Rumah dan Hunian']);
+    $semua = DummyData::rumah();
+
+    $cari = trim((string) request('cari', ''));
+    $filterSp = request('sp');
+    $filterKondisi = request('kondisi');
+    $filterHunian = request('status_hunian');
+
+    $baris = array_values(array_filter($semua, function ($r) use ($cari, $filterSp, $filterKondisi, $filterHunian) {
+        if ($cari !== '') {
+            $cocok = str_contains(mb_strtolower((string) $r['no_rumah']), mb_strtolower($cari))
+                || str_contains(mb_strtolower((string) ($r['penghuni'] ?? '')), mb_strtolower($cari));
+
+            if (! $cocok) {
+                return false;
+            }
+        }
+
+        if ($filterSp && (string) $r['satuan_permukiman_id'] !== (string) $filterSp) {
+            return false;
+        }
+
+        if ($filterKondisi && $r['kondisi'] !== $filterKondisi) {
+            return false;
+        }
+
+        if ($filterHunian && $r['status_hunian'] !== $filterHunian) {
+            return false;
+        }
+
+        return true;
+    }));
+
+    return view('pages.rumah.index', [
+        'title' => 'Rumah dan Hunian',
+        'semua' => $semua,
+        'baris' => $baris,
+        'cari' => $cari,
+        'filterSp' => $filterSp,
+        'filterKondisi' => $filterKondisi,
+        'filterHunian' => $filterHunian,
+        'adaFilter' => $cari !== '' || $filterSp || $filterKondisi || $filterHunian,
+        'jumlahDihuni' => count(array_filter($semua, fn ($r) => $r['status_hunian'] === 'Dihuni')),
+        'jumlahRusak' => count(array_filter($semua, fn ($r) => $r['kondisi'] !== 'Tidak Rusak')),
+
+        'daftarSp' => DummyData::satuanPermukiman(),
+        'opsiFilterKondisiRumah' => DummyData::opsiFilterReferensi(JenisReferensi::KondisiRumah),
+        'opsiFilterStatusHunian' => DummyData::opsiFilterReferensi(JenisReferensi::StatusHunian),
+    ]);
 })->name('rumah.index');
 
 Route::get('/rumah/{id}', function (int $id) {
-    $data = collect(\App\Support\DummyData::rumah())->firstWhere('id_rumah', $id);
+    $data = collect(DummyData::rumah())->firstWhere('id_rumah', $id);
 
     abort_if($data === null, 404);
 
-    return view('pages.rumah.detail', ['title' => 'Rumah ' . $data['no_rumah'], 'data' => $data]);
+    return view('pages.rumah.detail', [
+        'title' => 'Rumah '.$data['no_rumah'],
+        'data' => $data,
+        'riwayat' => DummyData::riwayatPenghunian($data['id_rumah']),
+    ]);
 })->where('id', '[0-9]+')->name('rumah.detail');
 
 Route::post('/rumah', function () {
@@ -932,15 +983,56 @@ Route::put('/saprotan/{id}', function (int $id) {
 })->where('id', '[0-9]+')->name('saprotan.perbarui');
 
 Route::get('/komoditas', function () {
-    return view('pages.komoditas.index', ['title' => 'Data Komoditas']);
+    $semua = DummyData::komoditas();
+
+    $cari = trim((string) request('cari', ''));
+    $filterTipe = request('tipe');
+
+    $baris = array_values(array_filter($semua, function ($k) use ($cari, $filterTipe) {
+        if ($cari !== '' && ! str_contains(mb_strtolower($k['nama']), mb_strtolower($cari))) {
+            return false;
+        }
+        if ($filterTipe && $k['tipe'] !== $filterTipe) {
+            return false;
+        }
+
+        return true;
+    }));
+
+    return view('pages.komoditas.index', [
+        'title' => 'Data Komoditas',
+        'semua' => $semua,
+        'baris' => $baris,
+        'sebaran' => DummyData::sebaranKomoditas(),
+        'cari' => $cari,
+        'filterTipe' => $filterTipe,
+        'adaFilter' => $cari !== '' || $filterTipe,
+        'unggulan' => count(array_filter($semua, fn ($k) => $k['is_unggulan'])),
+        'opsiFilterTipe' => DummyData::opsiFilterReferensi(JenisReferensi::TipeKomoditas),
+    ]);
 })->name('komoditas.index');
 
 Route::get('/komoditas/{id}', function (int $id) {
-    $data = collect(\App\Support\DummyData::komoditas())->firstWhere('id_komoditas', $id);
+    $data = collect(DummyData::komoditas())->firstWhere('id_komoditas', $id);
 
     abort_if($data === null, 404);
 
-    return view('pages.komoditas.detail', ['title' => $data['nama'], 'data' => $data]);
+    /*
+     * Riwayat penanaman komoditas ini, dicocokkan lewat `komoditas_id` dan
+     * bukan nama. Pencocokan teks putus begitu Admin membetulkan ejaan satu
+     * komoditas, dan putusnya tidak memerahkan apa pun: tabnya sekadar
+     * berubah menjadi kosong.
+     */
+    $riwayat = array_values(array_filter(
+        DummyData::penanaman(),
+        fn ($r) => $r['komoditas_id'] === $data['id_komoditas'],
+    ));
+
+    return view('pages.komoditas.detail', [
+        'title' => $data['nama'],
+        'data' => $data,
+        'riwayat' => $riwayat,
+    ]);
 })->where('id', '[0-9]+')->name('komoditas.detail');
 
 Route::post('/komoditas', function () {
@@ -996,7 +1088,52 @@ Route::post('/penanaman', function () {
 })->name('penanaman.simpan');
 
 Route::get('/infrastruktur', function () {
-    return view('pages.infrastruktur.index', ['title' => 'Infrastruktur SP']);
+    $semua = DummyData::infrastruktur();
+
+    $cari = trim((string) request('cari', ''));
+    $filterSp = request('sp');
+    $filterJenis = request('jenis');
+    $filterKondisi = request('kondisi');
+
+    $baris = array_values(array_filter($semua, function ($i) use ($cari, $filterSp, $filterJenis, $filterKondisi) {
+        if ($cari !== '' && ! str_contains(mb_strtolower($i['nama']), mb_strtolower($cari))) {
+            return false;
+        }
+        if ($filterSp && (string) $i['satuan_permukiman_id'] !== (string) $filterSp) {
+            return false;
+        }
+        if ($filterJenis && $i['jenis'] !== $filterJenis) {
+            return false;
+        }
+        if ($filterKondisi && $i['kondisi'] !== $filterKondisi) {
+            return false;
+        }
+
+        return true;
+    }));
+
+    return view('pages.infrastruktur.index', [
+        'title' => 'Infrastruktur SP',
+        'semua' => $semua,
+        'baris' => $baris,
+
+        // Rekap kondisi per jenis, dipakai tabel ringkas di bawah daftar.
+        // Sengaja dihitung atas SELURUH data, bukan hasil penyaringan, sebab
+        // yang dijawabnya adalah keadaan kawasan, bukan keadaan tampilan.
+        'statusJenis' => DummyData::statusInfrastruktur(),
+
+        'cari' => $cari,
+        'filterSp' => $filterSp,
+        'filterJenis' => $filterJenis,
+        'filterKondisi' => $filterKondisi,
+        'adaFilter' => $cari !== '' || $filterSp || $filterJenis || $filterKondisi,
+        'rusakBerat' => count(array_filter($semua, fn ($i) => $i['kondisi'] === 'Rusak Berat')),
+        'perluPerbaikan' => count(array_filter($semua, fn ($i) => $i['kondisi'] !== 'Baik')),
+
+        'daftarSp' => DummyData::satuanPermukiman(),
+        'opsiFilterJenis' => DummyData::opsiFilterReferensi(JenisReferensi::JenisInfrastruktur),
+        'opsiFilterKondisi' => DummyData::opsiFilterReferensi(JenisReferensi::Kondisi),
+    ]);
 })->name('infrastruktur.index');
 
 Route::get('/infrastruktur/{id}', function (int $id) {

@@ -23,30 +23,10 @@
 @extends('layouts.app')
 
 @section('content')
-    @php
-        use App\Support\DummyData;
-
-        $semua = DummyData::komoditas();
-        $sebaran = DummyData::sebaranKomoditas();
-
-        $cari = trim((string) request('cari', ''));
-        $filterTipe = request('tipe');
-
-        $baris = array_values(array_filter($semua, function ($k) use ($cari, $filterTipe) {
-            if ($cari !== '' && ! str_contains(mb_strtolower($k['nama']), mb_strtolower($cari))) {
-                return false;
-            }
-            if ($filterTipe && $k['tipe'] !== $filterTipe) {
-                return false;
-            }
-
-            return true;
-        }));
-
-        $adaFilter = $cari !== '' || $filterTipe;
-        $unggulan = count(array_filter($semua, fn ($k) => $k['is_unggulan']));
-    @endphp
-
+    {{--
+        Seluruh isian halaman ini datang dari rute `komoditas.index`.
+        Lihat routes/web.php.
+    --}}
     <x-sim.halaman-daftar judul="Data Komoditas"
         keterangan="Komoditas kawasan beserta satuan panen bakunya."
         :remah="\App\Helpers\RemahHelper::untuk('/komoditas')"
@@ -103,7 +83,7 @@
                     <select id="filter_tipe" name="tipe"
                         class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
                         <option value="">Semua tipe</option>
-                        @foreach (\App\Support\DummyData::opsiFilterReferensi(\App\Enums\JenisReferensi::TipeKomoditas) as $nilai => $label)
+                        @foreach ($opsiFilterTipe as $nilai => $label)
                             <option value="{{ $nilai }}" @selected($filterTipe === $nilai)>{{ $label }}</option>
                         @endforeach
                     </select>

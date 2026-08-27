@@ -9,39 +9,10 @@
 @extends('layouts.app')
 
 @section('content')
-    @php
-        use App\Support\DummyData;
-
-        $semua = DummyData::infrastruktur();
-        $statusJenis = DummyData::statusInfrastruktur();
-
-        $cari = trim((string) request('cari', ''));
-        $filterSp = request('sp');
-        $filterJenis = request('jenis');
-        $filterKondisi = request('kondisi');
-
-        $baris = array_values(array_filter($semua, function ($i) use ($cari, $filterSp, $filterJenis, $filterKondisi) {
-            if ($cari !== '' && ! str_contains(mb_strtolower($i['nama']), mb_strtolower($cari))) {
-                return false;
-            }
-            if ($filterSp && (string) $i['satuan_permukiman_id'] !== (string) $filterSp) {
-                return false;
-            }
-            if ($filterJenis && $i['jenis'] !== $filterJenis) {
-                return false;
-            }
-            if ($filterKondisi && $i['kondisi'] !== $filterKondisi) {
-                return false;
-            }
-
-            return true;
-        }));
-
-        $adaFilter = $cari !== '' || $filterSp || $filterJenis || $filterKondisi;
-        $rusakBerat = count(array_filter($semua, fn ($i) => $i['kondisi'] === 'Rusak Berat'));
-        $perluPerbaikan = count(array_filter($semua, fn ($i) => $i['kondisi'] !== 'Baik'));
-    @endphp
-
+    {{--
+        Seluruh isian halaman ini datang dari rute `infrastruktur.index`,
+        termasuk penyaringan dan rekap `$statusJenis`. Lihat routes/web.php.
+    --}}
     <x-sim.halaman-daftar judul="Infrastruktur SP"
         keterangan="Pendataan aset irigasi, air, jalan produksi, listrik, dan gudang."
         :remah="\App\Helpers\RemahHelper::untuk('/infrastruktur')"
@@ -90,7 +61,7 @@
                     <select id="filter_sp" name="sp"
                         class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
                         <option value="">Semua SP</option>
-                        @foreach (DummyData::satuanPermukiman() as $sp)
+                        @foreach ($daftarSp as $sp)
                             <option value="{{ $sp['id_satuan_permukiman'] }}"
                                 @selected($filterSp == $sp['id_satuan_permukiman'])>{{ $sp['nama'] }}</option>
                         @endforeach
@@ -102,7 +73,7 @@
                     <select id="filter_jenis" name="jenis"
                         class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
                         <option value="">Semua jenis</option>
-                        @foreach (\App\Support\DummyData::opsiFilterReferensi(\App\Enums\JenisReferensi::JenisInfrastruktur) as $nilai => $label)
+                        @foreach ($opsiFilterJenis as $nilai => $label)
                             <option value="{{ $nilai }}" @selected($filterJenis === $nilai)>{{ $label }}</option>
                         @endforeach
                     </select>
@@ -113,7 +84,7 @@
                     <select id="filter_kondisi" name="kondisi"
                         class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
                         <option value="">Semua kondisi</option>
-                        @foreach (\App\Support\DummyData::opsiFilterReferensi(\App\Enums\JenisReferensi::Kondisi) as $nilai => $label)
+                        @foreach ($opsiFilterKondisi as $nilai => $label)
                             <option value="{{ $nilai }}" @selected($filterKondisi === $nilai)>{{ $label }}</option>
                         @endforeach
                     </select>

@@ -21,7 +21,9 @@
     $kelasLabel = 'mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400';
     $kelasBagian = 'text-theme-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400';
 
-    $daftarSatuan = DummyData::satuan();
+    // `$daftarSatuan`, `$sebaran`, dan `$opsiTipeKomoditas` disuplai
+    // ViewServiceProvider, sebab berkas ini disisipkan dari halaman daftar
+    // maupun halaman rincian.
 
     // Faktor konversi dibaca Alpine agar keterangannya ikut berubah saat
     // satuan diganti, tanpa perlu memuat ulang halaman.
@@ -33,7 +35,10 @@
     // Unggulan ditetapkan menurut proposal atau kebijakan dinas (rules.md 8.1),
     // dan jagung sudah ditandai unggulan sebelum satu baris panen pun tercatat.
     // Angka ini hanya membantu petugas melihat keadaan sebelum memutuskan.
-    $sebaran = DummyData::sebaranKomoditas();
+    // Diurutkan di sini, bukan di rute maupun composer, sebab urutan menurun
+    // hanya dibutuhkan form. Aman terhadap induknya: berkas sisipan punya
+    // lingkup sendiri, sehingga `arsort()` tidak menyentuh `$sebaran` milik
+    // halaman daftar.
     arsort($sebaran);
 
     $namaKomoditas = $data['nama'] ?? null;
@@ -81,7 +86,7 @@
                 <label for="{{ $awalan }}_tipe" class="{{ $kelasLabel }}">Tipe<span class="text-error-500">*</span></label>
                 <select id="{{ $awalan }}_tipe" name="tipe" required class="{{ $kelasKontrol }}">
                     <option value="">Pilih tipe</option>
-                    @foreach (\App\Support\DummyData::opsiReferensi(\App\Enums\JenisReferensi::TipeKomoditas) as $nilaiRef => $labelRef)
+                    @foreach ($opsiTipeKomoditas as $nilaiRef => $labelRef)
                         <option value="{{ $nilaiRef }}" @selected(old('tipe', $data['tipe'] ?? '') === $nilaiRef)>
                             {{ $nilaiRef }}
                         </option>

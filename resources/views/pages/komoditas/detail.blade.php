@@ -13,17 +13,8 @@
 
 @section('content')
     @php
-        use App\Support\DummyData;
-
+        // `$riwayat` datang dari rute `komoditas.detail`.
         $bolehUbah = true;
-
-        // Dicocokkan lewat `komoditas_id`, bukan nama. Pencocokan teks putus
-        // begitu Admin membetulkan ejaan satu komoditas, dan putusnya tidak
-        // memerahkan apa pun: tabnya sekadar berubah menjadi kosong.
-        $riwayat = array_values(array_filter(
-            DummyData::penanaman(),
-            fn ($r) => $r['komoditas_id'] === $data['id_komoditas'],
-        ));
     @endphp
 
     <x-sim.page-header :judul="$data['nama']"

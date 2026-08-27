@@ -23,12 +23,20 @@
     $kelasLabel = 'mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400';
     $kelasBagian = 'text-theme-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400';
 
-    // Calon penghuni: KK yang belum punya rumah, ditambah penghuni rumah ini
-    // sendiri bila sedang mengubah.
-    $calonPenghuni = DummyData::transmigranTanpaRumah();
+    /*
+        `$transmigranTanpaRumah`, `$daftarTransmigran`, `$daftarSp`,
+        `$opsiKondisiRumah`, dan `$opsiStatusHunian` disuplai
+        ViewServiceProvider.
+
+        Penyusunan `$calonPenghuni` tetap di sini, sebab hasilnya bergantung
+        pada `$data` yang sedang diubah, dan `$data` itu datang dari induk yang
+        menyisipkan berkas ini. Yang dipindahkan ke composer adalah
+        pengambilan datanya, bukan penalaran yang memakainya.
+    */
+    $calonPenghuni = $transmigranTanpaRumah;
 
     if (! empty($data['penghuni'])) {
-        $penghuniSaatIni = collect(DummyData::transmigran())
+        $penghuniSaatIni = collect($daftarTransmigran)
             ->firstWhere('nama_kepala_keluarga', $data['penghuni']);
 
         if ($penghuniSaatIni) {
@@ -76,7 +84,7 @@
                     Kondisi Rumah<span class="text-error-500">*</span>
                 </label>
                 <select id="{{ $awalan }}_kondisi" name="kondisi" required class="{{ $kelasKontrol }}">
-                    @foreach (\App\Support\DummyData::opsiReferensi(\App\Enums\JenisReferensi::KondisiRumah) as $nilai => $label)
+                    @foreach ($opsiKondisiRumah as $nilai => $label)
                         <option value="{{ $nilai }}" @selected(old('kondisi', $data['kondisi'] ?? '') === $nilai)>
                             {{ $label }}
                         </option>
@@ -87,7 +95,7 @@
             <div class="sm:col-span-2">
                 <x-sim.wilayah-picker
                     :daftar-kawasan="[['id' => 1, 'nama' => 'Kobalima Timur']]"
-                    :daftar-sp="collect(DummyData::satuanPermukiman())
+                    :daftar-sp="collect($daftarSp)
                         ->map(fn ($s) => ['id' => $s['id_satuan_permukiman'], 'nama' => $s['nama'], 'kawasan_id' => 1])
                         ->all()"
                     :sp-terpilih="old('satuan_permukiman_id', $data['satuan_permukiman_id'] ?? null)" />
@@ -105,7 +113,7 @@
                 </label>
                 <select id="{{ $awalan }}_status_hunian" name="status_hunian" x-model="statusHunian" required
                     class="{{ $kelasKontrol }}">
-                    @foreach (\App\Support\DummyData::opsiReferensi(\App\Enums\JenisReferensi::StatusHunian) as $nilai => $label)
+                    @foreach ($opsiStatusHunian as $nilai => $label)
                         <option value="{{ $nilai }}">{{ $label }}</option>
                     @endforeach
                 </select>
