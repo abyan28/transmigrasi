@@ -40,19 +40,11 @@
     $kelasLabel = 'mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400';
     $kelasBagian = 'text-theme-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400';
 
-    $daftarSp = DummyData::satuanPermukiman();
-    $daftarTransmigran = DummyData::transmigran();
-
-    // Peta id keluarga ke telepon dan rekap lahannya, dipakai mengisi kontak
-    // serta luas ketua secara otomatis di sisi klien. Disusun di sini agar
-    // tidak ada permintaan tambahan ke peladen hanya untuk membaca satu nomor.
-    $kontakTransmigran = [];
-    $lahanTransmigran = [];
-    foreach ($daftarTransmigran as $t) {
-        $kunci = (string) $t['id_transmigran'];
-        $kontakTransmigran[$kunci] = $t['telepon'] ?? '';
-        $lahanTransmigran[$kunci] = DummyData::rekapLahanKeluarga($t['id_transmigran']);
-    }
+    // `$daftarSp`, `$daftarTransmigran`, `$kontakTransmigran`, dan
+    // `$lahanTransmigran` disuplai ViewServiceProvider. Kedua peta terakhir
+    // dahulu disusun di sini lewat perulangan yang memanggil
+    // rekapLahanKeluarga() untuk setiap keluarga, dan perulangan yang sama
+    // ditulis ulang di `form-anggota`.
 
     $asalKetua = old('asal_ketua', $data['asal_ketua'] ?? AsalWakilPoktan::KepalaKeluarga->value);
 @endphp

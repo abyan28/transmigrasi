@@ -9,66 +9,8 @@
 
 @section('content')
     @php
-        use App\Support\DummyData;
-
-        $semua = DummyData::lahan();
-
-        $cari = trim((string) request('cari', ''));
-        $filterSp = request('sp');
-        $filterJenis = request('peruntukan_lahan');
-        $filterKategori = request('kategori_lahan');
-
-        $baris = array_values(array_filter($semua, function ($l) use ($cari, $filterSp, $filterJenis, $filterKategori) {
-            if ($cari !== '') {
-                $cocok = str_contains(mb_strtolower((string) $l['kode_lahan']), mb_strtolower($cari))
-                    || str_contains(mb_strtolower($l['pemilik']), mb_strtolower($cari));
-
-                if (! $cocok) {
-                    return false;
-                }
-            }
-
-            if ($filterSp && (string) $l['satuan_permukiman_id'] !== (string) $filterSp) {
-                return false;
-            }
-
-            if ($filterJenis && $l['peruntukan_lahan'] !== $filterJenis) {
-                return false;
-            }
-
-            // Kering dan basah adalah KOMPOSISI, bukan kategori bidang, sehingga
-            // penyaringnya menanyakan "punya bagian basah?" bukan "seluruhnya
-            // basah?". Bidang campuran 1,25 ha kering + 0,75 ha basah wajib
-            // muncul pada kedua penyaring, dan itu memang maksudnya
-            // (agents/rules.md 7.5c).
-            if ($filterKategori === 'kering' && (float) ($l['luas_kering'] ?? 0) <= 0) {
-                return false;
-            }
-
-            if ($filterKategori === 'basah' && (float) ($l['luas_basah'] ?? 0) <= 0) {
-                return false;
-            }
-
-            return true;
-        }));
-
-        $adaFilter = $cari !== '' || $filterSp || $filterJenis || $filterKategori;
-
-        $totalLuasTampil = array_sum(array_column($baris, 'luas'));
-        // Lahan usaha kini terbagi beberapa tahap, sehingga penjumlahannya tidak
-        // boleh lagi mencocokkan satu nilai teks. Daftar tahapnya dibaca dari enum
-        // agar penambahan tahap berikutnya tidak melewatkan halaman ini.
-        $nilaiLahanUsaha = \App\Enums\PeruntukanLahan::nilaiLahanUsaha();
-        $bidangUsaha = array_filter($semua, fn ($l) => in_array($l['peruntukan_lahan'], $nilaiLahanUsaha, true));
-        $luasPekarangan = array_sum(array_column(array_filter($semua, fn ($l) => ! in_array($l['peruntukan_lahan'], $nilaiLahanUsaha, true)), 'luas'));
-        $luasUsaha = array_sum(array_column($bidangUsaha, 'luas'));
-
-        // Komposisi dijumlahkan dari kolomnya, bukan dari kategori bidang.
-        // Hanya lahan usaha yang memilikinya; pekarangan bernilai null dan
-        // tidak boleh ikut terjumlah.
-        $luasKering = array_sum(array_column($bidangUsaha, 'luas_kering'));
-        $luasBasah = array_sum(array_column($bidangUsaha, 'luas_basah'));
-
+        // Data, penyaringan, dan seluruh angka ringkasan datang dari rute
+        // `lahan.index`. Lihat routes/web.php.
         $bolehTambah = true;
         $bolehUbah = true;
         $bolehHapus = true;
@@ -139,7 +81,7 @@
                         <select id="filter_sp" name="sp"
                             class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
                             <option value="">Semua SP</option>
-                            @foreach (DummyData::satuanPermukiman() as $sp)
+                            @foreach ($daftarSp as $sp)
                                 <option value="{{ $sp['id_satuan_permukiman'] }}"
                                     @selected($filterSp == $sp['id_satuan_permukiman'])>{{ $sp['nama'] }}</option>
                             @endforeach

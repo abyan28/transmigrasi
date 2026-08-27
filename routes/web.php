@@ -1,7 +1,9 @@
 <?php
 
+use App\Enums\AsalWakilPoktan;
 use App\Enums\JenisReferensi;
 use App\Enums\JenisSaprotan;
+use App\Enums\PeruntukanLahan;
 use App\Http\Controllers\DokumenController;
 use App\Support\DummyData;
 use Illuminate\Support\Facades\Route;
@@ -394,15 +396,117 @@ Route::post('/sp/fasilitas', function () {
 |
 */
 Route::get('/transmigran', function () {
-    return view('pages.transmigran.index', ['title' => 'Data Transmigran']);
+    $semua = DummyData::transmigran();
+
+    // Penyaringan dan pencarian dibaca dari query string agar hasilnya
+    // bertahan setelah halaman dimuat ulang.
+    $cari = trim((string) request('cari', ''));
+    $filterSp = request('sp');
+    $filterTinggal = request('status_tinggal');
+
+    $baris = array_values(array_filter($semua, function ($t) use ($cari, $filterSp, $filterTinggal) {
+        if ($cari !== '') {
+            $cocok = str_contains(mb_strtolower($t['nama_kepala_keluarga']), mb_strtolower($cari))
+                || str_contains($t['nik'], $cari)
+                || str_contains($t['no_kk'], $cari);
+
+            if (! $cocok) {
+                return false;
+            }
+        }
+
+        if ($filterSp && (string) $t['satuan_permukiman_id'] !== (string) $filterSp) {
+            return false;
+        }
+
+        if ($filterTinggal && $t['status_tinggal'] !== $filterTinggal) {
+            return false;
+        }
+
+        return true;
+    }));
+
+    return view('pages.transmigran.index', [
+        'title' => 'Data Transmigran',
+        'semua' => $semua,
+        'baris' => $baris,
+        'cari' => $cari,
+        'filterSp' => $filterSp,
+        'filterTinggal' => $filterTinggal,
+        'adaFilter' => $cari !== '' || $filterSp || $filterTinggal,
+        'daftarSp' => DummyData::satuanPermukiman(),
+    ]);
 })->name('transmigran.index');
 
 Route::get('/transmigran/{id}', function (int $id) {
-    $data = collect(\App\Support\DummyData::transmigran())->firstWhere('id_transmigran', $id);
+    $data = collect(DummyData::transmigran())->firstWhere('id_transmigran', $id);
 
     abort_if($data === null, 404);
 
-    return view('pages.transmigran.detail', ['title' => $data['nama_kepala_keluarga'], 'data' => $data]);
+    $anggotaPoktan = DummyData::anggotaPoktan();
+
+    // Lahan dibaca lewat id, bukan mencocokkan nama: dua kepala keluarga
+    // dapat bernama sama, dan pencocokan nama akan menautkan bidang milik
+    // orang lain ke halaman ini tanpa ada yang menyadarinya.
+    $lahan = array_values(array_filter(
+        DummyData::lahan(),
+        fn ($l) => $l['transmigran_id'] === $data['id_transmigran']
+    ));
+
+    return view('pages.transmigran.detail', [
+        'title' => $data['nama_kepala_keluarga'],
+        'data' => $data,
+
+        // Rumah masih disaring menurut nama penghuni, sebab itulah satu-satunya
+        // kaitan yang ada pada data rumah. Saat backend siap, penyaringan
+        // berpindah ke relasi Eloquent.
+        'rumah' => collect(DummyData::rumah())
+            ->firstWhere('penghuni', $data['nama_kepala_keluarga']),
+
+        'lahan' => $lahan,
+        'totalLuas' => array_sum(array_column($lahan, 'luas')),
+
+        /*
+         * TAB HASIL PANEN DICABUT 2026-08-22.
+         *
+         * Panen kini dicatat per POKTAN, bukan per orang, sehingga tidak ada
+         * lagi cara yang sahih menyaringnya bagi satu keluarga. Digantikan
+         * tautan ke poktan tempat keluarga ini bernaung.
+         */
+        'poktanBernaung' => array_values(array_filter(
+            $anggotaPoktan,
+            fn ($a) => $a['transmigran_id'] === $data['id_transmigran']
+                && $a['status'] === 'Aktif'
+        )),
+
+        // Peta poktan ke SP-nya. Mencarinya di dalam perulangan berarti
+        // menyusuri seluruh daftar poktan untuk tiap baris.
+        'spPoktan' => collect(DummyData::poktan())
+            ->pluck('satuan_permukiman', 'id_poktan')
+            ->all(),
+
+        // Riwayat suksesi kepala keluarga. Satu baris transmigran adalah satu
+        // RUMAH TANGGA, sehingga pergantian kepalanya menyunting baris ini dan
+        // peristiwanya direkam terpisah (rules.md 6 poin 5).
+        'riwayatKk' => DummyData::riwayatKepalaKeluarga($data['id_transmigran']),
+
+        // Jabatan ketua poktan TIDAK diwariskan. Bila keluarga ini menjabat
+        // ketua lewat jalur Kepala Keluarga, petugas wajib memutuskan nasib
+        // jabatannya saat suksesi (rules.md 6 poin 5e).
+        'poktanDiketuai' => DummyData::poktanDiketuaiKeluarga($data['id_transmigran']),
+
+        // Keanggotaan poktan justru MENGIKUTI, sebab melekat pada keluarga
+        // (rules.md 7a poin 3a). Petugas cukup diberi tahu, tidak diminta
+        // memutuskan. Hanya wakil berjalur Kepala Keluarga yang ikut berganti.
+        'keanggotaanIkut' => array_values(array_filter(
+            $anggotaPoktan,
+            fn ($a) => $a['transmigran_id'] === $data['id_transmigran']
+                && $a['asal_wakil'] === AsalWakilPoktan::KepalaKeluarga->value
+                && $a['status'] !== 'Sudah Keluar'
+        )),
+
+        'inisial' => DummyData::inisial($data['nama_kepala_keluarga']),
+    ]);
 })->where('id', '[0-9]+')->name('transmigran.detail');
 
 Route::post('/transmigran', function () {
@@ -536,15 +640,96 @@ Route::delete('/rumah/{id}', function () {
 |
 */
 Route::get('/lahan', function () {
-    return view('pages.lahan.index', ['title' => 'Data Lahan']);
+    $semua = DummyData::lahan();
+
+    $cari = trim((string) request('cari', ''));
+    $filterSp = request('sp');
+    $filterJenis = request('peruntukan_lahan');
+    $filterKategori = request('kategori_lahan');
+
+    $baris = array_values(array_filter($semua, function ($l) use ($cari, $filterSp, $filterJenis, $filterKategori) {
+        if ($cari !== '') {
+            $cocok = str_contains(mb_strtolower((string) $l['kode_lahan']), mb_strtolower($cari))
+                || str_contains(mb_strtolower($l['pemilik']), mb_strtolower($cari));
+
+            if (! $cocok) {
+                return false;
+            }
+        }
+
+        if ($filterSp && (string) $l['satuan_permukiman_id'] !== (string) $filterSp) {
+            return false;
+        }
+
+        if ($filterJenis && $l['peruntukan_lahan'] !== $filterJenis) {
+            return false;
+        }
+
+        // Kering dan basah adalah KOMPOSISI, bukan kategori bidang, sehingga
+        // penyaringnya menanyakan "punya bagian basah?" bukan "seluruhnya
+        // basah?". Bidang campuran 1,25 ha kering + 0,75 ha basah wajib
+        // muncul pada kedua penyaring, dan itu memang maksudnya
+        // (agents/rules.md 7.5c).
+        if ($filterKategori === 'kering' && (float) ($l['luas_kering'] ?? 0) <= 0) {
+            return false;
+        }
+
+        if ($filterKategori === 'basah' && (float) ($l['luas_basah'] ?? 0) <= 0) {
+            return false;
+        }
+
+        return true;
+    }));
+
+    // Lahan usaha kini terbagi beberapa tahap, sehingga penjumlahannya tidak
+    // boleh lagi mencocokkan satu nilai teks. Daftar tahapnya dibaca dari enum
+    // agar penambahan tahap berikutnya tidak melewatkan halaman ini.
+    $nilaiLahanUsaha = PeruntukanLahan::nilaiLahanUsaha();
+    $bidangUsaha = array_filter($semua, fn ($l) => in_array($l['peruntukan_lahan'], $nilaiLahanUsaha, true));
+
+    return view('pages.lahan.index', [
+        'title' => 'Data Lahan',
+        'semua' => $semua,
+        'baris' => $baris,
+        'cari' => $cari,
+        'filterSp' => $filterSp,
+        'filterJenis' => $filterJenis,
+        'filterKategori' => $filterKategori,
+        'adaFilter' => $cari !== '' || $filterSp || $filterJenis || $filterKategori,
+        'totalLuasTampil' => array_sum(array_column($baris, 'luas')),
+        'nilaiLahanUsaha' => $nilaiLahanUsaha,
+        'bidangUsaha' => $bidangUsaha,
+        'luasPekarangan' => array_sum(array_column(array_filter($semua, fn ($l) => ! in_array($l['peruntukan_lahan'], $nilaiLahanUsaha, true)), 'luas')),
+        'luasUsaha' => array_sum(array_column($bidangUsaha, 'luas')),
+
+        // Komposisi dijumlahkan dari kolomnya, bukan dari kategori bidang.
+        // Hanya lahan usaha yang memilikinya; pekarangan bernilai null dan
+        // tidak boleh ikut terjumlah.
+        'luasKering' => array_sum(array_column($bidangUsaha, 'luas_kering')),
+        'luasBasah' => array_sum(array_column($bidangUsaha, 'luas_basah')),
+
+        'daftarSp' => DummyData::satuanPermukiman(),
+    ]);
 })->name('lahan.index');
 
 Route::get('/lahan/{id}', function (int $id) {
-    $data = collect(\App\Support\DummyData::lahan())->firstWhere('id_lahan', $id);
+    $data = collect(DummyData::lahan())->firstWhere('id_lahan', $id);
 
     abort_if($data === null, 404);
 
-    return view('pages.lahan.detail', ['title' => 'Lahan ' . $data['kode_lahan'], 'data' => $data]);
+    return view('pages.lahan.detail', [
+        'title' => 'Lahan '.$data['kode_lahan'],
+        'data' => $data,
+        'dokumen' => DummyData::dokumenLahan($data['id_lahan']),
+
+        // Dibaca lewat id, bukan mencocokkan nama. Dua kepala keluarga dapat
+        // bernama sama, dan pencocokan nama akan menautkan bidang ini ke
+        // profil orang yang keliru tanpa ada yang menyadarinya.
+        'pemilik' => collect(DummyData::transmigran())
+            ->firstWhere('id_transmigran', $data['transmigran_id']),
+
+        'opsiJenisDokumenLahan' => DummyData::opsiReferensi(JenisReferensi::JenisDokumenLahan),
+    ]);
 })->where('id', '[0-9]+')->name('lahan.detail');
 
 Route::post('/lahan', function () {
@@ -765,15 +950,89 @@ Route::get('/kependudukan/rekap/{kelompok}', function (string $kelompok) {
 })->where('kelompok', 'tahun|sp|status|pekerjaan|asal|pendidikan')->name('kependudukan.rekap.kelompok');
 
 Route::get('/poktan', function () {
-    return view('pages.poktan.index', ['title' => 'Kelompok Tani']);
+    $semua = DummyData::poktan();
+    $anggota = DummyData::anggotaPoktan();
+
+    $cari = trim((string) request('cari', ''));
+    $filterSp = request('sp');
+
+    $baris = array_values(array_filter($semua, function ($p) use ($cari, $filterSp) {
+        if ($cari !== '' && ! str_contains(mb_strtolower($p['nama']), mb_strtolower($cari))
+            && ! str_contains(mb_strtolower($p['nama_ketua']), mb_strtolower($cari))) {
+            return false;
+        }
+        if ($filterSp && (string) $p['satuan_permukiman_id'] !== (string) $filterSp) {
+            return false;
+        }
+
+        return true;
+    }));
+
+    return view('pages.poktan.index', [
+        'title' => 'Kelompok Tani',
+        'semua' => $semua,
+        'anggota' => $anggota,
+        'baris' => $baris,
+        'cari' => $cari,
+        'filterSp' => $filterSp,
+        'adaFilter' => $cari !== '' || $filterSp,
+        'totalAnggota' => array_sum(array_column($semua, 'jumlah_anggota')),
+        'anggotaAktif' => count(array_filter($anggota, fn ($a) => $a['status'] === 'Aktif')),
+        'daftarSp' => DummyData::satuanPermukiman(),
+    ]);
 })->name('poktan.index');
 
 Route::get('/poktan/{id}', function (int $id) {
-    $data = collect(\App\Support\DummyData::poktan())->firstWhere('id_poktan', $id);
+    $data = collect(DummyData::poktan())->firstWhere('id_poktan', $id);
 
     abort_if($data === null, 404);
 
-    return view('pages.poktan.detail', ['title' => $data['nama'], 'data' => $data]);
+    $anggota = DummyData::anggotaPoktan($data['id_poktan']);
+
+    // Identitas ketua bercabang tiga jalur, dipusatkan pada satu helper agar
+    // tidak diulang di setiap tempat yang menampilkannya.
+    $ketua = DummyData::identitasWakil($data, 'ketua');
+
+    /*
+     * Nama kepala keluarga setiap wakil, dikumpulkan sekali di sini.
+     *
+     * Bentuk lamanya memanggil `cariTransmigran()` DI DALAM perulangan
+     * anggota, yakni satu penelusuran seluruh data transmigran untuk setiap
+     * wakil yang bukan kepala keluarga. Hanya wakil semacam itu yang
+     * membutuhkannya, sehingga petanya pun hanya memuat mereka.
+     */
+    $namaKkWakil = [];
+    foreach ($anggota as $a) {
+        if ($a['asal_wakil'] !== AsalWakilPoktan::KepalaKeluarga->value) {
+            $kk = DummyData::cariTransmigran($a['transmigran_id']);
+            $namaKkWakil[$a['transmigran_id']] = $kk['nama_kepala_keluarga'] ?? '-';
+        }
+    }
+
+    return view('pages.poktan.detail', [
+        'title' => $data['nama'],
+        'data' => $data,
+        'anggota' => $anggota,
+        'alsintan' => array_values(array_filter(DummyData::alsintan(), fn ($a) => $a['poktan_id'] === $data['id_poktan'])),
+        'saprotan' => array_values(array_filter(DummyData::saprotan(), fn ($s) => $s['poktan_id'] === $data['id_poktan'])),
+        'aktif' => count(array_filter($anggota, fn ($a) => $a['status'] === 'Aktif')),
+        'ketua' => $ketua,
+        'keluargaKetua' => DummyData::cariTransmigran($data['ketua_transmigran_id']),
+        'namaKkWakil' => $namaKkWakil,
+
+        // Luas lahan ketua diturunkan dari bidang milik keluarganya, kecuali
+        // bagi ketua non-transmigran yang lahannya tidak terdata sehingga
+        // diketik.
+        'lahanKetua' => $ketua['asal']->dariKeluargaTransmigran()
+            ? DummyData::rekapLahanKeluarga($data['ketua_transmigran_id'])
+            : ['kering' => $data['luas_kering_ketua'] ?? 0, 'basah' => $data['luas_basah_ketua'] ?? 0],
+
+        // Luas lahan kelompok dijumlahkan dari seluruh anggotanya. Kolom
+        // `luas_lahan_kelompok` sudah dicabut sebab nilainya basi begitu luas
+        // dibetulkan di modul lahan (erd.md 7.3).
+        'luasKelompokKering' => array_sum(array_column($anggota, 'luas_kering')),
+        'luasKelompokBasah' => array_sum(array_column($anggota, 'luas_basah')),
+    ]);
 })->where('id', '[0-9]+')->name('poktan.detail');
 
 

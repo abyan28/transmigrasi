@@ -76,7 +76,7 @@
 
             <div>
                 <x-sim.pilih-cari nama="transmigran_id" label="Pemilik" :wajib="true"
-                    :awalan="$awalan" :opsi="DummyData::transmigran()" kunci="id_transmigran"
+                    :awalan="$awalan" :opsi="$daftarTransmigran" kunci="id_transmigran"
                     teks="nama_kepala_keluarga" keterangan-opsi="nik" gaya="kurung"
                     :terpilih="old('transmigran_id', $data['transmigran_id'] ?? null)"
                     placeholder="Pilih kepala keluarga"
@@ -121,7 +121,7 @@
             <div class="sm:col-span-2">
                 <x-sim.wilayah-picker
                     :daftar-kawasan="[['id' => 1, 'nama' => 'Kobalima Timur']]"
-                    :daftar-sp="collect(DummyData::satuanPermukiman())
+                    :daftar-sp="collect($daftarSp)
                         ->map(fn ($s) => ['id' => $s['id_satuan_permukiman'], 'nama' => $s['nama'], 'kawasan_id' => 1])
                         ->all()"
                     :sp-terpilih="old('satuan_permukiman_id', $data['satuan_permukiman_id'] ?? null)" />
@@ -289,7 +289,7 @@
                 <label for="{{ $awalan }}_jenis_dokumen" class="{{ $kelasLabel }}">Jenis Dokumen</label>
                 <select id="{{ $awalan }}_jenis_dokumen" name="jenis_dokumen" class="{{ $kelasKontrol }}">
                     <option value="">Belum ada dokumen</option>
-                    @foreach (\App\Support\DummyData::opsiReferensi(\App\Enums\JenisReferensi::JenisDokumenLahan) as $nilai => $label)
+                    @foreach ($opsiJenisDokumenLahan as $nilai => $label)
                         <option value="{{ $nilai }}"
                             @selected(old('jenis_dokumen', $data['jenis_dokumen'] ?? '') === $nilai)>
                             {{ $label }}

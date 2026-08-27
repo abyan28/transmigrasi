@@ -115,7 +115,7 @@
         <div class="mt-3 space-y-4">
             <x-sim.wilayah-picker
                 :daftar-kawasan="[['id' => 1, 'nama' => 'Kobalima Timur']]"
-                :daftar-sp="collect(\App\Support\DummyData::satuanPermukiman())
+                :daftar-sp="collect($daftarSp)
                     ->map(fn ($s) => ['id' => $s['id_satuan_permukiman'], 'nama' => $s['nama'], 'kawasan_id' => 1])
                     ->all()"
                 :sp-terpilih="old('satuan_permukiman_id', $data['satuan_permukiman_id'] ?? null)" />
@@ -201,7 +201,7 @@
                     value="{{ old('pekerjaan_kepala_keluarga', $data['pekerjaan_kepala_keluarga'] ?? '') }}"
                     required maxlength="100" list="saran-pekerjaan" class="{{ $kelasKontrol }}" />
                 <datalist id="saran-pekerjaan">
-                    @foreach (array_keys(\App\Support\DummyData::sebaranPekerjaan()) as $pekerjaan)
+                    @foreach ($saranPekerjaan as $pekerjaan)
                         <option value="{{ mb_strtoupper($pekerjaan) }}"></option>
                     @endforeach
                 </datalist>

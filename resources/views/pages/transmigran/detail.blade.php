@@ -8,66 +8,11 @@
 
 @section('content')
     @php
-        use App\Support\DummyData;
+        // Seluruh data terkait halaman ini datang dari rute
+        // `transmigran.detail`: $rumah, $lahan, $totalLuas, $poktanBernaung,
+        // $spPoktan, $riwayatKk, $poktanDiketuai, $keanggotaanIkut, dan
+        // $inisial. Lihat routes/web.php.
         $statusTinggal = \App\Enums\StatusTinggal::from($data['status_tinggal']);
-
-        // Data terkait, disaring dari penyedia data contoh menurut nama pemilik.
-        // Saat backend siap, penyaringan berpindah ke relasi Eloquent.
-        $rumah = collect(DummyData::rumah())
-            ->firstWhere('penghuni', $data['nama_kepala_keluarga']);
-
-        // Lahan dibaca lewat id, bukan mencocokkan nama: dua kepala keluarga
-        // dapat bernama sama, dan pencocokan nama akan menautkan bidang milik
-        // orang lain ke halaman ini tanpa ada yang menyadarinya.
-        $lahan = array_values(array_filter(
-            DummyData::lahan(),
-            fn ($l) => $l['transmigran_id'] === $data['id_transmigran']
-        ));
-
-        // TAB HASIL PANEN DICABUT 2026-08-22.
-        //
-        // Panen kini dicatat per POKTAN, bukan per orang, sehingga tidak ada
-        // lagi cara yang sahih untuk menyaringnya bagi satu keluarga.
-        // Pencocokan lewat nama penggarap sempat dipakai, tetapi itu menebak:
-        // satu poktan berisi banyak keluarga, dan hasil panennya milik
-        // kelompok.
-        //
-        // Digantikan tautan ke poktan tempat keluarga ini bernaung. Angka
-        // panennya dapat dibaca di sana, tanpa mengarang pembagian per orang
-        // yang tidak pernah didata.
-        $poktanBernaung = array_values(array_filter(
-            DummyData::anggotaPoktan(),
-            fn ($a) => $a['transmigran_id'] === $data['id_transmigran']
-                && $a['status'] === 'Aktif'
-        ));
-
-        // Peta poktan ke SP-nya, disusun sekali di sini. Mencarinya di dalam
-        // perulangan berarti menyusuri seluruh daftar poktan untuk tiap baris.
-        $spPoktan = collect(DummyData::poktan())
-            ->pluck('satuan_permukiman', 'id_poktan')
-            ->all();
-
-        $totalLuas = array_sum(array_column($lahan, 'luas'));
-
-        // Riwayat suksesi kepala keluarga. Satu baris transmigran adalah satu
-        // RUMAH TANGGA, sehingga pergantian kepalanya menyunting baris ini dan
-        // peristiwanya direkam terpisah (rules.md 6 poin 5).
-        $riwayatKk = DummyData::riwayatKepalaKeluarga($data['id_transmigran']);
-
-        // Jabatan ketua poktan TIDAK diwariskan. Bila keluarga ini menjabat
-        // ketua lewat jalur Kepala Keluarga, petugas wajib memutuskan nasib
-        // jabatannya saat suksesi (rules.md 6 poin 5e).
-        $poktanDiketuai = DummyData::poktanDiketuaiKeluarga($data['id_transmigran']);
-
-        // Keanggotaan poktan justru MENGIKUTI, sebab melekat pada keluarga
-        // (rules.md 7a poin 3a). Petugas cukup diberi tahu, tidak diminta
-        // memutuskan. Hanya wakil berjalur Kepala Keluarga yang ikut berganti.
-        $keanggotaanIkut = array_values(array_filter(
-            DummyData::anggotaPoktan(),
-            fn ($a) => $a['transmigran_id'] === $data['id_transmigran']
-                && $a['asal_wakil'] === \App\Enums\AsalWakilPoktan::KepalaKeluarga->value
-                && $a['status'] !== 'Sudah Keluar'
-        ));
 
         $bolehUbah = true;
 
@@ -122,7 +67,7 @@
                     <span
                         class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-brand-500 text-theme-lg font-bold text-white"
                         aria-hidden="true">
-                        {{ DummyData::inisial($data['nama_kepala_keluarga']) }}
+                        {{ $inisial }}
                     </span>
                     <div class="min-w-0">
                         <p class="truncate text-theme-sm font-semibold text-gray-800 dark:text-white/90">

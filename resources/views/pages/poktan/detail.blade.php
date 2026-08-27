@@ -11,32 +11,11 @@
 @extends('layouts.app')
 
 @section('content')
-    @php
-        use App\Support\DummyData;
-
-        $anggota = DummyData::anggotaPoktan($data['id_poktan']);
-        $alsintan = array_values(array_filter(DummyData::alsintan(), fn ($a) => $a['poktan_id'] === $data['id_poktan']));
-        $saprotan = array_values(array_filter(DummyData::saprotan(), fn ($s) => $s['poktan_id'] === $data['id_poktan']));
-
-        $aktif = count(array_filter($anggota, fn ($a) => $a['status'] === 'Aktif'));
-
-        // Identitas ketua bercabang tiga jalur, dipusatkan pada satu helper agar
-        // tidak diulang di setiap tempat yang menampilkannya.
-        $ketua = DummyData::identitasWakil($data, 'ketua');
-        $keluargaKetua = DummyData::cariTransmigran($data['ketua_transmigran_id']);
-
-        // Luas lahan ketua diturunkan dari bidang milik keluarganya, kecuali bagi
-        // ketua non-transmigran yang lahannya tidak terdata sehingga diketik.
-        $lahanKetua = $ketua['asal']->dariKeluargaTransmigran()
-            ? DummyData::rekapLahanKeluarga($data['ketua_transmigran_id'])
-            : ['kering' => $data['luas_kering_ketua'] ?? 0, 'basah' => $data['luas_basah_ketua'] ?? 0];
-
-        // Luas lahan kelompok dijumlahkan dari seluruh anggotanya. Kolom
-        // `luas_lahan_kelompok` sudah dicabut sebab nilainya basi begitu luas
-        // dibetulkan di modul lahan (erd.md 7.3).
-        $luasKelompokKering = array_sum(array_column($anggota, 'luas_kering'));
-        $luasKelompokBasah = array_sum(array_column($anggota, 'luas_basah'));
-    @endphp
+    {{--
+        Seluruh isian halaman ini datang dari rute `poktan.detail`, termasuk
+        `$namaKkWakil` yang dahulu ditelusuri ulang di dalam perulangan
+        anggota. Lihat routes/web.php.
+    --}}
 
     <x-sim.page-header :judul="$data['nama']"
         :keterangan="'Kelompok tani di ' . $data['satuan_permukiman'] . ', berdiri sejak ' . $data['tahun_berdiri'] . '.'"
@@ -210,7 +189,7 @@
                                         @if ($a['asal_wakil'] !== \App\Enums\AsalWakilPoktan::KepalaKeluarga->value)
                                             <p class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
                                                 {{ $a['hubungan_dengan_kk'] }} dari
-                                                {{ \App\Support\DummyData::cariTransmigran($a['transmigran_id'])['nama_kepala_keluarga'] ?? '-' }}
+                                                {{ $namaKkWakil[$a['transmigran_id']] ?? '-' }}
                                             </p>
                                         @endif
                                     </td>

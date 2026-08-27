@@ -15,39 +15,8 @@
 
 @section('content')
     @php
-        use App\Support\DummyData;
-
-        $semua = DummyData::transmigran();
-
-        // Penyaringan dan pencarian dibaca dari query string agar hasilnya
-        // bertahan setelah halaman dimuat ulang.
-        $cari = trim((string) request('cari', ''));
-        $filterSp = request('sp');
-        $filterTinggal = request('status_tinggal');
-
-        $baris = array_values(array_filter($semua, function ($t) use ($cari, $filterSp, $filterTinggal) {
-            if ($cari !== '') {
-                $cocok = str_contains(mb_strtolower($t['nama_kepala_keluarga']), mb_strtolower($cari))
-                    || str_contains($t['nik'], $cari)
-                    || str_contains($t['no_kk'], $cari);
-
-                if (! $cocok) {
-                    return false;
-                }
-            }
-
-            if ($filterSp && (string) $t['satuan_permukiman_id'] !== (string) $filterSp) {
-                return false;
-            }
-
-            if ($filterTinggal && $t['status_tinggal'] !== $filterTinggal) {
-                return false;
-            }
-
-            return true;
-        }));
-
-        $adaFilter = $cari !== '' || $filterSp || $filterTinggal;
+        // Data, penyaringan, dan pencarian datang dari rute
+        // `transmigran.index`. Lihat routes/web.php.
 
         // Sementara seluruh tombol dirender. Penyaringan menurut izin
         // dipasang pada Tahap 3 lewat MenuHelper::bolehLihat().
@@ -119,7 +88,7 @@
                         <select id="filter_sp" name="sp"
                             class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
                             <option value="">Semua SP</option>
-                            @foreach (DummyData::satuanPermukiman() as $sp)
+                            @foreach ($daftarSp as $sp)
                                 <option value="{{ $sp['id_satuan_permukiman'] }}"
                                     @selected($filterSp == $sp['id_satuan_permukiman'])>
                                     {{ $sp['nama'] }}

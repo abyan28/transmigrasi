@@ -8,32 +8,10 @@
 @extends('layouts.app')
 
 @section('content')
-    @php
-        use App\Support\DummyData;
-
-        $semua = DummyData::poktan();
-        $anggota = DummyData::anggotaPoktan();
-
-        $cari = trim((string) request('cari', ''));
-        $filterSp = request('sp');
-
-        $baris = array_values(array_filter($semua, function ($p) use ($cari, $filterSp) {
-            if ($cari !== '' && ! str_contains(mb_strtolower($p['nama']), mb_strtolower($cari))
-                && ! str_contains(mb_strtolower($p['nama_ketua']), mb_strtolower($cari))) {
-                return false;
-            }
-            if ($filterSp && (string) $p['satuan_permukiman_id'] !== (string) $filterSp) {
-                return false;
-            }
-
-            return true;
-        }));
-
-        $adaFilter = $cari !== '' || $filterSp;
-        $totalAnggota = array_sum(array_column($semua, 'jumlah_anggota'));
-        $anggotaAktif = count(array_filter($anggota, fn ($a) => $a['status'] === 'Aktif'));
-    @endphp
-
+    {{--
+        Seluruh isian halaman ini datang dari rute `poktan.index`.
+        Lihat routes/web.php.
+    --}}
     <x-sim.halaman-daftar judul="Kelompok Tani"
         keterangan="Poktan di kawasan beserta ketua dan jumlah anggotanya."
         :remah="\App\Helpers\RemahHelper::untuk('/poktan')"
@@ -83,7 +61,7 @@
                     <select id="filter_sp" name="sp"
                         class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
                         <option value="">Semua SP</option>
-                        @foreach (DummyData::satuanPermukiman() as $sp)
+                        @foreach ($daftarSp as $sp)
                             <option value="{{ $sp['id_satuan_permukiman'] }}"
                                 @selected($filterSp == $sp['id_satuan_permukiman'])>{{ $sp['nama'] }}</option>
                         @endforeach

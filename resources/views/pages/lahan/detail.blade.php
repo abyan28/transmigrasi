@@ -15,19 +15,12 @@
 
 @section('content')
     @php
-        use App\Support\DummyData;
-
-        $dokumen = DummyData::dokumenLahan($data['id_lahan']);
+        // `$dokumen`, `$pemilik`, dan `$opsiJenisDokumenLahan` datang dari
+        // rute `lahan.detail`.
 
         // Lahan usaha terbagi beberapa tahap, sehingga tidak boleh dicocokkan
         // dengan satu nilai teks. Pemeriksaannya dipusatkan pada enum.
         $lahanUsaha = \App\Enums\PeruntukanLahan::from($data['peruntukan_lahan'])->lahanUsaha();
-
-        // Dibaca lewat id, bukan mencocokkan nama. Dua kepala keluarga dapat
-        // bernama sama, dan pencocokan nama akan menautkan bidang ini ke
-        // profil orang yang keliru tanpa ada yang menyadarinya.
-        $pemilik = collect(DummyData::transmigran())
-            ->firstWhere('id_transmigran', $data['transmigran_id']);
 
         $bolehUbah = true;
     @endphp
@@ -283,7 +276,7 @@
                     </label>
                     <select id="dok_jenis" name="jenis_dokumen" required
                         class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
-                        @foreach (\App\Support\DummyData::opsiReferensi(\App\Enums\JenisReferensi::JenisDokumenLahan) as $nilai => $label)
+                        @foreach ($opsiJenisDokumenLahan as $nilai => $label)
                             <option value="{{ $nilai }}">{{ $label }}</option>
                         @endforeach
                     </select>

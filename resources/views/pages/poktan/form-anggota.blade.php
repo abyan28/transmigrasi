@@ -39,17 +39,9 @@
     $kelasArea = 'w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30';
     $kelasLabel = 'mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400';
 
-    $daftarTransmigran = DummyData::transmigran();
+    // `$daftarTransmigran`, `$kontakTransmigran`, `$lahanTransmigran`, dan
+    // `$opsiJabatanAnggota` disuplai ViewServiceProvider.
     $keluar = StatusKeaktifanAnggota::SudahKeluar->value;
-
-    // Peta id keluarga ke telepon dan rekap lahannya, dipakai di sisi klien.
-    $kontakTransmigran = [];
-    $lahanTransmigran = [];
-    foreach ($daftarTransmigran as $t) {
-        $kunci = (string) $t['id_transmigran'];
-        $kontakTransmigran[$kunci] = $t['telepon'] ?? '';
-        $lahanTransmigran[$kunci] = DummyData::rekapLahanKeluarga($t['id_transmigran']);
-    }
 
     $kepalaKeluarga = AsalWakilPoktan::KepalaKeluarga->value;
     $anggotaKeluarga = AsalWakilPoktan::AnggotaKeluarga->value;
@@ -225,7 +217,7 @@
         <div>
             <label for="{{ $awalan }}_jabatan_anggota" class="{{ $kelasLabel }}">Jabatan</label>
             <select id="{{ $awalan }}_jabatan_anggota" name="jabatan" class="{{ $kelasKontrol }}">
-                @foreach (DummyData::opsiReferensi(\App\Enums\JenisReferensi::JabatanAnggotaPoktan) as $nilaiJab => $labelJab)
+                @foreach ($opsiJabatanAnggota as $nilaiJab => $labelJab)
                     <option value="{{ $nilaiJab }}" @selected(old('jabatan', $data['jabatan'] ?? '') === $nilaiJab)>
                         {{ $labelJab }}
                     </option>
