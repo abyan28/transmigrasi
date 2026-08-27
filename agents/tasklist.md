@@ -683,6 +683,26 @@ Diminta pemilik proyek: memeriksa seluruh pekerjaan sampai titik ini. Lingkupnya
 
 **Catatan:** sesi pengerjaannya terputus karena galat penyedia model tepat sebelum pencatatan. Dokumentasi disusun ulang 2026-08-27 dari riwayat sesi, lalu dicocokkan terhadap keadaan berkas yang sebenarnya. Lihat `notes.md` 1g.8.
 
+### Pemindahan pengambilan data dari view ke rute (2026-08-27) ✅
+
+Butir tindak lanjut 12 pada `notes.md`, yaitu ide C hasil audit 1g.7. Disetujui pemilik proyek, dikerjakan dalam **sembilan batch** yang masing-masing diuji dan dicommit terpisah.
+
+**Hasil:** **212 pemanggilan `DummyData::` di 65 berkas Blade → nol**, dan kini dijaga uji.
+
+**Mengapa sekarang:** selama view mengambil datanya sendiri, migrasi ke Eloquent pada Tahap 4 bukan pekerjaan controller melainkan penyuntingan 65 view, dan setiap pemanggilan di dalam perulangan berubah menjadi satu kueri per baris. Selagi sumbernya array, pemindahannya hanya mengubah `return view('x')` menjadi `return view('x', [...])`.
+
+**Dua jalur.** Halaman berrute menerima data dari rutenya. Berkas form dan komponen bersama menerima rujukannya dari `ViewServiceProvider` — satu berkas form disisipkan tiga modal sekaligus, sehingga menyalurkannya lewat rute menuntut tiga rute mengoper isian yang sama persis, dan satu yang terlewat menghasilkan dropdown kosong tanpa galat apa pun.
+
+**Temuan paling berharga: tujuh N+1**, tidak satu pun terlihat sebelum penyisiran, seluruhnya berbentuk sama yakni satu pemanggilan yang menelusuri seluruh tabel diletakkan di dalam `@foreach`. Yang terparah `poktan/form` dan `poktan/form-anggota`: keduanya memanggil `rekapLahanKeluarga()` untuk SETIAP keluarga lewat perulangan yang ditulis dua kali, dan kedua form dapat muncul pada halaman yang sama.
+
+**Tiga rekap beserta lacak pengaduan** masing-masing dirender dua rute; sebelumnya kedua rute merender view yang menyusun datanya sendiri, sehingga tidak ada satu tempat pun yang dapat disebut sumbernya. Kini dipusatkan pada closure bersama, dan terbukti kedua jalur menghasilkan tabel identik.
+
+**Dua uji penjaga diperbaiki**, keduanya memerah tanpa satu pun perilaku berubah. Yang satu mengunci dari mana data diambil; yang lain mengunci berkas mana yang menghitungnya. Pemeriksaan sumber pada uji kedua sengaja **dipertahankan**, sebab data contoh tidak dapat membedakan implementasi benar dari yang salah — hanya cakupannya yang diperluas.
+
+**Penjaga baru:** view dilarang memanggil `DummyData` sama sekali, dibuktikan lewat mutasi. Wajib ada justru karena pelanggarannya tidak memerahkan apa pun.
+
+**Verifikasi:** **617 uji hijau**; seluruh **55 rute GET** yang membalas 200 disisir dan tidak satu pun memuat variabel hilang, `<select>` kosong, maupun sisa `DummyData` pada keluaran; `pint` tidak menambah utang di seluruh batch.
+
 ## Tahap 3 — Autentikasi dan Hak Akses
 
 > **Peringatan penerbitan statis.** Begitu login aktif, halaman berpelindung membalas pengalihan ke `/login`, bukan 200, sehingga `.github/workflows/deploy.yml` **gagal** dan situs GitHub Pages berhenti diperbarui. Putuskan lebih dulu: batasi `sim:tautan-statis` hanya ke halaman publik, atau hentikan penerbitan statis sama sekali. Lihat `notes.md` bagian 1b.7.

@@ -747,6 +747,86 @@ Pencocokan itu bukan formalitas: ia yang memastikan angka 37 masih berlaku, memb
 
 ---
 
+## 1h. Pengambilan Data Dipindahkan dari View ke Rute (2026-08-27)
+
+Butir tindak lanjut 12, yaitu ide C pada audit 1g.7. Dikerjakan atas persetujuan pemilik proyek, dalam **sembilan batch** yang masing-masing diuji dan dicommit terpisah.
+
+Keadaan awal: **212 pemanggilan `DummyData::` tersebar di 65 berkas Blade**. Keadaan akhir: **nol**, dijaga uji.
+
+### 1h.1 Mengapa dikerjakan sekarang, bukan di Tahap 4
+
+Alasannya bukan kerapian melainkan **biaya**. Selama view mengambil datanya sendiri, mengganti `DummyData` dengan Eloquent bukan pekerjaan controller melainkan penyuntingan 65 berkas view — dan setiap pemanggilan yang kebetulan berada di dalam `@foreach` berubah menjadi satu kueri per baris.
+
+Selagi sumbernya masih array, memindahkannya hanya berarti mengubah `return view('x')` menjadi `return view('x', [...])`. Sesudah Eloquent masuk, pekerjaan yang sama menuntut pembacaan ulang setiap view untuk memastikan mana yang aman.
+
+### 1h.2 Dua jalur, dan alasan pembedaannya
+
+**Halaman berrute** menerima datanya dari rute. Di situlah controller Tahap 4 kelak mengambil alih tanpa menyentuh viewnya.
+
+**Berkas form dan komponen bersama** menerima rujukannya dari `ViewServiceProvider`, bukan dari rute. Sebabnya struktural: satu berkas form disisipkan dari **induk yang berbeda-beda** — modal tambah dan modal ubah pada halaman daftar, serta modal ubah pada halaman rincian. Menyalurkan opsinya lewat rute berarti **tiga rute wajib mengoper isian yang sama persis**, dan satu saja yang terlewat menghasilkan dropdown kosong tanpa galat apa pun.
+
+Composer menyelesaikannya dari sisi yang benar: opsinya melekat pada FORM, bukan pada siapa yang menyisipkannya.
+
+Tiga berkas bahkan tidak punya induk tetap sama sekali: `layouts/app` membungkus setiap halaman, `user-dropdown` muncul di setiap halaman berautentikasi, dan `catatan-log` melayani dua belas halaman rincian. Composer `catatan-log` membaca **prop komponennya sendiri**, sebab baris yang ditampilkannya ditentukan pemanggilnya.
+
+> **Aturan:** yang dipindahkan adalah **akses datanya**, bukan penalaran yang memakainya. `rumah/form` tetap menyusun `$calonPenghuni` sendiri sebab hasilnya bergantung pada baris yang sedang diubah, dan baris itu hanya diketahui induknya; yang pindah ke composer hanya pengambilan dua daftar yang menjadi bahannya.
+
+### 1h.3 Tujuh N+1 yang ditemukan, seluruhnya sebentuk
+
+Ini hasil yang paling berharga, dan tidak satu pun terlihat sebelum penyisiran. Bentuknya identik: **satu pemanggilan yang menelusuri seluruh tabel, diletakkan di dalam `@foreach`.**
+
+| Tempat | Pemanggilan | Berapa kali terulang |
+|---|---|---|
+| `saprotan/index` | `sisaBenih()` | Sekali per baris benih; tiap kali menelusuri seluruh catatan penanaman |
+| `poktan/detail` | `cariTransmigran()` | Sekali per wakil bukan kepala keluarga; tiap kali menelusuri seluruh transmigran |
+| `poktan/form` dan `poktan/form-anggota` | `rekapLahanKeluarga()` | Sekali per **keluarga**, dan perulangannya ditulis **dua kali** pada dua form yang dapat muncul di halaman yang sama |
+| `panen/index` | `keTon()` | Sekali per baris |
+| `penanaman/form` | `rekapLahanPoktan()` dan `lahanTersedia()` | Sekali per poktan, pada form yang muncul dua kali per halaman |
+| `master/detail-referensi` | `referensiNilai()` | Sekali per baris berbidang |
+| `pengguna/index` | `inisial()` | Sekali per baris |
+
+Ditambah `dashboard/index` yang memanggil `PenilaianKondisiSp::penyebabUtama()` di dalam perulangan tabel kondisi.
+
+Seluruhnya kini peta yang disusun sekali. Yang dipakai lintas form diingat selama satu permintaan.
+
+> **Aturan:** pemanggilan sumber data **dilarang berada di dalam perulangan view**. Selama sumbernya array hal itu hanya lambat, sehingga tidak pernah memerahkan apa pun; begitu sumbernya kueri, ia menjadi N+1 yang sesungguhnya. Inilah yang membuatnya bertahan tanpa disadari.
+
+### 1h.4 Tiga rekap yang dirender dua rute
+
+`panen/rekap`, `pengaduan/rekap`, dan `kependudukan/rekap` masing-masing dilayani dua rute: tautan tetap per segmen, dan alamat lama ber-`?kelompok=`. Hal yang sama berlaku pada `lacak-pengaduan`.
+
+Sebelumnya **kedua rute merender view yang menyusun datanya sendiri**, sehingga tidak ada satu tempat pun yang dapat disebut sumbernya, dan keduanya dapat menyimpang tanpa ketahuan. Kini masing-masing dipusatkan pada satu closure yang dipakai bersama.
+
+Dibuktikan: `/panen/rekap/komoditas` dan `/panen/rekap?kelompok=komoditas` menghasilkan tabel yang **identik**. Keduanya memang berbeda beberapa byte, tetapi hanya pada `action` form penyaring yang memuat alamatnya sendiri — bukan pada satu angka pun.
+
+### 1h.5 Dua uji penjaga yang ikut diperbaiki
+
+Keduanya memerah oleh pekerjaan ini padahal **tidak ada satu pun perilaku yang berubah**, dan keduanya varian dari bentuk yang sudah tercatat pada 1g.5.
+
+**`membaca catatan tanam pada form panen dari data`** mengunci `toContain('DummyData::penanaman()')`, yakni **dari mana** datanya diambil. Diganti memeriksa bahwa pilihannya dibangkitkan dari kumpulan. Bagian kedua uji itu — yang mencocokkan tiap label terhadap data nyata pada halaman terender — sudah benar sejak awal dan tidak disentuh.
+
+**`memilih komoditas utama dashboard menurut nilai`** membaca `dashboard/index.blade.php` lalu mencari `max($sebaranKomoditas)`, sehingga memerah begitu perhitungannya pindah ke rute.
+
+Yang kedua ini menarik, sebab pemeriksaan sumbernya **dipertahankan**, bukan diganti pemeriksaan halaman terender. Data contoh saat ini tersusun menurun, sehingga `array_key_first()` dan `max()` menghasilkan jawaban yang **sama persis** — justru itu sebabnya kekeliruan aslinya tidak terlihat, dan itu pula sebabnya halaman terender tidak dapat membedakan keduanya. Di sini bentuk kodenyalah satu-satunya pembeda. Yang diperbaiki hanya cakupannya: kini menyisir rute dan view sekaligus, tidak mematok satu berkas.
+
+> **Aturan:** pemeriksaan berbasis sumber sah **ketika data tidak dapat membedakan benar dari salah**, dan pada keadaan itu ia wajib menyisir seluruh tempat yang mungkin memuatnya, bukan satu berkas. Pada keadaan lain, periksalah tujuannya.
+
+### 1h.6 Penjaga barunya
+
+`melarang view mengambil datanya sendiri` menyisir seluruh Blade dan memerah pada `DummyData::` yang benar-benar dipanggil. Penyebutan di dalam komentar penjelas dibiarkan, sebab yang dilarang adalah pengambilan data. Dibuktikan lewat mutasi.
+
+Larangan ini wajib punya penjaga justru karena **pelanggarannya tidak memerahkan apa pun**: view yang memanggil datanya sendiri tetap merender halaman yang benar, dan yang membusuk hanya biaya penggantiannya kelak. Tanpa penjaga, satu berkas baru sudah cukup untuk mulai mengembalikan keadaan lama.
+
+### 1h.7 Verifikasi
+
+Setiap batch: seluruh uji hijau, halaman terkaitnya dirender dan diperiksa, `pint` tidak menambah utang.
+
+Penutupnya lebih luas: **seluruh 55 rute GET yang membalas 200 disisir**, dan tidak satu pun memuat variabel hilang, `<select>` tanpa `<option>`, maupun sisa `DummyData` pada keluaran. Tiga rute lain sengaja dikecualikan sebab memang bukan 200 — `uji-403` melempar 403 sebagai pratinjau, sedangkan `dokumen` dan `template-impor` membalas 404 untuk id karangan.
+
+Uji bertambah dari 616 menjadi **617**.
+
+---
+
 ## 2. Catatan Dokumen Proposal
 
 Lembar pengesahan pada `docs/Revisi_Proposal_Budi_TEP ITS 2026_Kobalima_Timur_Upload_10_6_2026_a.pdf` masih memuat judul dan pengusul dari proposal lain:
@@ -897,6 +977,11 @@ Seharusnya: "Digitalisasi Monitoring Pertanian dan Tata Kelola Data Kawasan Tran
 | 2026-08-25 | Alamat dasar untuk modul JavaScript **wajib dioper dari Blade** | Berkas JavaScript tidak mengenal `url()`, sehingga alamat yang ditulis tetap di dalamnya selalu salah begitu situs berpindah ke sub-path. `chart-config.js` merusak penelusuran 17 grafik dashboard dengan cara ini, delapan hari setelah larangannya tertulis pada 1b.3 |
 | 2026-08-25 | Setiap larangan pada `notes.md` **wajib punya uji penjaga** | Larangan path absolut sudah tertulis sejak 2026-08-17 dan repo tetap kena masalah yang sama untuk ketiga kalinya. Aturan yang hanya tertulis terbukti tidak menahan apa pun; yang menahan adalah uji yang memerah |
 | 2026-08-25 | Laporan penelusur diperlakukan sebagai **kandidat**, bukan temuan | Dua dari sebelas laporan terbukti keliru saat diverifikasi terhadap berkas, yaitu form tanpa `@csrf` dan dua komponen yang disebut mati. Mengerjakannya berarti menghabiskan waktu atas masalah yang tidak ada |
+| 2026-08-27 | Pengambilan data **dipindahkan dari view ke rute**, selagi sumbernya masih array | Selama view mengambil datanya sendiri, migrasi ke Eloquent pada Tahap 4 bukan pekerjaan controller melainkan penyuntingan 65 view, dan setiap pemanggilan di dalam perulangan berubah menjadi satu kueri per baris. Penyisirannya menemukan tujuh N+1 nyata yang tidak satu pun terlihat sebelumnya. Lihat bagian 1h |
+| 2026-08-27 | Berkas form dan komponen bersama disuplai **composer**, bukan rute | Satu berkas form disisipkan tiga modal sekaligus, sehingga menyalurkannya lewat rute menuntut tiga rute mengoper isian yang sama persis dan satu yang terlewat menghasilkan dropdown kosong tanpa galat. Opsinya melekat pada FORM, bukan pada siapa yang menyisipkannya |
+| 2026-08-27 | Yang dipindahkan adalah **akses data**, bukan penalaran yang memakainya | `rumah/form` dan `panen/form` tetap menyaring sendiri, sebab hasilnya bergantung pada baris yang sedang disunting dan baris itu hanya diketahui induknya. Memaksakan penyaringan itu ke composer berarti composer harus menebak konteks pemanggilnya |
+| 2026-08-27 | Pemanggilan sumber data **dilarang berada di dalam perulangan view** | Selama sumbernya array hal itu hanya lambat sehingga tidak pernah memerahkan apa pun; begitu sumbernya kueri, ia menjadi N+1. Tujuh kejadian ditemukan, seluruhnya berbentuk sama |
+| 2026-08-27 | Pemeriksaan berbasis sumber **sah ketika data tidak dapat membedakan** benar dari salah | Sebaran komoditas tersusun menurun, sehingga `array_key_first()` dan `max()` menjawab sama persis dan halaman terender tidak dapat membedakannya. Pada keadaan itu bentuk kodenyalah satu-satunya pembeda, dan ujinya wajib menyisir seluruh tempat yang mungkin memuatnya, bukan satu berkas |
 | 2026-08-25 | Temuan 6, 7, dan 8 **ditunda dengan sengaja**, bukan terlupa | Ketiganya nyata tetapi tidak merusak apa pun yang sedang dipakai: `<caption>` menyangkut pembaca layar, komponen yatim menyangkut kebersihan, dan 37 path absolut melekat pada form POST yang toh sudah mati di versi statis. Dicatat lengkap pada 1g.7 agar tidak hilang bersama sesinya |
 
 ---
@@ -916,7 +1001,7 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
 9. ~~**Audit keputusan lama yang bersandar pada data contoh** (disepakati 2026-08-19).~~ **Selesai 2026-08-19.** Seluruh 992 baris `notes.md` disisir; 36 keputusan menyebut data contoh sebagai alasan, **5 di antaranya cacat dan menyangkut struktur data**. Dua pertanyaan lapangan yang muncul dijawab pemilik proyek, bukan disimpulkan. Hasil lengkapnya pada bagian 1c.4, dan dua pelanggaran baru yang ditemukan tercatat pada 1c.2 sebagai pelanggaran keempat dan kelima.
 10. ~~**Tinjau ulang ambang searchable dropdown setelah data nyata masuk**, khusus `/rumah` dan `/riwayat-tanam`.~~ **SELESAI 2026-08-20, dengan cara yang berbeda dari yang direncanakan di sini.** Butir ini menulis `Ambang 8 opsinya sendiri tidak bermasalah`, dan kalimat itu ternyata keliru: ambangnya justru yang bermasalah, sebab ia membandingkan terhadap jumlah baris data contoh yang dikarang sendiri. Ambang dicabut seluruhnya dan kriterianya menjadi sifat sumber. Tidak ada lagi yang perlu ditinjau saat data nyata masuk. Lihat bagian 1c.2 pelanggaran keenam.
 11. **Ulangi audit `rules.md` 19a secara berkala**, tidak cukup sekali. Audit 2026-08-19 menemukan dua pelanggaran yang terjadi **setelah** aturannya berlaku, salah satunya melanggar prinsip yang tertulis 400 baris di atasnya pada dokumen yang sama. Lihat bagian 1c.5.
-12. **Putuskan ide C sebelum Tahap 4 dibuka**, yaitu memindahkan pengambilan data dari view ke rute selagi isinya masih array. 272 pemanggilan `DummyData::` tersebar di 67 berkas Blade; selama view mengambil datanya sendiri, migrasi ke Eloquent berubah menjadi penyuntingan 67 view beserta N+1 di setiap perulangan. Biayanya hanya naik seiring waktu. Lihat bagian 1g.7.
+12. ~~**Putuskan ide C sebelum Tahap 4 dibuka**, yaitu memindahkan pengambilan data dari view ke rute selagi isinya masih array.~~ **SELESAI 2026-08-27.** Jumlah sebenarnya **212 pemanggilan di 65 berkas**, bukan 272 di 67 seperti tertulis semula; angka lama datang dari penghitungan yang ikut menyertakan rute dan berkas pendukung. Seluruhnya dipindahkan dalam sembilan batch dan kini bernilai **nol**, dijaga uji. Penyisirannya menemukan **tujuh N+1 nyata** yang tidak satu pun terlihat sebelumnya. Lihat bagian 1h.
 13. **Perluas penjaga path absolut ke prop aksi Blade.** Uji yang dibuat 2026-08-25 hanya menyisir `resources/js`, sedangkan 37 kemunculan pada `:hapus-url` dan `pola-aksi` masih ada dan belum dijaga apa pun. Akarnya dua komponen saja. Lihat bagian 1g.7 temuan 8.
 14. **Sisir ulang `ui-spec.md` saat 15 komponen yatim dicabut.** Empat di antaranya masih tercatat di sana sebagai komponen basis, sehingga menghapus berkasnya saja akan meninggalkan dokumen yang menjanjikan sesuatu yang tidak ada. Lihat bagian 1g.7 temuan 7.
 
