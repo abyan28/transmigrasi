@@ -27,18 +27,165 @@ use Illuminate\Support\Facades\Route;
 // Dashboard monitoring kawasan, 15 indikator dengan data contoh.
 // Penggantian ke query nyata dikerjakan pada Tahap 9.
 Route::get('/', function () {
-    return view('pages.dashboard.index', ['title' => 'Dashboard']);
+    $ringkasan = DummyData::ringkasanDashboard();
+    $deret = DummyData::deretTahunan();
+    $rekapSp = DummyData::rekapPerSp();
+
+    $penilaianSp = PenilaianKondisiSp::nilaiSeluruhSp();
+    $statusInfra = DummyData::statusInfrastruktur();
+    $sebaranPekerjaan = DummyData::sebaranPekerjaan();
+    $rekapStatusPengaduan = DummyData::rekapPengaduan('status');
+    $sebaranKomoditas = DummyData::sebaranKomoditas();
+    $rekapPenghuni = DummyData::rekapPenghuni();
+    $pengaduan = DummyData::pengaduan();
+
+    /*
+     * Tahun terakhir yang terdata, dipakai melabeli kartu volume panen.
+     *
+     * Dibaca dari deret, BUKAN dari `date('Y')`. Yang dapat dijamin benar
+     * adalah "angka ini milik tahun terakhir yang terdata"; menyebutnya tahun
+     * berjalan menjanjikan hal yang belum tentu benar begitu tahun berganti
+     * sementara datanya belum masuk.
+     */
+    $tahunTerakhir = end($deret['tahun']);
+    reset($deret['tahun']);
+
+    // Isu prioritas: pengaduan yang belum selesai, diurutkan dari yang paling
+    // mendesak.
+    $urutanPrioritas = ['Mendesak' => 0, 'Tinggi' => 1, 'Sedang' => 2, 'Rendah' => 3];
+    $isuPrioritas = array_filter($pengaduan, fn ($p) => $p['status'] !== 'Selesai');
+    usort($isuPrioritas, fn ($a, $b) => $urutanPrioritas[$a['prioritas']] <=> $urutanPrioritas[$b['prioritas']]);
+
+    return view('pages.dashboard.index', [
+        'title' => 'Dashboard',
+        'ringkasan' => $ringkasan,
+        'deret' => $deret,
+        'rekapSp' => $rekapSp,
+
+        // Indikator ke-16: kondisi layanan dasar tiap SP.
+        'penilaianSp' => $penilaianSp,
+        'rekapKondisi' => PenilaianKondisiSp::rekapStatus(),
+
+        // Penyebab utama tiap SP, dahulu dihitung di dalam perulangan tabel.
+        'penyebabSp' => collect($penilaianSp)
+            ->mapWithKeys(fn ($p) => [$p['satuan_permukiman_id'] => PenilaianKondisiSp::penyebabUtama($p)])
+            ->all(),
+
+        'statusInfra' => $statusInfra,
+        'sebaranPekerjaan' => $sebaranPekerjaan,
+        'rekapStatusPengaduan' => $rekapStatusPengaduan,
+        'sebaranKomoditas' => $sebaranKomoditas,
+        'rekapPenghuni' => $rekapPenghuni,
+        'daftarSp' => DummyData::satuanPermukiman(),
+        'pengaduan' => $pengaduan,
+
+        'persenHuni' => round($ringkasan['rumah_terhuni'] / $ringkasan['rumah_total'] * 100),
+        'tahunTerakhir' => $tahunTerakhir,
+
+        /*
+         * Porsi produksi terhadap penyebutnya masing-masing. Angka mutlak tanpa
+         * porsi tidak dapat dinilai pembaca: 24 ha puso terdengar kecil bagi
+         * kawasan 3.250 ha, padahal yang menentukan luas yang ditanam.
+         *
+         * Diformat memakai `number_format`, bukan `round`: round menghasilkan
+         * "19.5" bertitik, sedangkan seluruh angka lain di halaman ini memakai
+         * koma sebagai pemisah desimal. Satu angka bertitik di antara puluhan
+         * angka berkoma terbaca sebagai kekeliruan cetak.
+         */
+        'persenTanam' => number_format($ringkasan['realisasi_tanam_ha'] / $ringkasan['luas_lahan_total'] * 100, 1, ',', '.'),
+        'persenPuso' => number_format($ringkasan['puso_ha'] / $ringkasan['realisasi_tanam_ha'] * 100, 1, ',', '.'),
+
+        /*
+         * Komoditas dengan volume terbesar, dipakai kartu komoditas utama.
+         *
+         * Dipilih berdasarkan NILAI, bukan urutan larik. `array_key_first()`
+         * sempat dipakai dan kebetulan benar hanya karena `sebaranKomoditas()`
+         * ditulis terurut; begitu urutannya berubah, kartu ini akan menampilkan
+         * komoditas yang keliru tanpa ada yang menyadarinya.
+         *
+         * "Utama" berbeda dari "unggulan": yang ini dihitung dari volume dan
+         * berubah mengikuti musim, sedangkan unggulan ditetapkan menurut
+         * proposal atau kebijakan dinas (`rules.md` 8.1) dan ditandai petugas.
+         */
+        'komoditasUtama' => array_search(max($sebaranKomoditas), $sebaranKomoditas, true),
+
+        'isuPrioritas' => $isuPrioritas,
+
+        /*
+         * Bahan grafik disusun di sini, bukan di dalam blok skrip, karena
+         * direktif @js tidak dapat mengurai array bersarang bertingkat.
+         */
+        'dataGrafik' => [
+            'tahun' => $deret['tahun'],
+            'jiwa' => $deret['jumlah_jiwa'],
+            'kk' => $deret['jumlah_kk'],
+            'petani' => $deret['jumlah_petani'],
+            'pendapatan' => $deret['pendapatan_rata_rata'],
+            'kkMasuk' => $deret['kk_masuk'],
+            'kkKeluar' => $deret['kk_keluar'],
+            'volumePanen' => $deret['volume_panen'],
+            'harga' => $deret['harga_rata_rata'],
+            'statusPengaduanNama' => array_column($rekapStatusPengaduan, 'nama'),
+            'statusPengaduanNilai' => array_column($rekapStatusPengaduan, 'jumlah'),
+            'pekerjaanNama' => array_keys($sebaranPekerjaan),
+            'pekerjaanNilai' => array_values($sebaranPekerjaan),
+            'komoditasNama' => array_keys($sebaranKomoditas),
+            'komoditasNilai' => array_values($sebaranKomoditas),
+            'penghuniNama' => array_keys($rekapPenghuni),
+            'penghuniNilai' => array_values($rekapPenghuni),
+            'infraJenis' => array_column($statusInfra, 'jenis'),
+            'infraBaik' => array_column($statusInfra, 'baik'),
+            'infraRusakRingan' => array_column($statusInfra, 'rusak_ringan'),
+            'infraRusakBerat' => array_column($statusInfra, 'rusak_berat'),
+            'spNama' => array_column($rekapSp, 'satuan_permukiman'),
+            'spKk' => array_column($rekapSp, 'jumlah_kk'),
+            'spPanen' => array_column($rekapSp, 'volume_panen'),
+
+            // Dipakai penelusuran klik menuju /dashboard/sp/{id}
+            'spId' => array_column($rekapSp, 'satuan_permukiman_id'),
+        ],
+    ]);
 })->name('beranda');
 
 // Rincian satu satuan permukiman, tujuan penelusuran dari dashboard kawasan.
 // SP yang tidak dikenal membalas 404 agar alamat karangan tidak menghasilkan
 // halaman kosong yang membingungkan.
 Route::get('/dashboard/sp/{sp}', function (int $sp) {
-    $data = \App\Support\DummyData::cariSp($sp);
+    $data = DummyData::cariSp($sp);
 
     abort_if($data === null, 404);
 
-    return view('pages.dashboard.sp', ['title' => $data['nama'], 'sp' => $data]);
+    $rekap = DummyData::rekapSp($data['id_satuan_permukiman']);
+    $deretSp = DummyData::deretTahunanSp($data['id_satuan_permukiman']);
+
+    return view('pages.dashboard.sp', [
+        'title' => $data['nama'],
+        'sp' => $data,
+        'rekap' => $rekap,
+        'deretSp' => $deretSp,
+        'penilaian' => PenilaianKondisiSp::nilai($data['id_satuan_permukiman']),
+
+        'transmigran' => DummyData::saringPerSp(DummyData::transmigran(), $data['nama']),
+        'rumah' => DummyData::saringPerSp(DummyData::rumah(), $data['nama']),
+        'lahan' => DummyData::saringPerSp(DummyData::lahan(), $data['nama']),
+        'panen' => DummyData::saringPerSp(DummyData::hasilPanen(), $data['nama']),
+        'pengaduan' => DummyData::saringPerSp(DummyData::pengaduan(), $data['nama']),
+        'infrastruktur' => DummyData::saringPerSp(DummyData::infrastruktur(), $data['nama']),
+
+        'persenHuni' => $data['jumlah_kk_terisi'] > 0
+            ? round($rekap['rumah_terhuni'] / $data['jumlah_kk_terisi'] * 100)
+            : 0,
+        'persenIsi' => round($data['jumlah_kk_terisi'] / $data['jumlah_kk_rencana'] * 100),
+
+        // Dipakai penanda pindah antar SP pada bagian atas halaman.
+        'daftarSp' => DummyData::satuanPermukiman(),
+
+        'dataGrafik' => [
+            'tahun' => $deretSp['tahun'],
+            'kk' => $deretSp['jumlah_kk'],
+            'panen' => $deretSp['volume_panen'],
+        ],
+    ]);
 })->where('sp', '[0-9]+')->name('dashboard.sp');
 
 /*

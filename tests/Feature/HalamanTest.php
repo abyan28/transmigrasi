@@ -5435,18 +5435,48 @@ it('memperingatkan bila yang ditandai unggulan bukan volume terbesar', function 
 });
 
 it('memilih komoditas utama dashboard menurut nilai, bukan urutan larik', function () {
-    // `array_key_first()` sempat dipakai dan kebetulan benar hanya karena
-    // sebaranKomoditas() ditulis terurut. Begitu urutannya berubah, kartu ini
-    // menampilkan komoditas yang keliru tanpa ada yang menyadarinya.
-    $sumber = file_get_contents(resource_path('views/pages/dashboard/index.blade.php'));
+    /*
+        `array_key_first()` sempat dipakai dan kebetulan benar hanya karena
+        sebaranKomoditas() ditulis terurut. Begitu urutannya berubah, kartu ini
+        menampilkan komoditas yang keliru tanpa ada yang menyadarinya.
+
+        Diperiksa pada HALAMAN TERENDER, bukan pada berkas sumbernya.
+
+        Sampai 2026-08-27 uji ini membaca `dashboard/index.blade.php` dan
+        mencari string `max($sebaranKomoditas)`, yakni mengunci berkas MANA
+        yang menghitungnya. Ketika perhitungannya pindah dari view ke rute,
+        uji memerah padahal kartunya menampilkan komoditas yang sama persis.
+        Lihat notes.md 1g.5.
+    */
+    $sebaran = DummyData::sebaranKomoditas();
+    $terbesar = array_search(max($sebaran), $sebaran, true);
+
+    /*
+        Pemeriksaan sumber DIPERTAHANKAN, dan alasannya penting.
+
+        Data contoh saat ini tersusun menurun, sehingga `array_key_first()` dan
+        `max()` menghasilkan jawaban yang sama persis. Justru itu sebabnya
+        kekeliruan aslinya tidak terlihat, dan itu pula sebabnya halaman
+        terender TIDAK dapat membedakan keduanya. Di sini bentuk kodenyalah
+        yang menjadi satu-satunya pembeda.
+
+        Yang diperbaiki hanya CAKUPANNYA: sampai 2026-08-27 uji ini hanya
+        membaca `dashboard/index.blade.php`, sehingga memerah begitu
+        perhitungannya pindah ke rute padahal kartunya tidak berubah. Kini
+        disisir dari seluruh tempat yang mungkin memuatnya.
+    */
+    $sumber = file_get_contents(base_path('routes/web.php'))
+        .file_get_contents(resource_path('views/pages/dashboard/index.blade.php'));
 
     expect($sumber)->toContain('max($sebaranKomoditas)')
         ->and($sumber)->not->toContain('array_key_first($sebaranKomoditas)');
 
-    // Hasilnya tetap benar: jagung memang bervolume terbesar.
-    $sebaran = DummyData::sebaranKomoditas();
+    // Lalu hasilnya, dibaca dari kartu yang benar-benar dirender.
+    $isi = $this->get(route('beranda'))->assertOk()->getContent();
 
-    expect(array_search(max($sebaran), $sebaran, true))->toBe('JAGUNG');
+    expect($isi)->toContain('Komoditas Utama')
+        ->and($isi)->toContain($terbesar)
+        ->and($isi)->toContain(number_format($sebaran[$terbesar], 1, ',', '.').' ton dipanen');
 });
 
 it('menyamakan nama komoditas pada sebaran dengan data master', function () {

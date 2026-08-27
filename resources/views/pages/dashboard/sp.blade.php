@@ -17,34 +17,10 @@
 @extends('layouts.app')
 
 @section('content')
-    @php
-        use App\Support\DummyData;
-
-        use App\Support\PenilaianKondisiSp;
-
-        $rekap = DummyData::rekapSp($sp['id_satuan_permukiman']);
-        $deretSp = DummyData::deretTahunanSp($sp['id_satuan_permukiman']);
-        $penilaian = PenilaianKondisiSp::nilai($sp['id_satuan_permukiman']);
-
-        $transmigran = DummyData::saringPerSp(DummyData::transmigran(), $sp['nama']);
-        $rumah = DummyData::saringPerSp(DummyData::rumah(), $sp['nama']);
-        $lahan = DummyData::saringPerSp(DummyData::lahan(), $sp['nama']);
-        $panen = DummyData::saringPerSp(DummyData::hasilPanen(), $sp['nama']);
-        $pengaduan = DummyData::saringPerSp(DummyData::pengaduan(), $sp['nama']);
-        $infrastruktur = DummyData::saringPerSp(DummyData::infrastruktur(), $sp['nama']);
-
-        $persenHuni = $sp['jumlah_kk_terisi'] > 0
-            ? round($rekap['rumah_terhuni'] / $sp['jumlah_kk_terisi'] * 100)
-            : 0;
-
-        $persenIsi = round($sp['jumlah_kk_terisi'] / $sp['jumlah_kk_rencana'] * 100);
-
-        $dataGrafik = [
-            'tahun' => $deretSp['tahun'],
-            'kk' => $deretSp['jumlah_kk'],
-            'panen' => $deretSp['volume_panen'],
-        ];
-    @endphp
+    {{--
+        Seluruh isian halaman ini datang dari rute `dashboard.sp`.
+        Lihat routes/web.php.
+    --}}
 
     <x-sim.page-header :judul="$sp['nama']"
         :keterangan="'Desa ' . $sp['desa'] . ', Kecamatan ' . $sp['kecamatan'] . ', Kawasan ' . $sp['kawasan'] . '.'"
@@ -79,7 +55,7 @@
     {{-- Pindah cepat antar SP tanpa kembali ke dashboard lebih dulu --}}
     <nav aria-label="Pindah satuan permukiman"
         class="mb-6 flex gap-2 overflow-x-auto rounded-2xl border border-gray-200 bg-white p-2 dark:border-gray-800 dark:bg-white/[0.03]">
-        @foreach (DummyData::satuanPermukiman() as $lain)
+        @foreach ($daftarSp as $lain)
             @php $aktif = $lain['id_satuan_permukiman'] === $sp['id_satuan_permukiman']; @endphp
             <a href="{{ route('dashboard.sp', $lain['id_satuan_permukiman']) }}"
                 @if ($aktif) aria-current="page" @endif

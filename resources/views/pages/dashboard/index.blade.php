@@ -17,99 +17,10 @@
 @extends('layouts.app')
 
 @section('content')
-    @php
-        use App\Support\DummyData;
-
-        use App\Support\PenilaianKondisiSp;
-
-        $ringkasan = DummyData::ringkasanDashboard();
-        $deret = DummyData::deretTahunan();
-        $rekapSp = DummyData::rekapPerSp();
-
-        // Indikator ke-16: kondisi layanan dasar tiap SP
-        $penilaianSp = PenilaianKondisiSp::nilaiSeluruhSp();
-        $rekapKondisi = PenilaianKondisiSp::rekapStatus();
-        $statusInfra = DummyData::statusInfrastruktur();
-        $sebaranPekerjaan = DummyData::sebaranPekerjaan();
-        $rekapStatusPengaduan = DummyData::rekapPengaduan('status');
-        $sebaranKomoditas = DummyData::sebaranKomoditas();
-        $rekapPenghuni = DummyData::rekapPenghuni();
-        $daftarSp = DummyData::satuanPermukiman();
-        $pengaduan = DummyData::pengaduan();
-
-        $persenHuni = round($ringkasan['rumah_terhuni'] / $ringkasan['rumah_total'] * 100);
-
-        /*
-         * Tahun terakhir yang terdata, dipakai melabeli kartu volume panen.
-         *
-         * Dibaca dari deret, BUKAN dari `date('Y')`. Yang dapat dijamin benar
-         * adalah "angka ini milik tahun terakhir yang terdata"; menyebutnya
-         * tahun berjalan menjanjikan hal yang belum tentu benar begitu tahun
-         * berganti sementara datanya belum masuk.
-         */
-        $tahunTerakhir = end($deret['tahun']);
-        reset($deret['tahun']);
-
-        // Porsi produksi terhadap penyebutnya masing-masing. Angka mutlak
-        // tanpa porsi tidak dapat dinilai pembaca: 24 ha puso terdengar kecil
-        // bagi kawasan 3.250 ha, padahal yang menentukan luas yang ditanam.
-        //
-        // Diformat memakai `number_format`, bukan `round`: round menghasilkan
-        // "19.5" bertitik, sedangkan seluruh angka lain di halaman ini memakai
-        // koma sebagai pemisah desimal. Satu angka bertitik di antara puluhan
-        // angka berkoma terbaca sebagai kekeliruan cetak.
-        $persenTanam = number_format($ringkasan['realisasi_tanam_ha'] / $ringkasan['luas_lahan_total'] * 100, 1, ',', '.');
-        $persenPuso = number_format($ringkasan['puso_ha'] / $ringkasan['realisasi_tanam_ha'] * 100, 1, ',', '.');
-
-        // Komoditas dengan volume terbesar, dipakai kartu komoditas utama.
-        //
-        // Dipilih berdasarkan NILAI, bukan urutan larik. `array_key_first()`
-        // sempat dipakai di sini dan kebetulan benar hanya karena
-        // `sebaranKomoditas()` ditulis terurut; begitu urutannya berubah,
-        // kartu ini akan menampilkan komoditas yang keliru tanpa ada yang
-        // menyadarinya.
-        //
-        // "Utama" berbeda dari "unggulan": yang ini dihitung dari volume dan
-        // berubah mengikuti musim, sedangkan unggulan ditetapkan menurut
-        // proposal atau kebijakan dinas (`rules.md` 8.1) dan ditandai petugas.
-        $komoditasUtama = array_search(max($sebaranKomoditas), $sebaranKomoditas, true);
-
-        // Isu prioritas: pengaduan yang belum selesai, diurutkan dari yang paling mendesak
-        $urutanPrioritas = ['Mendesak' => 0, 'Tinggi' => 1, 'Sedang' => 2, 'Rendah' => 3];
-        $isuPrioritas = array_filter($pengaduan, fn ($p) => $p['status'] !== 'Selesai');
-        usort($isuPrioritas, fn ($a, $b) => $urutanPrioritas[$a['prioritas']] <=> $urutanPrioritas[$b['prioritas']]);
-
-        // Bahan grafik disusun di sini, bukan di dalam blok skrip, karena
-        // direktif @json tidak dapat mengurai array bersarang bertingkat.
-        $dataGrafik = [
-            'tahun' => $deret['tahun'],
-            'jiwa' => $deret['jumlah_jiwa'],
-            'kk' => $deret['jumlah_kk'],
-            'petani' => $deret['jumlah_petani'],
-            'pendapatan' => $deret['pendapatan_rata_rata'],
-            'kkMasuk' => $deret['kk_masuk'],
-            'kkKeluar' => $deret['kk_keluar'],
-            'volumePanen' => $deret['volume_panen'],
-            'harga' => $deret['harga_rata_rata'],
-            'statusPengaduanNama' => array_column($rekapStatusPengaduan, 'nama'),
-            'statusPengaduanNilai' => array_column($rekapStatusPengaduan, 'jumlah'),
-            'pekerjaanNama' => array_keys($sebaranPekerjaan),
-            'pekerjaanNilai' => array_values($sebaranPekerjaan),
-            'komoditasNama' => array_keys($sebaranKomoditas),
-            'komoditasNilai' => array_values($sebaranKomoditas),
-            'penghuniNama' => array_keys($rekapPenghuni),
-            'penghuniNilai' => array_values($rekapPenghuni),
-            'infraJenis' => array_column($statusInfra, 'jenis'),
-            'infraBaik' => array_column($statusInfra, 'baik'),
-            'infraRusakRingan' => array_column($statusInfra, 'rusak_ringan'),
-            'infraRusakBerat' => array_column($statusInfra, 'rusak_berat'),
-            'spNama' => array_column($rekapSp, 'satuan_permukiman'),
-            'spKk' => array_column($rekapSp, 'jumlah_kk'),
-            'spPanen' => array_column($rekapSp, 'volume_panen'),
-            // Dipakai penelusuran klik menuju /dashboard/sp/{id}
-            'spId' => array_column($rekapSp, 'satuan_permukiman_id'),
-        ];
-    @endphp
+    {{--
+        Seluruh isian halaman ini datang dari rute `beranda`, termasuk
+        `$dataGrafik` yang menjadi bahan 17 grafiknya. Lihat routes/web.php.
+    --}}
 
     <x-sim.page-header judul="Dashboard Kawasan Kobalima Timur"
         keterangan="Ringkasan kependudukan, lahan, produksi, dan pengaduan di enam satuan permukiman."
@@ -643,7 +554,7 @@
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
                     @foreach ($penilaianSp as $p)
-                        @php $penyebab = PenilaianKondisiSp::penyebabUtama($p); @endphp
+                        @php $penyebab = $penyebabSp[$p['satuan_permukiman_id']]; @endphp
                         <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                             <td class="px-5 py-3">
                                 <a href="{{ route('dashboard.sp', $p['satuan_permukiman_id']) }}"
