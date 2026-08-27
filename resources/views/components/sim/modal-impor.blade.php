@@ -330,6 +330,7 @@
                             </p>
                             <div class="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
                                 <table class="w-full text-left text-theme-xs">
+                                    <caption class="sr-only">Baris impor yang perlu diperbaiki</caption>
                                     <thead class="bg-gray-50 dark:bg-white/[0.02]">
                                         <tr class="border-b border-gray-200 dark:border-gray-800">
                                             <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">

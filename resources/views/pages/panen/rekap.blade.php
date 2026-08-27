@@ -179,6 +179,7 @@
         @else
             <div class="overflow-x-auto">
                 <table class="w-full text-left">
+                    <caption class="sr-only">Rekap hasil panen</caption>
                     <thead class="bg-gray-50 dark:bg-white/[0.02]">
                         <tr class="border-b border-gray-200 dark:border-gray-800">
                             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">

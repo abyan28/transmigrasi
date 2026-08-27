@@ -111,6 +111,7 @@
 
         <div class="mt-3 overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-800">
             <table class="min-w-full text-left text-theme-sm">
+                <caption class="sr-only">Matriks hak akses per fitur</caption>
                 <thead class="bg-gray-50 dark:bg-white/[0.02]">
                     <tr>
                         <th scope="col" class="px-4 py-3 font-medium text-gray-500 dark:text-gray-400">Fitur</th>

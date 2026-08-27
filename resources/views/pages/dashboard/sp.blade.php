@@ -169,6 +169,7 @@
                     keterangan="Perkiraan porsi SP ini terhadap deret kawasan." tinggi="260">
                     <x-slot:tabel>
                         <table class="w-full text-left text-theme-xs">
+                            <caption class="sr-only">Pertumbuhan kepala keluarga satuan permukiman ini</caption>
                             <thead class="border-b border-gray-200 dark:border-gray-800">
                                 <tr>
                                     <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Tahun</th>
@@ -193,6 +194,7 @@
                     keterangan="Seluruh komoditas dikonversi ke ton." tinggi="260">
                     <x-slot:tabel>
                         <table class="w-full text-left text-theme-xs">
+                            <caption class="sr-only">Volume panen satuan permukiman ini per tahun</caption>
                             <thead class="border-b border-gray-200 dark:border-gray-800">
                                 <tr>
                                     <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Tahun</th>

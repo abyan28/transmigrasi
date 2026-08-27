@@ -1,4 +1,4 @@
-{{--
+﻿{{--
     Data master satuan beserta faktor konversi ke ton.
 
     Inilah tabel yang membuat rekap lintas komoditas menjadi sepadan: volume
@@ -59,6 +59,7 @@
     <div class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
         <div class="overflow-x-auto">
             <table class="w-full text-left">
+                <caption class="sr-only">Satuan panen beserta faktor konversinya ke ton</caption>
                 <thead class="bg-gray-50 dark:bg-white/[0.02]">
                     <tr class="border-b border-gray-200 dark:border-gray-800">
                         <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">

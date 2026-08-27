@@ -57,6 +57,7 @@
         <div class="overflow-x-auto">
             @if ($kelompok === 'sp')
                 <table class="w-full text-left">
+                    <caption class="sr-only">Rekap kependudukan per satuan permukiman</caption>
                     <thead class="bg-gray-50 dark:bg-white/[0.02]">
                         <tr class="border-b border-gray-200 dark:border-gray-800">
                             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Satuan Permukiman</th>
@@ -97,6 +98,7 @@
                 </table>
             @elseif ($kelompok === 'status')
                 <table class="w-full text-left">
+                    <caption class="sr-only">Rekap kependudukan per status tinggal</caption>
                     <thead class="bg-gray-50 dark:bg-white/[0.02]">
                         <tr class="border-b border-gray-200 dark:border-gray-800">
                             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Status Tinggal</th>
@@ -129,6 +131,7 @@
                 </table>
             @elseif ($kelompok === 'pekerjaan')
                 <table class="w-full text-left">
+                    <caption class="sr-only">Rekap kependudukan per pekerjaan</caption>
                     <thead class="bg-gray-50 dark:bg-white/[0.02]">
                         <tr class="border-b border-gray-200 dark:border-gray-800">
                             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Pekerjaan Kepala Keluarga</th>
@@ -167,6 +170,7 @@
             --}}
             @elseif ($kelompok === 'asal')
                 <table class="w-full text-left">
+                    <caption class="sr-only">Rekap kependudukan per daerah asal</caption>
                     <thead class="bg-gray-50 dark:bg-white/[0.02]">
                         <tr class="border-b border-gray-200 dark:border-gray-800">
                             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Daerah Asal</th>
@@ -206,6 +210,7 @@
             --}}
             @elseif ($kelompok === 'pendidikan')
                 <table class="w-full text-left">
+                    <caption class="sr-only">Rekap kependudukan per pendidikan</caption>
                     <thead class="bg-gray-50 dark:bg-white/[0.02]">
                         <tr class="border-b border-gray-200 dark:border-gray-800">
                             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Pendidikan Terakhir</th>
@@ -236,6 +241,7 @@
                 </table>
             @else
                 <table class="w-full text-left">
+                    <caption class="sr-only">Rekap kependudukan per tahun</caption>
                     <thead class="bg-gray-50 dark:bg-white/[0.02]">
                         <tr class="border-b border-gray-200 dark:border-gray-800">
                             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Tahun</th>

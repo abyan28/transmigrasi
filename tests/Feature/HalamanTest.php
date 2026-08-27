@@ -6245,6 +6245,50 @@ it('menuliskan seluruh teks antarmuka dalam bahasa Indonesia', function () {
     expect(array_values(array_unique($galat)))->toBe([]);
 });
 
+it('memberi nama pada setiap tabel', function () {
+    /*
+        Penjaga temuan 6 audit 1g, ditambahkan 2026-08-27.
+
+        Tabel tanpa <caption> memaksa pembaca layar menebak tabel apa yang
+        sedang dibacanya. Pada halaman yang memuat tiga belas tabel seperti
+        dashboard, tebakan itu praktis mustahil.
+
+        <caption> wajib menjadi ANAK PERTAMA <table>; itulah sebabnya yang
+        diperiksa jarak antara tag pembuka dan captionnya, bukan sekadar
+        keberadaannya di suatu tempat dalam berkas.
+
+        Dua komponen bersama, `data-table` dan `tabel-ringkas`, merendernya
+        dari prop `judul` sehingga captionnya tidak tertulis harfiah. Keduanya
+        karena itu diperiksa lewat keberadaan prop tersebut.
+    */
+    $galat = [];
+
+    foreach (BerkasBlade::semua() as $path) {
+        $isi = file_get_contents($path);
+        $nama = BerkasBlade::namaPendek($path);
+
+        // Dua komponen yang merender captionnya dari prop.
+        if (str_contains($isi, '<caption class="sr-only">{{ $judul }}</caption>')) {
+            continue;
+        }
+
+        preg_match_all('/<table\b[^>]*>/', $isi, $cocok, PREG_OFFSET_CAPTURE);
+
+        foreach ($cocok[0] as $tabel) {
+            [$tag, $posisi] = $tabel;
+
+            // Sesudah tag pembuka, isi berarti pertama wajib <caption>.
+            $sesudah = ltrim(substr($isi, $posisi + strlen($tag), 200));
+
+            if (! str_starts_with($sesudah, '<caption')) {
+                $galat[] = $nama.': '.trim($tag);
+            }
+        }
+    }
+
+    expect($galat)->toBe([]);
+});
+
 it('melarang view mengambil datanya sendiri', function () {
     /*
         Penjaga hasil ide C, ditambahkan 2026-08-27.

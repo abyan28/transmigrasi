@@ -231,6 +231,7 @@
             tinggi="340">
             <x-slot:tabel>
                 <table class="w-full text-left text-theme-xs">
+                    <caption class="sr-only">Pertumbuhan penduduk kawasan per tahun</caption>
                     <thead class="border-b border-gray-200 dark:border-gray-800">
                         <tr>
                             <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Tahun</th>
@@ -261,6 +262,7 @@
             keterangan="Perpindahan KK tiap tahun." tinggi="300">
             <x-slot:tabel>
                 <table class="w-full text-left text-theme-xs">
+                    <caption class="sr-only">Kepala keluarga masuk dan keluar per tahun</caption>
                     <thead class="border-b border-gray-200 dark:border-gray-800">
                         <tr>
                             <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Tahun</th>
@@ -288,6 +290,7 @@
             keterangan="Sebaran mata pencaharian utama di seluruh kawasan." tinggi="320">
             <x-slot:tabel>
                 <table class="w-full text-left text-theme-xs">
+                    <caption class="sr-only">Pekerjaan kepala keluarga</caption>
                     <thead class="border-b border-gray-200 dark:border-gray-800">
                         <tr>
                             <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Pekerjaan</th>
@@ -312,6 +315,7 @@
             keterangan="Rekap kepala keluarga menurut keberadaannya di kawasan." tinggi="300">
             <x-slot:tabel>
                 <table class="w-full text-left text-theme-xs">
+                    <caption class="sr-only">Status tinggal penghuni kawasan</caption>
                     <thead class="border-b border-gray-200 dark:border-gray-800">
                         <tr>
                             <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Status</th>
@@ -341,6 +345,7 @@
             keterangan="Seluruh komoditas dikonversi ke ton sebelum dijumlahkan." tinggi="320">
             <x-slot:tabel>
                 <table class="w-full text-left text-theme-xs">
+                    <caption class="sr-only">Volume panen kawasan per tahun</caption>
                     <thead class="border-b border-gray-200 dark:border-gray-800">
                         <tr>
                             <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Tahun</th>
@@ -365,6 +370,7 @@
             keterangan="Volume panen per komoditas, dalam ton." tinggi="340">
             <x-slot:tabel>
                 <table class="w-full text-left text-theme-xs">
+                    <caption class="sr-only">Sebaran volume panen per komoditas</caption>
                     <thead class="border-b border-gray-200 dark:border-gray-800">
                         <tr>
                             <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Komoditas</th>
@@ -389,6 +395,7 @@
             keterangan="Rata-rata pendapatan kepala keluarga tiap tahun." tinggi="300">
             <x-slot:tabel>
                 <table class="w-full text-left text-theme-xs">
+                    <caption class="sr-only">Pendapatan keluarga per bulan tiap tahun</caption>
                     <thead class="border-b border-gray-200 dark:border-gray-800">
                         <tr>
                             <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Tahun</th>
@@ -413,6 +420,7 @@
             keterangan="Rupiah per ton, seluruh komoditas." tinggi="320">
             <x-slot:tabel>
                 <table class="w-full text-left text-theme-xs">
+                    <caption class="sr-only">Harga jual rata-rata per tahun</caption>
                     <thead class="border-b border-gray-200 dark:border-gray-800">
                         <tr>
                             <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Tahun</th>
@@ -442,6 +450,7 @@
             keterangan="Jumlah aset menurut kondisi terkini, dipecah per jenis." tinggi="320">
             <x-slot:tabel>
                 <table class="w-full text-left text-theme-xs">
+                    <caption class="sr-only">Kondisi infrastruktur per jenis</caption>
                     <thead class="border-b border-gray-200 dark:border-gray-800">
                         <tr>
                             <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Jenis</th>
@@ -479,6 +488,7 @@
             keterangan="Seluruh laporan warga menurut tahap penanganannya." tinggi="320">
             <x-slot:tabel>
                 <table class="w-full text-left text-theme-xs">
+                    <caption class="sr-only">Pengaduan menurut status penanganan</caption>
                     <thead class="border-b border-gray-200 dark:border-gray-800">
                         <tr>
                             <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Status</th>
@@ -540,6 +550,7 @@
         {{-- Tabel per SP beserta penyebabnya --}}
         <div class="hidden overflow-x-auto md:block">
             <table class="w-full text-left">
+                <caption class="sr-only">Kondisi layanan dasar per satuan permukiman</caption>
                 <thead class="bg-gray-50 dark:bg-white/[0.02]">
                     <tr class="border-b border-gray-200 dark:border-gray-800">
                         <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">
@@ -632,6 +643,7 @@
             {{-- Tabel untuk layar lebar --}}
             <div class="hidden overflow-x-auto md:block">
                 <table class="w-full text-left">
+                    <caption class="sr-only">Pengaduan yang belum selesai</caption>
                     <thead class="bg-gray-50 dark:bg-white/[0.02]">
                         <tr class="border-b border-gray-200 dark:border-gray-800">
                             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Nomor</th>
@@ -709,6 +721,7 @@
             keterangan="Klik salah satu batang untuk membuka rincian satuan permukiman tersebut." tinggi="360">
             <x-slot:tabel>
                 <table class="w-full text-left text-theme-xs">
+                    <caption class="sr-only">Perbandingan antar satuan permukiman</caption>
                     <thead class="border-b border-gray-200 dark:border-gray-800">
                         <tr>
                             <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Satuan Permukiman</th>
