@@ -863,6 +863,42 @@ Dibuktikan lewat mutasi: membuang satu caption memerahkan uji, memulihkannya men
 
 ---
 
+## 1j. Alamat Aksi Tidak Lagi Berakar Domain (2026-08-27)
+
+Temuan 8 audit 1g, sekaligus butir tindak lanjut 13.
+
+**37 pemanggil** mengoper alamat mentah semacam `/alsintan/3` pada `:hapus-url` dan `pola-aksi`. Pada penyajian statis yang berada di sub-path `/transmigrasi/`, seluruhnya mengirim ke akar domain dan tidak pernah sampai.
+
+### 1j.1 Diperbaiki di akarnya, dua komponen saja
+
+`aksi-baris` membungkus `hapusUrl` dan `modal-form` membungkus `polaAksi` dengan `url()`, mengikuti pola yang sudah terbukti pada `stat-card`. Alamat yang sudah lengkap bersekema dibiarkan apa adanya. **Ketiga puluh tujuh pemanggilnya tidak disentuh sama sekali.**
+
+Penanda `:id` pada pola aksi **dibiarkan utuh**. `url()` hanya menambahkan akar di depan dan tidak meng-encode kolonnya; penggantinya tetap Alpine di sisi klien sesudah alamat terbentuk. Terbukti: `url('/alsintan/:id')` menghasilkan `.../alsintan/:id`, bukan `.../alsintan/%3Aid`. Ini risiko nyata yang wajib diperiksa, bukan diasumsikan.
+
+### 1j.2 Lima kemunculan yang tidak tercatat audit
+
+Audit menyebut 37 dan menunjuk dua komponen sebagai akarnya. Penjaga baru menemukan **lima lagi** yang tidak lewat `aksi-baris` melainkan memanggil `buka-konfirmasi` langsung: dua tombol pada `pengguna/index`, satu pada `pengguna/role`, dan dua contoh pada `galeri-komponen`.
+
+Yang menemukannya penjaga, bukan penyisiran manual — sama seperti temuan 6 yang taksirannya juga meleset.
+
+> **Aturan:** angka pada temuan audit adalah batas bawah, bukan jumlah. Yang memastikan kelengkapannya adalah penjaga yang menyisir keluaran, sebab hanya ia yang memeriksa tempat yang tidak terpikir diperiksa.
+
+### 1j.3 Penjaganya memeriksa keluaran, bukan sumber
+
+Sejak alamatnya dibungkus di dalam komponen, **mengoper alamat mentah dari pemanggil tidak lagi keliru** — komponennya yang membereskan. Uji yang melarang bentuk itu di pemanggil justru akan melarang kode yang benar.
+
+Karena itu penjaganya menyisir seluruh rute GET yang membalas 200 dan menolak dua bentuk pada keluaran terender: `aksi: '/` dan `polaAksi: '\/`. Ditambah penjaga terhadap dirinya sendiri, yakni jumlah halaman terperiksa wajib di atas 40; tanpa itu uji ini hijau tanpa membuktikan apa pun. Dibuktikan lewat mutasi.
+
+**Ini kebalikan dari penjaga komoditas utama pada 1h.5**, yang justru wajib memeriksa sumber sebab data contohnya tidak dapat membedakan implementasi benar dari yang salah.
+
+> **Aturan:** periksa **keluaran** bila implementasi yang benar dan yang salah menghasilkan keluaran berbeda; periksa **sumber** hanya bila keduanya menghasilkan keluaran yang sama. Pembedanya satu pertanyaan, dan pertanyaan itu wajib dijawab sebelum ujinya ditulis.
+
+### 1j.4 Verifikasi
+
+619 uji hijau. Terbukti pula `url()` mengikuti akar yang dipaksakan `AppServiceProvider` saat `ASSET_URL` terisi, yakni mata rantai yang membuat alamat aksi ikut berpindah pada sub-path. `pint` tidak menambah utang.
+
+---
+
 ## 2. Catatan Dokumen Proposal
 
 Lembar pengesahan pada `docs/Revisi_Proposal_Budi_TEP ITS 2026_Kobalima_Timur_Upload_10_6_2026_a.pdf` masih memuat judul dan pengusul dari proposal lain:
@@ -1013,6 +1049,9 @@ Seharusnya: "Digitalisasi Monitoring Pertanian dan Tata Kelola Data Kawasan Tran
 | 2026-08-25 | Alamat dasar untuk modul JavaScript **wajib dioper dari Blade** | Berkas JavaScript tidak mengenal `url()`, sehingga alamat yang ditulis tetap di dalamnya selalu salah begitu situs berpindah ke sub-path. `chart-config.js` merusak penelusuran 17 grafik dashboard dengan cara ini, delapan hari setelah larangannya tertulis pada 1b.3 |
 | 2026-08-25 | Setiap larangan pada `notes.md` **wajib punya uji penjaga** | Larangan path absolut sudah tertulis sejak 2026-08-17 dan repo tetap kena masalah yang sama untuk ketiga kalinya. Aturan yang hanya tertulis terbukti tidak menahan apa pun; yang menahan adalah uji yang memerah |
 | 2026-08-25 | Laporan penelusur diperlakukan sebagai **kandidat**, bukan temuan | Dua dari sebelas laporan terbukti keliru saat diverifikasi terhadap berkas, yaitu form tanpa `@csrf` dan dua komponen yang disebut mati. Mengerjakannya berarti menghabiskan waktu atas masalah yang tidak ada |
+| 2026-08-27 | Alamat aksi dibungkus `url()` **di dalam komponennya**, bukan di 37 pemanggilnya | `aksi-baris` dan `modal-form` yang membereskan, mengikuti pola `stat-card`. Pemanggil tidak disentuh sama sekali, dan yang menambah pemanggil baru tidak perlu mengingat aturannya. Lihat bagian 1j |
+| 2026-08-27 | Periksa **keluaran** bila benar dan salah berbeda hasilnya; periksa **sumber** hanya bila hasilnya sama | Temuan 8 wajib diperiksa dari keluaran, sebab sejak komponennya membereskan, alamat mentah di pemanggil tidak lagi keliru dan uji berbasis sumber akan melarang kode yang benar. Kebalikannya berlaku pada komoditas utama 1h.5. Pertanyaan itu wajib dijawab sebelum ujinya ditulis |
+| 2026-08-27 | Angka pada temuan audit adalah **batas bawah**, bukan jumlah | Temuan 8 menyebut 37, penjaganya menemukan 5 lagi yang memanggil `buka-konfirmasi` langsung. Temuan 6 menaksir 2 komponen, nyatanya 26 tabel tidak lewat komponen mana pun. Yang memastikan kelengkapan adalah penjaga yang menyisir keluaran |
 | 2026-08-27 | Setiap tabel **wajib punya `<caption>`** sebagai anak pertama | Nol caption di seluruh sistem, sedangkan dashboard memuat tiga belas tabel dalam satu halaman sehingga pembaca layar mustahil menebak tabel mana yang sedang dibacanya. Halaman daftar memperolehnya otomatis dari judul halaman; sisanya diberi judul yang menyebut cakupan barisnya. Lihat bagian 1i |
 | 2026-08-27 | Taksiran ukuran temuan wajib dari **penghitungan**, bukan dari komponen bersamanya | Audit menaksir temuan 6 berakar pada 2 komponen; nyatanya 26 dari 46 tabel ditulis langsung di halaman dan tidak melewati komponen mana pun. Yang tidak melewati komponen justru tidak terlihat dari komponen itu |
 | 2026-08-27 | Pengambilan data **dipindahkan dari view ke rute**, selagi sumbernya masih array | Selama view mengambil datanya sendiri, migrasi ke Eloquent pada Tahap 4 bukan pekerjaan controller melainkan penyuntingan 65 view, dan setiap pemanggilan di dalam perulangan berubah menjadi satu kueri per baris. Penyisirannya menemukan tujuh N+1 nyata yang tidak satu pun terlihat sebelumnya. Lihat bagian 1h |
@@ -1040,7 +1079,7 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
 10. ~~**Tinjau ulang ambang searchable dropdown setelah data nyata masuk**, khusus `/rumah` dan `/riwayat-tanam`.~~ **SELESAI 2026-08-20, dengan cara yang berbeda dari yang direncanakan di sini.** Butir ini menulis `Ambang 8 opsinya sendiri tidak bermasalah`, dan kalimat itu ternyata keliru: ambangnya justru yang bermasalah, sebab ia membandingkan terhadap jumlah baris data contoh yang dikarang sendiri. Ambang dicabut seluruhnya dan kriterianya menjadi sifat sumber. Tidak ada lagi yang perlu ditinjau saat data nyata masuk. Lihat bagian 1c.2 pelanggaran keenam.
 11. **Ulangi audit `rules.md` 19a secara berkala**, tidak cukup sekali. Audit 2026-08-19 menemukan dua pelanggaran yang terjadi **setelah** aturannya berlaku, salah satunya melanggar prinsip yang tertulis 400 baris di atasnya pada dokumen yang sama. Lihat bagian 1c.5.
 12. ~~**Putuskan ide C sebelum Tahap 4 dibuka**, yaitu memindahkan pengambilan data dari view ke rute selagi isinya masih array.~~ **SELESAI 2026-08-27.** Jumlah sebenarnya **212 pemanggilan di 65 berkas**, bukan 272 di 67 seperti tertulis semula; angka lama datang dari penghitungan yang ikut menyertakan rute dan berkas pendukung. Seluruhnya dipindahkan dalam sembilan batch dan kini bernilai **nol**, dijaga uji. Penyisirannya menemukan **tujuh N+1 nyata** yang tidak satu pun terlihat sebelumnya. Lihat bagian 1h.
-13. **Perluas penjaga path absolut ke prop aksi Blade.** Uji yang dibuat 2026-08-25 hanya menyisir `resources/js`, sedangkan 37 kemunculan pada `:hapus-url` dan `pola-aksi` masih ada dan belum dijaga apa pun. Akarnya dua komponen saja. Lihat bagian 1g.7 temuan 8.
+13. ~~**Perluas penjaga path absolut ke prop aksi Blade.**~~ **SELESAI 2026-08-27.** Diperbaiki di akarnya, dua komponen saja, tanpa menyentuh 37 pemanggilnya. Penjaganya memeriksa keluaran terender, bukan sumber, sebab alamat mentah di pemanggil kini justru sah. Penjaga itu menemukan **lima kemunculan lagi** yang tidak tercatat audit. Lihat bagian 1j.
 14. **Sisir ulang `ui-spec.md` saat 15 komponen yatim dicabut.** Empat di antaranya masih tercatat di sana sebagai komponen basis, sehingga menghapus berkasnya saja akan meninggalkan dokumen yang menjanjikan sesuatu yang tidak ada. Lihat bagian 1g.7 temuan 7.
 
 

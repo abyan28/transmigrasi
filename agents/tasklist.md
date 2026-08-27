@@ -717,7 +717,21 @@ Nol `<caption>` menjadi seluruh tabel bernama, dijaga uji. Dua tahap, dua commit
 
 **Verifikasi:** **618 uji hijau**; lima halaman terender diperiksa dan jumlah `<table>` selalu sama dengan jumlah `<caption>`; `pint` tidak menambah utang.
 
-**Sisa audit 1g yang belum dikerjakan:** temuan 7 (15 komponen yatim), temuan 8 (37 path absolut beserta penjaganya, butir tindak lanjut 13), dan ide B (angkat `x-sim.aksi-daftar` serta `x-sim.tombol-filter`).
+### Temuan 8 audit: alamat aksi tidak lagi berakar domain (2026-08-27) ✅
+
+Butir tindak lanjut 13. **37 pemanggil** mengoper alamat mentah semacam `/alsintan/3` pada `:hapus-url` dan `pola-aksi`; pada penyajian statis bersub-path seluruhnya mengirim ke akar domain dan tidak pernah sampai.
+
+**Diperbaiki di akarnya, dua komponen saja.** `aksi-baris` dan `modal-form` membungkus alamatnya dengan `url()` mengikuti pola `stat-card`. Ketiga puluh tujuh pemanggilnya **tidak disentuh sama sekali**, dan yang menambah pemanggil baru tidak perlu mengingat aturannya.
+
+Penanda `:id` pada pola aksi dibiarkan utuh dan itu diperiksa, bukan diasumsikan: `url()` tidak meng-encode kolonnya, sehingga Alpine tetap dapat menggantinya di sisi klien.
+
+**Lima kemunculan lagi ditemukan penjaganya**, bukan oleh audit: dua tombol pada `pengguna/index`, satu pada `pengguna/role`, dan dua contoh pada `galeri-komponen`, seluruhnya memanggil `buka-konfirmasi` langsung tanpa lewat `aksi-baris`.
+
+**Penjaganya memeriksa keluaran terender, bukan sumber.** Sejak komponennya membereskan, alamat mentah di pemanggil tidak lagi keliru, sehingga uji berbasis sumber justru akan melarang kode yang benar. Ia menyisir seluruh rute GET yang membalas 200, dan punya penjaga terhadap dirinya sendiri berupa ambang jumlah halaman terperiksa. Dibuktikan lewat mutasi.
+
+**Verifikasi:** **619 uji hijau**; terbukti pula `url()` mengikuti akar yang dipaksakan saat `ASSET_URL` terisi; `pint` tidak menambah utang.
+
+**Sisa audit 1g yang belum dikerjakan:** temuan 7 (15 komponen yatim, butir tindak lanjut 14) dan ide B (angkat `x-sim.aksi-daftar` serta `x-sim.tombol-filter`).
 
 ## Tahap 3 — Autentikasi dan Hak Akses
 
