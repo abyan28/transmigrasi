@@ -118,7 +118,7 @@
                         <x-sim.empty-state judul="Belum ada penanaman"
                             pesan="Catatan penanaman komoditas ini akan tampil setelah petugas mendatanya." />
                     @else
-                        <x-sim.tabel-ringkas :kolom="['Kelompok Tani', 'Satuan Permukiman', 'Realisasi Tanam', 'Tanggal Tanam']">
+                        <x-sim.tabel-ringkas judul="Riwayat penanaman komoditas ini" :kolom="['Kelompok Tani', 'Satuan Permukiman', 'Realisasi Tanam', 'Tanggal Tanam']">
                             @foreach ($riwayat as $r)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                                     <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">

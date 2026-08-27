@@ -90,7 +90,7 @@
                         Dibaca dari tabel {{ $namaSumber === 'Fasilitas' ? 'fasilitas SP' : 'infrastruktur' }}.
                     </p>
 
-                    <x-sim.tabel-ringkas :kolom="['Jenis', 'Nama Parameter', 'Tingkat', 'Bobot', 'Dinilai', 'Aksi']"
+                    <x-sim.tabel-ringkas judul="Parameter penilaian kondisi satuan permukiman" :kolom="['Jenis', 'Nama Parameter', 'Tingkat', 'Bobot', 'Dinilai', 'Aksi']"
                         :kolom-kanan="['Aksi']">
                         @foreach ($daftar as $p)
                             <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
@@ -150,7 +150,7 @@
                 </p>
             </div>
 
-            <x-sim.tabel-ringkas :kolom="['Status', 'Keterangan', 'Ambang Skor', 'Aksi']" :kolom-kanan="['Aksi']">
+            <x-sim.tabel-ringkas judul="Ambang skor status kondisi" :kolom="['Status', 'Keterangan', 'Ambang Skor', 'Aksi']" :kolom-kanan="['Aksi']">
                 @foreach ($status as $indeks => $s)
                     <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                         <td class="px-5 py-3">

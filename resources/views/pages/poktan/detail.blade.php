@@ -171,7 +171,7 @@
                         <x-sim.empty-state judul="Belum ada anggota terdata"
                             pesan="Daftar anggota kelompok tani ini akan tampil setelah didata." />
                     @else
-                        <x-sim.tabel-ringkas
+                        <x-sim.tabel-ringkas judul="Anggota kelompok tani ini"
                             :kolom="['Wakil Keluarga', 'NIK', 'Telepon', 'Jabatan', 'Lahan Usaha (ha)', 'Tanggal Masuk', 'Status', 'Aksi']">
                             @foreach ($anggota as $a)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
@@ -287,7 +287,7 @@
                         <x-sim.empty-state judul="Belum ada alsintan"
                             pesan="Bantuan alat dan mesin pertanian untuk kelompok ini akan tampil di sini." />
                     @else
-                        <x-sim.tabel-ringkas :kolom="['Nama Alat', 'Jumlah', 'Tahun', 'Kondisi']">
+                        <x-sim.tabel-ringkas judul="Alsintan milik kelompok tani ini" :kolom="['Nama Alat', 'Jumlah', 'Tahun', 'Kondisi']">
                             @foreach ($alsintan as $a)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                                     <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">
@@ -310,7 +310,7 @@
                         <x-sim.empty-state judul="Belum ada penyaluran saprotan"
                             pesan="Penyaluran benih, pupuk, atau pestisida akan tampil di sini." />
                     @else
-                        <x-sim.tabel-ringkas :kolom="['Jenis', 'Nama', 'Jumlah', 'Tanggal']">
+                        <x-sim.tabel-ringkas judul="Saprotan yang diterima kelompok tani ini" :kolom="['Jenis', 'Nama', 'Jumlah', 'Tanggal']">
                             @foreach ($saprotan as $s)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                                     <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">

@@ -51,7 +51,12 @@
 
 {{-- Pencarian dan filter dibungkus satu form agar terkirim bersama --}}
 <form method="GET" @if ($aksiUrl) action="{{ $aksiUrl }}" @endif>
-    <x-sim.data-table :jumlah="$jumlah" :kata-kunci="$kataKunci"
+    {{--
+        Judul halaman diteruskan menjadi <caption> tabelnya. Dengan begitu
+        seluruh halaman yang memakai kerangka ini memperoleh nama tabel bagi
+        pembaca layar tanpa satu pun perlu disunting.
+    --}}
+    <x-sim.data-table :judul="$judul" :jumlah="$jumlah" :kata-kunci="$kataKunci"
         :placeholder-cari="$placeholderCari" :judul-kosong="$judulKosong"
         :pesan-kosong="$pesanKosong">
 

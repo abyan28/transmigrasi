@@ -158,7 +158,7 @@
                         Angka ini menjadi sumber indikator status infrastruktur pada dashboard.
                     </p>
                 </div>
-                <x-sim.tabel-ringkas :kolom="['Jenis', 'Baik', 'Rusak Ringan', 'Rusak Berat', 'Total']">
+                <x-sim.tabel-ringkas judul="Rekap kondisi infrastruktur per jenis" :kolom="['Jenis', 'Baik', 'Rusak Ringan', 'Rusak Berat', 'Total']">
                     @foreach ($statusJenis as $s)
                         <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                             <td class="px-5 py-3 text-theme-sm font-medium text-gray-800 dark:text-white/90">

@@ -108,7 +108,7 @@
             </p>
         </div>
 
-        <x-sim.tabel-ringkas :kolom="['Satuan Permukiman', 'Desa', 'Kecamatan', 'Kepala Keluarga', 'Rincian']">
+        <x-sim.tabel-ringkas judul="Satuan permukiman dalam kawasan ini" :kolom="['Satuan Permukiman', 'Desa', 'Kecamatan', 'Kepala Keluarga', 'Rincian']">
             @foreach ($daftarSp as $i => $sp)
                 <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                     <td class="px-5 py-3 text-theme-sm font-medium text-gray-800 dark:text-white/90">

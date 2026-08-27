@@ -221,7 +221,7 @@
                         <x-sim.empty-state judul="Belum ada dokumen lahan"
                             pesan="Dokumen HPL, SHM, atau surat keterangan desa dapat diunggah lewat tombol Tambah Dokumen Lahan." />
                     @else
-                        <x-sim.tabel-ringkas :kolom="['Jenis', 'Nomor Dokumen', 'Tanggal Terbit', 'Berkas']">
+                        <x-sim.tabel-ringkas judul="Dokumen kepemilikan lahan ini" :kolom="['Jenis', 'Nomor Dokumen', 'Tanggal Terbit', 'Berkas']">
                             @foreach ($dokumen as $d)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                                     <td class="px-5 py-3 text-theme-sm font-medium text-gray-800 dark:text-white/90">

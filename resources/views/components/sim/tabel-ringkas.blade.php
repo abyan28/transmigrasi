@@ -22,10 +22,16 @@
 @props([
     'kolom' => [],
     'kolomKanan' => [],
+
+    // Nama tabel bagi pembaca layar, dirender sebagai <caption> tersembunyi.
+    'judul' => null,
 ])
 
 <div {{ $attributes->merge(['class' => 'overflow-x-auto']) }}>
     <table class="w-full text-left">
+        @if ($judul)
+            <caption class="sr-only">{{ $judul }}</caption>
+        @endif
         <thead class="bg-gray-50 dark:bg-white/[0.02]">
             <tr class="border-b border-gray-200 dark:border-gray-800">
                 @foreach ($kolom as $judul)

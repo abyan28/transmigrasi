@@ -28,6 +28,15 @@
     'pesanKosong' => null,
     'placeholderCari' => 'Cari data',
     'perHalaman' => 25,
+
+    /*
+        Nama tabel bagi pembaca layar, dirender sebagai <caption> tersembunyi.
+
+        Halaman yang memakai `x-sim.halaman-daftar` menerimanya otomatis dari
+        judul halamannya, sehingga tidak satu pun perlu disunting. Yang
+        memanggil komponen ini langsung wajib mengisinya sendiri.
+    */
+    'judul' => null,
 ])
 
 <div x-data="{ filterTerbuka: false }"
@@ -100,6 +109,14 @@
         {{-- Tabel penuh untuk layar lebar --}}
         <div class="hidden overflow-x-auto md:block">
             <table class="w-full min-w-full text-left">
+                {{--
+                    WAJIB anak pertama <table>. Pembaca layar mengumumkannya
+                    saat memasuki tabel, sehingga pengguna tahu tabel apa yang
+                    sedang dibacanya tanpa perlu keluar mencari judul halaman.
+                --}}
+                @if ($judul)
+                    <caption class="sr-only">{{ $judul }}</caption>
+                @endif
                 <thead class="sticky top-0 z-10 bg-gray-50 dark:bg-white/[0.02]">
                     <tr class="border-b border-gray-200 dark:border-gray-800">
                         {{ $kepala }}

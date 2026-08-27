@@ -261,7 +261,7 @@
                             sudah kosong, sehingga tabel ini menjanjikan satu
                             keterangan yang tidak pernah ada.
                         --}}
-                        <x-sim.tabel-ringkas :kolom="['Kode', 'Peruntukan', 'Kering (ha)', 'Basah (ha)', 'Luas (ha)']">
+                        <x-sim.tabel-ringkas judul="Lahan milik keluarga ini" :kolom="['Kode', 'Peruntukan', 'Kering (ha)', 'Basah (ha)', 'Luas (ha)']">
                             @foreach ($lahan as $l)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                                     <td class="px-5 py-3">
@@ -321,7 +321,7 @@
                         <x-sim.empty-state judul="Belum tergabung kelompok tani"
                             pesan="Keanggotaan poktan keluarga ini akan tampil di sini setelah didata petugas." />
                     @else
-                        <x-sim.tabel-ringkas :kolom="['Kelompok Tani', 'Jabatan', 'Tanggal Masuk', 'Satuan Permukiman']">
+                        <x-sim.tabel-ringkas judul="Kelompok tani tempat keluarga ini bernaung" :kolom="['Kelompok Tani', 'Jabatan', 'Tanggal Masuk', 'Satuan Permukiman']">
                             @foreach ($poktanBernaung as $a)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                                     <td class="px-5 py-3">

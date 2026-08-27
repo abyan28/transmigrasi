@@ -254,7 +254,7 @@
                         <x-sim.empty-state judul="Belum ada data transmigran"
                             :pesan="'Data kepala keluarga di ' . $sp['nama'] . ' akan tampil di sini setelah ditambahkan.'" />
                     @else
-                        <x-sim.tabel-ringkas :kolom="['Nama', 'NIK', 'Pekerjaan']">
+                        <x-sim.tabel-ringkas judul="Transmigran di satuan permukiman ini" :kolom="['Nama', 'NIK', 'Pekerjaan']">
                             @foreach ($transmigran as $baris)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                                     <td class="px-5 py-3">
@@ -281,7 +281,7 @@
                         <x-sim.empty-state judul="Belum ada data rumah"
                             pesan="Data rumah akan tampil di sini setelah ditambahkan." />
                     @else
-                        <x-sim.tabel-ringkas :kolom="['Nomor', 'Penghuni', 'Kondisi', 'Status Hunian']">
+                        <x-sim.tabel-ringkas judul="Rumah di satuan permukiman ini" :kolom="['Nomor', 'Penghuni', 'Kondisi', 'Status Hunian']">
                             @foreach ($rumah as $baris)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                                     <td class="px-5 py-3">
@@ -314,7 +314,7 @@
                         <x-sim.empty-state judul="Belum ada data lahan"
                             pesan="Data lahan akan tampil di sini setelah ditambahkan." />
                     @else
-                        <x-sim.tabel-ringkas :kolom="['Kode', 'Pemilik', 'Jenis', 'Luas (ha)']">
+                        <x-sim.tabel-ringkas judul="Lahan di satuan permukiman ini" :kolom="['Kode', 'Pemilik', 'Jenis', 'Luas (ha)']">
                             @foreach ($lahan as $baris)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                                     <td class="px-5 py-3">
@@ -344,7 +344,7 @@
                         <x-sim.empty-state judul="Belum ada data panen"
                             pesan="Hasil panen akan tampil di sini setelah dicatat." />
                     @else
-                        <x-sim.tabel-ringkas :kolom="['Komoditas', 'Kelompok Tani', 'Periode Panen', 'Produksi']">
+                        <x-sim.tabel-ringkas judul="Hasil panen di satuan permukiman ini" :kolom="['Komoditas', 'Kelompok Tani', 'Periode Panen', 'Produksi']">
                             @foreach ($panen as $baris)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                                     <td class="px-5 py-3">
@@ -374,7 +374,7 @@
                         <x-sim.empty-state judul="Belum ada pengaduan"
                             :pesan="'Tidak ada pengaduan tercatat dari ' . $sp['nama'] . '.'" />
                     @else
-                        <x-sim.tabel-ringkas :kolom="['Nomor', 'Perihal', 'Prioritas', 'Status']">
+                        <x-sim.tabel-ringkas judul="Pengaduan di satuan permukiman ini" :kolom="['Nomor', 'Perihal', 'Prioritas', 'Status']">
                             @foreach ($pengaduan as $baris)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                                     <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
@@ -406,7 +406,7 @@
                         <x-sim.empty-state judul="Belum ada data infrastruktur"
                             pesan="Aset infrastruktur akan tampil di sini setelah didata." />
                     @else
-                        <x-sim.tabel-ringkas :kolom="['Nama', 'Jenis', 'Tahun', 'Kondisi']">
+                        <x-sim.tabel-ringkas judul="Infrastruktur di satuan permukiman ini" :kolom="['Nama', 'Jenis', 'Tahun', 'Kondisi']">
                             @foreach ($infrastruktur as $baris)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                                     <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">

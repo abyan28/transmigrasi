@@ -64,7 +64,7 @@
     </div>
 
     <div class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-        <x-sim.tabel-ringkas
+        <x-sim.tabel-ringkas :judul="$jenis->label()"
             :kolom="match (true) {
                 $jenis->berskor() => ['Nilai', 'Skor', 'Urutan', 'Status', 'Aksi'],
                 $jenis->berbidang() => ['Nilai', 'Bidang Bawaan', 'Urutan', 'Status', 'Aksi'],

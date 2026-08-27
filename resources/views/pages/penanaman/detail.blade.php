@@ -225,7 +225,7 @@
                             sel kini sejajar, dan satuannya ikut dicetak agar
                             ketidakcocokan semacam itu terlihat mata.
                         --}}
-                        <x-sim.tabel-ringkas :kolom="['Periode Panen', 'Realisasi Panen (ha)', 'Puso (ha)', 'Produksi', 'Harga Jual']">
+                        <x-sim.tabel-ringkas judul="Hasil panen dari penanaman ini" :kolom="['Periode Panen', 'Realisasi Panen (ha)', 'Puso (ha)', 'Produksi', 'Harga Jual']">
                             @foreach ($panen as $p)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                                     <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">
