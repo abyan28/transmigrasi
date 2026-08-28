@@ -26,13 +26,45 @@ use Illuminate\Support\Carbon;
 class LaporanData
 {
     /**
+     * Ambang jumlah kolom yang membuat satu laporan dicetak landscape.
+     *
+     * A4 potret menyisakan lebar isi sekitar 190mm, yang nyaman menampung
+     * delapan kolom teks tabular. Laporan berkolom lebih banyak dipaksa
+     * digulir mendatar bila tetap potret, dan itulah keluhan yang memicu
+     * Putaran 3 D2b.
+     *
+     * Ambang ini dijaga uji yang MENGHITUNG ULANG jumlah kolom dari HTML
+     * terender, sehingga menambah kolom tanpa memperbarui `meta()` memerah.
+     */
+    public const KOLOM_LANDSCAPE = 9;
+
+    /**
+     * Orientasi kertas satu laporan, diturunkan dari jumlah kolomnya.
+     *
+     * Bukan dipilih tangan per laporan: yang menentukan memang lebar tabel,
+     * sehingga menuliskannya dua kali hanya membuka peluang keduanya
+     * berselisih.
+     */
+    public static function orientasi(string $slug): string
+    {
+        return (self::meta($slug)['kolom'] ?? 0) >= self::KOLOM_LANDSCAPE
+            ? 'landscape'
+            : 'portrait';
+    }
+
+    /**
      * Metadata kepala dokumen tiap laporan: cakupan, dasar periode, tautan
-     * sumber, dan catatan.
+     * sumber, catatan, dan jumlah kolom tabel terlebarnya.
      *
      * Dulu tersebar sebagai atribut `<x-sim.kerangka-laporan>` di tujuh view.
      * Dipusatkan 2026-08-28 (Putaran 3 D2) agar halaman berbingkai dan rute
      * dokumen `/laporan/{slug}/dokumen` memakai kepala yang sama persis; satu
      * yang melenceng berarti dokumen yang dicetak berbeda dari yang di layar.
+     *
+     * Kunci `kolom` (D2b) adalah jumlah kolom tabel TERLEBAR laporan itu, dan
+     * dari situlah orientasi kertasnya diturunkan (lihat `orientasi()`).
+     * Nilainya dijaga uji yang menghitung ulang dari HTML terender, sehingga
+     * kolom yang ditambah tanpa memperbarui angka di sini akan memerah.
      *
      * @param  string|null  $slug  Null mengembalikan seluruh peta
      * @return array<string, mixed>
@@ -48,6 +80,7 @@ class LaporanData
                 'sumberLabel' => 'Data Hasil Panen',
                 'sumberRute' => 'panen.index',
                 'catatan' => 'Bagian benih menampilkan rantai penuh dari bantuan sampai hasil panennya. Bantuan pupuk tidak tertaut ke satu penanaman tertentu, sehingga hanya tampil pada Laporan Saprotan.',
+                'kolom' => 16,
             ],
             'monografi-sp' => [
                 'cakupan' => 'Seluruh satuan permukiman di kawasan transmigrasi Kobalima Timur.',
@@ -55,6 +88,7 @@ class LaporanData
                 'sumberLabel' => 'Data Satuan Permukiman',
                 'sumberRute' => 'sp.index',
                 'catatan' => 'Bab II "Keadaan Wilayah" diisi lewat modul Satuan Permukiman. Bagian yang belum diisi tetap tampil dengan penanda "belum dicatat".',
+                'kolom' => 13,
             ],
             'alsintan' => [
                 'cakupan' => 'Alat dan mesin pertanian milik seluruh kelompok tani di kawasan Kobalima Timur.',
@@ -62,6 +96,7 @@ class LaporanData
                 'sumberLabel' => 'Data Alsintan',
                 'sumberRute' => 'alsintan.index',
                 'catatan' => null,
+                'kolom' => 9,
             ],
             'saprotan' => [
                 'cakupan' => 'Penyaluran benih, pupuk, pestisida, dan mulsa kepada petani di kawasan Kobalima Timur.',
@@ -69,6 +104,7 @@ class LaporanData
                 'sumberLabel' => 'Data Saprotan',
                 'sumberRute' => 'saprotan.index',
                 'catatan' => 'Jadwal tanam adalah rencana dari berita acara penyaluran, bukan realisasi. Selisihnya dengan periode tanam yang sebenarnya justru berguna diamati.',
+                'kolom' => 15,
             ],
             'indikator-kawasan' => [
                 'cakupan' => 'Seluruh kawasan transmigrasi Kobalima Timur, gabungan '.$jumlahSp.' satuan permukiman.',
@@ -76,6 +112,7 @@ class LaporanData
                 'sumberLabel' => 'Dashboard',
                 'sumberRute' => 'beranda',
                 'catatan' => null,
+                'kolom' => 6,
             ],
             'poktan' => [
                 'cakupan' => 'Seluruh kelompok tani beserta anggotanya di kawasan transmigrasi Kobalima Timur.',
@@ -83,6 +120,7 @@ class LaporanData
                 'sumberLabel' => 'Data Kelompok Tani',
                 'sumberRute' => 'poktan.index',
                 'catatan' => null,
+                'kolom' => 9,
             ],
             'transmigran' => [
                 'cakupan' => 'Seluruh kepala keluarga transmigran di kawasan Kobalima Timur, beserta data rumah dan lahannya.',
@@ -90,6 +128,7 @@ class LaporanData
                 'sumberLabel' => 'Data Transmigran',
                 'sumberRute' => 'transmigran.index',
                 'catatan' => null,
+                'kolom' => 14,
             ],
         ];
 

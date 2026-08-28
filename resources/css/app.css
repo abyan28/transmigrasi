@@ -1111,6 +1111,45 @@ pre[class*='language-'] {
 }
 
 /*
+  Tabel dokumen laporan. Ditambahkan Putaran 3 D2b (2026-08-28).
+
+  Ditulis sebagai CSS telanjang, BUKAN @utility: aturan ini harus menyentuh
+  turunan (th dan td), dan @utility Tailwind v4 hanya dapat menargetkan
+  elemen itu sendiri beserta pseudo-elementnya. Presedennya
+  `.motif-baris-total` di atas.
+
+  Kelasnya juga sengaja polos tanpa varian arbitrer ber-`>` semacam
+  `[&>td]:border-r`. Penjaga `memberi nama pada setiap tabel` memakai regex
+  `/<table\b[^>]*>/` yang berhenti pada `>` pertama, sehingga kelas ber-`>`
+  memecah tag di tengah jalan dan membuat `<caption>` tidak lagi terbaca
+  sebagai anak pertama.
+
+  Garis kolom sebelumnya tidak ada sama sekali: tabel laporan hanya memakai
+  `divide-y` pada tbody, sehingga 16 kolom Laporan Hasil Panen berdempetan
+  tanpa pemisah.
+*/
+.tabel-dokumen th,
+.tabel-dokumen td {
+  border: 1px solid var(--color-gray-200);
+}
+
+.dark .tabel-dokumen th,
+.dark .tabel-dokumen td {
+  border-color: var(--color-gray-800);
+}
+
+/*
+  Kepadatan laporan landscape. Enam belas kolom hanya muat pada A4 landscape
+  bila sel dirapatkan; laporan potret tetap memakai kepadatan biasa.
+*/
+.dokumen-landscape .tabel-dokumen th,
+.dokumen-landscape .tabel-dokumen td {
+  padding: 0.3125rem 0.375rem;
+  font-size: var(--text-theme-xs);
+  line-height: var(--text-theme-xs--line-height);
+}
+
+/*
   Cetak. Ditambahkan Putaran 3 D2 (2026-08-28) -- @media print pertama di
   repo. Halaman laporan dan tampilan dokumennya harus tercetak sebagai
   kertas saja, tanpa sidebar, header, bilah filter, atau tombol.
@@ -1126,5 +1165,45 @@ pre[class*='language-'] {
 
   body {
     background: #ffffff !important;
+  }
+
+  /*
+    Garis tabel digelapkan saat dicetak. `gray-200` (#e4e7ec) praktis lenyap
+    di atas kertas putih, sebab peramban mematikan penyesuaian warna secara
+    bawaan. `gray-500` masih terbaca sebagai garis tipis, bukan garis tebal.
+  */
+  .tabel-dokumen th,
+  .tabel-dokumen td {
+    border-color: var(--color-gray-500) !important;
+  }
+
+  /*
+    Kepadatan khusus cetak. Layar memberi kertas landscape sekitar 1200px,
+    sedangkan A4 landscape dikurangi margin hanya menyisakan sekitar 277mm
+    (kira-kira 1047px). Selisih itu nyata: Laporan Daftar Transmigran yang
+    pas di layar akan terpotong bila dicetak dengan kepadatan yang sama.
+    Satuan pt dipakai sebab yang berlaku di sini kertas, bukan piksel.
+  */
+  .dokumen-landscape .tabel-dokumen th,
+  .dokumen-landscape .tabel-dokumen td {
+    font-size: 8pt;
+    line-height: 1.25;
+    padding: 2pt 3pt;
+  }
+
+  /* Kepala tabel diulang pada tiap halaman cetak, dan baris tidak dipotong. */
+  .tabel-dokumen thead {
+    display: table-header-group;
+  }
+
+  .tabel-dokumen tr {
+    break-inside: avoid;
+  }
+
+  /* Kertas mengisi halaman: bingkai layar tidak perlu ikut tercetak. */
+  .kertas-dokumen {
+    max-width: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
   }
 }

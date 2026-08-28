@@ -43,7 +43,42 @@
     $sumberLabel = $meta['sumberLabel'] ?? null;
     $sumberUrl = isset($meta['sumberRute']) ? route($meta['sumberRute']) : null;
     $catatan = $meta['catatan'] ?? null;
+
+    // Orientasi diturunkan dari jumlah kolom, bukan dipilih tangan (D2b).
+    $orientasi = \App\Support\LaporanData::orientasi($slug);
+    $landscape = $orientasi === 'landscape';
+
+    /*
+        Lebar kertas.
+
+        Di dalam aplikasi, laporan landscape MEMENUHI ruang yang tersedia
+        (keputusan pemilik proyek): itulah yang paling jarang memunculkan
+        gulir mendatar, sebab area konten sudah dibatasi breakpoint-2xl
+        dikurangi sidebar. Laporan potret tetap dibatasi agar terbaca sebagai
+        dokumen, bukan sebagai layar penuh.
+
+        Pada rute dokumen barulah proporsi A4 sesungguhnya ditegakkan.
+        Memakai max-w, BUKAN w-[...px]: penjaga "tidak memakai lebar tetap
+        yang berlaku pada layar sempit" melarang w-[NNNpx] di atas 360.
+    */
+    $lebarKertas = $dokumen
+        ? ($landscape ? 'max-w-[1200px]' : 'max-w-[820px]')
+        : ($landscape ? 'max-w-full' : 'max-w-5xl');
 @endphp
+
+{{--
+    Ukuran kertas saat dicetak. @page tidak dapat dibatasi per elemen,
+    sehingga aturannya didorong ke <head> lewat stack; layout dirender paling
+    akhir, jadi push dari dalam @section tetap sampai.
+--}}
+@push('gaya')
+    <style>
+        @page {
+            size: A4 {{ $orientasi }};
+            margin: {{ $landscape ? '10mm' : '12mm' }};
+        }
+    </style>
+@endpush
 
 @unless ($dokumen)
     <x-sim.page-header :judul="$judulLaporan"
@@ -67,11 +102,11 @@
 @endunless
 
 {{--
-    Kertas dokumen. Lebarnya dibatasi dan diletakkan di tengah agar tabel
-    lebar bergulir DI DALAM kertas, bukan melawan sidebar -- itulah keluhan
-    "berantakan" yang memicu Putaran 3.
+    Kertas dokumen. Tabel lebar bergulir DI DALAM kertas, bukan melawan
+    sidebar -- itulah keluhan "berantakan" yang memicu Putaran 3. Kelas
+    orientasi mengatur kepadatan selnya lewat app.css.
 --}}
-<article class="mx-auto max-w-5xl overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+<article class="kertas-dokumen dokumen-{{ $orientasi }} mx-auto {{ $lebarKertas }} overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
     {{--
         Masthead dokumen: judul, lalu cakupan sebagai TEKS (rules.md 12 poin
         8). Angka rekap tanpa cakupannya tidak dapat disalin ke laporan mana
@@ -121,7 +156,7 @@
 
 @unless ($dokumen)
     {{-- Unduh: jujur "segera hadir", bukan tombol yang tampak berfungsi (R-26) --}}
-    <div class="cetak-sembunyi mx-auto mt-6 flex max-w-5xl flex-wrap gap-2">
+    <div class="cetak-sembunyi mx-auto mt-6 flex {{ $lebarKertas }} flex-wrap gap-2">
         @foreach (['PDF', 'Excel'] as $format)
             <span
                 title="Pembangkitan berkas {{ $format }} dikerjakan pada tahap berikutnya."

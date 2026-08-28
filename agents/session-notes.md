@@ -1,115 +1,143 @@
-# Rencana Eksekusi — Putaran 3: Halaman Laporan (filter sendiri + tampilan dokumen)
+# Rencana Eksekusi — Putaran 3 D2b: orientasi dokumen + garis tabel
 
 Ditulis 2026-08-28 sesuai `rules.md` §20b. Sementara, boleh ditimpa.
 
 ## Lingkup
 
-Pemilik proyek menilai menu "Laporan" **berantakan**. Permintaannya: tiap
-halaman laporan punya filter datanya sendiri, isinya disajikan seperti dokumen
-di dalam bingkai, dengan "buka di tab baru" untuk tampilan penuh.
+Peninjauan pemilik proyek atas D2 memunculkan dua keluhan:
 
-Dua butir tunggu **gugur**: pintasan laporan berfilter dan pemilih periode
-lintas-modul. Keduanya hanya cara mewariskan filter ke halaman yang tidak
-punya filter; begitu tiap laporan punya filter sendiri, pewarisan tak perlu.
+1. **Orientasi.** Laporan berkolom banyak (Hasil Panen 16 kolom) dipaksa ke
+   kertas potret sehingga selalu perlu digulir. Seharusnya landscape,
+   ditentukan banyaknya kolom.
+2. **Garis tabel.** Tak ada garis pemisah antar kolom sama sekali, dan
+   beberapa garis pemisah baris juga hilang.
+
+D1 dan D2 sudah selesai (commit `5bf52b0`, `9c4076c`).
 
 ## Keputusan pemilik proyek (2026-08-28)
 
 | # | Keputusan |
 |---|---|
-| 1 | **Kertas bergaya**, bukan `<iframe>`. Dokumen dirender di halaman yang sama; penjaga uji tetap utuh |
-| 2 | **Filter harus jalan di GitHub Pages** - dikerjakan Alpine di sisi peramban |
-| 3 | **SP + periode + dimensi khas tiap laporan**, bukan dua filter seragam |
-| 4 | **Cakupan tetap dicetak sebagai kalimat**, kini disusun dari filter aktif |
-| 5 | **Rekap Indikator Kawasan: bangun agregasi per SP** (metode baru, dashboard tidak disentuh) |
-| 6 | **Berhenti setelah D2 untuk ditinjau** |
+| 6 | Di aplikasi kertas **memenuhi ruang yang tersedia**; tab dokumen dan cetak memakai proporsi A4 sesungguhnya |
+| 7 | Laporan landscape **dirapatkan** (huruf dan jarak sel lebih kecil); gulir tetap ada sebagai jaring pengaman, teks tak pernah terpotong |
+| 8 | Berhenti setelah D2b untuk ditinjau lagi |
 
-## Tiga temuan penelusuran
+## EMPAT JEBAKAN UJI (wajib dipatuhi saat menulis kode)
 
-1. `prd.md` §7.9 baris 217 sudah menuntut "menyediakan filter data" untuk
-   Laporan. Ini mengembalikan kepatuhan PRD, bukan cakupan baru. Paragraf
-   baris 221 masih memuat keputusan 2026-08-17 yang sudah dibalik Putaran 2.
-2. **Filter server-side akan jadi kontrol mati (R-26).** `deploy.yml:110`
-   menolak `?` dan `=` lewat regex dan menggagalkan penerbitan.
-   `notes.md` 1b.5 baris 306 sudah memutuskan ini "sengaja tidak diakali".
-   Karena itu filter WAJIB Alpine sisi peramban.
-3. **Tidak ada uji yang melarang filter di halaman laporan.** Larangan hidup
-   semata di dokumen. Penjaga baru wajib ditulis, tak bisa mengandalkan yang
-   ada.
+1. **Kelas TIDAK BOLEH mengandung `>`.** Penjaga `memberi nama pada setiap
+   tabel` (`HalamanTest.php:7160`) regex `/<table\b[^>]*>/` berhenti di `>`
+   pertama. `[&>td]:border-r` memecah tag, `<caption>` tak lagi terbaca
+   sebagai anak pertama, ketujuh berkas isi memerah. Penjaga
+   `memberi scope pada setiap header kolom tabel` (`:2333`) sama.
+   -> Kelas biasa + CSS terpusat.
+2. **`overflow-x-auto` TIDAK BOLEH dicabut** (`:2101` mewajibkan tiap berkas
+   ber-`<table` memuat literalnya).
+3. **`w-[NNNpx]` > 360 dilarang** (`:2073`, regex `^w-\[(\d+)px\]$`).
+   `max-w-[1160px]` lolos, `w-[1160px]` memerah.
+4. **`@utility` Tailwind v4 tak bisa menargetkan turunan.** Preseden repo:
+   CSS telanjang top level, contoh `.motif-baris-total` (`app.css:328-336`).
 
-## "Berantakan" itu terukur
+## Dua temuan yang ikut dibereskan
 
-- Hasil Panen 16 kolom, Saprotan benih 15, Transmigran 14, Monografi 13
-- Monografi 7 tabel + 6 seksi; Indikator Kawasan 5 tabel; Poktan 4; Transmigran 3
-- `$angka` ditulis ulang di **6 view dengan tanda tangan berbeda** (2 desimal
-  di hasil-panen/monografi/poktan, 0 di alsintan/indikator-kawasan/transmigran)
-  plus salinan ketujuh privat `LaporanData::angka()`
-- `transmigran.blade.php` memakai `@foreach` polos, tanpa jaring keadaan kosong
+- **Rute dokumen nol penjaga.** `/laporan/{slug}/dokumen` +
+  `pages/laporan/dokumen` + `layouts/dokumen` tak punya satu uji pun. Dua
+  penyapu rute global melewatkannya (URI ber-`{` di `:2319`; `{slug}` diganti
+  `1` lalu 404 dan `continue` di `:7064`). Bisa 500 tanpa memerahkan apa pun.
+- **Pelanggaran `ui-spec.md` §2.3 baris 99.** Baris total wajib garis atas
+  `navy-500` 2px, "bukan garis abu-abu biasa"; `.motif-baris-total` sudah
+  dipakai 15 halaman. Tapi `isi/alsintan` + `isi/hasil-panen` menulis
+  `border-t-2 border-gray-300` (persis yang dilarang), `isi/poktan` tak punya
+  garis atas sama sekali.
 
-## Prasyarat: id belum dibawa keluar LaporanData
+## Rancangan
 
-- `poktan_id` **tidak pernah dibawa keluar satu metode pun**
-- `kelompokkanPerSp()` mengelompokkan menurut NAMA SP, bukan id (baris 567);
-  `sp_id` tidak diteruskan ke tingkat grup. Cacat laten: dua SP bernama sama lebur
-- `saprotan().nonBenih` tanpa `sp_id`; `poktan()` buang `id_poktan` +
-  `satuan_permukiman_id`; `monografiSp().baris` buang `sp_id`
+### Orientasi dari jumlah kolom
 
-## Pelaksanaan bertahap
+`LaporanData::KOLOM_LANDSCAPE = 9` (A4 potret nyaman menampung 8 kolom teks).
+`meta()` menambah kunci `kolom`; `orientasi($slug)` menurunkannya.
 
-- **D1 SELESAI** (commit) - fondasi data: `sp_id`/`poktan_id` dibawa keluar;
-  `kelompokkanPerSp()` per id; `LaporanData::angka()` publik + penjaga
-  `$desimal > 0` (memperbaiki bug "1.200" jadi "1.2"); ketujuh view
-  mendelegasikan; `@foreach` -> `@forelse` transmigran; `jumlah_anggota`
-  keluar dari kolom subtotal hasilPanen. 662 uji, pint 31.
-- **D2 SELESAI** (commit) - kertas + tab baru:
-  * `kerangka-laporan` membungkus isi dalam `<article>` kertas (`max-w-5xl`
-    `mx-auto`), masthead dokumen (judul + cakupan + catatan), prop `dokumen`.
-  * `LaporanData::meta($slug)` memusatkan metadata kepala (cakupan, dasar
-    periode, sumber, catatan); dulu 5 atribut di tiap view. Judul tetap dari
-    MenuHelper.
-  * Badan tiap laporan dipisah ke `pages/laporan/isi/{slug}.blade.php`,
-    di-`@include` oleh halaman berbingkai (7 file jadi 6 baris) DAN rute
-    dokumen generik `pages/laporan/dokumen.blade.php`. Data dioper eksplisit
-    lewat `isiLaporan` (slot komponen tidak mewarisi variabel view).
-  * `layouts/dokumen.blade.php` baru - polos, tanpa sidebar/header. BUKAN
-    `fullscreen-layout` (kode mati + store sidebar tertinggal).
-  * Rute `/laporan/{slug}/dokumen` (`->where` 7 slug), `laporan.dokumen`.
-    `DaftarTautanStatis` membaca slug dari `LaporanData::meta()`; 223 alamat,
-    semua lolos regex `deploy.yml:110`.
-  * Tombol "Buka di tab baru" (`target=_blank rel=noopener` + sr-only) di
-    kop halaman berbingkai.
-  * `@media print` pertama di repo (`app.css`) + kelas `.cetak-sembunyi`
-    pada sidebar, app-header, penanda data contoh, tombol unduh.
-  * **BUG DITEMUKAN + DIPERBAIKI:** doc-comment `kerangka-laporan` sempat
-    memuat contoh `<x-sim.kerangka-laporan>` + `@include` DAN `{{-- --}}`
-    bersarang. Regex komentar non-greedy berhenti di `--}}` bersarang
-    pertama, sisa contoh dikompilasi jadi komponen sungguhan. Doc comment
-    ditulis ulang tanpa tag/directive literal.
-  * 662 uji, pint 31.
-- **TINJAU DI SINI** - terbitkan ke Pages, pemilik proyek periksa bentuk
-  kertas, lebar tabel, keseragaman angka, tab baru. D3 (filter) menyusul.
-- **D3** - filter Alpine (prasyarat: agregasi per SP Indikator Kawasan).
-- **D4** - penjaga + dokumen acuan (`rules.md` §12, `ui-spec.md` §6.9/6.10,
-  `prd.md` §7.9 basi, `notes.md` 1r, `tasklist.md`).
+| Laporan | Kolom terlebar | Orientasi |
+|---|---|---|
+| Hasil Panen | 16 (9 tetap + 7 dinamis) | landscape |
+| Saprotan | 15 | landscape |
+| Daftar Transmigran | 14 | landscape |
+| Monografi SP | 13 | landscape |
+| Daftar Poktan | 9 (kepala dua tingkat) | landscape |
+| Alsintan | 9 | landscape |
+| Rekap Indikator Kawasan | 6 | potret |
 
-## Cara filter bekerja (D3, dicatat sekarang agar D1/D2 tak menutup jalannya)
+### Lebar kertas
 
-Blade tetap merender seluruh baris server-side. Alpine hanya menyembunyikan
-baris dan menghitung ulang subtotal yang tampak. `data-sp`/`data-tahun`/
-`data-poktan` pada tiap `<tr>`; `x-text` pada sel subtotal/total. Alasannya:
-seluruh data tetap ada di HTML sehingga penjaga yang membaca `getContent()`
-tetap berlaku. Biayanya penjumlahan hidup di dua tempat, ditutup uji peramban.
+| Tempat | Potret | Landscape |
+|---|---|---|
+| Halaman berbingkai | `max-w-5xl` (tetap) | **memenuhi ruang** (`max-w-full`) |
+| Tab dokumen + cetak | `max-w-[820px]` | `max-w-[1160px]` |
 
-**Rentang tahun aman di laporan transaksi** meski §12 poin 12 melarang di
-"halaman laporan": larangan itu bersandar §9 poin 8b (luas terhitung ganda
-lintas tahun). Baris Hasil Panen/Alsintan/Saprotan tiap baris milik tepat satu
-tahun pengadaan.
+`layouts/dokumen` `<main>`: `max-w-6xl` -> `max-w-full`.
 
-## Verifikasi D1 + D2
+### Cetak
 
-1. `vendor/bin/pest.bat` hijau, >= 662 dan naik
-2. `vendor/bin/pint.bat --test` <= 31
-3. `sim:tautan-statis` 215 alamat, lolos regex `^/[A-Za-z0-9/_.~-]*$`
-4. Render 7 `/laporan/*` + 7 `/laporan/*/dokumen`: 200, tanpa
-   `Undefined array key`, tanpa em dash (R-02)
-5. Halaman berbingkai dan rute dokumen memuat isi tabel IDENTIK
-6. Angka sama dirender sama di 7 laporan setelah `$angka` disatukan
+`@page` pertama di repo, didorong `kerangka-laporan` lewat `@push('gaya')`;
+`@stack('gaya')` ditambahkan ke `<head>` `layouts/app` dan `layouts/dokumen`
+(push dari `@section` sampai ke head sebab layout dirender paling akhir).
+Garis cetak digelapkan ke `#667085` -- `gray-200` lenyap di atas kertas.
+`thead { display: table-header-group }` agar kepala berulang tiap halaman.
+
+### Garis tabel
+
+CSS telanjang top level `app.css`: `.tabel-dokumen th, .tabel-dokumen td`
+border 1px `gray-200` / gelap `gray-800`. `.dokumen-landscape` merapatkan
+padding dan huruf. Dipasang sebagai kelas biasa pada 12 tabel di
+`pages/laporan/isi/*`; `divide-y divide-gray-100` dicabut (berlebihan).
+
+### Baris total
+
+`border-t-2 border-gray-300` -> `motif-baris-total` di alsintan + hasil-panen;
+poktan yang belum punya ikut diberi.
+
+## Penjaga baru
+
+1. Rute dokumen tiap laporan 200, isi tabel sama dengan halaman berbingkai,
+   tanpa kromo aplikasi. **Menutup celah nol-cakupan.**
+2. Orientasi cocok dengan jumlah kolom **dihitung ulang dari HTML terender**:
+   tiap `<table>`, jumlahkan `colspan` pada `<tr>` pertama di `<thead>`, ambil
+   terbesar. Menangani kepala dua tingkat Poktan (5x1 + 2x2 = 9) dan kolom
+   dinamis Hasil Panen (9 + 7 = 16).
+3. Tiap tabel laporan memuat kelas `tabel-dokumen`.
+4. Baris total memakai `motif-baris-total`; tak ada lagi
+   `border-t-2 border-gray-300` di berkas laporan.
+5. `tests/Browser/uji-lebar-dokumen.mjs` (PORT_DEVTOOLS 9349, belum terpakai):
+   rute dokumen landscape pada 1440x900, `scrollWidth <= clientWidth`.
+   `rules.md` §876 poin 10 mewajibkan uji peramban untuk tata letak.
+
+## Verifikasi — SELESAI
+
+1. **678 uji hijau** (naik dari 662; 16 uji baru dari 4 penjaga berdataset)
+2. `pint` **31** (baseline)
+3. `sim:tautan-statis` **223 alamat**, semua lolos regex `deploy.yml:110`
+4. Tanpa em dash di berkas laporan (R-02)
+5. `npm run build` bersih
+6. **`node tests/Browser/uji-lebar-dokumen.mjs`: 28 lulus, 0 gagal** --
+   ketujuh laporan muat tanpa gulir mendatar
+7. Ctrl+P: **belum diperiksa mata**, menunggu peninjauan pemilik proyek
+
+## Penyetelan lebar (dari pengukuran peramban, bukan tebakan)
+
+Kepadatan awal `.375rem .5rem` menyisakan dua laporan meluber:
+saprotan 1117>1108 (9px) dan transmigran 1186>1108 (78px). Dirapatkan ke
+`.3125rem .375rem` -> saprotan muat, transmigran tinggal 1130>1108 (22px).
+Lebar kertas dokumen landscape dinaikkan 1160px -> **1200px** -> semua muat.
+
+**Cetak diberi kepadatan sendiri.** Layar memberi kertas landscape 1200px,
+sedangkan A4 landscape dikurangi margin hanya ~277mm (~1047px). Selisih itu
+nyata: yang pas di layar akan terpotong bila dicetak dengan kepadatan sama.
+`@media print` karena itu menyetel `font-size: 8pt; padding: 2pt 3pt` untuk
+tabel landscape. **Belum terverifikasi mesin** -- uji peramban hanya mengukur
+layar; perlu Ctrl+P oleh pemilik proyek.
+
+## Belum dikerjakan (D4)
+
+Dokumen acuan belum disentuh: `ui-spec.md` belum memuat `.tabel-dokumen`,
+`.kertas-dokumen`, kelas orientasi, maupun `@page`. `rules.md` §12 dan
+`prd.md` §7.9 juga masih menunggu. Sesuai rencana, D4 dikerjakan setelah
+bentuk dokumennya disetujui agar tidak ditulis dua kali.

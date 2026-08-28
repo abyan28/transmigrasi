@@ -24,7 +24,7 @@
 @endphp
 
 <div class="overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-800">
-    <table class="min-w-full text-theme-sm">
+    <table class="tabel-dokumen min-w-full text-theme-sm">
         <caption class="border-b border-gray-200 bg-gray-50 px-4 py-3 text-left text-theme-sm font-semibold text-gray-800 dark:border-gray-800 dark:bg-white/[0.03] dark:text-white/90">
             Realisasi tanam dan hasil panen per kelompok tani, dikelompokkan menurut satuan permukiman
         </caption>
@@ -44,7 +44,7 @@
                 @endforeach
             </tr>
         </thead>
-        <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+        <tbody>
             @php $nomor = 0; @endphp
             @forelse ($kelompok as $grup)
                 <tr class="bg-gray-50 dark:bg-white/[0.03]">
@@ -89,7 +89,7 @@
         </tbody>
         @if (! empty($kelompok))
             <tfoot>
-                <tr class="border-t-2 border-gray-300 bg-gray-100 font-semibold text-gray-900 dark:border-gray-700 dark:bg-white/[0.06] dark:text-white">
+                <tr class="motif-baris-total bg-gray-100 text-gray-900 dark:bg-white/[0.06] dark:text-white">
                     <td class="px-3 py-2.5" colspan="9">Total Kawasan Kobalima Timur</td>
                     @foreach ($kolomAngka as [$kunci, $label])
                         <td class="px-3 py-2.5 text-right tabular-nums">{{ $angka($total[$kunci], $kunci === 'volume_benih' ? 0 : 2) }}</td>

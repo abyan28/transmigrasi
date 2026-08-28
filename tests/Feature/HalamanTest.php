@@ -4680,6 +4680,171 @@ it('menyusun Laporan Daftar Transmigran dari tiga modul tanpa kehilangan baris',
 
 /*
 |--------------------------------------------------------------------------
+| Dokumen laporan: orientasi, garis tabel, rute polos (Putaran 3 D2b)
+|--------------------------------------------------------------------------
+|
+| Peninjauan pemilik proyek atas D2: laporan berkolom banyak dipaksa ke
+| kertas potret sehingga selalu perlu digulir, dan tabelnya tanpa garis
+| pemisah kolom sama sekali.
+|
+| Rute /laporan/{slug}/dokumen yang dibuat D2 ternyata TANPA PENJAGA sama
+| sekali: dua penyapu rute global melewatkannya karena URI-nya memuat
+| `{slug}`, sehingga ia bisa membalas 500 tanpa memerahkan apa pun.
+*/
+
+/**
+ * Menghitung jumlah kolom terlebar dari HTML terender.
+ *
+ * Dihitung dari baris PERTAMA di dalam <thead> dengan menjumlahkan colspan,
+ * bukan mencacah <th>. Keduanya berbeda pada dua kasus yang justru ada di
+ * laporan ini: kepala dua tingkat Laporan Poktan (5 kolom tunggal + 2 kolom
+ * ber-colspan 2 = 9, bukan 7) dan kolom dinamis Laporan Hasil Panen yang
+ * baru ada setelah dirender.
+ */
+function kolomTerlebarDariHtml(string $html): int
+{
+    preg_match_all('#<table\b.*?</table>#is', $html, $tabel);
+
+    $terlebar = 0;
+
+    foreach ($tabel[0] as $satu) {
+        if (! preg_match('#<thead\b.*?</thead>#is', $satu, $thead)) {
+            continue; // Tabel dua kolom tanpa thead, mis. blok Indikator Kawasan.
+        }
+
+        if (! preg_match('#<tr\b.*?</tr>#is', $thead[0], $baris)) {
+            continue;
+        }
+
+        preg_match_all('#<t[hd]\b([^>]*)>#i', $baris[0], $sel);
+
+        $kolom = 0;
+        foreach ($sel[1] as $atribut) {
+            $kolom += preg_match('#colspan="(\d+)"#i', $atribut, $c) ? (int) $c[1] : 1;
+        }
+
+        $terlebar = max($terlebar, $kolom);
+    }
+
+    return $terlebar;
+}
+
+it('menyajikan tiap laporan pada rute dokumen polos yang isinya sama', function (string $slug) {
+    // Penjaga pertama untuk /laporan/{slug}/dokumen. Sebelumnya nol uji:
+    // penyapu `merender setiap rute GET` melewati URI ber-`{`, dan penyapu
+    // alamat aksi mengganti {slug} dengan `1` lalu 404 dan continue.
+    $dokumen = $this->get('/laporan/'.$slug.'/dokumen')->assertOk()->getContent();
+    $berbingkai = $this->get('/laporan/'.$slug)->assertOk()->getContent();
+
+    // Kertasnya utuh: kepala dokumen dan penanda data contoh tetap ada.
+    expect($dokumen)
+        ->toContain('Cakupan laporan')
+        ->toContain('Data contoh.')
+        ->not->toContain("\xE2\x80\x94");   // R-02, tanpa em dash
+
+    // Tanpa kromo aplikasi: itulah gunanya rute ini.
+    expect($dokumen)
+        ->not->toContain('id="sidebar"')
+        ->not->toContain('Kembali ke Semua Laporan');
+
+    // Isi tabelnya sama persis dengan halaman berbingkai. Keduanya
+    // meng-include partial yang sama, jadi selisih berarti ada yang lepas.
+    foreach (['<table', '<caption', 'tabel-dokumen'] as $penanda) {
+        expect(substr_count($dokumen, $penanda))
+            ->toBe(substr_count($berbingkai, $penanda), "jumlah {$penanda} berbeda pada {$slug}");
+    }
+})->with(['hasil-panen', 'monografi-sp', 'alsintan', 'saprotan', 'indikator-kawasan', 'poktan', 'transmigran']);
+
+it('menurunkan orientasi kertas dari jumlah kolom yang sebenarnya', function (string $slug) {
+    // Jumlah kolom pada meta() adalah angka yang ditulis tangan; di sini ia
+    // dihitung ulang dari HTML terender. Menambah kolom tanpa memperbarui
+    // meta() memerahkan uji ini, bukan diam-diam membuat orientasinya salah.
+    $html = $this->get('/laporan/'.$slug.'/dokumen')->assertOk()->getContent();
+
+    $terhitung = kolomTerlebarDariHtml($html);
+    $tercatat = LaporanData::meta($slug)['kolom'] ?? 0;
+
+    expect($terhitung)->toBe($tercatat, "jumlah kolom {$slug} tercatat {$tercatat}, terhitung {$terhitung}");
+
+    // Orientasi diturunkan dari angka itu, bukan dipilih tangan.
+    $harusnya = $terhitung >= LaporanData::KOLOM_LANDSCAPE ? 'landscape' : 'portrait';
+    expect(LaporanData::orientasi($slug))->toBe($harusnya);
+
+    // Kelas orientasi benar-benar sampai ke kertasnya, beserta aturan cetak.
+    expect($html)
+        ->toContain('dokumen-'.$harusnya)
+        ->toContain('size: A4 '.$harusnya);
+})->with(['hasil-panen', 'monografi-sp', 'alsintan', 'saprotan', 'indikator-kawasan', 'poktan', 'transmigran']);
+
+it('memberi garis pemisah kolom pada setiap tabel laporan', function () {
+    // Sebelum D2b tabel laporan hanya punya garis baris (`divide-y`), sehingga
+    // enam belas kolom Laporan Hasil Panen berdempetan tanpa pemisah.
+    //
+    // Kelasnya WAJIB polos tanpa varian arbitrer ber-`>` semacam
+    // `[&>td]:border-r`: penjaga "memberi nama pada setiap tabel" memakai
+    // regex /<table\b[^>]*>/ yang berhenti pada `>` pertama, sehingga kelas
+    // ber-`>` memecah tag dan membuat <caption> tak lagi terbaca sebagai anak
+    // pertama.
+    $galat = [];
+
+    foreach (BerkasBlade::semua() as $path) {
+        $nama = BerkasBlade::namaPendek($path);
+
+        if (! str_starts_with($nama, 'pages/laporan/isi/')) {
+            continue;
+        }
+
+        $isi = file_get_contents($path);
+
+        preg_match_all('/<table\b[^>]*>/', $isi, $cocok);
+
+        foreach ($cocok[0] as $tag) {
+            if (! str_contains($tag, 'tabel-dokumen')) {
+                $galat[] = $nama.': '.trim($tag);
+            }
+        }
+    }
+
+    expect($galat)->toBe([]);
+
+    // Aturannya benar-benar ada di CSS, bukan hanya kelas yang menggantung.
+    $css = file_get_contents(resource_path('css/app.css'));
+    expect($css)
+        ->toContain('.tabel-dokumen th,')
+        ->toContain('.dokumen-landscape .tabel-dokumen th,');
+});
+
+it('menegaskan baris total laporan dengan motif resmi, bukan garis abu-abu', function () {
+    // ui-spec.md 2.3: baris total memakai garis atas navy-500 setebal 2px,
+    // "bukan garis abu-abu biasa". Kelas .motif-baris-total sudah dipakai 15
+    // halaman lain, tetapi berkas laporan sempat menulis border-t-2
+    // border-gray-300 (persis yang dilarang) dan Laporan Poktan bahkan tidak
+    // punya garis atas sama sekali.
+    $tanpaMotif = [];
+
+    foreach (BerkasBlade::semua() as $path) {
+        $nama = BerkasBlade::namaPendek($path);
+
+        if (! str_starts_with($nama, 'pages/laporan/')) {
+            continue;
+        }
+
+        $isi = file_get_contents($path);
+
+        expect(str_contains($isi, 'border-t-2 border-gray-300'))
+            ->toBeFalse("{$nama} memakai garis abu-abu pada baris total, lihat ui-spec.md 2.3");
+
+        // Setiap tfoot laporan adalah baris total, jadi wajib bermotif.
+        if (str_contains($isi, '<tfoot>') && ! str_contains($isi, 'motif-baris-total')) {
+            $tanpaMotif[] = $nama;
+        }
+    }
+
+    expect($tanpaMotif)->toBe([]);
+});
+
+/*
+|--------------------------------------------------------------------------
 | Filter rentang tahun pada halaman daftar bersumbu waktu
 |--------------------------------------------------------------------------
 |

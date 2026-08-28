@@ -202,6 +202,14 @@
         });
     </script>
 
+    {{--
+        Gaya khusus halaman, mis. aturan @page milik halaman laporan.
+        @page tidak dapat dibatasi per elemen sehingga wajib berada di head;
+        layout dirender paling akhir, jadi @push dari dalam @section tetap
+        sampai ke stack ini.
+    --}}
+    @stack('gaya')
+
 </head>
 
 <body

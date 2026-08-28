@@ -13,7 +13,7 @@
 
 @forelse ($poktan as $p)
     <div class="overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-800">
-        <table class="min-w-full text-theme-sm">
+        <table class="tabel-dokumen min-w-full text-theme-sm">
             <caption class="border-b border-gray-200 bg-gray-50 px-4 py-3 text-left dark:border-gray-800 dark:bg-white/[0.03]">
                 <span class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">{{ $p['nama'] }}</span>
                 <span class="mt-0.5 block text-theme-xs font-normal text-gray-500 dark:text-gray-400">
@@ -37,7 +37,7 @@
                     <th scope="col" class="px-3 py-2 text-right">Bujur</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+            <tbody>
                 @forelse ($p['anggota'] as $j => $a)
                     <tr class="text-gray-700 dark:text-gray-300">
                         <td class="px-3 py-2">{{ $j + 1 }}</td>
@@ -60,7 +60,7 @@
             </tbody>
             @if (! empty($p['anggota']))
                 <tfoot>
-                    <tr class="bg-gray-50 font-semibold text-gray-800 dark:bg-white/[0.03] dark:text-white/90">
+                    <tr class="motif-baris-total bg-gray-50 text-gray-800 dark:bg-white/[0.03] dark:text-white/90">
                         <td class="px-3 py-2" colspan="4">Jumlah</td>
                         <td class="px-3 py-2 text-right tabular-nums">{{ $angka($p['jumlah_basah']) }}</td>
                         <td class="px-3 py-2 text-right tabular-nums">{{ $angka($p['jumlah_kering']) }}</td>

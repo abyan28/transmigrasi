@@ -43,10 +43,18 @@
             });
         })();
     </script>
+
+    {{-- Gaya khusus halaman: aturan @page milik kerangka laporan. --}}
+    @stack('gaya')
 </head>
 
 <body class="min-h-full bg-gray-100 dark:bg-gray-900">
-    <main class="mx-auto max-w-6xl p-4 md:p-8">
+    {{--
+        Lebar dikendalikan kertasnya sendiri di kerangka-laporan, menurut
+        orientasi laporan. Wadah ini sengaja tidak lagi membatasi (dulu
+        max-w-6xl), sebab laporan landscape memerlukan ruang lebih lebar.
+    --}}
+    <main class="mx-auto max-w-full p-4 md:p-8">
         {{--
             Penanda data contoh. Wajib tampil selama aplikasi belum tersambung
             ke data nyata (ANTISLOP-ID R-17 dan R-38). Disuplai composer yang

@@ -22,7 +22,7 @@
 
 <h2 class="mb-3 text-theme-sm font-semibold text-gray-800 dark:text-white/90">Bagian 1. Bantuan benih</h2>
 <div class="mb-8 overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-800">
-    <table class="min-w-full text-theme-sm">
+    <table class="tabel-dokumen min-w-full text-theme-sm">
         <caption class="border-b border-gray-200 bg-gray-50 px-4 py-3 text-left text-theme-sm font-semibold text-gray-800 dark:border-gray-800 dark:bg-white/[0.03] dark:text-white/90">
             Penyaluran bantuan benih per kelompok tani penerima
         </caption>
@@ -45,7 +45,7 @@
                 <th scope="col" class="px-3 py-2 text-left">Jadwal Tanam</th>
             </tr>
         </thead>
-        <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+        <tbody>
             @forelse ($benih as $i => $b)
                 <tr class="text-gray-700 dark:text-gray-300">
                     <td class="px-3 py-2">{{ $i + 1 }}</td>
@@ -79,7 +79,7 @@
     Bagian 2. Bantuan pupuk, pestisida, dan mulsa
 </h2>
 <div class="overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-800">
-    <table class="min-w-full text-theme-sm">
+    <table class="tabel-dokumen min-w-full text-theme-sm">
         <caption class="border-b border-gray-200 bg-gray-50 px-4 py-3 text-left text-theme-sm font-semibold text-gray-800 dark:border-gray-800 dark:bg-white/[0.03] dark:text-white/90">
             Penyaluran sarana produksi selain benih, tanpa keterkaitan ke satu penanaman
         </caption>
@@ -94,7 +94,7 @@
                 <th scope="col" class="px-3 py-2 text-left">Sumber Dana</th>
             </tr>
         </thead>
-        <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+        <tbody>
             @forelse ($nonBenih as $i => $n)
                 <tr class="text-gray-700 dark:text-gray-300">
                     <td class="px-3 py-2">{{ $i + 1 }}</td>

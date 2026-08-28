@@ -63,11 +63,11 @@
 <div class="grid gap-4 sm:grid-cols-2">
     @foreach ($blok as $judulBlok => $isi)
         <div class="overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-800">
-            <table class="min-w-full text-theme-sm">
+            <table class="tabel-dokumen min-w-full text-theme-sm">
                 <caption class="border-b border-gray-200 bg-gray-50 px-4 py-2.5 text-left text-theme-sm font-semibold text-gray-800 dark:border-gray-800 dark:bg-white/[0.03] dark:text-white/90">
                     {{ $judulBlok }}
                 </caption>
-                <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                <tbody>
                     @foreach ($isi as [$label, $nilai])
                         <tr class="text-gray-700 dark:text-gray-300">
                             <th scope="row" class="px-4 py-2 text-left font-normal text-gray-500 dark:text-gray-400">{{ $label }}</th>
@@ -83,7 +83,7 @@
 <div>
     <h2 class="mb-3 text-theme-sm font-semibold text-gray-800 dark:text-white/90">Rincian per Satuan Permukiman</h2>
     <div class="overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-800">
-        <table class="min-w-full text-theme-sm">
+        <table class="tabel-dokumen min-w-full text-theme-sm">
             <caption class="border-b border-gray-200 bg-gray-50 px-4 py-3 text-left text-theme-sm font-semibold text-gray-800 dark:border-gray-800 dark:bg-white/[0.03] dark:text-white/90">
                 Indikator utama tiap satuan permukiman
             </caption>
@@ -97,7 +97,7 @@
                     <th scope="col" class="px-3 py-2 text-right">Pengaduan Terbuka</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+            <tbody>
                 @forelse ($perSp as $s)
                     <tr class="text-gray-700 dark:text-gray-300">
                         <td class="px-3 py-2 font-medium text-gray-800 dark:text-white/90">{{ $s['satuan_permukiman'] }}</td>
