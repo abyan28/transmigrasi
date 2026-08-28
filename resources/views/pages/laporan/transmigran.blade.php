@@ -11,7 +11,7 @@
 @extends('layouts.app')
 
 @php
-    $angka = fn ($n, $d = 0) => rtrim(rtrim(number_format((float) $n, $d, ',', '.'), '0'), ',');
+    $angka = fn ($n, $d = 0) => \App\Support\LaporanData::angka($n, $d);
     $rupiah = fn ($n) => 'Rp ' . number_format((float) $n, 0, ',', '.');
     $tgl = function ($t) {
         try {
@@ -53,7 +53,7 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-                    @foreach ($transmigran as $i => $t)
+                    @forelse ($transmigran as $i => $t)
                         <tr class="text-gray-700 dark:text-gray-300">
                             <td class="px-3 py-2">{{ $i + 1 }}</td>
                             <td class="px-3 py-2 tabular-nums">{{ $t['nik'] }}</td>
@@ -70,7 +70,13 @@
                             <td class="px-3 py-2">{{ $t['satuan_permukiman'] }}</td>
                             <td class="px-3 py-2">{{ $t['status_tinggal'] }}</td>
                         </tr>
-                    @endforeach
+                    @empty
+                        <tr>
+                            <td colspan="14" class="px-3 py-6 text-center text-gray-500 dark:text-gray-400">
+                                Belum ada data transmigran pada data contoh.
+                            </td>
+                        </tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>
@@ -94,7 +100,7 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-                    @foreach ($rumah as $i => $r)
+                    @forelse ($rumah as $i => $r)
                         <tr class="text-gray-700 dark:text-gray-300">
                             <td class="px-3 py-2">{{ $i + 1 }}</td>
                             <td class="px-3 py-2 font-medium text-gray-800 dark:text-white/90">{{ $r['no_rumah'] }}</td>
@@ -105,7 +111,13 @@
                             <td class="px-3 py-2 text-right tabular-nums">{{ $r['tahun_pembangunan'] }}</td>
                             <td class="px-3 py-2 text-right tabular-nums">{{ $angka($r['luas_bangunan']) }}</td>
                         </tr>
-                    @endforeach
+                    @empty
+                        <tr>
+                            <td colspan="8" class="px-3 py-6 text-center text-gray-500 dark:text-gray-400">
+                                Belum ada data rumah pada data contoh.
+                            </td>
+                        </tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>
@@ -129,7 +141,7 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-                    @foreach ($lahan as $i => $l)
+                    @forelse ($lahan as $i => $l)
                         <tr class="text-gray-700 dark:text-gray-300">
                             <td class="px-3 py-2">{{ $i + 1 }}</td>
                             <td class="px-3 py-2 font-medium text-gray-800 dark:text-white/90">{{ $l['kode_lahan'] }}</td>
@@ -140,7 +152,13 @@
                             <td class="px-3 py-2 text-right tabular-nums">{{ $l['luas_kering'] !== '' && $l['luas_kering'] !== null ? $angka($l['luas_kering'], 2) : '-' }}</td>
                             <td class="px-3 py-2 text-right tabular-nums">{{ $l['luas_basah'] !== '' && $l['luas_basah'] !== null ? $angka($l['luas_basah'], 2) : '-' }}</td>
                         </tr>
-                    @endforeach
+                    @empty
+                        <tr>
+                            <td colspan="8" class="px-3 py-6 text-center text-gray-500 dark:text-gray-400">
+                                Belum ada data lahan pada data contoh.
+                            </td>
+                        </tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>

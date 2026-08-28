@@ -16,7 +16,7 @@
 @extends('layouts.app')
 
 @php
-    $angka = fn ($n, $desimal = 2) => rtrim(rtrim(number_format((float) $n, $desimal, ',', '.'), '0'), ',');
+    $angka = fn ($n, $desimal = 2) => \App\Support\LaporanData::angka($n, $desimal);
     $kolomAngka = [
         ['volume_benih', 'Volume Benih (kg)'],
         ['realisasi_tanam', 'Realisasi Tanam (ha)'],

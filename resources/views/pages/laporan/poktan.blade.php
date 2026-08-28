@@ -11,7 +11,7 @@
 @extends('layouts.app')
 
 @php
-    $angka = fn ($n) => rtrim(rtrim(number_format((float) $n, 2, ',', '.'), '0'), ',');
+    $angka = fn ($n, $desimal = 2) => \App\Support\LaporanData::angka($n, $desimal);
 @endphp
 
 @section('content')

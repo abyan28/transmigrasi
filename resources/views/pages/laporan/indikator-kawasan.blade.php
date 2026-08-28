@@ -10,7 +10,7 @@
 @extends('layouts.app')
 
 @php
-    $angka = fn ($n, $desimal = 0) => rtrim(rtrim(number_format((float) $n, $desimal, ',', '.'), '0'), ',');
+    $angka = fn ($n, $desimal = 0) => \App\Support\LaporanData::angka($n, $desimal);
     $rupiah = fn ($n) => 'Rp ' . number_format((float) $n, 0, ',', '.');
     $persen = fn ($a, $b) => $b > 0 ? number_format($a / $b * 100, 1, ',', '.') . '%' : '-';
 

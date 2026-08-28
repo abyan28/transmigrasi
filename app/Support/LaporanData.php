@@ -162,6 +162,7 @@ class LaporanData
             $baris[] = [
                 'sp_id' => $pok['satuan_permukiman_id'],
                 'sp' => $pok['satuan_permukiman'],
+                'poktan_id' => $pok['id_poktan'],
                 'kecamatan' => $pok['kecamatan'],
                 'desa' => $pok['desa'],
                 'poktan' => $pok['nama'],
@@ -182,7 +183,7 @@ class LaporanData
 
         return self::kelompokkanPerSp($baris, [
             'volume_benih', 'realisasi_tanam', 'realisasi_panen',
-            'puso', 'belum_dipanen', 'produksi_ton', 'jumlah_anggota',
+            'puso', 'belum_dipanen', 'produksi_ton',
         ], 'produktivitas_tertimbang');
     }
 
@@ -211,6 +212,7 @@ class LaporanData
             $baris[] = [
                 'sp_id' => $a['satuan_permukiman_id'],
                 'sp' => $a['satuan_permukiman'],
+                'poktan_id' => $a['poktan_id'],
                 'kecamatan' => $pok['kecamatan'] ?? '-',
                 'desa' => $pok['desa'] ?? '-',
                 'jenis_alat' => $a['nama_alat'],
@@ -251,8 +253,9 @@ class LaporanData
                 $luasPoktan[$pid] ??= $pid ? DummyData::rekapLahanPoktan($pid)['luas_total'] : 0;
 
                 $benih[] = [
-                    'sp_id' => $pok['satuan_permukiman_id'] ?? null,
+                    'sp_id' => $pok['satuan_permukiman_id'] ?? $s['satuan_permukiman_id'] ?? null,
                     'sp' => $pok['satuan_permukiman'] ?? $s['satuan_permukiman'] ?? '-',
+                    'poktan_id' => $s['poktan_id'],
                     'kecamatan' => $pok['kecamatan'] ?? '-',
                     'desa' => $pok['desa'] ?? '-',
                     'poktan' => $s['penerima'],
@@ -274,6 +277,8 @@ class LaporanData
             }
 
             $nonBenih[] = [
+                'sp_id' => $pok['satuan_permukiman_id'] ?? $s['satuan_permukiman_id'] ?? null,
+                'poktan_id' => $s['poktan_id'],
                 'poktan' => $s['penerima'],
                 'sp' => $pok['satuan_permukiman'] ?? $s['satuan_permukiman'] ?? '-',
                 'jenis' => $s['jenis'],
@@ -288,11 +293,18 @@ class LaporanData
     }
 
     /**
-     * Angka desimal ringkas: koma sebagai pemisah desimal, nol di ekor dibuang.
+     * Angka desimal ringkas: koma sebagai pemisah desimal, titik ribuan.
+     *
+     * Satu-satunya perumus angka untuk seluruh halaman laporan (dulu tujuh
+     * salinan berbeda tanda tangan di tiap view). Nol di ekor dibuang HANYA
+     * bila ada bagian desimal; tanpa penjaga `$desimal > 0` itu, `rtrim`
+     * memakan angka bulat "1.200" menjadi "1.2".
      */
-    private static function angka(mixed $n, int $desimal = 2): string
+    public static function angka(int|float|string|null $n, int $desimal = 2): string
     {
-        return rtrim(rtrim(number_format((float) $n, $desimal, ',', '.'), '0'), ',');
+        $teks = number_format((float) $n, max(0, $desimal), ',', '.');
+
+        return $desimal > 0 ? rtrim(rtrim($teks, '0'), ',') : $teks;
     }
 
     /**
@@ -411,6 +423,7 @@ class LaporanData
             $r = $rekap->get($id);
 
             $baris[] = [
+                'sp_id' => $id,
                 'sp' => $s['nama'],
                 'kode' => $s['kode_sp'],
                 'kecamatan' => $s['kecamatan'],
@@ -440,6 +453,7 @@ class LaporanData
             ], DummyData::ruteAksesibilitasSp($id));
 
             $monografi[] = [
+                'sp_id' => $id,
                 'sp' => $s['nama'],
                 'kode' => $s['kode_sp'],
                 'desa' => $s['desa'],
@@ -516,6 +530,8 @@ class LaporanData
             ], $anggota);
 
             $daftar[] = [
+                'id_poktan' => $p['id_poktan'],
+                'sp_id' => $p['satuan_permukiman_id'],
                 'nama' => $p['nama'],
                 'sp' => $p['satuan_permukiman'],
                 'kecamatan' => $p['kecamatan'],
@@ -561,16 +577,18 @@ class LaporanData
      */
     private static function kelompokkanPerSp(array $baris, array $kolomJumlah, ?string $produktivitasKey = null): array
     {
+        // Dikelompokkan menurut id SP, bukan namanya: dua SP bernama sama akan
+        // lebur bila dikunci nama, dan D3 (penyaring) menyaring lewat id.
         $perSp = [];
 
         foreach ($baris as $b) {
-            $perSp[$b['sp']][] = $b;
+            $perSp[$b['sp_id']][] = $b;
         }
 
         $kelompok = [];
         $total = array_fill_keys($kolomJumlah, 0.0);
 
-        foreach ($perSp as $namaSp => $isi) {
+        foreach ($perSp as $spId => $isi) {
             $subtotal = array_fill_keys($kolomJumlah, 0.0);
 
             foreach ($isi as $b) {
@@ -587,7 +605,8 @@ class LaporanData
             }
 
             $kelompok[] = [
-                'sp' => $namaSp,
+                'sp_id' => $spId,
+                'sp' => $isi[0]['sp'] ?? '-',
                 'kecamatan' => $isi[0]['kecamatan'] ?? '-',
                 'desa' => $isi[0]['desa'] ?? '-',
                 'baris' => $isi,

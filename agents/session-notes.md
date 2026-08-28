@@ -1,85 +1,93 @@
-# Rencana Eksekusi — Penyeragaman nama field alsintan  [SELESAI 2026-08-28]
+# Rencana Eksekusi — Putaran 3: Halaman Laporan (filter sendiri + tampilan dokumen)
 
 Ditulis 2026-08-28 sesuai `rules.md` §20b. Sementara, boleh ditimpa.
 
-**Hasil:** 662 uji hijau (satu penjaga baru), pint 31. Semua berkas pada
-daftar di bawah disunting. `grep` verifikasi: `sumber_perolehan` nol di
-`app/` & `resources/`; `tahun_perolehan` hanya tersisa di infrastruktur /
-inventaris_sp / fasilitas_sp (sengaja). Commit menyusul.
+## Lingkup
 
-## Lingkup (butir 1 daftar tunggu, `notes.md` §1o.4)
+Pemilik proyek menilai menu "Laporan" **berantakan**. Permintaannya: tiap
+halaman laporan punya filter datanya sendiri, isinya disajikan seperti dokumen
+di dalam bingkai, dengan "buka di tab baru" untuk tampilan penuh.
 
-`saprotan` sudah memakai `tahun_pengadaan` / `sumber_dana` (diseragamkan
-Putaran 1, cocok dengan kamus data). `alsintan` masih memakai
-`tahun_perolehan` / `sumber_perolehan`. Kedua berkas rujukan
-(`laporan alsintan.jpeg`, `laporan saprotan.jpeg`) memakai label
-"Tahun Pengadaan" / "Sumber Dana". Laporan Alsintan sekarang menampilkan
-label rujukan sambil membaca field lama lewat pemetaan di `LaporanData`.
+Dua butir tunggu **gugur**: pintasan laporan berfilter dan pemilih periode
+lintas-modul. Keduanya hanya cara mewariskan filter ke halaman yang tidak
+punya filter; begitu tiap laporan punya filter sendiri, pewarisan tak perlu.
 
-**Tujuan:** rename `alsintan.tahun_perolehan` → `tahun_pengadaan`,
-`alsintan.sumber_perolehan` → `sumber_dana`. Murni penyeragaman nama;
-tipe, nullability, dan makna tetap.
+## Keputusan pemilik proyek (2026-08-28)
 
-## PENTING: jangan sentuh modul lain
+| # | Keputusan |
+|---|---|
+| 1 | **Kertas bergaya**, bukan `<iframe>`. Dokumen dirender di halaman yang sama; penjaga uji tetap utuh |
+| 2 | **Filter harus jalan di GitHub Pages** - dikerjakan Alpine di sisi peramban |
+| 3 | **SP + periode + dimensi khas tiap laporan**, bukan dua filter seragam |
+| 4 | **Cakupan tetap dicetak sebagai kalimat**, kini disusun dari filter aktif |
+| 5 | **Rekap Indikator Kawasan: bangun agregasi per SP** (metode baru, dashboard tidak disentuh) |
+| 6 | **Berhenti setelah D2 untuk ditinjau** |
 
-`tahun_perolehan` juga dipakai `inventaris_sp`, `fasilitas_sp`,
-`infrastruktur` — **itu tetap `tahun_perolehan`**. `sumber_perolehan`
-hanya dipakai alsintan (yang lain sudah `sumber_dana`). Rename hanya baris
-yang menyangkut alsintan.
+## Tiga temuan penelusuran
 
-## Berkas yang disentuh
+1. `prd.md` §7.9 baris 217 sudah menuntut "menyediakan filter data" untuk
+   Laporan. Ini mengembalikan kepatuhan PRD, bukan cakupan baru. Paragraf
+   baris 221 masih memuat keputusan 2026-08-17 yang sudah dibalik Putaran 2.
+2. **Filter server-side akan jadi kontrol mati (R-26).** `deploy.yml:110`
+   menolak `?` dan `=` lewat regex dan menggagalkan penerbitan.
+   `notes.md` 1b.5 baris 306 sudah memutuskan ini "sengaja tidak diakali".
+   Karena itu filter WAJIB Alpine sisi peramban.
+3. **Tidak ada uji yang melarang filter di halaman laporan.** Larangan hidup
+   semata di dokumen. Penjaga baru wajib ditulis, tak bisa mengandalkan yang
+   ada.
 
-**Kode**
-1. `app/Support/DummyData.php` — 5 baris `alsintan()` (id 1-5) + docblock +
-   komentar inline: `tahun_perolehan`→`tahun_pengadaan`,
-   `sumber_perolehan`→`sumber_dana`.
-2. `app/Support/LaporanData.php` — `alsintan()` map: `$a['sumber_perolehan']`
-   → `$a['sumber_dana']`, `$a['tahun_perolehan']` → `$a['tahun_pengadaan']`.
-   Tulis ulang CATATAN docblock (tak lagi "usul revisi tersendiri").
+## "Berantakan" itu terukur
 
-**Tampilan**
-3. `resources/views/pages/alsintan/form.blade.php` — dua field: `name`, `id`,
-   `<label>`, `old()`, `$data[...]`. Label "Tahun Perolehan"→"Tahun Pengadaan",
-   "Sumber Perolehan"→"Sumber Dana". Var `$opsiSumberDana` sudah ada, tak
-   berubah (ViewServiceProvider tidak disentuh).
-4. `resources/views/pages/alsintan/detail.blade.php` — 3 tempat + 2 label.
-5. `resources/views/pages/alsintan/index.blade.php` — `$a['tahun_perolehan']`
-   + header `Tahun` → `Tahun Pengadaan`.
-6. `resources/views/pages/poktan/detail.blade.php` — tabel alsintan,
-   `$a['tahun_perolehan']`.
+- Hasil Panen 16 kolom, Saprotan benih 15, Transmigran 14, Monografi 13
+- Monografi 7 tabel + 6 seksi; Indikator Kawasan 5 tabel; Poktan 4; Transmigran 3
+- `$angka` ditulis ulang di **6 view dengan tanda tangan berbeda** (2 desimal
+  di hasil-panen/monografi/poktan, 0 di alsintan/indikator-kawasan/transmigran)
+  plus salinan ketujuh privat `LaporanData::angka()`
+- `transmigran.blade.php` memakai `@foreach` polos, tanpa jaring keadaan kosong
 
-**Uji**
-7. `tests/Feature/HalamanTest.php` — `it('memakai nilai enum pada data
-   contoh...')` baris ~2924: `$baris['sumber_perolehan']`→`$baris['sumber_dana']`
-   + sesuaikan komentar. Tambah satu penjaga: form + detail + index alsintan
-   memakai `name="tahun_pengadaan"` / `name="sumber_dana"`, tidak lagi nama
-   lama; `DummyData::alsintan()` tiap baris punya kunci baru.
+## Prasyarat: id belum dibawa keluar LaporanData
 
-**Dokumen acuan**
-8. `agents/data-dictionary.md` §8.3 — baris tabel + prosa sekitarnya + catatan
-   rename bertanggal (pola sama seperti catatan `tahun_perolehan` dicabut di
-   §8.4).
-9. `agents/rules.md` §7b poin 1 & 2 — "tahun perolehan, sumber perolehan"
-   → "tahun pengadaan, sumber dana".
-10. `agents/erd.md` — baris indeks alsintan (269); baris saprotan (270) yang
-    juga masih `tahun_perolehan` padahal sudah lama berubah — ikut dibetulkan;
-    baris riwayat migrasi #20 diberi catatan.
-11. `agents/notes.md` §1o.4 — tandai selesai; tambah subbagian ringkas.
-    `agents/tasklist.md` — pindahkan butir dari "Ditunda" ke selesai.
+- `poktan_id` **tidak pernah dibawa keluar satu metode pun**
+- `kelompokkanPerSp()` mengelompokkan menurut NAMA SP, bukan id (baris 567);
+  `sp_id` tidak diteruskan ke tingkat grup. Cacat laten: dua SP bernama sama lebur
+- `saprotan().nonBenih` tanpa `sp_id`; `poktan()` buang `id_poktan` +
+  `satuan_permukiman_id`; `monografiSp().baris` buang `sp_id`
 
-## Verifikasi
+## Pelaksanaan bertahap
 
-1. `vendor/bin/pest.bat` — hijau, ≥ 662 (satu penjaga baru)
-2. `vendor/bin/pint.bat --test` — ≤ 31
-3. Render nyata: `/alsintan`, `/alsintan/1`, `/alsintan` form (tambah+ubah),
-   `/poktan/1`, `/laporan/alsintan` — semua memuat nilai tahun & sumber,
-   tak ada `Undefined array key`.
-4. `grep -rn "tahun_perolehan\|sumber_perolehan" app/ resources/` — hanya
-   sisa yang sah (inventaris/fasilitas/infrastruktur untuk `tahun_perolehan`;
-   nol untuk `sumber_perolehan`).
+- **D1** - fondasi data: bawa keluar `sp_id`/`poktan_id`; `kelompokkanPerSp()`
+  per id; satukan `$angka` (7 salinan jadi 1); `@foreach` -> `@forelse` pada
+  transmigran; buang `jumlah_anggota` dari kolom subtotal hasilPanen. Commit.
+- **D2** - kertas + tab baru: bingkai kertas di `kerangka-laporan`; badan
+  dokumen dipisah ke `pages/laporan/isi/{slug}`; `layouts/dokumen.blade.php`
+  baru (BUKAN `fullscreen-layout` yang kode mati + store sidebar tertinggal);
+  rute `/laporan/{slug}/dokumen` + 7 slug di `DaftarTautanStatis` (208 -> 215
+  alamat); tombol tab baru (`rel="noopener"` + sr-only); `@media print`
+  pertama di repo. Commit.
+- **TINJAU DI SINI** - terbitkan ke Pages, pemilik proyek periksa bentuknya.
+- **D3** - filter Alpine (prasyarat: agregasi per SP Indikator Kawasan).
+- **D4** - penjaga + dokumen acuan (`rules.md` §12, `ui-spec.md` §6.9/6.10,
+  `prd.md` §7.9 basi, `notes.md` 1r, `tasklist.md`).
 
-## Catatan
+## Cara filter bekerja (D3, dicatat sekarang agar D1/D2 tak menutup jalannya)
 
-Field `tahun_pengadaan` belum ada di `ValidationRules::label()`; saprotan
-pun tak menambahnya (peta itu parsial, hanya untuk label non-obvious).
-Ikuti preseden: tidak menambah entri.
+Blade tetap merender seluruh baris server-side. Alpine hanya menyembunyikan
+baris dan menghitung ulang subtotal yang tampak. `data-sp`/`data-tahun`/
+`data-poktan` pada tiap `<tr>`; `x-text` pada sel subtotal/total. Alasannya:
+seluruh data tetap ada di HTML sehingga penjaga yang membaca `getContent()`
+tetap berlaku. Biayanya penjumlahan hidup di dua tempat, ditutup uji peramban.
+
+**Rentang tahun aman di laporan transaksi** meski §12 poin 12 melarang di
+"halaman laporan": larangan itu bersandar §9 poin 8b (luas terhitung ganda
+lintas tahun). Baris Hasil Panen/Alsintan/Saprotan tiap baris milik tepat satu
+tahun pengadaan.
+
+## Verifikasi D1 + D2
+
+1. `vendor/bin/pest.bat` hijau, >= 662 dan naik
+2. `vendor/bin/pint.bat --test` <= 31
+3. `sim:tautan-statis` 215 alamat, lolos regex `^/[A-Za-z0-9/_.~-]*$`
+4. Render 7 `/laporan/*` + 7 `/laporan/*/dokumen`: 200, tanpa
+   `Undefined array key`, tanpa em dash (R-02)
+5. Halaman berbingkai dan rute dokumen memuat isi tabel IDENTIK
+6. Angka sama dirender sama di 7 laporan setelah `$angka` disatukan
