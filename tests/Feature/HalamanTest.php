@@ -2915,13 +2915,16 @@ it('memakai nilai enum pada data contoh, bukan teks yang menyerupainya', functio
     //
     // Kepemilikan sendiri sudah dicabut 2026-08-22, tetapi cacat yang sama
     // ternyata masih bersembunyi pada kolom lain: ''Pembelian Sendiri'' pada
-    // 'sumber_perolehan' juga bukan nilai enum mana pun. Uji ini karena itu
+    // sumber dana alsintan juga bukan nilai enum mana pun. Uji ini karena itu
     // dialihkan ke sana, bukan dihapus.
     $sumberSah = array_column(SumberDana::cases(), 'value');
     $kondisiSah = array_column(Kondisi::cases(), 'value');
 
+    // `sumber_dana` / `tahun_pengadaan` diseragamkan dari `sumber_perolehan`
+    // / `tahun_perolehan` pada 2026-08-28 agar sama dengan saprotan dan
+    // kamus data 8.3.
     foreach (DummyData::alsintan() as $baris) {
-        expect($sumberSah)->toContain($baris['sumber_perolehan']);
+        expect($sumberSah)->toContain($baris['sumber_dana']);
         expect($kondisiSah)->toContain($baris['kondisi']);
     }
 
@@ -2930,6 +2933,33 @@ it('memakai nilai enum pada data contoh, bukan teks yang menyerupainya', functio
     foreach (DummyData::saprotan() as $baris) {
         expect($sumberSah)->toContain($baris['sumber_dana']);
     }
+});
+
+it('menyeragamkan nama field alsintan dengan saprotan dan kamus data', function () {
+    // Butir 1 daftar tunggu (notes.md 1o.4): alsintan memakai
+    // `tahun_perolehan` / `sumber_perolehan` sementara saprotan dan kedua
+    // berkas rujukan memakai "Tahun Pengadaan" / "Sumber Dana". Diseragamkan
+    // 2026-08-28. Modul lain (inventaris_sp, fasilitas_sp, infrastruktur)
+    // TIDAK ikut: mereka tetap `tahun_perolehan`.
+    foreach (DummyData::alsintan() as $baris) {
+        expect($baris)->toHaveKeys(['tahun_pengadaan', 'sumber_dana']);
+        expect($baris)->not->toHaveKey('tahun_perolehan');
+        expect($baris)->not->toHaveKey('sumber_perolehan');
+    }
+
+    $form = file_get_contents(resource_path('views/pages/alsintan/form.blade.php'));
+    expect(str_contains($form, 'name="tahun_pengadaan"'))->toBeTrue('form alsintan belum memakai name="tahun_pengadaan"');
+    expect(str_contains($form, 'name="sumber_dana"'))->toBeTrue('form alsintan belum memakai name="sumber_dana"');
+    expect(str_contains($form, 'name="tahun_perolehan"'))->toBeFalse('form alsintan masih memakai nama lama tahun_perolehan');
+    expect(str_contains($form, 'name="sumber_perolehan"'))->toBeFalse('form alsintan masih memakai nama lama sumber_perolehan');
+
+    // Halaman rincian alsintan menampilkan kedua nilai.
+    $rincian = $this->get('/alsintan/1')->assertOk()->getContent();
+    expect($rincian)->toContain('Tahun pengadaan')->toContain('Sumber dana');
+
+    // Laporan Alsintan tetap utuh setelah rename.
+    $laporan = $this->get('/laporan/alsintan')->assertOk()->getContent();
+    expect($laporan)->toContain('Sumber Dana')->toContain('Tahun Pengadaan');
 });
 
 /*

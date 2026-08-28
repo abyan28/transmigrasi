@@ -193,10 +193,9 @@ class LaporanData
      * Poktan Penerima, Ketua Poktan, Alamat (Kec./Desa), Jumlah (Unit). Satu
      * baris per alsintan, dikelompokkan per SP, subtotal Jumlah.
      *
-     * CATATAN: field kita bernama `sumber_perolehan` dan `tahun_perolehan`;
-     * label kolom mengikuti berkas rujukan. Penyeragaman nama field alsintan
-     * ke `sumber_dana` / `tahun_pengadaan` (seperti saprotan) adalah usul
-     * revisi tersendiri.
+     * Field alsintan bernama `sumber_dana` dan `tahun_pengadaan` sejak
+     * diseragamkan 2026-08-28 (dulu `sumber_perolehan` / `tahun_perolehan`),
+     * cocok dengan saprotan dan kamus data §8.3.
      *
      * @return array{kelompok: array<int, mixed>, total: array<string, float>}
      */
@@ -215,8 +214,8 @@ class LaporanData
                 'kecamatan' => $pok['kecamatan'] ?? '-',
                 'desa' => $pok['desa'] ?? '-',
                 'jenis_alat' => $a['nama_alat'],
-                'sumber_dana' => $a['sumber_perolehan'],
-                'tahun_pengadaan' => $a['tahun_perolehan'],
+                'sumber_dana' => $a['sumber_dana'],
+                'tahun_pengadaan' => $a['tahun_pengadaan'],
                 'poktan' => $a['pemilik'],
                 'ketua' => $pok['nama_ketua_terpakai'] ?? '-',
                 'jumlah' => (int) $a['jumlah'],

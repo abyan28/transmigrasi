@@ -1130,9 +1130,11 @@ Berkas rujukan Polri dan alsintan dikelompokkan per **kecamatan** (laporan kabup
 
 Monografi UPT asli lima bab, memuat letak astronomis, topografi, iklim, sertifikat tanah, KB, agama, kelembagaan desa. Bab II (Keadaan Wilayah) **sudah dirender penuh per SP sejak Rombongan C Stage C3 (2026-08-28)**: letak, batas, luas dan bentuk, tanah, topografi, iklim, sumberdaya air, aksesibilitas, didahului satu tabel ikhtisar indikator (kependudukan, lahan tergarap, produksi, pengaduan). Bab kependudukan, sosial ekonomi, dan sosial budaya menyusul begitu modul terkait menyimpan datanya. Lihat bagian 1q.6.
 
-### 1o.4 Penyimpangan nama field alsintan ditemukan (belum diperbaiki)
+### 1o.4 Penyimpangan nama field alsintan — DIPERBAIKI 2026-08-28
 
-`saprotan` memakai `tahun_pengadaan` / `sumber_dana` (diseragamkan Putaran 1). `alsintan` masih memakai `tahun_perolehan` / `sumber_perolehan`. Kedua berkas rujukan (`laporan alsintan.jpeg`, `laporan saprotan.jpeg`) memakai label "Tahun Pengadaan" / "Sumber Dana". Laporan Alsintan memakai label rujukan sambil membaca field lama. **Penyeragaman nama field alsintan = usul revisi tersendiri**, dicatat di daftar tunggu.
+`saprotan` memakai `tahun_pengadaan` / `sumber_dana` (diseragamkan Putaran 1). `alsintan` dulu memakai `tahun_perolehan` / `sumber_perolehan`. Kedua berkas rujukan (`laporan alsintan.jpeg`, `laporan saprotan.jpeg`) memakai label "Tahun Pengadaan" / "Sumber Dana". Laporan Alsintan sempat memakai label rujukan sambil membaca field lama lewat pemetaan di `LaporanData`.
+
+**Diseragamkan 2026-08-28:** `alsintan.tahun_perolehan` → `tahun_pengadaan`, `alsintan.sumber_perolehan` → `sumber_dana`. Murni penyeragaman nama; tipe, nullability, makna tetap. `inventaris_sp` / `fasilitas_sp` / `infrastruktur` **tidak ikut** — tetap `tahun_perolehan` (bukan bantuan beranggaran, "perolehan" tepat). Disentuh: `DummyData::alsintan()` (5 baris + docblock), `LaporanData::alsintan()` (pemetaan dihapus, tinggal baca langsung), `alsintan/{form,detail,index}`, `poktan/detail` (tabel alsintan), `laporan/alsintan` (komentar), `data-dictionary.md` §8.3/§11.3, `rules.md` §7b, `erd.md`. 662 uji hijau (satu penjaga baru: `menyeragamkan nama field alsintan dengan saprotan dan kamus data`), pint 31.
 
 ### 1o.5 Dua adaptasi model saprotan
 

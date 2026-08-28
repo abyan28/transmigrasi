@@ -80,9 +80,9 @@
             </div>
 
             <div>
-                <label for="{{ $awalan }}_tahun_perolehan" class="{{ $kelasLabel }}">Tahun Perolehan</label>
-                <input type="number" id="{{ $awalan }}_tahun_perolehan" name="tahun_perolehan"
-                    value="{{ old('tahun_perolehan', $data['tahun_perolehan'] ?? '') }}" min="1900"
+                <label for="{{ $awalan }}_tahun_pengadaan" class="{{ $kelasLabel }}">Tahun Pengadaan</label>
+                <input type="number" id="{{ $awalan }}_tahun_pengadaan" name="tahun_pengadaan"
+                    value="{{ old('tahun_pengadaan', $data['tahun_pengadaan'] ?? '') }}" min="1900"
                     max="{{ date('Y') }}" class="{{ $kelasKontrol }} tabular-nums" />
             </div>
 
@@ -98,12 +98,12 @@
             </div>
 
             <div>
-                <label for="{{ $awalan }}_sumber_perolehan" class="{{ $kelasLabel }}">Sumber Perolehan</label>
-                <select id="{{ $awalan }}_sumber_perolehan" name="sumber_perolehan" class="{{ $kelasKontrol }}">
+                <label for="{{ $awalan }}_sumber_dana" class="{{ $kelasLabel }}">Sumber Dana</label>
+                <select id="{{ $awalan }}_sumber_dana" name="sumber_dana" class="{{ $kelasKontrol }}">
                     <option value="">Pilih sumber</option>
                     @foreach ($opsiSumberDana as $nilaiRef => $labelRef)
                         <option value="{{ $nilaiRef }}"
-                            @selected(old('sumber_perolehan', $data['sumber_perolehan'] ?? '') === $nilaiRef)>
+                            @selected(old('sumber_dana', $data['sumber_dana'] ?? '') === $nilaiRef)>
                             {{ $nilaiRef }}
                         </option>
                     @endforeach

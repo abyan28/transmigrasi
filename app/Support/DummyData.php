@@ -3427,7 +3427,7 @@ class DummyData
      *
      * Karena itu `kepemilikan` dan `transmigran_id` tidak lagi ada di sini,
      * sedangkan `poktan_id` menjadi wajib. Alat yang dibeli dari iuran anggota
-     * tetap tercatat atas nama kelompok, dengan `sumber_perolehan` bernilai
+     * tetap tercatat atas nama kelompok, dengan `sumber_dana` bernilai
      * `Swadaya`.
      *
      * Sebelumnya dua jalur pemilik disediakan sekaligus, dan akibatnya terlihat
@@ -3441,19 +3441,19 @@ class DummyData
     public static function alsintan(): array
     {
         $data = [
-            ['id_alsintan' => 1, 'nama_alat' => 'TRAKTOR RODA DUA', 'jumlah' => 2, 'penanda_terima_id' => 1, 'tahun_perolehan' => 2018, 'sumber_perolehan' => 'APBN', 'pemilik' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'kondisi' => 'Baik', 'keterangan' => 'Servis berkala terakhir Maret 2026.', 'foto' => 'foto-traktor-roda-dua.jpg', 'dokumen_pendukung' => 'berita-acara-traktor.pdf'],
-            ['id_alsintan' => 2, 'nama_alat' => 'POMPA AIR', 'jumlah' => 3, 'penanda_terima_id' => 2, 'tahun_perolehan' => 2019, 'sumber_perolehan' => 'APBD Kabupaten', 'pemilik' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'kondisi' => 'Rusak Ringan'],
+            ['id_alsintan' => 1, 'nama_alat' => 'TRAKTOR RODA DUA', 'jumlah' => 2, 'penanda_terima_id' => 1, 'tahun_pengadaan' => 2018, 'sumber_dana' => 'APBN', 'pemilik' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'kondisi' => 'Baik', 'keterangan' => 'Servis berkala terakhir Maret 2026.', 'foto' => 'foto-traktor-roda-dua.jpg', 'dokumen_pendukung' => 'berita-acara-traktor.pdf'],
+            ['id_alsintan' => 2, 'nama_alat' => 'POMPA AIR', 'jumlah' => 3, 'penanda_terima_id' => 2, 'tahun_pengadaan' => 2019, 'sumber_dana' => 'APBD Kabupaten', 'pemilik' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'kondisi' => 'Rusak Ringan'],
             // Dahulu tercatat atas nama YOHANES BERE sebagai milik pribadi.
-            // Dialihkan ke poktan tempatnya bernaung, dan `sumber_perolehan`
+            // Dialihkan ke poktan tempatnya bernaung, dan `sumber_dana`
             // dibetulkan dari 'Pembelian Sendiri' menjadi `Swadaya`: teks lama
             // bukan nilai enum SumberDana mana pun, sehingga penyaringnya
             // tidak pernah cocok. Maknanya bergeser wajar, dari dibeli
             // seorang anggota menjadi dibeli kelompok dari iuran anggotanya.
-            ['id_alsintan' => 3, 'nama_alat' => 'HAND SPRAYER', 'jumlah' => 1, 'tahun_perolehan' => 2021, 'sumber_perolehan' => 'Swadaya', 'pemilik' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'kondisi' => 'Baik'],
-            ['id_alsintan' => 4, 'nama_alat' => 'MESIN PERONTOK JAGUNG', 'jumlah' => 1, 'penanda_terima_id' => 5, 'tahun_perolehan' => 2020, 'sumber_perolehan' => 'Dinas Pertanian Kabupaten', 'pemilik' => 'POKTAN TANI BERSATU', 'poktan_id' => 3, 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'kondisi' => 'Rusak Berat'],
+            ['id_alsintan' => 3, 'nama_alat' => 'HAND SPRAYER', 'jumlah' => 1, 'tahun_pengadaan' => 2021, 'sumber_dana' => 'Swadaya', 'pemilik' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'kondisi' => 'Baik'],
+            ['id_alsintan' => 4, 'nama_alat' => 'MESIN PERONTOK JAGUNG', 'jumlah' => 1, 'penanda_terima_id' => 5, 'tahun_pengadaan' => 2020, 'sumber_dana' => 'Dinas Pertanian Kabupaten', 'pemilik' => 'POKTAN TANI BERSATU', 'poktan_id' => 3, 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'kondisi' => 'Rusak Berat'],
             // Dahulu atas nama GABRIEL LEKI, dialihkan ke POKTAN HARAPAN
             // BARU tempatnya bernaung; SP-nya memang sudah sama.
-            ['id_alsintan' => 5, 'nama_alat' => 'CANGKUL', 'jumlah' => 8, 'tahun_perolehan' => 2019, 'sumber_perolehan' => 'Swadaya', 'pemilik' => 'POKTAN HARAPAN BARU', 'poktan_id' => 4, 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain', 'kondisi' => 'Baik'],
+            ['id_alsintan' => 5, 'nama_alat' => 'CANGKUL', 'jumlah' => 8, 'tahun_pengadaan' => 2019, 'sumber_dana' => 'Swadaya', 'pemilik' => 'POKTAN HARAPAN BARU', 'poktan_id' => 4, 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain', 'kondisi' => 'Baik'],
         ];
 
         // Nama penanda tangan serah terima dihitung dari anggotaPoktan(),

@@ -379,8 +379,8 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **-*
 8. **Keanggotaan poktan ditetapkan dari sisi poktan, bukan dari form transmigran.** Kolom `status_anggota_poktan` pada transmigran adalah **penanda turunan** yang dihitung dari keanggotaan berstatus Aktif, bukan isian mandiri. Menyediakannya sebagai isian membuat dua sumber kebenaran yang tidak pernah tersinkron.
 
 ### 7b. Aturan Fitur Alsintan
-1. **Alsintan selalu milik kelompok tani.** Kepemilikan pribadi dicabut 2026-08-22: seluruh menu Pertanian mencatat kelompok, bukan individu. Alat yang dibeli dari iuran anggota tetap tercatat atas nama kelompok, dengan sumber perolehan Swadaya.
-2. Setiap alsintan wajib mencatat nama alat, jumlah, tahun perolehan, sumber perolehan, dan kondisi.
+1. **Alsintan selalu milik kelompok tani.** Kepemilikan pribadi dicabut 2026-08-22: seluruh menu Pertanian mencatat kelompok, bukan individu. Alat yang dibeli dari iuran anggota tetap tercatat atas nama kelompok, dengan sumber dana Swadaya.
+2. Setiap alsintan wajib mencatat nama alat, jumlah, tahun pengadaan, sumber dana, dan kondisi. *(Nama field `tahun_pengadaan` / `sumber_dana` diseragamkan dengan saprotan 2026-08-28; dulu `tahun_perolehan` / `sumber_perolehan`.)*
 3. Setiap alsintan wajib ditautkan ke poktan pemiliknya. **Satuan permukiman mengikuti poktan itu**, tidak dipilih terpisah, sebab isian mandiri hanya membuka peluang satu alat tercatat di SP yang berbeda dari kelompoknya.
 4. Setiap alsintan dapat dilampiri dokumen pendukung.
 5. Alsintan harus dapat direkap per desa/SP, per poktan, dan per jenis alat.

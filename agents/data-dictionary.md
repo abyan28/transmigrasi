@@ -829,8 +829,8 @@ Alat dan mesin pertanian.
 | `nama_alat` | `VARCHAR(255)` | TIDAK | | Traktor, sprayer, cultivator |
 | `jumlah` | `INT UNSIGNED` | TIDAK | | Bawaan 1 |
 | `penanda_terima_id` | `BIGINT UNSIGNED` | YA | FK, IDX | Anggota poktan pemilik yang **menandatangani serah terima**, dari berita acara. BUKAN pemilik: alat tetap milik kelompok (`rules.md` §7b poin 1). Menunjuk `anggota_poktan.id`; ketua maupun anggota biasa sama-sama sah |
-| `tahun_perolehan` | `YEAR` | YA | IDX | |
-| `sumber_perolehan` | `ENUM` | YA | | Lihat §11.3 |
+| `tahun_pengadaan` | `YEAR` | YA | IDX | Tahun alat diadakan |
+| `sumber_dana` | `ENUM` | YA | | Lihat §11.3 |
 | `kondisi` | `ENUM` | YA | | Lihat §11.5 |
 | `foto` | `VARCHAR(255)` | YA | | Dokumentasi kondisi alat |
 | `dokumen_pendukung` | `VARCHAR(255)` | YA | | Berita acara atau bukti pengadaan |
@@ -840,9 +840,11 @@ Alat dan mesin pertanian.
 
 Sebelumnya dua jalur pemilik disediakan sekaligus, dan akibatnya terlihat pada data: alat berkepemilikan pribadi **tidak dapat dijangkau dari halaman mana pun** kecuali daftar alsintan itu sendiri. Ia tidak muncul pada rincian poktan sebab `poktan_id`-nya kosong, sedangkan halaman transmigran tidak pernah punya tab alsintan.
 
-Alat yang dibeli dari iuran anggota tetap tercatat atas nama kelompok, dengan `sumber_perolehan` bernilai `Swadaya` (§11.3).
+Alat yang dibeli dari iuran anggota tetap tercatat atas nama kelompok, dengan `sumber_dana` bernilai `Swadaya` (§11.3).
 
 `satuan_permukiman_id` **tidak dipilih petugas**, melainkan terbaca dari poktan pemiliknya. Dropdown terpisah memungkinkan satu alat tercatat pada SP yang berbeda dari kelompoknya tanpa penjaga apa pun.
+
+> **`tahun_perolehan` → `tahun_pengadaan`, `sumber_perolehan` → `sumber_dana` (diseragamkan 2026-08-28).** Saprotan sudah memakai nama itu (§8.4, sejak Putaran 1) dan kedua berkas rujukan (`laporan alsintan.jpeg`, `laporan saprotan.jpeg`) memakai label "Tahun Pengadaan" / "Sumber Dana". Hanya penyeragaman nama; tipe, nullability, dan makna tidak berubah. Modul `inventaris_sp`, `fasilitas_sp`, dan `infrastruktur` **tidak ikut** — mereka tetap `tahun_perolehan`.
 
 ### 8.4 `saprotan`
 
@@ -1174,8 +1176,10 @@ Role `Transmigran` dan `Ketua Poktan` pada rancangan semula **dihapus**, karena 
 - `Ubah Izin Role` mencatat perubahan susunan kewenangan sebuah role, karena tindakan ini dapat memperluas akses banyak pengguna sekaligus.
 - Entri `Tambah` dan `Ubah` pada baris data yang sama memungkinkan penelusuran siapa penginput asli dan siapa yang memutakhirkannya.
 
-### 11.3 Sumber dana / sumber perolehan
+### 11.3 Sumber dana
 `APBN` · `APBD Provinsi` · `APBD Kabupaten` · `Dinas Transmigrasi Kabupaten` · `Dinas Pertanian Kabupaten` · `Lembaga Swadaya Masyarakat` · `Swadaya` · `Lainnya`
+
+Dipakai kolom `sumber_dana` pada `alsintan`, `saprotan`, `infrastruktur`, `inventaris_sp`, dan `fasilitas_sp`. Alsintan sempat menyebutnya `sumber_perolehan`; diseragamkan 2026-08-28 (§8.3).
 
 Nilai disederhanakan dari SQL referensi yang menuliskan awalan berulang "Sumber Perolehan Dana ...". Nilai `Swadaya` dipakai alsintan maupun saprotan yang dibeli kelompok dari iuran anggotanya. Dahulu ditambahkan untuk alsintan milik pribadi; sejak kepemilikan pribadi dicabut 2026-08-22, maknanya bergeser ke pembelian swadaya kelompok.
 

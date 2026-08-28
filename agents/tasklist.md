@@ -811,7 +811,7 @@ Lima laporan mengikuti berkas rujukan di `refs/` (dibaca lewat `pdftotext`, baca
 - Laporan Daftar Poktan (kolom xlsx): anggota per poktan + subtotal luas
 - Laporan Daftar Transmigran: tiga bagian (transmigran, rumah, lahan)
 
-**Ditemukan:** nama field alsintan (`tahun_perolehan` / `sumber_perolehan`) menyimpang dari saprotan (`tahun_pengadaan` / `sumber_dana`) dan dari kedua berkas rujukan. Laporan memakai label rujukan, baca field lama. Penyeragaman = usul revisi.
+**Ditemukan lalu DIBERESKAN 2026-08-28:** nama field alsintan (`tahun_perolehan` / `sumber_perolehan`) menyimpang dari saprotan (`tahun_pengadaan` / `sumber_dana`) dan dari kedua berkas rujukan. Diseragamkan: `alsintan` kini memakai `tahun_pengadaan` / `sumber_dana`; `inventaris_sp`/`fasilitas_sp`/`infrastruktur` tetap `tahun_perolehan`. Lihat `notes.md` §1o.4.
 
 **Verifikasi:** **648 uji hijau** (naik dari 635); penjaga baru untuk isi tabel, kolom kunci, konsistensi subtotal-total, pemisahan benih/pupuk. `pint` tetap 31.
 
@@ -820,7 +820,7 @@ Lima laporan mengikuti berkas rujukan di `refs/` (dibaca lewat `pdftotext`, baca
 - ~~Rombongan C: field SP Bab II Monografi~~ ✅ selesai (C1+C2+C3), lihat di bawah
 - Pintasan laporan dari halaman daftar (bawa filter aktif)
 - Pemilih periode untuk laporan lintas modul (Rekap Indikator Kawasan, Daftar Transmigran)
-- Penyeragaman nama field alsintan ke `tahun_pengadaan` / `sumber_dana`
+- ~~Penyeragaman nama field alsintan ke `tahun_pengadaan` / `sumber_dana`~~ ✅ selesai 2026-08-28
 - Butir bagian 6 lain yang belum dibahas
 
 ### Revisi Rombongan B: pendataan anggota keluarga (2026-08-28) — bertahap

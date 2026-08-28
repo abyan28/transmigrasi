@@ -7,11 +7,6 @@
     dengan subtotal jumlah unit, ditutup total kawasan.
 
     Laporan terpisah dari Laporan Saprotan, mengikuti dua berkas rujukan.
-
-    CATATAN: field sistem bernama `sumber_perolehan` dan `tahun_perolehan`;
-    label kolom di sini mengikuti berkas rujukan. Penyeragaman nama field
-    alsintan ke `sumber_dana` / `tahun_pengadaan` (seperti saprotan) menjadi
-    usul revisi tersendiri.
 --}}
 @extends('layouts.app')
 

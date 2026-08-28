@@ -295,7 +295,7 @@
                                     <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
                                         {{ $a['jumlah'] }}</td>
                                     <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
-                                        {{ $a['tahun_perolehan'] }}</td>
+                                        {{ $a['tahun_pengadaan'] }}</td>
                                     <td class="px-5 py-3">
                                         <x-sim.status-badge :status="\App\Enums\Kondisi::from($a['kondisi'])" />
                                     </td>

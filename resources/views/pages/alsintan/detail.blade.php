@@ -21,7 +21,7 @@
     @endphp
 
     <x-sim.page-header :judul="$data['nama_alat']"
-        :keterangan="'Alsintan di ' . $data['satuan_permukiman'] . ', diperoleh tahun ' . $data['tahun_perolehan'] . '.'"
+        :keterangan="'Alsintan di ' . $data['satuan_permukiman'] . ', diadakan tahun ' . $data['tahun_pengadaan'] . '.'"
         :remah="\App\Helpers\RemahHelper::untuk('/alsintan', $data['nama_alat'])">
         <x-slot:aksi>
             @if ($bolehUbah)
@@ -54,14 +54,14 @@
                             {{ $data['jumlah'] }} unit</dd>
                     </div>
                     <div class="flex justify-between gap-3">
-                        <dt class="text-gray-500 dark:text-gray-400">Tahun perolehan</dt>
+                        <dt class="text-gray-500 dark:text-gray-400">Tahun pengadaan</dt>
                         <dd class="text-right font-medium tabular-nums text-gray-800 dark:text-white/90">
-                            {{ $data['tahun_perolehan'] }}</dd>
+                            {{ $data['tahun_pengadaan'] }}</dd>
                     </div>
                     <div class="flex justify-between gap-3">
-                        <dt class="text-gray-500 dark:text-gray-400">Sumber perolehan</dt>
+                        <dt class="text-gray-500 dark:text-gray-400">Sumber dana</dt>
                         <dd class="text-right font-medium text-gray-800 dark:text-white/90">
-                            {{ $data['sumber_perolehan'] }}</dd>
+                            {{ $data['sumber_dana'] }}</dd>
                     </div>
                     <div class="flex justify-between gap-3">
                         <dt class="text-gray-500 dark:text-gray-400">Satuan permukiman</dt>
