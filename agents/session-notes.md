@@ -55,16 +55,38 @@ punya filter; begitu tiap laporan punya filter sendiri, pewarisan tak perlu.
 
 ## Pelaksanaan bertahap
 
-- **D1** - fondasi data: bawa keluar `sp_id`/`poktan_id`; `kelompokkanPerSp()`
-  per id; satukan `$angka` (7 salinan jadi 1); `@foreach` -> `@forelse` pada
-  transmigran; buang `jumlah_anggota` dari kolom subtotal hasilPanen. Commit.
-- **D2** - kertas + tab baru: bingkai kertas di `kerangka-laporan`; badan
-  dokumen dipisah ke `pages/laporan/isi/{slug}`; `layouts/dokumen.blade.php`
-  baru (BUKAN `fullscreen-layout` yang kode mati + store sidebar tertinggal);
-  rute `/laporan/{slug}/dokumen` + 7 slug di `DaftarTautanStatis` (208 -> 215
-  alamat); tombol tab baru (`rel="noopener"` + sr-only); `@media print`
-  pertama di repo. Commit.
-- **TINJAU DI SINI** - terbitkan ke Pages, pemilik proyek periksa bentuknya.
+- **D1 SELESAI** (commit) - fondasi data: `sp_id`/`poktan_id` dibawa keluar;
+  `kelompokkanPerSp()` per id; `LaporanData::angka()` publik + penjaga
+  `$desimal > 0` (memperbaiki bug "1.200" jadi "1.2"); ketujuh view
+  mendelegasikan; `@foreach` -> `@forelse` transmigran; `jumlah_anggota`
+  keluar dari kolom subtotal hasilPanen. 662 uji, pint 31.
+- **D2 SELESAI** (commit) - kertas + tab baru:
+  * `kerangka-laporan` membungkus isi dalam `<article>` kertas (`max-w-5xl`
+    `mx-auto`), masthead dokumen (judul + cakupan + catatan), prop `dokumen`.
+  * `LaporanData::meta($slug)` memusatkan metadata kepala (cakupan, dasar
+    periode, sumber, catatan); dulu 5 atribut di tiap view. Judul tetap dari
+    MenuHelper.
+  * Badan tiap laporan dipisah ke `pages/laporan/isi/{slug}.blade.php`,
+    di-`@include` oleh halaman berbingkai (7 file jadi 6 baris) DAN rute
+    dokumen generik `pages/laporan/dokumen.blade.php`. Data dioper eksplisit
+    lewat `isiLaporan` (slot komponen tidak mewarisi variabel view).
+  * `layouts/dokumen.blade.php` baru - polos, tanpa sidebar/header. BUKAN
+    `fullscreen-layout` (kode mati + store sidebar tertinggal).
+  * Rute `/laporan/{slug}/dokumen` (`->where` 7 slug), `laporan.dokumen`.
+    `DaftarTautanStatis` membaca slug dari `LaporanData::meta()`; 223 alamat,
+    semua lolos regex `deploy.yml:110`.
+  * Tombol "Buka di tab baru" (`target=_blank rel=noopener` + sr-only) di
+    kop halaman berbingkai.
+  * `@media print` pertama di repo (`app.css`) + kelas `.cetak-sembunyi`
+    pada sidebar, app-header, penanda data contoh, tombol unduh.
+  * **BUG DITEMUKAN + DIPERBAIKI:** doc-comment `kerangka-laporan` sempat
+    memuat contoh `<x-sim.kerangka-laporan>` + `@include` DAN `{{-- --}}`
+    bersarang. Regex komentar non-greedy berhenti di `--}}` bersarang
+    pertama, sisa contoh dikompilasi jadi komponen sungguhan. Doc comment
+    ditulis ulang tanpa tag/directive literal.
+  * 662 uji, pint 31.
+- **TINJAU DI SINI** - terbitkan ke Pages, pemilik proyek periksa bentuk
+  kertas, lebar tabel, keseragaman angka, tab baru. D3 (filter) menyusul.
 - **D3** - filter Alpine (prasyarat: agregasi per SP Indikator Kawasan).
 - **D4** - penjaga + dokumen acuan (`rules.md` §12, `ui-spec.md` §6.9/6.10,
   `prd.md` §7.9 basi, `notes.md` 1r, `tasklist.md`).

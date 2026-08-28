@@ -261,7 +261,7 @@
                     (ANTISLOP-ID R-17 dan R-38).
                 --}}
                 @if ($memakaiDataContoh)
-                    <div class="mb-5 flex items-start gap-3 rounded-xl border border-yellow-300 bg-yellow-50 p-3.5 dark:border-yellow-500/30 dark:bg-yellow-500/10"
+                    <div class="cetak-sembunyi mb-5 flex items-start gap-3 rounded-xl border border-yellow-300 bg-yellow-50 p-3.5 dark:border-yellow-500/30 dark:bg-yellow-500/10"
                         role="status">
                         <svg class="mt-0.5 h-5 w-5 shrink-0 text-yellow-600 dark:text-yellow-400" fill="none"
                             viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">

@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Enums\JenisReferensi;
 use App\Support\DummyData;
+use App\Support\LaporanData;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Route;
 use RuntimeException;
@@ -173,6 +174,14 @@ class DaftarTautanStatis extends Command
         // `kependudukan.rekap.kelompok` dan $labelKelompok pada viewnya.
         foreach (['tahun', 'sp', 'status', 'pekerjaan', 'asal', 'pendidikan'] as $kelompok) {
             $hasil[] = '/kependudukan/rekap/'.$kelompok;
+        }
+
+        // Tampilan dokumen polos tiap laporan. Rute /laporan/{slug}/dokumen
+        // berparameter sehingga tidak ikut ruteTanpaParameter(); slugnya
+        // dibaca dari LaporanData::meta() agar laporan baru ikut tergilas
+        // dengan sendirinya.
+        foreach (array_keys(LaporanData::meta()) as $slug) {
+            $hasil[] = '/laporan/'.$slug.'/dokumen';
         }
 
         // Halaman satu daftar referensi. Dibaca dari enumnya, bukan disebut

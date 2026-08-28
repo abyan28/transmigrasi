@@ -2501,15 +2501,15 @@ Route::get('/audit-log', function () {
 | ke dinas, bukan potret tabel yang sedang tersaring. Menu "Laporan" jadi
 | rumahnya; tombol ekspor yang dahulu menempel di tiap halaman daftar dicabut.
 |
-| Isi kolom tiap laporan menyusul dari dinas (refs/ memuat empat berkas
-| rujukan yang belum seluruhnya terbaca). Halaman yang ada sekarang baru
-| kerangkanya: judul, pernyataan cakupan sebagai teks, dan tempat tabel.
-| Pengisiannya dikerjakan pada Tahap 2c setelah format kolomnya pasti.
+| Isinya disajikan sebagai "kertas" berbingkai (Putaran 3 D2). Tiap laporan
+| punya rute dokumen polos `/laporan/{slug}/dokumen` yang dibuka di tab baru
+| untuk tampilan penuh; kerangka dan tabelnya sama persis dengan halaman
+| berbingkai (metadata dari LaporanData::meta(), isi dari pages/laporan/isi).
 |
-| Cakupan ditulis sebagai teks di kepala dokumen, BUKAN sebagai kontrol
-| filter (rules.md 12 poin 8). Halaman laporan tidak punya penyaring sendiri;
-| penyaringan diwarisi dari halaman daftar pasangan lewat pintasan (belum
-| dipasang) atau lewat pemilih periode untuk laporan lintas-modul.
+| Penyaring per laporan (SP, periode, dimensi khas) menyusul di D3, dikerjakan
+| Alpine di sisi peramban -- query string tidak dilayani GitHub Pages
+| (notes.md 1b.5). Sampai D3 berdiri, cakupan tetap dinyatakan sebagai teks
+| di kepala dokumen (rules.md 12 poin 8).
 */
 $daftarLaporan = [
     'hasil-panen' => 'Laporan Hasil Panen',
@@ -2528,22 +2528,38 @@ Route::get('/laporan', function () use ($daftarLaporan) {
     ]);
 })->name('laporan.index');
 
-foreach ($daftarLaporan as $slug => $judul) {
-    Route::get('/laporan/'.$slug, function () use ($slug, $judul) {
-        // Data tiap laporan disusun di App\Support\LaporanData, satu metode
-        // per laporan (nama slug di-camelCase), agar view tidak memanggil
-        // DummyData langsung (penjaga Ide C).
-        $metode = Str::camel($slug);
-        $data = method_exists(LaporanData::class, $metode)
-            ? LaporanData::$metode()
-            : [];
+// Data tiap laporan disusun di App\Support\LaporanData, satu metode per
+// laporan (nama slug di-camelCase), agar view tidak memanggil DummyData
+// langsung (penjaga Ide C). Dikirim sebagai satu larik `isiLaporan` supaya
+// halaman berbingkai dan rute dokumen dapat meneruskannya utuh ke partial
+// isi lewat @include -- slot komponen tidak mewarisi variabel view.
+$dataLaporan = function (string $slug): array {
+    $metode = Str::camel($slug);
 
-        return view('pages.laporan.'.$slug, array_merge([
+    return method_exists(LaporanData::class, $metode) ? LaporanData::$metode() : [];
+};
+
+foreach ($daftarLaporan as $slug => $judul) {
+    Route::get('/laporan/'.$slug, function () use ($slug, $judul, $dataLaporan) {
+        return view('pages.laporan.'.$slug, [
             'title' => $judul,
             'slug' => $slug,
-        ], $data));
+            'isiLaporan' => $dataLaporan($slug),
+        ]);
     })->name('laporan.'.$slug);
 }
+
+// Tampilan dokumen polos (tanpa sidebar/header), dibuka di tab baru. Satu
+// rute berparameter, dibatasi `where` pada slug yang sah -- pola yang sama
+// dengan /panen/rekap/{kelompok}. Slug wajib sejalan dengan $daftarLaporan
+// di atas dan dengan LaporanData::meta().
+Route::get('/laporan/{slug}/dokumen', function (string $slug) use ($daftarLaporan, $dataLaporan) {
+    return view('pages.laporan.dokumen', [
+        'title' => $daftarLaporan[$slug],
+        'slug' => $slug,
+        'isiLaporan' => $dataLaporan($slug),
+    ]);
+})->where('slug', implode('|', array_keys($daftarLaporan)))->name('laporan.dokumen');
 
 /*
 |--------------------------------------------------------------------------

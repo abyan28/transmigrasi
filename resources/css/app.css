@@ -1109,3 +1109,22 @@ pre[class*='language-'] {
     margin-right: -60px !important;
   }
 }
+
+/*
+  Cetak. Ditambahkan Putaran 3 D2 (2026-08-28) -- @media print pertama di
+  repo. Halaman laporan dan tampilan dokumennya harus tercetak sebagai
+  kertas saja, tanpa sidebar, header, bilah filter, atau tombol.
+
+  `.cetak-sembunyi` dipasang pada elemen yang tidak boleh ikut tercetak
+  (penanda data contoh, bilah filter D3, tombol aksi). Sidebar dan header
+  aplikasi disembunyikan lewat strukturnya di layouts/app.
+*/
+@media print {
+  .cetak-sembunyi {
+    display: none !important;
+  }
+
+  body {
+    background: #ffffff !important;
+  }
+}

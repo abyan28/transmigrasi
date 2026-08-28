@@ -94,7 +94,7 @@ class ViewServiceProvider extends ServiceProvider
         // Penanda data contoh, wajib tampil selama aplikasi belum tersambung
         // ke data nyata (ANTISLOP-ID R-17 dan R-38). Saat Tahap 4 masuk, nilai
         // ini berpindah menjadi pengaturan, bukan tetapan pada penyedia data.
-        View::composer('layouts.app', function ($tampilan): void {
+        View::composer(['layouts.app', 'layouts.dokumen'], function ($tampilan): void {
             $tampilan->with('memakaiDataContoh', DummyData::MEMAKAI_DATA_CONTOH);
         });
 
