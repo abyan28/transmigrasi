@@ -1761,8 +1761,11 @@ selalu jalan.** Tak menambah rute → `sim:tautan-statis` tetap 222,
 
 - `LaporanData::instansi()` — dua lambang (keputusan pemilik proyek: logo
   Kementerian Transmigrasi kiri + lambang Kabupaten Malaka kanan), teks
-  instansi dari `DummyData::kawasan()`. Telp/surel PLACEHOLDER dari referensi
-  (dikomentari; spanduk data-contoh menutupi).
+  instansi dari `DummyData::kawasan()`. Telepon/email PLACEHOLDER dari
+  referensi (dikomentari; spanduk data-contoh menutupi). Istilah **"Email"**,
+  bukan "Surel" (`ui-spec.md` §10.1) — sempat salah "Surel", diperbaiki
+  setelah pemilik proyek memergoki; uji `memakai istilah email, bukan surel`
+  kini menyapu rute `/laporan/{slug}/dokumen`.
 - `LaporanData::tahunDokumenBawaan()` — tahun terakhir `deretTahunan()`
   (2026), BUKAN `date('Y')` (ikut pola dashboard).
 - `x-sim.kop-laporan` BARU — **flex/grid, TANPA elemen tabel** (penjaga

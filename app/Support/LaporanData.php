@@ -58,7 +58,7 @@ class LaporanData
      *
      * Dua lambang (keputusan pemilik proyek): logo Kementerian Transmigrasi
      * di kiri, lambang Kabupaten Malaka di kanan. Kabupaten dan provinsi dari
-     * `DummyData::kawasan()`. Telepon dan surel adalah CONTOH yang mengikuti
+     * `DummyData::kawasan()`. Telepon dan email adalah CONTOH yang mengikuti
      * `refs/contoh format laporan.docx`, bukan kontak resmi -- spanduk
      * "Data contoh" seluruh aplikasi sudah menyanggahnya.
      *
@@ -75,8 +75,9 @@ class LaporanData
             'dinas' => 'Dinas Tenaga Kerja dan Transmigrasi Kabupaten '.$kabupaten,
             'alamat' => 'Jalan Raya Betun, Kompleks Perkantoran Pemerintah Daerah Kab. '
                 .$kabupaten.', '.($kawasan['provinsi'] ?? '-'),
-            // Placeholder dari berkas rujukan, bukan kontak resmi.
-            'kontak' => 'Telepon (0389) 123456  |  Surel distrans@malakakab.go.id',
+            // Placeholder dari berkas rujukan, bukan kontak resmi. Istilah
+            // "Email", bukan "Surel" (ui-spec.md 10.1).
+            'kontak' => 'Telepon (0389) 123456  |  Email distrans@malakakab.go.id',
             'logoKementerian' => 'images/logo/logo-kementrans-128.png',
             'lambangKabupaten' => 'images/logo/lambang-malaka.png',
         ];

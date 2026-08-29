@@ -4342,6 +4342,13 @@ it('memakai istilah email, bukan surel, pada teks yang dilihat pengguna', functi
      */
     '/pengaduan/1',
     '/poktan/1',
+    /*
+     * Kop surat dokumen laporan menyebut kontak instansi (Putaran 5). Label
+     * "Surel" yang sempat ditulis di sana lolos tanpa memerahkan uji sampai
+     * pemilik proyek memergokinya -- rute dokumen tidak ada di daftar ini.
+     */
+    '/laporan/indikator-kawasan/dokumen',
+    '/laporan/transmigran/dokumen',
 ]);
 
 it('menuliskan baris total tanpa penanda cakupan', function (string $jalur) {
