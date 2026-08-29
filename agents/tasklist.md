@@ -872,9 +872,11 @@ Rencana `C:\Users\v28mt\.claude\plans\linked-sprouting-aho.md`; catatan `notes.m
 
 - **Part 1 ✅** (commit `cb6c311`) — filter dibawa ke rute dokumen lewat **fragmen hash** (`#sp=..`), bukan query string (mati di GitHub Pages). `filter-laporan.js` getter `hashFilter` + `dariHash()`. Tombol "Buka di tab baru" → **"Generate Laporan"** (primer); `x-data` pindah ke `<div>` pembungkus supaya tombol baca keadaan filter.
 - **Part 2 ✅** (commit `cb6c311`) — rute dokumen = **dokumen resmi berkop**: `x-sim.kop-laporan` (dua lambang Kementerian+Malaka, flex tanpa tabel), blok judul + "TAHUN <2026>" + kalimat cakupan. TANPA bilah filter, TANPA blok "Cakupan laporan". `LaporanData::instansi()` + `tahunDokumenBawaan()`. Aset `lambang-malaka.png`. pest 692, pint 31, `uji-filter-laporan` 50/0, `uji-lebar-dokumen` 28/0.
-- **Part 3 ⬜ FASE B** — pemilih **tahun tunggal** untuk Rekap Indikator Kawasan + Monografi SP. Metode `DummyData` baru per-tahun (5 tahun 2022–2026), render 6 SP × 5 tahun, Bab II iklim `x-text`. Terbesar; commit terpisah.
+- **Part 3 ✅** (commit `0c12b9f`) — pemilih **tahun tunggal** (bukan rentang) untuk Rekap Indikator Kawasan + Monografi SP. `DummyData::indikatorKawasanTahun()` / `rekapPerSpTahun()` / `iklimSpTahun()` (5 tahun 2022–2026; irisan 2026 == sumber lama). Blok kawasan `x-text="nilaiTahun()"`, tabel per SP 6×5 baris `data-tahun`, Bab II iklim `x-text="iklimTahun()"`. `rules.md` §12 poin 11 diperbarui (pemilih tahun tunggal diizinkan di laporan snapshot). pest 696, pint 31, `uji-filter-laporan` 53/0.
 
-**Belum diperiksa mata:** hasil cetak (Ctrl+P) tampilan dokumen resmi (kop + tabel di A4).
+**Putaran 5 SELESAI. Sisa Tahap 2: NOL.**
+
+**Belum diperiksa mata:** hasil cetak (Ctrl+P) tampilan dokumen resmi (kop dua lambang + tabel di A4).
 
 ## Tahap 3 — Autentikasi dan Hak Akses
 

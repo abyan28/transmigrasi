@@ -1792,15 +1792,40 @@ termasuk: href Generate memuat `#sp=`, rute dokumen tanpa bilah + kop,
 `about:blank` dulu supaya perubahan hash same-document tetap memuat ulang.
 **pest 692, pint 31, uji-lebar-dokumen 28/0.**
 
-### 1u.3 Part 3 (FASE B, belum) — pemilih tahun tunggal
+### 1u.3 Part 3: pemilih tahun tunggal (commit `0c12b9f`)
 
-Rekap Indikator Kawasan + Monografi SP. Jendela 5 tahun (2022–2026). Metode
-`DummyData` BARU (JANGAN sentuh `deretTahunan()` — uji panjang seragam):
-`indikatorKawasanTahun()`, `rekapPerSpTahun($tahun)` (2026 == `rekapPerSp()`
-presis), `iklimSpTahun($id,$tahun)` (12 field iklim, jitter deterministik,
-geografi tetap). Klien: state `tahun`, `nilaiTahun()`/`iklimTahun()`,
-render 6 SP × 5 tahun `<tr data-tahun>`, Bab II satu `<section>`/SP dengan
-`x-text` iklim. Rincian di rencana + `session-notes.md`.
+Rekap Indikator Kawasan + Monografi SP. **Pemilih SATU tahun, bukan rentang**
+— melihat "keadaan tahun X", bukan menjumlah lintas tahun, jadi `rules.md`
+§9 poin 8b tidak dilanggar (§12 poin 11 diperbarui). Jendela 5 tahun
+(2022–2026) untuk menahan ukuran DOM.
+
+- `DummyData` BARU (`deretTahunan()` TAK disentuh — uji panjang seragam
+  `DummyDataTest:284`): `indikatorKawasanTahun()` (14 indikator/tahun, irisan
+  2026 == `ringkasanDashboard()`), `rekapPerSpTahun($tahun)` (2026 ===
+  `rekapPerSp()` presis; lain `bagiProporsional()` + koreksi sisa),
+  `iklimSpTahun($id,$tahun)` (12 field iklim, tren + derau **deterministik**;
+  formula lama `(id*7+tahun)%11-5` sempat menghasilkan 0 → diganti
+  `jarak*0.006 + derau`, tak pernah 0 untuk tahun lampau).
+- `LaporanData`: `bab2($s, ?$tahun)` merakit iklim per tahun;
+  `indikatorKawasan()`/`monografiSp()` menambah `perSpTahun`/`ringkasanTahun`/
+  `iklimTahun`/`daftarTahun`. `monografiSp()` dimemo (dipanggil 2× per render:
+  `$dataLaporan` + `filterLaporan`).
+- Klien: state `tahun` (bawaan = tahun terakhir); `adaFilter` menghitungnya
+  hanya bila berbeda dari bawaan (kalau tidak tombol Bersihkan & catatan
+  kejujuran tampil permanen). `cocok()` cocok-tahun-tepat. `nilaiTahun()`,
+  `nilaiTahunRasio()`, `iklimTahun()`.
+- Template: blok kawasan → `x-text="nilaiTahun('kunci', d)"` (Kelembagaan
+  tetap, catatan); tabel per SP 6×5 baris `data-tahun`; Bab II SATU
+  `<section>`/SP, hanya grup "Iklim" `x-text="iklimTahun(spId, label)"`;
+  catatan "keadaan fisik wilayah tidak berubah antar tahun".
+- **Jebakan:** `x-text="{!! $expr !!}"` (raw) di `indikator-kawasan` — `$expr`
+  dari larik hardcoded, aman; `{{ }}` akan meng-escape `'` jadi `&#039;`
+  (peramban decode balik, tapi raw lebih bersih).
+
+pest 696, pint 31, `uji-filter-laporan.mjs` 53/0, `uji-lebar-dokumen` 28/0,
+`sim:tautan-statis` 222. `DummyDataTest` +4.
+
+**Putaran 5 SELESAI. Sisa Tahap 2: NOL.** Berikutnya Tahap 3 (fondasi `user`).
 
 ---
 

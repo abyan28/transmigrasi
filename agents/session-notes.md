@@ -35,13 +35,16 @@ Rencana lengkap + latar di `C:\Users\v28mt\.claude\plans\linked-sprouting-aho.md
 - Pemisah teks pakai `·` (U+00B7), BUKAN `—` (uji parity menolak em dash).
 - Opsional `meta['subjudulDokumen']` per laporan.
 
-### Part 3 (FASE B, commit terpisah) — pemilih tahun TUNGGAL
+### Part 3 ✅ SELESAI (commit `0c12b9f`) — pemilih tahun TUNGGAL
 Rekap Indikator Kawasan + Monografi SP. Jendela 5 tahun (2022–2026).
-- `DummyData` metode BARU (JANGAN sentuh `deretTahunan()` — uji panjang
-  seragam `DummyDataTest:284`): `indikatorKawasanTahun()` (irisan 2026 ==
-  `ringkasanDashboard()`), `rekapPerSpTahun($tahun)` (2026 == `rekapPerSp()`
-  presis; lain `bagiProporsional()` + koreksi sisa), `iklimSpTahun($id,$tahun)`
-  (12 field iklim, jitter deterministik, geografi tetap).
+- `DummyData` metode BARU (`deretTahunan()` TAK disentuh): `indikatorKawasanTahun()`
+  (irisan 2026 == `ringkasanDashboard()`), `rekapPerSpTahun($tahun)` (2026 ===
+  `rekapPerSp()` presis), `iklimSpTahun($id,$tahun)` (goyang deterministik
+  `jarak*0.006 + derau`, tak pernah 0 utk tahun lampau), `bagiProporsional()`.
+- pest 696, pint 31, `uji-filter-laporan` 53/0, `uji-lebar-dokumen` 28/0.
+
+**PUTARAN 5 SELESAI.** Semua tiga bagian ter-commit (`cb6c311`, `308d670`,
+`0c12b9f`). Belum diperiksa mata: Ctrl+P dokumen resmi.
 - `filterLaporan()`: `tahunTunggal:true`, `daftarTahun`, `tahunBawaan:2026`,
   `perTahun` blob.
 - Klien: state `tahun`, `nilaiTahun('kunci')` baca `konfig.perTahun[tahun]`,

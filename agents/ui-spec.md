@@ -880,6 +880,8 @@ Sepasang `<select>` (dari–sampai) untuk menyaring **daftar transaksi bersumbu 
 
 **DILARANG pada halaman rekap agregat.** Rekap panen yang dijumlah lintas tahun membuat bidang 2 ha yang ditanami tiga tahun terbaca 6 ha (`rules.md` §9 poin 8b). Penyaringan daftar dipusatkan di `DummyData::saringRentangTahun()`: batas kosong berarti terbuka, batas terbalik ditukar, baris tanpa tahun tersaring keluar begitu satu batas dipasang.
 
+**Pemilih tahun TUNGGAL** (`tahunTunggal` di `filterLaporan()`, Putaran 5) berbeda: satu `<select id="filter-laporan-tahun" x-model="tahun">`, untuk melihat "keadaan tahun X" pada laporan snapshot (Rekap Indikator Kawasan, Monografi SP) — bukan menjumlah rentang, jadi §9 poin 8b tidak dilanggar. Bawaan `tahunBawaan` = tahun terakhir deret data; `adaFilter` menghitungnya hanya bila berbeda dari bawaan. Data per tahun (`DummyData::indikatorKawasanTahun()`, `rekapPerSpTahun()`, `iklimSpTahun()`) di-*embed* di `konfig`; nilai bertahun jadi `x-text="nilaiTahun(...)"` / `x-text="iklimTahun(...)"`, tabel per SP dirender 6 SP × 5 tahun (`data-tahun` + `x-show="cocok($el)"`).
+
 ### 6.11 `<x-sim.filter-laporan>` (Putaran 3 D3, D3-1 dipasang 2026-08-29)
 
 Bilah filter di kepala halaman laporan (BUKAN laci — di halaman laporan filter adalah kontrol utama, bukan pelengkap; selalu tampak). Dikerjakan Alpine di sisi peramban — query string tidak dilayani GitHub Pages (`notes.md` 1b.5). Blade tetap merender seluruh baris; Alpine menyembunyikan `<tr>` yang tak cocok dan menghitung ulang subtotal yang tampak.
