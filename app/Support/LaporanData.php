@@ -499,10 +499,17 @@ class LaporanData
      * "belum dicatat". Format angka disamakan dengan blok Keadaan Wilayah di
      * halaman dashboard SP.
      *
+     * Bila `$tahun` diisi (Putaran 5), dua belas field iklim digantikan nilai
+     * tahun itu lewat `DummyData::iklimSpTahun()`; sisanya (geografi) tetap.
+     *
      * @return array<string, array<string, ?string>>
      */
-    private static function bab2(array $s): array
+    private static function bab2(array $s, ?int $tahun = null): array
     {
+        if ($tahun !== null && isset($s['id_satuan_permukiman'])) {
+            $s = array_merge($s, DummyData::iklimSpTahun($s['id_satuan_permukiman'], $tahun));
+        }
+
         $km = fn (string $k) => ($s[$k] ?? null) !== null ? self::angka($s[$k], 1).' km' : null;
         $rata = fn (string $k, string $satuan) => ($s[$k] ?? null) !== null
             ? ', rata-rata '.self::angka($s[$k], 1).' '.$satuan : '';
@@ -571,6 +578,11 @@ class LaporanData
      */
     public static function monografiSp(): array
     {
+        static $memo = null;
+        if ($memo !== null) {
+            return $memo;
+        }
+
         $rekap = collect(DummyData::rekapPerSp())->keyBy('satuan_permukiman_id');
         $kawasan = DummyData::kawasan()[0] ?? ['kabupaten' => '-', 'provinsi' => '-'];
 
@@ -585,12 +597,33 @@ class LaporanData
                 + (float) $t['realisasi_tanam'];
         }
 
+        // Rekap per SP untuk tiap tahun laporan (Putaran 5), agar ikhtisar dan
+        // Bab II "Iklim" dapat mengikuti tahun terpilih.
+        $rekapTahun = [];
+        foreach (DummyData::tahunLaporan() as $tahun) {
+            $rekapTahun[$tahun] = collect(DummyData::rekapPerSpTahun($tahun))->keyBy('satuan_permukiman_id');
+        }
+
         $baris = [];
         $monografi = [];
+        $iklimTahun = [];
 
         foreach (DummyData::satuanPermukiman() as $s) {
             $id = $s['id_satuan_permukiman'];
             $r = $rekap->get($id);
+
+            // Angka ikhtisar yang berubah antar tahun. Kolom struktural (luas
+            // wilayah, KK rencana, poktan, lahan tergarap) tetap.
+            $perTahun = [];
+            foreach (DummyData::tahunLaporan() as $tahun) {
+                $rt = $rekapTahun[$tahun]->get($id);
+                $perTahun[$tahun] = [
+                    'kk_terisi' => (int) ($rt['jumlah_kk'] ?? 0),
+                    'rumah_terhuni' => (int) ($rt['rumah_terhuni'] ?? 0),
+                    'produksi_ton' => (float) ($rt['volume_panen'] ?? 0),
+                    'pengaduan_terbuka' => (int) ($rt['pengaduan_terbuka'] ?? 0),
+                ];
+            }
 
             $baris[] = [
                 'sp_id' => $id,
@@ -607,10 +640,17 @@ class LaporanData
                 'lahan_tergarap' => round($lahanTergarap[$id] ?? 0, 2),
                 'produksi_ton' => $r['volume_panen'] ?? 0,
                 'pengaduan_terbuka' => $r['pengaduan_terbuka'] ?? 0,
+                'per_tahun' => $perTahun,
             ];
 
             $kelompok = self::bab2($s);
             $adaIsi = collect($kelompok)->flatten()->contains(fn ($v) => $v !== null && trim((string) $v) !== '');
+
+            // Kalimat kelompok "Iklim" untuk tiap tahun laporan.
+            $iklimTahun[$id] = [];
+            foreach (DummyData::tahunLaporan() as $tahun) {
+                $iklimTahun[$id][$tahun] = self::bab2($s, $tahun)['Iklim'];
+            }
 
             $rute = array_map(fn ($x) => [
                 'rute' => $x['rute'],
@@ -637,7 +677,12 @@ class LaporanData
             ];
         }
 
-        return ['baris' => $baris, 'monografi' => $monografi];
+        return $memo = [
+            'baris' => $baris,
+            'monografi' => $monografi,
+            'iklimTahun' => $iklimTahun,
+            'daftarTahun' => DummyData::tahunLaporan(),
+        ];
     }
 
     /**
@@ -648,7 +693,11 @@ class LaporanData
      * berjalan, beda dari Laporan Hasil Panen yang memakai tahun pengadaan
      * bantuan (rules.md 9 poin 16; basis tahun dipisah menurut tujuan).
      *
-     * @return array{kawasan: array, ringkasan: array, perSp: array}
+     * `perSp` TETAP `rekapPerSp()` (tahun terakhir) supaya penjaga "jumlah enam
+     * SP = angka kawasan" tak berubah. `perSpTahun` dan `ringkasanTahun`
+     * (Putaran 5) melayani pemilih tahun tunggal di sisi peramban.
+     *
+     * @return array{kawasan: array, ringkasan: array, perSp: array, perSpTahun: array, ringkasanTahun: array, daftarTahun: list<int>}
      */
     public static function indikatorKawasan(): array
     {
@@ -660,10 +709,18 @@ class LaporanData
             'saprotan' => count(DummyData::saprotan()),
         ];
 
+        $perSpTahun = [];
+        foreach (DummyData::tahunLaporan() as $tahun) {
+            $perSpTahun[$tahun] = DummyData::rekapPerSpTahun($tahun);
+        }
+
         return [
             'kawasan' => DummyData::kawasan()[0] ?? [],
             'ringkasan' => $r + $kelembagaan,
             'perSp' => DummyData::rekapPerSp(),
+            'perSpTahun' => $perSpTahun,
+            'ringkasanTahun' => DummyData::indikatorKawasanTahun(),
+            'daftarTahun' => DummyData::tahunLaporan(),
         ];
     }
 
@@ -860,14 +917,26 @@ class LaporanData
             'monografi-sp' => [
                 'sp' => $daftarSp,
                 'tahun' => false,
+                'tahunTunggal' => true,
+                'labelTahun' => 'Tahun',
+                'daftarTahun' => DummyData::tahunLaporan(),
+                'tahunBawaan' => self::tahunDokumenBawaan(),
                 'dimensi' => [],
                 'cakupanBawaan' => $cakupanBawaan,
+                // Kalimat Bab II "Iklim" per tahun, dirakit di PHP (aman
+                // terhadap penjaga format angka). [spId][tahun][label] => teks.
+                'iklimTahun' => self::monografiSp()['iklimTahun'],
             ],
             'indikator-kawasan' => [
                 'sp' => $daftarSp,
                 'tahun' => false,
+                'tahunTunggal' => true,
+                'labelTahun' => 'Tahun',
+                'daftarTahun' => DummyData::tahunLaporan(),
+                'tahunBawaan' => self::tahunDokumenBawaan(),
                 'dimensi' => [],
                 'cakupanBawaan' => $cakupanBawaan,
+                'ringkasanTahun' => DummyData::indikatorKawasanTahun(),
             ],
             default => [],
         };

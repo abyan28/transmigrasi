@@ -6,6 +6,11 @@
     dashboard (rules.md 12 poin 11). Indikator produksi memakai tahun panen
     berjalan, beda dari Laporan Hasil Panen yang memakai tahun pengadaan
     bantuan (rules.md 9 poin 16; basis tahun dipisah menurut tujuannya).
+
+    Pemilih TAHUN TUNGGAL (Putaran 5): blok ringkasan kawasan dan tabel per SP
+    mengikuti tahun terpilih. Angka tingkat kawasan tetap dari deret dashboard
+    (`ringkasanTahun`); rincian per SP dari `perSpTahun`, berjumlah persis sama
+    (dijaga uji). Cacah kelembagaan (poktan/alsintan/saprotan) TIDAK bertahun.
 --}}
 @php
     $angka = fn ($n, $desimal = 0) => \App\Support\LaporanData::angka($n, $desimal);
@@ -13,31 +18,35 @@
     $persen = fn ($a, $b) => $b > 0 ? number_format($a / $b * 100, 1, ',', '.') . '%' : '-';
 
     $r = $ringkasan;
+    $tahunAkhir = \App\Support\LaporanData::tahunDokumenBawaan();
+
+    // Tiap baris: [label, ungkapan x-text (null = statis), nilai bawaan Blade].
     $blok = [
         'Kependudukan' => [
-            ['Kepala keluarga', $angka($r['jumlah_kk'])],
-            ['Jiwa', $angka($r['jumlah_jiwa'])],
-            ['Petani', $angka($r['jumlah_petani'])],
-            ['Rumah terhuni', $angka($r['rumah_terhuni']) . ' dari ' . $angka($r['rumah_total'])],
-            ['Tingkat hunian', $persen($r['rumah_terhuni'], $r['rumah_total'])],
+            ['Kepala keluarga', "nilaiTahun('jumlah_kk')", $angka($r['jumlah_kk'])],
+            ['Jiwa', "nilaiTahun('jumlah_jiwa')", $angka($r['jumlah_jiwa'])],
+            ['Petani', "nilaiTahun('jumlah_petani')", $angka($r['jumlah_petani'])],
+            ['Rumah terhuni', "nilaiTahun('rumah_terhuni')", $angka($r['rumah_terhuni'])],
+            ['Rumah tercatat', "nilaiTahun('rumah_total')", $angka($r['rumah_total'])],
+            ['Tingkat hunian', "nilaiTahunRasio('rumah_terhuni', 'rumah_total') + '%'", $persen($r['rumah_terhuni'], $r['rumah_total'])],
         ],
         'Lahan dan Produksi (tahun panen berjalan)' => [
-            ['Luas lahan tercatat', $angka($r['luas_lahan_total'], 2) . ' ha'],
-            ['Realisasi tanam', $angka($r['realisasi_tanam_ha'], 2) . ' ha'],
-            ['Realisasi panen', $angka($r['hasil_panen_ha'], 2) . ' ha'],
-            ['Puso', $angka($r['puso_ha'], 2) . ' ha'],
-            ['Belum dipanen', $angka($r['belum_dipanen_ha'], 2) . ' ha'],
-            ['Produktivitas rata-rata', $angka($r['produktivitas_ton_ha'], 2) . ' ton/ha'],
-            ['Volume panen', $angka($r['volume_panen_ton'], 2) . ' ton'],
-            ['Harga jual rata-rata', $rupiah($r['harga_rata_rata'])],
+            ['Luas lahan tercatat', "nilaiTahun('luas_lahan_total', 2) + ' ha'", $angka($r['luas_lahan_total'], 2) . ' ha'],
+            ['Realisasi tanam', "nilaiTahun('realisasi_tanam_ha', 2) + ' ha'", $angka($r['realisasi_tanam_ha'], 2) . ' ha'],
+            ['Realisasi panen', "nilaiTahun('hasil_panen_ha', 2) + ' ha'", $angka($r['hasil_panen_ha'], 2) . ' ha'],
+            ['Puso', "nilaiTahun('puso_ha', 2) + ' ha'", $angka($r['puso_ha'], 2) . ' ha'],
+            ['Belum dipanen', "nilaiTahun('belum_dipanen_ha', 2) + ' ha'", $angka($r['belum_dipanen_ha'], 2) . ' ha'],
+            ['Produktivitas rata-rata', "nilaiTahun('produktivitas_ton_ha', 2) + ' ton/ha'", $angka($r['produktivitas_ton_ha'], 2) . ' ton/ha'],
+            ['Volume panen', "nilaiTahun('volume_panen_ton', 2) + ' ton'", $angka($r['volume_panen_ton'], 2) . ' ton'],
+            ['Harga jual rata-rata', "'Rp ' + nilaiTahun('harga_rata_rata')", $rupiah($r['harga_rata_rata'])],
         ],
-        'Kelembagaan Tani' => [
-            ['Kelompok tani', $angka($r['poktan'])],
-            ['Catatan alsintan', $angka($r['alsintan'])],
-            ['Catatan saprotan', $angka($r['saprotan'])],
+        'Kelembagaan Tani (jumlah kini, bukan per tahun)' => [
+            ['Kelompok tani', null, $angka($r['poktan'])],
+            ['Catatan alsintan', null, $angka($r['alsintan'])],
+            ['Catatan saprotan', null, $angka($r['saprotan'])],
         ],
         'Pengaduan Warga' => [
-            ['Pengaduan terbuka', $angka($r['pengaduan_terbuka'])],
+            ['Pengaduan terbuka', "nilaiTahun('pengaduan_terbuka')", $angka($r['pengaduan_terbuka'])],
         ],
     ];
 @endphp
@@ -61,17 +70,18 @@
 </section>
 
 {{--
-    Blok ringkasan tingkat kawasan. Angkanya dari dashboard (rules.md 12 poin
-    10) dan TIDAK ikut menyempit saat satu SP dipilih -- dashboard menyimpan
-    agregat kawasan, bukan rincian per SP. Yang menyempit adalah tabel "Rincian
-    per Satuan Permukiman" di bawah, yang untuk kelima indikatornya berjumlah
-    persis sama dengan blok ini (dijaga uji).
+    Blok ringkasan tingkat kawasan mengikuti TAHUN terpilih (angka dari deret
+    dashboard, rules.md 12 poin 10), tetapi TIDAK menyempit menurut SP --
+    dashboard menyimpan agregat kawasan. Yang menyempit menurut SP dan tahun
+    adalah tabel "Rincian per Satuan Permukiman" di bawah, yang untuk kelima
+    indikatornya berjumlah persis sama dengan blok ini (dijaga uji).
 --}}
 <p x-show="adaFilter" x-cloak
     class="rounded-lg border border-yellow-300 bg-yellow-50 p-3 text-theme-xs text-yellow-800 dark:border-yellow-500/30 dark:bg-yellow-500/10 dark:text-yellow-200"
     role="note">
-    Blok ringkasan di bawah tetap menampilkan angka tingkat kawasan. Rincian
-    yang menyempit mengikuti filter ada pada tabel per satuan permukiman.
+    Blok ringkasan di bawah tetap menampilkan angka tingkat kawasan untuk tahun
+    terpilih; ia tidak menyempit menurut satuan permukiman. Rincian yang
+    menyempit menurut SP ada pada tabel per satuan permukiman.
 </p>
 
 <div class="grid gap-4 sm:grid-cols-2">
@@ -82,10 +92,11 @@
                     {{ $judulBlok }}
                 </caption>
                 <tbody>
-                    @foreach ($isi as [$label, $nilai])
+                    @foreach ($isi as [$label, $expr, $awal])
                         <tr class="text-gray-700 dark:text-gray-300">
                             <th scope="row" class="px-4 py-2 text-left font-normal text-gray-500 dark:text-gray-400">{{ $label }}</th>
-                            <td class="px-4 py-2 text-right font-medium tabular-nums text-gray-800 dark:text-white/90">{{ $nilai }}</td>
+                            <td class="px-4 py-2 text-right font-medium tabular-nums text-gray-800 dark:text-white/90"
+                                @if ($expr) x-text="{!! $expr !!}" @endif>{{ $awal }}</td>
                         </tr>
                     @endforeach
                 </tbody>
@@ -112,19 +123,22 @@
                 </tr>
             </thead>
             <tbody>
-                @forelse ($perSp as $s)
-                    <tr data-baris data-sp="{{ $s['satuan_permukiman_id'] }}"
-                        data-jumlah_kk="{{ $s['jumlah_kk'] }}" data-rumah_terhuni="{{ $s['rumah_terhuni'] }}"
-                        data-luas_lahan="{{ $s['luas_lahan'] }}" data-volume_panen="{{ $s['volume_panen'] }}"
-                        data-pengaduan_terbuka="{{ $s['pengaduan_terbuka'] }}"
-                        x-show="cocok($el)" class="text-gray-700 dark:text-gray-300">
-                        <td class="px-3 py-2 font-medium text-gray-800 dark:text-white/90">{{ $s['satuan_permukiman'] }}</td>
-                        <td class="px-3 py-2 text-right tabular-nums">{{ $angka($s['jumlah_kk']) }}</td>
-                        <td class="px-3 py-2 text-right tabular-nums">{{ $angka($s['rumah_terhuni']) }}</td>
-                        <td class="px-3 py-2 text-right tabular-nums">{{ $angka($s['luas_lahan'], 2) }}</td>
-                        <td class="px-3 py-2 text-right tabular-nums">{{ $angka($s['volume_panen'], 2) }}</td>
-                        <td class="px-3 py-2 text-right tabular-nums">{{ $s['pengaduan_terbuka'] }}</td>
-                    </tr>
+                {{-- Enam SP untuk tiap tahun laporan; Alpine menampilkan baris tahun terpilih. --}}
+                @forelse ($daftarTahun as $th)
+                    @foreach ($perSpTahun[$th] as $s)
+                        <tr data-baris data-sp="{{ $s['satuan_permukiman_id'] }}" data-tahun="{{ $th }}"
+                            data-jumlah_kk="{{ $s['jumlah_kk'] }}" data-rumah_terhuni="{{ $s['rumah_terhuni'] }}"
+                            data-luas_lahan="{{ $s['luas_lahan'] }}" data-volume_panen="{{ $s['volume_panen'] }}"
+                            data-pengaduan_terbuka="{{ $s['pengaduan_terbuka'] }}"
+                            x-show="cocok($el)" class="text-gray-700 dark:text-gray-300">
+                            <td class="px-3 py-2 font-medium text-gray-800 dark:text-white/90">{{ $s['satuan_permukiman'] }}</td>
+                            <td class="px-3 py-2 text-right tabular-nums">{{ $angka($s['jumlah_kk']) }}</td>
+                            <td class="px-3 py-2 text-right tabular-nums">{{ $angka($s['rumah_terhuni']) }}</td>
+                            <td class="px-3 py-2 text-right tabular-nums">{{ $angka($s['luas_lahan'], 2) }}</td>
+                            <td class="px-3 py-2 text-right tabular-nums">{{ $angka($s['volume_panen'], 2) }}</td>
+                            <td class="px-3 py-2 text-right tabular-nums">{{ $s['pengaduan_terbuka'] }}</td>
+                        </tr>
+                    @endforeach
                 @empty
                     <tr>
                         <td colspan="6" class="px-3 py-6 text-center text-gray-500 dark:text-gray-400">
@@ -132,7 +146,7 @@
                         </td>
                     </tr>
                 @endforelse
-                @if (count($perSp) > 0)
+                @if (! empty($daftarTahun))
                     <tr x-show="kosong($el.closest('tbody'))" x-cloak>
                         <td colspan="6" class="px-3 py-6 text-center text-gray-500 dark:text-gray-400">
                             Tidak ada satuan permukiman yang cocok dengan filter.
@@ -140,7 +154,7 @@
                     </tr>
                 @endif
             </tbody>
-            @if (count($perSp) > 0)
+            @if (! empty($perSp))
                 <tfoot>
                     <tr class="motif-baris-total bg-gray-100 text-gray-900 dark:bg-white/[0.06] dark:text-white">
                         <td class="px-3 py-2.5 font-medium">

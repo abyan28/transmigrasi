@@ -344,6 +344,73 @@ it('menyelaraskan harga rata-rata ringkasan dengan tahun terakhir deret', functi
     expect(DummyData::ringkasanDashboard()['harga_rata_rata'])->toBe(end($deret['harga_rata_rata']));
 });
 
+/*
+|--------------------------------------------------------------------------
+| Data per tahun untuk pemilih tahun tunggal (Putaran 5)
+|--------------------------------------------------------------------------
+|
+| Rekap Indikator Kawasan & Monografi SP dapat dilihat "keadaan tahun X".
+| Irisan tahun terakhir WAJIB tepat sama dengan sumber yang sudah ada,
+| supaya pemilih tahun tidak diam-diam mengubah angka bawaan.
+*/
+
+it('menyamakan indikator kawasan tahun terakhir dengan ringkasan dashboard', function () {
+    $tahunAkhir = (int) end(DummyData::deretTahunan()['tahun']);
+    $tahun = DummyData::indikatorKawasanTahun()[$tahunAkhir];
+    $r = DummyData::ringkasanDashboard();
+
+    foreach ($tahun as $kunci => $nilai) {
+        expect(round((float) $nilai, 3))->toBe(round((float) $r[$kunci], 3), "indikator {$kunci} tahun terakhir menyimpang dari ringkasan");
+    }
+
+    // Lima tahun disediakan, seluruhnya di dalam deret dashboard.
+    expect(array_keys(DummyData::indikatorKawasanTahun()))->toBe(DummyData::tahunLaporan());
+});
+
+it('menyamakan rekap per SP tahun terakhir dengan rekapPerSp apa adanya', function () {
+    $tahunAkhir = (int) end(DummyData::deretTahunan()['tahun']);
+
+    expect(DummyData::rekapPerSpTahun($tahunAkhir))->toBe(DummyData::rekapPerSp());
+});
+
+it('menjumlahkan rekap per SP tiap tahun tepat ke angka kawasan tahun itu', function () {
+    $peta = [
+        'jumlah_kk' => 'jumlah_kk',
+        'rumah_terhuni' => 'rumah_terhuni',
+        'luas_lahan' => 'luas_lahan_total',
+        'volume_panen' => 'volume_panen_ton',
+        'pengaduan_terbuka' => 'pengaduan_terbuka',
+    ];
+
+    foreach (DummyData::tahunLaporan() as $tahun) {
+        $perSp = DummyData::rekapPerSpTahun($tahun);
+        $kawasan = DummyData::indikatorKawasanTahun()[$tahun];
+
+        expect($perSp)->toHaveCount(6);
+
+        foreach ($peta as $kolomSp => $kolomKawasan) {
+            $jumlah = round(array_sum(array_column($perSp, $kolomSp)), 2);
+            expect($jumlah)->toBe(round((float) $kawasan[$kolomKawasan], 2), "kolom {$kolomSp} tahun {$tahun} tidak menjumlah ke angka kawasan");
+        }
+    }
+});
+
+it('mempertahankan iklim SP tahun terakhir dan menggoyangnya secara deterministik', function () {
+    $tahunAkhir = (int) end(DummyData::deretTahunan()['tahun']);
+
+    // Tahun terakhir == nilai dasar (subset field iklim keadaanWilayahSp).
+    $iklim2026 = DummyData::iklimSpTahun(1, $tahunAkhir);
+    expect($iklim2026)->toHaveKey('curah_hujan_tahunan_mm')
+        ->and($iklim2026)->toHaveKey('suhu_rata_c');
+    expect($iklim2026)->not->toHaveKey('batas_utara');   // geografi tidak ikut
+
+    // Deterministik: dua panggilan identik.
+    expect(DummyData::iklimSpTahun(3, 2023))->toBe(DummyData::iklimSpTahun(3, 2023));
+
+    // Tahun lampau berbeda dari tahun terakhir untuk minimal satu field.
+    expect(DummyData::iklimSpTahun(1, 2022))->not->toBe($iklim2026);
+});
+
 it('memakai status tinggal yang sah pada rekap penghuni', function () {
     $rekap = DummyData::rekapPenghuni();
 

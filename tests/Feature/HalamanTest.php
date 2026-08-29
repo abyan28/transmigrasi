@@ -5050,11 +5050,23 @@ it('menjaga jumlah enam SP = angka kawasan pada Rekap Indikator Kawasan', functi
     }
 
     // Baris total tabel per SP dijumlah ulang oleh Alpine, bukan angka tetap.
+    // Pemilih TAHUN TUNGGAL (Putaran 5): tabel per SP dirender 6 SP x 5 tahun,
+    // blok ringkasan mengikuti tahun terpilih (nilaiTahun), bukan menyempit SP.
     $isi = $this->get('/laporan/indikator-kawasan')->getContent();
     expect($isi)
         ->toContain('data-baris data-sp=')
+        ->toContain('data-tahun=')
         ->toContain("jumlahTampak(\$el.closest('table'), 'jumlah_kk', 0)")
+        ->toContain('x-text="nilaiTahun(')                       // blok kawasan ikut tahun
+        ->toContain('id="filter-laporan-tahun"')
         ->toContain('tetap menampilkan angka tingkat kawasan');   // catatan kejujuran
+
+    expect(substr_count($isi, '<tr data-baris data-sp='))->toBe(6 * 5);
+
+    $konfig = LaporanData::filterLaporan('indikator-kawasan');
+    expect($konfig['tahunTunggal'])->toBeTrue();
+    expect($konfig['ringkasanTahun'][LaporanData::tahunDokumenBawaan()])
+        ->toBe(DummyData::indikatorKawasanTahun()[LaporanData::tahunDokumenBawaan()]);
 });
 
 it('menyembunyikan tabel poktan seutuhnya lewat penanda SP, bukan per baris', function () {
@@ -5141,23 +5153,31 @@ it('menghitung ulang produktivitas tertimbang, bukan merata-ratakannya, pada Lap
     expect($isi)->toContain(', selSp(');
 });
 
-it('menyaring tabel ikhtisar dan tiap bab Monografi SP dengan pemilih SP', function () {
+it('menyaring tabel ikhtisar dan tiap bab Monografi SP dengan pemilih SP + tahun tunggal', function () {
     // Monografi = potret per SP: pemilih SP menyembunyikan baris ikhtisar SP
-    // lain DAN section Bab II SP lain. Tanpa rentang tahun (bukan rekap).
+    // lain DAN section Bab II SP lain. Pemilih TAHUN TUNGGAL (Putaran 5),
+    // BUKAN rentang: ikhtisar dirender 6 SP x 5 tahun, Bab II satu section/SP.
     $isi = $this->get('/laporan/monografi-sp')->assertOk()->getContent();
 
     expect($isi)
         ->toContain('x-data="filterLaporan(')
         ->toContain('data-baris data-sp=')
+        ->toContain('data-tahun=')
         ->toContain('<section data-baris data-sp=')
+        ->toContain('id="filter-laporan-tahun"')            // pemilih tahun tunggal
+        ->toContain('x-text="iklimTahun(')                  // Bab II iklim ikut tahun
         ->toContain('Tidak ada satuan permukiman yang cocok dengan filter')
-        ->not->toContain('id="filter-laporan-tahun-dari"');   // tak ada rentang tahun
+        ->not->toContain('id="filter-laporan-tahun-dari"'); // BUKAN rentang tahun
 
-    // Baris ikhtisar + section Bab II sama banyak (satu per SP).
-    expect(substr_count($isi, '<tr data-baris data-sp='))
-        ->toBe(substr_count($isi, '<section data-baris data-sp='));
+    // Ikhtisar: 6 SP x 5 tahun = 30 baris. Bab II tetap satu section per SP = 6.
+    expect(substr_count($isi, '<tr data-baris data-sp='))->toBe(6 * 5);
+    expect(substr_count($isi, '<section data-baris data-sp='))->toBe(6);
 
-    expect(LaporanData::filterLaporan('monografi-sp')['tahun'])->toBeFalse();
+    $konfig = LaporanData::filterLaporan('monografi-sp');
+    expect($konfig['tahun'])->toBeFalse();
+    expect($konfig['tahunTunggal'])->toBeTrue();
+    expect($konfig['daftarTahun'])->toBe(DummyData::tahunLaporan());
+    expect($konfig['tahunBawaan'])->toBe(LaporanData::tahunDokumenBawaan());
 });
 
 it('menomori baris laporan lewat penghitung CSS supaya rapat setelah disaring', function () {

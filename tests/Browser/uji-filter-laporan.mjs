@@ -517,74 +517,112 @@ async function main() {
             `) === true);
 
         // ============================================================
-        console.log('\nLaporan Monografi SP (potret per SP: tabel + tiap bab):');
+        console.log('\nLaporan Monografi SP (pemilih SP + tahun tunggal):');
         await buka('/laporan/monografi-sp');
 
-        periksa('bilah Monografi: pemilih SP, tanpa rentang tahun',
+        periksa('bilah Monografi: pemilih SP + tahun tunggal, TANPA rentang tahun',
             await nilai(`!! document.querySelector('#filter-laporan-sp')
+                && !! document.querySelector('#filter-laporan-tahun')
                 && ! document.querySelector('#filter-laporan-tahun-dari')`) === true);
+
+        // 6 SP x 5 tahun dirender; bawaan tahun terakhir -> 6 baris tampak.
+        periksa('ikhtisar dirender 30 baris, 6 tampak pada tahun bawaan',
+            await nilai(`document.querySelectorAll('table.tabel-dokumen tr[data-baris]').length`) === 30
+            && await nilai(`
+                [...document.querySelectorAll('table.tabel-dokumen tr[data-baris]')]
+                    .filter((tr) => tr.offsetParent !== null).length
+            `) === 6);
 
         const spMono = await nilai(`document.querySelector('#filter-laporan-sp').options[1].value`);
         await setSelect('#filter-laporan-sp', spMono);
         await tidur(300);
 
-        periksa('memilih SP menyisakan tepat satu baris ikhtisar',
+        periksa('memilih SP menyisakan tepat satu baris ikhtisar (SP x tahun bawaan)',
             await nilai(`
                 [...document.querySelectorAll('table.tabel-dokumen tr[data-baris]')]
                     .filter((tr) => tr.offsetParent !== null).length
             `) === 1);
-
-        periksa('memilih SP menyisakan tepat satu section Bab II',
+        periksa('memilih SP menyisakan tepat satu section Bab II milik SP itu',
             await nilai(`
-                [...document.querySelectorAll('section[data-baris]')]
-                    .filter((s) => s.offsetParent !== null).length
-            `) === 1);
+                (() => {
+                    const s = [...document.querySelectorAll('section[data-baris]')].filter((x) => x.offsetParent !== null);
+                    return s.length === 1 && s[0].dataset.sp === ${JSON.stringify(spMono)};
+                })()
+            `) === true);
 
-        periksa('section Bab II yang tersisa milik SP terpilih',
+        // Ganti tahun -> angka ikhtisar & teks Iklim berubah, cakupan menyebut tahun.
+        const iklimSebelum = await nilai(`
+            [...document.querySelectorAll('section[data-baris] dd[x-text^="iklimTahun"]')]
+                .filter((d) => d.offsetParent !== null).map((d) => d.textContent).join('|')
+        `);
+        const thnLain = await nilai(`document.querySelector('#filter-laporan-tahun').options[0].value`);
+        await setSelect('#filter-laporan-tahun', thnLain);
+        await tidur(300);
+        periksa('ganti tahun mengubah teks kelompok Iklim Bab II',
+            (await nilai(`
+                [...document.querySelectorAll('section[data-baris] dd[x-text^="iklimTahun"]')]
+                    .filter((d) => d.offsetParent !== null).map((d) => d.textContent).join('|')
+            `)) !== iklimSebelum);
+        periksa('baris ikhtisar yang tampak kini milik tahun terpilih',
             await nilai(`
-                [...document.querySelectorAll('section[data-baris]')]
-                    .filter((s) => s.offsetParent !== null)
-                    .every((s) => s.dataset.sp === ${JSON.stringify(spMono)})
+                [...document.querySelectorAll('table.tabel-dokumen tr[data-baris]')]
+                    .filter((tr) => tr.offsetParent !== null)
+                    .every((tr) => tr.dataset.tahun === ${JSON.stringify(thnLain)})
             `) === true);
 
         // ============================================================
-        console.log('\nRekap Indikator Kawasan (tabel per SP menyempit, blok kawasan tetap):');
+        console.log('\nRekap Indikator Kawasan (pemilih SP + tahun tunggal):');
         await buka('/laporan/indikator-kawasan');
 
-        // Baris total tabel per SP tanpa filter = jumlah semua SP.
         const selTotalKK = `[...document.querySelectorAll('table.tabel-dokumen tfoot td')][1].textContent.replace(/[^0-9]/g, '')`;
-        const kkSemua = await nilai(`
+        const kkTahunBawaan = await nilai(`
             [...document.querySelectorAll('table.tabel-dokumen tr[data-baris]')]
+                .filter((tr) => tr.offsetParent !== null)
                 .reduce((s, tr) => s + Number(tr.dataset.jumlah_kk || 0), 0)
         `);
-        periksa('baris Jumlah tabel per SP = total kawasan tanpa filter',
-            Number(await nilai(selTotalKK)) === kkSemua && kkSemua > 0);
+        periksa('baris Jumlah tabel per SP = jumlah baris tampak (tahun bawaan)',
+            Number(await nilai(selTotalKK)) === kkTahunBawaan && kkTahunBawaan > 0);
 
         const spInd = await nilai(`document.querySelector('#filter-laporan-sp').options[1].value`);
         await setSelect('#filter-laporan-sp', spInd);
         await tidur(300);
-
         periksa('memilih SP menyisakan satu baris di tabel per SP',
             await nilai(`
                 [...document.querySelectorAll('table.tabel-dokumen tr[data-baris]')]
                     .filter((tr) => tr.offsetParent !== null).length
             `) === 1);
 
-        periksa('baris Jumlah menyusut ke KK SP terpilih',
-            Number(await nilai(selTotalKK)) === await nilai(`
-                [...document.querySelectorAll('table.tabel-dokumen tr[data-baris]')]
-                    .find((tr) => tr.dataset.sp === ${JSON.stringify(spInd)}).dataset.jumlah_kk | 0
-            `));
-
-        periksa('catatan kejujuran muncul: blok ringkasan tetap angka kawasan',
+        periksa('catatan kejujuran: blok ringkasan tetap angka kawasan',
             await nilai(`
                 [...document.querySelectorAll('p[role=note]')]
                     .some((p) => p.offsetParent !== null && p.textContent.includes('tetap menampilkan angka tingkat kawasan'))
             `) === true);
 
-        // Blok kawasan TIDAK berubah oleh filter (contoh: cari sel berisi "1.140").
-        periksa('blok Kependudukan tetap menampilkan angka kawasan (1.140 KK)',
-            await nilai(`document.body.textContent.includes('1.140')`) === true);
+        // Ganti tahun -> blok Kependudukan berubah dari nilai tahun bawaan.
+        await setSelect('#filter-laporan-sp', '');
+        await tidur(150);
+        const kkBlokBawaan = await nilai(`
+            [...document.querySelectorAll('td[x-text^="nilaiTahun"]')].map((t) => t.textContent).join('|')
+        `);
+        const thnIndLain = await nilai(`document.querySelector('#filter-laporan-tahun').options[0].value`);
+        await setSelect('#filter-laporan-tahun', thnIndLain);
+        await tidur(300);
+        periksa('ganti tahun mengubah angka blok ringkasan kawasan',
+            (await nilai(`
+                [...document.querySelectorAll('td[x-text^="nilaiTahun"]')].map((t) => t.textContent).join('|')
+            `)) !== kkBlokBawaan);
+        periksa('baris per SP yang tampak kini milik tahun terpilih',
+            await nilai(`
+                [...document.querySelectorAll('table.tabel-dokumen tr[data-baris]')]
+                    .filter((tr) => tr.offsetParent !== null)
+                    .every((tr) => tr.dataset.tahun === ${JSON.stringify(thnIndLain)})
+            `) === true);
+        periksa('Sigma per SP tahun terpilih = baris total tfoot',
+            Number(await nilai(selTotalKK)) === await nilai(`
+                [...document.querySelectorAll('table.tabel-dokumen tr[data-baris]')]
+                    .filter((tr) => tr.offsetParent !== null)
+                    .reduce((s, tr) => s + Number(tr.dataset.jumlah_kk || 0), 0)
+            `));
 
         soket.close();
     } finally {

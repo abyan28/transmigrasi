@@ -117,6 +117,8 @@ export default function filterLaporan(konfig = {}) {
                 this.sp !== '' ||
                 this.tahunDari !== '' ||
                 this.tahunSampai !== '' ||
+                (this.konfig.tahunTunggal &&
+                    String(this.tahun) !== String(this.konfig.tahunBawaan ?? '')) ||
                 Object.values(this.dimensi).some((v) => v !== '')
             );
         },
@@ -150,6 +152,11 @@ export default function filterLaporan(konfig = {}) {
                 }
 
                 if (this.tahunSampai !== '' && t > Number(this.tahunSampai)) {
+                    return false;
+                }
+
+                // Pemilih tahun tunggal: cocok hanya baris tahun terpilih.
+                if (this.konfig.tahunTunggal && this.tahun && t !== Number(this.tahun)) {
                     return false;
                 }
             }
@@ -284,9 +291,49 @@ export default function filterLaporan(konfig = {}) {
             this.sp = '';
             this.tahunDari = '';
             this.tahunSampai = '';
+            if (this.konfig.tahunTunggal) {
+                this.tahun = String(this.konfig.tahunBawaan ?? '');
+            }
             Object.keys(this.dimensi).forEach((k) => {
                 this.dimensi[k] = '';
             });
+        },
+
+        /**
+         * Nilai indikator kawasan untuk tahun yang sedang dipilih, diformat ala
+         * Indonesia. Membaca `konfig.ringkasanTahun[tahun]` (Rekap Indikator
+         * Kawasan). Dipakai `x-text` sel blok ringkasan.
+         *
+         * @param {string} kunci
+         * @param {number} desimal
+         * @returns {string}
+         */
+        nilaiTahun(kunci, desimal = 0) {
+            const t = (this.konfig.ringkasanTahun || {})[this.tahun] || {};
+
+            return this.angka(t[kunci] ?? 0, desimal);
+        },
+
+        /** Persentase `pembilang/penyebut` indikator kawasan tahun terpilih. */
+        nilaiTahunRasio(pembilang, penyebut, desimal = 1) {
+            const t = (this.konfig.ringkasanTahun || {})[this.tahun] || {};
+            const b = Number(t[penyebut] ?? 0);
+
+            return this.angka(b > 0 ? (Number(t[pembilang] ?? 0) / b) * 100 : 0, desimal);
+        },
+
+        /**
+         * Kalimat kelompok "Iklim" Bab II Monografi untuk SP dan tahun terpilih.
+         * Dirakit di PHP (`konfig.iklimTahun[spId][tahun][label]`).
+         *
+         * @param {number|string} spId
+         * @param {string} label
+         * @returns {string}
+         */
+        iklimTahun(spId, label) {
+            const sp = (this.konfig.iklimTahun || {})[spId] || {};
+
+            return (sp[this.tahun] || {})[label] ?? 'belum dicatat';
         },
 
         /**
@@ -351,6 +398,8 @@ export default function filterLaporan(konfig = {}) {
                         ' sampai ' +
                         (this.tahunSampai || 'paling akhir')
                 );
+            } else if (this.konfig.tahunTunggal && this.tahun) {
+                bagian.push('tahun ' + this.tahun);
             }
 
             (this.konfig.dimensi || []).forEach((d) => {

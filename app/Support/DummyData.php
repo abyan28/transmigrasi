@@ -4264,6 +4264,196 @@ class DummyData
     }
 
     /**
+     * Lima tahun terakhir yang dilayani pemilih tahun tunggal Laporan Rekap
+     * Indikator Kawasan dan Laporan Monografi SP (Putaran 5). Dibatasi lima
+     * tahun untuk menahan ukuran DOM (6 SP x 5 tahun = 30 baris per tabel).
+     *
+     * @return list<int>
+     */
+    public static function tahunLaporan(): array
+    {
+        return array_slice(self::deretTahunan()['tahun'], -5);
+    }
+
+    /**
+     * Indikator tingkat kawasan per tahun, untuk pemilih tahun tunggal
+     * (Putaran 5). Dikunci per tahun (lihat `tahunLaporan()`).
+     *
+     * IRISAN TAHUN TERAKHIR WAJIB SAMA dengan `ringkasanDashboard()` untuk
+     * setiap kunci di sini -- itulah invarian yang menjaga blok ringkasan dan
+     * tabel per SP tidak saling membantah. Kunci yang punya deret sendiri di
+     * `deretTahunan()` dibaca dari sana; sisanya diskalakan menurut porsi KK
+     * tahun itu terhadap tahun terakhir. Angka sebelum tahun terakhir adalah
+     * CONTOH turunan, bukan pendataan; hanya irisan tahun terakhir yang
+     * mengikat invarian. Cacah kelembagaan (poktan/alsintan/saprotan) TIDAK
+     * bertahun -- itu cacah baris contoh, ditampilkan apa adanya dengan catatan.
+     *
+     * @return array<int, array<string, float|int>>
+     */
+    public static function indikatorKawasanTahun(): array
+    {
+        $deret = self::deretTahunan();
+        $r = self::ringkasanDashboard();
+        $indeks = array_flip($deret['tahun']);
+        $kkAkhir = (int) end($deret['jumlah_kk']);
+
+        $hasil = [];
+
+        foreach (self::tahunLaporan() as $tahun) {
+            $i = $indeks[$tahun];
+            $akhir = $tahun === (int) end($deret['tahun']);
+            $f = $kkAkhir > 0 ? $deret['jumlah_kk'][$i] / $kkAkhir : 1.0;
+
+            $hasil[$tahun] = [
+                'jumlah_kk' => $deret['jumlah_kk'][$i],
+                'jumlah_jiwa' => $deret['jumlah_jiwa'][$i],
+                'jumlah_petani' => $deret['jumlah_petani'][$i],
+                'harga_rata_rata' => $deret['harga_rata_rata'][$i],
+                'volume_panen_ton' => $akhir ? $r['volume_panen_ton'] : round($deret['volume_panen'][$i], 2),
+                'rumah_total' => $akhir ? $r['rumah_total'] : (int) round($r['rumah_total'] * $f),
+                'rumah_terhuni' => $akhir ? $r['rumah_terhuni'] : (int) round($r['rumah_terhuni'] * $f),
+                'luas_lahan_total' => $akhir ? $r['luas_lahan_total'] : round($r['luas_lahan_total'] * $f, 2),
+                'realisasi_tanam_ha' => $akhir ? $r['realisasi_tanam_ha'] : round($r['realisasi_tanam_ha'] * $f, 2),
+                'hasil_panen_ha' => $akhir ? $r['hasil_panen_ha'] : round($r['hasil_panen_ha'] * $f, 2),
+                'puso_ha' => $akhir ? $r['puso_ha'] : round($r['puso_ha'] * $f, 2),
+                'belum_dipanen_ha' => $akhir ? $r['belum_dipanen_ha'] : round($r['belum_dipanen_ha'] * $f, 2),
+                'pengaduan_terbuka' => $akhir ? $r['pengaduan_terbuka'] : (int) round($r['pengaduan_terbuka'] * $f),
+            ];
+
+            $hasil[$tahun]['produktivitas_ton_ha'] = $akhir
+                ? $r['produktivitas_ton_ha']
+                : ($hasil[$tahun]['hasil_panen_ha'] > 0
+                    ? round($hasil[$tahun]['volume_panen_ton'] / $hasil[$tahun]['hasil_panen_ha'], 3)
+                    : 0.0);
+        }
+
+        return $hasil;
+    }
+
+    /**
+     * Membagi sebuah total menurut porsi, dengan koreksi sisa pembulatan
+     * ditaruh pada porsi terbesar supaya jumlahnya tepat.
+     *
+     * @param  array<int|string, float>  $porsi
+     * @return array<int|string, float>
+     */
+    private static function bagiProporsional(array $porsi, float $total, int $desimal): array
+    {
+        if ($porsi === []) {
+            return [];
+        }
+
+        $kunciMaks = array_keys($porsi, max($porsi))[0];
+        $keluar = [];
+        $akum = 0.0;
+
+        foreach ($porsi as $k => $p) {
+            $keluar[$k] = round($total * $p, $desimal);
+            $akum += $keluar[$k];
+        }
+
+        $keluar[$kunciMaks] = round($keluar[$kunciMaks] + $total - $akum, $desimal);
+
+        return $keluar;
+    }
+
+    /**
+     * Rekap per SP untuk satu tahun (Putaran 5). `rekapPerSpTahun(tahunAkhir)`
+     * WAJIB SAMA PERSIS dengan `rekapPerSp()` (mengikat uji "menjaga jumlah
+     * enam SP"). Tahun lain: porsi SP tahun terakhir dikalikan total kawasan
+     * tahun itu (`indikatorKawasanTahun()`), dengan koreksi sisa supaya Sigma
+     * per kolom tetap sama dengan angka kawasan tahun itu.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function rekapPerSpTahun(int $tahun): array
+    {
+        $dasar = self::rekapPerSp();
+        $tahunAkhir = (int) end(self::deretTahunan()['tahun']);
+
+        if ($tahun === $tahunAkhir) {
+            return $dasar;
+        }
+
+        $kawasanAkhir = self::indikatorKawasanTahun()[$tahunAkhir];
+        $kawasanTahun = self::indikatorKawasanTahun()[$tahun];
+
+        $petaKawasan = [
+            'jumlah_kk' => 'jumlah_kk',
+            'rumah_terhuni' => 'rumah_terhuni',
+            'luas_lahan' => 'luas_lahan_total',
+            'volume_panen' => 'volume_panen_ton',
+            'pengaduan_terbuka' => 'pengaduan_terbuka',
+        ];
+        $desimal = [
+            'jumlah_kk' => 0, 'rumah_terhuni' => 0, 'luas_lahan' => 2,
+            'volume_panen' => 2, 'pengaduan_terbuka' => 0,
+        ];
+
+        $baris = array_map(fn (array $b): array => [
+            'satuan_permukiman_id' => $b['satuan_permukiman_id'],
+            'satuan_permukiman' => $b['satuan_permukiman'],
+        ], $dasar);
+
+        foreach ($petaKawasan as $kolomSp => $kolomKawasan) {
+            $porsi = [];
+            foreach ($dasar as $i => $b) {
+                $porsi[$i] = $kawasanAkhir[$kolomKawasan] > 0
+                    ? $b[$kolomSp] / $kawasanAkhir[$kolomKawasan]
+                    : 0.0;
+            }
+
+            $bagi = self::bagiProporsional($porsi, (float) $kawasanTahun[$kolomKawasan], $desimal[$kolomSp]);
+
+            foreach ($bagi as $i => $nilai) {
+                $baris[$i][$kolomSp] = $desimal[$kolomSp] === 0 ? (int) $nilai : $nilai;
+            }
+        }
+
+        return array_values($baris);
+    }
+
+    /**
+     * Field iklim satu SP untuk satu tahun (Putaran 5). Hanya dua belas field
+     * iklim yang bergerak; seluruh field geografi (koordinat, jarak, batas,
+     * SK, pola, tanah, air) TETAP -- geografi tidak berubah antar tahun.
+     *
+     * `iklimSpTahun($id, tahunAkhir)` == nilai `keadaanWilayahSp()` apa adanya.
+     * Tahun lain: goyangan DETERMINISTIK kecil (bukan `rand()`, supaya uji
+     * stabil) di sekitar nilai dasar -- angka contoh, bukan pengamatan.
+     *
+     * @return array<string, float|null>
+     */
+    public static function iklimSpTahun(int $id, int $tahun): array
+    {
+        $fieldIklim = [
+            'curah_hujan_tahunan_mm', 'curah_hujan_bulan_min_mm', 'curah_hujan_bulan_maks_mm',
+            'suhu_min_c', 'suhu_maks_c', 'suhu_rata_c',
+            'angin_min_knot', 'angin_maks_knot', 'angin_rata_knot',
+            'penyinaran_min_persen', 'penyinaran_maks_persen', 'penyinaran_rata_persen',
+        ];
+
+        $dasar = array_intersect_key(self::keadaanWilayahSp()[$id] ?? [], array_flip($fieldIklim));
+        $tahunAkhir = (int) end(self::deretTahunan()['tahun']);
+
+        if ($tahun === $tahunAkhir) {
+            return $dasar;
+        }
+
+        // Tren ringan menjauh dari tahun terakhir + derau kecil; ditentukan id
+        // SP dan tahun, sama tiap panggilan, dan tidak pernah tepat nol untuk
+        // tahun lampau (0,006 x jarak bukan kelipatan 0,005).
+        $jarak = $tahunAkhir - $tahun;
+        $derau = ((($id * 13 + $tahun * 7) % 9) - 4) / 200;
+        $goyang = $jarak * 0.006 + $derau;
+
+        return array_map(
+            fn ($nilai) => $nilai === null ? null : round($nilai * (1 + $goyang), 2),
+            $dasar,
+        );
+    }
+
+    /**
      * Mencari satu satuan permukiman menurut idnya.
      *
      * @param  int  $id  Nilai id_satuan_permukiman

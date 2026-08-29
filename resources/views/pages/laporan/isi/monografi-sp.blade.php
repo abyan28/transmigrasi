@@ -12,7 +12,14 @@
 @php
     $angka = fn ($n, $desimal = 2) => \App\Support\LaporanData::angka($n, $desimal);
     $isi = fn ($v) => $v !== null && trim((string) $v) !== '' ? $v : 'belum dicatat';
+    $tahunAkhir = \App\Support\LaporanData::tahunDokumenBawaan();
 @endphp
+
+<p class="rounded-lg border border-gray-200 bg-gray-50 p-3 text-theme-xs text-gray-500 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400">
+    Pemilih tahun mengubah angka kependudukan, produksi, dan iklim menurut tahun
+    terpilih. Keadaan fisik wilayah (letak, batas, luas, tanah, sumberdaya air,
+    aksesibilitas) tidak berubah antar tahun.
+</p>
 
 <div class="overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-800">
     <table class="tabel-dokumen min-w-full text-theme-sm">
@@ -37,26 +44,29 @@
             </tr>
         </thead>
         <tbody>
+            {{-- Enam SP untuk tiap tahun laporan; Alpine menampilkan baris tahun terpilih. --}}
             @forelse ($baris as $b)
-                <tr data-baris data-sp="{{ $b['sp_id'] }}" x-show="cocok($el)"
-                    class="text-gray-700 dark:text-gray-300">
-                    <td class="px-3 py-2 tabular-nums" data-nomor></td>
-                    <td class="px-3 py-2 font-medium text-gray-800 dark:text-white/90">
-                        {{ $b['sp'] }}
-                        <span class="block text-theme-xs font-normal text-gray-500 dark:text-gray-400">{{ $b['kode'] }}</span>
-                    </td>
-                    <td class="px-3 py-2">{{ $b['kecamatan'] }}</td>
-                    <td class="px-3 py-2">{{ $b['desa'] }}</td>
-                    <td class="px-3 py-2 text-right tabular-nums">{{ $b['tahun_penempatan'] }}</td>
-                    <td class="px-3 py-2 text-right tabular-nums">{{ $angka($b['luas_wilayah']) }}</td>
-                    <td class="px-3 py-2 text-right tabular-nums">{{ $angka($b['kk_rencana'], 0) }}</td>
-                    <td class="px-3 py-2 text-right tabular-nums">{{ $angka($b['kk_terisi'], 0) }}</td>
-                    <td class="px-3 py-2 text-right tabular-nums">{{ $angka($b['rumah_terhuni'], 0) }}</td>
-                    <td class="px-3 py-2 text-right tabular-nums">{{ $b['poktan'] }}</td>
-                    <td class="px-3 py-2 text-right tabular-nums">{{ $angka($b['lahan_tergarap']) }}</td>
-                    <td class="px-3 py-2 text-right tabular-nums">{{ $angka($b['produksi_ton']) }}</td>
-                    <td class="px-3 py-2 text-right tabular-nums">{{ $b['pengaduan_terbuka'] }}</td>
-                </tr>
+                @foreach ($daftarTahun as $th)
+                    <tr data-baris data-sp="{{ $b['sp_id'] }}" data-tahun="{{ $th }}" x-show="cocok($el)"
+                        class="text-gray-700 dark:text-gray-300">
+                        <td class="px-3 py-2 tabular-nums" data-nomor></td>
+                        <td class="px-3 py-2 font-medium text-gray-800 dark:text-white/90">
+                            {{ $b['sp'] }}
+                            <span class="block text-theme-xs font-normal text-gray-500 dark:text-gray-400">{{ $b['kode'] }}</span>
+                        </td>
+                        <td class="px-3 py-2">{{ $b['kecamatan'] }}</td>
+                        <td class="px-3 py-2">{{ $b['desa'] }}</td>
+                        <td class="px-3 py-2 text-right tabular-nums">{{ $b['tahun_penempatan'] }}</td>
+                        <td class="px-3 py-2 text-right tabular-nums">{{ $angka($b['luas_wilayah']) }}</td>
+                        <td class="px-3 py-2 text-right tabular-nums">{{ $angka($b['kk_rencana'], 0) }}</td>
+                        <td class="px-3 py-2 text-right tabular-nums">{{ $angka($b['per_tahun'][$th]['kk_terisi'], 0) }}</td>
+                        <td class="px-3 py-2 text-right tabular-nums">{{ $angka($b['per_tahun'][$th]['rumah_terhuni'], 0) }}</td>
+                        <td class="px-3 py-2 text-right tabular-nums">{{ $b['poktan'] }}</td>
+                        <td class="px-3 py-2 text-right tabular-nums">{{ $angka($b['lahan_tergarap']) }}</td>
+                        <td class="px-3 py-2 text-right tabular-nums">{{ $angka($b['per_tahun'][$th]['produksi_ton']) }}</td>
+                        <td class="px-3 py-2 text-right tabular-nums">{{ $b['per_tahun'][$th]['pengaduan_terbuka'] }}</td>
+                    </tr>
+                @endforeach
             @empty
                 <tr>
                     <td colspan="13" class="px-3 py-6 text-center text-gray-500 dark:text-gray-400">
@@ -104,7 +114,9 @@
                             @foreach ($daftar as $label => $nilai)
                                 <div class="flex justify-between gap-4">
                                     <dt class="text-gray-500 dark:text-gray-400">{{ $label }}</dt>
-                                    <dd class="text-right font-medium text-gray-800 dark:text-white/90">{{ $isi($nilai) }}</dd>
+                                    {{-- Kelompok "Iklim" mengikuti tahun terpilih (Putaran 5). --}}
+                                    <dd class="text-right font-medium text-gray-800 dark:text-white/90"
+                                        @if ($judul === 'Iklim') x-text="iklimTahun({{ $m['sp_id'] }}, '{{ $label }}')" @endif>{{ $isi($nilai) }}</dd>
                                 </div>
                             @endforeach
                         </dl>
