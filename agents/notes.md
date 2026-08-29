@@ -1554,6 +1554,64 @@ E3), sisanya di putaran ini.
 
 ---
 
+## 1t. Putaran 3 D3: Filter per Halaman Laporan (Alpine) — bertahap (2026-08-29)
+
+Rencana lima sub-tahap di `session-notes.md`. Kontrak: `rules.md` §12 poin
+5/8/11, `ui-spec.md` §6.11.
+
+### 1t.1 Stage D3-1: pola filter + Laporan Transmigran (commit menyusul)
+
+**Keputusan arsitektur — di mana `x-data` hidup.** Pada `<article>` "kertas"
+di `kerangka-laporan`, BUKAN pada komponen bilah filter. Alasannya kalimat
+cakupan di kepala kertas (`<dd x-text="kalimatCakupan">`) HARUS ikut bereaksi
+(rules.md §12 poin 8), dan ia sibling dari slot isi. `x-data` pada leluhur
+bersama keduanya menyelesaikannya; slot Blade dirender sebagai DOM turunan
+sehingga mewarisi cakupan Alpine (variabel Blade tetap tidak diwariskan — itu
+sudah ditangani `isiLaporan`).
+
+**Akibatnya kerangka-laporan menurunkan konfig filter dari slug**, sama
+seperti ia menurunkan `meta()`. Nol berkas halaman laporan disunting; rute
+dokumen polos memperoleh bilah yang sama (disembunyikan `.cetak-sembunyi`
+saat cetak).
+
+**Berkas baru:**
+- `resources/js/filter-laporan.js` — `Alpine.data('filterLaporan', …)`.
+  `cocok(tr)` membandingkan `tr.dataset` dengan keadaan filter; `jumlahTampak()`
+  / `cacahTampak()` untuk subtotal; `kalimatCakupan` getter menyusun kalimat
+  "Wilayah". Satu dimensi filter **hanya berlaku atas baris yang membawa
+  atribut datanya** — laporan berbagian banyak (transmigran+rumah+lahan)
+  hanya menandai bagian yang relevan, jadi filter tahun kedatangan tidak
+  menghapus seluruh baris rumah.
+- `resources/views/components/sim/filter-laporan.blade.php` — bilah selalu
+  tampak (BUKAN laci), `.cetak-sembunyi`, `<select x-model>` untuk SP +
+  rentang tahun + dimensi. TIDAK membuat cakupan Alpine sendiri.
+- `LaporanData::filterLaporan($slug)` — konfig per slug lewat `match`.
+  D3-1 hanya `transmigran` (SP + Tahun Kedatangan + Status Tinggal);
+  slug lain `[]`. Daftar SP dari `DummyData::satuanPermukiman()` (master,
+  bukan cacahan baris — §19a aman).
+
+**Nomor urut lewat penghitung CSS**, bukan `{{ $i + 1 }}`: elemen
+ber-`display:none` (baris tersaring `x-show`) tidak menaikkan penghitung CSS,
+jadi nomor ikut rapat kembali tanpa satu baris JS pun. `.tabel-dokumen
+td[data-nomor]::before { content: counter(baris-laporan) }`. `getComputedStyle`
+tidak dapat membaca hasil `counter()`, jadi kebenarannya dijaga uji Pest atas
+aturan CSS-nya, bukan uji peramban.
+
+**Uji:** `tests/Browser/uji-filter-laporan.mjs` (PORT 9353) — 18/0: pilih SP →
+baris SP lain hilang di ketiga tabel, kalimat cakupan berubah, Bersihkan
+memulihkan, rentang tahun mustahil memunculkan pesan "tidak ada yang cocok",
+laporan tanpa filter (Poktan) tidak pecah. Pest +5 penjaga di `HalamanTest`
+(kerangka bilah, bukan `<form>`, opsi SP dari master, arm per laporan,
+aturan CSS penghitung).
+
+### 1t.2 Sisa D3
+
+D3-2 (Poktan, Alsintan, Saprotan), D3-3 (Hasil Panen — subtotal berjenjang
+`x-text`), D3-4 (Rekap Indikator Kawasan — agregasi 16 indikator per SP +
+penjaga Σ-SP), D3-5 (Monografi SP, opsional). Rincian di `session-notes.md`.
+
+---
+
 ## 2. Catatan Dokumen Proposal
 
 Lembar pengesahan pada `docs/Revisi_Proposal_Budi_TEP ITS 2026_Kobalima_Timur_Upload_10_6_2026_a.pdf` masih memuat judul dan pengusul dari proposal lain:

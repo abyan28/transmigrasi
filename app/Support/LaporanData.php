@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Enums\StatusTinggal;
 use Illuminate\Support\Carbon;
 
 /**
@@ -687,6 +688,70 @@ class LaporanData
             'rumah' => DummyData::rumah(),
             'lahan' => DummyData::lahan(),
         ];
+    }
+
+    /**
+     * Daftar tahun unik terurut dari sebuah kolom, untuk mengisi opsi pemilih
+     * rentang tahun pada bilah filter laporan.
+     *
+     * @param  iterable<int|string|null>  $nilai
+     * @return list<int>
+     */
+    private static function tahunUnik(iterable $nilai): array
+    {
+        $tahun = [];
+
+        foreach ($nilai as $t) {
+            if ($t !== null && $t !== '') {
+                $tahun[(int) $t] = true;
+            }
+        }
+
+        $tahun = array_keys($tahun);
+        sort($tahun);
+
+        return $tahun;
+    }
+
+    /**
+     * Konfigurasi bilah filter satu halaman laporan (Putaran 3 D3).
+     *
+     * Dibaca `x-sim.kerangka-laporan` dan dialirkan ke `x-sim.filter-laporan`
+     * serta ke `x-data="filterLaporan(konfig)"`. Penyaringannya sendiri berjalan
+     * di peramban (resources/js/filter-laporan.js): GitHub Pages tidak melayani
+     * query string (notes.md 1b.5).
+     *
+     * Daftar SP adalah data master, bukan cacahan baris contoh, sehingga tidak
+     * melanggar rules.md 19a. Larik kosong berarti laporan itu belum berfilter.
+     *
+     * @return array<string, mixed>
+     */
+    public static function filterLaporan(string $slug): array
+    {
+        $daftarSp = array_map(
+            fn (array $s): array => ['id' => $s['id_satuan_permukiman'], 'nama' => $s['nama']],
+            DummyData::satuanPermukiman()
+        );
+
+        $cakupanBawaan = self::meta($slug)['cakupan'] ?? '';
+
+        return match ($slug) {
+            'transmigran' => [
+                'sp' => $daftarSp,
+                'tahun' => true,
+                'labelTahun' => 'Tahun Kedatangan',
+                'daftarTahun' => self::tahunUnik(array_column(DummyData::transmigran(), 'tahun_kedatangan')),
+                'dimensi' => [
+                    [
+                        'kunci' => 'status',
+                        'label' => 'Status Tinggal',
+                        'opsi' => array_map(fn (StatusTinggal $c): string => $c->value, StatusTinggal::cases()),
+                    ],
+                ],
+                'cakupanBawaan' => $cakupanBawaan,
+            ],
+            default => [],
+        };
     }
 
     /**

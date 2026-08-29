@@ -4881,6 +4881,107 @@ it('menegaskan baris total laporan dengan motif resmi, bukan garis abu-abu', fun
 
 /*
 |--------------------------------------------------------------------------
+| Bilah filter per halaman laporan (Putaran 3 D3, 2026-08-29)
+|--------------------------------------------------------------------------
+|
+| rules.md 12 poin 5: tiap halaman laporan punya bilah filternya sendiri,
+| dikerjakan Alpine di sisi peramban (GitHub Pages tidak melayani query
+| string, notes.md 1b.5). Blade merender SELURUH baris; Alpine menyembunyikan
+| <tr> yang tak cocok. Perilaku penyembunyiannya diuji tests/Browser/
+| uji-filter-laporan.mjs; di sini dijaga kerangkanya.
+|
+| D3-1 baru memasang Laporan Transmigran. Laporan lain menyusul (D3-2..D3-5).
+*/
+
+it('memasang bilah filter Alpine di halaman Laporan Transmigran', function () {
+    foreach (['/laporan/transmigran', '/laporan/transmigran/dokumen'] as $rute) {
+        $isi = $this->get($rute)->assertOk()->getContent();
+
+        // Cakupan Alpine pada kertas, dan bilah filternya.
+        expect($isi)
+            ->toContain('x-data="filterLaporan(')
+            ->toContain('aria-label="Penyaring laporan"')
+            ->toContain('id="filter-laporan-sp"')
+            ->toContain('x-text="kalimatCakupan"');
+
+        // Bilah tidak ikut tercetak: section-nya memakai .cetak-sembunyi.
+        $awal = strpos($isi, 'aria-label="Penyaring laporan"');
+        expect(substr($isi, max(0, $awal - 200), 400))->toContain('cetak-sembunyi');
+
+        // Tiap baris data membawa penanda SP supaya Alpine dapat menyaringnya,
+        // dan nomor urut dikosongkan (diisi penghitung CSS, bukan indeks Blade).
+        expect(substr_count($isi, 'data-baris'))->toBeGreaterThan(3);
+        expect($isi)->toContain('data-sp=')->toContain('data-nomor');
+    }
+});
+
+it('menyaring laporan lewat Alpine, bukan query string yang mati di GitHub Pages', function () {
+    // notes.md 1b.5: query string tidak dilayani situs statis. Bilah filter
+    // laporan karena itu TIDAK boleh berupa <form> yang men-submit.
+    $isi = $this->get('/laporan/transmigran')->getContent();
+
+    // Ambil hanya penggal <section aria-label="Penyaring laporan"> ... </section>.
+    expect($isi)->toContain('aria-label="Penyaring laporan"');
+    $mulai = strpos($isi, 'aria-label="Penyaring laporan"');
+    $penggal = substr($isi, $mulai, 4000);
+
+    expect($penggal)
+        ->not->toContain('<form')
+        ->not->toContain('type="submit"')
+        ->toContain('x-model="sp"');
+});
+
+it('menyusun opsi SP filter laporan dari data master, bukan cacahan baris contoh', function () {
+    // rules.md 19a: keputusan tidak boleh bersandar pada cacahan baris contoh.
+    // Daftar SP di sini adalah master (DummyData::satuanPermukiman()), sah.
+    $konfig = LaporanData::filterLaporan('transmigran');
+
+    $idMaster = array_column(DummyData::satuanPermukiman(), 'id_satuan_permukiman');
+    $idFilter = array_column($konfig['sp'], 'id');
+
+    expect($idFilter)->toBe($idMaster);
+    expect($konfig['cakupanBawaan'])->toBe(LaporanData::meta('transmigran')['cakupan']);
+
+    // Opsi tahun kedatangan terurut naik dan unik.
+    $tahun = $konfig['daftarTahun'];
+    expect($tahun)->toBe(array_values(array_unique($tahun)));
+    expect($tahun)->toBe(collect($tahun)->sort()->values()->all());
+});
+
+it('menandai hanya laporan yang bilah filternya sudah dipasang', function () {
+    // D3 bertahap: begitu satu laporan memperoleh filter, arm-nya di sini.
+    // Larik kosong = belum berfilter, dan kerangka-laporan tidak merender bilah.
+    $berfilter = [];
+
+    foreach (array_keys(LaporanData::meta()) as $slug) {
+        if (LaporanData::filterLaporan($slug) !== []) {
+            $berfilter[] = $slug;
+        }
+
+        // Halaman tetap membalas 200 apa pun keadaan filternya.
+        $this->get('/laporan/'.$slug)->assertOk();
+    }
+
+    expect($berfilter)->toBe(['transmigran']);
+});
+
+it('menomori baris laporan lewat penghitung CSS supaya rapat setelah disaring', function () {
+    // Penyaring D3 menyembunyikan <tr> dengan display:none, dan elemen
+    // ber-display:none TIDAK menaikkan penghitung CSS. Aturannya wajib benar
+    // ada di CSS, bukan kelas yang menggantung.
+    $css = file_get_contents(resource_path('css/app.css'));
+
+    expect($css)
+        ->toContain('.tabel-dokumen tbody {')
+        ->toContain('counter-reset: baris-laporan;')
+        ->toContain('.tabel-dokumen tr[data-baris] {')
+        ->toContain('counter-increment: baris-laporan;')
+        ->toContain('.tabel-dokumen td[data-nomor]::before {')
+        ->toContain('content: counter(baris-laporan);');
+});
+
+/*
+|--------------------------------------------------------------------------
 | Filter rentang tahun pada halaman daftar bersumbu waktu
 |--------------------------------------------------------------------------
 |

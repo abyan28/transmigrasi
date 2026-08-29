@@ -1150,6 +1150,28 @@ pre[class*='language-'] {
 }
 
 /*
+  Nomor urut baris laporan lewat penghitung CSS, bukan indeks Blade.
+  Ditambahkan Putaran 3 D3 (2026-08-29).
+
+  Penyaring D3 menyembunyikan `<tr>` dengan `display:none`, dan elemen
+  ber-`display:none` TIDAK menaikkan penghitung CSS. Nomor urut karena itu
+  ikut rapat kembali setelah baris disaring, tanpa satu baris JavaScript pun.
+  Hanya sel ber-atribut `data-nomor` yang menampilkannya, sehingga tabel
+  laporan lain yang belum berfilter tidak terpengaruh.
+*/
+.tabel-dokumen tbody {
+  counter-reset: baris-laporan;
+}
+
+.tabel-dokumen tr[data-baris] {
+  counter-increment: baris-laporan;
+}
+
+.tabel-dokumen td[data-nomor]::before {
+  content: counter(baris-laporan);
+}
+
+/*
   Cetak. Ditambahkan Putaran 3 D2 (2026-08-28) -- @media print pertama di
   repo. Halaman laporan dan tampilan dokumennya harus tercetak sebagai
   kertas saja, tanpa sidebar, header, bilah filter, atau tombol.

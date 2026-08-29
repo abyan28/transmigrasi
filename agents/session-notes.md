@@ -2,12 +2,24 @@
 
 Ditulis 2026-08-29 sesuai `rules.md` §20b. Sementara, boleh ditimpa.
 
-**Status masuk:** Putaran 4 (E1+E2+E3/D4) SELESAI dan ter-commit
-(`e36de0a`, `2a194b3`). Tercatat permanen di `notes.md` §1s. Repo hijau:
-`pest` 679, `pint` 31, `sim:tautan-statis` 222, tiga uji peramban hijau.
+**Status:** D3-1 SELESAI (commit menyusul/ter-commit). Berikutnya **D3-2**.
+Catatan permanen D3-1 di `notes.md` §1t. Repo hijau: `pest` 684, `pint` 31,
+`sim:tautan-statis` 222, `uji-filter-laporan.mjs` 18/0, uji peramban lain hijau.
 
 **D3 adalah satu-satunya sisa Tahap 2.** Semua butir lain sudah selesai atau
 ditunda ke Tahap 3 (fondasi `user`, `notes.md` §1g.7 Temuan 3).
+
+**Yang sudah terbukti di D3-1 (dipakai D3-2..D3-5 tanpa diubah):**
+- `x-data="filterLaporan(konfig)"` pada `<article>` di `kerangka-laporan`;
+  konfig diturunkan dari `LaporanData::filterLaporan($slug)` — jadi menambah
+  laporan = satu arm `match` + `data-*` pada `<tr>` partial isi, TANPA
+  menyentuh berkas halaman.
+- Cakupan Alpine mewaris ke slot: `x-show`/`x-text` di `isi/{slug}` langsung
+  bekerja.
+- `cocok(tr)`: dimensi filter hanya berlaku atas baris yang membawa atribut
+  datanya. `jumlahTampak()` / `cacahTampak()` siap untuk subtotal D3-2/D3-3.
+- Nomor urut lewat penghitung CSS (`td[data-nomor]`), sudah ada di `app.css`.
+- `uji-filter-laporan.mjs` (PORT 9353) — tambah blok per laporan baru.
 
 ---
 
@@ -44,42 +56,34 @@ Sumber: `rules.md` §12 poin 5, 8, 11; `ui-spec.md` §6.10, §6.11; `notes.md`
 
 ## Pembagian bertahap (tiap tahap = satu commit, diuji terpisah)
 
-### D3-1 — Komponen `x-sim.filter-laporan` + pasang di laporan PALING sederhana
+### D3-1 — Komponen `x-sim.filter-laporan` + Laporan Transmigran ✅ SELESAI
 
-**Tujuan:** membangun pola sekali, buktikan di satu laporan, sebelum
-menyalin ke enam lainnya.
+Dikerjakan 2026-08-29. Hasil (lihat `notes.md` §1t.1 untuk rinciannya):
 
-- Buat `resources/views/components/sim/filter-laporan.blade.php`:
-  - Prop: `:sp="[...]"` (daftar SP untuk `<select>`), `:tahun="false"`
-    (pasang `x-sim.filter-rentang-tahun` bila true), slot untuk dimensi khas.
-  - `x-data` dengan state `{ sp: '', tahunDari: '', tahunSampai: '', ... }`
-    dan getter `cocok(baris)` yang mengembalikan boolean.
-  - `x-modelable` atau `$dispatch` supaya `kerangka-laporan` /
-    `isi/{slug}` dapat membaca state filter untuk (a) sembunyikan `<tr>`,
-    (b) hitung ulang subtotal, (c) susun kalimat cakupan.
-  - **Keputusan arsitektur yang harus diambil dulu:** di mana `x-data`
-    filter hidup? Usulan: di `kerangka-laporan` `<article>` sebagai
-    `x-data="filterLaporan({...})"`, sehingga `isi/{slug}` (yang di-`@include`
-    ke dalam slot) berada di dalam scope-nya dan bisa pakai `x-show`/`x-text`
-    langsung. Verifikasi: slot komponen TIDAK mewarisi variabel Blade, tapi
-    scope Alpine `x-data` DITURUNKAN ke DOM anak — termasuk isi slot. Cek
-    dengan satu `x-text` percobaan sebelum menembak jauh.
-- Pasang di **Laporan Transmigran** (`isi/transmigran.blade.php`): dimensi
-  SP + `tahun_kedatangan`. Paling sederhana: daftar datar, subtotal
-  sedikit/tidak ada.
-  - Tiap `<tr>` transmigran: `data-sp="{id sp}"` `data-tahun="{tahun_kedatangan}"`,
-    `x-show="cocok($el)"` (atau kelas tersembunyi + logika terpusat).
-  - Bila ada baris "Jumlah": `x-text` menghitung `<tr>` yang tampak.
-  - Kalimat cakupan: `x-text` di `<dd>` Wilayah pada `kerangka-laporan`,
-    default `{{ $cakupan }}`, berubah jadi "SP <nama>" saat difilter.
-- **Uji:** tambah kasus ke `tests/Browser/` (file baru `uji-filter-laporan.mjs`,
-  PORT DevTools baru — 9353): buka `/laporan/transmigran`, pilih satu SP,
-  pastikan baris SP lain hilang + kalimat cakupan berubah + subtotal turun.
-- **Jangan** sentuh enam laporan lain di tahap ini.
+- `resources/js/filter-laporan.js` — `Alpine.data('filterLaporan', konfig)`
+  dengan `cocok(tr)`, `jumlahTampak()`, `cacahTampak()`, `kalimatCakupan`,
+  `bersihkan()`. Didaftarkan di `resources/js/app.js`.
+- `resources/views/components/sim/filter-laporan.blade.php` — bilah selalu
+  tampak, `.cetak-sembunyi`, `<select x-model>` SP + rentang tahun + dimensi.
+  TIDAK membuat cakupan Alpine sendiri.
+- `LaporanData::filterLaporan($slug)` — `match` per slug; D3-1 hanya
+  `transmigran` (SP + Tahun Kedatangan + Status Tinggal), lain `[]`.
+- `kerangka-laporan.blade.php` — `x-data="filterLaporan(@js($konfigFilter))"`
+  pada `<article>`; `<x-sim.filter-laporan>` sesudah masthead bila `$filter`
+  terisi; `<dd x-text="kalimatCakupan">{{ $cakupan }}</dd>`.
+- `isi/transmigran.blade.php` — `<tr data-baris data-sp data-tahun data-status
+  x-show="cocok($el)">` di 3 bagian; `<td data-nomor>` (penghitung CSS);
+  baris "Tidak ada … yang cocok" `x-show="cacahTampak(...) === 0"`.
+- `app.css` — 3 aturan penghitung baris (`.tabel-dokumen tbody/tr[data-baris]/
+  td[data-nomor]::before`).
+- `tests/Browser/uji-filter-laporan.mjs` (PORT 9353) — 18/0.
+- `HalamanTest` +5 penjaga. **pest 684** (dari 679), pint 31, tautan-statis 222.
 
-**Checkpoint:** `pest` tetap hijau (uji Blade statis tak berubah), uji
-peramban baru hijau, `pint` 31. Commit "Putaran 3 D3-1: komponen
-filter-laporan + Laporan Transmigran".
+**Keputusan arsitektur terkonfirmasi:** `x-data` di `<article>`, bukan di
+komponen bilah — kalimat cakupan (sibling slot) wajib ikut bereaksi. Scope
+Alpine `x-data` diturunkan ke DOM anak termasuk isi slot Blade. `x-sim.
+filter-rentang-tahun`/`tombol-filter` yang ada berbasis submit `<form>`, jadi
+TIDAK dipakai ulang apa adanya (bilah membangun `<select x-model>` sendiri).
 
 ### D3-2 — Salin pola ke laporan datar lain: Poktan, Alsintan, Saprotan
 

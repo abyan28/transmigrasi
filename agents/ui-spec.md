@@ -874,9 +874,21 @@ Sepasang `<select>` (dari–sampai) untuk menyaring **daftar transaksi bersumbu 
 
 **DILARANG pada halaman rekap agregat.** Rekap panen yang dijumlah lintas tahun membuat bidang 2 ha yang ditanami tiga tahun terbaca 6 ha (`rules.md` §9 poin 8b). Penyaringan daftar dipusatkan di `DummyData::saringRentangTahun()`: batas kosong berarti terbuka, batas terbalik ditukar, baris tanpa tahun tersaring keluar begitu satu batas dipasang.
 
-### 6.11 `<x-sim.filter-laporan>` (Putaran 3 D3)
+### 6.11 `<x-sim.filter-laporan>` (Putaran 3 D3, D3-1 dipasang 2026-08-29)
 
-Bilah filter di kepala halaman laporan (BUKAN laci — di halaman laporan filter adalah kontrol utama, bukan pelengkap). Memakai ulang `x-sim.filter-rentang-tahun` dan `x-sim.tombol-filter`. Isi per laporan: Satuan Permukiman + dimensi khas (poktan, komoditas, jenis, status, dst). Dikerjakan Alpine di sisi peramban — query string tidak dilayani GitHub Pages (`notes.md` 1b.5). Blade tetap merender seluruh baris; Alpine menyembunyikan baris (`data-sp`, `data-tahun`, `data-poktan` pada tiap `<tr>`) dan menghitung ulang subtotal yang tampak (`x-text` pada sel subtotal/total). Bilah memakai `.cetak-sembunyi`. Kalimat cakupan di kepala kertas ikut berubah mengikuti filter.
+Bilah filter di kepala halaman laporan (BUKAN laci — di halaman laporan filter adalah kontrol utama, bukan pelengkap; selalu tampak). Dikerjakan Alpine di sisi peramban — query string tidak dilayani GitHub Pages (`notes.md` 1b.5). Blade tetap merender seluruh baris; Alpine menyembunyikan `<tr>` yang tak cocok dan menghitung ulang subtotal yang tampak.
+
+**Cakupan Alpine hidup di `<article>` kerangka-laporan**, bukan di komponen bilah ini. Alasannya kalimat cakupan di kepala kertas (`<dd x-text="kalimatCakupan">`) wajib ikut bereaksi (`rules.md` §12 poin 8) dan ia sibling dari slot isi; leluhur bersama menyelesaikannya. `kerangka-laporan` menurunkan konfig dari `LaporanData::filterLaporan($slug)` — nol berkas halaman laporan disunting, rute dokumen polos memperoleh bilah yang sama.
+
+**Mekanisme.** `resources/js/filter-laporan.js` mendaftarkan `Alpine.data('filterLaporan', konfig)`. Tiap `<tr data-baris>` diberi `data-sp`, `data-tahun`, `data-poktan`, `data-status`, dst; `cocok($el)` pada `x-show` membandingkannya. **Satu dimensi filter hanya berlaku atas baris yang membawa atribut datanya** — laporan berbagian banyak (transmigran+rumah+lahan) hanya menandai bagian yang relevan, jadi filter tahun kedatangan tidak menghapus seluruh baris rumah. Sel subtotal/total memakai `x-text="jumlahTampak($el.closest('table'), 'kolom')"`.
+
+**Isi bilah per laporan** dari `LaporanData::filterLaporan($slug)`: Satuan Permukiman (daftar master, bukan cacahan baris — §19a) + `tahun` (sepasang rentang) + `dimensi` khas (status, komoditas, jenis, poktan). Larik kosong = laporan belum berfilter, kerangka tak merender bilah. D3-1 memasang **Laporan Transmigran** (SP + Tahun Kedatangan + Status Tinggal); laporan lain menyusul D3-2..D3-5.
+
+**Nomor urut** lewat penghitung CSS (`.tabel-dokumen td[data-nomor]::before { content: counter(baris-laporan) }`), bukan indeks Blade: elemen ber-`display:none` tidak menaikkan penghitung CSS, jadi nomor rapat kembali setelah baris disaring tanpa satu baris JS pun.
+
+**Keadaan pencarian nihil** (ui-spec §7): tiap tabel punya satu `<tr x-show="cacahTampak(...) === 0">` "Tidak ada … yang cocok dengan filter". Bilah memakai `.cetak-sembunyi`. Tombol **Bersihkan** `x-show="adaFilter"` (R-26).
+
+**Catatan:** `x-sim.filter-rentang-tahun` dan `x-sim.tombol-filter` yang ada berbasis submit `<form>` server, jadi TIDAK dipakai ulang apa adanya — bilah ini membangun `<select x-model>` sendiri dengan kelas Tailwind yang sama.
 
 ---
 

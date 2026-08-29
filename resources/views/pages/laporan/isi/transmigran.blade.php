@@ -43,9 +43,11 @@
             </tr>
         </thead>
         <tbody>
-            @forelse ($transmigran as $i => $t)
-                <tr class="text-gray-700 dark:text-gray-300">
-                    <td class="px-3 py-2">{{ $i + 1 }}</td>
+            @forelse ($transmigran as $t)
+                <tr data-baris data-sp="{{ $t['satuan_permukiman_id'] }}"
+                    data-tahun="{{ $t['tahun_kedatangan'] }}" data-status="{{ $t['status_tinggal'] }}"
+                    x-show="cocok($el)" class="text-gray-700 dark:text-gray-300">
+                    <td class="px-3 py-2 tabular-nums" data-nomor></td>
                     <td class="px-3 py-2 tabular-nums">{{ $t['nik'] }}</td>
                     <td class="px-3 py-2 font-medium text-gray-800 dark:text-white/90">{{ $t['nama_kepala_keluarga'] }}</td>
                     <td class="px-3 py-2 tabular-nums">{{ $t['no_kk'] }}</td>
@@ -67,6 +69,16 @@
                     </td>
                 </tr>
             @endforelse
+            @if (count($transmigran) > 0)
+                <tr x-show="cacahTampak($el.closest('tbody')) === 0" x-cloak>
+                    <td colspan="14" class="px-3 py-6 text-center text-gray-500 dark:text-gray-400">
+                        Tidak ada kepala keluarga yang cocok dengan filter.
+                        <button type="button" @click="bersihkan()"
+                            class="ml-1 rounded font-medium text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">Bersihkan
+                            filter</button>
+                    </td>
+                </tr>
+            @endif
         </tbody>
     </table>
 </div>
@@ -90,9 +102,10 @@
             </tr>
         </thead>
         <tbody>
-            @forelse ($rumah as $i => $r)
-                <tr class="text-gray-700 dark:text-gray-300">
-                    <td class="px-3 py-2">{{ $i + 1 }}</td>
+            @forelse ($rumah as $r)
+                <tr data-baris data-sp="{{ $r['satuan_permukiman_id'] }}" x-show="cocok($el)"
+                    class="text-gray-700 dark:text-gray-300">
+                    <td class="px-3 py-2 tabular-nums" data-nomor></td>
                     <td class="px-3 py-2 font-medium text-gray-800 dark:text-white/90">{{ $r['no_rumah'] }}</td>
                     <td class="px-3 py-2">{{ $r['satuan_permukiman'] }}</td>
                     <td class="px-3 py-2">{{ $r['penghuni'] ?: '-' }}</td>
@@ -108,6 +121,13 @@
                     </td>
                 </tr>
             @endforelse
+            @if (count($rumah) > 0)
+                <tr x-show="cacahTampak($el.closest('tbody')) === 0" x-cloak>
+                    <td colspan="8" class="px-3 py-6 text-center text-gray-500 dark:text-gray-400">
+                        Tidak ada rumah yang cocok dengan filter.
+                    </td>
+                </tr>
+            @endif
         </tbody>
     </table>
 </div>
@@ -131,9 +151,10 @@
             </tr>
         </thead>
         <tbody>
-            @forelse ($lahan as $i => $l)
-                <tr class="text-gray-700 dark:text-gray-300">
-                    <td class="px-3 py-2">{{ $i + 1 }}</td>
+            @forelse ($lahan as $l)
+                <tr data-baris data-sp="{{ $l['satuan_permukiman_id'] }}" x-show="cocok($el)"
+                    class="text-gray-700 dark:text-gray-300">
+                    <td class="px-3 py-2 tabular-nums" data-nomor></td>
                     <td class="px-3 py-2 font-medium text-gray-800 dark:text-white/90">{{ $l['kode_lahan'] }}</td>
                     <td class="px-3 py-2">{{ $l['pemilik'] }}</td>
                     <td class="px-3 py-2">{{ $l['satuan_permukiman'] }}</td>
@@ -149,6 +170,13 @@
                     </td>
                 </tr>
             @endforelse
+            @if (count($lahan) > 0)
+                <tr x-show="cacahTampak($el.closest('tbody')) === 0" x-cloak>
+                    <td colspan="8" class="px-3 py-6 text-center text-gray-500 dark:text-gray-400">
+                        Tidak ada lahan yang cocok dengan filter.
+                    </td>
+                </tr>
+            @endif
         </tbody>
     </table>
 </div>

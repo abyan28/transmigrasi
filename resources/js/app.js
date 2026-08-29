@@ -17,6 +17,10 @@ import { pasangPenjagaAngka } from './input-angka';
 // Penguncian gulir selama modal terbuka
 import kunciGulir from './kunci-gulir';
 
+// Penyaring halaman laporan, dijalankan di sisi peramban (GitHub Pages tidak
+// melayani query string, notes.md 1b.5)
+import filterLaporan from './filter-laporan';
+
 // Locale flatpickr disetel ke Bahasa Indonesia mengikuti locale aplikasi
 flatpickr.localize(Indonesian);
 
@@ -58,5 +62,12 @@ grafik.pantauTema();
     Lihat resources/js/input-angka.js untuk alasan tiap penolakannya.
 */
 pasangPenjagaAngka();
+
+/*
+    Penyaring halaman laporan. Didaftarkan sebagai komponen Alpine bernama
+    supaya `x-sim.kerangka-laporan` cukup menulis `x-data="filterLaporan(konfig)"`.
+    Lihat resources/js/filter-laporan.js.
+*/
+Alpine.data('filterLaporan', filterLaporan);
 
 Alpine.start();

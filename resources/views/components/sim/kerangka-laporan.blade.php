@@ -38,6 +38,12 @@
     $sumberUrl = isset($meta['sumberRute']) ? route($meta['sumberRute']) : null;
     $catatan = $meta['catatan'] ?? null;
 
+    // Konfigurasi bilah filter (D3). Larik kosong berarti laporan ini belum
+    // berfilter; cakupan Alpine tetap dipasang agar partial isi yang memakai
+    // x-show tidak pecah pada laporan tanpa filter.
+    $filter = \App\Support\LaporanData::filterLaporan($slug);
+    $konfigFilter = $filter + ['cakupanBawaan' => $cakupan];
+
     // Orientasi diturunkan dari jumlah kolom, bukan dipilih tangan (D2b).
     $orientasi = \App\Support\LaporanData::orientasi($slug);
     $landscape = $orientasi === 'landscape';
@@ -96,11 +102,16 @@
     sidebar -- itulah keluhan "berantakan" yang memicu Putaran 3. Kelas
     orientasi mengatur kepadatan selnya lewat app.css.
 --}}
-<article class="kertas-dokumen dokumen-{{ $orientasi }} mx-auto {{ $lebarKertas }} overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+<article x-data="filterLaporan(@js($konfigFilter))"
+    class="kertas-dokumen dokumen-{{ $orientasi }} mx-auto {{ $lebarKertas }} overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
     {{--
         Masthead dokumen: judul, lalu cakupan sebagai TEKS (rules.md 12 poin
         8). Angka rekap tanpa cakupannya tidak dapat disalin ke laporan mana
         pun (rules.md 9), jadi di sinilah cakupan itu dinyatakan.
+
+        Kalimat "Wilayah" disusun ulang oleh Alpine mengikuti filter yang
+        aktif (D3): dokumen yang dicetak atau difoto kehilangan kontrol
+        filternya, jadi cakupan yang sedang berlaku wajib ikut tercetak.
     --}}
     <header class="border-b border-gray-200 px-6 py-5 dark:border-gray-800">
         <h1 class="text-theme-lg font-semibold text-gray-900 dark:text-white">{{ $judulLaporan }}</h1>
@@ -110,7 +121,8 @@
         <dl class="mt-2 grid gap-x-6 gap-y-2 text-theme-sm sm:grid-cols-2">
             <div>
                 <dt class="text-gray-500 dark:text-gray-400">Wilayah</dt>
-                <dd class="mt-0.5 font-medium text-gray-800 dark:text-white/90">{{ $cakupan }}</dd>
+                <dd class="mt-0.5 font-medium text-gray-800 dark:text-white/90"
+                    x-text="kalimatCakupan">{{ $cakupan }}</dd>
             </div>
             <div>
                 <dt class="text-gray-500 dark:text-gray-400">Dasar periode</dt>
@@ -138,6 +150,12 @@
             </p>
         @endif
     </header>
+
+    @if (! empty($filter))
+        <x-sim.filter-laporan :sp="$filter['sp'] ?? []" :tahun="$filter['tahun'] ?? false"
+            :label-tahun="$filter['labelTahun'] ?? 'Tahun'" :daftar-tahun="$filter['daftarTahun'] ?? []"
+            :dimensi="$filter['dimensi'] ?? []" />
+    @endif
 
     <div class="space-y-8 p-6">
         {{ $slot }}
