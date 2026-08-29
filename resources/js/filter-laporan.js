@@ -19,9 +19,17 @@
  *   {
  *     sp: [{ id, nama }],          // daftar opsi Satuan Permukiman
  *     tahun: true,                 // pasang sepasang penyaring rentang tahun
+ *     tahunTunggal: true,          // pasang SATU pemilih tahun (laporan snapshot)
+ *     tahunBawaan: 2026,           // tahun terpilih bawaan untuk tahunTunggal
+ *     tahunAkhir: 2026,            // tahun terakhir deret data, utk label dokumen
  *     dimensi: [{ kunci, label, opsi: [...] }],
  *     cakupanBawaan: 'kalimat cakupan penuh saat tak ada filter',
  *   }
+ *
+ * Tautan "Generate Laporan" membawa keadaan filter ke rute dokumen lewat
+ * FRAGMEN HASH (`#sp=..&td=..`), bukan query string -- GitHub Pages tidak
+ * melayani query string (notes.md 1b.5) tetapi hash murni sisi peramban.
+ * `hashFilter` menserialisasi, `dariHash()` membaca kembali di rute dokumen.
  */
 export default function filterLaporan(konfig = {}) {
     return {
@@ -29,6 +37,7 @@ export default function filterLaporan(konfig = {}) {
         sp: '',
         tahunDari: '',
         tahunSampai: '',
+        tahun: '',
 
         /** Keadaan tiap dimensi khas laporan, mis. { status: '', komoditas: '' }. */
         dimensi: {},
@@ -38,6 +47,68 @@ export default function filterLaporan(konfig = {}) {
                 if (!(d.kunci in this.dimensi)) {
                     this.dimensi[d.kunci] = '';
                 }
+            });
+
+            if (this.konfig.tahunTunggal) {
+                this.tahun = String(this.konfig.tahunBawaan ?? this.konfig.tahunAkhir ?? '');
+            }
+
+            this.dariHash();
+        },
+
+        /**
+         * Menserialisasi filter yang sedang aktif ke fragmen hash, untuk
+         * dipasang pada `href` tombol "Generate Laporan". Kosong bila tak ada
+         * filter. Tahun tunggal hanya ditulis bila berbeda dari bawaannya.
+         *
+         * @returns {string} '' atau '#sp=1&td=2019&...'
+         */
+        get hashFilter() {
+            const p = new URLSearchParams();
+
+            if (this.sp !== '') p.set('sp', this.sp);
+            if (this.tahunDari !== '') p.set('td', this.tahunDari);
+            if (this.tahunSampai !== '') p.set('ts', this.tahunSampai);
+
+            if (
+                this.konfig.tahunTunggal &&
+                this.tahun !== '' &&
+                this.tahun !== String(this.konfig.tahunBawaan ?? this.konfig.tahunAkhir ?? '')
+            ) {
+                p.set('th', this.tahun);
+            }
+
+            Object.entries(this.dimensi).forEach(([k, v]) => {
+                if (v !== '') p.set(k, v);
+            });
+
+            const s = p.toString();
+
+            return s ? '#' + s : '';
+        },
+
+        /**
+         * Membaca `location.hash` dan menerapkannya ke keadaan filter. Dipanggil
+         * di `init()`. Di rute dokumen inilah satu-satunya cara filter sampai;
+         * di halaman berbingkai hash biasanya kosong (dan tak apa bila terisi --
+         * jadi tautan yang dapat ditandai).
+         */
+        dariHash() {
+            const raw = (globalThis.location?.hash || '').replace(/^#/, '');
+
+            if (! raw) {
+                return;
+            }
+
+            const p = new URLSearchParams(raw);
+
+            if (p.has('sp')) this.sp = p.get('sp');
+            if (p.has('td')) this.tahunDari = p.get('td');
+            if (p.has('ts')) this.tahunSampai = p.get('ts');
+            if (p.has('th')) this.tahun = p.get('th');
+
+            Object.keys(this.dimensi).forEach((k) => {
+                if (p.has(k)) this.dimensi[k] = p.get(k);
             });
         },
 
@@ -225,6 +296,25 @@ export default function filterLaporan(konfig = {}) {
          */
         selSp(spId) {
             return 'tr[data-baris][data-sp="' + spId + '"]';
+        },
+
+        /**
+         * Baris "TAHUN ..." di blok judul kop dokumen. Rentang bila penyaring
+         * rentang tahun aktif; satu tahun bila pemilih tahun tunggal; selain
+         * itu tahun terakhir deret data (`konfig.tahunBawaanDokumen`).
+         *
+         * @returns {string}
+         */
+        get tahunDokumen() {
+            if (this.konfig.tahunTunggal && this.tahun) {
+                return 'TAHUN ' + this.tahun;
+            }
+
+            if (this.tahunDari !== '' || this.tahunSampai !== '') {
+                return 'TAHUN ' + (this.tahunDari || 'paling awal') + ' sampai ' + (this.tahunSampai || 'paling akhir');
+            }
+
+            return 'TAHUN ' + (this.konfig.tahunBawaanDokumen || '');
         },
 
         /** Nama satu SP dari daftar opsi konfig, atau id mentah bila tak ketemu. */

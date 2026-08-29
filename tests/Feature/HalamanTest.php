@@ -4772,16 +4772,29 @@ it('menyajikan tiap laporan pada rute dokumen polos yang isinya sama', function 
     $dokumen = $this->get('/laporan/'.$slug.'/dokumen')->assertOk()->getContent();
     $berbingkai = $this->get('/laporan/'.$slug)->assertOk()->getContent();
 
-    // Kertasnya utuh: kepala dokumen dan penanda data contoh tetap ada.
+    // Rute dokumen = DOKUMEN RESMI berkop (Putaran 5), bukan lagi blok
+    // "Cakupan laporan". Dua lambang, blok judul di tengah, baris "TAHUN ...",
+    // lalu kalimat cakupan (wajib tetap tercetak -- rules.md 12 poin 8).
     expect($dokumen)
-        ->toContain('Cakupan laporan')
+        ->toContain('KEMENTERIAN TRANSMIGRASI')
+        ->toContain('Logo Kementerian Transmigrasi')     // alt gambar kiri
+        ->toContain('Lambang Kabupaten Malaka')          // alt gambar kanan
+        ->toContain('x-text="tahunDokumen"')
+        ->toContain('x-text="kalimatCakupan"')           // cakupan tetap ada
         ->toContain('Data contoh.')
-        ->not->toContain("\xE2\x80\x94");   // R-02, tanpa em dash
+        ->not->toContain("\xE2\x80\x94")                 // R-02, tanpa em dash
+        ->not->toContain('Cakupan laporan');            // blok lama dicabut di dokumen
 
-    // Tanpa kromo aplikasi: itulah gunanya rute ini.
+    // Tanpa kromo aplikasi, tanpa bilah filter, tanpa tombol Generate.
     expect($dokumen)
         ->not->toContain('id="sidebar"')
-        ->not->toContain('Buka di tab baru');   // tombol itu hanya di halaman berbingkai
+        ->not->toContain('aria-label="Penyaring laporan"')
+        ->not->toContain('Generate Laporan')
+        ->not->toContain('Buka di tab baru');
+
+    // Kop WAJIB non-<table> (penjaga kolomTerlebarDariHtml).
+    $awalKop = strpos($dokumen, 'KEMENTERIAN TRANSMIGRASI');
+    expect(substr($dokumen, max(0, $awalKop - 600), 1400))->not->toContain('<table');
 
     // Isi tabelnya sama persis dengan halaman berbingkai. Keduanya
     // meng-include partial yang sama, jadi selisih berarti ada yang lepas.
@@ -4893,26 +4906,71 @@ it('menegaskan baris total laporan dengan motif resmi, bukan garis abu-abu', fun
 | D3-1 baru memasang Laporan Transmigran. Laporan lain menyusul (D3-2..D3-5).
 */
 
-it('memasang bilah filter Alpine di halaman Laporan Transmigran', function () {
-    foreach (['/laporan/transmigran', '/laporan/transmigran/dokumen'] as $rute) {
-        $isi = $this->get($rute)->assertOk()->getContent();
+it('memasang bilah filter Alpine di halaman Laporan Transmigran (berbingkai)', function () {
+    $isi = $this->get('/laporan/transmigran')->assertOk()->getContent();
 
-        // Cakupan Alpine pada kertas, dan bilah filternya.
-        expect($isi)
-            ->toContain('x-data="filterLaporan(')
-            ->toContain('aria-label="Penyaring laporan"')
-            ->toContain('id="filter-laporan-sp"')
-            ->toContain('x-text="kalimatCakupan"');
+    // Cakupan Alpine pada kertas, dan bilah filternya.
+    expect($isi)
+        ->toContain('x-data="filterLaporan(')
+        ->toContain('aria-label="Penyaring laporan"')
+        ->toContain('id="filter-laporan-sp"')
+        ->toContain('x-text="kalimatCakupan"');
 
-        // Bilah tidak ikut tercetak: section-nya memakai .cetak-sembunyi.
-        $awal = strpos($isi, 'aria-label="Penyaring laporan"');
-        expect(substr($isi, max(0, $awal - 200), 400))->toContain('cetak-sembunyi');
+    // Bilah tidak ikut tercetak: section-nya memakai .cetak-sembunyi.
+    $awal = strpos($isi, 'aria-label="Penyaring laporan"');
+    expect(substr($isi, max(0, $awal - 200), 400))->toContain('cetak-sembunyi');
 
-        // Tiap baris data membawa penanda SP supaya Alpine dapat menyaringnya,
-        // dan nomor urut dikosongkan (diisi penghitung CSS, bukan indeks Blade).
-        expect(substr_count($isi, 'data-baris'))->toBeGreaterThan(3);
-        expect($isi)->toContain('data-sp=')->toContain('data-nomor');
-    }
+    // Tiap baris data membawa penanda SP supaya Alpine dapat menyaringnya,
+    // dan nomor urut dikosongkan (diisi penghitung CSS, bukan indeks Blade).
+    expect(substr_count($isi, 'data-baris'))->toBeGreaterThan(3);
+    expect($isi)->toContain('data-sp=')->toContain('data-nomor');
+});
+
+it('membawa filter ke rute dokumen lewat hash, bukan bilah (Putaran 5)', function () {
+    // Rute dokumen TANPA bilah filter. Cakupan Alpine tetap dipasang supaya
+    // hash (#sp=..) yang dibawa tombol "Generate Laporan" diterapkan; baris
+    // disembunyikan lewat x-show. Tombol Generate hanya di halaman berbingkai.
+    $dokumen = $this->get('/laporan/transmigran/dokumen')->assertOk()->getContent();
+
+    expect($dokumen)
+        ->toContain('x-data="filterLaporan(')            // untuk dariHash()
+        ->toContain('data-baris')
+        ->toContain('data-sp=')
+        ->not->toContain('aria-label="Penyaring laporan"')
+        ->not->toContain('id="filter-laporan-sp"');
+
+    // Tombol "Generate Laporan" di halaman berbingkai membawa keadaan filter
+    // lewat fragmen hash pada :href (bukan query string).
+    $berbingkai = $this->get('/laporan/transmigran')->getContent();
+    expect($berbingkai)
+        ->toContain('Generate Laporan')
+        ->toContain(':href="')
+        ->toContain('+ hashFilter');
+});
+
+it('menyusun kop dokumen laporan dari satu sumber identitas (Putaran 5)', function () {
+    $instansi = LaporanData::instansi();
+
+    // Kabupaten & provinsi diturunkan dari DummyData::kawasan(), tidak ditulis
+    // ulang. Dua lambang: Kementerian + Kabupaten.
+    $kawasan = DummyData::kawasan()[0];
+    expect($instansi['dinas'])->toContain($kawasan['kabupaten']);
+    expect($instansi['alamat'])->toContain($kawasan['provinsi']);
+    expect($instansi['logoKementerian'])->toBe('images/logo/logo-kementrans-128.png');
+    expect($instansi['lambangKabupaten'])->toBe('images/logo/lambang-malaka.png');
+    expect(public_path('images/logo/lambang-malaka.png'))->toBeFile();
+
+    // Tahun rujukan dokumen = tahun terakhir deret data, bukan date('Y').
+    $deret = DummyData::deretTahunan()['tahun'];
+    expect(LaporanData::tahunDokumenBawaan())->toBe((int) end($deret));
+
+    // Kop HANYA di rute dokumen, tidak di halaman berbingkai.
+    expect($this->get('/laporan/poktan')->getContent())->not->toContain('KEMENTERIAN TRANSMIGRASI');
+    $dokumen = $this->get('/laporan/poktan/dokumen')->getContent();
+    expect($dokumen)
+        ->toContain('lambang-malaka.png')
+        ->toContain('logo-kementrans-128.png')
+        ->toContain('TAHUN '.LaporanData::tahunDokumenBawaan());
 });
 
 it('menyaring laporan lewat Alpine, bukan query string yang mati di GitHub Pages', function () {

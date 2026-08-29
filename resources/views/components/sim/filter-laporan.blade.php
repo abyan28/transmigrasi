@@ -25,6 +25,8 @@
 @props([
     'sp' => [],
     'tahun' => false,
+    'tahunTunggal' => false,
+    'tahunBawaan' => null,
     'labelTahun' => 'Tahun',
     'daftarTahun' => [],
     'dimensi' => [],
@@ -45,6 +47,17 @@
                     <option value="">Seluruh satuan permukiman</option>
                     @foreach ($sp as $opsi)
                         <option value="{{ $opsi['id'] }}">{{ $opsi['nama'] }}</option>
+                    @endforeach
+                </select>
+            </div>
+        @endif
+
+        @if ($tahunTunggal)
+            <div class="min-w-[9rem] flex-1">
+                <label for="filter-laporan-tahun" class="{{ $kelasLabel }}">{{ $labelTahun }}</label>
+                <select id="filter-laporan-tahun" x-model="tahun" class="{{ $kelasSelect }}">
+                    @foreach ($daftarTahun as $t)
+                        <option value="{{ $t }}">{{ $t }}</option>
                     @endforeach
                 </select>
             </div>

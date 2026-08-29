@@ -54,6 +54,50 @@ class LaporanData
     }
 
     /**
+     * Identitas instansi untuk kop surat rute dokumen laporan (Putaran 5).
+     *
+     * Dua lambang (keputusan pemilik proyek): logo Kementerian Transmigrasi
+     * di kiri, lambang Kabupaten Malaka di kanan. Kabupaten dan provinsi dari
+     * `DummyData::kawasan()`. Telepon dan surel adalah CONTOH yang mengikuti
+     * `refs/contoh format laporan.docx`, bukan kontak resmi -- spanduk
+     * "Data contoh" seluruh aplikasi sudah menyanggahnya.
+     *
+     * @return array<string, string>
+     */
+    public static function instansi(): array
+    {
+        $kawasan = DummyData::kawasan()[0] ?? ['kabupaten' => '-', 'provinsi' => '-'];
+        $kabupaten = $kawasan['kabupaten'] ?? '-';
+
+        return [
+            'kementerian' => 'Kementerian Transmigrasi Republik Indonesia',
+            'pemerintah' => 'Pemerintah Kabupaten '.$kabupaten,
+            'dinas' => 'Dinas Tenaga Kerja dan Transmigrasi Kabupaten '.$kabupaten,
+            'alamat' => 'Jalan Raya Betun, Kompleks Perkantoran Pemerintah Daerah Kab. '
+                .$kabupaten.', '.($kawasan['provinsi'] ?? '-'),
+            // Placeholder dari berkas rujukan, bukan kontak resmi.
+            'kontak' => 'Telepon (0389) 123456  |  Surel distrans@malakakab.go.id',
+            'logoKementerian' => 'images/logo/logo-kementrans-128.png',
+            'lambangKabupaten' => 'images/logo/lambang-malaka.png',
+        ];
+    }
+
+    /**
+     * Tahun rujukan dokumen laporan, yaitu tahun TERAKHIR deret data
+     * (`DummyData::deretTahunan()`), bukan `date('Y')`.
+     *
+     * Ikut pola dashboard (`pages/dashboard/index.blade.php`): yang dapat
+     * dijamin benar adalah "angka ini milik tahun terakhir yang terdata";
+     * menyebut tahun berjalan menjanjikan hal yang belum tentu benar.
+     */
+    public static function tahunDokumenBawaan(): int
+    {
+        $tahun = DummyData::deretTahunan()['tahun'] ?? [];
+
+        return $tahun === [] ? (int) date('Y') : (int) end($tahun);
+    }
+
+    /**
      * Metadata tiap laporan: judul, izin, cakupan, dasar periode, tautan
      * sumber, catatan, dan jumlah kolom tabel terlebarnya.
      *

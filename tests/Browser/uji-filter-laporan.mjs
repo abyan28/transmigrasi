@@ -127,6 +127,12 @@ async function main() {
         });
 
         const buka = async (jalur) => {
+            // about:blank dulu supaya navigasi yang hanya berbeda fragmen hash
+            // (mis. #sp=1 pada path yang sama) tetap memuat ulang halaman penuh
+            // -- Page.navigate ke perubahan same-document tidak menjalankan
+            // ulang Alpine init()/dariHash().
+            await kirim('Page.navigate', { url: 'about:blank' });
+            await tidur(150);
             await kirim('Page.navigate', { url: `${ASAL}${jalur}` });
             for (let i = 0; i < 60; i += 1) {
                 if (await nilai('!! window.Alpine')) break;
@@ -257,12 +263,45 @@ async function main() {
             `) === true);
 
         // ============================================================
-        console.log('\nRute dokumen polos:');
+        console.log('\nTombol "Generate Laporan" membawa filter lewat hash:');
+        // Set satu SP lagi, lalu baca href tombol Generate Laporan.
+        await setSelect('#filter-laporan-sp', spPertama);
+        await tidur(200);
+        const hrefGenerate = await nilai(`
+            [...document.querySelectorAll('a[target="_blank"]')]
+                .find((a) => a.textContent.trim().startsWith('Generate Laporan'))?.getAttribute('href') ?? ''
+        `);
+        periksa('href tombol Generate Laporan memuat #sp= sesuai filter aktif',
+            hrefGenerate.includes('/laporan/transmigran/dokumen#sp=' + spPertama),
+            `href=${hrefGenerate}`);
+
+        // ============================================================
+        console.log('\nRute dokumen polos: dokumen resmi, tanpa bilah, hash diterapkan:');
         await buka('/laporan/transmigran/dokumen');
-        periksa('bilah filter tetap ada pada rute dokumen',
-            await nilai(`!! document.querySelector('section[aria-label="Penyaring laporan"]')`) === true);
-        periksa('bilah filter memakai .cetak-sembunyi',
-            await nilai(`document.querySelector('section[aria-label="Penyaring laporan"]')?.classList.contains('cetak-sembunyi')`) === true);
+        periksa('rute dokumen TIDAK memuat bilah filter',
+            await nilai(`! document.querySelector('section[aria-label="Penyaring laporan"]')`) === true);
+        periksa('rute dokumen memuat kop KEMENTERIAN TRANSMIGRASI + dua lambang',
+            await nilai(`
+                document.body.textContent.includes('KEMENTERIAN TRANSMIGRASI')
+                && !! document.querySelector('img[alt="Logo Kementerian Transmigrasi"]')
+                && !! document.querySelector('img[alt="Lambang Kabupaten Malaka"]')
+            `) === true);
+        periksa('baris "TAHUN ..." kop menyebut tahun terakhir deret data',
+            /^TAHUN \d{4}$/.test(await nilai(`document.querySelector('[x-text="tahunDokumen"]')?.textContent ?? ''`)));
+
+        // Hash diterapkan: buka dokumen dengan #sp=<id>, hanya baris SP itu tampak.
+        await buka('/laporan/transmigran/dokumen#sp=' + spPertama);
+        periksa('hash #sp= menyaring baris di rute dokumen (tanpa bilah)',
+            await nilai(`
+                (() => {
+                    const b = [...document.querySelectorAll('table.tabel-dokumen')[0].querySelectorAll('tbody tr[data-baris]')];
+                    const tampak = b.filter((tr) => tr.offsetParent !== null);
+                    return tampak.length > 0 && tampak.length < b.length
+                        && tampak.every((tr) => tr.dataset.sp === ${JSON.stringify(spPertama)});
+                })()
+            `) === true);
+        periksa('kalimat cakupan kop menyebut SP terpilih (dari hash)',
+            (await nilai(`document.querySelector('[x-text="kalimatCakupan"]')?.textContent ?? ''`)).includes(spNama));
 
         // ============================================================
         console.log('\nLaporan Poktan (penyaring menyembunyikan tabel utuh):');
