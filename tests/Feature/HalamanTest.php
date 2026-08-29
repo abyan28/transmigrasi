@@ -5223,11 +5223,23 @@ it('menyaring tabel ikhtisar dan tiap bab Monografi SP dengan pemilih SP + tahun
         ->toContain('data-tahun=')
         ->toContain('<section data-baris data-sp=')
         ->toContain('id="filter-laporan-tahun"')            // pemilih tahun tunggal
-        ->toContain('x-text="iklimTahun(')                  // Bab II iklim ikut tahun
+        ->toContain('x-text="iklimTahun(')                  // Keadaan Wilayah iklim ikut tahun
+        ->toContain('x-text="nilaiKependudukan(')           // keadaan penduduk sekarang ikut tahun
         ->toContain('Tidak ada satuan permukiman yang cocok dengan filter')
         ->not->toContain('id="filter-laporan-tahun-dari"'); // BUKAN rentang tahun
 
-    // Ikhtisar: 6 SP x 5 tahun = 30 baris. Bab II tetap satu section per SP = 6.
+    // Judul bagian tanpa awalan "Bab X." (Putaran 6).
+    expect($isi)
+        ->toContain('Pendahuluan')
+        ->toContain('>Keadaan Wilayah</h4>')
+        ->toContain('>Kependudukan</h4>')
+        ->toContain('>Sosial Ekonomi</h4>')
+        ->toContain('>Sosial Budaya</h4>')
+        ->toContain('Struktur penduduk menurut kelompok umur')
+        ->toContain('Mutasi penduduk kumulatif sejak penempatan')
+        ->not->toContain('Bab II');
+
+    // Ikhtisar: 6 SP x 5 tahun = 30 baris. Section tetap satu per SP = 6.
     expect(substr_count($isi, '<tr data-baris data-sp='))->toBe(6 * 5);
     expect(substr_count($isi, '<section data-baris data-sp='))->toBe(6);
 
@@ -5236,6 +5248,7 @@ it('menyaring tabel ikhtisar dan tiap bab Monografi SP dengan pemilih SP + tahun
     expect($konfig['tahunTunggal'])->toBeTrue();
     expect($konfig['daftarTahun'])->toBe(DummyData::tahunLaporan());
     expect($konfig['tahunBawaan'])->toBe(LaporanData::tahunDokumenBawaan());
+    expect($konfig)->toHaveKey('kependudukanTahun');
 });
 
 it('menomori baris laporan lewat penghitung CSS supaya rapat setelah disaring', function () {

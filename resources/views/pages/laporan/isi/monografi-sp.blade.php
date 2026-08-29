@@ -3,11 +3,14 @@
     dokumen polos.
 
     Berkas rujukan "LAPORAN MONOGRAFI UPT KAPITAN MEO 2025.doc" adalah dokumen
-    naratif lima bab. Yang disajikan di sini Bab II "Keadaan Wilayah" tiap SP
-    (letak, batas, luas dan bentuk, tanah, topografi, iklim, sumberdaya air,
-    aksesibilitas), didahului satu tabel ikhtisar indikator per SP. Bab
-    kependudukan, sosial ekonomi, dan sosial budaya menyusul begitu modul
-    terkait menyimpan datanya.
+    naratif lima bab. Judul di sini tanpa awalan "Bab X." (Putaran 6). Tiap SP
+    menyajikan Pendahuluan, Keadaan Wilayah (letak, batas, luas, tanah, iklim,
+    sumberdaya air, aksesibilitas), Kependudukan (penempatan, keadaan sekarang,
+    struktur umur, usia sekolah, mutasi penduduk), Sosial Ekonomi (lahan,
+    sertifikat, tanaman pangan, infrastruktur), dan Sosial Budaya (pendidikan,
+    kesehatan, agama, olahraga, keamanan, alsintan, inventaris, fasilitas umum).
+    Bagian yang belum berdata ditandai kosong; struktur umur dan mutasi adalah
+    angka contoh turunan.
 --}}
 @php
     $angka = fn ($n, $desimal = 2) => \App\Support\LaporanData::angka($n, $desimal);
@@ -86,7 +89,7 @@
 </div>
 
 <div class="space-y-8">
-    <h2 class="text-theme-lg font-semibold text-gray-800 dark:text-white/90">Bab II. Keadaan Wilayah</h2>
+    <h2 class="text-theme-lg font-semibold text-gray-800 dark:text-white/90">Monografi per Satuan Permukiman</h2>
 
     @forelse ($monografi as $m)
         <section data-baris data-sp="{{ $m['sp_id'] }}" x-show="cocok($el)"
@@ -97,6 +100,22 @@
                     Desa {{ $m['desa'] }}, Kecamatan {{ $m['kecamatan'] }}, Kabupaten {{ $m['kabupaten'] }}, Provinsi {{ $m['provinsi'] }}. Ditempatkan sejak {{ $m['tahun_penempatan'] }}.
                 </p>
             </header>
+
+            {{-- Pendahuluan --}}
+            <div class="mt-4">
+                <h4 class="text-theme-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Pendahuluan</h4>
+                <p class="mt-2 text-theme-sm text-gray-700 dark:text-gray-300">{{ $m['pendahuluan']['kalimat'] }}</p>
+                <dl class="mt-3 grid gap-x-8 gap-y-2 text-theme-sm sm:grid-cols-2">
+                    @foreach ($m['pendahuluan']['ringkas'] as $label => $nilai)
+                        <div class="flex justify-between gap-4">
+                            <dt class="text-gray-500 dark:text-gray-400">{{ $label }}</dt>
+                            <dd class="text-right font-medium text-gray-800 dark:text-white/90">{{ $nilai }}</dd>
+                        </div>
+                    @endforeach
+                </dl>
+            </div>
+
+            <h4 class="mt-6 text-theme-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Keadaan Wilayah</h4>
 
             @unless ($m['ada_isi'])
                 <p class="mt-4 rounded-lg bg-gray-50 px-4 py-6 text-center text-theme-sm text-gray-500 dark:bg-white/[0.03] dark:text-gray-400">
@@ -164,6 +183,68 @@
                         </table>
                     </div>
                 @endif
+            </div>
+
+            {{-- Kependudukan --}}
+            <div class="mt-6 border-t border-gray-200 pt-5 dark:border-gray-800">
+                <h4 class="text-theme-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Kependudukan</h4>
+                <p class="mt-2 text-theme-xs text-gray-500 dark:text-gray-400">{{ $m['kependudukan']['catatan'] }}</p>
+
+                @include('pages.laporan.isi._tabel-dok', ['t' => $m['kependudukan']['penempatan']])
+
+                {{-- Keadaan Penduduk Sekarang: mengikuti tahun terpilih (Putaran 6). --}}
+                <div class="mt-3 rounded-xl border border-gray-200 p-4 dark:border-gray-800">
+                    <p class="text-theme-xs font-medium text-gray-600 dark:text-gray-400">Keadaan penduduk sekarang <span x-text="labelTahunTerpilih()"></span></p>
+                    <dl class="mt-2 grid gap-x-8 gap-y-2 text-theme-sm sm:grid-cols-2">
+                        <div class="flex justify-between gap-4">
+                            <dt class="text-gray-500 dark:text-gray-400">Kepala keluarga</dt>
+                            <dd class="text-right font-medium tabular-nums text-gray-800 dark:text-white/90"
+                                x-text="nilaiKependudukan({{ $m['sp_id'] }}, 'kk')">{{ $m['kependudukan']['sekarang']['kk'] }}</dd>
+                        </div>
+                        <div class="flex justify-between gap-4">
+                            <dt class="text-gray-500 dark:text-gray-400">Jiwa</dt>
+                            <dd class="text-right font-medium tabular-nums text-gray-800 dark:text-white/90"
+                                x-text="nilaiKependudukan({{ $m['sp_id'] }}, 'jiwa')">{{ $m['kependudukan']['sekarang']['jiwa'] }}</dd>
+                        </div>
+                        <div class="flex justify-between gap-4">
+                            <dt class="text-gray-500 dark:text-gray-400">Laki-laki</dt>
+                            <dd class="text-right font-medium tabular-nums text-gray-800 dark:text-white/90"
+                                x-text="nilaiKependudukan({{ $m['sp_id'] }}, 'laki')">{{ $m['kependudukan']['sekarang']['laki'] }}</dd>
+                        </div>
+                        <div class="flex justify-between gap-4">
+                            <dt class="text-gray-500 dark:text-gray-400">Perempuan</dt>
+                            <dd class="text-right font-medium tabular-nums text-gray-800 dark:text-white/90"
+                                x-text="nilaiKependudukan({{ $m['sp_id'] }}, 'perempuan')">{{ $m['kependudukan']['sekarang']['perempuan'] }}</dd>
+                        </div>
+                    </dl>
+                </div>
+
+                @include('pages.laporan.isi._tabel-dok', ['t' => $m['kependudukan']['strukturUmur']])
+                @include('pages.laporan.isi._tabel-dok', ['t' => $m['kependudukan']['usiaSekolah']])
+                @include('pages.laporan.isi._tabel-dok', ['t' => $m['kependudukan']['mutasi']])
+            </div>
+
+            {{-- Sosial Ekonomi --}}
+            <div class="mt-6 border-t border-gray-200 pt-5 dark:border-gray-800">
+                <h4 class="text-theme-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Sosial Ekonomi</h4>
+                @include('pages.laporan.isi._tabel-dok', ['t' => $m['sosial_ekonomi']['lahan']])
+                @include('pages.laporan.isi._tabel-dok', ['t' => $m['sosial_ekonomi']['sertifikat']])
+                @include('pages.laporan.isi._tabel-dok', ['t' => $m['sosial_ekonomi']['tanamanPangan']])
+                @include('pages.laporan.isi._tabel-dok', ['t' => $m['sosial_ekonomi']['infrastruktur']])
+            </div>
+
+            {{-- Sosial Budaya --}}
+            <div class="mt-6 border-t border-gray-200 pt-5 dark:border-gray-800">
+                <h4 class="text-theme-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Sosial Budaya</h4>
+                @include('pages.laporan.isi._tabel-dok', ['t' => $m['sosial_budaya']['pendidikan']])
+                @include('pages.laporan.isi._tabel-dok', ['t' => $m['sosial_budaya']['kesehatan']])
+                @include('pages.laporan.isi._tabel-dok', ['t' => $m['sosial_budaya']['agama']])
+                @include('pages.laporan.isi._tabel-dok', ['t' => $m['sosial_budaya']['rumahIbadah']])
+                @include('pages.laporan.isi._tabel-dok', ['t' => $m['sosial_budaya']['olahraga']])
+                @include('pages.laporan.isi._tabel-dok', ['t' => $m['sosial_budaya']['keamanan']])
+                @include('pages.laporan.isi._tabel-dok', ['t' => $m['sosial_budaya']['alsintan']])
+                @include('pages.laporan.isi._tabel-dok', ['t' => $m['sosial_budaya']['inventaris']])
+                @include('pages.laporan.isi._tabel-dok', ['t' => $m['sosial_budaya']['fasilitasUmum']])
             </div>
         </section>
     @empty

@@ -337,6 +337,26 @@ export default function filterLaporan(konfig = {}) {
         },
 
         /**
+         * Angka "Keadaan Penduduk Sekarang" Monografi untuk SP dan tahun
+         * terpilih. Dirakit di PHP (`konfig.kependudukanTahun[spId][tahun]`).
+         *
+         * @param {number|string} spId
+         * @param {'kk'|'jiwa'|'laki'|'perempuan'} kunci
+         * @returns {string}
+         */
+        nilaiKependudukan(spId, kunci) {
+            const sp = (this.konfig.kependudukanTahun || {})[spId] || {};
+            const nilai = (sp[this.tahun] || {})[kunci];
+
+            return nilai == null ? 'belum dicatat' : new Intl.NumberFormat('id-ID').format(nilai);
+        },
+
+        /** Label "(tahun X)" untuk kepala blok keadaan penduduk sekarang. */
+        labelTahunTerpilih() {
+            return this.konfig.tahunTunggal && this.tahun ? '(tahun ' + this.tahun + ')' : '';
+        },
+
+        /**
          * Selektor CSS untuk baris data milik satu SP. Dipakai baris subtotal
          * per grup pada laporan `kelompokkanPerSp` (Alsintan, Saprotan, Panen)
          * supaya `jumlahTampak`/`kosong` hanya menghitung grup itu.

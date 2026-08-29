@@ -139,7 +139,7 @@ class LaporanData
                 'dasarPeriode' => 'Potret keadaan terkini tiap SP pada tahun berjalan, bukan rekap lintas tahun.',
                 'sumberLabel' => 'Data Satuan Permukiman',
                 'sumberRute' => 'sp.index',
-                'catatan' => 'Bab II "Keadaan Wilayah" diisi lewat modul Satuan Permukiman. Bagian yang belum diisi tetap tampil dengan penanda "belum dicatat".',
+                'catatan' => 'Tiap SP memuat Pendahuluan, Keadaan Wilayah, Kependudukan, Sosial Ekonomi, dan Sosial Budaya. Bagian yang belum berdata ditandai kosong; struktur umur dan mutasi penduduk adalah angka contoh turunan.',
                 'kolom' => 13,
             ],
             'transmigran' => [
