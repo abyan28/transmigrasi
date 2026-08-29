@@ -850,10 +850,11 @@ Peninjauan pemilik proyek atas menu Laporan hasil Tahap 2c: "berantakan". Tiap l
 - **Stage D2b ✅** (commit `a4421de`) — orientasi + garis: `LaporanData::KOLOM_LANDSCAPE = 9`, `meta()` + kunci `kolom`, `orientasi($slug)`. 6 laporan landscape, Indikator Kawasan potret. `@page` pertama (via `@push('gaya')` → `@stack('gaya')` di kedua layout). `.tabel-dokumen` (CSS telanjang, tak boleh ber-`>`) pada 12 tabel; `divide-y` dicabut. Cetak: garis digelapkan, `thead` diulang, tabel landscape `8pt`. Baris total: `border-t-2 border-gray-300` → `motif-baris-total` (`ui-spec.md` §2.3). Celah nol-cakupan rute dokumen ditutup. **678 uji hijau**, pint 31. `uji-lebar-dokumen.mjs` 28/0.
 - **Stage D3 🔶 sedang berjalan** — filter per halaman laporan (Alpine sisi peramban, bukan query string). Bertahap; rencana lima sub-tahap di `session-notes.md`, catatan di `notes.md` §1t.
   - **D3-1 ✅** — pola filter + Laporan Transmigran. Baru: `resources/js/filter-laporan.js` (`Alpine.data('filterLaporan')`), `x-sim.filter-laporan` (bilah selalu tampak, `.cetak-sembunyi`), `LaporanData::filterLaporan($slug)`. `x-data` pada `<article>` kerangka-laporan supaya kalimat cakupan kepala kertas ikut bereaksi (rules §12 poin 8). Nomor urut lewat penghitung CSS (baris `display:none` tak menaikkan penghitung). `uji-filter-laporan.mjs` 18/0, pest +5 (684).
-  - **D3-2 ⬜** — Poktan, Alsintan, Saprotan (laporan datar; Alsintan/Saprotan + rentang tahun pengadaan).
-  - **D3-3 ⬜** — Hasil Panen (subtotal berjenjang `x-text`; §8o cakupan pada baris total).
+  - **D3-2 ✅** — Laporan Poktan. Satu tabel per poktan (milik tepat satu SP) → penyaring SP menyembunyikan wadah tabel utuh, bukan baris. Helper JS `kosong()`. `uji-filter-laporan.mjs` 21/0.
+  - **D3-3 ⬜** — Alsintan + Saprotan + Hasil Panen (ketiganya `kelompokkanPerSp`: grup per SP + subtotal `x-text` berjenjang + total kawasan; + rentang tahun pengadaan; Hasil Panen §8o cakupan pada baris total).
   - **D3-4 ⬜** — Rekap Indikator Kawasan: agregasi 16 indikator per SP + penjaga Σ-SP = angka kawasan (`ringkasanDashboard()` tak disentuh).
   - **D3-5 ⬜** — Monografi SP (opsional; pemilih SP tunggal).
+  - status masuk D3-3: `pest` 685, `pint` 31, `uji-filter-laporan.mjs` 21/0.
 - **Stage D4 ✅** (Putaran 4, sebagian di `03558ff`) — dokumen acuan: `rules.md` §12 poin 5-13, `ui-spec.md` §6.2/§6.9/§6.11/§4.9, `prd.md` §7.9. Dua butir tunggu GUGUR (lihat blok "Ditunda").
 
 ### Putaran 4: Submenu Laporan disatukan + Form Transmigran bertahap (2026-08-29)

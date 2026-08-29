@@ -265,12 +265,54 @@ async function main() {
             await nilai(`document.querySelector('section[aria-label="Penyaring laporan"]')?.classList.contains('cetak-sembunyi')`) === true);
 
         // ============================================================
-        console.log('\nLaporan tanpa filter (Poktan) tidak pecah:');
+        console.log('\nLaporan Poktan (penyaring menyembunyikan tabel utuh):');
         await buka('/laporan/poktan');
-        periksa('halaman Poktan memuat tanpa galat konsol dan tanpa bilah filter',
-            await nilai(`! document.querySelector('section[aria-label="Penyaring laporan"]')`) === true);
-        periksa('kertas Poktan tetap merender tabel',
-            await nilai(`document.querySelectorAll('table.tabel-dokumen').length`) > 0);
+
+        periksa('bilah filter Poktan tampak dengan pemilih SP',
+            await nilai(`!! document.querySelector('#filter-laporan-sp')`) === true);
+
+        const totalTabelPoktan = await nilai(`document.querySelectorAll('div[data-poktan-wadah]').length`);
+        periksa('seluruh tabel poktan dirender Blade', totalTabelPoktan > 1);
+
+        const spPoktan = await nilai(`document.querySelector('#filter-laporan-sp').options[1].value`);
+        await setSelect('#filter-laporan-sp', spPoktan);
+        await tidur(300);
+
+        const tampakPoktan = await nilai(`
+            [...document.querySelectorAll('div[data-poktan-wadah]')].filter((d) => d.offsetParent !== null).length
+        `);
+        periksa('memilih SP menyembunyikan tabel poktan SP lain',
+            tampakPoktan > 0 && tampakPoktan < totalTabelPoktan,
+            `tampak=${tampakPoktan} dari ${totalTabelPoktan}`);
+
+        periksa('tabel poktan yang tersisa semuanya milik SP terpilih',
+            await nilai(`
+                [...document.querySelectorAll('div[data-poktan-wadah]')]
+                    .filter((d) => d.offsetParent !== null)
+                    .every((d) => d.dataset.sp === ${JSON.stringify(spPoktan)})
+            `) === true);
+
+        // Cari SP yang tak punya poktan sama sekali; bila ada, pastikan pesannya muncul.
+        const spTanpaPoktan = await nilai(`
+            (() => {
+                const punya = new Set([...document.querySelectorAll('div[data-poktan-wadah]')].map((d) => d.dataset.sp));
+                const opsi = [...document.querySelector('#filter-laporan-sp').options].slice(1);
+                const kosong = opsi.find((o) => ! punya.has(o.value));
+                return kosong ? kosong.value : null;
+            })()
+        `);
+        if (spTanpaPoktan) {
+            await setSelect('#filter-laporan-sp', spTanpaPoktan);
+            await tidur(300);
+            periksa('SP tanpa poktan memunculkan pesan "tidak ada yang cocok"',
+                await nilai(`
+                    [...document.querySelectorAll('div[x-show]')]
+                        .some((d) => d.offsetParent !== null && d.textContent.includes('Tidak ada kelompok tani yang cocok'))
+                `) === true);
+        } else {
+            periksa('SP tanpa poktan memunculkan pesan "tidak ada yang cocok"', true,
+                'lewat: semua SP punya poktan pada data contoh');
+        }
 
         soket.close();
     } finally {

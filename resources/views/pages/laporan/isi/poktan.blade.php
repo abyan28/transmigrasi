@@ -12,7 +12,10 @@
 @endphp
 
 @forelse ($poktan as $p)
-    <div class="overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-800">
+    {{-- Penyaring SP (D3) menyembunyikan tabel poktan seutuhnya, bukan barisnya:
+         satu poktan milik tepat satu SP. --}}
+    <div data-poktan-wadah data-sp="{{ $p['sp_id'] }}" x-show="cocok($el)"
+        class="overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-800">
         <table class="tabel-dokumen min-w-full text-theme-sm">
             <caption class="border-b border-gray-200 bg-gray-50 px-4 py-3 text-left dark:border-gray-800 dark:bg-white/[0.03]">
                 <span class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">{{ $p['nama'] }}</span>
@@ -75,3 +78,13 @@
         Belum ada kelompok tani pada data contoh.
     </div>
 @endforelse
+
+@if (count($poktan) > 0)
+    <div x-show="kosong($root, 'div[data-poktan-wadah]')" x-cloak
+        class="rounded-2xl border border-gray-200 p-6 text-center text-gray-500 dark:border-gray-800 dark:text-gray-400">
+        Tidak ada kelompok tani yang cocok dengan filter.
+        <button type="button" @click="bersihkan()"
+            class="ml-1 rounded font-medium text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">Bersihkan
+            filter</button>
+    </div>
+@endif

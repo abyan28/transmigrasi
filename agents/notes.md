@@ -1604,11 +1604,33 @@ laporan tanpa filter (Poktan) tidak pecah. Pest +5 penjaga di `HalamanTest`
 (kerangka bilah, bukan `<form>`, opsi SP dari master, arm per laporan,
 aturan CSS penghitung).
 
-### 1t.2 Sisa D3
+### 1t.2 Stage D3-2: Laporan Poktan (commit menyusul/ter-commit)
 
-D3-2 (Poktan, Alsintan, Saprotan), D3-3 (Hasil Panen — subtotal berjenjang
-`x-text`), D3-4 (Rekap Indikator Kawasan — agregasi 16 indikator per SP +
-penjaga Σ-SP), D3-5 (Monografi SP, opsional). Rincian di `session-notes.md`.
+Poktan = **satu tabel per kelompok tani**, tiap poktan milik tepat satu SP.
+Penyaring SP karena itu menyembunyikan **wadah tabel utuh**
+(`<div data-poktan-wadah data-sp x-show="cocok($el)">`), bukan baris. Tak ada
+subtotal yang perlu dihitung ulang (subtotal per-poktan ikut hilang bersama
+tabelnya). Dimensi status keaktifan poktan **dilewati** — data `poktan()`
+tidak menyimpannya (hanya status per anggota).
+
+Helper JS baru `kosong(cakupanEl, penanda)` untuk pesan "tidak ada yang
+cocok" pada laporan yang menyaring wadah, bukan baris.
+`LaporanData::filterLaporan('poktan')` → SP saja. Uji peramban +5 (21/0),
+Pest +1 penjaga (`['transmigran', 'poktan']`).
+
+### 1t.3 Sisa D3
+
+Pembagian ulang menurut kemiripan struktur:
+- **D3-3** — Alsintan + Saprotan + Hasil Panen. Ketiganya `kelompokkanPerSp`
+  (grup per SP + subtotal + total kawasan), jadi satu pola `x-text` subtotal
+  berjenjang melayani ketiganya. Alsintan/Saprotan + rentang tahun pengadaan;
+  Hasil Panen `data-tahun` = tahun anggaran bantuan (`rules.md` §16a), dan
+  §8o (cakupan wajib pada baris total yang menyempit).
+- **D3-4** — Rekap Indikator Kawasan: agregasi 16 indikator per SP + penjaga
+  Σ-SP = angka kawasan (`ringkasanDashboard()` tak disentuh).
+- **D3-5** — Monografi SP (opsional; pemilih SP tunggal).
+
+Rincian di `session-notes.md`.
 
 ---
 

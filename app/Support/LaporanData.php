@@ -750,6 +750,12 @@ class LaporanData
                 ],
                 'cakupanBawaan' => $cakupanBawaan,
             ],
+            'poktan' => [
+                'sp' => $daftarSp,
+                'tahun' => false,
+                'dimensi' => [],
+                'cakupanBawaan' => $cakupanBawaan,
+            ],
             default => [],
         };
     }

@@ -125,6 +125,24 @@ export default function filterLaporan(konfig = {}) {
         },
 
         /**
+         * Apakah tak ada satu pun elemen ber-`penanda` yang cocok di dalam
+         * `cakupanEl`. Dipakai `x-show` pesan "tidak ada yang cocok", termasuk
+         * pada laporan yang menyaring wadah utuh (satu tabel per poktan), bukan
+         * baris.
+         *
+         * @param {HTMLElement} cakupanEl
+         * @param {string} penanda
+         * @returns {boolean}
+         */
+        kosong(cakupanEl, penanda = 'tr[data-baris]') {
+            if (! cakupanEl) {
+                return false;
+            }
+
+            return ! [...cakupanEl.querySelectorAll(penanda)].some((el) => this.cocok(el));
+        },
+
+        /**
          * Cacah `<tr data-baris>` yang cocok di dalam `cakupanEl`.
          *
          * @param {HTMLElement} cakupanEl

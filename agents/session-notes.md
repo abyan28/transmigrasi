@@ -85,29 +85,47 @@ Alpine `x-data` diturunkan ke DOM anak termasuk isi slot Blade. `x-sim.
 filter-rentang-tahun`/`tombol-filter` yang ada berbasis submit `<form>`, jadi
 TIDAK dipakai ulang apa adanya (bilah membangun `<select x-model>` sendiri).
 
-### D3-2 — Salin pola ke laporan datar lain: Poktan, Alsintan, Saprotan
+### D3-2 — Laporan Poktan ✅ SELESAI
 
-- **Poktan** (`isi/poktan.blade.php`): dimensi SP + status keaktifan poktan.
-- **Alsintan**: dimensi SP + poktan pemilik + `x-sim.filter-rentang-tahun`
-  (`data-tahun` = tahun pengadaan) + jenis alsintan.
-- **Saprotan**: dimensi SP + poktan + rentang tahun + jenis saprotan
-  (benih / non-benih sudah dipisah di `LaporanData`).
-- Tiap laporan: `data-*` pada `<tr>`, `x-text` subtotal, kalimat cakupan.
-- Tambah kasus ke `uji-filter-laporan.mjs` per laporan.
+Dikerjakan 2026-08-29. Poktan = satu tabel per kelompok tani, tiap poktan
+milik tepat satu SP → penyaring SP menyembunyikan **wadah tabel utuh**
+(`<div data-poktan-wadah data-sp x-show="cocok($el)">`), bukan baris. Tanpa
+`x-text` subtotal (subtotal per-poktan ikut hilang bersama tabelnya). Dimensi
+status keaktifan poktan **dilewati** — `poktan()` tak menyimpannya.
 
-**Checkpoint:** commit "Putaran 3 D3-2: filter Poktan, Alsintan, Saprotan".
+- `resources/js/filter-laporan.js` — helper baru `kosong(cakupanEl, penanda)`.
+- `LaporanData::filterLaporan('poktan')` → SP saja.
+- `isi/poktan.blade.php` — wadah `data-poktan-wadah data-sp x-show`; blok
+  "Tidak ada kelompok tani yang cocok" `x-show="kosong($root, 'div[data-poktan-wadah]')"`.
+- `uji-filter-laporan.mjs` +5 (21/0). Pest +1 (`['transmigran', 'poktan']`).
 
-### D3-3 — Laporan Hasil Panen (paling rumit: subtotal berjenjang)
+### D3-3 — Alsintan + Saprotan + Hasil Panen (grup per SP + subtotal berjenjang)
 
-- Dimensi: SP + poktan + komoditas + rentang tahun (tahun panen — CATATAN:
-  laporan hasil panen memakai **tahun anggaran bantuan** sebagai sumbu,
-  `rules.md` §16a; pastikan `data-tahun` memakai sumbu yang benar).
-- Subtotal per kelompok (per SP / per komoditas) DAN total keseluruhan
-  harus ikut menyempit — tiap sel subtotal `x-text`.
-- `rules.md` §8o: baris total yang menyempit WAJIB dinyatakan pada judul
-  tabel & baris totalnya ("mencakup filter aktif: ...").
+Ketiganya memakai `LaporanData::kelompokkanPerSp` (atau bentuk serupa): baris
+grup-header per SP, baris data, baris subtotal per SP, lalu `<tfoot>` total
+kawasan. Satu pola melayani ketiganya:
 
-**Checkpoint:** commit "Putaran 3 D3-3: filter Laporan Hasil Panen".
+- Tiap `<tr>` data: `data-baris data-sp data-poktan data-tahun` (+
+  `data-komoditas` untuk panen/saprotan-benih). `x-show="cocok($el)"`.
+- Baris grup-header + subtotal per SP: `x-show="!kosong(...)"` untuk grup itu
+  (scope: sekumpulan `<tr>` milik SP tsb — beri `data-grup="{sp_id}"` pada
+  header/subtotal, dan sediakan cara `kosong()` menyaring `tr[data-baris][data-sp="X"]`).
+- Sel subtotal & `<tfoot>` total: `x-text="jumlahTampak($el.closest('table'), 'kolom', desimal)"`.
+  `jumlahTampak` menjumlah `tr[data-baris]` yang `cocok` — untuk subtotal per
+  SP, batasi cakupannya ke baris SP itu (mis. bungkus tiap grup dalam
+  `<tbody data-grup>` supaya `$el.closest('tbody')` memberi cakupan yang tepat —
+  perlu cek: `kelompokkanPerSp` saat ini satu `<tbody>` untuk semua grup).
+- Rentang tahun: Alsintan/Saprotan `data-tahun` = `tahun_pengadaan`; **Hasil
+  Panen `data-tahun` = tahun anggaran bantuan** (`rules.md` §16a), BUKAN tahun
+  panen.
+- `rules.md` §8o: baris total & subtotal yang menyempit WAJIB menyatakan
+  cakupan aktif. Tambah `<span x-show="adaFilter" x-text="'(mencakup: ' + kalimatCakupan + ')'">`
+  pada judul tabel / baris total.
+- Produktivitas tertimbang (`hasilPanen`): subtotal produktivitas = Σ produksi
+  tampak / Σ realisasi panen tampak — TIDAK bisa `jumlahTampak` langsung,
+  perlu helper `bagiTampak(cakupan, pembilang, penyebut)`.
+
+**Checkpoint tiap laporan bisa jadi commit sendiri bila D3-3 kepanjangan.**
 
 ### D3-4 — Rekap Indikator Kawasan: agregasi per SP + filter SP
 

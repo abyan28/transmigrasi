@@ -4962,7 +4962,24 @@ it('menandai hanya laporan yang bilah filternya sudah dipasang', function () {
         $this->get('/laporan/'.$slug)->assertOk();
     }
 
-    expect($berfilter)->toBe(['transmigran']);
+    // Urutan mengikuti LaporanData::meta().
+    expect($berfilter)->toBe(['transmigran', 'poktan']);
+});
+
+it('menyembunyikan tabel poktan seutuhnya lewat penanda SP, bukan per baris', function () {
+    // Satu poktan milik tepat satu SP, jadi penyaring SP menyembunyikan
+    // wadah tabelnya, bukan baris anggotanya.
+    $isi = $this->get('/laporan/poktan')->assertOk()->getContent();
+
+    expect($isi)
+        ->toContain('x-data="filterLaporan(')
+        ->toContain('data-poktan-wadah')
+        ->toContain('Tidak ada kelompok tani yang cocok dengan filter');
+
+    // Lebih dari satu wadah poktan, dan tiap wadah membawa data-sp lalu x-show.
+    expect(substr_count($isi, 'data-poktan-wadah data-sp='))->toBeGreaterThan(1);
+    expect(substr_count($isi, 'data-poktan-wadah data-sp='))
+        ->toBe(substr_count($isi, 'data-poktan-wadah data-sp="'));
 });
 
 it('menomori baris laporan lewat penghitung CSS supaya rapat setelah disaring', function () {
