@@ -314,6 +314,76 @@ async function main() {
                 'lewat: semua SP punya poktan pada data contoh');
         }
 
+        // ============================================================
+        console.log('\nLaporan Alsintan (grup per SP, subtotal dihitung ulang):');
+        await buka('/laporan/alsintan');
+
+        periksa('bilah Alsintan: SP + rentang tahun pengadaan + jenis alat',
+            await nilai(`!! document.querySelector('#filter-laporan-sp')
+                && !! document.querySelector('#filter-laporan-tahun-dari')
+                && !! document.querySelector('#filter-laporan-jenis')`) === true);
+
+        // Total kawasan sebelum filter = jumlah seluruh data-jumlah.
+        const totalSemua = await nilai(`
+            [...document.querySelectorAll('table.tabel-dokumen tr[data-baris]')]
+                .reduce((s, tr) => s + Number(tr.dataset.jumlah || 0), 0)
+        `);
+        const selTotal = `[...document.querySelectorAll('table.tabel-dokumen tfoot td')].pop().textContent.replace(/[^0-9]/g, '')`;
+        periksa('total kawasan awal = jumlah semua baris',
+            Number(await nilai(selTotal)) === totalSemua, `sel=${await nilai(selTotal)} data=${totalSemua}`);
+
+        const spAls = await nilai(`document.querySelector('#filter-laporan-sp').options[1].value`);
+        await setSelect('#filter-laporan-sp', spAls);
+        await tidur(300);
+
+        periksa('memilih SP menyembunyikan baris, grup-header, dan subtotal SP lain',
+            await nilai(`
+                [...document.querySelectorAll('table.tabel-dokumen tbody tr')]
+                    .filter((tr) => tr.offsetParent !== null && tr.dataset.baris !== undefined)
+                    .every((tr) => tr.dataset.sp === ${JSON.stringify(spAls)})
+            `) === true);
+
+        periksa('total kawasan menyusut ke jumlah baris SP terpilih',
+            Number(await nilai(selTotal)) === await nilai(`
+                [...document.querySelectorAll('table.tabel-dokumen tr[data-baris]')]
+                    .filter((tr) => tr.dataset.sp === ${JSON.stringify(spAls)})
+                    .reduce((s, tr) => s + Number(tr.dataset.jumlah || 0), 0)
+            `));
+
+        periksa('subtotal SP yang tampak = jumlah baris tampak grup itu',
+            await nilai(`
+                (() => {
+                    const baris = [...document.querySelectorAll('table.tabel-dokumen tr[data-baris]')]
+                        .filter((tr) => tr.offsetParent !== null);
+                    const jum = baris.reduce((s, tr) => s + Number(tr.dataset.jumlah || 0), 0);
+                    const subtotal = [...document.querySelectorAll('table.tabel-dokumen tbody tr')]
+                        .find((tr) => tr.offsetParent !== null && tr.textContent.includes('Subtotal'));
+                    if (! subtotal) return false;
+                    const angka = Number(subtotal.lastElementChild.textContent.replace(/[^0-9]/g, ''));
+                    return angka === jum;
+                })()
+            `) === true);
+
+        periksa('baris total menyatakan cakupan aktif (rules 8o)',
+            await nilai(`
+                [...document.querySelectorAll('table.tabel-dokumen tfoot span[x-text]')]
+                    .some((s) => s.offsetParent !== null && s.textContent.includes('Satuan Permukiman'))
+            `) === true);
+
+        // Rentang tahun mustahil -> tabel kosong, pesan muncul.
+        await nilai(`
+            [...document.querySelectorAll('section[aria-label="Penyaring laporan"] button')]
+                .find((b) => b.textContent.trim().startsWith('Bersihkan'))?.click()
+        `);
+        await tidur(200);
+        const thnMax = await nilai(`document.querySelector('#filter-laporan-tahun-dari').options[
+            document.querySelector('#filter-laporan-tahun-dari').options.length - 1].value`);
+        await setSelect('#filter-laporan-tahun-dari', thnMax);
+        await setSelect('#filter-laporan-tahun-sampai', await nilai(`document.querySelector('#filter-laporan-tahun-sampai').options[1].value`));
+        await tidur(300);
+        periksa('rentang tahun mustahil memunculkan pesan Alsintan kosong',
+            await nilai(`document.body.textContent.includes('Tidak ada alsintan yang cocok')`) === true);
+
         soket.close();
     } finally {
         proses.kill();

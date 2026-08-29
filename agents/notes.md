@@ -1618,14 +1618,38 @@ cocok" pada laporan yang menyaring wadah, bukan baris.
 `LaporanData::filterLaporan('poktan')` → SP saja. Uji peramban +5 (21/0),
 Pest +1 penjaga (`['transmigran', 'poktan']`).
 
-### 1t.3 Sisa D3
+### 1t.3 Stage D3-3a: Laporan Alsintan (grup per SP + subtotal dihitung ulang)
 
-Pembagian ulang menurut kemiripan struktur:
-- **D3-3** — Alsintan + Saprotan + Hasil Panen. Ketiganya `kelompokkanPerSp`
-  (grup per SP + subtotal + total kawasan), jadi satu pola `x-text` subtotal
-  berjenjang melayani ketiganya. Alsintan/Saprotan + rentang tahun pengadaan;
-  Hasil Panen `data-tahun` = tahun anggaran bantuan (`rules.md` §16a), dan
-  §8o (cakupan wajib pada baris total yang menyempit).
+Laporan `kelompokkanPerSp`: grup-header per SP, baris data, subtotal per SP,
+`<tfoot>` total kawasan. Pola yang dipakai (melayani juga Saprotan & Panen):
+
+- Baris data: `data-baris data-sp data-tahun data-jenis data-jumlah`,
+  `x-show="cocok($el)"`.
+- Baris grup-header + subtotal: `x-show="! kosong($el.closest('table'),
+  selSp({sp_id}))"` — ikut hilang saat seluruh baris grupnya tersaring.
+  `selSp(id)` (helper JS baru) = `tr[data-baris][data-sp="id"]`.
+- Sel subtotal: `x-text="jumlahTampak($el.closest('table'), 'jumlah', 0,
+  selSp({sp_id}))"`. Sel total `<tfoot>`: `jumlahTampak(...)` tanpa penanda
+  (seluruh baris cocok). Angka Blade tetap dipertahankan sebagai jaring
+  bila JS mati.
+- `rules.md` §8o: baris total menyatakan cakupan aktif —
+  `<span x-show="adaFilter" x-text="'(' + kalimatCakupan + ')'">`.
+
+`jumlahTampak`/`kosong`/`cacahTampak` kini menerima **elemen ATAU NodeList/
+array** baris (`_baris()` menormalkannya) + param `penanda`, supaya subtotal
+per grup dapat dibatasi ke baris SP-nya. Ditambah `rasioTampak(pembilang,
+penyebut)` untuk produktivitas tertimbang (Panen, D3-3c).
+
+`filterLaporan('alsintan')`: SP + Tahun Pengadaan + Jenis Alat (opsi dari
+`nama_alat` unik). Uji peramban +7 (28/0), Pest +1 (subtotal & total
+dihitung ulang) + arm `['transmigran', 'poktan', 'alsintan']`.
+
+### 1t.4 Sisa D3
+
+- **D3-3b** — Saprotan (dua bagian: benih + non-benih; pola sama dengan
+  Alsintan, + dimensi jenis/komoditas).
+- **D3-3c** — Hasil Panen: `data-tahun` = tahun anggaran bantuan
+  (`rules.md` §16a), produktivitas tertimbang lewat `rasioTampak`.
 - **D3-4** — Rekap Indikator Kawasan: agregasi 16 indikator per SP + penjaga
   Σ-SP = angka kawasan (`ringkasanDashboard()` tak disentuh).
 - **D3-5** — Monografi SP (opsional; pemilih SP tunggal).

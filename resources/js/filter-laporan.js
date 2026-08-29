@@ -92,74 +92,111 @@ export default function filterLaporan(konfig = {}) {
 
         /**
          * Menjumlahkan `data-<kolom>` dari `<tr data-baris>` yang cocok di dalam
-         * `cakupanEl` (biasanya `<table>` atau `<tbody>`), lalu memformatnya ala
-         * Indonesia. Dipakai `x-text` sel subtotal.
+         * `cakupan`, lalu memformatnya ala Indonesia. Dipakai `x-text` sel
+         * subtotal dan total.
+         *
+         * `cakupan` boleh berupa elemen (turunannya diambil dengan `penanda`)
+         * ATAU sebuah NodeList/array baris yang sudah disiapkan pemanggil.
+         * Untuk subtotal per grup SP, pemanggil mengoper penanda ber-`data-sp`.
          *
          * Memakai `cocok(tr)` alih-alih membaca `display`, supaya nilainya benar
          * meski Alpine belum sempat menerapkan `x-show` ke DOM dan supaya
          * ketergantungan reaktifnya terlacak.
          *
-         * @param {HTMLElement} cakupanEl
+         * @param {HTMLElement|Iterable<HTMLElement>} cakupan
          * @param {string} kolom  nama kunci pada dataset, mis. 'jumlah'
          * @param {number} desimal
+         * @param {string} penanda
          * @returns {string}
          */
-        jumlahTampak(cakupanEl, kolom, desimal = 0) {
+        jumlahTampak(cakupan, kolom, desimal = 0, penanda = 'tr[data-baris]') {
             let total = 0;
 
-            if (cakupanEl) {
-                cakupanEl.querySelectorAll('tr[data-baris]').forEach((tr) => {
-                    if (!this.cocok(tr)) {
-                        return;
-                    }
+            for (const tr of this._baris(cakupan, penanda)) {
+                if (! this.cocok(tr)) {
+                    continue;
+                }
 
-                    const v = Number(tr.dataset[kolom] ?? 0);
+                const v = Number(tr.dataset[kolom] ?? 0);
 
-                    if (!Number.isNaN(v)) {
-                        total += v;
-                    }
-                });
+                if (! Number.isNaN(v)) {
+                    total += v;
+                }
             }
 
             return this.angka(total, desimal);
         },
 
         /**
-         * Apakah tak ada satu pun elemen ber-`penanda` yang cocok di dalam
-         * `cakupanEl`. Dipakai `x-show` pesan "tidak ada yang cocok", termasuk
-         * pada laporan yang menyaring wadah utuh (satu tabel per poktan), bukan
-         * baris.
+         * Rasio dua kolom terjumlah dari baris yang cocok, mis. produktivitas
+         * tertimbang = Σ produksi / Σ realisasi panen. Tidak sama dengan
+         * merata-ratakan produktivitas per baris.
          *
-         * @param {HTMLElement} cakupanEl
+         * @param {HTMLElement|Iterable<HTMLElement>} cakupan
+         * @param {string} pembilang
+         * @param {string} penyebut
+         * @param {number} desimal
          * @param {string} penanda
-         * @returns {boolean}
+         * @returns {string}
          */
-        kosong(cakupanEl, penanda = 'tr[data-baris]') {
-            if (! cakupanEl) {
-                return false;
+        rasioTampak(cakupan, pembilang, penyebut, desimal = 2, penanda = 'tr[data-baris]') {
+            let atas = 0;
+            let bawah = 0;
+
+            for (const tr of this._baris(cakupan, penanda)) {
+                if (! this.cocok(tr)) {
+                    continue;
+                }
+
+                atas += Number(tr.dataset[pembilang] ?? 0) || 0;
+                bawah += Number(tr.dataset[penyebut] ?? 0) || 0;
             }
 
-            return ! [...cakupanEl.querySelectorAll(penanda)].some((el) => this.cocok(el));
+            return this.angka(bawah > 0 ? atas / bawah : 0, desimal);
         },
 
         /**
-         * Cacah `<tr data-baris>` yang cocok di dalam `cakupanEl`.
+         * Apakah tak ada satu pun baris ber-`penanda` yang cocok di dalam
+         * `cakupan`. Dipakai `x-show` pesan "tidak ada yang cocok" dan
+         * penyembunyian baris grup-header/subtotal saat grupnya kosong.
          *
-         * @param {HTMLElement} cakupanEl
+         * @param {HTMLElement|Iterable<HTMLElement>} cakupan
+         * @param {string} penanda
+         * @returns {boolean}
+         */
+        kosong(cakupan, penanda = 'tr[data-baris]') {
+            return ! this._baris(cakupan, penanda).some((el) => this.cocok(el));
+        },
+
+        /**
+         * Cacah baris ber-`penanda` yang cocok di dalam `cakupan`.
+         *
+         * @param {HTMLElement|Iterable<HTMLElement>} cakupan
+         * @param {string} penanda
          * @returns {number}
          */
-        cacahTampak(cakupanEl) {
-            let n = 0;
+        cacahTampak(cakupan, penanda = 'tr[data-baris]') {
+            return this._baris(cakupan, penanda).filter((el) => this.cocok(el)).length;
+        },
 
-            if (cakupanEl) {
-                cakupanEl.querySelectorAll('tr[data-baris]').forEach((tr) => {
-                    if (this.cocok(tr)) {
-                        n += 1;
-                    }
-                });
+        /**
+         * Menormalkan `cakupan` menjadi array baris. Elemen -> ambil turunannya
+         * dengan `penanda`; NodeList/array -> pakai apa adanya.
+         *
+         * @param {HTMLElement|Iterable<HTMLElement>|null} cakupan
+         * @param {string} penanda
+         * @returns {HTMLElement[]}
+         */
+        _baris(cakupan, penanda = 'tr[data-baris]') {
+            if (! cakupan) {
+                return [];
             }
 
-            return n;
+            if (typeof cakupan.querySelectorAll === 'function') {
+                return [...cakupan.querySelectorAll(penanda)];
+            }
+
+            return [...cakupan];
         },
 
         /** Format angka ala Indonesia, meniru App\Support\LaporanData::angka(). */
@@ -177,6 +214,15 @@ export default function filterLaporan(konfig = {}) {
             Object.keys(this.dimensi).forEach((k) => {
                 this.dimensi[k] = '';
             });
+        },
+
+        /**
+         * Selektor CSS untuk baris data milik satu SP. Dipakai baris subtotal
+         * per grup pada laporan `kelompokkanPerSp` (Alsintan, Saprotan, Panen)
+         * supaya `jumlahTampak`/`kosong` hanya menghitung grup itu.
+         */
+        selSp(spId) {
+            return 'tr[data-baris][data-sp="' + spId + '"]';
         },
 
         /** Nama satu SP dari daftar opsi konfig, atau id mentah bila tak ketemu. */

@@ -4963,7 +4963,7 @@ it('menandai hanya laporan yang bilah filternya sudah dipasang', function () {
     }
 
     // Urutan mengikuti LaporanData::meta().
-    expect($berfilter)->toBe(['transmigran', 'poktan']);
+    expect($berfilter)->toBe(['transmigran', 'poktan', 'alsintan']);
 });
 
 it('menyembunyikan tabel poktan seutuhnya lewat penanda SP, bukan per baris', function () {
@@ -4980,6 +4980,34 @@ it('menyembunyikan tabel poktan seutuhnya lewat penanda SP, bukan per baris', fu
     expect(substr_count($isi, 'data-poktan-wadah data-sp='))->toBeGreaterThan(1);
     expect(substr_count($isi, 'data-poktan-wadah data-sp='))
         ->toBe(substr_count($isi, 'data-poktan-wadah data-sp="'));
+});
+
+it('menghitung ulang subtotal per SP dan total kawasan saat Laporan Alsintan disaring', function () {
+    // Laporan grup-per-SP (kelompokkanPerSp): tiap baris data ber-data-*, tiap
+    // subtotal dan total memakai x-text yang menjumlah ulang baris yang cocok.
+    $isi = $this->get('/laporan/alsintan')->assertOk()->getContent();
+
+    expect($isi)
+        ->toContain('x-data="filterLaporan(')
+        ->toContain('data-baris data-sp=')
+        ->toContain('data-jumlah=')
+        // Subtotal per SP: dijumlah ulang lewat selSp(), bukan angka Blade tetap.
+        ->toContain("jumlahTampak(\$el.closest('table'), 'jumlah', 0, selSp(")
+        // Total kawasan: dijumlah ulang atas seluruh baris yang cocok.
+        ->toContain("jumlahTampak(\$el.closest('table'), 'jumlah', 0)")
+        // rules.md 8o: baris total yang menyempit menyatakan cakupan aktif.
+        ->toContain("x-text=\"'(' + kalimatCakupan + ')'\"")
+        // Baris grup-header dan subtotal ikut sembunyi saat grupnya kosong.
+        ->toContain("x-show=\"! kosong(\$el.closest('table'), selSp(");
+
+    // Angka Blade tetap dipertahankan sebagai jaring bila JS mati.
+    expect($isi)->toContain('Total Kawasan Kobalima Timur');
+
+    // Setiap baris data membawa keempat penanda filternya.
+    $baris = substr_count($isi, 'data-baris data-sp=');
+    expect($baris)->toBeGreaterThan(1);
+    expect(substr_count($isi, 'data-jumlah='))->toBe($baris);
+    expect(substr_count($isi, 'data-jenis='))->toBe($baris);
 });
 
 it('menomori baris laporan lewat penghitung CSS supaya rapat setelah disaring', function () {

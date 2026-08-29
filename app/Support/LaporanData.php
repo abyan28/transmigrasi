@@ -756,6 +756,21 @@ class LaporanData
                 'dimensi' => [],
                 'cakupanBawaan' => $cakupanBawaan,
             ],
+            'alsintan' => [
+                'sp' => $daftarSp,
+                'tahun' => true,
+                'labelTahun' => 'Tahun Pengadaan',
+                'daftarTahun' => self::tahunUnik(array_column(DummyData::alsintan(), 'tahun_pengadaan')),
+                'dimensi' => [
+                    [
+                        'kunci' => 'jenis',
+                        'label' => 'Jenis Alat',
+                        'opsi' => collect(DummyData::alsintan())->pluck('nama_alat')
+                            ->unique()->sort()->values()->all(),
+                    ],
+                ],
+                'cakupanBawaan' => $cakupanBawaan,
+            ],
             default => [],
         };
     }

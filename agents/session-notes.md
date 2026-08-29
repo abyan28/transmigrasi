@@ -99,33 +99,34 @@ status keaktifan poktan **dilewati** — `poktan()` tak menyimpannya.
   "Tidak ada kelompok tani yang cocok" `x-show="kosong($root, 'div[data-poktan-wadah]')"`.
 - `uji-filter-laporan.mjs` +5 (21/0). Pest +1 (`['transmigran', 'poktan']`).
 
-### D3-3 — Alsintan + Saprotan + Hasil Panen (grup per SP + subtotal berjenjang)
+### D3-3a — Laporan Alsintan ✅ SELESAI (2026-08-29)
 
-Ketiganya memakai `LaporanData::kelompokkanPerSp` (atau bentuk serupa): baris
-grup-header per SP, baris data, baris subtotal per SP, lalu `<tfoot>` total
-kawasan. Satu pola melayani ketiganya:
+Pola grup-per-SP terbukti (dipakai ulang D3-3b/c):
+- Baris data `data-baris data-sp data-tahun data-jenis data-jumlah` +
+  `x-show="cocok($el)"`.
+- Grup-header + subtotal `x-show="! kosong($el.closest('table'), selSp({sp_id}))"`.
+- Sel subtotal `x-text="jumlahTampak($el.closest('table'), 'jumlah', 0, selSp({sp_id}))"`;
+  total `<tfoot>` tanpa penanda. Angka Blade dipertahankan (jaring JS mati).
+- §8o: `<span x-show="adaFilter" x-text="'(' + kalimatCakupan + ')'">` di baris total.
 
-- Tiap `<tr>` data: `data-baris data-sp data-poktan data-tahun` (+
-  `data-komoditas` untuk panen/saprotan-benih). `x-show="cocok($el)"`.
-- Baris grup-header + subtotal per SP: `x-show="!kosong(...)"` untuk grup itu
-  (scope: sekumpulan `<tr>` milik SP tsb — beri `data-grup="{sp_id}"` pada
-  header/subtotal, dan sediakan cara `kosong()` menyaring `tr[data-baris][data-sp="X"]`).
-- Sel subtotal & `<tfoot>` total: `x-text="jumlahTampak($el.closest('table'), 'kolom', desimal)"`.
-  `jumlahTampak` menjumlah `tr[data-baris]` yang `cocok` — untuk subtotal per
-  SP, batasi cakupannya ke baris SP itu (mis. bungkus tiap grup dalam
-  `<tbody data-grup>` supaya `$el.closest('tbody')` memberi cakupan yang tepat —
-  perlu cek: `kelompokkanPerSp` saat ini satu `<tbody>` untuk semua grup).
-- Rentang tahun: Alsintan/Saprotan `data-tahun` = `tahun_pengadaan`; **Hasil
-  Panen `data-tahun` = tahun anggaran bantuan** (`rules.md` §16a), BUKAN tahun
-  panen.
-- `rules.md` §8o: baris total & subtotal yang menyempit WAJIB menyatakan
-  cakupan aktif. Tambah `<span x-show="adaFilter" x-text="'(mencakup: ' + kalimatCakupan + ')'">`
-  pada judul tabel / baris total.
-- Produktivitas tertimbang (`hasilPanen`): subtotal produktivitas = Σ produksi
-  tampak / Σ realisasi panen tampak — TIDAK bisa `jumlahTampak` langsung,
-  perlu helper `bagiTampak(cakupan, pembilang, penyebut)`.
+Helper JS: `_baris(cakupan, penanda)` menormalkan elemen ATAU NodeList;
+`selSp(id)`; `rasioTampak(pembilang, penyebut)` untuk produktivitas tertimbang
+(dipakai D3-3c). Nomor urut → `td[data-nomor]` (penghitung CSS, tak lagi
+`++$nomor`). `pest` 686, `uji-filter-laporan.mjs` 28/0.
 
-**Checkpoint tiap laporan bisa jadi commit sendiri bila D3-3 kepanjangan.**
+### D3-3b/c — Saprotan + Hasil Panen (grup per SP + subtotal berjenjang)
+
+Pakai pola D3-3a. Catatan khusus:
+- **Saprotan** dua bagian: `benih` (grup per SP, subtotal) + `nonBenih`
+  (penyaluran). Dimensi: SP + tahun pengadaan + jenis/komoditas.
+- **Hasil Panen** `data-tahun` = tahun anggaran bantuan (`tahun_pengadaan`
+  benih), BUKAN tahun panen (`rules.md` §16a). Kolom produktivitas subtotal =
+  `rasioTampak($el.closest('table'), 'produksi_ton', 'realisasi_panen', 2, selSp(id))`
+  — perlu `data-produksi_ton` + `data-realisasi_panen` pada tiap baris.
+  Belum-dipanen per baris sudah dihitung Blade; taruh sebagai `data-belum_dipanen`
+  dan jumlah ulang subtotal/total lewat `jumlahTampak`.
+
+**Checkpoint tiap laporan = commit sendiri** (D3-3b, D3-3c terpisah).
 
 ### D3-4 — Rekap Indikator Kawasan: agregasi per SP + filter SP
 
