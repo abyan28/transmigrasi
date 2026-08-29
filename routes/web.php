@@ -2508,25 +2508,13 @@ Route::get('/audit-log', function () {
 |
 | Penyaring per laporan (SP, periode, dimensi khas) menyusul di D3, dikerjakan
 | Alpine di sisi peramban -- query string tidak dilayani GitHub Pages
-| (notes.md 1b.5). Sampai D3 berdiri, cakupan tetap dinyatakan sebagai teks
-| di kepala dokumen (rules.md 12 poin 8).
+| (notes.md 1b.5).
+|
+| Nama, izin, dan urutan laporan hanya ditulis di App\Support\LaporanData::meta()
+| (Putaran 4). Butir "Semua Laporan" + halaman /laporan dicabut: submenu sudah
+| memuat ketujuh laporan langsung.
 */
-$daftarLaporan = [
-    'hasil-panen' => 'Laporan Hasil Panen',
-    'monografi-sp' => 'Laporan Monografi SP',
-    'alsintan' => 'Laporan Alsintan',
-    'saprotan' => 'Laporan Saprotan',
-    'indikator-kawasan' => 'Rekap Indikator Kawasan',
-    'poktan' => 'Laporan Daftar Poktan',
-    'transmigran' => 'Laporan Daftar Transmigran',
-];
-
-Route::get('/laporan', function () use ($daftarLaporan) {
-    return view('pages.laporan.index', [
-        'title' => 'Laporan',
-        'daftarLaporan' => $daftarLaporan,
-    ]);
-})->name('laporan.index');
+$judulLaporan = array_map(fn (array $m): string => $m['judul'], LaporanData::meta());
 
 // Data tiap laporan disusun di App\Support\LaporanData, satu metode per
 // laporan (nama slug di-camelCase), agar view tidak memanggil DummyData
@@ -2539,7 +2527,7 @@ $dataLaporan = function (string $slug): array {
     return method_exists(LaporanData::class, $metode) ? LaporanData::$metode() : [];
 };
 
-foreach ($daftarLaporan as $slug => $judul) {
+foreach ($judulLaporan as $slug => $judul) {
     Route::get('/laporan/'.$slug, function () use ($slug, $judul, $dataLaporan) {
         return view('pages.laporan.'.$slug, [
             'title' => $judul,
@@ -2551,15 +2539,14 @@ foreach ($daftarLaporan as $slug => $judul) {
 
 // Tampilan dokumen polos (tanpa sidebar/header), dibuka di tab baru. Satu
 // rute berparameter, dibatasi `where` pada slug yang sah -- pola yang sama
-// dengan /panen/rekap/{kelompok}. Slug wajib sejalan dengan $daftarLaporan
-// di atas dan dengan LaporanData::meta().
-Route::get('/laporan/{slug}/dokumen', function (string $slug) use ($daftarLaporan, $dataLaporan) {
+// dengan /panen/rekap/{kelompok}.
+Route::get('/laporan/{slug}/dokumen', function (string $slug) use ($judulLaporan, $dataLaporan) {
     return view('pages.laporan.dokumen', [
-        'title' => $daftarLaporan[$slug],
+        'title' => $judulLaporan[$slug],
         'slug' => $slug,
         'isiLaporan' => $dataLaporan($slug),
     ]);
-})->where('slug', implode('|', array_keys($daftarLaporan)))->name('laporan.dokumen');
+})->where('slug', implode('|', array_keys($judulLaporan)))->name('laporan.dokumen');
 
 /*
 |--------------------------------------------------------------------------

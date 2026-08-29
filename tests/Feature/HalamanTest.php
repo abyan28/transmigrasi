@@ -4462,9 +4462,10 @@ it('mencabut komponen tombol ekspor beserta rujukannya di kerangka bersama', fun
 });
 
 it('menyediakan menu Laporan berisi halaman laporan bernama', function () {
-    // Halaman `/laporan` DIHIDUPKAN kembali, kali ini sebagai kumpulan
-    // dokumen bernama, bukan kartu unduhan tanpa filter.
-    $this->get('/laporan')->assertOk();
+    // Butir "Semua Laporan" + halaman `/laporan` DICABUT 2026-08-29:
+    // submenu sudah memuat ketujuh laporan langsung, jadi halaman indeks
+    // hanya mengulang isinya.
+    $this->get('/laporan')->assertNotFound();
 
     $kelompok = collect(MenuHelper::definisiMenu())->firstWhere('title', 'Laporan');
 
@@ -4475,13 +4476,48 @@ it('menyediakan menu Laporan berisi halaman laporan bernama', function () {
         ->pluck('path')
         ->all();
 
-    expect($tautan)->toContain('/laporan');
+    // Tidak ada lagi pintu masuk ke /laporan dari menu.
+    expect($tautan)->not->toContain('/laporan');
 
     // Tiap butir menu Laporan wajib menunjuk rute terdaftar yang membalas
     // 200. Menu ke halaman tidak ada melanggar R-24 dan baru ketahuan saat
     // petugas mengkliknya.
     foreach ($tautan as $path) {
         $this->get($path)->assertOk("Menu Laporan menunjuk {$path} yang tidak membalas 200");
+    }
+});
+
+it('menyusun submenu Laporan dalam urutan yang disepakati, satu sumber nama', function () {
+    // Urutan dan nama laporan hanya ditulis di LaporanData::meta(). Dikunci
+    // di sini seperti submenu Administrasi Sistem dikunci di
+    // PengaturanPenilaianTest -- tanpa penjaga urutan, submenu bisa bergeser
+    // tanpa memerahkan apa pun.
+    $submenu = collect(MenuHelper::definisiMenu())
+        ->firstWhere('title', 'Laporan')['items'][0]['subItems'];
+
+    expect(collect($submenu)->pluck('name')->all())->toBe([
+        'Rekap Indikator Kawasan',
+        'Laporan Monografi SP',
+        'Laporan Transmigran',
+        'Laporan Poktan',
+        'Laporan Alsintan',
+        'Laporan Saprotan',
+        'Laporan Hasil Panen',
+    ]);
+
+    // Nama di menu, di <title>, dan di <h1> ketiganya dari meta().
+    foreach (LaporanData::meta() as $slug => $m) {
+        $isi = $this->get('/laporan/'.$slug)->assertOk()->getContent();
+        expect($isi)
+            ->toContain('<title>'.$m['judul'].' |')
+            ->toContain('>'.$m['judul'].'<');   // h1 di kop + h1 di kertas
+    }
+
+    // Tak satu pun berkas Blade menyebut rute atau butir yang dicabut.
+    foreach (BerkasBlade::semua() as $path) {
+        $isi = file_get_contents($path);
+        expect(str_contains($isi, 'laporan.index'))->toBeFalse(BerkasBlade::namaPendek($path).' menyebut laporan.index');
+        expect(str_contains($isi, 'Semua Laporan'))->toBeFalse(BerkasBlade::namaPendek($path).' menyebut "Semua Laporan"');
     }
 });
 
@@ -4505,8 +4541,8 @@ it('memberi tiap halaman laporan judul, pernyataan cakupan, dan unduh yang jujur
     ['alsintan', 'Laporan Alsintan'],
     ['saprotan', 'Laporan Saprotan'],
     ['indikator-kawasan', 'Rekap Indikator Kawasan'],
-    ['poktan', 'Laporan Daftar Poktan'],
-    ['transmigran', 'Laporan Daftar Transmigran'],
+    ['poktan', 'Laporan Poktan'],
+    ['transmigran', 'Laporan Transmigran'],
 ]);
 
 it('memisahkan Laporan Alsintan dari Laporan Saprotan', function () {
@@ -4657,7 +4693,7 @@ it('memisahkan bantuan benih dari pupuk pada Laporan Saprotan', function () {
     }
 });
 
-it('menjumlahkan luas lahan anggota tiap poktan pada Laporan Daftar Poktan', function () {
+it('menjumlahkan luas lahan anggota tiap poktan pada Laporan Poktan', function () {
     $data = LaporanData::poktan();
 
     expect($data['poktan'])->not->toBeEmpty();
@@ -4670,7 +4706,7 @@ it('menjumlahkan luas lahan anggota tiap poktan pada Laporan Daftar Poktan', fun
     }
 });
 
-it('menyusun Laporan Daftar Transmigran dari tiga modul tanpa kehilangan baris', function () {
+it('menyusun Laporan Transmigran dari tiga modul tanpa kehilangan baris', function () {
     $data = LaporanData::transmigran();
 
     expect(count($data['transmigran']))->toBe(count(DummyData::transmigran()));
@@ -4745,7 +4781,7 @@ it('menyajikan tiap laporan pada rute dokumen polos yang isinya sama', function 
     // Tanpa kromo aplikasi: itulah gunanya rute ini.
     expect($dokumen)
         ->not->toContain('id="sidebar"')
-        ->not->toContain('Kembali ke Semua Laporan');
+        ->not->toContain('Buka di tab baru');   // tombol itu hanya di halaman berbingkai
 
     // Isi tabelnya sama persis dengan halaman berbingkai. Keduanya
     // meng-include partial yang sama, jadi selisih berarti ada yang lepas.

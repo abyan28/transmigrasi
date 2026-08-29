@@ -2,6 +2,8 @@
 
 namespace App\Helpers;
 
+use App\Support\LaporanData;
+
 class MenuHelper
 {
     /**
@@ -188,58 +190,26 @@ class MenuHelper
                  * tersaring, sehingga ia punya rumah sendiri alih-alih tombol
                  * ekspor yang menempel di tiap halaman daftar.
                  *
-                 * Isi kolom tiap laporan menyusul dari dinas; halaman yang ada
-                 * sekarang baru kerangkanya (judul, pernyataan cakupan, tempat
-                 * tabel). Alsintan dan Saprotan sengaja dua laporan terpisah,
-                 * mengikuti dua berkas rujukan terpisah di refs/.
+                 * subItems dibangun dari App\Support\LaporanData::meta()
+                 * (Putaran 4, 2026-08-29): nama, izin, dan URUTAN laporan
+                 * hanya ditulis di satu tempat. Butir "Semua Laporan" dan
+                 * halaman /laporan dicabut -- submenu ini sudah memuat
+                 * ketujuh laporan langsung.
                  */
                 'title' => 'Laporan',
                 'items' => [
                     [
                         'icon' => 'laporan',
                         'name' => 'Laporan',
-                        'subItems' => [
-                            [
-                                'name' => 'Semua Laporan',
-                                'path' => '/laporan',
-                                'permission' => null,
+                        'subItems' => array_map(
+                            fn (string $slug, array $m): array => [
+                                'name' => $m['judul'],
+                                'path' => '/laporan/'.$slug,
+                                'permission' => $m['izin'],
                             ],
-                            [
-                                'name' => 'Laporan Hasil Panen',
-                                'path' => '/laporan/hasil-panen',
-                                'permission' => 'hasil_panen.lihat',
-                            ],
-                            [
-                                'name' => 'Laporan Monografi SP',
-                                'path' => '/laporan/monografi-sp',
-                                'permission' => 'sp.lihat',
-                            ],
-                            [
-                                'name' => 'Laporan Alsintan',
-                                'path' => '/laporan/alsintan',
-                                'permission' => 'alsintan.lihat',
-                            ],
-                            [
-                                'name' => 'Laporan Saprotan',
-                                'path' => '/laporan/saprotan',
-                                'permission' => 'saprotan.lihat',
-                            ],
-                            [
-                                'name' => 'Rekap Indikator Kawasan',
-                                'path' => '/laporan/indikator-kawasan',
-                                'permission' => 'dashboard.lihat',
-                            ],
-                            [
-                                'name' => 'Laporan Daftar Poktan',
-                                'path' => '/laporan/poktan',
-                                'permission' => 'poktan.lihat',
-                            ],
-                            [
-                                'name' => 'Laporan Daftar Transmigran',
-                                'path' => '/laporan/transmigran',
-                                'permission' => 'transmigran.lihat',
-                            ],
-                        ],
+                            array_keys(LaporanData::meta()),
+                            array_values(LaporanData::meta()),
+                        ),
                     ],
                 ],
             ],

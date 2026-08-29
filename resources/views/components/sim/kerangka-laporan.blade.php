@@ -6,9 +6,9 @@
     sebagai "kertas" berbingkai, dan setiap laporan punya rute dokumen polos
     di /laporan/{slug}/dokumen yang dibuka di tab baru untuk tampilan penuh.
 
-    Metadata kepala dokumen (cakupan, dasar periode, sumber, catatan) dibaca
-    dari LaporanData::meta($slug), judul dari MenuHelper -- keduanya satu
-    sumber, sehingga halaman berbingkai dan rute dokumen mustahil melenceng.
+    Judul dan metadata kepala dokumen (cakupan, dasar periode, sumber,
+    catatan) seluruhnya dibaca dari LaporanData::meta($slug) -- satu sumber
+    untuk nama, urutan, izin, kolom, dan orientasi laporan.
 
     Setiap tabel di dalam slot WAJIB memuat caption sebagai anak pertama
     (penjaga Temuan 6). Bungkus tabel lebar dengan div overflow-x-auto.
@@ -29,15 +29,9 @@
 ])
 
 @php
-    // Judul dari menu, metadata dari LaporanData: nama laporan hanya ditulis
-    // di satu tempat, kepala dokumen di satu tempat lain.
-    $butirMenu = collect(\App\Helpers\MenuHelper::definisiMenu())
-        ->flatMap(fn ($k) => $k['items'])
-        ->flatMap(fn ($i) => $i['subItems'] ?? [])
-        ->firstWhere('path', '/laporan/' . $slug);
-    $judulLaporan = is_array($butirMenu) ? ($butirMenu['name'] ?? 'Laporan') : 'Laporan';
-
+    // Judul, cakupan, dan metadata lain dari satu sumber: LaporanData::meta().
     $meta = \App\Support\LaporanData::meta($slug);
+    $judulLaporan = $meta['judul'] ?? 'Laporan';
     $cakupan = $meta['cakupan'] ?? '';
     $dasarPeriode = $meta['dasarPeriode'] ?? '';
     $sumberLabel = $meta['sumberLabel'] ?? null;
@@ -92,10 +86,6 @@
                         d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
                 </svg>
                 Buka di tab baru<span class="sr-only">, terbuka di tab baru</span>
-            </a>
-            <a href="{{ route('laporan.index') }}"
-                class="inline-flex h-10 shrink-0 items-center gap-2 rounded-lg border border-gray-300 px-4 text-theme-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
-                Kembali ke Semua Laporan
             </a>
         </x-slot:aksi>
     </x-sim.page-header>

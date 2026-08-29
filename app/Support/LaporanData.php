@@ -53,18 +53,19 @@ class LaporanData
     }
 
     /**
-     * Metadata kepala dokumen tiap laporan: cakupan, dasar periode, tautan
+     * Metadata tiap laporan: judul, izin, cakupan, dasar periode, tautan
      * sumber, catatan, dan jumlah kolom tabel terlebarnya.
      *
-     * Dulu tersebar sebagai atribut `<x-sim.kerangka-laporan>` di tujuh view.
-     * Dipusatkan 2026-08-28 (Putaran 3 D2) agar halaman berbingkai dan rute
-     * dokumen `/laporan/{slug}/dokumen` memakai kepala yang sama persis; satu
-     * yang melenceng berarti dokumen yang dicetak berbeda dari yang di layar.
+     * **Satu-satunya sumber nama dan urutan laporan** (disatukan Putaran 4,
+     * 2026-08-29). Dulu nama ditulis dua kali (MenuHelper + routes/web.php)
+     * dan slugnya tiga kali, tanpa pengunci. Sekarang: MenuHelper membangun
+     * submenu dari sini, routes menurunkan daftar rutenya dari sini, dan
+     * `kerangka-laporan` membaca judul dari sini. **Urutan larik = urutan
+     * submenu sidebar.**
      *
      * Kunci `kolom` (D2b) adalah jumlah kolom tabel TERLEBAR laporan itu, dan
      * dari situlah orientasi kertasnya diturunkan (lihat `orientasi()`).
-     * Nilainya dijaga uji yang menghitung ulang dari HTML terender, sehingga
-     * kolom yang ditambah tanpa memperbarui angka di sini akan memerah.
+     * Nilainya dijaga uji yang menghitung ulang dari HTML terender.
      *
      * @param  string|null  $slug  Null mengembalikan seluruh peta
      * @return array<string, mixed>
@@ -74,15 +75,19 @@ class LaporanData
         $jumlahSp = DummyData::kawasan()[0]['jumlah_sp'] ?? count(DummyData::satuanPermukiman());
 
         $semua = [
-            'hasil-panen' => [
-                'cakupan' => 'Seluruh satuan permukiman di kawasan transmigrasi Kobalima Timur.',
-                'dasarPeriode' => 'Dikelompokkan menurut tahun pengadaan bantuan (tahun anggaran), bukan tahun panen.',
-                'sumberLabel' => 'Data Hasil Panen',
-                'sumberRute' => 'panen.index',
-                'catatan' => 'Bagian benih menampilkan rantai penuh dari bantuan sampai hasil panennya. Bantuan pupuk tidak tertaut ke satu penanaman tertentu, sehingga hanya tampil pada Laporan Saprotan.',
-                'kolom' => 16,
+            'indikator-kawasan' => [
+                'judul' => 'Rekap Indikator Kawasan',
+                'izin' => 'dashboard.lihat',
+                'cakupan' => 'Seluruh kawasan transmigrasi Kobalima Timur, gabungan '.$jumlahSp.' satuan permukiman.',
+                'dasarPeriode' => 'Keadaan terkini kawasan; indikator produksi memakai tahun panen berjalan, bukan tahun pengadaan bantuan.',
+                'sumberLabel' => 'Dashboard',
+                'sumberRute' => 'beranda',
+                'catatan' => null,
+                'kolom' => 6,
             ],
             'monografi-sp' => [
+                'judul' => 'Laporan Monografi SP',
+                'izin' => 'sp.lihat',
                 'cakupan' => 'Seluruh satuan permukiman di kawasan transmigrasi Kobalima Timur.',
                 'dasarPeriode' => 'Potret keadaan terkini tiap SP pada tahun berjalan, bukan rekap lintas tahun.',
                 'sumberLabel' => 'Data Satuan Permukiman',
@@ -90,7 +95,29 @@ class LaporanData
                 'catatan' => 'Bab II "Keadaan Wilayah" diisi lewat modul Satuan Permukiman. Bagian yang belum diisi tetap tampil dengan penanda "belum dicatat".',
                 'kolom' => 13,
             ],
+            'transmigran' => [
+                'judul' => 'Laporan Transmigran',
+                'izin' => 'transmigran.lihat',
+                'cakupan' => 'Seluruh kepala keluarga transmigran di kawasan Kobalima Timur, beserta data rumah dan lahannya.',
+                'dasarPeriode' => 'Potret keadaan terkini seluruh kepala keluarga transmigran.',
+                'sumberLabel' => 'Data Transmigran',
+                'sumberRute' => 'transmigran.index',
+                'catatan' => null,
+                'kolom' => 14,
+            ],
+            'poktan' => [
+                'judul' => 'Laporan Poktan',
+                'izin' => 'poktan.lihat',
+                'cakupan' => 'Seluruh kelompok tani beserta anggotanya di kawasan transmigrasi Kobalima Timur.',
+                'dasarPeriode' => 'Potret keadaan terkini kelembagaan tani, bukan rekap lintas tahun.',
+                'sumberLabel' => 'Data Kelompok Tani',
+                'sumberRute' => 'poktan.index',
+                'catatan' => null,
+                'kolom' => 9,
+            ],
             'alsintan' => [
+                'judul' => 'Laporan Alsintan',
+                'izin' => 'alsintan.lihat',
                 'cakupan' => 'Alat dan mesin pertanian milik seluruh kelompok tani di kawasan Kobalima Timur.',
                 'dasarPeriode' => 'Dikelompokkan menurut tahun pengadaan bantuan (tahun anggaran).',
                 'sumberLabel' => 'Data Alsintan',
@@ -99,6 +126,8 @@ class LaporanData
                 'kolom' => 9,
             ],
             'saprotan' => [
+                'judul' => 'Laporan Saprotan',
+                'izin' => 'saprotan.lihat',
                 'cakupan' => 'Penyaluran benih, pupuk, pestisida, dan mulsa kepada petani di kawasan Kobalima Timur.',
                 'dasarPeriode' => 'Dikelompokkan menurut tahun pengadaan bantuan (tahun anggaran), sesuai kolom tahun_pengadaan pada data saprotan.',
                 'sumberLabel' => 'Data Saprotan',
@@ -106,29 +135,15 @@ class LaporanData
                 'catatan' => 'Jadwal tanam adalah rencana dari berita acara penyaluran, bukan realisasi. Selisihnya dengan periode tanam yang sebenarnya justru berguna diamati.',
                 'kolom' => 15,
             ],
-            'indikator-kawasan' => [
-                'cakupan' => 'Seluruh kawasan transmigrasi Kobalima Timur, gabungan '.$jumlahSp.' satuan permukiman.',
-                'dasarPeriode' => 'Keadaan terkini kawasan; indikator produksi memakai tahun panen berjalan, bukan tahun pengadaan bantuan.',
-                'sumberLabel' => 'Dashboard',
-                'sumberRute' => 'beranda',
-                'catatan' => null,
-                'kolom' => 6,
-            ],
-            'poktan' => [
-                'cakupan' => 'Seluruh kelompok tani beserta anggotanya di kawasan transmigrasi Kobalima Timur.',
-                'dasarPeriode' => 'Potret keadaan terkini kelembagaan tani, bukan rekap lintas tahun.',
-                'sumberLabel' => 'Data Kelompok Tani',
-                'sumberRute' => 'poktan.index',
-                'catatan' => null,
-                'kolom' => 9,
-            ],
-            'transmigran' => [
-                'cakupan' => 'Seluruh kepala keluarga transmigran di kawasan Kobalima Timur, beserta data rumah dan lahannya.',
-                'dasarPeriode' => 'Potret keadaan terkini seluruh kepala keluarga transmigran.',
-                'sumberLabel' => 'Data Transmigran',
-                'sumberRute' => 'transmigran.index',
-                'catatan' => null,
-                'kolom' => 14,
+            'hasil-panen' => [
+                'judul' => 'Laporan Hasil Panen',
+                'izin' => 'hasil_panen.lihat',
+                'cakupan' => 'Seluruh satuan permukiman di kawasan transmigrasi Kobalima Timur.',
+                'dasarPeriode' => 'Dikelompokkan menurut tahun pengadaan bantuan (tahun anggaran), bukan tahun panen.',
+                'sumberLabel' => 'Data Hasil Panen',
+                'sumberRute' => 'panen.index',
+                'catatan' => 'Bagian benih menampilkan rantai penuh dari bantuan sampai hasil panennya. Bantuan pupuk tidak tertaut ke satu penanaman tertentu, sehingga hanya tampil pada Laporan Saprotan.',
+                'kolom' => 16,
             ],
         ];
 

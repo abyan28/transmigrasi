@@ -1,143 +1,105 @@
-# Rencana Eksekusi — Putaran 3 D2b: orientasi dokumen + garis tabel
+# Rencana Eksekusi — Putaran 4: Submenu Laporan + Form Transmigran Bertahap
 
-Ditulis 2026-08-28 sesuai `rules.md` §20b. Sementara, boleh ditimpa.
+Ditulis 2026-08-29 sesuai `rules.md` §20b. Sementara, boleh ditimpa.
+E3 (dokumen) SUDAH selesai + commit `03558ff`.
 
 ## Lingkup
 
-Peninjauan pemilik proyek atas D2 memunculkan dua keluhan:
+1. **E1 — Submenu Laporan**: urut ulang, dua nama diganti, "Semua Laporan"
+   + halaman `/laporan` dihapus seluruhnya. Nama laporan disatukan ke
+   `LaporanData::meta()`.
+2. **E2 — Form transmigran bertahap**: `x-sim.modal-form` diberi prop
+   `langkah` (opsional, komponen dipakai ulang); form transmigran dipecah
+   4 langkah.
 
-1. **Orientasi.** Laporan berkolom banyak (Hasil Panen 16 kolom) dipaksa ke
-   kertas potret sehingga selalu perlu digulir. Seharusnya landscape,
-   ditentukan banyaknya kolom.
-2. **Garis tabel.** Tak ada garis pemisah antar kolom sama sekali, dan
-   beberapa garis pemisah baris juga hilang.
-
-D1 dan D2 sudah selesai (commit `5bf52b0`, `9c4076c`).
-
-## Keputusan pemilik proyek (2026-08-28)
+## Keputusan pemilik proyek
 
 | # | Keputusan |
 |---|---|
-| 6 | Di aplikasi kertas **memenuhi ruang yang tersedia**; tab dokumen dan cetak memakai proporsi A4 sesungguhnya |
-| 7 | Laporan landscape **dirapatkan** (huruf dan jarak sel lebih kecil); gulir tetap ada sebagai jaring pengaman, teks tak pernah terpotong |
-| 8 | Berhenti setelah D2b untuk ditinjau lagi |
+| 1 | Halaman `/laporan` dihapus seluruhnya, bukan hanya butir menunya |
+| 2 | Form transmigran 4 langkah: Identitas / Penempatan / Anggota Keluarga / Berkas |
+| 3 | Komponen dipakai ulang; putaran ini hanya dipasang pada form transmigran |
 
-## EMPAT JEBAKAN UJI (wajib dipatuhi saat menulis kode)
+## E1 — urutan + nama baru
 
-1. **Kelas TIDAK BOLEH mengandung `>`.** Penjaga `memberi nama pada setiap
-   tabel` (`HalamanTest.php:7160`) regex `/<table\b[^>]*>/` berhenti di `>`
-   pertama. `[&>td]:border-r` memecah tag, `<caption>` tak lagi terbaca
-   sebagai anak pertama, ketujuh berkas isi memerah. Penjaga
-   `memberi scope pada setiap header kolom tabel` (`:2333`) sama.
-   -> Kelas biasa + CSS terpusat.
-2. **`overflow-x-auto` TIDAK BOLEH dicabut** (`:2101` mewajibkan tiap berkas
-   ber-`<table` memuat literalnya).
-3. **`w-[NNNpx]` > 360 dilarang** (`:2073`, regex `^w-\[(\d+)px\]$`).
-   `max-w-[1160px]` lolos, `w-[1160px]` memerah.
-4. **`@utility` Tailwind v4 tak bisa menargetkan turunan.** Preseden repo:
-   CSS telanjang top level, contoh `.motif-baris-total` (`app.css:328-336`).
-
-## Dua temuan yang ikut dibereskan
-
-- **Rute dokumen nol penjaga.** `/laporan/{slug}/dokumen` +
-  `pages/laporan/dokumen` + `layouts/dokumen` tak punya satu uji pun. Dua
-  penyapu rute global melewatkannya (URI ber-`{` di `:2319`; `{slug}` diganti
-  `1` lalu 404 dan `continue` di `:7064`). Bisa 500 tanpa memerahkan apa pun.
-- **Pelanggaran `ui-spec.md` §2.3 baris 99.** Baris total wajib garis atas
-  `navy-500` 2px, "bukan garis abu-abu biasa"; `.motif-baris-total` sudah
-  dipakai 15 halaman. Tapi `isi/alsintan` + `isi/hasil-panen` menulis
-  `border-t-2 border-gray-300` (persis yang dilarang), `isi/poktan` tak punya
-  garis atas sama sekali.
-
-## Rancangan
-
-### Orientasi dari jumlah kolom
-
-`LaporanData::KOLOM_LANDSCAPE = 9` (A4 potret nyaman menampung 8 kolom teks).
-`meta()` menambah kunci `kolom`; `orientasi($slug)` menurunkannya.
-
-| Laporan | Kolom terlebar | Orientasi |
+| # | slug (TAK berubah) | judul baru |
 |---|---|---|
-| Hasil Panen | 16 (9 tetap + 7 dinamis) | landscape |
-| Saprotan | 15 | landscape |
-| Daftar Transmigran | 14 | landscape |
-| Monografi SP | 13 | landscape |
-| Daftar Poktan | 9 (kepala dua tingkat) | landscape |
-| Alsintan | 9 | landscape |
-| Rekap Indikator Kawasan | 6 | potret |
+| 1 | indikator-kawasan | Rekap Indikator Kawasan |
+| 2 | monografi-sp | Laporan Monografi SP |
+| 3 | transmigran | **Laporan Transmigran** (dulu "Laporan Daftar Transmigran") |
+| 4 | poktan | **Laporan Poktan** (dulu "Laporan Daftar Poktan") |
+| 5 | alsintan | Laporan Alsintan |
+| 6 | saprotan | Laporan Saprotan |
+| 7 | hasil-panen | Laporan Hasil Panen |
 
-### Lebar kertas
+**Nama disatukan:** `LaporanData::meta()` menambah `judul` + `izin`; urutan
+lariknya = urutan submenu. `MenuHelper` membangun `subItems` Laporan dari
+`meta()`. `routes/web.php` menurunkan `$daftarLaporan` dari `meta()`.
+`kerangka-laporan` baca judul dari `meta()` langsung.
 
-| Tempat | Potret | Landscape |
-|---|---|---|
-| Halaman berbingkai | `max-w-5xl` (tetap) | **memenuhi ruang** (`max-w-full`) |
-| Tab dokumen + cetak | `max-w-[820px]` | `max-w-[1160px]` |
+**Bongkar `/laporan`:** butir menu `MenuHelper.php:202-206`, rute
+`laporan.index` (`web.php`), berkas `pages/laporan/index.blade.php`, tombol
+"Kembali ke Semua Laporan" (`kerangka-laporan`). `RemahHelper` tak terdampak.
+`DaftarTautanStatis` menyesuaikan sendiri: 223 → **222** alamat.
 
-`layouts/dokumen` `<main>`: `max-w-6xl` -> `max-w-full`.
+**Uji:** `HalamanTest.php` — `:4467` `get('/laporan')->assertOk()` dicabut;
+`:4478` `toContain('/laporan')` dicabut; `:4502-4510` dataset dua nama
+diperbarui; `:4660`/`:4673` judul uji diselaraskan; `:4748` penjaga kosong
+diganti. **Penjaga baru:** urutan submenu Laporan `toBe([...])` (meniru
+`PengaturanPenilaianTest.php:221`); nama laporan hanya dari `meta()`;
+`/laporan` → 404.
 
-### Cetak
+## E2 — form bertahap
 
-`@page` pertama di repo, didorong `kerangka-laporan` lewat `@push('gaya')`;
-`@stack('gaya')` ditambahkan ke `<head>` `layouts/app` dan `layouts/dokumen`
-(push dari `@section` sampai ke head sebab layout dirender paling akhir).
-Garis cetak digelapkan ke `#667085` -- `gray-200` lenyap di atas kertas.
-`thead { display: table-header-group }` agar kepala berulang tiap halaman.
+**`modal-form` prop `:langkah="[...]"`** (tanpa prop = perilaku lama):
+- Penunjuk langkah di kepala (angka BERTEKS, meniru `modal-impor:173-198`).
+- Kaki menyesuaikan: Batal/Kembali kiri; Lanjut kanan; Simpan hanya langkah
+  terakhir (meniru `modal-impor:366-391`).
+- `buka()` reset `langkah = 1`.
+- State per modal (halaman `/transmigran` punya DUA salinan form).
 
-### Garis tabel
+**Validasi:**
+- Lanjut → `checkValidity()` isian di wadah langkah ini saja; gagal →
+  `reportValidity()` + fokus, jangan maju.
+- Simpan → periksa seluruh form; ada yang gagal → **LOMPAT ke langkah
+  pemuatnya** lalu `reportValidity()`.
+- Isian wajib: `:required="langkah === n"`. **TANPA `:disabled`** (nilai
+  harus terkirim; `isiFormulir()` mengisi lewat `name`). Bintang tetap statis.
 
-CSS telanjang top level `app.css`: `.tabel-dokumen th, .tabel-dokumen td`
-border 1px `gray-200` / gelap `gray-800`. `.dokumen-landscape` merapatkan
-padding dan huruf. Dipasang sebagai kelas biasa pada 12 tabel di
-`pages/laporan/isi/*`; `divide-y divide-gray-100` dicabut (berlebihan).
+**Pembagian:**
+| Langkah | Isi |
+|---|---|
+| 1 Identitas | Bagian 1 sekarang + pekerjaan & pendapatan dari Bagian 3 |
+| 2 Penempatan | Bagian 2 sekarang |
+| 3 Anggota Keluarga | Bagian 4 sekarang (repeater utuh) |
+| 4 Berkas | Catatan (Bagian 3) + Dokumen Pendukung (Bagian 5) |
 
-### Baris total
+`nama_kepala_keluarga` tetap isian pertama DOM di langkah 1 (`buka()` fokus,
+`#tambah_nama` uji peramban).
 
-`border-t-2 border-gray-300` -> `motif-baris-total` di alsintan + hasil-panen;
-poktan yang belum punya ikut diberi.
+**Jebakan (dari notes.md):**
+- `required` tersembunyi → form menolak diam-diam. Repo kena 3x (1877, 2197,
+  2299). Karena itu Simpan melompat ke langkah, bukan menolak.
+- `uji-gulir-modal.mjs:282` pakai form transmigran sebagai "Modal form
+  panjang" dan menuntut isinya > layar. Dipindah ke form SP (22 isian,
+  tak dipecah).
 
-## Penjaga baru
+## Berkas
 
-1. Rute dokumen tiap laporan 200, isi tabel sama dengan halaman berbingkai,
-   tanpa kromo aplikasi. **Menutup celah nol-cakupan.**
-2. Orientasi cocok dengan jumlah kolom **dihitung ulang dari HTML terender**:
-   tiap `<table>`, jumlahkan `colspan` pada `<tr>` pertama di `<thead>`, ambil
-   terbesar. Menangani kepala dua tingkat Poktan (5x1 + 2x2 = 9) dan kolom
-   dinamis Hasil Panen (9 + 7 = 16).
-3. Tiap tabel laporan memuat kelas `tabel-dokumen`.
-4. Baris total memakai `motif-baris-total`; tak ada lagi
-   `border-t-2 border-gray-300` di berkas laporan.
-5. `tests/Browser/uji-lebar-dokumen.mjs` (PORT_DEVTOOLS 9349, belum terpakai):
-   rute dokumen landscape pada 1440x900, `scrollWidth <= clientWidth`.
-   `rules.md` §876 poin 10 mewajibkan uji peramban untuk tata letak.
+Kode: `LaporanData.php`, `MenuHelper.php`, `routes/web.php`,
+`components/sim/modal-form.blade.php`, `components/sim/kerangka-laporan.blade.php`,
+`pages/transmigran/form.blade.php`. Hapus `pages/laporan/index.blade.php`.
+Uji: `HalamanTest.php`, `uji-gulir-modal.mjs`, `uji-form-transmigran.mjs` (baru,
+PORT 9351).
 
-## Verifikasi — SELESAI
+## Verifikasi
 
-1. **678 uji hijau** (naik dari 662; 16 uji baru dari 4 penjaga berdataset)
-2. `pint` **31** (baseline)
-3. `sim:tautan-statis` **223 alamat**, semua lolos regex `deploy.yml:110`
-4. Tanpa em dash di berkas laporan (R-02)
-5. `npm run build` bersih
-6. **`node tests/Browser/uji-lebar-dokumen.mjs`: 28 lulus, 0 gagal** --
-   ketujuh laporan muat tanpa gulir mendatar
-7. Ctrl+P: **belum diperiksa mata**, menunggu peninjauan pemilik proyek
-
-## Penyetelan lebar (dari pengukuran peramban, bukan tebakan)
-
-Kepadatan awal `.375rem .5rem` menyisakan dua laporan meluber:
-saprotan 1117>1108 (9px) dan transmigran 1186>1108 (78px). Dirapatkan ke
-`.3125rem .375rem` -> saprotan muat, transmigran tinggal 1130>1108 (22px).
-Lebar kertas dokumen landscape dinaikkan 1160px -> **1200px** -> semua muat.
-
-**Cetak diberi kepadatan sendiri.** Layar memberi kertas landscape 1200px,
-sedangkan A4 landscape dikurangi margin hanya ~277mm (~1047px). Selisih itu
-nyata: yang pas di layar akan terpotong bila dicetak dengan kepadatan sama.
-`@media print` karena itu menyetel `font-size: 8pt; padding: 2pt 3pt` untuk
-tabel landscape. **Belum terverifikasi mesin** -- uji peramban hanya mengukur
-layar; perlu Ctrl+P oleh pemilik proyek.
-
-## Belum dikerjakan (D4)
-
-Dokumen acuan belum disentuh: `ui-spec.md` belum memuat `.tabel-dokumen`,
-`.kertas-dokumen`, kelas orientasi, maupun `@page`. `rules.md` §12 dan
-`prd.md` §7.9 juga masih menunggu. Sesuai rencana, D4 dikerjakan setelah
-bentuk dokumennya disetujui agar tidak ditulis dua kali.
+1. `pest.bat` hijau, naik dari 678
+2. `pint.bat --test` ≤ 31
+3. `sim:tautan-statis` **222**, lolos regex `deploy.yml:110`
+4. Render 7 `/laporan/*` + `/laporan/*/dokumen` = 200; `/laporan` = 404
+5. `npm run build`; `uji-lebar-dokumen.mjs` tetap hijau
+6. `uji-gulir-modal.mjs` hijau setelah kasus dipindah
+7. `uji-form-transmigran.mjs` hijau (termasuk: Simpan dengan isian langkah 1
+   kosong → modal LOMPAT ke langkah 1, bukan menolak diam-diam)
+8. Modal Tambah + modal Ubah `/transmigran`: langkah masing-masing sendiri
