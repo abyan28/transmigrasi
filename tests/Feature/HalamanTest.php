@@ -4962,8 +4962,9 @@ it('menandai hanya laporan yang bilah filternya sudah dipasang', function () {
         $this->get('/laporan/'.$slug)->assertOk();
     }
 
-    // Urutan mengikuti LaporanData::meta().
-    expect($berfilter)->toBe(['transmigran', 'poktan', 'alsintan', 'saprotan', 'hasil-panen']);
+    // Urutan mengikuti LaporanData::meta() (monografi-sp kedua, setelah
+    // indikator-kawasan yang belum berfilter).
+    expect($berfilter)->toBe(['monografi-sp', 'transmigran', 'poktan', 'alsintan', 'saprotan', 'hasil-panen']);
 });
 
 it('menyembunyikan tabel poktan seutuhnya lewat penanda SP, bukan per baris', function () {
@@ -5048,6 +5049,25 @@ it('menghitung ulang produktivitas tertimbang, bukan merata-ratakannya, pada Lap
 
     // Subtotal per SP dihitung ulang lewat selSp().
     expect($isi)->toContain(', selSp(');
+});
+
+it('menyaring tabel ikhtisar dan tiap bab Monografi SP dengan pemilih SP', function () {
+    // Monografi = potret per SP: pemilih SP menyembunyikan baris ikhtisar SP
+    // lain DAN section Bab II SP lain. Tanpa rentang tahun (bukan rekap).
+    $isi = $this->get('/laporan/monografi-sp')->assertOk()->getContent();
+
+    expect($isi)
+        ->toContain('x-data="filterLaporan(')
+        ->toContain('data-baris data-sp=')
+        ->toContain('<section data-baris data-sp=')
+        ->toContain('Tidak ada satuan permukiman yang cocok dengan filter')
+        ->not->toContain('id="filter-laporan-tahun-dari"');   // tak ada rentang tahun
+
+    // Baris ikhtisar + section Bab II sama banyak (satu per SP).
+    expect(substr_count($isi, '<tr data-baris data-sp='))
+        ->toBe(substr_count($isi, '<section data-baris data-sp='));
+
+    expect(LaporanData::filterLaporan('monografi-sp')['tahun'])->toBeFalse();
 });
 
 it('menomori baris laporan lewat penghitung CSS supaya rapat setelah disaring', function () {

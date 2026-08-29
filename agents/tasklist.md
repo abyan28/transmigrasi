@@ -854,9 +854,9 @@ Peninjauan pemilik proyek atas menu Laporan hasil Tahap 2c: "berantakan". Tiap l
   - **D3-3a ✅** — Laporan Alsintan (grup per SP). Baris data ber-`data-*`; grup-header + subtotal `x-show="!kosong(...,selSp(id))"`; sel subtotal & total `x-text="jumlahTampak(...)"`; baris total menyatakan cakupan (§8o). Helper JS: `_baris()` (elemen ATAU NodeList), `selSp()`, `rasioTampak()`. `uji-filter-laporan.mjs` 28/0.
   - **D3-3b ✅** — Saprotan. Ternyata dua tabel datar (benih + non-benih), TANPA subtotal → pola Transmigran, bukan Alsintan. Dua dimensi: Komoditas Benih (baris benih) + Jenis Sarana non-benih (baris non-benih), satu bilah melayani keduanya. `cocok()` diperketat: atribut data `''` = tidak ada. `uji-filter-laporan.mjs` 32/0.
   - **D3-3c ✅** — Hasil Panen (grup per SP, pola Alsintan). 7 kolom angka; produktivitas subtotal/total via `rasioTampak` (Σ produksi / Σ realisasi panen, bukan rata-rata). `data-tahun` = tahun anggaran bantuan §16a, label "Tahun Anggaran Bantuan". Closure Blade `$selHitung()`. `uji-filter-laporan.mjs` 37/0.
-  - **D3-4 ⬜** — Rekap Indikator Kawasan: agregasi 16 indikator per SP + penjaga Σ-SP = angka kawasan (`ringkasanDashboard()` tak disentuh).
-  - **D3-5 ⬜** — Monografi SP (opsional; pemilih SP tunggal).
-  - status masuk D3-4: `pest` 688, `pint` 31, `uji-filter-laporan.mjs` 37/0.
+  - **D3-5 ✅** — Monografi SP. Potret per SP: pemilih SP menyembunyikan baris ikhtisar + `<section data-baris data-sp>` Bab II. Tanpa rentang tahun. `uji-filter-laporan.mjs` 41/0.
+  - **D3-4 ⬜** — Rekap Indikator Kawasan (**satu-satunya laporan tersisa**): agregasi 16 indikator per SP + penjaga Σ-SP = angka kawasan (`ringkasanDashboard()` tak disentuh). Terberat.
+  - status masuk D3-4: `pest` 689, `pint` 31, `uji-filter-laporan.mjs` 41/0.
 - **Stage D4 ✅** (Putaran 4, sebagian di `03558ff`) — dokumen acuan: `rules.md` §12 poin 5-13, `ui-spec.md` §6.2/§6.9/§6.11/§4.9, `prd.md` §7.9. Dua butir tunggu GUGUR (lihat blok "Ditunda").
 
 ### Putaran 4: Submenu Laporan disatukan + Form Transmigran bertahap (2026-08-29)

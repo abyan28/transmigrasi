@@ -154,13 +154,26 @@ produktivitas tertimbang numerik).
 **Checkpoint:** commit "Putaran 3 D3-4: Rekap Indikator Kawasan per SP +
 filter". Ini menutup D3.
 
-### D3-5 — Monografi SP (bila filter SP relevan)
+### D3-5 — Monografi SP ✅ SELESAI (2026-08-29)
 
-- Monografi SP sudah per-SP secara struktur (satu blok Bab II per SP).
-  Filter SP di sini = tampilkan satu SP saja. Dimensi lain: tak ada.
-  Mungkin cukup `<select>` SP tunggal tanpa rentang tahun.
-- Nilai kecil; boleh digabung ke D3-4 atau dilewati bila pemilik proyek
-  menilai tak perlu.
+Pemilih SP menyembunyikan `<tr data-baris data-sp>` ikhtisar + `<section
+data-baris data-sp>` Bab II. Tanpa rentang tahun. `filterLaporan('monografi-sp')`
+→ SP saja. `uji-filter-laporan.mjs` 41/0.
+
+### D3-4 — Rekap Indikator Kawasan (SATU-SATUNYA TERSISA)
+
+**Prasyarat:** metode `LaporanData` agregasi 16 indikator dashboard **per SP**
+dari data mentah `DummyData`, TANPA menyentuh `ringkasanDashboard()`.
+- Pakai definisi indikator `prd.md` §7.8 / `ui-spec.md` §9, JANGAN cacah baris
+  `DummyData` (`rules.md` §19a).
+- **Penjaga wajib** (Pest): indikator jumlah → `Σ(6 SP) === angka kawasan
+  ringkasanDashboard()`. Rasio/rata-rata dikecualikan eksplisit + komentar.
+- `isi/indikator-kawasan.blade.php`: cek strukturnya dulu (`indikatorKawasan()`
+  mengembalikan `kawasan`, `ringkasan`, `perSp` — `perSp` = `rekapPerSp()`).
+  Kemungkinan tabel per-SP sudah ada sebagian; filter SP tinggal `data-sp` +
+  `x-show` + baris "Kawasan" tetap.
+- Kalau kolom per SP belum lengkap 16 indikator, itu pekerjaan agregasi
+  tersendiri sebelum filternya.
 
 ---
 

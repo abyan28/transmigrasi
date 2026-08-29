@@ -1681,11 +1681,22 @@ kolom angka, satu di antaranya **rasio**, bukan jumlah:
   Uji peramban +5 (37/0, termasuk cek produktivitas tertimbang numerik),
   Pest +1, arm 5 laporan.
 
-### 1t.6 Sisa D3
+### 1t.6 Stage D3-5: Laporan Monografi SP (potret per SP)
 
-- **D3-4** — Rekap Indikator Kawasan: agregasi 16 indikator per SP + penjaga
-  Σ-SP = angka kawasan (`ringkasanDashboard()` tak disentuh).
-- **D3-5** — Monografi SP (opsional; pemilih SP tunggal).
+Monografi = potret per SP: pemilih SP menyembunyikan baris ikhtisar SP lain
+DAN `<section data-baris data-sp>` Bab II SP lain. Tanpa rentang tahun (bukan
+rekap lintas tahun). `filterLaporan('monografi-sp')` → SP saja.
+`kosong($root, 'section[data-baris]')` untuk pesan Bab II kosong.
+Uji peramban +4 (41/0), Pest +1, arm 6 laporan (urutan meta: monografi-sp
+kedua).
+
+### 1t.7 Sisa D3
+
+- **D3-4** — Rekap Indikator Kawasan: **satu-satunya laporan tersisa**.
+  Perlu agregasi 16 indikator dashboard **per SP** (dari data mentah, TANPA
+  menyentuh `ringkasanDashboard()`) + penjaga Σ-SP = angka kawasan untuk
+  indikator yang bersifat jumlah. Ini yang paling berat; rincian di
+  `session-notes.md`.
 
 Rincian di `session-notes.md`.
 

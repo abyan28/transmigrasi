@@ -477,6 +477,37 @@ async function main() {
                     .every((tr) => tr.dataset.sp === ${JSON.stringify(spPanen)})
             `) === true);
 
+        // ============================================================
+        console.log('\nLaporan Monografi SP (potret per SP: tabel + tiap bab):');
+        await buka('/laporan/monografi-sp');
+
+        periksa('bilah Monografi: pemilih SP, tanpa rentang tahun',
+            await nilai(`!! document.querySelector('#filter-laporan-sp')
+                && ! document.querySelector('#filter-laporan-tahun-dari')`) === true);
+
+        const spMono = await nilai(`document.querySelector('#filter-laporan-sp').options[1].value`);
+        await setSelect('#filter-laporan-sp', spMono);
+        await tidur(300);
+
+        periksa('memilih SP menyisakan tepat satu baris ikhtisar',
+            await nilai(`
+                [...document.querySelectorAll('table.tabel-dokumen tr[data-baris]')]
+                    .filter((tr) => tr.offsetParent !== null).length
+            `) === 1);
+
+        periksa('memilih SP menyisakan tepat satu section Bab II',
+            await nilai(`
+                [...document.querySelectorAll('section[data-baris]')]
+                    .filter((s) => s.offsetParent !== null).length
+            `) === 1);
+
+        periksa('section Bab II yang tersisa milik SP terpilih',
+            await nilai(`
+                [...document.querySelectorAll('section[data-baris]')]
+                    .filter((s) => s.offsetParent !== null)
+                    .every((s) => s.dataset.sp === ${JSON.stringify(spMono)})
+            `) === true);
+
         soket.close();
     } finally {
         proses.kill();

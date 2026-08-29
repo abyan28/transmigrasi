@@ -37,9 +37,10 @@
             </tr>
         </thead>
         <tbody>
-            @forelse ($baris as $i => $b)
-                <tr class="text-gray-700 dark:text-gray-300">
-                    <td class="px-3 py-2">{{ $i + 1 }}</td>
+            @forelse ($baris as $b)
+                <tr data-baris data-sp="{{ $b['sp_id'] }}" x-show="cocok($el)"
+                    class="text-gray-700 dark:text-gray-300">
+                    <td class="px-3 py-2 tabular-nums" data-nomor></td>
                     <td class="px-3 py-2 font-medium text-gray-800 dark:text-white/90">
                         {{ $b['sp'] }}
                         <span class="block text-theme-xs font-normal text-gray-500 dark:text-gray-400">{{ $b['kode'] }}</span>
@@ -63,6 +64,13 @@
                     </td>
                 </tr>
             @endforelse
+            @if (count($baris) > 0)
+                <tr x-show="kosong($el.closest('tbody'))" x-cloak>
+                    <td colspan="13" class="px-3 py-6 text-center text-gray-500 dark:text-gray-400">
+                        Tidak ada satuan permukiman yang cocok dengan filter.
+                    </td>
+                </tr>
+            @endif
         </tbody>
     </table>
 </div>
@@ -71,7 +79,8 @@
     <h2 class="text-theme-lg font-semibold text-gray-800 dark:text-white/90">Bab II. Keadaan Wilayah</h2>
 
     @forelse ($monografi as $m)
-        <section class="rounded-2xl border border-gray-200 p-5 dark:border-gray-800 sm:p-6">
+        <section data-baris data-sp="{{ $m['sp_id'] }}" x-show="cocok($el)"
+            class="rounded-2xl border border-gray-200 p-5 dark:border-gray-800 sm:p-6">
             <header class="border-b border-gray-200 pb-3 dark:border-gray-800">
                 <h3 class="text-theme-md font-semibold text-gray-800 dark:text-white/90">{{ $m['sp'] }} <span class="font-normal text-gray-500 dark:text-gray-400">({{ $m['kode'] }})</span></h3>
                 <p class="mt-1 text-theme-sm text-gray-500 dark:text-gray-400">
@@ -150,4 +159,14 @@
             Belum ada satuan permukiman pada data contoh.
         </p>
     @endforelse
+
+    @if (count($monografi) > 0)
+        <p x-show="kosong($root, 'section[data-baris]')" x-cloak
+            class="rounded-2xl border border-gray-200 p-6 text-center text-theme-sm text-gray-500 dark:border-gray-800 dark:text-gray-400">
+            Tidak ada satuan permukiman yang cocok dengan filter.
+            <button type="button" @click="bersihkan()"
+                class="ml-1 rounded font-medium text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">Bersihkan
+                filter</button>
+        </p>
+    @endif
 </div>

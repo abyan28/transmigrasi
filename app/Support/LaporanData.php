@@ -813,6 +813,12 @@ class LaporanData
                 ],
                 'cakupanBawaan' => $cakupanBawaan,
             ],
+            'monografi-sp' => [
+                'sp' => $daftarSp,
+                'tahun' => false,
+                'dimensi' => [],
+                'cakupanBawaan' => $cakupanBawaan,
+            ],
             default => [],
         };
     }
