@@ -819,6 +819,12 @@ class LaporanData
                 'dimensi' => [],
                 'cakupanBawaan' => $cakupanBawaan,
             ],
+            'indikator-kawasan' => [
+                'sp' => $daftarSp,
+                'tahun' => false,
+                'dimensi' => [],
+                'cakupanBawaan' => $cakupanBawaan,
+            ],
             default => [],
         };
     }

@@ -1690,15 +1690,45 @@ rekap lintas tahun). `filterLaporan('monografi-sp')` → SP saja.
 Uji peramban +4 (41/0), Pest +1, arm 6 laporan (urutan meta: monografi-sp
 kedua).
 
-### 1t.7 Sisa D3
+### 1t.7 Stage D3-4: Rekap Indikator Kawasan (tabel per SP menyempit)
 
-- **D3-4** — Rekap Indikator Kawasan: **satu-satunya laporan tersisa**.
-  Perlu agregasi 16 indikator dashboard **per SP** (dari data mentah, TANPA
-  menyentuh `ringkasanDashboard()`) + penjaga Σ-SP = angka kawasan untuk
-  indikator yang bersifat jumlah. Ini yang paling berat; rincian di
-  `session-notes.md`.
+**Temuan yang menyederhanakan:** `DummyData::rekapPerSp()` sudah berisi lima
+indikator per SP (`jumlah_kk`, `rumah_terhuni`, `luas_lahan`, `volume_panen`,
+`pengaduan_terbuka`) yang **berjumlah persis** ke `ringkasanDashboard()`
+(1140 KK, 1063 rumah, 3250,75 ha, 1847,5 ton, 12 pengaduan). Tidak perlu
+mengarang 42 angka per-SP baru.
 
-Rincian di `session-notes.md`.
+Yang dikerjakan:
+- Tabel "Rincian per Satuan Permukiman": `<tr data-baris data-sp
+  data-jumlah_kk …>` + `x-show="cocok($el)"`, `<tfoot>` Jumlah dengan
+  `x-text="jumlahTampak(…)"` per kolom + §8o cakupan.
+- **Empat blok ringkasan kawasan TIDAK menyempit** — mereka dari dashboard
+  yang menyimpan agregat kawasan, bukan rincian per SP. Catatan kejujuran
+  `x-show="adaFilter"` menyatakannya. Ini keputusan sadar: "kawasan tetap
+  dari dashboard" (`rules.md` §12 poin 10) dimenangkan atas "menyempitkan
+  seluruh halaman"; yang menyempit adalah bagian yang memang punya rincian
+  per SP.
+- **Penjaga wajib** (`HalamanTest`): untuk kelima indikator jumlah,
+  `Σ(6 SP) === ringkasanDashboard()`. Rata-rata (produktivitas, harga) dan
+  cacah kelembagaan dikecualikan eksplisit.
+- `filterLaporan('indikator-kawasan')`: SP saja. Uji peramban +5 (46/0),
+  Pest +1, **arm ketujuh laporan lengkap**.
+
+### 1t.8 D3 SELESAI — ketujuh laporan berfilter
+
+pest 690, pint 31, `sim:tautan-statis` 222, `uji-filter-laporan.mjs` 46/0,
+`uji-lebar-dokumen.mjs` 28/0. Pola per struktur laporan:
+
+| Struktur | Laporan | Cara |
+|---|---|---|
+| Baris datar | Transmigran, Saprotan | `x-show` per `<tr>` |
+| Satu wadah per entitas | Poktan | `x-show` per `<div data-poktan-wadah>` |
+| Grup per SP + subtotal | Alsintan, Hasil Panen | `x-show` baris + grup, `x-text` subtotal via `selSp()` |
+| Potret per SP | Monografi SP | `x-show` per `<tr>` ikhtisar + `<section>` Bab II |
+| Rekap + rincian | Rekap Indikator Kawasan | tabel per SP menyempit; blok kawasan tetap (jujur) |
+
+**Sisa Tahap 2: NOL.** Semua revisi Putaran 1-4 tuntas. Berikutnya Tahap 3
+(fondasi `user`).
 
 ---
 

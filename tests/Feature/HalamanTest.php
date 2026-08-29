@@ -4962,9 +4962,41 @@ it('menandai hanya laporan yang bilah filternya sudah dipasang', function () {
         $this->get('/laporan/'.$slug)->assertOk();
     }
 
-    // Urutan mengikuti LaporanData::meta() (monografi-sp kedua, setelah
-    // indikator-kawasan yang belum berfilter).
-    expect($berfilter)->toBe(['monografi-sp', 'transmigran', 'poktan', 'alsintan', 'saprotan', 'hasil-panen']);
+    // Ketujuh laporan kini berfilter (urutan mengikuti LaporanData::meta()).
+    expect($berfilter)->toBe([
+        'indikator-kawasan', 'monografi-sp', 'transmigran',
+        'poktan', 'alsintan', 'saprotan', 'hasil-panen',
+    ]);
+});
+
+it('menjaga jumlah enam SP = angka kawasan pada Rekap Indikator Kawasan', function () {
+    // rules.md 12 poin 10: angka tingkat kawasan tetap dari dashboard;
+    // rincian per SP berjumlah PERSIS sama dengannya, sehingga filter SP yang
+    // menjumlah ulang tabel per SP tidak pernah membantah blok ringkasan.
+    $perSp = LaporanData::indikatorKawasan()['perSp'];
+    $kawasan = DummyData::ringkasanDashboard();
+
+    // Hanya indikator yang bersifat JUMLAH. Rata-rata (produktivitas, harga)
+    // dan cacah kelembagaan dikecualikan: bukan penjumlahan lintas SP.
+    $petaan = [
+        'jumlah_kk' => 'jumlah_kk',
+        'rumah_terhuni' => 'rumah_terhuni',
+        'luas_lahan' => 'luas_lahan_total',
+        'volume_panen' => 'volume_panen_ton',
+        'pengaduan_terbuka' => 'pengaduan_terbuka',
+    ];
+
+    foreach ($petaan as $kolomSp => $kolomKawasan) {
+        $jumlah = round(array_sum(array_column($perSp, $kolomSp)), 2);
+        expect($jumlah)->toBe(round((float) $kawasan[$kolomKawasan], 2), "indikator {$kolomSp} tidak menjumlah ke angka kawasan");
+    }
+
+    // Baris total tabel per SP dijumlah ulang oleh Alpine, bukan angka tetap.
+    $isi = $this->get('/laporan/indikator-kawasan')->getContent();
+    expect($isi)
+        ->toContain('data-baris data-sp=')
+        ->toContain("jumlahTampak(\$el.closest('table'), 'jumlah_kk', 0)")
+        ->toContain('tetap menampilkan angka tingkat kawasan');   // catatan kejujuran
 });
 
 it('menyembunyikan tabel poktan seutuhnya lewat penanda SP, bukan per baris', function () {

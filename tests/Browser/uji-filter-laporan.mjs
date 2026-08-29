@@ -508,6 +508,45 @@ async function main() {
                     .every((s) => s.dataset.sp === ${JSON.stringify(spMono)})
             `) === true);
 
+        // ============================================================
+        console.log('\nRekap Indikator Kawasan (tabel per SP menyempit, blok kawasan tetap):');
+        await buka('/laporan/indikator-kawasan');
+
+        // Baris total tabel per SP tanpa filter = jumlah semua SP.
+        const selTotalKK = `[...document.querySelectorAll('table.tabel-dokumen tfoot td')][1].textContent.replace(/[^0-9]/g, '')`;
+        const kkSemua = await nilai(`
+            [...document.querySelectorAll('table.tabel-dokumen tr[data-baris]')]
+                .reduce((s, tr) => s + Number(tr.dataset.jumlah_kk || 0), 0)
+        `);
+        periksa('baris Jumlah tabel per SP = total kawasan tanpa filter',
+            Number(await nilai(selTotalKK)) === kkSemua && kkSemua > 0);
+
+        const spInd = await nilai(`document.querySelector('#filter-laporan-sp').options[1].value`);
+        await setSelect('#filter-laporan-sp', spInd);
+        await tidur(300);
+
+        periksa('memilih SP menyisakan satu baris di tabel per SP',
+            await nilai(`
+                [...document.querySelectorAll('table.tabel-dokumen tr[data-baris]')]
+                    .filter((tr) => tr.offsetParent !== null).length
+            `) === 1);
+
+        periksa('baris Jumlah menyusut ke KK SP terpilih',
+            Number(await nilai(selTotalKK)) === await nilai(`
+                [...document.querySelectorAll('table.tabel-dokumen tr[data-baris]')]
+                    .find((tr) => tr.dataset.sp === ${JSON.stringify(spInd)}).dataset.jumlah_kk | 0
+            `));
+
+        periksa('catatan kejujuran muncul: blok ringkasan tetap angka kawasan',
+            await nilai(`
+                [...document.querySelectorAll('p[role=note]')]
+                    .some((p) => p.offsetParent !== null && p.textContent.includes('tetap menampilkan angka tingkat kawasan'))
+            `) === true);
+
+        // Blok kawasan TIDAK berubah oleh filter (contoh: cari sel berisi "1.140").
+        periksa('blok Kependudukan tetap menampilkan angka kawasan (1.140 KK)',
+            await nilai(`document.body.textContent.includes('1.140')`) === true);
+
         soket.close();
     } finally {
         proses.kill();

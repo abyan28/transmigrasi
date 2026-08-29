@@ -160,20 +160,22 @@ Pemilih SP menyembunyikan `<tr data-baris data-sp>` ikhtisar + `<section
 data-baris data-sp>` Bab II. Tanpa rentang tahun. `filterLaporan('monografi-sp')`
 → SP saja. `uji-filter-laporan.mjs` 41/0.
 
-### D3-4 — Rekap Indikator Kawasan (SATU-SATUNYA TERSISA)
+### D3-4 — Rekap Indikator Kawasan ✅ SELESAI (2026-08-29)
 
-**Prasyarat:** metode `LaporanData` agregasi 16 indikator dashboard **per SP**
-dari data mentah `DummyData`, TANPA menyentuh `ringkasanDashboard()`.
-- Pakai definisi indikator `prd.md` §7.8 / `ui-spec.md` §9, JANGAN cacah baris
-  `DummyData` (`rules.md` §19a).
-- **Penjaga wajib** (Pest): indikator jumlah → `Σ(6 SP) === angka kawasan
-  ringkasanDashboard()`. Rasio/rata-rata dikecualikan eksplisit + komentar.
-- `isi/indikator-kawasan.blade.php`: cek strukturnya dulu (`indikatorKawasan()`
-  mengembalikan `kawasan`, `ringkasan`, `perSp` — `perSp` = `rekapPerSp()`).
-  Kemungkinan tabel per-SP sudah ada sebagian; filter SP tinggal `data-sp` +
-  `x-show` + baris "Kawasan" tetap.
-- Kalau kolom per SP belum lengkap 16 indikator, itu pekerjaan agregasi
-  tersendiri sebelum filternya.
+`rekapPerSp()` ternyata sudah berisi 5 indikator per SP yang berjumlah PERSIS
+ke `ringkasanDashboard()` — tak perlu mengarang data. Tabel "Rincian per SP"
+menyempit (`x-show` + `<tfoot>` `x-text` per kolom + §8o); 4 blok ringkasan
+kawasan TIDAK menyempit (dari dashboard; catatan kejujuran `x-show="adaFilter"`).
+Penjaga Pest Σ-SP untuk 5 indikator jumlah, rata-rata/cacah dikecualikan.
+
+---
+
+## D3 SELESAI — ketujuh laporan berfilter (pest 690, pint 31, uji 46/0)
+
+Commit: D3-1 `4baf44a`, D3-2 `c8ddacc`, D3-3a `972a575`, D3-3b `4ec21ff`,
+D3-3c `41a2771`, D3-5 `0255c02`, D3-4 (menyusul).
+
+**Sisa Tahap 2: NOL.** Berikutnya Tahap 3.
 
 ---
 

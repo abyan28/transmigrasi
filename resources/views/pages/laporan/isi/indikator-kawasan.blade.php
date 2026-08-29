@@ -60,6 +60,20 @@
     </dl>
 </section>
 
+{{--
+    Blok ringkasan tingkat kawasan. Angkanya dari dashboard (rules.md 12 poin
+    10) dan TIDAK ikut menyempit saat satu SP dipilih -- dashboard menyimpan
+    agregat kawasan, bukan rincian per SP. Yang menyempit adalah tabel "Rincian
+    per Satuan Permukiman" di bawah, yang untuk kelima indikatornya berjumlah
+    persis sama dengan blok ini (dijaga uji).
+--}}
+<p x-show="adaFilter" x-cloak
+    class="rounded-lg border border-yellow-300 bg-yellow-50 p-3 text-theme-xs text-yellow-800 dark:border-yellow-500/30 dark:bg-yellow-500/10 dark:text-yellow-200"
+    role="note">
+    Blok ringkasan di bawah tetap menampilkan angka tingkat kawasan. Rincian
+    yang menyempit mengikuti filter ada pada tabel per satuan permukiman.
+</p>
+
 <div class="grid gap-4 sm:grid-cols-2">
     @foreach ($blok as $judulBlok => $isi)
         <div class="overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-800">
@@ -99,7 +113,11 @@
             </thead>
             <tbody>
                 @forelse ($perSp as $s)
-                    <tr class="text-gray-700 dark:text-gray-300">
+                    <tr data-baris data-sp="{{ $s['satuan_permukiman_id'] }}"
+                        data-jumlah_kk="{{ $s['jumlah_kk'] }}" data-rumah_terhuni="{{ $s['rumah_terhuni'] }}"
+                        data-luas_lahan="{{ $s['luas_lahan'] }}" data-volume_panen="{{ $s['volume_panen'] }}"
+                        data-pengaduan_terbuka="{{ $s['pengaduan_terbuka'] }}"
+                        x-show="cocok($el)" class="text-gray-700 dark:text-gray-300">
                         <td class="px-3 py-2 font-medium text-gray-800 dark:text-white/90">{{ $s['satuan_permukiman'] }}</td>
                         <td class="px-3 py-2 text-right tabular-nums">{{ $angka($s['jumlah_kk']) }}</td>
                         <td class="px-3 py-2 text-right tabular-nums">{{ $angka($s['rumah_terhuni']) }}</td>
@@ -114,7 +132,35 @@
                         </td>
                     </tr>
                 @endforelse
+                @if (count($perSp) > 0)
+                    <tr x-show="kosong($el.closest('tbody'))" x-cloak>
+                        <td colspan="6" class="px-3 py-6 text-center text-gray-500 dark:text-gray-400">
+                            Tidak ada satuan permukiman yang cocok dengan filter.
+                        </td>
+                    </tr>
+                @endif
             </tbody>
+            @if (count($perSp) > 0)
+                <tfoot>
+                    <tr class="motif-baris-total bg-gray-100 text-gray-900 dark:bg-white/[0.06] dark:text-white">
+                        <td class="px-3 py-2.5 font-medium">
+                            Jumlah
+                            <span x-show="adaFilter" x-cloak class="font-normal text-gray-600 dark:text-gray-300"
+                                x-text="'(' + kalimatCakupan + ')'"></span>
+                        </td>
+                        <td class="px-3 py-2.5 text-right tabular-nums"
+                            x-text="jumlahTampak($el.closest('table'), 'jumlah_kk', 0)">{{ $angka(array_sum(array_column($perSp, 'jumlah_kk'))) }}</td>
+                        <td class="px-3 py-2.5 text-right tabular-nums"
+                            x-text="jumlahTampak($el.closest('table'), 'rumah_terhuni', 0)">{{ $angka(array_sum(array_column($perSp, 'rumah_terhuni'))) }}</td>
+                        <td class="px-3 py-2.5 text-right tabular-nums"
+                            x-text="jumlahTampak($el.closest('table'), 'luas_lahan', 2)">{{ $angka(array_sum(array_column($perSp, 'luas_lahan')), 2) }}</td>
+                        <td class="px-3 py-2.5 text-right tabular-nums"
+                            x-text="jumlahTampak($el.closest('table'), 'volume_panen', 2)">{{ $angka(array_sum(array_column($perSp, 'volume_panen')), 2) }}</td>
+                        <td class="px-3 py-2.5 text-right tabular-nums"
+                            x-text="jumlahTampak($el.closest('table'), 'pengaduan_terbuka', 0)">{{ array_sum(array_column($perSp, 'pengaduan_terbuka')) }}</td>
+                    </tr>
+                </tfoot>
+            @endif
         </table>
     </div>
 </div>
