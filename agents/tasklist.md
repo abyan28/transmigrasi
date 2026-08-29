@@ -866,7 +866,15 @@ Rencana lengkap di `agents/session-notes.md`; catatan tetap di `notes.md` 1s.
 - **Stage E2 ✅** — `x-sim.modal-form` prop opsional `langkah` (larik nama; tanpa prop tak berubah). Form transmigran 4 langkah: Identitas / Penempatan / Anggota Keluarga / Catatan dan Berkas. `required` tetap statis; Lanjut & Simpan memvalidasi per langkah dan **melompat** ke langkah bermasalah (bukan menolak diam-diam — cacat 1877/2197/2299). Prop dipasang pada 3 pemakaian transmigran saja. `uji-gulir-modal.mjs` kasus "form panjang" dipindah transmigran→SP. Uji peramban baru `uji-form-transmigran.mjs` (10/0).
 - **Verifikasi:** pest 679 (dari 678), pint 31, tautan-statis 222, `uji-form-transmigran` 10/0, `uji-gulir-modal` 24/0, `uji-lebar-dokumen` 28/0.
 
-**Belum diperiksa mata:** hasil cetak (Ctrl+P) tampilan dokumen.
+### Putaran 5: "Generate Laporan" — dokumen resmi + filter dibawa ke tab + filter tahun (2026-08-29)
+
+Rencana `C:\Users\v28mt\.claude\plans\linked-sprouting-aho.md`; catatan `notes.md` §1u.
+
+- **Part 1 ✅** (commit `cb6c311`) — filter dibawa ke rute dokumen lewat **fragmen hash** (`#sp=..`), bukan query string (mati di GitHub Pages). `filter-laporan.js` getter `hashFilter` + `dariHash()`. Tombol "Buka di tab baru" → **"Generate Laporan"** (primer); `x-data` pindah ke `<div>` pembungkus supaya tombol baca keadaan filter.
+- **Part 2 ✅** (commit `cb6c311`) — rute dokumen = **dokumen resmi berkop**: `x-sim.kop-laporan` (dua lambang Kementerian+Malaka, flex tanpa tabel), blok judul + "TAHUN <2026>" + kalimat cakupan. TANPA bilah filter, TANPA blok "Cakupan laporan". `LaporanData::instansi()` + `tahunDokumenBawaan()`. Aset `lambang-malaka.png`. pest 692, pint 31, `uji-filter-laporan` 50/0, `uji-lebar-dokumen` 28/0.
+- **Part 3 ⬜ FASE B** — pemilih **tahun tunggal** untuk Rekap Indikator Kawasan + Monografi SP. Metode `DummyData` baru per-tahun (5 tahun 2022–2026), render 6 SP × 5 tahun, Bab II iklim `x-text`. Terbesar; commit terpisah.
+
+**Belum diperiksa mata:** hasil cetak (Ctrl+P) tampilan dokumen resmi (kop + tabel di A4).
 
 ## Tahap 3 — Autentikasi dan Hak Akses
 

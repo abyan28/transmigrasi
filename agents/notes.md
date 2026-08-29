@@ -1727,8 +1727,80 @@ pest 690, pint 31, `sim:tautan-statis` 222, `uji-filter-laporan.mjs` 46/0,
 | Potret per SP | Monografi SP | `x-show` per `<tr>` ikhtisar + `<section>` Bab II |
 | Rekap + rincian | Rekap Indikator Kawasan | tabel per SP menyempit; blok kawasan tetap (jujur) |
 
-**Sisa Tahap 2: NOL.** Semua revisi Putaran 1-4 tuntas. Berikutnya Tahap 3
-(fondasi `user`).
+**Sisa Tahap 2: NOL.** Semua revisi Putaran 1-4 tuntas.
+
+---
+
+## 1u. Putaran 5: "Generate Laporan" — dokumen resmi + filter dibawa ke tab (2026-08-29)
+
+Peninjauan pemilik proyek atas D3: (1) tombol "Buka di tab baru" jadi
+"Generate Laporan" dan tab yang terbuka memuat **data yang sudah difilter**;
+(2) tab itu **dokumen resmi berkop**, tanpa bilah filter & blok "Cakupan
+laporan"; (3) Rekap Indikator Kawasan & Monografi SP diberi **filter tahun
+tunggal**. Referensi pemilik proyek: `refs/contoh format laporan.docx`.
+Rencana: `C:\Users\v28mt\.claude\plans\linked-sprouting-aho.md`.
+
+### 1u.1 Part 1: filter dibawa lewat FRAGMEN HASH (commit `cb6c311`)
+
+**Keputusan kunci:** hash (`#sp=1&td=2019`), BUKAN query string. `notes.md`
+1b.5 mencatat query string mati di GitHub Pages; **hash murni sisi peramban,
+selalu jalan.** Tak menambah rute → `sim:tautan-statis` tetap 222,
+`deploy.yml` lolos.
+
+- `filter-laporan.js`: getter `hashFilter` (serialisasi keadaan filter aktif
+  via `URLSearchParams`), `dariHash()` (baca `location.hash` → terapkan),
+  dipanggil di `init()`.
+- `kerangka-laporan`: `x-data="filterLaporan(...)"` **PINDAH** dari `<article>`
+  ke `<div>` pembungkus — supaya tombol "Generate Laporan" di dalam
+  `page-header` (di luar `<article>`) ikut membaca keadaan filter. Scope
+  Alpine menembus slot `<x-slot:aksi>` (DOM turunan biasa).
+- Tombol: "Buka di tab baru" → **"Generate Laporan"** (gaya primer),
+  `:href="@js(route('laporan.dokumen',$slug)) + hashFilter"`, `target=_blank`.
+
+### 1u.2 Part 2: kop surat dokumen resmi (commit `cb6c311`)
+
+- `LaporanData::instansi()` — dua lambang (keputusan pemilik proyek: logo
+  Kementerian Transmigrasi kiri + lambang Kabupaten Malaka kanan), teks
+  instansi dari `DummyData::kawasan()`. Telp/surel PLACEHOLDER dari referensi
+  (dikomentari; spanduk data-contoh menutupi).
+- `LaporanData::tahunDokumenBawaan()` — tahun terakhir `deretTahunan()`
+  (2026), BUKAN `date('Y')` (ikut pola dashboard).
+- `x-sim.kop-laporan` BARU — **flex/grid, TANPA elemen tabel** (penjaga
+  `kolomTerlebarDariHtml` mengurai `<thead>` tiap tabel). Blok judul di
+  tengah: `LAPORAN <judul>` + baris "TAHUN ..." (getter Alpine `tahunDokumen`)
+  + kalimat cakupan (`x-text`, wajib tetap tercetak — `rules.md` §12 poin 8)
+  + dasar periode + catatan.
+- Rute dokumen: TANPA `<x-sim.filter-laporan>`, blok "Cakupan laporan"
+  DIGANTI kop. `x-data` tetap → `dariHash()` menerapkan filter dari hash,
+  baris tersembunyi `x-show`. Bingkai kartu dilepas pada rute dokumen.
+- Aset `public/images/logo/lambang-malaka.png` (dari `refs/`).
+- **Jebakan yang kena:** string `<table` di dalam KOMENTAR kop
+  memerahkan uji `membungkus setiap tabel` & `memberi nama pada setiap
+  tabel` (regex `str_contains($isi, '<table')` tak abaikan komentar). Sama
+  seperti `<div data-langkah>` di `modal-form` (§1s.2). Komentar ditulis
+  ulang tanpa `<table` harfiah.
+- **Bug diperbaiki:** `Str::upper('Laporan '.$judul)` → "LAPORAN LAPORAN
+  HASIL PANEN" (judul `meta()` sudah berawalan "Laporan"). Kini
+  `Str::upper($judul)` apa adanya.
+
+Uji: `menyajikan tiap laporan pada rute dokumen polos` ditulis ulang (kop,
+bukan "Cakupan laporan"); `memasang bilah filter` dipecah berbingkai vs
+dokumen; +2 uji (`membawa filter ke rute dokumen lewat hash`, `menyusun kop
+dokumen dari satu sumber identitas`). `uji-filter-laporan.mjs` +… (50/0,
+termasuk: href Generate memuat `#sp=`, rute dokumen tanpa bilah + kop,
+`#sp=` menyaring baris di rute dokumen). `buka()` uji peramban navigasi
+`about:blank` dulu supaya perubahan hash same-document tetap memuat ulang.
+**pest 692, pint 31, uji-lebar-dokumen 28/0.**
+
+### 1u.3 Part 3 (FASE B, belum) — pemilih tahun tunggal
+
+Rekap Indikator Kawasan + Monografi SP. Jendela 5 tahun (2022–2026). Metode
+`DummyData` BARU (JANGAN sentuh `deretTahunan()` — uji panjang seragam):
+`indikatorKawasanTahun()`, `rekapPerSpTahun($tahun)` (2026 == `rekapPerSp()`
+presis), `iklimSpTahun($id,$tahun)` (12 field iklim, jitter deterministik,
+geografi tetap). Klien: state `tahun`, `nilaiTahun()`/`iklimTahun()`,
+render 6 SP × 5 tahun `<tr data-tahun>`, Bab II satu `<section>`/SP dengan
+`x-text` iklim. Rincian di rencana + `session-notes.md`.
 
 ---
 
