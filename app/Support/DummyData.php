@@ -14,6 +14,7 @@ use App\Enums\Kondisi;
 use App\Enums\KondisiRumah;
 use App\Enums\PeruntukanLahan;
 use App\Enums\PrioritasPengaduan;
+use App\Enums\StatusAnggotaKeluarga;
 use App\Enums\StatusHunian;
 use App\Enums\StatusKondisiSp;
 use App\Enums\StatusPanen;
@@ -572,6 +573,11 @@ class DummyData
         // `jumlah_anggota_keluarga` (lihat docblock).
         $cacahAnggota = [];
         foreach (self::anggotaKeluarga() as $anggota) {
+            // Anggota yang sudah meninggal atau pindah tidak ikut dihitung
+            // sebagai jiwa keluarga (Putaran 6).
+            if (($anggota['status'] ?? StatusAnggotaKeluarga::Aktif->value) !== StatusAnggotaKeluarga::Aktif->value) {
+                continue;
+            }
             $cacahAnggota[$anggota['transmigran_id']] = ($cacahAnggota[$anggota['transmigran_id']] ?? 0) + 1;
         }
 
@@ -599,11 +605,17 @@ class DummyData
      * Masih Sekolah mengisi `pendidikan_terakhir` sebagai jenjang berjalan;
      * Belum Sekolah tidak mengisi apa-apa.
      *
+     * `status`, `tanggal_peristiwa`, dan `keterangan_peristiwa` ditambahkan
+     * 2026-08-29 (Putaran 6), membalik sebagian agents/rules.md 9c: anggota
+     * yang meninggal atau pindah TIDAK lagi dihapus, melainkan ditandai di
+     * sini supaya Laporan Monografi SP bisa menghitung mutasi penduduk.
+     * Anggota non-Aktif dikeluarkan dari cacah `jumlah_anggota_keluarga`.
+     *
      * @return array<int, array<string, mixed>> Data anggota keluarga
      */
     public static function anggotaKeluarga(): array
     {
-        return [
+        $data = [
             // Keluarga 1 - YOHANES BERE (L): istri + tiga anak.
             [
                 'id_anggota_keluarga' => 1, 'transmigran_id' => 1, 'hubungan' => 'Istri',
@@ -860,6 +872,26 @@ class DummyData
                 'telepon' => null, 'keterangan' => null,
             ],
         ];
+
+        // Peristiwa mutasi anggota keluarga (Putaran 6). Baris tetap ada,
+        // hanya ditandai. Kepala keluarga tidak di sini — peristiwanya lewat
+        // alur ganti kepala keluarga.
+        $peristiwa = [
+            12 => ['status' => 'Meninggal', 'tanggal_peristiwa' => '2024-03-12',
+                'keterangan_peristiwa' => 'Meninggal karena sakit usia lanjut.'],
+            27 => ['status' => 'Pindah', 'tanggal_peristiwa' => '2025-07-01',
+                'keterangan_peristiwa' => 'Merantau ke Kupang mengikuti kerabat, tidak kembali ke lokasi.'],
+        ];
+
+        return array_map(function ($b) use ($peristiwa) {
+            $p = $peristiwa[$b['id_anggota_keluarga']] ?? [];
+
+            return $b + [
+                'status' => $p['status'] ?? StatusAnggotaKeluarga::Aktif->value,
+                'tanggal_peristiwa' => $p['tanggal_peristiwa'] ?? null,
+                'keterangan_peristiwa' => $p['keterangan_peristiwa'] ?? null,
+            ];
+        }, $data);
     }
 
     /**
@@ -899,6 +931,9 @@ class DummyData
         $peta = [];
 
         foreach (self::anggotaKeluarga() as $a) {
+            if (($a['status'] ?? 'Aktif') !== StatusAnggotaKeluarga::Aktif->value) {
+                continue;
+            }
             $peta[$a['transmigran_id']][] = [
                 'id' => $a['id_anggota_keluarga'],
                 'nama' => $a['nama_lengkap'],
@@ -928,6 +963,7 @@ class DummyData
         $anggota = array_values(array_filter(
             self::anggotaKeluarga(),
             fn ($a) => $a['transmigran_id'] === $transmigranId
+                && ($a['status'] ?? 'Aktif') === StatusAnggotaKeluarga::Aktif->value
         ));
 
         $usia = function (?string $tanggal): ?int {

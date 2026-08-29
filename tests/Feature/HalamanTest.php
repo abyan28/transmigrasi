@@ -23,6 +23,7 @@ use App\Enums\Kondisi;
 use App\Enums\PendidikanTerakhir;
 use App\Enums\PeruntukanLahan;
 use App\Enums\PolaPermukiman;
+use App\Enums\StatusAnggotaKeluarga;
 use App\Enums\StatusPanen;
 use App\Enums\StatusPengaduan;
 use App\Enums\SumberDana;
@@ -341,9 +342,14 @@ it('memakai nama kolom kamus data pada isian form', function () {
 | turunan, usia dihitung dari tanggal lahir.
 */
 
-it('menurunkan jumlah anggota keluarga dari cacah baris, bukan menyimpannya', function () {
+it('menurunkan jumlah anggota keluarga dari cacah baris aktif, bukan menyimpannya', function () {
+    // Anggota yang meninggal atau pindah (Putaran 6) tetap tercatat tetapi
+    // tidak lagi dihitung sebagai jiwa keluarga.
     $cacah = [];
     foreach (DummyData::anggotaKeluarga() as $a) {
+        if ($a['status'] !== StatusAnggotaKeluarga::Aktif->value) {
+            continue;
+        }
         $cacah[$a['transmigran_id']] = ($cacah[$a['transmigran_id']] ?? 0) + 1;
     }
 
@@ -355,6 +361,11 @@ it('menurunkan jumlah anggota keluarga dari cacah baris, bukan menyimpannya', fu
     // Buktikan datanya bisa membedakan benar dari salah: minimal satu keluarga
     // punya anggota, sehingga turunannya bukan sekadar 1 untuk semua.
     expect(max(array_column(DummyData::transmigran(), 'jumlah_anggota_keluarga')))->toBeGreaterThan(1);
+
+    // Dan minimal satu anggota non-aktif ada, supaya penyaringan di atas
+    // benar-benar teruji.
+    expect(collect(DummyData::anggotaKeluarga())->contains(fn ($a) => $a['status'] !== 'Aktif'))
+        ->toBeTrue('Data contoh wajib memuat anggota keluarga yang meninggal atau pindah');
 });
 
 it('menghitung usia dari tanggal lahir pada halaman rincian transmigran', function () {

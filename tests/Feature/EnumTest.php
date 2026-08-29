@@ -18,6 +18,7 @@ use App\Enums\KategoriPengaduan;
 use App\Enums\Kondisi;
 use App\Enums\KondisiRumah;
 use App\Enums\PrioritasPengaduan;
+use App\Enums\StatusAnggotaKeluarga;
 use App\Enums\StatusPengaduan;
 use App\Enums\StatusTinggal;
 use App\Enums\SumberDana;
@@ -72,6 +73,19 @@ it('meniadakan status tinggal Meninggal dan memakai Pindah Penduduk', function (
         ->and(StatusTinggal::tryFrom('Meninggal'))->toBeNull()
         ->and(StatusTinggal::tryFrom('Pindah'))->toBeNull()
         ->and(AlasanPergantianKK::Meninggal->value)->toBe('Meninggal');
+});
+
+it('menandai anggota keluarga meninggal atau pindah tanpa menghapus barisnya', function () {
+    // Putaran 6: membalik sebagian rules.md 9c. Enum ini hanya untuk anggota
+    // non-kepala; kepala keluarga tetap lewat AlasanPergantianKK.
+    expect(StatusAnggotaKeluarga::nilai())->toBe(['Aktif', 'Meninggal', 'Pindah'])
+        ->and(StatusAnggotaKeluarga::opsiPeristiwa())->toBe([
+            'Meninggal' => 'Meninggal',
+            'Pindah' => 'Pindah',
+        ])
+        ->and(StatusAnggotaKeluarga::Aktif->warna())->toBe('success')
+        ->and(StatusAnggotaKeluarga::Meninggal->warna())->toBe('gray')
+        ->and(StatusAnggotaKeluarga::Pindah->warna())->toBe('warning');
 });
 
 it('memuat dua belas kategori pengaduan tanpa spasi berlebih', function () {
