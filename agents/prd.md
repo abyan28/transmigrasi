@@ -218,9 +218,9 @@ Sistem harus:
 - menghasilkan laporan rekap;
 - mendukung export Excel dan PDF untuk data utama.
 
-Ekspor **menempel pada tabel data masing-masing**, bukan pada satu halaman laporan tersendiri (ditetapkan 2026-08-17, `rules.md` 12 poin 6). Alasannya kebutuhan "menyediakan filter data" di atas: halaman daftar sudah memiliki pencarian dan filter, sedangkan halaman laporan terpusat tidak pernah memilikinya. Filter yang sedang aktif ikut terbawa ke berkas hasil unduhan.
+**Laporan adalah dokumen bernama di menu "Laporan"**, satu halaman berformat tetap per laporan (ditetapkan 2026-08-28, membalik keputusan 2026-08-17 yang menempelkan ekspor pada tiap tabel — belasan kontrol mati R-26). Kebutuhan "menyediakan filter data" di atas dipenuhi dengan **memberi tiap halaman laporan bilah filternya sendiri** (Putaran 3 D3): Satuan Permukiman, periode, dan dimensi khas laporan. Rincian pada `rules.md` §12.
 
-Rekap indikator kawasan untuk kementerian diekspor dari dashboard, sebab tidak memiliki tabel padanan di modul mana pun.
+Rekap indikator kawasan untuk kementerian menjadi salah satu halaman laporan; angka tingkat kawasannya bersumber dari dashboard.
 
 ### 7.10 Data Alsintan (Alat dan Mesin Pertanian)
 Sistem harus dapat:

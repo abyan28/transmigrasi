@@ -507,8 +507,8 @@ Kolom "Kewenangan" menggantikan kolom "Role" pada tabel-tabel sebelumnya, karena
 
 | Halaman | Rute | Kewenangan |
 |---|---|---|
-| Ikhtisar laporan | `GET /laporan` | semua yang login |
 | Halaman laporan | `GET /laporan/{slug}` | kewenangan `lihat` modul sumbernya |
+| Tampilan dokumen polos | `GET /laporan/{slug}/dokumen` | idem |
 | Unduh template luring | langkah pertama modal impor | `[fitur].tambah` |
 | Manajemen pengguna | `GET /pengguna` | `pengguna.lihat` |
 | Detail pengguna | modal | `pengguna.lihat` |
@@ -772,6 +772,12 @@ Modal floating untuk form isian (`rules.md` §13.2 poin 3).
 - Tombol simpan nonaktif + spinner selama proses kirim
 - Layar penuh pada perangkat mobile
 
+**Form bertahap (prop `langkah`, ditambahkan 2026-08-29).** Bila `:langkah` diberi larik nama langkah, modal menampilkan penunjuk langkah di kepala (angka **berteks**, bukan titik warna — meniru `x-sim.modal-impor`), dan kaki menyesuaikan: Batal/Kembali di kiri, Lanjut di kanan, Simpan hanya pada langkah terakhir. Tanpa prop, komponen berperilaku persis seperti biasa.
+- **Tombol Lanjut** memanggil `checkValidity()` pada isian di wadah langkah itu saja; bila tidak sah, `reportValidity()` + fokus, dan tidak berpindah.
+- **Tombol Simpan** memeriksa seluruh form; bila ada isian tidak sah, modal **melompat ke langkah yang memuatnya lebih dulu**, baru `reportValidity()`. Ini mencegah cacat "form menolak diam-diam" yang sudah tiga kali terjadi di repo (`notes.md` 1877, 2197, 2299): peramban menahan pengiriman sambil menunjuk elemen yang sedang tersembunyi.
+- Isian wajib pada langkah memakai **`:required="langkah === n"`** — bukan `required` tetap (peramban tak boleh diminta memvalidasi elemen tersembunyi) dan bukan `:disabled` (nilainya harus tetap terkirim, berbeda dari cabang bersyarat §6.0 poin 3). Bintang wajib tetap statis.
+- `buka()` mereset ke langkah 1. Dipakai form transmigran (Identitas / Penempatan / Anggota Keluarga / Berkas). State langkah per modal, sebab halaman `/transmigran` memuat dua salinan form sekaligus.
+
 ### 6.3 `<x-stat-card>`
 Kartu indikator dashboard: label, angka besar, ikon, tren, dan tautan drill-down opsional.
 
@@ -848,17 +854,29 @@ Input lintang dan bujur, tombol "Ambil lokasi saat ini" (Geolocation API), serta
 ### 6.8 Komponen pelengkap
 `<x-breadcrumb>`, `<x-page-header>`, `<x-confirm-dialog>` (konfirmasi hapus), `<x-empty-state>`, `<x-toast>` (notifikasi hasil aksi).
 
-### 6.9 `<x-sim.kerangka-laporan>` (2026-08-28)
+### 6.9 `<x-sim.kerangka-laporan>` (2026-08-28, diperbarui Putaran 3)
 
-Kerangka satu halaman laporan di menu "Laporan". Setiap laporan wajib memuat: judul dokumen, **pernyataan cakupan sebagai teks** di kepala dokumen (wilayah + dasar periode, bukan kontrol filter — `rules.md` §12 poin 8), penampung tabel berlabel "Format kolom sedang disusun", dan tombol unduh jujur "segera hadir" (R-26; pembangkitan PDF/Excel Tahap 10).
+Kerangka satu halaman laporan di menu "Laporan". Setiap laporan memuat: judul dokumen, **pernyataan cakupan sebagai kalimat** di kepala kertas (disusun otomatis dari filter aktif — `rules.md` §12 poin 8), tabel isinya, dan tombol unduh jujur "segera hadir" (R-26; pembangkitan PDF/Excel Tahap 10).
 
-Halaman laporan **tidak punya penyaring sendiri**. Cakupan diwarisi dari halaman daftar pasangan lewat pintasan (belum dipasang) atau lewat pemilih periode untuk laporan lintas modul. Judul dokumen dibaca dari `MenuHelper::definisiMenu()` agar nama laporan hanya ditulis di satu tempat.
+**Tampilan "kertas".** Isi dibungkus `<article class="kertas-dokumen dokumen-{orientasi} ...">`. Orientasi diturunkan dari `LaporanData::orientasi($slug)` — ≥ 9 kolom (`KOLOM_LANDSCAPE`) → landscape. Lebar: di aplikasi laporan landscape memenuhi ruang (`max-w-full`), potret `max-w-5xl`; pada rute dokumen `max-w-[1200px]` / `max-w-[820px]` (proporsi A4). Metadata kepala (cakupan, dasar periode, sumber, catatan, judul) dibaca dari **`LaporanData::meta($slug)`** — satu sumber, tidak lagi menelusuri `MenuHelper`.
+
+**Rute dokumen polos** `/laporan/{slug}/dokumen` (`laporan.dokumen`) memakai `layouts/dokumen` — tanpa sidebar/header, siap dibaca/dicetak/difoto. Dibuka di tab baru dari kop halaman berbingkai (`target=_blank rel=noopener` + sr-only). Kerangka dan tabelnya sama persis dengan halaman berbingkai: keduanya `@include('pages.laporan.isi.{slug}')`.
+
+**Garis tabel** lewat kelas `.tabel-dokumen` (CSS telanjang di `app.css`, sebab `@utility` Tailwind v4 tak bisa menargetkan `th`/`td`). Kelas TIDAK BOLEH memakai varian arbitrer ber-`>` (`[&>td]:border-r`): penjaga "memberi nama pada setiap tabel" memakai regex `/<table\b[^>]*>/` yang berhenti di `>` pertama.
+
+**Cetak** (`@media print` + `@page`, pertama di repo): sidebar/header/tombol disembunyikan lewat `.cetak-sembunyi`; garis tabel digelapkan (`gray-200` lenyap di atas kertas); `thead` diulang tiap halaman; tabel landscape memakai kepadatan `8pt` sebab A4 lebih sempit daripada layar. Aturan `@page` didorong `kerangka-laporan` lewat `@push('gaya')` ke `@stack('gaya')` di `<head>` kedua layout.
+
+**Baris total** memakai `.motif-baris-total` (`ui-spec.md` §2.3), bukan garis abu-abu biasa.
 
 ### 6.10 `<x-sim.filter-rentang-tahun>` (2026-08-28)
 
-Sepasang `<select>` (dari–sampai) untuk menyaring **daftar transaksi bersumbu waktu**: `/panen`, `/penanaman`, `/audit-log`. Menggantikan penyaring tahun tunggal pada dua yang pertama.
+Sepasang `<select>` (dari–sampai) untuk menyaring **daftar transaksi bersumbu waktu**: `/panen`, `/penanaman`, `/audit-log`, dan bilah filter laporan yang barisnya transaksi (Hasil Panen, Alsintan, Saprotan). Menggantikan penyaring tahun tunggal pada dua daftar pertama.
 
-**DILARANG pada halaman rekap agregat.** Rekap panen yang dijumlah lintas tahun membuat bidang 2 ha yang ditanami tiga tahun terbaca 6 ha (`rules.md` §9 poin 8b). Penyaringannya dipusatkan di `DummyData::saringRentangTahun()`: batas kosong berarti terbuka, batas terbalik ditukar, baris tanpa tahun tersaring keluar begitu satu batas dipasang.
+**DILARANG pada halaman rekap agregat.** Rekap panen yang dijumlah lintas tahun membuat bidang 2 ha yang ditanami tiga tahun terbaca 6 ha (`rules.md` §9 poin 8b). Penyaringan daftar dipusatkan di `DummyData::saringRentangTahun()`: batas kosong berarti terbuka, batas terbalik ditukar, baris tanpa tahun tersaring keluar begitu satu batas dipasang.
+
+### 6.11 `<x-sim.filter-laporan>` (Putaran 3 D3)
+
+Bilah filter di kepala halaman laporan (BUKAN laci — di halaman laporan filter adalah kontrol utama, bukan pelengkap). Memakai ulang `x-sim.filter-rentang-tahun` dan `x-sim.tombol-filter`. Isi per laporan: Satuan Permukiman + dimensi khas (poktan, komoditas, jenis, status, dst). Dikerjakan Alpine di sisi peramban — query string tidak dilayani GitHub Pages (`notes.md` 1b.5). Blade tetap merender seluruh baris; Alpine menyembunyikan baris (`data-sp`, `data-tahun`, `data-poktan` pada tiap `<tr>`) dan menghitung ulang subtotal yang tampak (`x-text` pada sel subtotal/total). Bilah memakai `.cetak-sembunyi`. Kalimat cakupan di kepala kertas ikut berubah mengikuti filter.
 
 ---
 

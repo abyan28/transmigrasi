@@ -818,8 +818,8 @@ Lima laporan mengikuti berkas rujukan di `refs/` (dibaca lewat `pdftotext`, baca
 **Ditunda:**
 - ~~Rombongan B: anggota keluarga + usia/agama~~ ✅ selesai (B1+B2+B3), lihat di bawah
 - ~~Rombongan C: field SP Bab II Monografi~~ ✅ selesai (C1+C2+C3), lihat di bawah
-- Pintasan laporan dari halaman daftar (bawa filter aktif)
-- Pemilih periode untuk laporan lintas modul (Rekap Indikator Kawasan, Daftar Transmigran)
+- ~~Pintasan laporan dari halaman daftar (bawa filter aktif)~~ **GUGUR 2026-08-29** — digantikan filter per laporan (Putaran 3 D3). Pewarisan hanya perlu bila halaman laporan tak punya filter sendiri.
+- ~~Pemilih periode untuk laporan lintas modul (Rekap Indikator Kawasan, Daftar Transmigran)~~ **GUGUR 2026-08-29** — alasan sama.
 - ~~Penyeragaman nama field alsintan ke `tahun_pengadaan` / `sumber_dana`~~ ✅ selesai 2026-08-28
 - Butir bagian 6 lain yang belum dibahas
 
@@ -840,6 +840,18 @@ Field Bab II Laporan Monografi (Keadaan Wilayah) pada modul SP.
 - **Stage C1 ✅** — 3 enum (`PolaPermukiman`/`TingkatKesuburanTanah`/`BentukWilayah`); ~35 kolom baru pada `satuan_permukiman` (letak astronomis kotak, jarak ekonomis, batas wilayah DIHIDUPKAN, SK pencadangan, pola, tanah, topografi, iklim min/maks/rata, sumber air); `keadaanWilayahSp()` di DummyData (Kapitan Meo dari berkas monografi); section "Keadaan Wilayah" pada form SP; blok tampil di `dashboard/sp`. 660 uji hijau, pint 31. `data-dictionary.md` §3.6/§3.6a/§11.41-43, `rules.md` §4a, `notes.md` bagian 6 batas + 1q.
 - **Stage C2 ✅** — tabel `rute_aksesibilitas_sp` (17 baris; SP Kapitan Meo 5 baris dari Tabel 2.1 monografi); dynamic repeater "Rute Aksesibilitas" pada form SP; tabel tampil (dengan `<caption>`) di `dashboard/sp`. Label catatan repeater = "Catatan" (penjaga label). 660 uji hijau, pint 31. `notes.md` 1q.5.
 - **Stage C3 ✅** — Laporan Monografi SP merender Bab II penuh per SP (Letak, Batas, Luas & Bentuk, Tanah, Topografi, Iklim, Sumberdaya Air, Aksesibilitas), didahului tabel ikhtisar indikator. `LaporanData::monografiSp()` kembalikan `baris` + `monografi`; helper `angka()`/`rentang()`/`bab2()`. Nilai kosong -> "belum dicatat". 661 uji hijau, pint 31. `notes.md` 1q.6. **Rombongan C selesai.**
+
+### Putaran 3: Halaman Laporan diperbaiki (2026-08-28/29) — bertahap
+
+Peninjauan pemilik proyek atas menu Laporan hasil Tahap 2c: "berantakan". Tiap laporan diberi filter sendiri; isinya disajikan sebagai dokumen berbingkai dengan "buka di tab baru". Rincian di `notes.md` §1r.
+
+- **Stage D1 ✅** (commit `5bf52b0`) — fondasi data: `sp_id`/`poktan_id` dibawa keluar `LaporanData`; `kelompokkanPerSp()` per id SP (menutup cacat dua SP senama lebur); `LaporanData::angka()` publik + penjaga `$desimal > 0` (dulu 7 salinan, bug "1.200"→"1.2"); `jumlah_anggota` keluar dari subtotal hasilPanen; `laporan/transmigran` `@foreach`→`@forelse`. **662 uji hijau**, pint 31, tanpa perubahan uji.
+- **Stage D2 ✅** (commit `9c4076c`) — kertas berbingkai: `kerangka-laporan` membungkus isi dalam `<article>` `.kertas-dokumen`; `LaporanData::meta($slug)` memusatkan metadata kepala; badan tiap laporan dipisah ke `pages/laporan/isi/{slug}`, di-`@include` halaman berbingkai + rute dokumen generik `pages/laporan/dokumen`; `layouts/dokumen.blade.php` baru (polos); rute `/laporan/{slug}/dokumen` (`laporan.dokumen`); tombol "Buka di tab baru"; `@media print` pertama + `.cetak-sembunyi`. Bug `{{-- --}}` bersarang di doc-comment `kerangka-laporan` ikut diperbaiki. **662 uji hijau**, pint 31.
+- **Stage D2b ✅** (commit `a4421de`) — orientasi + garis: `LaporanData::KOLOM_LANDSCAPE = 9`, `meta()` + kunci `kolom`, `orientasi($slug)`. 6 laporan landscape, Indikator Kawasan potret. `@page` pertama (via `@push('gaya')` → `@stack('gaya')` di kedua layout). `.tabel-dokumen` (CSS telanjang, tak boleh ber-`>`) pada 12 tabel; `divide-y` dicabut. Cetak: garis digelapkan, `thead` diulang, tabel landscape `8pt`. Baris total: `border-t-2 border-gray-300` → `motif-baris-total` (`ui-spec.md` §2.3). Celah nol-cakupan rute dokumen ditutup. **678 uji hijau**, pint 31. `uji-lebar-dokumen.mjs` 28/0.
+- **Stage D3 ⬜** — filter per laporan (Alpine). Prasyarat: agregasi 17 indikator per SP untuk Rekap Indikator Kawasan.
+- **Stage D4 ⬜** — dokumen acuan (`rules.md` §12, `ui-spec.md` §6.9/6.10, `prd.md` §7.9). Dua butir tunggu GUGUR (lihat blok "Ditunda").
+
+**Belum diperiksa mata:** hasil cetak (Ctrl+P) tampilan dokumen.
 
 ## Tahap 3 — Autentikasi dan Hak Akses
 

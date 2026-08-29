@@ -725,17 +725,19 @@ Penjaga alamat mutlak sengaja dibatasi ke `resources/js` dan penjaga nama tombol
 
 Dicatat di sini agar tidak hilang bersama sesinya.
 
-**Temuan 3 — fondasi `user`.** Ditunda ke Tahap 3 atas pilihan pemilik proyek. Yang perlu diingat saat tahap itu dibuka: `ValidationRules.php` (425 baris) sudah **hardcode** `unique:user,email,...,id_user` mengikuti kamus data, sedangkan migration yang ada masih membuat `users` bawaan Laravel. Berkas itu belum pernah dipanggil sekali pun dari rute, jadi pertentangannya belum menimbulkan galat — dan justru itu yang membuatnya mudah terlewat.
+**Temuan 3 — fondasi `user`.** Ditunda ke Tahap 3 atas pilihan pemilik proyek. Yang perlu diingat saat tahap itu dibuka: `ValidationRules.php` (425 baris) sudah **hardcode** `unique:user,email,...,id_user` mengikuti kamus data, sedangkan migration yang ada masih membuat `users` bawaan Laravel. Berkas itu belum pernah dipanggil sekali pun dari rute, jadi pertentangannya belum menimbulkan galat — dan justru itu yang membuatnya mudah terlewat. **Ini satu-satunya butir 1g.7 yang masih terbuka.**
 
-**Temuan 6 — `<caption>` nol.** Belum dikerjakan. Perbaikannya kecil dan terpusat: 2 komponen, `data-table` dan `tabel-ringkas`, melayani 28 pemakaian.
+> **Lima butir di bawah SUDAH DIBERESKAN 2026-08-27** (teks di bawah dipertahankan sebagai potret keadaan saat ditemukan). Temuan 6 → §1i; Temuan 7 → §1k (jumlah sebenarnya 13, bukan 15); Temuan 8 → §1j; Ide B → §1l; Ide C → §1h (jumlah sebenarnya 212 pemanggilan di 65 berkas). Lihat juga bagian 4 nomor 12–14.
 
-**Temuan 7 — 15 komponen yatim.** Belum dikerjakan. `ui/modal`, `ui/badge`, `ui/alert`, dan `common/page-breadcrumb` masih tercatat pada `ui-spec.md` sebagai komponen basis, padahal polanya sudah diserap seluruhnya ke `x-sim.*`. Pencabutannya wajib disertai penyuntingan `ui-spec.md`, bukan penghapusan berkas begitu saja.
+**~~Temuan 6 — `<caption>` nol.~~** ~~Belum dikerjakan.~~ Perbaikannya kecil dan terpusat: 2 komponen, `data-table` dan `tabel-ringkas`, melayani 28 pemakaian.
 
-**Temuan 8 — 37 path absolut pada prop aksi.** Belum dikerjakan, dan **penjaganya pun belum ada**: uji baru hanya menyisir `resources/js`, tidak menyentuh prop aksi Blade. Diverifikasi ulang 2026-08-27, jumlahnya masih tepat 37. Akarnya dua komponen, `aksi-baris.blade.php` dan `modal-form.blade.php`, dan pola `url()` yang benar sudah ada di `stat-card.blade.php`.
+**~~Temuan 7 — 15 komponen yatim.~~** ~~Belum dikerjakan.~~ `ui/modal`, `ui/badge`, `ui/alert`, dan `common/page-breadcrumb` masih tercatat pada `ui-spec.md` sebagai komponen basis, padahal polanya sudah diserap seluruhnya ke `x-sim.*`. Pencabutannya wajib disertai penyuntingan `ui-spec.md`, bukan penghapusan berkas begitu saja.
 
-**Ide B — angkat `x-sim.aksi-daftar` dan `x-sim.tombol-filter`.** Blok tombol Impor beserta Tambah identik 21 baris di 14 berkas; blok filter identik 16 baris di 11 berkas. Sekitar **470 baris duplikat** berisi kelas Tailwind panjang yang akan menyimpang satu per satu.
+**~~Temuan 8 — 37 path absolut pada prop aksi.~~** ~~Belum dikerjakan, dan penjaganya pun belum ada~~: uji baru hanya menyisir `resources/js`, tidak menyentuh prop aksi Blade. Diverifikasi ulang 2026-08-27, jumlahnya masih tepat 37. Akarnya dua komponen, `aksi-baris.blade.php` dan `modal-form.blade.php`, dan pola `url()` yang benar sudah ada di `stat-card.blade.php`.
 
-**Ide C — pindahkan pengambilan data ke rute sebelum Tahap 3.** Ini yang paling menentukan biaya tahap berikutnya. Ada **272 pemanggilan `DummyData::`** tersebar di **67 berkas Blade**. Selama view mengambil datanya sendiri, migrasi ke Eloquent bukan pekerjaan controller melainkan penyuntingan 67 view, dan setiap perulangan menjadi N+1. Mengubah `return view('x')` menjadi `return view('x', ['baris' => ...])` **sekarang**, selagi isinya masih array, jauh lebih murah daripada sesudah Eloquent masuk.
+**~~Ide B — angkat `x-sim.aksi-daftar` dan `x-sim.tombol-filter`.~~** Blok tombol Impor beserta Tambah identik 21 baris di 14 berkas; blok filter identik 16 baris di 11 berkas. Sekitar **470 baris duplikat** berisi kelas Tailwind panjang yang akan menyimpang satu per satu.
+
+**~~Ide C — pindahkan pengambilan data ke rute sebelum Tahap 3.~~** Ini yang paling menentukan biaya tahap berikutnya. Ada **272 pemanggilan `DummyData::`** tersebar di **67 berkas Blade**. Selama view mengambil datanya sendiri, migrasi ke Eloquent bukan pekerjaan controller melainkan penyuntingan 67 view, dan setiap perulangan menjadi N+1. Mengubah `return view('x')` menjadi `return view('x', ['baris' => ...])` **sekarang**, selagi isinya masih array, jauh lebih murah daripada sesudah Eloquent masuk.
 
 ### 1g.8 Sesi terputus, catatan disusun belakangan
 
@@ -1354,6 +1356,110 @@ Rombongan C selesai (C1+C2+C3).
 
 ---
 
+## 1r. Putaran 3: Halaman Laporan diperbaiki (2026-08-28/29)
+
+Peninjauan pemilik proyek atas menu Laporan hasil Tahap 2c: "berantakan".
+Permintaan awalnya tiap laporan punya filter sendiri, isinya disajikan
+seperti dokumen berbingkai dengan "buka di tab baru". Dikerjakan bertahap;
+D3 (filter) dan D4 (dokumen acuan) menyusul.
+
+### 1r.1 Stage D1: fondasi data + perumus angka (commit `5bf52b0`)
+
+- `LaporanData`: `sp_id`/`poktan_id` dibawa keluar di `hasilPanen()`,
+  `alsintan()`, `saprotan()` (benih + non-benih), `monografiSp()`, `poktan()`.
+- `kelompokkanPerSp()` mengelompokkan menurut **id SP**, bukan namanya --
+  menutup cacat laten: dua SP bernama sama akan lebur. `sp_id` diteruskan ke
+  tingkat grup.
+- `LaporanData::angka()` jadi publik + penjaga `$desimal > 0`. Dulu **tujuh
+  salinan** berbeda tanda tangan di tiap view; pola `rtrim(...,'0')` memakan
+  angka bulat "1.200" jadi "1.2". Ketujuh view kini mendelegasikan.
+- `hasilPanen()`: `jumlah_anggota` dikeluarkan dari kolom subtotal (dijumlah
+  tapi tak pernah dirender).
+- `laporan/transmigran`: tiga `@foreach` -> `@forelse` (satu-satunya laporan
+  tanpa jaring keadaan kosong).
+
+**662 uji hijau**, `pint` 31. Tanpa perubahan uji (seluruhnya additif).
+
+### 1r.2 Stage D2: tampilan dokumen berbingkai + tab baru (commit `9c4076c`)
+
+- `kerangka-laporan` membungkus isi dalam `<article>` "kertas" (`max-w-5xl`
+  `mx-auto`, kelas `.kertas-dokumen`), dengan masthead dokumen (judul +
+  cakupan + catatan) dan prop `dokumen`.
+- `LaporanData::meta($slug)` memusatkan metadata kepala (cakupan, dasar
+  periode, sumber, catatan) -- dulu 5 atribut di tiap view. Judul tetap dari
+  `MenuHelper`.
+- Badan tiap laporan dipisah ke `pages/laporan/isi/{slug}.blade.php`,
+  di-`@include` oleh halaman berbingkai DAN rute dokumen generik
+  `pages/laporan/dokumen.blade.php`. Data dioper eksplisit lewat `isiLaporan`
+  (slot komponen tidak mewarisi variabel view).
+- `layouts/dokumen.blade.php` baru -- polos, tanpa sidebar/header. **BUKAN**
+  `fullscreen-layout` (kode mati + store sidebar tertinggal).
+- Rute `/laporan/{slug}/dokumen` (`->where` 7 slug), nama `laporan.dokumen`.
+  `DaftarTautanStatis` membaca slug dari `LaporanData::meta()`; 223 alamat.
+- Tombol "Buka di tab baru" (`target=_blank rel=noopener` + sr-only) di kop
+  halaman berbingkai.
+- `@media print` pertama di repo (`app.css`) + kelas `.cetak-sembunyi` pada
+  sidebar, app-header, penanda data contoh, tombol unduh.
+- **Bug ditemukan + diperbaiki:** doc-comment `kerangka-laporan` memuat
+  contoh `<x-sim.kerangka-laporan>` + `@include` DAN `{{-- --}}` bersarang.
+  Regex komentar non-greedy berhenti di `--}}` bersarang pertama, sisanya
+  dikompilasi jadi komponen sungguhan (tiga render bertumpuk). Doc comment
+  ditulis ulang tanpa tag/directive literal.
+
+**662 uji hijau**, `pint` 31.
+
+### 1r.3 Stage D2b: orientasi kertas + garis tabel (commit `a4421de`)
+
+Peninjauan D2: laporan berkolom banyak dipaksa ke kertas potret sehingga
+selalu perlu digulir, dan tabelnya tanpa garis pemisah kolom.
+
+**Orientasi diturunkan dari jumlah kolom, bukan dipilih tangan.**
+`LaporanData::KOLOM_LANDSCAPE = 9`; `meta()` menambah kunci `kolom`;
+`orientasi($slug)` menurunkannya. Enam laporan jadi landscape (16, 15, 14,
+13, 9, 9 kolom); hanya Rekap Indikator Kawasan (6) tetap potret.
+
+| Tempat | Potret | Landscape |
+|---|---|---|
+| Halaman berbingkai (dalam aplikasi) | `max-w-5xl` | memenuhi ruang (`max-w-full`) |
+| Tab dokumen + cetak | `max-w-[820px]` | `max-w-[1200px]` |
+
+- `@page` pertama di repo, didorong lewat `@push('gaya')` ke `@stack('gaya')`
+  yang ditambahkan pada `<head>` kedua layout.
+- **Garis tabel:** `.tabel-dokumen` (CSS telanjang top level, sebab `@utility`
+  Tailwind v4 tak bisa menargetkan `th`/`td`; preseden `.motif-baris-total`).
+  Kelas sengaja polos tanpa varian ber-`>`: penjaga caption memakai regex
+  `/<table\b[^>]*>/` yang berhenti di `>` pertama. 12 tabel di
+  `pages/laporan/isi` diberi kelasnya; `divide-y` dicabut.
+- Cetak: garis digelapkan ke `gray-500` (`gray-200` lenyap di atas kertas),
+  `thead` diulang tiap halaman, baris tak dipotong, tabel landscape diberi
+  kepadatan `8pt` sebab A4 lebih sempit daripada layar.
+- **Pelanggaran `ui-spec.md` §2.3 ikut dibetulkan:** baris total laporan
+  memakai `border-t-2 border-gray-300` (persis "garis abu-abu biasa" yang
+  dilarang), Laporan Poktan tak punya garis atas sama sekali. Ketiganya kini
+  `motif-baris-total`.
+- **Celah nol-cakupan ditutup:** rute `/laporan/{slug}/dokumen` selama ini
+  tanpa satu uji pun -- dua penyapu rute global melewatkan URI ber-`{}`.
+
+**678 uji hijau** (dari 662; 16 uji baru dari 4 penjaga berdataset), `pint`
+31. `tests/Browser/uji-lebar-dokumen.mjs`: **28 lulus, 0 gagal** -- ketujuh
+laporan muat tanpa gulir mendatar (diukur Edge headless 1440x900).
+
+**Belum diperiksa mata:** hasil cetak (Ctrl+P) -- uji peramban hanya mengukur
+layar; kepadatan `@media print` `8pt` belum terverifikasi mesin.
+
+### 1r.4 Yang menyusul
+
+- **D3 -- filter per laporan (Alpine).** Prasyarat: agregasi 17 indikator
+  per SP untuk Rekap Indikator Kawasan (dari data mentah, `ringkasanDashboard()`
+  tidak disentuh) + penjaga "jumlah enam SP = angka kawasan".
+- **D4 -- dokumen acuan.** Dikerjakan bersama Putaran 4 (lihat 1s):
+  `rules.md` §12, `ui-spec.md` §6.9/§6.10, `prd.md` §7.9. Dua butir tunggu
+  **gugur**: pintasan laporan berfilter dan pemilih periode lintas-modul --
+  keduanya cara mewariskan filter ke halaman yang tak punya filter; begitu
+  tiap laporan punya filter sendiri, pewarisan tak perlu.
+
+---
+
 ## 2. Catatan Dokumen Proposal
 
 Lembar pengesahan pada `docs/Revisi_Proposal_Budi_TEP ITS 2026_Kobalima_Timur_Upload_10_6_2026_a.pdf` masih memuat judul dan pengusul dari proposal lain:
@@ -1530,7 +1636,7 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
 1. ~~Susun ulang ERD berdasarkan koreksi pada bagian 1, sebelum menulis migration Laravel.~~ **Selesai** ? `erd.md`
 2. ~~Buat data dictionary sebagai deliverable Fase 2 (`workflow.md` �2.2).~~ **Selesai** ? `data-dictionary.md`
 3. Konfirmasi ke tim lapangan: daftar satuan yang benar-benar dipakai per komoditas, untuk mengisi data master `satuan` dan menetapkan satuan baku tiap komoditas. *Sementara memakai Ton, Kuintal, Kilogram.*
-4. Konfirmasi apakah lahan pekarangan juga dapat lebih dari satu per KK, atau dipastikan selalu satu. *Saat ini struktur dibuat one-to-many agar fleksibel.*
+4. ~~Konfirmasi apakah lahan pekarangan juga dapat lebih dari satu per KK, atau dipastikan selalu satu.~~ **TERJAWAB 2026-08-18: tidak.** Satu transmigran menerima satu lahan pekarangan dan satu lahan usaha (`rules.md` §7.8, keterangan lapangan pemilik proyek). Relasi tetap one-to-many sebab satu KK memegang dua bidang berbeda peruntukan. Lihat bagian 6 butir "Koreksi konsep hak atas tanah" dan `tasklist.md` blok "Masih menunggu".
 5. Pastikan penanganan kasus rumah yang ditinggalkan sementara: apakah tetap berstatus Dihuni dengan penghuni terdaftar, atau dilepas menjadi kosong. *Sementara tetap Dihuni, dicatat pada `rumah.catatan_hunian`.*
 6. Konfirmasi apakah satu transmigran dapat menjadi anggota lebih dari satu poktan. *Sementara diasumsikan tidak, mengikuti `rules.md` �6.4.*
 7. Konfirmasi spesifikasi hosting/VPS target, khususnya versi PHP yang tersedia, sebelum tahap deployment.
@@ -2450,19 +2556,21 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
 
 - [done] tambahkan di rules.md, sebelum eksekusi, tulis lengkap plan pengerjaan yg akan dikerjakan di session-notes.md
   * **Selesai 2026-08-27.** `rules.md` §20b baru berisi dua poin: rencana lengkap wajib ditulis ke `session-notes.md` sebelum kode disentuh, dan rencana itu boleh ditimpa tiap sesi sedangkan yang permanen tetap `notes.md` dan `tasklist.md`. Lahir dari sesi yang terhenti di tengah audit tanpa jejak rencana (1g.8). Lihat bagian 1m.6.
-- Pada form di halaman transmigran, tambahkan field usia di mana auto hitung dari field tanggal lahir yg diinputkan oleh user. Tiap tahun nanti usia juga otomatis bertambah. Tambahkan field Agama juga.
+- [done] Pada form di halaman transmigran, tambahkan field usia di mana auto hitung dari field tanggal lahir yg diinputkan oleh user. Tiap tahun nanti usia juga otomatis bertambah. Tambahkan field Agama juga.
+  * **Selesai 2026-08-28 (Rombongan B Stage B1).** Field `agama` (`<select>` 6 agama Dukcapil, enum `Agama`) dan usia read-only yang dihitung `Carbon::parse($tanggal_lahir)->age` di sisi Alpine, ikut bertambah tiap tahun sebab tidak disimpan. Penjaga uji: `name="usia"` dan `name="jumlah_anggota_keluarga"` justru DILARANG ada di form (keduanya turunan). Lihat bagian 1p.
 - [done] fitur export/ekspor kita ganti dengan fitur laporan. Jadi nanti ketika klik tombol laporan, redirect ke halaman laporan dan nanti bisa unduh as pdf/excel gitu. Bagaimana menurutmu?
   * **Kerangka selesai 2026-08-28.** Keputusan 2026-08-17 (tombol ekspor menempel di tiap tabel) dibalik: ternyata belasan kontrol mati R-26. Menu "Laporan" jadi rumah dokumen bernama; komponen `tombol-ekspor` dihapus dari `halaman-daftar` + 9 halaman. `rules.md` §12 ditulis ulang. Lihat bagian 1n.1.
   * **Isi kolom selesai 2026-08-28 (Tahap 2c).** Ketujuh laporan kini bertabel berisi data contoh; lima mengikuti berkas rujukan di `refs/`. Lihat bagian 1o.
 - [done] kita diskusi apakah perlu menambahkan 1 filter tahun tambahan (2 filter tahun) sehingga nanti muncul data dalam rentang tahun tersebut dalam tiap datatable yg ada. Bagaimana menurutmu?
   * **Selesai 2026-08-28, tetapi TIDAK "tiap datatable".** Hanya daftar transaksi bersumbu waktu yang aman: `/panen`, `/penanaman`, `/audit-log`. Rekap agregat dikecualikan tegas (§9 poin 8b: luas terhitung ganda lintas tahun). `/panen` dan `/penanaman` yang sudah punya tahun tunggal diganti sepasang dari–sampai; `/audit-log` baru dapat filter tahun. Dipusatkan di `DummyData::saringRentangTahun()`. Lihat bagian 1n.3.
-- [fondasi selesai] Kita diskusikan dulu ya hasil pertemuan kemarin kami dengan dinas pertanian terkait format pelaporan hasil panen. Jadi format pelaporannya itu berdasarkan bantuan benih dan pupuk yg dihibahkan dari pemerintah ke poktan. Misal bantuan tersebut menggunakan APBD/APBN tahun 2025, maka walaupun penanaman dan panennya di tahun 2026 semua, maka laporan mereka itu nanti masuknya tetep tahun 2025. Bagaimana menurutmu? Coba kita diskusikan.
-  * **Diskusi selesai, fondasi datanya selesai 2026-08-27; halaman laporannya BELUM.** Kolom `saprotan.tahun_pengadaan` (tahun anggaran, diisi petugas), rantai penelusuran `hasil_panen → penanaman.saprotan_id → saprotan.tahun_pengadaan`, dan aturan pengelompokan (`rules.md` §9 poin 16) sudah berdiri, dijaga uji lintas tahun. Basis tahun dipisah menurut tujuan: rekap tetap tahun panen, laporan pakai tahun pengadaan. Pupuk dilaporkan sebagai bagian terpisah sebab tidak tertaut ke penanaman. Lihat bagian 1m.2 sampai 1m.4.
+- [done] Kita diskusikan dulu ya hasil pertemuan kemarin kami dengan dinas pertanian terkait format pelaporan hasil panen. Jadi format pelaporannya itu berdasarkan bantuan benih dan pupuk yg dihibahkan dari pemerintah ke poktan. Misal bantuan tersebut menggunakan APBD/APBN tahun 2025, maka walaupun penanaman dan panennya di tahun 2026 semua, maka laporan mereka itu nanti masuknya tetep tahun 2025. Bagaimana menurutmu? Coba kita diskusikan.
+  * **Diskusi selesai, fondasi datanya selesai 2026-08-27.** Kolom `saprotan.tahun_pengadaan` (tahun anggaran, diisi petugas), rantai penelusuran `hasil_panen → penanaman.saprotan_id → saprotan.tahun_pengadaan`, dan aturan pengelompokan (`rules.md` §9 poin 16) sudah berdiri, dijaga uji lintas tahun. Basis tahun dipisah menurut tujuan: rekap tetap tahun panen, laporan pakai tahun pengadaan. Pupuk dilaporkan sebagai bagian terpisah sebab tidak tertaut ke penanaman. Lihat bagian 1m.2 sampai 1m.4.
   * **Halaman Laporan Hasil Panen selesai 2026-08-28** bersama enam laporan lain di menu "Laporan" (bagian 1n.2, 1o). Kolomnya mengikuti "Lap. Akhir Panen Jagung Polri MT. I 2025": identitas poktan, volume benih, varietas, realisasi tanam sampai produksi, dikelompokkan per SP + subtotal + total kawasan. Dasar periode tetap tahun pengadaan bantuan, dengan pupuk di Laporan Saprotan bagian terpisah.
 - [done] Bagaimana menurutmu kalau sistem ini ditambahkan untuk pengisian anggota keluarga? Jika iya, nanti saat pengisian data kepala keluarga di halaman transmigran, ditambah dengan pengisian anggota keluarga (istri + anak2) dengan model tambah form gitu (dynamic form fields). Lalu untuk field form-nya, untuk istri mirip dengan suami (minus field nomor KK), sedangkan untuk anaknya Nama Lengkap, NIK, Jenis Kelamin, Tempat Lahir, Tanggal Lahir, Agama, Pendidikan/Kerja [multi level dropdown] (jika pilih kerja, munculkan form pendidikan terakhir, pekerjaan, dan pendapatan perbulan).
   * **Selesai 2026-08-28 (Rombongan B, B1+B2+B3).** Tabel `anggota_keluarga`, repeater dinamis bersyarat pada form transmigran, field `agama` + usia terhitung, `jumlah_anggota_keluarga` jadi turunan. Ikut merombak `anggota_poktan` dan suksesi KK agar keduanya menaut ke orang di `anggota_keluarga`, bukan mengetik ulang identitasnya. `erd.md` §7.4 dibalik penuh. Lihat bagian 1p.
 - [done] Apakah mungkin untuk masing-masing halaman laporan dibuat sekarang? Untuk datanya kita buat dummy dulu agar setidaknya kita bisa menentukan kolom-kolomnya. Kalau kamu setuju, nanti untuk beberapa halaman laporan tertentu akan aku kasih format kolom laporannya.
-  * **Tujuh halaman laporan selesai berisi 2026-08-28** (bagian 1n.2, 1o): judul, cakupan sebagai teks, tabel berdata contoh, tombol unduh jujur. Lima mengikuti berkas rujukan (`refs/`), dua (Rekap Indikator Kawasan, Daftar Transmigran) dirancang dari kolom data yang ada. Laporan Monografi SP dilengkapi Bab II Keadaan Wilayah penuh per SP pada Rombongan C Stage C3 (bagian 1q.6). Yang tersisa: pintasan pembawa filter, pemilih periode laporan lintas modul.
+  * **Tujuh halaman laporan selesai berisi 2026-08-28** (bagian 1n.2, 1o): judul, cakupan sebagai teks, tabel berdata contoh, tombol unduh jujur. Lima mengikuti berkas rujukan (`refs/`), dua (Rekap Indikator Kawasan, Daftar Transmigran) dirancang dari kolom data yang ada. Laporan Monografi SP dilengkapi Bab II Keadaan Wilayah penuh per SP pada Rombongan C Stage C3 (bagian 1q.6).
+  * **Putaran 3 (2026-08-28/29):** tampilan diperbaiki setelah pemilik proyek menilai "berantakan" — kertas berbingkai, rute dokumen polos "buka di tab baru", orientasi kertas menurut jumlah kolom, garis tabel. Bagian 1r. Filter per laporan (D3) menyusul; dua butir tunggu ("pintasan pembawa filter", "pemilih periode lintas modul") **GUGUR** digantikan filter per laporan.
 - [done] Pada halaman saprotan, saat user klik benih, munculkan field form “Varietas”. Tambahkan juga field form “Jadwal Tanam” (Bulan+Tahun). Lalu untuk field form “Tanggal Perolehan”,  ganti dengan Tahun Pengadaan (Tahun).
   * **Selesai 2026-08-27.** `varietas` (VARCHAR, wajib bila jenis Benih — bersyarat sejajar dengan komoditas), `jadwal_tanam` (`CHAR(7)` bentuk `YYYY-MM`, rencana dari berita acara), dan `tahun_pengadaan` (YEAR wajib) menggantikan `tanggal_perolehan`. Sekalian membereskan penyimpangan nama: `tanggal_perolehan` tak pernah ada di kamus data, dan `sumber` diseragamkan menjadi `sumber_dana`. Penjaga varietas dibuktikan lewat mutasi. Lihat bagian 1m.1 dan 1m.7.
 - [done] Pada halaman alsintan, tambahkan field form “Penerima” dari Poktan (bisa dari ketua/anggota).
