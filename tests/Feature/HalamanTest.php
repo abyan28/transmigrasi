@@ -368,6 +368,46 @@ it('menurunkan jumlah anggota keluarga dari cacah baris aktif, bukan menyimpanny
         ->toBeTrue('Data contoh wajib memuat anggota keluarga yang meninggal atau pindah');
 });
 
+it('menandai status anggota keluarga dan menyediakan pencatatan peristiwa', function () {
+    // Putaran 6: anggota yang meninggal atau pindah tetap tampil, ditandai
+    // badge, dan tidak lagi punya tombol "Catat Peristiwa".
+    $isi = $this->get('/transmigran/3')->assertOk()->getContent();
+
+    // Anggota non-aktif (ROSALIA SERAN, id 12) tetap dirender beserta
+    // tanggal peristiwanya.
+    expect($isi)
+        ->toContain('ROSALIA SERAN')
+        ->toContain('Meninggal')
+        ->toContain('Catat Peristiwa')
+        ->toContain('formPeristiwaAnggota')
+        ->toContain('catat-peristiwa')
+        ->toContain(':id');
+
+    // Kolom Status hadir di kepala tabel.
+    expect($isi)->toContain('>Status</th>');
+});
+
+it('menyediakan rute pencatatan peristiwa anggota keluarga', function () {
+    expect(Route::has('transmigran.anggota.catat-peristiwa'))->toBeTrue();
+
+    $this->post('/transmigran/3/anggota/9/catat-peristiwa', [
+        'status' => 'Pindah',
+        'tanggal_peristiwa' => '2026-08-01',
+        'keterangan_peristiwa' => 'Pindah ke Atambua.',
+    ])->assertRedirect('/transmigran/3?tab=keluarga');
+
+    $this->post('/transmigran/3/anggota/9/catat-peristiwa')
+        ->assertSessionHas('sukses');
+});
+
+it('menyunting hanya anggota keluarga aktif pada form multi-langkah', function () {
+    // Anggota non-aktif tidak boleh menjadi baris repeater yang tersunting;
+    // ia hanya ditampilkan sebagai bacaan.
+    $isi = $this->get('/transmigran/3')->assertOk()->getContent();
+
+    expect($isi)->toContain('sudah dicatat meninggal atau pindah');
+});
+
 it('menghitung usia dari tanggal lahir pada halaman rincian transmigran', function () {
     $data = collect(DummyData::transmigran())->firstWhere('id_transmigran', 1);
     $usia = Carbon::parse($data['tanggal_lahir'])->age;

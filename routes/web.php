@@ -894,6 +894,22 @@ Route::post('/transmigran/{id}/ganti-kepala-keluarga', function (int $id) {
 })->where('id', '[0-9]+')->name('transmigran.ganti-kepala-keluarga');
 
 
+/*
+ * Mencatat peristiwa pada satu anggota keluarga SELAIN kepala keluarga
+ * (Putaran 6): meninggal atau pindah. Barisnya tidak dihapus, hanya ditandai
+ * `status` + `tanggal_peristiwa` + `keterangan_peristiwa`.
+ *
+ * Kepala keluarga TIDAK lewat sini; peristiwanya selalu lewat alur ganti
+ * kepala keluarga di atas.
+ *
+ * Tahap 5: sunting satu baris `anggota_keluarga`, catat audit log.
+ */
+Route::post('/transmigran/{id}/anggota/{anggota}/catat-peristiwa', function (int $id) {
+    return redirect()->route('transmigran.detail', ['id' => $id, 'tab' => 'keluarga'])
+        ->with('sukses', 'Peristiwa anggota keluarga tercatat.');
+})->where(['id' => '[0-9]+', 'anggota' => '[0-9]+'])->name('transmigran.anggota.catat-peristiwa');
+
+
 Route::delete('/transmigran/{id}', function () {
     // Tahap 5: soft delete agar data tetap dapat dipulihkan.
     return redirect()->route('transmigran.index')

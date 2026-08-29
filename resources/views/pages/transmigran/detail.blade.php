@@ -229,11 +229,14 @@
                                         <th scope="col" class="px-5 py-3 text-left">Kegiatan</th>
                                         <th scope="col" class="px-5 py-3 text-left">Pendidikan</th>
                                         <th scope="col" class="px-5 py-3 text-left">Pekerjaan</th>
+                                        <th scope="col" class="px-5 py-3 text-left">Status</th>
+                                        <th scope="col" class="px-5 py-3 text-right"><span class="sr-only">Aksi</span></th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                                     @foreach ($anggotaKeluarga as $a)
-                                        <tr class="text-gray-700 dark:text-gray-300">
+                                        @php $anggotaAktif = ($a['status'] ?? 'Aktif') === \App\Enums\StatusAnggotaKeluarga::Aktif->value; @endphp
+                                        <tr class="text-gray-700 dark:text-gray-300 {{ $anggotaAktif ? '' : 'opacity-60' }}">
                                             <td class="px-5 py-3 font-medium text-gray-800 dark:text-white/90">
                                                 {{ $a['nama_lengkap'] }}
                                                 @if (! empty($a['keterangan']))
@@ -255,13 +258,38 @@
                                                     <span class="mt-0.5 block text-theme-xs font-normal text-gray-500 dark:text-gray-400">Rp {{ number_format($a['pendapatan_per_bulan'], 0, ',', '.') }} per bulan</span>
                                                 @endif
                                             </td>
+                                            <td class="px-5 py-3">
+                                                <x-sim.status-badge
+                                                    :status="\App\Enums\StatusAnggotaKeluarga::from($a['status'] ?? 'Aktif')"
+                                                    ukuran="sm" />
+                                                @if (! $anggotaAktif && ! empty($a['tanggal_peristiwa']))
+                                                    <span class="mt-0.5 block text-theme-xs font-normal text-gray-500 dark:text-gray-400">
+                                                        {{ \Illuminate\Support\Carbon::parse($a['tanggal_peristiwa'])->translatedFormat('d M Y') }}@if (! empty($a['keterangan_peristiwa'])) &mdash; {{ $a['keterangan_peristiwa'] }} @endif
+                                                    </span>
+                                                @endif
+                                            </td>
+                                            <td class="px-5 py-3 text-right">
+                                                @if ($bolehUbah && $anggotaAktif)
+                                                    <button type="button"
+                                                        @click.prevent="$dispatch('buka-modal-baris', {
+                                                            nama: 'formPeristiwaAnggota',
+                                                            data: @js(['id' => $a['id_anggota_keluarga'], 'nama_anggota' => $a['nama_lengkap']]),
+                                                        })"
+                                                        class="rounded-lg border border-gray-300 px-3 py-1.5 text-theme-xs font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
+                                                        Catat Peristiwa
+                                                    </button>
+                                                @endif
+                                            </td>
                                         </tr>
                                     @endforeach
                                 </tbody>
                             </table>
                         </div>
                         <p class="px-5 py-3 text-theme-xs text-gray-500 dark:text-gray-400">
-                            Usia dihitung dari tanggal lahir dan bertambah sendiri tiap tahun.
+                            Usia dihitung dari tanggal lahir dan bertambah sendiri tiap tahun. Anggota
+                            yang meninggal atau pindah tetap tercatat untuk riwayat dan laporan, tetapi
+                            tidak lagi dihitung sebagai jiwa keluarga. Peristiwa pada kepala keluarga
+                            dicatat lewat tombol <span class="font-medium">Ganti Kepala Keluarga</span>.
                         </p>
                     @endif
                 </div>
@@ -754,6 +782,65 @@
                     Rumah, lahan, dan dokumen tetap melekat pada keluarga ini, sebab jatah transmigrasi
                     diberikan kepada keluarga bukan kepada orangnya. Pergantian ini tercatat sebagai riwayat
                     tersendiri dan tidak dapat dihapus.
+                </p>
+            </div>
+        </x-sim.modal-form>
+    @endif
+
+    {{--
+        Modal pencatatan peristiwa anggota keluarga (Putaran 6).
+
+        Hanya untuk anggota SELAIN kepala keluarga: meninggal atau pindah.
+        Barisnya tidak dihapus, hanya ditandai. Satu modal melayani seluruh
+        baris lewat pola-aksi :id (anggota_keluarga_id).
+
+        Peristiwa pada kepala keluarga TIDAK di sini, melainkan lewat modal
+        Ganti Kepala Keluarga, sebab kepala keluarga membawa rumah, lahan, dan
+        keanggotaan poktan yang harus berpindah bersamanya.
+    --}}
+    @if ($bolehUbah)
+        <x-sim.modal-form nama="formPeristiwaAnggota" judul="Catat Peristiwa Anggota Keluarga"
+            keterangan="Anggota yang meninggal atau pindah tetap tercatat, hanya ditandai agar tidak lagi dihitung sebagai jiwa keluarga."
+            :pola-aksi="'/transmigran/' . $data['id_transmigran'] . '/anggota/:id/catat-peristiwa'"
+            ukuran="md" label-simpan="Simpan Peristiwa">
+
+            <div class="space-y-6"
+                x-data="{ namaAnggota: '' }"
+                x-on:buka-modal-baris.window="if ($event.detail.nama === 'formPeristiwaAnggota') namaAnggota = $event.detail.data.nama_anggota">
+
+                <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+                    <p class="text-theme-xs text-gray-500 dark:text-gray-400">Anggota keluarga</p>
+                    <p class="mt-0.5 text-theme-sm font-medium text-gray-800 dark:text-white/90" x-text="namaAnggota">&nbsp;</p>
+                </div>
+
+                <div>
+                    <label for="peristiwa_status" class="mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400">Peristiwa</label>
+                    <select id="peristiwa_status" name="status" required
+                        class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
+                        <option value="">Pilih peristiwa</option>
+                        @foreach (\App\Enums\StatusAnggotaKeluarga::opsiPeristiwa() as $nilai => $label)
+                            <option value="{{ $nilai }}">{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <label for="peristiwa_tanggal" class="mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400">Tanggal peristiwa</label>
+                    <input type="date" id="peristiwa_tanggal" name="tanggal_peristiwa" required
+                        value="{{ now()->format('Y-m-d') }}" max="{{ now()->format('Y-m-d') }}"
+                        class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90" />
+                </div>
+
+                <div>
+                    <label for="peristiwa_keterangan" class="mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400">Keterangan</label>
+                    <textarea id="peristiwa_keterangan" name="keterangan_peristiwa" rows="2" maxlength="500"
+                        placeholder="Contoh: pindah ke Kupang mengikuti kerabat; akta kematian sudah diserahkan."
+                        class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30"></textarea>
+                </div>
+
+                <p class="rounded-lg bg-gray-50 p-3.5 text-theme-xs text-gray-600 dark:bg-white/[0.03] dark:text-gray-400">
+                    Peristiwa ini menandai satu anggota, bukan membubarkan keluarga. Bila yang berpindah
+                    atau wafat adalah kepala keluarga, gunakan tombol Ganti Kepala Keluarga.
                 </p>
             </div>
         </x-sim.modal-form>

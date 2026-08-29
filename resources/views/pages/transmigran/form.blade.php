@@ -31,6 +31,18 @@
     $data = $data ?? [];
     $anggotaKeluargaData = $anggotaKeluargaData ?? [];
 
+    // Repeater hanya menyunting anggota yang masih Aktif (Putaran 6). Anggota
+    // yang sudah meninggal atau pindah dicatat lewat modal "Catat Peristiwa"
+    // di halaman rincian, bukan lewat form ini; menampilkannya di sini akan
+    // membuat petugas menghidupkannya kembali tanpa sengaja saat menyimpan.
+    $anggotaNonAktif = collect($anggotaKeluargaData)
+        ->filter(fn ($a) => ($a['status'] ?? 'Aktif') !== 'Aktif')
+        ->values();
+    $anggotaKeluargaData = collect($anggotaKeluargaData)
+        ->filter(fn ($a) => ($a['status'] ?? 'Aktif') === 'Aktif')
+        ->values()
+        ->all();
+
     $kelasKontrol = 'h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30';
     $kelasLabel = 'mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400';
     $kelasBagian = 'text-theme-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400';
@@ -482,6 +494,26 @@
                 </div>
             </fieldset>
         </template>
+
+        @if ($anggotaNonAktif->isNotEmpty())
+            {{--
+                Anggota yang sudah meninggal atau pindah (Putaran 6). Ditampilkan
+                sebagai bacaan, tidak ikut terkirim: peristiwanya dicatat lewat
+                modal "Catat Peristiwa" di halaman rincian, bukan diedit di sini.
+            --}}
+            <div class="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+                <p class="text-theme-xs font-medium text-gray-600 dark:text-gray-400">
+                    Tidak dapat disunting di sini &mdash; sudah dicatat meninggal atau pindah
+                </p>
+                <ul class="mt-2 space-y-1">
+                    @foreach ($anggotaNonAktif as $a)
+                        <li class="text-theme-xs text-gray-500 dark:text-gray-400">
+                            {{ $a['nama_lengkap'] }} ({{ $a['hubungan'] }}) &mdash; {{ $a['status'] }}@if (! empty($a['tanggal_peristiwa'])), {{ \Illuminate\Support\Carbon::parse($a['tanggal_peristiwa'])->translatedFormat('d M Y') }}@endif
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
     </section>
     </div>
 
