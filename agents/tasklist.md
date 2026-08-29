@@ -852,11 +852,11 @@ Peninjauan pemilik proyek atas menu Laporan hasil Tahap 2c: "berantakan". Tiap l
   - **D3-1 ✅** — pola filter + Laporan Transmigran. Baru: `resources/js/filter-laporan.js` (`Alpine.data('filterLaporan')`), `x-sim.filter-laporan` (bilah selalu tampak, `.cetak-sembunyi`), `LaporanData::filterLaporan($slug)`. `x-data` pada `<article>` kerangka-laporan supaya kalimat cakupan kepala kertas ikut bereaksi (rules §12 poin 8). Nomor urut lewat penghitung CSS (baris `display:none` tak menaikkan penghitung). `uji-filter-laporan.mjs` 18/0, pest +5 (684).
   - **D3-2 ✅** — Laporan Poktan. Satu tabel per poktan (milik tepat satu SP) → penyaring SP menyembunyikan wadah tabel utuh, bukan baris. Helper JS `kosong()`. `uji-filter-laporan.mjs` 21/0.
   - **D3-3a ✅** — Laporan Alsintan (grup per SP). Baris data ber-`data-*`; grup-header + subtotal `x-show="!kosong(...,selSp(id))"`; sel subtotal & total `x-text="jumlahTampak(...)"`; baris total menyatakan cakupan (§8o). Helper JS: `_baris()` (elemen ATAU NodeList), `selSp()`, `rasioTampak()`. `uji-filter-laporan.mjs` 28/0.
-  - **D3-3b ⬜** — Saprotan (dua bagian benih + non-benih; pola sama).
-  - **D3-3c ⬜** — Hasil Panen (`data-tahun` = tahun anggaran bantuan §16a; produktivitas tertimbang lewat `rasioTampak`).
+  - **D3-3b ✅** — Saprotan. Ternyata dua tabel datar (benih + non-benih), TANPA subtotal → pola Transmigran, bukan Alsintan. Dua dimensi: Komoditas Benih (baris benih) + Jenis Sarana non-benih (baris non-benih), satu bilah melayani keduanya. `cocok()` diperketat: atribut data `''` = tidak ada. `uji-filter-laporan.mjs` 32/0.
+  - **D3-3c ⬜** — Hasil Panen (grup per SP, pola Alsintan; `data-tahun` = tahun anggaran bantuan §16a; produktivitas tertimbang lewat `rasioTampak`).
   - **D3-4 ⬜** — Rekap Indikator Kawasan: agregasi 16 indikator per SP + penjaga Σ-SP = angka kawasan (`ringkasanDashboard()` tak disentuh).
   - **D3-5 ⬜** — Monografi SP (opsional; pemilih SP tunggal).
-  - status masuk D3-3b: `pest` 686, `pint` 31, `uji-filter-laporan.mjs` 28/0.
+  - status masuk D3-3c: `pest` 687, `pint` 31, `uji-filter-laporan.mjs` 32/0.
 - **Stage D4 ✅** (Putaran 4, sebagian di `03558ff`) — dokumen acuan: `rules.md` §12 poin 5-13, `ui-spec.md` §6.2/§6.9/§6.11/§4.9, `prd.md` §7.9. Dua butir tunggu GUGUR (lihat blok "Ditunda").
 
 ### Putaran 4: Submenu Laporan disatukan + Form Transmigran bertahap (2026-08-29)

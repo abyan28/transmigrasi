@@ -4963,7 +4963,7 @@ it('menandai hanya laporan yang bilah filternya sudah dipasang', function () {
     }
 
     // Urutan mengikuti LaporanData::meta().
-    expect($berfilter)->toBe(['transmigran', 'poktan', 'alsintan']);
+    expect($berfilter)->toBe(['transmigran', 'poktan', 'alsintan', 'saprotan']);
 });
 
 it('menyembunyikan tabel poktan seutuhnya lewat penanda SP, bukan per baris', function () {
@@ -5008,6 +5008,24 @@ it('menghitung ulang subtotal per SP dan total kawasan saat Laporan Alsintan dis
     expect($baris)->toBeGreaterThan(1);
     expect(substr_count($isi, 'data-jumlah='))->toBe($baris);
     expect(substr_count($isi, 'data-jenis='))->toBe($baris);
+});
+
+it('menyaring kedua bagian Laporan Saprotan tanpa subtotal (tabel datar)', function () {
+    // Saprotan dua tabel datar (benih + non-benih), tanpa grup per SP.
+    // Penyaring hanya menyembunyikan baris; tak ada subtotal untuk dihitung.
+    $isi = $this->get('/laporan/saprotan')->assertOk()->getContent();
+
+    expect($isi)
+        ->toContain('x-data="filterLaporan(')
+        ->toContain('data-baris data-sp=')
+        ->toContain('data-komoditas=')                       // dimensi benih
+        ->toContain('data-jenis=')                           // dimensi non-benih
+        ->toContain('Tidak ada penyaluran benih yang cocok dengan filter')
+        ->toContain('Tidak ada penyaluran sarana non-benih yang cocok dengan filter')
+        ->not->toContain('jumlahTampak(');                   // tak ada subtotal
+
+    // Dimensi komoditas hanya di baris benih, jenis hanya di non-benih.
+    expect(substr_count($isi, 'data-komoditas='))->toBeLessThan(substr_count($isi, 'data-baris data-sp='));
 });
 
 it('menomori baris laporan lewat penghitung CSS supaya rapat setelah disaring', function () {

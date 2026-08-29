@@ -114,19 +114,28 @@ Helper JS: `_baris(cakupan, penanda)` menormalkan elemen ATAU NodeList;
 (dipakai D3-3c). Nomor urut → `td[data-nomor]` (penghitung CSS, tak lagi
 `++$nomor`). `pest` 686, `uji-filter-laporan.mjs` 28/0.
 
-### D3-3b/c — Saprotan + Hasil Panen (grup per SP + subtotal berjenjang)
+### D3-3b — Laporan Saprotan ✅ SELESAI (2026-08-29)
 
-Pakai pola D3-3a. Catatan khusus:
-- **Saprotan** dua bagian: `benih` (grup per SP, subtotal) + `nonBenih`
-  (penyaluran). Dimensi: SP + tahun pengadaan + jenis/komoditas.
-- **Hasil Panen** `data-tahun` = tahun anggaran bantuan (`tahun_pengadaan`
-  benih), BUKAN tahun panen (`rules.md` §16a). Kolom produktivitas subtotal =
-  `rasioTampak($el.closest('table'), 'produksi_ton', 'realisasi_panen', 2, selSp(id))`
-  — perlu `data-produksi_ton` + `data-realisasi_panen` pada tiap baris.
-  Belum-dipanen per baris sudah dihitung Blade; taruh sebagai `data-belum_dipanen`
-  dan jumlah ulang subtotal/total lewat `jumlahTampak`.
+**Bukan** grup-per-SP — dua tabel datar (benih + non-benih), tanpa subtotal.
+Pola Transmigran: hanya `x-show` baris. Benih: `data-sp data-tahun
+data-komoditas`. Non-benih: `data-sp data-tahun data-jenis`. Dua dimensi
+(Komoditas Benih, Jenis Sarana non-benih) — masing-masing hanya menyentuh
+tabel yang membawa atributnya. `cocok()` diperketat: atribut `''` = tidak ada.
+`uji-filter-laporan.mjs` 32/0.
 
-**Checkpoint tiap laporan = commit sendiri** (D3-3b, D3-3c terpisah).
+### D3-3c — Laporan Hasil Panen (grup per SP, pola D3-3a)
+
+Pakai pola Alsintan. Catatan khusus:
+- `data-tahun` = tahun anggaran bantuan (`tahun_pengadaan` benih), BUKAN tahun
+  panen (`rules.md` §16a). Cek `isi/hasil-panen.blade.php` — mungkin sudah ada
+  kolom Tahun Pengadaan.
+- Kolom produktivitas subtotal/total = `rasioTampak($el.closest('table'),
+  'produksi_ton', 'realisasi_panen', 2, selSp(id))` — perlu `data-produksi_ton`
+  + `data-realisasi_panen` pada tiap baris.
+- Kolom jumlah biasa (`volume_benih`, `realisasi_tanam`, `realisasi_panen`,
+  `puso`, `belum_dipanen`, `produksi_ton`) via `jumlahTampak(...)`.
+- §8o cakupan pada baris total. Angka Blade dipertahankan sebagai jaring.
+- Dimensi: SP + poktan? + komoditas + rentang tahun pengadaan.
 
 ### D3-4 — Rekap Indikator Kawasan: agregasi per SP + filter SP
 

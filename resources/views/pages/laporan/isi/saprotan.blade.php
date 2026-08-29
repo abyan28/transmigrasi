@@ -46,9 +46,11 @@
             </tr>
         </thead>
         <tbody>
-            @forelse ($benih as $i => $b)
-                <tr class="text-gray-700 dark:text-gray-300">
-                    <td class="px-3 py-2">{{ $i + 1 }}</td>
+            @forelse ($benih as $b)
+                <tr data-baris data-sp="{{ $b['sp_id'] }}" data-tahun="{{ $b['tahun_pengadaan'] }}"
+                    data-komoditas="{{ $b['komoditas'] }}" x-show="cocok($el)"
+                    class="text-gray-700 dark:text-gray-300">
+                    <td class="px-3 py-2 tabular-nums" data-nomor></td>
                     <td class="px-3 py-2">{{ $b['kecamatan'] }}</td>
                     <td class="px-3 py-2">{{ $b['desa'] }}</td>
                     <td class="px-3 py-2 font-medium text-gray-800 dark:text-white/90">{{ $b['poktan'] }}</td>
@@ -71,6 +73,13 @@
                     </td>
                 </tr>
             @endforelse
+            @if (count($benih) > 0)
+                <tr x-show="kosong($el.closest('tbody'))" x-cloak>
+                    <td colspan="15" class="px-3 py-6 text-center text-gray-500 dark:text-gray-400">
+                        Tidak ada penyaluran benih yang cocok dengan filter.
+                    </td>
+                </tr>
+            @endif
         </tbody>
     </table>
 </div>
@@ -95,9 +104,11 @@
             </tr>
         </thead>
         <tbody>
-            @forelse ($nonBenih as $i => $n)
-                <tr class="text-gray-700 dark:text-gray-300">
-                    <td class="px-3 py-2">{{ $i + 1 }}</td>
+            @forelse ($nonBenih as $n)
+                <tr data-baris data-sp="{{ $n['sp_id'] }}" data-tahun="{{ $n['tahun_pengadaan'] }}"
+                    data-jenis="{{ $n['jenis'] }}" x-show="cocok($el)"
+                    class="text-gray-700 dark:text-gray-300">
+                    <td class="px-3 py-2 tabular-nums" data-nomor></td>
                     <td class="px-3 py-2 font-medium text-gray-800 dark:text-white/90">{{ $n['poktan'] }}</td>
                     <td class="px-3 py-2">{{ $n['sp'] }}</td>
                     <td class="px-3 py-2">{{ $n['jenis'] }}</td>
@@ -112,6 +123,13 @@
                     </td>
                 </tr>
             @endforelse
+            @if (count($nonBenih) > 0)
+                <tr x-show="kosong($el.closest('tbody'))" x-cloak>
+                    <td colspan="7" class="px-3 py-6 text-center text-gray-500 dark:text-gray-400">
+                        Tidak ada penyaluran sarana non-benih yang cocok dengan filter.
+                    </td>
+                </tr>
+            @endif
         </tbody>
     </table>
 </div>

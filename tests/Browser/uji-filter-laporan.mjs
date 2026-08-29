@@ -384,6 +384,40 @@ async function main() {
         periksa('rentang tahun mustahil memunculkan pesan Alsintan kosong',
             await nilai(`document.body.textContent.includes('Tidak ada alsintan yang cocok')`) === true);
 
+        // ============================================================
+        console.log('\nLaporan Saprotan (dua tabel datar, tanpa subtotal):');
+        await buka('/laporan/saprotan');
+
+        periksa('bilah Saprotan: SP + tahun + komoditas benih + jenis sarana',
+            await nilai(`!! document.querySelector('#filter-laporan-sp')
+                && !! document.querySelector('#filter-laporan-komoditas')
+                && !! document.querySelector('#filter-laporan-jenis')`) === true);
+
+        const benihTotal = await nilai(`document.querySelectorAll('table.tabel-dokumen')[0].querySelectorAll('tr[data-baris]').length`);
+        const nonBenihTotal = await nilai(`document.querySelectorAll('table.tabel-dokumen')[1].querySelectorAll('tr[data-baris]').length`);
+        periksa('kedua tabel Saprotan dirender penuh oleh Blade', benihTotal > 0 && nonBenihTotal > 0);
+
+        // Filter komoditas benih: hanya tabel benih menyempit, non-benih utuh.
+        const kom = await nilai(`document.querySelector('#filter-laporan-komoditas').options[1]?.value`);
+        if (kom) {
+            await setSelect('#filter-laporan-komoditas', kom);
+            await tidur(300);
+            periksa('filter komoditas menyempitkan tabel benih',
+                await nilai(`
+                    [...document.querySelectorAll('table.tabel-dokumen')[0].querySelectorAll('tr[data-baris]')]
+                        .filter((tr) => tr.offsetParent !== null)
+                        .every((tr) => tr.dataset.komoditas === ${JSON.stringify(kom)})
+                `) === true);
+            periksa('filter komoditas TIDAK menyentuh tabel non-benih (tak punya data-komoditas)',
+                await nilai(`
+                    [...document.querySelectorAll('table.tabel-dokumen')[1].querySelectorAll('tr[data-baris]')]
+                        .filter((tr) => tr.offsetParent !== null).length
+                `) === nonBenihTotal);
+        } else {
+            periksa('filter komoditas menyempitkan tabel benih', true, 'lewat: data contoh tanpa komoditas benih');
+            periksa('filter komoditas TIDAK menyentuh tabel non-benih (tak punya data-komoditas)', true, 'lewat');
+        }
+
         soket.close();
     } finally {
         proses.kill();

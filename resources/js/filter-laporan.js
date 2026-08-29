@@ -65,11 +65,13 @@ export default function filterLaporan(konfig = {}) {
         cocok(el) {
             const d = el.dataset;
 
-            if (this.sp !== '' && d.sp !== undefined && String(d.sp) !== String(this.sp)) {
+            // Atribut data yang kosong ('') diperlakukan sebagai TIDAK ADA:
+            // dimensi itu tak berlaku atas baris tsb (mis. baris benih tanpa SP).
+            if (this.sp !== '' && d.sp && String(d.sp) !== String(this.sp)) {
                 return false;
             }
 
-            if (d.tahun !== undefined && d.tahun !== '') {
+            if (d.tahun) {
                 const t = Number(d.tahun);
 
                 if (this.tahunDari !== '' && t < Number(this.tahunDari)) {
@@ -82,7 +84,7 @@ export default function filterLaporan(konfig = {}) {
             }
 
             for (const [kunci, nilai] of Object.entries(this.dimensi)) {
-                if (nilai !== '' && d[kunci] !== undefined && String(d[kunci]) !== String(nilai)) {
+                if (nilai !== '' && d[kunci] != null && d[kunci] !== '' && String(d[kunci]) !== String(nilai)) {
                     return false;
                 }
             }

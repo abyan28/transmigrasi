@@ -771,6 +771,27 @@ class LaporanData
                 ],
                 'cakupanBawaan' => $cakupanBawaan,
             ],
+            'saprotan' => [
+                'sp' => $daftarSp,
+                'tahun' => true,
+                'labelTahun' => 'Tahun Pengadaan',
+                'daftarTahun' => self::tahunUnik(array_column(DummyData::saprotan(), 'tahun_pengadaan')),
+                'dimensi' => [
+                    [
+                        'kunci' => 'komoditas',
+                        'label' => 'Komoditas Benih',
+                        'opsi' => collect(DummyData::saprotan())->where('jenis', 'Benih')
+                            ->pluck('komoditas')->filter()->unique()->sort()->values()->all(),
+                    ],
+                    [
+                        'kunci' => 'jenis',
+                        'label' => 'Jenis Sarana (non-benih)',
+                        'opsi' => collect(DummyData::saprotan())->where('jenis', '!=', 'Benih')
+                            ->pluck('jenis')->filter()->unique()->sort()->values()->all(),
+                    ],
+                ],
+                'cakupanBawaan' => $cakupanBawaan,
+            ],
             default => [],
         };
     }

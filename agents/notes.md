@@ -1644,12 +1644,28 @@ penyebut)` untuk produktivitas tertimbang (Panen, D3-3c).
 `nama_alat` unik). Uji peramban +7 (28/0), Pest +1 (subtotal & total
 dihitung ulang) + arm `['transmigran', 'poktan', 'alsintan']`.
 
-### 1t.4 Sisa D3
+### 1t.4 Stage D3-3b: Laporan Saprotan (dua tabel datar, tanpa subtotal)
 
-- **D3-3b** — Saprotan (dua bagian: benih + non-benih; pola sama dengan
-  Alsintan, + dimensi jenis/komoditas).
-- **D3-3c** — Hasil Panen: `data-tahun` = tahun anggaran bantuan
-  (`rules.md` §16a), produktivitas tertimbang lewat `rasioTampak`.
+Ternyata Saprotan **tidak** grup-per-SP — dua tabel datar (benih + non-benih),
+tanpa subtotal. Jadi polanya seperti Transmigran (multi-bagian datar), bukan
+Alsintan: hanya `x-show` baris, tak ada `jumlahTampak`.
+
+- Benih: `data-baris data-sp data-tahun data-komoditas`. Non-benih:
+  `data-baris data-sp data-tahun data-jenis`.
+- Dua dimensi: **Komoditas Benih** (hanya baris benih membawa `data-komoditas`)
+  dan **Jenis Sarana non-benih** (hanya baris non-benih membawa `data-jenis`).
+  Berkat aturan "dimensi hanya berlaku atas baris yang membawa atributnya",
+  satu bilah melayani kedua tabel tanpa saling mengganggu.
+- `cocok()` diperketat: atribut data kosong (`''`) diperlakukan sebagai TIDAK
+  ADA (baris benih bisa tanpa `sp_id`).
+- `filterLaporan('saprotan')`: SP + Tahun Pengadaan + Komoditas + Jenis.
+  Uji peramban +4 (32/0), Pest +1, arm 4 laporan.
+
+### 1t.5 Sisa D3
+
+- **D3-3c** — Hasil Panen: grup per SP (pola Alsintan), `data-tahun` = tahun
+  anggaran bantuan (`rules.md` §16a), produktivitas tertimbang lewat
+  `rasioTampak`.
 - **D3-4** — Rekap Indikator Kawasan: agregasi 16 indikator per SP + penjaga
   Σ-SP = angka kawasan (`ringkasanDashboard()` tak disentuh).
 - **D3-5** — Monografi SP (opsional; pemilih SP tunggal).
