@@ -1832,6 +1832,85 @@ pest 696, pint 31, `uji-filter-laporan.mjs` 53/0, `uji-lebar-dokumen` 28/0,
 
 ---
 
+## 1v. Putaran 6: Peristiwa penduduk + perluasan Laporan Monografi SP (2026-08-29)
+
+Permintaan pemilik: (a) "tambahkan mutasi penduduk rinci kecuali perkawinan";
+(b) di halaman transmigran tambahkan status kelahiran & kematian; (c) Laporan
+Monografi jangan cuma Bab II — buat Bab I & III–V untuk data yang ada.
+
+Keputusan (3 putaran AskUserQuestion): anggota keluarga dapat `status`
+{Aktif, Meninggal, Pindah}, barisnya **disimpan** bukan dihapus (balik sebagian
+`rules.md` §9c). Kepala keluarga **tidak** dapat field baru — peristiwanya tetap
+lewat suksesi. Kelahiran tidak ditandai di halaman, hanya dihitung di laporan.
+Mutasi **kumulatif sejak penempatan**. Struktur umur **dikarang per SP**. Judul
+laporan **tanpa "Bab X."**. Data tipis → "belum ada data" + catatan.
+
+### 1v.1 Model (commit 1/6)
+- `App\Enums\StatusAnggotaKeluarga` (`PunyaLabel` + `PunyaWarnaBadge`;
+  `opsiPeristiwa()` tanpa Aktif). Docblock membedakan dari `StatusTinggal`
+  (keluarga) & `AlasanPergantianKK` (suksesi).
+- `anggotaKeluarga()` tiap baris +`status`/`tanggal_peristiwa`/
+  `keterangan_peristiwa` (map di akhir; 2 baris contoh: id 12 Meninggal,
+  id 27 Pindah). Non-Aktif dikeluarkan dari cacah `jumlah_anggota_keluarga`,
+  `calonPenggantiKk`, `anggotaKeluargaPerKeluarga`.
+- **Jebakan pint:** `\App\Enums\...` inline di uji memicu
+  `fully_qualified_strict_types` → pakai `use`.
+
+### 1v.2 UI transmigran (commit 2/6)
+- Rute `POST /transmigran/{id}/anggota/{anggota}/catat-peristiwa` (redirect+
+  flash; non-GET → `sim:tautan-statis` tetap 222).
+- Tab keluarga: kolom "Status" (badge), baris non-Aktif `opacity-60` + sub-baris
+  tanggal/keterangan, tombol "Catat Peristiwa" (baris Aktif). Modal
+  `formPeristiwaAnggota` pola `pola-aksi=":id"` (`:id` = anggota_keluarga_id;
+  nama anggota ditangkap slot `x-data` dari event `buka-modal-baris`).
+- `transmigran/form.blade.php`: repeater hanya anggota Aktif; non-Aktif
+  read-only di bawah.
+- **Jebakan:** JSON meng-escape `/` → `\/`; uji jangan cari `/anggota/:id/...`
+  harfiah.
+
+### 1v.3 strukturUmurSp + mutasiPendudukSp + jiwaPerSp (commit 3/6)
+- `jiwaPerSp()` = `bagiProporsional(porsiKK, ringkasanDashboard.jumlah_jiwa, 0)`
+  → Σ 6 SP = 4863 tepat.
+- `strukturUmurSp($id)` 14 kelompok umur × L/P; bobot piramida digoyang per id;
+  `bagiProporsional` dua tingkat (kelompok, lalu L/P) → Σ sel = jiwaPerSp.
+- `mutasiPendudukSp($id)` kumulatif: laju kasar × jiwa × (tahunAkhir −
+  tahun_penempatan) × goyang; + peristiwa `anggota_keluarga.status` tercatat.
+  Baris "Pertambahan bersih". TANPA perkawinan.
+- §19a: ini pengecualian sadar (data belum dimodelkan; turunan dari
+  `ringkasanDashboard`, bukan cacah baris contoh).
+
+### 1v.4 LaporanData (commit 4/6)
+- `bagianTambahanSp($s, $tahun)` → `pendahuluan` / `kependudukan` /
+  `sosial_ekonomi` / `sosial_budaya`, tiap tabel lewat `tabelDok()`
+  (`judul`, `kolom`, `baris`, `total`, `catatan`, `kosong`).
+- `keadaanPendudukTahun($id, $tahun)`: KK dari `rekapPerSpTahun`, jiwa
+  diskalakan dari `jiwaPerSp`, L/P dari nisbah `strukturUmurSp`.
+- `monografiSp()` tiap item +4 kunci; `kependudukanTahun` blob;
+  `filterLaporan('monografi-sp')` membawanya.
+
+### 1v.5 View (commit 5/6)
+- `pages/laporan/isi/_tabel-dok.blade.php` — partial tabel dokumen
+  (`.tabel-dokumen` + `<caption>` anak pertama + `overflow-x-auto` +
+  `motif-baris-total`; "belum ada data" untuk kosong).
+- `monografi-sp.blade.php` — judul "Bab II. Keadaan Wilayah" → "Keadaan
+  Wilayah"; `<h2>` → "Monografi per Satuan Permukiman"; tiap `<section>` SP
+  dapat Pendahuluan + 3 blok `<h4>` + sub-tabel. Keadaan penduduk sekarang
+  `x-text="nilaiKependudukan(spId, kunci)"`.
+- `filter-laporan.js`: `nilaiKependudukan()` + `labelTahunTerpilih()`.
+- **Jebakan uji:** `menyaring tabel ikhtisar ...` cek `<tr data-baris data-sp=`
+  === 30 & `<section data-baris data-sp=` === 6 — partial `_tabel-dok` pakai
+  `<tr class=...>` biasa, tak ikut terhitung. `not->toContain('Bab II')`.
+
+### 1v.6 Verifikasi
+pest 705 (+6), pint 31, `sim:tautan-statis` 222, `npm run build`,
+`uji-lebar-dokumen.mjs` 28/0, `uji-filter-laporan.mjs` 53/0.
+`uji-suksesi-kk.mjs` 14/5 — 5 gagal **pra-ada** (lingkungan Edge headless,
+sudah gagal di baseline sebelum putaran ini).
+
+Belum diperiksa mata: Ctrl+P dokumen Monografi yang kini jauh lebih panjang.
+
+---
+
 ## 2. Catatan Dokumen Proposal
 
 Lembar pengesahan pada `docs/Revisi_Proposal_Budi_TEP ITS 2026_Kobalima_Timur_Upload_10_6_2026_a.pdf` masih memuat judul dan pengusul dari proposal lain:

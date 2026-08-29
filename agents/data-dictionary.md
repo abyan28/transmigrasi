@@ -614,9 +614,13 @@ Satu baris per anggota keluarga transmigran **selain kepala keluarga**. Ditambah
 | `pendapatan_per_bulan` | `DECIMAL(15,2)` | YA | | Hanya bila `kegiatan` = `Bekerja` |
 | `telepon` | `VARCHAR(20)` | YA | | |
 | `keterangan` | `VARCHAR(1000)` | YA | | |
+| `status` | `ENUM` | TIDAK | IDX | Lihat §11.44. Bawaan `Aktif`. Ditambahkan 2026-08-29 (Putaran 6) |
+| `tanggal_peristiwa` | `DATE` | YA | | Tanggal meninggal atau pindah; `NULL` bila `status` = `Aktif` |
+| `keterangan_peristiwa` | `VARCHAR(500)` | YA | | Catatan peristiwa; `NULL` bila `status` = `Aktif` |
 
 **Catatan:**
-- **Tidak ada tabel riwayat anggota keluarga.** Anggota yang meninggal atau pindah cukup dihapus dari sini; peristiwa yang perlu jejak permanen adalah pergantian **kepala keluarga**, dan itu direkam `riwayat_kepala_keluarga` (§6.4).
+- **Mutasi anggota keluarga ditandai, tidak dihapus** (Putaran 6, 2026-08-29; membalik sebagian ketentuan lama). Anggota yang meninggal atau pindah **tetap disimpan** dengan `status` + `tanggal_peristiwa` + `keterangan_peristiwa`, dan dikecualikan dari cacah jiwa keluarga, pilihan pengganti KK, serta rekap agama. Alasannya: Laporan Monografi SP membutuhkan angka mutasi penduduk. Dicatat lewat tombol "Catat Peristiwa" per baris (rute `transmigran.anggota.catat-peristiwa`). Bukan riwayat lengkap, hanya penanda peristiwa terakhir. ~~Ketentuan lama: "Anggota yang meninggal atau pindah cukup dihapus dari sini."~~
+- **Kepala keluarga tidak memakai `status` ini** — peristiwanya selalu lewat suksesi (`riwayat_kepala_keluarga` §6.4, `AlasanPergantianKK` §11.36). Kelahiran tidak ditandai; Laporan Monografi menghitungnya dari `tanggal_lahir` vs `tahun_penempatan` SP.
 - **Pasangan dipisah `Istri`/`Suami` pada `hubungan`** agar jenis kelamin tersirat dari hubungannya, dan agar suksesi dapat menawarkan "pasangan" sebagai calon pengganti pertama.
 - **Kepala keluarga sendiri tidak punya baris di sini.** Datanya ada di `transmigran`. Ketika terjadi suksesi, baris `anggota_keluarga` sang pengganti dihapus dan datanya "naik" menimpa baris `transmigran` (`rules.md` §6.5).
 
@@ -1452,6 +1456,19 @@ Dipakai `satuan_permukiman.tingkat_kesuburan_tanah`. Bab II sub-bagian 4. Kisara
 `Datar` · `Bergelombang` · `Berbukit` · `Bergunung`
 
 Dipakai `satuan_permukiman.bentuk_wilayah`. Bab II sub-bagian 5 (topografi). Persentase kemiringan lereng disimpan terpisah pada `kemiringan_min_persen` / `kemiringan_maks_persen`.
+
+### 11.44 Status anggota keluarga
+
+`Aktif` · `Meninggal` · `Pindah`
+
+Enum `App\Enums\StatusAnggotaKeluarga`. Dipakai `anggota_keluarga.status` (Putaran 6, 2026-08-29). Warna badge: `Aktif` success, `Meninggal` gray, `Pindah` warning. `opsiPeristiwa()` mengembalikan dua nilai tanpa `Aktif` untuk form pencatatan.
+
+**Berbeda dari dua enum yang mirip:**
+- `StatusTinggal` (§11.8) menyatakan keadaan sebuah **keluarga**, tidak punya nilai `Meninggal`.
+- `AlasanPergantianKK` (§11.36) merekam **peristiwa suksesi kepala keluarga** pada riwayat.
+- `StatusAnggotaKeluarga` hanya untuk anggota **non-kepala**, yang tidak membawa rumah/lahan/poktan sehingga barisnya aman ditandai per orang.
+
+Metode turunan Monografi: `DummyData::strukturUmurSp($id)` (14 kelompok umur × L/P, Σ = `jiwaPerSp($id)`), `DummyData::mutasiPendudukSp($id)` (mutasi kumulatif sejak `tahun_penempatan`, tanpa perkawinan), `DummyData::jiwaPerSp()` (porsi KK × `ringkasanDashboard()['jumlah_jiwa']`). Semuanya angka contoh turunan deterministik.
 
 ---
 

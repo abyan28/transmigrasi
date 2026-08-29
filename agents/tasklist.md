@@ -878,6 +878,21 @@ Rencana `C:\Users\v28mt\.claude\plans\linked-sprouting-aho.md`; catatan `notes.m
 
 **Belum diperiksa mata:** hasil cetak (Ctrl+P) tampilan dokumen resmi (kop dua lambang + tabel di A4).
 
+### Putaran 6: Peristiwa penduduk + perluasan Laporan Monografi SP (2026-08-29)
+
+Rencana `C:\Users\v28mt\.claude\plans\linked-sprouting-aho.md`; catatan `notes.md` §1v.
+
+- **1/6 ✅** (commit `8c545f1`) — `App\Enums\StatusAnggotaKeluarga` {Aktif, Meninggal, Pindah}; `anggota_keluarga` +`status`/`tanggal_peristiwa`/`keterangan_peristiwa`; anggota non-Aktif keluar dari cacah jiwa / pengganti KK / rekap agama. Balik sebagian `rules.md` §9c.
+- **2/6 ✅** — rute `POST /transmigran/{id}/anggota/{anggota}/catat-peristiwa`; tab keluarga kolom Status + tombol "Catat Peristiwa" + modal `formPeristiwaAnggota`; form multi-langkah repeater hanya anggota Aktif. Kepala keluarga tetap lewat "Ganti Kepala Keluarga".
+- **3/6 ✅** — `DummyData::jiwaPerSp()` (Σ = `ringkasanDashboard`), `strukturUmurSp($id)` (14 kelompok, Σ = jiwa), `mutasiPendudukSp($id)` (kumulatif sejak penempatan, tanpa perkawinan). Angka contoh turunan deterministik (pengecualian sadar §19a).
+- **4/6 ✅** — `LaporanData::bagianTambahanSp()` → Pendahuluan / Kependudukan / Sosial Ekonomi / Sosial Budaya per SP dari tabel yang sudah ada; `keadaanPendudukTahun()` + `kependudukanTahun` blob.
+- **5/6 ✅** — `_tabel-dok.blade.php` partial; `monografi-sp.blade.php` judul tanpa "Bab X." + 4 blok baru; `filter-laporan.js` `nilaiKependudukan()`.
+- **6/6 ✅** — dokumen: `rules.md` §9c (dibalik sebagian) + §12 poin 14; `data-dictionary.md` §6.1a + §11.44; `notes.md` §1v; `ui-spec.md` §6.12; blok ini.
+
+pest 705, pint 31, `sim:tautan-statis` 222, `uji-lebar-dokumen` 28/0, `uji-filter-laporan` 53/0.
+
+**Belum diperiksa mata:** Ctrl+P dokumen Monografi yang kini jauh lebih panjang (banyak sub-tabel per SP).
+
 ## Tahap 3 — Autentikasi dan Hak Akses
 
 > **Peringatan penerbitan statis.** Begitu login aktif, halaman berpelindung membalas pengalihan ke `/login`, bukan 200, sehingga `.github/workflows/deploy.yml` **gagal** dan situs GitHub Pages berhenti diperbarui. Putuskan lebih dulu: batasi `sim:tautan-statis` hanya ke halaman publik, atau hentikan penerbitan statis sama sekali. Lihat `notes.md` bagian 1b.7.
