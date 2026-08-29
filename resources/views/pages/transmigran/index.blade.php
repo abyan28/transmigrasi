@@ -241,6 +241,7 @@
         <x-sim.modal-form nama="formTambahTransmigran" judul="Tambah Data Transmigran"
             keterangan="Isian bertanda bintang wajib diisi."
             :aksi="route('transmigran.simpan')" ukuran="xl"
+            :langkah="['Identitas', 'Penempatan', 'Anggota Keluarga', 'Berkas']"
             label-simpan="Simpan Data Transmigran">
             @include('pages.transmigran.form', ['awalan' => 'tambah'])
         </x-sim.modal-form>
@@ -262,6 +263,7 @@
         <x-sim.modal-form nama="formUbahTransmigranBaris" judul="Ubah Data Transmigran"
             keterangan="Perubahan tercatat pada audit log."
             pola-aksi="/transmigran/:id" metode="PUT" ukuran="xl"
+            :langkah="['Identitas', 'Penempatan', 'Anggota Keluarga', 'Berkas']"
             label-simpan="Simpan Perubahan">
             @include('pages.transmigran.form', ['awalan' => 'ubahBaris'])
         </x-sim.modal-form>

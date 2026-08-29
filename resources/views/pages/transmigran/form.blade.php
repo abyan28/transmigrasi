@@ -7,12 +7,19 @@
     Nama kolom mengikuti agents/data-dictionary.md bagian 6.1, sehingga saat
     backend siap, Form Request tinggal membaca nama yang sama.
 
-    Isian dikelompokkan menjadi beberapa bagian agar form tidak terasa padat
-    (agents/rules.md bagian 13.1 poin 2).
+    FORM BERTAHAP (Putaran 4, 2026-08-29). Empat langkah, dibungkus
+    <div data-langkah="n">: 1 Identitas, 2 Penempatan, 3 Anggota Keluarga,
+    4 Berkas. Modal pemanggil WAJIB mengoper :langkah -- penunjuk langkah dan
+    tombol Lanjut/Simpan hidup di x-sim.modal-form (ui-spec.md 6.2).
+
+    Isian wajib TETAP memakai `required` biasa: tombol Lanjut memvalidasi
+    langkah aktif sebelum maju, dan tombol Simpan melompat ke langkah
+    bermasalah alih-alih menolak diam-diam. Cabang bersyarat di dalam repeater
+    anggota keluarga tetap :required/:disabled seperti biasa.
 
     USIA tidak diisi: dihitung dari tanggal lahir dan bertambah sendiri tiap
-    tahun (Rombongan B, 2026-08-28). JUMLAH ANGGOTA KELUARGA juga tidak diisi:
-    dihitung 1 (kepala) + cacah baris pada bagian Anggota Keluarga.
+    tahun (Rombongan B). JUMLAH ANGGOTA KELUARGA juga tidak diisi: dihitung
+    1 (kepala) + cacah baris pada langkah Anggota Keluarga.
 
     Pemakaian:
         @include('pages.transmigran.form', ['data' => $baris, 'awalan' => 'ubah'])
@@ -70,7 +77,8 @@
         },
         hapusAnggota(i) { this.anggota.splice(i, 1); },
     }">
-    {{-- Bagian 1: identitas --}}
+    {{-- Langkah 1: Identitas --}}
+    <div data-langkah="1" x-show="! bertahap || langkah === 1" x-cloak>
     <section>
         <h3 class="{{ $kelasBagian }}">Identitas Kepala Keluarga</h3>
         <div class="mt-3 grid gap-4 sm:grid-cols-2">
@@ -182,8 +190,48 @@
         </div>
     </section>
 
-    {{-- Bagian 2: penempatan --}}
     <section class="border-t border-gray-200 pt-5 dark:border-gray-800">
+        <h3 class="{{ $kelasBagian }}">Penghidupan</h3>
+        <div class="mt-3 grid gap-4 sm:grid-cols-2">
+            <div>
+                <label for="{{ $awalan }}_pekerjaan" class="{{ $kelasLabel }}">
+                    Pekerjaan Kepala Keluarga<span class="text-error-500">*</span>
+                </label>
+                {{--
+                    Pekerjaan berupa teks bebas karena ragamnya di lapangan sulit
+                    dibatasi di muka. Daftar saran menjaga konsistensi penulisan
+                    (agents/data-dictionary.md bagian 6.1).
+                --}}
+                <input type="text" id="{{ $awalan }}_pekerjaan" name="pekerjaan_kepala_keluarga"
+                    value="{{ old('pekerjaan_kepala_keluarga', $data['pekerjaan_kepala_keluarga'] ?? '') }}"
+                    required maxlength="100" list="saran-pekerjaan" class="{{ $kelasKontrol }}" />
+                <datalist id="saran-pekerjaan">
+                    @foreach ($saranPekerjaan as $pekerjaan)
+                        <option value="{{ mb_strtoupper($pekerjaan) }}"></option>
+                    @endforeach
+                </datalist>
+            </div>
+
+            <div>
+                <label for="{{ $awalan }}_pendapatan" class="{{ $kelasLabel }}">Pendapatan Kepala Keluarga per Bulan</label>
+                <div class="relative">
+                    <span
+                        class="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-theme-sm text-gray-500 dark:text-gray-400">
+                        Rp
+                    </span>
+                    <input type="number" id="{{ $awalan }}_pendapatan" name="pendapatan_per_bulan"
+                        value="{{ old('pendapatan_per_bulan', $data['pendapatan_per_bulan'] ?? '') }}" min="0"
+                        step="1000" placeholder="0"
+                        class="{{ $kelasKontrol }} tabular-nums pl-10" />
+                </div>
+            </div>
+        </div>
+    </section>
+    </div>
+
+    {{-- Langkah 2: Penempatan --}}
+    <div data-langkah="2" x-show="! bertahap || langkah === 2" x-cloak>
+    <section>
         <h3 class="{{ $kelasBagian }}">Penempatan di Kawasan</h3>
         <div class="mt-3 space-y-4">
             <x-sim.wilayah-picker
@@ -245,76 +293,21 @@
             </div>
         </div>
     </section>
+    </div>
 
-    {{-- Bagian 3: penghidupan --}}
-    <section class="border-t border-gray-200 pt-5 dark:border-gray-800">
-        <h3 class="{{ $kelasBagian }}">Penghidupan</h3>
-        <div class="mt-3 grid gap-4 sm:grid-cols-2">
-            <div>
-                <label for="{{ $awalan }}_pekerjaan" class="{{ $kelasLabel }}">
-                    Pekerjaan Kepala Keluarga<span class="text-error-500">*</span>
-                </label>
-                {{--
-                    Pekerjaan berupa teks bebas karena ragamnya di lapangan sulit
-                    dibatasi di muka. Daftar saran menjaga konsistensi penulisan
-                    (agents/data-dictionary.md bagian 6.1).
-                --}}
-                <input type="text" id="{{ $awalan }}_pekerjaan" name="pekerjaan_kepala_keluarga"
-                    value="{{ old('pekerjaan_kepala_keluarga', $data['pekerjaan_kepala_keluarga'] ?? '') }}"
-                    required maxlength="100" list="saran-pekerjaan" class="{{ $kelasKontrol }}" />
-                <datalist id="saran-pekerjaan">
-                    @foreach ($saranPekerjaan as $pekerjaan)
-                        <option value="{{ mb_strtoupper($pekerjaan) }}"></option>
-                    @endforeach
-                </datalist>
-            </div>
-
-            <div>
-                {{--
-                    Jumlah anggota keluarga DIHITUNG 1 (kepala) + cacah baris
-                    pada bagian Anggota Keluarga, tidak diisi (Rombongan B).
-                    Sebelumnya diketik petugas dan dapat berselisih dengan
-                    daftar anggota yang sebenarnya (erd.md 7.4, dibalik).
-                --}}
-                <span class="{{ $kelasLabel }}">Jumlah Anggota Keluarga</span>
-                <p class="flex h-11 items-center rounded-lg bg-gray-50 px-4 text-theme-sm text-gray-600 dark:bg-white/[0.03] dark:text-gray-400">
-                    <span x-text="jumlahAnggotaKeluarga + ' orang'"></span>
-                </p>
-                <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
-                    Termasuk kepala keluarga. Dihitung dari daftar anggota di bawah.
-                </p>
-            </div>
-
-            <div class="sm:col-span-2">
-                <label for="{{ $awalan }}_pendapatan" class="{{ $kelasLabel }}">Pendapatan Kepala Keluarga per Bulan</label>
-                <div class="relative">
-                    <span
-                        class="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-theme-sm text-gray-500 dark:text-gray-400">
-                        Rp
-                    </span>
-                    <input type="number" id="{{ $awalan }}_pendapatan" name="pendapatan_per_bulan"
-                        value="{{ old('pendapatan_per_bulan', $data['pendapatan_per_bulan'] ?? '') }}" min="0"
-                        step="1000" placeholder="0"
-                        class="{{ $kelasKontrol }} tabular-nums pl-10" />
-                </div>
-            </div>
-
-            <div class="sm:col-span-2">
-                <label for="{{ $awalan }}_keterangan" class="{{ $kelasLabel }}">Catatan</label>
-                <textarea id="{{ $awalan }}_keterangan" name="keterangan" rows="3" maxlength="1000"
-                    placeholder="Catatan tambahan bila ada"
-                    class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">{{ old('keterangan', $data['keterangan'] ?? '') }}</textarea>
-            </div>
-        </div>
-    </section>
-
-    {{-- Bagian 4: anggota keluarga (dynamic) --}}
-    <section class="border-t border-gray-200 pt-5 dark:border-gray-800">
+    {{-- Langkah 3: Anggota Keluarga --}}
+    <div data-langkah="3" x-show="! bertahap || langkah === 3" x-cloak>
+    <section>
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
                 <h3 class="{{ $kelasBagian }}">Anggota Keluarga</h3>
                 <p class="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
                     Istri atau suami, anak, dan anggota lain selain kepala keluarga.
+                    <span class="block">
+                        Jumlah anggota keluarga:
+                        <span class="font-medium text-gray-700 dark:text-gray-300" x-text="jumlahAnggotaKeluarga + ' orang'"></span>
+                        (termasuk kepala keluarga, dihitung dari daftar di bawah).
+                    </span>
                 </p>
             </div>
             <button type="button" @click="tambahAnggota()"
@@ -490,11 +483,20 @@
             </fieldset>
         </template>
     </section>
+    </div>
 
-    {{-- Bagian 5: dokumen --}}
-    <section class="border-t border-gray-200 pt-5 dark:border-gray-800">
-        <h3 class="{{ $kelasBagian }}">Dokumen Pendukung</h3>
-        <div class="mt-3">
+    {{-- Langkah 4: Catatan dan Berkas --}}
+    <div data-langkah="4" x-show="! bertahap || langkah === 4" x-cloak>
+    <section>
+        <h3 class="{{ $kelasBagian }}">Catatan dan Berkas</h3>
+        <div class="mt-3 space-y-4">
+            <div>
+                <label for="{{ $awalan }}_keterangan" class="{{ $kelasLabel }}">Catatan</label>
+                <textarea id="{{ $awalan }}_keterangan" name="keterangan" rows="3" maxlength="1000"
+                    placeholder="Catatan tambahan bila ada"
+                    class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">{{ old('keterangan', $data['keterangan'] ?? '') }}</textarea>
+            </div>
+
             <x-sim.file-upload nama="dokumen_pendukung" label="Kartu Keluarga atau KTP"
                 nama-dokumen="Kartu Keluarga"
                 :nama-pemilik="$data['nama_kepala_keluarga'] ?? null"
@@ -502,4 +504,5 @@
                 keterangan="Unggah hasil pindaian atau foto yang terbaca jelas." />
         </div>
     </section>
+    </div>
 </div>

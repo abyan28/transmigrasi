@@ -279,7 +279,11 @@ async function main() {
             await tutupModal();
         };
 
-        await ujiModal('/transmigran', 'formTambahTransmigran', '#tambah_nama', 'Modal form panjang');
+        // Form SP adalah form terpanjang di repo (22 isian) dan TIDAK dipecah
+        // bertahap, jadi ia yang memastikan modal tinggi tetap dapat digulir
+        // ke puncak. Form transmigran dipindah dari sini setelah dijadikan
+        // bertahap (Putaran 4): langkah 1-nya tak lagi melampaui layar.
+        await ujiModal('/sp', 'formTambahSp', '#tambah_nama_sp', 'Modal form panjang');
         await ujiModal('/lahan', 'formTambahLahan', '#tambah_kode_lahan', 'Modal form lahan');
         await ujiModal('/transmigran', 'imporTransmigran', '#judul-imporTransmigran', 'Modal impor');
 

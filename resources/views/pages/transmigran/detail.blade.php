@@ -764,6 +764,7 @@
         <x-sim.modal-form nama="formUbahTransmigran" judul="Ubah Data Transmigran"
             keterangan="Perubahan tercatat pada audit log."
             :aksi="route('transmigran.perbarui', $data['id_transmigran'])" metode="PUT" ukuran="xl"
+            :langkah="['Identitas', 'Penempatan', 'Anggota Keluarga', 'Berkas']"
             label-simpan="Simpan Perubahan">
             @include('pages.transmigran.form', [
                 'data' => $data,

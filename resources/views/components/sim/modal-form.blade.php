@@ -39,6 +39,21 @@
         ada tetap memakai `aksi` statis tanpa perubahan.
     */
     'polaAksi' => null,
+
+    /*
+        Form bertahap. Bila diberi larik nama langkah, modal menampilkan
+        penunjuk langkah di kepala dan kaki menyesuaikan: Kembali/Batal,
+        Lanjut, Simpan hanya di langkah terakhir (ui-spec.md 6.2).
+
+        Slot WAJIB membungkus tiap langkah dengan sebuah div beratribut
+        data-langkah="n" (n mulai dari 1).
+        Isian wajib memakai :required="langkah >= n" -- BUKAN required tetap
+        (peramban tak boleh diminta memvalidasi elemen yang tersembunyi) dan
+        BUKAN :disabled (nilainya harus tetap terkirim).
+
+        Kosong secara bawaan: 20+ pemakaian lain tak berubah.
+    */
+    'langkah' => [],
 ])
 
 @php
@@ -72,12 +87,18 @@
         aksiStatis: @js($aksi),
         baris: null,
 
+        namaLangkah: @js(array_values($langkah)),
+        langkah: 1,
+        get totalLangkah() { return this.namaLangkah.length; },
+        get bertahap() { return this.totalLangkah > 0; },
+
         buka(detail) {
             // Modal berbaris menerima data baris yang diklik, lalu mengisi
             // sendiri isian di dalamnya. Modal biasa memanggil tanpa argumen.
             this.baris = (detail && typeof detail === 'object') ? (detail.data ?? null) : null;
 
             this.terbuka = true;
+            this.langkah = 1;
             window.kunciGulir?.kunci();
 
             this.$nextTick(() => {
@@ -87,6 +108,53 @@
 
                 this.$refs.panel?.querySelector('input, select, textarea')?.focus();
             });
+        },
+
+        /* Isian tidak sah di dalam satu wadah langkah. */
+        langkahBermasalah(n) {
+            const wadah = this.$refs.panel?.querySelector('[data-langkah=&quot;' + n + '&quot;]');
+            return wadah ? wadah.querySelector(':invalid') : null;
+        },
+
+        pindahKe(n) {
+            this.langkah = n;
+            this.$nextTick(() => {
+                this.$refs.panel?.querySelector('[data-langkah=&quot;' + n + '&quot;] input, [data-langkah=&quot;' + n + '&quot;] select, [data-langkah=&quot;' + n + '&quot;] textarea')?.focus();
+            });
+        },
+
+        /* Tombol Lanjut: validasi langkah ini dulu, jangan maju bila gagal. */
+        lanjut() {
+            const buruk = this.langkahBermasalah(this.langkah);
+            if (buruk) {
+                buruk.reportValidity();
+                return;
+            }
+            if (this.langkah < this.totalLangkah) {
+                this.pindahKe(this.langkah + 1);
+            }
+        },
+
+        /*
+            Tombol Simpan. Diperiksa SEBELUM pengiriman (lewat @click), sebab
+            validasi peramban atas isian wajib di langkah tersembunyi tidak
+            memunculkan pesan yang dapat dilihat petugas -- form seolah menolak
+            diam-diam (notes.md 1877/2197/2299: cacat yang sudah tiga kali
+            terjadi). Bila ada yang belum sah, modal MELOMPAT ke langkahnya.
+        */
+        cekSimpan(event) {
+            if (! this.bertahap) {
+                return;
+            }
+            for (let n = 1; n <= this.totalLangkah; n++) {
+                const buruk = this.langkahBermasalah(n);
+                if (buruk) {
+                    event.preventDefault();
+                    this.pindahKe(n);
+                    this.$nextTick(() => buruk.reportValidity());
+                    return;
+                }
+            }
         },
 
         /*
@@ -204,32 +272,67 @@
                     berlaku dan modal tumbuh melampaui layar.
                 --}}
                 <form :action="aksi" method="POST" enctype="multipart/form-data"
-                    @submit="mengirim = true" class="flex min-h-0 flex-col">
+                    @submit="mengirim = true"
+                    @keydown.enter="if (bertahap && langkah < totalLangkah && $event.target.tagName !== 'TEXTAREA') { $event.preventDefault(); lanjut(); }"
+                    class="flex min-h-0 flex-col">
                     @csrf
                     @if (! in_array($metode, ['GET', 'POST']))
                         @method($metode)
                     @endif
 
                     {{-- Kepala modal, tidak ikut menggulir --}}
-                    <div class="flex shrink-0 items-start justify-between gap-4 border-b border-gray-200 px-5 py-4 dark:border-gray-800">
-                        <div>
-                            <h2 id="judul-{{ $nama }}"
-                                class="text-lg font-semibold text-gray-800 dark:text-white/90">
-                                {{ $judul }}
-                            </h2>
-                            @if ($keterangan)
-                                <p class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
-                                    {{ $keterangan }}
-                                </p>
-                            @endif
+                    <div class="shrink-0 border-b border-gray-200 px-5 py-4 dark:border-gray-800">
+                        <div class="flex items-start justify-between gap-4">
+                            <div>
+                                <h2 id="judul-{{ $nama }}"
+                                    class="text-lg font-semibold text-gray-800 dark:text-white/90">
+                                    {{ $judul }}
+                                </h2>
+                                @if ($keterangan)
+                                    <p class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                                        {{ $keterangan }}
+                                    </p>
+                                @endif
+                            </div>
+                            <button type="button" @click="tutup()" aria-label="Tutup"
+                                class="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-gray-400 dark:hover:bg-white/5">
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                    stroke-width="1.5" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
                         </div>
-                        <button type="button" @click="tutup()" aria-label="Tutup"
-                            class="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-gray-400 dark:hover:bg-white/5">
-                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                                stroke-width="1.5" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
+
+                        {{--
+                            Penunjuk langkah. Angka berteks, bukan sekadar titik
+                            warna, agar terbaca pembaca layar dan pengguna yang
+                            sulit membedakan warna (meniru x-sim.modal-impor).
+                        --}}
+                        @if (! empty($langkah))
+                            <ol x-cloak class="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-theme-xs"
+                                aria-label="Langkah pengisian">
+                                @foreach (array_values($langkah) as $i => $namaLangkah)
+                                    <li class="flex items-center gap-2">
+                                        <span class="flex h-6 w-6 items-center justify-center rounded-full font-medium"
+                                            :class="langkah >= {{ $i + 1 }}
+                                                ? 'bg-brand-500 text-white'
+                                                : 'bg-gray-100 text-gray-500 dark:bg-white/10 dark:text-gray-400'"
+                                            :aria-current="langkah === {{ $i + 1 }} ? 'step' : false">
+                                            {{ $i + 1 }}
+                                        </span>
+                                        <span class="hidden sm:inline"
+                                            :class="langkah >= {{ $i + 1 }}
+                                                ? 'font-medium text-gray-800 dark:text-white/90'
+                                                : 'text-gray-500 dark:text-gray-400'">
+                                            {{ $namaLangkah }}
+                                        </span>
+                                        @if ($i < count($langkah) - 1)
+                                            <span class="mx-1 h-px w-4 bg-gray-300 dark:bg-gray-700" aria-hidden="true"></span>
+                                        @endif
+                                    </li>
+                                @endforeach
+                            </ol>
+                        @endif
                     </div>
 
                     {{--
@@ -247,12 +350,22 @@
 
                     {{-- Kaki modal, tombol rata kanan, tidak ikut menggulir --}}
                     <div class="flex shrink-0 flex-col-reverse gap-2 border-t border-gray-200 px-5 py-4 sm:flex-row sm:justify-end dark:border-gray-800">
-                        <button type="button" @click="tutup()"
+                        {{-- Batal (langkah 1 / form biasa) atau Kembali (langkah > 1) --}}
+                        <button type="button"
+                            @click="bertahap && langkah > 1 ? langkah-- : tutup()"
                             class="rounded-lg border border-gray-300 px-4 py-2.5 text-theme-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
-                            Batal
+                            <span x-text="bertahap && langkah > 1 ? 'Kembali' : 'Batal'">Batal</span>
                         </button>
 
-                        <button type="submit" :disabled="mengirim"
+                        {{-- Lanjut: hanya pada form bertahap dan bukan langkah terakhir --}}
+                        <button x-show="bertahap && langkah < totalLangkah" x-cloak type="button" @click="lanjut()"
+                            class="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-theme-sm font-medium text-white hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
+                            Lanjut
+                        </button>
+
+                        {{-- Simpan: form biasa selalu; form bertahap hanya langkah terakhir --}}
+                        <button type="submit" :disabled="mengirim" @click="cekSimpan($event)"
+                            x-show="! bertahap || langkah === totalLangkah"
                             class="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-theme-sm font-medium text-white hover:bg-brand-600 disabled:opacity-60 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
                             <span x-show="mengirim" x-cloak
                                 class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"

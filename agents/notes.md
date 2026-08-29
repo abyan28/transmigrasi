@@ -1460,6 +1460,100 @@ layar; kepadatan `@media print` `8pt` belum terverifikasi mesin.
 
 ---
 
+## 1s. Putaran 4: Submenu Laporan disatukan + Form Transmigran bertahap (2026-08-29)
+
+Dua permintaan pemilik proyek. Rencana lengkap ada di
+`agents/session-notes.md` (ditulis lebih dulu, sesuai `rules.md` §20b).
+
+### 1s.1 Stage E1: nama & urutan laporan disatukan ke satu sumber
+
+Sebelumnya nama laporan ditulis **dua kali** (`MenuHelper` dan `routes/web.php`)
+dan slugnya **tiga kali**, tanpa pengunci; urutan submenu bisa bergeser tanpa
+memerahkan apa pun. Sekarang:
+
+- `LaporanData::meta()` menambah kunci `judul` dan `izin`; **urutan lariknya
+  adalah urutan submenu.** Ini satu-satunya sumber nama laporan.
+- `MenuHelper` membangun `subItems` kelompok Laporan dari `meta()`.
+- `routes/web.php` menurunkan `$judulLaporan` dari `meta()`.
+- `kerangka-laporan` membaca judul dari `meta()` langsung (tak lagi menelusuri
+  `MenuHelper` lewat `firstWhere('path', ...)`).
+
+Urutan & nama baru: Rekap Indikator Kawasan, Laporan Monografi SP, Laporan
+Transmigran (dulu "Laporan Daftar Transmigran"), Laporan Poktan (dulu "Laporan
+Daftar Poktan"), Laporan Alsintan, Laporan Saprotan, Laporan Hasil Panen.
+Slug **tidak diubah** (mengubahnya menyentuh nama berkas view, `isi/*`, kunci
+dan nama metode `meta()`).
+
+Halaman `/laporan` **dibongkar seluruhnya** (keputusan pemilik proyek):
+butir menu "Semua Laporan", rute `laporan.index`, berkas
+`pages/laporan/index.blade.php`, dan tombol "Kembali ke Semua Laporan" di
+`kerangka-laporan`. Remah tetap "Beranda / Laporan / <nama>" (bergantung
+`MenuHelper`, bukan rute). `DaftarTautanStatis` menyesuaikan sendiri:
+**223 -> 222 alamat.**
+
+Penjaga baru di `HalamanTest`:
+- urutan submenu Laporan dikunci `toBe([...])` dengan tujuh nama (meniru
+  `PengaturanPenilaianTest` yang sudah mengunci submenu Administrasi Sistem);
+- nama laporan hanya dari `meta()`: nama menu, `<title>`, dan `>judul<` sama;
+- `/laporan` membalas 404; tak ada berkas Blade menyebut `laporan.index` atau
+  "Semua Laporan".
+
+### 1s.2 Stage E2: form transmigran bertahap (4 langkah)
+
+`x-sim.modal-form` diberi prop opsional `langkah` (larik nama). Tanpa prop,
+komponen berperilaku persis seperti sebelumnya (20+ pemakaian lain tak
+berubah). Putaran ini prop hanya dipasang pada tiga pemakaian form
+transmigran (index: tambah + ubah-baris; detail: ubah).
+
+Langkah: 1. Identitas (Bagian 1 + pekerjaan & pendapatan), 2. Penempatan
+(Bagian 2), 3. Anggota Keluarga (repeater utuh), 4. Catatan dan Berkas
+(keterangan + dokumen pendukung). `nama_kepala_keluarga` tetap isian pertama
+secara DOM, jadi `buka()` yang memfokuskan isian pertama tetap benar.
+
+**Tiga jebakan yang menentukan caranya:**
+
+1. **Isian `required` tersembunyi -> form menolak diam-diam.** Sudah tiga kali
+   di repo ini (1877 wilayah, 2197 saprotan, 2299 panen). Isian wajib tetap
+   `required` statis (bintang wajib statis, `ui-spec.md` §6.0), tetapi:
+   - tombol **Lanjut** memanggil `lanjut()` -> `langkahBermasalah(langkah)`
+     mencari `:invalid` di wadah langkah aktif saja; bila ada,
+     `reportValidity()` + tak maju;
+   - tombol **Simpan** (`@click="cekSimpan($event)"`) menelusuri semua langkah,
+     `event.preventDefault()` + `pindahKe(n)` + `reportValidity()` pada langkah
+     bermasalah pertama. Modal **melompat** ke langkah itu, bukan diam.
+2. **`:disabled` BUKAN jalan keluar di sini.** Pada langkah, seluruh nilai
+   harus tetap terkirim; `:disabled` juga merusak `isiFormulir()` yang mengisi
+   modal ubah lewat atribut `name`.
+3. **Halaman `/transmigran` memuat DUA salinan form** (tambah + ubah-baris).
+   State `langkah` per komponen `x-data`, bukan global. Uji peramban men-scope
+   pemeriksaan ke dialog yang sedang tampak.
+
+`uji-gulir-modal.mjs` kasus "Modal form panjang" **dipindah** dari form
+transmigran ke form SP: begitu transmigran dipecah, langkah 1-nya tak lagi
+melampaui layar; form SP (22 isian, tak dipecah) yang kini jadi penjaga modal
+tinggi.
+
+### 1s.3 Verifikasi Putaran 4
+
+- `vendor/bin/pest.bat`: 679 lulus (dari 678; +1 penjaga urutan submenu).
+- `vendor/bin/pint.bat --test`: 31 berkas (tak bertambah).
+- `php artisan sim:tautan-statis`: 222 alamat, semua lolos regex `deploy.yml`.
+- `node tests/Browser/uji-form-transmigran.mjs`: 10/0 (termasuk butir "Simpan
+  dengan isian langkah 1 kosong -> modal LOMPAT ke langkah 1").
+- `node tests/Browser/uji-gulir-modal.mjs`: 24/0 (kasus SP).
+- `node tests/Browser/uji-lebar-dokumen.mjs`: 28/0.
+
+### 1s.4 D4 (dokumen acuan) — selesai bersama putaran ini
+
+`rules.md` §12 ditulis ulang berjejak (poin 5-13); `ui-spec.md` §6.2 (prop
+`langkah`), §6.9/§6.11, §4.9; `prd.md` §7.9; `tasklist.md` dua butir tunggu
+ditandai **gugur**. Sebagian sudah dikerjakan pada commit `03558ff` (Putaran 3
+E3), sisanya di putaran ini.
+
+**Masih menyusul: D3 (filter per laporan, Alpine).**
+
+---
+
 ## 2. Catatan Dokumen Proposal
 
 Lembar pengesahan pada `docs/Revisi_Proposal_Budi_TEP ITS 2026_Kobalima_Timur_Upload_10_6_2026_a.pdf` masih memuat judul dan pengusul dari proposal lain:

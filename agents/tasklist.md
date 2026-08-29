@@ -848,8 +848,16 @@ Peninjauan pemilik proyek atas menu Laporan hasil Tahap 2c: "berantakan". Tiap l
 - **Stage D1 ✅** (commit `5bf52b0`) — fondasi data: `sp_id`/`poktan_id` dibawa keluar `LaporanData`; `kelompokkanPerSp()` per id SP (menutup cacat dua SP senama lebur); `LaporanData::angka()` publik + penjaga `$desimal > 0` (dulu 7 salinan, bug "1.200"→"1.2"); `jumlah_anggota` keluar dari subtotal hasilPanen; `laporan/transmigran` `@foreach`→`@forelse`. **662 uji hijau**, pint 31, tanpa perubahan uji.
 - **Stage D2 ✅** (commit `9c4076c`) — kertas berbingkai: `kerangka-laporan` membungkus isi dalam `<article>` `.kertas-dokumen`; `LaporanData::meta($slug)` memusatkan metadata kepala; badan tiap laporan dipisah ke `pages/laporan/isi/{slug}`, di-`@include` halaman berbingkai + rute dokumen generik `pages/laporan/dokumen`; `layouts/dokumen.blade.php` baru (polos); rute `/laporan/{slug}/dokumen` (`laporan.dokumen`); tombol "Buka di tab baru"; `@media print` pertama + `.cetak-sembunyi`. Bug `{{-- --}}` bersarang di doc-comment `kerangka-laporan` ikut diperbaiki. **662 uji hijau**, pint 31.
 - **Stage D2b ✅** (commit `a4421de`) — orientasi + garis: `LaporanData::KOLOM_LANDSCAPE = 9`, `meta()` + kunci `kolom`, `orientasi($slug)`. 6 laporan landscape, Indikator Kawasan potret. `@page` pertama (via `@push('gaya')` → `@stack('gaya')` di kedua layout). `.tabel-dokumen` (CSS telanjang, tak boleh ber-`>`) pada 12 tabel; `divide-y` dicabut. Cetak: garis digelapkan, `thead` diulang, tabel landscape `8pt`. Baris total: `border-t-2 border-gray-300` → `motif-baris-total` (`ui-spec.md` §2.3). Celah nol-cakupan rute dokumen ditutup. **678 uji hijau**, pint 31. `uji-lebar-dokumen.mjs` 28/0.
-- **Stage D3 ⬜** — filter per laporan (Alpine). Prasyarat: agregasi 17 indikator per SP untuk Rekap Indikator Kawasan.
-- **Stage D4 ⬜** — dokumen acuan (`rules.md` §12, `ui-spec.md` §6.9/6.10, `prd.md` §7.9). Dua butir tunggu GUGUR (lihat blok "Ditunda").
+- **Stage D3 ⬜** — filter per laporan (Alpine). Prasyarat: agregasi 17 indikator per SP untuk Rekap Indikator Kawasan. **Satu-satunya sisa Putaran 3/4.**
+- **Stage D4 ✅** (Putaran 4, sebagian di `03558ff`) — dokumen acuan: `rules.md` §12 poin 5-13, `ui-spec.md` §6.2/§6.9/§6.11/§4.9, `prd.md` §7.9. Dua butir tunggu GUGUR (lihat blok "Ditunda").
+
+### Putaran 4: Submenu Laporan disatukan + Form Transmigran bertahap (2026-08-29)
+
+Rencana lengkap di `agents/session-notes.md`; catatan tetap di `notes.md` 1s.
+
+- **Stage E1 ✅** — nama & urutan laporan disatukan ke `LaporanData::meta()` (kunci `judul`+`izin`, urutan larik = urutan submenu); `MenuHelper` & `routes/web.php` menurunkan dari sana; `kerangka-laporan` baca judul dari `meta()` langsung. Submenu diurut ulang & dua laporan diganti nama (Laporan Transmigran, Laporan Poktan). Halaman `/laporan` **dibongkar** (butir "Semua Laporan", rute `laporan.index`, `pages/laporan/index.blade.php`, tombol "Kembali"). `sim:tautan-statis` 223→222. Penjaga baru: urutan submenu `toBe([...])`, satu sumber nama, `/laporan`→404.
+- **Stage E2 ✅** — `x-sim.modal-form` prop opsional `langkah` (larik nama; tanpa prop tak berubah). Form transmigran 4 langkah: Identitas / Penempatan / Anggota Keluarga / Catatan dan Berkas. `required` tetap statis; Lanjut & Simpan memvalidasi per langkah dan **melompat** ke langkah bermasalah (bukan menolak diam-diam — cacat 1877/2197/2299). Prop dipasang pada 3 pemakaian transmigran saja. `uji-gulir-modal.mjs` kasus "form panjang" dipindah transmigran→SP. Uji peramban baru `uji-form-transmigran.mjs` (10/0).
+- **Verifikasi:** pest 679 (dari 678), pint 31, tautan-statis 222, `uji-form-transmigran` 10/0, `uji-gulir-modal` 24/0, `uji-lebar-dokumen` 28/0.
 
 **Belum diperiksa mata:** hasil cetak (Ctrl+P) tampilan dokumen.
 
