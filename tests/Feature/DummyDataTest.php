@@ -411,6 +411,63 @@ it('mempertahankan iklim SP tahun terakhir dan menggoyangnya secara deterministi
     expect(DummyData::iklimSpTahun(1, 2022))->not->toBe($iklim2026);
 });
 
+it('membagi jiwa kawasan ke enam SP tepat sama dengan ringkasan dashboard', function () {
+    $jiwa = DummyData::jiwaPerSp();
+
+    expect($jiwa)->toHaveCount(6)
+        ->and(array_sum($jiwa))->toBe(DummyData::ringkasanDashboard()['jumlah_jiwa']);
+});
+
+it('mengarang struktur umur SP yang jumlahnya tepat sama dengan jiwa SP', function () {
+    foreach (array_keys(DummyData::jiwaPerSp()) as $id) {
+        $struktur = DummyData::strukturUmurSp($id);
+        $jiwaSp = DummyData::jiwaPerSp()[$id];
+
+        expect($struktur)->toHaveCount(14, "SP {$id} bukan 14 kelompok umur");
+
+        $totalSel = 0;
+        foreach ($struktur as $b) {
+            expect($b['laki'])->toBeGreaterThanOrEqual(0)
+                ->and($b['perempuan'])->toBeGreaterThanOrEqual(0)
+                ->and($b['jumlah'])->toBe($b['laki'] + $b['perempuan']);
+            $totalSel += $b['jumlah'];
+        }
+
+        expect($totalSel)->toBe($jiwaSp, "SP {$id} struktur umur tidak menutup jiwa");
+
+        // Deterministik.
+        expect(DummyData::strukturUmurSp($id))->toBe($struktur);
+    }
+});
+
+it('menghitung mutasi penduduk SP secara kumulatif tanpa perkawinan', function () {
+    foreach (array_keys(DummyData::jiwaPerSp()) as $id) {
+        $mutasi = DummyData::mutasiPendudukSp($id);
+
+        expect($mutasi)->toHaveKeys(['baris', 'bersih']);
+
+        $jenis = array_column($mutasi['baris'], 'jenis');
+        expect($jenis)->not->toContain('Perkawinan')
+            ->and($jenis)->toContain('Kelahiran')
+            ->and($jenis)->toContain('Kematian');
+
+        // Pertambahan bersih = (lahir + datang) - (mati + pindah + keluar).
+        $peta = array_column($mutasi['baris'], 'jumlah', 'jenis');
+        $bersihHitung = $peta['Kelahiran'] + $peta['Transmigran datang (pengganti atau spontan)']
+            - $peta['Kematian'] - $peta['Pindah keluar keluarga'] - $peta['Meninggalkan lokasi'];
+        expect($mutasi['bersih'])->toBe($bersihHitung);
+
+        // Deterministik.
+        expect(DummyData::mutasiPendudukSp($id))->toBe($mutasi);
+    }
+
+    // Peristiwa anggota keluarga yang tercatat (SP 1) ikut terhitung pada
+    // baris Kematian dan Pindah.
+    $sp1 = array_column(DummyData::mutasiPendudukSp(1)['baris'], 'jumlah', 'jenis');
+    expect($sp1['Kematian'])->toBeGreaterThan(0)
+        ->and($sp1['Pindah keluar keluarga'])->toBeGreaterThan(0);
+});
+
 it('memakai status tinggal yang sah pada rekap penghuni', function () {
     $rekap = DummyData::rekapPenghuni();
 

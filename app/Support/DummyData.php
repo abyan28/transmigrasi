@@ -4490,6 +4490,161 @@ class DummyData
     }
 
     /**
+     * Jumlah jiwa per SP (Putaran 6). Diturunkan dari porsi KP SP terhadap
+     * kawasan, dikalikan `ringkasanDashboard()['jumlah_jiwa']`, dengan koreksi
+     * sisa supaya Sigma keenam SP tepat sama dengan angka kawasan.
+     *
+     * Data contoh tidak menyimpan angka jiwa per SP; ia dihitung di sini agar
+     * satu-satunya sumber tetap `ringkasanDashboard()` (rules.md 19a: tidak
+     * menghitung dari cacah baris contoh).
+     *
+     * @return array<int, int> Peta id_satuan_permukiman ke jumlah jiwa
+     */
+    public static function jiwaPerSp(): array
+    {
+        $rekap = self::rekapPerSp();
+        $totalKk = array_sum(array_column($rekap, 'jumlah_kk'));
+        $totalJiwa = self::ringkasanDashboard()['jumlah_jiwa'];
+
+        $porsi = [];
+        foreach ($rekap as $r) {
+            $porsi[$r['satuan_permukiman_id']] = $totalKk > 0 ? $r['jumlah_kk'] / $totalKk : 0;
+        }
+
+        return array_map('intval', self::bagiProporsional($porsi, (float) $totalJiwa, 0));
+    }
+
+    /**
+     * Struktur penduduk satu SP menurut kelompok umur lima tahunan (Putaran 6).
+     *
+     * ANGKA CONTOH TURUNAN, bukan pendataan per orang: sistem Tahap 2 belum
+     * mendata umur seluruh penduduk, hanya kepala keluarga dan anggota yang
+     * tercatat. Sebaran memakai bentuk piramida penduduk muda yang lazim di
+     * kawasan transmigrasi, digoyang deterministik menurut id SP (pola
+     * `iklimSpTahun()`), dengan koreksi sisa supaya jumlah seluruh sel tepat
+     * sama dengan `jiwaPerSp()`.
+     *
+     * @return array<int, array{kelompok: string, laki: int, perempuan: int, jumlah: int}>
+     */
+    public static function strukturUmurSp(int $id): array
+    {
+        $kelompok = [
+            '0–4', '5–9', '10–14', '15–19', '20–24', '25–29', '30–34',
+            '35–39', '40–44', '45–49', '50–54', '55–59', '60–64', '65+',
+        ];
+
+        // Bobot piramida: balita dan usia produktif besar, lansia kecil.
+        $bobotDasar = [11, 10.5, 10, 9.2, 8.6, 8, 7.4, 6.6, 5.8, 4.8, 4, 3.2, 2.4, 2.7];
+        $jiwa = self::jiwaPerSp()[$id] ?? 0;
+
+        $bobot = [];
+        foreach ($bobotDasar as $i => $b) {
+            $derau = ((($id * 7 + $i * 13) % 7) - 3) / 100;
+            $bobot[$i] = $b * (1 + $derau);
+        }
+        $totalBobot = array_sum($bobot);
+
+        $porsi = [];
+        foreach ($bobot as $i => $b) {
+            $porsi[$i] = $totalBobot > 0 ? $b / $totalBobot : 0;
+        }
+        $perKelompok = self::bagiProporsional($porsi, (float) $jiwa, 0);
+
+        $baris = [];
+        foreach ($kelompok as $i => $label) {
+            $n = (int) $perKelompok[$i];
+            $porsiLaki = 0.51 + ((($id * 5 + $i * 11) % 5) - 2) / 100;
+            $bagi = self::bagiProporsional(
+                ['laki' => $porsiLaki, 'perempuan' => 1 - $porsiLaki],
+                (float) $n,
+                0,
+            );
+
+            $baris[] = [
+                'kelompok' => $label,
+                'laki' => (int) $bagi['laki'],
+                'perempuan' => (int) $bagi['perempuan'],
+                'jumlah' => $n,
+            ];
+        }
+
+        return $baris;
+    }
+
+    /**
+     * Mutasi penduduk satu SP, KUMULATIF sejak tahun penempatan (Putaran 6).
+     *
+     * ANGKA CONTOH TURUNAN: dihitung dari jumlah jiwa SP dan lama sejak
+     * penempatan memakai laju kasar per penduduk per tahun, digoyang
+     * deterministik menurut id SP. TANPA baris perkawinan (dikecualikan
+     * pemilik proyek). Kematian dan kepindahan anggota keluarga yang benar-
+     * benar tercatat (`anggota_keluarga.status`) ikut ditambahkan supaya
+     * peristiwa yang didata petugas tetap terlihat pada laporan.
+     *
+     * @return array{baris: array<int, array{jenis: string, laki: int, perempuan: int, jumlah: int}>, bersih: int}
+     */
+    public static function mutasiPendudukSp(int $id): array
+    {
+        $sp = self::cariSp($id);
+        $tahunAkhir = (int) end(self::deretTahunan()['tahun']);
+        $tahunTempat = $sp['tahun_penempatan'] ?? $tahunAkhir;
+        $lama = max(1, $tahunAkhir - $tahunTempat);
+        $jiwa = self::jiwaPerSp()[$id] ?? 0;
+
+        // Laju kasar per penduduk per tahun; digoyang +-15% menurut id SP.
+        $goyang = 1 + ((($id * 17) % 7) - 3) / 20;
+        $hitung = fn (float $laju) => (int) round($jiwa * $lama * $laju * $goyang);
+
+        // Peristiwa anggota keluarga yang sungguh tercatat di SP ini.
+        $transmigranSp = array_column(
+            array_filter(self::transmigran(), fn ($t) => $t['satuan_permukiman_id'] === $id),
+            null,
+            'id_transmigran',
+        );
+        $meninggalDicatat = ['Laki-laki' => 0, 'Perempuan' => 0];
+        $pindahDicatat = ['Laki-laki' => 0, 'Perempuan' => 0];
+        foreach (self::anggotaKeluarga() as $a) {
+            if (! isset($transmigranSp[$a['transmigran_id']])) {
+                continue;
+            }
+            $jk = $a['jenis_kelamin'] ?? 'Laki-laki';
+            if ($a['status'] === StatusAnggotaKeluarga::Meninggal->value) {
+                $meninggalDicatat[$jk] = ($meninggalDicatat[$jk] ?? 0) + 1;
+            } elseif ($a['status'] === StatusAnggotaKeluarga::Pindah->value) {
+                $pindahDicatat[$jk] = ($pindahDicatat[$jk] ?? 0) + 1;
+            }
+        }
+
+        $pisah = function (int $total, int $tambahanL = 0, int $tambahanP = 0): array {
+            $l = (int) round($total * 0.51) + $tambahanL;
+            $p = $total - (int) round($total * 0.51) + $tambahanP;
+
+            return [$l, $p];
+        };
+
+        [$lahirL, $lahirP] = $pisah($hitung(0.020));
+        [$datangL, $datangP] = $pisah($hitung(0.004));
+        [$matiL, $matiP] = $pisah($hitung(0.006), $meninggalDicatat['Laki-laki'], $meninggalDicatat['Perempuan']);
+        [$pindahL, $pindahP] = $pisah($hitung(0.004), $pindahDicatat['Laki-laki'], $pindahDicatat['Perempuan']);
+        [$keluarL, $keluarP] = $pisah($hitung(0.003));
+
+        $baris = [
+            ['jenis' => 'Kelahiran', 'laki' => $lahirL, 'perempuan' => $lahirP],
+            ['jenis' => 'Transmigran datang (pengganti atau spontan)', 'laki' => $datangL, 'perempuan' => $datangP],
+            ['jenis' => 'Kematian', 'laki' => $matiL, 'perempuan' => $matiP],
+            ['jenis' => 'Pindah keluar keluarga', 'laki' => $pindahL, 'perempuan' => $pindahP],
+            ['jenis' => 'Meninggalkan lokasi', 'laki' => $keluarL, 'perempuan' => $keluarP],
+        ];
+
+        $baris = array_map(fn ($b) => $b + ['jumlah' => $b['laki'] + $b['perempuan']], $baris);
+
+        $bersih = ($lahirL + $lahirP) + ($datangL + $datangP)
+            - ($matiL + $matiP) - ($pindahL + $pindahP) - ($keluarL + $keluarP);
+
+        return ['baris' => $baris, 'bersih' => $bersih];
+    }
+
+    /**
      * Mencari satu satuan permukiman menurut idnya.
      *
      * @param  int  $id  Nilai id_satuan_permukiman
