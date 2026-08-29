@@ -123,19 +123,16 @@ data-komoditas`. Non-benih: `data-sp data-tahun data-jenis`. Dua dimensi
 tabel yang membawa atributnya. `cocok()` diperketat: atribut `''` = tidak ada.
 `uji-filter-laporan.mjs` 32/0.
 
-### D3-3c — Laporan Hasil Panen (grup per SP, pola D3-3a)
+### D3-3c — Laporan Hasil Panen ✅ SELESAI (2026-08-29)
 
-Pakai pola Alsintan. Catatan khusus:
-- `data-tahun` = tahun anggaran bantuan (`tahun_pengadaan` benih), BUKAN tahun
-  panen (`rules.md` §16a). Cek `isi/hasil-panen.blade.php` — mungkin sudah ada
-  kolom Tahun Pengadaan.
-- Kolom produktivitas subtotal/total = `rasioTampak($el.closest('table'),
-  'produksi_ton', 'realisasi_panen', 2, selSp(id))` — perlu `data-produksi_ton`
-  + `data-realisasi_panen` pada tiap baris.
-- Kolom jumlah biasa (`volume_benih`, `realisasi_tanam`, `realisasi_panen`,
-  `puso`, `belum_dipanen`, `produksi_ton`) via `jumlahTampak(...)`.
-- §8o cakupan pada baris total. Angka Blade dipertahankan sebagai jaring.
-- Dimensi: SP + poktan? + komoditas + rentang tahun pengadaan.
+Pola Alsintan. Closure Blade `$selHitung($kunci, $penanda)` menghasilkan
+`jumlahTampak(...)` per kolom KECUALI `produktivitas_tertimbang` →
+`rasioTampak($el.closest('table'), 'produksi_ton', 'realisasi_panen', 2, …)`.
+`data-tahun` = `tahun_pengadaan` (§16a), label "Tahun Anggaran Bantuan".
+`data-*` kolom angka ber-underscore. `uji-filter-laporan.mjs` 37/0 (cek
+produktivitas tertimbang numerik).
+
+--- Ketujuh laporan menyusul selesai; sisa D3-4 & D3-5 di bawah. ---
 
 ### D3-4 — Rekap Indikator Kawasan: agregasi per SP + filter SP
 

@@ -4963,7 +4963,7 @@ it('menandai hanya laporan yang bilah filternya sudah dipasang', function () {
     }
 
     // Urutan mengikuti LaporanData::meta().
-    expect($berfilter)->toBe(['transmigran', 'poktan', 'alsintan', 'saprotan']);
+    expect($berfilter)->toBe(['transmigran', 'poktan', 'alsintan', 'saprotan', 'hasil-panen']);
 });
 
 it('menyembunyikan tabel poktan seutuhnya lewat penanda SP, bukan per baris', function () {
@@ -5026,6 +5026,28 @@ it('menyaring kedua bagian Laporan Saprotan tanpa subtotal (tabel datar)', funct
 
     // Dimensi komoditas hanya di baris benih, jenis hanya di non-benih.
     expect(substr_count($isi, 'data-komoditas='))->toBeLessThan(substr_count($isi, 'data-baris data-sp='));
+});
+
+it('menghitung ulang produktivitas tertimbang, bukan merata-ratakannya, pada Laporan Hasil Panen', function () {
+    // rules.md 16a: sumbu tahun laporan panen = tahun anggaran bantuan.
+    // Produktivitas subtotal/total adalah Sigma produksi / Sigma realisasi
+    // panen (rasioTampak), bukan rata-rata produktivitas per baris.
+    $isi = $this->get('/laporan/hasil-panen')->assertOk()->getContent();
+
+    expect($isi)
+        ->toContain('x-data="filterLaporan(')
+        ->toContain('data-produksi_ton=')
+        ->toContain('data-realisasi_panen=')
+        ->toContain("rasioTampak(\$el.closest('table'), 'produksi_ton', 'realisasi_panen', 2")
+        ->toContain("jumlahTampak(\$el.closest('table'), 'puso'")
+        ->toContain('Tidak ada catatan panen yang cocok dengan filter')
+        ->toContain("x-text=\"'(' + kalimatCakupan + ')'\"");
+
+    // Label pemilih tahun menegaskan sumbu anggaran bantuan (rules 16a).
+    expect(LaporanData::filterLaporan('hasil-panen')['labelTahun'])->toBe('Tahun Anggaran Bantuan');
+
+    // Subtotal per SP dihitung ulang lewat selSp().
+    expect($isi)->toContain(', selSp(');
 });
 
 it('menomori baris laporan lewat penghitung CSS supaya rapat setelah disaring', function () {

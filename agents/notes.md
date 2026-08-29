@@ -1661,11 +1661,28 @@ Alsintan: hanya `x-show` baris, tak ada `jumlahTampak`.
 - `filterLaporan('saprotan')`: SP + Tahun Pengadaan + Komoditas + Jenis.
   Uji peramban +4 (32/0), Pest +1, arm 4 laporan.
 
-### 1t.5 Sisa D3
+### 1t.5 Stage D3-3c: Laporan Hasil Panen (grup per SP, produktivitas tertimbang)
 
-- **D3-3c** — Hasil Panen: grup per SP (pola Alsintan), `data-tahun` = tahun
-  anggaran bantuan (`rules.md` §16a), produktivitas tertimbang lewat
-  `rasioTampak`.
+Pola Alsintan (grup per SP + subtotal `x-text` + total `<tfoot>`), tetapi 7
+kolom angka, satu di antaranya **rasio**, bukan jumlah:
+
+- `data-tahun` = `tahun_pengadaan` (tahun anggaran bantuan, `rules.md` §16a),
+  BUKAN tahun panen. Label pemilih: "Tahun Anggaran Bantuan".
+- Tiap baris membawa `data-volume_benih data-realisasi_tanam
+  data-realisasi_panen data-puso data-belum_dipanen data-produksi_ton`
+  (atribut `data-*` ber-underscore → `dataset['realisasi_panen']`, underscore
+  tidak jadi camelCase).
+- Subtotal/total tiap kolom: closure Blade `$selHitung($kunci, $penanda)`
+  menghasilkan `jumlahTampak(...)` — KECUALI `produktivitas_tertimbang` →
+  `rasioTampak($el.closest('table'), 'produksi_ton', 'realisasi_panen', 2, …)`:
+  Σ produksi / Σ realisasi panen, bukan rata-rata produktivitas per baris.
+  `x-text="{!! … !!}"` (raw; kunci dari larik hardcoded, sp_id int — aman).
+- `filterLaporan('hasil-panen')`: SP + Tahun Anggaran Bantuan + Komoditas.
+  Uji peramban +5 (37/0, termasuk cek produktivitas tertimbang numerik),
+  Pest +1, arm 5 laporan.
+
+### 1t.6 Sisa D3
+
 - **D3-4** — Rekap Indikator Kawasan: agregasi 16 indikator per SP + penjaga
   Σ-SP = angka kawasan (`ringkasanDashboard()` tak disentuh).
 - **D3-5** — Monografi SP (opsional; pemilih SP tunggal).

@@ -792,6 +792,27 @@ class LaporanData
                 ],
                 'cakupanBawaan' => $cakupanBawaan,
             ],
+            'hasil-panen' => [
+                'sp' => $daftarSp,
+                'tahun' => true,
+                // rules.md 16a: sumbu laporan panen adalah tahun anggaran
+                // bantuan (tahun pengadaan benih), BUKAN tahun panen.
+                'labelTahun' => 'Tahun Anggaran Bantuan',
+                'daftarTahun' => self::tahunUnik(
+                    collect(self::hasilPanen()['kelompok'])
+                        ->flatMap(fn (array $g): array => array_column($g['baris'], 'tahun_pengadaan'))
+                        ->all()
+                ),
+                'dimensi' => [
+                    [
+                        'kunci' => 'komoditas',
+                        'label' => 'Komoditas',
+                        'opsi' => collect(DummyData::hasilPanen())->pluck('komoditas')
+                            ->filter()->unique()->sort()->values()->all(),
+                    ],
+                ],
+                'cakupanBawaan' => $cakupanBawaan,
+            ],
             default => [],
         };
     }

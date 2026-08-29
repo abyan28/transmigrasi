@@ -418,6 +418,65 @@ async function main() {
             periksa('filter komoditas TIDAK menyentuh tabel non-benih (tak punya data-komoditas)', true, 'lewat');
         }
 
+        // ============================================================
+        console.log('\nLaporan Hasil Panen (grup per SP, produktivitas tertimbang):');
+        await buka('/laporan/hasil-panen');
+
+        periksa('label pemilih tahun menegaskan sumbu anggaran bantuan (rules 16a)',
+            (await nilai(`document.querySelector('label[for="filter-laporan-tahun-dari"]')?.textContent ?? ''`))
+                .includes('Anggaran Bantuan'));
+
+        const spPanen = await nilai(`document.querySelector('#filter-laporan-sp').options[1].value`);
+        await setSelect('#filter-laporan-sp', spPanen);
+        await tidur(300);
+
+        // Produksi (ton) total = jumlah data-produksi_ton baris tampak.
+        periksa('kolom Produksi total = jumlah baris tampak',
+            await nilai(`
+                (() => {
+                    const baris = [...document.querySelectorAll('table.tabel-dokumen tr[data-baris]')]
+                        .filter((tr) => tr.offsetParent !== null);
+                    const jum = baris.reduce((s, tr) => s + Number(tr.dataset.produksi_ton || 0), 0);
+                    const sel = [...document.querySelectorAll('table.tabel-dokumen tfoot td')].pop();
+                    return Math.abs(Number(sel.textContent.replace(/\\./g, '').replace(',', '.')) - jum) < 0.05;
+                })()
+            `) === true);
+
+        // Produktivitas tertimbang total = Sigma produksi / Sigma realisasi panen.
+        periksa('produktivitas total = Sigma produksi / Sigma realisasi panen (tertimbang, bukan rata-rata)',
+            await nilai(`
+                (() => {
+                    const baris = [...document.querySelectorAll('table.tabel-dokumen tr[data-baris]')]
+                        .filter((tr) => tr.offsetParent !== null);
+                    const prod = baris.reduce((s, tr) => s + Number(tr.dataset.produksi_ton || 0), 0);
+                    const panen = baris.reduce((s, tr) => s + Number(tr.dataset.realisasi_panen || 0), 0);
+                    const tertimbang = panen > 0 ? prod / panen : 0;
+                    const tds = [...document.querySelectorAll('table.tabel-dokumen tfoot td')];
+                    const selProd = tds[tds.length - 2];   // produktivitas kolom kedua dari kanan
+                    const nilai = Number(selProd.textContent.replace(/\\./g, '').replace(',', '.'));
+                    return Math.abs(nilai - tertimbang) < 0.05;
+                })()
+            `) === true);
+
+        const spPanenNama = await nilai(`document.querySelector('#filter-laporan-sp').options[1].textContent.trim()`);
+        periksa('hanya satu grup (SP terpilih) yang tampak: 1 grup-header + 1 subtotal',
+            await nilai(`
+                [...document.querySelectorAll('table.tabel-dokumen tbody tr')]
+                    .filter((tr) => tr.offsetParent !== null && tr.textContent.includes('Subtotal')).length
+            `) === 1
+            && (await nilai(`
+                [...document.querySelectorAll('table.tabel-dokumen tbody tr')]
+                    .find((tr) => tr.offsetParent !== null && tr.textContent.includes('Subtotal'))?.textContent ?? ''
+            `)).includes(spPanenNama));
+
+        // Semua baris data tampak milik SP terpilih.
+        periksa('baris panen tampak semuanya milik SP terpilih',
+            await nilai(`
+                [...document.querySelectorAll('table.tabel-dokumen tr[data-baris]')]
+                    .filter((tr) => tr.offsetParent !== null)
+                    .every((tr) => tr.dataset.sp === ${JSON.stringify(spPanen)})
+            `) === true);
+
         soket.close();
     } finally {
         proses.kill();
