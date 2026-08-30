@@ -6,10 +6,11 @@
     inventaris hanya memiliki halaman daftar, sehingga keluhan warga atas
     sebuah barang tidak punya tempat untuk ditampilkan kembali.
 
-    SATU BARIS MEWAKILI BANYAK UNIT. Kolom jumlah dapat bernilai 12 sedangkan
-    kondisi hanya satu kolom, sehingga sistem tidak dapat membedakan meja
-    ke-3 dari meja ke-7. Ini konsekuensi sadar dari pendataan per jenis, dan
-    dinyatakan terbuka pada halaman agar petugas tidak mengira datanya kurang.
+    SATU BARIS MEWAKILI BANYAK UNIT. Sejak Putaran 7 `rincian_kondisi` mencatat
+    berapa unit berkondisi apa (histogram), sehingga "sebagian retak" jadi
+    angka. Tetap per jenis, bukan per unit: meja ke-3 masih tak dapat
+    dibedakan dari meja ke-7. Kolom `kondisi` di atas tetap penilaian umum
+    petugas untuk lencana dan cacah "perlu perbaikan".
 --}}
 @extends('layouts.app')
 
@@ -152,16 +153,23 @@
                         </div>
                     </dl>
 
-                    {{--
-                        Batas ketelitian dinyatakan terbuka. Tanpa keterangan
-                        ini, petugas yang membaca "12 unit, kondisi Baik" dapat
-                        mengira seluruh dua belas meja memang baik, padahal
-                        yang tercatat adalah kondisi umum jenis barangnya.
-                    --}}
                     @if ($data['jumlah'] > 1)
-                        <p class="mt-6 rounded-lg bg-gray-50 p-3.5 text-theme-xs text-gray-600 dark:bg-white/[0.03] dark:text-gray-400">
-                            Barang didata per jenis, bukan per unit. Kondisi di atas menggambarkan keadaan umum
-                            {{ number_format($data['jumlah'], 0, ',', '.') }} {{ $data['satuan_barang'] }} yang tercatat.
+                        @if (count($data['rincian_kondisi']) > 1)
+                            <div class="mt-6">
+                                <p class="text-theme-xs font-medium text-gray-600 dark:text-gray-400">Rincian kondisi per unit</p>
+                                <dl class="mt-2 space-y-1.5">
+                                    @foreach ($data['rincian_kondisi'] as $namaKondisi => $jumlahKondisi)
+                                        @continue($jumlahKondisi <= 0)
+                                        <div class="flex items-center justify-between gap-3 text-theme-sm">
+                                            <dt><x-sim.status-badge :status="\App\Enums\Kondisi::from($namaKondisi)" ukuran="sm" /></dt>
+                                            <dd class="tabular-nums text-gray-700 dark:text-gray-300">{{ number_format($jumlahKondisi, 0, ',', '.') }} {{ $data['satuan_barang'] }}</dd>
+                                        </div>
+                                    @endforeach
+                                </dl>
+                            </div>
+                        @endif
+                        <p class="mt-4 rounded-lg bg-gray-50 p-3.5 text-theme-xs text-gray-600 dark:bg-white/[0.03] dark:text-gray-400">
+                            Barang didata per jenis, bukan per unit: unit ke-3 tidak dapat dibedakan dari unit ke-7.
                             Kerusakan pada unit tertentu dicatat lewat pengaduan beserta keterangannya.
                         </p>
                     @endif

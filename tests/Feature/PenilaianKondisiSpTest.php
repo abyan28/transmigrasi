@@ -178,6 +178,35 @@ it('mengakui aset yang melayani beberapa SP, bukan hanya SP pangkalnya', functio
         ->toBe(1.0);
 });
 
+it('menilai aset ber-rincian kondisi dari unit terbaik yang jumlahnya lebih dari nol', function () {
+    // Putaran 7 F2: untuk "apakah SP punya X yang berfungsi", satu unit
+    // terbaik sudah cukup. Kolom `kondisi` kepala justru yang terburuk dan
+    // menyesatkan di sini.
+    $fasilitas = [
+        ['satuan_permukiman_id' => 50, 'jenis_fasilitas' => 'Kesehatan', 'kondisi' => 'Rusak Berat',
+            'rincian_kondisi' => ['Baik' => 1, 'Rusak Berat' => 2]],
+    ];
+
+    $hasil = PenilaianKondisiSp::nilai(50, [], $fasilitas);
+    $kesehatan = collect($hasil['rincian'])->firstWhere('kode', 'kesehatan');
+
+    expect($kesehatan['kondisi'])->toBe('Baik')
+        ->and($kesehatan['nilai'])->toBe(1.0);
+
+    // Bila SELURUH unit rusak berat, barulah dinilai rusak berat.
+    $semuaRusak = [
+        ['satuan_permukiman_id' => 51, 'jenis_fasilitas' => 'Kesehatan', 'kondisi' => 'Rusak Berat',
+            'rincian_kondisi' => ['Rusak Berat' => 3]],
+    ];
+    expect(collect(PenilaianKondisiSp::nilai(51, [], $semuaRusak)['rincian'])->firstWhere('kode', 'kesehatan')['kondisi'])
+        ->toBe('Rusak Berat');
+
+    // Aset lama tanpa `rincian_kondisi` tetap dibaca lewat `kondisi` tunggal.
+    $lama = [['satuan_permukiman_id' => 52, 'jenis_fasilitas' => 'Kesehatan', 'kondisi' => 'Rusak Ringan']];
+    expect(collect(PenilaianKondisiSp::nilai(52, [], $lama)['rincian'])->firstWhere('kode', 'kesehatan')['nilai'])
+        ->toBe(0.5);
+});
+
 it('membawa cakupan layanan infrastruktur yang wajib memuat SP pangkal', function () {
     // Kenyataan "melayani 3 SP" dahulu hanya tertulis di kolom kapasitas.
     foreach (DummyData::infrastruktur() as $a) {

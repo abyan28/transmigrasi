@@ -90,6 +90,11 @@
                 <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ $b['sumber_dana'] }}</td>
                 <td class="px-5 py-3">
                     <x-sim.status-badge :status="\App\Enums\Kondisi::from($b['kondisi'])" />
+                    @if (count($b['rincian_kondisi']) > 1)
+                        <span class="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">
+                            {{ collect($b['rincian_kondisi'])->filter()->map(fn ($n, $k) => $n . ' ' . \Illuminate\Support\Str::lower($k))->implode(', ') }}
+                        </span>
+                    @endif
                 </td>
                 <td class="px-5 py-3">
                     <x-sim.status-badge :status="\App\Enums\StatusPenyerahan::from($b['status_penyerahan'])" />

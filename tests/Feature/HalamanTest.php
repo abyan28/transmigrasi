@@ -3015,6 +3015,26 @@ it('menyeragamkan nama field alsintan dengan saprotan dan kamus data', function 
     expect($laporan)->toContain('Sumber Dana')->toContain('Tahun Pengadaan');
 });
 
+it('mencatat rincian kondisi per unit pada form dan rincian aset SP', function () {
+    // Putaran 7 F2: "dua dari tiga pos lapuk" jadi angka. Form fasilitas dan
+    // inventaris memuat isian rincian per nilai kondisi; halaman rincian
+    // menampilkan sebarannya bila lebih dari satu kondisi.
+    $fasilitasForm = $this->get('/sp/fasilitas')->assertOk()->getContent();
+    expect($fasilitasForm)
+        ->toContain('name="rincian_kondisi[')
+        ->toContain('Rincian Kondisi per Unit');
+
+    $inventarisForm = $this->get('/sp/inventaris')->assertOk()->getContent();
+    expect($inventarisForm)->toContain('name="rincian_kondisi[');
+
+    // POS KAMLING (fasilitas 5): 1 Baik + 2 Rusak Berat.
+    $pos = collect(DummyData::fasilitasSp())->firstWhere('id_fasilitas_sp', 5);
+    expect($pos['rincian_kondisi'])->toBe(['Baik' => 1, 'Rusak Berat' => 2]);
+
+    $rincianHal = $this->get('/sp/fasilitas/5')->assertOk()->getContent();
+    expect($rincianHal)->toContain('per unit');
+});
+
 /*
 |--------------------------------------------------------------------------
 | Keterbacaan mode gelap dan akses berkas

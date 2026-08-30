@@ -111,7 +111,7 @@
             </div>
 
             <div>
-                <label for="{{ $awalan }}_kondisi_inventaris" class="{{ $kelasLabel }}">Kondisi</label>
+                <label for="{{ $awalan }}_kondisi_inventaris" class="{{ $kelasLabel }}">Kondisi Umum</label>
                 <select id="{{ $awalan }}_kondisi_inventaris" name="kondisi" class="{{ $kelasKontrol }}">
                     @foreach ($opsiKondisi as $nilaiRef => $labelRef)
                         <option value="{{ $nilaiRef }}" @selected(old('kondisi', $data['kondisi'] ?? '') === $nilaiRef)>
@@ -120,6 +120,12 @@
                     @endforeach
                 </select>
             </div>
+
+            @include('pages.sp._rincian-kondisi', [
+                'jumlahFieldId' => $awalan . '_jumlah_inventaris',
+                'rincianAwal' => $data['rincian_kondisi'] ?? [],
+                'satuanLabel' => $data['satuan_barang'] ?? 'unit',
+            ])
 
             <div class="sm:col-span-2">
                 <label for="{{ $awalan }}_keterangan_inventaris" class="{{ $kelasLabel }}">Catatan</label>

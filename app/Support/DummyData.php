@@ -2654,13 +2654,19 @@ class DummyData
      */
     public static function inventarisSp(): array
     {
-        return [
+        // `rincian_kondisi` (Putaran 7): histogram kondisi per jenis barang,
+        // sehingga "sebagian retak" jadi angka, bukan kalimat. Tetap per
+        // jenis, bukan per unit — kursi ke-3 masih tak dapat dibedakan dari
+        // kursi ke-7.
+        $data = [
             ['id_inventaris_sp' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'nama_barang' => 'MEJA KANTOR', 'jumlah' => 12, 'satuan_barang' => 'unit', 'tahun_perolehan' => 2016, 'sumber_dana' => 'APBN', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Baik', 'keterangan' => null],
-            ['id_inventaris_sp' => 2, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'nama_barang' => 'KURSI PLASTIK', 'jumlah' => 60, 'satuan_barang' => 'buah', 'tahun_perolehan' => 2016, 'sumber_dana' => 'APBN', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Rusak Ringan', 'keterangan' => 'Sebagian retak pada sandaran.', 'foto' => 'kondisi-kursi-plastik.jpg', 'dokumen_pendukung' => 'berita-acara-kursi.pdf'],
+            ['id_inventaris_sp' => 2, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'nama_barang' => 'KURSI PLASTIK', 'jumlah' => 60, 'satuan_barang' => 'buah', 'tahun_perolehan' => 2016, 'sumber_dana' => 'APBN', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Rusak Ringan', 'rincian_kondisi' => ['Baik' => 43, 'Rusak Ringan' => 15, 'Rusak Berat' => 2], 'keterangan' => 'Sebagian retak pada sandaran.', 'foto' => 'kondisi-kursi-plastik.jpg', 'dokumen_pendukung' => 'berita-acara-kursi.pdf'],
             ['id_inventaris_sp' => 3, 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'nama_barang' => 'GENSET 5000 WATT', 'jumlah' => 1, 'satuan_barang' => 'unit', 'tahun_perolehan' => 2018, 'sumber_dana' => 'APBD Kabupaten', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Baik', 'keterangan' => null],
             ['id_inventaris_sp' => 4, 'satuan_permukiman_id' => 3, 'satuan_permukiman' => 'SP Harekakae', 'nama_barang' => 'KOMPUTER DESKTOP', 'jumlah' => 2, 'satuan_barang' => 'unit', 'tahun_perolehan' => 2019, 'sumber_dana' => 'Dinas Transmigrasi Kabupaten', 'status_penyerahan' => 'Dalam Proses', 'kondisi' => 'Baik', 'keterangan' => 'Berita acara sedang diproses.'],
-            ['id_inventaris_sp' => 5, 'satuan_permukiman_id' => 5, 'satuan_permukiman' => 'SP Tualaran', 'nama_barang' => 'LEMARI ARSIP', 'jumlah' => 4, 'satuan_barang' => 'unit', 'tahun_perolehan' => 2019, 'sumber_dana' => 'APBD Provinsi', 'status_penyerahan' => 'Belum Diserahkan', 'kondisi' => 'Baik', 'keterangan' => null],
+            ['id_inventaris_sp' => 5, 'satuan_permukiman_id' => 5, 'satuan_permukiman' => 'SP Tualaran', 'nama_barang' => 'LEMARI ARSIP', 'jumlah' => 4, 'satuan_barang' => 'unit', 'tahun_perolehan' => 2019, 'sumber_dana' => 'APBD Provinsi', 'status_penyerahan' => 'Belum Diserahkan', 'kondisi' => 'Baik', 'rincian_kondisi' => ['Baik' => 3, 'Rusak Ringan' => 1], 'keterangan' => null],
         ];
+
+        return self::denganRincianKondisi($data);
     }
 
     /**
@@ -2678,7 +2684,8 @@ class DummyData
             ['id_fasilitas_sp' => 2, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'jenis_fasilitas' => 'Kesehatan', 'nama_fasilitas' => 'PUSKESMAS PEMBANTU', 'jumlah' => 1, 'tahun_perolehan' => 2017, 'sumber_dana' => 'APBD Kabupaten', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Baik', 'lintang' => -9.5127000, 'bujur' => 124.9128000, 'keterangan' => null],
             ['id_fasilitas_sp' => 3, 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'jenis_fasilitas' => 'Pendidikan Dasar', 'nama_fasilitas' => 'SEKOLAH DASAR', 'jumlah' => 1, 'tahun_perolehan' => 2016, 'sumber_dana' => 'APBN', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Rusak Ringan', 'lintang' => -9.4982000, 'bujur' => 124.8878000, 'keterangan' => 'Plafon ruang kelas dua bocor.', 'foto' => 'kondisi-sekolah-dasar.jpg', 'dokumen_pendukung' => 'bast-sekolah-dasar.pdf'],
             ['id_fasilitas_sp' => 4, 'satuan_permukiman_id' => 3, 'satuan_permukiman' => 'SP Harekakae', 'jenis_fasilitas' => 'Ibadah', 'nama_fasilitas' => 'RUMAH IBADAH', 'jumlah' => 2, 'tahun_perolehan' => 2017, 'sumber_dana' => 'Lembaga Swadaya Masyarakat', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Baik', 'lintang' => -9.4554000, 'bujur' => 124.9453000, 'keterangan' => null],
-            ['id_fasilitas_sp' => 5, 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain', 'jenis_fasilitas' => 'Keamanan', 'nama_fasilitas' => 'POS KAMLING', 'jumlah' => 3, 'tahun_perolehan' => 2018, 'sumber_dana' => 'APBD Provinsi', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Rusak Berat', 'lintang' => -9.3766000, 'bujur' => 125.0346000, 'keterangan' => 'Dua pos lapuk dimakan rayap.'],
+            // "Dua pos lapuk" kini DATA, bukan kalimat di keterangan (Putaran 7).
+            ['id_fasilitas_sp' => 5, 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain', 'jenis_fasilitas' => 'Keamanan', 'nama_fasilitas' => 'POS KAMLING', 'jumlah' => 3, 'tahun_perolehan' => 2018, 'sumber_dana' => 'APBD Provinsi', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Rusak Berat', 'rincian_kondisi' => ['Baik' => 1, 'Rusak Berat' => 2], 'lintang' => -9.3766000, 'bujur' => 125.0346000, 'keterangan' => 'Dua pos lapuk dimakan rayap.'],
 
             /*
              * Fasilitas di bawah melengkapi sebaran layanan sosial agar
@@ -2729,7 +2736,7 @@ class DummyData
             sort($ids);
 
             return $a + ['satuan_permukiman_ids' => $ids];
-        }, $data);
+        }, self::denganRincianKondisi($data));
     }
 
     /**
@@ -3036,6 +3043,33 @@ class DummyData
         }
 
         return $hasil;
+    }
+
+    /**
+     * Menempelkan `rincian_kondisi` (peta kondisi ke jumlah unit) pada baris
+     * aset ber-`jumlah` (Putaran 7).
+     *
+     * Sebelumnya satu baris `fasilitas_sp` / `inventaris_sp` hanya punya satu
+     * `kondisi` meski `jumlah` > 1, sehingga "dua dari tiga pos lapuk" lolos
+     * ke kolom `keterangan` sebagai kalimat, bukan data. Ini BUKAN pendataan
+     * per unit (pos ke-2 masih tak dapat dibedakan dari pos ke-3), melainkan
+     * histogram kondisi per jenis.
+     *
+     * `kondisi` TIDAK diturunkan darinya — ia tetap penilaian umum yang diketik
+     * petugas (lencana daftar, cacah "perlu perbaikan"). Baris yang sudah
+     * membawa `rincian_kondisi` literal dipakai apa adanya; sisanya diisi
+     * `[kondisi => jumlah]`.
+     *
+     * @param  array<int, array<string, mixed>>  $rows
+     * @return array<int, array<string, mixed>>
+     */
+    private static function denganRincianKondisi(array $rows): array
+    {
+        return array_map(function (array $r): array {
+            $r['rincian_kondisi'] = $r['rincian_kondisi'] ?? [$r['kondisi'] => $r['jumlah']];
+
+            return $r;
+        }, $rows);
     }
 
     /**

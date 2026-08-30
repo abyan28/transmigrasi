@@ -903,14 +903,15 @@ Cacat FATAL: `alsintan`/`saprotan` bawa satu `poktan_id` → satu batch bantuan 
 - **B+C ✅** `<x-sim.pilih-cari-banyak>` + alsintan `alsintan()` induk + `alsintanDistribusi()`. Form: repeater distribusi (jumlah bagi rata otomatis, kondisi/penanda per poktan). Index 1 baris/pengadaan.
 - **D ✅** saprotan induk + `saprotanDistribusi()`. `penanaman.saprotan_id`→`saprotan_distribusi_id`. `sisaBenih()` grain turun ke distribusi (§7c.8 utuh). `satuan`→`satuan_id` dibetulkan.
 - **E ✅** infrastruktur lintas SP: `+satuan_permukiman_ids` + `infrastrukturCakupan()`. `PenilaianKondisiSp` baca cakupan. **Memperbaiki skor SP yang salah** (primer nol).
-- **F1 ✅** fasilitas_sp cakupan (pola sama E). **F2 (jumlah>1 satu kondisi) DITUNDA** — bug class berbeda (`rules.md` §7bc.5).
+- **F1 ✅** fasilitas_sp cakupan (pola sama E).
+- **F2 ✅** `fasilitas_sp`/`inventaris_sp` ber-`jumlah`>1 dapat `rincian_kondisi` (histogram, Σ=jumlah). `kondisi` tetap penilaian umum; `kondisiTerbaik()` baca rincian. Partial `sp/_rincian-kondisi`.
 - **G ✅** `dokumenLahan()` induk + `dokumenLahanBidang()` (m2m). Satu HPL banyak bidang.
 - **H ✅** `hasil_panen.poktan_id` dicabut, diturunkan dari penanaman.
 - **I ✅** dokumen: `rules.md` §7b/§7c ditulis ulang + §7bc baru; `data-dictionary.md` §7.2/§8.3/§8.4/§10.1 + tabel batas #4/#5/#9/#33-35; `§11.37` betulkan `kualitas_panen` + `jenis_alsintan`; `ui-spec.md` §6.0a; `notes.md` §1w; blok ini.
 
-pest 711, pint 31, `sim:tautan-statis` 223. Seluruh suite peramban hijau.
+pest 714, pint 31, `sim:tautan-statis` 223. Seluruh suite peramban hijau (termasuk `uji-penilaian-kondisi` 12/0).
 
-**Tertunda:** F2 (rincian kondisi per unit fasilitas/inventaris). **Belum diperiksa mata:** form repeater distribusi di layar, Ctrl+P laporan.
+Sembilan tahap SELESAI. **Belum diperiksa mata:** form repeater distribusi + form rincian kondisi di layar, Ctrl+P laporan.
 
 ## Tahap 3 — Autentikasi dan Hak Akses
 

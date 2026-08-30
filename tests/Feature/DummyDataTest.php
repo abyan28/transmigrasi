@@ -643,6 +643,34 @@ it('menautkan tiap distribusi alsintan ke pengadaan dan poktan yang sah', functi
     }
 });
 
+it('mencatat rincian kondisi per unit pada fasilitas dan inventaris SP', function () {
+    // Putaran 7 F2: "dua dari tiga pos lapuk" jadi angka, bukan kalimat di
+    // keterangan. Tetap per jenis, bukan per unit.
+    foreach ([DummyData::fasilitasSp(), DummyData::inventarisSp()] as $daftar) {
+        foreach ($daftar as $a) {
+            expect($a)->toHaveKey('rincian_kondisi');
+
+            // Σ rincian = jumlah.
+            $nama = $a['nama_barang'] ?? $a['nama_fasilitas'] ?? '?';
+            expect(array_sum($a['rincian_kondisi']))->toBe($a['jumlah'], "rincian kondisi {$nama}");
+
+            // Tiap kunci kondisi yang sah.
+            foreach (array_keys($a['rincian_kondisi']) as $k) {
+                expect(Kondisi::tryFrom($k))->not->toBeNull("kondisi '{$k}' bukan enum");
+            }
+
+            // `kondisi` kepala tidak diturunkan — tetap salah satu kunci rincian
+            // ATAU nilai lama (bila jumlah 1).
+            expect($a['kondisi'])->toBeString();
+        }
+    }
+
+    // Data contoh WAJIB memuat satu aset dengan lebih dari satu kondisi.
+    $beragam = collect(DummyData::fasilitasSp())->merge(DummyData::inventarisSp())
+        ->first(fn ($a) => count(array_filter($a['rincian_kondisi'])) > 1);
+    expect($beragam)->not->toBeNull('data contoh wajib memuat aset ber-rincian kondisi beragam');
+});
+
 it('membiarkan satu dokumen lahan mencakup banyak bidang', function () {
     // Putaran 7: satu HPL / SK pencadangan lazim mencakup ratusan bidang.
     // Model lama membawa satu lahan_id per baris, memaksa dokumen yang sama

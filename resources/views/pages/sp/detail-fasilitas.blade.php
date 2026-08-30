@@ -67,6 +67,20 @@
                             {{ number_format($data['jumlah'], 0, ',', '.') }} unit
                         </dd>
                     </div>
+                    @if (count($data['rincian_kondisi']) > 1)
+                        {{-- Rincian kondisi per unit (Putaran 7): "dua dari tiga pos lapuk" jadi angka. --}}
+                        <div class="flex justify-between gap-3">
+                            <dt class="text-gray-500 dark:text-gray-400">Rincian kondisi per unit</dt>
+                            <dd></dd>
+                        </div>
+                        @foreach ($data['rincian_kondisi'] as $namaKondisi => $jumlahKondisi)
+                            @continue($jumlahKondisi <= 0)
+                            <div class="flex items-center justify-between gap-3 pl-2">
+                                <dt><x-sim.status-badge :status="\App\Enums\Kondisi::from($namaKondisi)" ukuran="sm" /></dt>
+                                <dd class="text-right tabular-nums text-gray-700 dark:text-gray-300">{{ $jumlahKondisi }} unit</dd>
+                            </div>
+                        @endforeach
+                    @endif
                     <div class="flex justify-between gap-3">
                         <dt class="text-gray-500 dark:text-gray-400">Tahun perolehan</dt>
                         <dd class="text-right font-medium tabular-nums text-gray-800 dark:text-white/90">

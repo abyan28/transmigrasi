@@ -189,11 +189,24 @@ class PenilaianKondisiSp
         $nilaiTerbaik = -1.0;
 
         foreach ($cocok as $a) {
-            $nilai = self::nilaiKondisi()[$a['kondisi'] ?? ''] ?? self::NILAI_TIDAK_ADA;
+            // Sejak Putaran 7 aset ber-`jumlah` membawa `rincian_kondisi`
+            // (histogram kondisi). Untuk pertanyaan "apakah SP punya X yang
+            // berfungsi", satu unit terbaik yang jumlahnya > 0 sudah cukup —
+            // kolom `kondisi` kepala justru yang TERBURUK dan menyesatkan di
+            // sini. Aset tanpa rincian dibaca lewat `kondisi` tunggalnya.
+            $rincian = $a['rincian_kondisi'] ?? [($a['kondisi'] ?? '') => 1];
 
-            if ($nilai > $nilaiTerbaik) {
-                $nilaiTerbaik = $nilai;
-                $terbaik = $a['kondisi'] ?? self::KONDISI_TIDAK_ADA;
+            foreach ($rincian as $kondisi => $jumlah) {
+                if ($jumlah <= 0) {
+                    continue;
+                }
+
+                $nilai = self::nilaiKondisi()[$kondisi] ?? self::NILAI_TIDAK_ADA;
+
+                if ($nilai > $nilaiTerbaik) {
+                    $nilaiTerbaik = $nilai;
+                    $terbaik = $kondisi !== '' ? $kondisi : self::KONDISI_TIDAK_ADA;
+                }
             }
         }
 

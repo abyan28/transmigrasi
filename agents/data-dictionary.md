@@ -390,13 +390,15 @@ Barang bergerak milik SP (`rules.md` §4b).
 | `tahun_perolehan` | `YEAR` | YA | | |
 | `sumber_dana` | `ENUM` | YA | | Lihat §11.3 |
 | `status_penyerahan` | `ENUM` | TIDAK | | Lihat §11.4 |
-| `kondisi` | `ENUM` | YA | | Lihat §11.5 |
+| `kondisi` | `ENUM` | YA | | Lihat §11.5. **Penilaian umum petugas** (lencana, cacah "perlu perbaikan"); tidak diturunkan dari `rincian_kondisi` |
+| `rincian_kondisi` | `JSON` | YA | | Peta kondisi → jumlah unit (Putaran 7). Σ = `jumlah`. "Sebagian retak" jadi angka. Tetap per jenis, bukan per unit |
 | `foto` | `VARCHAR(255)` | YA | | Dokumentasi kondisi barang |
 | `dokumen_pendukung` | `VARCHAR(255)` | YA | | Berita acara atau bukti pengadaan |
 | `keterangan` | `TEXT` | YA | | |
 
 **Catatan:**
 - `satuan_barang` sengaja berupa teks bebas dan **tidak** menaut ke tabel `satuan`, karena tabel `satuan` khusus menyimpan satuan berat beserta faktor konversi ke ton.
+- **`rincian_kondisi` (Putaran 7, 2026-08-30).** Sebelumnya satu baris hanya punya satu `kondisi` meski `jumlah` > 1, sehingga "dua dari tiga pos lapuk" lolos ke `keterangan` sebagai kalimat. `rincian_kondisi` mencatat histogram; `PenilaianKondisiSp::kondisiTerbaik()` membacanya (satu unit terbaik yang jumlahnya > 0 sudah cukup untuk "SP punya X yang berfungsi"). BUKAN pendataan per unit — kursi ke-3 tak dapat dibedakan dari kursi ke-7. Sama untuk `fasilitas_sp`.
 - **Kolom `foto` ditambahkan 2026-08-20**, mengikuti pola `infrastruktur` §10.1. Keduanya menjawab hal berbeda: foto merekam kondisi barang saat pendataan, dokumen menyimpan berkas administratifnya. Satu slot untuk keduanya membuat foto kondisi tertimpa berita acara, atau sebaliknya, dan kehilangannya berlangsung diam-diam sebab form tetap tersimpan.
 
 ### 4.2 `fasilitas_sp`
@@ -413,7 +415,8 @@ Bangunan dan fasilitas tetap milik SP. Struktur sama persis dengan `inventaris_s
 | `tahun_perolehan` | `YEAR` | YA | | |
 | `sumber_dana` | `ENUM` | YA | | Lihat §11.3 |
 | `status_penyerahan` | `ENUM` | TIDAK | | Lihat §11.4 |
-| `kondisi` | `ENUM` | YA | | Lihat §11.5 |
+| `kondisi` | `ENUM` | YA | | Lihat §11.5. Penilaian umum petugas |
+| `rincian_kondisi` | `JSON` | YA | | Peta kondisi → jumlah unit (Putaran 7). Σ = `jumlah`. Lihat catatan §4.1 |
 | `lintang` | `DECIMAL(10,7)` | YA | | Lokasi fasilitas |
 | `bujur` | `DECIMAL(10,7)` | YA | | Lokasi fasilitas |
 | `foto` | `VARCHAR(255)` | YA | | Dokumentasi kondisi bangunan |
@@ -421,6 +424,7 @@ Bangunan dan fasilitas tetap milik SP. Struktur sama persis dengan `inventaris_s
 | `keterangan` | `TEXT` | YA | | |
 
 **Catatan:**
+- **`satuan_permukiman_id` = lokasi/pangkal.** Tabel `fasilitas_sp_cakupan` `(fasilitas_sp_id, satuan_permukiman_id)` menyimpan SP yang dilayani, **wajib memuat SP pangkal** (Putaran 7). SMP Satu Atap, puskesmas pembantu, atau pasar desa di satu SP kerap melayani warga SP tetangga; `PenilaianKondisiSp` membacanya sama seperti `infrastruktur_sp` (§10.1). `rincian_kondisi`: lihat §4.1.
 - **Kolom `foto` ditambahkan 2026-08-20**, alasan sama dengan §4.1. Sebelumnya satu slot dipakai untuk keduanya, dan labelnya bahkan berbunyi "Dokumen atau Foto Fasilitas" — menjanjikan dua hal untuk satu tempat penyimpanan.
 - `jenis_fasilitas` dan `nama_fasilitas` sengaja berdampingan. Enum diperlukan agar penilaian kondisi SP dapat menghitung otomatis, sebab teks bebas membuat "SEKOLAH DASAR" dan "SD Negeri 1" tidak terbaca sebagai hal yang sama. Nama bebas tetap dipertahankan agar petugas dapat menulis sebutan yang dikenal warga setempat.
 

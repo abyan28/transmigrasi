@@ -1950,7 +1950,11 @@ berubah. Pengadaan tanpa distribusi = "Belum tersalurkan".
   dgn mundur `[$id]`. Data: KIOS SAPROTAN DESA → SP 1/2/5. **Memperbaiki skor SP
   yang salah** (primer nol).
 - **F1** fasilitas_sp cakupan (pola sama E; SMP Satu Atap → SP tetangga).
-  **F2 (jumlah>1 satu kondisi) DITUNDA** — bug class berbeda, `rules.md` §7bc.5.
+- **F2** `fasilitas_sp`/`inventaris_sp` ber-`jumlah`>1 dapat `rincian_kondisi`
+  (histogram kondisi→jumlah, Σ=jumlah). `kondisi` TETAP penilaian umum petugas.
+  `kondisiTerbaik()` baca rincian (unit terbaik >0 cukup untuk skor SP).
+  Partial `sp/_rincian-kondisi.blade.php` (x-show jumlah>1). Data: POS KAMLING
+  {Baik:1,RusakBerat:2}, KURSI PLASTIK {43,15,2}, LEMARI ARSIP {3,1}.
 - **G** `dokumenLahan()` induk + `dokumenLahanBidang()` (m2m). `dokumenLahan(?lahanId)`
   tanda tangan tetap. Data: HPL/0142 mencakup pekarangan + usaha Yohanes Bere.
 - **H** `hasil_panen.poktan_id` dicabut dari baris literal, diturunkan dari
@@ -1967,13 +1971,14 @@ berubah. Pengadaan tanpa distribusi = "Belum tersalurkan".
 - pint: `\App\Enums\` sebaris di uji → `fully_qualified_strict_types`, pakai `use`.
 
 ### Verifikasi
-pest 711, pint 31, `sim:tautan-statis` 223, `npm run build`,
+pest 714, pint 31, `sim:tautan-statis` 223, `npm run build`,
 `uji-lebar-dokumen` 28/0, `uji-gulir-modal` 24/0, `uji-sp-otomatis` 21/0,
-`uji-benih-komoditas` 16/0, `uji-form-penanaman` 25/0, `uji-filter-laporan` 53/0.
+`uji-benih-komoditas` 16/0, `uji-form-penanaman` 25/0, `uji-filter-laporan` 53/0,
+`uji-penilaian-kondisi` 12/0.
 
 **Belum diperiksa mata:** form alsintan/saprotan repeater distribusi di layar,
-Ctrl+P laporan, rincian poktan dengan distribusi.
-**Tertunda:** F2 (rincian kondisi per unit fasilitas/inventaris).
+form fasilitas/inventaris rincian kondisi, Ctrl+P laporan, rincian poktan.
+Seluruh sembilan tahap SELESAI (F2 tidak lagi tertunda).
 
 ---
 

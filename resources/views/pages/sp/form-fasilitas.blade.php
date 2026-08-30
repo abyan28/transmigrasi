@@ -141,9 +141,15 @@
                     @endforeach
                 </select>
                 <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
-                    Kondisi menjadi salah satu parameter penilaian kondisi SP.
+                    Kondisi umum menjadi salah satu parameter penilaian kondisi SP.
                 </p>
             </div>
+
+            @include('pages.sp._rincian-kondisi', [
+                'jumlahFieldId' => $awalan . '_jumlah_fasilitas',
+                'rincianAwal' => $data['rincian_kondisi'] ?? [],
+                'satuanLabel' => 'unit',
+            ])
         </div>
     </section>
 
