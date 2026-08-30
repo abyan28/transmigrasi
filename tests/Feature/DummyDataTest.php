@@ -12,6 +12,7 @@ use App\Enums\BidangPengaduan;
 use App\Enums\CakupanData;
 use App\Enums\JenisDokumenLahan;
 use App\Enums\JenisInfrastruktur;
+use App\Enums\JenisReferensi;
 use App\Enums\JenisSaprotan;
 use App\Enums\KategoriPengaduan;
 use App\Enums\Kondisi;
@@ -576,6 +577,70 @@ it('menjaga deret SP tidak melebihi deret kawasan', function () {
 
 it('mengembalikan deret kosong untuk SP yang tidak ada', function () {
     expect(DummyData::deretTahunanSp(99)['tahun'])->toBe([]);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Alsintan: satu pengadaan dibagikan ke banyak poktan (Putaran 7)
+|--------------------------------------------------------------------------
+*/
+
+it('memisahkan pengadaan alsintan dari distribusinya ke poktan', function () {
+    // Model lama: satu poktan_id pada baris pengadaan, sehingga satu batch
+    // ke tiga poktan harus diketik jadi tiga baris. Kini pengadaan hanya
+    // mendeskripsikan bendanya; poktan penerima ada di baris distribusi.
+    foreach (DummyData::alsintan() as $a) {
+        expect($a)->toHaveKeys(['jenis_alsintan', 'nama_alat', 'jumlah_total', 'distribusi', 'jumlah_tersalur', 'jumlah_belum_tersalur'])
+            ->and($a)->not->toHaveKey('poktan_id')
+            ->and($a)->not->toHaveKey('kondisi');
+
+        // Jenis alsintan wajib nilai data master yang sah.
+        expect(array_keys(DummyData::opsiReferensi(JenisReferensi::JenisAlsintan)))
+            ->toContain($a['jenis_alsintan']);
+
+        // Sigma distribusi tidak melebihi jumlah total; sisa terhitung benar.
+        $tersalur = array_sum(array_column($a['distribusi'], 'jumlah'));
+        expect($tersalur)->toBeLessThanOrEqual($a['jumlah_total'])
+            ->and($a['jumlah_tersalur'])->toBe($tersalur)
+            ->and($a['jumlah_belum_tersalur'])->toBe($a['jumlah_total'] - $tersalur);
+    }
+
+    // Data contoh WAJIB memuat kasus yang model lama tidak sanggup:
+    // satu pengadaan dibagikan ke lebih dari satu poktan, lintas SP.
+    $lintas = collect(DummyData::alsintan())->first(function ($a) {
+        $sp = array_unique(array_column($a['distribusi'], 'satuan_permukiman_id'));
+
+        return count($a['distribusi']) > 1 && count($sp) > 1;
+    });
+    expect($lintas)->not->toBeNull('data contoh wajib memuat pengadaan lintas SP');
+
+    // Dan satu pengadaan yang belum tersalurkan sama sekali.
+    $belum = collect(DummyData::alsintan())->first(fn ($a) => count($a['distribusi']) === 0);
+    expect($belum)->not->toBeNull('data contoh wajib memuat pengadaan belum tersalurkan')
+        ->and($belum['jumlah_belum_tersalur'])->toBe($belum['jumlah_total']);
+});
+
+it('menautkan tiap distribusi alsintan ke pengadaan dan poktan yang sah', function () {
+    $idPengadaan = array_column(DummyData::alsintan(), 'id_alsintan');
+    $idPoktan = array_column(DummyData::poktan(), 'id_poktan');
+
+    foreach (DummyData::alsintanDistribusi() as $d) {
+        expect($idPengadaan)->toContain($d['alsintan_id'])
+            ->and($idPoktan)->toContain($d['poktan_id'])
+            ->and($d['satuan_permukiman_id'])->not->toBeNull()
+            ->and($d['jumlah'])->toBeGreaterThan(0);
+
+        // SP mengikuti poktan, tidak dipilih terpisah (rules.md §7b poin 3).
+        $poktan = collect(DummyData::poktan())->firstWhere('id_poktan', $d['poktan_id']);
+        expect($d['satuan_permukiman_id'])->toBe($poktan['satuan_permukiman_id']);
+
+        // Penanda tangan, bila ada, anggota poktan yang sama.
+        if ($d['penanda_terima_id'] !== null) {
+            $anggota = collect(DummyData::anggotaPoktan())->firstWhere('id_anggota_poktan', $d['penanda_terima_id']);
+            expect($anggota)->not->toBeNull()
+                ->and($anggota['poktan_id'])->toBe($d['poktan_id']);
+        }
+    }
 });
 
 /*

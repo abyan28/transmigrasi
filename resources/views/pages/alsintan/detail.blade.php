@@ -1,13 +1,10 @@
 {{--
-    Rincian satu unit alsintan.
+    Rincian satu PENGADAAN alsintan (Putaran 7).
 
-    PEMILIK SELALU KELOMPOK TANI (agents/rules.md bagian 7b). Kepemilikan
-    pribadi dicabut 2026-08-22 mengikuti keputusan pemilik proyek bahwa seluruh
-    menu Pertanian mencatat kelompok, bukan individu. Tautan pemilik karena itu
-    selalu menuju halaman poktan.
-
-    Tombol Ubah diletakkan di sini, bukan di halaman daftar, mengikuti pola
-    yang sudah baku sejak Task 2.7.
+    Satu batch bantuan dapat dibagikan ke beberapa poktan lintas SP. Halaman
+    ini menampilkan bendanya (jenis, nama, jumlah total, tahun, sumber dana)
+    dan tabel distribusi per poktan penerima. Kondisi melekat pada tiap baris
+    distribusi, sebab diamati per unit di lapangan.
 --}}
 @extends('layouts.app')
 
@@ -16,12 +13,10 @@
         use App\Enums\Kondisi;
 
         $bolehUbah = true;
-
-        $kondisi = Kondisi::from($data['kondisi']);
     @endphp
 
     <x-sim.page-header :judul="$data['nama_alat']"
-        :keterangan="'Alsintan di ' . $data['satuan_permukiman'] . ', diadakan tahun ' . $data['tahun_pengadaan'] . '.'"
+        :keterangan="$data['jenis_alsintan'] . ', diadakan tahun ' . $data['tahun_pengadaan'] . '.'"
         :remah="\App\Helpers\RemahHelper::untuk('/alsintan', $data['nama_alat'])">
         <x-slot:aksi>
             @if ($bolehUbah)
@@ -41,55 +36,45 @@
     <div class="grid gap-6 lg:grid-cols-[20rem_1fr]">
         <aside class="lg:sticky lg:top-24 lg:self-start">
             <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
-                <h2 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">Status</h2>
+                <h2 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">Pengadaan</h2>
 
-                <div class="mt-3 flex flex-wrap gap-2">
-                    <x-sim.status-badge :status="$kondisi" />
-                </div>
-
-                <dl class="mt-5 space-y-3 border-t border-gray-200 pt-5 text-theme-sm dark:border-gray-800">
+                <dl class="mt-4 space-y-3 text-theme-sm">
                     <div class="flex justify-between gap-3">
-                        <dt class="text-gray-500 dark:text-gray-400">Jumlah</dt>
-                        <dd class="text-right font-medium tabular-nums text-gray-800 dark:text-white/90">
-                            {{ $data['jumlah'] }} unit</dd>
+                        <dt class="text-gray-500 dark:text-gray-400">Jenis alat</dt>
+                        <dd class="text-right font-medium text-gray-800 dark:text-white/90">{{ $data['jenis_alsintan'] }}</dd>
+                    </div>
+                    <div class="flex justify-between gap-3">
+                        <dt class="text-gray-500 dark:text-gray-400">Jumlah total</dt>
+                        <dd class="text-right font-medium tabular-nums text-gray-800 dark:text-white/90">{{ $data['jumlah_total'] }} unit</dd>
+                    </div>
+                    <div class="flex justify-between gap-3">
+                        <dt class="text-gray-500 dark:text-gray-400">Tersalur</dt>
+                        <dd class="text-right font-medium tabular-nums text-gray-800 dark:text-white/90">{{ $data['jumlah_tersalur'] }} unit</dd>
+                    </div>
+                    <div class="flex justify-between gap-3">
+                        <dt class="text-gray-500 dark:text-gray-400">Belum tersalur</dt>
+                        <dd class="text-right font-medium tabular-nums {{ $data['jumlah_belum_tersalur'] > 0 ? 'text-yellow-700 dark:text-yellow-400' : 'text-gray-800 dark:text-white/90' }}">
+                            {{ $data['jumlah_belum_tersalur'] }} unit</dd>
                     </div>
                     <div class="flex justify-between gap-3">
                         <dt class="text-gray-500 dark:text-gray-400">Tahun pengadaan</dt>
-                        <dd class="text-right font-medium tabular-nums text-gray-800 dark:text-white/90">
-                            {{ $data['tahun_pengadaan'] }}</dd>
+                        <dd class="text-right font-medium tabular-nums text-gray-800 dark:text-white/90">{{ $data['tahun_pengadaan'] }}</dd>
                     </div>
                     <div class="flex justify-between gap-3">
                         <dt class="text-gray-500 dark:text-gray-400">Sumber dana</dt>
-                        <dd class="text-right font-medium text-gray-800 dark:text-white/90">
-                            {{ $data['sumber_dana'] }}</dd>
-                    </div>
-                    <div class="flex justify-between gap-3">
-                        <dt class="text-gray-500 dark:text-gray-400">Satuan permukiman</dt>
-                        <dd class="text-right font-medium text-gray-800 dark:text-white/90">
-                            <a href="{{ route('dashboard.sp', $data['satuan_permukiman_id']) }}"
-                                class="rounded text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
-                                {{ $data['satuan_permukiman'] }}
-                            </a>
-                        </dd>
-                    </div>
-                    <div class="flex justify-between gap-3">
-                        <dt class="text-gray-500 dark:text-gray-400">Penerima serah terima</dt>
-                        <dd class="text-right font-medium text-gray-800 dark:text-white/90">
-                            {{ $data['penanda_terima'] ?? 'Belum dicatat' }}
-                        </dd>
+                        <dd class="text-right font-medium text-gray-800 dark:text-white/90">{{ $data['sumber_dana'] ?? '-' }}</dd>
                     </div>
                 </dl>
             </div>
         </aside>
 
-        {{-- Kolom kanan: tab rincian --}}
-        <div x-data="hashTabs('pemilik')" class="min-w-0">
+        <div x-data="hashTabs('distribusi')" class="min-w-0">
             <div class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
                 <div class="flex gap-1 overflow-x-auto border-b border-gray-200 px-2 pt-2 dark:border-gray-800"
                     role="tablist" aria-label="Rincian alsintan">
                     @foreach ([
-                        'pemilik' => 'Pemilik',
-                        'kondisi' => 'Kondisi Alat',
+                        'distribusi' => 'Distribusi',
+                        'dokumen' => 'Catatan dan Berkas',
                         'log' => 'Catatan Log',
                     ] as $kunci => $label)
                         <button type="button" role="tab" @click="setTab('{{ $kunci }}')"
@@ -103,83 +88,103 @@
                     @endforeach
                 </div>
 
-                {{-- Pemilik, selalu kelompok tani sejak 2026-08-22 --}}
-                <div x-show="tab === 'pemilik'" role="tabpanel" class="p-5 sm:p-6">
-                    <div class="flex flex-wrap items-center gap-3">
-                        <span
-                            class="rounded-full bg-teal-50 px-2.5 py-1 text-theme-xs font-medium text-teal-700 dark:bg-teal-500/15 dark:text-teal-300">
-                            Kelompok Tani
-                        </span>
+                {{-- Distribusi ke poktan --}}
+                <div x-show="tab === 'distribusi'" role="tabpanel" class="p-5 sm:p-6">
+                    @if (count($data['distribusi']) === 0)
+                        <x-sim.empty-state judul="Belum tersalurkan"
+                            pesan="Seluruh {{ $data['jumlah_total'] }} unit masih di gudang UPT. Bagikan ke kelompok tani lewat tombol Ubah Data Alsintan." />
+                    @else
+                        <div class="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
+                            <table class="min-w-full text-theme-sm">
+                                <caption class="px-4 py-2.5 text-left text-theme-xs text-gray-500 dark:text-gray-400">
+                                    Pembagian {{ $data['nama_alat'] }} ke kelompok tani penerima
+                                </caption>
+                                <thead class="border-y border-gray-200 bg-gray-50 text-theme-xs text-gray-500 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400">
+                                    <tr>
+                                        <th scope="col" class="px-4 py-2 text-left">Kelompok Tani</th>
+                                        <th scope="col" class="px-4 py-2 text-left">Satuan Permukiman</th>
+                                        <th scope="col" class="px-4 py-2 text-right">Jumlah</th>
+                                        <th scope="col" class="px-4 py-2 text-left">Kondisi</th>
+                                        <th scope="col" class="px-4 py-2 text-left">Penanda Tangan</th>
+                                        <th scope="col" class="px-4 py-2 text-left">Tanggal Serah</th>
+                                        <th scope="col" class="px-4 py-2 text-right"><span class="sr-only">Aksi</span></th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                                    @foreach ($data['distribusi'] as $d)
+                                        <tr class="text-gray-700 dark:text-gray-300">
+                                            <td class="px-4 py-2 font-medium text-gray-800 dark:text-white/90">
+                                                <a href="{{ route('poktan.detail', $d['poktan_id']) }}"
+                                                    class="rounded text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
+                                                    {{ $d['poktan'] }}
+                                                </a>
+                                                @if (! empty($d['keterangan']))
+                                                    <span class="mt-0.5 block text-theme-xs font-normal text-gray-500 dark:text-gray-400">{{ $d['keterangan'] }}</span>
+                                                @endif
+                                                @if (! empty($d['foto']))
+                                                    <span class="mt-0.5 block text-theme-xs font-normal">
+                                                        <x-sim.tautan-dokumen modul="alsintan" :id="$data['id_alsintan']" :berkas="$d['foto']" />
+                                                    </span>
+                                                @endif
+                                            </td>
+                                            <td class="px-4 py-2">
+                                                <a href="{{ route('dashboard.sp', $d['satuan_permukiman_id']) }}"
+                                                    class="rounded text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
+                                                    {{ $d['satuan_permukiman'] }}
+                                                </a>
+                                            </td>
+                                            <td class="px-4 py-2 text-right tabular-nums">{{ $d['jumlah'] }}</td>
+                                            <td class="px-4 py-2">
+                                                <x-sim.status-badge :status="Kondisi::from($d['kondisi'])" ukuran="sm" />
+                                            </td>
+                                            <td class="px-4 py-2">{{ $d['penanda_terima'] ?? 'Belum dicatat' }}</td>
+                                            <td class="px-4 py-2 tabular-nums">
+                                                {{ $d['tanggal_serah'] ? \Illuminate\Support\Carbon::parse($d['tanggal_serah'])->translatedFormat('d M Y') : '-' }}
+                                            </td>
+                                            <td class="px-4 py-2 text-right">
+                                                @if ($bolehUbah)
+                                                    <button type="button"
+                                                        @click.prevent="$dispatch('buka-modal-baris', {
+                                                            nama: 'formKondisiDistribusi',
+                                                            data: @js(['id' => $d['id_alsintan_distribusi'], 'poktan' => $d['poktan'], 'kondisi' => $d['kondisi']]),
+                                                        })"
+                                                        class="rounded-lg border border-gray-300 px-3 py-1.5 text-theme-xs font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
+                                                        Perbarui Kondisi
+                                                    </button>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="mt-3 text-theme-xs text-gray-500 dark:text-gray-400">
+                            Kondisi diperbarui per baris distribusi: unit di satu poktan dapat berkondisi berbeda
+                            dari unit yang sama di poktan lain.
+                        </p>
+                    @endif
+                </div>
 
-                        <span class="text-theme-sm text-gray-800 dark:text-white/90">
-                            <a href="{{ route('poktan.detail', $data['poktan_id']) }}"
-                                class="rounded font-medium text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
-                                {{ $data['pemilik'] }}
-                            </a>
-                        </span>
-                    </div>
-
-                    <p class="mt-4 rounded-lg bg-gray-50 p-3.5 text-theme-xs text-gray-600 dark:bg-white/[0.03] dark:text-gray-400">
-                        Alat tercatat atas nama kelompok tani, sehingga pemakaiannya bergilir antar-anggota
-                        dan pertanggungjawabannya melekat pada pengurus poktan. Alat yang dibeli dari iuran
-                        anggota pun tercatat atas nama kelompok, dengan sumber perolehan Swadaya.
-                    </p>
-
-                    {{--
-                        Catatan dan berkas, ditambahkan 2026-08-20.
-
-                        Kolom `keterangan` dan `dokumen_pendukung` sudah lama
-                        ada pada kamus data 8.3 tetapi tidak pernah ditampilkan
-                        kembali. Petugas dapat mengunggah berita acara lalu
-                        tidak menemukan cara membukanya, dan catatan yang
-                        diketik hilang dari pandangan begitu form ditutup.
-                    --}}
-                    <dl class="mt-6 space-y-4 border-t border-gray-200 pt-6 dark:border-gray-800">
+                {{-- Catatan dan berkas --}}
+                <div x-show="tab === 'dokumen'" x-cloak role="tabpanel" class="p-5 sm:p-6">
+                    <dl class="space-y-4">
                         <div>
                             <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Catatan</dt>
                             <dd class="mt-0.5 text-theme-sm leading-relaxed text-gray-800 dark:text-white/90">
                                 {{ $data['keterangan'] ?? 'Tidak ada catatan tambahan.' }}
                             </dd>
                         </div>
-                        {{--
-                            Foto ditambahkan 2026-08-25, melengkapi tambalan
-                            2026-08-20 yang baru menjangkau `dokumen_pendukung`.
-                            Kolom `foto` sudah lama diisi lewat form tetapi
-                            tidak pernah punya tempat tampil, sehingga foto
-                            kondisi alat hanya menumpuk di penyimpanan.
-                        --}}
-                        <div class="grid gap-4 sm:grid-cols-2">
-                            <div>
-                                <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Foto alat</dt>
-                                <dd class="mt-0.5 text-theme-sm text-gray-800 dark:text-white/90">
-                                    <x-sim.tautan-dokumen modul="alsintan" :id="$data['id_alsintan']"
-                                        :berkas="$data['foto'] ?? null" />
-                                </dd>
-                            </div>
-                            <div>
-                                <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Dokumen pendukung</dt>
-                                <dd class="mt-0.5 text-theme-sm text-gray-800 dark:text-white/90">
-                                    <x-sim.tautan-dokumen modul="alsintan" :id="$data['id_alsintan']"
-                                        :berkas="$data['dokumen_pendukung'] ?? null" />
-                                </dd>
-                            </div>
+                        <div>
+                            <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Dokumen pendukung</dt>
+                            <dd class="mt-0.5 text-theme-sm text-gray-800 dark:text-white/90">
+                                <x-sim.tautan-dokumen modul="alsintan" :id="$data['id_alsintan']"
+                                    :berkas="$data['dokumen_pendukung'] ?? null" />
+                            </dd>
                         </div>
                     </dl>
                 </div>
 
-                {{-- Kondisi --}}
-                <div x-show="tab === 'kondisi'" x-cloak role="tabpanel" class="p-5 sm:p-6">
-                    <div class="flex items-start gap-3">
-                        <x-sim.status-badge :status="$kondisi" />
-                        <p class="text-theme-sm text-gray-600 dark:text-gray-400">
-                            Kondisi diperbarui petugas saat pendataan berkala. Alat berkondisi Rusak Berat tetap
-                            didata, tidak dihapus, agar kebutuhan penggantian terbaca pada rekap aset.
-                        </p>
-                    </div>
-                </div>
-
-
-                {{-- Catatan log: riwayat perubahan data ini saja --}}
+                {{-- Catatan log --}}
                 <div x-show="tab === 'log'" x-cloak role="tabpanel">
                     <x-sim.catatan-log nama-tabel="alsintan" :record-id="$data['id_alsintan']" />
                 </div>
@@ -187,13 +192,46 @@
         </div>
     </div>
 
-    {{-- Modal ubah, terisi nilai yang sedang berlaku --}}
+    {{-- Modal ubah pengadaan --}}
     @if ($bolehUbah)
         <x-sim.modal-form nama="formUbahAlsintan" judul="Ubah Data Alsintan"
             keterangan="Perubahan tercatat pada audit log."
             :aksi="route('alsintan.perbarui', $data['id_alsintan'])" metode="PUT" ukuran="lg"
             label-simpan="Simpan Perubahan">
             @include('pages.alsintan.form', ['data' => $data, 'awalan' => 'ubah'])
+        </x-sim.modal-form>
+
+        {{-- Modal perbarui kondisi satu baris distribusi, beserta foto unitnya. --}}
+        <x-sim.modal-form nama="formKondisiDistribusi" judul="Perbarui Kondisi Alat"
+            keterangan="Kondisi diamati per unit di lapangan dan berubah setelah pengadaan."
+            :pola-aksi="'/alsintan/' . $data['id_alsintan'] . '/distribusi/:id/kondisi'"
+            ukuran="md" label-simpan="Simpan Kondisi">
+
+            <div class="space-y-5" x-data="{ namaPoktan: '' }"
+                x-on:buka-modal-baris.window="if ($event.detail.nama === 'formKondisiDistribusi') namaPoktan = $event.detail.data.poktan">
+                <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+                    <p class="text-theme-xs text-gray-500 dark:text-gray-400">Kelompok tani</p>
+                    <p class="mt-0.5 text-theme-sm font-medium text-gray-800 dark:text-white/90" x-text="namaPoktan">&nbsp;</p>
+                </div>
+                <div>
+                    <label for="dist_kondisi_baru" class="mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400">Kondisi</label>
+                    <select id="dist_kondisi_baru" name="kondisi" required
+                        class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
+                        @foreach ($opsiKondisi as $nilaiRef => $labelRef)
+                            <option value="{{ $nilaiRef }}">{{ $nilaiRef }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{--
+                    Foto merekam WUJUD unit ini saat pendataan, bukan berkas
+                    administratif pengadaan (yang ada di tab Catatan dan Berkas).
+                    Terpisah dengan alasan yang sama seperti infrastruktur.
+                --}}
+                <x-sim.file-upload nama="foto" label="Foto Kondisi Unit" :hanya-gambar="true"
+                    nama-dokumen="Foto Alsintan" :nama-pemilik="$data['nama_alat']"
+                    keterangan="Dokumentasi kondisi unit di kelompok ini saat pendataan." />
+            </div>
         </x-sim.modal-form>
     @endif
 @endsection

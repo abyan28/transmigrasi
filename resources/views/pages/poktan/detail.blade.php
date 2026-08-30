@@ -277,7 +277,7 @@
                             adalah orang yang benar-benar menggarap. Luas lahan dijumlahkan dari bidang milik
                             keluarga tersebut, sehingga selalu mengikuti data lahan terbaru. Anggota yang
                             berhenti ditandai Sudah Keluar lewat tombol ubah, bukan dihapus, agar riwayat
-                            keanggotaan tetap utuh. Penyaluran saprotan hanya untuk anggota berstatus Aktif.
+                            keanggotaan tetap utuh.
                         </p>
                     @endif
                 </div>
@@ -287,11 +287,17 @@
                         <x-sim.empty-state judul="Belum ada alsintan"
                             pesan="Bantuan alat dan mesin pertanian untuk kelompok ini akan tampil di sini." />
                     @else
-                        <x-sim.tabel-ringkas judul="Alsintan milik kelompok tani ini" :kolom="['Nama Alat', 'Jumlah', 'Tahun', 'Kondisi']">
+                        <x-sim.tabel-ringkas judul="Alsintan yang bagiannya diterima kelompok tani ini" :kolom="['Jenis', 'Nama Alat', 'Jumlah', 'Tahun', 'Kondisi']">
                             @foreach ($alsintan as $a)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
+                                    <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
+                                        {{ $a['jenis_alsintan'] }}</td>
                                     <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">
-                                        {{ $a['nama_alat'] }}</td>
+                                        <a href="{{ route('alsintan.detail', $a['id_alsintan']) }}"
+                                            class="rounded text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
+                                            {{ $a['nama_alat'] }}
+                                        </a>
+                                    </td>
                                     <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
                                         {{ $a['jumlah'] }}</td>
                                     <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">

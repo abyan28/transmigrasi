@@ -1785,7 +1785,26 @@ Route::get('/poktan/{id}', function (int $id) {
         'title' => $data['nama'],
         'data' => $data,
         'anggota' => $anggota,
-        'alsintan' => array_values(array_filter(DummyData::alsintan(), fn ($a) => $a['poktan_id'] === $data['id_poktan'])),
+        // Alsintan yang bagiannya diterima poktan ini (Putaran 7): satu baris
+        // per distribusi, membawa konteks pengadaannya.
+        'alsintan' => (function () use ($data) {
+            $hasil = [];
+            foreach (DummyData::alsintan() as $a) {
+                foreach ($a['distribusi'] as $d) {
+                    if ($d['poktan_id'] === $data['id_poktan']) {
+                        $hasil[] = $d + [
+                            'jenis_alsintan' => $a['jenis_alsintan'],
+                            'nama_alat' => $a['nama_alat'],
+                            'tahun_pengadaan' => $a['tahun_pengadaan'],
+                            'sumber_dana' => $a['sumber_dana'],
+                            'id_alsintan' => $a['id_alsintan'],
+                        ];
+                    }
+                }
+            }
+
+            return $hasil;
+        })(),
         'saprotan' => array_values(array_filter(DummyData::saprotan(), fn ($s) => $s['poktan_id'] === $data['id_poktan'])),
         'aktif' => count(array_filter($anggota, fn ($a) => $a['status'] === 'Aktif')),
         'ketua' => $ketua,
@@ -1863,14 +1882,19 @@ Route::get('/alsintan', function () {
     $filterKondisi = request('kondisi');
 
     $baris = array_values(array_filter($semua, function ($a) use ($cari, $filterSp, $filterKondisi) {
+        $poktanTeks = mb_strtolower(implode(' ', $a['poktan_penerima']));
+
         if ($cari !== '' && ! str_contains(mb_strtolower($a['nama_alat']), mb_strtolower($cari))
-            && ! str_contains(mb_strtolower($a['pemilik']), mb_strtolower($cari))) {
+            && ! str_contains(mb_strtolower($a['jenis_alsintan']), mb_strtolower($cari))
+            && ! str_contains($poktanTeks, mb_strtolower($cari))) {
             return false;
         }
-        if ($filterSp && (string) $a['satuan_permukiman_id'] !== (string) $filterSp) {
+        // SP cocok bila ADA distribusi di SP itu (Putaran 7).
+        if ($filterSp && ! in_array((int) $filterSp, array_column($a['distribusi'], 'satuan_permukiman_id'), true)) {
             return false;
         }
-        if ($filterKondisi && $a['kondisi'] !== $filterKondisi) {
+        // Kondisi cocok bila ADA distribusi berkondisi itu.
+        if ($filterKondisi && ! in_array($filterKondisi, array_column($a['distribusi'], 'kondisi'), true)) {
             return false;
         }
 
@@ -1885,14 +1909,15 @@ Route::get('/alsintan', function () {
         'filterSp' => $filterSp,
         'filterKondisi' => $filterKondisi,
         'adaFilter' => $cari !== '' || $filterSp || $filterKondisi,
-        'totalUnit' => array_sum(array_column($semua, 'jumlah')),
+        'totalUnit' => array_sum(array_column($semua, 'jumlah_total')),
+        'belumTersalur' => array_sum(array_column($semua, 'jumlah_belum_tersalur')),
 
-        // Cacah poktan pemilik, menggantikan kartu Bantuan Pemerintah. Kartu
-        // lama menghitung baris berkepemilikan bantuan; kini seluruh alat
-        // memang milik kelompok, sehingga angkanya akan selalu sama dengan
-        // jumlah seluruh data dan tidak menerangkan apa pun.
-        'poktanPemilik' => count(array_unique(array_column($semua, 'poktan_id'))),
-        'rusak' => count(array_filter($semua, fn ($a) => $a['kondisi'] !== 'Baik')),
+        // Cacah poktan penerima di seluruh distribusi (Putaran 7).
+        'poktanPenerima' => count(array_unique(array_merge(
+            [], ...array_map(fn ($a) => array_column($a['distribusi'], 'poktan_id'), $semua)
+        ))),
+        'rusak' => count(array_filter($semua, fn ($a) => in_array('Rusak Ringan', array_column($a['distribusi'], 'kondisi'), true)
+            || in_array('Rusak Berat', array_column($a['distribusi'], 'kondisi'), true))),
 
         // Dropdown penyaring, bukan dropdown form: memakai varian yang ikut
         // memuat nilai nonaktif, sebab data lama masih memakainya.
@@ -1906,13 +1931,17 @@ Route::get('/alsintan/{id}', function (int $id) {
 
     abort_if($data === null, 404);
 
-    return view('pages.alsintan.detail', ['title' => $data['nama_alat'], 'data' => $data]);
+    return view('pages.alsintan.detail', [
+        'title' => $data['nama_alat'],
+        'data' => $data,
+        'opsiKondisi' => DummyData::opsiReferensi(JenisReferensi::Kondisi),
+    ]);
 })->where('id', '[0-9]+')->name('alsintan.detail');
 
 Route::post('/alsintan', function () {
-    // Tahap 6: validasi, simpan, catat audit log. Pemilik disimpan pada
-    // poktan_id atau transmigran_id sesuai jenis kepemilikan, tidak pernah
-    // keduanya sekaligus.
+    // Tahap 6: validasi, simpan, catat audit log. Satu baris pengadaan
+    // (jenis, nama, jumlah total, tahun, sumber dana) beserta baris
+    // distribusi per poktan penerima; Sigma distribusi <= jumlah total.
     return redirect()->route('alsintan.index')
         ->with('sukses', 'Data alsintan tersimpan.');
 })->name('alsintan.simpan');
@@ -1921,6 +1950,16 @@ Route::put('/alsintan/{id}', function (int $id) {
     return redirect()->route('alsintan.detail', $id)
         ->with('sukses', 'Perubahan data alsintan tersimpan.');
 })->where('id', '[0-9]+')->name('alsintan.perbarui');
+
+/*
+ * Memperbarui kondisi satu baris distribusi alsintan (Putaran 7). Kondisi
+ * melekat pada distribusi, bukan pengadaan, sebab diamati per unit di
+ * lapangan dan berubah setelah barang dibagikan.
+ */
+Route::post('/alsintan/{id}/distribusi/{dist}/kondisi', function (int $id) {
+    return redirect()->route('alsintan.detail', $id)
+        ->with('sukses', 'Kondisi alat diperbarui.');
+})->where(['id' => '[0-9]+', 'dist' => '[0-9]+'])->name('alsintan.distribusi.kondisi');
 
 Route::get('/saprotan', function () {
     $semua = DummyData::saprotan();
@@ -2001,9 +2040,9 @@ Route::get('/saprotan/{id}', function (int $id) {
 })->where('id', '[0-9]+')->name('saprotan.detail');
 
 Route::post('/saprotan', function () {
-    // Tahap 6: validasi, simpan, catat audit log. Penerima individu wajib
-    // berstatus anggota aktif; pemeriksaan diulang di sisi server sebab
-    // penyaringan dropdown saja tidak menghalangi kiriman langsung.
+    // Tahap 6: validasi, simpan, catat audit log. Satu baris pengadaan
+    // beserta baris distribusi per poktan penerima; sisa benih dihitung
+    // per baris distribusi, tidak disimpan (rules.md §7c poin 8).
     return redirect()->route('saprotan.index')
         ->with('sukses', 'Data saprotan tersimpan.');
 })->name('saprotan.simpan');

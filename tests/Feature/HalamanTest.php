@@ -2973,9 +2973,11 @@ it('memakai nilai enum pada data contoh, bukan teks yang menyerupainya', functio
 
     // `sumber_dana` / `tahun_pengadaan` diseragamkan dari `sumber_perolehan`
     // / `tahun_perolehan` pada 2026-08-28 agar sama dengan saprotan dan
-    // kamus data 8.3.
+    // kamus data 8.3. Sejak Putaran 7 `kondisi` pindah ke baris distribusi.
     foreach (DummyData::alsintan() as $baris) {
         expect($sumberSah)->toContain($baris['sumber_dana']);
+    }
+    foreach (DummyData::alsintanDistribusi() as $baris) {
         expect($kondisiSah)->toContain($baris['kondisi']);
     }
 
@@ -6027,8 +6029,9 @@ it('menyediakan unggahan dokumen pada modul yang kolomnya sudah ada', function (
     // Alsintan dan saprotan ikut memisahkan foto dari dokumen sejak
     // 2026-08-22. Satu slot untuk keduanya memaksa petugas memilih salah
     // satu, dan yang mengunggah dokumen setelah foto kehilangan fotonya
-    // tanpa peringatan apa pun.
-    ['/alsintan', 'foto'],
+    // tanpa peringatan apa pun. Sejak Putaran 7 foto alsintan melekat pada
+    // BARIS DISTRIBUSI (kondisi per unit), diunggah dari halaman rincian.
+    ['/alsintan/1', 'foto'],
     ['/saprotan', 'foto'],
 ]);
 

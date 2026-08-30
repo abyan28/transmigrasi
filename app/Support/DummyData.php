@@ -3465,55 +3465,112 @@ class DummyData
     }
 
     /**
-     * Alat dan mesin pertanian.
+     * Alat dan mesin pertanian, satu baris per PENGADAAN (induk).
      *
-     * PEMILIK SELALU KELOMPOK TANI. Kepemilikan pribadi dicabut 2026-08-22
-     * bersama enum `KepemilikanAlsintan`, mengikuti keputusan pemilik proyek
-     * bahwa seluruh menu Pertanian mencatat KELOMPOK, bukan individu.
+     * Diubah 2026-08-30 (Putaran 7): satu batch pengadaan (mis. 4 traktor
+     * anggaran APBN 2018) lazim dibagikan ke BEBERAPA poktan, bahkan lintas
+     * SP. Model lama membawa satu `poktan_id` pada baris ini, sehingga satu
+     * batch harus diketik ulang per poktan menjadi baris-baris terpisah yang
+     * tidak saling tahu dan dapat berselisih diam-diam.
      *
-     * Karena itu `kepemilikan` dan `transmigran_id` tidak lagi ada di sini,
-     * sedangkan `poktan_id` menjadi wajib. Alat yang dibeli dari iuran anggota
-     * tetap tercatat atas nama kelompok, dengan `sumber_dana` bernilai
-     * `Swadaya`.
+     * Kini baris ini hanya mendeskripsikan BENDAnya: `jenis_alsintan` (data
+     * master, §11.37), `nama_alat`, `jumlah_total`, `tahun_pengadaan`,
+     * `sumber_dana`. Poktan penerima, jumlah per poktan, kondisi per poktan,
+     * penanda tangan, dan tanggal serah pindah ke `alsintanDistribusi()`.
+     * `distribusi[]`, `jumlah_tersalur`, `jumlah_belum_tersalur`, dan
+     * `ringkasan_kondisi` ditempel di sini sebagai turunan.
      *
-     * Sebelumnya dua jalur pemilik disediakan sekaligus, dan akibatnya terlihat
-     * pada data: dua baris pribadi tidak dapat dijangkau dari halaman mana pun
-     * kecuali daftar alsintan itu sendiri. Ia tidak muncul pada rincian poktan
-     * sebab `poktan_id`-nya kosong, dan halaman transmigran tidak pernah punya
-     * tab alsintan.
+     * Pengadaan yang belum dibagikan ke satu poktan pun tetap tercatat
+     * (barang di gudang UPT); `distribusi` kosong dan seluruh jumlahnya
+     * terhitung "belum tersalurkan".
      *
-     * @return array<int, array<string, mixed>> Data alsintan
+     * @return array<int, array<string, mixed>> Data pengadaan alsintan
      */
     public static function alsintan(): array
     {
         $data = [
-            ['id_alsintan' => 1, 'nama_alat' => 'TRAKTOR RODA DUA', 'jumlah' => 2, 'penanda_terima_id' => 1, 'tahun_pengadaan' => 2018, 'sumber_dana' => 'APBN', 'pemilik' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'kondisi' => 'Baik', 'keterangan' => 'Servis berkala terakhir Maret 2026.', 'foto' => 'foto-traktor-roda-dua.jpg', 'dokumen_pendukung' => 'berita-acara-traktor.pdf'],
-            ['id_alsintan' => 2, 'nama_alat' => 'POMPA AIR', 'jumlah' => 3, 'penanda_terima_id' => 2, 'tahun_pengadaan' => 2019, 'sumber_dana' => 'APBD Kabupaten', 'pemilik' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'kondisi' => 'Rusak Ringan'],
-            // Dahulu tercatat atas nama YOHANES BERE sebagai milik pribadi.
-            // Dialihkan ke poktan tempatnya bernaung, dan `sumber_dana`
-            // dibetulkan dari 'Pembelian Sendiri' menjadi `Swadaya`: teks lama
-            // bukan nilai enum SumberDana mana pun, sehingga penyaringnya
-            // tidak pernah cocok. Maknanya bergeser wajar, dari dibeli
-            // seorang anggota menjadi dibeli kelompok dari iuran anggotanya.
-            ['id_alsintan' => 3, 'nama_alat' => 'HAND SPRAYER', 'jumlah' => 1, 'tahun_pengadaan' => 2021, 'sumber_dana' => 'Swadaya', 'pemilik' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'kondisi' => 'Baik'],
-            ['id_alsintan' => 4, 'nama_alat' => 'MESIN PERONTOK JAGUNG', 'jumlah' => 1, 'penanda_terima_id' => 5, 'tahun_pengadaan' => 2020, 'sumber_dana' => 'Dinas Pertanian Kabupaten', 'pemilik' => 'POKTAN TANI BERSATU', 'poktan_id' => 3, 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'kondisi' => 'Rusak Berat'],
-            // Dahulu atas nama GABRIEL LEKI, dialihkan ke POKTAN HARAPAN
-            // BARU tempatnya bernaung; SP-nya memang sudah sama.
-            ['id_alsintan' => 5, 'nama_alat' => 'CANGKUL', 'jumlah' => 8, 'tahun_pengadaan' => 2019, 'sumber_dana' => 'Swadaya', 'pemilik' => 'POKTAN HARAPAN BARU', 'poktan_id' => 4, 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain', 'kondisi' => 'Baik'],
+            // Satu batch traktor dibagikan ke tiga poktan di tiga SP berbeda.
+            // Inilah kasus yang model lama memaksa diketik jadi tiga baris.
+            ['id_alsintan' => 1, 'jenis_alsintan' => 'Traktor Roda Dua', 'nama_alat' => 'TRAKTOR RODA DUA KUBOTA', 'jumlah_total' => 4, 'tahun_pengadaan' => 2018, 'sumber_dana' => 'APBN', 'keterangan' => 'Bantuan mekanisasi lahan kering, dibagi rata tiga poktan.', 'dokumen_pendukung' => 'berita-acara-traktor.pdf'],
+            ['id_alsintan' => 2, 'jenis_alsintan' => 'Pompa Air', 'nama_alat' => 'POMPA AIR 3 INCI', 'jumlah_total' => 3, 'tahun_pengadaan' => 2019, 'sumber_dana' => 'APBD Kabupaten', 'keterangan' => null, 'dokumen_pendukung' => null],
+            ['id_alsintan' => 3, 'jenis_alsintan' => 'Hand Sprayer', 'nama_alat' => 'HAND SPRAYER', 'jumlah_total' => 2, 'tahun_pengadaan' => 2021, 'sumber_dana' => 'Swadaya', 'keterangan' => 'Dibeli dari iuran anggota dua kelompok.', 'dokumen_pendukung' => null],
+            // BELUM TERSALURKAN, satu-satunya pada data contoh. Barang sudah
+            // di gudang UPT, pembagian belum diputuskan. Sengaja ada agar
+            // keadaan itu punya benda nyata untuk dilihat dan diuji.
+            ['id_alsintan' => 4, 'jenis_alsintan' => 'Mesin Perontok', 'nama_alat' => 'MESIN PERONTOK JAGUNG', 'jumlah_total' => 2, 'tahun_pengadaan' => 2020, 'sumber_dana' => 'Dinas Pertanian Kabupaten', 'keterangan' => 'Menunggu penetapan poktan penerima.', 'dokumen_pendukung' => null],
+            ['id_alsintan' => 5, 'jenis_alsintan' => 'Lainnya', 'nama_alat' => 'CANGKUL', 'jumlah_total' => 8, 'tahun_pengadaan' => 2019, 'sumber_dana' => 'Swadaya', 'keterangan' => null, 'dokumen_pendukung' => null],
         ];
 
-        // Nama penanda tangan serah terima dihitung dari anggotaPoktan(),
-        // tidak disimpan: sama alasannya dengan nama wakil pada anggotaPoktan
-        // itu sendiri, yakni agar view tidak mengulang pencarian yang sama.
-        $namaAnggota = [];
-        foreach (self::anggotaPoktan() as $a) {
-            $namaAnggota[$a['id_anggota_poktan']] = $a['nama'];
+        $distribusiPer = [];
+        foreach (self::alsintanDistribusi() as $d) {
+            $distribusiPer[$d['alsintan_id']][] = $d;
         }
 
-        return array_map(function (array $baris) use ($namaAnggota): array {
-            $id = $baris['penanda_terima_id'] ?? null;
+        return array_map(function (array $baris) use ($distribusiPer): array {
+            $dist = $distribusiPer[$baris['id_alsintan']] ?? [];
+            $tersalur = array_sum(array_column($dist, 'jumlah'));
 
-            return $baris + ['penanda_terima' => $id === null ? null : ($namaAnggota[$id] ?? null)];
+            $ringkasan = [];
+            foreach ($dist as $d) {
+                $ringkasan[$d['kondisi']] = ($ringkasan[$d['kondisi']] ?? 0) + $d['jumlah'];
+            }
+
+            return $baris + [
+                'distribusi' => $dist,
+                'jumlah_tersalur' => $tersalur,
+                'jumlah_belum_tersalur' => max(0, $baris['jumlah_total'] - $tersalur),
+                'ringkasan_kondisi' => $ringkasan,
+                'poktan_penerima' => array_values(array_unique(array_column($dist, 'poktan'))),
+            ];
+        }, $data);
+    }
+
+    /**
+     * Distribusi pengadaan alsintan ke poktan, satu baris per poktan penerima.
+     *
+     * Ditambahkan 2026-08-30 (Putaran 7). `kondisi` melekat di sini, bukan di
+     * induk, sebab kondisi diamati per unit di lapangan: traktor di satu poktan
+     * dapat rusak berat sementara yang di poktan lain masih baik. `poktan_id`,
+     * `satuan_permukiman_id`, dan `satuan_permukiman` MENGIKUTI poktan
+     * (rules.md §7b poin 3), tidak dipilih terpisah. `penanda_terima` dan
+     * `poktan` ditempel sebagai turunan.
+     *
+     * @return array<int, array<string, mixed>> Data distribusi alsintan
+     */
+    public static function alsintanDistribusi(): array
+    {
+        $data = [
+            ['id_alsintan_distribusi' => 1, 'alsintan_id' => 1, 'poktan_id' => 1, 'jumlah' => 2, 'kondisi' => 'Baik', 'penanda_terima_id' => 1, 'tanggal_serah' => '2018-11-20', 'foto' => 'foto-traktor-roda-dua.jpg', 'keterangan' => 'Servis berkala terakhir Maret 2026.'],
+            ['id_alsintan_distribusi' => 2, 'alsintan_id' => 1, 'poktan_id' => 3, 'jumlah' => 1, 'kondisi' => 'Rusak Ringan', 'penanda_terima_id' => 5, 'tanggal_serah' => '2018-11-22', 'foto' => null, 'keterangan' => 'Kopling mulai selip, sudah diajukan perbaikan.'],
+            ['id_alsintan_distribusi' => 3, 'alsintan_id' => 1, 'poktan_id' => 4, 'jumlah' => 1, 'kondisi' => 'Baik', 'penanda_terima_id' => 6, 'tanggal_serah' => '2018-12-05', 'foto' => null, 'keterangan' => null],
+            ['id_alsintan_distribusi' => 4, 'alsintan_id' => 2, 'poktan_id' => 1, 'jumlah' => 3, 'kondisi' => 'Rusak Ringan', 'penanda_terima_id' => 2, 'tanggal_serah' => '2019-07-14', 'foto' => null, 'keterangan' => null],
+            ['id_alsintan_distribusi' => 5, 'alsintan_id' => 3, 'poktan_id' => 1, 'jumlah' => 1, 'kondisi' => 'Baik', 'penanda_terima_id' => null, 'tanggal_serah' => null, 'foto' => null, 'keterangan' => null],
+            ['id_alsintan_distribusi' => 6, 'alsintan_id' => 3, 'poktan_id' => 3, 'jumlah' => 1, 'kondisi' => 'Baik', 'penanda_terima_id' => 5, 'tanggal_serah' => '2021-05-03', 'foto' => null, 'keterangan' => null],
+            ['id_alsintan_distribusi' => 7, 'alsintan_id' => 5, 'poktan_id' => 4, 'jumlah' => 8, 'kondisi' => 'Baik', 'penanda_terima_id' => 6, 'tanggal_serah' => '2019-02-18', 'foto' => null, 'keterangan' => null],
+        ];
+
+        $namaAnggota = [];
+        $poktanAnggota = [];
+        foreach (self::anggotaPoktan() as $a) {
+            $namaAnggota[$a['id_anggota_poktan']] = $a['nama'];
+            $poktanAnggota[$a['id_anggota_poktan']] = $a['poktan_id'];
+        }
+
+        $poktanPeta = [];
+        foreach (self::poktan() as $p) {
+            $poktanPeta[$p['id_poktan']] = $p;
+        }
+
+        return array_map(function (array $d) use ($namaAnggota, $poktanPeta): array {
+            $p = $poktanPeta[$d['poktan_id']] ?? null;
+            $pt = $d['penanda_terima_id'] ?? null;
+
+            return $d + [
+                'poktan' => $p['nama'] ?? null,
+                'satuan_permukiman_id' => $p['satuan_permukiman_id'] ?? null,
+                'satuan_permukiman' => $p['satuan_permukiman'] ?? null,
+                'penanda_terima' => $pt === null ? null : ($namaAnggota[$pt] ?? null),
+            ];
         }, $data);
     }
 

@@ -362,13 +362,16 @@ class LaporanData
     /**
      * Laporan Alsintan.
      *
-     * Kolom "laporan alsintan.jpeg": Jenis Alat, Sumber Dana, Tahun Pengadaan,
-     * Poktan Penerima, Ketua Poktan, Alamat (Kec./Desa), Jumlah (Unit). Satu
-     * baris per alsintan, dikelompokkan per SP, subtotal Jumlah.
+     * Kolom "laporan alsintan.jpeg": Jenis Alat, Nama Alat, Sumber Dana, Tahun
+     * Pengadaan, Poktan Penerima, Ketua Poktan, Alamat (Kec./Desa), Jumlah
+     * (Unit). Satu baris per DISTRIBUSI (satu poktan menerima sekian unit dari
+     * satu pengadaan), dikelompokkan per SP, subtotal Jumlah.
      *
-     * Field alsintan bernama `sumber_dana` dan `tahun_pengadaan` sejak
-     * diseragamkan 2026-08-28 (dulu `sumber_perolehan` / `tahun_perolehan`),
-     * cocok dengan saprotan dan kamus data §8.3.
+     * Grain berpindah dari pengadaan ke distribusi sejak Putaran 7: satu batch
+     * dapat dibagikan ke banyak poktan lintas SP. `jenis_alat` kini benar-benar
+     * `jenis_alsintan` (data master §11.37), bukan `nama_alat` yang dipakai
+     * ulang. Pengadaan yang belum disalurkan ke satu poktan pun tidak
+     * menghasilkan baris di sini.
      *
      * @return array{kelompok: array<int, mixed>, total: array<string, float>}
      */
@@ -379,21 +382,24 @@ class LaporanData
         $baris = [];
 
         foreach (DummyData::alsintan() as $a) {
-            $pok = $poktan[$a['poktan_id']] ?? null;
+            foreach ($a['distribusi'] as $d) {
+                $pok = $poktan[$d['poktan_id']] ?? null;
 
-            $baris[] = [
-                'sp_id' => $a['satuan_permukiman_id'],
-                'sp' => $a['satuan_permukiman'],
-                'poktan_id' => $a['poktan_id'],
-                'kecamatan' => $pok['kecamatan'] ?? '-',
-                'desa' => $pok['desa'] ?? '-',
-                'jenis_alat' => $a['nama_alat'],
-                'sumber_dana' => $a['sumber_dana'],
-                'tahun_pengadaan' => $a['tahun_pengadaan'],
-                'poktan' => $a['pemilik'],
-                'ketua' => $pok['nama_ketua_terpakai'] ?? '-',
-                'jumlah' => (int) $a['jumlah'],
-            ];
+                $baris[] = [
+                    'sp_id' => $d['satuan_permukiman_id'],
+                    'sp' => $d['satuan_permukiman'],
+                    'poktan_id' => $d['poktan_id'],
+                    'kecamatan' => $pok['kecamatan'] ?? '-',
+                    'desa' => $pok['desa'] ?? '-',
+                    'jenis_alat' => $a['jenis_alsintan'],
+                    'nama_alat' => $a['nama_alat'],
+                    'sumber_dana' => $a['sumber_dana'],
+                    'tahun_pengadaan' => $a['tahun_pengadaan'],
+                    'poktan' => $d['poktan'],
+                    'ketua' => $pok['nama_ketua_terpakai'] ?? '-',
+                    'jumlah' => (int) $d['jumlah'],
+                ];
+            }
         }
 
         return self::kelompokkanPerSp($baris, ['jumlah']);
@@ -836,7 +842,16 @@ class LaporanData
             $barisAgama[] = [$ag, $v['l'], $v['p'], $v['l'] + $v['p']];
         }
 
-        $alsintanSp = array_values(array_filter(DummyData::alsintan(), fn ($x) => $x['satuan_permukiman_id'] === $id));
+        // Alsintan disaring lewat baris distribusi: satu SP dilayani bila ada
+        // poktan di SP itu yang menerima bagian dari pengadaan (Putaran 7).
+        $alsintanSp = [];
+        foreach (DummyData::alsintan() as $a) {
+            foreach ($a['distribusi'] as $d) {
+                if ($d['satuan_permukiman_id'] === $id) {
+                    $alsintanSp[] = [$a['jenis_alsintan'], $a['nama_alat'], $d['jumlah'], $a['tahun_pengadaan'], $d['poktan']];
+                }
+            }
+        }
         $inventarisSp = array_values(array_filter(DummyData::inventarisSp(), fn ($x) => $x['satuan_permukiman_id'] === $id));
 
         $sosialBudaya = [
@@ -852,8 +867,8 @@ class LaporanData
                 $fasilitasJenis(['Olahraga'])),
             'keamanan' => self::tabelDok('Sarana keamanan', ['Nama', 'Jumlah', 'Kondisi', 'Tahun'],
                 $fasilitasJenis(['Keamanan'])),
-            'alsintan' => self::tabelDok('Alat dan mesin pertanian', ['Nama Alat', 'Jumlah', 'Tahun', 'Pemilik'],
-                array_map(fn ($x) => [$x['nama_alat'], $x['jumlah'], $x['tahun_pengadaan'], $x['pemilik']], $alsintanSp)),
+            'alsintan' => self::tabelDok('Alat dan mesin pertanian', ['Jenis', 'Nama Alat', 'Jumlah', 'Tahun', 'Poktan Penerima'],
+                $alsintanSp),
             'inventaris' => self::tabelDok('Inventaris UPT', ['Nama Barang', 'Jumlah', 'Satuan', 'Kondisi', 'Tahun'],
                 array_map(fn ($x) => [$x['nama_barang'], $x['jumlah'], $x['satuan_barang'], $x['kondisi'], $x['tahun_perolehan']], $inventarisSp)),
             'fasilitasUmum' => self::tabelDok('Fasilitas umum', ['Jenis', 'Nama', 'Jumlah', 'Kondisi', 'Tahun'],
@@ -1185,8 +1200,8 @@ class LaporanData
                     [
                         'kunci' => 'jenis',
                         'label' => 'Jenis Alat',
-                        'opsi' => collect(DummyData::alsintan())->pluck('nama_alat')
-                            ->unique()->sort()->values()->all(),
+                        'opsi' => collect(DummyData::alsintan())->pluck('jenis_alsintan')
+                            ->filter()->unique()->sort()->values()->all(),
                     ],
                 ],
                 'cakupanBawaan' => $cakupanBawaan,
