@@ -59,7 +59,7 @@
         </x-slot:aksi>
     </x-sim.page-header>
 
-    <div class="grid gap-6 lg:grid-cols-[20rem_1fr]">
+    <div class="grid gap-6 lg:grid-cols-[20rem_minmax(0,1fr)]">
         {{-- Kolom kiri: ringkasan yang menetap --}}
         <aside class="lg:sticky lg:top-24 lg:self-start">
             <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
@@ -129,8 +129,8 @@
 
         {{-- Kolom kanan: tab rincian --}}
         <div x-data="hashTabs('biodata')" class="min-w-0">
-            <div class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-                <div class="flex gap-1 overflow-x-auto border-b border-gray-200 px-2 pt-2 dark:border-gray-800"
+            <div class="min-w-0 overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+                <div class="flex gap-1 overflow-x-auto no-scrollbar border-b border-gray-200 px-2 pt-2 dark:border-gray-800"
                     role="tablist" aria-label="Rincian data transmigran">
                     @foreach ([
                         'biodata' => 'Biodata',
@@ -208,13 +208,13 @@
                 </div>
 
                 {{-- Anggota keluarga (Rombongan B, 2026-08-28) --}}
-                <div x-show="tab === 'keluarga'" x-cloak role="tabpanel">
+                <div x-show="tab === 'keluarga'" x-cloak role="tabpanel" class="min-w-0 overflow-hidden">
                     @if (count($anggotaKeluarga) === 0)
                         <x-sim.empty-state judul="Belum ada anggota keluarga terdata"
                             pesan="Selain kepala keluarga, belum ada istri, suami, anak, atau anggota lain yang dicatat. Tambahkan lewat tombol Ubah Data." />
                     @else
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full text-theme-sm">
+                        <div class="relative overflow-x-auto">
+                            <table class="w-full text-theme-sm">
                                 <caption class="px-5 py-3 text-left text-theme-sm font-medium text-gray-700 dark:text-gray-300">
                                     Anggota keluarga {{ $data['nama_kepala_keluarga'] }} selain kepala keluarga
                                 </caption>
@@ -264,7 +264,7 @@
                                                     ukuran="sm" />
                                                 @if (! $anggotaAktif && ! empty($a['tanggal_peristiwa']))
                                                     <span class="mt-0.5 block text-theme-xs font-normal text-gray-500 dark:text-gray-400">
-                                                        {{ \Illuminate\Support\Carbon::parse($a['tanggal_peristiwa'])->translatedFormat('d M Y') }}@if (! empty($a['keterangan_peristiwa'])) &mdash; {{ $a['keterangan_peristiwa'] }} @endif
+                                                        {{ \Illuminate\Support\Carbon::parse($a['tanggal_peristiwa'])->translatedFormat('d M Y') }}@if (! empty($a['keterangan_peristiwa'])) &middot; {{ $a['keterangan_peristiwa'] }} @endif
                                                     </span>
                                                 @endif
                                             </td>

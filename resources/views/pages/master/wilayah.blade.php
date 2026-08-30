@@ -50,8 +50,8 @@
         adalah tindakan yang dipilih pengguna, bukan keadaan awal.
     --}}
     <div x-data="hashTabs('provinsi')"
-        class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-        <div class="flex gap-1 overflow-x-auto border-b border-gray-200 px-2 pt-2 dark:border-gray-800"
+        class="min-w-0 overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+        <div class="flex gap-1 overflow-x-auto no-scrollbar border-b border-gray-200 px-2 pt-2 dark:border-gray-800"
             role="tablist" aria-label="Tingkat wilayah">
             @foreach ([
                 'provinsi' => 'Provinsi (' . count($wilayah['provinsi']) . ')',

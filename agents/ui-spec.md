@@ -615,6 +615,31 @@ Menjawab PRD §8.1: sinyal di lokus tidak selalu stabil, sehingga petugas mengun
 
 Terpasang pada sepuluh halaman: Transmigran, Rumah, Lahan, Poktan, Pengaduan, Alsintan, Saprotan, Infrastruktur, Komoditas, dan Panen.
 
+#### 5.1d Cangkang dua kolom baku
+
+Kelas cangkang wajib **sama persis** di semua halaman rincian — acuannya
+`pages/poktan/detail.blade.php`. Menyimpang darinya memunculkan scrollbar
+mendatar pada **badan halaman** saat salah satu tab memuat tabel lebar
+(tercatat 2026-08-30, bukti `refs/bug tab anggota keluarga transmigran.jpg`).
+
+1. Wadah grid: `grid gap-6 lg:grid-cols-[20rem_minmax(0,1fr)]`. **Bukan**
+   `[20rem_1fr]` — trek `1fr` polos minimum otomatisnya `min-content`, sehingga
+   tabel lebar melebarkannya menembus wadah `.mx-auto max-w-(--breakpoint-2xl)`.
+2. Kartu tab (blok tepat di dalam `x-data="hashTabs(...)"`):
+   `min-w-0 overflow-hidden rounded-2xl ...`.
+3. Bilah tab: `flex gap-1 overflow-x-auto no-scrollbar border-b ...`.
+4. **Setiap wadah gulir mendatar tabel wajib `relative`**
+   (`relative overflow-x-auto`). Tanpa itu, elemen `sr-only` di dalam tabel
+   (`<caption class="sr-only">`, `<span class="sr-only">Aksi</span>` — Tailwind
+   `sr-only` memakai `position: absolute`) memakai `<html>` sebagai blok
+   pengurung ketika tabelnya melebar, lolos dari klip `overflow`, dan menyeret
+   `documentElement.scrollWidth`. Komponen bersama `x-sim.tabel-ringkas` dan
+   `x-sim.data-table` sudah memasangnya; wadah `overflow-x-auto` tulisan tangan
+   wajib menambahkannya sendiri.
+
+Dijaga penjaga Pest `it('memakai cangkang dua kolom baku pada halaman detail')`
+dan uji peramban `tests/Browser/uji-lebar-halaman.mjs`.
+
 ### 5.2 Aturan perenderan menu
 
 1. **Item menu dirender hanya bila pengguna memiliki kewenangan yang tercantum.** Menu yang tidak berhak **tidak dirender sama sekali**, bukan disembunyikan lewat CSS.

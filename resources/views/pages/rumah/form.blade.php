@@ -50,6 +50,15 @@
     <section>
         <h3 class="{{ $kelasBagian }}">Identitas Rumah</h3>
         <div class="mt-3 grid gap-4 sm:grid-cols-2">
+            <div class="sm:col-span-2">
+                <x-sim.wilayah-picker
+                    :daftar-kawasan="[['id' => 1, 'nama' => 'Kobalima Timur']]"
+                    :daftar-sp="collect($daftarSp)
+                        ->map(fn ($s) => ['id' => $s['id_satuan_permukiman'], 'nama' => $s['nama'], 'kawasan_id' => 1])
+                        ->all()"
+                    :sp-terpilih="old('satuan_permukiman_id', $data['satuan_permukiman_id'] ?? null)" />
+            </div>
+
             <div>
                 <label for="{{ $awalan }}_no_rumah" class="{{ $kelasLabel }}">Nomor atau Blok Rumah</label>
                 <input type="text" id="{{ $awalan }}_no_rumah" name="no_rumah"
@@ -88,15 +97,6 @@
                         </option>
                     @endforeach
                 </select>
-            </div>
-
-            <div class="sm:col-span-2">
-                <x-sim.wilayah-picker
-                    :daftar-kawasan="[['id' => 1, 'nama' => 'Kobalima Timur']]"
-                    :daftar-sp="collect($daftarSp)
-                        ->map(fn ($s) => ['id' => $s['id_satuan_permukiman'], 'nama' => $s['nama'], 'kawasan_id' => 1])
-                        ->all()"
-                    :sp-terpilih="old('satuan_permukiman_id', $data['satuan_permukiman_id'] ?? null)" />
             </div>
         </div>
     </section>

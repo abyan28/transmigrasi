@@ -63,7 +63,7 @@
 
         {{-- Tabel alternatif yang setara isinya dengan grafik --}}
         @isset($tabel)
-            <div x-show="tabelTerbuka" x-cloak id="tabel-{{ $id }}" class="overflow-x-auto">
+            <div x-show="tabelTerbuka" x-cloak id="tabel-{{ $id }}" class="relative overflow-x-auto">
                 {{ $tabel }}
             </div>
         @endisset

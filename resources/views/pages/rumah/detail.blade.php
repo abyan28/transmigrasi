@@ -55,7 +55,7 @@
         </div>
     @endif
 
-    <div class="grid gap-6 lg:grid-cols-[20rem_1fr]">
+    <div class="grid gap-6 lg:grid-cols-[20rem_minmax(0,1fr)]">
         {{-- Kolom kiri: ringkasan rumah --}}
         <aside class="lg:sticky lg:top-24 lg:self-start">
             <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
@@ -119,8 +119,8 @@
 
         {{-- Kolom kanan: tab rincian dan riwayat --}}
         <div x-data="hashTabs('rincian')" class="min-w-0">
-            <div class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-                <div class="flex gap-1 overflow-x-auto border-b border-gray-200 px-2 pt-2 dark:border-gray-800"
+            <div class="min-w-0 overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+                <div class="flex gap-1 overflow-x-auto no-scrollbar border-b border-gray-200 px-2 pt-2 dark:border-gray-800"
                     role="tablist" aria-label="Rincian rumah">
                     @foreach ([
                         'rincian' => 'Rincian',

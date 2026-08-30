@@ -328,7 +328,7 @@
                             <p class="mb-2 text-theme-xs font-medium text-gray-700 dark:text-gray-300">
                                 Baris yang perlu diperbaiki
                             </p>
-                            <div class="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
+                            <div class="relative overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
                                 <table class="w-full text-left text-theme-xs">
                                     <caption class="sr-only">Baris impor yang perlu diperbaiki</caption>
                                     <thead class="bg-gray-50 dark:bg-white/[0.02]">

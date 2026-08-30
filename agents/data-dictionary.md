@@ -384,6 +384,7 @@ Barang bergerak milik SP (`rules.md` §4b).
 |---|---|---|---|---|
 | `id_inventaris_sp` | `BIGINT UNSIGNED AUTO_INCREMENT` | TIDAK | PK | |
 | `satuan_permukiman_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | |
+| `jenis_inventaris` | `VARCHAR(100)` | TIDAK | IDX | Master referensi (Revisi 2026-08-30). Opsi baku: Peralatan Kantor, Elektronik & Mesin, Perabotan, Kendaraan Operasional, Peralatan Lainnya |
 | `nama_barang` | `VARCHAR(255)` | TIDAK | | |
 | `jumlah` | `INT UNSIGNED` | TIDAK | | Bawaan 1 |
 | `satuan_barang` | `VARCHAR(50)` | YA | | Teks bebas: unit, buah, set |
@@ -1444,9 +1445,9 @@ Dahulu: diisi bila wakil keluarga di poktan bukan kepala keluarganya sendiri. Se
 
 ### 11.37 Jenis referensi
 
-`sumber_dana` - `status_penyerahan` - `kondisi` - `kondisi_rumah` - `status_hunian` - `tipe_komoditas` - `prioritas_pengaduan` - `jenis_dokumen_lahan` - `jabatan_anggota_poktan` - `jenis_infrastruktur` - `jenis_fasilitas` - `bidang_pengaduan` - `kategori_pengaduan` - `jenis_alsintan`
+`sumber_dana` - `status_penyerahan` - `kondisi` - `kondisi_rumah` - `status_hunian` - `tipe_komoditas` - `prioritas_pengaduan` - `jenis_dokumen_lahan` - `jabatan_anggota_poktan` - `jenis_infrastruktur` - `jenis_fasilitas` - `bidang_pengaduan` - `kategori_pengaduan` - `jenis_alsintan` - `jenis_inventaris`
 
-*(`kualitas_panen` dicabut — kualitas panen dihapus, `rules.md` §9. `jenis_alsintan` ditambahkan Putaran 7; dideklarasikan PALING AKHIR pada `DummyData::referensi()` supaya id `jenis_infrastruktur`/`jenis_fasilitas` yang ditunjuk `PenilaianKondisiSp::parameter()` tidak bergeser. Membaca `alsintan.jenis_alsintan`.)*
+*(`kualitas_panen` dicabut — kualitas panen dihapus, `rules.md` §9. `jenis_alsintan` ditambahkan Putaran 7; `jenis_inventaris` ditambahkan Revisi 2026-08-30 untuk modul `inventaris_sp`.)*
 
 Menyatakan daftar mana saja yang dikelola Admin lewat data master referensi (5.6). **Enum ini sendiri tidak ikut menjadi data**, sebab ia menyatakan daftar mana yang ada, bukan isi daftarnya.
 

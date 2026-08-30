@@ -27,7 +27,14 @@
     'judul' => null,
 ])
 
-<div {{ $attributes->merge(['class' => 'overflow-x-auto']) }}>
+{{--
+    `relative` mengurung elemen ber-`position: absolute` di dalam tabel
+    (mis. `<caption class="sr-only">` dan `<span class="sr-only">` pada kolom
+    aksi). Tanpa itu, ketika tabel lebih lebar dari wadahnya, elemen sr-only
+    "kabur" ke blok pengurung `<html>` dan menyeret scrollbar mendatar ke
+    seluruh badan halaman — bug yang tercatat 2026-08-30.
+--}}
+<div {{ $attributes->merge(['class' => 'relative overflow-x-auto']) }}>
     <table class="w-full text-left">
         @if ($judul)
             <caption class="sr-only">{{ $judul }}</caption>
@@ -36,9 +43,7 @@
             <tr class="border-b border-gray-200 dark:border-gray-800">
                 @foreach ($kolom as $judul)
                     <th scope="col"
-                        class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400 {{ in_array($judul, (array) $kolomKanan, true) ? 'text-right' : '' }}">
-                        {{ $judul }}
-                    </th>
+                        class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400 {{ in_array($judul, (array) $kolomKanan, true) ? 'text-right' : '' }}">{{ $judul }}</th>
                 @endforeach
             </tr>
         </thead>

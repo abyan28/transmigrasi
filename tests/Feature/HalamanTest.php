@@ -7134,7 +7134,7 @@ it('memakai nama submenu yang sama persis dengan sidebar', function () {
     // sehingga penggantian nama menu langsung terbaca tanpa menyunting uji.
     $peta = [
         '/transmigran' => ['Penduduk & Lahan', 'Transmigran'],
-        '/lahan' => ['Penduduk & Lahan', 'Daftar Lahan'],
+        '/lahan' => ['Penduduk & Lahan', 'Data Lahan'],
         '/poktan' => ['Poktan & Sarana', 'Kelompok Tani'],
         '/infrastruktur' => ['Wilayah & SP', 'Infrastruktur SP'],
         '/sp/inventaris' => ['Wilayah & SP', 'Inventaris SP'],
@@ -7811,6 +7811,73 @@ it('memberi nama pada setiap tabel', function () {
     }
 
     expect($galat)->toBe([]);
+});
+
+it('memakai cangkang dua kolom baku pada halaman detail', function () {
+    /*
+        Penjaga bug gulir mendatar badan halaman, ditambahkan 2026-08-30.
+
+        Di `/transmigran/1?tab=keluarga` muncul scrollbar mendatar pada BADAN
+        halaman (bukan wadah gulir tabel), menggeser seluruh halaman ke kanan
+        hingga kolom ringkasan tertutup sidebar. Buktinya di
+        `refs/bug tab anggota keluarga transmigran.jpg`; geometrinya dijaga
+        `tests/Browser/uji-lebar-halaman.mjs`.
+
+        Akar masalah selalu bentuk yang sama: halaman menyimpang dari cangkang
+        dua kolom baku milik `pages/poktan/detail.blade.php` —
+
+          - trek grid kanan ditulis `1fr` polos (minimum otomatisnya
+            `min-content`), bukan `minmax(0,1fr)`, sehingga isi selebar apa pun
+            memaksanya melebar;
+          - kartu tab (blok tepat setelah `x-data="hashTabs(...)"`) tidak
+            memakai `min-w-0 overflow-hidden`, sehingga tabel tab terlebar
+            menembus wadah `.mx-auto max-w-(--breakpoint-2xl)`.
+
+        Penjaga string ini mengunci kedua kelas itu; pelanggarannya tidak
+        memerahkan apa pun tanpa uji peramban.
+    */
+    $galatGrid = [];
+    $galatKartu = [];
+
+    foreach (BerkasBlade::semua() as $path) {
+        $isi = BerkasBlade::bersihkan(file_get_contents($path));
+        $nama = BerkasBlade::namaPendek($path);
+
+        // 1. Setiap trek grid kolom ringkasan wajib dapat menyusut.
+        if (str_contains($isi, 'lg:grid-cols-[20rem_1fr]')) {
+            $galatGrid[] = $nama;
+        }
+
+        // 2. Setiap kartu tab hashTabs wajib mengurung isinya.
+        if (preg_match_all('/x-data="hashTabs\(/', $isi, $_, PREG_OFFSET_CAPTURE)) {
+            foreach ($_[0] as [$cocok, $posisi]) {
+                // Dari titik hashTabs sampai pembuka <button role="tab"> atau
+                // role="tablist" pertama: di situlah kartu + bilah tab berada.
+                $cuplik = substr($isi, $posisi, 600);
+                $batas = strpos($cuplik, 'role="tab');
+                $wilayah = $batas === false ? $cuplik : substr($cuplik, 0, $batas);
+
+                if (! str_contains($wilayah, 'min-w-0') || ! str_contains($wilayah, 'overflow-hidden')) {
+                    $galatKartu[] = $nama;
+                }
+            }
+        }
+    }
+
+    expect($galatGrid)->toBe([]);
+    expect(array_values(array_unique($galatKartu)))->toBe([]);
+
+    // 3. Wadah gulir mendatar tabel bersama WAJIB `relative`, supaya
+    //    `<caption class="sr-only">` / `<span class="sr-only">` (position
+    //    absolute) tetap terkurung saat tabel lebih lebar dari wadahnya.
+    //    Tanpa ini, elemen sr-only kabur ke <html> dan menyeret scrollbar
+    //    mendatar ke seluruh badan halaman (bug 2026-08-30, dijaga tuntas
+    //    oleh tests/Browser/uji-lebar-halaman.mjs).
+    foreach (['components/sim/tabel-ringkas.blade.php', 'components/sim/data-table.blade.php'] as $komponen) {
+        $isi = file_get_contents(resource_path('views/'.$komponen));
+
+        expect($isi)->toMatch('/[\'"][^\'"]*\brelative\b[^\'"]*\boverflow-x-auto\b/');
+    }
 });
 
 it('melarang view mengambil datanya sendiri', function () {

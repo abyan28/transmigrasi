@@ -2659,11 +2659,11 @@ class DummyData
         // jenis, bukan per unit — kursi ke-3 masih tak dapat dibedakan dari
         // kursi ke-7.
         $data = [
-            ['id_inventaris_sp' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'nama_barang' => 'MEJA KANTOR', 'jumlah' => 12, 'satuan_barang' => 'unit', 'tahun_perolehan' => 2016, 'sumber_dana' => 'APBN', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Baik', 'keterangan' => null],
-            ['id_inventaris_sp' => 2, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'nama_barang' => 'KURSI PLASTIK', 'jumlah' => 60, 'satuan_barang' => 'buah', 'tahun_perolehan' => 2016, 'sumber_dana' => 'APBN', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Rusak Ringan', 'rincian_kondisi' => ['Baik' => 43, 'Rusak Ringan' => 15, 'Rusak Berat' => 2], 'keterangan' => 'Sebagian retak pada sandaran.', 'foto' => 'kondisi-kursi-plastik.jpg', 'dokumen_pendukung' => 'berita-acara-kursi.pdf'],
-            ['id_inventaris_sp' => 3, 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'nama_barang' => 'GENSET 5000 WATT', 'jumlah' => 1, 'satuan_barang' => 'unit', 'tahun_perolehan' => 2018, 'sumber_dana' => 'APBD Kabupaten', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Baik', 'keterangan' => null],
-            ['id_inventaris_sp' => 4, 'satuan_permukiman_id' => 3, 'satuan_permukiman' => 'SP Harekakae', 'nama_barang' => 'KOMPUTER DESKTOP', 'jumlah' => 2, 'satuan_barang' => 'unit', 'tahun_perolehan' => 2019, 'sumber_dana' => 'Dinas Transmigrasi Kabupaten', 'status_penyerahan' => 'Dalam Proses', 'kondisi' => 'Baik', 'keterangan' => 'Berita acara sedang diproses.'],
-            ['id_inventaris_sp' => 5, 'satuan_permukiman_id' => 5, 'satuan_permukiman' => 'SP Tualaran', 'nama_barang' => 'LEMARI ARSIP', 'jumlah' => 4, 'satuan_barang' => 'unit', 'tahun_perolehan' => 2019, 'sumber_dana' => 'APBD Provinsi', 'status_penyerahan' => 'Belum Diserahkan', 'kondisi' => 'Baik', 'rincian_kondisi' => ['Baik' => 3, 'Rusak Ringan' => 1], 'keterangan' => null],
+            ['id_inventaris_sp' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'jenis_inventaris' => 'Perabotan', 'nama_barang' => 'MEJA KANTOR', 'jumlah' => 12, 'satuan_barang' => 'unit', 'tahun_perolehan' => 2016, 'sumber_dana' => 'APBN', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Baik', 'keterangan' => null],
+            ['id_inventaris_sp' => 2, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'jenis_inventaris' => 'Perabotan', 'nama_barang' => 'KURSI PLASTIK', 'jumlah' => 60, 'satuan_barang' => 'buah', 'tahun_perolehan' => 2016, 'sumber_dana' => 'APBN', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Rusak Ringan', 'rincian_kondisi' => ['Baik' => 43, 'Rusak Ringan' => 15, 'Rusak Berat' => 2], 'keterangan' => 'Sebagian retak pada sandaran.', 'foto' => 'kondisi-kursi-plastik.jpg', 'dokumen_pendukung' => 'berita-acara-kursi.pdf'],
+            ['id_inventaris_sp' => 3, 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'jenis_inventaris' => 'Elektronik & Mesin', 'nama_barang' => 'GENSET 5000 WATT', 'jumlah' => 1, 'satuan_barang' => 'unit', 'tahun_perolehan' => 2018, 'sumber_dana' => 'APBD Kabupaten', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Baik', 'keterangan' => null],
+            ['id_inventaris_sp' => 4, 'satuan_permukiman_id' => 3, 'satuan_permukiman' => 'SP Harekakae', 'jenis_inventaris' => 'Elektronik & Mesin', 'nama_barang' => 'KOMPUTER DESKTOP', 'jumlah' => 2, 'satuan_barang' => 'unit', 'tahun_perolehan' => 2019, 'sumber_dana' => 'Dinas Transmigrasi Kabupaten', 'status_penyerahan' => 'Dalam Proses', 'kondisi' => 'Baik', 'keterangan' => 'Berita acara sedang diproses.'],
+            ['id_inventaris_sp' => 5, 'satuan_permukiman_id' => 5, 'satuan_permukiman' => 'SP Tualaran', 'jenis_inventaris' => 'Peralatan Kantor', 'nama_barang' => 'LEMARI ARSIP', 'jumlah' => 4, 'satuan_barang' => 'unit', 'tahun_perolehan' => 2019, 'sumber_dana' => 'APBD Provinsi', 'status_penyerahan' => 'Belum Diserahkan', 'kondisi' => 'Baik', 'rincian_kondisi' => ['Baik' => 3, 'Rusak Ringan' => 1], 'keterangan' => null],
         ];
 
         return self::denganRincianKondisi($data);
@@ -2832,6 +2832,9 @@ class DummyData
             JenisReferensi::JenisAlsintan->value => [
                 'Traktor Roda Dua', 'Traktor Roda Empat', 'Pompa Air', 'Hand Sprayer',
                 'Mesin Perontok', 'Cultivator', 'Alat Panen', 'Lainnya',
+            ],
+            JenisReferensi::JenisInventaris->value => [
+                'Peralatan Kantor', 'Elektronik & Mesin', 'Perabotan', 'Kendaraan Operasional', 'Peralatan Lainnya',
             ],
         ];
 

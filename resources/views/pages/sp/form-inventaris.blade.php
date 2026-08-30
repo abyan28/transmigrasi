@@ -32,6 +32,32 @@
     <section>
         <h3 class="{{ $kelasBagian }}">Identitas Barang</h3>
         <div class="mt-3 grid gap-4 sm:grid-cols-2">
+            <div>
+                <label for="{{ $awalan }}_sp_inventaris" class="{{ $kelasLabel }}">Satuan Permukiman<span class="text-error-500">*</span></label>
+                <select id="{{ $awalan }}_sp_inventaris" name="satuan_permukiman_id" required class="{{ $kelasKontrol }}">
+                    <option value="">Pilih satuan permukiman</option>
+                    @foreach ($daftarSp as $sp)
+                        <option value="{{ $sp['id_satuan_permukiman'] }}"
+                            @selected((string) old('satuan_permukiman_id', $data['satuan_permukiman_id'] ?? '') === (string) $sp['id_satuan_permukiman'])>
+                            {{ $sp['nama'] }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
+                <label for="{{ $awalan }}_jenis_inventaris" class="{{ $kelasLabel }}">Jenis Inventaris<span class="text-error-500">*</span></label>
+                <select id="{{ $awalan }}_jenis_inventaris" name="jenis_inventaris" required class="{{ $kelasKontrol }}">
+                    <option value="">Pilih jenis inventaris</option>
+                    @foreach ($opsiJenisInventaris as $nilaiJenis => $labelJenis)
+                        <option value="{{ $nilaiJenis }}"
+                            @selected(old('jenis_inventaris', $data['jenis_inventaris'] ?? '') === $nilaiJenis)>
+                            {{ $labelJenis }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
             <div class="sm:col-span-2">
                 <label for="{{ $awalan }}_nama_barang" class="{{ $kelasLabel }}">Nama Barang<span class="text-error-500">*</span></label>
                 <input type="text" id="{{ $awalan }}_nama_barang" name="nama_barang" required
@@ -56,20 +82,7 @@
                 </p>
             </div>
 
-            <div>
-                <label for="{{ $awalan }}_sp_inventaris" class="{{ $kelasLabel }}">Satuan Permukiman<span class="text-error-500">*</span></label>
-                <select id="{{ $awalan }}_sp_inventaris" name="satuan_permukiman_id" required class="{{ $kelasKontrol }}">
-                    <option value="">Pilih satuan permukiman</option>
-                    @foreach ($daftarSp as $sp)
-                        <option value="{{ $sp['id_satuan_permukiman'] }}"
-                            @selected((string) old('satuan_permukiman_id', $data['satuan_permukiman_id'] ?? '') === (string) $sp['id_satuan_permukiman'])>
-                            {{ $sp['nama'] }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div>
+            <div class="sm:col-span-2">
                 <label for="{{ $awalan }}_tahun_inventaris" class="{{ $kelasLabel }}">Tahun Perolehan</label>
                 <input type="number" id="{{ $awalan }}_tahun_inventaris" name="tahun_perolehan"
                     value="{{ old('tahun_perolehan', $data['tahun_perolehan'] ?? '') }}" min="1950"

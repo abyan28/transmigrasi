@@ -27,7 +27,9 @@
 
 <div class="space-y-6">
 
-    {{-- Bagian 1: identitas --}}
+    {{-- Langkah 1: Identitas & Wilayah --}}
+    <div data-langkah="1" x-show="! bertahap || langkah === 1" x-cloak>
+    <div class="space-y-6">
     <section>
         <h3 class="{{ $kelasBagian }}">Identitas Satuan Permukiman</h3>
         <div class="mt-3 grid gap-4 sm:grid-cols-2">
@@ -75,7 +77,7 @@
         </div>
     </section>
 
-    {{-- Bagian 2: penempatan pada dua hierarki --}}
+    {{-- Penempatan pada dua hierarki --}}
     <section>
         <h3 class="{{ $kelasBagian }}">Penempatan Wilayah</h3>
 
@@ -114,8 +116,12 @@
             </div>
         </div>
     </section>
+    </div>
+    </div>
 
-    {{-- Bagian 3: titik lokasi --}}
+    {{-- Langkah 2: Lokasi & Batas --}}
+    <div data-langkah="2" x-show="! bertahap || langkah === 2" x-cloak>
+    <div class="space-y-6">
     <section>
         <h3 class="{{ $kelasBagian }}">Titik Lokasi</h3>
 
@@ -125,17 +131,10 @@
         </div>
     </section>
 
-    {{--
-        Bagian 4: Keadaan Wilayah (Bab II Monografi).
-
-        Semua isian di bawah opsional dan dokumenter. Angka rentang disimpan
-        sebagai pasangan min/maks (keputusan pemilik proyek 2026-08-28), bukan
-        teks, agar dapat dianalisis kelak.
-    --}}
     <section class="border-t border-gray-200 pt-5 dark:border-gray-800">
-        <h3 class="{{ $kelasBagian }}">Keadaan Wilayah</h3>
+        <h3 class="{{ $kelasBagian }}">Batas & Letak Wilayah</h3>
         <p class="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
-            Data untuk Laporan Monografi SP. Seluruhnya opsional; isi menurut berkas penetapan dan survei wilayah.
+            Letak astronomis, jarak ke pusat pemerintahan, dan batas administratif SP.
         </p>
 
         <div class="mt-4 space-y-5">
@@ -198,7 +197,21 @@
                     @endforeach
                 </div>
             </fieldset>
+        </div>
+    </section>
+    </div>
+    </div>
 
+    {{-- Langkah 3: Kondisi Alam & Iklim --}}
+    <div data-langkah="3" x-show="! bertahap || langkah === 3" x-cloak>
+    <div class="space-y-6">
+    <section>
+        <h3 class="{{ $kelasBagian }}">Keadaan Alam & Iklim</h3>
+        <p class="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
+            Data untuk Laporan Monografi SP. Seluruhnya opsional; isi menurut berkas penetapan dan survei wilayah.
+        </p>
+
+        <div class="mt-4 space-y-5">
             {{-- Luas dan bentuk lokasi --}}
             <fieldset>
                 <legend class="mb-2 text-theme-sm font-medium text-gray-700 dark:text-gray-300">Luas dan Bentuk Lokasi</legend>
@@ -341,7 +354,12 @@
             </fieldset>
         </div>
     </section>
+    </div>
+    </div>
 
+    {{-- Langkah 4: Aksesibilitas & Berkas --}}
+    <div data-langkah="4" x-show="! bertahap || langkah === 4" x-cloak>
+    <div class="space-y-6">
     {{--
         Bagian 4b: Rute Aksesibilitas (Tabel 2.1 Monografi), daftar dinamis.
         Ditambahkan 2026-08-28 (Rombongan C, Stage C2).
@@ -453,31 +471,21 @@
     </section>
 
     <section>
-        <h3 class="{{ $kelasBagian }}">Catatan</h3>
-        <div class="mt-3">
-            {{-- Label ditambahkan 2026-08-20. Sebelumnya isian ini satu-satunya
-                 yang sama sekali tanpa `<label>`, sehingga pembaca layar hanya
-                 mengumumkan sebuah kotak teks tanpa memberi tahu isinya apa. --}}
-            <label for="{{ $awalan }}_keterangan_sp" class="{{ $kelasLabel }}">Catatan</label>
-            <textarea id="{{ $awalan }}_keterangan_sp" name="keterangan" rows="2" maxlength="255"
-                placeholder="Catatan tambahan mengenai satuan permukiman ini."
-                class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30">{{ old('keterangan', $data['keterangan'] ?? '') }}</textarea>
-        </div>
-    </section>
+        <h3 class="{{ $kelasBagian }}">Dokumen Pendukung & Catatan</h3>
+        <div class="mt-3 space-y-4">
+            <div>
+                <label for="{{ $awalan }}_keterangan_sp" class="{{ $kelasLabel }}">Catatan</label>
+                <textarea id="{{ $awalan }}_keterangan_sp" name="keterangan" rows="2" maxlength="255"
+                    placeholder="Catatan tambahan mengenai satuan permukiman ini."
+                    class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30">{{ old('keterangan', $data['keterangan'] ?? '') }}</textarea>
+            </div>
 
-    {{-- Bagian 5: catatan --}}
-    {{--
-        Dokumen pendukung. Kolomnya sudah lama ada pada data-dictionary.md 3.6,
-        tetapi belum pernah punya isian, sehingga SK penetapan SP tidak dapat
-        diunggah ke mana pun.
-    --}}
-    <section>
-        <h3 class="{{ $kelasBagian }}">Dokumen Pendukung</h3>
-        <div class="mt-3">
             <x-sim.file-upload nama="dokumen_pendukung" label="Dokumen Penetapan SP"
                 nama-dokumen="Dokumen SP" :nama-pemilik="$data['nama'] ?? null"
                 :berkas-saat-ini="$data['dokumen_pendukung'] ?? null"
                 keterangan="SK penetapan, peta wilayah, atau berita acara penyerahan." />
         </div>
     </section>
+    </div>
+    </div>
 </div>

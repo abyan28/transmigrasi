@@ -96,7 +96,7 @@ class MenuHelper
                                 'permission' => 'rumah.lihat',
                             ],
                             [
-                                'name' => 'Daftar Lahan',
+                                'name' => 'Data Lahan',
                                 'path' => '/lahan',
                                 'permission' => 'lahan.lihat',
                             ],

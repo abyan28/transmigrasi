@@ -13,7 +13,7 @@
         Lihat routes/web.php.
     --}}
     <x-sim.halaman-daftar judul="Kelompok Tani"
-        keterangan="Poktan di kawasan beserta ketua dan jumlah anggotanya."
+        keterangan="Poktan di kawasan beserta ketua dan jumlah anggota transmigrannya."
         :remah="\App\Helpers\RemahHelper::untuk('/poktan')"
         :jumlah="count($baris)" :kata-kunci="$cari" :aksi-url="route('poktan.index')"
         placeholder-cari="Cari nama poktan atau ketua" judul-kosong="Belum ada kelompok tani"
@@ -106,13 +106,17 @@
 
     <x-sim.modal-form nama="formTambahPoktan" judul="Tambah Kelompok Tani"
         keterangan="Ketua dipilih dari data transmigran agar tautannya tetap sahih."
-        :aksi="route('poktan.simpan')" ukuran="lg" label-simpan="Simpan Data">
+        :aksi="route('poktan.simpan')" ukuran="lg"
+        :langkah="['Identitas Kelompok', 'Pengurus & Legalitas', 'Anggota Kelompok']"
+        label-simpan="Simpan Data">
         @include('pages.poktan.form', ['awalan' => 'tambah'])
     </x-sim.modal-form>
 
     <x-sim.modal-form nama="formUbahPoktanBaris" judul="Ubah Profil Poktan"
         keterangan="Perubahan tercatat pada audit log."
-        pola-aksi="/poktan/:id" metode="PUT" ukuran="lg" label-simpan="Simpan Perubahan">
+        pola-aksi="/poktan/:id" metode="PUT" ukuran="lg"
+        :langkah="['Identitas Kelompok', 'Pengurus & Legalitas', 'Anggota Kelompok']"
+        label-simpan="Simpan Perubahan">
         @include('pages.poktan.form', ['awalan' => 'ubahBaris'])
     </x-sim.modal-form>
 

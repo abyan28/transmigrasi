@@ -34,6 +34,19 @@
         <h3 class="{{ $kelasBagian }}">Identitas Fasilitas</h3>
         <div class="mt-3 grid gap-4 sm:grid-cols-2">
             <div>
+                <label for="{{ $awalan }}_sp_fasilitas" class="{{ $kelasLabel }}">Satuan Permukiman (Lokasi)<span class="text-error-500">*</span></label>
+                <select id="{{ $awalan }}_sp_fasilitas" name="satuan_permukiman_id" required class="{{ $kelasKontrol }}">
+                    <option value="">Pilih satuan permukiman</option>
+                    @foreach ($daftarSp as $sp)
+                        <option value="{{ $sp['id_satuan_permukiman'] }}"
+                            @selected((string) old('satuan_permukiman_id', $data['satuan_permukiman_id'] ?? '') === (string) $sp['id_satuan_permukiman'])>
+                            {{ $sp['nama'] }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
                 <label for="{{ $awalan }}_jenis_fasilitas" class="{{ $kelasLabel }}">Jenis Fasilitas<span class="text-error-500">*</span></label>
                 <select id="{{ $awalan }}_jenis_fasilitas" name="jenis_fasilitas" required class="{{ $kelasKontrol }}">
                     <option value="">Pilih jenis</option>
@@ -49,7 +62,21 @@
                 </p>
             </div>
 
-            <div>
+            {{--
+                SP lain yang ikut dilayani (Putaran 7). SMP Satu Atap, puskesmas
+                pembantu, atau pasar desa di satu SP kerap melayani warga SP
+                tetangga. Tanpa ini penilaian kondisi SP tetangga mencatatnya
+                sebagai tidak memiliki fasilitas itu.
+            --}}
+            <div class="sm:col-span-2">
+                <x-sim.pilih-cari-banyak nama="satuan_permukiman_ids_lain" label="SP Lain yang Dilayani"
+                    :awalan="$awalan" :opsi="$daftarSp" kunci="id_satuan_permukiman" teks="nama"
+                    :terpilih="collect($data['satuan_permukiman_ids'] ?? [])->reject(fn ($x) => (string) $x === (string) ($data['satuan_permukiman_id'] ?? ''))->values()->all()"
+                    placeholder="Kosongkan bila fasilitas ini hanya melayani SP lokasinya"
+                    keterangan="SP lokasi di atas otomatis termasuk. Isi hanya SP tambahan." />
+            </div>
+
+            <div class="sm:col-span-2">
                 <label for="{{ $awalan }}_nama_fasilitas" class="{{ $kelasLabel }}">Nama Fasilitas<span class="text-error-500">*</span></label>
                 <input type="text" id="{{ $awalan }}_nama_fasilitas" name="nama_fasilitas" required
                     value="{{ old('nama_fasilitas', $data['nama_fasilitas'] ?? '') }}" maxlength="100"
@@ -64,33 +91,6 @@
                 <input type="number" id="{{ $awalan }}_jumlah_fasilitas" name="jumlah" required
                     value="{{ old('jumlah', $data['jumlah'] ?? '') }}" min="0" step="1"
                     class="{{ $kelasKontrol }} tabular-nums" />
-            </div>
-
-            <div>
-                <label for="{{ $awalan }}_sp_fasilitas" class="{{ $kelasLabel }}">Satuan Permukiman (Lokasi)<span class="text-error-500">*</span></label>
-                <select id="{{ $awalan }}_sp_fasilitas" name="satuan_permukiman_id" required class="{{ $kelasKontrol }}">
-                    <option value="">Pilih satuan permukiman</option>
-                    @foreach ($daftarSp as $sp)
-                        <option value="{{ $sp['id_satuan_permukiman'] }}"
-                            @selected((string) old('satuan_permukiman_id', $data['satuan_permukiman_id'] ?? '') === (string) $sp['id_satuan_permukiman'])>
-                            {{ $sp['nama'] }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-
-            {{--
-                SP lain yang ikut dilayani (Putaran 7). SMP Satu Atap, puskesmas
-                pembantu, atau pasar desa di satu SP kerap melayani warga SP
-                tetangga. Tanpa ini penilaian kondisi SP tetangga mencatatnya
-                sebagai tidak memiliki fasilitas itu.
-            --}}
-            <div class="sm:col-span-2">
-                <x-sim.pilih-cari-banyak nama="satuan_permukiman_ids_lain" label="SP Lain yang Dilayani"
-                    :awalan="$awalan" :opsi="$daftarSp" kunci="id_satuan_permukiman" teks="nama"
-                    :terpilih="collect($data['satuan_permukiman_ids'] ?? [])->reject(fn ($x) => (string) $x === (string) ($data['satuan_permukiman_id'] ?? ''))->values()->all()"
-                    placeholder="Kosongkan bila fasilitas ini hanya melayani SP lokasinya"
-                    keterangan="SP lokasi di atas otomatis termasuk. Isi hanya SP tambahan." />
             </div>
 
             <div>

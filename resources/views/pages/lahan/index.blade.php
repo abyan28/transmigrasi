@@ -260,6 +260,7 @@
     @if ($bolehTambah)
         <x-sim.modal-form nama="formTambahLahan" judul="Tambah Data Lahan"
             keterangan="Isian bertanda bintang wajib diisi." :aksi="route('lahan.simpan')" ukuran="xl"
+            :langkah="['Identitas & Pemilik', 'Penggunaan & Lokasi', 'Legalitas & Berkas']"
             label-simpan="Simpan Data Lahan">
             @include('pages.lahan.form', ['awalan' => 'tambah'])
         </x-sim.modal-form>
@@ -275,6 +276,7 @@
         <x-sim.modal-form nama="formUbahLahanBaris" judul="Ubah Data Lahan"
             keterangan="Perubahan tercatat pada audit log."
             pola-aksi="/lahan/:id" metode="PUT" ukuran="xl"
+            :langkah="['Identitas & Pemilik', 'Penggunaan & Lokasi', 'Legalitas & Berkas']"
             label-simpan="Simpan Perubahan">
             @include('pages.lahan.form', ['awalan' => 'ubahBaris'])
         </x-sim.modal-form>

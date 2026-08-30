@@ -1,4 +1,4 @@
-﻿{{--
+{{--
     Daftar satuan permukiman.
 
     SP adalah simpul tempat kedua cabang hierarki wilayah bertemu, dan seluruh
@@ -147,13 +147,17 @@
 
     <x-sim.modal-form nama="formTambahSp" judul="Tambah Satuan Permukiman"
         keterangan="Satu SP menempel pada desa sekaligus kawasan transmigrasi."
-        :aksi="route('sp.simpan')" ukuran="xl" label-simpan="Simpan Data">
+        :aksi="route('sp.simpan')" ukuran="xl"
+        :langkah="['Identitas & Wilayah', 'Lokasi & Batas', 'Keadaan Alam & Iklim', 'Aksesibilitas & Berkas']"
+        label-simpan="Simpan Data">
         @include('pages.sp.form', ['awalan' => 'tambah'])
     </x-sim.modal-form>
 
     <x-sim.modal-form nama="formUbahSpBaris" judul="Ubah Satuan Permukiman"
         keterangan="Perubahan tercatat pada audit log."
-        pola-aksi="/sp/:id" metode="PUT" ukuran="xl" label-simpan="Simpan Perubahan">
+        pola-aksi="/sp/:id" metode="PUT" ukuran="xl"
+        :langkah="['Identitas & Wilayah', 'Lokasi & Batas', 'Keadaan Alam & Iklim', 'Aksesibilitas & Berkas']"
+        label-simpan="Simpan Perubahan">
         @include('pages.sp.form', ['awalan' => 'ubahBaris'])
     </x-sim.modal-form>
 

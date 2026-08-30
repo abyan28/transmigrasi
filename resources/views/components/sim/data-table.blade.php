@@ -107,7 +107,10 @@
         </x-sim.empty-state>
     @else
         {{-- Tabel penuh untuk layar lebar --}}
-        <div class="hidden overflow-x-auto md:block">
+        {{-- `relative` mengurung `<caption class="sr-only">` (position:absolute)
+             agar tidak menyeret scrollbar mendatar badan halaman saat tabel
+             lebih lebar dari wadahnya (bug 2026-08-30). --}}
+        <div class="relative hidden overflow-x-auto md:block">
             <table class="w-full min-w-full text-left">
                 {{--
                     WAJIB anak pertama <table>. Pembaca layar mengumumkannya

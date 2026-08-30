@@ -35,7 +35,7 @@
         </x-slot:aksi>
     </x-sim.page-header>
 
-    <div class="grid gap-6 lg:grid-cols-[20rem_1fr]">
+    <div class="grid gap-6 lg:grid-cols-[20rem_minmax(0,1fr)]">
         <aside class="lg:sticky lg:top-24 lg:self-start">
             <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
                 <h2 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">Pengadaan</h2>
@@ -98,8 +98,8 @@
         </aside>
 
         <div x-data="hashTabs('distribusi')" class="min-w-0">
-            <div class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-                <div class="flex gap-1 overflow-x-auto border-b border-gray-200 px-2 pt-2 dark:border-gray-800"
+            <div class="min-w-0 overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+                <div class="flex gap-1 overflow-x-auto no-scrollbar border-b border-gray-200 px-2 pt-2 dark:border-gray-800"
                     role="tablist" aria-label="Rincian saprotan">
                     @foreach ([
                         'distribusi' => 'Distribusi',
@@ -123,7 +123,7 @@
                         <x-sim.empty-state judul="Belum tersalurkan"
                             pesan="Seluruh pengadaan masih di gudang UPT. Bagikan ke kelompok tani lewat tombol Ubah Data Saprotan." />
                     @else
-                        <div class="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
+                        <div class="relative overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
                             <table class="min-w-full text-theme-sm">
                                 <caption class="px-4 py-2.5 text-left text-theme-xs text-gray-500 dark:text-gray-400">
                                     Pembagian {{ $data['nama'] }} ke kelompok tani penerima

@@ -52,7 +52,7 @@ class ViewServiceProvider extends ServiceProvider
         'pages.infrastruktur.form' => ['daftarSp', 'opsiJenisInfrastruktur', 'opsiSumberDana', 'opsiKondisi'],
         'pages.komoditas.form' => ['daftarSatuan', 'sebaran', 'opsiTipeKomoditas'],
         'pages.rumah.form' => ['transmigranTanpaRumah', 'daftarTransmigran', 'daftarSp', 'opsiKondisiRumah', 'opsiStatusHunian'],
-        'pages.poktan.form' => ['daftarSp', 'daftarTransmigran', 'kontakTransmigran', 'lahanTransmigran', 'anggotaKeluargaPerKeluarga'],
+        'pages.poktan.form' => ['daftarSp', 'daftarTransmigran', 'kontakTransmigran', 'lahanTransmigran', 'anggotaKeluargaPerKeluarga', 'opsiJabatanAnggota', 'anggotaPoktanPerPoktan'],
         'pages.poktan.form-anggota' => ['daftarTransmigran', 'kontakTransmigran', 'lahanTransmigran', 'opsiJabatanAnggota', 'anggotaKeluargaPerKeluarga'],
         'pages.lahan.form' => ['daftarTransmigran', 'daftarSp', 'opsiJenisDokumenLahan'],
         'pages.transmigran.form' => ['daftarSp', 'saranPekerjaan', 'opsiAgama', 'opsiHubunganAnggota', 'opsiKegiatanAnggota', 'opsiPendidikan', 'opsiJenisKelamin'],
@@ -61,7 +61,7 @@ class ViewServiceProvider extends ServiceProvider
         'pages.pengaduan.form' => ['petaBidang', 'opsiKategoriPengaduan', 'opsiBidang', 'opsiPrioritasPengaduan', 'daftarSp'],
         'pages.sp.form' => ['daftarDesa', 'daftarKawasan', 'opsiPolaPermukiman', 'opsiKesuburanTanah', 'opsiBentukWilayah'],
         'pages.sp.form-kawasan' => ['daftarProvinsi', 'daftarKabupaten'],
-        'pages.sp.form-inventaris' => ['daftarSp', 'opsiSumberDana', 'opsiStatusPenyerahan', 'opsiKondisi'],
+        'pages.sp.form-inventaris' => ['daftarSp', 'opsiJenisInventaris', 'opsiSumberDana', 'opsiStatusPenyerahan', 'opsiKondisi'],
         'pages.sp.form-fasilitas' => ['daftarSp', 'opsiJenisFasilitas', 'opsiSumberDana', 'opsiStatusPenyerahan', 'opsiKondisi'],
         'pages.pengguna.form' => ['daftarRole', 'daftarSp'],
 
@@ -205,8 +205,23 @@ class ViewServiceProvider extends ServiceProvider
                 ->mapWithKeys(fn ($r) => [(int) $r['id_role'] => DummyData::izinRole((int) $r['id_role'])])
                 ->all(),
 
+            'anggotaPoktanPerPoktan' => collect(DummyData::poktan())
+                ->mapWithKeys(fn ($p) => [
+                    (int) $p['id_poktan'] => collect(DummyData::anggotaPoktan((int) $p['id_poktan']))
+                        ->filter(fn ($a) => ($a['status'] ?? 'Aktif') === 'Aktif')
+                        ->map(fn ($a) => [
+                            'transmigran_id' => $a['transmigran_id'] ?? '',
+                            'jabatan' => $a['jabatan'] ?? 'Anggota',
+                            'keterangan' => $a['keterangan'] ?? '',
+                        ])
+                        ->values()
+                        ->all(),
+                ])
+                ->all(),
+
             'opsiStatusPenyerahan' => DummyData::opsiReferensi(JenisReferensi::StatusPenyerahan),
             'opsiJenisFasilitas' => DummyData::opsiReferensi(JenisReferensi::JenisFasilitas),
+            'opsiJenisInventaris' => DummyData::opsiReferensi(JenisReferensi::JenisInventaris),
             'daftarKawasan' => DummyData::kawasan(),
             'daftarProvinsi' => DummyData::wilayah()['provinsi'],
             'daftarKabupaten' => DummyData::wilayah()['kabupaten'],

@@ -43,8 +43,8 @@
         </p>
     </div>
     <div x-data="hashTabs('parameter')"
-        class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-        <div class="flex gap-1 border-b border-gray-200 px-2 pt-2 dark:border-gray-800"
+        class="min-w-0 overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+        <div class="flex gap-1 overflow-x-auto no-scrollbar border-b border-gray-200 px-2 pt-2 dark:border-gray-800"
             role="tablist" aria-label="Pengaturan penilaian">
             <button type="button" role="tab" @click="setTab('parameter')"
                 :aria-selected="tab === 'parameter'"

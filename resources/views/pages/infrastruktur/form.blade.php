@@ -33,11 +33,18 @@
     <section>
         <h3 class="{{ $kelasBagian }}">Identitas Aset</h3>
         <div class="mt-3 grid gap-4 sm:grid-cols-2">
-            <div class="sm:col-span-2">
-                <label for="{{ $awalan }}_nama_infrastruktur" class="{{ $kelasLabel }}">Nama Aset<span class="text-error-500">*</span></label>
-                <input type="text" id="{{ $awalan }}_nama_infrastruktur" name="nama" required
-                    value="{{ old('nama', $data['nama'] ?? '') }}" maxlength="100"
-                    placeholder="Contoh: SALURAN IRIGASI BLOK A" class="{{ $kelasKontrol }}" />
+            <div>
+                <label for="{{ $awalan }}_satuan_permukiman_infrastruktur" class="{{ $kelasLabel }}">Satuan Permukiman (Lokasi)<span class="text-error-500">*</span></label>
+                <select id="{{ $awalan }}_satuan_permukiman_infrastruktur" name="satuan_permukiman_id" required
+                    class="{{ $kelasKontrol }}">
+                    <option value="">Pilih satuan permukiman</option>
+                    @foreach ($daftarSp as $sp)
+                        <option value="{{ $sp['id_satuan_permukiman'] }}"
+                            @selected((string) old('satuan_permukiman_id', $data['satuan_permukiman_id'] ?? '') === (string) $sp['id_satuan_permukiman'])>
+                            {{ $sp['nama'] }}
+                        </option>
+                    @endforeach
+                </select>
             </div>
 
             <div>
@@ -55,27 +62,6 @@
                 </p>
             </div>
 
-            <div>
-                <label for="{{ $awalan }}_kapasitas" class="{{ $kelasLabel }}">Kapasitas atau Ukuran</label>
-                <input type="text" id="{{ $awalan }}_kapasitas" name="kapasitas"
-                    value="{{ old('kapasitas', $data['kapasitas'] ?? '') }}" maxlength="100"
-                    placeholder="Contoh: Panjang 1,2 km" class="{{ $kelasKontrol }}" />
-            </div>
-
-            <div>
-                <label for="{{ $awalan }}_satuan_permukiman_infrastruktur" class="{{ $kelasLabel }}">Satuan Permukiman (Lokasi)<span class="text-error-500">*</span></label>
-                <select id="{{ $awalan }}_satuan_permukiman_infrastruktur" name="satuan_permukiman_id" required
-                    class="{{ $kelasKontrol }}">
-                    <option value="">Pilih satuan permukiman</option>
-                    @foreach ($daftarSp as $sp)
-                        <option value="{{ $sp['id_satuan_permukiman'] }}"
-                            @selected((string) old('satuan_permukiman_id', $data['satuan_permukiman_id'] ?? '') === (string) $sp['id_satuan_permukiman'])>
-                            {{ $sp['nama'] }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-
             {{--
                 SP lain yang ikut dilayani (Putaran 7). Satu irigasi, jalan
                 masuk kawasan, atau kios lazim melayani beberapa SP; tanpa ini
@@ -89,6 +75,20 @@
                     :terpilih="collect($data['satuan_permukiman_ids'] ?? [])->reject(fn ($x) => (string) $x === (string) ($data['satuan_permukiman_id'] ?? ''))->values()->all()"
                     placeholder="Kosongkan bila aset ini hanya melayani SP lokasinya"
                     keterangan="SP lokasi di atas otomatis termasuk. Isi hanya SP tambahan." />
+            </div>
+
+            <div class="sm:col-span-2">
+                <label for="{{ $awalan }}_nama_infrastruktur" class="{{ $kelasLabel }}">Nama Aset<span class="text-error-500">*</span></label>
+                <input type="text" id="{{ $awalan }}_nama_infrastruktur" name="nama" required
+                    value="{{ old('nama', $data['nama'] ?? '') }}" maxlength="100"
+                    placeholder="Contoh: SALURAN IRIGASI BLOK A" class="{{ $kelasKontrol }}" />
+            </div>
+
+            <div>
+                <label for="{{ $awalan }}_kapasitas" class="{{ $kelasLabel }}">Kapasitas atau Ukuran</label>
+                <input type="text" id="{{ $awalan }}_kapasitas" name="kapasitas"
+                    value="{{ old('kapasitas', $data['kapasitas'] ?? '') }}" maxlength="100"
+                    placeholder="Contoh: Panjang 1,2 km" class="{{ $kelasKontrol }}" />
             </div>
 
             <div>

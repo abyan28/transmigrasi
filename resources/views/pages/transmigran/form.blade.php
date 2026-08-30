@@ -276,7 +276,7 @@
 
                 <div>
                     <label for="{{ $awalan }}_status_tinggal" class="{{ $kelasLabel }}">
-                        Status Tinggal<span class="text-error-500">*</span>
+                        Status Tinggal Keluarga<span class="text-error-500">*</span>
                     </label>
                     <select id="{{ $awalan }}_status_tinggal" name="status_tinggal" required
                         class="{{ $kelasKontrol }}">
@@ -286,6 +286,9 @@
                             </option>
                         @endforeach
                     </select>
+                    <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                        Status keberadaan keluarga inti di satuan permukiman.
+                    </p>
                 </div>
 
                 {{--
@@ -529,11 +532,12 @@
                     class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">{{ old('keterangan', $data['keterangan'] ?? '') }}</textarea>
             </div>
 
-            <x-sim.file-upload nama="dokumen_pendukung" label="Kartu Keluarga atau KTP"
+            <x-sim.file-upload nama="dokumen_pendukung" label="Kartu Keluarga (KK)"
                 nama-dokumen="Kartu Keluarga"
+                :wajib="true"
                 :nama-pemilik="$data['nama_kepala_keluarga'] ?? null"
                 :berkas-saat-ini="$data['dokumen_pendukung'] ?? null"
-                keterangan="Unggah hasil pindaian atau foto yang terbaca jelas." />
+                keterangan="Unggah hasil pindaian atau foto Kartu Keluarga (KK) yang terbaca jelas." />
         </div>
     </section>
     </div>
