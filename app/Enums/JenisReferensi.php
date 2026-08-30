@@ -42,6 +42,7 @@ enum JenisReferensi: string
     case JenisFasilitas = 'jenis_fasilitas';
     case BidangPengaduan = 'bidang_pengaduan';
     case KategoriPengaduan = 'kategori_pengaduan';
+    case JenisAlsintan = 'jenis_alsintan';
 
     /**
      * Teks yang tampil sebagai judul tab pada halaman data master.
@@ -64,6 +65,7 @@ enum JenisReferensi: string
             self::JenisFasilitas => 'Jenis Fasilitas',
             self::BidangPengaduan => 'Bidang Penanganan',
             self::KategoriPengaduan => 'Kategori Pengaduan',
+            self::JenisAlsintan => 'Jenis Alsintan',
         };
     }
 
@@ -89,7 +91,8 @@ enum JenisReferensi: string
             self::StatusPenyerahan,
             self::Kondisi,
             self::JenisInfrastruktur,
-            self::JenisFasilitas => KelompokReferensi::AsetInfrastruktur,
+            self::JenisFasilitas,
+            self::JenisAlsintan => KelompokReferensi::AsetInfrastruktur,
 
             self::KondisiRumah,
             self::StatusHunian,

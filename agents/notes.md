@@ -3030,3 +3030,13 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
   * **Selesai 2026-08-28 (Rombongan C, C1+C2+C3).** ~35 kolom Keadaan Wilayah pada `satuan_permukiman` (letak astronomis, jarak ekonomis, batas wilayah dihidupkan kembali, SK pencadangan, pola permukiman, tanah, topografi, iklim min/maks/rata, sumberdaya air) + tabel `rute_aksesibilitas_sp`. Ditampilkan di form SP, `dashboard/sp`, dan dirender penuh sebagai Bab II pada Laporan Monografi SP. Lihat bagian 1q.
 - [done] Jangan lupa jika ada penambahan field form, sediakan juga tempat untuk menampilkan datanya di halaman detail datanya.
   * **Sudah menjadi penjaga uji permanen sejak audit 1f (2026-08-25):** setiap `name="..."` pada form wajib punya tempat tampil di halaman rincian pasangannya, memerah bila tidak. Dipatuhi otomatis oleh seluruh field yang ditambahkan revisi putaran 1 — `varietas`, `jadwal_tanam`, `tahun_pengadaan`, `penanda_terima_id` semuanya diberi tempat di `saprotan/detail` dan `alsintan/detail`.
+
+
+
+
+  ----------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+  - Ini ada kesalahan fatal terkait relasi dan cara input data pada form alsintan dan saprotan di mana harusnya pada pengisian form-nya itu tidak diisi berulang kali untuk setiap poktan, sebab yg diisikan sama. Oh iya, untuk Alsintan tambahkan field form jenis alsinta juga ya sekalian yg bisa di-edit lewat data master. Contoh pada Alsintan: Untuk jenis alsintan traktor dengan nama traktor X, jumlah unit sekian, tahun pengadaan sekian, kondisi Y, dan sumber dana Z itu bisa dibagikan ke banyak Poktan. Begitupun juga dengan Saprotan. Nah, kalau diisi satu-satu kayak form sekarang ini, nanti admin bakal input redundan untuk tiap poktannya, padahal barangnya sama. Paham gak kamu? Coba kita diskusikan ya. Oh iya, nanti saat input Poktan, gunakan Searchable multi-select Poktan ya. Sekalian coba cari apakah ada masalah yg sama terkait relasi dan cara input data di sistem ini selain yg saya temukan di Alsintan dan Saprotan, karena ini fatal sekali.

@@ -27,6 +27,28 @@ it('menyediakan seluruh jenis referensi pada data contoh', function () {
     }
 });
 
+it('menyediakan jenis alsintan sebagai data master yang dapat disunting admin', function () {
+    // Putaran 7: alsintan sebelumnya tidak punya `jenis` sama sekali.
+    // Dideklarasikan paling akhir supaya id `jenis_infrastruktur` /
+    // `jenis_fasilitas` yang ditunjuk PenilaianKondisiSp tidak bergeser.
+    expect(JenisReferensi::JenisAlsintan->value)->toBe('jenis_alsintan')
+        ->and(JenisReferensi::JenisAlsintan->kelompok())->toBe(KelompokReferensi::AsetInfrastruktur)
+        ->and(JenisReferensi::JenisAlsintan->berskor())->toBeFalse()
+        ->and(JenisReferensi::JenisAlsintan->berjenjang())->toBeFalse()
+        ->and(JenisReferensi::JenisAlsintan->dirujukParameter())->toBeFalse();
+
+    $nilai = array_column(DummyData::referensi(JenisReferensi::JenisAlsintan), 'nilai');
+    expect($nilai)->toContain('Traktor Roda Dua')->toContain('Pompa Air')->toContain('Lainnya');
+
+    // Halamannya sendiri di /master/referensi/jenis_alsintan.
+    $this->get(route('referensi.jenis', ['jenis' => 'jenis_alsintan']))->assertOk();
+
+    // Id infrastruktur/fasilitas tetap di tempatnya: tak ada penomoran ulang.
+    $idInfraTerakhir = max(array_column(DummyData::referensi(JenisReferensi::JenisInfrastruktur), 'id_referensi'));
+    $idAlsintanPertama = min(array_column(DummyData::referensi(JenisReferensi::JenisAlsintan), 'id_referensi'));
+    expect($idAlsintanPertama)->toBeGreaterThan($idInfraTerakhir);
+});
+
 it('memisahkan nilai aktif dari nilai yang sudah dinonaktifkan', function () {
     // Penonaktifan adalah inti rancangan tabel ini: nilai lama tetap terbaca,
     // hanya berhenti ditawarkan pada data baru. Tanpa satu pun contoh nonaktif,

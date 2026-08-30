@@ -47,7 +47,7 @@ class ViewServiceProvider extends ServiceProvider
      * @var array<string, list<string>>
      */
     private const RUJUKAN_FORM = [
-        'pages.alsintan.form' => ['daftarPoktan', 'opsiKondisi', 'opsiSumberDana', 'anggotaPerPoktan'],
+        'pages.alsintan.form' => ['daftarPoktan', 'opsiJenisAlsintan', 'opsiKondisi', 'opsiSumberDana', 'anggotaPerPoktan'],
         'pages.saprotan.form' => ['daftarPoktan', 'daftarSatuan', 'daftarKomoditas', 'opsiSumberDana'],
         'pages.infrastruktur.form' => ['daftarSp', 'opsiJenisInfrastruktur', 'opsiSumberDana', 'opsiKondisi'],
         'pages.komoditas.form' => ['daftarSatuan', 'sebaran', 'opsiTipeKomoditas'],
@@ -166,6 +166,7 @@ class ViewServiceProvider extends ServiceProvider
             'opsiKondisiRumah' => DummyData::opsiReferensi(JenisReferensi::KondisiRumah),
             'opsiStatusHunian' => DummyData::opsiReferensi(JenisReferensi::StatusHunian),
             'opsiJenisInfrastruktur' => DummyData::opsiReferensi(JenisReferensi::JenisInfrastruktur),
+            'opsiJenisAlsintan' => DummyData::opsiReferensi(JenisReferensi::JenisAlsintan),
             'opsiTipeKomoditas' => DummyData::opsiReferensi(JenisReferensi::TipeKomoditas),
             'opsiJenisDokumenLahan' => DummyData::opsiReferensi(JenisReferensi::JenisDokumenLahan),
             'daftarRole' => DummyData::role(),

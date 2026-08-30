@@ -2715,6 +2715,16 @@ class DummyData
                 'Inventaris SP', 'Fasilitas SP', 'Kelompok Tani', 'Alsintan',
                 'Saprotan', 'Produksi Panen', 'Bencana', 'Lainnya',
             ],
+            // Ditambahkan 2026-08-30 (Putaran 7). WAJIB di urutan paling akhir:
+            // penomoran id mengikuti urutan deklarasi, dan menyisipkan di tengah
+            // akan menggeser id `jenis_infrastruktur` / `jenis_fasilitas` yang
+            // sudah ditunjuk PenilaianKondisiSp::parameter(). Sebelumnya alsintan
+            // tidak punya `jenis` sama sekali; "Jenis Alat" pada laporan adalah
+            // `nama_alat` yang dipakai ulang.
+            JenisReferensi::JenisAlsintan->value => [
+                'Traktor Roda Dua', 'Traktor Roda Empat', 'Pompa Air', 'Hand Sprayer',
+                'Mesin Perontok', 'Cultivator', 'Alat Panen', 'Lainnya',
+            ],
         ];
 
         // Bidang penanganan bawaan tiap kategori, menggantikan `match` pada
