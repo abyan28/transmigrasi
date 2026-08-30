@@ -1614,13 +1614,12 @@ class DummyData
      */
     public static function hasilPanen(): array
     {
-        return [
+        $data = [
             // Panen sebagian beserta puso: 1,25 + 0,25 = 1,50 ha yang ditanam.
             // Sengaja ada agar cabang puso ikut terlihat saat peninjauan.
             [
                 'id_hasil_panen' => 1,
                 'penanaman_id' => 1,
-                'poktan_id' => 1,
                 'poktan' => 'POKTAN MEKAR JAYA',
                 'komoditas' => 'JAGUNG',
                 'satuan' => 'Ton',
@@ -1638,7 +1637,6 @@ class DummyData
             [
                 'id_hasil_panen' => 2,
                 'penanaman_id' => 3,
-                'poktan_id' => 1,
                 'poktan' => 'POKTAN MEKAR JAYA',
                 'komoditas' => 'JAGUNG',
                 'satuan' => 'Ton',
@@ -1663,7 +1661,6 @@ class DummyData
             [
                 'id_hasil_panen' => 3,
                 'penanaman_id' => 2,
-                'poktan_id' => 1,
                 'poktan' => 'POKTAN MEKAR JAYA',
                 'komoditas' => 'PADI',
                 'satuan' => 'Ton',
@@ -1687,7 +1684,6 @@ class DummyData
             [
                 'id_hasil_panen' => 4,
                 'penanaman_id' => 4,
-                'poktan_id' => 3,
                 'poktan' => 'POKTAN TANI BERSATU',
                 'komoditas' => 'CABAI',
                 'satuan' => 'Kilogram',
@@ -1705,7 +1701,6 @@ class DummyData
             [
                 'id_hasil_panen' => 5,
                 'penanaman_id' => 5,
-                'poktan_id' => 1,
                 'poktan' => 'POKTAN MEKAR JAYA',
                 'komoditas' => 'JAGUNG',
                 'satuan' => 'Ton',
@@ -1731,7 +1726,6 @@ class DummyData
             [
                 'id_hasil_panen' => 6,
                 'penanaman_id' => 7,
-                'poktan_id' => 4,
                 'poktan' => 'POKTAN HARAPAN BARU',
                 'komoditas' => 'PADI',
                 'satuan' => 'Ton',
@@ -1747,6 +1741,20 @@ class DummyData
                 'dokumen_pendukung' => null,
             ],
         ];
+
+        // `poktan_id` DITURUNKAN dari penanamannya (Putaran 7), bukan disimpan
+        // pada baris ini. Kolom sebelahnya `satuan_id` memang disalin dari
+        // komoditas dengan alasan snapshot historis (data-dictionary.md), tetapi
+        // `poktan_id` tak punya alasan itu: `penanaman.poktan_id` tak pernah
+        // sah berubah makna, dan salinan yang menggantung diam-diam berselisih.
+        $poktanPenanaman = [];
+        foreach (self::penanaman() as $t) {
+            $poktanPenanaman[$t['id_penanaman']] = $t['poktan_id'];
+        }
+
+        return array_map(function (array $h) use ($poktanPenanaman): array {
+            return $h + ['poktan_id' => $poktanPenanaman[$h['penanaman_id']] ?? null];
+        }, $data);
     }
 
     /**
@@ -2659,7 +2667,7 @@ class DummyData
      */
     public static function fasilitasSp(): array
     {
-        return [
+        $data = [
             ['id_fasilitas_sp' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'jenis_fasilitas' => 'Balai Pertemuan', 'nama_fasilitas' => 'BALAI PERTEMUAN', 'jumlah' => 1, 'tahun_perolehan' => 2016, 'sumber_dana' => 'APBN', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Baik', 'lintang' => -9.5124500, 'bujur' => 124.9125000, 'keterangan' => null],
             ['id_fasilitas_sp' => 2, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'jenis_fasilitas' => 'Kesehatan', 'nama_fasilitas' => 'PUSKESMAS PEMBANTU', 'jumlah' => 1, 'tahun_perolehan' => 2017, 'sumber_dana' => 'APBD Kabupaten', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Baik', 'lintang' => -9.5127000, 'bujur' => 124.9128000, 'keterangan' => null],
             ['id_fasilitas_sp' => 3, 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'jenis_fasilitas' => 'Pendidikan Dasar', 'nama_fasilitas' => 'SEKOLAH DASAR', 'jumlah' => 1, 'tahun_perolehan' => 2016, 'sumber_dana' => 'APBN', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Rusak Ringan', 'lintang' => -9.4982000, 'bujur' => 124.8878000, 'keterangan' => 'Plafon ruang kelas dua bocor.', 'foto' => 'kondisi-sekolah-dasar.jpg', 'dokumen_pendukung' => 'bast-sekolah-dasar.pdf'],
@@ -2696,6 +2704,49 @@ class DummyData
             ['id_fasilitas_sp' => 25, 'satuan_permukiman_id' => 5, 'satuan_permukiman' => 'SP Tualaran', 'jenis_fasilitas' => 'Kesehatan', 'nama_fasilitas' => 'POSKESDES TUALARAN', 'jumlah' => 1, 'tahun_perolehan' => 2022, 'sumber_dana' => 'APBN', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Baik', 'lintang' => -9.3985000, 'bujur' => 125.0134000, 'keterangan' => null],
             ['id_fasilitas_sp' => 26, 'satuan_permukiman_id' => 5, 'satuan_permukiman' => 'SP Tualaran', 'jenis_fasilitas' => 'Balai Pertemuan', 'nama_fasilitas' => 'BALAI PERTEMUAN NAET', 'jumlah' => 1, 'tahun_perolehan' => 2021, 'sumber_dana' => 'APBD Kabupaten', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Baik', 'lintang' => -9.3979000, 'bujur' => 125.0141000, 'keterangan' => null],
         ];
+
+        // Cakupan layanan lintas SP (Putaran 7), pola sama dengan
+        // infrastruktur: SMP Satu Atap dan Puskesmas Pembantu di satu SP
+        // melayani anak dan warga SP tetangga yang berjalan ke sana. Tanpa ini
+        // penilaian kondisi SP tetangga mencatatnya sebagai tidak punya SMP.
+        $cakupanTambahan = [
+            2 => [2],       // PUSKESMAS PEMBANTU Kapitan Meo melayani SP Tniumanu juga
+            14 => [2],      // SMP SATU ATAP KAPITAN MEO menampung anak SP Tniumanu
+            15 => [2],      // PASAR DESA KAPITAN MEO
+        ];
+
+        return array_map(function (array $a) use ($cakupanTambahan): array {
+            $ids = array_values(array_unique(array_merge(
+                [$a['satuan_permukiman_id']],
+                $cakupanTambahan[$a['id_fasilitas_sp']] ?? [],
+            )));
+            sort($ids);
+
+            return $a + ['satuan_permukiman_ids' => $ids];
+        }, $data);
+    }
+
+    /**
+     * Cakupan layanan tiap fasilitas SP, satu baris per SP dilayani
+     * (Putaran 7). Wajib memuat SP pangkal.
+     *
+     * @return array<int, array{fasilitas_sp_id: int, satuan_permukiman_id: int, pangkal: bool}>
+     */
+    public static function fasilitasSpCakupan(): array
+    {
+        $hasil = [];
+
+        foreach (self::fasilitasSp() as $a) {
+            foreach ($a['satuan_permukiman_ids'] as $spId) {
+                $hasil[] = [
+                    'fasilitas_sp_id' => $a['id_fasilitas_sp'],
+                    'satuan_permukiman_id' => $spId,
+                    'pangkal' => $spId === $a['satuan_permukiman_id'],
+                ];
+            }
+        }
+
+        return $hasil;
     }
 
     /**

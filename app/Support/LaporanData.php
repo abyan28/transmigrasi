@@ -846,7 +846,12 @@ class LaporanData
         ];
 
         // --- Sosial Budaya ---------------------------------------------
-        $fasilitasSp = array_values(array_filter(DummyData::fasilitasSp(), fn ($x) => $x['satuan_permukiman_id'] === $id));
+        // Fasilitas yang MELAYANI SP ini, termasuk yang berpangkal di SP lain
+        // (Putaran 7): SMP Satu Atap, puskesmas pembantu, pasar desa.
+        $fasilitasSp = array_values(array_filter(
+            DummyData::fasilitasSp(),
+            fn ($x) => in_array($id, $x['satuan_permukiman_ids'] ?? [$x['satuan_permukiman_id']], true),
+        ));
         $fasilitasJenis = function (array $jenis) use ($fasilitasSp) {
             return array_map(fn ($x) => [$x['nama_fasilitas'], $x['jumlah'], $x['kondisi'], $x['tahun_perolehan']],
                 array_values(array_filter($fasilitasSp, fn ($x) => in_array($x['jenis_fasilitas'], $jenis, true))));
