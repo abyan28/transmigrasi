@@ -772,11 +772,15 @@ class LaporanData
             self::angka(array_sum(array_column($lahanGrup, 'diusahakan'))),
         ];
 
+        // Cacah BIDANG berdokumen per jenis (Putaran 7): satu dokumen dapat
+        // mencakup banyak bidang, jadi yang dihitung adalah bidangnya.
         $idLahanSp = array_column($lahanSp, 'id_lahan');
         $dokGrup = [];
         foreach (DummyData::dokumenLahan() as $d) {
-            if (in_array($d['lahan_id'], $idLahanSp, true)) {
-                $dokGrup[$d['jenis_dokumen']] = ($dokGrup[$d['jenis_dokumen']] ?? 0) + 1;
+            foreach ($d['lahan_ids'] as $lahanId) {
+                if (in_array($lahanId, $idLahanSp, true)) {
+                    $dokGrup[$d['jenis_dokumen']] = ($dokGrup[$d['jenis_dokumen']] ?? 0) + 1;
+                }
             }
         }
         $barisDok = [];

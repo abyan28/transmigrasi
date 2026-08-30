@@ -1095,6 +1095,13 @@ Route::get('/lahan/{id}', function (int $id) {
         'data' => $data,
         'dokumen' => DummyData::dokumenLahan($data['id_lahan']),
 
+        // Bidang lain untuk pilihan "dokumen ini juga mencakup" (Putaran 7):
+        // satu HPL/SK lazim mencakup banyak bidang.
+        'daftarLahanLain' => array_values(array_filter(
+            DummyData::lahan(),
+            fn ($l) => $l['id_lahan'] !== $data['id_lahan'],
+        )),
+
         // Dibaca lewat id, bukan mencocokkan nama. Dua kepala keluarga dapat
         // bernama sama, dan pencocokan nama akan menautkan bidang ini ke
         // profil orang yang keliru tanpa ada yang menyadarinya.

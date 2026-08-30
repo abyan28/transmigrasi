@@ -2,10 +2,12 @@
     Rincian satu lahan beserta dokumen status lahannya.
 
     Dokumen HPL dan SHM dikelola di sini, bukan di dalam form lahan, karena
-    satu lahan dapat memiliki lebih dari satu dokumen
-    (agents/data-dictionary.md bagian 7.2). Nomor dokumen dan tanggal terbit
-    tetap hidup di tab ini meski isiannya dicabut dari form lahan pada
-    2026-08-20, sebab keduanya memang keterangan per dokumen, bukan per bidang.
+    satu lahan dapat memiliki lebih dari satu dokumen DAN satu dokumen dapat
+    mencakup banyak bidang (agents/data-dictionary.md bagian 7.2; relasi
+    many-to-many lewat `dokumen_lahan_bidang` sejak Putaran 7). Nomor dokumen
+    dan tanggal terbit tetap hidup di tab ini meski isiannya dicabut dari form
+    lahan pada 2026-08-20, sebab keduanya keterangan per dokumen, bukan per
+    bidang.
 
     Bagian pengelolaan (pola tanam, peralatan, kendala) hanya ditampilkan bila
     lahan berjenis Lahan Usaha, mengikuti aturan bahwa keempat kolom itu tidak
@@ -206,8 +208,9 @@
                             terbit menyusul setelah surat keterangan pembagian tanah.
                         --}}
                         <p class="text-theme-xs text-gray-500 dark:text-gray-400">
-                            Dokumen pertama diisi pada form lahan. Tab ini untuk dokumen tambahan pada
-                            bidang yang sama, masing-masing dengan nomor dan tanggal terbitnya sendiri.
+                            Dokumen pertama diisi pada form lahan. Tab ini untuk dokumen tambahan, masing-masing
+                            dengan nomor dan tanggal terbitnya sendiri. Satu HPL atau SK dapat mencakup beberapa
+                            bidang sekaligus.
                         </p>
                         @if ($bolehUbah)
                             <button type="button" @click="$dispatch('buka-modal', 'formDokumenLahan')"
@@ -221,7 +224,7 @@
                         <x-sim.empty-state judul="Belum ada dokumen lahan"
                             pesan="Dokumen HPL, SHM, atau surat keterangan desa dapat diunggah lewat tombol Tambah Dokumen Lahan." />
                     @else
-                        <x-sim.tabel-ringkas judul="Dokumen kepemilikan lahan ini" :kolom="['Jenis', 'Nomor Dokumen', 'Tanggal Terbit', 'Berkas']">
+                        <x-sim.tabel-ringkas judul="Dokumen kepemilikan lahan ini" :kolom="['Jenis', 'Nomor Dokumen', 'Bidang Dicakup', 'Tanggal Terbit', 'Berkas']">
                             @foreach ($dokumen as $d)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                                     <td class="px-5 py-3 text-theme-sm font-medium text-gray-800 dark:text-white/90">
@@ -229,6 +232,9 @@
                                     </td>
                                     <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
                                         {{ $d['nomor_dokumen'] ?? '-' }}
+                                    </td>
+                                    <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
+                                        {{ count($d['lahan_ids']) }} bidang
                                     </td>
                                     <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
                                         @if ($d['tanggal_terbit'])
@@ -297,6 +303,21 @@
                     </label>
                     <input type="date" id="dok_tanggal" name="tanggal_terbit" max="{{ date('Y-m-d') }}"
                         class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90" />
+                </div>
+
+                {{--
+                    Bidang lain yang dicakup dokumen yang sama (Putaran 7).
+                    Satu HPL atau SK pencadangan lazim mencakup banyak bidang;
+                    tanpa ini dokumen itu harus diketik ulang dan berkasnya
+                    diunggah ulang per bidang.
+                --}}
+                <div class="sm:col-span-2">
+                    <x-sim.pilih-cari-banyak nama="lahan_ids_lain" label="Bidang Lain yang Dicakup Dokumen Ini"
+                        :opsi="$daftarLahanLain" kunci="id_lahan" teks="kode_lahan"
+                        keterangan-opsi="pemilik,satuan_permukiman"
+                        :terpilih="[]"
+                        placeholder="Kosongkan bila dokumen ini hanya untuk bidang ini"
+                        keterangan="Bidang ini otomatis termasuk. Isi hanya bidang tambahan yang tercatat pada dokumen yang sama." />
                 </div>
 
                 <div class="sm:col-span-2">

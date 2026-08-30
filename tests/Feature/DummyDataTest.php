@@ -643,6 +643,41 @@ it('menautkan tiap distribusi alsintan ke pengadaan dan poktan yang sah', functi
     }
 });
 
+it('membiarkan satu dokumen lahan mencakup banyak bidang', function () {
+    // Putaran 7: satu HPL / SK pencadangan lazim mencakup ratusan bidang.
+    // Model lama membawa satu lahan_id per baris, memaksa dokumen yang sama
+    // diketik ulang dan berkasnya diunggah ulang per bidang.
+    $idLahan = array_column(DummyData::lahan(), 'id_lahan');
+
+    foreach (DummyData::dokumenLahan() as $d) {
+        expect($d)->toHaveKey('lahan_ids')
+            ->and($d['lahan_ids'])->not->toBeEmpty()
+            // Kompatibilitas: lahan_id tunggal = bidang pertama.
+            ->and($d['lahan_id'])->toBe($d['lahan_ids'][0]);
+
+        foreach ($d['lahan_ids'] as $lid) {
+            expect($idLahan)->toContain($lid);
+        }
+    }
+
+    // Data contoh wajib memuat satu dokumen lintas bidang.
+    $lintas = collect(DummyData::dokumenLahan())->first(fn ($d) => count($d['lahan_ids']) > 1);
+    expect($lintas)->not->toBeNull('data contoh wajib memuat dokumen lahan lintas bidang');
+
+    // Penyaringan per bidang mengembalikan dokumen yang mencakupnya.
+    foreach ($lintas['lahan_ids'] as $lid) {
+        expect(collect(DummyData::dokumenLahan($lid))->pluck('id_dokumen_lahan'))
+            ->toContain($lintas['id_dokumen_lahan']);
+    }
+
+    // Tabel penghubung menautkan ke dokumen yang sah.
+    $idDok = array_column(DummyData::dokumenLahan(), 'id_dokumen_lahan');
+    foreach (DummyData::dokumenLahanBidang() as $b) {
+        expect($idDok)->toContain($b['dokumen_lahan_id'])
+            ->and($idLahan)->toContain($b['lahan_id']);
+    }
+});
+
 /*
 |--------------------------------------------------------------------------
 | Saprotan: kaitan benih ke komoditas dan sisa stok

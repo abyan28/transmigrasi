@@ -1309,50 +1309,55 @@ class DummyData
      */
     public static function dokumenLahan(?int $lahanId = null): array
     {
-        $data = [
-            [
-                'id_dokumen_lahan' => 1,
-                'lahan_id' => 1,
-                'jenis_dokumen' => 'HPL',
-                'nomor_dokumen' => 'HPL/NTT/2016/0142',
-                'tanggal_terbit' => '2016-11-08',
-                'file_dokumen' => 'lahan/1/HPL_yohanes-bere.pdf',
-                'keterangan' => 'Hak pengelolaan lahan pekarangan.',
-            ],
-            [
-                'id_dokumen_lahan' => 2,
-                'lahan_id' => 2,
-                'jenis_dokumen' => 'HPL',
-                'nomor_dokumen' => 'HPL/NTT/2016/0143',
-                'tanggal_terbit' => '2016-11-08',
-                'file_dokumen' => 'lahan/2/HPL_yohanes-bere.pdf',
-                'keterangan' => 'Hak pengelolaan lahan usaha satu.',
-            ],
-            [
-                'id_dokumen_lahan' => 3,
-                'lahan_id' => 5,
-                'jenis_dokumen' => 'SHM',
-                'nomor_dokumen' => 'SHM/MLK/2021/0871',
-                'tanggal_terbit' => '2021-03-19',
-                'file_dokumen' => 'lahan/5/SHM_maria-da-costa.pdf',
-                'keterangan' => 'Sertifikat hak milik atas nama pemilik lahan.',
-            ],
-            [
-                'id_dokumen_lahan' => 4,
-                'lahan_id' => 6,
-                'jenis_dokumen' => 'HPL',
-                'nomor_dokumen' => 'HPL/NTT/2017/0219',
-                'tanggal_terbit' => '2017-02-27',
-                'file_dokumen' => 'lahan/6/HPL_petrus-nahak.pdf',
-                'keterangan' => null,
-            ],
+        // INDUK: mendeskripsikan BERKASnya. Satu HPL / SK pencadangan lazim
+        // mencakup banyak bidang (Putaran 7); model lama membawa satu
+        // `lahan_id` per baris, sehingga satu dokumen harus diketik ulang dan
+        // berkasnya diunggah ulang per bidang, lalu satu digit yang salah pada
+        // `nomor_dokumen` hanya terbetulkan di sebagian baris.
+        $induk = [
+            ['id_dokumen_lahan' => 1, 'jenis_dokumen' => 'HPL', 'nomor_dokumen' => 'HPL/NTT/2016/0142', 'tanggal_terbit' => '2016-11-08', 'file_dokumen' => 'lahan/dokumen/1/HPL-NTT-2016-0142.pdf', 'keterangan' => 'Hak pengelolaan blok pekarangan dan usaha SP Kapitan Meo tahap awal.'],
+            ['id_dokumen_lahan' => 3, 'jenis_dokumen' => 'SHM', 'nomor_dokumen' => 'SHM/MLK/2021/0871', 'tanggal_terbit' => '2021-03-19', 'file_dokumen' => 'lahan/dokumen/3/SHM-MLK-2021-0871.pdf', 'keterangan' => 'Sertifikat hak milik atas nama pemilik lahan.'],
+            ['id_dokumen_lahan' => 4, 'jenis_dokumen' => 'HPL', 'nomor_dokumen' => 'HPL/NTT/2017/0219', 'tanggal_terbit' => '2017-02-27', 'file_dokumen' => 'lahan/dokumen/4/HPL-NTT-2017-0219.pdf', 'keterangan' => null],
         ];
+
+        $bidangPer = [];
+        foreach (self::dokumenLahanBidang() as $b) {
+            $bidangPer[$b['dokumen_lahan_id']][] = $b['lahan_id'];
+        }
+
+        $data = array_map(function (array $d) use ($bidangPer): array {
+            $ids = $bidangPer[$d['id_dokumen_lahan']] ?? [];
+
+            return $d + [
+                'lahan_ids' => $ids,
+                // Kompatibilitas: pemanggil lama yang membaca `lahan_id` tunggal
+                // mendapat bidang pertama.
+                'lahan_id' => $ids[0] ?? null,
+            ];
+        }, $induk);
 
         if ($lahanId === null) {
             return $data;
         }
 
-        return array_values(array_filter($data, fn ($b) => $b['lahan_id'] === $lahanId));
+        return array_values(array_filter($data, fn ($b) => in_array($lahanId, $b['lahan_ids'], true)));
+    }
+
+    /**
+     * Bidang lahan yang dicakup tiap dokumen (Putaran 7), tabel penghubung
+     * many-to-many.
+     *
+     * @return array<int, array{dokumen_lahan_id: int, lahan_id: int}>
+     */
+    public static function dokumenLahanBidang(): array
+    {
+        return [
+            // HPL/NTT/2016/0142 mencakup pekarangan DAN lahan usaha Yohanes Bere.
+            ['dokumen_lahan_id' => 1, 'lahan_id' => 1],
+            ['dokumen_lahan_id' => 1, 'lahan_id' => 2],
+            ['dokumen_lahan_id' => 3, 'lahan_id' => 5],
+            ['dokumen_lahan_id' => 4, 'lahan_id' => 6],
+        ];
     }
 
     /**
