@@ -2434,7 +2434,7 @@ class DummyData
      */
     public static function infrastruktur(): array
     {
-        return [
+        $data = [
             [
                 'id_infrastruktur' => 1,
                 'nama' => 'SALURAN IRIGASI BLOK A',
@@ -2546,6 +2546,50 @@ class DummyData
             ['id_infrastruktur' => 34, 'nama' => 'MENARA TELEKOMUNIKASI TUALARAN', 'jenis' => JenisInfrastruktur::Telekomunikasi->value, 'satuan_permukiman' => 'SP Tualaran', 'satuan_permukiman_id' => 5, 'tahun_perolehan' => 2023, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Jangkauan 4G'],
             ['id_infrastruktur' => 35, 'nama' => 'SANITASI KOMUNAL TUALARAN', 'jenis' => JenisInfrastruktur::Sanitasi->value, 'satuan_permukiman' => 'SP Tualaran', 'satuan_permukiman_id' => 5, 'tahun_perolehan' => 2019, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::RusakRingan->value, 'kapasitas' => 'Melayani 38 KK'],
         ];
+
+        // Cakupan layanan lintas SP (Putaran 7). Sebelumnya kenyataan ini
+        // hanya tertulis di `kapasitas` sebagai teks ("Melayani 3 SP sekitar"),
+        // sebab satu FK tunggal tidak dapat menampungnya. `satuan_permukiman_id`
+        // TETAP sebagai lokasi/pangkal; `satuan_permukiman_ids` menambahkan SP
+        // lain yang benar-benar dilayani, dan penilaian kondisi SP membacanya.
+        $cakupanTambahan = [
+            1 => [2],       // SALURAN IRIGASI BLOK A juga mengairi blok di SP Tniumanu
+            9 => [2, 5],    // KIOS SAPROTAN DESA "melayani 3 SP sekitar"
+            19 => [5],      // IRIGASI BLOK BARAT mengairi lahan di SP Tualaran juga
+        ];
+
+        return array_map(function (array $a) use ($cakupanTambahan): array {
+            $ids = array_values(array_unique(array_merge(
+                [$a['satuan_permukiman_id']],
+                $cakupanTambahan[$a['id_infrastruktur']] ?? [],
+            )));
+            sort($ids);
+
+            return $a + ['satuan_permukiman_ids' => $ids];
+        }, $data);
+    }
+
+    /**
+     * Cakupan layanan tiap aset infrastruktur, satu baris per SP dilayani
+     * (Putaran 7). Wajib memuat SP pangkal (`satuan_permukiman_id`).
+     *
+     * @return array<int, array{infrastruktur_id: int, satuan_permukiman_id: int, pangkal: bool}>
+     */
+    public static function infrastrukturCakupan(): array
+    {
+        $hasil = [];
+
+        foreach (self::infrastruktur() as $a) {
+            foreach ($a['satuan_permukiman_ids'] as $spId) {
+                $hasil[] = [
+                    'infrastruktur_id' => $a['id_infrastruktur'],
+                    'satuan_permukiman_id' => $spId,
+                    'pangkal' => $spId === $a['satuan_permukiman_id'],
+                ];
+            }
+        }
+
+        return $hasil;
     }
 
     /*

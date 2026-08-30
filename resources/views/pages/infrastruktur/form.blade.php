@@ -63,7 +63,7 @@
             </div>
 
             <div>
-                <label for="{{ $awalan }}_satuan_permukiman_infrastruktur" class="{{ $kelasLabel }}">Satuan Permukiman<span class="text-error-500">*</span></label>
+                <label for="{{ $awalan }}_satuan_permukiman_infrastruktur" class="{{ $kelasLabel }}">Satuan Permukiman (Lokasi)<span class="text-error-500">*</span></label>
                 <select id="{{ $awalan }}_satuan_permukiman_infrastruktur" name="satuan_permukiman_id" required
                     class="{{ $kelasKontrol }}">
                     <option value="">Pilih satuan permukiman</option>
@@ -74,6 +74,21 @@
                         </option>
                     @endforeach
                 </select>
+            </div>
+
+            {{--
+                SP lain yang ikut dilayani (Putaran 7). Satu irigasi, jalan
+                masuk kawasan, atau kios lazim melayani beberapa SP; tanpa ini
+                kenyataan itu hanya bisa ditulis di kolom Kapasitas sebagai
+                teks, dan penilaian kondisi SP tetangga jatuh karena aset itu
+                seolah tidak ada di SP-nya.
+            --}}
+            <div class="sm:col-span-2">
+                <x-sim.pilih-cari-banyak nama="satuan_permukiman_ids_lain" label="SP Lain yang Dilayani"
+                    :awalan="$awalan" :opsi="$daftarSp" kunci="id_satuan_permukiman" teks="nama"
+                    :terpilih="collect($data['satuan_permukiman_ids'] ?? [])->reject(fn ($x) => (string) $x === (string) ($data['satuan_permukiman_id'] ?? ''))->values()->all()"
+                    placeholder="Kosongkan bila aset ini hanya melayani SP lokasinya"
+                    keterangan="SP lokasi di atas otomatis termasuk. Isi hanya SP tambahan." />
             </div>
 
             <div>

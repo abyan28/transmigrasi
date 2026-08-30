@@ -94,9 +94,19 @@ class PenilaianKondisiSp
         $infrastruktur ??= DummyData::infrastruktur();
         $fasilitas ??= DummyData::fasilitasSp();
 
-        // Hanya aset milik SP yang sedang dinilai
-        $asetInfra = array_filter($infrastruktur, fn ($a) => ($a['satuan_permukiman_id'] ?? null) === $satuanPermukimanId);
-        $asetFasilitas = array_filter($fasilitas, fn ($a) => ($a['satuan_permukiman_id'] ?? null) === $satuanPermukimanId);
+        // Aset yang MELAYANI SP yang sedang dinilai, bukan hanya yang berpangkal
+        // di sana (Putaran 7). Satu irigasi atau kios yang melayani beberapa SP
+        // dahulu hanya diakui SP pertama pada barisnya, sehingga SP tetangga
+        // jatuh ke "Perlu Penanganan" lewat aturan primer nol. Mundur ke
+        // `[satuan_permukiman_id]` menjaga larik yang disuntik uji tanpa kolom
+        // baru tetap berjalan.
+        $melayani = fn ($a) => in_array(
+            $satuanPermukimanId,
+            $a['satuan_permukiman_ids'] ?? [$a['satuan_permukiman_id'] ?? null],
+            true,
+        );
+        $asetInfra = array_filter($infrastruktur, $melayani);
+        $asetFasilitas = array_filter($fasilitas, $melayani);
 
         $rincian = [];
         $totalBobotNilai = 0.0;

@@ -808,7 +808,12 @@ class LaporanData
             $barisTanam[] = [$kom, self::angka($v['tanam']), self::angka($v['panen']), self::angka($v['puso']), self::angka($v['produksi'])];
         }
 
-        $infraSp = array_values(array_filter(DummyData::infrastruktur(), fn ($x) => $x['satuan_permukiman_id'] === $id));
+        // Infrastruktur yang MELAYANI SP ini, termasuk aset bersama yang
+        // berpangkal di SP lain (Putaran 7).
+        $infraSp = array_values(array_filter(
+            DummyData::infrastruktur(),
+            fn ($x) => in_array($id, $x['satuan_permukiman_ids'] ?? [$x['satuan_permukiman_id']], true),
+        ));
         $barisInfra = array_map(fn ($x) => [
             $x['jenis'], $x['nama'], $x['kondisi'], $x['kapasitas'] ?? '-', $x['tahun_perolehan'] ?? '-',
         ], $infraSp);

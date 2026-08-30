@@ -15,6 +15,7 @@
 
 use App\Enums\StatusKondisiSp;
 use App\Enums\TingkatKebutuhan;
+use App\Support\DummyData;
 use App\Support\PenilaianKondisiSp;
 
 /*
@@ -148,6 +149,50 @@ it('memberi skor nol untuk SP tanpa satu pun aset', function () {
     expect($hasil['skor'])->toBe(0.0)
         ->and($hasil['ada_primer_nol'])->toBeTrue()
         ->and($hasil['status'])->toBe(StatusKondisiSp::PerluPenanganan);
+});
+
+it('mengakui aset yang melayani beberapa SP, bukan hanya SP pangkalnya', function () {
+    // Putaran 7: satu irigasi atau kios yang melayani beberapa SP dahulu
+    // hanya diakui SP pada barisnya, sehingga SP tetangga jatuh ke Perlu
+    // Penanganan lewat aturan primer nol.
+    $airBersamaUntukDuaSp = [
+        ['satuan_permukiman_id' => 1, 'satuan_permukiman_ids' => [1, 2], 'jenis' => 'Air', 'kondisi' => 'Baik'],
+    ];
+
+    $sp1 = PenilaianKondisiSp::nilai(1, $airBersamaUntukDuaSp, []);
+    $sp2 = PenilaianKondisiSp::nilai(2, $airBersamaUntukDuaSp, []);
+
+    // Kedua SP mendapat kondisi air Baik dari SATU aset.
+    expect(collect($sp1['rincian'])->firstWhere('kode', 'air_bersih')['nilai'])->toBe(1.0)
+        ->and(collect($sp2['rincian'])->firstWhere('kode', 'air_bersih')['nilai'])->toBe(1.0);
+
+    // SP di luar cakupan tidak ikut mendapatkannya.
+    $sp3 = PenilaianKondisiSp::nilai(3, $airBersamaUntukDuaSp, []);
+    expect(collect($sp3['rincian'])->firstWhere('kode', 'air_bersih')['nilai'])
+        ->toBe(PenilaianKondisiSp::NILAI_TIDAK_ADA);
+
+    // Larik lama tanpa kolom `satuan_permukiman_ids` tetap dinilai lewat
+    // `satuan_permukiman_id` tunggal (mundur aman).
+    $lama = [['satuan_permukiman_id' => 7, 'jenis' => 'Air', 'kondisi' => 'Baik']];
+    expect(collect(PenilaianKondisiSp::nilai(7, $lama, [])['rincian'])->firstWhere('kode', 'air_bersih')['nilai'])
+        ->toBe(1.0);
+});
+
+it('membawa cakupan layanan infrastruktur yang wajib memuat SP pangkal', function () {
+    // Kenyataan "melayani 3 SP" dahulu hanya tertulis di kolom kapasitas.
+    foreach (DummyData::infrastruktur() as $a) {
+        expect($a)->toHaveKey('satuan_permukiman_ids')
+            ->and($a['satuan_permukiman_ids'])->toContain($a['satuan_permukiman_id']);
+    }
+
+    // Data contoh wajib memuat setidaknya satu aset lintas SP.
+    $lintas = collect(DummyData::infrastruktur())->first(fn ($a) => count($a['satuan_permukiman_ids']) > 1);
+    expect($lintas)->not->toBeNull('data contoh wajib memuat infrastruktur lintas SP');
+
+    // Tabel cakupan menandai baris pangkal.
+    $cakupan = collect(DummyData::infrastrukturCakupan());
+    expect($cakupan->where('infrastruktur_id', $lintas['id_infrastruktur'])->where('pangkal', true))
+        ->toHaveCount(1);
 });
 
 /*
