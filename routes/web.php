@@ -1805,7 +1805,12 @@ Route::get('/poktan/{id}', function (int $id) {
 
             return $hasil;
         })(),
-        'saprotan' => array_values(array_filter(DummyData::saprotan(), fn ($s) => $s['poktan_id'] === $data['id_poktan'])),
+        // Saprotan yang bagiannya diterima poktan ini (Putaran 7): satu baris
+        // per distribusi, membawa konteks pengadaannya.
+        'saprotan' => array_values(array_filter(
+            DummyData::saprotanDistribusi(),
+            fn ($d) => $d['poktan_id'] === $data['id_poktan'],
+        )),
         'aktif' => count(array_filter($anggota, fn ($a) => $a['status'] === 'Aktif')),
         'ketua' => $ketua,
         'keluargaKetua' => DummyData::cariTransmigran($data['ketua_transmigran_id']),
@@ -1969,11 +1974,14 @@ Route::get('/saprotan', function () {
     $filterJenis = request('jenis');
 
     $baris = array_values(array_filter($semua, function ($s) use ($cari, $filterSp, $filterJenis) {
+        $poktanTeks = mb_strtolower(implode(' ', $s['poktan_penerima']));
+
         if ($cari !== '' && ! str_contains(mb_strtolower($s['nama']), mb_strtolower($cari))
-            && ! str_contains(mb_strtolower($s['penerima']), mb_strtolower($cari))) {
+            && ! str_contains($poktanTeks, mb_strtolower($cari))) {
             return false;
         }
-        if ($filterSp && (string) $s['satuan_permukiman_id'] !== (string) $filterSp) {
+        // SP cocok bila ADA distribusi di SP itu (Putaran 7).
+        if ($filterSp && ! in_array((int) $filterSp, array_column($s['distribusi'], 'satuan_permukiman_id'), true)) {
             return false;
         }
         if ($filterJenis && $s['jenis'] !== $filterJenis) {
@@ -1994,11 +2002,10 @@ Route::get('/saprotan', function () {
      * penanaman. Menghitungnya untuk pupuk berarti menjanjikan angka yang
      * tidak pernah dimaksudkan.
      */
-    $sisaBenih = [];
+    // Sisa PENGADAAN yang belum tersalurkan (barang di gudang UPT), per baris.
+    $belumTersalur = [];
     foreach ($baris as $s) {
-        if ($s['jenis'] === JenisSaprotan::Benih->value) {
-            $sisaBenih[$s['id_saprotan']] = DummyData::sisaBenih($s['id_saprotan']);
-        }
+        $belumTersalur[$s['id_saprotan']] = $s['jumlah_belum_tersalur'];
     }
 
     return view('pages.saprotan.index', [
@@ -2011,11 +2018,11 @@ Route::get('/saprotan', function () {
         'adaFilter' => $cari !== '' || $filterSp || $filterJenis,
         'jenisUnik' => array_values(array_unique(array_column($semua, 'jenis'))),
 
-        // Banyaknya poktan yang pernah menerima, menggantikan pasangan kartu
-        // "Kepada Poktan" dan "Kepada Individu". Penerima kini selalu poktan,
-        // sehingga kartu lama hanya menampilkan seluruh data dan angka nol.
-        'poktanPenerima' => count(array_unique(array_column($semua, 'poktan_id'))),
-        'sisaBenih' => $sisaBenih,
+        // Banyaknya poktan penerima di seluruh distribusi (Putaran 7).
+        'poktanPenerima' => count(array_unique(array_merge(
+            [], ...array_map(fn ($s) => array_column($s['distribusi'], 'poktan_id'), $semua)
+        ))),
+        'belumTersalur' => $belumTersalur,
         'daftarSp' => DummyData::satuanPermukiman(),
     ]);
 })->name('saprotan.index');
@@ -2025,17 +2032,9 @@ Route::get('/saprotan/{id}', function (int $id) {
 
     abort_if($data === null, 404);
 
-    // Hanya benih yang punya sisa, sebab hanya benih yang dikurangi pemakaian
-    // penanaman. Bernilai null untuk jenis lain, dan viewnya memang tidak
-    // menampilkan blok itu.
-    $sisaBenih = $data['jenis'] === JenisSaprotan::Benih->value
-        ? DummyData::sisaBenih($data['id_saprotan'])
-        : null;
-
     return view('pages.saprotan.detail', [
         'title' => $data['nama'],
         'data' => $data,
-        'sisaBenih' => $sisaBenih,
     ]);
 })->where('id', '[0-9]+')->name('saprotan.detail');
 
@@ -2282,8 +2281,10 @@ Route::get('/penanaman/{id}', function (int $id) {
         'belumDitanam' => DummyData::lahanTersedia($data['poktan_id']),
         'rekapPoktan' => DummyData::rekapLahanPoktan($data['poktan_id']),
 
-        'benih' => $data['saprotan_id']
-            ? collect(DummyData::saprotan())->firstWhere('id_saprotan', $data['saprotan_id'])
+        // Benih dibaca lewat baris distribusi (jatah poktan ini), lalu
+        // konteks pengadaannya (Putaran 7).
+        'benih' => $data['saprotan_distribusi_id']
+            ? collect(DummyData::saprotanDistribusi())->firstWhere('id_saprotan_distribusi', $data['saprotan_distribusi_id'])
             : null,
     ]);
 })->where('id', '[0-9]+')->name('penanaman.detail');

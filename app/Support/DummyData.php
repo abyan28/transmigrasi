@@ -3575,131 +3575,228 @@ class DummyData
     }
 
     /**
-     * Penyaluran sarana produksi pertanian.
+     * Pengadaan sarana produksi pertanian, satu baris per PENGADAAN (induk).
      *
-     * PENERIMA SELALU POKTAN. Penyaluran kepada perorangan dicabut 2026-08-22
-     * bersama pilihan "Jenis Penerima" pada formnya: seluruh pencatatan
-     * Produksi Pertanian berpusat pada kelompok tani, dan pembagian kepada
-     * anggota diatur poktan sendiri di luar sistem.
+     * Diubah 2026-08-30 (Putaran 7): satu batch bantuan (mis. 250 kg benih
+     * jagung anggaran Dinas 2025) lazim dibagikan ke BEBERAPA poktan. Model
+     * lama membawa satu `poktan_id` pada baris ini, sehingga satu batch harus
+     * diketik ulang per poktan menjadi baris-baris terpisah yang tidak saling
+     * tahu; sisa benih pun tak terdefinisi bila jatah satu poktan tergerus
+     * penanaman poktan lain.
      *
-     * Karena itu `transmigran_id` dan `jenis_penerima` tidak lagi ada di sini,
-     * sedangkan `poktan_id` menjadi wajib. Satuan permukiman tetap disimpan
-     * sebab dipakai penyaringan daftar, tetapi nilainya selalu mengikuti SP
-     * poktan penerimanya.
+     * Kini baris ini mendeskripsikan BENDAnya: `jenis`, `nama`, `komoditas_id`
+     * (WAJIB bila Benih, kosong bagi jenis lain), `varietas` (idem),
+     * `jadwal_tanam`, `jumlah_total`, `satuan_id`, `tahun_pengadaan` (tahun
+     * anggaran, §8.4), `sumber_dana`. Poktan penerima, jumlah per poktan, dan
+     * tanggal serah pindah ke `saprotanDistribusi()`. `distribusi[]`,
+     * `jumlah_tersalur`, `jumlah_belum_tersalur`, `poktan_penerima` ditempel
+     * di sini sebagai turunan.
      *
-     * `komoditas_id` ditambahkan 2026-08-22, WAJIB bila jenisnya Benih dan
-     * kosong bagi jenis lain. Sebelumnya kaitan benih ke komoditas hanya
-     * tersirat dari teks namanya, sehingga sistem tidak tahu "BENIH JAGUNG
-     * HIBRIDA" itu benih jagung: tidak ada cara menyaringnya, dan petugas
-     * dapat memilih benih padi untuk penanaman jagung tanpa ditegur.
+     * `satuan` dibetulkan menjadi `satuan_id` (FK) sekalian: data lama
+     * menyimpan nama sedangkan form mengirim id dan kamus data menyatakan FK.
      *
-     * Pupuk, pestisida, dan mulsa sengaja TIDAK diwajibkan berkomoditas.
-     * Urea dipakai tanaman apa pun, dan memaksanya memilih satu komoditas
-     * berarti mengarang data yang tidak ada di lapangan.
-     *
-     * @return array<int, array<string, mixed>> Data saprotan
+     * @return array<int, array<string, mixed>> Data pengadaan saprotan
      */
     public static function saprotan(): array
     {
+        $data = self::saprotanPengadaan();
+
+        $distribusiPer = [];
+        foreach (self::saprotanDistribusi() as $d) {
+            $distribusiPer[$d['saprotan_id']][] = $d;
+        }
+
+        return array_map(function (array $baris) use ($distribusiPer): array {
+            $dist = $distribusiPer[$baris['id_saprotan']] ?? [];
+            $tersalur = round(array_sum(array_column($dist, 'jumlah')), 3);
+
+            return $baris + [
+                'distribusi' => $dist,
+                'jumlah_tersalur' => $tersalur,
+                'jumlah_belum_tersalur' => max(0.0, round($baris['jumlah_total'] - $tersalur, 3)),
+                'poktan_penerima' => array_values(array_unique(array_column($dist, 'poktan'))),
+            ];
+        }, $data);
+    }
+
+    /**
+     * Distribusi pengadaan saprotan ke poktan, satu baris per poktan penerima.
+     *
+     * Ditambahkan 2026-08-30 (Putaran 7). `poktan_id`, `satuan_permukiman_id`,
+     * dan `satuan_permukiman` MENGIKUTI poktan (rules.md §7c poin 4), tidak
+     * dipilih terpisah. `sisa_benih` dihitung PER BARIS (jatah poktan ini
+     * dikurangi pemakaian penanaman yang menunjuk baris ini), tidak disimpan
+     * (rules.md §7c poin 8). `poktan`, `komoditas`, `varietas`,
+     * `tahun_pengadaan`, dan `jenis` ditempel dari pengadaan sebagai turunan.
+     *
+     * @return array<int, array<string, mixed>> Data distribusi saprotan
+     */
+    public static function saprotanDistribusi(): array
+    {
+        $data = [
+            ['id_saprotan_distribusi' => 1, 'saprotan_id' => 1, 'poktan_id' => 1, 'jumlah' => 150.0, 'tanggal_serah' => '2025-01-28', 'keterangan' => null],
+            ['id_saprotan_distribusi' => 2, 'saprotan_id' => 1, 'poktan_id' => 2, 'jumlah' => 100.0, 'tanggal_serah' => '2025-01-30', 'keterangan' => 'Belum dipakai, disimpan di lumbung kelompok.'],
+            // Sebagian UREA masih di gudang UPT: 800 dari 1200 tersalur.
+            ['id_saprotan_distribusi' => 3, 'saprotan_id' => 2, 'poktan_id' => 1, 'jumlah' => 800.0, 'tanggal_serah' => '2025-02-10', 'keterangan' => null],
+            ['id_saprotan_distribusi' => 4, 'saprotan_id' => 3, 'poktan_id' => 3, 'jumlah' => 40.0, 'tanggal_serah' => '2026-01-15', 'keterangan' => null],
+            ['id_saprotan_distribusi' => 5, 'saprotan_id' => 4, 'poktan_id' => 1, 'jumlah' => 80.0, 'tanggal_serah' => '2025-02-18', 'keterangan' => null],
+            ['id_saprotan_distribusi' => 6, 'saprotan_id' => 5, 'poktan_id' => 4, 'jumlah' => 15.0, 'tanggal_serah' => '2026-02-01', 'keterangan' => null],
+            ['id_saprotan_distribusi' => 7, 'saprotan_id' => 6, 'poktan_id' => 1, 'jumlah' => 30.0, 'tanggal_serah' => '2025-05-20', 'keterangan' => null],
+            ['id_saprotan_distribusi' => 8, 'saprotan_id' => 7, 'poktan_id' => 3, 'jumlah' => 1.5, 'tanggal_serah' => '2025-11-25', 'keterangan' => null],
+            ['id_saprotan_distribusi' => 9, 'saprotan_id' => 8, 'poktan_id' => 2, 'jumlah' => 15.0, 'tanggal_serah' => '2026-05-30', 'keterangan' => null],
+            ['id_saprotan_distribusi' => 10, 'saprotan_id' => 9, 'poktan_id' => 4, 'jumlah' => 12.0, 'tanggal_serah' => '2025-12-15', 'keterangan' => null],
+        ];
+
+        $pengadaan = [];
+        foreach (self::saprotanPengadaan() as $s) {
+            $pengadaan[$s['id_saprotan']] = $s;
+        }
+
+        $poktanPeta = [];
+        foreach (self::poktan() as $p) {
+            $poktanPeta[$p['id_poktan']] = $p;
+        }
+
+        // Pemakaian penanaman per baris distribusi.
+        $terpakai = [];
+        foreach (self::penanaman() as $t) {
+            $did = $t['saprotan_distribusi_id'] ?? null;
+            if ($did !== null) {
+                $terpakai[$did] = ($terpakai[$did] ?? 0.0) + (float) ($t['volume_benih'] ?? 0);
+            }
+        }
+
+        return array_map(function (array $d) use ($pengadaan, $poktanPeta, $terpakai): array {
+            $s = $pengadaan[$d['saprotan_id']] ?? [];
+            $p = $poktanPeta[$d['poktan_id']] ?? null;
+            $sisa = $s['jenis'] === 'Benih'
+                ? max(0.0, round($d['jumlah'] - ($terpakai[$d['id_saprotan_distribusi']] ?? 0.0), 3))
+                : null;
+
+            return $d + [
+                'poktan' => $p['nama'] ?? null,
+                'satuan_permukiman_id' => $p['satuan_permukiman_id'] ?? null,
+                'satuan_permukiman' => $p['satuan_permukiman'] ?? null,
+                'jenis' => $s['jenis'] ?? null,
+                'nama' => $s['nama'] ?? null,
+                'komoditas_id' => $s['komoditas_id'] ?? null,
+                'komoditas' => $s['komoditas'] ?? null,
+                'varietas' => $s['varietas'] ?? null,
+                'satuan' => $s['satuan'] ?? null,
+                'tahun_pengadaan' => $s['tahun_pengadaan'] ?? null,
+                'sumber_dana' => $s['sumber_dana'] ?? null,
+                'sisa_benih' => $sisa,
+            ];
+        }, $data);
+    }
+
+    /**
+     * Baris pengadaan saprotan (induk) TANPA turunan distribusi.
+     *
+     * Sumber tunggal daftar pengadaan. `saprotan()` menempelkan turunan
+     * distribusi ke sini; `saprotanDistribusi()` memanggilnya untuk konteks
+     * pengadaan. Memisahkannya menghindari rekursi antara keduanya.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private static function saprotanPengadaan(): array
+    {
         return [
-            ['id_saprotan' => 1, 'jenis' => 'Benih', 'nama' => 'BENIH JAGUNG HIBRIDA', 'komoditas_id' => 1, 'komoditas' => 'JAGUNG', 'varietas' => 'Hibrida Bisi-18', 'jadwal_tanam' => '2026-02', 'jumlah' => 250.0, 'satuan' => 'Kilogram', 'tahun_pengadaan' => 2025, 'sumber_dana' => 'Dinas Pertanian Kabupaten', 'penerima' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'keterangan' => 'Disalurkan menjelang penanaman awal tahun.', 'foto' => 'foto-benih-jagung.jpg', 'dokumen_pendukung' => 'bast-benih-jagung.pdf'],
-            ['id_saprotan' => 2, 'jenis' => 'Pupuk', 'nama' => 'PUPUK UREA', 'komoditas_id' => null, 'komoditas' => null, 'varietas' => null, 'jadwal_tanam' => null, 'jumlah' => 1200.0, 'satuan' => 'Kilogram', 'tahun_pengadaan' => 2025, 'sumber_dana' => 'APBN', 'penerima' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo'],
-            ['id_saprotan' => 3, 'jenis' => 'Pestisida', 'nama' => 'INSEKTISIDA CAIR', 'komoditas_id' => null, 'komoditas' => null, 'varietas' => null, 'jadwal_tanam' => null, 'jumlah' => 40.0, 'satuan' => 'Liter', 'tahun_pengadaan' => 2026, 'sumber_dana' => 'Dinas Pertanian Kabupaten', 'penerima' => 'POKTAN TANI BERSATU', 'poktan_id' => 3, 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu'],
-            // Sebelumnya tercatat atas nama YOHANES BERE sebagai penerima
-            // perorangan. Dialihkan ke poktan tempatnya bernaung, sebab
-            // penyaluran perorangan sudah tidak ada lagi.
-            ['id_saprotan' => 4, 'jenis' => 'Benih', 'nama' => 'BENIH PADI IR64', 'komoditas_id' => 2, 'komoditas' => 'PADI', 'varietas' => 'IR64', 'jadwal_tanam' => '2026-03', 'jumlah' => 80.0, 'satuan' => 'Kilogram', 'tahun_pengadaan' => 2025, 'sumber_dana' => 'APBD Provinsi', 'penerima' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo'],
-            ['id_saprotan' => 5, 'jenis' => 'Mulsa', 'nama' => 'MULSA PLASTIK HITAM PERAK', 'komoditas_id' => null, 'komoditas' => null, 'varietas' => null, 'jadwal_tanam' => null, 'jumlah' => 15.0, 'satuan' => 'Rol', 'tahun_pengadaan' => 2026, 'sumber_dana' => 'Lembaga Swadaya Masyarakat', 'penerima' => 'POKTAN HARAPAN BARU', 'poktan_id' => 4, 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain'],
-            // Benih jagung kedua bagi poktan yang sama, sengaja ada agar
-            // keadaan "satu poktan memegang dua benih komoditas yang sama"
-            // ikut terlihat saat peninjauan. Seluruh isinya sudah terpakai,
-            // sehingga ia TIDAK boleh muncul pada pilihan benih di form
-            // penanaman - dan itulah yang dijaga uji sisa stok.
-            ['id_saprotan' => 6, 'jenis' => 'Benih', 'nama' => 'BENIH JAGUNG LOKAL', 'komoditas_id' => 1, 'komoditas' => 'JAGUNG', 'varietas' => 'Lokal Kobalima', 'jadwal_tanam' => '2025-06', 'jumlah' => 30.0, 'satuan' => 'Kilogram', 'tahun_pengadaan' => 2025, 'sumber_dana' => 'Swadaya', 'penerima' => 'POKTAN MEKAR JAYA', 'poktan_id' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'keterangan' => 'Benih swadaya anggota, habis dipakai penanaman Juni 2025.'],
-            // TIGA BENIH SWADAYA, ditambahkan 2026-08-24.
-            //
-            // Sebelumnya ketiga penanaman yang memakainya dicatat TANPA benih
-            // sama sekali, dengan alasan "bibit swadaya tidak melalui modul
-            // saprotan". Alasan itu keliru: enum sumber perolehan sudah memuat
-            // `Swadaya` sejak awal, dan BENIH JAGUNG LOKAL di atas sudah
-            // memakainya. Yang kurang hanyalah keseragaman.
-            //
-            // Mendaftarkannya di sini membuat benih swadaya ikut punya STOK.
-            // Tanpa itu ia seolah tak terbatas: poktan dapat mencatat
-            // penanaman sebanyak apa pun tanpa ada yang menegur.
-            ['id_saprotan' => 7, 'jenis' => 'Benih', 'nama' => 'BIBIT CABAI SEMAI SENDIRI', 'komoditas_id' => 5, 'komoditas' => 'CABAI', 'varietas' => 'Semai Sendiri', 'jadwal_tanam' => '2025-12', 'jumlah' => 1.5, 'satuan' => 'Kilogram', 'tahun_pengadaan' => 2025, 'sumber_dana' => 'Swadaya', 'penerima' => 'POKTAN TANI BERSATU', 'poktan_id' => 3, 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'keterangan' => 'Disemai anggota dari buah panen sebelumnya.'],
-            ['id_saprotan' => 8, 'jenis' => 'Benih', 'nama' => 'BENIH JAGUNG SWADAYA KELOMPOK', 'komoditas_id' => 1, 'komoditas' => 'JAGUNG', 'varietas' => 'Lokal Kobalima', 'jadwal_tanam' => '2026-06', 'jumlah' => 15.0, 'satuan' => 'Kilogram', 'tahun_pengadaan' => 2026, 'sumber_dana' => 'Swadaya', 'penerima' => 'POKTAN SUBUR MAKMUR', 'poktan_id' => 2, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'keterangan' => 'Dibeli kelompok dari kas iuran anggota.'],
-            ['id_saprotan' => 9, 'jenis' => 'Benih', 'nama' => 'BENIH PADI LOKAL SWADAYA', 'komoditas_id' => 2, 'komoditas' => 'PADI', 'varietas' => 'Lokal Kobalima', 'jadwal_tanam' => '2026-01', 'jumlah' => 12.0, 'satuan' => 'Kilogram', 'tahun_pengadaan' => 2025, 'sumber_dana' => 'Swadaya', 'penerima' => 'POKTAN HARAPAN BARU', 'poktan_id' => 4, 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain', 'keterangan' => 'Sisa gabah panen lalu yang disisihkan untuk benih.'],
+            // Benih jagung hibrida dibagikan ke DUA poktan. Model lama memaksa
+            // ini jadi dua baris terpisah.
+            ['id_saprotan' => 1, 'jenis' => 'Benih', 'nama' => 'BENIH JAGUNG HIBRIDA', 'komoditas_id' => 1, 'komoditas' => 'JAGUNG', 'varietas' => 'Hibrida Bisi-18', 'jadwal_tanam' => '2026-02', 'jumlah_total' => 250.0, 'satuan_id' => 3, 'satuan' => 'Kilogram', 'tahun_pengadaan' => 2025, 'sumber_dana' => 'Dinas Pertanian Kabupaten', 'keterangan' => 'Disalurkan menjelang penanaman awal tahun.', 'foto' => 'foto-benih-jagung.jpg', 'dokumen_pendukung' => 'bast-benih-jagung.pdf'],
+            ['id_saprotan' => 2, 'jenis' => 'Pupuk', 'nama' => 'PUPUK UREA', 'komoditas_id' => null, 'komoditas' => null, 'varietas' => null, 'jadwal_tanam' => null, 'jumlah_total' => 1200.0, 'satuan_id' => 3, 'satuan' => 'Kilogram', 'tahun_pengadaan' => 2025, 'sumber_dana' => 'APBN', 'keterangan' => 'Sebagian masih di gudang UPT.', 'foto' => null, 'dokumen_pendukung' => null],
+            ['id_saprotan' => 3, 'jenis' => 'Pestisida', 'nama' => 'INSEKTISIDA CAIR', 'komoditas_id' => null, 'komoditas' => null, 'varietas' => null, 'jadwal_tanam' => null, 'jumlah_total' => 40.0, 'satuan_id' => 4, 'satuan' => 'Liter', 'tahun_pengadaan' => 2026, 'sumber_dana' => 'Dinas Pertanian Kabupaten', 'keterangan' => null, 'foto' => null, 'dokumen_pendukung' => null],
+            ['id_saprotan' => 4, 'jenis' => 'Benih', 'nama' => 'BENIH PADI IR64', 'komoditas_id' => 2, 'komoditas' => 'PADI', 'varietas' => 'IR64', 'jadwal_tanam' => '2026-03', 'jumlah_total' => 80.0, 'satuan_id' => 3, 'satuan' => 'Kilogram', 'tahun_pengadaan' => 2025, 'sumber_dana' => 'APBD Provinsi', 'keterangan' => null, 'foto' => null, 'dokumen_pendukung' => null],
+            ['id_saprotan' => 5, 'jenis' => 'Mulsa', 'nama' => 'MULSA PLASTIK HITAM PERAK', 'komoditas_id' => null, 'komoditas' => null, 'varietas' => null, 'jadwal_tanam' => null, 'jumlah_total' => 15.0, 'satuan_id' => 5, 'satuan' => 'Rol', 'tahun_pengadaan' => 2026, 'sumber_dana' => 'Lembaga Swadaya Masyarakat', 'keterangan' => null, 'foto' => null, 'dokumen_pendukung' => null],
+            // Benih jagung kedua bagi POKTAN MEKAR JAYA, seluruhnya terpakai:
+            // tidak boleh muncul pada pilihan benih form penanaman (dijaga uji).
+            ['id_saprotan' => 6, 'jenis' => 'Benih', 'nama' => 'BENIH JAGUNG LOKAL', 'komoditas_id' => 1, 'komoditas' => 'JAGUNG', 'varietas' => 'Lokal Kobalima', 'jadwal_tanam' => '2025-06', 'jumlah_total' => 30.0, 'satuan_id' => 3, 'satuan' => 'Kilogram', 'tahun_pengadaan' => 2025, 'sumber_dana' => 'Swadaya', 'keterangan' => 'Benih swadaya anggota, habis dipakai penanaman Juni 2025.', 'foto' => null, 'dokumen_pendukung' => null],
+            // Tiga benih swadaya (2026-08-24): mendaftarkannya memberi benih
+            // swadaya sebuah STOK, sehingga penanaman tidak seolah tak terbatas.
+            ['id_saprotan' => 7, 'jenis' => 'Benih', 'nama' => 'BIBIT CABAI SEMAI SENDIRI', 'komoditas_id' => 5, 'komoditas' => 'CABAI', 'varietas' => 'Semai Sendiri', 'jadwal_tanam' => '2025-12', 'jumlah_total' => 1.5, 'satuan_id' => 3, 'satuan' => 'Kilogram', 'tahun_pengadaan' => 2025, 'sumber_dana' => 'Swadaya', 'keterangan' => 'Disemai anggota dari buah panen sebelumnya.', 'foto' => null, 'dokumen_pendukung' => null],
+            ['id_saprotan' => 8, 'jenis' => 'Benih', 'nama' => 'BENIH JAGUNG SWADAYA KELOMPOK', 'komoditas_id' => 1, 'komoditas' => 'JAGUNG', 'varietas' => 'Lokal Kobalima', 'jadwal_tanam' => '2026-06', 'jumlah_total' => 15.0, 'satuan_id' => 3, 'satuan' => 'Kilogram', 'tahun_pengadaan' => 2026, 'sumber_dana' => 'Swadaya', 'keterangan' => 'Dibeli kelompok dari kas iuran anggota.', 'foto' => null, 'dokumen_pendukung' => null],
+            ['id_saprotan' => 9, 'jenis' => 'Benih', 'nama' => 'BENIH PADI LOKAL SWADAYA', 'komoditas_id' => 2, 'komoditas' => 'PADI', 'varietas' => 'Lokal Kobalima', 'jadwal_tanam' => '2026-01', 'jumlah_total' => 12.0, 'satuan_id' => 3, 'satuan' => 'Kilogram', 'tahun_pengadaan' => 2025, 'sumber_dana' => 'Swadaya', 'keterangan' => 'Sisa gabah panen lalu yang disisihkan untuk benih.', 'foto' => null, 'dokumen_pendukung' => null],
         ];
     }
 
     /**
-     * Sisa benih yang belum terpakai pada satu baris saprotan.
+     * Sisa benih yang belum terpakai pada satu baris DISTRIBUSI saprotan.
      *
-     * Rumusnya satu pengurangan, dan ia MENGOREKSI DIRINYA SENDIRI ketika
+     * Grain berpindah dari pengadaan ke distribusi sejak Putaran 7: satu batch
+     * dapat dibagikan ke banyak poktan, dan jatah tiap poktan dikurangi hanya
+     * oleh penanaman poktan itu sendiri. Menghitungnya di tingkat pengadaan
+     * membuat penanaman poktan A menggerus jatah poktan B.
+     *
+     * Rumusnya tetap satu pengurangan yang MENGOREKSI DIRINYA SENDIRI ketika
      * baris penanaman disunting:
      *
-     *     sisa = saprotan.jumlah - SUM(penanaman.volume_benih)
+     *     sisa = saprotan_distribusi.jumlah - SUM(penanaman.volume_benih WHERE saprotan_distribusi_id = ini)
      *
      * Itulah sebabnya tidak ada mekanisme "pengembalian stok" di mana pun.
-     * Alur nyatanya begini: poktan menerima 150 kg untuk 10 ha, lalu petugas
-     * mencatat penanaman dengan alokasi penuh sehingga sisanya nol. Saat
-     * ditinjau ulang ternyata baru 3 ha yang ditanam memakai 45 kg; petugas
-     * menyunting baris itu, dan sisanya kembali menjadi 105 kg dengan
-     * sendirinya. Menyunting baris adalah CRUD biasa, bukan peristiwa khusus.
-     *
      * Benih HABIS SEKALI PAKAI, tetapi penguncian terjadi ketika STOKNYA
-     * HABIS, bukan ketika pertama kali dipakai. Mengunci pada pemakaian
-     * pertama akan mematahkan penanaman bertahap: laporan Polri MT.II 2025
-     * menunjukkan satu poktan menanam 3 ha lalu 7 ha dari jatah yang sama,
-     * dan penanaman kedua itu tidak akan dapat dicatat sama sekali.
+     * HABIS, bukan ketika pertama kali dipakai (laporan Polri MT.II 2025:
+     * satu poktan menanam 3 ha lalu 7 ha dari jatah yang sama).
      *
-     * @param  int  $saprotanId  Nilai id_saprotan
+     * @param  int  $distribusiId  Nilai id_saprotan_distribusi
      * @return float Sisa dalam satuan aslinya, tidak pernah negatif
      */
-    public static function sisaBenih(int $saprotanId): float
+    public static function sisaBenih(int $distribusiId): float
     {
-        $baris = collect(self::saprotan())->firstWhere('id_saprotan', $saprotanId);
+        $baris = collect(self::saprotanDistribusi())->firstWhere('id_saprotan_distribusi', $distribusiId);
 
-        if ($baris === null) {
+        if ($baris === null || $baris['jenis'] !== 'Benih') {
             return 0.0;
         }
 
         $terpakai = 0.0;
 
         foreach (self::penanaman() as $tanam) {
-            if (($tanam['saprotan_id'] ?? null) === $saprotanId) {
+            if (($tanam['saprotan_distribusi_id'] ?? null) === $distribusiId) {
                 $terpakai += (float) ($tanam['volume_benih'] ?? 0);
             }
         }
 
-        // Tidak pernah negatif. Pemakaian melebihi stok memang ditolak
-        // penjaga pada form, tetapi data lama yang terlanjur begitu tidak
-        // boleh membuat halaman menampilkan sisa bertanda minus.
         return max(0.0, round((float) $baris['jumlah'] - $terpakai, 3));
+    }
+
+    /**
+     * Sisa satu PENGADAAN yang belum dibagikan ke poktan mana pun (Putaran 7).
+     *
+     *     belum_tersalur = saprotan.jumlah_total - SUM(saprotan_distribusi.jumlah)
+     *
+     * Berbeda dari `sisaBenih()`: yang ini tentang barang di gudang UPT yang
+     * belum diserahkan, bukan jatah poktan yang belum ditanam.
+     *
+     * @param  int  $saprotanId  Nilai id_saprotan
+     */
+    public static function sisaBenihPengadaan(int $saprotanId): float
+    {
+        $baris = collect(self::saprotan())->firstWhere('id_saprotan', $saprotanId);
+
+        return $baris === null ? 0.0 : (float) $baris['jumlah_belum_tersalur'];
     }
 
     /**
      * Benih milik satu poktan untuk satu komoditas yang stoknya masih ada.
      *
      * Dipakai form penanaman: begitu poktan dan komoditas dipilih, hanya
-     * benih yang benar-benar dapat ditanam yang ditawarkan. Menyaringnya di
-     * sini, bukan di tampilan, membuat aturan yang sama berlaku bagi setiap
-     * pemanggil.
+     * benih yang benar-benar dapat ditanam yang ditawarkan. Sejak Putaran 7
+     * yang diiterasi adalah baris DISTRIBUSI (jatah satu poktan), bukan
+     * pengadaan; `id` yang dikembalikan adalah `id_saprotan_distribusi`, yang
+     * lalu disimpan `penanaman.saprotan_distribusi_id`.
      *
-     * Benih yang stoknya habis SENGAJA tidak muncul. Petugas yang hendak
-     * mencatat penanaman berikutnya harus mendata penyaluran baru lebih dulu,
-     * sebab benih memang tidak muncul dari ketiadaan.
+     * Benih yang stoknya habis SENGAJA tidak muncul.
      *
      * @param  int|null  $poktanId  Penyaring poktan, null berarti semua
      * @param  int|null  $komoditasId  Penyaring komoditas, null berarti semua
-     * @return array<int, array<string, mixed>> Baris saprotan beserta sisanya
+     * @return array<int, array<string, mixed>> Baris distribusi beserta sisanya
      */
     public static function benihTersedia(?int $poktanId = null, ?int $komoditasId = null): array
     {
         $hasil = [];
 
-        foreach (self::saprotan() as $baris) {
+        foreach (self::saprotanDistribusi() as $baris) {
             if ($baris['jenis'] !== JenisSaprotan::Benih->value) {
                 continue;
             }
@@ -3712,15 +3809,12 @@ class DummyData
                 continue;
             }
 
-            $sisa = self::sisaBenih($baris['id_saprotan']);
+            $sisa = self::sisaBenih($baris['id_saprotan_distribusi']);
 
             if ($sisa <= 0) {
                 continue;
             }
 
-            // Label menyebut sisanya, bukan hanya namanya. Petugas perlu tahu
-            // berapa yang masih dapat dialokasikan sebelum memilih, bukan
-            // setelah formnya ditolak.
             $hasil[] = $baris + [
                 'sisa_benih' => $sisa,
                 'label_benih' => $baris['nama'].' - sisa '
@@ -3818,16 +3912,16 @@ class DummyData
     public static function penanaman(): array
     {
         return [
-            ['id_penanaman' => 1, 'poktan_id' => 1, 'poktan' => 'POKTAN MEKAR JAYA', 'komoditas_id' => 1, 'komoditas' => 'JAGUNG', 'saprotan_id' => 1, 'volume_benih' => 22.5, 'realisasi_tanam' => 1.50, 'periode_tanam' => '2025-11', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'keterangan' => null, 'dokumen_pendukung' => 'bast-tanam-jagung-nov-2025.pdf'],
-            ['id_penanaman' => 2, 'poktan_id' => 1, 'poktan' => 'POKTAN MEKAR JAYA', 'komoditas_id' => 2, 'komoditas' => 'PADI', 'saprotan_id' => 4, 'volume_benih' => 20.0, 'realisasi_tanam' => 0.75, 'periode_tanam' => '2025-12', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'keterangan' => null],
-            ['id_penanaman' => 3, 'poktan_id' => 1, 'poktan' => 'POKTAN MEKAR JAYA', 'komoditas_id' => 1, 'komoditas' => 'JAGUNG', 'saprotan_id' => 1, 'volume_benih' => 30.0, 'realisasi_tanam' => 2.00, 'periode_tanam' => '2025-11', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'keterangan' => 'Penanaman bertahap, sisa lahan menyusul.'],
+            ['id_penanaman' => 1, 'poktan_id' => 1, 'poktan' => 'POKTAN MEKAR JAYA', 'komoditas_id' => 1, 'komoditas' => 'JAGUNG', 'saprotan_distribusi_id' => 1, 'volume_benih' => 22.5, 'realisasi_tanam' => 1.50, 'periode_tanam' => '2025-11', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'keterangan' => null, 'dokumen_pendukung' => 'bast-tanam-jagung-nov-2025.pdf'],
+            ['id_penanaman' => 2, 'poktan_id' => 1, 'poktan' => 'POKTAN MEKAR JAYA', 'komoditas_id' => 2, 'komoditas' => 'PADI', 'saprotan_distribusi_id' => 5, 'volume_benih' => 20.0, 'realisasi_tanam' => 0.75, 'periode_tanam' => '2025-12', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'keterangan' => null],
+            ['id_penanaman' => 3, 'poktan_id' => 1, 'poktan' => 'POKTAN MEKAR JAYA', 'komoditas_id' => 1, 'komoditas' => 'JAGUNG', 'saprotan_distribusi_id' => 1, 'volume_benih' => 30.0, 'realisasi_tanam' => 2.00, 'periode_tanam' => '2025-11', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'keterangan' => 'Penanaman bertahap, sisa lahan menyusul.'],
             // Tanpa benih tercatat: cabai ditanam dari bibit swadaya yang
             // tidak pernah masuk modul saprotan. Sengaja ada agar cabang
             // nullable ikut terlihat saat peninjauan.
-            ['id_penanaman' => 4, 'poktan_id' => 3, 'poktan' => 'POKTAN TANI BERSATU', 'komoditas_id' => 5, 'komoditas' => 'CABAI', 'saprotan_id' => 7, 'volume_benih' => 1.5, 'realisasi_tanam' => 0.30, 'periode_tanam' => '2025-12', 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'keterangan' => 'Bibit swadaya anggota, didaftarkan lebih dulu pada penyaluran saprotan.'],
+            ['id_penanaman' => 4, 'poktan_id' => 3, 'poktan' => 'POKTAN TANI BERSATU', 'komoditas_id' => 5, 'komoditas' => 'CABAI', 'saprotan_distribusi_id' => 8, 'volume_benih' => 1.5, 'realisasi_tanam' => 0.30, 'periode_tanam' => '2025-12', 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'keterangan' => 'Bibit swadaya anggota, didaftarkan lebih dulu pada penyaluran saprotan.'],
             // Menghabiskan seluruh 30 kg BENIH JAGUNG LOKAL, sehingga benih
             // itu tidak lagi muncul sebagai pilihan pada penanaman berikutnya.
-            ['id_penanaman' => 5, 'poktan_id' => 1, 'poktan' => 'POKTAN MEKAR JAYA', 'komoditas_id' => 1, 'komoditas' => 'JAGUNG', 'saprotan_id' => 6, 'volume_benih' => 30.0, 'realisasi_tanam' => 1.50, 'periode_tanam' => '2025-06', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'keterangan' => null],
+            ['id_penanaman' => 5, 'poktan_id' => 1, 'poktan' => 'POKTAN MEKAR JAYA', 'komoditas_id' => 1, 'komoditas' => 'JAGUNG', 'saprotan_distribusi_id' => 7, 'volume_benih' => 30.0, 'realisasi_tanam' => 1.50, 'periode_tanam' => '2025-06', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'keterangan' => null],
             // BELUM DIPANEN SAMA SEKALI, satu-satunya pada data contoh.
             //
             // Sengaja ada agar status ketiga punya benda nyata untuk dilihat
@@ -3839,14 +3933,14 @@ class DummyData
             // BUKAN pada POKTAN MEKAR JAYA: lahan tersedia milik Mekar Jaya
             // sudah dikunci uji peramban pada angka 3,45 ha, dan menambah
             // penanaman di sana akan memerahkannya tanpa ada yang rusak.
-            ['id_penanaman' => 6, 'poktan_id' => 2, 'poktan' => 'POKTAN SUBUR MAKMUR', 'komoditas_id' => 1, 'komoditas' => 'JAGUNG', 'saprotan_id' => 8, 'volume_benih' => 15.0, 'realisasi_tanam' => 1.00, 'periode_tanam' => '2026-06', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'keterangan' => 'Tanaman masih berdiri, panen diperkirakan tiga bulan lagi.'],
+            ['id_penanaman' => 6, 'poktan_id' => 2, 'poktan' => 'POKTAN SUBUR MAKMUR', 'komoditas_id' => 1, 'komoditas' => 'JAGUNG', 'saprotan_distribusi_id' => 9, 'volume_benih' => 15.0, 'realisasi_tanam' => 1.00, 'periode_tanam' => '2026-06', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'keterangan' => 'Tanaman masih berdiri, panen diperkirakan tiga bulan lagi.'],
             // GAGAL TOTAL, satu-satunya pada data contoh. Panennya tercatat
             // 0 ha dengan puso menutup seluruh luas, sehingga cabang itu
             // ikut terlihat saat peninjauan dan punya benda nyata untuk
             // diuji. Ditaruh pada POKTAN HARAPAN BARU yang belum pernah
             // menanam, agar tidak mengganggu perhitungan lahan poktan lain
             // yang sudah dikunci uji peramban.
-            ['id_penanaman' => 7, 'poktan_id' => 4, 'poktan' => 'POKTAN HARAPAN BARU', 'komoditas_id' => 2, 'komoditas' => 'PADI', 'saprotan_id' => 9, 'volume_benih' => 12.0, 'realisasi_tanam' => 0.50, 'periode_tanam' => '2026-01', 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain', 'keterangan' => 'Benih swadaya kelompok, disisihkan dari gabah panen sebelumnya.'],
+            ['id_penanaman' => 7, 'poktan_id' => 4, 'poktan' => 'POKTAN HARAPAN BARU', 'komoditas_id' => 2, 'komoditas' => 'PADI', 'saprotan_distribusi_id' => 10, 'volume_benih' => 12.0, 'realisasi_tanam' => 0.50, 'periode_tanam' => '2026-01', 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain', 'keterangan' => 'Benih swadaya kelompok, disisihkan dari gabah panen sebelumnya.'],
         ];
     }
 

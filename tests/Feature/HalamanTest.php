@@ -4711,14 +4711,15 @@ it('menjumlahkan hasil panen per SP lalu ke total kawasan tanpa selisih', functi
 
 it('menelusuri varietas dan tahun pengadaan laporan panen sampai ke saprotan benih', function () {
     // Inti rules.md 9 poin 16: dasar laporan panen adalah tahun pengadaan
-    // BANTUAN, dibaca lewat penanaman.saprotan_id -> saprotan.tahun_pengadaan.
-    $saprotan = collect(DummyData::saprotan())->keyBy('id_saprotan');
+    // BANTUAN, dibaca lewat penanaman.saprotan_distribusi_id ->
+    // saprotan_distribusi -> pengadaan.tahun_pengadaan (Putaran 7).
+    $distribusi = collect(DummyData::saprotanDistribusi())->keyBy('id_saprotan_distribusi');
     $penanaman = collect(DummyData::penanaman())->keyBy('id_penanaman');
 
     $adaVarietas = false;
 
-    // Pembuktian langsung pada satu baris: panen id 1 -> penanaman 1 -> saprotan 1.
-    $benih = $saprotan[$penanaman[1]['saprotan_id']];
+    // Pembuktian langsung: panen 1 -> penanaman 1 -> distribusi 1 -> pengadaan 1.
+    $benih = $distribusi[$penanaman[1]['saprotan_distribusi_id']];
     expect($benih['tahun_pengadaan'])->not->toBeNull();
     expect($benih['varietas'])->not->toBeNull();
 
@@ -7715,13 +7716,13 @@ it('mengelompokkan laporan panen menurut tahun pengadaan bantuannya', function (
         bukan tahun panen. Bantuan beranggaran 2025 yang dipanen 2026 tetap
         capaian 2025.
 
-        Yang dibuktikan di sini RANTAI PENELUSURANNYA, bukan halaman laporan
-        (belum dibuat): hasil_panen -> penanaman -> saprotan.tahun_pengadaan
-        wajib menghasilkan tahun yang benar, termasuk untuk kasus lintas
-        tahun.
+        Yang dibuktikan di sini RANTAI PENELUSURANNYA: hasil_panen ->
+        penanaman -> saprotan_distribusi -> pengadaan.tahun_pengadaan wajib
+        menghasilkan tahun yang benar, termasuk untuk kasus lintas tahun
+        (Putaran 7: grain benih pindah ke distribusi).
     */
     $penanaman = collect(DummyData::penanaman())->keyBy('id_penanaman');
-    $saprotan = collect(DummyData::saprotan())->keyBy('id_saprotan');
+    $distribusi = collect(DummyData::saprotanDistribusi())->keyBy('id_saprotan_distribusi');
 
     $lintasThn = 0;
 
@@ -7729,7 +7730,7 @@ it('mengelompokkan laporan panen menurut tahun pengadaan bantuannya', function (
         $tanam = $penanaman[$panen['penanaman_id']] ?? null;
         expect($tanam)->not->toBeNull("panen {$panen['id_hasil_panen']} tanpa penanaman");
 
-        $benih = $saprotan[$tanam['saprotan_id']] ?? null;
+        $benih = $distribusi[$tanam['saprotan_distribusi_id']] ?? null;
         expect($benih)->not->toBeNull("penanaman {$tanam['id_penanaman']} tanpa benih");
 
         $thnPengadaan = $benih['tahun_pengadaan'];

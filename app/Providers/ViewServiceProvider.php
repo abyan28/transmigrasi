@@ -359,7 +359,9 @@ class ViewServiceProvider extends ServiceProvider
 
         return collect(DummyData::benihTersedia())
             ->map(fn ($b) => [
-                'id' => (string) $b['id_saprotan'],
+                // Sejak Putaran 7 id yang dibawa adalah id_saprotan_distribusi:
+                // penanaman menunjuk jatah SATU poktan, bukan pengadaan.
+                'id' => (string) $b['id_saprotan_distribusi'],
                 'poktan_id' => (string) $b['poktan_id'],
                 'komoditas_id' => (string) $b['komoditas_id'],
                 'label' => $b['label_benih'],

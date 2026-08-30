@@ -272,6 +272,14 @@ class LaporanData
         return $peta ??= collect(DummyData::saprotan())->keyBy('id_saprotan')->all();
     }
 
+    /** @return array<int, array<string, mixed>> */
+    private static function petaSaprotanDistribusi(): array
+    {
+        static $peta = null;
+
+        return $peta ??= collect(DummyData::saprotanDistribusi())->keyBy('id_saprotan_distribusi')->all();
+    }
+
     /**
      * Jumlah anggota aktif per poktan, dihitung dari keanggotaan sungguhan
      * alih-alih memakai kolom `jumlah_anggota` yang dapat basi (notes.md 1a.7).
@@ -311,7 +319,7 @@ class LaporanData
     {
         $poktan = self::petaPoktan();
         $penanaman = self::petaPenanaman();
-        $saprotan = self::petaSaprotan();
+        $distribusi = self::petaSaprotanDistribusi();
         $anggotaAktif = self::anggotaAktifPerPoktan();
 
         $baris = [];
@@ -324,7 +332,9 @@ class LaporanData
                 continue;
             }
 
-            $benih = $saprotan[$tanam['saprotan_id']] ?? null;
+            // Jejak varietas & tahun pengadaan: hasil_panen -> penanaman
+            // -> saprotan_distribusi -> pengadaan (Putaran 7).
+            $benih = $distribusi[$tanam['saprotan_distribusi_id'] ?? null] ?? null;
 
             $realisasiTanam = (float) $tanam['realisasi_tanam'];
             $realisasiPanen = (float) $h['realisasi_panen'];
@@ -423,47 +433,53 @@ class LaporanData
         $benih = [];
         $nonBenih = [];
 
-        foreach (DummyData::saprotan() as $s) {
-            $pok = $s['poktan_id'] ? ($poktan[$s['poktan_id']] ?? null) : null;
+        // Grain: satu baris per DISTRIBUSI (satu poktan menerima sekian dari
+        // satu pengadaan), sejak Putaran 7. Pengadaan yang belum disalurkan
+        // ke satu poktan pun tidak menghasilkan baris di sini. Jadwal tanam
+        // tetap dari pengadaan (rencana bantuan).
+        $jadwal = collect(DummyData::saprotan())->pluck('jadwal_tanam', 'id_saprotan')->all();
 
-            if ($s['jenis'] === 'Benih') {
-                $pid = $s['poktan_id'];
-                $luasPoktan[$pid] ??= $pid ? DummyData::rekapLahanPoktan($pid)['luas_total'] : 0;
+        foreach (DummyData::saprotanDistribusi() as $d) {
+            $pok = $poktan[$d['poktan_id']] ?? null;
+
+            if ($d['jenis'] === 'Benih') {
+                $pid = $d['poktan_id'];
+                $luasPoktan[$pid] ??= DummyData::rekapLahanPoktan($pid)['luas_total'];
 
                 $benih[] = [
-                    'sp_id' => $pok['satuan_permukiman_id'] ?? $s['satuan_permukiman_id'] ?? null,
-                    'sp' => $pok['satuan_permukiman'] ?? $s['satuan_permukiman'] ?? '-',
-                    'poktan_id' => $s['poktan_id'],
+                    'sp_id' => $d['satuan_permukiman_id'],
+                    'sp' => $d['satuan_permukiman'],
+                    'poktan_id' => $d['poktan_id'],
                     'kecamatan' => $pok['kecamatan'] ?? '-',
                     'desa' => $pok['desa'] ?? '-',
-                    'poktan' => $s['penerima'],
+                    'poktan' => $d['poktan'],
                     'ketua' => $pok['nama_ketua_terpakai'] ?? '-',
                     'nik_ketua' => $pok['nik_ketua_terpakai'] ?? '-',
                     'telepon_ketua' => $pok['telepon_ketua'] ?? '-',
                     'jumlah_anggota' => $pok ? ($anggotaAktif[$pok['id_poktan']] ?? 0) : 0,
-                    'luas_lahan' => $pid ? ($luasPoktan[$pid] ?? 0) : 0,
-                    'komoditas' => $s['komoditas'] ?? '-',
-                    'varietas' => $s['varietas'] ?? '-',
-                    'volume_benih' => (float) $s['jumlah'],
-                    'satuan' => $s['satuan'],
-                    'tahun_pengadaan' => $s['tahun_pengadaan'] ?? null,
-                    'sumber_dana' => $s['sumber_dana'] ?? '-',
-                    'jadwal_tanam' => $s['jadwal_tanam'] ?? null,
+                    'luas_lahan' => $luasPoktan[$pid] ?? 0,
+                    'komoditas' => $d['komoditas'] ?? '-',
+                    'varietas' => $d['varietas'] ?? '-',
+                    'volume_benih' => (float) $d['jumlah'],
+                    'satuan' => $d['satuan'],
+                    'tahun_pengadaan' => $d['tahun_pengadaan'] ?? null,
+                    'sumber_dana' => $d['sumber_dana'] ?? '-',
+                    'jadwal_tanam' => $jadwal[$d['saprotan_id']] ?? null,
                 ];
 
                 continue;
             }
 
             $nonBenih[] = [
-                'sp_id' => $pok['satuan_permukiman_id'] ?? $s['satuan_permukiman_id'] ?? null,
-                'poktan_id' => $s['poktan_id'],
-                'poktan' => $s['penerima'],
-                'sp' => $pok['satuan_permukiman'] ?? $s['satuan_permukiman'] ?? '-',
-                'jenis' => $s['jenis'],
-                'volume' => (float) $s['jumlah'],
-                'satuan' => $s['satuan'],
-                'tahun_pengadaan' => $s['tahun_pengadaan'] ?? null,
-                'sumber_dana' => $s['sumber_dana'] ?? '-',
+                'sp_id' => $d['satuan_permukiman_id'],
+                'poktan_id' => $d['poktan_id'],
+                'poktan' => $d['poktan'],
+                'sp' => $d['satuan_permukiman'],
+                'jenis' => $d['jenis'],
+                'volume' => (float) $d['jumlah'],
+                'satuan' => $d['satuan'],
+                'tahun_pengadaan' => $d['tahun_pengadaan'] ?? null,
+                'sumber_dana' => $d['sumber_dana'] ?? '-',
             ];
         }
 

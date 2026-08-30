@@ -174,7 +174,7 @@
                             <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Benih dipakai</dt>
                             <dd class="mt-0.5 text-theme-sm text-gray-800 dark:text-white/90">
                                 @if ($benih)
-                                    <a href="{{ route('saprotan.detail', $benih['id_saprotan']) }}"
+                                    <a href="{{ route('saprotan.detail', $benih['saprotan_id']) }}"
                                         class="rounded font-medium text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
                                         {{ $benih['nama'] }}
                                     </a>

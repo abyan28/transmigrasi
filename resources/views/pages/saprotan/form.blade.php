@@ -1,16 +1,14 @@
 {{--
-    Isian data sarana produksi pertanian.
+    Isian data pengadaan sarana produksi pertanian.
 
-    Dua aturan yang dijaga di sini:
+    SATU PENGADAAN, BANYAK POKTAN (Putaran 7). Satu batch bantuan lazim
+    dibagikan ke beberapa poktan. Bagian atas mendeskripsikan bendanya; bagian
+    bawah adalah distribusi: satu baris per poktan penerima dengan jumlahnya
+    (dibagi rata otomatis, dapat disunting) dan tanggal serah. Kelompok tani
+    boleh kosong: barang yang belum dibagikan tetap tercatat.
 
-    1. PENERIMA SELALU KELOMPOK TANI. Pilihan penerima individu dicabut
-       2026-08-22: seluruh pencatatan Produksi Pertanian berpusat pada poktan,
-       bukan perorangan. Menyediakan dua jalur membuat sebagian bantuan
-       tercatat atas nama orang dan sebagian atas nama kelompok, sehingga
-       rekap per poktan tidak pernah utuh.
-    2. SATUAN PERMUKIMAN MENGIKUTI POKTAN, tidak dipilih sendiri. Poktan sudah
-       menyimpan SP-nya, dan membiarkan petugas memilih SP secara terpisah
-       memungkinkan bantuan tercatat di SP yang berbeda dari poktannya.
+    SATUAN PERMUKIMAN MENGIKUTI POKTAN, terbaca per baris distribusi, tidak
+    dipilih sendiri.
 
     Nama kolom mengikuti agents/data-dictionary.md bagian 8.4.
 --}}
@@ -26,28 +24,75 @@
     $kelasBagian = 'text-theme-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400';
 
     // `$daftarPoktan`, `$daftarSatuan`, `$daftarKomoditas`, dan
-    // `$opsiSumberDana` disuplai ViewServiceProvider, sebab berkas ini
-    // disisipkan dari halaman daftar maupun halaman rincian.
+    // `$opsiSumberDana` disuplai ViewServiceProvider.
 
-    // Peta poktan ke satuan permukimannya, dibaca Alpine untuk mengisi kolom
-    // SP begitu poktan dipilih. Disusun di sini, bukan di dalam markup, agar
-    // pencariannya tidak diulang setiap kali pilihan berubah.
-    $petaSpPoktan = [];
+    $petaPoktan = [];
     foreach ($daftarPoktan as $p) {
-        $petaSpPoktan[(string) $p['id_poktan']] = [
-            'id' => (string) $p['satuan_permukiman_id'],
-            'nama' => $p['satuan_permukiman'],
+        $petaPoktan[(string) $p['id_poktan']] = ['nama' => $p['nama'], 'sp' => $p['satuan_permukiman']];
+    }
+
+    $distribusiAwal = [];
+    foreach ($data['distribusi'] ?? [] as $d) {
+        $distribusiAwal[(string) $d['poktan_id']] = [
+            'jumlah' => $d['jumlah'],
+            'tanggal_serah' => $d['tanggal_serah'] ?? '',
         ];
     }
+    $poktanAwal = array_keys($distribusiAwal);
 @endphp
 
 <div class="space-y-6"
     x-data="{
-        poktanId: @js((string) old('poktan_id', $data['poktan_id'] ?? '')),
-        petaSp: @js($petaSpPoktan),
+        poktanTerpilih: @js($poktanAwal),
+        petaPoktan: @js($petaPoktan),
         jenis: @js(old('jenis', $data['jenis'] ?? '')),
-        get spTerpilih() { return this.petaSp[this.poktanId] ?? null; },
+        jumlahTotal: Number(@js(old('jumlah_total', $data['jumlah_total'] ?? 0))) || 0,
+        distribusi: @js((object) $distribusiAwal),
+
+        init() {
+            this.$watch('poktanTerpilih', () => this.selaraskanDistribusi());
+            this.$watch('jumlahTotal', () => this.bagiRata());
+        },
+
+        selaraskanDistribusi() {
+            for (const pid of this.poktanTerpilih) {
+                if (! this.distribusi[pid]) {
+                    this.distribusi[pid] = { jumlah: 0, tanggal_serah: '' };
+                }
+            }
+            for (const pid of Object.keys(this.distribusi)) {
+                if (! this.poktanTerpilih.includes(pid)) {
+                    delete this.distribusi[pid];
+                }
+            }
+            this.bagiRata();
+        },
+
+        bagiRata() {
+            const pids = this.poktanTerpilih;
+            if (pids.length === 0) return;
+
+            const dasar = Math.round((this.jumlahTotal / pids.length) * 100) / 100;
+            let terpakai = 0;
+            pids.forEach((pid, i) => {
+                if (! this.distribusi[pid]) return;
+                if (i === pids.length - 1) {
+                    this.distribusi[pid].jumlah = Math.round((this.jumlahTotal - terpakai) * 100) / 100;
+                } else {
+                    this.distribusi[pid].jumlah = dasar;
+                    terpakai += dasar;
+                }
+            });
+        },
+
+        namaPoktan(pid) { return this.petaPoktan[pid]?.nama ?? pid; },
+        spUntuk(pid) { return this.petaPoktan[pid]?.sp ?? '-'; },
+
         get benih() { return this.jenis === @js(JenisSaprotan::Benih->value); },
+        get jumlahTersalur() {
+            return this.poktanTerpilih.reduce((t, pid) => t + Number(this.distribusi[pid]?.jumlah || 0), 0);
+        },
+        get sisaBelum() { return Math.round((this.jumlahTotal - this.jumlahTersalur) * 100) / 100; },
     }">
 
     {{-- Bagian 1: identitas sarana --}}
@@ -125,9 +170,9 @@
             </div>
 
             <div>
-                <label for="{{ $awalan }}_jumlah" class="{{ $kelasLabel }}">Jumlah<span class="text-error-500">*</span></label>
-                <input type="number" id="{{ $awalan }}_jumlah" name="jumlah" required
-                    value="{{ old('jumlah', $data['jumlah'] ?? '') }}" min="0" step="0.01"
+                <label for="{{ $awalan }}_jumlah_total" class="{{ $kelasLabel }}">Jumlah Total<span class="text-error-500">*</span></label>
+                <input type="number" id="{{ $awalan }}_jumlah_total" name="jumlah_total" required
+                    x-model.number="jumlahTotal" min="0" step="0.01"
                     class="{{ $kelasKontrol }} tabular-nums" />
             </div>
 
@@ -137,7 +182,7 @@
                     <option value="">Pilih satuan</option>
                     @foreach ($daftarSatuan as $s)
                         <option value="{{ $s['id_satuan'] }}"
-                            @selected(old('satuan', $data['satuan'] ?? '') === $s['nama'])>
+                            @selected((string) old('satuan_id', $data['satuan_id'] ?? '') === (string) $s['id_satuan'])>
                             {{ $s['nama'] }} ({{ $s['simbol'] }})
                         </option>
                     @endforeach
@@ -181,41 +226,52 @@
         </div>
     </section>
 
-    {{-- Bagian 2: penerima --}}
+    {{-- Bagian 2: distribusi ke poktan --}}
     <section>
-        <h3 class="{{ $kelasBagian }}">Penerima</h3>
+        <h3 class="{{ $kelasBagian }}">Distribusi ke Kelompok Tani</h3>
         <div class="mt-3 space-y-4">
-            <x-sim.pilih-cari nama="poktan_id" label="Kelompok Tani Penerima" :wajib="true"
+            <x-sim.pilih-cari-banyak nama="poktan_id" label="Kelompok Tani Penerima"
                 :awalan="$awalan" :opsi="$daftarPoktan" kunci="id_poktan"
                 teks="nama" keterangan-opsi="satuan_permukiman"
-                :terpilih="old('poktan_id', $data['poktan_id'] ?? null)"
-                placeholder="Pilih kelompok tani"
-                keterangan="Seluruh penyaluran tercatat atas nama kelompok. Pembagian kepada anggota diatur poktan sendiri."
-                @change="poktanId = $event.target.value" />
+                :terpilih="$poktanAwal"
+                sinkron-ke="poktanTerpilih"
+                placeholder="Pilih satu atau lebih kelompok tani, atau biarkan kosong"
+                keterangan="Kosongkan bila barang masih di gudang UPT. Satuan permukiman mengikuti poktan penerima." />
 
-            {{--
-                SATUAN PERMUKIMAN TERBACA, BUKAN DIPILIH.
+            <p class="text-theme-xs" :class="sisaBelum < -0.001 ? 'text-error-500' : 'text-gray-500 dark:text-gray-400'">
+                Tersalur <span class="tabular-nums font-medium" x-text="jumlahTersalur"></span>
+                dari <span class="tabular-nums font-medium" x-text="jumlahTotal"></span>.
+                <span x-show="sisaBelum > 0.001">Sisa <span class="tabular-nums" x-text="sisaBelum"></span> belum tersalurkan.</span>
+                <span x-show="sisaBelum < -0.001" class="font-medium">Jumlah distribusi melebihi total.</span>
+            </p>
 
-                Sebelumnya berupa dropdown terpisah, sehingga satu penyaluran
-                dapat tercatat pada SP yang berbeda dari SP poktan penerimanya
-                tanpa ada yang menegur. Nilainya memang sudah ditentukan begitu
-                poktan dipilih, jadi menanyakannya lagi hanya membuka peluang
-                salah isi.
+            <template x-for="pid in poktanTerpilih" :key="pid">
+                <fieldset class="rounded-lg border border-gray-200 p-4 dark:border-gray-800">
+                    <legend class="px-1 text-theme-sm font-medium text-gray-800 dark:text-white/90">
+                        <span x-text="namaPoktan(pid)"></span>
+                        <span class="font-normal text-gray-500 dark:text-gray-400" x-text="'(' + spUntuk(pid) + ')'"></span>
+                    </legend>
 
-                Nilai tetap dikirim lewat `<input type="hidden">`, sebab kolom
-                `satuan_permukiman_id` tetap ada pada kamus data 8.4 dan dipakai
-                penyaringan daftar.
-            --}}
-            <div>
-                <span class="{{ $kelasLabel }}">Satuan Permukiman</span>
-                <p class="flex h-11 items-center rounded-lg bg-gray-50 px-4 text-theme-sm text-gray-600 dark:bg-white/5 dark:text-gray-400">
-                    <span x-show="spTerpilih" x-text="spTerpilih?.nama"></span>
-                    <span x-show="! spTerpilih" x-cloak class="text-gray-400 dark:text-white/30">
-                        Terisi otomatis setelah kelompok tani dipilih
-                    </span>
-                </p>
-                <input type="hidden" name="satuan_permukiman_id" :value="spTerpilih?.id ?? ''" />
-            </div>
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <div>
+                            <label class="{{ $kelasLabel }}" :for="'{{ $awalan }}_dist_jumlah_' + pid">Jumlah</label>
+                            <input type="number" :id="'{{ $awalan }}_dist_jumlah_' + pid"
+                                :name="`distribusi[${pid}][jumlah]`" x-model.number="distribusi[pid].jumlah"
+                                min="0" step="0.01" class="{{ $kelasKontrol }} tabular-nums" />
+                        </div>
+                        <div>
+                            <label class="{{ $kelasLabel }}" :for="'{{ $awalan }}_dist_tanggal_' + pid">Tanggal Serah</label>
+                            <input type="date" :id="'{{ $awalan }}_dist_tanggal_' + pid"
+                                :name="`distribusi[${pid}][tanggal_serah]`" x-model="distribusi[pid].tanggal_serah"
+                                max="{{ date('Y-m-d') }}" class="{{ $kelasKontrol }}" />
+                        </div>
+                    </div>
+                </fieldset>
+            </template>
+
+            <p x-show="poktanTerpilih.length === 0" class="rounded-lg bg-gray-50 px-4 py-3 text-theme-xs text-gray-500 dark:bg-white/5 dark:text-gray-400">
+                Belum ada kelompok tani dipilih. Seluruh jumlah tercatat sebagai belum tersalurkan.
+            </p>
         </div>
     </section>
 

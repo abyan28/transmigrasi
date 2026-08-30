@@ -145,102 +145,91 @@ async function main() {
         };
 
         /*
-            Membuka modal lalu memilih satu opsi pada `pilih-cari`.
+            Membuka pilih-cari-banyak lalu mencentang beberapa opsi sekaligus.
 
             Opsi diklik sungguhan, bukan nilainya disuntikkan, sebab yang diuji
-            justru rantai peristiwanya: klik memanggil `pilih()`, yang
-            memancarkan `change` pada isian tersembunyi, yang lalu ditangkap
-            `@change` milik pemanggil. Menyuntikkan nilai langsung akan
-            melewati seluruh rantai itu dan uji ini kehilangan gunanya.
+            justru rantai peristiwanya: klik memanggil `toggle()`, yang
+            menyinkronkan `poktanTerpilih` di form, yang lalu memicu
+            `selaraskanDistribusi()` dan `bagiRata()`.
         */
-        const pilihOpsi = async (namaIsian, urutan) => nilai(`(() => {
-            const nilaiEl = document.querySelector('[name="${namaIsian}"]');
-            const wadah = nilaiEl.closest('[x-data]');
-            const tombol = wadah.querySelector('button[type="button"]');
-
-            tombol.click();
+        const centangPoktan = async (idPanel, jumlahOpsi) => nilai(`(() => {
+            document.querySelector('#' + ${JSON.stringify(idPanel)} + '_tombol').click();
 
             return new Promise((selesai) => setTimeout(() => {
-                const opsi = [...wadah.querySelectorAll('[role="option"], li button, ul button')];
-                const dipilih = opsi[${urutan}];
-
-                if (! dipilih) {
-                    selesai('opsi tidak ditemukan, ada ' + opsi.length);
-
-                    return;
+                const opsi = [...document.querySelectorAll('#' + ${JSON.stringify(idPanel)} + '_daftar [role="option"]')];
+                for (let i = 0; i < ${jumlahOpsi} && i < opsi.length; i += 1) {
+                    opsi[i].click();
                 }
-
-                dipilih.click();
-                setTimeout(() => selesai('ok'), 250);
+                setTimeout(() => selesai(opsi.length), 300);
             }, 250));
         })()`);
 
         // ------------------------------------------------------------------
-        // Saprotan
+        // Saprotan (Putaran 7): pengadaan induk + distribusi per poktan
         // ------------------------------------------------------------------
         await buka('/saprotan');
         await nilai(`window.dispatchEvent(new CustomEvent('buka-modal', { detail: 'formTambahSaprotan' }))`);
         await tidur(700);
 
         const awalSaprotan = JSON.parse(await nilai(`(() => {
-            const sp = document.querySelector('[name="satuan_permukiman_id"]');
+            const modal = document.querySelector('#judul-formTambahSaprotan').closest('[role="dialog"]');
 
             return JSON.stringify({
-                adaIsianTersembunyi: !! sp && sp.type === 'hidden',
-                // Dropdown SP lama WAJIB sudah tidak ada: selama ia masih
-                // dirender, petugas tetap dapat memilih SP yang berbeda dari
-                // poktannya dan seluruh perubahan ini tidak ada gunanya.
-                adaDropdownSp: !! document.querySelector('select[name="satuan_permukiman_id"]'),
-                adaJenisPenerima: !! document.querySelector('[name="jenis_penerima"]'),
-                adaPenerimaIndividu: !! document.querySelector('[name="transmigran_id"]'),
-                nilaiAwal: sp ? sp.value : null,
+                adaSpTunggal: !! modal.querySelector('[name="satuan_permukiman_id"]'),
+                adaDropdownSp: !! modal.querySelector('select[name="satuan_permukiman_id"]'),
+                adaJenisPenerima: !! modal.querySelector('[name="jenis_penerima"]'),
+                adaPenerimaIndividu: !! modal.querySelector('[name="transmigran_id"]'),
+                adaPemilihPoktan: !! modal.querySelector('#tambah_poktan_id_tombol'),
+                barisDistribusiAwal: modal.querySelectorAll('fieldset').length,
             });
         })()`));
 
-        periksa('saprotan: SP dikirim lewat isian tersembunyi', awalSaprotan.adaIsianTersembunyi === true);
+        periksa('saprotan: SP tunggal pengadaan sudah dicabut', awalSaprotan.adaSpTunggal === false);
         periksa('saprotan: dropdown SP manual sudah dicabut', awalSaprotan.adaDropdownSp === false);
         periksa('saprotan: pilihan jenis penerima sudah dicabut', awalSaprotan.adaJenisPenerima === false);
         periksa('saprotan: isian penerima perorangan sudah dicabut', awalSaprotan.adaPenerimaIndividu === false);
-        periksa(
-            'saprotan: SP kosong selama poktan belum dipilih',
-            awalSaprotan.nilaiAwal === '',
-            `dapat "${awalSaprotan.nilaiAwal}"`
-        );
+        periksa('saprotan: pemilih poktan berganda tersedia', awalSaprotan.adaPemilihPoktan === true);
+        periksa('saprotan: belum ada baris distribusi sebelum poktan dipilih', awalSaprotan.barisDistribusiAwal === 0);
 
-        const hasilPilih = await pilihOpsi('poktan_id', 0);
-        periksa('saprotan: opsi poktan dapat diklik', hasilPilih === 'ok', String(hasilPilih));
+        await nilai(`(() => {
+            const t = document.querySelector('[name="jumlah_total"]');
+            t.value = 100;
+            t.dispatchEvent(new Event('input', { bubbles: true }));
+        })()`);
+
+        await centangPoktan('tambah_poktan_id', 2);
+        await tidur(400);
 
         const sesudahSaprotan = JSON.parse(await nilai(`(() => {
-            const sp = document.querySelector('[name="satuan_permukiman_id"]');
-            const poktan = document.querySelector('[name="poktan_id"]');
+            const modal = document.querySelector('#judul-formTambahSaprotan').closest('[role="dialog"]');
+            const fieldsets = [...modal.querySelectorAll('fieldset')];
+            const inputPoktan = [...modal.querySelectorAll('input[name="poktan_id[]"]')];
+            const jumlahDist = [...modal.querySelectorAll('input[name^="distribusi["][name$="[jumlah]"]')].map((el) => Number(el.value));
 
             return JSON.stringify({
-                poktanTerpilih: poktan.value,
-                spTerkirim: sp.value,
-                teksTerbaca: sp.parentElement.innerText.trim(),
+                barisDistribusi: fieldsets.length,
+                inputPoktanTerkirim: inputPoktan.length,
+                totalTerbagi: jumlahDist.reduce((a, b) => a + b, 0),
+                adaTeksSp: fieldsets.length > 0 && /\\(SP/.test(fieldsets[0].textContent),
             });
         })()`));
 
         periksa(
-            'saprotan: memilih poktan mengisi SP tersembunyi',
-            sesudahSaprotan.spTerkirim !== '',
-            `poktan ${sesudahSaprotan.poktanTerpilih}, sp "${sesudahSaprotan.spTerkirim}"`
+            'saprotan: memilih dua poktan menambah dua baris distribusi',
+            sesudahSaprotan.barisDistribusi === 2,
+            `dapat ${sesudahSaprotan.barisDistribusi}`
         );
-
-        // POKTAN MEKAR JAYA berada di SP Kapitan Meo, yaitu id 1. Nilai inilah
-        // yang menjadikan uji ini bermakna: isian yang terisi sembarang angka
-        // sama buruknya dengan isian yang kosong.
         periksa(
-            'saprotan: SP yang terkirim milik poktan yang dipilih',
-            sesudahSaprotan.spTerkirim === '1',
-            `dapat "${sesudahSaprotan.spTerkirim}"`
+            'saprotan: tiap poktan terkirim sebagai poktan_id[]',
+            sesudahSaprotan.inputPoktanTerkirim === 2,
+            `dapat ${sesudahSaprotan.inputPoktanTerkirim}`
         );
-
         periksa(
-            'saprotan: nama SP terbaca petugas',
-            sesudahSaprotan.teksTerbaca.includes('Kapitan Meo'),
-            sesudahSaprotan.teksTerbaca
+            'saprotan: Sigma distribusi sama dengan jumlah total',
+            Math.abs(sesudahSaprotan.totalTerbagi - 100) < 0.01,
+            `dapat ${sesudahSaprotan.totalTerbagi}`
         );
+        periksa('saprotan: SP terbaca pada baris distribusi', sesudahSaprotan.adaTeksSp === true);
 
         // ------------------------------------------------------------------
         // Alsintan (Putaran 7): pengadaan induk + distribusi per poktan
@@ -278,20 +267,7 @@ async function main() {
             t.dispatchEvent(new Event('input', { bubbles: true }));
         })()`);
 
-        const pilihPoktanBanyak = async (jumlahOpsi) => nilai(`(() => {
-            const tombol = document.querySelector('#tambah_poktan_id_tombol');
-            tombol.click();
-
-            return new Promise((selesai) => setTimeout(() => {
-                const opsi = [...document.querySelectorAll('#tambah_poktan_id_daftar [role="option"]')];
-                for (let i = 0; i < ${jumlahOpsi} && i < opsi.length; i += 1) {
-                    opsi[i].click();
-                }
-                setTimeout(() => selesai(opsi.length), 300);
-            }, 250));
-        })()`);
-
-        await pilihPoktanBanyak(2);
+        await centangPoktan('tambah_poktan_id', 2);
         await tidur(400);
 
         const sesudahAlsintan = JSON.parse(await nilai(`(() => {

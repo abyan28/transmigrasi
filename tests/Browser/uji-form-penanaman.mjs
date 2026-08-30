@@ -198,7 +198,7 @@ async function main() {
         const keadaan = async () => JSON.parse(await nilai(`(() => {
             const modal = ${modalPenanaman};
             const teks = modal.innerText;
-            const benih = modal.querySelector('select[name="saprotan_id"]');
+            const benih = modal.querySelector('select[name="saprotan_distribusi_id"]');
             const volume = modal.querySelector('[name="volume_benih"]');
 
             const terlihat = (el) => {
@@ -347,7 +347,7 @@ async function main() {
         // ------------------------------------------------------------------
         // 4. Volume benih dibatasi sisa stok
         // ------------------------------------------------------------------
-        await isiKontrol('saprotan_id', '4');
+        await isiKontrol('saprotan_distribusi_id', '5');
         await tidur(400);
 
         const sesudahBenih = await keadaan();

@@ -286,36 +286,37 @@ async function main() {
         );
 
         // ------------------------------------------------------------------
-        // 4. Sisa stok benih terbaca pada halaman daftar
+        // 4. Sisa stok benih PER POKTAN terbaca pada halaman rincian
+        //    (Putaran 7: grain pindah ke distribusi; index kini per pengadaan).
         // ------------------------------------------------------------------
         await nilai(`window.dispatchEvent(new CustomEvent('tutup-modal'))`);
-        await tidur(400);
+        await tidur(300);
 
-        const halamanDaftar = JSON.parse(await nilai(`(() => {
-            // DIBACA DARI TABELNYA, bukan document.body.innerText.
-            //
-            // innerText hanya melaporkan teks yang TERLIHAT, dan modal yang
-            // baru saja ditutup masih menyisakan transisi yang menutupi tabel.
-            // textContent membaca isinya apa adanya, dan itulah yang hendak
-            // diperiksa di sini: angkanya benar-benar dirender, bukan soal
-            // terlihat atau tidak.
-            const tabel = document.querySelector('table');
-            const teks = tabel ? tabel.textContent : '';
+        // Pengadaan 1 (BENIH JAGUNG HIBRIDA) dibagi ke dua poktan, sebagian
+        // sudah dipakai penanaman: tabel distribusinya memuat kolom Sisa.
+        await buka('/saprotan/1');
+        const rincianBersisa = await nilai(`(() => {
+            const t = document.querySelector('table');
+            return t ? t.textContent : '';
+        })()`);
 
-            return JSON.stringify({
-                adaSisa: teks.includes('sisa'),
-                adaHabis: teks.includes('habis'),
-                adaKomoditasBenih: teks.includes('JAGUNG'),
-            });
-        })()`));
+        periksa('rincian benih memuat kolom Sisa per poktan', rincianBersisa.includes('Sisa'));
+        periksa('sisa stok benih terbaca pada rincian saprotan', /sisa|Sisa/.test(rincianBersisa));
 
-        periksa('sisa stok benih terbaca pada daftar saprotan', halamanDaftar.adaSisa === true);
+        // Pengadaan 6 (BENIH JAGUNG LOKAL) seluruhnya terpakai: sisa poktan
+        // penerimanya "Habis".
+        await buka('/saprotan/6');
+        const rincianHabis = await nilai(`(() => {
+            const t = document.querySelector('table');
+            return t ? t.textContent : '';
+        })()`);
+
         periksa(
-            'benih yang stoknya habis ditandai',
-            halamanDaftar.adaHabis === true,
-            'data contoh memuat satu benih yang seluruhnya terpakai'
+            'benih yang jatahnya habis ditandai Habis',
+            rincianHabis.includes('Habis'),
+            'data contoh memuat satu distribusi benih yang seluruhnya terpakai'
         );
-        periksa('komoditas benih terbaca pada daftar', halamanDaftar.adaKomoditasBenih === true);
+        periksa('komoditas benih terbaca pada rincian', rincianHabis.includes('JAGUNG'));
 
         soket.close();
 

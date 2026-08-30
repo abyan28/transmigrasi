@@ -316,15 +316,21 @@
                         <x-sim.empty-state judul="Belum ada penyaluran saprotan"
                             pesan="Penyaluran benih, pupuk, atau pestisida akan tampil di sini." />
                     @else
-                        <x-sim.tabel-ringkas judul="Saprotan yang diterima kelompok tani ini" :kolom="['Jenis', 'Nama', 'Jumlah', 'Tahun Pengadaan']">
+                        <x-sim.tabel-ringkas judul="Saprotan yang bagiannya diterima kelompok tani ini" :kolom="['Jenis', 'Nama', 'Jumlah Diterima', 'Sisa Benih', 'Tahun Pengadaan']">
                             @foreach ($saprotan as $s)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                                     <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
                                         {{ $s['jenis'] }}</td>
                                     <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">
-                                        {{ $s['nama'] }}</td>
+                                        <a href="{{ route('saprotan.detail', $s['saprotan_id']) }}"
+                                            class="rounded text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
+                                            {{ $s['nama'] }}
+                                        </a>
+                                    </td>
                                     <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
-                                        {{ number_format($s['jumlah'], 0, ',', '.') }} {{ $s['satuan'] }}</td>
+                                        {{ rtrim(rtrim(number_format($s['jumlah'], 2, ',', '.'), '0'), ',') }} {{ $s['satuan'] }}</td>
+                                    <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
+                                        {{ $s['sisa_benih'] === null ? '-' : (rtrim(rtrim(number_format($s['sisa_benih'], 2, ',', '.'), '0'), ',') . ' ' . $s['satuan']) }}</td>
                                     <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
                                         {{ $s['tahun_pengadaan'] }}
                                     </td>

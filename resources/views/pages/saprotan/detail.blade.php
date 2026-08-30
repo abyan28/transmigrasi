@@ -1,20 +1,24 @@
 {{--
-    Rincian satu catatan sarana produksi pertanian.
+    Rincian satu PENGADAAN sarana produksi pertanian (Putaran 7).
 
-    PENERIMA SELALU KELOMPOK TANI (agents/rules.md bagian 7c). Penyaluran
-    kepada perorangan dicabut 2026-08-22, sehingga tautan penerima selalu
-    menuju halaman poktan.
+    Satu batch bantuan dapat dibagikan ke beberapa poktan. Halaman ini
+    menampilkan bendanya (jenis, komoditas, varietas, jumlah total, tahun,
+    sumber dana) dan tabel distribusi per poktan penerima. Untuk benih, sisa
+    stok dihitung PER BARIS distribusi (jatah poktan itu dikurangi
+    penanamannya sendiri), tidak disimpan (rules.md §7c poin 8).
 --}}
 @extends('layouts.app')
 
 @section('content')
     @php
+        use App\Enums\JenisSaprotan;
 
         $bolehUbah = true;
+        $benih = $data['jenis'] === JenisSaprotan::Benih->value;
     @endphp
 
     <x-sim.page-header :judul="$data['nama']"
-        :keterangan="$data['jenis'] . ' di ' . $data['satuan_permukiman'] . '.'"
+        :keterangan="$data['jenis'] . ($data['komoditas'] ? ' ' . $data['komoditas'] : '') . ', diadakan tahun ' . $data['tahun_pengadaan'] . '.'"
         :remah="\App\Helpers\RemahHelper::untuk('/saprotan', $data['nama'])">
         <x-slot:aksi>
             @if ($bolehUbah)
@@ -34,16 +38,9 @@
     <div class="grid gap-6 lg:grid-cols-[20rem_1fr]">
         <aside class="lg:sticky lg:top-24 lg:self-start">
             <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
-                {{--
-                    Judul "Status" beserta wadah kosong di bawahnya dicabut
-                    2026-08-25: saprotan memang tidak punya kolom status maupun
-                    kondisi, sehingga judulnya menjanjikan isi yang tidak ada.
-                    Sisa pola yang sama sudah dibereskan lebih dulu di
-                    panen/detail.blade.php.
-                --}}
-                <h2 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">Rincian Penyaluran</h2>
+                <h2 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">Pengadaan</h2>
 
-                <dl class="mt-5 space-y-3 border-t border-gray-200 pt-5 text-theme-sm dark:border-gray-800">
+                <dl class="mt-4 space-y-3 text-theme-sm">
                     <div class="flex justify-between gap-3">
                         <dt class="text-gray-500 dark:text-gray-400">Jenis</dt>
                         <dd class="text-right font-medium text-gray-800 dark:text-white/90">{{ $data['jenis'] }}</dd>
@@ -74,72 +71,39 @@
                         </div>
                     @endif
                     <div class="flex justify-between gap-3">
-                        <dt class="text-gray-500 dark:text-gray-400">Jumlah diterima</dt>
+                        <dt class="text-gray-500 dark:text-gray-400">Jumlah total</dt>
                         <dd class="text-right font-medium tabular-nums text-gray-800 dark:text-white/90">
-                            {{ number_format($data['jumlah'], 0, ',', '.') }} {{ $data['satuan'] }}</dd>
+                            {{ number_format($data['jumlah_total'], 0, ',', '.') }} {{ $data['satuan'] }}</dd>
                     </div>
-
-                    {{--
-                        Sisa dan terpakai hanya untuk benih.
-
-                        Keduanya DIHITUNG, bukan disimpan: sisa selalu sama
-                        dengan jumlah dikurangi seluruh pemakaian pada
-                        penanaman. Menyimpannya sebagai kolom berarti angka itu
-                        harus dikoreksi setiap kali satu baris penanaman
-                        disunting, dan koreksi yang terlewat tidak akan pernah
-                        ketahuan.
-                    --}}
-                    @if ($data['jenis'] === \App\Enums\JenisSaprotan::Benih->value)
-                        {{-- `$sisaBenih` datang dari rute `saprotan.detail`. --}}
-                        @php($terpakai = $data['jumlah'] - $sisaBenih)
-
-                        <div class="flex justify-between gap-3">
-                            <dt class="text-gray-500 dark:text-gray-400">Terpakai</dt>
-                            <dd class="text-right font-medium tabular-nums text-gray-800 dark:text-white/90">
-                                {{ rtrim(rtrim(number_format($terpakai, 2, ',', '.'), '0'), ',') }} {{ $data['satuan'] }}
-                            </dd>
-                        </div>
-                        <div class="flex justify-between gap-3">
-                            <dt class="text-gray-500 dark:text-gray-400">Sisa</dt>
-                            <dd class="text-right font-medium tabular-nums {{ $sisaBenih > 0 ? 'text-gray-800 dark:text-white/90' : 'text-error-500' }}">
-                                @if ($sisaBenih > 0)
-                                    {{ rtrim(rtrim(number_format($sisaBenih, 2, ',', '.'), '0'), ',') }} {{ $data['satuan'] }}
-                                @else
-                                    Habis
-                                @endif
-                            </dd>
-                        </div>
-                    @endif
+                    <div class="flex justify-between gap-3">
+                        <dt class="text-gray-500 dark:text-gray-400">Tersalur</dt>
+                        <dd class="text-right font-medium tabular-nums text-gray-800 dark:text-white/90">
+                            {{ rtrim(rtrim(number_format($data['jumlah_tersalur'], 2, ',', '.'), '0'), ',') }} {{ $data['satuan'] }}</dd>
+                    </div>
+                    <div class="flex justify-between gap-3">
+                        <dt class="text-gray-500 dark:text-gray-400">Belum tersalur</dt>
+                        <dd class="text-right font-medium tabular-nums {{ $data['jumlah_belum_tersalur'] > 0 ? 'text-yellow-700 dark:text-yellow-400' : 'text-gray-800 dark:text-white/90' }}">
+                            {{ rtrim(rtrim(number_format($data['jumlah_belum_tersalur'], 2, ',', '.'), '0'), ',') }} {{ $data['satuan'] }}</dd>
+                    </div>
                     <div class="flex justify-between gap-3">
                         <dt class="text-gray-500 dark:text-gray-400">Tahun pengadaan</dt>
-                        <dd class="text-right font-medium tabular-nums text-gray-800 dark:text-white/90">
-                            {{ $data['tahun_pengadaan'] }}
-                        </dd>
+                        <dd class="text-right font-medium tabular-nums text-gray-800 dark:text-white/90">{{ $data['tahun_pengadaan'] }}</dd>
                     </div>
                     <div class="flex justify-between gap-3">
                         <dt class="text-gray-500 dark:text-gray-400">Sumber dana</dt>
                         <dd class="text-right font-medium text-gray-800 dark:text-white/90">{{ $data['sumber_dana'] ?? '-' }}</dd>
                     </div>
-                    <div class="flex justify-between gap-3">
-                        <dt class="text-gray-500 dark:text-gray-400">Satuan permukiman</dt>
-                        <dd class="text-right font-medium text-gray-800 dark:text-white/90">
-                            <a href="{{ route('dashboard.sp', $data['satuan_permukiman_id']) }}"
-                                class="rounded text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
-                                {{ $data['satuan_permukiman'] }}
-                            </a>
-                        </dd>
-                    </div>
                 </dl>
             </div>
         </aside>
 
-        {{-- Kolom kanan: tab rincian --}}
-        <div x-data="hashTabs('penerima')" class="min-w-0">
+        <div x-data="hashTabs('distribusi')" class="min-w-0">
             <div class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
                 <div class="flex gap-1 overflow-x-auto border-b border-gray-200 px-2 pt-2 dark:border-gray-800"
                     role="tablist" aria-label="Rincian saprotan">
                     @foreach ([
-                        'penerima' => 'Penerima',
+                        'distribusi' => 'Distribusi',
+                        'dokumen' => 'Catatan dan Berkas',
                         'log' => 'Catatan Log',
                     ] as $kunci => $label)
                         <button type="button" role="tab" @click="setTab('{{ $kunci }}')"
@@ -153,54 +117,86 @@
                     @endforeach
                 </div>
 
-                {{-- Penerima --}}
-                <div x-show="tab === 'penerima'" role="tabpanel" class="p-5 sm:p-6">
-                    <div class="flex flex-wrap items-center gap-3">
-                        <span
-                            class="rounded-full bg-teal-50 px-2.5 py-1 text-theme-xs font-medium text-teal-700 dark:bg-teal-500/15 dark:text-teal-300">
-                            Kelompok Tani
-                        </span>
+                {{-- Distribusi ke poktan --}}
+                <div x-show="tab === 'distribusi'" role="tabpanel" class="p-5 sm:p-6">
+                    @if (count($data['distribusi']) === 0)
+                        <x-sim.empty-state judul="Belum tersalurkan"
+                            pesan="Seluruh pengadaan masih di gudang UPT. Bagikan ke kelompok tani lewat tombol Ubah Data Saprotan." />
+                    @else
+                        <div class="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
+                            <table class="min-w-full text-theme-sm">
+                                <caption class="px-4 py-2.5 text-left text-theme-xs text-gray-500 dark:text-gray-400">
+                                    Pembagian {{ $data['nama'] }} ke kelompok tani penerima
+                                </caption>
+                                <thead class="border-y border-gray-200 bg-gray-50 text-theme-xs text-gray-500 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400">
+                                    <tr>
+                                        <th scope="col" class="px-4 py-2 text-left">Kelompok Tani</th>
+                                        <th scope="col" class="px-4 py-2 text-left">Satuan Permukiman</th>
+                                        <th scope="col" class="px-4 py-2 text-right">Jumlah</th>
+                                        @if ($benih)
+                                            <th scope="col" class="px-4 py-2 text-right">Terpakai</th>
+                                            <th scope="col" class="px-4 py-2 text-right">Sisa</th>
+                                        @endif
+                                        <th scope="col" class="px-4 py-2 text-left">Tanggal Serah</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                                    @foreach ($data['distribusi'] as $d)
+                                        <tr class="text-gray-700 dark:text-gray-300">
+                                            <td class="px-4 py-2 font-medium text-gray-800 dark:text-white/90">
+                                                <a href="{{ route('poktan.detail', $d['poktan_id']) }}"
+                                                    class="rounded text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
+                                                    {{ $d['poktan'] }}
+                                                </a>
+                                                @if (! empty($d['keterangan']))
+                                                    <span class="mt-0.5 block text-theme-xs font-normal text-gray-500 dark:text-gray-400">{{ $d['keterangan'] }}</span>
+                                                @endif
+                                            </td>
+                                            <td class="px-4 py-2">
+                                                <a href="{{ route('dashboard.sp', $d['satuan_permukiman_id']) }}"
+                                                    class="rounded text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
+                                                    {{ $d['satuan_permukiman'] }}
+                                                </a>
+                                            </td>
+                                            <td class="px-4 py-2 text-right tabular-nums">
+                                                {{ rtrim(rtrim(number_format($d['jumlah'], 2, ',', '.'), '0'), ',') }} {{ $data['satuan'] }}
+                                            </td>
+                                            @if ($benih)
+                                                @php($terpakai = $d['jumlah'] - $d['sisa_benih'])
+                                                <td class="px-4 py-2 text-right tabular-nums">
+                                                    {{ rtrim(rtrim(number_format($terpakai, 2, ',', '.'), '0'), ',') }}
+                                                </td>
+                                                <td class="px-4 py-2 text-right tabular-nums {{ $d['sisa_benih'] > 0 ? '' : 'text-error-500' }}">
+                                                    {{ $d['sisa_benih'] > 0 ? rtrim(rtrim(number_format($d['sisa_benih'], 2, ',', '.'), '0'), ',') : 'Habis' }}
+                                                </td>
+                                            @endif
+                                            <td class="px-4 py-2 tabular-nums">
+                                                {{ $d['tanggal_serah'] ? \Illuminate\Support\Carbon::parse($d['tanggal_serah'])->translatedFormat('d M Y') : '-' }}
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        @if ($benih)
+                            <p class="mt-3 text-theme-xs text-gray-500 dark:text-gray-400">
+                                Sisa benih dihitung per kelompok: jatah satu poktan dikurangi penanaman poktan itu
+                                sendiri, bukan penanaman poktan lain. Nilainya mengoreksi diri sendiri saat baris
+                                penanaman disunting; tidak ada mekanisme "pengembalian stok".
+                            </p>
+                        @endif
+                    @endif
+                </div>
 
-                        <span class="text-theme-sm text-gray-800 dark:text-white/90">
-                            @if ($data['poktan_id'])
-                                <a href="{{ route('poktan.detail', $data['poktan_id']) }}"
-                                    class="rounded font-medium text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
-                                    {{ $data['penerima'] }}
-                                </a>
-                            @else
-                                {{ $data['penerima'] }}
-                            @endif
-                        </span>
-                    </div>
-
-                    <p class="mt-4 rounded-lg bg-gray-50 p-3.5 text-theme-xs text-gray-600 dark:bg-white/[0.03] dark:text-gray-400">
-                        Seluruh penyaluran tercatat atas nama kelompok tani, tidak pernah perorangan. Pembagian
-                        kepada anggota diatur poktan sendiri di luar sistem.
-                    </p>
-
-                    {{--
-                        Catatan dan berkas, ditambahkan 2026-08-20. Kolom
-                        `keterangan` dan `dokumen_pendukung` sudah lama ada pada
-                        kamus data 8.4 tetapi tidak pernah ditampilkan kembali.
-
-                        Justru di modul inilah berita acara penyaluran paling
-                        sering diminta saat pemeriksaan, sehingga tidak dapat
-                        membukanya berarti unggahannya tidak berguna.
-                    --}}
-                    <dl class="mt-6 space-y-4 border-t border-gray-200 pt-6 dark:border-gray-800">
+                {{-- Catatan dan berkas --}}
+                <div x-show="tab === 'dokumen'" x-cloak role="tabpanel" class="p-5 sm:p-6">
+                    <dl class="space-y-4">
                         <div>
                             <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Catatan</dt>
                             <dd class="mt-0.5 text-theme-sm leading-relaxed text-gray-800 dark:text-white/90">
                                 {{ $data['keterangan'] ?? 'Tidak ada catatan tambahan.' }}
                             </dd>
                         </div>
-                        {{--
-                            Foto ditambahkan 2026-08-25. Kolom `foto` dipisah
-                            dari `dokumen_pendukung` di form mengikuti pola
-                            inventaris dan fasilitas, tetapi sisi rincian dulu
-                            hanya memasang satu tautan sehingga foto barang yang
-                            diunggah petugas tidak punya cara dibuka (R-26).
-                        --}}
                         <div class="grid gap-4 sm:grid-cols-2">
                             <div>
                                 <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Foto barang</dt>
@@ -220,7 +216,7 @@
                     </dl>
                 </div>
 
-                {{-- Catatan log: riwayat perubahan data ini saja --}}
+                {{-- Catatan log --}}
                 <div x-show="tab === 'log'" x-cloak role="tabpanel">
                     <x-sim.catatan-log nama-tabel="saprotan" :record-id="$data['id_saprotan']" />
                 </div>

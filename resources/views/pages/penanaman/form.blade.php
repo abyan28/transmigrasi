@@ -38,7 +38,7 @@
     x-data="{
         poktanId: @js((string) old('poktan_id', $data['poktan_id'] ?? '')),
         komoditasId: @js((string) old('komoditas_id', $data['komoditas_id'] ?? '')),
-        saprotanId: @js((string) old('saprotan_id', $data['saprotan_id'] ?? '')),
+        saprotanId: @js((string) old('saprotan_distribusi_id', $data['saprotan_distribusi_id'] ?? '')),
         realisasi: @js((string) old('realisasi_tanam', $data['realisasi_tanam'] ?? '')),
         petaPoktan: @js($petaPoktan),
         semuaBenih: @js($petaBenih),
@@ -194,11 +194,11 @@
             dapat dipilih apa pun adalah kontrol mati (ui-spec.md R-26).
         --}}
         <div>
-            <label for="{{ $awalan }}_saprotan_id" class="{{ $kelasLabel }}">
+            <label for="{{ $awalan }}_saprotan_distribusi_id" class="{{ $kelasLabel }}">
                 Benih Dipakai<span class="text-error-500">*</span>
             </label>
 
-            <select id="{{ $awalan }}_saprotan_id" name="saprotan_id" x-model="saprotanId"
+            <select id="{{ $awalan }}_saprotan_distribusi_id" name="saprotan_distribusi_id" x-model="saprotanId"
                 x-show="benihTersedia.length > 0" x-cloak
                 :required="benihTersedia.length > 0" class="{{ $kelasKontrol }}">
                 <option value="">Pilih benih</option>

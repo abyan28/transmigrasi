@@ -1,25 +1,27 @@
 {{--
-    Penyaluran sarana produksi pertanian.
+    Daftar pengadaan sarana produksi pertanian, SATU BARIS PER PENGADAAN
+    (Putaran 7).
 
-    Penerima dapat berupa kelompok tani maupun individu transmigran
-    (agents/rules.md bagian 7c poin 3). Penyaluran kepada anggota poktan hanya
-    untuk anggota berstatus aktif (poin 4), aturan yang dijaga saat pemilihan
-    penerima pada Tahap 6.
+    Satu batch bantuan (mis. 250 kg benih jagung anggaran Dinas 2025) lazim
+    dibagikan ke beberapa poktan. Model lama membawa satu poktan_id pada tiap
+    baris, sehingga satu batch diketik ulang per poktan dan sisa benih tak
+    terdefinisi bila jatah satu poktan tergerus penanaman poktan lain. Kini
+    poktan penerima tampil sebagai lencana; rincian per poktan (termasuk sisa
+    benih) ada di halaman detail (rules.md §7c).
 --}}
 @extends('layouts.app')
 
 @section('content')
     {{--
         Seluruh isian halaman ini datang dari rute `saprotan.index`, termasuk
-        penyaringan, angka ringkasan, dan peta `$sisaBenih` yang dahulu
-        dihitung ulang di dalam perulangan baris. Lihat routes/web.php.
+        penyaringan dan angka ringkasan. Lihat routes/web.php.
     --}}
     <x-sim.halaman-daftar judul="Saprotan"
-        keterangan="Penyaluran benih, pupuk, pestisida, dan mulsa kepada petani."
+        keterangan="Pengadaan benih, pupuk, pestisida, dan mulsa, beserta pembagiannya ke kelompok tani."
         :remah="\App\Helpers\RemahHelper::untuk('/saprotan')"
         :jumlah="count($baris)" :kata-kunci="$cari" :aksi-url="route('saprotan.index')"
-        placeholder-cari="Cari nama saprotan atau penerima" judul-kosong="Belum ada penyaluran saprotan"
-        pesan-kosong="Penyaluran sarana produksi akan tampil di sini setelah dicatat.">
+        placeholder-cari="Cari nama saprotan atau poktan" judul-kosong="Belum ada pengadaan saprotan"
+        pesan-kosong="Pengadaan sarana produksi akan tampil di sini setelah dicatat.">
 
         <x-slot:aksi>
             <x-sim.aksi-daftar modal-impor="imporSaprotan"
@@ -27,9 +29,10 @@
         </x-slot:aksi>
 
         <x-slot:ringkasan>
-            <x-sim.stat-card label="Catatan Penyaluran" :nilai="count($semua)" />
+            <x-sim.stat-card label="Pengadaan" :nilai="count($semua)" />
             <x-sim.stat-card label="Jenis Saprotan" :nilai="count($jenisUnik)" />
-            <x-sim.stat-card label="Poktan Penerima" :nilai="$poktanPenerima" />
+            <x-sim.stat-card label="Poktan Penerima" :nilai="$poktanPenerima"
+                keterangan="Kelompok yang menerima bagian" />
         </x-slot:ringkasan>
 
         <x-slot:filter>
@@ -62,10 +65,9 @@
         </x-slot:filter>
 
         <x-slot:kepala>
-            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Jenis</th>
-            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Nama Saprotan</th>
+            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Saprotan</th>
+            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Poktan Penerima</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Jumlah</th>
-            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Penerima</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Tahun Pengadaan</th>
             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Sumber Dana</th>
             <th scope="col" class="px-5 py-3 text-right text-theme-xs font-medium text-gray-500 dark:text-gray-400">Aksi</th>
@@ -73,42 +75,30 @@
 
         @foreach ($baris as $s)
             <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
-                <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ $s['jenis'] }}</td>
-                <td class="px-5 py-3 text-theme-sm font-medium text-gray-800 dark:text-white/90">
-                    {{ $s['nama'] }}
-                    {{-- Komoditas hanya ada pada benih, sehingga barisnya
-                         tidak selalu tampil. --}}
-                    @if (! empty($s['komoditas']))
-                        <p class="mt-0.5 text-theme-xs font-normal text-gray-500 dark:text-gray-400">
-                            {{ $s['komoditas'] }}
-                        </p>
-                    @endif
+                <td class="px-5 py-3">
+                    <p class="text-theme-sm font-medium text-gray-800 dark:text-white/90">{{ $s['nama'] }}</p>
+                    <p class="text-theme-xs text-gray-500 dark:text-gray-400">
+                        {{ $s['jenis'] }}@if (! empty($s['komoditas'])) &middot; {{ $s['komoditas'] }} @endif
+                    </p>
                 </td>
-                {{--
-                    Sisa stok ditampilkan HANYA untuk benih, sebab hanya benih
-                    yang dikurangi pemakaiannya oleh penanaman. Menampilkannya
-                    pada pupuk berarti menjanjikan penghitungan yang tidak
-                    pernah dilakukan.
-                --}}
-                <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
-                    {{ number_format($s['jumlah'], 0, ',', '.') }} {{ $s['satuan'] }}
-                    @if ($s['jenis'] === \App\Enums\JenisSaprotan::Benih->value)
-                        @php($sisa = $sisaBenih[$s['id_saprotan']])
-                        <p class="mt-0.5 text-theme-xs {{ $sisa > 0 ? 'text-gray-500 dark:text-gray-400' : 'text-error-500' }}">
-                            {{ $sisa > 0 ? 'sisa ' . rtrim(rtrim(number_format($sisa, 2, ',', '.'), '0'), ',') . ' ' . $s['satuan'] : 'habis' }}
-                        </p>
-                    @endif
-                </td>
-                <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
-                    @if ($s['poktan_id'])
-                        <a href="{{ route('poktan.detail', $s['poktan_id']) }}"
-                            class="rounded text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
-                            {{ $s['penerima'] }}
+                <td class="px-5 py-3">
+                    @forelse ($s['distribusi'] as $d)
+                        <a href="{{ route('poktan.detail', $d['poktan_id']) }}"
+                            class="mr-1 mb-1 inline-flex items-center gap-1 rounded-md bg-gray-100 px-2 py-0.5 text-theme-xs text-gray-700 hover:bg-gray-200 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:bg-white/5 dark:text-gray-300 dark:hover:bg-white/10">
+                            {{ $d['poktan'] }}
+                            <span class="tabular-nums text-gray-500 dark:text-gray-400">{{ rtrim(rtrim(number_format($d['jumlah'], 2, ',', '.'), '0'), ',') }}</span>
                         </a>
-                    @else
-                        {{ $s['penerima'] }}
+                    @empty
+                        <span class="text-theme-xs text-gray-400 dark:text-white/30">Belum tersalurkan</span>
+                    @endforelse
+                </td>
+                <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
+                    {{ number_format($s['jumlah_total'], 0, ',', '.') }} {{ $s['satuan'] }}
+                    @if ($belumTersalur[$s['id_saprotan']] > 0)
+                        <span class="block text-theme-xs text-yellow-700 dark:text-yellow-400">
+                            {{ rtrim(rtrim(number_format($belumTersalur[$s['id_saprotan']], 2, ',', '.'), '0'), ',') }} belum tersalur
+                        </span>
                     @endif
-                    <p class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">{{ $s['satuan_permukiman'] }}</p>
                 </td>
                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
                     {{ $s['tahun_pengadaan'] }}</td>
@@ -116,7 +106,7 @@
                 <td class="px-5 py-3">
                     <x-sim.aksi-baris :rincian-url="route('saprotan.detail', $s['id_saprotan'])"
                         modal-ubah="formUbahSaprotanBaris"
-                        :data-baris="$s + ['id' => $s['id_saprotan']]"
+                        :data-baris="['id' => $s['id_saprotan'], 'id_saprotan' => $s['id_saprotan'], 'jenis' => $s['jenis'], 'nama' => $s['nama'], 'komoditas_id' => $s['komoditas_id'], 'varietas' => $s['varietas'], 'jadwal_tanam' => $s['jadwal_tanam'], 'jumlah_total' => $s['jumlah_total'], 'satuan_id' => $s['satuan_id'], 'tahun_pengadaan' => $s['tahun_pengadaan'], 'sumber_dana' => $s['sumber_dana'], 'keterangan' => $s['keterangan']]"
                         :hapus-url="'/saprotan/' . $s['id_saprotan']"
                         konfirmasi-hapus="hapusSaprotan" :label="$s['nama']" />
                 </td>
@@ -126,9 +116,15 @@
         <x-slot:kartu>
             @foreach ($baris as $s)
                 <div class="p-4">
-                    <p class="text-theme-sm font-medium text-gray-800 dark:text-white/90">{{ $s['nama'] }}</p>
+                    <div class="flex items-start justify-between gap-3">
+                        <p class="text-theme-sm font-medium text-gray-800 dark:text-white/90">{{ $s['nama'] }}</p>
+                        <span class="text-theme-xs tabular-nums text-gray-500 dark:text-gray-400">
+                            {{ number_format($s['jumlah_total'], 0, ',', '.') }} {{ $s['satuan'] }}
+                        </span>
+                    </div>
                     <p class="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
-                        {{ number_format($s['jumlah'], 0, ',', '.') }} {{ $s['satuan'] }} &middot; {{ $s['penerima'] }}
+                        {{ $s['jenis'] }} &middot; {{ $s['tahun_pengadaan'] }} &middot;
+                        {{ count($s['distribusi']) > 0 ? implode(', ', $s['poktan_penerima']) : 'Belum tersalurkan' }}
                     </p>
                 </div>
             @endforeach
@@ -136,13 +132,13 @@
     </x-sim.halaman-daftar>
 
     <x-sim.modal-form nama="formTambahSaprotan" judul="Tambah Saprotan"
-        keterangan="Penyaluran hanya dapat ditujukan kepada anggota berstatus aktif."
+        keterangan="Satu pengadaan beserta pembagiannya ke satu atau beberapa kelompok tani."
         :aksi="route('saprotan.simpan')" ukuran="lg" label-simpan="Simpan Data">
         @include('pages.saprotan.form', ['awalan' => 'tambah'])
     </x-sim.modal-form>
 
     <x-sim.modal-form nama="formUbahSaprotanBaris" judul="Ubah Data Saprotan"
-        keterangan="Penerima individu hanya dapat dipilih dari anggota aktif."
+        keterangan="Satuan permukiman mengikuti kelompok tani penerima."
         pola-aksi="/saprotan/:id" metode="PUT" ukuran="lg"
         label-simpan="Simpan Perubahan">
         @include('pages.saprotan.form', ['awalan' => 'ubahBaris'])
@@ -154,5 +150,5 @@
     {{-- Impor massal, lihat komponennya untuk alur tiga langkah --}}
     <x-sim.modal-impor nama="imporSaprotan" judul="Impor Data Saprotan"
         entitas="saprotan"
-        :kolom-wajib="['satuan_permukiman', 'jenis_saprotan', 'jumlah', 'satuan']" />
+        :kolom-wajib="['jenis_saprotan', 'nama', 'jumlah_total', 'satuan', 'tahun_pengadaan']" />
 @endsection
