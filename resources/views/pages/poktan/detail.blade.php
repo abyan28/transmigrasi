@@ -4,9 +4,9 @@
     Anggota yang berhenti ditandai berstatus Sudah Keluar, bukan dihapus,
     agar riwayat keanggotaan tetap utuh (agents/rules.md bagian 5.1 catatan 5).
 
-    Status keaktifan bukan sekadar penanda: penyaluran saprotan hanya boleh
-    kepada anggota aktif (bagian 7c poin 4), sehingga kolom ini dibaca modul
-    lain saat menentukan penerima.
+    Status keaktifan bukan sekadar penanda: penanaman dan rekap kelompok hanya
+    menghitung anggota aktif beserta lahannya (bagian 7d poin 3 dan 4).
+    Penyaluran saprotan kini ke KELOMPOK, bukan perorangan (dicabut 2026-08-22).
 --}}
 @extends('layouts.app')
 

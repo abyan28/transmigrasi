@@ -2179,9 +2179,10 @@ class DummyData
             ],
 
             /*
-             * Tiga baris berikut melengkapi keadaan yang belum terwakili pada
-             * tautan objek: pengaduan atas inventaris, atas fasilitas, dan
-             * pengaduan yang asetnya belum terdata sama sekali.
+             * Tiga baris berikut melengkapi ragam kategori: pengaduan atas
+             * inventaris, atas fasilitas, dan atas kejadian yang tidak
+             * bertaut aset. (Tautan objek pengaduan dicabut 2026-08-19,
+             * notes.md; satu laporan ditangani satu dinas.)
              */
             [
                 'id_pengaduan' => 6,

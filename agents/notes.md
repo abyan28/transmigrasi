@@ -1911,6 +1911,72 @@ Belum diperiksa mata: Ctrl+P dokumen Monografi yang kini jauh lebih panjang.
 
 ---
 
+## 1w. Putaran 7: pola "induk + distribusi" (Alsintan, Saprotan, +3 temuan audit) (2026-08-30)
+
+Pemilik menemukan cacat FATAL: `alsintan`/`saprotan` bawa satu `poktan_id`, jadi
+satu batch bantuan ke banyak poktan diketik ulang per poktan → N baris tak
+saling tahu. Audit menemukan 3 instans sama.
+
+### Keputusan pemilik (3 putaran AskUserQuestion)
+Jumlah per poktan = bagi rata otomatis, dapat disunting · kondisi alsintan per
+poktan (baris distribusi) · daftar = 1 baris/pengadaan · pengadaan tanpa
+penerima BOLEH · tanggal serah per poktan opsional · keempat temuan audit
+dikerjakan.
+
+### Pola: INDUK (benda) + DISTRIBUSI (satu baris/penerima)
+DummyData tempel anak ke induk sebagai larik turunan (pola `penanda_terima`).
+Turunan SP pindah butir: "SP mengikuti poktan" kini berlaku pada baris
+distribusi, bukan induk. Laporan tetap bergrain distribusi → kolom nyaris tak
+berubah. Pengadaan tanpa distribusi = "Belum tersalurkan".
+
+### Tahap (commit per tahap)
+- **A** `JenisReferensi::JenisAlsintan` (deklarasi PALING AKHIR di `referensi()`
+  — id infra/fasilitas terpaku ke `PenilaianKondisiSp::parameter()`).
+  `sim:tautan-statis` 222→223.
+- **B+C** `<x-sim.pilih-cari-banyak>` (saudara `pilih-cari`, jangan modif) +
+  alsintan `alsintan()` induk + `alsintanDistribusi()`. Data: 1 batch ke 3
+  poktan lintas SP + 1 pengadaan belum tersalur. Form: pilih-cari-banyak +
+  repeater distribusi (bagi rata otomatis). `uji-sp-otomatis.mjs` blok alsintan
+  ditulis ulang.
+- **D** saprotan — PALING BERISIKO. `saprotanPengadaan()` (induk, sumber
+  tunggal) + `saprotan()` menempel turunan + `saprotanDistribusi()`.
+  **`penanaman.saprotan_id`→`saprotan_distribusi_id`**. `sisaBenih($distId)`
+  turun grain (§7c.8 "dihitung tak disimpan" TETAP). `benihTersedia()` iterasi
+  distribusi, id = `id_saprotan_distribusi`. `satuan` lama (nama) dibetulkan
+  jadi `satuan_id`. Uji DummyData/Halaman/uji-benih-komoditas/uji-form-penanaman
+  di-regrain.
+- **E** infrastruktur: `satuan_permukiman_id` TETAP pangkal, +`infrastruktur_sp`
+  cakupan (wajib muat pangkal). `PenilaianKondisiSp.php:98` `===`→`in_array(...ids)`
+  dgn mundur `[$id]`. Data: KIOS SAPROTAN DESA → SP 1/2/5. **Memperbaiki skor SP
+  yang salah** (primer nol).
+- **F1** fasilitas_sp cakupan (pola sama E; SMP Satu Atap → SP tetangga).
+  **F2 (jumlah>1 satu kondisi) DITUNDA** — bug class berbeda, `rules.md` §7bc.5.
+- **G** `dokumenLahan()` induk + `dokumenLahanBidang()` (m2m). `dokumenLahan(?lahanId)`
+  tanda tangan tetap. Data: HPL/0142 mencakup pekarangan + usaha Yohanes Bere.
+- **H** `hasil_panen.poktan_id` dicabut dari baris literal, diturunkan dari
+  `penanaman.poktan_id`.
+- **I** docs.
+
+### Jebakan
+- `return [` → `$data = [` sebelum menambah `array_map` turunan (kena 2×:
+  infrastruktur, fasilitas — array_map jadi dead code kalau lupa).
+- id referensi terpaku → `jenis_alsintan` deklarasi PALING AKHIR.
+- uji regrain (bukan hapus): DummyDataTest sisa benih, HalamanTest jejak panen,
+  uji peramban saprotan/penanaman.
+- `pilih-cari` baca atribut terikat TANPA titik dua (`required` bukan `:required`).
+- pint: `\App\Enums\` sebaris di uji → `fully_qualified_strict_types`, pakai `use`.
+
+### Verifikasi
+pest 711, pint 31, `sim:tautan-statis` 223, `npm run build`,
+`uji-lebar-dokumen` 28/0, `uji-gulir-modal` 24/0, `uji-sp-otomatis` 21/0,
+`uji-benih-komoditas` 16/0, `uji-form-penanaman` 25/0, `uji-filter-laporan` 53/0.
+
+**Belum diperiksa mata:** form alsintan/saprotan repeater distribusi di layar,
+Ctrl+P laporan, rincian poktan dengan distribusi.
+**Tertunda:** F2 (rincian kondisi per unit fasilitas/inventaris).
+
+---
+
 ## 2. Catatan Dokumen Proposal
 
 Lembar pengesahan pada `docs/Revisi_Proposal_Budi_TEP ITS 2026_Kobalima_Timur_Upload_10_6_2026_a.pdf` masih memuat judul dan pengusul dari proposal lain:

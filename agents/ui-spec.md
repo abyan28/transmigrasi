@@ -734,6 +734,16 @@ Isian yang sumbernya **tabel data**, bukan enum, memakai `x-sim.pilih-cari`. Con
 13. **Dilarang memakai `x-model` pada `<select>` yang opsinya dirender lewat `x-for`.** Alpine menyetel ulang nilainya setiap daftar opsi berubah, sehingga pilihan pengguna hilang begitu ia mengetik di kotak pencarian. Pakai `@change` untuk menyalin nilainya.
 14. Keadaan pencarian nihil **wajib dikatakan**; daftar yang mendadak kosong tanpa penjelasan terbaca sebagai kerusakan.
 
+#### `<x-sim.pilih-cari-banyak>` — varian berganda (Putaran 7, 2026-08-30)
+
+Saudara `pilih-cari`, **bukan modifikasinya** (yang lama skalar dari ujung ke ujung: 11 pemanggil bergantung padanya). Dipakai ketika satu induk dibagikan ke banyak pihak: satu batch alsintan/saprotan ke beberapa poktan, satu infrastruktur/fasilitas melayani beberapa SP, satu dokumen lahan mencakup beberapa bidang.
+
+Mempertahankan **seluruh 14 aturan di atas**. Yang berbeda: `nilai` adalah larik; `toggle()` menambah/menghapus tanpa menutup panel (petugas lazim memilih beberapa sekaligus); satu `<input class="sr-only" name="poktan_id[]">` per pilihan dirender lewat `x-for` (Form Request membacanya sebagai larik); pemicu menampilkan **chip** yang dapat dilepas; `role="listbox"` mendapat `aria-multiselectable="true"`; penanda pilihan berupa **kotak centang** (bukan tanda centang tunggal); `<noscript>` memakai `<select multiple>`; penjaga wajib-isi berupa `<input>` **tanpa `name`** (tidak ikut terkirim, tetap diperiksa validasi form).
+
+`sinkron-ke` menerima ekspresi Alpine milik leluhur (larik pada `x-data` form); setiap perubahan menimpanya dengan salinan `nilai`, sehingga repeater `x-for` di form dapat menampilkan satu baris per pihak terpilih. **Dilarang** memasang gerbang berbasis cacah opsi (`rules.md` §19a).
+
+Pemakai Putaran 7: `alsintan/form` + `saprotan/form` (poktan penerima → repeater distribusi, jumlah dibagi rata otomatis), `infrastruktur/form` + `sp/form-fasilitas` ("SP lain yang dilayani"), `lahan/detail` modal dokumen ("bidang lain yang dicakup").
+
 ### 6.0 Penandaan isian wajib
 
 Isian wajib ditandai **dua hal yang selalu berpasangan**. Salah satu tanpa yang lain adalah cacat:
