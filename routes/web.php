@@ -1679,15 +1679,33 @@ Route::delete('/pengaduan/{id}', function () {
  * Rekap kependudukan, dipakai DUA rute seperti rekap panen dan rekap pengaduan.
  */
 $susunRekapKependudukan = function (?string $kelompokRute = null) {
+    $kelompok = $kelompokRute ?? request('kelompok', 'tahun');
+    $daftarTahun = DummyData::daftarTahunKependudukan();
+    $tahunTerakhir = end($daftarTahun);
+    $tahunDipilih = (int) request('tahun', $tahunTerakhir);
+
+    if (! in_array($tahunDipilih, $daftarTahun, true)) {
+        $tahunDipilih = $tahunTerakhir;
+    }
+
+    $perSp = DummyData::rekapPerSp($tahunDipilih);
+    $penghuni = DummyData::rekapPenghuni($tahunDipilih);
+    $pekerjaan = DummyData::sebaranPekerjaan($tahunDipilih);
+    $daerahAsal = DummyData::sebaranDaerahAsal($tahunDipilih);
+    $pendidikan = DummyData::sebaranPendidikan($tahunDipilih);
+
     return view('pages.kependudukan.rekap', [
         'title' => 'Rekap Kependudukan',
-        'kelompok' => $kelompokRute ?? request('kelompok', 'tahun'),
+        'kelompok' => $kelompok,
+        'daftarTahun' => $daftarTahun,
+        'tahunPilihan' => $tahunDipilih,
+        'tahunTerakhir' => $tahunTerakhir,
         'perTahun' => DummyData::rekapKependudukan(),
-        'perSp' => DummyData::rekapPerSp(),
-        'penghuni' => DummyData::rekapPenghuni(),
-        'pekerjaan' => DummyData::sebaranPekerjaan(),
-        'daerahAsal' => DummyData::sebaranDaerahAsal(),
-        'pendidikan' => DummyData::sebaranPendidikan(),
+        'perSp' => $perSp,
+        'penghuni' => $penghuni,
+        'pekerjaan' => $pekerjaan,
+        'daerahAsal' => $daerahAsal,
+        'pendidikan' => $pendidikan,
         'ringkasan' => DummyData::ringkasanDashboard(),
 
         /*

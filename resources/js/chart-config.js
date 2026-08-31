@@ -17,18 +17,45 @@
  */
 
 /**
- * Urutan warna seri grafik, diambil dari palet logo Kementerian.
+ * Urutan warna seri grafik kategorikal umum dengan kontras seimbang.
  *
  * ApexCharts memerlukan nilai heksadesimal, bukan nama kelas Tailwind
  * (agents/ui-spec.md bagian 9 poin 6).
  */
 export const warnaSeri = [
-    '#163B54', // navy-500
-    '#33809C', // teal-500
-    '#C09546', // gold-500
-    '#DFB87E', // sand-500
-    '#265F73', // teal-700
+    '#163B54', // navy-500 (primer gelap)
+    '#2D7189', // teal-600 (sekunder dingin)
+    '#C09546', // gold-500 (aksen hangat)
+    '#0BA5EC', // blue-light-500 (terang kontras)
+    '#D96B43', // terracotta (hangat kontras)
+    '#667085', // gray-500 (netral)
 ];
+
+/**
+ * Palet warna kategorikal khusus komoditas pertanian (6 komoditas).
+ * Menggunakan 6 rona spektral terpisah (Amber, Emerald, Navy, Violet, Crimson, Slate)
+ * untuk menjamin keterbedaan maksimal pada Donut Sebaran Komoditas.
+ */
+export const warnaKomoditas = [
+    '#D97706', // Jagung: Harvest Amber / Emas
+    '#12B76A', // Padi: Emerald Leaf Green
+    '#163B54', // Kacang Tanah: Deep Navy
+    '#8B5CF6', // Ubi Kayu: Violet / Ungu Umbi
+    '#E11D48', // Cabai: Coral Crimson Red
+    '#64748B', // Lainnya: Slate Gray
+];
+
+/**
+ * Peta warna semantik untuk siklus penanganan pengaduan.
+ * Dipetakan berbasis nama status agar tidak tertukar saat urutan data disortir di backend.
+ */
+export const warnaStatusPengaduan = {
+    'Selesai': '#12B76A',            // Emerald Green (Tuntas / Sukses)
+    'Diproses': '#F79009',           // Amber / Oranye (Sedang Ditangani)
+    'Diterima': '#0BA5EC',           // Sky Blue (Terverifikasi Petugas)
+    'Menunggu Diterima': '#94A3B8',  // Slate Gray (Laporan Baru Masuk / Antrean)
+    'Ditolak': '#F04438',            // Rose Red (Bila Ada Penolakan)
+};
 
 /** Warna kondisi aset, dipakai grafik status infrastruktur. */
 export const warnaKondisi = {
@@ -101,6 +128,9 @@ export function opsiDasar() {
             fontFamily: 'Outfit, system-ui, sans-serif',
             foreColor: warnaTeks,
             toolbar: { show: false },
+            zoom: { enabled: false },
+            selection: { enabled: false },
+            parentHeightOffset: 0,
             animations: { enabled: false },
             background: 'transparent',
 
@@ -136,6 +166,9 @@ export function opsiDasar() {
         },
         tooltip: {
             theme: gelap ? 'dark' : 'light',
+            shared: true,
+            intersect: false,
+            followCursor: false,
             style: { fontSize: '12px', fontFamily: 'Outfit, system-ui, sans-serif' },
         },
         xaxis: {
@@ -343,6 +376,8 @@ export function drilldownSp(idSp, basisUrl) {
 
 export default {
     warnaSeri,
+    warnaKomoditas,
+    warnaStatusPengaduan,
     warnaKondisi,
     modeGelap,
     angka,

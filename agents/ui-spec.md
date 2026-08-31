@@ -1017,12 +1017,18 @@ Indikator PRD §7.8 dipetakan ke jenis visualisasi:
 3. Produksi **selalu** dikonversi ke ton sebelum diagregasi (`rules.md` §8a).
 4. Kartu statistik dimuat lebih dulu, grafik menyusul secara asinkron.
 5. Setiap grafik punya state kosong sendiri bila data belum tersedia.
-6. Warna seri grafik mengambil urutan: `#163B54` (navy-500) → `#33809C` (teal-500) → `#C09546` (gold-500) → `#DFB87E` (sand-500) → `#265F73` (teal-700). ApexCharts dikonfigurasi memakai nilai heksadesimal, bukan nama kelas Tailwind.
+6. Palet warna grafik ApexCharts dibagi menurut fungsi data (agents/rules.md §13):
+   - **Kategorikal umum (`warnaSeri`)**: `#163B54` (navy-500) → `#2D7189` (teal-600) → `#C09546` (gold-500) → `#0BA5EC` (blue-light-500) → `#D96B43` (terracotta) → `#667085` (gray-500).
+   - **Komoditas pertanian (`warnaKomoditas`)**: Jagung `#D97706` (Amber/Gold), Padi `#12B76A` (Emerald), Kacang Tanah `#163B54` (Navy), Ubi Kayu `#8B5CF6` (Violet), Cabai `#E11D48` (Crimson), Lainnya `#64748B` (Slate). Mencegah tumpang tindih rona kembar pada Donut Sebaran Komoditas.
+   - **Semantik pengaduan (`warnaStatusPengaduan`)**: Diterima `#F79009` (Amber), Diproses `#0BA5EC` (Blue-light), Selesai `#12B76A` (Emerald), selaras dengan status badge sistem.
+   - **Kondisi aset (`warnaKondisi`)**: Baik `#12B76A`, Rusak Ringan `#F79009`, Rusak Berat `#F04438`.
 7. Grafik wajib menyediakan tabel data alternatif demi aksesibilitas.
 8. Konfigurasi ApexCharts bersama (warna, font Outfit, locale Indonesia, format angka) diletakkan di satu berkas `resources/js/chart-config.js`, tidak diulang di tiap grafik.
 9. **Visualisasi dikelompokkan menurut topik, bukan menurut nomor indikator.** Dashboard memuat lebih dari dua puluh blok; mengurutkannya menurut nomor indikator membuat pembaca dilempar antartopik dan satu pokok bahasan terpecah di beberapa tempat berjauhan. Urutan bagiannya: Ringkasan Kawasan, Kependudukan, Pertanian dan Ekonomi, Infrastruktur dan Layanan, lalu Perbandingan Antar SP.
 10. Tiap bagian diawali `x-sim.judul-bagian` yang memakai `<h2>`, sehingga hierarki tajuk tidak melompat dari `<h1>` halaman ke `<h3>` kartu grafik.
 11. **Tiap baris grid wajib genap.** Lebar kartu disetel agar tidak menyisakan kolom menganggur di ujung baris; kartu yang berdiri sendiri diletakkan selebar halaman, di luar grid.
+12. **Interaksi grafik non-blocking (Scrolling Halaman > Interaksi Chart).** Seluruh grafik ApexCharts dikonfigurasi agar tidak pernah menangkap gesture vertikal halaman saat pengguna melakukan scrolling cepat (`chart.zoom.enabled: false`, `chart.selection.enabled: false`, `tooltip.followCursor: false`, `touch-action: pan-y !important;` pada canvas dan SVG). Pada desktop kursor mouse memunculkan tooltip instan, pada mobile sentuhan singkat (tap) mengunci tooltip tanpa mengorbankan navigasi swipe vertikal.
+13. **Struktur Ringkasan Kawasan 3 Pilar Domain.** 12 indikator utama dikelompokkan ke dalam 3 pilar tematik visual: (1) *Kependudukan & Hunian* (Navy), (2) *Lahan & Siklus Tanam* (Teal), dan (3) *Produksi & Nilai Pasar* (Gold/Sand), dilengkapi bar visual keterhunian dan siklus tanam (Realisasi Tanam, Puso, Realisasi Panen). Sumbu Y pada grafik per SP (`#grafikPerSp`) memisahkan skala Jiwa di kiri dan Luas Lahan ha di kanan (Dual Y-Axis).
 
 **Indikator 17, produksi pertanian kawasan** (ditambahkan 2026-08-24). Empat kartu statistik pada bagian Ringkasan Kawasan: Realisasi Tanam, Hasil Panen, Puso, dan Produktivitas Rata-rata.
 

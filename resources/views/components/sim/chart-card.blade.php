@@ -59,7 +59,7 @@
             tetap utuh sekalipun grafiknya belum sempat menyesuaikan diri.
         --}}
         <div x-show="!tabelTerbuka" id="{{ $id }}" style="min-height: {{ $tinggi }}px"
-            class="w-full max-w-full overflow-hidden {{ $lebar ?? '' }}"></div>
+            class="w-full max-w-full overflow-hidden touch-pan-y {{ $lebar ?? '' }}"></div>
 
         {{-- Tabel alternatif yang setara isinya dengan grafik --}}
         @isset($tabel)

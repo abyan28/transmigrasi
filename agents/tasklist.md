@@ -1277,6 +1277,9 @@ Aturan modul yang mudah terlewat, tercatat agar tidak terulang:
 19. `ANTISLOP-ID.md` berlaku sebagai filter desain. **R-02 (larangan em dash) hanya berlaku untuk teks yang tampil di antarmuka**, tidak untuk dokumen di folder `agents/`.
 20. Dial desain ditetapkan: **ENERGI 1 / RITME 2 / GERAK 1**, dengan motif identitas diturunkan dari logo Kementerian.
 21. **Mode gelap dipertahankan** sebagai toggle dua mode; konsekuensinya seluruh komponen dan grafik wajib diuji di kedua mode (R-34).
+22. **Restrukturisasi Ringkasan Kawasan (2026-08-31):** 12 KPI ringkasan kawasan dikelompokkan ke dalam 3 Pilar Visualisasi Domain (*Kependudukan & Hunian*, *Lahan & Siklus Tanam*, *Produksi & Nilai Pasar*) dengan mini progress bar dan Dual Y-Axis pada grafik per SP (`#grafikPerSp`).
+23. **Interaksi Grafik Non-Blocking (2026-08-31):** Penegakan aturan UX *Scrolling Halaman > Interaksi Chart* via CSS `touch-action: pan-y !important;`, non-blocking pointer/zoom options di `chart-config.js`, dan `touch-pan-y` di `chart-card.blade.php`.
+24. **Palet Warna Visualisasi Khusus (2026-08-31):** Penetapan palet komoditas khusus (`warnaKomoditas`) untuk memecahkan masalah warna biru kembar pada Donut Sebaran Komoditas, palet semantik pengaduan (`warnaStatusPengaduan`), kontras dual-bar SP (Navy vs Gold), dan multi-series line penduduk (Navy, Sky Blue, Gold).
 
 **Masih menunggu:**
 - Referensi tata letak Figma (tidak memblokir; sementara memakai tata letak bawaan TailAdmin).

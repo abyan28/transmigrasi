@@ -1172,6 +1172,18 @@ pre[class*='language-'] {
 }
 
 /*
+  Penegakan Scrolling Halaman Vertikal pada Seluruh Grafik ApexCharts.
+  Mencegah event capturing pada mobile/trackpad sehingga gestur swipe vertikal
+  100% diproses oleh browser untuk menggulir halaman tanpa hambatan.
+*/
+.apexcharts-canvas,
+.apexcharts-canvas svg,
+.apexcharts-canvas .apexcharts-inner,
+.apexcharts-canvas .apexcharts-grid-rect {
+  touch-action: pan-y !important;
+}
+
+/*
   Cetak. Ditambahkan Putaran 3 D2 (2026-08-28) -- @media print pertama di
   repo. Halaman laporan dan tampilan dokumennya harus tercetak sebagai
   kertas saja, tanpa sidebar, header, bilah filter, atau tombol.

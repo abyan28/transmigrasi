@@ -4423,15 +4423,79 @@ class DummyData
     }
 
     /**
+     * Daftar tahun yang tercatat pada data deret kependudukan.
+     *
+     * @return list<int>
+     */
+    public static function daftarTahunKependudukan(): array
+    {
+        return self::deretTahunan()['tahun'];
+    }
+
+    /**
+     * Menyesuaikan sebaran kategori agar jumlah totalnya tepat sama dengan jumlah KK pada tahun tertentu.
+     * Menjamin rekonsiliasi total 100% konsisten antar-tab (rules.md §10a.4b).
+     *
+     * @param  array<string, int>  $sebaran  Peta kategori => jumlah KK pada tahun terakhir (1140)
+     * @param  int|null  $tahun  Tahun yang dipilih
+     * @return array<string, int> Peta kategori => jumlah KK pada tahun terpilih
+     */
+    public static function skalakanSebaranKependudukan(array $sebaran, ?int $tahun = null): array
+    {
+        if ($tahun === null) {
+            return $sebaran;
+        }
+
+        $deret = self::deretTahunan();
+        $idx = array_search($tahun, $deret['tahun'], true);
+        if ($idx === false || $tahun === end($deret['tahun'])) {
+            return $sebaran;
+        }
+
+        $targetTotal = $deret['jumlah_kk'][$idx];
+        $baseTotal = array_sum($sebaran);
+        if ($baseTotal === 0 || $targetTotal === $baseTotal) {
+            return $sebaran;
+        }
+
+        $rasio = $targetTotal / $baseTotal;
+        $hasil = [];
+        $kunciTerbesar = null;
+        $nilaiTerbesar = -1;
+
+        foreach ($sebaran as $kunci => $nilai) {
+            if ($nilai === 0) {
+                $hasil[$kunci] = 0;
+                continue;
+            }
+            $dibulatkan = (int) round($nilai * $rasio);
+            $hasil[$kunci] = $dibulatkan;
+            if ($nilai > $nilaiTerbesar) {
+                $nilaiTerbesar = $nilai;
+                $kunciTerbesar = $kunci;
+            }
+        }
+
+        $selisih = $targetTotal - array_sum($hasil);
+        if ($selisih !== 0 && $kunciTerbesar !== null) {
+            $hasil[$kunciTerbesar] += $selisih;
+        }
+
+        return $hasil;
+    }
+
+    /**
      * Rekap penghuni kawasan menurut status tinggalnya.
      *
      * Indikator ke-14 dashboard (agents/ui-spec.md bagian 9).
+     * Mendukung filter tahun pada halaman Rekap Kependudukan.
      *
+     * @param  int|null  $tahun  Tahun data terpilih (default tahun terakhir)
      * @return array<string, int> Peta status tinggal ke jumlah KK
      */
-    public static function rekapPenghuni(): array
+    public static function rekapPenghuni(?int $tahun = null): array
     {
-        return [
+        $base = [
             StatusTinggal::Aktif->value => 1063,
             StatusTinggal::PindahPenduduk->value => 54,
             // Enam keluarga yang sebelumnya berstatus `Meninggal` dilebur ke
@@ -4440,16 +4504,20 @@ class DummyData
             // melainkan tidak adanya lagi penghuni yang meneruskan.
             StatusTinggal::TidakAktif->value => 23,
         ];
+
+        return self::skalakanSebaranKependudukan($base, $tahun);
     }
 
     /**
      * Sebaran pekerjaan kepala keluarga untuk histogram.
+     * Mendukung filter tahun pada halaman Rekap Kependudukan.
      *
+     * @param  int|null  $tahun  Tahun data terpilih (default tahun terakhir)
      * @return array<string, int> Peta pekerjaan ke jumlah KK
      */
-    public static function sebaranPekerjaan(): array
+    public static function sebaranPekerjaan(?int $tahun = null): array
     {
-        return [
+        $base = [
             'Petani' => 892,
             'Buruh Tani' => 118,
             'Pedagang' => 54,
@@ -4458,6 +4526,8 @@ class DummyData
             'Aparat Desa' => 14,
             'Lainnya' => 12,
         ];
+
+        return self::skalakanSebaranKependudukan($base, $tahun);
     }
 
     /**
@@ -4483,11 +4553,12 @@ class DummyData
      * menyeragamkan huruf besarnya, tetapi tidak ejaannya. Agregat di sini
      * mengandaikan penyeragaman itu sudah dilakukan.
      *
+     * @param  int|null  $tahun  Tahun data terpilih (default tahun terakhir)
      * @return array<string, int> Peta daerah asal ke jumlah KK
      */
-    public static function sebaranDaerahAsal(): array
+    public static function sebaranDaerahAsal(?int $tahun = null): array
     {
-        return [
+        $base = [
             'MALAKA' => 402,
             'BELU' => 286,
             'TIMOR TENGAH UTARA' => 178,
@@ -4495,6 +4566,8 @@ class DummyData
             'TIMOR TENGAH SELATAN' => 96,
             'Lainnya' => 33,
         ];
+
+        return self::skalakanSebaranKependudukan($base, $tahun);
     }
 
     /**
@@ -4512,11 +4585,12 @@ class DummyData
      * sekali membuat pembaca tidak dapat membedakannya dari data yang belum
      * didata.
      *
+     * @param  int|null  $tahun  Tahun data terpilih (default tahun terakhir)
      * @return array<string, int> Peta jenjang pendidikan ke jumlah KK
      */
-    public static function sebaranPendidikan(): array
+    public static function sebaranPendidikan(?int $tahun = null): array
     {
-        return [
+        $base = [
             'Tidak Sekolah' => 61,
             'SD' => 402,
             'SMP' => 331,
@@ -4526,6 +4600,8 @@ class DummyData
             'S2' => 2,
             'S3' => 0,
         ];
+
+        return self::skalakanSebaranKependudukan($base, $tahun);
     }
 
     /**
@@ -4574,15 +4650,17 @@ class DummyData
 
     /**
      * Rekap ringkas per satuan permukiman untuk tabel dan drill-down.
+     * Mendukung filter tahun pada halaman Rekap Kependudukan.
      *
      * Kolom `satuan_permukiman_id` diperlukan agar baris rekap dapat ditaut
      * ke halaman rincian `/dashboard/sp/{id}`.
      *
+     * @param  int|null  $tahun  Tahun data terpilih (default tahun terakhir)
      * @return array<int, array<string, mixed>> Rekap per SP
      */
-    public static function rekapPerSp(): array
+    public static function rekapPerSp(?int $tahun = null): array
     {
-        return [
+        $base = [
             ['satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo',
                 'jumlah_kk' => 218, 'rumah_terhuni' => 205, 'luas_lahan' => 620.50, 'volume_panen' => 385.20, 'pengaduan_terbuka' => 3],
             ['satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu',
@@ -4596,6 +4674,46 @@ class DummyData
             ['satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain',
                 'jumlah_kk' => 163, 'rumah_terhuni' => 149, 'luas_lahan' => 497.50, 'volume_panen' => 190.20, 'pengaduan_terbuka' => 1],
         ];
+
+        if ($tahun === null) {
+            return $base;
+        }
+
+        $deret = self::deretTahunan();
+        $idx = array_search($tahun, $deret['tahun'], true);
+        if ($idx === false || $tahun === end($deret['tahun'])) {
+            return $base;
+        }
+
+        $targetKk = $deret['jumlah_kk'][$idx];
+        $baseKk = 1140;
+        $rasio = $targetKk / $baseKk;
+
+        $hasil = [];
+        $totalKkHitung = 0;
+        $maxKkIdx = 0;
+
+        foreach ($base as $i => $baris) {
+            $kkBaris = (int) round($baris['jumlah_kk'] * $rasio);
+            $huniBaris = (int) round($baris['rumah_terhuni'] * $rasio);
+            $totalKkHitung += $kkBaris;
+
+            $barisBaru = $baris;
+            $barisBaru['jumlah_kk'] = $kkBaris;
+            $barisBaru['rumah_terhuni'] = $huniBaris;
+            $hasil[] = $barisBaru;
+
+            if ($baris['jumlah_kk'] > $base[$maxKkIdx]['jumlah_kk']) {
+                $maxKkIdx = $i;
+            }
+        }
+
+        $selisih = $targetKk - $totalKkHitung;
+        if ($selisih !== 0) {
+            $hasil[$maxKkIdx]['jumlah_kk'] += $selisih;
+        }
+
+        return $hasil;
     }
 
     /**

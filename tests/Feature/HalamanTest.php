@@ -1040,6 +1040,31 @@ it('merender keenam tab rekap kependudukan beserta isinya', function () {
     }
 });
 
+it('menyaring rekap kependudukan per tahun dengan total yang selalu konsisten', function () {
+    $tahunUji = 2020;
+    $deret = DummyData::deretTahunan();
+    $idx = array_search($tahunUji, $deret['tahun'], true);
+    $targetKk = $deret['jumlah_kk'][$idx]; // 968
+
+    // Periksa konsistensi seluruh helper data pada tahun 2020
+    expect(array_sum(array_column(DummyData::rekapPerSp($tahunUji), 'jumlah_kk')))->toBe($targetKk)
+        ->and(array_sum(DummyData::rekapPenghuni($tahunUji)))->toBe($targetKk)
+        ->and(array_sum(DummyData::sebaranPekerjaan($tahunUji)))->toBe($targetKk)
+        ->and(array_sum(DummyData::sebaranDaerahAsal($tahunUji)))->toBe($targetKk)
+        ->and(array_sum(DummyData::sebaranPendidikan($tahunUji)))->toBe($targetKk);
+
+    // Periksa rendering view dengan filter tahun
+    $tab = ['sp', 'status', 'pekerjaan', 'asal', 'pendidikan'];
+    foreach ($tab as $kelompok) {
+        $isi = $this->get(route('kependudukan.rekap.kelompok', ['kelompok' => $kelompok, 'tahun' => $tahunUji]))
+            ->assertOk()
+            ->getContent();
+
+        expect($isi)->toContain("Tahun {$tahunUji}")
+            ->and($isi)->toContain(number_format($targetKk, 0, ',', '.'));
+    }
+});
+
 it('menyusun kolom rekap sesuai dasar pengelompokannya', function () {
     /*
      * Kolom kedua BERBEDA tiap tab (ditetapkan pemilik proyek 2026-08-24):

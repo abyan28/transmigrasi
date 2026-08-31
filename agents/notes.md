@@ -3165,3 +3165,68 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
   * Sesi Gemini yg menyunting ~36 berkas revisi lain **dibiarkan** (tak berkonflik) atas permintaan pemilik; suntingan Gemini yg menghapus `<caption>` tabel anggota keluarga **dikembalikan** di sini (melanggar penjaga Pest `memberi nama pada setiap tabel`).
   * Penjaga baru: Pest `it('memakai cangkang dua kolom baku pada halaman detail')` (grid + kartu + `relative` pada wadah tabel bersama) dan uji peramban `tests/Browser/uji-lebar-halaman.mjs` (9 rute × 1440 & 1920 px, `documentElement.scrollWidth <= clientWidth`).
   * Verifikasi: pest 715, pint 31, `uji-lebar-halaman` 36/0, `uji-lebar-dokumen` 28/0, `uji-gulir-modal` 24/0. `uji-suksesi-kk` 14/5 pra-ada.
+
+
+------------------------------------------------------------------------------------------------------------------------------------
+
+
+- [done] pada halaman dashboard di bagian Ringkasan Kawasan itu kan ada 12 kotak gitu di mana kalau orang lihat itu pasti bingung dan gak bisa membedakan. Bagaimana kalau kamu coba buat visualisasinya, namun tidak keluar jauh dari tema palet warna sistem.
+  * **Selesai 2026-08-31.** 12 kartu KPI identik tanpa hierarki visual dirombak menjadi **3 Pilar Visualisasi Domain** yang terstruktur, komunikatif, dan tetap setia pada palet resmi Kementerian (`navy-500` #163B54, `teal-500` #33809C, `gold-500` #C09546, `sand-500` #DFB87E, serta skala netral):
+    1. **Pilar 1: Kependudukan & Hunian** (Tema Navy/Blue) — Menghubungkan total jiwa (4.560), kepala keluarga (1.140 KK), petani (2.280), dan rasio keterhunian rumah (1.140 / 1.200 unit = 95%) lengkap dengan *progress bar* visual kapasitas hunian.
+    2. **Pilar 2: Lahan & Siklus Tanam** (Tema Teal/Emerald) — Mengelompokkan total luas lahan kawasan (3.250 ha), lahan tergarap (1.140 ha = 35,08%), serta *siklus produksi pertanian* (Realisasi Tanam 630 ha, Puso 24,60 ha = 3,9%, dan Realisasi Panen 605,40 ha = 96,1%) dengan *stacked mini progress bar* interaktif.
+    3. **Pilar 3: Produksi & Nilai Pasar** (Tema Gold/Sand) — Menyatukan total volume produksi (1.781 ton), produktivitas rata-rata tertimbang (2,94 ton/ha), perkiraan perputaran nilai pasar (Rp 7,12 Miliar), dan komoditas unggulan (Jagung 65% pangsa).
+  * **Dual Y-Axis pada Grafik Antar SP (`#grafikPerSp`):** Menyelaraskan grafik komparasi per SP dengan memisahkan skala Jiwa (sumbu kiri) dan skala Luas Lahan Hektare (sumbu kanan). Sebelumnya kedua besaran dipaksakan pada satu sumbu Y sehingga garis luas lahan (skala ratusan ha) tampak mendatar di dasar kanvas di bawah deret jiwa (skala ribuan).
+  * **Smooth Area Chart pada Tren Pendapatan (`#grafikPendapatan`):** Mengubah grafik garis kaku menjadi area bernuansa halus dengan gradien transparan lembut, mempertegas tren pertumbuhan ekonomi keluarga transmigran dari tahun ke tahun.
+  * **Konsistensi Data & Nol Regresi:** Seluruh angka agregat turunan dan identitas aritmetika (`realisasi_tanam = hasil_panen + puso`, `produksi = hasil_panen * produktivitas`) tetap terjaga 100%. Tidak ada perubahan skema database atau rumus backend.
+  * **Verifikasi:** 14 pengujian Pest dashboard (75 assertions) lulus hijau, kompilasi aset Vite sukses bersih (`exit code 0`).
+
+- [done] untuk grafik multi-series line chart pada halaman dashboard itu kan interaktif ketika di-scroll bawah dan atas. Nah, masalahnya ketika user mau scroll halaman dashboard, sering nyangkut di grafik interaktif tersebut. Apakah bisa dimodif grafik interaktif tersebut baru aktif ketika di-klik? Atau mungkin kamu ada ide yg lebih baik? Untuk grafik multi-series line chart yg ada pada dashboard ada 2, yaitu Pertumbuhan Penduduk Kawasan dan Harga Jual Rata-Rata.
+  * **Selesai 2026-08-31 (Opsi C: Hybrid Responsive Gesture Model).**
+  * **Akar Masalah Teknis:** ApexCharts merender overlay SVG (`.apexcharts-grid-rect` dan `.apexcharts-inner`) selebar kanvas yang mengikat event `touchstart`, `touchmove`, dan `pointermove`. Tanpa deklarasi CSS `touch-action: pan-y`, peramban mobile (Chrome/Safari) dan trackpad menahan atau memperlambat scroll vertikal halaman karena terjadi *gesture contention* (kebingungan antara *drag scrub* titik data vs *page scroll*). Selain itu, fitur zoom/selection default ApexCharts memicu hit-testing berulang yang memberatkan CPU saat kursor sekadar melintas di atas grafik saat scrolling cepat.
+  * **Prinsip UX Ditegakkan: SCROLLING HALAMAN > INTERAKSI CHART.** Chart adalah bagian dari dashboard, bukan aplikasi terpisah. Navigasi halaman tidak boleh dikorbankan demi interaksi grafik.
+  * **Solusi Hybrid Terpusat:**
+    1. **Pada Desktop (`@media (hover: hover)`):** Kursor mouse tetap dapat melakukan hover instan tanpa hambatan klik tambahan (*zero-click friction*). `chart.zoom: { enabled: false }`, `chart.selection: { enabled: false }`, `chart.parentHeightOffset: 0`, serta `tooltip.followCursor: false` dipasang di `opsiDasar()` ([chart-config.js](file:///D:/TEP/sistem%20informasi%20transmigrasi/resources/js/chart-config.js)) guna mematikan kalkulasi matriks berlebih saat roda mouse diputar kencang.
+    2. **Pada Mobile/Touchscreen (`@media (hover: none)` / pointer kasar):** Penegakan CSS native `.apexcharts-canvas, .apexcharts-canvas svg, .apexcharts-canvas .apexcharts-inner, .apexcharts-canvas .apexcharts-grid-rect { touch-action: pan-y !important; }` di [app.css](file:///D:/TEP/sistem%20informasi%20transmigrasi/resources/css/app.css) dan utility `touch-pan-y` di [chart-card.blade.php](file:///D:/TEP/sistem%20informasi%20transmigrasi/resources/views/components/sim/chart-card.blade.php). Peramban HP 100% memprioritaskan gestur *swipe* vertikal untuk menggulir halaman; eksplorasi data dilakukan via *tap* singkat pada titik data tanpa mengunci navigasi.
+  * **Konsistensi Seluruh Grafik:** Diterapkan secara sentral pada helper bersama, mencakup `#grafikPenduduk` (*Pertumbuhan Penduduk Kawasan*), `#grafikPendapatan` (*Tren Pendapatan Keluarga*), `#grafikHarga` (*Harga Jual Rata-Rata*), serta seluruh grafik lain di sistem secara otomatis.
+  * **Verifikasi:** 14 pengujian Pest dashboard (75 assertions), 77 pengujian DummyData (1.626 assertions) 100% lulus hijau, dan build Vite terverifikasi bersih.
+
+- [done] Bisa coba tolong audit lagi semua grafik pada dashboard yg menampilkan warna? Sebab beberapa warnanya itu mirip2 gitu. Jadinya susah membedakannya dari user.
+  * **Selesai 2026-08-31 (Audit & Optimalisasi Warna Visualisasi Dashboard).**
+  * **Akar Masalah Keterbacaan:** Palet bawaan `warnaSeri` sebelumnya memuat 3 varian biru/teal (`#163B54` Navy, `#33809C` Teal, `#265F73` Dark Teal) yang saat diterapkan pada grafik multi-kategori (khususnya Donut Chart `#grafikKomoditas` dan Grouped Bar `#grafikPerSp`) menghasilkan irisan/batang dengan rona (*hue*) dan kegelapan yang nyaris identik. Pada donat *Sebaran Komoditas*, *Jagung* (Navy) dan *Cabai* (Dark Teal) nyaris tidak dapat dibedakan. Selain itu, grafik Donut *Pengaduan per Status* sebelumnya memakai warna brand acak alih-alih warna semantik status penanganan.
+  * **Prinsip yang Ditegakkan:** *"Distinct enough to differentiate, but consistent enough to feel like one system."*
+  * **Penyelesaian Terstruktur:**
+    1. **Palet Komoditas Pertanian Khusus (`warnaKomoditas` - 6 Rona Spektral Terpisah):**
+       - *Jagung* $\rightarrow$ `#D97706` (*Harvest Amber* / Emas Jagung)
+       - *Padi* $\rightarrow$ `#12B76A` (*Emerald Green* / Hijau Sawah)
+       - *Kacang Tanah* $\rightarrow$ `#163B54` (*Deep Navy* / Biru Gelap)
+       - *Ubi Kayu* $\rightarrow$ `#8B5CF6` (*Violet* / Ungu Umbi)
+       - *Cabai* $\rightarrow$ `#E11D48` (*Coral Crimson* / Merah Cerah; langsung mencolok meski persentase irisan kecil 1,1%)
+       - *Lainnya* $\rightarrow$ `#64748B` (*Slate Gray* / Abu-abu Netral; mencegah wrap-around warna kembar)
+    2. **Palet Semantik Siklus Pengaduan (`warnaStatusPengaduan` - Name-to-Color Keyed Mapping):**
+       - Menghilangkan bug tertukarnya warna akibat sorting `usort` descending count di backend.
+       - *Selesai* $\rightarrow$ `#12B76A` (Emerald Green / Tuntas & Sukses 100% konsisten)
+       - *Diproses* $\rightarrow$ `#F79009` (Amber / Sedang Ditangani)
+       - *Diterima* $\rightarrow$ `#0BA5EC` (Sky Blue / Terverifikasi Petugas)
+       - *Menunggu Diterima* $\rightarrow$ `#94A3B8` (Slate Gray / Laporan Baru Masuk)
+    3. **Pemisahan Kontras Dual-Bar Perbandingan SP (`#grafikPerSp`):**
+       - Batang 1 (*Kepala Keluarga* / Sumbu Kiri) $\rightarrow$ `#163B54` (Navy)
+       - Batang 2 (*Volume Panen* / Sumbu Kanan) $\rightarrow$ `#C09546` (Gold)
+       - Pemisahan visual antara dimensi demografi vs produksi pertanian kini terbaca instan.
+    4. **Peningkatan Kontras Multi-Series Line Penduduk (`#grafikPenduduk`):**
+       - *Jiwa* $\rightarrow$ `#163B54` (Navy), *Kepala Keluarga* $\rightarrow$ `#0BA5EC` (Sky Blue), *Petani* $\rightarrow$ `#C09546` (Gold).
+    5. **Sentralisasi Helper:** Seluruh palet didaftarkan pada [resources/js/chart-config.js](file:///D:/TEP/sistem%20informasi%20transmigrasi/resources/js/chart-config.js) (`warnaSeri`, `warnaKomoditas`, `warnaStatusPengaduan`) dan diekspor ke `window.grafikSim`.
+  * **Verifikasi:** 14 pengujian Pest Dashboard (75 assertions) dan 77 pengujian DummyData (1.626 assertions) 100% lulus hijau; `npm run build` sukses bersih.
+* **3. Filter Tahun Konteks pada Rekap Kependudukan (Hybrid UX Model - 2026-08-31):**
+  * **Latar Belakang:** Sebelumnya halaman `/kependudukan/rekap` menempatkan "Tahun" sebagai salah satu tab yang sejajar dengan SP, Status, Pekerjaan, Asal, dan Pendidikan. Hal ini mengunci 5 tab demografis ke potret tahun terakhir (2026) dan tidak memungkinkan eksplorasi data kependudukan historis per tahun (misal: 2020 saat 968 KK).
+  * **Solusi Arsitektur (Hybrid UX Model):**
+    1. **Filter Konteks Tahun Tunggal (`?tahun=YYYY`):** Ditambahkan di atas tabel dengan opsi 2016–2026. Nilai bawaan adalah tahun terakhir (`2026`).
+    2. **Perkembangan Antar-Tahun (Tab 'tahun'):** Menyajikan tabel tren multi-tahun longitudinal lengkap 2016–2026. Dropdown filter tahun dinonaktifkan dengan penjelasan saat tab ini aktif.
+    3. **Distribusi Demografis Responsif (Tab 'sp', 'status', 'pekerjaan', 'asal', 'pendidikan'):** Kelima tab kini menyajikan data cacah jiwa/keluarga pada tahun terpilih dengan scaling deterministik.
+    4. **Rekonsiliasi Total 100% Konsisten (rules.md §10a.4b):** Menggunakan helper `DummyData::skalakanSebaranKependudukan()`, total KK pada kelima tab dijamin tepat sama dengan `deretTahunan['jumlah_kk'][$tahun]` tanpa selisih pembulatan (misal pada 2020 seluruh tab tepat menghasilkan 968 KK).
+    5. **Navigasi Tab Mengikat Tahun:** Berpindah antar-tab demografis mempertahankan parameter `?tahun=YYYY`.
+  * **Berkas yang Diubah:**
+    - [app/Support/DummyData.php](file:///D:/TEP/sistem%20informasi%20transmigrasi/app/Support/DummyData.php): `daftarTahunKependudukan()`, `skalakanSebaranKependudukan()`, parameterized `$tahun` pada `rekapPerSp()`, `rekapPenghuni()`, `sebaranPekerjaan()`, `sebaranDaerahAsal()`, `sebaranPendidikan()`.
+    - [routes/web.php](file:///D:/TEP/sistem%20informasi%20transmigrasi/routes/web.php): `$susunRekapKependudukan` membaca `request('tahun')` dan mengoper konteks tahun.
+    - [resources/views/pages/kependudukan/rekap.blade.php](file:///D:/TEP/sistem%20informasi%20transmigrasi/resources/views/pages/kependudukan/rekap.blade.php): Bilah filter tahun, judul bertahun, tombol reset, dan keterangan cakupan.
+    - [tests/Feature/HalamanTest.php](file:///D:/TEP/sistem%20informasi%20transmigrasi/tests/Feature/HalamanTest.php): Pengujian konsistensi dan rendering filter tahun.
+  * **Verifikasi:** 4 pengujian kependudukan (68 assertions) dan 14 pengujian dashboard (75 assertions) 100% lulus hijau; `npm run build` sukses bersih.
