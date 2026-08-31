@@ -18,7 +18,7 @@
     --}}
 
     <x-sim.page-header :judul="$data['nama']"
-        :keterangan="'Kelompok tani di ' . $data['satuan_permukiman'] . ', berdiri sejak ' . $data['tahun_berdiri'] . '.'"
+        :keterangan="'Kelompok tani di ' . $data['satuan_permukiman'] . ', berdiri sejak ' . $data['tahun_berdiri'] . '. Pencatatan anggota khusus warga transmigran.'"
         :remah="\App\Helpers\RemahHelper::untuk('/poktan', $data['nama'])">
         <x-slot:aksi>
             <button type="button" @click="$dispatch('buka-modal', 'formTambahAnggota')"
@@ -104,9 +104,13 @@
                         </dd>
                     </div>
                     <div class="flex justify-between gap-3">
-                        <dt class="text-gray-500 dark:text-gray-400">Anggota aktif</dt>
+                        <dt class="text-gray-500 dark:text-gray-400">Anggota transmigran aktif</dt>
                         <dd class="text-right font-medium tabular-nums text-gray-800 dark:text-white/90">
-                            {{ $aktif }} dari {{ count($anggota) }} terdata</dd>
+                            {{ $aktif }} dari {{ count($anggota) }} terdata
+                            <span class="mt-0.5 block text-theme-xs font-normal text-gray-500 dark:text-gray-400">
+                                Khusus warga transmigran
+                            </span>
+                        </dd>
                     </div>
                     {{--
                         SK pembentukan dan catatan, ditambahkan 2026-08-20.
@@ -150,7 +154,7 @@
                 <div class="flex gap-1 overflow-x-auto no-scrollbar border-b border-gray-200 px-2 pt-2 dark:border-gray-800"
                     role="tablist" aria-label="Rincian kelompok tani">
                     @foreach ([
-                        'anggota' => 'Anggota (' . count($anggota) . ')',
+                        'anggota' => 'Anggota Transmigran (' . count($anggota) . ')',
                         'alsintan' => 'Alsintan (' . count($alsintan) . ')',
                         'saprotan' => 'Saprotan (' . count($saprotan) . ')',
                         'log' => 'Catatan Log',
@@ -167,11 +171,18 @@
                 </div>
 
                 <div x-show="tab === 'anggota'" role="tabpanel">
+                    <div class="border-b border-gray-200 bg-gray-50/60 px-5 py-3 dark:border-gray-800 dark:bg-white/[0.02]">
+                        <p class="text-theme-xs text-gray-600 dark:text-gray-400">
+                            <span class="font-medium text-gray-700 dark:text-gray-300">Catatan Ruang Lingkup:</span>
+                            Sistem ini hanya mendata anggota kelompok tani yang merupakan warga transmigran. Anggota non-transmigran (penduduk lokal) yang tergabung di kelompok yang sama tidak dicatat dalam sistem ini.
+                        </p>
+                    </div>
+
                     @if (empty($anggota))
                         <x-sim.empty-state judul="Belum ada anggota terdata"
-                            pesan="Daftar anggota kelompok tani ini akan tampil setelah didata." />
+                            pesan="Daftar anggota transmigran kelompok tani ini akan tampil setelah didata." />
                     @else
-                        <x-sim.tabel-ringkas judul="Anggota kelompok tani ini"
+                        <x-sim.tabel-ringkas judul="Anggota Kelompok Tani (Khusus Warga Transmigran)"
                             :kolom="['Wakil Keluarga', 'NIK', 'Telepon', 'Jabatan', 'Lahan Usaha (ha)', 'Tanggal Masuk', 'Status', 'Aksi']">
                             @foreach ($anggota as $a)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">

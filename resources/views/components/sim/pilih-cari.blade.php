@@ -304,8 +304,8 @@
         tabindex="-1" aria-hidden="true"
         @invalid="$refs.tombol?.focus()"
         @if ($wajib && ! $ekspresiRequired) required @endif
-        @if ($ekspresiRequired) :required="{{ $ekspresiRequired }}" @endif
-        @if ($ekspresiDisabled) :disabled="{{ $ekspresiDisabled }}" @endif
+        @if ($ekspresiRequired) :required="{!! $ekspresiRequired !!}" @endif
+        @if ($ekspresiDisabled) :disabled="{!! $ekspresiDisabled !!}" @endif
         class="sr-only" />
 
     {{--
@@ -320,7 +320,7 @@
         :aria-expanded="terbuka" aria-haspopup="listbox"
         :aria-controls="@js($id . '_daftar')"
         role="combobox"
-        @if ($ekspresiDisabled) :disabled="{{ $ekspresiDisabled }}" @endif
+        @if ($ekspresiDisabled) :disabled="{!! $ekspresiDisabled !!}" @endif
         class="{{ $kelasKontrol }} flex items-center justify-between gap-2 text-left disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400 dark:disabled:bg-white/5">
         <span class="truncate" :class="terpilihItem ? '' : 'text-gray-400 dark:text-white/30'"
             x-text="labelTombol"></span>

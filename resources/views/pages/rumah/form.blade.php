@@ -44,12 +44,56 @@
 @endphp
 
 <div class="space-y-6"
-    x-data="{ statusHunian: @js($data['status_hunian'] ?? 'Dihuni') }">
+    x-data="{
+        statusHunian: @js($data['status_hunian'] ?? 'Dihuni'),
+        petaSpTransmigran: @js(collect($daftarTransmigran)->pluck('satuan_permukiman_id', 'id_transmigran')->all()),
+        gantiPenghuni(id) {
+            if (this.statusHunian === 'Dihuni' && id) {
+                const spId = this.petaSpTransmigran ? this.petaSpTransmigran[id] : null;
+                if (spId) {
+                    const sel = this.$el.querySelector('[name=&quot;satuan_permukiman_id&quot;]');
+                    if (sel) {
+                        sel.value = spId;
+                        sel.dispatchEvent(new Event('input', { bubbles: true }));
+                        sel.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                }
+            }
+        },
+    }"
+    @change="if ($event.target.name === 'transmigran_id') gantiPenghuni($event.target.value)">
 
-    {{-- Bagian 1: identitas rumah --}}
+    {{-- Bagian 1: Penghunian & Wilayah --}}
     <section>
-        <h3 class="{{ $kelasBagian }}">Identitas Rumah</h3>
+        <h3 class="{{ $kelasBagian }}">Penghunian & Wilayah</h3>
         <div class="mt-3 grid gap-4 sm:grid-cols-2">
+            <div>
+                <label for="{{ $awalan }}_status_hunian" class="{{ $kelasLabel }}">
+                    Status Hunian<span class="text-error-500">*</span>
+                </label>
+                <select id="{{ $awalan }}_status_hunian" name="status_hunian" x-model="statusHunian" required
+                    class="{{ $kelasKontrol }}">
+                    @foreach ($opsiStatusHunian as $nilai => $label)
+                        <option value="{{ $nilai }}">{{ $label }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
+                {{--
+                    Keterangan di bawah penting: operator sering bingung mengapa
+                    nama yang dicarinya tidak muncul di daftar.
+                --}}
+                <x-sim.pilih-cari nama="transmigran_id" label="Kepala Keluarga Penghuni"
+                    :awalan="$awalan" :opsi="$calonPenghuni" kunci="id_transmigran"
+                    teks="nama_kepala_keluarga" keterangan-opsi="nik" gaya="kurung"
+                    :terpilih="old('transmigran_id', $data['transmigran_id'] ?? null)"
+                    placeholder="Belum ada penghuni"
+                    keterangan="Hanya keluarga yang belum menempati rumah lain yang dapat dipilih."
+                    :disabled="'statusHunian === \'Tidak Dihuni\''"
+                    @change="gantiPenghuni($event.target.value)" />
+            </div>
+
             <div class="sm:col-span-2">
                 <x-sim.wilayah-picker
                     :daftar-kawasan="[['id' => 1, 'nama' => 'Kobalima Timur']]"
@@ -59,6 +103,30 @@
                     :sp-terpilih="old('satuan_permukiman_id', $data['satuan_permukiman_id'] ?? null)" />
             </div>
 
+            {{-- Alasan wajib diisi saat rumah tidak dihuni --}}
+            <div class="sm:col-span-2" x-show="statusHunian === 'Tidak Dihuni'" x-cloak>
+                <label for="{{ $awalan }}_alasan_tidak_dihuni" class="{{ $kelasLabel }}">
+                    Alasan Tidak Dihuni<span class="text-error-500">*</span>
+                </label>
+                <textarea id="{{ $awalan }}_alasan_tidak_dihuni" name="alasan_tidak_dihuni" rows="2"
+                    :required="statusHunian === 'Tidak Dihuni'"
+                    placeholder="Contoh: atap rusak berat, sedang menunggu perbaikan"
+                    class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">{{ old('alasan_tidak_dihuni', $data['alasan_tidak_dihuni'] ?? '') }}</textarea>
+            </div>
+
+            <div class="sm:col-span-2">
+                <label for="{{ $awalan }}_catatan_hunian" class="{{ $kelasLabel }}">Catatan Hunian</label>
+                <textarea id="{{ $awalan }}_catatan_hunian" name="catatan_hunian" rows="2" maxlength="1000"
+                    placeholder="Termasuk catatan bila rumah ditinggal sementara"
+                    class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">{{ old('catatan_hunian', $data['catatan_hunian'] ?? '') }}</textarea>
+            </div>
+        </div>
+    </section>
+
+    {{-- Bagian 2: Spesifikasi Bangunan --}}
+    <section class="border-t border-gray-200 pt-5 dark:border-gray-800">
+        <h3 class="{{ $kelasBagian }}">Spesifikasi Bangunan</h3>
+        <div class="mt-3 grid gap-4 sm:grid-cols-2">
             <div>
                 <label for="{{ $awalan }}_no_rumah" class="{{ $kelasLabel }}">Nomor atau Blok Rumah</label>
                 <input type="text" id="{{ $awalan }}_no_rumah" name="no_rumah"
@@ -97,56 +165,6 @@
                         </option>
                     @endforeach
                 </select>
-            </div>
-        </div>
-    </section>
-
-    {{-- Bagian 2: penghunian --}}
-    <section class="border-t border-gray-200 pt-5 dark:border-gray-800">
-        <h3 class="{{ $kelasBagian }}">Penghunian</h3>
-        <div class="mt-3 grid gap-4 sm:grid-cols-2">
-            <div>
-                <label for="{{ $awalan }}_status_hunian" class="{{ $kelasLabel }}">
-                    Status Hunian<span class="text-error-500">*</span>
-                </label>
-                <select id="{{ $awalan }}_status_hunian" name="status_hunian" x-model="statusHunian" required
-                    class="{{ $kelasKontrol }}">
-                    @foreach ($opsiStatusHunian as $nilai => $label)
-                        <option value="{{ $nilai }}">{{ $label }}</option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div>
-                {{--
-                    Keterangan di bawah penting: operator sering bingung mengapa
-                    nama yang dicarinya tidak muncul di daftar.
-                --}}
-                <x-sim.pilih-cari nama="transmigran_id" label="Kepala Keluarga Penghuni"
-                    :awalan="$awalan" :opsi="$calonPenghuni" kunci="id_transmigran"
-                    teks="nama_kepala_keluarga" keterangan-opsi="nik" gaya="kurung"
-                    :terpilih="old('transmigran_id', $data['transmigran_id'] ?? null)"
-                    placeholder="Belum ada penghuni"
-                    keterangan="Hanya keluarga yang belum menempati rumah lain yang dapat dipilih."
-                    :disabled="'statusHunian === \'Tidak Dihuni\''" />
-            </div>
-
-            {{-- Alasan wajib diisi saat rumah tidak dihuni --}}
-            <div class="sm:col-span-2" x-show="statusHunian === 'Tidak Dihuni'" x-cloak>
-                <label for="{{ $awalan }}_alasan_tidak_dihuni" class="{{ $kelasLabel }}">
-                    Alasan Tidak Dihuni<span class="text-error-500">*</span>
-                </label>
-                <textarea id="{{ $awalan }}_alasan_tidak_dihuni" name="alasan_tidak_dihuni" rows="2"
-                    :required="statusHunian === 'Tidak Dihuni'"
-                    placeholder="Contoh: atap rusak berat, sedang menunggu perbaikan"
-                    class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">{{ old('alasan_tidak_dihuni', $data['alasan_tidak_dihuni'] ?? '') }}</textarea>
-            </div>
-
-            <div class="sm:col-span-2">
-                <label for="{{ $awalan }}_catatan_hunian" class="{{ $kelasLabel }}">Catatan Hunian</label>
-                <textarea id="{{ $awalan }}_catatan_hunian" name="catatan_hunian" rows="2" maxlength="1000"
-                    placeholder="Termasuk catatan bila rumah ditinggal sementara"
-                    class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">{{ old('catatan_hunian', $data['catatan_hunian'] ?? '') }}</textarea>
             </div>
         </div>
     </section>

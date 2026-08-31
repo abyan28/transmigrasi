@@ -51,29 +51,28 @@
 
     {{--
         Penyaring Tahun. Formulir GET biasa yang kompatibel dengan atau tanpa JavaScript.
-        Untuk tab 'tahun', deret multi-tahun disajikan secara lengkap sehingga pemilih dinonaktifkan.
-        Untuk 5 tab lainnya, tahun mengontrol konteks tahun potret data.
+        Hanya dirender untuk 5 tab demografi (sp, status, pekerjaan, asal, pendidikan)
+        karena tab 'tahun' sudah menyajikan seluruh deret waktu historis secara lengkap.
     --}}
-    <form method="GET" action="{{ route('kependudukan.rekap.kelompok', ['kelompok' => $kelompok]) }}"
-        class="mb-6 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
-        <div class="flex flex-wrap items-end gap-3">
-            <div>
-                <label for="filter_tahun"
-                    class="mb-1.5 block text-theme-xs font-medium text-gray-700 dark:text-gray-400">
-                    Tahun Data
-                </label>
-                <select id="filter_tahun" name="tahun"
-                    @if ($kelompok === 'tahun') disabled @endif
-                    class="h-10 w-52 rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 dark:border-gray-700 dark:text-white/90 dark:disabled:bg-gray-800 dark:disabled:text-gray-500">
-                    @foreach ($daftarTahun as $t)
-                        <option value="{{ $t }}" @selected($tahunPilihan === $t)>
-                            {{ $t }} @if ($t === $tahunTerakhir) (Tahun Terakhir) @endif
-                        </option>
-                    @endforeach
-                </select>
-            </div>
+    @if ($kelompok !== 'tahun')
+        <form method="GET" action="{{ route('kependudukan.rekap.kelompok', ['kelompok' => $kelompok]) }}"
+            class="mb-6 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-white/[0.03]">
+            <div class="flex flex-wrap items-end gap-3">
+                <div>
+                    <label for="filter_tahun"
+                        class="mb-1.5 block text-theme-xs font-medium text-gray-700 dark:text-gray-400">
+                        Tahun Data
+                    </label>
+                    <select id="filter_tahun" name="tahun"
+                        class="h-10 w-52 rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
+                        @foreach ($daftarTahun as $t)
+                            <option value="{{ $t }}" @selected($tahunPilihan === $t)>
+                                {{ $t }} @if ($t === $tahunTerakhir) (Tahun Terakhir) @endif
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
 
-            @if ($kelompok !== 'tahun')
                 <button type="submit"
                     class="h-10 rounded-lg bg-brand-500 px-4 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
                     Terapkan Filter
@@ -85,14 +84,8 @@
                         Reset ke Tahun {{ $tahunTerakhir }}
                     </a>
                 @endif
-            @endif
-        </div>
+            </div>
 
-        @if ($kelompok === 'tahun')
-            <p class="mt-3 text-theme-xs text-gray-500 dark:text-gray-400">
-                Tab <strong>Per Tahun</strong> menyajikan seluruh deret waktu historis secara lengkap ({{ min($daftarTahun) }}&ndash;{{ max($daftarTahun) }}). Untuk memfilter rincian demografis per tahun tertentu, pilih salah satu tab di atas.
-            </p>
-        @else
             @php
                 $totalKkSaatIni = match ($kelompok) {
                     'sp' => array_sum(array_column($perSp, 'jumlah_kk')),
@@ -106,8 +99,8 @@
             <p class="mt-3 text-theme-xs text-gray-500 dark:text-gray-400">
                 Menampilkan data kependudukan kawasan pada tahun <strong>{{ $tahunPilihan }}</strong> (Total: <strong>{{ number_format($totalKkSaatIni, 0, ',', '.') }} KK</strong>). Rekap terikat satu tahun data; angka kependudukan tidak dijumlahkan lintas tahun.
             </p>
-        @endif
-    </form>
+        </form>
+    @endif
 
     <div class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
         <div class="border-b border-gray-200 p-5 dark:border-gray-800">

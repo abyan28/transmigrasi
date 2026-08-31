@@ -45,6 +45,18 @@
         nilaiLahanUsaha: @js($nilaiLahanUsaha),
         kering: @js($data['luas_kering'] ?? ''),
         basah: @js($data['luas_basah'] ?? ''),
+        petaSpTransmigran: @js(collect($daftarTransmigran)->pluck('satuan_permukiman_id', 'id_transmigran')->all()),
+        gantiPemilik(id) {
+            const spId = this.petaSpTransmigran ? this.petaSpTransmigran[id] : null;
+            if (spId) {
+                const sel = this.$el.querySelector('[name=&quot;satuan_permukiman_id&quot;]');
+                if (sel) {
+                    sel.value = spId;
+                    sel.dispatchEvent(new Event('input', { bubbles: true }));
+                    sel.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            }
+        },
         get lahanUsaha() {
             return this.nilaiLahanUsaha.includes(this.peruntukan);
         },
@@ -57,7 +69,8 @@
         get totalUsaha() {
             return Math.round(((Number(this.kering) || 0) + (Number(this.basah) || 0)) * 100) / 100;
         },
-    }">
+    }"
+    @change="if ($event.target.name === 'transmigran_id') gantiPemilik($event.target.value)">
 
     {{-- Langkah 1: Identitas & Pemilik --}}
     <div data-langkah="1" x-show="! bertahap || langkah === 1" x-cloak>
@@ -65,21 +78,22 @@
         <h3 class="{{ $kelasBagian }}">Identitas & Pemilik Bidang Lahan</h3>
         <div class="mt-3 grid gap-4 sm:grid-cols-2">
             <div class="sm:col-span-2">
+                <x-sim.pilih-cari nama="transmigran_id" label="Pemilik" :wajib="true"
+                    :awalan="$awalan" :opsi="$daftarTransmigran" kunci="id_transmigran"
+                    teks="nama_kepala_keluarga" keterangan-opsi="nik" gaya="kurung"
+                    :terpilih="old('transmigran_id', $data['transmigran_id'] ?? null)"
+                    placeholder="Pilih kepala keluarga"
+                    keterangan="Tiap keluarga memiliki bidang pekarangan dan bidang usahanya sendiri."
+                    @change="gantiPemilik($event.target.value)" />
+            </div>
+
+            <div class="sm:col-span-2">
                 <x-sim.wilayah-picker
                     :daftar-kawasan="[['id' => 1, 'nama' => 'Kobalima Timur']]"
                     :daftar-sp="collect($daftarSp)
                         ->map(fn ($s) => ['id' => $s['id_satuan_permukiman'], 'nama' => $s['nama'], 'kawasan_id' => 1])
                         ->all()"
                     :sp-terpilih="old('satuan_permukiman_id', $data['satuan_permukiman_id'] ?? null)" />
-            </div>
-
-            <div class="sm:col-span-2">
-                <x-sim.pilih-cari nama="transmigran_id" label="Pemilik" :wajib="true"
-                    :awalan="$awalan" :opsi="$daftarTransmigran" kunci="id_transmigran"
-                    teks="nama_kepala_keluarga" keterangan-opsi="nik" gaya="kurung"
-                    :terpilih="old('transmigran_id', $data['transmigran_id'] ?? null)"
-                    placeholder="Pilih kepala keluarga"
-                    keterangan="Tiap keluarga memiliki bidang pekarangan dan bidang usahanya sendiri." />
             </div>
 
             <div>

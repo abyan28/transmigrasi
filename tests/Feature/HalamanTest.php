@@ -1061,8 +1061,18 @@ it('menyaring rekap kependudukan per tahun dengan total yang selalu konsisten', 
             ->getContent();
 
         expect($isi)->toContain("Tahun {$tahunUji}")
-            ->and($isi)->toContain(number_format($targetKk, 0, ',', '.'));
+            ->and($isi)->toContain(number_format($targetKk, 0, ',', '.'))
+            ->and($isi)->toContain('id="filter_tahun"')
+            ->and($isi)->toContain('Terapkan Filter');
     }
+
+    // Tab 'tahun' menyajikan seluruh deret waktu historis sehingga card filter_tahun tidak dirender
+    $isiTahun = $this->get(route('kependudukan.rekap.kelompok', ['kelompok' => 'tahun']))
+        ->assertOk()
+        ->getContent();
+
+    expect($isiTahun)->not->toContain('id="filter_tahun"')
+        ->and($isiTahun)->not->toContain('Terapkan Filter');
 });
 
 it('merender halaman Tentang Sistem beserta seluruh data tim pengembang dan kolaborator', function () {
@@ -5905,6 +5915,19 @@ it('membatasi wakil anggota poktan pada keluarga transmigran', function () {
         ->and(array_unique($cocok[1]))->toBe(['Kepala Keluarga', 'Anggota Keluarga']);
 });
 
+it('menegaskan bahwa pencatatan anggota poktan khusus warga transmigran', function () {
+    $isi = $this->get(route('poktan.detail', 1))->assertOk()->getContent();
+
+    expect($isi)
+        ->toContain('Pencatatan anggota khusus warga transmigran')
+        ->toContain('Anggota transmigran aktif')
+        ->toContain('Khusus warga transmigran')
+        ->toContain('Anggota Transmigran (')
+        ->toContain('Catatan Ruang Lingkup:')
+        ->toContain('Sistem ini hanya mendata anggota kelompok tani yang merupakan warga transmigran')
+        ->toContain('Anggota Kelompok Tani (Khusus Warga Transmigran)');
+});
+
 it('menautkan keanggotaan poktan ke keluarga, bukan ke kepala keluarga', function () {
     // Ditetapkan 2026-08-20: yang terdaftar adalah orang yang benar-benar
     // menggarap, dan ia tidak selalu kepala keluarga (rules.md 7a.3a). Sejak
@@ -8002,4 +8025,29 @@ it('melarang view mengambil datanya sendiri', function () {
     }
 
     expect($galat)->toBe([]);
+});
+
+it('menempatkan field pemilik sebelum satuan permukiman pada form lahan', function () {
+    $sumber = file_get_contents(resource_path('views/pages/lahan/form.blade.php'));
+
+    $posPemilik = strpos($sumber, 'nama="transmigran_id"');
+    $posSp = strpos($sumber, 'x-sim.wilayah-picker');
+
+    expect($posPemilik)->not->toBeFalse()
+        ->and($posSp)->not->toBeFalse()
+        ->and($posPemilik)->toBeLessThan($posSp);
+});
+
+it('menempatkan section penghunian dan wilayah sebelum spesifikasi bangunan pada form rumah', function () {
+    $sumber = file_get_contents(resource_path('views/pages/rumah/form.blade.php'));
+
+    $posPenghunian = strpos($sumber, 'Penghunian & Wilayah');
+    $posBangunan = strpos($sumber, 'Spesifikasi Bangunan');
+    $posPenghuni = strpos($sumber, 'nama="transmigran_id"');
+    $posNoRumah = strpos($sumber, 'name="no_rumah"');
+
+    expect($posPenghunian)->not->toBeFalse()
+        ->and($posBangunan)->not->toBeFalse()
+        ->and($posPenghunian)->toBeLessThan($posBangunan)
+        ->and($posPenghuni)->toBeLessThan($posNoRumah);
 });
