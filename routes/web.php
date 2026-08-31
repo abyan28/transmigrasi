@@ -149,10 +149,10 @@ Route::get('/', function () {
     ]);
 })->name('beranda');
 
-// Rincian satu satuan permukiman, tujuan penelusuran dari dashboard kawasan.
+// Rincian satu satuan permukiman (RESTful baku).
 // SP yang tidak dikenal membalas 404 agar alamat karangan tidak menghasilkan
 // halaman kosong yang membingungkan.
-Route::get('/dashboard/sp/{sp}', function (int $sp) {
+Route::get('/sp/{sp}', function (int $sp) {
     $data = DummyData::cariSp($sp);
 
     abort_if($data === null, 404);
@@ -160,7 +160,7 @@ Route::get('/dashboard/sp/{sp}', function (int $sp) {
     $rekap = DummyData::rekapSp($data['id_satuan_permukiman']);
     $deretSp = DummyData::deretTahunanSp($data['id_satuan_permukiman']);
 
-    return view('pages.dashboard.sp', [
+    return view('pages.sp.detail', [
         'title' => $data['nama'],
         'sp' => $data,
         'rekap' => $rekap,
@@ -170,9 +170,12 @@ Route::get('/dashboard/sp/{sp}', function (int $sp) {
         'transmigran' => DummyData::saringPerSp(DummyData::transmigran(), $data['nama']),
         'rumah' => DummyData::saringPerSp(DummyData::rumah(), $data['nama']),
         'lahan' => DummyData::saringPerSp(DummyData::lahan(), $data['nama']),
+        'poktan' => DummyData::saringPerSp(DummyData::poktan(), $data['nama']),
         'panen' => DummyData::saringPerSp(DummyData::hasilPanen(), $data['nama']),
         'pengaduan' => DummyData::saringPerSp(DummyData::pengaduan(), $data['nama']),
         'infrastruktur' => DummyData::saringPerSp(DummyData::infrastruktur(), $data['nama']),
+        'fasilitas' => DummyData::saringPerSp(DummyData::fasilitasSp(), $data['nama']),
+        'inventaris' => DummyData::saringPerSp(DummyData::inventarisSp(), $data['nama']),
 
         // Rute pencapaian menuju SP ini (Tabel 2.1 Monografi, Stage C2).
         'ruteAksesibilitas' => DummyData::ruteAksesibilitasSp($data['id_satuan_permukiman']),
@@ -182,16 +185,23 @@ Route::get('/dashboard/sp/{sp}', function (int $sp) {
             : 0,
         'persenIsi' => round($data['jumlah_kk_terisi'] / $data['jumlah_kk_rencana'] * 100),
 
-        // Dipakai penanda pindah antar SP pada bagian atas halaman.
-        'daftarSp' => DummyData::satuanPermukiman(),
-
         'dataGrafik' => [
             'tahun' => $deretSp['tahun'],
             'kk' => $deretSp['jumlah_kk'],
             'panen' => $deretSp['volume_panen'],
         ],
     ]);
+})->where('sp', '[0-9]+')->name('sp.detail');
+
+// Redirect 301 untuk kompatibilitas alamat lama /dashboard/sp/{sp}
+Route::get('/dashboard/sp/{sp}', function (int $sp) {
+    return redirect()->route('sp.detail', ['sp' => $sp], 301);
 })->where('sp', '[0-9]+')->name('dashboard.sp');
+
+Route::put('/sp/{sp}', function (int $sp) {
+    // Tahap 4: simpan perubahan data SP
+    return back()->with('sukses', 'Perubahan data satuan permukiman tersimpan.');
+})->where('sp', '[0-9]+')->name('sp.perbarui');
 
 /*
 |--------------------------------------------------------------------------

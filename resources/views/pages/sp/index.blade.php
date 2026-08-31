@@ -70,7 +70,7 @@
             @php $persen = round($sp['jumlah_kk_terisi'] / $sp['jumlah_kk_rencana'] * 100); @endphp
             <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                 <td class="px-5 py-3">
-                    <a href="{{ route('dashboard.sp', $sp['id_satuan_permukiman']) }}"
+                    <a href="{{ route('sp.detail', $sp['id_satuan_permukiman']) }}"
                         class="rounded text-theme-sm font-medium text-gray-800 hover:text-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-white/90 dark:hover:text-brand-400">
                         {{ $sp['nama'] }}
                     </a>
@@ -103,7 +103,7 @@
                     @endif
                 </td>
                 <td class="px-5 py-3">
-                    <x-sim.aksi-baris :rincian-url="route('dashboard.sp', $sp['id_satuan_permukiman'])"
+                    <x-sim.aksi-baris :rincian-url="route('sp.detail', $sp['id_satuan_permukiman'])"
                         modal-ubah="formUbahSpBaris"
                         :data-baris="$sp + ['id' => $sp['id_satuan_permukiman']]"
                         :hapus-url="'/sp/' . $sp['id_satuan_permukiman']"
@@ -130,7 +130,7 @@
         <x-slot:kartu>
             @foreach ($baris as $sp)
                 <div class="p-4">
-                    <a href="{{ route('dashboard.sp', $sp['id_satuan_permukiman']) }}"
+                    <a href="{{ route('sp.detail', $sp['id_satuan_permukiman']) }}"
                         class="rounded focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
                         <p class="text-theme-sm font-medium text-gray-800 dark:text-white/90">{{ $sp['nama'] }}</p>
                     </a>

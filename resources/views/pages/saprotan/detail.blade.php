@@ -153,7 +153,7 @@
                                                 @endif
                                             </td>
                                             <td class="px-4 py-2">
-                                                <a href="{{ route('dashboard.sp', $d['satuan_permukiman_id']) }}"
+                                                <a href="{{ route('sp.detail', $d['satuan_permukiman_id']) }}"
                                                     class="rounded text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
                                                     {{ $d['satuan_permukiman'] }}
                                                 </a>

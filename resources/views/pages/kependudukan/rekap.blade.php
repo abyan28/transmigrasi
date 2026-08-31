@@ -125,7 +125,7 @@
                         @foreach ($perSp as $b)
                             <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                                 <td class="px-5 py-3 text-theme-sm font-medium text-gray-800 dark:text-white/90">
-                                    <a href="{{ route('dashboard.sp', $b['satuan_permukiman_id']) }}"
+                                    <a href="{{ route('sp.detail', $b['satuan_permukiman_id']) }}"
                                         class="rounded hover:text-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:hover:text-brand-400">
                                         {{ $b['satuan_permukiman'] }}
                                     </a>

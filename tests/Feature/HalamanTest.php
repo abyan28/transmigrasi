@@ -103,7 +103,7 @@ it('menyimpan filter dashboard pada query string', function () {
 
 it('merender halaman rincian untuk keenam satuan permukiman', function () {
     foreach (DummyData::satuanPermukiman() as $sp) {
-        $this->get(route('dashboard.sp', $sp['id_satuan_permukiman']))
+        $this->get(route('sp.detail', $sp['id_satuan_permukiman']))
             ->assertOk()
             ->assertSee($sp['nama'])
             ->assertSee($sp['kecamatan']);
@@ -112,27 +112,33 @@ it('merender halaman rincian untuk keenam satuan permukiman', function () {
 
 it('membalas 404 untuk satuan permukiman yang tidak ada', function () {
     // Alamat karangan tidak boleh menghasilkan halaman kosong yang membingungkan.
-    $this->get('/dashboard/sp/99')->assertNotFound();
-    $this->get('/dashboard/sp/0')->assertNotFound();
+    $this->get('/sp/99')->assertNotFound();
+    $this->get('/sp/0')->assertNotFound();
+});
+
+it('mengalihkan alamat lama dashboard.sp ke rute RESTful sp.detail', function () {
+    $this->get('/dashboard/sp/1')
+        ->assertStatus(301)
+        ->assertRedirect(route('sp.detail', 1));
 });
 
 it('menampilkan hanya data milik satuan permukiman yang dibuka', function () {
     // SP Tniumanu memuat PETRUS NAHAK, bukan YOHANES BERE yang ada di SP Kapitan Meo.
-    $this->get(route('dashboard.sp', 2))
+    $this->get(route('sp.detail', 2))
         ->assertSee('PETRUS NAHAK')
         ->assertDontSee('YOHANES BERE');
 });
 
-it('menyediakan enam tab rincian beserta jumlah barisnya', function () {
-    $respons = $this->get(route('dashboard.sp', 1));
+it('menyediakan enam tab rincian beserta label domainnya', function () {
+    $respons = $this->get(route('sp.detail', 1));
 
-    foreach (['Transmigran (', 'Rumah (', 'Lahan (', 'Panen (', 'Pengaduan (', 'Infrastruktur ('] as $label) {
+    foreach (['Ringkasan & Kondisi', 'Warga & Hunian (', 'Pertanian & Lahan (', 'Aset & Fasilitas (', 'Pengaduan (', 'Keadaan Wilayah'] as $label) {
         $respons->assertSee($label);
     }
 });
 
 it('menyertakan tabel alternatif untuk grafik halaman rincian SP', function () {
-    $isi = $this->get(route('dashboard.sp', 1))->getContent();
+    $isi = $this->get(route('sp.detail', 1))->getContent();
 
     expect(substr_count($isi, 'Lihat tabel data'))->toBe(substr_count($isi, 'buatGrafik('));
 });
@@ -140,7 +146,7 @@ it('menyertakan tabel alternatif untuk grafik halaman rincian SP', function () {
 it('menampilkan keadaan kosong pada tab yang tidak punya data', function () {
     // SP Tualaran belum memiliki data rumah, lahan, panen, dan infrastruktur
     // pada data contoh, sehingga keempat tabnya wajib memakai keadaan kosong.
-    $this->get(route('dashboard.sp', 5))->assertSee('Belum ada data');
+    $this->get(route('sp.detail', 5))->assertSee('Belum ada data');
 });
 
 it('menautkan dashboard kawasan ke rincian setiap SP', function () {
@@ -149,32 +155,15 @@ it('menautkan dashboard kawasan ke rincian setiap SP', function () {
     $respons = $this->get(route('beranda'));
 
     foreach (DummyData::rekapPerSp() as $baris) {
-        $respons->assertSee(route('dashboard.sp', $baris['satuan_permukiman_id']), false);
+        $respons->assertSee(route('sp.detail', $baris['satuan_permukiman_id']), false);
     }
 });
 
 it('memasang penelusuran klik pada grafik bersumbu satuan permukiman', function () {
-    /*
-        Alamat dasar wajib ikut dioper. Sebelum 2026-08-25 uji ini mengunci
-        `drilldownSp(data.spId)` tanpa argumen kedua, sehingga tetap hijau
-        selama bertahun halaman meski modul JavaScript menuju alamat mutlak
-        yang membalas 404 pada penyajian statis bersub-path.
-
-        Yang diperiksa kini alamat hasil `url()`, bukan sekadar nama
-        fungsinya, sebab di situlah letak kekeliruannya.
-    */
     $this->get(route('beranda'))
         ->assertSee('id="grafikPerSp"', false)
         ->assertSee('drilldownSp(data.spId,', false)
-        ->assertSee(url('/dashboard/sp'), false);
-});
-
-it('menyediakan tautan pindah antar SP pada halaman rincian', function () {
-    $respons = $this->get(route('dashboard.sp', 1));
-
-    foreach (DummyData::satuanPermukiman() as $sp) {
-        $respons->assertSee(route('dashboard.sp', $sp['id_satuan_permukiman']), false);
-    }
+        ->assertSee(url('/sp'), false);
 });
 
 /*
@@ -285,7 +274,7 @@ it('membalas 404 untuk transmigran yang tidak ada', function () {
 
 it('menautkan rincian transmigran ke satuan permukimannya', function () {
     $this->get(route('transmigran.detail', 1))
-        ->assertSee(route('dashboard.sp', 1), false);
+        ->assertSee(route('sp.detail', 1), false);
 });
 
 it('menyediakan seluruh rute tulis modul transmigran', function () {
@@ -2042,7 +2031,7 @@ it('merender halaman 404 untuk alamat yang tidak ada', function () {
 it('memakai halaman 404 kustom pada seluruh modul', function () {
     // abort(404) pada rute modul wajib memakai halaman yang sama, bukan
     // tampilan bawaan Laravel.
-    foreach (['/transmigran/99', '/rumah/99', '/lahan/99', '/panen/99', '/pengaduan/99', '/dashboard/sp/99'] as $alamat) {
+    foreach (['/transmigran/99', '/rumah/99', '/lahan/99', '/panen/99', '/pengaduan/99', '/sp/99'] as $alamat) {
         $this->get($alamat)->assertNotFound()->assertSee('Galat 404');
     }
 });
@@ -2359,7 +2348,7 @@ it('menautkan modul kependudukan, lahan, dan poktan satu sama lain', function ()
 });
 
 it('menautkan halaman rincian SP ke seluruh modul terkait', function () {
-    $isi = $this->get(route('dashboard.sp', 1))->getContent();
+    $isi = $this->get(route('sp.detail', 1))->getContent();
 
     expect($isi)->toContain(route('transmigran.detail', 1))
         ->and($isi)->toContain(route('rumah.detail', 1))
@@ -3633,7 +3622,7 @@ it('menampilkan tautan peta pada halaman yang memuat koordinat', function () {
     // Koordinat berupa angka tidak berarti apa-apa bagi petugas tanpa cara
     // melihatnya di peta.
     $halaman = [
-        ['dashboard.sp', 1],
+        ['sp.detail', 1],
         ['rumah.detail', 1],
         ['lahan.detail', 1],
         ['pengaduan.detail', 1],
@@ -6652,7 +6641,7 @@ it('menghidupkan kembali batas wilayah SP secara lengkap, bukan sebagian', funct
     $arah = ['batas_utara', 'batas_timur', 'batas_selatan', 'batas_barat'];
 
     $formSp = $this->get(route('sp.index'))->assertOk()->getContent();
-    $rincianSp = $this->get(route('dashboard.sp', 1))->assertOk()->getContent();
+    $rincianSp = $this->get(route('sp.detail', 1))->assertOk()->getContent();
 
     foreach ($arah as $kolom) {
         expect($formSp)->toContain('name="'.$kolom.'"');
@@ -6676,7 +6665,7 @@ it('menyediakan tempat tampil bagi setiap field Keadaan Wilayah SP', function ()
     // Penjaga 1f untuk field baru Rombongan C: tiap isian yang diisi form SP
     // wajib punya tempat tampil di halaman rincian SP.
     $form = $this->get(route('sp.index'))->assertOk()->getContent();
-    $rincian = $this->get(route('dashboard.sp', 1))->assertOk()->getContent();
+    $rincian = $this->get(route('sp.detail', 1))->assertOk()->getContent();
 
     // Setiap isian Keadaan Wilayah pada form terender wajib punya name=.
     $isianWajib = [
@@ -6742,7 +6731,7 @@ it('mendata rute aksesibilitas SP sebagai daftar dinamis dengan tempat tampil', 
         ->toContain('rute_aksesibilitas[${i}][rute]');
 
     // Halaman rincian SP menampilkan tabel rute berisi (dengan caption).
-    $rincian = $this->get(route('dashboard.sp', 1))->assertOk()->getContent();
+    $rincian = $this->get(route('sp.detail', 1))->assertOk()->getContent();
     expect($rincian)
         ->toContain('Rute Aksesibilitas')
         ->toContain('Cara pencapaian menuju')
@@ -7215,7 +7204,7 @@ it('menempelkan rincian satuan permukiman pada menunya, bukan pada Dashboard', f
     expect($remah[2]['url'] ?? null)->toBeNull();
 
     // Halamannya benar-benar memakai remah itu, bukan remah Dashboard.
-    $berkas = file_get_contents(resource_path('views/pages/dashboard/sp.blade.php'));
+    $berkas = file_get_contents(resource_path('views/pages/sp/detail.blade.php'));
 
     expect($berkas)->toContain("RemahHelper::untuk('/sp'");
     expect($berkas)->not->toContain("RemahHelper::untuk('/'");
@@ -7370,9 +7359,9 @@ it('menyediakan cara membuka berkas dari halaman rincian modulnya', function (st
     ['/infrastruktur/1', 2],
     ['/sp/inventaris/2', 2],
     ['/sp/fasilitas/3', 2],
-    // Rincian SP adalah halaman dashboard SP, satu-satunya tempat dokumen
+    // Rincian SP adalah halaman detail SP, satu-satunya tempat dokumen
     // penetapan dapat dibuka.
-    ['/dashboard/sp/1', 1],
+    ['/sp/1', 1],
     // Bukti dari pelapor, terpisah dari dokumen tindak lanjut milik petugas.
     ['/pengaduan/1', 2],
 ]);

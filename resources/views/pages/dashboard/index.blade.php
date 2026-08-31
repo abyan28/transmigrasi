@@ -701,7 +701,7 @@
                         @php $penyebab = $penyebabSp[$p['satuan_permukiman_id']]; @endphp
                         <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                             <td class="px-5 py-3">
-                                <a href="{{ route('dashboard.sp', $p['satuan_permukiman_id']) }}"
+                                <a href="{{ route('sp.detail', $p['satuan_permukiman_id']) }}"
                                     class="rounded text-theme-sm font-medium text-gray-800 hover:text-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-white/90 dark:hover:text-brand-400">
                                     {{ $p['satuan_permukiman'] }}
                                 </a>
@@ -735,7 +735,7 @@
             @foreach ($penilaianSp as $p)
                 <div class="p-4">
                     <div class="flex items-start justify-between gap-3">
-                        <a href="{{ route('dashboard.sp', $p['satuan_permukiman_id']) }}"
+                        <a href="{{ route('sp.detail', $p['satuan_permukiman_id']) }}"
                             class="rounded text-theme-sm font-medium text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-white/90">
                             {{ $p['satuan_permukiman'] }}
                         </a>
@@ -869,7 +869,7 @@
                                 <td class="px-3 py-2 tabular-nums text-gray-600 dark:text-gray-400">
                                     {{ number_format($baris['volume_panen'], 2, ',', '.') }}</td>
                                 <td class="px-3 py-2">
-                                    <a href="{{ route('dashboard.sp', $baris['satuan_permukiman_id']) }}"
+                                    <a href="{{ route('sp.detail', $baris['satuan_permukiman_id']) }}"
                                         class="rounded font-medium text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
                                         Buka rincian
                                     </a>
@@ -1045,7 +1045,7 @@
                 chart: {
                     type: 'bar',
                     height: 360,
-                    events: { dataPointSelection: drilldownSp(data.spId, @js(url('/dashboard/sp'))) },
+                    events: { dataPointSelection: drilldownSp(data.spId, @js(url('/sp'))) },
                 },
                 series: [
                     { name: 'Kepala Keluarga', data: data.spKk },

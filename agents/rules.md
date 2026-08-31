@@ -190,6 +190,21 @@ Alamat URL **tidak menampilkan primary key berurutan**. Pola berurutan seperti `
 4. Setiap entri wajib mencatat status penyerahan dan dapat dilampiri dokumen pendukung.
 5. Inventaris dan fasilitas harus dapat direkap per SP untuk kebutuhan laporan aset kawasan.
 
+### 4c. Aturan Halaman Detail Satuan Permukiman (SP)
+1. **Standardisasi Rute RESTful:** Rute rincian SP menggunakan pola RESTful baku `Route::get('/sp/{sp}', ...)->where('sp', '[0-9]+')->name('sp.detail')`. Rute lama `/dashboard/sp/{sp}` dialihkan secara permanen (HTTP 301) ke `/sp/{sp}`.
+2. **Struktur Tata Letak 2-Kolom Asimetris:** Halaman rincian SP (`resources/views/pages/sp/detail.blade.php`) menggunakan grid 2-kolom (`lg:grid-cols-[20rem_minmax(0,1fr)]`):
+   - **Kolom Kiri (Sticky Sidebar):** Kartu identitas profil SP, kode SP, kecamatan/desa, tahun penempatan, luas lahan, status kondisi & skor SP, kapasitas/keterisian KK, dokumen SK penetapan, catatan/keterangan wilayah, dan peta mini koordinat Leaflet OSM.
+   - **Kolom Kanan (6 Tab Domain):**
+     - `ringkasan`: 4 Stat Cards KPI, 2 grafik ApexCharts khusus SP (Tren KK & Panen), dan rincian 16 Parameter Layanan Dasar SP.
+     - `warga`: Tabel Warga Transmigran / KK dan Tabel Rumah & Hunian beserta tautan drill-down ke modul masing-masing.
+     - `pertanian`: Tabel Bidang Lahan, Kelompok Tani (Poktan), dan Catatan Hasil Panen beserta tautan drill-down.
+     - `aset`: Tabel Infrastruktur Kawasan, Fasilitas Umum SP, dan Inventaris Operasional SP beserta tautan drill-down.
+     - `pengaduan`: Tabel Pengaduan Masuk dari SP tersebut beserta tautan drill-down.
+     - `monografi`: Data Geografis & Iklim Bab II Monografi SP dan Tabel Rute Aksesibilitas.
+3. **Peniadaan Switcher SP:** Bilah navigasi switcher antar-SP di halaman rincian ditiadakan; navigasi berpindah SP dilakukan melalui Daftar SP (`/sp`) atau breadcrumb `Wilayah & SP > Satuan Permukiman > {Nama SP}`.
+4. **Tombol Aksi Header:** Header menyediakan tombol primer "Ubah Data SP" (membuka modal edit data SP) dan tombol sekunder "Kembali ke Daftar SP" (`route('sp.index')`).
+5. **State Navigasi Tab URL Query String:** Menggunakan komponen helper Alpine.js `hashTabs('ringkasan')` yang otomatis menyinkronkan state aktif ke URL `?tab=...` (misal `/sp/1?tab=pertanian`), memungkinkan bookmark, deep-linking, dan menjaga posisi tab saat modal form tersimpan.
+
 ### 5. Aturan Hak Akses
 
 #### 5.0 Prinsip dasar

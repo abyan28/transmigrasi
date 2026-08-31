@@ -96,3 +96,31 @@ Catatan hasil: `agents/notes.md` §1w & `## 6. Revisi`. Ringkasan: `agents/taskl
 6. **Revisi 6 (Upload KK Wajib)**: Upload Kartu Keluarga dijadikan mandatory (`:wajib="true"`) dengan label "Kartu Keluarga (KK)".
 7. **Revisi 7 (Wording Subjudul Poktan)**: Subjudul halaman Poktan $\rightarrow$ "...beserta ketua dan jumlah anggota transmigrannya."
 
+---
+
+# Restrukturisasi Halaman Detail Satuan Permukiman (SP) & Rute RESTful (2026-08-31)
+
+### 1. Standardisasi Rute RESTful
+- Mengubah rute rincian SP dari `/dashboard/sp/{id}` menjadi `Route::get('/sp/{sp}', ...)->where('sp', '[0-9]+')->name('sp.detail')`.
+- Memasang redirect 301 dari `/dashboard/sp/{id}` ke `/sp/{id}` untuk menjamin tautan lama dan penelusuran tetap bekerja.
+- Menambahkan rute pembaruan data SP `Route::put('/sp/{sp}', ...)->name('sp.perbarui')`.
+- Memperbarui 16 berkas view yang memanggil `route('dashboard.sp', ...)` menjadi `route('sp.detail', ...)`.
+
+### 2. Restrukturisasi UI & Sistem 6 Tab Domain
+- Memindahkan view ke `resources/views/pages/sp/detail.blade.php` dengan grid 2-kolom asimetris `lg:grid-cols-[20rem_minmax(0,1fr)]`.
+- **Kolom Kiri (Sticky Sidebar):** Profil SP, kode SP, kecamatan/desa, tahun penempatan, luas lahan, status kondisi SP & skor kelayakan, kapasitas/keterisian KK, dokumen SK penetapan, catatan/keterangan wilayah, dan peta mini titik koordinat Leaflet OSM.
+- **Kolom Kanan (6 Tab Domain Terpadu via `hashTabs()`):**
+  1. `ringkasan`: 4 Stat Cards KPI (Skor Kelayakan, Jumlah KK, Realisasi Lahan Usaha, Total Produksi Panen), 2 ApexCharts (Tren Kependudukan KK & Volume Panen per Tahun), dan rincian 16 Parameter Layanan Dasar SP.
+  2. `warga`: Tabel Warga Transmigran / KK dan Tabel Rumah & Hunian.
+  3. `pertanian`: Tabel Bidang Lahan, Kelompok Tani (Poktan), dan Catatan Hasil Panen.
+  4. `aset`: Tabel Infrastruktur Kawasan, Fasilitas Umum SP, dan Inventaris Operasional SP.
+  5. `pengaduan`: Tabel Pengaduan Masuk SP beserta status & prioritasnya.
+  6. `monografi`: Profil Geografis, Topografi, Tanah, Iklim Bab II Monografi SP & Tabel Rute Aksesibilitas.
+- **Eliminasi Bar Switcher SP:** Bilah navigasi switcher 6 SP di atas halaman dihapus atas arahan user; navigasi antar-SP dilakukan melalui `/sp` atau breadcrumb.
+- **Header Action:** Menambahkan tombol primer *"Ubah Data SP"* (membuka modal `formUbahSp`) dan tombol sekunder *"Kembali ke Daftar SP"* (`route('sp.index')`).
+
+### 3. Verifikasi Mutu
+- **Pest PHP:** 726 pengujian (6.110 assertions) 100% PASS (Hijau).
+- **Vite Build:** `npm run build` terkompilasi bersih tanpa galat.
+- **HTTP Endpoint:** `/sp/1` membalas 200 OK, `/dashboard/sp/1` membalas 301 Redirect ke `/sp/1`.
+

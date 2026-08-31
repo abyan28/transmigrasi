@@ -77,7 +77,7 @@
                     <div class="flex justify-between gap-3">
                         <dt class="text-gray-500 dark:text-gray-400">Satuan permukiman</dt>
                         <dd class="text-right font-medium text-gray-800 dark:text-white/90">
-                            <a href="{{ route('dashboard.sp', $data['satuan_permukiman_id']) }}"
+                            <a href="{{ route('sp.detail', $data['satuan_permukiman_id']) }}"
                                 class="rounded text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
                                 {{ $data['satuan_permukiman'] }}
                             </a>

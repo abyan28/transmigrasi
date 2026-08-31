@@ -3295,3 +3295,35 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
     - 523 pengujian fitur & unit Pest (3.363 assertions) 100% PASS (Hijau).
     - Uji browser interaktif DevTools Headless Edge (`uji-autofill-sp.mjs` 5/5 lulus, `uji-format-uang.mjs` 11/11 lulus).
     - `npm run build` terkompilasi bersih tanpa galat.
+* **7. Restrukturisasi Halaman Detail Satuan Permukiman (SP) & Standardisasi Rute RESTful `/sp/{id}?tab=...` (2026-08-31):**
+  * **Latar Belakang:**
+    1. Halaman rincian SP sebelumnya berada di `/dashboard/sp/{id}` dengan bilah navigasi *switcher* 6 SP di atas halaman yang membingungkan peran fungsionalnya (apakah ini dashboard kawasan atau halaman rincian entitas).
+    2. Struktur tab lama hanya memecah entitas mentah level satu secara horizontal (Transmigran, Rumah, Lahan, Panen, Pengaduan, Infrastruktur) tanpa mengelompokkan Poktan, Fasilitas Umum, Inventaris, Monografi Keadaan Wilayah, serta Ringkasan Layanan Dasar ke dalam kluster domain yang terpadu.
+    3. Halaman rincian SP belum memiliki tombol aksi primer untuk mengubah profil SP (`formUbahSp`) dan tombol kembali ke daftar SP.
+  * **Solusi Arsitektur & Detail Implementasi:**
+    1. **Standardisasi Rute RESTful Resource (`routes/web.php`):**
+       - Mendaftarkan rute `Route::get('/sp/{sp}', ...)->where('sp', '[0-9]+')->name('sp.detail')` dan `Route::put('/sp/{sp}', ...)->name('sp.perbarui')`.
+       - Menambahkan pengalihan permanen `Route::get('/dashboard/sp/{sp}', fn ($sp) => redirect()->route('sp.detail', ['sp' => $sp], 301))->name('dashboard.sp')` untuk menjaga *backward-compatibility*.
+       - Menyuplai dataset tersaring per SP ke view: `$poktan`, `$fasilitas`, `$inventaris`, `$infrastruktur`, `$transmigran`, `$rumah`, `$lahan`, `$panen`, `$pengaduan`, `$skorSp`, `$deret`.
+    2. **Arsitektur Tampilan 2-Kolom Asimetris (`resources/views/pages/sp/detail.blade.php`):**
+       - Grid 2-kolom asimetris (`lg:grid-cols-[20rem_minmax(0,1fr)]`).
+       - **Kolom Kiri (Sticky Profile Sidebar):** Kode SP, nama desa/kecamatan, tahun penempatan, luas wilayah, badge skor & status kondisi SP, progress bar kapasitas/keterisian KK, dokumen SK penetapan, catatan/keterangan wilayah, dan peta mini titik koordinat Leaflet OSM.
+       - **Kolom Kanan (Sistem 6 Tab Domain):**
+         - `ringkasan`: 4 Stat Cards KPI (Skor Kelayakan, Jumlah KK, Realisasi Lahan Usaha, Total Produksi Panen), 2 ApexCharts (Tren Kependudukan KK & Volume Panen per Tahun), dan rincian 16 Parameter Layanan Dasar SP (status kondisi, tingkat kebutuhan, bobot skor).
+         - `warga`: Tabel Transmigran / Kepala Keluarga & Tabel Rumah dan Hunian beserta tautan drill-down.
+         - `pertanian`: Tabel Bidang Lahan, Kelompok Tani (Poktan), dan Catatan Hasil Panen beserta tautan drill-down.
+         - `aset`: Tabel Infrastruktur Kawasan, Fasilitas Umum SP, dan Inventaris Operasional SP beserta tautan drill-down.
+         - `pengaduan`: Tabel Pengaduan Masuk SP beserta status & prioritas.
+         - `monografi`: Profil Geografis, Topografi, Tanah, Iklim Bab II Monografi SP & Tabel Rute Aksesibilitas.
+    3. **Pemberian Tombol Aksi Header & Eliminasi Switcher Antar-SP:**
+       - Menghapus bilah switcher 6 SP di atas halaman sesuai arahan perancangan; navigasi antar-SP dilakukan dari `/sp` atau breadcrumb.
+       - Menyediakan tombol primer *"Ubah Data SP"* (membuka modal `formUbahSp`) dan tombol sekunder *"Kembali ke Daftar SP"* (`route('sp.index')`).
+    4. **Pembaruan Menyeluruh Pemanggil Rute:**
+       - Memperbarui seluruh pemanggilan `route('dashboard.sp', ...)` menjadi `route('sp.detail', ...)` di 16 berkas view.
+       - Memperbarui event `dataPointSelection` grafik perbandingan SP di dashboard index ke `url('/sp')`.
+    5. **Standardisasi Diksi Tautan Drill-Down ("Halaman" menggantikan "Modul"):**
+       - Menghapus penggunaan istilah teknis *"modul"* pada tautan navigasi antarmuka dan menstandarkannya menjadi pola **`Buka di Halaman [Nama Entitas] &rarr;`** (misal: `Buka di Halaman Transmigran`, `Buka di Halaman Rumah`, `Buka di Halaman Data Lahan`, `Buka di Halaman Kelompok Tani`, `Buka di Halaman Hasil Panen`, `Buka di Halaman Infrastruktur`, `Buka di Halaman Fasilitas SP`, `Buka di Halaman Inventaris SP`, `Buka di Halaman Pengaduan`).
+  * **Verifikasi:**
+    - 726 pengujian fitur & unit Pest (6.110 assertions) 100% PASS (Hijau).
+    - Status HTTP 200 untuk `/sp/1` dan HTTP 301 untuk `/dashboard/sp/1` terverifikasi.
+    - `npm run build` terkompilasi bersih tanpa galat.

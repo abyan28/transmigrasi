@@ -118,7 +118,7 @@
                     <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
                         {{ number_format($rekap[$i]['jumlah_kk'], 0, ',', '.') }} KK</td>
                     <td class="px-5 py-3">
-                        <a href="{{ route('dashboard.sp', $sp['id_satuan_permukiman']) }}"
+                        <a href="{{ route('sp.detail', $sp['id_satuan_permukiman']) }}"
                             class="rounded text-theme-sm font-medium text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
                             Buka rincian
                         </a>
