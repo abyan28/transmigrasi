@@ -54,7 +54,7 @@ const RUTE = [
     '/alsintan/1',
     '/saprotan/1',
     '/lahan/1',
-    '/infrastruktur/1',
+    '/sp/infrastruktur/1',
     '/sp/inventaris/1',
     '/sp/fasilitas/1',
 ];

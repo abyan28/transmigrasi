@@ -364,7 +364,7 @@
                 yang ditanam - identitas yang dahulu memerlukan suku ketiga.
             --}}
             <div class="sm:col-span-2">
-                <p x-show="tanam" x-cloak
+                <p x-show="tanam" x-cloak aria-live="polite" aria-atomic="true"
                     class="rounded-lg bg-gray-50 p-3.5 text-theme-xs text-gray-600 dark:bg-white/[0.03] dark:text-gray-400">
                     <span x-text="angka(angkaPanen)"></span> ha dipanen
                     + <span x-text="angka(angkaPuso)"></span> ha puso
@@ -426,7 +426,7 @@
             --}}
             <div>
                 <span class="{{ $kelasLabel }}">Produksi</span>
-                <p class="{{ $kelasTerkunci }} tabular-nums">
+                <p aria-live="polite" aria-atomic="true" class="{{ $kelasTerkunci }} tabular-nums">
                     <span x-show="tanam" x-cloak>
                         <span x-text="angka(produksi, 3)"></span>
                         <span class="ml-1" x-text="tanam?.satuan"></span>

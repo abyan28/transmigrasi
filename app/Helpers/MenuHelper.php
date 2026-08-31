@@ -76,7 +76,7 @@ class MenuHelper
                             ],
                             [
                                 'name' => 'Infrastruktur SP',
-                                'path' => '/infrastruktur',
+                                'path' => '/sp/infrastruktur',
                                 'permission' => 'infrastruktur.lihat',
                             ],
                         ],

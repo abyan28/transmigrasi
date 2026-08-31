@@ -2339,7 +2339,7 @@ Route::post('/penanaman', function () {
         ->with('sukses', 'Catatan penanaman tersimpan.');
 })->name('penanaman.simpan');
 
-Route::get('/infrastruktur', function () {
+Route::get('/sp/infrastruktur', function () {
     $semua = DummyData::infrastruktur();
 
     $cari = trim((string) request('cari', ''));
@@ -2388,7 +2388,12 @@ Route::get('/infrastruktur', function () {
     ]);
 })->name('infrastruktur.index');
 
-Route::get('/infrastruktur/{id}', function (int $id) {
+// Redirect 301 untuk kompatibilitas alamat lama /infrastruktur
+Route::get('/infrastruktur', function () {
+    return redirect()->route('infrastruktur.index', request()->query(), 301);
+});
+
+Route::get('/sp/infrastruktur/{id}', function (int $id) {
     $data = collect(\App\Support\DummyData::infrastruktur())->firstWhere('id_infrastruktur', $id);
 
     abort_if($data === null, 404);
@@ -2396,14 +2401,19 @@ Route::get('/infrastruktur/{id}', function (int $id) {
     return view('pages.infrastruktur.detail', ['title' => $data['nama'], 'data' => $data]);
 })->where('id', '[0-9]+')->name('infrastruktur.detail');
 
-Route::post('/infrastruktur', function () {
+// Redirect 301 untuk kompatibilitas alamat lama /infrastruktur/{id}
+Route::get('/infrastruktur/{id}', function (int $id) {
+    return redirect()->route('infrastruktur.detail', ['id' => $id], 301);
+})->where('id', '[0-9]+');
+
+Route::post('/sp/infrastruktur', function () {
     // Tahap 8: validasi, simpan, catat audit log. Modul pendataan aset,
     // sehingga tidak ada alur laporan kerusakan di sini.
     return redirect()->route('infrastruktur.index')
         ->with('sukses', 'Data aset infrastruktur tersimpan.');
 })->name('infrastruktur.simpan');
 
-Route::put('/infrastruktur/{id}', function (int $id) {
+Route::put('/sp/infrastruktur/{id}', function (int $id) {
     // Tahap 8: perubahan kondisi ikut memengaruhi penilaian kondisi SP pada
     // penilaian berikutnya, bukan penilaian yang sudah tersimpan.
     return redirect()->route('infrastruktur.detail', $id)
@@ -2751,7 +2761,7 @@ Route::delete('/komoditas/{id}', function (int $id) {
     return redirect()->route('komoditas.index')->with('sukses', 'Data komoditas dihapus.');
 })->where('id', '[0-9]+')->name('komoditas.hapus');
 
-Route::delete('/infrastruktur/{id}', function (int $id) {
+Route::delete('/sp/infrastruktur/{id}', function (int $id) {
     return redirect()->route('infrastruktur.index')->with('sukses', 'Data aset infrastruktur dihapus.');
 })->where('id', '[0-9]+')->name('infrastruktur.hapus');
 

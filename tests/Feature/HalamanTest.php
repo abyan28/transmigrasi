@@ -2441,6 +2441,7 @@ it('merender setiap rute GET yang terdaftar tanpa galat', function () {
         'up',              // health check bawaan Laravel
         'uji-403',         // sengaja mengembalikan 403
         'logout',          // mengubah keadaan, diuji terpisah
+        'infrastruktur',   // rute lama dengan redirect 301, diuji terpisah
     ];
 
     $gagal = [];
@@ -3007,7 +3008,7 @@ it('menyediakan halaman rincian bagi modul yang dapat disunting', function () {
     // Pola baku sejak Task 2.7: Tambah di halaman daftar, Ubah di halaman
     // rincian. Modul tanpa rincian karena itu tidak punya tempat menaruh
     // tombol Ubah.
-    foreach (['alsintan', 'saprotan', 'komoditas', 'infrastruktur'] as $modul) {
+    foreach (['alsintan', 'saprotan', 'komoditas', 'sp/infrastruktur'] as $modul) {
         $this->get('/'.$modul.'/1')->assertOk();
         $this->get('/'.$modul.'/999')->assertNotFound();
     }
@@ -3227,7 +3228,7 @@ it('menyusun sidebar sesuai kelompok yang disepakati', function () {
     }
 
     expect($letak['/lahan'] ?? null)->toBe('Transmigrasi')
-        ->and($letak['/infrastruktur'] ?? null)->toBe('Transmigrasi')
+        ->and($letak['/sp/infrastruktur'] ?? null)->toBe('Transmigrasi')
         ->and($letak['/panen/rekap'] ?? null)->toBe('Pertanian');
 });
 
@@ -3856,7 +3857,7 @@ it('menyediakan tombol impor pada modul berdata banyak', function (string $url, 
     ['/lahan', 'imporLahan'],
     ['/panen', 'imporPanen'],
     ['/penanaman', 'imporPenanaman'],
-    ['/infrastruktur', 'imporInfrastruktur'],
+    ['/sp/infrastruktur', 'imporInfrastruktur'],
     ['/sp/inventaris', 'imporInventaris'],
     ['/wilayah', 'imporWilayah'],
     ['/master/satuan', 'imporSatuan'],
@@ -4220,7 +4221,7 @@ it('menyediakan tab catatan log pada setiap halaman rincian utama', function (st
     ['/pengaduan/1', 'pengaduan', 1],
     ['/alsintan/1', 'alsintan', 1],
     ['/saprotan/1', 'saprotan', 1],
-    ['/infrastruktur/1', 'infrastruktur', 1],
+    ['/sp/infrastruktur/1', 'infrastruktur', 1],
     ['/komoditas/1', 'komoditas', 1],
     ['/panen/1', 'hasil_panen', 1],
 ]);
@@ -4311,7 +4312,7 @@ it('menyeragamkan seluruh halaman rincian memakai tab', function () {
     // dan petugas harus menebaknya tiap berpindah.
     foreach ([
         '/transmigran/1', '/rumah/1', '/lahan/1', '/poktan/1', '/pengaduan/1',
-        '/alsintan/1', '/saprotan/1', '/infrastruktur/1', '/komoditas/1', '/panen/1',
+        '/alsintan/1', '/saprotan/1', '/sp/infrastruktur/1', '/komoditas/1', '/panen/1',
     ] as $jalur) {
         expect($this->get($jalur)->getContent())
             ->toContain('hashTabs(')
@@ -4525,7 +4526,7 @@ it('menuliskan baris total tanpa penanda cakupan', function (string $jalur) {
     '/kependudukan/rekap',
     '/sp',
     '/kawasan',
-    '/infrastruktur',
+    '/sp/infrastruktur',
 ]);
 
 it('memakai istilah fitur dan kewenangan pada teks yang dilihat pengguna', function (string $jalur) {
@@ -4552,8 +4553,8 @@ it('memakai istilah fitur dan kewenangan pada teks yang dilihat pengguna', funct
 })->with([
     '/pengaturan/role',
     '/pengguna',
-    '/infrastruktur',
-    '/infrastruktur/1',
+    '/sp/infrastruktur',
+    '/sp/infrastruktur/1',
     '/audit-log',
     '/galeri-komponen',
 ]);
@@ -4606,7 +4607,7 @@ it('tidak lagi menempelkan tombol ekspor pada halaman daftar mana pun', function
     '/alsintan',
     '/saprotan',
     '/komoditas',
-    '/infrastruktur',
+    '/sp/infrastruktur',
     '/sp',
     '/pengguna',
     '/audit-log',
@@ -6137,10 +6138,10 @@ it('menyediakan unggahan dokumen pada modul yang kolomnya sudah ada', function (
     ['/sp', 'dokumen_pendukung'],
     ['/sp/inventaris', 'dokumen_pendukung'],
     ['/sp/fasilitas', 'dokumen_pendukung'],
-    ['/infrastruktur', 'dokumen_pendukung'],
+    ['/sp/infrastruktur', 'dokumen_pendukung'],
     // Infrastruktur punya dua kolom terpisah: foto merekam kondisi lapangan,
     // dokumen menyimpan berkas administratifnya.
-    ['/infrastruktur', 'foto'],
+    ['/sp/infrastruktur', 'foto'],
     // Inventaris dan fasilitas SP ikut memisahkan foto dari dokumen sejak
     // 2026-08-20, mengikuti pola infrastruktur.
     ['/sp/inventaris', 'foto'],
@@ -7237,7 +7238,7 @@ it('memakai nama submenu yang sama persis dengan sidebar', function () {
         '/transmigran' => ['Penduduk & Lahan', 'Transmigran'],
         '/lahan' => ['Penduduk & Lahan', 'Data Lahan'],
         '/poktan' => ['Poktan & Sarana', 'Kelompok Tani'],
-        '/infrastruktur' => ['Wilayah & SP', 'Infrastruktur SP'],
+        '/sp/infrastruktur' => ['Wilayah & SP', 'Infrastruktur SP'],
         '/sp/inventaris' => ['Wilayah & SP', 'Inventaris SP'],
         '/wilayah' => ['Data Master', 'Wilayah'],
     ];
@@ -7331,7 +7332,7 @@ it('menampilkan catatan pada setiap halaman rincian yang modulnya punya kolom it
 })->with([
     '/alsintan/1',
     '/saprotan/1',
-    '/infrastruktur/1',
+    '/sp/infrastruktur/1',
     '/poktan/1',
     '/sp/inventaris/1',
     '/sp/fasilitas/1',
@@ -7356,7 +7357,7 @@ it('menyediakan cara membuka berkas dari halaman rincian modulnya', function (st
     // form, tetapi halaman rincian dulu hanya memasang tautan dokumen.
     ['/alsintan/1', 2],
     ['/saprotan/1', 2],
-    ['/infrastruktur/1', 2],
+    ['/sp/infrastruktur/1', 2],
     ['/sp/inventaris/2', 2],
     ['/sp/fasilitas/3', 2],
     // Rincian SP adalah halaman detail SP, satu-satunya tempat dokumen
@@ -8039,4 +8040,16 @@ it('menempatkan section penghunian dan wilayah sebelum spesifikasi bangunan pada
         ->and($posBangunan)->not->toBeFalse()
         ->and($posPenghunian)->toBeLessThan($posBangunan)
         ->and($posPenghuni)->toBeLessThan($posNoRumah);
+});
+
+it('mengalihkan rute lama /infrastruktur dan /infrastruktur/{id} ke /sp/infrastruktur dengan status 301', function () {
+    $this->get('/infrastruktur')->assertRedirect('/sp/infrastruktur')->assertStatus(301);
+    $this->get('/infrastruktur/1')->assertRedirect('/sp/infrastruktur/1')->assertStatus(301);
+});
+
+it('memasang atribut aria-live pada field kalkulasi dinamis', function () {
+    expect(file_get_contents(resource_path('views/pages/lahan/form.blade.php')))->toContain('aria-live="polite"')
+        ->and(file_get_contents(resource_path('views/pages/panen/form.blade.php')))->toContain('aria-live="polite"')
+        ->and(file_get_contents(resource_path('views/pages/transmigran/form.blade.php')))->toContain('aria-live="polite"')
+        ->and(file_get_contents(resource_path('views/pages/penanaman/form.blade.php')))->toContain('aria-live="polite"');
 });

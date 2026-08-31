@@ -3327,3 +3327,22 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
     - 726 pengujian fitur & unit Pest (6.110 assertions) 100% PASS (Hijau).
     - Status HTTP 200 untuk `/sp/1` dan HTTP 301 untuk `/dashboard/sp/1` terverifikasi.
     - `npm run build` terkompilasi bersih tanpa galat.
+
+* **Audit Menyeluruh Frontend, Eksekusi Phase A (Quick Wins UX/a11y), & Standardisasi Rute `/sp/infrastruktur` (2026-08-31):**
+  * **Konteks:**
+    Audit menyeluruh terhadap 96 blade views, 35 reusable components, 8 JS files, dan arsitektur frontend menghasilkan rekomendasi perbaikan cepat (Phase A) serta standardisasi rute infrastruktur agar simetris dengan aset wilayah lainnya (`/sp/inventaris`, `/sp/fasilitas`).
+  * **Solusi Arsitektur & Detail Implementasi:**
+    1. **Standardisasi Rute `/sp/infrastruktur` & Redirect 301 (`routes/web.php`):**
+       - Mendaftarkan rute utama: `Route::get('/sp/infrastruktur', ...)->name('infrastruktur.index')`, `Route::get('/sp/infrastruktur/{id}', ...)->name('infrastruktur.detail')`, `Route::post('/sp/infrastruktur', ...)->name('infrastruktur.simpan')`, `Route::put('/sp/infrastruktur/{id}', ...)->name('infrastruktur.perbarui')`, dan `Route::delete('/sp/infrastruktur/{id}', ...)->name('infrastruktur.hapus')`.
+       - Menambahkan redirect permanen (301) dari `/infrastruktur` dan `/infrastruktur/{id}` ke `/sp/infrastruktur`.
+       - Memperbarui `MenuHelper.php` dan `RemahHelper.php` agar path menu Infrastruktur SP tercatat sebagai `/sp/infrastruktur`.
+    2. **A11y Live Regions (`aria-live="polite"`, `aria-atomic="true"`):**
+       - Memasang atribut aksesibilitas pada field kalkulasi dinamis: Total Luas Lahan Usaha (`pages/lahan/form.blade.php`), Puso & Produksi Panen (`pages/panen/form.blade.php`), Usia KK (`pages/transmigran/form.blade.php`), dan Sisa Lahan Belum Ditanam (`pages/penanaman/form.blade.php`).
+    3. **Indikator Visual Filter Aktif (`components/sim/data-table.blade.php`):**
+       - Memberikan styling aksen visual mencolok (`border-brand-500 bg-brand-50 text-brand-700 dark:border-brand-500 dark:bg-brand-950/40 dark:text-brand-300`) beserta dot badge pada tombol filter saat tabel dalam kondisi terfilter (`adaFilterAktif`).
+    4. **Pembatalan Banner Panduan pada Halaman Rekap (RITME 2):**
+       - Banner panduan dokumen resmi pada `/panen/rekap` dan `/kependudukan/rekap` dibatalkan/dihapus sesuai arahan user demi menjaga kelapangan ruang vertikal layar dan kemurnian tata letak tabel agregat (ui-spec.md §2.2).
+  * **Verifikasi:**
+    - 728 pengujian fitur & unit Pest (6.120 assertions) 100% PASS (Hijau).
+    - Verifikasi redirect 301 untuk `/infrastruktur` dan `/infrastruktur/{id}`.
+    - `npm run build` sukses bersih.

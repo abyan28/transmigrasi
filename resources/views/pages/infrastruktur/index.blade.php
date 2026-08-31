@@ -15,7 +15,7 @@
     --}}
     <x-sim.halaman-daftar judul="Infrastruktur SP"
         keterangan="Pendataan aset irigasi, air, jalan produksi, listrik, dan gudang."
-        :remah="\App\Helpers\RemahHelper::untuk('/infrastruktur')"
+        :remah="\App\Helpers\RemahHelper::untuk('/sp/infrastruktur')"
         :jumlah="count($baris)" :kata-kunci="$cari" :aksi-url="route('infrastruktur.index')"
         placeholder-cari="Cari nama infrastruktur" judul-kosong="Belum ada data infrastruktur"
         pesan-kosong="Aset infrastruktur akan tampil di sini setelah didata.">
@@ -98,7 +98,7 @@
                     <x-sim.aksi-baris :rincian-url="route('infrastruktur.detail', $i['id_infrastruktur'])"
                         modal-ubah="formUbahInfrastrukturBaris"
                         :data-baris="$i + ['id' => $i['id_infrastruktur']]"
-                        :hapus-url="'/infrastruktur/' . $i['id_infrastruktur']"
+                        :hapus-url="'/sp/infrastruktur/' . $i['id_infrastruktur']"
                         konfirmasi-hapus="hapusInfrastruktur" :label="$i['nama']" />
                 </td>
             </tr>
@@ -174,7 +174,7 @@
 
     <x-sim.modal-form nama="formUbahInfrastrukturBaris" judul="Ubah Data Aset"
         keterangan="Kondisi diperbarui petugas saat pendataan berkala."
-        pola-aksi="/infrastruktur/:id" metode="PUT" ukuran="lg"
+        pola-aksi="/sp/infrastruktur/:id" metode="PUT" ukuran="lg"
         label-simpan="Simpan Perubahan">
         @include('pages.infrastruktur.form', ['awalan' => 'ubahBaris'])
     </x-sim.modal-form>

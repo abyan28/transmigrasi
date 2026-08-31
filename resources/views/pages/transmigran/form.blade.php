@@ -185,7 +185,7 @@
                     terkirim; nilainya diturunkan ulang setiap kali data dibaca.
                 --}}
                 <span class="{{ $kelasLabel }}">Usia</span>
-                <p class="flex h-11 items-center rounded-lg bg-gray-50 px-4 text-theme-sm text-gray-600 dark:bg-white/[0.03] dark:text-gray-400">
+                <p aria-live="polite" aria-atomic="true" class="flex h-11 items-center rounded-lg bg-gray-50 px-4 text-theme-sm text-gray-600 dark:bg-white/[0.03] dark:text-gray-400">
                     <span x-text="usiaKk !== null ? usiaKk + ' tahun' : 'Isi tanggal lahir lebih dulu'"></span>
                 </p>
                 <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">

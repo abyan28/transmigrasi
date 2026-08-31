@@ -24,7 +24,7 @@
 
     <x-sim.page-header :judul="$data['nama']"
         :keterangan="$jenis->value . ' di ' . $data['satuan_permukiman'] . ', dibangun tahun ' . $data['tahun_perolehan'] . '.'"
-        :remah="\App\Helpers\RemahHelper::untuk('/infrastruktur', $data['nama'])">
+        :remah="\App\Helpers\RemahHelper::untuk('/sp/infrastruktur', $data['nama'])">
         <x-slot:aksi>
             @if ($bolehUbah)
                 <button type="button" @click="$dispatch('buka-modal', 'formUbahInfrastruktur')"

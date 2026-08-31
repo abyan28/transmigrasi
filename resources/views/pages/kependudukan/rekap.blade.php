@@ -28,6 +28,7 @@
     <x-sim.page-header judul="Rekap Kependudukan"
         keterangan="Perkembangan jumlah penduduk kawasan beserta perpindahannya."
         :remah="\App\Helpers\RemahHelper::untuk('/kependudukan/rekap')" />
+
     {{--
         Tombol ekspor dicabut 2026-08-28 (rules.md 12 poin 7). Laporan
         kependudukan kini dokumen bernama di menu "Laporan".

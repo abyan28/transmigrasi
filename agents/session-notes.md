@@ -124,3 +124,25 @@ Catatan hasil: `agents/notes.md` §1w & `## 6. Revisi`. Ringkasan: `agents/taskl
 - **Vite Build:** `npm run build` terkompilasi bersih tanpa galat.
 - **HTTP Endpoint:** `/sp/1` membalas 200 OK, `/dashboard/sp/1` membalas 301 Redirect ke `/sp/1`.
 
+
+# Audit Menyeluruh Frontend, Phase A (Quick Wins UX/a11y), & Standardisasi Rute `/sp/infrastruktur` (2026-08-31)
+
+### 1. Audit Menyeluruh Frontend
+- Melakukan audit 24 tahap pada seluruh arsitektur antarmuka, 96 berkas tampilan Blade, 35 komponen sim, 8 berkas JavaScript, dan integrasi backend-readiness.
+- Menyusun laporan audit komprehensif pada artefak `audit_komprehensif_seluruh_frontend.md`.
+
+### 2. Standardisasi Rute RESTful `/sp/infrastruktur`
+- Mengubah rute utama menjadi `/sp/infrastruktur` dan `/sp/infrastruktur/{id}` (`name: infrastruktur.index`, `infrastruktur.detail`, `infrastruktur.simpan`, `infrastruktur.perbarui`, `infrastruktur.hapus`).
+- Memasang pengalihan permanen (HTTP 301) dari `/infrastruktur` dan `/infrastruktur/{id}` ke `/sp/infrastruktur`.
+- Memperbarui `MenuHelper.php`, `RemahHelper.php`, dan view `pages/infrastruktur/*` agar seluruh aset wilayah (`/sp/inventaris`, `/sp/fasilitas`, `/sp/infrastruktur`) memiliki struktur rute simetris.
+
+### 3. Eksekusi Phase A (Quick Wins UX & a11y)
+- **A11y Live Regions (`aria-live="polite"`, `aria-atomic="true"`):** Dipasang pada field kalkulasi dinamis (Total Lahan Usaha di `pages/lahan/form.blade.php`, Puso & Produksi di `pages/panen/form.blade.php`, Usia KK di `pages/transmigran/form.blade.php`, dan Sisa Belum Ditanam di `pages/penanaman/form.blade.php`).
+- **Indikator Visual Filter Aktif:** Menambahkan aksen latar & border (`border-brand-500 bg-brand-50 text-brand-700`) beserta dot badge pada komponen `x-sim.data-table` ketika ada filter aktif (`adaFilterAktif`).
+- **Pembatalan Banner Panduan Rekap:** Banner panduan dokumen resmi pada `/panen/rekap` dan `/kependudukan/rekap` dibatalkan/dihapus sesuai arahan user demi menjaga kelapangan ruang vertikal layar dan kemurnian tata letak tabel agregat (ui-spec.md §2.2).
+
+### 4. Verifikasi Mutu
+- **Pest PHP:** 728 pengujian (6.120 assertions) **100% PASS (Hijau)**.
+- **Vite Build:** `npm run build` sukses bersih.
+- **HTTP Endpoint:** `/sp/infrastruktur` membalas 200 OK, `/infrastruktur` membalas 301 Redirect.
+

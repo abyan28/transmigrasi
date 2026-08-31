@@ -320,7 +320,7 @@
         --}}
         <div>
             <span class="{{ $kelasLabel }}">Belum Ditanam</span>
-            <p class="{{ $kelasTerkunci }}">
+            <p aria-live="polite" aria-atomic="true" class="{{ $kelasTerkunci }}">
                 <span x-show="poktan" x-cloak>
                     <span x-text="angka(belumDitanam)"></span> ha
                 </span>

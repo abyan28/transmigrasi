@@ -196,7 +196,7 @@
 
                 <div>
                     <span class="{{ $kelasLabel }}">Total Luas Bidang</span>
-                    <div
+                    <div aria-live="polite" aria-atomic="true"
                         class="flex h-11 items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-4 dark:border-gray-800 dark:bg-white/[0.03]">
                         <span class="text-theme-sm font-medium tabular-nums text-gray-800 dark:text-white/90"
                             x-text="totalUsaha.toFixed(2)">0.00</span>
