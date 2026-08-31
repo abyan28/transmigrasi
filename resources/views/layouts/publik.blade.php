@@ -103,17 +103,7 @@
         @yield('content')
     </main>
 
-    <footer class="mt-8 border-t border-gray-200 bg-white dark:border-navy-700 dark:bg-navy-800">
-        <div class="mx-auto max-w-4xl px-4 py-6 sm:px-6">
-            <p class="text-theme-xs text-gray-500 dark:text-gray-400">
-                Halaman ini disediakan untuk warga Kawasan Transmigrasi Kobalima Timur.
-                Petugas yang hendak masuk ke sistem dapat menggunakan
-                <a href="{{ route('login') }}"
-                    class="rounded font-medium text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
-                    halaman masuk petugas</a>.
-            </p>
-        </div>
-    </footer>
+    <x-sim.footer-publik />
 
     {{-- Tombol ganti mode terang atau gelap --}}
     <div class="fixed right-5 bottom-5 z-50">

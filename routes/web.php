@@ -312,6 +312,14 @@ Route::put('/profil/kata-sandi', function () {
     return redirect()->route('profil')->with('sukses', 'Kata sandi berhasil diperbarui.');
 })->name('profil.kata-sandi.simpan');
 
+Route::get('/tentang', function () {
+    return view('pages.tentang.index', ['title' => 'Tentang Sistem']);
+})->name('tentang');
+
+Route::get('/panduan', function () {
+    return view('pages.panduan.index', ['title' => 'Panduan Penggunaan']);
+})->name('panduan');
+
 
 // Galeri komponen bersama, halaman internal untuk pengembangan.
 // Dihapus sebelum penyerahan akhir.

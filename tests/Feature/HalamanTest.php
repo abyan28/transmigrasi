@@ -1065,6 +1065,70 @@ it('menyaring rekap kependudukan per tahun dengan total yang selalu konsisten', 
     }
 });
 
+it('merender halaman Tentang Sistem beserta seluruh data tim pengembang dan kolaborator', function () {
+    $response = $this->get(route('tentang'))->assertOk();
+    $konten = $response->getContent();
+
+    expect($konten)->toContain('Tentang Sistem')
+        ->and($konten)->toContain('Dr. Budi Setiyono, S.Si., M.T.')
+        ->and($konten)->toContain('Leonardi Paris Hasugian')
+        ->and($konten)->toContain('Muhammad Abyan Dzaka')
+        ->and($konten)->toContain('Reyner Marvi Leiwakabessy')
+        ->and($konten)->toContain('Muhammad Rias Ramadan')
+        ->and($konten)->toContain('Heaven Happyna Putra Febriyono')
+        ->and($konten)->toContain('Institut Teknologi Sepuluh Nopember')
+        ->and($konten)->toContain('Kementerian Transmigrasi')
+        ->and($konten)->toContain('Kabupaten Malaka')
+        ->and($konten)->toContain('SP Kapitan Meo')
+        ->and($konten)->toContain('SP Tniumanu')
+        ->and($konten)->toContain('SP Harekakae')
+        ->and($konten)->toContain('SP Weoe')
+        ->and($konten)->toContain('SP Tualaran')
+        ->and($konten)->toContain('SP Weain');
+});
+
+it('merender halaman Panduan Penggunaan beserta seluruh bab dan daftar isi', function () {
+    $response = $this->get(route('panduan'))->assertOk();
+    $konten = $response->getContent();
+
+    expect($konten)->toContain('Panduan Penggunaan')
+        ->and($konten)->toContain('Daftar Isi Panduan')
+        ->and($konten)->toContain('peran-akses')
+        ->and($konten)->toContain('dashboard-indikator')
+        ->and($konten)->toContain('master-wilayah')
+        ->and($konten)->toContain('kependudukan-lahan')
+        ->and($konten)->toContain('kelembagaan-pertanian')
+        ->and($konten)->toContain('pengaduan-warga')
+        ->and($konten)->toContain('laporan-ekspor')
+        ->and($konten)->toContain('faq-bantuan')
+        ->and($konten)->toContain('Unduh Panduan (PDF)');
+});
+
+it('menampilkan submenu Bantuan & Info pada sidebar aplikasi', function () {
+    $response = $this->get(route('beranda'))->assertOk();
+    $konten = $response->getContent();
+
+    expect($konten)->toContain('Bantuan &amp; Info')
+        ->and($konten)->toContain('Panduan Penggunaan')
+        ->and($konten)->toContain('Tentang Sistem');
+});
+
+it('menampilkan footer ramping pada layout aplikasi dan footer informatif pada layout publik', function () {
+    // CMS Layout: footer ramping
+    $kontenApp = $this->get(route('beranda'))->assertOk()->getContent();
+    expect($kontenApp)->toContain('Kementerian Transmigrasi RI')
+        ->and($kontenApp)->toContain('Pemerintah Kabupaten Malaka')
+        ->and($kontenApp)->toContain('ITS Surabaya')
+        ->and($kontenApp)->toContain('TailAdmin');
+
+    // Public Layout: footer informatif
+    $kontenPublik = $this->get(route('pengaduan-warga'))->assertOk()->getContent();
+    expect($kontenPublik)->toContain('Kawasan Kobalima Timur')
+        ->and($kontenPublik)->toContain('SP Kapitan Meo')
+        ->and($kontenPublik)->toContain('Kementerian Transmigrasi RI')
+        ->and($kontenPublik)->toContain('Masuk sebagai Petugas Sistem');
+});
+
 it('menyusun kolom rekap sesuai dasar pengelompokannya', function () {
     /*
      * Kolom kedua BERBEDA tiap tab (ditetapkan pemilik proyek 2026-08-24):

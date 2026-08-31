@@ -3230,3 +3230,25 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
     - [resources/views/pages/kependudukan/rekap.blade.php](file:///D:/TEP/sistem%20informasi%20transmigrasi/resources/views/pages/kependudukan/rekap.blade.php): Bilah filter tahun, judul bertahun, tombol reset, dan keterangan cakupan.
     - [tests/Feature/HalamanTest.php](file:///D:/TEP/sistem%20informasi%20transmigrasi/tests/Feature/HalamanTest.php): Pengujian konsistensi dan rendering filter tahun.
   * **Verifikasi:** 4 pengujian kependudukan (68 assertions) dan 14 pengujian dashboard (75 assertions) 100% lulus hijau; `npm run build` sukses bersih.
+* **4. Implementasi Global Footer, Halaman "Tentang Sistem", dan Halaman "Panduan Penggunaan" (2026-08-31):**
+  * **Latar Belakang:** Aplikasi membutuhkan identitas kepemilikan sistem, informasi tim pengembang, buku panduan operasional, dan footer yang proporsional. Berdasarkan tinjauan UX, halaman CMS admin internal memerlukan footer ramping (*slim bar*) yang tidak memakan ruang vertikal kerja, sedangkan halaman publik/tamu memerlukan footer informatif multi-kolom (*rich footer*).
+  * **Solusi & Detail Implementasi:**
+    1. **Footer Ramping CMS Admin (`resources/views/components/sim/footer.blade.php`):**
+       - Ditempatkan pada tata letak aplikasi `layouts/app.blade.php`.
+       - Berupa bilah 1-baris bersih berisi hak cipta resmi `© {{ date('Y') }} Kementerian Transmigrasi RI & Pemerintah Kabupaten Malaka. Dikembangkan bersama ITS Surabaya`, status versi `v0.8.4-alpha (Tahap 2)`, dan atribusi lisensi template TailAdmin (MIT).
+    2. **Footer Informatif Halaman Publik (`resources/views/components/sim/footer-publik.blade.php`):**
+       - Ditempatkan pada tata letak publik `layouts/publik.blade.php` (digunakan pada `/pengaduan-warga` dan `/lacak-pengaduan`).
+       - Menampilkan identitas kementerian, lokus 6 SP Kobalima Timur di 4 kecamatan, kerja sama Pemkab Malaka & ITS Surabaya, tautan cepat kirim/lacak aduan, dan akses masuk petugas.
+    3. **Submenu Sidebar "Bantuan & Info" (`app/Helpers/MenuHelper.php`):**
+       - Ditambahkan di bawah kelompok **Administrasi Sistem** dengan izin terbuka (`permission => null`) untuk seluruh peran (Operator SP, Dinas Pertanian, Dinas Transmigrasi, Admin).
+       - Memuat dua menu: **Panduan Penggunaan** (`/panduan`) dan **Tentang Sistem** (`/tentang`).
+    4. **Halaman "Tentang Sistem" (`/tentang`):**
+       - Menampilkan profil sistem, latar belakang potensi agroekologis jagung kawasan Kobalima Timur, daftar 6 SP binaan di 4 kecamatan.
+       - Menampilkan data resmi **Tim Pengembang & Peneliti (ITS Surabaya)**: Ketua Tim **Dr. Budi Setiyono, S.Si., M.T.** beserta 5 Anggota Tim (**Leonardi Paris Hasugian**, **Muhammad Abyan Dzaka**, **Reyner Marvi Leiwakabessy**, **Muhammad Rias Ramadan**, **Heaven Happyna Putra Febriyono**).
+       - Menampilkan profil kolaborasi instansi (Kementerian Transmigrasi RI, Dinas Transmigrasi Kab. Malaka, Dinas Pertanian Kab. Malaka), arsitektur teknologi (Laravel 12, Tailwind v4, Alpine.js, ApexCharts, Leaflet OSM), dan narahubung/helpdesk teknis.
+    5. **Halaman "Panduan Penggunaan" (`/panduan`):**
+       - Menampilkan antarmuka panduan 2 kolom dengan *sticky Table of Contents* (Daftar Isi) dan *smooth anchor navigation* mencakup 8 bab operasional (RBAC, Dashboard, Wilayah & SP, Kependudukan & Lahan, Pertanian & Panen, Pengaduan, 7 Laporan Resmi, FAQ).
+       - Tombol "Unduh Panduan (PDF)" dengan modal/callout transparan terkait finalisasi berkas BAST Task 11.6 tanpa memalsukan berkas PDF kosong.
+    6. **Registrasi Rute & Generator Statis:**
+       - Rute `Route::get('/tentang')` dan `Route::get('/panduan')` terdaftar di `routes/web.php` dan otomatis terangkut oleh `php artisan sim:tautan-statis`.
+  * **Verifikasi:** 4 pengujian fitur khusus (43 assertions), 20 pengujian modul inti (167 assertions), dan 43 pengujian laporan (723 assertions) 100% lulus hijau; `npm run build` sukses bersih.

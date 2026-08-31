@@ -286,6 +286,9 @@
 
                 @yield('content')
             </div>
+
+            <!-- global footer -->
+            <x-sim.footer />
         </div>
 
     </div>

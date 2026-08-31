@@ -281,6 +281,22 @@ class MenuHelper
                             ],
                         ],
                     ],
+                    [
+                        'icon' => 'bantuan',
+                        'name' => 'Bantuan & Info',
+                        'subItems' => [
+                            [
+                                'name' => 'Panduan Penggunaan',
+                                'path' => '/panduan',
+                                'permission' => null,
+                            ],
+                            [
+                                'name' => 'Tentang Sistem',
+                                'path' => '/tentang',
+                                'permission' => null,
+                            ],
+                        ],
+                    ],
                 ],
             ],
         ];
@@ -431,6 +447,9 @@ class MenuHelper
             // Laporan: papan jepit berisi baris teks, lambang dokumen resmi
             // yang dicetak dan diserahkan ke dinas. Ditambahkan 2026-08-28.
             'laporan' => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 4.5H7.5A1.5 1.5 0 006 6v13.5A1.5 1.5 0 007.5 21h9a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H15M9 4.5a1.5 1.5 0 011.5-1.5h3A1.5 1.5 0 0115 4.5M9 4.5A1.5 1.5 0 0010.5 6h3A1.5 1.5 0 0015 4.5M9 12h6M9 15.5h6M9 8.5h1.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+
+            // Bantuan & Info: lingkaran tanda tanya / informasi, lambang panduan sistem.
+            'bantuan' => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 21a9 9 0 100-18 9 9 0 000 18z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 17h.01M12 13.5a2.5 2.5 0 012.35-1.65c.78 0 1.4.63 1.4 1.4 0 1.5-2.25 2-2.25 3.75" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
         ];
 
         return $icons[$iconName] ?? '<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor"/></svg>';
