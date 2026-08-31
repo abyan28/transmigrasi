@@ -21,6 +21,9 @@ import kunciGulir from './kunci-gulir';
 // melayani query string, notes.md 1b.5)
 import filterLaporan from './filter-laporan';
 
+// Pemformat dan sanitasi nominal uang (Rupiah) dengan direktif Alpine x-uang
+import { pasangFormatUang, formatUang, bersihkanUang } from './format-uang';
+
 // Locale flatpickr disetel ke Bahasa Indonesia mengikuti locale aplikasi
 flatpickr.localize(Indonesian);
 
@@ -69,5 +72,13 @@ pasangPenjagaAngka();
     Lihat resources/js/filter-laporan.js.
 */
 Alpine.data('filterLaporan', filterLaporan);
+
+/*
+    Format nominal uang Rupiah dan direktif Alpine x-uang.
+    Menerapkan pemisah ribuan otomatis, menjaga kursor, dan menormalkan ke digit
+    mentah saat submit formulir.
+*/
+pasangFormatUang(Alpine);
+window.formatUang = { format: formatUang, bersih: bersihkanUang };
 
 Alpine.start();

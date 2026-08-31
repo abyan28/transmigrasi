@@ -456,8 +456,9 @@
                         <label class="{{ $kelasLabel }}" :for="'{{ $awalan }}_rute_ongkos_' + i">Ongkos</label>
                         <div class="relative">
                             <span class="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-theme-sm text-gray-500 dark:text-gray-400">Rp</span>
-                            <input type="number" step="1000" min="0" :id="'{{ $awalan }}_rute_ongkos_' + i"
-                                :name="`rute_aksesibilitas[${i}][ongkos_rp]`" x-model="r.ongkos_rp" class="{{ $kelasKontrol }} tabular-nums pl-10" />
+                            <input type="text" inputmode="numeric" x-uang :id="'{{ $awalan }}_rute_ongkos_' + i"
+                                :name="`rute_aksesibilitas[${i}][ongkos_rp]`" x-model="r.ongkos_rp"
+                                placeholder="0" class="{{ $kelasKontrol }} tabular-nums pl-10" />
                         </div>
                     </div>
                     <div class="sm:col-span-2">

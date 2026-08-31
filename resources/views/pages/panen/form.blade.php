@@ -445,8 +445,8 @@
                     <span class="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-theme-sm text-gray-500 dark:text-gray-400">
                         Rp
                     </span>
-                    <input type="number" id="{{ $awalan }}_harga_jual" name="harga_jual"
-                        value="{{ old('harga_jual', $data['harga_jual'] ?? '') }}" min="0" step="100"
+                    <input type="text" inputmode="numeric" x-uang id="{{ $awalan }}_harga_jual" name="harga_jual"
+                        value="{{ old('harga_jual', $data['harga_jual'] ?? '') }}"
                         placeholder="0" class="{{ $kelasKontrol }} tabular-nums pl-10" />
                 </div>
                 <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
