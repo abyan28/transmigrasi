@@ -1,12 +1,11 @@
-{{-- <div
-    x-show="$store.sidebar.isMobileOpen"
-    @click="$store.sidebar.toggleMobileOpen()"
-    class="fixed inset-0 bg-gray-900/50 z-[9999] xl:hidden"
->
-sidebarToggle ? 'block xl:hidden' : 'hidden'
-</div> --}}
-
-<div
-  :class="$store.sidebar.isMobileOpen ? 'block xl:hidden' : 'hidden'"
-  class="fixed z-50 h-screen w-full bg-gray-900/50"
-></div>
+<div x-show="$store.sidebar.isMobileOpen"
+    x-cloak
+    @click="$store.sidebar.setMobileOpen(false)"
+    x-transition:enter="transition-opacity ease-linear duration-200"
+    x-transition:enter-start="opacity-0"
+    x-transition:enter-end="opacity-100"
+    x-transition:leave="transition-opacity ease-linear duration-200"
+    x-transition:leave-start="opacity-100"
+    x-transition:leave-end="opacity-0"
+    class="fixed inset-0 z-9999 bg-gray-900/50 backdrop-blur-xs xl:hidden"
+    aria-hidden="true"></div>

@@ -3252,3 +3252,14 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
     6. **Registrasi Rute & Generator Statis:**
        - Rute `Route::get('/tentang')` dan `Route::get('/panduan')` terdaftar di `routes/web.php` dan otomatis terangkut oleh `php artisan sim:tautan-statis`.
   * **Verifikasi:** 4 pengujian fitur khusus (43 assertions), 20 pengujian modul inti (167 assertions), dan 43 pengujian laporan (723 assertions) 100% lulus hijau; `npm run build` sukses bersih.
+* **5. Audit & Perbaikan Mobile Sidebar Stacking Context dan Scrolling Viewport (2026-08-31):**
+  * **Latar Belakang:** Pada layar mobile saat sidebar dibuka, konten header bertumpuk/tembus di atas logo sidebar karena konflik z-index (`z-99999` ganda). Selain itu, menu paling bawah (Administrasi Sistem & Bantuan) tidak dapat dicapai karena wadah scroll tidak memiliki batasan flex height (`min-h-0`) dan terhalang bilah navigasi bawah browser mobile (*dynamic browser toolbar*).
+  * **Solusi & Detail Implementasi:**
+    1. **Penataan Ulang Z-Index & Stacking Context (`resources/views/layouts/app-header.blade.php`, `backdrop.blade.php`, `sidebar.blade.php`):**
+       - Menurunkan z-index header aplikasi menjadi `z-40` sehingga tetap berada di atas konten halaman saat di-scroll, namun berada rapi di bawah backdrop (`z-9999`) dan sidebar mobile (`z-99999`).
+       - Memperbaiki backdrop menjadi `fixed inset-0 z-9999 bg-gray-900/50 backdrop-blur-xs xl:hidden` dengan penutup klik bersih `@click="$store.sidebar.setMobileOpen(false)"`, serta menghapus duplikasi elemen backdrop di dalam sidebar.
+    2. **Struktur Scroll Vertikal Penuh & Safe Padding (`resources/views/layouts/sidebar.blade.php`):**
+       - Mengubah posisi `<aside>` menjadi `fixed inset-y-0 left-0 flex flex-col z-99999 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800`.
+       - Mengunci Logo Section di bagian atas (`shrink-0`) dan menambahkan tombol tutup `[X]` khusus mobile yang elegan.
+       - Mengunci wadah menu dengan `flex flex-col flex-1 min-h-0 overflow-y-auto no-scrollbar` dan menambahkan padding bawah `pb-24 sm:pb-8` pada `<nav>` sehingga item terakhir ("Bantuan & Info" -> "Tentang Sistem") dapat di-scroll sepenuhnya dan aman di atas toolbar browser mobile.
+  * **Verifikasi:** 520 pengujian unit & fitur (3.335 assertions) 100% PASS (Hijau); `npm run build` terkompilasi bersih tanpa regresi.

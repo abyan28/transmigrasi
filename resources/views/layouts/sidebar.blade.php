@@ -8,7 +8,7 @@
 @endphp
 
 <aside id="sidebar"
-    class="cetak-sembunyi fixed flex flex-col mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-99999 border-r border-gray-200"
+    class="cetak-sembunyi fixed inset-y-0 left-0 flex flex-col px-5 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 transition-all duration-300 ease-in-out z-99999 border-r border-gray-200"
     x-data="{
         openSubmenus: {},
         init() {
@@ -88,10 +88,10 @@
     @mouseenter="if (!$store.sidebar.isExpanded) $store.sidebar.setHovered(true)"
     @mouseleave="$store.sidebar.setHovered(false)">
     <!-- Logo Section -->
-    <div class="pt-8 pb-7 flex"
+    <div class="pt-8 pb-7 flex items-center justify-between shrink-0"
         :class="(!$store.sidebar.isExpanded && !$store.sidebar.isHovered && !$store.sidebar.isMobileOpen) ?
         'xl:justify-center' :
-        'justify-start'">
+        'justify-between'">
         {{--
             Logo resmi Kementerian Transmigrasi. Dilarang mengubah warna,
             proporsi, atau memotongnya (agents/ui-spec.md bagian 3.7).
@@ -112,11 +112,20 @@
                 <span class="text-theme-xs text-gray-500 dark:text-navy-200">Kobalima Timur</span>
             </span>
         </a>
+
+        <!-- Mobile Close Button (visible only on mobile when sidebar is open) -->
+        <button type="button" @click="$store.sidebar.setMobileOpen(false)"
+            class="flex xl:hidden items-center justify-center w-9 h-9 text-gray-500 rounded-lg hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500"
+            aria-label="Tutup menu samping">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
     </div>
 
     <!-- Navigation Menu -->
-    <div class="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
-        <nav class="mb-6">
+    <div class="flex flex-col flex-1 min-h-0 overflow-y-auto duration-300 ease-linear no-scrollbar">
+        <nav class="pb-24 sm:pb-8">
             <div class="flex flex-col gap-4">
                 @foreach ($menuGroups as $groupIndex => $menuGroup)
                     <div>
@@ -263,7 +272,3 @@
 
     </div>
 </aside>
-
-<!-- Mobile Overlay -->
-<div x-show="$store.sidebar.isMobileOpen" @click="$store.sidebar.setMobileOpen(false)"
-    class="fixed z-50 h-screen w-full bg-gray-900/50"></div>

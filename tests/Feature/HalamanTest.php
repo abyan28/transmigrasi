@@ -7627,13 +7627,11 @@ it('tidak menuliskan ulang blok tombol yang sudah punya komponen', function () {
     ];
 
     /*
-        Satu pengecualian yang disengaja. Blok filter `panen/rekap` berbeda
-        wujudnya: tombolnya tanpa `flex-1`, labelnya "Bersihkan Filter" bukan
-        "Bersihkan", dan alamat bersihnya membawa tahun terpilih. Memaksanya
-        memakai komponen berarti mengubah tampilan demi kerapian kode, dan itu
-        harga yang tidak sepadan untuk sebuah refactor.
+        Dua pengecualian yang disengaja: `panen/rekap` dan `kependudukan/rekap`.
+        Keduanya merupakan halaman rekap berpenyaring tahun/komoditas terpadu
+        pada bilah atas, bukan tombol penyaring modal daftar berbaris.
     */
-    $dikecualikan = ['pages/panen/rekap.blade.php'];
+    $dikecualikan = ['pages/panen/rekap.blade.php', 'pages/kependudukan/rekap.blade.php'];
 
     $galat = [];
 
