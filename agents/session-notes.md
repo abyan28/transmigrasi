@@ -1,3 +1,45 @@
+# Putaran 9 — Formatter Nominal Rupiah, Scope Poktan Transmigran, Peniadaan Filter Tab Tahun Rekap, & Urutan Field Form Lahan/Rumah SELESAI (2026-08-31)
+
+Rencana: `C:\Users\v28mt\.gemini\antigravity-cli\brain\0fc4a1ba-ef33-4a8c-b8ea-138571694790\plan_dokumentasi_seluruh_revisi.md` & `walkthrough.md`.
+Catatan hasil: `agents/notes.md` `## 6. Revisi` (butir 6). Ringkasan: `agents/tasklist.md`, `agents/rules.md`, `agents/ui-spec.md`.
+
+## 4 Pekerjaan yang Telah Diselesaikan:
+
+### 1. Reusable Currency Formatter Nominal Rupiah (`x-uang`)
+- **Modul Sentral:** Membangun `resources/js/format-uang.js` dengan fungsi `bersihkanUang`, `formatUang`, `hitungPosisiKursor`, `pasangFormatUang(Alpine)`, serta mengekspos ke `window.formatUang`.
+- **Interaksi & Sanitasi:** Pemisah ribuan titik murni (`1.000.000`), pengetikan karakter ilegal (huruf/minus/notasi) ditolak, paste teks dinormalisasi, navigasi kursor stabil, dan dukungan keyboard numerik mobile (`type="text" inputmode="numeric"`).
+- **Programmatic & Submit Handling:** Intersepsi prototype descriptor `HTMLInputElement.value` untuk mencegah rekursi ganda pada modal ubah / Alpine `x-model`, serta global form `submit` capture listener yang menormalkan nilai `input[data-uang]` menjadi string integer murni (`1000000`) sebelum dikirim ke backend Laravel `ValidationRules::uang()`.
+- **Implementasi Lapangan:**
+  - Form Transmigran (`pendapatan_per_bulan` KK & repeater anggota keluarga).
+  - Form Panen (`harga_jual`).
+  - Form SP (`rute_aksesibilitas[*][ongkos_rp]`).
+
+### 2. Peniadaan Card Filter Tahun Data pada Tab "Per Tahun" (Rekap Kependudukan)
+- Menghilangkan card formulir filter Tahun Data khusus ketika tab "Per Tahun" aktif pada `/kependudukan/rekap` (`@if ($kelompok !== 'tahun') ... @endif`).
+- Tab "Per Tahun" kini bersih langsung menyajikan tabel agregat deret waktu historis (2016–2026) tanpa kontrol dropdown yang tidak fungsional/mati, sementara filter tahun tetap aktif di 5 tab demografis lainnya (`sp`, `status`, `pekerjaan`, `asal`, `pendidikan`).
+
+### 3. Penegasan Ruang Lingkup Anggota Poktan Khusus Transmigran
+- Menegaskan batasan domain SIM Transmigrasi bahwa sistem **hanya mencatat anggota poktan yang merupakan warga/keluarga transmigran**, sedangkan anggota non-transmigran (penduduk lokal) tidak dicatat di sistem.
+- **Titik Penegasan di Rincian Poktan (`pages/poktan/detail.blade.php`):**
+  - Subjudul header: `"Kelompok tani di [SP], berdiri sejak [Tahun]. Pencatatan anggota khusus warga transmigran."`
+  - Sidebar Profil: `Anggota transmigran aktif` dengan catatan kaki `Khusus warga transmigran`.
+  - Tab Rincian: `Anggota Transmigran (n)`.
+  - Banner Edukatif: Callout di atas tabel anggota menerangkan batasan ruang lingkup data.
+  - Judul Tabel: `Anggota Kelompok Tani (Khusus Warga Transmigran)`.
+- **Form Anggota (`pages/poktan/form-anggota.blade.php`):** Bantuan isian menegaskan bahwa anggota non-transmigran tidak didata pada SIM Transmigrasi.
+
+### 4. Penyesuaian Urutan Field Transmigran & Auto-Fill Satuan Permukiman
+- **Form Lahan (`pages/lahan/form.blade.php`):** Field `Pemilik` (transmigran) dipindahkan ke urutan pertama Section 1 sebelum `Satuan Permukiman`. Memilih Pemilik otomatis mengisi dan memilih dropdown Satuan Permukiman via Alpine reactive event.
+- **Form Rumah (`pages/rumah/form.blade.php`):** Section 1 disusun menjadi `Penghunian & Wilayah` sebelum Section 2 `Spesifikasi Bangunan`. Saat status `Dihuni`, memilih KK Penghuni otomatis mengisi Satuan Permukiman. Saat status `Tidak Dihuni`, isian KK dinonaktifkan (`disabled`) dan pemilihan SP menjadi aktif manual.
+- **Perbaikan Komponen (`resources/views/components/sim/pilih-cari.blade.php`):** Binding `:disabled` dan `:required` dirender dengan `{!! !!}` agar ekspresi JavaScript Alpine berkarakter petik tidak ter-escape menjadi HTML entity `&#039;`.
+
+## Verifikasi
+- **Pest PHP:** 523 test (3.363 assertions) lulus 100% hijau.
+- **Browser Tests:** `uji-autofill-sp.mjs` (5/5 PASS), `uji-format-uang.mjs` (11/11 PASS).
+- **Vite Build:** `npm run build` terkompilasi bersih tanpa galat.
+
+---
+
 # Putaran 8 — Visualisasi Dashboard, Optimasi Interaksi & Audit Warna SELESAI (2026-08-31)
 
 Rencana: `C:\Users\v28mt\.gemini\antigravity-cli\brain\9333f50b-2b4d-449a-ab28-563179b31500\implementation_plan.md` & `walkthrough.md`.

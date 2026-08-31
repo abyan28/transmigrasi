@@ -79,7 +79,7 @@ Skema final ada pada `erd.md`, rincian kolom pada `data-dictionary.md`. Berkas `
 | Foreign key | nama tabel rujukan + `_id` | `transmigran_id` |
 | Kolom boolean | awalan `is_` | `is_unggulan` |
 | Koordinat | dua kolom `lintang` dan `bujur` bertipe `DECIMAL(10,7)` | dilarang memakai tipe `GEOMETRY` |
-| Nilai uang | `DECIMAL(15,2)` | dilarang memakai `FLOAT` atau `VARCHAR` |
+| Nilai uang | `DECIMAL(15,2)` | Rupiah; diformat dengan pemisah ribuan titik tanpa desimal (`1.000.000`) via Alpine `x-uang` dan dinormalkan ke integer murni saat submit |
 | Luas lahan | `DECIMAL(12,2)`, satuan hektare | |
 | Volume panen | `DECIMAL(12,3)` | 3 desimal agar panen 1 kg tetap terekam |
 | Dokumen dan foto | `VARCHAR(255)` berisi path berkas | dilarang memakai `BLOB` |
@@ -335,6 +335,7 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **-*
 9. Pergantian penghuni dicatat sebagai **riwayat penghunian** (tanggal masuk, tanggal keluar, alasan), tidak menimpa data penghuni sebelumnya.
 10. Sistem harus menyimpan catatan hunian dan foto rumah.
 11. Jumlah rumah terhuni harus dapat direkap per desa/SP untuk kebutuhan dashboard.
+12. **Hirarki Form Rumah: Penghunian menentukan Satuan Permukiman** (2026-08-31). Bagian Penghunian ditempatkan di Section 1 sebelum Spesifikasi Bangunan. Saat status `Dihuni`, memilih KK Penghuni otomatis mengisi dan memilih Satuan Permukiman sesuai SP transmigran. Saat status `Tidak Dihuni`, isian KK dinonaktifkan (`disabled`) dan pemilihan SP dilakukan secara manual untuk mendata lokasi rumah kosong.
 
 ### 7. Aturan Fitur Lahan
 1. Setiap lahan harus memiliki identitas yang jelas.
@@ -355,6 +356,7 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **-*
 9. **Jumlah pada poin 8 adalah jumlah yang wajar, bukan batas yang ditegakkan sistem.** Relasi tetap satu-ke-banyak dengan foreign key pada tabel `lahan`, sebab satu KK memang memegang dua bidang berbeda peruntukan sehingga satu-ke-satu tidak mungkin. Sistem juga tidak menolak bidang ketiga: bila satu jatah lahan usaha terletak pada dua petak berkoordinat berbeda, keduanya tetap perlu dicatat tersendiri karena dokumen dan letaknya berbeda. Yang dijaga adalah kewajaran data, bukan penolakan di tingkat isian.
 10. Rekap luas lahan per transmigran, per poktan, maupun per desa/SP wajib memakai penjumlahan seluruh lahan terkait, bukan mengambil satu baris data saja.
 11. Lahan harus bisa dipakai sebagai dasar analisis produksi dan perencanaan.
+12. **Hirarki Form Lahan: Pemilik menentukan Satuan Permukiman** (2026-08-31). Field Pemilik (transmigran) ditempatkan paling awal di Section 1 sebelum Satuan Permukiman. Memilih Pemilik langsung mengisi otomatis dropdown Satuan Permukiman sesuai SP penempatan transmigran tersebut.
 
 ### 7a. Aturan Fitur Kelompok Tani (Poktan)
 1. Setiap poktan wajib memiliki profil berisi nama poktan dan desa/SP asal.
@@ -370,6 +372,7 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **-*
 3a. **Keanggotaan poktan melekat pada keluarga, bukan pada kepala keluarga** (ditetapkan 2026-08-20 atas keterangan pemilik proyek). Yang terdaftar adalah orang yang benar-benar menggarap dan menghadiri pertemuan, dan ia tidak selalu kepala keluarga: bila kepala keluarga merantau, istri atau anaknya yang mewakili. Karena itu `anggota_poktan.transmigran_id` menunjuk **keluarga** yang diwakili, sedangkan `asal_wakil` menyatakan siapa wakilnya. Bila wakilnya bukan kepala keluarga, **wakilnya dipilih dari daftar anggota keluarga** itu (`anggota_keluarga_id`); nama, NIK, telepon, dan hubungan dibaca dari baris itu (diubah 2026-08-28, Stage B2; sebelumnya diketik). Telepon tetap dapat disunting.
 3b. **Satu keluarga diwakili satu orang saja pada satu poktan.** Sudah ditegakkan UNIQUE `(poktan_id, transmigran_id)` yang ada, sebab `transmigran_id` kini bermakna keluarga.
 3c. **Luas lahan dan koordinat ketua maupun anggota diturunkan, tidak disimpan.** Keduanya dijumlahkan dari bidang milik keluarga yang bersangkutan (7.10), sehingga tidak pernah basi ketika luas dibetulkan di modul lahan dan tidak berubah ketika wakilnya berganti. Pengecualiannya hanya ketua bertanda `Bukan Transmigran`, yang lahannya memang tidak terdata sehingga wajib diketik.
+3d. **SIM Transmigrasi hanya mencatat anggota poktan dari keluarga transmigran** (2026-08-31). Bila sebuah kelompok tani di lapangan memiliki anggota campuran dengan penduduk lokal setempat, anggota non-transmigran sengaja tidak didata dan tidak dihitung dalam sistem ini. Batasan ruang lingkup ini ditegaskan pada subjudul header, metrik sidebar, tab rincian, banner edukatif di atas tabel anggota, dan bantuan form.
 4. Setiap anggota mencatat nama, NIK, tanggal masuk, status keaktifan (Aktif, Tidak Aktif, Sudah Keluar), dan tanggal keluar bila ada.
 4a. **Data anggota wajib dapat diubah setelah tersimpan.** Status keaktifan dan tanggal keluar pada poin 4 justru berubah belakangan, sehingga menyediakannya hanya pada saat penambahan membuat keduanya tidak pernah dapat diisi. Yang tidak disediakan adalah **penghapusan**, sesuai 5.1 catatan 7.
 4b. **Jabatan anggota tidak memuat nilai `Ketua`.** Ketua ditetapkan pada profil poktan (poin 2a), dan menyediakannya juga pada daftar anggota membuat satu poktan dapat memiliki dua ketua berbeda tanpa penjaga apa pun.
@@ -606,6 +609,7 @@ Parameter dikelompokkan menurut satu pertanyaan: **tanpa ini, apakah tempat ters
 4c. **Pendidikan diurutkan menurut jenjang, bukan menurut jumlah.** Pendidikan bertingkat, sehingga mengurutkannya menurut jumlah membuat `SD` mendahului `Tidak Sekolah` dan pembaca kehilangan bentuk piramidanya. Jenjang tanpa penghuni **tetap ditampilkan bernilai nol**: baris yang hilang membuat pembaca tidak dapat membedakan "tidak ada" dari "belum didata".
 4d. **Tiap dasar pengelompokan wajib punya tautan tetap**, bukan hanya kueri `?kelompok=`. Kueri tidak dilayani berkas statis, sehingga tanpa tautan tetap hanya tab bawaan yang terbuka di situs terbit. Berlaku bagi seluruh halaman rekap; aturan ini ditulis setelah rekap kependudukan ditemukan terlewat pada 2026-08-25, padahal rekap panen sudah diperbaiki jauh sebelumnya.
 4e. Beberapa isian form transmigran **sengaja belum direkap**: jenis kelamin, usia, dan jumlah anggota keluarga. Bukan kelalaian melainkan keputusan; pendapatan sudah terwakili lewat kolom pendapatan rata-rata pada rekap per tahun.
+4f. **Tab 'Per Tahun' pada Rekap Kependudukan tidak menampilkan kartu filter tahun** (2026-08-31). Karena tab ini menyajikan tabel agregat multi-tahun longitudinal (2016–2026), filter tahun tunggal dihilangkan pada tab ini guna menghindari kontrol mati/disabled yang membingungkan pengguna, sementara filter tahun tetap aktif di lima tab demografi lainnya.
 5. Data penghuni bersifat sensitif dan wajib dibatasi oleh RBAC serta ditampilkan agregat bagi pihak terbatas.
 
 ### 10b. Aturan Fitur Pengaduan

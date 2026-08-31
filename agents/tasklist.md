@@ -1280,6 +1280,10 @@ Aturan modul yang mudah terlewat, tercatat agar tidak terulang:
 22. **Restrukturisasi Ringkasan Kawasan (2026-08-31):** 12 KPI ringkasan kawasan dikelompokkan ke dalam 3 Pilar Visualisasi Domain (*Kependudukan & Hunian*, *Lahan & Siklus Tanam*, *Produksi & Nilai Pasar*) dengan mini progress bar dan Dual Y-Axis pada grafik per SP (`#grafikPerSp`).
 23. **Interaksi Grafik Non-Blocking (2026-08-31):** Penegakan aturan UX *Scrolling Halaman > Interaksi Chart* via CSS `touch-action: pan-y !important;`, non-blocking pointer/zoom options di `chart-config.js`, dan `touch-pan-y` di `chart-card.blade.php`.
 24. **Palet Warna Visualisasi Khusus (2026-08-31):** Penetapan palet komoditas khusus (`warnaKomoditas`) untuk memecahkan masalah warna biru kembar pada Donut Sebaran Komoditas, palet semantik pengaduan (`warnaStatusPengaduan`), kontras dual-bar SP (Navy vs Gold), dan multi-series line penduduk (Navy, Sky Blue, Gold).
+25. **Formatter Nominal Mata Uang Rupiah (2026-08-31):** Pemformatan otomatis pemisah ribuan titik tanpa desimal (`1.000.000`) via Alpine `x-uang` (`format-uang.js`) pada field nominal uang (`pendapatan_per_bulan`, `harga_jual`, `ongkos_rp`) dengan normalisasi integer murni (`1000000`) saat form submit.
+26. **Peniadaan Card Filter Tab Per Tahun Rekap Kependudukan (2026-08-31):** Tab 'Per Tahun' pada `/kependudukan/rekap` tidak menampilkan kartu filter tahun karena tabelnya sendiri menyajikan deret waktu historis longitudinal 2016–2026.
+27. **Penegasan Scope Anggota Poktan Khusus Transmigran (2026-08-31):** SIM Transmigrasi secara tegas hanya mendata dan menghitung anggota kelompok tani dari kalangan keluarga transmigran; anggota lokal/non-transmigran tidak dicatat dalam sistem ini.
+28. **Hirarki Form Transmigran $\rightarrow$ Satuan Permukiman (2026-08-31):** Field Pemilik pada Form Lahan dan KK Penghuni pada Form Rumah ditempatkan di bagian awal untuk mengotomatiskan pengisian dan pemilihan Satuan Permukiman.
 
 **Masih menunggu:**
 - Referensi tata letak Figma (tidak memblokir; sementara memakai tata letak bawaan TailAdmin).

@@ -223,7 +223,7 @@ it('memisahkan menu data master dari pengaturan sistem', function () {
 
     $nama = array_column($menu['items'], 'name');
 
-    expect($nama)->toBe(['Data Master', 'Pengaturan Sistem']);
+    expect($nama)->toBe(['Data Master', 'Pengaturan Sistem', 'Bantuan & Info']);
 
     $dataMaster = collect($menu['items'])->firstWhere('name', 'Data Master');
     $pengaturan = collect($menu['items'])->firstWhere('name', 'Pengaturan Sistem');

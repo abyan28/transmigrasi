@@ -789,6 +789,28 @@ Isian wajib ditandai **dua hal yang selalu berpasangan**. Salah satu tanpa yang 
 
 > **Audit 2026-08-17.** Ditemukan 45 cacat: 43 isian berkolom `Null = TIDAK` tanpa penanda apa pun, dan 2 bintang tanpa `required` pada halaman masuk. Cacatnya **mengelompok**, bukan tersebar: seluruh form master dan aset belum pernah dilewati penandaan, sedangkan form kependudukan sudah benar sejak awal. Kelengkapannya kini dijaga uji yang membaca kamus data.
 
+### 6.0b Format Isian Nominal Uang (Direktif Alpine `x-uang`) (Putaran 9, 2026-08-31)
+
+Seluruh isian nominal mata uang Rupiah (`pendapatan_per_bulan`, `harga_jual`, `ongkos_rp`) wajib memakai direktif `x-uang` yang dimuat dari `resources/js/format-uang.js`.
+
+1. **Format Tampilan:** Angka diformat dengan pemisah ribuan titik tanpa simbol desimal (`1.000.000`).
+2. **Karakter Ilegal & Sanitasi:** Huruf, simbol minus, titik desimal, koma, dan karakter non-digit ditolak secara instan saat pengetikan (`bersihkanUang()`). Teks hasil paste dinormalisasi otomatis.
+3. **Stabilitas Kursor:** Fungsi `hitungPosisiKursor()` mempertahankan letak kursor pengguna saat menyunting digit di tengah angka yang memicu pergeseran pemisah titik.
+4. **Input Numerik Mobile:** Menggunakan atribut `type="text" inputmode="numeric"` untuk memunculkan keyboard numerik layar sentuh pada perangkat seluler.
+5. **Normalisasi Submit Bersih:** Sesaat sebelum event form `submit` dikirim ke backend, listener global mengonversi seluruh nilai elemen ber-`input[data-uang]` menjadi string integer murni (`1000000`), menjaga kompatibilitas penuh dengan aturan validasi backend `ValidationRules::uang()`.
+6. **Batasan Penerapan:** Direktif `x-uang` **khusus untuk nominal mata uang Rupiah**. Field kuantitatif non-uang (luas hektare, volume panen kg/kuintal/ton, berat, tahun, persentase) tetap menggunakan `input type="number"` atau kontrol khusus masing-masing.
+
+### 6.0c Hirarki Form Bertingkat & Mekanisme Auto-Fill Satuan Permukiman (Putaran 9, 2026-08-31)
+
+1. **Form Data Lahan (`pages/lahan/form.blade.php`):**
+   - Field `Pemilik` (transmigran) ditempatkan di urutan teratas Section 1 sebelum pemilih `Satuan Permukiman`.
+   - Mengubah pilihan `Pemilik` langsung mengidentifikasi `satuan_permukiman_id` penempatan transmigran tersebut dan secara otomatis mengisi/memilih opsi Satuan Permukiman.
+2. **Form Rumah & Hunian (`pages/rumah/form.blade.php`):**
+   - Section 1 disusun sebagai **Penghunian & Wilayah** sebelum Section 2 **Spesifikasi Bangunan**.
+   - Pada status `Dihuni`, memilih KK Penghuni otomatis mengisi Satuan Permukiman transmigran.
+   - Pada status `Tidak Dihuni`, isian KK Penghuni otomatis dinonaktifkan (`disabled`) dan dropdown Satuan Permukiman menjadi aktif secara manual.
+3. **Komponen `x-sim.pilih-cari`:** Atribut `:disabled` dan `:required` dievaluasi unescaped `{!! !!}` agar ekspresi logika Alpine berkutip tunggal/ganda tidak ter-escape ke entity HTML `&#039;`.
+
 ### 6.1 `<x-data-table>`
 Tabel dengan pencarian, filter, urutan, dan paginasi. **Tanpa tombol export** (dicabut 2026-08-28, `rules.md` §12 poin 7): laporan kini dokumen bernama di menu "Laporan" tersendiri, bukan potret tabel yang sedang tersaring.
 - Pencarian di kanan atas, filter dalam laci yang bisa dilipat

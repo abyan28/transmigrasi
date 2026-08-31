@@ -3263,3 +3263,35 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
        - Mengunci Logo Section di bagian atas (`shrink-0`) dan menambahkan tombol tutup `[X]` khusus mobile yang elegan.
        - Mengunci wadah menu dengan `flex flex-col flex-1 min-h-0 overflow-y-auto no-scrollbar` dan menambahkan padding bawah `pb-24 sm:pb-8` pada `<nav>` sehingga item terakhir ("Bantuan & Info" -> "Tentang Sistem") dapat di-scroll sepenuhnya dan aman di atas toolbar browser mobile.
   * **Verifikasi:** 520 pengujian unit & fitur (3.335 assertions) 100% PASS (Hijau); `npm run build` terkompilasi bersih tanpa regresi.
+* **6. Formatter Nominal Rupiah (x-uang), Penegasan Scope Poktan, Peniadaan Filter Tab Tahun Rekap, & Urutan Field Form Lahan/Rumah (2026-08-31):**
+  * **Latar Belakang:** Ditemukan sejumlah area formulir dan halaman yang memerlukan perbaikan konsistensi pengalaman pengguna:
+    1. Field input nominal uang belum memiliki pemisah ribuan otomatis terpusat tanpa pengetikan manual atau script duplikatif.
+    2. Tab 'Per Tahun' pada `/kependudukan/rekap` menampilkan dropdown filter tahun yang berstatus mati/disabled padahal tabelnya sendiri sudah menyajikan seluruh deret waktu historis.
+    3. Halaman rincian Kelompok Tani belum secara tegas mengomunikasikan batasan domain bahwa SIM Transmigrasi hanya mendata anggota poktan dari kalangan keluarga transmigran.
+    4. Form Lahan dan Form Rumah menempatkan pemilih Satuan Permukiman sebelum Transmigran (Pemilik/Penghuni), padahal memilih Transmigran dapat mengotomatiskan pengisian Satuan Permukiman.
+  * **Solusi Arsitektur & Detail Implementasi:**
+    1. **Reusable Rupiah Currency Formatter (`resources/js/format-uang.js` & Alpine `x-uang`):**
+       - Menyediakan fungsi pemformatan murni `bersihkanUang(nilai)`, `formatUang(nilai)` (pemisah ribuan titik tanpa desimal, `1.000.000`), dan `hitungPosisiKursor()` untuk menjaga stabilitas kursor saat menyunting di tengah angka.
+       - Mendaftarkan direktif Alpine `x-uang` di `resources/js/app.js` serta mengekspos `window.formatUang`.
+       - Mengintersepsi descriptor `HTMLInputElement.prototype.value` agar pembaruan programatis (Alpine `x-model`, modal `isiFormulir()`) langsung terformat tanpa risiko rekursi penggandaan digit.
+       - Menambahkan global form `submit` capture listener yang secara otomatis menormalkan seluruh `input[data-uang]` menjadi string integer numerik murni (`1000000`) sesaat sebelum request POST dikirim ke backend, menjamin kompatibilitas 100% dengan `ValidationRules::uang()`.
+       - Menggunakan atribut `type="text" inputmode="numeric"` untuk memicu *numeric keypad* pada perangkat seluler.
+       - Diterapkan pada 4 field uang: `transmigran/form` (`pendapatan_per_bulan` KK & repeater anggota keluarga), `panen/form` (`harga_jual`), dan `sp/form` (`rute_aksesibilitas[*][ongkos_rp]`). Input non-uang (luas, volume, berat, tahun, persentase) tetap menggunakan `input type="number"` murni.
+    2. **Peniadaan Card Filter Tahun Data pada Tab "Per Tahun" Rekap Kependudukan (`pages/kependudukan/rekap.blade.php`):**
+       - Membungkus card formulir filter GET dalam `@if ($kelompok !== 'tahun') ... @endif`.
+       - Mengeliminasi kontrol mati/disabled pada tab longitudinal multi-tahun (2016–2026) sekaligus mempertahankan filter tahun aktif pada 5 tab demografi lainnya (`sp`, `status`, `pekerjaan`, `asal`, `pendidikan`).
+    3. **Penegasan Ruang Lingkup Anggota Poktan Khusus Transmigran (`pages/poktan/detail.blade.php` & `form-anggota.blade.php`):**
+       - Header halaman: `:keterangan="... Pencatatan anggota khusus warga transmigran."`.
+       - Profil sidebar: `Anggota transmigran aktif` dengan catatan kaki `Khusus warga transmigran`.
+       - Tab rincian: `Anggota Transmigran (n)`.
+       - Banner catatan edukatif di atas tabel: Menerangkan bahwa sistem hanya mencatat anggota yang merupakan warga transmigran, sedangkan anggota lokal/non-transmigran tidak terdata.
+       - Header tabel: `Anggota Kelompok Tani (Khusus Warga Transmigran)`.
+       - Form anggota: Bantuan isian menegaskan bahwa anggota wajib berasal dari keluarga transmigran.
+    4. **Urutan Field Transmigran & Auto-Fill Satuan Permukiman:**
+       - `lahan/form.blade.php`: Field `Pemilik` diposisikan paling atas Section 1; memilih Pemilik langsung mengisi otomatis dropdown `Satuan Permukiman` via relasi `petaSpTransmigran`.
+       - `rumah/form.blade.php`: Section 1 diubah menjadi `Penghunian & Wilayah` sebelum Section 2 `Spesifikasi Bangunan`. Saat status `Dihuni`, memilih KK Penghuni otomatis mengisi Satuan Permukiman. Saat status `Tidak Dihuni`, isian KK dinonaktifkan (`disabled`) dan pemilihan SP menjadi manual.
+       - `components/sim/pilih-cari.blade.php`: Mengubah interpolasi `:disabled` dan `:required` menjadi `{!! !!}` unescaped agar ekspresi logika JavaScript Alpine yang memuat tanda petik tidak ter-escape menjadi entity `&#039;`.
+  * **Verifikasi:**
+    - 523 pengujian fitur & unit Pest (3.363 assertions) 100% PASS (Hijau).
+    - Uji browser interaktif DevTools Headless Edge (`uji-autofill-sp.mjs` 5/5 lulus, `uji-format-uang.mjs` 11/11 lulus).
+    - `npm run build` terkompilasi bersih tanpa galat.
