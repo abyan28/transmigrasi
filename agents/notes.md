@@ -3423,3 +3423,96 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
   * **Verifikasi:**
     - 728 pengujian Pest (6.149 assertions) 100% PASS (Hijau).
     - `npm run build` sukses terkompilasi dalam 7.02 detik.
+
+* **Skema DDL Basis Data Final `database/transmigrasi.sql` (2026-09-01):**
+  * **Konteks:**
+    Menerjemahkan desain domain yang sudah disepakati (`erd.md`, `data-dictionary.md`,
+    `rules.md`, `notes.md`) menjadi **satu berkas DDL** yang dapat diimpor ke
+    MySQL/MariaDB, dijadikan dasar PDM, dan menjadi acuan implementasi
+    migration/model Laravel tahap berikutnya. Backend/database bisnis sebelumnya
+    belum ada (frontend-first, domain disimulasikan lewat `DummyData`).
+    Lingkup: **hanya membuat 1 berkas baru** `database/transmigrasi.sql` — tanpa
+    migration/model/controller/service/seeder/factory/backend/frontend, tanpa
+    commit/push. DDL murni tanpa `INSERT` data operasional.
+  * **Jumlah tabel:**
+    Angka "37 tabel" pada `erd.md` §2 **usang**. Setelah Rombongan B, Rombongan C,
+    dan Putaran 7, jumlah **tabel bisnis aktif = 44** (43 dari dokumen + 1
+    `status_kondisi_sp` hasil cross-check frontend). Berkas juga menyertakan 6
+    tabel infrastruktur framework Laravel (`sessions`, `cache`, `cache_locks`,
+    `jobs`, `job_batches`, `failed_jobs`) pada bagian terpisah — total 50 tabel.
+    `refs/20260809_T10_22_39.349Z.sql` diperlakukan sebagai referensi historis
+    (22 tabel, arah FK terbalik), bukan sumber.
+  * **Konvensi yang dipatuhi:** tabel snake_case tunggal; PK `id_<tabel>`
+    `BIGINT UNSIGNED AI`; FK `<tabel>_id`; koordinat `lintang`/`bujur`
+    `DECIMAL(10,7)` (bukan GEOMETRY); uang `DECIMAL(15,2)`, luas `DECIMAL(12,2)`,
+    volume `DECIMAL(12,3)`, faktor `DECIMAL(10,6)`; dokumen/foto `VARCHAR(255)`
+    path (bukan BLOB); periode bulanan `CHAR(7)` `YYYY-MM`; `created_at`/
+    `updated_at` semua tabel, `deleted_at` hanya tabel data utama;
+    `ENGINE=InnoDB CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`; urutan
+    `CREATE TABLE` mengikuti dependency (parent sebelum child; domain Lahan
+    diletakkan setelah Kelembagaan sebab `lahan.poktan_id`).
+  * **Enum vs referensi:** enum berperilaku/terikat ketentuan luar tetap `ENUM`
+    (`jenis_kelamin`, `agama`, `status` pengaduan, `asal_ketua`, `cakupan_data`,
+    dll.). Kolom yang nilainya dikelola Admin lewat tabel `referensi` ditulis
+    `VARCHAR` + komentar `REF(jenis=...)` agar nilai baru cukup `INSERT` ke
+    `referensi` tanpa `ALTER TABLE` (mendukung `rules.md` §4a.7). Pengecualian
+    FK: `parameter_penilaian_sp.referensi_id` → `referensi`; `referensi.bidang_id`
+    → self-FK `referensi` (baris jenis `bidang_pengaduan`).
+  * **Rekonsiliasi konflik dokumentasi (diselesaikan mengikuti keputusan terbaru):**
+    1. `data-dictionary.md` §5.3 masih memuat heading `musim_tanam` → tabel **tidak dibuat** (dicabut 2026-08-22).
+    2. `erd.md` relasi #17 `dokumen_lahan.lahan_id` (N:1) → diganti `dokumen_lahan` induk + pivot M:N `dokumen_lahan_bidang(dokumen_lahan_id, lahan_id)` (Putaran 7-G).
+    3. `erd.md` relasi #32a `penanaman.saprotan_id` (nullable, SET NULL) → `penanaman.saprotan_distribusi_id` → `saprotan_distribusi`, **NOT NULL**, `ON DELETE RESTRICT` (wajib sejak 2026-08-30).
+    4. `erd.md` relasi #22–26 `alsintan`/`saprotan` FK ke SP+poktan → keduanya menjadi **induk/pengadaan**; poktan penerima di `alsintan_distribusi` / `saprotan_distribusi` (Putaran 7).
+    5. `erd.md` relasi #33a + `data-dictionary.md` §9.3 `hasil_panen.poktan_id` → **tidak dibuat** (dicabut Putaran 7-H, diturunkan dari `penanaman.poktan_id`).
+    6. `erd.md` §8.2 #17 "batas wilayah SP dicabut 2026-08-18" → dihidupkan kembali 2026-08-28 (Rombongan C); `batas_utara/timur/selatan/barat` ada di `satuan_permukiman`.
+    7. `erd.md` §7.4 "`jumlah_anggota_keluarga` disimpan" → dibalik; kolom **tidak dibuat** (turunan `1 + COUNT(anggota_keluarga)`), tabel `anggota_keluarga` ditambahkan.
+    8. `erd.md` §5 aturan integritas #10 UNIQUE `penanaman` → **tidak dibuat** (dicabut 2026-09-01).
+    9. `data-dictionary.md` §7.1 `lahan.status_hak` (`ENUM`) + `kategori_lahan` → **tidak dibuat** (dicabut 2026-08-29 / 2026-08-20; digantikan `luas_kering`/`luas_basah`).
+    10. `data-dictionary.md` §11.14 `JenisDokumenLahan` 6 nilai → dibuat `ENUM('HPL','SHM')` (dicabut jadi 2, 2026-08-29; frontend `referensi()` konfirmasi).
+    11. `poktan.hubungan_ketua`, `anggota_poktan.nama_wakil`/`nik_wakil`/`hubungan_dengan_kk` → **tidak dibuat** (dicabut Stage B2); diganti FK `poktan.ketua_anggota_keluarga_id`, `anggota_poktan.anggota_keluarga_id`.
+    12. `hasil_panen.kualitas`, `alsintan.kepemilikan`/`alsintan.transmigran_id`, `saprotan.transmigran_id` → **tidak dibuat** (dicabut 2026-08-22).
+    13. `role.cakupan_data` (notes lama "Milik Sendiri" vs §11.25 "Per Bidang") → `ENUM('Semua','Per SP','Per Bidang')`.
+    14. `user` login ("email atau NIK" pada `tasklist.md`) → `user` tanpa `nik`/`transmigran_id`; `email` + `username` NOT NULL UNIQUE.
+    15. `tahun_perolehan` vs `tahun_pengadaan` → `alsintan`/`saprotan` memakai `tahun_pengadaan`; `inventaris_sp`/`fasilitas_sp`/`infrastruktur` tetap `tahun_perolehan`.
+  * **Tabel baru dari cross-check frontend — `status_kondisi_sp`:** halaman
+    `/master/penilaian-kondisi` menyimpan 3 baris ambang & wording predikat kondisi
+    SP (`kode`, `nama`, `keterangan`, `ambang_bawah`, `warna`, `urutan`) yang belum
+    dirancang di `erd.md`/`data-dictionary.md`. Dibuat sebagai tabel ke-44 atas
+    persetujuan pemilik proyek; strukturnya diturunkan dari `DummyData::statusKondisiSp()`.
+    Jumlah baris tetap 3; `kode` = kunci enum perilaku `StatusKondisiSp::dariSkor()`.
+    **Tindak lanjut:** perlu ditambahkan ke `data-dictionary.md` (§5.7 baru) dan
+    daftar tabel `erd.md` §2 pada revisi dokumen berikutnya.
+  * **Derived data — sengaja TIDAK menjadi kolom:** `poktan.jumlah_anggota` &
+    `luas_lahan_kelompok`; luas/koordinat ketua & anggota (kecuali `luas_*_ketua`
+    jalur Bukan Transmigran); `transmigran.jumlah_anggota_keluarga`, `usia`,
+    `anggota_keluarga.usia`; status panen; sisa benih `saprotan_distribusi`;
+    `alsintan.jumlah_tersalur`/`belum_tersalur`; `satuan_permukiman.kecamatan_id`
+    & `jumlah_kk_terisi`; `hasil_panen.poktan_id`; agregasi ke ton; tahun
+    tanam/panen; "komoditas utama". Yang **tetap disimpan** meski dapat dihitung:
+    `hasil_panen.produksi` (dilaporkan ke dinas), `hasil_panen.satuan_id`
+    (snapshot dari komoditas), `penilaian_sp.rincian` (salinan bobot JSON),
+    `transmigran.status_anggota_poktan` (penanda cepat).
+  * **Invariant aritmetika** (`luas_kering+luas_basah=luas`;
+    `realisasi_panen+puso=realisasi_tanam`; `Σ distribusi ≤ jumlah_total`;
+    `produksi = realisasi_panen × produktivitas`) ditulis sebagai **komentar SQL**,
+    tanpa `CHECK` constraint (sesuai desain: ditegakkan di aplikasi/derivasi).
+  * **Verifikasi (MariaDB 10.4.32 XAMPP):** dijalankan pada database sekali-pakai
+    `transmigrasi_ddl_test` dan `transmigrasi`, **bukan** DB dev `sim_transmigrasi`
+    (tidak disentuh); kedua DB uji sudah di-`DROP` setelah pemeriksaan.
+    - Impor penuh (termasuk `CREATE DATABASE`/`USE`): sukses, exit 0.
+    - `information_schema`: 50 tabel, 64 foreign key, 582 kolom — sesuai harapan.
+    - Tidak ada tabel/kolom yang dicabut muncul; `hasil_panen.poktan_id` tidak ada.
+    - 3 indeks FK wilayah redundan (sudah ditutup composite `UNIQUE (parent_id, nama)`)
+      dihapus; indeks lain sesuai `erd.md` §6.
+    - Koreksi syntax: `kode_pemulihan_sandi.kedaluwarsa_pada` & `created_at`
+      diberi `DEFAULT CURRENT_TIMESTAMP` (MariaDB menolak `TIMESTAMP NOT NULL`
+      tanpa default di bawah `NO_ZERO_DATE`); nilai sebenarnya tetap diisi aplikasi.
+  * **Tindak lanjut dokumentasi (belum dikerjakan pada sesi ini, tercatat agar tidak terlewat):**
+    - `erd.md` §2: perbarui "Total 37 tabel" + tambahkan `anggota_keluarga`,
+      `rute_aksesibilitas_sp`, `referensi`, `dokumen_lahan_bidang`,
+      `alsintan_distribusi`, `saprotan_distribusi`, `fasilitas_sp_cakupan`,
+      `infrastruktur_sp`, `status_kondisi_sp` ke daftar; sesuaikan §4 (relasi
+      #17/#22–26/#32a/#33a) dan §10 (urutan migration).
+    - `data-dictionary.md`: §7.1 cabut baris `status_hak`; §9.3 cabut baris
+      `poktan_id`; §11.14 turunkan ke `HPL`/`SHM`; tambah §5.7 `status_kondisi_sp`.
+    (Bagian "Tindak lanjut" berikut pada sesi ini menerapkan sebagiannya.)

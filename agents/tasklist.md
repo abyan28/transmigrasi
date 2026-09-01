@@ -917,7 +917,15 @@ Sembilan tahap SELESAI. **Belum diperiksa mata:** form repeater distribusi + for
 
 > **Peringatan penerbitan statis.** Begitu login aktif, halaman berpelindung membalas pengalihan ke `/login`, bukan 200, sehingga `.github/workflows/deploy.yml` **gagal** dan situs GitHub Pages berhenti diperbarui. Putuskan lebih dulu: batasi `sim:tautan-statis` hanya ke halaman publik, atau hentikan penerbitan statis sama sekali. Lihat `notes.md` bagian 1b.7.
 
+> **Acuan skema untuk seluruh migration Tahap 3–9 (2026-09-01):** `database/transmigrasi.sql`
+> adalah skema DDL final (44 tabel bisnis, MySQL/MariaDB, siap PDM). Migration Laravel
+> menerjemahkannya, TIDAK menyusun ulang dari nol. Rekonsiliasi 15 konflik dokumentasi
+> tercatat pada `notes.md` butir 2026-09-01. Catatan Task 3.2 di bawah ("email atau NIK",
+> "16 digit angka berarti NIK") **usang**: `user` tidak lagi punya kolom `nik`/`transmigran_id`;
+> login memakai **email atau username**.
+
 - [ ] Task 3.1 - Migration dan model `user` beserta password dan timestamps `[Mudah]`
+  * Acuan struktur kolom, tipe, index, dan FK: `database/transmigrasi.sql` (tabel `user`, `role`, `permission`, `role_permission`, `user_satuan_permukiman`, `kode_pemulihan_sandi`, `audit_log`)
 - [ ] Task 3.2 - Implementasi login, logout, dan rate limiting `[Sedang]`
   * Satu kolom kredensial menerima **email atau NIK**; sistem memilih kolom pencarian berdasarkan bentuk masukan (16 digit angka berarti NIK)
   * Tolak akun dengan `is_aktif = FALSE`

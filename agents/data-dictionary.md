@@ -559,6 +559,24 @@ Empat belas daftar disatukan pada satu tabel karena strukturnya identik. Empat b
 - **Jenisnya tetap enum**, tidak ikut menjadi data. `jenis` menyatakan daftar mana yang ada, bukan isinya; menjadikannya data membuat Admin dapat membuat jenis yang tidak satu pun kolom database menunjuknya.
 - Enum yang **tetap di dalam kode** dan tidak menjadi referensi: seluruh enum yang membawa perilaku (`StatusPengaduan` dengan state machine-nya, `StatusKondisiSp` dengan `dariSkor()`, `PeruntukanLahan` dengan `lahanUsaha()`, `AsalWakilPoktan`, `CakupanData`, `AksiPermission`, `AksiAuditLog`), serta enum yang nilainya terikat ketentuan luar (`JenisKelamin`, `PendidikanTerakhir`).
 
+### 5.7 `status_kondisi_sp`
+
+Ambang skor dan teks tampil (wording) predikat kondisi SP, disunting dinas lewat `/master/penilaian-kondisi`. **Ditambahkan 2026-09-01** bersama penyusunan `database/transmigrasi.sql`; struktur diturunkan dari frontend (`DummyData::statusKondisiSp()`), yang lebih dulu ada daripada tabelnya.
+
+| Kolom | Tipe | Null | Kunci | Keterangan |
+|---|---|---|---|---|
+| `id_status_kondisi_sp` | `BIGINT UNSIGNED AUTO_INCREMENT` | TIDAK | PK | |
+| `kode` | `VARCHAR(30)` | TIDAK | UQ | `Mandiri` / `Berkembang` / `Perlu Penanganan`; kunci enum perilaku `StatusKondisiSp::dariSkor()` — tidak disunting |
+| `nama` | `VARCHAR(50)` | TIDAK | | Teks tampil; dinas boleh memakai istilah sendiri (mis. "Prioritas Pembinaan") |
+| `keterangan` | `VARCHAR(255)` | YA | | |
+| `ambang_bawah` | `DECIMAL(5,2)` | TIDAK | | Ambang wajib menurun; ambang status terendah terkunci pada 0 |
+| `warna` | `VARCHAR(20)` | TIDAK | | `success` / `warning` / `error` — tidak disunting (menyatakan urutan keparahan) |
+| `urutan` | `SMALLINT UNSIGNED` | TIDAK | | |
+
+**Catatan:**
+- **Jumlahnya tetap tiga** dan tidak dapat ditambah/dihapus: `dariSkor()` hanya mengembalikan tiga keluaran dan `penilaian_sp.status` bertipe `ENUM`. Yang berubah lewat CMS hanya `nama`, `keterangan`, dan `ambang_bawah`.
+- Nilai kondisi berskor (Baik 1,0 / Rusak Ringan 0,5 / Rusak Berat 0,2 / Hilang 0) tetap pada `referensi` (jenis `kondisi`, kolom `nilai_skor`), bukan di sini. Bobot parameter tetap pada `parameter_penilaian_sp.bobot`.
+
 ---
 
 ## 6. Domain Kependudukan
@@ -714,7 +732,7 @@ Menggabungkan `lahan_sp`, `lahan_usaha_sp`, `kategori_lahan_sp`, dan `kategori_l
 | `luas` | `DECIMAL(12,2)` | TIDAK | | Hektare; luas seluruh bidang |
 | `luas_kering` | `DECIMAL(12,2)` | YA | | Hektare; bagian lahan kering. Hanya untuk lahan usaha |
 | `luas_basah` | `DECIMAL(12,2)` | YA | | Hektare; bagian lahan basah. Hanya untuk lahan usaha |
-| `status_hak` | `ENUM` | YA | | Lihat 11.13 |
+| ~~`status_hak`~~ | ~~`ENUM`~~ | | | **Dicabut menyeluruh 2026-08-29** beserta enum `StatusHakLahan` (§11.13). Form adalah satu-satunya jalan mengisinya; menyisakan kolomnya berarti keterangan yang tidak pernah terisi (kontrol mati R-26). Lihat `notes.md` butir 2026-08-29 |
 | `tujuan_pemanfaatan` | `TEXT` | YA | | |
 | `lintang` | `DECIMAL(10,7)` | YA | | |
 | `bujur` | `DECIMAL(10,7)` | YA | | |
@@ -1047,7 +1065,7 @@ Alasan tidak menyimpannya: kolom tersimpan menjadi salah begitu satu baris panen
 |---|---|---|---|---|
 | `id_hasil_panen` | `BIGINT UNSIGNED AUTO_INCREMENT` | TIDAK | PK | |
 | `penanaman_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | Menentukan poktan dan komoditas |
-| `poktan_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | Disalin dari penanamannya |
+| ~~`poktan_id`~~ | ~~`BIGINT UNSIGNED`~~ | | | **Dicabut Putaran 7 (2026-08-30).** Salinan tanpa alasan snapshot (berbeda dari `satuan_id`); diturunkan dari `penanaman.poktan_id`. Lihat `notes.md` butir Putaran 7-H |
 | `satuan_id` | `BIGINT UNSIGNED` | TIDAK | FK | Disalin dari komoditas saat penyimpanan |
 | `periode_panen` | `CHAR(7)` | TIDAK | IDX | Bulan panen, bentuk `YYYY-MM` |
 | `realisasi_panen` | `DECIMAL(12,2)` | TIDAK | | Hektare yang benar-benar dipanen; tampil sebagai **"Realisasi Panen"** (`rules.md` §9.8j) |
@@ -1288,7 +1306,9 @@ Rantai yang sebenarnya: tanah kawasan berstatus Hak Pengelolaan, lalu bidang-bid
 > Istilah pada daftar ini **masih menunggu konfirmasi dinas** (`notes.md` bagian 6), sebab berkas penetapan di tiap daerah dapat memakai sebutan berbeda.
 
 ### 11.14 Jenis dokumen lahan
-`SHM` — `Surat Keterangan Pembagian Tanah` — `SKT` — `Surat Keterangan Desa` — `HPL` — `Lainnya`
+`HPL` — `SHM`
+
+**Diciutkan 6 → 2 nilai (2026-08-29).** `Surat Keterangan Pembagian Tanah`, `SKT`, `Surat Keterangan Desa`, dan `Lainnya` dibuang. HPL adalah alas hak kawasan yang terbit lebih dulu, SHM menyusul bertahun kemudian; tabel `dokumen_lahan` tetap terpisah agar sertifikasi berlapis terwakili. Lihat `notes.md` butir 2026-08-29.
 
 ### 11.15 Jabatan anggota poktan
 `Sekretaris` — `Bendahara` — `Anggota`
