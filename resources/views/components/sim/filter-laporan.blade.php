@@ -85,7 +85,7 @@
         @if ($tahun)
             <div class="min-w-[9rem] flex-1"
                 x-show="modeTampilan === 'gabungan' || modeTampilan === 'transmigran'">
-                <label for="filter-laporan-tahun-dari" class="{{ $kelasLabel }}">{{ $labelTahun }} dari</label>
+                <label for="filter-laporan-tahun-dari" class="{{ $kelasLabel }}">{{ $labelTahun }} Awal</label>
                 <select id="filter-laporan-tahun-dari" x-model="tahunDari" class="{{ $kelasSelect }}">
                     <option value="">Tahun paling awal</option>
                     @foreach ($daftarTahun as $t)
@@ -95,7 +95,7 @@
             </div>
             <div class="min-w-[9rem] flex-1"
                 x-show="modeTampilan === 'gabungan' || modeTampilan === 'transmigran'">
-                <label for="filter-laporan-tahun-sampai" class="{{ $kelasLabel }}">{{ $labelTahun }} sampai</label>
+                <label for="filter-laporan-tahun-sampai" class="{{ $kelasLabel }}">{{ $labelTahun }} Akhir</label>
                 <select id="filter-laporan-tahun-sampai" x-model="tahunSampai" class="{{ $kelasSelect }}">
                     <option value="">Tahun paling akhir</option>
                     @foreach ($daftarTahun as $t)

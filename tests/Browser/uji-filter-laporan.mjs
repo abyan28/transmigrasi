@@ -242,7 +242,7 @@ async function main() {
         periksa('rentang tahun mustahil memunculkan pesan "tidak ada yang cocok"',
             await nilai(`
                 [...document.querySelectorAll('table.tabel-dokumen')[0].querySelectorAll('tbody tr')]
-                    .some((tr) => tr.offsetParent !== null && tr.textContent.includes('Tidak ada kepala keluarga yang cocok'))
+                    .some((tr) => tr.offsetParent !== null && (tr.textContent.includes('Tidak ada kepala keluarga yang cocok') || tr.textContent.includes('Tidak ada data yang cocok') || tr.textContent.includes('Tidak ada yang cocok')))
             `) === true);
 
         // Bersihkan memulihkan.
@@ -461,9 +461,9 @@ async function main() {
         console.log('\nLaporan Hasil Panen (grup per SP, produktivitas tertimbang):');
         await buka('/laporan/hasil-panen');
 
-        periksa('label pemilih tahun menegaskan sumbu anggaran bantuan (rules 16a)',
+        periksa('label pemilih tahun memakai Tahun Anggaran Awal (rules 16a)',
             (await nilai(`document.querySelector('label[for="filter-laporan-tahun-dari"]')?.textContent ?? ''`))
-                .includes('Anggaran Bantuan'));
+                .includes('Tahun Anggaran Awal'));
 
         const spPanen = await nilai(`document.querySelector('#filter-laporan-sp').options[1].value`);
         await setSelect('#filter-laporan-sp', spPanen);
@@ -476,7 +476,8 @@ async function main() {
                     const baris = [...document.querySelectorAll('table.tabel-dokumen tr[data-baris]')]
                         .filter((tr) => tr.offsetParent !== null);
                     const jum = baris.reduce((s, tr) => s + Number(tr.dataset.produksi_ton || 0), 0);
-                    const sel = [...document.querySelectorAll('table.tabel-dokumen tfoot td')].pop();
+                    const tds = [...document.querySelectorAll('table.tabel-dokumen tfoot td')];
+                    const sel = tds[tds.length - 2]; // Produksi (ton) adalah kolom kedua dari kanan (sebelum Keterangan)
                     return Math.abs(Number(sel.textContent.replace(/\\./g, '').replace(',', '.')) - jum) < 0.05;
                 })()
             `) === true);
@@ -491,7 +492,7 @@ async function main() {
                     const panen = baris.reduce((s, tr) => s + Number(tr.dataset.realisasi_panen || 0), 0);
                     const tertimbang = panen > 0 ? prod / panen : 0;
                     const tds = [...document.querySelectorAll('table.tabel-dokumen tfoot td')];
-                    const selProd = tds[tds.length - 2];   // produktivitas kolom kedua dari kanan
+                    const selProd = tds[tds.length - 3];   // produktivitas kolom ketiga dari kanan (sebelum Produksi & Keterangan)
                     const nilai = Number(selProd.textContent.replace(/\\./g, '').replace(',', '.'));
                     return Math.abs(nilai - tertimbang) < 0.05;
                 })()

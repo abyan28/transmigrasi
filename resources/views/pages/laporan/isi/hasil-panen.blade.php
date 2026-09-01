@@ -27,16 +27,30 @@
     /*
         Ungkapan x-text sel subtotal/total (D3). Produktivitas adalah rasio
         tertimbang -- Sigma produksi / Sigma realisasi panen, BUKAN rata-rata
-        produktivitas per baris -- jadi memakai rasioTampak(). Sisanya jumlah
-        biasa. $penanda null pada baris total (menjumlah seluruh baris cocok).
+        produktivitas per baris -- jadi memakai rasioTampak().
+        Luas lahan memakai himpunan poktan unik via jumlahTampakPoktanUnik() (rules.md §16c).
+        Belum ditanam dihitung sisa via belumDitanamTampak().
+        Sisanya jumlah biasa. $penanda null pada baris total (menjumlah seluruh baris cocok).
     */
     $selHitung = function (string $kunci, ?string $penanda): string {
         $d = in_array($kunci, ['volume_benih'], true) ? 0 : 2;
         $arg4 = $penanda !== null ? ', '.$penanda : '';
 
-        return $kunci === 'produktivitas_tertimbang'
-            ? "rasioTampak(\$el.closest('table'), 'produksi_ton', 'realisasi_panen', 2{$arg4})"
-            : "jumlahTampak(\$el.closest('table'), '{$kunci}', {$d}{$arg4})";
+        if ($kunci === 'produktivitas_tertimbang') {
+            return "rasioTampak(\$el.closest('table'), 'produksi_ton', 'realisasi_panen', 2{$arg4})";
+        }
+
+        if ($kunci === 'luas_lahan') {
+            $arg3 = $penanda !== null ? ', 2, '.$penanda : ', 2';
+            return "jumlahTampakPoktanUnik(\$el.closest('table'), 'luas_lahan'{$arg3})";
+        }
+
+        if ($kunci === 'belum_ditanam') {
+            $arg3 = $penanda !== null ? '2, '.$penanda : '2';
+            return "belumDitanamTampak(\$el.closest('table'), {$arg3})";
+        }
+
+        return "jumlahTampak(\$el.closest('table'), '{$kunci}', {$d}{$arg4})";
     };
 @endphp
 
@@ -72,6 +86,8 @@
                 @foreach ($grup['baris'] as $b)
                     <tr data-baris data-sp="{{ $b['sp_id'] }}" data-tahun="{{ $b['tahun_pengadaan'] }}"
                         data-komoditas="{{ $b['komoditas'] }}"
+                        data-sumber_dana="{{ $b['sumber_dana'] }}"
+                        data-poktan_id="{{ $b['poktan_id'] }}"
                         data-luas_lahan="{{ $b['luas_lahan'] }}"
                         data-volume_benih="{{ $b['volume_benih'] }}" data-realisasi_tanam="{{ $b['realisasi_tanam'] }}"
                         data-belum_ditanam="{{ $b['belum_ditanam'] }}"

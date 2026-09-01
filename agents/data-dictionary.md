@@ -970,16 +970,16 @@ Catatan penanaman: kelompok tani mana, menanam komoditas apa, kapan, seluas bera
 | Kolom | Tipe | Null | Kunci | Keterangan |
 |---|---|---|---|---|
 | `id_penanaman` | `BIGINT UNSIGNED AUTO_INCREMENT` | TIDAK | PK | |
-| `poktan_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX, UQ¹ | Kelompok tani pelaksana |
-| `komoditas_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX, UQ¹ | |
-| `saprotan_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | Benih yang dipakai; **wajib sejak 2026-08-24** |
+| `poktan_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | Kelompok tani pelaksana |
+| `komoditas_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | |
+| `saprotan_distribusi_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | Jatah distribusi benih yang dipakai; **wajib sejak 2026-08-30 (Putaran 7)** |
 | `volume_benih` | `DECIMAL(12,3)` | TIDAK | | **Wajib sejak 2026-08-24** |
 | `realisasi_tanam` | `DECIMAL(12,2)` | TIDAK | | Hektare yang benar-benar ditanami |
-| `periode_tanam` | `CHAR(7)` | TIDAK | IDX, UQ¹ | Bulan tanam, bentuk `YYYY-MM` |
+| `periode_tanam` | `CHAR(7)` | TIDAK | IDX | Bulan tanam, bentuk `YYYY-MM` |
 | `dokumen_pendukung` | `VARCHAR(255)` | YA | | Berita acara tanam atau foto hamparan |
 | `keterangan` | `TEXT` | YA | | |
 
-¹ UNIQUE gabungan `(poktan_id, komoditas_id, periode_tanam)`.
+> **Catatan 2026-09-01:** Constraint `UNIQUE (poktan_id, komoditas_id, periode_tanam)` **dicabut**. Satu kelompok tani dapat mencatat lebih dari satu kali penanaman pada bulan yang sama (misal penanaman bertahap di awal dan akhir bulan, atau dari bantuan benih berbeda). `saprotan_id` diperbarui menjadi `saprotan_distribusi_id` mengikuti relasi jatah poktan Putaran 7.
 
 #### Berpusat pada poktan, bukan lahan perorangan
 

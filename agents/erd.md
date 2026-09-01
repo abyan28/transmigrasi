@@ -242,7 +242,7 @@ Aturan berikut **tidak boleh** hanya divalidasi di form, karena dapat ditembus l
 | 9 | Nama wilayah unik dalam induknya | `UNIQUE (kecamatan_id, nama)` pada `desa`, dan seterusnya berjenjang |
 | 9a | Nama kawasan unik dalam kabupatennya | `UNIQUE (kabupaten_id, nama)` pada `kawasan_transmigrasi` |
 | 9b | Satu SP hanya berdiri di satu desa dan satu kawasan | `desa_id` dan `kawasan_id` keduanya `NOT NULL` |
-| 10 | Satu poktan hanya satu komoditas per periode tanam | `UNIQUE (poktan_id, komoditas_id, periode_tanam)` pada `penanaman` |
+| 10 | ~~Satu poktan hanya satu komoditas per periode tanam~~ **DICABUT 2026-09-01** | `UNIQUE` pada `penanaman` dibatalkan; satu poktan dapat menanam bertahap atau menanam dari bantuan berbeda pada bulan yang sama |
 
 **Catatan aturan 1 dan 2:** FK sengaja diletakkan pada `rumah`, bukan pada `transmigran`. Dengan begitu satu constraint `UNIQUE` sudah cukup menjamin relasi satu-ke-satu dua arah, sekaligus membuat kolom penghuni bersifat nullable â€” nilai `NULL` berarti rumah kosong (`rules.md` Â§6a.7).
 

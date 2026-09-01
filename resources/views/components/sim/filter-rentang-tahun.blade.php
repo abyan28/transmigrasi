@@ -34,7 +34,7 @@
 @endphp
 
 <div>
-    <label for="filter_{{ $namaDari }}" class="{{ $kelasLabel }}">{{ $label }} dari</label>
+    <label for="filter_{{ $namaDari }}" class="{{ $kelasLabel }}">{{ $label }} Awal</label>
     <select id="filter_{{ $namaDari }}" name="{{ $namaDari }}" class="{{ $kelasSelect }}">
         <option value="">Tahun paling awal</option>
         @foreach ($daftarTahun as $t)
@@ -44,7 +44,7 @@
 </div>
 
 <div>
-    <label for="filter_{{ $namaSampai }}" class="{{ $kelasLabel }}">{{ $label }} sampai</label>
+    <label for="filter_{{ $namaSampai }}" class="{{ $kelasLabel }}">{{ $label }} Akhir</label>
     <select id="filter_{{ $namaSampai }}" name="{{ $namaSampai }}" class="{{ $kelasSelect }}">
         <option value="">Tahun paling akhir</option>
         @foreach ($daftarTahun as $t)

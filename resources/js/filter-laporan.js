@@ -269,6 +269,80 @@ export default function filterLaporan(konfig = {}) {
         },
 
         /**
+         * Jumlah kolom profil poktan (mis. luas_lahan) dari baris yang cocok,
+         * dihitung dari HIMPUNAN POKTAN UNIK (rules.md §16c) agar satu poktan
+         * yang menanam berkali-kali tidak melipatgandakan luas lahan pada subtotal.
+         *
+         * @param {HTMLElement|Iterable<HTMLElement>} cakupan
+         * @param {string} kolom
+         * @param {number} desimal
+         * @param {string} penanda
+         * @returns {string}
+         */
+        jumlahTampakPoktanUnik(cakupan, kolom, desimal = 2, penanda = 'tr[data-baris]') {
+            const poktanDihitung = new Set();
+            let total = 0;
+
+            for (const tr of this._baris(cakupan, penanda)) {
+                if (! this.cocok(tr)) {
+                    continue;
+                }
+
+                const poktanId = tr.dataset.poktan_id || tr.dataset.poktan;
+                if (poktanId && poktanDihitung.has(poktanId)) {
+                    continue;
+                }
+                if (poktanId) {
+                    poktanDihitung.add(poktanId);
+                }
+
+                const v = Number(tr.dataset[kolom] ?? 0);
+                if (! Number.isNaN(v)) {
+                    total += v;
+                }
+            }
+
+            return this.angka(total, desimal);
+        },
+
+        /**
+         * Luas sisa belum ditanam pada subtotal/total:
+         * Σ per poktan unik max(0, luas_lahan_poktan - Σ realisasi_tanam_poktan) (rules.md §16c).
+         *
+         * @param {HTMLElement|Iterable<HTMLElement>} cakupan
+         * @param {number} desimal
+         * @param {string} penanda
+         * @returns {string}
+         */
+        belumDitanamTampak(cakupan, desimal = 2, penanda = 'tr[data-baris]') {
+            const luasPoktan = new Map();
+            const tanamPoktan = new Map();
+
+            for (const tr of this._baris(cakupan, penanda)) {
+                if (! this.cocok(tr)) {
+                    continue;
+                }
+
+                const poktanId = tr.dataset.poktan_id || tr.dataset.poktan;
+                if (poktanId) {
+                    if (! luasPoktan.has(poktanId)) {
+                        luasPoktan.set(poktanId, Number(tr.dataset.luas_lahan ?? 0) || 0);
+                    }
+                    const tanamSebelum = tanamPoktan.get(poktanId) || 0;
+                    tanamPoktan.set(poktanId, tanamSebelum + (Number(tr.dataset.realisasi_tanam ?? 0) || 0));
+                }
+            }
+
+            let totalSisa = 0;
+            for (const [poktanId, luas] of luasPoktan.entries()) {
+                const tanam = tanamPoktan.get(poktanId) || 0;
+                totalSisa += Math.max(0, Math.round((luas - tanam) * 100) / 100);
+            }
+
+            return this.angka(totalSisa, desimal);
+        },
+
+        /**
          * Apakah tak ada satu pun baris ber-`penanda` yang cocok di dalam
          * `cakupan`. Dipakai `x-show` pesan "tidak ada yang cocok" dan
          * penyembunyian baris grup-header/subtotal saat grupnya kosong.

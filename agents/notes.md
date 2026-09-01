@@ -3381,8 +3381,23 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
        - Menambahkan kolom **Keterangan** pada sisi kanan tabel untuk mencatat catatan dan kendala lapangan (banjir, serangan hama, dll).
        - Mengeluarkan kolom `Tahun Pengadaan` dari dalam tabel dan memindahkannya ke kop judul resmi: **LAPORAN HASIL PANEN BENIH {KOMODITAS} \n TAHUN ANGGARAN {TAHUN}** (responsif mengikuti filter aktif).
     9. **Penambahan Kolom Belum Ditanam (ha) pada Neraca Lahan Hasil Panen:**
-       - Menambahkan kolom **Belum Ditanam (ha)** (`Luas Lahan - Realisasi Tanam`) di antara `Realisasi Tanam` dan `Realisasi Panen`.
-       - Rantai neraca lahan menjadi lengkap dan simetris (17 kolom): *Luas Lahan $\rightarrow$ Volume Benih $\rightarrow$ Realisasi Tanam $\rightarrow$ Belum Ditanam $\rightarrow$ Realisasi Panen $\rightarrow$ Puso $\rightarrow$ Belum Dipanen $\rightarrow$ Produktivitas $\rightarrow$ Produksi $\rightarrow$ Keterangan*.
+        - Menambahkan kolom **Belum Ditanam (ha)** (`Luas Lahan - Realisasi Tanam`) di antara `Realisasi Tanam` dan `Realisasi Panen`.
+        - Rantai neraca lahan menjadi lengkap dan simetris (17 kolom): *Luas Lahan $\rightarrow$ Volume Benih $\rightarrow$ Realisasi Tanam $\rightarrow$ Belum Ditanam $\rightarrow$ Realisasi Panen $\rightarrow$ Puso $\rightarrow$ Belum Dipanen $\rightarrow$ Produktivitas $\rightarrow$ Produksi $\rightarrow$ Keterangan*.
+* **Audit Konseptual Domain Produksi & Penyempurnaan Laporan Hasil Panen (2026-09-01):**
+  * **Konteks:**
+    Pemeriksaan keselarasan antara desain sistem (tanpa entitas MT kaku) dengan dokumen rujukan lapangan (`refs/Lap. Akhir  Panen Jagung Polri MT. I 2025.pdf` & `refs/Lap. Panen Sisa Tanam Polri MT. II 2025.pdf`).
+  * **Keputusan & Implementasi:**
+    1. **P0 (Pencabutan Constraint Unique Penanaman):**
+       Constraint `UNIQUE (poktan_id, komoditas_id, periode_tanam)` pada `agents/erd.md` dan `agents/data-dictionary.md` resmi dicabut. Satu kelompok tani dapat mencatat lebih dari 1 kegiatan penanaman pada bulan yang sama (tanam bertahap atau bantuan benih berbeda).
+    2. **P1 (Harmonisasi Aturan Penanaman Bertahap vs Panen Bertahap):**
+       Memperjelas `agents/rules.md` §9.9 dan §9.9a. Penanaman bertahap dari satu alokasi distribusi benih didukung dengan mencatatnya sebagai baris kegiatan penanaman baru. Larangan "panen bertahap" adalah larangan mencicil panen dari satu hamparan penanaman tunggal (sisa yang tidak panen wajib dicatat sebagai Puso).
+    3. **Penyempurnaan Dimensi & Filter Sumber Dana (`LaporanData.php`):**
+       Menambahkan kolom `sumber_dana` pada baris data Laporan Hasil Panen dan menambahkan penyaring Sumber Dana (`Semua`, `APBN`, `APBD Provinsi`, `APBD Kabupaten`, `Swadaya`). Memungkinkan instansi mencetak laporan pertanggungjawaban khusus APBN/APBD maupun laporan komprehensif kawasan.
+    4. **Agregasi Subtotal SP dan Total Kawasan Berbasis Himpunan Poktan Unik (`rules.md` §16c):**
+       Menghindari penggelembungan data fisik wilayah saat 1 poktan menanam berkali-kali:
+       - Kolom Profil Poktan (`luas_lahan`, `jumlah_anggota`, `belum_ditanam`) dihitung dari **Himpunan Poktan Unik** (tidak dijumlahkan berulang kali).
+       - Logika subtotal/total di `app/Support/LaporanData.php` dan helper Alpine `jumlahTampakPoktanUnik()` serta `belumDitanamTampak()` di `resources/js/filter-laporan.js` diintegrasikan.
+       - Kolom aktivitas transaksi (`volume_benih`, `realisasi_tanam`, `realisasi_panen`, `puso`, `belum_dipanen`, `produksi_ton`) tetap dihitung secara aditif per baris transaksi, dengan `produktivitas` sebagai rasio tertimbang.
   * **Verifikasi:**
     - Uji Peramban Lebar Dokumen (`node tests/Browser/uji-lebar-dokumen.mjs`): **28 lulus, 0 gagal (100% muat tanpa gulir mendatar)**.
     - 728 pengujian Pest (6.142 assertions) 100% PASS (Hijau).

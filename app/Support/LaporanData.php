@@ -363,6 +363,7 @@ class LaporanData
                 'komoditas' => $h['komoditas'],
                 'varietas' => $benih['varietas'] ?? '-',
                 'tahun_pengadaan' => $benih['tahun_pengadaan'] ?? null,
+                'sumber_dana' => $benih['sumber_dana'] ?? 'Swadaya',
                 'luas_lahan' => $luasLahan,
                 'volume_benih' => (float) ($tanam['volume_benih'] ?? 0),
                 'realisasi_tanam' => $realisasiTanam,
@@ -1290,7 +1291,7 @@ class LaporanData
                 'tahun' => true,
                 // rules.md 16a: sumbu laporan panen adalah tahun anggaran
                 // bantuan (tahun pengadaan benih), BUKAN tahun panen.
-                'labelTahun' => 'Tahun Anggaran Bantuan',
+                'labelTahun' => 'Tahun Anggaran',
                 'labelTahunDokumen' => 'Tahun Anggaran',
                 'daftarTahun' => self::tahunUnik(
                     collect(self::hasilPanen()['kelompok'])
@@ -1302,6 +1303,13 @@ class LaporanData
                         'kunci' => 'komoditas',
                         'label' => 'Komoditas',
                         'opsi' => collect(DummyData::hasilPanen())->pluck('komoditas')
+                            ->filter()->unique()->sort()->values()->all(),
+                    ],
+                    [
+                        'kunci' => 'sumber_dana',
+                        'label' => 'Sumber Dana',
+                        'opsi' => collect(self::hasilPanen()['kelompok'])
+                            ->flatMap(fn (array $g): array => array_column($g['baris'], 'sumber_dana'))
                             ->filter()->unique()->sort()->values()->all(),
                     ],
                 ],
@@ -1372,6 +1380,38 @@ class LaporanData
                 }
             }
 
+            // rules.md §16c: luas_lahan dihitung dari himpunan poktan unik
+            if (in_array('luas_lahan', $kolomJumlah, true)) {
+                $poktanUnikSp = [];
+                $luasUnik = 0.0;
+                foreach ($isi as $b) {
+                    $pid = $b['poktan_id'] ?? null;
+                    if ($pid !== null && ! in_array($pid, $poktanUnikSp, true)) {
+                        $poktanUnikSp[] = $pid;
+                        $luasUnik += (float) ($b['luas_lahan'] ?? 0);
+                    }
+                }
+                $subtotal['luas_lahan'] = $luasUnik;
+            }
+
+            // rules.md §16c: belum_ditanam dihitung per poktan unik: sum(max(0, luas_poktan - tanam_poktan))
+            if (in_array('belum_ditanam', $kolomJumlah, true)) {
+                $tanamPerPoktan = [];
+                $luasPerPoktan = [];
+                foreach ($isi as $b) {
+                    $pid = $b['poktan_id'] ?? null;
+                    if ($pid !== null) {
+                        $luasPerPoktan[$pid] = (float) ($b['luas_lahan'] ?? 0);
+                        $tanamPerPoktan[$pid] = ($tanamPerPoktan[$pid] ?? 0.0) + (float) ($b['realisasi_tanam'] ?? 0);
+                    }
+                }
+                $sisaBelumTanamSp = 0.0;
+                foreach ($luasPerPoktan as $pid => $luas) {
+                    $sisaBelumTanamSp += max(0.0, round($luas - ($tanamPerPoktan[$pid] ?? 0), 2));
+                }
+                $subtotal['belum_ditanam'] = $sisaBelumTanamSp;
+            }
+
             if ($produktivitasKey) {
                 $subtotal[$produktivitasKey] = $subtotal['realisasi_panen'] > 0
                     ? round($subtotal['produksi_ton'] / $subtotal['realisasi_panen'], 2)
@@ -1388,9 +1428,18 @@ class LaporanData
             ];
         }
 
+        // Total kawasan untuk luas_lahan dan belum_ditanam = jumlah seluruh subtotal SP
+        if (in_array('luas_lahan', $kolomJumlah, true)) {
+            $total['luas_lahan'] = array_sum(array_column(array_column($kelompok, 'subtotal'), 'luas_lahan'));
+        }
+
+        if (in_array('belum_ditanam', $kolomJumlah, true)) {
+            $total['belum_ditanam'] = array_sum(array_column(array_column($kelompok, 'subtotal'), 'belum_ditanam'));
+        }
+
         if ($produktivitasKey) {
-            $total[$produktivitasKey] = $total['realisasi_panen'] > 0
-                ? round($total['produksi_ton'] / $total['realisasi_panen'], 2)
+            $total[$produktivitasKey] = ($total['realisasi_panen'] ?? 0) > 0
+                ? round(($total['produksi_ton'] ?? 0) / $total['realisasi_panen'], 2)
                 : 0.0;
         }
 

@@ -5318,13 +5318,17 @@ it('menghitung ulang produktivitas tertimbang, bukan merata-ratakannya, pada Lap
         ->toContain('x-data="filterLaporan(')
         ->toContain('data-produksi_ton=')
         ->toContain('data-realisasi_panen=')
+        ->toContain('data-sumber_dana=')
+        ->toContain('data-poktan_id=')
         ->toContain("rasioTampak(\$el.closest('table'), 'produksi_ton', 'realisasi_panen', 2")
+        ->toContain("jumlahTampakPoktanUnik(\$el.closest('table'), 'luas_lahan'")
+        ->toContain("belumDitanamTampak(\$el.closest('table'), 2")
         ->toContain("jumlahTampak(\$el.closest('table'), 'puso'")
         ->toContain('Tidak ada catatan panen yang cocok dengan filter')
         ->toContain("x-text=\"'(' + kalimatCakupan + ')'\"");
 
-    // Label pemilih tahun menegaskan sumbu anggaran bantuan (rules 16a).
-    expect(LaporanData::filterLaporan('hasil-panen')['labelTahun'])->toBe('Tahun Anggaran Bantuan');
+    // Label pemilih tahun menegaskan sumbu anggaran (rules 16a).
+    expect(LaporanData::filterLaporan('hasil-panen')['labelTahun'])->toBe('Tahun Anggaran');
 
     // Subtotal per SP dihitung ulang lewat selSp().
     expect($isi)->toContain(', selSp(');
