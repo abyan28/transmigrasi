@@ -67,7 +67,7 @@ class DaftarTautanStatis extends Command
      *
      * @var list<string>
      */
-    private const DIKECUALIKAN = ['uji-403', 'up'];
+    private const DIKECUALIKAN = ['uji-403', 'up', 'infrastruktur'];
 
     /**
      * Seluruh rute GET yang tidak memerlukan parameter.
@@ -119,11 +119,11 @@ class DaftarTautanStatis extends Command
             'alsintan' => ['alsintan', 'id_alsintan'],
             'saprotan' => ['saprotan', 'id_saprotan'],
             'komoditas' => ['komoditas', 'id_komoditas'],
-            'infrastruktur' => ['infrastruktur', 'id_infrastruktur'],
+            'sp/infrastruktur' => ['infrastruktur', 'id_infrastruktur'],
             'penanaman' => ['penanaman', 'id_penanaman'],
             'sp/inventaris' => ['inventarisSp', 'id_inventaris_sp'],
             'sp/fasilitas' => ['fasilitasSp', 'id_fasilitas_sp'],
-            'dashboard/sp' => ['satuanPermukiman', 'id_satuan_permukiman'],
+            'sp' => ['satuanPermukiman', 'id_satuan_permukiman'],
         ];
 
         $hasil = [];
