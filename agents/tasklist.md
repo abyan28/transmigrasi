@@ -1284,6 +1284,9 @@ Aturan modul yang mudah terlewat, tercatat agar tidak terulang:
 26. **Peniadaan Card Filter Tab Per Tahun Rekap Kependudukan (2026-08-31):** Tab 'Per Tahun' pada `/kependudukan/rekap` tidak menampilkan kartu filter tahun karena tabelnya sendiri menyajikan deret waktu historis longitudinal 2016–2026.
 27. **Penegasan Scope Anggota Poktan Khusus Transmigran (2026-08-31):** SIM Transmigrasi secara tegas hanya mendata dan menghitung anggota kelompok tani dari kalangan keluarga transmigran; anggota lokal/non-transmigran tidak dicatat dalam sistem ini.
 28. **Hirarki Form Transmigran $\rightarrow$ Satuan Permukiman (2026-08-31):** Field Pemilik pada Form Lahan dan KK Penghuni pada Form Rumah ditempatkan di bagian awal untuk mengotomatiskan pengisian dan pemilihan Satuan Permukiman.
+29. **Penamaan Submenu Data Master Referensi $\rightarrow$ Daftar Pilihan (2026-09-01):** Submenu `/master/referensi` di bawah grup Data Master resmi dinamai "Daftar Pilihan" untuk mencerminkan fungsinya sebagai pengelola opsi dropdown dan opsi referensi sistem.
+30. **Konsistensi Relasi Fasilitas/Infrastruktur Lintas SP (2026-09-01):** Field "SP Lain yang Dilayani" ditampilkan secara eksplisit pada rincian Fasilitas SP dan Infrastruktur SP dengan penyaluran data aman dari closure rute (mematuhi aturan Ide C).
+31. **Pembangunan Modul Pengelolaan Konten (CMS) 5 Tab (2026-09-01):** Antarmuka CMS murni frontend dibangun pada `/cms` di bawah grup Administrasi Sistem (izin `cms.lihat`), mencakup: *Identitas & Visual* (upload logo/favicon/banner), *Kop & Dokumen Laporan* (kop surat & pejabat penandatangan dengan live paper preview), *Konten Profil & FAQ*, *Portal Pengaduan Warga*, dan *Pengumuman Dinas*.
 
 **Masih menunggu:**
 - Referensi tata letak Figma (tidak memblokir; sementara memakai tata letak bawaan TailAdmin).

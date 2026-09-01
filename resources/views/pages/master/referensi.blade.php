@@ -25,7 +25,7 @@
         // `master.referensi`. Lihat routes/web.php.
     @endphp
 
-    <x-sim.page-header judul="Data Master Referensi"
+    <x-sim.page-header judul="Data Master Daftar Pilihan"
         keterangan="Pilihan pada form yang dapat ditambah dan disunting tanpa mengubah kode."
         :remah="\App\Helpers\RemahHelper::untuk('/master/referensi')" />
 

@@ -509,6 +509,7 @@ Kolom "Kewenangan" menggantikan kolom "Role" pada tabel-tabel sebelumnya, karena
 |---|---|---|
 | Halaman laporan | `GET /laporan/{slug}` | kewenangan `lihat` modul sumbernya |
 | Tampilan dokumen polos | `GET /laporan/{slug}/dokumen` | idem |
+| Pengelolaan Konten (CMS) | `GET /cms` | `cms.lihat` |
 | Unduh template luring | langkah pertama modal impor | `[fitur].tambah` |
 | Manajemen pengguna | `GET /pengguna` | `pengguna.lihat` |
 | Detail pengguna | modal | `pengguna.lihat` |
@@ -533,7 +534,7 @@ Sejak role menjadi dinamis (`rules.md` bagian 5), menu **tidak lagi ditulis teta
 
 ### 5.1 Pemetaan menu ke kewenangan
 
-Sidebar memakai **submenu**: lima kelompok. Kelompok Transmigrasi dan Pertanian masing-masing memuat dua submenu, sehingga satu judul kelompok menaungi lebih dari satu daftar. Pembagiannya mengikuti pembagian urusan di dinas, bukan pembagian tabel.
+Sidebar memakai **submenu**: enam kelompok. Kelompok Transmigrasi dan Pertanian masing-masing memuat dua submenu, sedangkan Administrasi Sistem membagi Data Master, Pengelolaan Konten, dan Pengaturan Sistem. Pembagiannya mengikuti pembagian urusan di dinas, bukan pembagian tabel.
 
 Dua penempatan yang perlu diketahui, sebab tidak mengikuti struktur tabel:
 
@@ -547,10 +548,10 @@ Dua penempatan yang perlu diketahui, sebab tidak mengikuti struktur tabel:
 | | | Satuan Permukiman | `/sp` | `sp.lihat` |
 | | | Inventaris SP | `/sp/inventaris` | `inventaris_sp.lihat` |
 | | | Fasilitas SP | `/sp/fasilitas` | `fasilitas_sp.lihat` |
-| | | Infrastruktur SP | `/infrastruktur` | `infrastruktur.lihat` |
+| | | Infrastruktur SP | `/sp/infrastruktur` | `infrastruktur.lihat` |
 | | Penduduk & Lahan | Transmigran | `/transmigran` | `transmigran.lihat` |
 | | | Rumah & Hunian | `/rumah` | `rumah.lihat` |
-| | | Daftar Lahan | `/lahan` | `lahan.lihat` |
+| | | Data Lahan | `/lahan` | `lahan.lihat` |
 | | | Rekap Kependudukan | `/kependudukan/rekap` | `transmigran.lihat` |
 | **Pertanian** | Poktan & Sarana | Kelompok Tani | `/poktan` | `poktan.lihat` |
 | | | Alsintan | `/alsintan` | `alsintan.lihat` |
@@ -561,11 +562,13 @@ Dua penempatan yang perlu diketahui, sebab tidak mengikuti struktur tabel:
 | | | Rekap Panen | `/panen/rekap` | `hasil_panen.lihat` |
 | **Pengaduan** | Pengaduan Warga | Daftar Pengaduan | `/pengaduan` | `pengaduan.lihat` |
 | | | Rekap Pengaduan | `/pengaduan/rekap` | `pengaduan.lihat` |
-| **Administrasi Sistem** | Pengaturan Sistem | Data Master Wilayah | `/wilayah` | `wilayah.lihat` |
+| **Laporan** | Dokumen Cetak | 7 Laporan Resmi | `/laporan/{slug}` | `laporan.lihat` |
+| **Administrasi Sistem** | Data Master | Data Master Wilayah | `/wilayah` | `wilayah.lihat` |
 | | | Data Master Satuan | `/master/satuan` | `satuan.lihat` |
-| | | Data Master Referensi | `/master/referensi` | `referensi.lihat` |
+| | | Data Master Daftar Pilihan | `/master/referensi` | `referensi.lihat` |
 | | | Penilaian Kondisi SP | `/master/penilaian-kondisi` | `penilaian_kondisi.lihat` |
-| | | Pengguna | `/pengguna` | `pengguna.lihat` |
+| | Pengelolaan Konten | CMS / Konten Sistem | `/cms` | `cms.lihat` |
+| | Pengaturan Sistem | Pengguna | `/pengguna` | `pengguna.lihat` |
 | | | Role & Hak Akses | `/pengaturan/role` | `role.lihat` |
 | | | Audit Log | `/audit-log` | `audit_log.lihat` |
 

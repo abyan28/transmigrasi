@@ -78,6 +78,29 @@
                             </a>
                         </dd>
                     </div>
+                    @php
+                        $spLain = collect($daftarSp ?? [])
+                            ->whereIn('id_satuan_permukiman', $data['satuan_permukiman_ids'] ?? [])
+                            ->reject(fn ($sp) => (int) $sp['id_satuan_permukiman'] === (int) $data['satuan_permukiman_id'])
+                            ->values();
+                    @endphp
+                    @if ($spLain->isNotEmpty())
+                        <div class="flex justify-between gap-3">
+                            <dt class="text-gray-500 dark:text-gray-400">SP lain yang dilayani</dt>
+                            <dd class="text-right font-medium text-gray-800 dark:text-white/90">
+                                <ul class="space-y-1">
+                                    @foreach ($spLain as $sp)
+                                        <li>
+                                            <a href="{{ route('sp.detail', $sp['id_satuan_permukiman']) }}"
+                                                class="rounded text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
+                                                {{ $sp['nama'] }}
+                                            </a>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </dd>
+                        </div>
+                    @endif
                 </dl>
             </div>
         </aside>

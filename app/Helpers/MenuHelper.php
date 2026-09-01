@@ -245,7 +245,7 @@ class MenuHelper
                                 'permission' => 'satuan.lihat',
                             ],
                             [
-                                'name' => 'Referensi',
+                                'name' => 'Daftar Pilihan',
                                 'path' => '/master/referensi',
                                 'permission' => 'referensi.lihat',
                             ],
@@ -259,6 +259,12 @@ class MenuHelper
                                 'permission' => 'penilaian_kondisi.lihat',
                             ],
                         ],
+                    ],
+                    [
+                        'icon' => 'cms',
+                        'name' => 'Pengelolaan Konten',
+                        'path' => '/cms',
+                        'permission' => 'cms.lihat',
                     ],
                     [
                         'icon' => 'pengaturan',
@@ -440,6 +446,9 @@ class MenuHelper
 
             // Produksi Pertanian: tunas bertumbuh, mewakili komoditas dan panen.
             'tanaman' => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 21V10M12 10C12 6.5 9.5 4 6 4c0 3.5 2.5 6 6 6zM12 13c0-3 2-5.5 5.5-5.5 0 3-2.5 5.5-5.5 5.5zM6 21h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+
+            // Pengelolaan Konten (CMS): dokumen dengan pena/layout, lambang manajemen konten.
+            'cms' => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
 
             // Pengaturan Sistem: roda gigi, lambang baku untuk konfigurasi.
             'pengaturan' => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" stroke-width="1.8"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 008 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 8a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',

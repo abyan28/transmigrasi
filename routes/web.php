@@ -418,7 +418,7 @@ Route::get('/master/referensi', function () {
     }
 
     return view('pages.master.referensi', [
-        'title' => 'Data Master Referensi',
+        'title' => 'Data Master Daftar Pilihan',
         'semua' => $semua,
         'jumlah' => $jumlah,
         'nonaktif' => $nonaktif,
@@ -542,6 +542,22 @@ Route::put('/master/penilaian-kondisi/status/{kode}', function (string $kode) {
         ->with('sukses', 'Status kondisi SP tersimpan.');
 })->name('penilaian-kondisi.status');
 
+/*
+ * Pengelolaan Konten Sistem (CMS).
+ *
+ * Mengelola narasi profil kawasan, panduan operasional, identitas aplikasi,
+ * portal publik warga, dan banner pengumuman dinas tanpa mengubah kode.
+ */
+Route::get('/cms', function () {
+    return view('pages.cms.index', [
+        'title' => 'Pengelolaan Konten',
+    ]);
+})->name('cms');
+
+Route::put('/cms', function () {
+    return redirect()->route('cms')->with('sukses', 'Pengaturan konten berhasil disimpan.');
+})->name('cms.simpan');
+
 Route::get('/kawasan', function () {
     $daftarSp = DummyData::satuanPermukiman();
     $rekap = DummyData::rekapPerSp();
@@ -660,6 +676,7 @@ Route::get('/sp/fasilitas/{id}', function (int $id) {
     return view('pages.sp.detail-fasilitas', [
         'title' => $data['nama_fasilitas'],
         'data' => $data,
+        'daftarSp' => DummyData::satuanPermukiman(),
     ]);
 })->where('id', '[0-9]+')->name('sp.fasilitas.detail');
 
@@ -2398,7 +2415,11 @@ Route::get('/sp/infrastruktur/{id}', function (int $id) {
 
     abort_if($data === null, 404);
 
-    return view('pages.infrastruktur.detail', ['title' => $data['nama'], 'data' => $data]);
+    return view('pages.infrastruktur.detail', [
+        'title' => $data['nama'],
+        'data' => $data,
+        'daftarSp' => DummyData::satuanPermukiman(),
+    ]);
 })->where('id', '[0-9]+')->name('infrastruktur.detail');
 
 // Redirect 301 untuk kompatibilitas alamat lama /infrastruktur/{id}

@@ -1,3 +1,35 @@
+# Putaran 10 — Audit Frontend, Penamaan Daftar Pilihan, Konsistensi Field SP Dilayani, & Modul Pengelolaan Konten (CMS) 5 Tab SELESAI (2026-09-01)
+
+Rencana: `plan_penyempurnaan_frontend_dan_cms.md`, `plan_penambahan_upload_logo_favicon_cms.md`, `plan_audit_dan_konfigurasi_cms_laporan.md` & `walkthrough.md`.
+Catatan hasil: `agents/notes.md` `## 6. Revisi`. Ringkasan: `agents/tasklist.md`, `agents/rules.md`, `agents/ui-spec.md`.
+
+## 3 Pekerjaan yang Telah Diselesaikan:
+
+### 1. Penamaan Ulang Submenu Data Master `Referensi` $\rightarrow$ `Daftar Pilihan`
+- Mengubah submenu `Referensi` menjadi `Daftar Pilihan` pada `app/Helpers/MenuHelper.php` (`/master/referensi`).
+- Mengubah header judul halaman menjadi `"Data Master Daftar Pilihan"` pada `resources/views/pages/master/referensi.blade.php`.
+- Remah roti (breadcrumb) otomatis menyesuaikan: `Beranda > Data Master > Daftar Pilihan > [Nama Pilihan]`.
+
+### 2. Konsistensi Relasi SP Lain yang Dilayani pada Detail Fasilitas & Infrastruktur
+- Menambahkan blok informasi **"SP lain yang dilayani"** pada `resources/views/pages/sp/detail-fasilitas.blade.php` dan `resources/views/pages/infrastruktur/detail.blade.php`.
+- Menyalurkan variabel data satuan permukiman dari closure route di `routes/web.php` untuk mematuhi aturan lint Ide C (*"view melarang mengambil datanya sendiri"*).
+
+### 3. Pembangunan Antarmuka Frontend Pengelolaan Konten (CMS) 5 Tab (`/cms`)
+- Mendaftarkan rute `GET /cms` dan `PUT /cms` di `routes/web.php` dengan izin `cms.lihat`.
+- Menempatkan menu `Pengelolaan Konten` pada grup **Administrasi Sistem** (di antara `Data Master` dan `Pengaturan Sistem`) pada `MenuHelper.php` dan `sidebar.blade.php`.
+- Membangun antarmuka interaktif 5 Tab berbasis Alpine.js di `resources/views/pages/cms/index.blade.php`:
+  1. **Tab Identitas & Visual:** Nama sistem, subjudul kawasan, instansi pusat & daerah, kontak helpdesk, footer, serta form upload gambar lokal (Logo Utama PNG transparan, Logo Daerah, Favicon 32x32, Hero Banner) dengan live preview card & mock browser tab.
+  2. **Tab Kop & Dokumen Laporan:** Pengaturan teks Kop Surat Dinas resmi (Kementerian, Pemda, Dinas, Alamat, Kontak, Logo Kiri & Kanan) serta Pejabat Penandatangan (Kota Titimangsa, Jabatan, Nama Pejabat, Pangkat/Golongan, NIP, Saklar Tampilkan Tanda Tangan) lengkap dengan live paper preview cetak A4.
+  3. **Tab Konten Profil & FAQ:** Editor narasi Latar Belakang Halaman Tentang (`/tentang`) dan FAQ Panduan (`/panduan`).
+  4. **Tab Portal Pengaduan Warga:** Sambutan, format nomor tiket `PGD-YYYY-XXXX`, jaminan kerahasiaan identitas, dan hotline darurat.
+  5. **Tab Pengumuman Dinas:** Broadcast banner dasbor dengan saklar on/off, 4 level kegentingan (*Info, Sukses, Perhatian, Darurat*), dan live preview banner.
+
+## Verifikasi
+- **Pest PHP:** 728 test (6.149 assertions) lulus 100% hijau.
+- **Vite Build:** `npm run build` terkompilasi bersih tanpa galat.
+
+---
+
 # Putaran 9 — Formatter Nominal Rupiah, Scope Poktan Transmigran, Peniadaan Filter Tab Tahun Rekap, & Urutan Field Form Lahan/Rumah SELESAI (2026-08-31)
 
 Rencana: `C:\Users\v28mt\.gemini\antigravity-cli\brain\0fc4a1ba-ef33-4a8c-b8ea-138571694790\plan_dokumentasi_seluruh_revisi.md` & `walkthrough.md`.

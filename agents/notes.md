@@ -3402,3 +3402,24 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
     - Uji Peramban Lebar Dokumen (`node tests/Browser/uji-lebar-dokumen.mjs`): **28 lulus, 0 gagal (100% muat tanpa gulir mendatar)**.
     - 728 pengujian Pest (6.142 assertions) 100% PASS (Hijau).
     - `npm run build` sukses terkompilasi dalam 5.17 detik.
+
+* **Audit Frontend, Penamaan Daftar Pilihan, Konsistensi Field SP Dilayani, & Modul Pengelolaan Konten (CMS) 5 Tab (2026-09-01):**
+  * **Konteks:**
+    Penyempurnaan navigasi data master, penyelarasan field relasi SP bersama pada detail infrastruktur dan fasilitas, serta perancangan antarmuka frontend modul Pengelolaan Konten (CMS) untuk mengelola identitas visual, kop dokumen laporan resmi, profil kawasan, panduan operasional, portal warga, dan pengumuman dinas.
+  * **Keputusan & Detail Implementasi:**
+    1. **Penamaan Submenu Data Master Referensi $\rightarrow$ "Daftar Pilihan":**
+       - Mengubah nama submenu pada `MenuHelper.php` dari `'Referensi'` menjadi `'Daftar Pilihan'` (`/master/referensi`).
+       - Menyesuaikan header halaman `pages/master/referensi.blade.php`, rute `routes/web.php`, dan remah roti otomatis: `Beranda > Data Master > Daftar Pilihan > [Nama Pilihan]`.
+    2. **Konsistensi Form $\leftrightarrow$ Detail (SP Lain yang Dilayani):**
+       - Menambahkan blok tampilan "SP lain yang dilayani" pada `pages/sp/detail-fasilitas.blade.php` dan `pages/infrastruktur/detail.blade.php`.
+       - Menyalurkan variabel `$daftarSp` langsung dari closure rute `routes/web.php` untuk mematuhi prinsip arsitektur "View melarang mengambil data sendiri".
+    3. **Pembangunan Antarmuka Frontend Pengelolaan Konten (CMS) 5 Tab (`pages/cms/index.blade.php`):**
+       - Ditempatkan pada grup menu **Administrasi Sistem** di antara `Data Master` dan `Pengaturan Sistem` (`/cms`, izin `cms.lihat`).
+       - **Tab 1 (Identitas & Visual Branding):** Nama resmi sistem, subjudul kawasan, instansi pusat & daerah, helpdesk kontak, footer hak cipta, serta form upload gambar lokal (Logo Utama PNG transparan, Logo Daerah, Favicon 32x32, Hero Banner) lengkap dengan *Live Preview Card* dan *Mock Browser Tab*.
+       - **Tab 2 (Kop & Dokumen Laporan):** Pengaturan teks Kop Surat Dinas resmi (Kementerian, Pemda, Dinas, Alamat, Kontak, Logo Kiri & Logo Kanan) serta lembar pengesahan Pejabat Penandatangan (Kota Titimangsa, Jabatan, Nama Pejabat, Pangkat/Golongan, NIP, Saklar On/Off) lengkap dengan *Live Paper Preview A4*.
+       - **Tab 3 (Konten Profil & FAQ):** Editor narasi Latar Belakang & Visi-Misi Halaman Tentang (`/tentang`) serta CRUD FAQ Panduan (`/panduan`).
+       - **Tab 4 (Portal Pengaduan Warga):** Sambutan warga, format penomoran tiket `PGD-YYYY-XXXX`, disclaimer kerahasiaan identitas, dan hotline WhatsApp.
+       - **Tab 5 (Pengumuman Dinas):** Pengaturan broadcast banner dasbor dengan saklar on/off, level kegentingan (*Info, Sukses, Perhatian, Darurat*), dan pratinjau banner langsung.
+  * **Verifikasi:**
+    - 728 pengujian Pest (6.149 assertions) 100% PASS (Hijau).
+    - `npm run build` sukses terkompilasi dalam 7.02 detik.

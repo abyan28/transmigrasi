@@ -223,13 +223,13 @@ it('memisahkan menu data master dari pengaturan sistem', function () {
 
     $nama = array_column($menu['items'], 'name');
 
-    expect($nama)->toBe(['Data Master', 'Pengaturan Sistem', 'Bantuan & Info']);
+    expect($nama)->toBe(['Data Master', 'Pengelolaan Konten', 'Pengaturan Sistem', 'Bantuan & Info']);
 
     $dataMaster = collect($menu['items'])->firstWhere('name', 'Data Master');
     $pengaturan = collect($menu['items'])->firstWhere('name', 'Pengaturan Sistem');
 
     expect(array_column($dataMaster['subItems'], 'name'))
-        ->toBe(['Wilayah', 'Satuan', 'Referensi', 'Penilaian Kondisi SP']);
+        ->toBe(['Wilayah', 'Satuan', 'Daftar Pilihan', 'Penilaian Kondisi SP']);
 
     expect(array_column($pengaturan['subItems'], 'name'))
         ->toBe(['Pengguna', 'Role & Hak Akses', 'Audit Log']);
