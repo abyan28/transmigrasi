@@ -161,6 +161,11 @@
             --}}
             <header class="border-b border-gray-200 px-6 py-5 dark:border-gray-800">
                 <h1 class="text-theme-lg font-semibold text-gray-900 dark:text-white">{{ $judulLaporan }}</h1>
+                @if ($slug === 'hasil-panen')
+                    <p class="mt-1 text-theme-xs font-semibold uppercase text-brand-600 dark:text-brand-400" x-text="tahunDokumen">
+                        TAHUN ANGGARAN {{ \App\Support\LaporanData::tahunDokumenBawaan() }}
+                    </p>
+                @endif
                 <h2 class="mt-4 text-theme-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                     Cakupan laporan
                 </h2>

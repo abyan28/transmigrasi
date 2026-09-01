@@ -62,13 +62,17 @@
 
 <div class="border-b border-gray-200 px-6 py-5 text-center dark:border-gray-800">
     <h1 class="text-theme-lg font-bold uppercase tracking-wide text-gray-900 dark:text-white">
-        {{ $judulDokumen }}
+        @if ($slug === 'hasil-panen')
+            LAPORAN HASIL PANEN BENIH <span x-text="dimensi.komoditas ? dimensi.komoditas.toUpperCase() : 'JAGUNG HIBRIDA'">JAGUNG HIBRIDA</span>
+        @else
+            {{ $judulDokumen }}
+        @endif
     </h1>
     @if ($subjudul)
         <p class="mt-1 text-theme-sm font-semibold uppercase text-gray-700 dark:text-gray-300">{{ $subjudul }}</p>
     @endif
     <p class="mt-1 text-theme-sm font-semibold text-gray-700 dark:text-gray-300"
-        x-text="tahunDokumen">TAHUN {{ $tahunBawaan }}</p>
+        x-text="tahunDokumen">{{ $slug === 'hasil-panen' ? 'TAHUN ANGGARAN '.$tahunBawaan : 'TAHUN '.$tahunBawaan }}</p>
     <p class="mx-auto mt-3 max-w-2xl text-theme-xs text-gray-500 dark:text-gray-400"
         x-text="kalimatCakupan">{{ $cakupan }}</p>
     @if ($dasarPeriode)

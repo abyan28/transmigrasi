@@ -407,15 +407,23 @@ export default function filterLaporan(konfig = {}) {
          * @returns {string}
          */
         get tahunDokumen() {
+            const prefix = this.konfig.labelTahunDokumen ? this.konfig.labelTahunDokumen.toUpperCase() : 'TAHUN';
+
             if (this.konfig.tahunTunggal && this.tahun) {
-                return 'TAHUN ' + this.tahun;
+                return prefix + ' ' + this.tahun;
+            }
+
+            if (this.tahunDari !== '' && this.tahunSampai !== '') {
+                return this.tahunDari === this.tahunSampai
+                    ? prefix + ' ' + this.tahunDari
+                    : prefix + ' ' + this.tahunDari + ' sampai ' + this.tahunSampai;
             }
 
             if (this.tahunDari !== '' || this.tahunSampai !== '') {
-                return 'TAHUN ' + (this.tahunDari || 'paling awal') + ' sampai ' + (this.tahunSampai || 'paling akhir');
+                return prefix + ' ' + (this.tahunDari || 'paling awal') + ' sampai ' + (this.tahunSampai || 'paling akhir');
             }
 
-            return 'TAHUN ' + (this.konfig.tahunBawaanDokumen || '');
+            return prefix + ' ' + (this.konfig.tahunBawaanDokumen || '');
         },
 
         /** Nama satu SP dari daftar opsi konfig, atau id mentah bila tak ketemu. */

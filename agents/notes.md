@@ -3376,7 +3376,14 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
     7. **Penyesuaian Teks & Pembersihan Card Informasi Monografi SP (`pages/laporan/isi/monografi-sp.blade.php`):**
        - Menyesuaikan redaksi panduan pemilih tahun menjadi: *"Laporan menampilkan data kependudukan, produksi, dan iklim sesuai tahun yang dipilih. Informasi kondisi fisik wilayah, meliputi letak, batas, luas, tanah, sumber daya air, dan aksesibilitas, merupakan informasi wilayah yang bersifat tetap."*
        - Menyembunyikan card panduan tersebut pada dokumen resmi yang digenerate (`@unless ($isDokumen)`).
+    8. **Penyempurnaan Kolom & Judul Laporan Hasil Panen (`pages/laporan/isi/hasil-panen.blade.php`, `LaporanData.php`, `kop-laporan.blade.php`):**
+       - Menambahkan kolom **Luas Lahan (ha)** (total alokasi luas garapan poktan) lengkap dengan subtotal per SP dan total kawasan.
+       - Menambahkan kolom **Keterangan** pada sisi kanan tabel untuk mencatat catatan dan kendala lapangan (banjir, serangan hama, dll).
+       - Mengeluarkan kolom `Tahun Pengadaan` dari dalam tabel dan memindahkannya ke kop judul resmi: **LAPORAN HASIL PANEN BENIH {KOMODITAS} \n TAHUN ANGGARAN {TAHUN}** (responsif mengikuti filter aktif).
+    9. **Penambahan Kolom Belum Ditanam (ha) pada Neraca Lahan Hasil Panen:**
+       - Menambahkan kolom **Belum Ditanam (ha)** (`Luas Lahan - Realisasi Tanam`) di antara `Realisasi Tanam` dan `Realisasi Panen`.
+       - Rantai neraca lahan menjadi lengkap dan simetris (17 kolom): *Luas Lahan $\rightarrow$ Volume Benih $\rightarrow$ Realisasi Tanam $\rightarrow$ Belum Ditanam $\rightarrow$ Realisasi Panen $\rightarrow$ Puso $\rightarrow$ Belum Dipanen $\rightarrow$ Produktivitas $\rightarrow$ Produksi $\rightarrow$ Keterangan*.
   * **Verifikasi:**
     - Uji Peramban Lebar Dokumen (`node tests/Browser/uji-lebar-dokumen.mjs`): **28 lulus, 0 gagal (100% muat tanpa gulir mendatar)**.
-    - 728 pengujian Pest (6.120 assertions) 100% PASS (Hijau).
-    - `npm run build` sukses terkompilasi dalam 5.10 detik.
+    - 728 pengujian Pest (6.142 assertions) 100% PASS (Hijau).
+    - `npm run build` sukses terkompilasi dalam 5.17 detik.

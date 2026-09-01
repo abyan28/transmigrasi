@@ -183,11 +183,21 @@ Catatan hasil: `agents/notes.md` §1w & `## 6. Revisi`. Ringkasan: `agents/taskl
 - Redaksi panduan pemilih tahun disesuaikan menjadi: *"Laporan menampilkan data kependudukan, produksi, dan iklim sesuai tahun yang dipilih. Informasi kondisi fisik wilayah, meliputi letak, batas, luas, tanah, sumber daya air, dan aksesibilitas, merupakan informasi wilayah yang bersifat tetap."*
 - Card panduan tersebut disembunyikan pada dokumen resmi yang digenerate (`@unless ($isDokumen)`).
 
-### 8. Verifikasi Mutu
+### 8. Penyempurnaan Kolom & Judul Laporan Hasil Panen
+- Menambahkan kolom **Luas Lahan (ha)** (total alokasi luas garapan poktan) lengkap dengan subtotal per SP dan total kawasan.
+- Menambahkan kolom **Keterangan** pada sisi kanan tabel untuk mencatat catatan dan kendala lapangan (banjir, serangan hama, dll).
+- Mengeluarkan kolom `Tahun Pengadaan` dari dalam tabel dan memindahkannya ke kop judul resmi: **LAPORAN HASIL PANEN BENIH {KOMODITAS} \n TAHUN ANGGARAN {TAHUN}** (responsif mengikuti filter aktif).
+
+### 9. Penambahan Kolom Belum Ditanam (ha) pada Neraca Lahan
+- Menambahkan kolom **Belum Ditanam (ha)** (`Luas Lahan - Realisasi Tanam`) di antara `Realisasi Tanam` dan `Realisasi Panen`.
+- Rantai neraca lahan menjadi lengkap dan simetris (17 kolom): *Luas Lahan $\rightarrow$ Volume Benih $\rightarrow$ Realisasi Tanam $\rightarrow$ Belum Ditanam $\rightarrow$ Realisasi Panen $\rightarrow$ Puso $\rightarrow$ Belum Dipanen $\rightarrow$ Produktivitas $\rightarrow$ Produksi $\rightarrow$ Keterangan*.
+
+### 10. Verifikasi Mutu
 - **Uji Peramban Lebar Dokumen (`node tests/Browser/uji-lebar-dokumen.mjs`):** 28 lulus, 0 gagal (100% muat tanpa gulir mendatar di seluruh 7 laporan resmi).
-- **Pest PHP:** 728 pengujian (6.120 assertions) **100% PASS (Hijau)**.
-- **Vite Build:** `npm run build` sukses bersih dalam 5.10 detik.
+- **Pest PHP:** 728 pengujian (6.142 assertions) **100% PASS (Hijau)**.
+- **Vite Build:** `npm run build` sukses bersih dalam 5.17 detik.
 - **A11y & Visual Hierarchy:** Memenuhi WCAG 2.1 AA (caption, th scope, tabular-nums).
+
 
 
 

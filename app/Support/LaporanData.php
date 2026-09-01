@@ -193,7 +193,7 @@ class LaporanData
                 'sumberLabel' => 'Data Hasil Panen',
                 'sumberRute' => 'panen.index',
                 'catatan' => 'Bagian benih menampilkan rantai penuh dari bantuan sampai hasil panennya. Bantuan pupuk tidak tertaut ke satu penanaman tertentu, sehingga hanya tampil pada Laporan Saprotan.',
-                'kolom' => 16,
+                'kolom' => 17,
             ],
         ];
 
@@ -324,6 +324,7 @@ class LaporanData
         $penanaman = self::petaPenanaman();
         $distribusi = self::petaSaprotanDistribusi();
         $anggotaAktif = self::anggotaAktifPerPoktan();
+        $luasPoktan = [];
 
         $baris = [];
 
@@ -335,6 +336,9 @@ class LaporanData
                 continue;
             }
 
+            $pid = $pok['id_poktan'];
+            $luasPoktan[$pid] ??= (float) (DummyData::rekapLahanPoktan($pid)['luas_total'] ?? 0.0);
+
             // Jejak varietas & tahun pengadaan: hasil_panen -> penanaman
             // -> saprotan_distribusi -> pengadaan (Putaran 7).
             $benih = $distribusi[$tanam['saprotan_distribusi_id'] ?? null] ?? null;
@@ -343,6 +347,9 @@ class LaporanData
             $realisasiPanen = (float) $h['realisasi_panen'];
             $puso = (float) $h['puso'];
             $belumDipanen = max(0.0, round($realisasiTanam - $realisasiPanen - $puso, 2));
+
+            $luasLahan = $luasPoktan[$pid] ?? 0.0;
+            $belumDitanam = max(0.0, round($luasLahan - $realisasiTanam, 2));
 
             $baris[] = [
                 'sp_id' => $pok['satuan_permukiman_id'],
@@ -356,18 +363,21 @@ class LaporanData
                 'komoditas' => $h['komoditas'],
                 'varietas' => $benih['varietas'] ?? '-',
                 'tahun_pengadaan' => $benih['tahun_pengadaan'] ?? null,
+                'luas_lahan' => $luasLahan,
                 'volume_benih' => (float) ($tanam['volume_benih'] ?? 0),
                 'realisasi_tanam' => $realisasiTanam,
+                'belum_ditanam' => $belumDitanam,
                 'realisasi_panen' => $realisasiPanen,
                 'puso' => $puso,
                 'belum_dipanen' => $belumDipanen,
                 'produktivitas' => (float) $h['produktivitas'],
                 'produksi_ton' => round(DummyData::keTon((float) $h['produksi'], $h['satuan']), 2),
+                'keterangan' => $h['keterangan'] ?? null,
             ];
         }
 
         return self::kelompokkanPerSp($baris, [
-            'volume_benih', 'realisasi_tanam', 'realisasi_panen',
+            'luas_lahan', 'volume_benih', 'realisasi_tanam', 'belum_ditanam', 'realisasi_panen',
             'puso', 'belum_dipanen', 'produksi_ton',
         ], 'produktivitas_tertimbang');
     }
@@ -1281,6 +1291,7 @@ class LaporanData
                 // rules.md 16a: sumbu laporan panen adalah tahun anggaran
                 // bantuan (tahun pengadaan benih), BUKAN tahun panen.
                 'labelTahun' => 'Tahun Anggaran Bantuan',
+                'labelTahunDokumen' => 'Tahun Anggaran',
                 'daftarTahun' => self::tahunUnik(
                     collect(self::hasilPanen()['kelompok'])
                         ->flatMap(fn (array $g): array => array_column($g['baris'], 'tahun_pengadaan'))

@@ -4757,13 +4757,15 @@ it('mengisi tiap halaman laporan dengan tabel berdata, bukan penampung kosong', 
 it('memuat kolom kunci tiap laporan sesuai berkas rujukannya', function () {
     // Laporan Hasil Panen: kolom Polri MT. I 2025.
     expect($this->get('/laporan/hasil-panen')->getContent())
+        ->toContain('Luas Lahan')
         ->toContain('Volume Benih')
         ->toContain('Realisasi Tanam')
+        ->toContain('Belum Ditanam')
         ->toContain('Realisasi Panen')
         ->toContain('Puso')
         ->toContain('Produktivitas')
         ->toContain('Produksi (ton)')
-        ->toContain('Tahun Pengadaan');
+        ->toContain('Keterangan');
 
     // Laporan Alsintan: kolom berkas gambar.
     expect($this->get('/laporan/alsintan')->getContent())
@@ -4801,18 +4803,23 @@ it('menjumlahkan hasil panen per SP lalu ke total kawasan tanpa selisih', functi
     expect($data['kelompok'])->not->toBeEmpty();
 
     // Total kawasan = jumlah seluruh subtotal SP, untuk tiap kolom angka.
-    foreach (['realisasi_tanam', 'realisasi_panen', 'puso', 'produksi_ton', 'volume_benih'] as $kolom) {
+    foreach (['luas_lahan', 'realisasi_tanam', 'belum_ditanam', 'realisasi_panen', 'puso', 'produksi_ton', 'volume_benih'] as $kolom) {
         $jumlahSubtotal = array_sum(array_column(
             array_column($data['kelompok'], 'subtotal'), $kolom
         ));
         expect(round($jumlahSubtotal, 2))->toBe(round($data['total'][$kolom], 2), "kolom {$kolom} tidak konsisten");
     }
 
+    // Belum Ditanam = luas lahan - realisasi tanam, tak pernah negatif.
     // Belum Dipanen = realisasi tanam - realisasi panen - puso, tak pernah negatif.
     foreach ($data['kelompok'] as $grup) {
         foreach ($grup['baris'] as $b) {
-            $harusnya = max(0.0, round($b['realisasi_tanam'] - $b['realisasi_panen'] - $b['puso'], 2));
-            expect($b['belum_dipanen'])->toBe($harusnya);
+            $tanamSisa = max(0.0, round($b['luas_lahan'] - $b['realisasi_tanam'], 2));
+            expect($b['belum_ditanam'])->toBe($tanamSisa);
+            expect($b['belum_ditanam'])->toBeGreaterThanOrEqual(0);
+
+            $panenSisa = max(0.0, round($b['realisasi_tanam'] - $b['realisasi_panen'] - $b['puso'], 2));
+            expect($b['belum_dipanen'])->toBe($panenSisa);
             expect($b['belum_dipanen'])->toBeGreaterThanOrEqual(0);
         }
     }
