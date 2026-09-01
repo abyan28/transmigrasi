@@ -38,6 +38,9 @@ export default function filterLaporan(konfig = {}) {
         tahunDari: '',
         tahunSampai: '',
         tahun: '',
+        cari: '',
+        modeTampilan: 'gabungan',
+        ukuranKertas: 'a4',
 
         /** Keadaan tiap dimensi khas laporan, mis. { status: '', komoditas: '' }. */
         dimensi: {},
@@ -66,7 +69,10 @@ export default function filterLaporan(konfig = {}) {
         get hashFilter() {
             const p = new URLSearchParams();
 
+            if (this.ukuranKertas && this.ukuranKertas !== 'a4') p.set('kertas', this.ukuranKertas);
+            if (this.modeTampilan && this.modeTampilan !== 'gabungan') p.set('mode', this.modeTampilan);
             if (this.sp !== '') p.set('sp', this.sp);
+            if (this.cari !== '') p.set('q', this.cari);
             if (this.tahunDari !== '') p.set('td', this.tahunDari);
             if (this.tahunSampai !== '') p.set('ts', this.tahunSampai);
 
@@ -102,7 +108,24 @@ export default function filterLaporan(konfig = {}) {
 
             const p = new URLSearchParams(raw);
 
+            if (p.has('kertas')) {
+                this.ukuranKertas = p.get('kertas');
+                if (this.ukuranKertas === 'f4') {
+                    const landscape = document.querySelector('.kertas-dokumen')?.classList.contains('dokumen-landscape');
+                    let tag = document.getElementById('style-page-kertas');
+                    if (!tag) {
+                        tag = document.createElement('style');
+                        tag.id = 'style-page-kertas';
+                        document.head.appendChild(tag);
+                    }
+                    tag.textContent = landscape
+                        ? '@page { size: 330mm 215mm; margin: 10mm; }'
+                        : '@page { size: 215mm 330mm; margin: 12mm; }';
+                }
+            }
+            if (p.has('mode')) this.modeTampilan = p.get('mode');
             if (p.has('sp')) this.sp = p.get('sp');
+            if (p.has('q')) this.cari = p.get('q');
             if (p.has('td')) this.tahunDari = p.get('td');
             if (p.has('ts')) this.tahunSampai = p.get('ts');
             if (p.has('th')) this.tahun = p.get('th');
@@ -115,6 +138,7 @@ export default function filterLaporan(konfig = {}) {
         get adaFilter() {
             return (
                 this.sp !== '' ||
+                this.cari !== '' ||
                 this.tahunDari !== '' ||
                 this.tahunSampai !== '' ||
                 (this.konfig.tahunTunggal &&
@@ -137,6 +161,15 @@ export default function filterLaporan(konfig = {}) {
          */
         cocok(el) {
             const d = el.dataset;
+
+            // Pencarian kata kunci
+            if (this.cari.trim() !== '') {
+                const q = this.cari.toLowerCase().trim();
+                const haystack = (d.cari || el.textContent || '').toLowerCase();
+                if (!haystack.includes(q)) {
+                    return false;
+                }
+            }
 
             // Atribut data yang kosong ('') diperlakukan sebagai TIDAK ADA:
             // dimensi itu tak berlaku atas baris tsb (mis. baris benih tanpa SP).
@@ -289,6 +322,7 @@ export default function filterLaporan(konfig = {}) {
 
         bersihkan() {
             this.sp = '';
+            this.cari = '';
             this.tahunDari = '';
             this.tahunSampai = '';
             if (this.konfig.tahunTunggal) {

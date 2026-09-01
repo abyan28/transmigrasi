@@ -13,16 +13,17 @@
     angka contoh turunan.
 --}}
 @php
+    $isDokumen = request()->routeIs('laporan.dokumen');
     $angka = fn ($n, $desimal = 2) => \App\Support\LaporanData::angka($n, $desimal);
     $isi = fn ($v) => $v !== null && trim((string) $v) !== '' ? $v : 'belum dicatat';
     $tahunAkhir = \App\Support\LaporanData::tahunDokumenBawaan();
 @endphp
 
-<p class="rounded-lg border border-gray-200 bg-gray-50 p-3 text-theme-xs text-gray-500 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400">
-    Pemilih tahun mengubah angka kependudukan, produksi, dan iklim menurut tahun
-    terpilih. Keadaan fisik wilayah (letak, batas, luas, tanah, sumberdaya air,
-    aksesibilitas) tidak berubah antar tahun.
-</p>
+@unless ($isDokumen)
+    <p class="rounded-lg border border-gray-200 bg-gray-50 p-3 text-theme-xs text-gray-500 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400">
+        Laporan menampilkan data kependudukan, produksi, dan iklim sesuai tahun yang dipilih. Informasi kondisi fisik wilayah, meliputi letak, batas, luas, tanah, sumber daya air, dan aksesibilitas, merupakan informasi wilayah yang bersifat tetap.
+    </p>
+@endunless
 
 <div class="overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-800">
     <table class="tabel-dokumen min-w-full text-theme-sm">

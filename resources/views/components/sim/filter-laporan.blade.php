@@ -40,6 +40,25 @@
 <section aria-label="Penyaring laporan"
     class="cetak-sembunyi border-b border-gray-200 bg-gray-50 px-6 py-4 dark:border-gray-800 dark:bg-white/[0.02]">
     <div class="flex flex-wrap items-end gap-3">
+        {{-- Input Pencarian Kata Kunci --}}
+        <div class="min-w-[14rem] flex-1">
+            <label for="filter-laporan-cari" class="{{ $kelasLabel }}">Cari Data</label>
+            <div class="relative">
+                <input id="filter-laporan-cari" type="search" x-model.debounce.150ms="cari"
+                    placeholder="Ketik kata kunci pencarian..."
+                    class="{{ $kelasSelect }} pl-9 pr-8" />
+                <svg class="pointer-events-none absolute left-3 top-3 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                </svg>
+                <button type="button" x-show="cari !== ''" @click="cari = ''" class="absolute right-2.5 top-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                    <span class="sr-only">Hapus pencarian</span>
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
         @if (! empty($sp))
             <div class="min-w-[12rem] flex-1">
                 <label for="filter-laporan-sp" class="{{ $kelasLabel }}">Satuan Permukiman</label>
@@ -64,7 +83,8 @@
         @endif
 
         @if ($tahun)
-            <div class="min-w-[9rem] flex-1">
+            <div class="min-w-[9rem] flex-1"
+                x-show="modeTampilan === 'gabungan' || modeTampilan === 'transmigran'">
                 <label for="filter-laporan-tahun-dari" class="{{ $kelasLabel }}">{{ $labelTahun }} dari</label>
                 <select id="filter-laporan-tahun-dari" x-model="tahunDari" class="{{ $kelasSelect }}">
                     <option value="">Tahun paling awal</option>
@@ -73,7 +93,8 @@
                     @endforeach
                 </select>
             </div>
-            <div class="min-w-[9rem] flex-1">
+            <div class="min-w-[9rem] flex-1"
+                x-show="modeTampilan === 'gabungan' || modeTampilan === 'transmigran'">
                 <label for="filter-laporan-tahun-sampai" class="{{ $kelasLabel }}">{{ $labelTahun }} sampai</label>
                 <select id="filter-laporan-tahun-sampai" x-model="tahunSampai" class="{{ $kelasSelect }}">
                     <option value="">Tahun paling akhir</option>
@@ -85,7 +106,15 @@
         @endif
 
         @foreach ($dimensi as $d)
-            <div class="min-w-[10rem] flex-1">
+            @php
+                $kondisiMode = match ($d['kunci']) {
+                    'status' => "modeTampilan === 'gabungan' || modeTampilan === 'transmigran'",
+                    'statusHunian', 'kondisi' => "modeTampilan === 'rumah'",
+                    'peruntukan' => "modeTampilan === 'lahan'",
+                    default => 'true',
+                };
+            @endphp
+            <div class="min-w-[10rem] flex-1" x-show="{{ $kondisiMode }}">
                 <label for="filter-laporan-{{ $d['kunci'] }}" class="{{ $kelasLabel }}">{{ $d['label'] }}</label>
                 <select id="filter-laporan-{{ $d['kunci'] }}" x-model="dimensi.{{ $d['kunci'] }}"
                     class="{{ $kelasSelect }}">

@@ -3346,3 +3346,37 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
     - 728 pengujian fitur & unit Pest (6.120 assertions) 100% PASS (Hijau).
     - Verifikasi redirect 301 untuk `/infrastruktur` dan `/infrastruktur/{id}`.
     - `npm run build` sukses bersih.
+
+* **Revisi Komprehensif UX/UI Menu Laporan Transmigran (2026-09-01):**
+  * **Konteks:**
+    Menu Laporan Transmigran (`/laporan/transmigran`) sebelumnya terpisah ke dalam 3 tabel statis (Bagian A: Transmigran, Bagian B: Rumah, Bagian C: Lahan) tanpa integrasi hubungan data antar-entitas, tanpa input pencarian kata kunci (*search input*), dan tanpa fleksibilitas pemilihan sudut pandang laporan.
+  * **Solusi Arsitektur & Detail Implementasi:**
+    1. **Implementasi 4 Mode Tampilan Interaktif (`pages/laporan/isi/transmigran.blade.php`):**
+       - **Mode Gabungan (Terpadu / Alternatif 1):** Menggabungkan Transmigran + Rumah + Lahan ke dalam SATU tabel utama berorientasi Kepala Keluarga dengan Multi-Level Grouped Header (Identitas KK, Rumah & Hunian, Hak Pengelolaan Lahan) dan Sub-cell Stack untuk menangani kepemilikan multi-bidang lahan secara rapi tanpa merusak struktur baris.
+       - **Mode Data Transmigran:** Menampilkan profil demografi lengkap kepala keluarga (NIK, jenis kelamin, TTL, pendidikan, pekerjaan, anggota keluarga, pendapatan, asal, tahun datang, SP, status tinggal).
+       - **Mode Data Rumah:** Menampilkan inventarisasi fisik rumah (nomor rumah, SP, penghuni, kondisi fisik bangunan, status penghunian, tahun bangun, luas bangunan).
+       - **Mode Data Lahan:** Menampilkan inventarisasi bidang lahan (kode lahan, pemilik, SP, peruntukan pekarangan/usaha, total luas, luas kering, luas basah, pola tanam).
+    2. **Penyaring Cerdas & Pencarian Kata Kunci Sisi Klien (`resources/js/filter-laporan.js` & `components/sim/filter-laporan.blade.php`):**
+       - Menambahkan input pencarian kata kunci teks bebas (`cari` / `q`) yang menyaring data secara instan (`data-cari`) untuk nama KK, NIK, No KK, no rumah, dan kode lahan.
+       - Menambahkan filter kondisional per mode tampilan (`statusHunian` dan `kondisi` hanya tampil di Mode Rumah, `peruntukan` hanya di Mode Lahan, `tahun` dan `status` tampil di Mode Gabungan dan Transmigran).
+       - Menambahkan filter dimensi baru di `LaporanData::filterLaporan('transmigran')`: `statusHunian`, `kondisi`, `peruntukan`.
+    3. **Hierarki Visual & Kontainer Scroll Responsif:**
+       - Seluruh tabel dibungkus dalam kontainer `overflow-x-auto rounded-2xl border` sehingga scroll horizontal hanya berlaku di area tabel jika layar menyempit.
+       - Tipografi terstruktur dengan `tabular-nums` untuk NIK/angka/luas dan badge status semantik (Aktif, Pindah, Dihuni, Kondisi Rumah).
+    4. **Pembersihan Dokumen Resmi Sesuai Mode Terpilih (`/laporan/transmigran/dokumen`):**
+       - Menyembunyikan seluruh navigasi *pill tab switcher* dan subjudul pengantar informal pada rute dokumen (`$isDokumen`), sehingga hasil *Generate Laporan* murni memuat Kop Surat Dinas + Tabel Data Mode Terpilih (Gabungan, Transmigran, Rumah, atau Lahan) beserta parameter filternya.
+    5. **Peniadaan Scrollbar Horizontal & Vertikal di Dalam Tabel Dokumen Landscape:**
+       - Menyesuaikan ukuran font ke `text-theme-xs` (11–12px), memadatkan padding sel (`0.25rem 0.375rem`), dan mengoptimalkan sel lebar (TTL 2 baris kompak, NIK/KK/Pendapatan tabular-nums whitespace-nowrap).
+       - Menegakkan `overflow-y: hidden` pada `.kertas-dokumen .overflow-x-auto` di `app.css`.
+       - Total lebar tabel 14 kolom menyusut hingga ~1.180px, muat presisi di dalam kontainer dokumen 1.200px tanpa memicu slider horizontal maupun slider vertikal.
+    6. **Dukungan Pemilihan Ukuran Kertas Cetak A4 / F4 (Opsi 2 - Pill Selector):**
+       - Menambahkan pemilih ukuran kertas (`Kertas: [ A4 | F4 ]`) di bilah header laporan (`components/sim/kerangka-laporan.blade.php`).
+       - Parameter pilihan kertas disinkronkan ke dokumen lewat URL Hash (`#kertas=f4&...`) dan ditangani secara reaktif di `resources/js/filter-laporan.js`.
+       - Menyesuaikan lebar kontainer layar (`max-w-[1320px]` untuk F4 landscape) dan menginjeksi aturan cetak `@page { size: 330mm 215mm; margin: 10mm; }` untuk dokumen F4.
+    7. **Penyesuaian Teks & Pembersihan Card Informasi Monografi SP (`pages/laporan/isi/monografi-sp.blade.php`):**
+       - Menyesuaikan redaksi panduan pemilih tahun menjadi: *"Laporan menampilkan data kependudukan, produksi, dan iklim sesuai tahun yang dipilih. Informasi kondisi fisik wilayah, meliputi letak, batas, luas, tanah, sumber daya air, dan aksesibilitas, merupakan informasi wilayah yang bersifat tetap."*
+       - Menyembunyikan card panduan tersebut pada dokumen resmi yang digenerate (`@unless ($isDokumen)`).
+  * **Verifikasi:**
+    - Uji Peramban Lebar Dokumen (`node tests/Browser/uji-lebar-dokumen.mjs`): **28 lulus, 0 gagal (100% muat tanpa gulir mendatar)**.
+    - 728 pengujian Pest (6.120 assertions) 100% PASS (Hijau).
+    - `npm run build` sukses terkompilasi dalam 5.10 detik.

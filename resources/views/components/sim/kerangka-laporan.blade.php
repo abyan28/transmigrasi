@@ -95,21 +95,38 @@
             keterangan="Dokumen laporan berformat tetap untuk kebutuhan dinas, pendamping, dan kementerian."
             :remah="\App\Helpers\RemahHelper::untuk('/laporan/' . $slug)">
             <x-slot:aksi>
-                {{--
-                    "Generate Laporan": membuka rute dokumen di tab baru dengan
-                    keadaan filter dibawa lewat FRAGMEN HASH (#sp=..&td=..).
-                    GitHub Pages tidak melayani query string (notes.md 1b.5),
-                    tetapi hash murni sisi peramban. `hashFilter` kosong berarti
-                    href = alamat polos.
-                --}}
-                <a :href="@js(route('laporan.dokumen', $slug)) + hashFilter" target="_blank" rel="noopener"
-                    class="inline-flex h-10 shrink-0 items-center gap-2 rounded-lg bg-brand-500 px-4 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
-                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-                    </svg>
-                    Generate Laporan<span class="sr-only">, terbuka di tab baru</span>
-                </a>
+                <div class="flex flex-wrap items-center gap-2.5">
+                    {{-- Pemilih Ukuran Kertas (Opsi 2: Pill Selector) --}}
+                    <div class="inline-flex items-center rounded-lg border border-gray-200 bg-gray-50 p-1 dark:border-gray-800 dark:bg-gray-800/80">
+                        <span class="px-2 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Kertas:</span>
+                        <button type="button" @click="ukuranKertas = 'a4'"
+                            :class="ukuranKertas === 'a4' ? 'bg-white font-semibold text-gray-900 shadow-sm dark:bg-gray-900 dark:text-white' : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white font-medium'"
+                            class="rounded-md px-2.5 py-1 text-theme-xs transition focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
+                            A4
+                        </button>
+                        <button type="button" @click="ukuranKertas = 'f4'"
+                            :class="ukuranKertas === 'f4' ? 'bg-white font-semibold text-gray-900 shadow-sm dark:bg-gray-900 dark:text-white' : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white font-medium'"
+                            class="rounded-md px-2.5 py-1 text-theme-xs transition focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
+                            F4 (Folio)
+                        </button>
+                    </div>
+
+                    {{--
+                        "Generate Laporan": membuka rute dokumen di tab baru dengan
+                        keadaan filter dibawa lewat FRAGMEN HASH (#sp=..&td=..&kertas=..).
+                        GitHub Pages tidak melayani query string (notes.md 1b.5),
+                        tetapi hash murni sisi peramban. `hashFilter` kosong berarti
+                        href = alamat polos.
+                    --}}
+                    <a :href="@js(route('laporan.dokumen', $slug)) + hashFilter" target="_blank" rel="noopener"
+                        class="inline-flex h-10 shrink-0 items-center gap-2 rounded-lg bg-brand-500 px-4 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                        </svg>
+                        Generate Laporan<span class="sr-only">, terbuka di tab baru</span>
+                    </a>
+                </div>
             </x-slot:aksi>
         </x-sim.page-header>
     @endunless
@@ -121,7 +138,18 @@
         bingkai kartu (rounded + shadow) dilepas supaya terbaca sebagai kertas.
     --}}
     <article
-        class="kertas-dokumen dokumen-{{ $orientasi }} mx-auto {{ $lebarKertas }} overflow-hidden border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900 {{ $dokumen ? '' : 'rounded-2xl shadow-sm' }}">
+        :class="{
+            'kertas-f4': ukuranKertas === 'f4',
+            @if ($dokumen)
+                'max-w-[1320px]': ukuranKertas === 'f4' && {{ $landscape ? 'true' : 'false' }},
+                'max-w-[880px]': ukuranKertas === 'f4' && ! {{ $landscape ? 'true' : 'false' }},
+                'max-w-[1200px]': ukuranKertas !== 'f4' && {{ $landscape ? 'true' : 'false' }},
+                'max-w-[820px]': ukuranKertas !== 'f4' && ! {{ $landscape ? 'true' : 'false' }},
+            @else
+                '{{ $landscape ? 'max-w-full' : 'max-w-5xl' }}': true,
+            @endif
+        }"
+        class="kertas-dokumen dokumen-{{ $orientasi }} mx-auto overflow-hidden border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900 {{ $dokumen ? '' : 'rounded-2xl shadow-sm' }}">
         @if ($dokumen)
             {{-- Kop surat resmi (Putaran 5), menggantikan blok "Cakupan laporan". --}}
             <x-sim.kop-laporan :slug="$slug" />

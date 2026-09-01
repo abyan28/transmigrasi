@@ -2,7 +2,10 @@
 
 namespace App\Support;
 
+use App\Enums\KondisiRumah;
+use App\Enums\PeruntukanLahan;
 use App\Enums\StatusAnggotaKeluarga;
+use App\Enums\StatusHunian;
 use App\Enums\StatusTinggal;
 use Illuminate\Support\Carbon;
 
@@ -1211,6 +1214,21 @@ class LaporanData
                         'kunci' => 'status',
                         'label' => 'Status Tinggal',
                         'opsi' => array_map(fn (StatusTinggal $c): string => $c->value, StatusTinggal::cases()),
+                    ],
+                    [
+                        'kunci' => 'statusHunian',
+                        'label' => 'Status Hunian',
+                        'opsi' => array_map(fn (StatusHunian $c): string => $c->value, StatusHunian::cases()),
+                    ],
+                    [
+                        'kunci' => 'kondisi',
+                        'label' => 'Kondisi Rumah',
+                        'opsi' => array_map(fn (KondisiRumah $c): string => $c->value, KondisiRumah::cases()),
+                    ],
+                    [
+                        'kunci' => 'peruntukan',
+                        'label' => 'Peruntukan Lahan',
+                        'opsi' => array_map(fn (PeruntukanLahan $c): string => $c->value, PeruntukanLahan::cases()),
                     ],
                 ],
                 'cakupanBawaan' => $cakupanBawaan,

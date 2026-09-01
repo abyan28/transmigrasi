@@ -146,3 +146,50 @@ Catatan hasil: `agents/notes.md` §1w & `## 6. Revisi`. Ringkasan: `agents/taskl
 - **Vite Build:** `npm run build` sukses bersih.
 - **HTTP Endpoint:** `/sp/infrastruktur` membalas 200 OK, `/infrastruktur` membalas 301 Redirect.
 
+
+# Revisi Komprehensif UX/UI Menu Laporan Transmigran (2026-09-01)
+
+### 1. Implementasi 4 Mode Tampilan Interaktif
+- **Mode Gabungan (Terpadu / Alternatif 1):** Menggabungkan data Transmigran + Rumah + Lahan ke dalam satu tabel komprehensif berorientasi Kepala Keluarga dengan Multi-Level Grouped Header dan Sub-cell Stack untuk multi-bidang lahan.
+- **Mode Data Transmigran:** Menampilkan rincian demografi 14 kolom lengkap Kepala Keluarga transmigran.
+- **Mode Data Rumah:** Menampilkan inventarisasi fisik rumah, nomor rumah, penghuni, kondisi bangunan, status hunian, tahun bangun, dan luas bangunan.
+- **Mode Data Lahan:** Menampilkan inventarisasi seluruh bidang lahan pekarangan dan usaha dengan komposisi luas kering/basah dan pola tanam.
+- **Pill Tab Selector:** Disediakan bilah navigasi mode di bagian atas tabel dengan deskripsi peran masing-masing mode.
+
+### 2. Penyaring Cerdas & Pencarian Kata Kunci Sisi Klien
+- **Pencarian Kata Kunci Instan (`cari` / `q`):** Menambahkan input pencarian teks bebas di bilah filter laporan yang mencocokkan `data-cari` (Nama KK, NIK, No KK, no rumah, kode lahan).
+- **Filter Kondisional Per Mode:** Dimensi filter ditampilkan secara kontekstual sesuai mode yang aktif (`statusHunian` & `kondisi` di Mode Rumah, `peruntukan` di Mode Lahan, `status` & `tahun` di Mode Gabungan dan Transmigran).
+- **Dimensi Baru Laporan Data:** Menambahkan opsi dimensi `statusHunian`, `kondisi`, dan `peruntukan` pada `LaporanData::filterLaporan('transmigran')`.
+
+### 3. Hierarki Visual & Kontainer Scroll Responsif
+- Membungkus setiap tabel dalam `overflow-x-auto rounded-2xl border` agar scrollbar horizontal hanya berada pada container tabel saat layar menyempit.
+- Tipografi terstruktur, penggunaan `tabular-nums` untuk angka/NIK/luas, dan badge status semantik (Aktif, Pindah, Kondisi Rumah, Status Hunian).
+
+### 4. Pembersihan Dokumen Resmi Sesuai Mode Terpilih
+- Pada rute dokumen resmi (`/laporan/transmigran/dokumen`), navigasi *pill tab switcher* dan subjudul pengantar informal disembunyikan seluruhnya (`$isDokumen`).
+- Dokumen yang digenerate murni menyajikan Kop Surat Dinas + Tabel Data Mode Terpilih (Gabungan, Transmigran, Rumah, atau Lahan) beserta parameter filternya yang dibawa melalui URL Hash.
+
+### 5. Peniadaan Scrollbar Horizontal & Vertikal di Dalam Tabel Dokumen
+- Menyesuaikan ukuran font ke `text-theme-xs` (11–12px), memadatkan padding sel (`0.25rem 0.375rem`), dan mengoptimalkan sel lebar (TTL 2 baris kompak, NIK/KK/Pendapatan tabular-nums whitespace-nowrap).
+- Menegakkan `overflow-y: hidden` pada `.kertas-dokumen .overflow-x-auto` di `app.css`.
+- Total lebar tabel 14 kolom menyusut hingga ~1.180px, muat presisi di dalam kontainer dokumen 1.200px tanpa memicu slider horizontal maupun slider vertikal di dalam tabel.
+
+### 6. Dukungan Pemilihan Ukuran Kertas Cetak A4 / F4 (Opsi 2)
+- Menambahkan switcher ukuran kertas (`Kertas: [ A4 | F4 ]`) di bilah header laporan (`components/sim/kerangka-laporan.blade.php`).
+- Keadaan pilihan ukuran kertas disinkronkan ke dokumen lewat URL Hash (`#kertas=f4&...`) dan ditangani secara reaktif di `resources/js/filter-laporan.js`.
+- Menyesuaikan lebar kontainer layar (`max-w-[1320px]` untuk F4 landscape) dan menginjeksi aturan cetak `@page { size: 330mm 215mm; margin: 10mm; }` untuk dokumen F4.
+
+### 7. Penyesuaian Teks & Pembersihan Card Informasi Monografi SP
+- Redaksi panduan pemilih tahun disesuaikan menjadi: *"Laporan menampilkan data kependudukan, produksi, dan iklim sesuai tahun yang dipilih. Informasi kondisi fisik wilayah, meliputi letak, batas, luas, tanah, sumber daya air, dan aksesibilitas, merupakan informasi wilayah yang bersifat tetap."*
+- Card panduan tersebut disembunyikan pada dokumen resmi yang digenerate (`@unless ($isDokumen)`).
+
+### 8. Verifikasi Mutu
+- **Uji Peramban Lebar Dokumen (`node tests/Browser/uji-lebar-dokumen.mjs`):** 28 lulus, 0 gagal (100% muat tanpa gulir mendatar di seluruh 7 laporan resmi).
+- **Pest PHP:** 728 pengujian (6.120 assertions) **100% PASS (Hijau)**.
+- **Vite Build:** `npm run build` sukses bersih dalam 5.10 detik.
+- **A11y & Visual Hierarchy:** Memenuhi WCAG 2.1 AA (caption, th scope, tabular-nums).
+
+
+
+
+
