@@ -226,6 +226,52 @@ regresi tertangkap & dibetulkan: `x-sim.file-upload` SHM sempat mendahului
 `name="keterangan"` di langkah 3 (melanggar ui-spec 6.4a poin 5) - Catatan
 dipindah ke atas unggahan.
 
+## Audit pra-Tahap-3 + utang dokumentasi + keputusan A1/A2 (2026-09-03)
+
+Pemilik proyek meminta pemeriksaan apa yang tersisa sebelum Tahap 3. **Tidak ada
+blocker kode** - Tahap 2 selesai seluruhnya, `schema.sql` final & terverifikasi
+impor MariaDB, pengambilan data sudah pindah dari view ke rute. Yang ada:
+
+- **Utang dokumentasi (DIBERESKAN):** `erd.md` §2 (hitungan 55 bisnis + 6 Laravel,
+  `schema.sql` sebagai sumber kebenaran), §10 (pointer ke urutan `CREATE TABLE`),
+  §12 poin 1 (lahan one-to-many -> one-to-one). `data-dictionary.md`: dicek
+  konsisten dengan `schema.sql` (§5.7 `status_kondisi_sp` sudah ada dari agen
+  paralel, `uuid` terpusat di §1.3a, kolom usang sudah dicoret). `tasklist.md`
+  Task 4.1b (kawasan/HPL - sebelumnya tak bernomor), Task 5.1/5.2 & 6.1/6.2/6.3
+  diperbarui agar penulis migration Tahap
+  4-6 tidak membangun dari deskripsi usang (one-to-one lahan, bidang jadi kolom,
+  SHM lewat form lahan, HPL di kawasan, `dokumen_pendukung` -> peran ktp/kk/sk,
+  `jumlah_anggota_keluarga` diturunkan). `notes.md` §6 daftar tindak-lanjut DDL
+  ditandai selesai. §5.7 `status_kondisi_sp` ternyata sudah ada (agen paralel).
+- **A1 (DIPUTUSKAN):** penerbitan statis begitu login aktif -> **batasi ke halaman
+  publik saja** (opsi a). Implementasi konkret masuk Task 3.2: saring
+  `DaftarTautanStatis` ke rute tanpa `auth`, `TautanStatisTest` menyesuaikan.
+- **A2 (MENUNGGU DINAS):** spesifikasi hosting - 6 hal (versi PHP 8.2.x, MySQL/
+  MariaDB + versi, storage privat + S3/GCS, cron untuk backup, SSL + domain,
+  reverse proxy). Diangkat jadi item eksplisit di `notes.md` §4 poin 7 + peringatan
+  di kepala Tahap 3 `tasklist.md`. Tahap 3 boleh mulai di XAMPP lokal sambil
+  menunggu; Task 3.10 & 11.3 menahan diri.
+
+Baseline tak berubah: **732 PASS**, pint 33, `sim:tautan-statis` 224. Perubahan
+audit ini hanya menyentuh `agents/*.md`, nol kode.
+
+**Lanjutan 2026-09-03 — evaluasi analisis AI lain + konsolidasi.** Pemilik proyek
+membagikan analisis AI lain soal "yang belum dikerjakan sebelum Tahap 3". Dicek
+baris demi baris ke kode: **seluruh klaim teknisnya benar** (SQLite `:memory:`,
+`RefreshDatabase` mati, 33 ENUM/185 UNSIGNED, migration & `Model User` masih
+bawaan, `ValidationRules` menunjuk tabel `user`). Namun **sebagian besar
+menemukan ulang** hal yang sudah tercatat: B1/B4 di rencana Putaran 13 (389–390,
+495–500), B3 (SQLite tak kenal ENUM) di 474–489, urutan B-A & Pages publik-saja
+di 418–419. B2 ("bangkai") keliru kategori — `ValidationRules::email()` benar
+untuk skema target, cuma belum terpakai. **Tidak ada yang perlu dikerjakan
+sekarang:** B1/B2/B4 = isi Task 3.1; B3 = keputusan kickoff Task 3.1 (arah sudah
+ada). Yang dikerjakan: blok **"⚑ BACA SEBELUM TASK 3.1"** di kepala bagian Tahap 3
+`tasklist.md` mengonsolidasikan semua keputusan/jebakan yang tersebar, plus
+strategi uji DB (SQLite cepat untuk 732 uji lama + grup `tests/Feature/Database/`
+ber-MySQL untuk uji constraint Tahap 3+), plus Task 3.1 dinaikkan dari `[Mudah]`
+ke `[Sulit]` (cakupan sebenarnya ~55 migration + ~55 model), dan "44 tabel
+bisnis" usang di kepala Tahap 3 dibetulkan jadi 55.
+
 ---
 
 # Putaran 14 - UI Multi-Unggah Berkas BERJALAN (2026-09-02)

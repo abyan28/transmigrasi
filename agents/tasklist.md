@@ -1030,17 +1030,65 @@ domain; sisanya mengikuti tanpa mengubah skema maupun komponen.
 
 ## Tahap 3 — Autentikasi dan Hak Akses
 
-> **Peringatan penerbitan statis.** Begitu login aktif, halaman berpelindung membalas pengalihan ke `/login`, bukan 200, sehingga `.github/workflows/deploy.yml` **gagal** dan situs GitHub Pages berhenti diperbarui. Putuskan lebih dulu: batasi `sim:tautan-statis` hanya ke halaman publik, atau hentikan penerbitan statis sama sekali. Lihat `notes.md` bagian 1b.7.
+> ## ⚑ BACA SEBELUM TASK 3.1 (konsolidasi keputusan pra-Tahap-3, 2026-09-03)
+>
+> **1. Rencana Task 3.1 sudah ada dan masih sah:** `session-notes.md` baris ~373–500
+> (Putaran 13, "DITUNDA sebelum satu baris kode"). Pakai apa adanya — 6 penjaga,
+> penyisiran lima sudut, cara verifikasi. Jangan susun ulang.
+>
+> **2. Keputusan terkunci pemilik proyek (Putaran 13):**
+> - **Urutan B lalu A** — migration + model DULU tanpa menyentuh autentikasi;
+>   login/RBAC/penyesuaian ±330 uji menyusul pada putaran terpisah. Selama Task
+>   3.1, **732 uji wajib tetap hijau** — itu penjaganya.
+> - **GitHub Pages → halaman publik saja** saat login aktif (diterapkan Task 3.2,
+>   lihat blockquote di bawah).
+>
+> **3. Strategi uji basis data (jawaban B3, ditegaskan 2026-09-03):** uji sekarang
+> memakai SQLite `:memory:` dengan `RefreshDatabase` MATI (`tests/Pest.php:15`),
+> sehingga 732 uji **tidak menyentuh DB** — dan memang tidak perlu. SQLite juga
+> tidak menegakkan `ENUM`/`UNSIGNED`, jadi menyalakan `RefreshDatabase` untuk
+> seluruh suite = ongkos tanpa manfaat, malah membuat penjaga jadi fiksi.
+> **Rencana:** pertahankan SQLite cepat untuk 732 uji lama; tambah grup terpisah
+> `tests/Feature/Database/` ber-`RefreshDatabase` + **MySQL/MariaDB** untuk uji
+> model & constraint Tahap 3+ (lokal via XAMPP, CI via service `mysql` — CI
+> sekarang belum punya job pest sama sekali). **Tetap** verifikasi manual
+> `migrate:fresh` → MariaDB nyata → banding `schema.sql` (penjaga yang menemukan
+> cacat sungguhan 2 putaran terakhir). ENUM diterjemahkan `$table->string()` +
+> penjaga PHP Enum. **Finalisasi bentuk grup uji ini saat menulis uji model pertama.**
+>
+> **4. Jebakan Task 3.1 (terverifikasi ke kode 2026-09-03):**
+> - `database/migrations/0001_01_01_000000_create_users_table.php` membuat `users`
+>   (PK `id`) + `password_reset_tokens` + `sessions`. **GANTI, bukan tambahi:**
+>   skema menuntut `user` (PK `id_user`, + `role_id` FK, `username`,
+>   `password_harus_diganti`, `is_aktif`, `last_login_at`). `password_reset_tokens`
+>   **TIDAK dibuat** — `kode_pemulihan_sandi` menggantikannya, dan `rules.md` §14b
+>   melarang rute pemulihan sandi bawaan. `sessions` boleh dipertahankan.
+> - `app/Models/User.php` masih 100% bawaan Laravel (`$fillable = ['name',...]`,
+>   tanpa `$table`/`$primaryKey`/relasi `role`). Tulis ulang: `$table = 'user'`,
+>   `$primaryKey = 'id_user'`, relasi `role()` eksplisit menyebut kunci (`rules.md` 4.0).
+> - `app/Support/ValidationRules.php` baris 137/155 menunjuk `unique:user,...,id_user`.
+>   Ini **benar untuk skema target**, hanya belum terpakai — akan hidup & benar
+>   begitu tabel `user` ada. Bukan bug.
+>
+> **5. A2 hosting** — 6 spesifikasi menunggu input dinas (blockquote di bawah);
+> Tahap 3 boleh mulai di XAMPP lokal, Task 3.10 & 11.3 yang menahan diri.
+
+> **Penerbitan statis — KEPUTUSAN DIAMBIL 2026-09-03 (audit pra-Tahap-3):** batasi `sim:tautan-statis` ke **halaman publik saja** (opsi a), bukan menghentikan penerbitan. Halaman berpelindung membalas redirect ke `/login` (bukan 200) begitu login aktif, sehingga `deploy.yml` gagal bila daftar rute tak disaring. **Kerjakan bersama Task 3.2:** tandai rute publik, saring `app/Console/Commands/DaftarTautanStatis.php` ke allowlist rute tanpa `auth`, sesuaikan `TautanStatisTest`. `deploy.yml` boleh tetap jalan sebagai pratinjau halaman publik, atau dimatikan bila hosting ber-PHP sudah siap (lihat catatan hosting di bawah). Ref `notes.md` 1b.7.
+
+> **Spesifikasi hosting (A2) — MENUNGGU INPUT DINAS.** Sebelum Task 3.10 (rate limit) & Task 11.3 (deployment): konfirmasi versi PHP (target 8.2.x), MySQL/MariaDB + versi, kapasitas storage privat + ketersediaan S3/GCS, dukungan cron untuk backup terjadwal, SSL + domain, dan apakah di belakang reverse proxy. Daftar lengkap di `notes.md` §6 butir "[decided 2026-09-03]" dan §4 poin 7. Tahap 3 boleh berjalan di XAMPP lokal tanpa risiko sambil menunggu.
 
 > **Acuan skema untuk seluruh migration Tahap 3–9 (2026-09-01):** `database/data/schema.sql`
-> adalah skema DDL final (44 tabel bisnis, MySQL/MariaDB, siap PDM). Migration Laravel
+> adalah skema DDL final (**55 tabel bisnis** + 6 tabel infrastruktur Laravel = 61
+> `CREATE TABLE`, MySQL/MariaDB, siap PDM). Migration Laravel
 > menerjemahkannya, TIDAK menyusun ulang dari nol. Rekonsiliasi 15 konflik dokumentasi
 > tercatat pada `notes.md` butir 2026-09-01. Catatan Task 3.2 di bawah ("email atau NIK",
 > "16 digit angka berarti NIK") **usang**: `user` tidak lagi punya kolom `nik`/`transmigran_id`;
 > login memakai **email atau username**.
 
-- [ ] Task 3.1 - Migration dan model `user` beserta password dan timestamps `[Mudah]`
-  * Acuan struktur kolom, tipe, index, dan FK: `database/data/schema.sql` (tabel `user`, `role`, `permission`, `role_permission`, `user_satuan_permukiman`, `kode_pemulihan_sandi`, `audit_log`)
+- [ ] Task 3.1 - Migration + model seluruh 55 tabel bisnis, `Model User` ditulis ulang `[Sulit]`
+  * **Bukan `[Mudah]`.** Cakupan penuh Putaran 13: ~55 migration + ~55 model Eloquent, urutan mengikuti `CREATE TABLE` pada `schema.sql`. Rincian, penjaga, dan cara verifikasi: `session-notes.md` 373–500. Lihat blok "⚑ BACA SEBELUM TASK 3.1" di atas untuk jebakan migration bawaan & strategi uji DB
+  * `uuid` dipasang bersamaan Model (`rules.md` 4.0a 5a), diawali modul berdata pribadi (transmigran, rumah, pengaduan)
+  * Acuan kolom/tipe/index/FK: `database/data/schema.sql` — SATU-SATUNYA sumber kebenaran
 - [ ] Task 3.2 - Implementasi login, logout, dan rate limiting `[Sedang]`
   * Satu kolom kredensial menerima **email atau username**; keduanya unik antar-akun (`rules.md` 14b poin 4). Sistem memilih kolom pencarian berdasarkan bentuk masukannya
   * ~~Ketentuan lama: `email atau NIK`, dengan 16 digit angka berarti NIK. **DICABUT** sebab seluruh pemegang akun adalah petugas dan warga tidak memiliki akun (`rules.md` 14b poin 6); `user` pun tidak lagi punya kolom `nik`. Teksnya baru dibetulkan 2026-09-02, sebelumnya hanya ditandai usang pada catatan di atas sehingga pembaca yang langsung melompat ke butir ini tetap membaca ketentuan yang keliru.~~
@@ -1103,6 +1151,9 @@ domain; sisanya mengikuti tanpa mengubah skema maupun komponen.
 
 - [ ] Task 4.1 - Migration dan model wilayah bertingkat + seeder 6 desa/4 kecamatan `[Sedang]`
   * Tampilan form sudah selesai pada Task 2.30
+  * **`provinsi`/`kabupaten` seeder dari `app/Support/DataWilayah.php`** (38 + 514 berkode BPS); kecamatan/desa TETAP lokus sampai pengambilan bertahap lewat endpoint (`rules.md` 4a.9a)
+- [ ] Task 4.1b - CRUD kawasan transmigrasi + unggah HPL/SK/peta `[Sedang]`
+  * Tampilan form (`sp/form-kawasan`) sudah selesai pada Task 2.30, multi-berkas. `kawasan_transmigrasi_berkas` peran `hpl`/`sk`/`peta`. HPL alas hak KAWASAN milik instansi (`rules.md` 7.4a) — bukan per bidang lahan. Kawasan tak punya halaman rincian sendiri; berkasnya dibuka dari kartu di `/kawasan`
 - [ ] Task 4.2 - CRUD satuan permukiman (SP) beserta koordinat `[Sedang]`
   * Tampilan form sudah selesai pada Task 2.30; tersisa migration, model, dan penyimpanan
 - [ ] Task 4.3 - CRUD inventaris SP (nama, tahun, sumber dana, status penyerahan, dokumen) `[Sedang]`
@@ -1115,8 +1166,12 @@ domain; sisanya mengikuti tanpa mengubah skema maupun komponen.
 
 ## Tahap 5 — Backend Kependudukan
 
-- [ ] Task 5.1 - Migration dan model transmigran (termasuk no. KK dan jumlah anggota) `[Sedang]`
-- [ ] Task 5.2 - CRUD transmigran + upload dokumen pendukung `[Sulit]`
+- [ ] Task 5.1 - Migration dan model transmigran + `anggota_keluarga` `[Sedang]`
+  * `no_kk` UNIQUE, `nik` UNIQUE. **`jumlah_anggota_keluarga` BUKAN kolom** (dicabut Rombongan B) — diturunkan: 1 + `COUNT(anggota_keluarga)`. `usia` juga diturunkan dari `tanggal_lahir`
+  * `status_sertifikat` (enum `StatusSertifikat`) adalah kolom di sini, tetapi isiannya lewat form LAHAN (`rules.md` 7.6a)
+  * `uuid` dipasang bersamaan (`rules.md` 4.0a 5b: transmigran termasuk gelombang pertama UUID)
+- [ ] Task 5.2 - CRUD transmigran + unggah KTP/KK/SK terpisah `[Sulit]`
+  * Bukan satu kolom `dokumen_pendukung` (dicabut Putaran 12). KTP, KK, SK penempatan adalah tiga peran berkas terpisah pada `transmigran_berkas`; SHM peran `shm` diunggah dari form lahan
 - [ ] Task 5.3 - CRUD rumah dan kondisi hunian + foto dan koordinat `[Sedang]`
   * UNIQUE constraint dua arah rumah–KK; dropdown hanya menampilkan rumah kosong
 - [ ] Task 5.4 - Riwayat penghunian rumah (masuk, keluar, alasan) `[Sedang]`
@@ -1125,10 +1180,14 @@ domain; sisanya mengikuti tanpa mengubah skema maupun komponen.
 
 ## Tahap 6 — Backend Lahan dan Kelembagaan
 
-- [ ] Task 6.1 - Migration dan model lahan (pekarangan dan usaha) + kategori lahan `[Sedang]`
-  * Relasi one-to-many: FK `id_transmigran` berada di tabel lahan
-- [ ] Task 6.2 - CRUD lahan + upload dokumen HPL/SHM `[Sedang]`
-- [ ] Task 6.3 - Pencatatan koordinat, pola tanam, peralatan, dan kendala lahan usaha `[Sedang]`
+- [ ] Task 6.1 - Migration dan model lahan (SATU BARIS PER KK) `[Sedang]`
+  * **Relasi one-to-ONE** (Putaran 15): `UNIQUE (transmigran_id)`. Pekarangan & lahan usaha adalah KOLOM (`luas_pekarangan`/`luas_usaha`/`luas_kering`/`luas_basah` + dua pasang koordinat), bukan dua baris. `kategori_lahan`, `peruntukan_lahan`, `pola_tanam`, `peralatan_pertanian`, `kendala` sudah **dicabut** — jangan hidupkan
+  * `uuid` dipasang bersamaan (`rules.md` 4.0a 5a); Model lahir dengan `getRouteKeyName()` = `uuid`, pembatas rute `[0-9]+` ikut disesuaikan
+- [ ] Task 6.2 - CRUD lahan + isian SHM & status sertifikat `[Sedang]`
+  * Tampilan form sudah selesai (multistep, langkah 3). **SHM diunggah dari form lahan** ke `transmigran_berkas` peran `shm`; `status_sertifikat` menulis kolom `transmigran.status_sertifikat` (`rules.md` 7.6a). **HPL bukan di sini** — melekat pada `kawasan_transmigrasi`, diunggah dari form kawasan (Tahap 4)
+  * Alur Tambah hanya untuk KK yang belum punya baris lahan (UNIQUE); KK yang sudah ada → alur Ubah
+- [ ] Task 6.3 - Pencatatan dua pasang koordinat + komposisi luas usaha `[Sedang]`
+  * `lintang_pekarangan`/`bujur_pekarangan` dan `lintang_usaha`/`bujur_usaha` terpisah. Invarian aplikasi: `luas_kering + luas_basah = luas_usaha`. `NULL` pada `luas_pekarangan` = belum menerima, bukan nol
 - [ ] Task 6.4 - CRUD profil poktan dan data ketua `[Sedang]`
   * Tampilan form sudah selesai pada Task 2.30
 - [ ] Task 6.5 - CRUD daftar anggota poktan + status keaktifan `[Sedang]`

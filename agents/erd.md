@@ -49,12 +49,17 @@ Pola ini dipilih agar kode mudah dibaca (`transmigran_id` langsung terbaca menun
 
 ## 2. Daftar Tabel
 
-Total **55 tabel bisnis aktif** (Putaran 12 menambah registry `berkas` + 12 pivot, dan mencabut `dokumen_lahan` + `dokumen_lahan_bidang`), dikelompokkan menjadi 9 domain. (Angka "37" pada revisi
-awal dokumen ini **usang**: Rombongan B menambah `anggota_keluarga`; Rombongan C menambah
-`rute_aksesibilitas_sp`; Putaran 7 memecah alsintan/saprotan menjadi induk + `*_distribusi`,
-menambah `dokumen_lahan_bidang`, `infrastruktur_sp`, `fasilitas_sp_cakupan`; data master
-`referensi` menjadi tabel; dan `status_kondisi_sp` ditambahkan 2026-09-01. Skema DDL final
-ada pada `database/data/schema.sql` — lihat `notes.md` butir 2026-09-01.)
+**Sumber kebenaran: `database/data/schema.sql`** (61 `CREATE TABLE`: **55 tabel bisnis** +
+6 tabel infrastruktur Laravel `sessions`/`cache`/`cache_locks`/`jobs`/`job_batches`/`failed_jobs`).
+Skema itu sudah diverifikasi impor ke MariaDB 10.4 (Putaran 12: 61 tabel, 94 FK). Tabel di
+bawah dikelompokkan 9 domain; bila berbeda dari `schema.sql`, `schema.sql` yang benar.
+
+Riwayat pertumbuhan dari "37 tabel" revisi awal: Rombongan B `anggota_keluarga`; Rombongan C
+`rute_aksesibilitas_sp`; Putaran 7 memecah alsintan/saprotan jadi induk + `*_distribusi` +
+`infrastruktur_sp` + `fasilitas_sp_cakupan`; `referensi` menjadi tabel; `status_kondisi_sp`
+(2026-09-01); Putaran 12 menambah registry `berkas` + 12 pivot `*_berkas` dan **mencabut**
+`dokumen_lahan` + `dokumen_lahan_bidang` (yang sempat ada sejak Putaran 7). Putaran 15
+menyatukan `lahan` menjadi satu baris per KK tanpa mengubah jumlah tabel.
 
 | # | Domain | Tabel |
 |---|---|---|
@@ -440,7 +445,7 @@ Bagian ini merangkum seluruh penyimpangan yang disengaja dari berkas SQL referen
 
 ## 9. Tabel Bawaan Laravel
 
-Selain 37 tabel di atas, Laravel membuat tabel infrastrukturnya sendiri. Tabel ini tidak masuk hitungan ERD dan tidak perlu didokumentasikan di data dictionary.
+Selain 55 tabel bisnis di atas, Laravel membuat 6 tabel infrastrukturnya sendiri (`sessions`, `cache`, `cache_locks`, `jobs`, `job_batches`, `failed_jobs`) — 55 + 6 = 61 `CREATE TABLE` pada `schema.sql`. Tabel bawaan ini tidak masuk hitungan ERD dan tidak perlu didokumentasikan di data dictionary. `password_reset_tokens` bawaan **tidak dibuat**; digantikan `kode_pemulihan_sandi`.
 
 | Tabel | Fungsi |
 |---|---|
@@ -471,6 +476,12 @@ Kode lama milik satu akun wajib dibatalkan ketika kode baru diminta, agar tidak 
 ---
 
 ## 10. Urutan Migration
+
+**Acuan urutan yang mengikat adalah urutan `CREATE TABLE` pada
+`database/data/schema.sql`** — sudah diverifikasi impor bersih ke MariaDB, sehingga setiap
+foreign key dijamin menemukan induknya. Daftar bernomor di bawah adalah kerangka konseptual
+(disusun sebelum sejumlah tabel baca ditambahkan); untuk 55 tabel bisnis penuh, ikuti
+`schema.sql`. "Sisipan tabel baca" di bawah daftar menautkan tabel-tabel yang belum bernomor.
 
 Urutan berikut wajib dipatuhi agar foreign key selalu menemukan tabel induknya.
 
@@ -582,7 +593,7 @@ Daftar satuan masih menunggu konfirmasi lapangan (`notes.md` Â§4 poin 3); tiga
 | # | Pertanyaan | Asumsi sementara |
 |---|---|---|
 | 0 | Apakah akan ada kawasan transmigrasi yang melintasi lebih dari satu kabupaten? | Diasumsikan tidak; `kawasan_transmigrasi.kabupaten_id` bersifat wajib. Bila kelak terjadi, kabupaten sebenarnya tetap terbaca dari desa milik tiap SP |
-| 1 | Apakah lahan pekarangan bisa lebih dari satu per KK? | Struktur dibuat one-to-many agar fleksibel; bila ternyata selalu satu, cukup tambah validasi di sisi aplikasi tanpa mengubah skema |
+| 1 | ~~Apakah lahan pekarangan bisa lebih dari satu per KK?~~ **TERJAWAB: tidak.** Sejak Putaran 15 (2026-09-02) relasi `lahan`↔`transmigran` **one-to-one** (`UNIQUE (transmigran_id)`): pekarangan dan lahan usaha menjadi KOLOM pada satu baris per KK, bukan dua baris berperuntukan. `kategori_lahan` juga sudah dicabut (2026-08-20), digantikan `luas_kering`/`luas_basah`. | — |
 | 2 | Rumah yang ditinggalkan sementara: tetap Dihuni atau dilepas jadi kosong? | Tetap `Dihuni` dengan penghuni terdaftar; kepindahan sementara dicatat pada `rumah.catatan_hunian` |
 | 3 | Daftar satuan final per komoditas | Ton, Kuintal, Kilogram sebagai nilai awal |
 | 4 | Apakah satu transmigran bisa masuk lebih dari satu poktan? | Diasumsikan tidak; `rules.md` Â§6.4 menyatakan satu transmigran menjadi anggota satu kelompok tani |

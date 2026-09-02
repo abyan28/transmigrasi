@@ -347,7 +347,7 @@ Setelah ketiganya diperbaiki, jumlah halaman terbit naik dari 113 menjadi **122*
 
 Begitu Tahap 3 dan seterusnya berjalan, sistem memerlukan PHP dan basis data yang hidup, sehingga **GitHub Pages tidak lagi memadai**. Yang perlu diputuskan saat itu:
 
-1. **Autentikasi mematikan penggilasan.** Setelah Tahap 3 aktif, halaman yang butuh login akan membalas pengalihan ke `/login`, bukan 200, dan penerbitan gagal. Pilihannya: batasi daftar gilas hanya ke halaman publik, atau hentikan penerbitan statis sama sekali.
+1. **Autentikasi mematikan penggilasan.** Setelah Tahap 3 aktif, halaman yang butuh login akan membalas pengalihan ke `/login`, bukan 200, dan penerbitan gagal. ~~Pilihannya: batasi daftar gilas hanya ke halaman publik, atau hentikan penerbitan statis sama sekali.~~ **DIPUTUSKAN 2026-09-03: batasi ke halaman publik saja** (landing, portal & lacak pengaduan warga, `/login`, `/lupa-kata-sandi`, `/verifikasi-kode`). Kerjakan bersama Task 3.2: saring `app/Console/Commands/DaftarTautanStatis.php` ke allowlist rute tanpa `auth`. Lihat §6 butir "[decided 2026-09-03]".
 2. **Pindah ke hosting ber-PHP.** `prd.md` A9 sudah menetapkan hosting dengan SSL dan cadangan terjadwal. Alur kerja ini dapat dihapus atau dialihkan menjadi penerbitan pratinjau saja.
 3. **Yang tetap berguna** meski beralih hosting: penyeragaman `asset()`, `url()`, dan `route()` pada 1b.3, serta kepercayaan pada `X-Forwarded-*` di `bootstrap/app.php`. Keduanya justru **syarat** untuk hosting di belakang reverse proxy.
 
@@ -2161,7 +2161,7 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
 4. ~~Konfirmasi apakah lahan pekarangan juga dapat lebih dari satu per KK, atau dipastikan selalu satu.~~ **TERJAWAB 2026-08-18: tidak.** Satu transmigran menerima satu lahan pekarangan dan satu lahan usaha (`rules.md` §7.8, keterangan lapangan pemilik proyek). Relasi tetap one-to-many sebab satu KK memegang dua bidang berbeda peruntukan. Lihat bagian 6 butir "Koreksi konsep hak atas tanah" dan `tasklist.md` blok "Masih menunggu".
 5. Pastikan penanganan kasus rumah yang ditinggalkan sementara: apakah tetap berstatus Dihuni dengan penghuni terdaftar, atau dilepas menjadi kosong. *Sementara tetap Dihuni, dicatat pada `rumah.catatan_hunian`.*
 6. Konfirmasi apakah satu transmigran dapat menjadi anggota lebih dari satu poktan. *Sementara diasumsikan tidak, mengikuti `rules.md` �6.4.*
-7. Konfirmasi spesifikasi hosting/VPS target, khususnya versi PHP yang tersedia, sebelum tahap deployment.
+7. **Konfirmasi spesifikasi hosting/VPS target — MENUNGGU INPUT DINAS (diangkat jadi item eksplisit 2026-09-03).** Enam hal yang wajib dipastikan sebelum Task 3.10 (rate limit per akun/IP) dan Task 11.3 (deployment): (1) versi PHP — target 8.2.x, dilarang 8.5; (2) MySQL atau MariaDB + versinya — skema diuji di MariaDB 10.4; (3) kapasitas storage berkas privat di luar `public/` + apakah S3/GCS tersedia (`berkas.disk` sudah menyiapkannya); (4) dukungan cron/scheduler untuk backup terjadwal & pembersihan berkas soft-deleted; (5) SSL/HTTPS + domain/subdomain; (6) apakah di belakang reverse proxy (`TrustProxies`). Tahap 3 boleh dimulai di XAMPP lokal tanpa risiko sambil menunggu jawaban. Lihat §6 butir "[decided 2026-09-03]".
 8. Putuskan apakah mode gelap bawaan TailAdmin dipertahankan atau dimatikan, setelah uji coba bersama operator lapangan.
 9. ~~**Audit keputusan lama yang bersandar pada data contoh** (disepakati 2026-08-19).~~ **Selesai 2026-08-19.** Seluruh 992 baris `notes.md` disisir; 36 keputusan menyebut data contoh sebagai alasan, **5 di antaranya cacat dan menyangkut struktur data**. Dua pertanyaan lapangan yang muncul dijawab pemilik proyek, bukan disimpulkan. Hasil lengkapnya pada bagian 1c.4, dan dua pelanggaran baru yang ditemukan tercatat pada 1c.2 sebagai pelanggaran keempat dan kelima.
 10. ~~**Tinjau ulang ambang searchable dropdown setelah data nyata masuk**, khusus `/rumah` dan `/riwayat-tanam`.~~ **SELESAI 2026-08-20, dengan cara yang berbeda dari yang direncanakan di sini.** Butir ini menulis `Ambang 8 opsinya sendiri tidak bermasalah`, dan kalimat itu ternyata keliru: ambangnya justru yang bermasalah, sebab ia membandingkan terhadap jumlah baris data contoh yang dikarang sendiri. Ambang dicabut seluruhnya dan kriterianya menjadi sifat sumber. Tidak ada lagi yang perlu ditinjau saat data nyata masuk. Lihat bagian 1c.2 pelanggaran keenam.
@@ -3636,12 +3636,46 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
     - Koreksi syntax: `kode_pemulihan_sandi.kedaluwarsa_pada` & `created_at`
       diberi `DEFAULT CURRENT_TIMESTAMP` (MariaDB menolak `TIMESTAMP NOT NULL`
       tanpa default di bawah `NO_ZERO_DATE`); nilai sebenarnya tetap diisi aplikasi.
-  * **Tindak lanjut dokumentasi (belum dikerjakan pada sesi ini, tercatat agar tidak terlewat):**
-    - `erd.md` §2: perbarui "Total 37 tabel" + tambahkan `anggota_keluarga`,
-      `rute_aksesibilitas_sp`, `referensi`, `dokumen_lahan_bidang`,
-      `alsintan_distribusi`, `saprotan_distribusi`, `fasilitas_sp_cakupan`,
-      `infrastruktur_sp`, `status_kondisi_sp` ke daftar; sesuaikan §4 (relasi
-      #17/#22–26/#32a/#33a) dan §10 (urutan migration).
-    - `data-dictionary.md`: §7.1 cabut baris `status_hak`; §9.3 cabut baris
-      `poktan_id`; §11.14 turunkan ke `HPL`/`SHM`; tambah §5.7 `status_kondisi_sp`.
-    (Bagian "Tindak lanjut" berikut pada sesi ini menerapkan sebagiannya.)
+  * ~~**Tindak lanjut dokumentasi**~~ **SELESAI 2026-09-03** (audit pra-Tahap-3):
+    - `erd.md` §2: hitungan diperbaiki jadi **55 tabel bisnis + 6 Laravel = 61
+      `CREATE TABLE`**, dengan `schema.sql` ditegaskan sebagai sumber kebenaran;
+      `dokumen_lahan`/`dokumen_lahan_bidang` ditandai dicabut (bukan ditambahkan).
+      §4 relasi #17 (`dokumen_lahan` DICABUT) & #14 (`lahan`↔`transmigran` jadi 1:1
+      UNIQUE) sudah benar sejak Putaran 12/15. §10 diberi pointer: urutan mengikat
+      = urutan `CREATE TABLE` pada `schema.sql`. §12 poin 1 (lahan one-to-many)
+      diperbaiki jadi one-to-one.
+    - `data-dictionary.md`: `status_hak` (§7.1) & `hasil_panen.poktan_id` (§9.3)
+      sudah dicoret; §11.14 (jenis dokumen lahan) DICABUT total Putaran 15;
+      **§5.7 `status_kondisi_sp` sudah ditambahkan** (agen paralel). `uuid`
+      didokumentasikan terpusat di §1.3a (daftar tabel di sana sudah memuat
+      `lahan` + `hasil_panen`), tidak diulang per tabel.
+    - `tasklist.md` Task 5.1/5.2 & 6.1/6.2/6.3 + Task 4.1b (kawasan/HPL) diperbarui
+      agar tidak menyesatkan penulis migration Tahap 4–6 (one-to-one lahan,
+      pekarangan/usaha kolom, SHM lewat form lahan, HPL di kawasan, `dokumen_pendukung`
+      jadi peran ktp/kk/sk, `jumlah_anggota_keluarga` diturunkan).
+
+- [decided 2026-09-03] **Dua keputusan pra-Tahap-3 diambil (A1, A2 audit pra-Tahap-3).**
+  * **A1 — Penerbitan statis begitu login aktif: OPSI (a), batasi `sim:tautan-statis`
+    ke halaman publik saja.** Bukan opsi (b) menghentikan penerbitan. Alasan: halaman
+    publik (landing, portal pengaduan warga, lacak pengaduan, `/login`,
+    `/lupa-kata-sandi`, `/verifikasi-kode`) tetap berguna dipratinjau dinas & warga,
+    dan biayanya kecil — cukup menyaring daftar rute di
+    `app/Console/Commands/DaftarTautanStatis.php` ke allowlist rute tanpa `auth`.
+    **Pekerjaan konkretnya masuk Task 3.2** (bersama pemasangan middleware auth):
+    saat itu, tandai rute publik, ubah `DaftarTautanStatis` agar hanya memuat yang
+    tak berpelindung, dan `TautanStatisTest` menyesuaikan angka. `deploy.yml` boleh
+    tetap jalan sebagai penerbitan pratinjau halaman publik, atau dimatikan bila
+    dinas sudah punya hosting ber-PHP (lihat A2). Ref `notes.md` 1b.7 poin 1.
+  * **A2 — Spesifikasi hosting belum dikonfirmasi; diblokir menunggu input dinas.**
+    Yang WAJIB dipastikan sebelum Tahap 11 (idealnya sebelum Tahap 3 dimulai agar
+    asumsi migration/queue/storage tidak salah):
+    1. Versi PHP tersedia di hosting (target `rules.md` 2.1: **8.2.x**, dilarang 8.5).
+    2. MySQL atau MariaDB + versinya (skema diuji di MariaDB 10.4).
+    3. Kapasitas penyimpanan berkas privat (di luar `public/`) + apakah objek
+       storage S3/GCS tersedia (kolom `berkas.disk` sudah menyiapkannya).
+    4. Dukungan cron/scheduler untuk backup terjadwal & pembersihan berkas
+       soft-deleted (`prd.md` A9, `rules.md` 2.2.5).
+    5. SSL/HTTPS + domain/subdomain.
+    6. Apakah di belakang reverse proxy (mempengaruhi `TrustProxies`).
+    Sampai keenamnya terjawab, Tahap 3 boleh berjalan di lingkungan lokal (XAMPP)
+    tanpa risiko, tetapi Task 3.10 (rate limit) & Task 11.3 (deployment) menahan diri.
