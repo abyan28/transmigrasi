@@ -706,8 +706,13 @@ class LaporanData
         $penempatan = [];
         $grup = [];
         foreach ($transmigranSp as $t) {
-            $kunci = ($t['daerah_asal'] ?? 'Tidak dicatat').'|'.$t['tahun_kedatangan'];
-            $grup[$kunci] ??= ['asal' => $t['daerah_asal'] ?? 'Tidak dicatat', 'tahun' => $t['tahun_kedatangan'], 'kk' => 0, 'l' => 0, 'p' => 0];
+            // Nama dibaca dari data master sejak daerah asal menjadi FK
+            // (2026-09-02). "Tidak dicatat" dipertahankan untuk baris yang
+            // memang belum terisi, dan itu berbeda dari id yang tidak dikenal.
+            $asal = DataWilayah::namaKabupaten($t['daerah_asal_kabupaten_id'] ?? null) ?? 'Tidak dicatat';
+
+            $kunci = $asal.'|'.$t['tahun_kedatangan'];
+            $grup[$kunci] ??= ['asal' => $asal, 'tahun' => $t['tahun_kedatangan'], 'kk' => 0, 'l' => 0, 'p' => 0];
             $grup[$kunci]['kk']++;
             $grup[$kunci][$t['jenis_kelamin'] === 'Perempuan' ? 'p' : 'l']++;
         }

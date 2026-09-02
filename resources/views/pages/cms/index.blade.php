@@ -61,13 +61,13 @@
             <div x-show="tab === 'identitas'" role="tabpanel" class="p-5 sm:p-6"
                 x-data="{
                     namaApp: 'Sistem Informasi Monitoring Pertanian & Tata Kelola Kawasan',
-                    subjudul: 'Kawasan Transmigrasi Kobalima Timur • Kabupaten Malaka, Provinsi Nusa Tenggara Timur',
+                    subjudul: 'Kawasan Transmigrasi Kobalima Timur â€¢ Kabupaten Malaka, Provinsi Nusa Tenggara Timur',
                     instansiPusat: 'Kementerian Transmigrasi Republik Indonesia',
                     instansiDaerah: 'Dinas Transmigrasi dan Tenaga Kerja Kabupaten Malaka',
                     emailBantuan: 'helpdesk@transmigrasi.malakakab.go.id',
                     teleponBantuan: '(0389) 21004',
                     waBantuan: '0812-3456-7890',
-                    footerTeks: '© 2026 Kementerian Transmigrasi Republik Indonesia. Dikembangkan bersama Institut Teknologi Sepuluh Nopember (ITS).',
+                    footerTeks: 'Â© 2026 Kementerian Transmigrasi Republik Indonesia. Dikembangkan bersama Institut Teknologi Sepuluh Nopember (ITS).',
                     logoUtama: '{{ asset('images/logo/logo-kementrans-128.png') }}',
                     logoDaerah: '{{ asset('images/logo/lambang-malaka.png') }}',
                     favicon: '{{ asset('images/logo/favicon-32.png') }}',
@@ -308,15 +308,15 @@
                                     <p class="font-semibold text-gray-800 dark:text-white/90">Pusat Bantuan &amp; Kontak</p>
                                     <div class="mt-2 space-y-1.5 text-gray-600 dark:text-gray-400">
                                         <div class="flex items-center gap-2">
-                                            <span class="text-gray-400">✉</span>
+                                            <span class="text-gray-400">âœ‰</span>
                                             <span class="tabular-nums" x-text="emailBantuan"></span>
                                         </div>
                                         <div class="flex items-center gap-2">
-                                            <span class="text-gray-400">☎</span>
+                                            <span class="text-gray-400">â˜Ž</span>
                                             <span class="tabular-nums" x-text="teleponBantuan"></span>
                                         </div>
                                         <div class="flex items-center gap-2">
-                                            <span class="text-gray-400">💬</span>
+                                            <span class="text-gray-400">ðŸ’¬</span>
                                             <span class="tabular-nums" x-text="waBantuan"></span>
                                         </div>
                                     </div>
@@ -522,7 +522,7 @@
                                         TAHUN ANGGARAN {{ date('Y') }}
                                     </p>
                                     <p class="mt-1 text-[10px] text-gray-400">
-                                        Kawasan Transmigrasi Kobalima Timur • 6 Satuan Permukiman
+                                        Kawasan Transmigrasi Kobalima Timur â€¢ 6 Satuan Permukiman
                                     </p>
                                 </div>
 
@@ -653,7 +653,7 @@
             <div x-show="tab === 'portal'" x-cloak role="tabpanel" class="p-5 sm:p-6"
                 x-data="{
                     sambutan: 'Sampaikan laporan, kendala pertanian, atau keluhan fasilitas di lingkungan satuan permukiman Anda. Laporan akan ditindaklanjuti langsung oleh dinas terkait.',
-                    formatNomor: 'PGD-{TAHUN}-{NOMOR}',
+                    formatNomor: 'PGD-{TAHUN}-{NOMOR}-{ACAK}',
                     disclaimer: 'Identitas pelapor dilindungi dan hanya digunakan untuk keperluan verifikasi lapangan oleh petugas resmi kementerian dan dinas.',
                     hotlineDarurat: '0811-2345-6789',
                     tersimpan: false,
@@ -690,7 +690,18 @@
                                 <label for="cms_format_tiket" class="{{ $kelasLabel }}">Format Nomor Registrasi Tiket</label>
                                 <input type="text" id="cms_format_tiket" x-model="formatNomor" class="{{ $kelasKontrol }} tabular-nums font-mono" />
                                 <p class="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
-                                    Contoh hasil: <code class="font-mono text-brand-600">PGD-2026-0042</code>
+                                    Contoh hasil: <code class="font-mono text-brand-600">PGD-2026-0042-K7F2M9</code>
+                                </p>
+                                {{--
+                                    Bagian acak WAJIB dan tidak dapat dimatikan lewat halaman ini
+                                    (rules.md 4.0a poin 4). Alasannya keamanan, bukan gaya penulisan:
+                                    halaman lacak dapat dibuka tanpa login, sehingga nomor berurutan
+                                    membuat laporan warga dapat disusuri satu per satu.
+                                --}}
+                                <p class="mt-2 rounded-lg bg-gray-50 p-2.5 text-theme-xs text-gray-600 dark:bg-white/[0.03] dark:text-gray-400">
+                                    Bagian <code class="font-mono">{ACAK}</code> selalu ditambahkan sistem dan tidak dapat
+                                    dihilangkan. Halaman lacak dapat dibuka tanpa login, sehingga nomor yang
+                                    dapat ditebak membuat laporan warga lain ikut terbaca.
                                 </p>
                             </div>
 
@@ -808,7 +819,7 @@
                                         }">
                                         <div class="flex items-start gap-3">
                                             <span class="mt-0.5 text-lg"
-                                                x-text="tipe === 'info' ? 'ℹ️' : (tipe === 'success' ? '✅' : (tipe === 'warning' ? '⚠️' : '🚨'))"></span>
+                                                x-text="tipe === 'info' ? 'â„¹ï¸' : (tipe === 'success' ? 'âœ…' : (tipe === 'warning' ? 'âš ï¸' : 'ðŸš¨'))"></span>
                                             <div>
                                                 <h5 class="text-theme-sm font-bold" x-text="judulPengumuman"></h5>
                                                 <p class="mt-1 text-theme-xs leading-relaxed opacity-90" x-text="isiPengumuman"></p>

@@ -175,7 +175,7 @@
                                 : null,
                             'Pendidikan terakhir' => $data['pendidikan_terakhir'] ?? null,
                             'Pekerjaan' => $data['pekerjaan_kepala_keluarga'] ?? null,
-                            'Daerah asal' => $data['daerah_asal'] ?? null,
+                            'Daerah asal' => \App\Support\DataWilayah::namaKabupaten($data['daerah_asal_kabupaten_id'] ?? null),
                             'Tahun kedatangan' => $data['tahun_kedatangan'] ?? null,
                             'Anggota kelompok tani' => $data['status_anggota_poktan'] ?? null,
                         ] as $label => $nilai)

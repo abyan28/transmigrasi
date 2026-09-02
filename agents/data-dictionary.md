@@ -561,7 +561,7 @@ Empat belas daftar disatukan pada satu tabel karena strukturnya identik. Empat b
 
 ### 5.7 `status_kondisi_sp`
 
-Ambang skor dan teks tampil (wording) predikat kondisi SP, disunting dinas lewat `/master/penilaian-kondisi`. **Ditambahkan 2026-09-01** bersama penyusunan `database/transmigrasi.sql`; struktur diturunkan dari frontend (`DummyData::statusKondisiSp()`), yang lebih dulu ada daripada tabelnya.
+Ambang skor dan teks tampil (wording) predikat kondisi SP, disunting dinas lewat `/master/penilaian-kondisi`. **Ditambahkan 2026-09-01** bersama penyusunan `database/data/schema.sql`; struktur diturunkan dari frontend (`DummyData::statusKondisiSp()`), yang lebih dulu ada daripada tabelnya.
 
 | Kolom | Tipe | Null | Kunci | Keterangan |
 |---|---|---|---|---|
@@ -600,7 +600,7 @@ Data inti sistem, satu baris per **kepala keluarga**.
 | `pekerjaan_kepala_keluarga` | `VARCHAR(100)` | TIDAK | IDX | Sumber histogram dashboard |
 | ~~`jumlah_anggota_keluarga`~~ | ~~`TINYINT UNSIGNED`~~ | | | **Diturunkan sejak 2026-08-28, tidak lagi kolom.** 1 (kepala) + `COUNT(anggota_keluarga)`. Lihat catatan |
 | `pendapatan_per_bulan` | `DECIMAL(15,2)` | YA | | Rupiah; pendapatan kepala keluarga |
-| `daerah_asal` | `VARCHAR(255)` | YA | | Kabupaten/provinsi asal |
+| `daerah_asal_kabupaten_id` | `BIGINT UNSIGNED` | YA | FK `kabupaten` | Kabupaten/kota asal. **Diubah 2026-09-02** dari `VARCHAR(255)` teks bebas: ia salah satu dari enam dasar rekap kependudukan (`rules.md` 10a.4a), dan teks bebas memecah satu kabupaten menjadi beberapa baris rekap karena beda ejaan tanpa memerahkan apa pun. Nama kabupaten tidak unik nasional, sehingga isian menampilkan nama provinsi sebagai pembeda |
 | `tahun_kedatangan` | `YEAR` | TIDAK | IDX | Dasar grafik jumlah transmigran per tahun |
 | `status_tinggal` | `ENUM` | TIDAK | IDX | Lihat §11.8 |
 | `status_anggota_poktan` | `ENUM` | TIDAK | | Ya, Tidak |

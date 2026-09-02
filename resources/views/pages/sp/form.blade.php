@@ -82,29 +82,40 @@
         <h3 class="{{ $kelasBagian }}">Penempatan Wilayah</h3>
 
         <p class="mt-2 rounded-lg bg-gray-50 p-3.5 text-theme-xs text-gray-600 dark:bg-white/[0.03] dark:text-gray-400">
-            Satu SP menempel pada dua induk sekaligus. <span class="font-medium">Desa</span> adalah
-            kedudukan administratifnya, sedangkan <span class="font-medium">kawasan transmigrasi</span>
-            adalah kedudukan programnya. Satu kawasan dapat mencakup beberapa kecamatan, sehingga keduanya
-            tidak selalu sejalan dan harus diisi terpisah.
+            Satu SP menempel pada dua induk sekaligus. <span class="font-medium">Kawasan transmigrasi</span>
+            adalah kedudukan programnya, sedangkan <span class="font-medium">desa</span> adalah kedudukan
+            administratifnya. Satu kawasan dapat mencakup beberapa kecamatan, sehingga keduanya tidak
+            selalu sejalan dan tetap diisi terpisah.
         </p>
 
-        <div class="mt-3 grid gap-4 sm:grid-cols-2">
-            <div>
-                <label for="{{ $awalan }}_desa_id" class="{{ $kelasLabel }}">Desa<span class="text-error-500">*</span></label>
-                <select id="{{ $awalan }}_desa_id" name="desa_id" required class="{{ $kelasKontrol }}">
-                    <option value="">Pilih desa</option>
-                    @foreach ($daftarDesa as $d)
-                        <option value="{{ $d['id_desa'] }}"
-                            @selected(old('desa', $data['desa'] ?? '') === $d['nama'])>
-                            {{ $d['nama'] }} &mdash; Kec. {{ $d['kecamatan'] }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
+        {{--
+            Kawasan didahulukan (2026-09-02), sepola dengan form Rumah dan
+            form Lahan yang menaruh penentu sebelum yang ditentukan
+            (rules.md 6a.12 dan 7.12).
+
+            Memilih kawasan MENYARING daftar desa menjadi desa pada
+            kabupaten kawasan itu. Penyaringannya menempuh kabupaten,
+            BUKAN relasi kawasan-ke-desa: keduanya dua cabang terpisah
+            yang baru bertemu di SP (rules.md 4a.2), sehingga menautkan
+            desa langsung ke kawasan berarti mengarang relasi yang
+            sengaja tidak dimodelkan.
+
+            Desanya tetap dapat dipilih ketika kawasan belum dipilih,
+            sebab urutan pengisian adalah anjuran, bukan penghalang.
+        --}}
+        <div class="mt-3 grid gap-4 sm:grid-cols-2"
+            x-data="{
+                kawasanId: @js((string) old('kawasan_id', $data['kawasan_id'] ?? '')),
+                petaKawasan: @js($petaKawasanKabupaten),
+
+                get kabupatenKawasan() {
+                    return this.petaKawasan[this.kawasanId] ?? null;
+                },
+            }">
 
             <div>
                 <label for="{{ $awalan }}_kawasan_id" class="{{ $kelasLabel }}">Kawasan Transmigrasi<span class="text-error-500">*</span></label>
-                <select id="{{ $awalan }}_kawasan_id" name="kawasan_id" required class="{{ $kelasKontrol }}">
+                <select id="{{ $awalan }}_kawasan_id" name="kawasan_id" required x-model="kawasanId" class="{{ $kelasKontrol }}">
                     <option value="">Pilih kawasan</option>
                     @foreach ($daftarKawasan as $k)
                         <option value="{{ $k['id_kawasan_transmigrasi'] }}"
@@ -113,6 +124,25 @@
                         </option>
                     @endforeach
                 </select>
+            </div>
+
+            <div>
+                <label for="{{ $awalan }}_desa_id" class="{{ $kelasLabel }}">Desa<span class="text-error-500">*</span></label>
+                <select id="{{ $awalan }}_desa_id" name="desa_id" required class="{{ $kelasKontrol }}">
+                    <option value="">Pilih desa</option>
+                    @foreach ($daftarDesa as $d)
+                        <option value="{{ $d['id_desa'] }}"
+                            data-kabupaten="{{ $d['kabupaten_id'] ?? '' }}"
+                            x-show="! kabupatenKawasan || kabupatenKawasan === {{ (int) ($d['kabupaten_id'] ?? 0) }}"
+                            @selected(old('desa', $data['desa'] ?? '') === $d['nama'])>
+                            {{ $d['nama'] }} &mdash; Kec. {{ $d['kecamatan'] }}
+                        </option>
+                    @endforeach
+                </select>
+                <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400"
+                    x-show="kabupatenKawasan" x-cloak>
+                    Hanya desa pada kabupaten kawasan terpilih yang ditampilkan.
+                </p>
             </div>
         </div>
     </section>

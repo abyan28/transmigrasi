@@ -111,7 +111,30 @@ Alamat URL **tidak menampilkan primary key berurutan**. Pola berurutan seperti `
 2. **Slug dilarang diturunkan dari data pribadi.** Nama orang tidak boleh menjadi slug, sebab alamat URL tersimpan pada riwayat peramban, log server, dan terlihat siapa pun yang memandang layar. Untuk data pribadi, slug justru menurunkan kerahasiaan dibandingkan id angka.
 3. Slug wajib unik dan tidak berubah setelah dibuat, meski namanya kelak disunting, agar tautan yang sudah dibagikan tidak rusak.
 4. Nomor pengaduan publik wajib memuat **bagian acak**, contoh `PGD-2026-0001-K7F2M9`. Nomor berurutan dapat ditebak, dan halaman lacak dapat diakses tanpa login sehingga menjadi permukaan serangan yang nyata.
+4a. **Bagian acak berada DI LUAR kendali CMS** (ditetapkan 2026-09-02). Dinas dapat mengatur awalan dan pola nomor urut lewat Pengelolaan Konten, tetapi bagian acaknya selalu ditambahkan sistem dan tidak dapat dimatikan. Alasannya keamanan, bukan gaya penulisan: menyerahkannya kepada pilihan dinas berarti perlindungan yang paling menentukan dapat dilepas tanpa disadari akibatnya. Template bawaan CMS sempat berbunyi `PGD-{TAHUN}-{NOMOR}` tanpa bagian acak, dan itu bertentangan dengan poin 4.
+4b. **Bentuknya enam karakter beralfabet tanpa huruf dan angka yang mudah tertukar** (tanpa `0`, `O`, `1`, `I`, dan `L`). Warga membaca nomornya dari layar ponsel lalu menyalinnya ke halaman lacak, dan salah baca satu karakter membuat laporannya seolah tidak pernah ada.
+4c. **Nomor urutnya dipertahankan, tidak diganti acak seluruhnya.** Ia tetap berguna bagi petugas untuk mengurutkan dan menyebut laporan; yang menutup penyusuran adalah bagian acaknya.
+4d. **Nomor tidak pernah berubah setelah terbit.** Bagian acaknya dibangkitkan sekali saat penerbitan lalu ikut tersimpan, bukan dihitung ulang tiap kali dibaca. Warga sudah mencatat atau memotretnya, dan nomor yang berubah membuat laporannya tidak dapat dilacak lagi.
 5. Penggantian ke UUID dilakukan **bertahap**, dimulai dari fitur berdata pribadi. Mengubah seluruh fitur sekaligus memperbesar risiko tanpa menambah perlindungan yang sepadan.
+5a. **Pengenal publik dipasang bersamaan dengan pembuatan Model, bukan sesudahnya**
+(ditetapkan 2026-09-02). Tiap model yang tabelnya memiliki kolom `uuid` wajib lahir
+dengan `getRouteKeyName()` bernilai `uuid` sejak commit pertamanya. Alasannya biaya:
+pada saat Model dibuat, penggantiannya cukup satu method per model; setelah controller,
+rute, dan tautan terlanjur ditulis di atas id integer, penggantiannya menuntut
+penyisiran setiap pemanggilan `route()`. Biaya itu naik terus selama ditunda.
+
+5b. **Lima tabel sudah menyediakan kolom `uuid`** pada skema: `transmigran`,
+`rumah`, `lahan`, `hasil_panen`, dan `pengaduan`. Urutan penerapannya mengikuti
+poin 5, yaitu data pribadi lebih dulu: `transmigran`, `rumah`, `pengaduan`, lalu
+`lahan` dan `hasil_panen`.
+
+5c. **Rute tahap frontend TIDAK diubah lebih dulu.** Selama data masih disimulasikan
+`DummyData`, mengganti `{id}` menjadi UUID hanya menambah kerumitan tanpa
+perlindungan apa pun: belum ada Model yang menerjemahkan pengenal publik menjadi kunci
+internal, sehingga penerjemahannya terpaksa ditulis tangan lalu dibuang lagi.
+Pembatas rutenya (`[0-9]+`) wajib ikut disesuaikan pada saat Model dibuat, sebab
+pembatas angka akan menolak UUID dan menghasilkan 404 yang membingungkan.
+
 6. Pembatasan laju melengkapi, bukan menggantikan, pengenal tak tertebak (Â§14c).
 
 **Aturan tambahan:**
@@ -183,6 +206,15 @@ Alamat URL **tidak menampilkan primary key berurutan**. Pola berurutan seperti `
 7. Struktur wilayah dan kawasan harus dapat ditambah tanpa mengubah skema, agar sistem dapat direplikasi ke kawasan transmigrasi lain. Nama wilayah dan nama kawasan disimpan sebagai data referensi, bukan nilai tetap di dalam struktur tabel.
 8. Setiap kawasan transmigrasi menyimpan nama, kabupaten, tahun penetapan, nomor SK, luas total, dan dokumen pendukung.
 
+9. **Provinsi dan kabupaten/kota dimuat dari data referensi nasional** (2026-09-02): 38 provinsi dan 514 kabupaten/kota berkode BPS pada `app/Support/DataWilayah.php`. Daftar ini melayani pemilihan daerah asal transmigran, yang dapat berasal dari mana pun di Indonesia, sehingga dua baris lokus tidak memadai.
+9a. **Kecamatan dan desa TETAP terbatas wilayah lokus** sampai Tahap 3. Berkas sumber memuat 7.000 kecamatan dan 83.000 kelurahan, sedangkan komponen `pilih-cari` menyematkan seluruh opsi ke dalam HTML; hanya wilayah ber-SP yang bermakna pada pemilihan desa. Pemuatan penuh menunggu pengambilan bertahap lewat endpoint.
+9b. **Nama kabupaten disimpan beserta awalan Kabupaten atau Kota.** Awalan itu bukan hiasan: nama kabupaten TIDAK unik secara nasional, dan Kabupaten Kupang (5301) berbeda dari Kota Kupang (5371). Setiap isian yang memilih kabupaten wajib menampilkan nama provinsinya sebagai pembeda.
+10. **Halaman Data Master Wilayah menyajikan keempat tingkat dalam SATU tabel**, dengan tingkat sebagai kolom sekaligus penyaring (2026-09-02, menggantikan empat tab). Penyaring tingkat **wajib mencantumkan jumlah tiap tingkat**, sebab judul tab lama menampilkannya; menghapusnya tanpa memindahkan angka itu membuat pembaca kehilangan keterangan yang sebelumnya ada. Pencarian mencakup nama, induk, dan kode.
+10a. Alasan pencabutan tab: sejak poin 9, tab Kabupaten memuat 514 baris tanpa pencarian maupun paginasi, dan mencari satu nama menuntut petugas menebak lebih dulu ia berada di tab mana. Tab juga sudah dua kali melahirkan cacat, yaitu tab bawaan yang keliru dan tingkat form yang tidak mengikuti tab yang terbuka.
+11. **Form SP menempatkan Kawasan sebelum Desa**, dan memilih kawasan menyaring daftar desa menjadi desa pada kabupaten kawasan tersebut (2026-09-02). Sejalan dengan pola form Rumah (6a.12) dan form Lahan (7.12) yang menaruh penentu sebelum yang ditentukan.
+11a. **Penyaringannya menempuh KABUPATEN, bukan relasi kawasan ke desa.** Kawasan dan desa adalah dua cabang terpisah yang baru bertemu di SP (poin 2), sehingga menautkan desa langsung ke kawasan berarti mengarang relasi yang sengaja tidak dimodelkan. Rantai yang dipakai sudah tersedia seluruhnya: kawasan menaut kabupaten, dan desa menaut kecamatan lalu kabupaten.
+11b. Desa tetap dapat dipilih ketika kawasan belum dipilih. Urutan pengisian adalah anjuran, bukan penghalang.
+
 ### 4b. Aturan Fitur Inventaris dan Fasilitas SP
 1. Inventaris SP dan fasilitas SP dikelola sebagai dua daftar terpisah yang menempel pada satu SP.
 2. Setiap entri wajib memuat nama barang/fasilitas, tahun perolehan, dan sumber dana.
@@ -243,6 +275,98 @@ Dibuat lewat seeder sebagai konfigurasi awal agar sistem langsung dapat dipakai.
 6b. Konsekuensi yang diterima sadar: satu-satunya jalan laporan sampai ke Dinas Pertanian adalah lewat penetapan Admin atau Dinas Transmigrasi. Peredamnya, filter bidang pada halaman daftar menyediakan pilihan **Belum ditentukan** beserta jumlahnya (10b poin 7e), sehingga antrean penyaringan tidak menumpuk diam-diam.
    
 7. Akun berrole bercakupan `Per SP` **wajib** memiliki minimal satu penugasan SP. Bila belum ditugaskan, pengguna tidak melihat data apa pun, bukan melihat seluruhnya. Ini disengaja agar kelalaian penugasan tidak berubah menjadi kebocoran data.
+
+#### 5.0b-1 Rancangan penegakan cakupan data (ditetapkan 2026-09-02, mengikat Tahap 3)
+
+> **Kedudukan bagian ini.** Poin 6 mewajibkan cakupan ditegakkan sebagai penyaring query,
+> tetapi tidak menyatakan DI MANA penyaring itu dipasang. Tanpa penetapan itu,
+> penegakannya akan tersebar ke tiap tempat pengambilan data satu per satu, dan satu
+> tempat yang terlewat tidak memerahkan apa pun. Bagian ini menutup kekosongan tersebut
+> sebelum Model pertama ditulis.
+
+8. **Titik penegakan tunggal: Eloquent Global Scope.** Tiap model yang datanya bercakupan
+   wajib memasang satu global scope yang membaca cakupan pengguna aktif. Penyaringnya
+   melekat pada MODEL, bukan pada pemanggilnya, sehingga query yang lupa menyaring tidak
+   mungkin ada. Alasannya terukur: pengambilan data pada tahap frontend tersebar di 167
+   pemanggilan `DummyData` di dalam `routes/web.php` yang mencakup 65 metode berbeda.
+   Menegakkan cakupan satu per satu di sana berarti 167 peluang terlewat, dan yang
+   terlewat gagal secara senyap: datanya tampil, tidak ada galat, dan tidak ada yang tahu.
+
+8a. **Dua cara yang ditolak, beserta alasannya.** Penyaringan di dalam controller ditolak
+   sebab ia mengulang maksud yang sama di tiap aksi dan tidak berlaku bagi query yang
+   dipanggil dari tempat lain, misalnya laporan, ekspor, dan perintah artisan.
+   Penyaringan di dalam view ditolak lebih tegas: view dilarang mengambil datanya
+   sendiri, dan menyaring di sana berarti data yang tidak boleh dilihat SUDAH terlanjur
+   diambil dari basis data.
+
+9. **Penyaring dipasang pada pemilik SP, bukan diulang pada tiap turunannya.** Tiga belas
+   tabel membawa `satuan_permukiman_id` secara langsung: `rute_aksesibilitas_sp`,
+   `inventaris_sp`, `fasilitas_sp`, `fasilitas_sp_cakupan`, `penilaian_sp`,
+   `transmigran`, `rumah`, `poktan`, `lahan`, `infrastruktur`,
+   `infrastruktur_sp`, `pengaduan`, dan `user_satuan_permukiman`. Sisanya mewarisi
+   SP lewat induknya:
+
+   | Tabel | Mewarisi lewat |
+   |---|---|
+   | `anggota_keluarga`, `riwayat_kepala_keluarga` | `transmigran` |
+   | `riwayat_penghunian` | `rumah` |
+   | `anggota_poktan`, `komoditas_poktan`, `penanaman` | `poktan` |
+   | `hasil_panen` | `penanaman` lalu `poktan` |
+   | `alsintan_distribusi`, `saprotan_distribusi` | `poktan` |
+   | `dokumen_lahan_bidang` | `lahan` |
+
+9a. **Pengadaan `alsintan` dan `saprotan` induk TIDAK disaring per SP.** Sejak
+   Putaran 7 barisnya mendeskripsikan bendanya, dan SP baru muncul pada baris
+   distribusinya. Pengadaan yang belum disalurkan tidak berada di SP mana pun, sehingga
+   menyaringnya per SP menyembunyikan barang gudang UPT dari semua orang termasuk yang
+   berhak. Yang disaring adalah distribusinya.
+
+9b. **Data referensi tidak pernah disaring:** wilayah, kawasan, satuan, komoditas,
+   `referensi`, `parameter_penilaian_sp`, `status_kondisi_sp`, role, dan permission.
+   Seluruhnya data master yang justru dibutuhkan tiap pengguna untuk membaca datanya
+   sendiri; menyaringnya membuat dropdown kosong tanpa sebab yang terlihat.
+
+10. **Akun `Per SP` tanpa penugasan melihat NOL baris, bukan seluruhnya** (menegaskan
+    poin 7 pada tingkat teknis). Global scope yang menerima daftar SP kosong wajib
+    menghasilkan penyaring yang tidak meloloskan apa pun, BUKAN melewatkan penyaringan.
+    Ini kekeliruan yang paling mudah terjadi, sebab daftar kosong secara naluriah
+    diterjemahkan menjadi tanpa syarat. Akibatnya kebalikan dari yang dimaksud: akun
+    yang paling tidak berhak justru melihat segalanya.
+
+11. **Data yang tidak boleh dilihat membalas 404, bukan 403.** Balasan 403 menyatakan
+    barisnya ADA tetapi tidak boleh dibuka, dan pernyataan itu sendiri kebocoran:
+    penyerang dapat memetakan keberadaan data SP lain hanya dari beda balasannya.
+    Balasan 403 tetap dipakai untuk kewenangan AKSI, misalnya menekan hapus tanpa izin
+    hapus; keduanya persoalan berbeda.
+
+12. **Angka rekap dan dashboard yang menyempit wajib menyatakan cakupannya.** Operator SP
+    yang melihat dashboard mendapat angka SP-nya sendiri, bukan angka kawasan. Tanpa
+    keterangan itu pada judul, angkanya dapat disalin ke laporan sebagai total kawasan.
+    Alasannya sama dengan kewajiban menulis periode dan cakupan pada rekap panen
+    (9 poin 8b dan 8o), dan berlaku pada kalimat cakupan laporan (12 poin 8).
+
+13. **Penyaringan terjadi sebelum paginasi.** Menyaring koleksi hasil setelah query
+    membuat penghitung halaman ikut menghitung baris yang tidak boleh dilihat, sehingga
+    jumlah halaman membocorkan banyaknya data SP lain meski isinya tidak tampil.
+
+14. **Cakupan `Per Bidang` berdiri sendiri dan hanya berlaku pada `pengaduan`.** Ia
+    tidak menggantikan `Per SP` maupun bertumpuk dengannya: Dinas Pertanian bercakupan
+    `Per Bidang` dengan jangkauan seluruh SP, sedangkan Operator SP bercakupan
+    `Per SP` tanpa pembatasan bidang.
+
+15. **Satu jalan memintas penyaring, dan ia wajib eksplisit.** Perintah artisan, seeder,
+    dan pekerjaan latar berjalan tanpa pengguna aktif, sehingga scope tidak menemukan
+    cakupan siapa pun. Keadaan itu wajib menghasilkan data LENGKAP, tetapi hanya lewat
+    pemanggilan yang menyatakannya sendiri, bukan karena scope diam-diam menyerah ketika
+    tidak menemukan pengguna. Yang kedua akan membuat setiap kekeliruan autentikasi
+    berubah menjadi kebocoran menyeluruh.
+
+16. **Diuji sebagai penjaga, bukan diperiksa manual.** Tahap 3 wajib menyertakan uji yang
+    memastikan: akun `Per SP` hanya menerima baris SP-nya, akun `Per SP` tanpa
+    penugasan menerima nol baris, data SP lain membalas 404, dan akun bercakupan
+    `Semua` tidak ikut tersaring. Tanpa uji, kebocoran cakupan tidak pernah
+    memerahkan apa pun sebab tampilannya normal.
+
 
 #### 5.0c Perlindungan
 

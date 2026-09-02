@@ -362,9 +362,96 @@ Route::get('/uji-403', function () {
 |
 */
 Route::get('/wilayah', function () {
+    $wilayah = DummyData::wilayah();
+
+    /*
+     * Keempat tingkat disatukan menjadi SATU daftar rata (2026-09-02),
+     * menggantikan empat tab yang masing-masing merender seluruh barisnya.
+     *
+     * Dua alasan. Pertama, sejak provinsi dan kabupaten dibaca dari data
+     * referensi nasional, tab Kabupaten memuat 514 baris tanpa pencarian
+     * maupun paginasi. Kedua, mencari satu nama menuntut petugas menebak
+     * lebih dulu ia berada di tab mana, padahal yang ia tahu hanya namanya.
+     *
+     * Tingkat berubah dari tab menjadi KOLOM sekaligus penyaring, sehingga
+     * keempatnya tetap dapat dilihat terpisah maupun sekaligus.
+     */
+    $induk = [
+        'provinsi' => fn (array $b) => null,
+        'kabupaten' => fn (array $b) => $b['provinsi'] ?? null,
+        'kecamatan' => fn (array $b) => $b['kabupaten'] ?? null,
+        'desa' => fn (array $b) => $b['kecamatan'] ?? null,
+    ];
+
+    $kunciId = [
+        'provinsi' => 'id_provinsi',
+        'kabupaten' => 'id_kabupaten',
+        'kecamatan' => 'id_kecamatan',
+        'desa' => 'id_desa',
+    ];
+
+    $baris = [];
+    $cacah = [];
+
+    foreach ($kunciId as $tingkat => $kunci) {
+        $cacah[$tingkat] = count($wilayah[$tingkat]);
+
+        foreach ($wilayah[$tingkat] as $b) {
+            $baris[] = [
+                'id' => $b[$kunci],
+                'tingkat' => $tingkat,
+                'nama' => $b['nama'],
+                'induk' => $induk[$tingkat]($b),
+                'kode' => $b['kode'] ?? null,
+                'asli' => $b,
+            ];
+        }
+    }
+
+    $filterTingkat = request()->query('tingkat');
+    $cari = trim((string) request()->query('cari', ''));
+
+    if ($filterTingkat !== null && $filterTingkat !== '' && isset($kunciId[$filterTingkat])) {
+        $baris = array_values(array_filter($baris, fn ($b) => $b['tingkat'] === $filterTingkat));
+    } else {
+        $filterTingkat = '';
+    }
+
+    // Dicocokkan pada nama MAUPUN induknya: petugas kerap mengingat
+    // kabupatennya ketika nama kecamatannya sendiri sudah kabur.
+    if ($cari !== '') {
+        $baris = array_values(array_filter(
+            $baris,
+            fn ($b) => str_contains(mb_strtolower($b['nama']), mb_strtolower($cari))
+                || str_contains(mb_strtolower((string) $b['induk']), mb_strtolower($cari))
+                || str_contains(mb_strtolower((string) $b['kode']), mb_strtolower($cari))
+        ));
+    }
+
+    // Dipotong menurut halaman, sebab daftarnya kini memuat ratusan baris dan
+    // merender seluruhnya membuat halaman berat tanpa ada yang membacanya.
+    // Jumlah SEBELUM pemotongan tetap dibawa agar paginasi dan keterangan
+    // "menampilkan sekian dari sekian" menyebut angka yang benar.
+    $jumlah = count($baris);
+    $perHalaman = (int) request()->query('per_halaman', 25);
+
+    if (! in_array($perHalaman, [10, 25, 50, 100], true)) {
+        $perHalaman = 25;
+    }
+
+    $halaman = max(1, (int) request()->query('page', 1));
+    $barisHalaman = array_slice($baris, ($halaman - 1) * $perHalaman, $perHalaman);
+
     return view('pages.master.wilayah', [
         'title' => 'Data Master Wilayah',
-        'wilayah' => DummyData::wilayah(),
+        'wilayah' => $wilayah,
+        'baris' => $barisHalaman,
+        'jumlahBaris' => $jumlah,
+        'perHalaman' => $perHalaman,
+        'cacahTingkat' => $cacah,
+        'filterTingkat' => $filterTingkat,
+        'cari' => $cari,
+        'adaFilter' => $filterTingkat !== '' || $cari !== '',
     ]);
 })->name('wilayah');
 
@@ -835,11 +922,11 @@ Route::get('/transmigran/{id}', function (int $id) {
         'title' => $data['nama_kepala_keluarga'],
         'data' => $data,
 
-        // Rumah masih disaring menurut nama penghuni, sebab itulah satu-satunya
-        // kaitan yang ada pada data rumah. Saat backend siap, penyaringan
-        // berpindah ke relasi Eloquent.
+        // Dibaca lewat id sejak 2026-09-02, sejalan dengan lahan dan riwayat
+        // penghunian. Penyaringan menurut nama sebelumnya putus diam-diam
+        // begitu suksesi mengganti nama kepala keluarga (rules.md 6.5).
         'rumah' => collect(DummyData::rumah())
-            ->firstWhere('penghuni', $data['nama_kepala_keluarga']),
+            ->firstWhere('transmigran_id', $data['id_transmigran']),
 
         'lahan' => $lahan,
         'totalLuas' => array_sum(array_column($lahan, 'luas')),
@@ -1479,7 +1566,7 @@ Route::get('/pengaduan-warga', function () {
 
 Route::post('/pengaduan-warga', function (Illuminate\Http\Request $permintaan) {
     // Tahap 8: simpan pengaduan berstatus Menunggu Diterima, catat ip_pelapor,
-    // buat nomor pengaduan berurutan, lalu kirim nomornya ke surel pelapor
+    // buat nomor pengaduan berbagian acak, lalu kirim nomornya ke surel pelapor
     // bila diisi.
     //
     // Nomor contoh sengaja memakai salah satu yang BENAR-BENAR ADA pada data
@@ -1487,7 +1574,7 @@ Route::post('/pengaduan-warga', function (Illuminate\Http\Request $permintaan) {
     // tombol "Lihat Perkembangan Laporan" selalu berujung pada keadaan nomor
     // tidak ditemukan; kontrol semacam itu dilarang (R-26).
     return back()
-        ->with('nomor_pengaduan', 'PGD-2026-0003')
+        ->with('nomor_pengaduan', 'PGD-2026-0003-3NYVEN')
         ->with('email_pelapor', $permintaan->input('email_pelapor'));
 })->name('pengaduan-warga.kirim');
 
@@ -1726,7 +1813,9 @@ $susunRekapKependudukan = function (?string $kelompokRute = null) {
     $perSp = DummyData::rekapPerSp($tahunDipilih);
     $penghuni = DummyData::rekapPenghuni($tahunDipilih);
     $pekerjaan = DummyData::sebaranPekerjaan($tahunDipilih);
-    $daerahAsal = DummyData::sebaranDaerahAsal($tahunDipilih);
+    // Berlabel, sebab `sebaranDaerahAsal()` berkunci id kabupaten sejak
+    // 2026-09-02. Pelabelan terpusat agar tidak tiap view melabeli sendiri.
+    $daerahAsal = DummyData::sebaranDaerahAsalBerlabel($tahunDipilih);
     $pendidikan = DummyData::sebaranPendidikan($tahunDipilih);
 
     return view('pages.kependudukan.rekap', [
@@ -2703,11 +2792,12 @@ Route::get('/dokumen/{modul}/{id}/{namaBerkas}', [DokumenController::class, 'tam
 |
 */
 
-Route::put('/sp/{id}', function (int $id) {
-    // Tahap 4: SP menempel pada desa dan kawasan sekaligus.
-    return redirect()->route('sp.index')->with('sukses', 'Perubahan data satuan permukiman tersimpan.');
-})->where('id', '[0-9]+')->name('sp.perbarui');
-
+// `sp.perbarui` TIDAK didaftarkan di sini. Ia sudah ada pada blok Wilayah dan SP
+// di bagian atas berkas, dan deklarasi kedua di tempat ini menimpanya diam-diam:
+// Laravel memakai yang terakhir, sehingga menyunting SP dari halaman rincian
+// melempar petugas ke daftar SP beserta hilangnya posisi tab. Yang dipertahankan
+// adalah versi ber-`back()`, sebab ia memenuhi rules.md 4c poin 5 dan tetap benar
+// ketika penyuntingan dilakukan dari halaman daftar. Dicabut 2026-09-02.
 Route::delete('/sp/{id}', function (int $id) {
     // Tahap 4: memakai soft delete, sebab seluruh data kawasan menaut SP.
     return redirect()->route('sp.index')->with('sukses', 'Satuan permukiman dihapus.');

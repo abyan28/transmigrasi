@@ -84,7 +84,7 @@
 
         Ketiga isian induk ini saling meniadakan: hanya satu yang berlaku pada
         satu waktu. Dengan `required` tetap, peramban menuntut ketiganya terisi
-        sekaligus dan form TIDAK PERNAH dapat dikirim untuk tingkat apa pun —
+        sekaligus dan form TIDAK PERNAH dapat dikirim untuk tingkat apa pun ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â
         yang wajib pun tak dapat dilihat petugas sebab pesan galatnya menunjuk
         elemen tersembunyi.
 
@@ -93,31 +93,35 @@
         Pola yang sama dipakai form poktan dan form lahan.
     --}}
     <div x-show="tingkat === 'kabupaten'" x-cloak x-transition>
-        <label for="{{ $awalan }}_induk_provinsi" class="{{ $kelasLabel }}">Provinsi Induk<span class="text-error-500">*</span></label>
-        <select id="{{ $awalan }}_induk_provinsi" name="provinsi_id" class="{{ $kelasKontrol }}"
-            :required="tingkat === 'kabupaten'" :disabled="tingkat !== 'kabupaten'">
-            <option value="">Pilih provinsi</option>
-            @foreach ($wilayah['provinsi'] as $p)
-                <option value="{{ $p['id_provinsi'] }}"
-                    @selected((string) old('provinsi_id', $data['provinsi_id'] ?? '') === (string) $p['id_provinsi'])>
-                    {{ $p['nama'] }}
-                </option>
-            @endforeach
-        </select>
+        {{--
+            Searchable sejak 2026-09-02: daftarnya kini 38 provinsi
+            se-Indonesia, bukan lagi satu baris lokus. Ekspresi `:required`
+            dan `:disabled` diteruskan apa adanya oleh komponennya.
+        --}}
+        <x-sim.pilih-cari nama="provinsi_id" label="Provinsi Induk" wajib
+            :awalan="$awalan . '_induk'" :opsi="$wilayah['provinsi']"
+            kunci="id_provinsi" teks="nama"
+            :terpilih="old('provinsi_id', $data['provinsi_id'] ?? null)"
+            placeholder="Pilih provinsi"
+            required="tingkat === 'kabupaten'"
+            disabled="tingkat !== 'kabupaten'" />
     </div>
 
     <div x-show="tingkat === 'kecamatan'" x-cloak x-transition>
-        <label for="{{ $awalan }}_induk_kabupaten" class="{{ $kelasLabel }}">Kabupaten Induk<span class="text-error-500">*</span></label>
-        <select id="{{ $awalan }}_induk_kabupaten" name="kabupaten_id" class="{{ $kelasKontrol }}"
-            :required="tingkat === 'kecamatan'" :disabled="tingkat !== 'kecamatan'">
-            <option value="">Pilih kabupaten</option>
-            @foreach ($wilayah['kabupaten'] as $k)
-                <option value="{{ $k['id_kabupaten'] }}"
-                    @selected((string) old('kabupaten_id', $data['kabupaten_id'] ?? '') === (string) $k['id_kabupaten'])>
-                    {{ $k['nama'] }}
-                </option>
-            @endforeach
-        </select>
+        {{--
+            Searchable, dan keterangan provinsinya WAJIB: daftarnya kini
+            514 kabupaten/kota se-Indonesia, dan namanya tidak unik
+            secara nasional. Tanpa keterangan itu Kabupaten Kupang tidak
+            dapat dibedakan dari Kota Kupang, dan pilihan yang keliru
+            tidak akan memerahkan apa pun.
+        --}}
+        <x-sim.pilih-cari nama="kabupaten_id" label="Kabupaten Induk" wajib
+            :awalan="$awalan . '_induk'" :opsi="$wilayah['kabupaten']"
+            kunci="id_kabupaten" teks="nama" keterangan-opsi="provinsi"
+            :terpilih="old('kabupaten_id', $data['kabupaten_id'] ?? null)"
+            placeholder="Pilih kabupaten atau kota"
+            required="tingkat === 'kecamatan'"
+            disabled="tingkat !== 'kecamatan'" />
     </div>
 
     <div x-show="tingkat === 'desa'" x-cloak x-transition>

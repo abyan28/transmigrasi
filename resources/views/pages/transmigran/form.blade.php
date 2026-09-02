@@ -268,10 +268,19 @@
                 </div>
 
                 <div>
-                    <label for="{{ $awalan }}_daerah_asal" class="{{ $kelasLabel }}">Daerah Asal</label>
-                    <input type="text" id="{{ $awalan }}_daerah_asal" name="daerah_asal"
-                        value="{{ old('daerah_asal', $data['daerah_asal'] ?? '') }}" maxlength="255"
-                        placeholder="Kabupaten atau provinsi asal" class="{{ $kelasKontrol }}" />
+                    {{--
+                        Dipilih dari data master, bukan diketik (2026-09-02).
+                        Nama kabupaten TIDAK unik secara nasional, sehingga nama
+                        provinsi ditampilkan sebagai keterangan: tanpa itu
+                        Kabupaten Kupang tidak dapat dibedakan dari Kota Kupang,
+                        dan pilihan yang keliru tidak memerahkan apa pun.
+                    --}}
+                    <x-sim.pilih-cari nama="daerah_asal_kabupaten_id" label="Daerah Asal"
+                        :awalan="$awalan" :opsi="$opsiDaerahAsal" kunci="id" teks="nama"
+                        keterangan-opsi="provinsi"
+                        :terpilih="old('daerah_asal_kabupaten_id', $data['daerah_asal_kabupaten_id'] ?? null)"
+                        placeholder="Pilih kabupaten atau kota asal"
+                        keterangan="Kabupaten atau kota tempat keluarga berasal sebelum penempatan." />
                 </div>
 
                 <div>

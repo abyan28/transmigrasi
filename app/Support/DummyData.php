@@ -61,7 +61,15 @@ class DummyData
             [
                 'id_kawasan_transmigrasi' => 1,
                 'nama' => 'Kobalima Timur',
-                'kabupaten' => 'Malaka',
+
+                // `kabupaten_id` ADALAH KEBENARANNYA, dua kolom teks di
+                // bawahnya hanya label tampilan. Ditambahkan 2026-09-02 sebab
+                // penyaringan desa pada form SP menempuh kawasan lalu
+                // kabupatennya, dan pencocokan lewat nama akan putus diam-diam
+                // begitu ejaan data master berubah. Skema sudah lebih dulu
+                // benar (`kawasan_transmigrasi.kabupaten_id`, FK RESTRICT).
+                'kabupaten_id' => 5321,
+                'kabupaten' => 'Kabupaten Malaka',
                 'provinsi' => 'Nusa Tenggara Timur',
                 'kode_kawasan' => 'KWS-KBT',
                 'tahun_penetapan' => 2015,
@@ -412,13 +420,12 @@ class DummyData
                 'pendidikan_terakhir' => 'SMA/SMK',
                 'pekerjaan_kepala_keluarga' => 'PETANI',
                 'pendapatan_per_bulan' => 2350000,
-                'daerah_asal' => 'KUPANG',
+                'daerah_asal_kabupaten_id' => 5301,
                 'tahun_kedatangan' => 2016,
                 'status_tinggal' => StatusTinggal::Aktif->value,
                 'status_anggota_poktan' => 'Ya',
                 'telepon' => '081234567801',
                 'satuan_permukiman' => 'SP Kapitan Meo',
-                'satuan_permukiman_id' => 1,
                 'satuan_permukiman_id' => 1,
             ],
             [
@@ -433,13 +440,12 @@ class DummyData
                 'pendidikan_terakhir' => 'SMP',
                 'pekerjaan_kepala_keluarga' => 'PETANI',
                 'pendapatan_per_bulan' => 1850000,
-                'daerah_asal' => 'BELU',
+                'daerah_asal_kabupaten_id' => 5304,
                 'tahun_kedatangan' => 2016,
                 'status_tinggal' => StatusTinggal::Aktif->value,
                 'status_anggota_poktan' => 'Ya',
                 'telepon' => '081234567802',
                 'satuan_permukiman' => 'SP Kapitan Meo',
-                'satuan_permukiman_id' => 1,
                 'satuan_permukiman_id' => 1,
             ],
             [
@@ -454,13 +460,12 @@ class DummyData
                 'pendidikan_terakhir' => 'SD',
                 'pekerjaan_kepala_keluarga' => 'PETANI',
                 'pendapatan_per_bulan' => 2100000,
-                'daerah_asal' => 'TIMOR TENGAH SELATAN',
+                'daerah_asal_kabupaten_id' => 5302,
                 'tahun_kedatangan' => 2016,
                 'status_tinggal' => StatusTinggal::Aktif->value,
                 'status_anggota_poktan' => 'Tidak',
                 'telepon' => '081234567803',
                 'satuan_permukiman' => 'SP Tniumanu',
-                'satuan_permukiman_id' => 2,
                 'satuan_permukiman_id' => 2,
             ],
             [
@@ -475,13 +480,12 @@ class DummyData
                 'pendidikan_terakhir' => 'SMA/SMK',
                 'pekerjaan_kepala_keluarga' => 'PEDAGANG',
                 'pendapatan_per_bulan' => 2750000,
-                'daerah_asal' => 'MALAKA',
+                'daerah_asal_kabupaten_id' => 5321,
                 'tahun_kedatangan' => 2017,
                 'status_tinggal' => StatusTinggal::Aktif->value,
                 'status_anggota_poktan' => 'Tidak',
                 'telepon' => '081234567804',
                 'satuan_permukiman' => 'SP Harekakae',
-                'satuan_permukiman_id' => 3,
                 'satuan_permukiman_id' => 3,
             ],
             [
@@ -496,13 +500,12 @@ class DummyData
                 'pendidikan_terakhir' => 'SMP',
                 'pekerjaan_kepala_keluarga' => 'PETANI',
                 'pendapatan_per_bulan' => 1950000,
-                'daerah_asal' => 'BELU',
+                'daerah_asal_kabupaten_id' => 5304,
                 'tahun_kedatangan' => 2017,
                 'status_tinggal' => StatusTinggal::PindahPenduduk->value,
                 'status_anggota_poktan' => 'Ya',
                 'telepon' => '081234567805',
                 'satuan_permukiman' => 'SP Weoe / Uluk Lubuk',
-                'satuan_permukiman_id' => 4,
                 'satuan_permukiman_id' => 4,
             ],
             [
@@ -517,13 +520,12 @@ class DummyData
                 'pendidikan_terakhir' => 'Diploma',
                 'pekerjaan_kepala_keluarga' => 'GURU',
                 'pendapatan_per_bulan' => 3200000,
-                'daerah_asal' => 'KUPANG',
+                'daerah_asal_kabupaten_id' => 5301,
                 'tahun_kedatangan' => 2018,
                 'status_tinggal' => StatusTinggal::Aktif->value,
                 'status_anggota_poktan' => 'Tidak',
                 'telepon' => '081234567806',
                 'satuan_permukiman' => 'SP Tualaran',
-                'satuan_permukiman_id' => 5,
                 'satuan_permukiman_id' => 5,
             ],
             [
@@ -538,13 +540,12 @@ class DummyData
                 'pendidikan_terakhir' => 'SD',
                 'pekerjaan_kepala_keluarga' => 'PETANI',
                 'pendapatan_per_bulan' => 1700000,
-                'daerah_asal' => 'TIMOR TENGAH UTARA',
+                'daerah_asal_kabupaten_id' => 5303,
                 'tahun_kedatangan' => 2018,
                 'status_tinggal' => StatusTinggal::Aktif->value,
                 'status_anggota_poktan' => 'Ya',
                 'telepon' => '081234567807',
                 'satuan_permukiman' => 'SP Weain',
-                'satuan_permukiman_id' => 6,
                 'satuan_permukiman_id' => 6,
             ],
             [
@@ -559,7 +560,7 @@ class DummyData
                 'pendidikan_terakhir' => 'SMA/SMK',
                 'pekerjaan_kepala_keluarga' => 'BURUH TANI',
                 'pendapatan_per_bulan' => 1450000,
-                'daerah_asal' => 'MALAKA',
+                'daerah_asal_kabupaten_id' => 5321,
                 'tahun_kedatangan' => 2019,
                 'status_tinggal' => StatusTinggal::Aktif->value,
                 'status_anggota_poktan' => 'Ya',
@@ -1004,8 +1005,25 @@ class DummyData
     /**
      * Daftar rumah beserta penghuninya.
      *
-     * Satu rumah dihuni tepat satu KK, dan rumah kosong ditandai penghuni
-     * bernilai null (agents/rules.md bagian 6a.5).
+     * Satu rumah dihuni tepat satu KK, dan rumah kosong ditandai
+     * `transmigran_id` bernilai null (agents/rules.md bagian 6a.5 dan 6a.7).
+     *
+     * `transmigran_id` ADALAH KEBENARANNYA, `penghuni` hanya label tampilan.
+     * Ditambahkan 2026-09-02; sebelumnya penautan hanya berupa nama, dan
+     * tabel ini menjadi satu-satunya yang menaut lewat teks sementara
+     * `lahan`, `penanaman`, dan `riwayat_penghunian` sudah memakai id.
+     *
+     * Bukan sekadar kerapian. Suksesi kepala keluarga MENYUNTING baris
+     * `transmigran` yang sama (agents/rules.md bagian 6.5), sehingga
+     * `nama_kepala_keluarga` berubah. Penautan lewat nama akan putus pada
+     * saat itu juga, tanpa satu pun pesan galat: rumahnya tetap tampil,
+     * penghuninya hilang, dan tidak ada yang menegur. Dua KK bernama sama
+     * juga cukup untuk menautkan rumah kepada keluarga yang keliru.
+     *
+     * Skema sudah lebih dulu benar: `rumah.transmigran_id` nullable ber-UNIQUE
+     * (`database/data/schema.sql`, `uq_rumah_transmigran`), sesuai kewajiban
+     * agents/rules.md bagian 6a.6 bahwa relasi satu-ke-satu dijaga basis data,
+     * bukan hanya validasi form.
      *
      * @return array<int, array<string, mixed>> Data rumah
      */
@@ -1017,6 +1035,7 @@ class DummyData
                 'no_rumah' => 'A-01',
                 'satuan_permukiman' => 'SP Kapitan Meo',
                 'satuan_permukiman_id' => 1,
+                'transmigran_id' => 1,
                 'penghuni' => 'YOHANES BERE',
                 'kondisi' => KondisiRumah::TidakRusak->value,
                 'status_hunian' => StatusHunian::Dihuni->value,
@@ -1030,6 +1049,7 @@ class DummyData
                 'no_rumah' => 'A-02',
                 'satuan_permukiman' => 'SP Kapitan Meo',
                 'satuan_permukiman_id' => 1,
+                'transmigran_id' => 2,
                 'penghuni' => 'MARIA DA COSTA',
                 'kondisi' => KondisiRumah::RusakRingan->value,
                 'status_hunian' => StatusHunian::Dihuni->value,
@@ -1039,10 +1059,14 @@ class DummyData
                 'bujur' => 124.9125100,
             ],
             [
+                // Pernah dihuni DOMINGGUS TAEK (transmigran 5) sampai 2025-09-30.
+                // Kolom ini menyimpan penghuni SEKARANG, sehingga bernilai null;
+                // kepergiannya tetap terbaca pada riwayatPenghunian() baris 3.
                 'id_rumah' => 3,
                 'no_rumah' => 'A-03',
                 'satuan_permukiman' => 'SP Kapitan Meo',
                 'satuan_permukiman_id' => 1,
+                'transmigran_id' => null,
                 'penghuni' => null,
                 'kondisi' => KondisiRumah::RusakBerat->value,
                 'status_hunian' => StatusHunian::TidakDihuni->value,
@@ -1057,6 +1081,7 @@ class DummyData
                 'no_rumah' => 'B-01',
                 'satuan_permukiman' => 'SP Tniumanu',
                 'satuan_permukiman_id' => 2,
+                'transmigran_id' => 3,
                 'penghuni' => 'PETRUS NAHAK',
                 'kondisi' => KondisiRumah::TidakRusak->value,
                 'status_hunian' => StatusHunian::Dihuni->value,
@@ -1070,6 +1095,7 @@ class DummyData
                 'no_rumah' => 'C-01',
                 'satuan_permukiman' => 'SP Harekakae',
                 'satuan_permukiman_id' => 3,
+                'transmigran_id' => 4,
                 'penghuni' => 'ANGELA SERAN',
                 'kondisi' => KondisiRumah::TidakRusak->value,
                 'status_hunian' => StatusHunian::Dihuni->value,
@@ -1083,6 +1109,7 @@ class DummyData
                 'no_rumah' => 'C-02',
                 'satuan_permukiman' => 'SP Harekakae',
                 'satuan_permukiman_id' => 3,
+                'transmigran_id' => null,
                 'penghuni' => null,
                 'kondisi' => KondisiRumah::TidakRusak->value,
                 'status_hunian' => StatusHunian::TidakDihuni->value,
@@ -1277,7 +1304,7 @@ class DummyData
      */
     public static function rumahKosong(): array
     {
-        return array_values(array_filter(self::rumah(), fn ($r) => $r['penghuni'] === null));
+        return array_values(array_filter(self::rumah(), fn ($r) => $r['transmigran_id'] === null));
     }
 
     /**
@@ -1290,11 +1317,11 @@ class DummyData
      */
     public static function transmigranTanpaRumah(): array
     {
-        $sudahPunya = array_filter(array_column(self::rumah(), 'penghuni'));
+        $sudahPunya = array_filter(array_column(self::rumah(), 'transmigran_id'));
 
         return array_values(array_filter(
             self::transmigran(),
-            fn ($t) => ! in_array($t['nama_kepala_keluarga'], $sudahPunya, true)
+            fn ($t) => ! in_array($t['id_transmigran'], $sudahPunya, true)
         ));
     }
 
@@ -2072,7 +2099,7 @@ class DummyData
         return [
             [
                 'id_pengaduan' => 1,
-                'nomor_pengaduan' => 'PGD-2026-0001',
+                'nomor_pengaduan' => 'PGD-2026-0001-PMTUXK',
                 'tanggal_pengaduan' => '2026-08-02',
                 'nama_pelapor' => 'YOHANES BERE',
                 'kontak_pelapor' => '081234567801',
@@ -2103,7 +2130,7 @@ class DummyData
             ],
             [
                 'id_pengaduan' => 2,
-                'nomor_pengaduan' => 'PGD-2026-0002',
+                'nomor_pengaduan' => 'PGD-2026-0002-3EKHZA',
                 'tanggal_pengaduan' => '2026-08-05',
                 'nama_pelapor' => 'MARIA DA COSTA',
                 'kontak_pelapor' => '081234567802',
@@ -2119,7 +2146,7 @@ class DummyData
             ],
             [
                 'id_pengaduan' => 3,
-                'nomor_pengaduan' => 'PGD-2026-0003',
+                'nomor_pengaduan' => 'PGD-2026-0003-3NYVEN',
                 'tanggal_pengaduan' => '2026-08-08',
                 'nama_pelapor' => 'PETRUS NAHAK',
                 'kontak_pelapor' => '081234567803',
@@ -2137,7 +2164,7 @@ class DummyData
             ],
             [
                 'id_pengaduan' => 4,
-                'nomor_pengaduan' => 'PGD-2026-0004',
+                'nomor_pengaduan' => 'PGD-2026-0004-TGMZ79',
                 'tanggal_pengaduan' => '2026-08-09',
                 'nama_pelapor' => 'FRANSISKA BRIA',
                 'kontak_pelapor' => '081234567806',
@@ -2161,7 +2188,7 @@ class DummyData
             ],
             [
                 'id_pengaduan' => 5,
-                'nomor_pengaduan' => 'PGD-2026-0005',
+                'nomor_pengaduan' => 'PGD-2026-0005-96RY4X',
                 'tanggal_pengaduan' => '2026-07-28',
                 'nama_pelapor' => 'GABRIEL LEKI',
                 'kontak_pelapor' => '081234567807',
@@ -2186,7 +2213,7 @@ class DummyData
              */
             [
                 'id_pengaduan' => 6,
-                'nomor_pengaduan' => 'PGD-2026-0006',
+                'nomor_pengaduan' => 'PGD-2026-0006-KCJSY6',
                 'tanggal_pengaduan' => '2026-08-11',
                 'nama_pelapor' => 'YULITA HOAR',
                 'kontak_pelapor' => '081234567804',
@@ -2202,7 +2229,7 @@ class DummyData
             ],
             [
                 'id_pengaduan' => 7,
-                'nomor_pengaduan' => 'PGD-2026-0007',
+                'nomor_pengaduan' => 'PGD-2026-0007-3YDKAW',
                 'tanggal_pengaduan' => '2026-08-12',
                 'nama_pelapor' => 'AGUSTINUS SERAN',
                 'kontak_pelapor' => '081234567808',
@@ -2218,7 +2245,7 @@ class DummyData
             ],
             [
                 'id_pengaduan' => 8,
-                'nomor_pengaduan' => 'PGD-2026-0008',
+                'nomor_pengaduan' => 'PGD-2026-0008-2QZY3Q',
                 'tanggal_pengaduan' => '2026-08-13',
                 'nama_pelapor' => 'THERESIA BAU',
                 'kontak_pelapor' => '081234567809',
@@ -2245,7 +2272,7 @@ class DummyData
              */
             [
                 'id_pengaduan' => 9,
-                'nomor_pengaduan' => 'PGD-2026-0009',
+                'nomor_pengaduan' => 'PGD-2026-0009-669C3Z',
                 'tanggal_pengaduan' => '2026-08-15',
                 'nama_pelapor' => 'DOMINGGUS TAEK',
                 'kontak_pelapor' => '081234567810',
@@ -2273,10 +2300,10 @@ class DummyData
      * @param  string  $nomorPengaduan  Nomor pengaduan yang dicari
      * @return array<int, array<string, mixed>> Riwayat penanganan
      */
-    public static function penangananPengaduan(string $nomorPengaduan = 'PGD-2026-0001'): array
+    public static function penangananPengaduan(string $nomorPengaduan = 'PGD-2026-0001-PMTUXK'): array
     {
         $data = [
-            'PGD-2026-0001' => [
+            'PGD-2026-0001-PMTUXK' => [
                 [
                     'tanggal_penanganan' => '2026-08-03',
                     'petugas' => 'NARA WIJAYA',
@@ -2294,7 +2321,7 @@ class DummyData
                     'dokumen_tindak_lanjut' => 'pengaduan/1/BeritaAcaraPeninjauan_pgd-2026-0001.pdf',
                 ],
             ],
-            'PGD-2026-0002' => [
+            'PGD-2026-0002-3EKHZA' => [
                 [
                     'tanggal_penanganan' => '2026-08-06',
                     'petugas' => 'SITI RAHMAWATI',
@@ -2304,7 +2331,7 @@ class DummyData
                     'dokumen_tindak_lanjut' => null,
                 ],
             ],
-            'PGD-2026-0005' => [
+            'PGD-2026-0005-96RY4X' => [
                 [
                     'tanggal_penanganan' => '2026-07-29',
                     'petugas' => 'AGUS PRASETYO',
@@ -2330,7 +2357,7 @@ class DummyData
                     'dokumen_tindak_lanjut' => 'pengaduan/5/BeritaAcaraPenyelesaian_pgd-2026-0005.pdf',
                 ],
             ],
-            'PGD-2026-0006' => [
+            'PGD-2026-0006-KCJSY6' => [
                 [
                     'tanggal_penanganan' => '2026-08-12',
                     'petugas' => 'NARA WIJAYA',
@@ -2348,7 +2375,7 @@ class DummyData
                     'dokumen_tindak_lanjut' => null,
                 ],
             ],
-            'PGD-2026-0007' => [
+            'PGD-2026-0007-3YDKAW' => [
                 [
                     'tanggal_penanganan' => '2026-08-13',
                     'petugas' => 'NARA WIJAYA',
@@ -2366,7 +2393,7 @@ class DummyData
                     'dokumen_tindak_lanjut' => null,
                 ],
             ],
-            'PGD-2026-0008' => [
+            'PGD-2026-0008-2QZY3Q' => [
                 [
                     'tanggal_penanganan' => '2026-08-14',
                     'petugas' => 'SITI RAHMAWATI',
@@ -2623,18 +2650,44 @@ class DummyData
      */
     public static function wilayah(): array
     {
+        // Provinsi dan kabupaten dibaca dari data referensi nasional
+        // (2026-09-02), bukan lagi dua baris tulis tangan yang hanya memuat
+        // NTT dan Malaka. Alasannya: daftar ini melayani pemilihan daerah asal
+        // transmigran yang dapat berasal dari mana pun di Indonesia, sedangkan
+        // dua baris itu hanya cukup untuk lokusnya sendiri.
+        //
+        // Idnya mengikuti kode BPS, sehingga Malaka bernilai 5321 dan bukan 1.
+        // Kecamatan di bawah menyesuaikan diri terhadap kode itu.
+        $provinsi = array_map(fn (array $p) => [
+            'id_provinsi' => $p['id'],
+            'nama' => $p['nama'],
+            'kode' => $p['kode'],
+        ], DataWilayah::provinsi());
+
+        $namaProvinsi = DataWilayah::petaProvinsi();
+
+        $kabupaten = array_map(fn (array $k) => [
+            'id_kabupaten' => $k['id'],
+            'provinsi_id' => $k['provinsi_id'],
+            'provinsi' => $namaProvinsi[$k['provinsi_id']] ?? '',
+            'nama' => $k['nama'],
+            'kode' => $k['kode'],
+        ], DataWilayah::kabupaten());
+
+        // KECAMATAN DAN DESA TETAP WILAYAH LOKUS, bukan seluruh Indonesia.
+        // Berkas sumber memuat 7.000 kecamatan dan 83.000 kelurahan, sedangkan
+        // hanya wilayah ber-SP yang bermakna di sini: dropdown pemilihan desa
+        // pada form SP akan berisi puluhan ribu pilihan yang seluruhnya keliru
+        // kecuali enam. Pemuatan penuh menunggu Tahap 3, ketika pengambilan
+        // bertahap lewat endpoint sudah tersedia.
         return [
-            'provinsi' => [
-                ['id_provinsi' => 1, 'nama' => 'Nusa Tenggara Timur', 'kode' => '53'],
-            ],
-            'kabupaten' => [
-                ['id_kabupaten' => 1, 'provinsi_id' => 1, 'provinsi' => 'Nusa Tenggara Timur', 'nama' => 'Malaka', 'kode' => '5321'],
-            ],
+            'provinsi' => $provinsi,
+            'kabupaten' => $kabupaten,
             'kecamatan' => [
-                ['id_kecamatan' => 1, 'kabupaten_id' => 1, 'kabupaten' => 'Malaka', 'nama' => 'Laen Manen', 'jumlah_desa' => 2],
-                ['id_kecamatan' => 2, 'kabupaten_id' => 1, 'kabupaten' => 'Malaka', 'nama' => 'Malaka Tengah', 'jumlah_desa' => 1],
-                ['id_kecamatan' => 3, 'kabupaten_id' => 1, 'kabupaten' => 'Malaka', 'nama' => 'Wewiku', 'jumlah_desa' => 1],
-                ['id_kecamatan' => 4, 'kabupaten_id' => 1, 'kabupaten' => 'Malaka', 'nama' => 'Rinhat', 'jumlah_desa' => 2],
+                ['id_kecamatan' => 1, 'kabupaten_id' => 5321, 'kabupaten' => 'Kabupaten Malaka', 'nama' => 'Laen Manen', 'jumlah_desa' => 2],
+                ['id_kecamatan' => 2, 'kabupaten_id' => 5321, 'kabupaten' => 'Kabupaten Malaka', 'nama' => 'Malaka Tengah', 'jumlah_desa' => 1],
+                ['id_kecamatan' => 3, 'kabupaten_id' => 5321, 'kabupaten' => 'Kabupaten Malaka', 'nama' => 'Wewiku', 'jumlah_desa' => 1],
+                ['id_kecamatan' => 4, 'kabupaten_id' => 5321, 'kabupaten' => 'Kabupaten Malaka', 'nama' => 'Rinhat', 'jumlah_desa' => 2],
             ],
             'desa' => [
                 ['id_desa' => 1, 'kecamatan_id' => 1, 'kecamatan' => 'Laen Manen', 'nama' => 'Kapitan Meo', 'jumlah_sp' => 1],
@@ -2645,6 +2698,30 @@ class DummyData
                 ['id_desa' => 6, 'kecamatan_id' => 4, 'kecamatan' => 'Rinhat', 'nama' => 'Weain', 'jumlah_sp' => 1],
             ],
         ];
+    }
+
+    /**
+     * Daftar desa beserta id kabupatennya.
+     *
+     * `kabupaten_id` DITURUNKAN lewat kecamatan, tidak disimpan pada baris
+     * desa. Menyimpannya berarti dua kolom yang saling menentukan dapat
+     * berselisih diam-diam ketika satu kecamatan dipindah kabupaten.
+     *
+     * Dipakai form SP untuk menyaring desa menurut kabupaten kawasan yang
+     * dipilih. Penyaringan menempuh KABUPATEN, bukan relasi kawasan ke desa:
+     * kawasan dan desa adalah dua cabang terpisah yang baru bertemu di SP
+     * (agents/rules.md bagian 4a.2).
+     *
+     * @return array<int, array<string, mixed>> Desa beserta kabupaten_id
+     */
+    public static function desaBerkabupaten(): array
+    {
+        $wilayah = self::wilayah();
+        $kecamatan = array_column($wilayah['kecamatan'], null, 'id_kecamatan');
+
+        return array_map(fn (array $d) => $d + [
+            'kabupaten_id' => $kecamatan[$d['kecamatan_id']]['kabupaten_id'] ?? null,
+        ], $wilayah['desa']);
     }
 
     /**
@@ -4182,7 +4259,7 @@ class DummyData
             ['id_audit_log' => 3, 'waktu' => '2026-08-10 16:32:09', 'pengguna' => 'NARA WIJAYA', 'aksi' => 'Ubah', 'nama_tabel' => 'rumah', 'record_id' => 3, 'ringkasan' => 'Mengubah status hunian A-03 menjadi Tidak Dihuni.', 'ip_address' => '10.14.2.31'],
             // Penutupan pengaduan tercatat sebagai perubahan status, bukan
             // verifikasi data, sebab yang berubah adalah tahap penanganannya.
-            ['id_audit_log' => 4, 'waktu' => '2026-08-10 14:22:41', 'pengguna' => 'AGUS PRASETYO', 'aksi' => 'Ubah', 'nama_tabel' => 'pengaduan', 'record_id' => 5, 'ringkasan' => 'Menutup pengaduan PGD-2026-0005 berstatus Selesai.', 'ip_address' => '10.14.2.55'],
+            ['id_audit_log' => 4, 'waktu' => '2026-08-10 14:22:41', 'pengguna' => 'AGUS PRASETYO', 'aksi' => 'Ubah', 'nama_tabel' => 'pengaduan', 'record_id' => 5, 'ringkasan' => 'Menutup pengaduan PGD-2026-0005-96RY4X berstatus Selesai.', 'ip_address' => '10.14.2.55'],
             ['id_audit_log' => 5, 'waktu' => '2026-08-09 11:07:33', 'pengguna' => 'SITI RAHMAWATI', 'aksi' => 'Reset Kata Sandi', 'nama_tabel' => 'user', 'record_id' => 4, 'ringkasan' => 'Menyetel ulang kata sandi akun yosep.klau.', 'ip_address' => '10.14.2.31'],
             ['id_audit_log' => 6, 'waktu' => '2026-08-08 09:45:12', 'pengguna' => 'SITI RAHMAWATI', 'aksi' => 'Nonaktifkan Akun', 'nama_tabel' => 'user', 'record_id' => 5, 'ringkasan' => 'Menonaktifkan akun maria.goreti atas permintaan dinas.', 'ip_address' => '10.14.2.31'],
             ['id_audit_log' => 7, 'waktu' => '2026-08-07 15:18:55', 'pengguna' => 'NARA WIJAYA', 'aksi' => 'Hapus', 'nama_tabel' => 'transmigran', 'record_id' => 4, 'ringkasan' => 'Menghapus data ANGELA SERAN yang terdaftar ganda.', 'ip_address' => '10.14.2.31'],
@@ -4205,7 +4282,7 @@ class DummyData
             ['id_audit_log' => 12, 'waktu' => '2026-04-02 10:41:03', 'pengguna' => 'YOSEP KLAU', 'aksi' => 'Tambah', 'nama_tabel' => 'lahan', 'record_id' => 1, 'ringkasan' => 'Menambahkan lahan pekarangan LP-001 milik YOHANES BERE.', 'ip_address' => '10.14.2.77'],
             ['id_audit_log' => 13, 'waktu' => '2026-06-18 11:03:52', 'pengguna' => 'NARA WIJAYA', 'aksi' => 'Ubah', 'nama_tabel' => 'lahan', 'record_id' => 1, 'ringkasan' => 'Melengkapi titik koordinat lahan hasil peninjauan lapangan.', 'ip_address' => '10.14.2.31'],
             ['id_audit_log' => 14, 'waktu' => '2026-05-09 08:55:31', 'pengguna' => 'AGUS PRASETYO', 'aksi' => 'Tambah', 'nama_tabel' => 'poktan', 'record_id' => 1, 'ringkasan' => 'Mendaftarkan kelompok tani POKTAN MEKAR JAYA.', 'ip_address' => '10.14.2.55'],
-            ['id_audit_log' => 15, 'waktu' => '2026-08-02 13:47:26', 'pengguna' => 'MARIA GORETI', 'aksi' => 'Tambah', 'nama_tabel' => 'pengaduan', 'record_id' => 1, 'ringkasan' => 'Mencatat pengaduan PGD-2026-0001 dari warga SP Kapitan Meo.', 'ip_address' => '10.14.2.91'],
+            ['id_audit_log' => 15, 'waktu' => '2026-08-02 13:47:26', 'pengguna' => 'MARIA GORETI', 'aksi' => 'Tambah', 'nama_tabel' => 'pengaduan', 'record_id' => 1, 'ringkasan' => 'Mencatat pengaduan PGD-2026-0001-PMTUXK dari warga SP Kapitan Meo.', 'ip_address' => '10.14.2.91'],
             /*
                 Jejak bagi lima modul aset dan produksi. Tanpa entri di sini,
                 tab Catatan Log pada halaman rinciannya akan selalu kosong
@@ -4546,28 +4623,64 @@ class DummyData
      * Diurutkan dari jumlah terbesar, dengan `Lainnya` sebagai penampung sisa -
      * pola yang sama dengan `sebaranKomoditas()`.
      *
-     * CATATAN UNTUK TAHAP BACKEND: `transmigran.daerah_asal` adalah isian TEKS
-     * BEBAS, bukan pilihan dari data master. Pada data nyata ejaannya akan
-     * beragam - "KUPANG", "Kab. Kupang", dan "KABUPATEN KUPANG" menjadi tiga
-     * baris berbeda meski menunjuk tempat yang sama. Middleware UppercaseInput
-     * menyeragamkan huruf besarnya, tetapi tidak ejaannya. Agregat di sini
-     * mengandaikan penyeragaman itu sudah dilakukan.
+     * BERBASIS `kabupaten_id`, BUKAN TEKS (diubah 2026-09-02). Kuncinya adalah
+     * id pada `DataWilayah::kabupaten()`, dan namanya dibaca dari sana saat
+     * dirender. Sebelum ini `transmigran.daerah_asal` berupa teks bebas, dan
+     * pada data nyata ejaannya akan beragam: "KUPANG", "Kab. Kupang", dan
+     * "KABUPATEN KUPANG" menjadi tiga baris berbeda meski menunjuk tempat yang
+     * sama. `UppercaseInput` menyeragamkan huruf besarnya, tetapi tidak
+     * ejaannya, sehingga pembagiannya bocor tanpa memerahkan apa pun.
+     *
+     * Nama kabupaten juga tidak unik: Kabupaten Kupang (5301) berbeda dari
+     * Kota Kupang (5371), sedangkan teks "KUPANG" tidak dapat membedakannya.
+     *
+     * `Lainnya` TETAP berkunci teks, sebab ia penampung sisa dan bukan satu
+     * kabupaten tertentu. Memberinya id berarti mengarang tempat yang tidak
+     * pernah didata.
      *
      * @param  int|null  $tahun  Tahun data terpilih (default tahun terakhir)
-     * @return array<string, int> Peta daerah asal ke jumlah KK
+     * @return array<int|string, int> Peta id kabupaten (atau `Lainnya`) ke jumlah KK
      */
     public static function sebaranDaerahAsal(?int $tahun = null): array
     {
         $base = [
-            'MALAKA' => 402,
-            'BELU' => 286,
-            'TIMOR TENGAH UTARA' => 178,
-            'KUPANG' => 145,
-            'TIMOR TENGAH SELATAN' => 96,
+            5321 => 402,  // Kabupaten Malaka
+            5304 => 286,  // Kabupaten Belu
+            5303 => 178,  // Kabupaten Timor Tengah Utara
+            5301 => 145,  // Kabupaten Kupang
+            5302 => 96,   // Kabupaten Timor Tengah Selatan
             'Lainnya' => 33,
         ];
 
         return self::skalakanSebaranKependudukan($base, $tahun);
+    }
+
+    /**
+     * Sebaran daerah asal beserta nama kabupatennya, siap ditampilkan.
+     *
+     * Pemisahan ini disengaja: `sebaranDaerahAsal()` menyimpan id sebagai
+     * kebenarannya, sedangkan pelabelan terjadi di satu tempat saja. Tanpa itu
+     * tiap pemakainya akan melabeli sendiri-sendiri, dan pelabelan yang keliru
+     * gagal secara senyap - id yang tidak ketemu tampil sebagai tanda hubung,
+     * dan tanda itu terbaca "tidak ada data" padahal artinya "kodenya tidak
+     * menemukan namanya" (pola yang sama dengan agents/rules.md 9 poin 8i).
+     *
+     * @param  int|null  $tahun  Tahun data terpilih (default tahun terakhir)
+     * @return array<string, int> Peta nama kabupaten ke jumlah KK
+     */
+    public static function sebaranDaerahAsalBerlabel(?int $tahun = null): array
+    {
+        $hasil = [];
+
+        foreach (self::sebaranDaerahAsal($tahun) as $kunci => $jumlah) {
+            $nama = is_int($kunci)
+                ? (DataWilayah::namaKabupaten($kunci) ?? 'Tidak dikenal')
+                : $kunci;
+
+            $hasil[$nama] = ($hasil[$nama] ?? 0) + $jumlah;
+        }
+
+        return $hasil;
     }
 
     /**

@@ -54,7 +54,7 @@ awal dokumen ini **usang**: Rombongan B menambah `anggota_keluarga`; Rombongan C
 `rute_aksesibilitas_sp`; Putaran 7 memecah alsintan/saprotan menjadi induk + `*_distribusi`,
 menambah `dokumen_lahan_bidang`, `infrastruktur_sp`, `fasilitas_sp_cakupan`; data master
 `referensi` menjadi tabel; dan `status_kondisi_sp` ditambahkan 2026-09-01. Skema DDL final
-ada pada `database/transmigrasi.sql` — lihat `notes.md` butir 2026-09-01.)
+ada pada `database/data/schema.sql` — lihat `notes.md` butir 2026-09-01.)
 
 | # | Domain | Tabel |
 |---|---|---|
@@ -229,7 +229,7 @@ Kolom "Aturan hapus" memakai istilah SQL: `RESTRICT` mencegah penghapusan induk 
 | 44 | `user_satuan_permukiman` | `user_id` | `user` | N:M | CASCADE |
 | 45 | `user_satuan_permukiman` | `satuan_permukiman_id` | `satuan_permukiman` | N:M | CASCADE |
 
-**Rekonsiliasi relasi terhadap keputusan terbaru (diterapkan pada `database/transmigrasi.sql`, 2026-09-01):**
+**Rekonsiliasi relasi terhadap keputusan terbaru (diterapkan pada `database/data/schema.sql`, 2026-09-01):**
 
 - **#17 `dokumen_lahan.lahan_id`** dicabut. `dokumen_lahan` menjadi **induk** (jenis, nomor, tanggal terbit, berkas); relasi ke bidang lewat pivot M:N **`dokumen_lahan_bidang`** (`dokumen_lahan_id` CASCADE, `lahan_id` CASCADE, UNIQUE gabungan). Putaran 7-G.
 - **#22–#23 `alsintan` → `satuan_permukiman`/`poktan`** dicabut. `alsintan` = induk/pengadaan tanpa FK tersebut; distribusi ke poktan pada **`alsintan_distribusi`** (`alsintan_id` CASCADE, `poktan_id` RESTRICT, `penanda_terima_id` → `anggota_poktan` SET NULL). Putaran 7.
@@ -516,7 +516,7 @@ Urutan berikut wajib dipatuhi agar foreign key selalu menemukan tabel induknya.
 
 **Catatan langkah 5 dan 13:** `kawasan_transmigrasi` hanya bergantung pada `kabupaten`, sehingga dapat dibuat kapan saja setelah langkah 2. Ia diletakkan sebelum `satuan_permukiman` karena SP menaut ke keduanya.
 
-**Sisipan tabel baca (urutan pada `database/transmigrasi.sql`, 2026-09-01):**
+**Sisipan tabel baca (urutan pada `database/data/schema.sql`, 2026-09-01):**
 `referensi` (setelah `komoditas`, sebelum `parameter_penilaian_sp` yang menautnya) ·
 `status_kondisi_sp` (tanpa FK, di mana saja) ·
 `anggota_keluarga` (setelah `transmigran`) ·

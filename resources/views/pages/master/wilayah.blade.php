@@ -5,8 +5,18 @@
     cabang administratif provinsi, kabupaten, kecamatan, desa; dan cabang
     program berupa kawasan transmigrasi. Keduanya bertemu di SP.
 
-    Halaman ini menampilkan cabang administratif dalam tab bertingkat, karena
-    keempat tingkatnya jarang diubah tetapi perlu dapat ditelusuri.
+    Keempat tingkat cabang administratif disajikan dalam SATU tabel, dengan
+    tingkat sebagai kolom sekaligus penyaring.
+
+    Sebelum 2026-09-02 halaman ini memakai empat tab, dan itu tidak lagi
+    memadai. Sejak provinsi dan kabupaten dibaca dari data referensi nasional,
+    tab Kabupaten memuat 514 baris tanpa pencarian maupun paginasi. Mencari
+    satu nama juga menuntut petugas menebak lebih dulu ia berada di tab mana,
+    padahal yang ia ketahui hanya namanya.
+
+    Tab juga sudah dua kali melahirkan cacat: tab bawaan yang keliru, dan
+    tingkat form yang tidak mengikuti tab yang sedang terbuka. Menyatukannya
+    menghapus kelas cacat itu, bukan memperbaikinya untuk ketiga kali.
 --}}
 @extends('layouts.app')
 
@@ -36,126 +46,101 @@
             provinsi &rarr; kabupaten &rarr; kawasan transmigrasi &nbsp;&#8599;
         </p>
     </div>
-
     {{--
-        Tab bawaan PROVINSI, bukan kecamatan.
+        Satu tabel untuk keempat tingkat, menggantikan empat tab.
 
-        Semula bawaannya `kecamatan`, dan itu keliru pada dua hal sekaligus:
-        pembacaannya melompati dua tingkat pertama sehingga susunan hierarki
-        yang baru saja dijelaskan di atas tidak terlihat, dan pengunjung yang
-        mengklik menu langsung mendapat alamat `?tab=kecamatan` seolah ia
-        pernah memilihnya sendiri.
-
-        Halaman bertingkat dibuka dari tingkat teratas; penelusuran ke bawah
-        adalah tindakan yang dipilih pengguna, bukan keadaan awal.
+        Filter Tingkat WAJIB mencantumkan jumlahnya, sebab judul tab lama
+        menampilkan angka itu. Menghapus tab tanpa memindahkan angkanya
+        berarti pembaca kehilangan keterangan yang sebelumnya ada, dan
+        perombakan ini berubah menjadi kemunduran.
     --}}
-    <div x-data="hashTabs('provinsi')"
-        class="min-w-0 overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-        <div class="flex gap-1 overflow-x-auto no-scrollbar border-b border-gray-200 px-2 pt-2 dark:border-gray-800"
-            role="tablist" aria-label="Tingkat wilayah">
-            @foreach ([
-                'provinsi' => 'Provinsi (' . count($wilayah['provinsi']) . ')',
-                'kabupaten' => 'Kabupaten (' . count($wilayah['kabupaten']) . ')',
-                'kecamatan' => 'Kecamatan (' . count($wilayah['kecamatan']) . ')',
-                'desa' => 'Desa (' . count($wilayah['desa']) . ')',
-            ] as $kunci => $label)
-                <button type="button" role="tab" @click="setTab('{{ $kunci }}')"
-                    :aria-selected="tab === '{{ $kunci }}'"
-                    :class="tab === '{{ $kunci }}'
-                        ? 'border-brand-500 text-brand-600 dark:text-brand-400'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
-                    class="shrink-0 border-b-2 px-4 py-2.5 text-theme-sm font-medium transition focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
-                    {{ $label }}
+    <form method="GET" action="{{ route('wilayah') }}">
+        <x-sim.data-table :jumlah="$jumlahBaris" :per-halaman="$perHalaman" :kata-kunci="$cari"
+            judul="Daftar wilayah administratif"
+            placeholder-cari="Cari nama wilayah, induk, atau kode"
+            judul-kosong="Wilayah tidak ditemukan"
+            pesan-kosong="Ubah kata kunci atau lepas penyaring tingkatnya.">
+
+            <x-slot:filter>
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <div>
+                        <label for="filter_tingkat"
+                            class="mb-1.5 block text-theme-xs font-medium text-gray-700 dark:text-gray-400">
+                            Tingkat Wilayah
+                        </label>
+                        <select id="filter_tingkat" name="tingkat"
+                            class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
+                            <option value="">Semua tingkat ({{ array_sum($cacahTingkat) }})</option>
+                            @foreach (['provinsi' => 'Provinsi', 'kabupaten' => 'Kabupaten/Kota', 'kecamatan' => 'Kecamatan', 'desa' => 'Desa'] as $nilai => $label)
+                                <option value="{{ $nilai }}" @selected($filterTingkat === $nilai)>
+                                    {{ $label }} ({{ $cacahTingkat[$nilai] }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+            </x-slot:filter>
+
+            <x-slot:aksiKanan>
+                <button type="submit"
+                    class="h-10 shrink-0 rounded-lg border border-gray-300 px-3 text-theme-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
+                    Cari
                 </button>
+            </x-slot:aksiKanan>
+
+            <x-slot:aksiKosong>
+                @if ($adaFilter)
+                    <a href="{{ route('wilayah') }}"
+                        class="inline-flex items-center rounded-lg border border-gray-300 px-4 py-2.5 text-theme-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
+                        Bersihkan Filter
+                    </a>
+                @endif
+            </x-slot:aksiKosong>
+
+            <x-slot:kepala>
+                <th scope="col" class="px-5 py-3 text-left text-theme-xs font-medium text-gray-500 dark:text-gray-400">Nama Wilayah</th>
+                <th scope="col" class="px-5 py-3 text-left text-theme-xs font-medium text-gray-500 dark:text-gray-400">Tingkat</th>
+                <th scope="col" class="px-5 py-3 text-left text-theme-xs font-medium text-gray-500 dark:text-gray-400">Induk</th>
+                <th scope="col" class="px-5 py-3 text-left text-theme-xs font-medium text-gray-500 dark:text-gray-400">Kode</th>
+                <th scope="col" class="px-5 py-3 text-right text-theme-xs font-medium text-gray-500 dark:text-gray-400">Aksi</th>
+            </x-slot:kepala>
+
+            @foreach ($baris as $b)
+                <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
+                    <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">{{ $b['nama'] }}</td>
+                    <td class="px-5 py-3 text-theme-sm text-gray-600 capitalize dark:text-gray-400">{{ $b['tingkat'] }}</td>
+                    <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ $b['induk'] ?? '-' }}</td>
+                    <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">{{ $b['kode'] ?? '-' }}</td>
+                    <td class="px-5 py-3 text-right">
+                        <x-sim.aksi-baris modal-ubah="formUbahWilayahBaris"
+                            :data-baris="$b['asli'] + ['id' => $b['id'], 'tingkat' => $b['tingkat']]"
+                            :hapus-url="'/wilayah/' . $b['id']"
+                            konfirmasi-hapus="hapusWilayah" :label="$b['nama']" />
+                    </td>
+                </tr>
             @endforeach
-        </div>
 
-        {{--
-            Panel ini SENGAJA tanpa `x-cloak`, dan itu bukan kelalaian: ia
-            panel bawaan, sehingga menyembunyikannya sampai Alpine memulai
-            justru membuat halaman kosong sesaat. Ketiga panel lain memakai
-            `x-cloak` agar tidak berkedip terlihat.
-
-            Sebelum bawaannya diubah menjadi provinsi, keduanya tidak sejalan:
-            yang tanpa `x-cloak` adalah provinsi sementara bawaannya kecamatan,
-            sehingga panel provinsi berkedip lalu tergantikan.
-        --}}
-        <div x-show="tab === 'provinsi'" role="tabpanel">
-            <x-sim.tabel-ringkas :kolom="['Nama Provinsi', 'Kode', 'Aksi']" :kolom-kanan="['Aksi']">
-                @foreach ($wilayah['provinsi'] as $b)
-                    <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
-                        <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">{{ $b['nama'] }}</td>
-                        <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
-                            {{ $b['kode'] }}</td>
-                        <td class="px-5 py-3 text-right">
+            <x-slot:kartu>
+                @foreach ($baris as $b)
+                    <div class="border-b border-gray-100 p-4 last:border-0 dark:border-gray-800">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <p class="truncate text-theme-sm font-medium text-gray-800 dark:text-white/90">{{ $b['nama'] }}</p>
+                                <p class="mt-0.5 text-theme-xs text-gray-500 capitalize dark:text-gray-400">
+                                    {{ $b['tingkat'] }}@if ($b['induk']) &middot; {{ $b['induk'] }} @endif
+                                </p>
+                            </div>
                             <x-sim.aksi-baris modal-ubah="formUbahWilayahBaris"
-                                :data-baris="$b + ['id' => $b['id_provinsi']]"
-                                :hapus-url="'/wilayah/' . $b['id_provinsi']"
+                                :data-baris="$b['asli'] + ['id' => $b['id'], 'tingkat' => $b['tingkat']]"
+                                :hapus-url="'/wilayah/' . $b['id']"
                                 konfirmasi-hapus="hapusWilayah" :label="$b['nama']" />
-                        </td>
-                    </tr>
+                        </div>
+                    </div>
                 @endforeach
-            </x-sim.tabel-ringkas>
-        </div>
+            </x-slot:kartu>
+        </x-sim.data-table>
+    </form>
 
-                <div x-show="tab === 'kabupaten'" x-cloak role="tabpanel">
-            <x-sim.tabel-ringkas :kolom="['Nama Kabupaten', 'Provinsi', 'Kode', 'Aksi']" :kolom-kanan="['Aksi']">
-                @foreach ($wilayah['kabupaten'] as $b)
-                    <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
-                        <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">{{ $b['nama'] }}</td>
-                        <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ $b['provinsi'] }}</td>
-                        <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
-                            {{ $b['kode'] }}</td>
-                        <td class="px-5 py-3 text-right">
-                            <x-sim.aksi-baris modal-ubah="formUbahWilayahBaris"
-                                :data-baris="$b + ['id' => $b['id_kabupaten']]"
-                                :hapus-url="'/wilayah/' . $b['id_kabupaten']"
-                                konfirmasi-hapus="hapusWilayah" :label="$b['nama']" />
-                        </td>
-                    </tr>
-                @endforeach
-            </x-sim.tabel-ringkas>
-        </div>
-
-                <div x-show="tab === 'kecamatan'" x-cloak role="tabpanel">
-
-            <x-sim.tabel-ringkas :kolom="['Nama Kecamatan', 'Kabupaten', 'Jumlah Desa', 'Aksi']" :kolom-kanan="['Aksi']">
-                @foreach ($wilayah['kecamatan'] as $b)
-                    <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
-                        <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">{{ $b['nama'] }}</td>
-                        <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ $b['kabupaten'] }}</td>
-                        <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
-                            {{ $b['jumlah_desa'] }}</td>
-                        <td class="px-5 py-3 text-right">
-                            <x-sim.aksi-baris modal-ubah="formUbahWilayahBaris"
-                                :data-baris="$b + ['id' => $b['id_kecamatan']]"
-                                :hapus-url="'/wilayah/' . $b['id_kecamatan']"
-                                konfirmasi-hapus="hapusWilayah" :label="$b['nama']" />
-                        </td>
-                    </tr>
-                @endforeach
-            </x-sim.tabel-ringkas>
-        </div>
-
-        <div x-show="tab === 'desa'" x-cloak role="tabpanel">
-            <x-sim.tabel-ringkas :kolom="['Nama Desa', 'Kecamatan', 'Jumlah SP', 'Aksi']" :kolom-kanan="['Aksi']">
-                @foreach ($wilayah['desa'] as $b)
-                    <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
-                        <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">{{ $b['nama'] }}</td>
-                        <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ $b['kecamatan'] }}</td>
-                        <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
-                            {{ $b['jumlah_sp'] }}</td>
-                        <td class="px-5 py-3 text-right">
-                            <x-sim.aksi-baris modal-ubah="formUbahWilayahBaris"
-                                :data-baris="$b + ['id' => $b['id_desa']]"
-                                :hapus-url="'/wilayah/' . $b['id_desa']"
-                                konfirmasi-hapus="hapusWilayah" :label="$b['nama']" />
-                        </td>
-                    </tr>
-                @endforeach
-            </x-sim.tabel-ringkas>
-        </div>
-    </div>
 
     <x-sim.modal-form nama="formTambahWilayah" judul="Tambah Wilayah Administratif"
         keterangan="Satu form untuk empat tingkat wilayah."

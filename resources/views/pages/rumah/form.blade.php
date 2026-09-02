@@ -33,9 +33,9 @@
     */
     $calonPenghuni = $transmigranTanpaRumah;
 
-    if (! empty($data['penghuni'])) {
+    if (! empty($data['transmigran_id'])) {
         $penghuniSaatIni = collect($daftarTransmigran)
-            ->firstWhere('nama_kepala_keluarga', $data['penghuni']);
+            ->firstWhere('id_transmigran', $data['transmigran_id']);
 
         if ($penghuniSaatIni) {
             array_unshift($calonPenghuni, $penghuniSaatIni);

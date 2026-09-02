@@ -20,13 +20,19 @@
         }
     };
 
-    // Peta relasi rumah berdasarkan nama penghuni (nama KK)
+    // Peta relasi rumah berdasarkan transmigran_id.
+    // Dibaca lewat id sejak 2026-09-02, sejalan dengan peta lahan di bawah;
+    // sebelumnya memakai nama penghuni, dan kaitan itu putus diam-diam begitu
+    // suksesi mengganti nama kepala keluarga (rules.md 6.5).
     $petaRumah = [];
     foreach ($rumah as $r) {
-        if (!empty($r['penghuni'])) {
-            $petaRumah[$r['penghuni']] = $r;
+        if (!empty($r['transmigran_id'])) {
+            $petaRumah[$r['transmigran_id']] = $r;
         }
     }
+
+    // Nama kabupaten asal, dibaca dari data master.
+    $namaAsal = fn ($t) => \App\Support\DataWilayah::namaKabupaten($t['daerah_asal_kabupaten_id'] ?? null) ?? '-';
 
     // Peta relasi bidang lahan berdasarkan transmigran_id
     $petaLahan = [];
@@ -115,7 +121,7 @@
             <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                 @forelse ($transmigran as $t)
                     @php
-                        $r = $petaRumah[$t['nama_kepala_keluarga']] ?? null;
+                        $r = $petaRumah[$t['id_transmigran']] ?? null;
                         $lahans = $petaLahan[$t['id_transmigran']] ?? [];
                         $pekarangan = array_values(array_filter($lahans, fn ($x) => ($x['peruntukan_lahan'] ?? '') === \App\Enums\PeruntukanLahan::LahanPekarangan->value));
                         $usaha = array_values(array_filter($lahans, fn ($x) => ($x['peruntukan_lahan'] ?? '') === \App\Enums\PeruntukanLahan::LahanUsaha->value));
@@ -125,7 +131,7 @@
                             $t['nama_kepala_keluarga'],
                             $t['nik'],
                             $t['no_kk'],
-                            $t['daerah_asal'],
+                            $namaAsal($t),
                             $t['satuan_permukiman'],
                             $r ? ($r['no_rumah'] . ' ' . $r['kondisi'] . ' ' . $r['status_hunian']) : '',
                             $kodesLahan,
@@ -152,7 +158,7 @@
                         </td>
 
                         {{-- Daerah Asal --}}
-                        <td class="px-2 py-1.5">{{ $t['daerah_asal'] }}</td>
+                        <td class="px-2 py-1.5">{{ $namaAsal($t) }}</td>
 
                         {{-- Tahun Datang --}}
                         <td class="px-2 py-1.5 text-center tabular-nums">{{ $t['tahun_kedatangan'] }}</td>
@@ -312,7 +318,7 @@
                             $t['tempat_lahir'],
                             $t['pendidikan_terakhir'],
                             $t['pekerjaan_kepala_keluarga'],
-                            $t['daerah_asal'],
+                            $namaAsal($t),
                             $t['satuan_permukiman'],
                         ]));
                     @endphp
@@ -335,7 +341,7 @@
                         <td class="px-1.5 py-1.5">{{ $t['pekerjaan_kepala_keluarga'] }}</td>
                         <td class="px-1.5 py-1.5 text-right tabular-nums">{{ $t['jumlah_anggota_keluarga'] }}</td>
                         <td class="px-1.5 py-1.5 text-right tabular-nums whitespace-nowrap font-medium text-gray-900 dark:text-white">{{ $rupiah($t['pendapatan_per_bulan']) }}</td>
-                        <td class="px-1.5 py-1.5">{{ $t['daerah_asal'] }}</td>
+                        <td class="px-1.5 py-1.5">{{ $namaAsal($t) }}</td>
                         <td class="px-1.5 py-1.5 text-center tabular-nums">{{ $t['tahun_kedatangan'] }}</td>
                         <td class="px-1.5 py-1.5 font-medium text-gray-800 dark:text-white/90">{{ $t['satuan_permukiman'] }}</td>
                         <td class="px-1.5 py-1.5 text-center">

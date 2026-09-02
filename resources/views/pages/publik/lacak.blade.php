@@ -52,7 +52,7 @@
         </label>
         <div class="flex flex-col gap-3 sm:flex-row">
             <input type="text" id="nomor" name="nomor" value="{{ $nomor }}" required
-                placeholder="Contoh: PGD-2026-0001" autocomplete="off"
+                placeholder="Contoh: PGD-2026-0001-K7F2M9" autocomplete="off"
                 class="h-12 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-theme-sm tabular-nums text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-navy-700 dark:text-white/90" />
             <button type="submit"
                 class="shrink-0 rounded-lg bg-brand-500 px-6 py-3 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">

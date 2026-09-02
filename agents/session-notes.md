@@ -1,3 +1,831 @@
+# Putaran 11 - Perbaikan Pra-Backend (audit menyeluruh) BERJALAN (2026-09-02)
+
+Rencana ini ditulis sebelum kode disentuh, sesuai `rules.md` bagian 20b poin 12.
+Pemicu: audit menyeluruh pra-backend atas permintaan pemilik proyek.
+Catatan hasil (setelah selesai): `agents/notes.md`, `agents/tasklist.md`.
+
+## Urutan bagian (disepakati pemilik proyek)
+
+```
+F'1 SELESAI -> A + C2 SELESAI -> C1 + C3 (BERJALAN) -> D1 + D3 + F'4
+  -> E + F'2 + F'3 -> B + D2 + F'5
+```
+
+Baseline verifikasi tiap bagian: `php artisan test` = 729 PASS / 6.377 assertions.
+
+## Keputusan pemilik proyek yang mengikat
+
+| # | Keputusan |
+|---|---|
+| 1 | Rumah dinaut `transmigran_id`, pemetaan mengikuti data contoh yang ada |
+| 2 | `daerah_asal` jadi FK ke `kabupaten`; `pekerjaan_kepala_keluarga` TETAP teks bebas + datalist |
+| 3 | Dataset wilayah: 38 provinsi + 552 kab/kota dari `database/data/wilayah_indonesia.sql`; nama apa adanya (Title Case + awalan Kabupaten/Kota) |
+| 4 | Kecamatan + desa penuh DITUNDA ke Tahap 3; sementara tetap wilayah lokus (4 kecamatan, 6 desa) |
+| 5 | Halaman Master Wilayah: 4 tab DIHAPUS, ganti satu datatable + filter Tingkat bercantum jumlah |
+| 6 | Form SP: blok Penempatan Wilayah pindah ke Section 1; Kawasan -> (kabupaten) -> Desa |
+| 7 | UUID pada URL: TIDAK diubah sekarang, dicatat sebagai keputusan mengikat tahap Model |
+| 8 | Nomor pengaduan berbagian acak dikerjakan sekarang di DummyData |
+| 9 | Dead code (`dashboard/sp.blade.php`, `/galeri-komponen`, `/uji-403`) DITUNDA ke pra-deploy |
+| 10 | Test gagal -> BERHENTI dan lapor, tidak menyesuaikan sendiri |
+
+## Bagian yang SUDAH selesai pada sesi ini
+
+### F'1 - Betulkan rujukan berkas skema (dokumen saja)
+8 titik `database/transmigrasi.sql` -> `database/data/schema.sql`:
+`tasklist.md` 920/928, `erd.md` 57/232/519, `data-dictionary.md` 564, `notes.md` 3427/3438.
+Berkas dipindah pemilik proyek ke `database/data/` agar berkumpul dengan `wilayah_indonesia.sql`.
+KOREKSI TEMUAN AUDIT: angka `44 tabel bisnis` pada dokumen ternyata BENAR
+(50 CREATE TABLE - 6 tabel infrastruktur Laravel). Temuan audit yang menyebut 51 tabel keliru.
+
+### A - Penautan rumah dan KK lewat id (blocker B-1)
+| Titik | Berkas | Perubahan |
+|---|---|---|
+| A1 | `DummyData::rumah()` | +`transmigran_id` 6 baris (1->1, 2->2, 3->null, 4->3, 5->4, 6->null) |
+| A2 | `DummyData::rumahKosong()` | saring `transmigran_id === null` |
+| A3 | `DummyData::transmigranTanpaRumah()` | cocokkan `id_transmigran` |
+| A4 | `routes/web.php` transmigran.detail | `firstWhere('transmigran_id', ...)` |
+| A5 | `pages/rumah/form.blade.php` | `firstWhere('id_transmigran', ...)` |
+| C2 | `DummyData::transmigran()` | hapus 7 duplikasi kunci `satuan_permukiman_id` |
+
+Alasan A: penautan lewat nama PUTUS DIAM-DIAM saat suksesi mengganti nama kepala keluarga
+(`rules.md` 6.5), dan dua KK senama menautkan rumah ke keluarga keliru. Skema sudah benar
+lebih dulu (`uq_rumah_transmigran`), hanya data contoh dan frontend yang tertinggal.
+Bukti perbaikan: `transmigranTanpaRumah()` semula mengembalikan 8 dari 8 KK (selalu gagal cocok),
+kini `[5,6,7,8]`. `rumahKosong()` = `[3,6]`.
+Verifikasi: 729 PASS / 6.377 assertions, sama dengan baseline.
+
+## Bagian SELESAI: D3 (nomor pengaduan berbagian acak) (2026-09-02)
+
+### Masalah
+
+`rules.md` 4.0a poin 4 mewajibkan nomor pengaduan publik memuat BAGIAN ACAK, contoh
+`PGD-2026-0001-K7F2M9`. Data contoh masih memakai `PGD-2026-0001` yang berurutan.
+
+Ini bukan soal kerapian. Halaman lacak dapat diakses TANPA LOGIN, sehingga nomor
+berurutan berarti siapa pun dapat menyusuri `PGD-2026-0001` sampai `PGD-2026-9999`
+dan memanen status seluruh pengaduan warga. Uji privasi yang sudah ada
+(`tidak pernah menampilkan data pribadi pelapor`) menjaga ISI halaman lacak, tetapi
+tidak menjaga siapa yang dapat sampai ke sana.
+
+### Konflik CMS yang ikut diselesaikan
+
+`pages/cms/index.blade.php` menyediakan isian `Format Nomor Registrasi Tiket`
+bernilai `PGD-{TAHUN}-{NOMOR}`, dan contohnya `PGD-2026-0042` tanpa bagian acak.
+Artinya CMS menjanjikan dinas dapat menetapkan format yang justru melanggar 4.0a poin 4.
+
+Keputusan pemilik proyek: **bagian acak WAJIB dan di luar kendali CMS.** Dinas mengatur
+awalan dan pola nomor urut; suffix acak selalu ditambahkan sistem dan tidak dapat
+dimatikan. Alasannya keamanan, bukan gaya penulisan.
+
+### Bentuk nomor yang dipakai
+
+`PGD-2026-0001-K7F2M9`: awalan, tahun, nomor urut empat digit, lalu **enam karakter**
+acak. Alfabetnya sengaja TANPA huruf dan angka yang mudah tertukar (`0`/`O`,
+`1`/`I`/`L`), sebab warga membacanya dari layar ponsel lalu menyalinnya ke
+halaman lacak, dan salah baca satu karakter membuat laporannya seolah tidak ada.
+
+Nomor urutnya DIPERTAHANKAN, tidak diganti acak seluruhnya: ia tetap berguna bagi
+petugas untuk mengurutkan dan menyebut laporan, sedangkan bagian acaknya yang
+menutup penyusuran.
+
+### Berkas yang akan disunting
+
+| Titik | Berkas | Perubahan |
+|---|---|---|
+| D3a | `DummyData::pengaduan()` | 9 nomor mendapat suffix acak |
+| D3b | `DummyData::penangananPengaduan()` | 6 kunci peta riwayat ikut menyesuaikan |
+| D3c | `routes/web.php` | nomor contoh pada balasan kirim pengaduan |
+| D3d | `pages/cms/index.blade.php` | template + contoh + keterangan bahwa suffix acak di luar kendali dinas |
+| D3e | `tests/Feature/HalamanTest.php` | 21 titik bernomor hardcoded |
+| D3f | `rules.md` 4.0a poin 4 | ditegaskan: bagian acak di luar kendali CMS |
+
+### Cara menyentuh berkas uji
+
+Sebagian besar dari 21 titik itu SEHARUSNYA tidak pernah menuliskan nomor sendiri.
+Uji yang mengetik `PGD-2026-0005` mengunci nilai data contoh, sehingga ia pecah tiap
+kali datanya disunting sedikit pun. Bentuk yang benar adalah membacanya dari
+`DummyData`, dan itulah yang dikerjakan di sini.
+
+Contoh: `assertSee('PGD-2026-0005')` pada uji penyaring status menjadi membaca nomor
+baris berstatus Selesai dari `DummyData::pengaduan()`. Ujinya menjadi LEBIH kuat,
+sebab kini menegakkan hubungan status dengan barisnya, bukan sekadar mencocokkan teks.
+
+Ini bukan melonggarkan uji. Yang dilonggarkan adalah keterikatannya pada nilai harfiah
+yang memang bukan bagian dari perilaku yang dijaga.
+
+### Penyisiran lima sudut (rules.md 20a poin 10)
+
+**Privasi.** Inti bagian ini. Nomor tertebak membuat halaman lacak tanpa login dapat
+disusuri berurutan. Uji privasi yang ada menjaga ISI halaman; bagian ini menjaga
+AKSESNYA. Keduanya diperlukan, dan tidak saling menggantikan.
+
+**Siklus hidup.** Nomor pengaduan TIDAK PERNAH berubah setelah terbit; warga sudah
+mencatat atau memotretnya. Suffix acak karena itu dibangkitkan sekali saat penerbitan
+dan ikut tersimpan, bukan dihitung ulang tiap kali dibaca. Pada data contoh nilainya
+tetap, sebab data contoh memang mewakili nomor yang sudah terbit.
+
+**Kejujuran angka.** Kosong. Tidak menyentuh satu pun rekap, agregat, maupun grafik;
+rekap pengaduan mengelompokkan menurut kategori, status, SP, prioritas, dan bidang,
+tidak satu pun memakai nomornya.
+
+**Alur kerja.** Nomor menjadi lebih panjang dan lebih sulit disalin ulang dengan tangan.
+Peredamnya sudah ada dan wajib dipertahankan: halaman kirim menampilkan nomor SANGAT
+BESAR beserta anjuran mencatat atau memotretnya, ditambah tautan langsung ke halaman
+lacak (Task 2.11b). Alfabet acaknya juga sengaja membuang karakter yang mudah tertukar.
+Pencarian nomor pada halaman daftar petugas tetap bekerja sebab ia mencocokkan sebagian
+teks, sehingga mengetik `PGD-2026-0001` tanpa suffix tetap menemukan barisnya.
+
+**Teknis.** Rute lacak sudah menerima `[A-Za-z0-9\-]+` sehingga suffix lolos tanpa
+perubahan. `DaftarTautanStatis` membangkitkan tautannya DARI DATA, sehingga ikut
+menyesuaikan sendiri dan jumlah 227 seharusnya tidak berubah. Yang wajib diperiksa:
+uji `TautanStatisTest` yang menuntut seluruh tautan membalas 200.
+
+### Cara verifikasi
+
+1. `php artisan test` wajib kembali 729 PASS. Kegagalan yang diperkirakan hanya pada
+   21 titik bernomor; bila ada yang lain, berarti ada yang tidak terduga dan diperiksa
+   lebih dulu sebelum disesuaikan.
+2. `sim:tautan-statis` tetap 227, dan seluruhnya tetap membalas 200.
+3. Halaman `/pengaduan`, `/pengaduan/1`, `/lacak-pengaduan`, dan lacak bernomor
+   penuh seluruhnya 200.
+4. Tiap nomor pada `penangananPengaduan()` wajib ada padanannya di `pengaduan()`,
+   sebab keduanya dipetakan lewat nomor. Diperiksa langsung, bukan diandaikan.
+5. `pint --test` tetap 33 berkas; seluruh berkas tersunting bebas BOM.
+
+---
+
+### Hasil D3
+
+Sembilan nomor pengaduan mendapat suffix enam karakter. Alfabetnya membuang `0`, `O`,
+`1`, `I`, dan `L` sebab warga menyalinnya dari layar ponsel.
+
+`PGD-2026-0001-PMTUXK`, `0002-3EKHZA`, `0003-3NYVEN`, `0004-TGMZ79`,
+`0005-96RY4X`, `0006-KCJSY6`, `0007-3YDKAW`, `0008-2QZY3Q`, `0009-669C3Z`.
+
+| Pemeriksaan data | Hasil |
+|---|---|
+| sembilan nomor unik | YA |
+| sesuai pola `PGD-YYYY-NNNN-XXXXXX` | 9 dari 9 |
+| mengandung karakter mudah tertukar | 0 |
+| kunci `penangananPengaduan()` punya padanan | 6 dari 6 |
+
+**Konflik CMS diselesaikan.** Template `formatNomor` menjadi `PGD-{TAHUN}-{NOMOR}-{ACAK}`,
+contohnya diperbarui, dan ditambahkan keterangan tampil bahwa bagian `{ACAK}` selalu
+ditambahkan sistem dan tidak dapat dihilangkan, beserta alasannya. Sebelumnya CMS
+menjanjikan dinas dapat menetapkan format yang justru melanggar `rules.md` 4.0a poin 4.
+
+`rules.md` 4.0a mendapat poin 4a sampai 4d: bagian acak di luar kendali CMS, bentuk
+enam karakter beralfabet aman, nomor urut dipertahankan, dan nomor tidak pernah berubah
+setelah terbit.
+
+### Uji: 21 titik berkurang menjadi satu komentar riwayat
+
+Rencana memperkirakan 21 titik uji perlu disentuh. Yang benar-benar GAGAL hanya **5**,
+sebab sisanya lolos lewat pencocokan sebagian: `assertSee('PGD-2026-0005')` tetap
+cocok terhadap `PGD-2026-0005-96RY4X`.
+
+Kelima yang gagal dibetulkan, dan **sembilan titik lain yang sebenarnya lolos ikut
+dibereskan**. Alasannya: titik yang lolos hanya karena kebetulan awalannya sama akan
+pecah diam-diam pada perubahan data berikutnya, dan ia menguji teks harfiah alih-alih
+perilaku.
+
+Bentuk yang dipakai adalah membaca nomornya dari `DummyData`, dan pada dua uji
+penyaring hasilnya menjadi LEBIH kuat daripada sebelumnya:
+
+| Uji | Sebelum | Sesudah |
+|---|---|---|
+| penyaring status/kategori/prioritas | mengetik nomor | membaca nomor LEWAT penyaring yang sama, sehingga menegakkan hubungan status dengan barisnya |
+| penyaring bidang | mengetik nomor | membaca nomor lewat bidangnya sendiri |
+
+Yang tersisa hanya satu kemunculan `PGD-2026` di berkas uji, yaitu komentar riwayat
+tentang nomor yang dahulu tidak pernah ada. Itu memang catatan, bukan nilai yang diuji.
+
+Jumlah uji tetap 729 dan assertions tetap 7.410.
+
+### Dua hal yang ditemukan di luar rencana
+
+**Placeholder halaman lacak terlewat dari daftar.** `publik/lacak.blade.php` memuat
+`Contoh: PGD-2026-0001` tanpa suffix. Bila dibiarkan, contoh yang ditunjukkan kepada
+warga justru mengajarkan bentuk yang salah, dan nomor yang diketik menurut contoh itu
+tidak akan pernah ditemukan. Ikut dibetulkan.
+
+**Nama kolom yang saya duga keliru.** Uji penyaring bidang sempat saya tulis membaca
+`bidang_penanganan`, padahal kolomnya bernama `bidang`. Tertangkap uji, bukan
+lolos, dan dibetulkan setelah memeriksa kunci sebenarnya pada data.
+
+### Yang TIDAK diubah, beserta alasannya
+
+Nama berkas dokumen tindak lanjut (`BeritaAcaraPeninjauan_pgd-2026-0001.pdf`) TETAP
+memakai bentuk lama. Ia path berkas yang sudah tersimpan di disk, bukan nomor yang
+ditampilkan atau dicari; mengubahnya berarti menunjuk berkas yang tidak ada.
+
+### Verifikasi D3
+
+| Pemeriksaan | Hasil |
+|---|---|
+| `php artisan test` | 729 PASS / 7.410 assertions |
+| `sim:tautan-statis` | 227, tidak berubah; tautannya terbangkit dari data sehingga ikut menyesuaikan |
+| `/lacak-pengaduan/PGD-2026-0001-PMTUXK` | 200 |
+| `/pengaduan`, `/pengaduan/1`, `/pengaduan-warga`, `/cms` | 200 |
+| `pint --test` | 33 pre-existing setelah CRLF dirapikan |
+| BOM | seluruh berkas tersunting bersih |
+
+---
+
+## Bagian SELESAI: B + D2 + F'5 (2026-09-02)
+
+Ketiganya DOKUMEN. Tidak ada kode aplikasi yang disunting, sehingga 729 uji wajib tetap
+hijau tanpa satu pun penyesuaian.
+
+### Koreksi terhadap temuan audit sendiri
+
+Laporan audit menyatakan seluruh pemanggilan `DummyData` terpusat di
+`ViewServiceProvider`, dan menjadikannya alasan bahwa seam cakupan data sudah
+setengah tersedia. Itu KELIRU dan dikoreksi di sini.
+
+| Tempat | Panggilan `DummyData::` |
+|---|---|
+| `routes/web.php` | **167** panggilan, 65 metode berbeda |
+| `ViewServiceProvider` | 59 |
+| view Blade | 0 |
+
+Yang benar: VIEW tidak mengambil datanya sendiri, dan itu memang penjaga yang berlaku
+(Ide C). Tetapi pengambilan datanya tersebar di 167 titik pada closure rute, bukan
+terpusat. Angka inilah yang menentukan bentuk rancangan seam, sehingga kekeliruannya
+berdampak nyata, bukan sekadar salah hitung.
+
+### Fakta yang dikumpulkan sebelum merancang
+
+**13 tabel membawa `satuan_permukiman_id` langsung:** `user_satuan_permukiman`,
+`rute_aksesibilitas_sp`, `inventaris_sp`, `fasilitas_sp`, `fasilitas_sp_cakupan`,
+`penilaian_sp`, `transmigran`, `rumah`, `poktan`, `lahan`, `infrastruktur`,
+`infrastruktur_sp`, `pengaduan`.
+
+**Sisanya mewarisi SP lewat induknya,** dan inilah bagian yang menentukan:
+
+| Tabel | Mewarisi lewat |
+|---|---|
+| `anggota_keluarga`, `riwayat_kepala_keluarga` | `transmigran` |
+| `riwayat_penghunian` | `rumah` dan `transmigran` |
+| `anggota_poktan`, `komoditas_poktan`, `penanaman` | `poktan` |
+| `hasil_panen` | `penanaman` lalu `poktan` |
+| `alsintan_distribusi`, `saprotan_distribusi` | `poktan` |
+| `dokumen_lahan_bidang` | `lahan` lalu `transmigran` |
+
+`alsintan` dan `saprotan` INDUK sengaja tanpa SP: sejak Putaran 7 barisnya
+mendeskripsikan bendanya, dan SP baru muncul pada baris distribusinya. Pengadaan yang
+belum disalurkan tidak berada di SP mana pun, sehingga menyaringnya per SP akan
+menyembunyikan barang gudang UPT dari semua orang.
+
+`user_satuan_permukiman` sudah ada lengkap dengan UNIQUE `(user_id, satuan_permukiman_id)`.
+
+### Penyisiran lima sudut (rules.md 20a poin 10)
+
+**Privasi.** Inti bagian ini. Cakupan data adalah pembatas yang menentukan apakah
+Operator SP dapat membaca data kependudukan SP lain. Aturan yang paling mudah terlewat:
+akun `Per SP` TANPA penugasan wajib melihat NOL data, bukan seluruhnya (5.0b poin 7).
+Fail-closed, bukan fail-open.
+
+**Siklus hidup.** Menghapus penugasan SP seorang operator langsung menyempitkan apa yang
+ia lihat, dan itu memang maksudnya. Yang perlu diperhatikan: baris yang mewarisi SP
+lewat induk ikut hilang begitu induknya tersaring, sehingga penyaringan wajib dipasang
+pada induknya, bukan diulang pada tiap anak.
+
+**Kejujuran angka.** Paling berbahaya dan wajib ditulis sebagai aturan. Bila cakupan
+menyaring rekap dan dashboard, Operator SP akan melihat angka kawasan yang sebenarnya
+hanya angka SP-nya. Tanpa keterangan cakupan pada judulnya, angka itu dapat disalin ke
+laporan sebagai total kawasan. Ini persoalan yang sama dengan kewajiban menulis periode
+pada rekap panen (9 poin 8b dan 8o).
+
+**Alur kerja.** Operator SP yang membuka tautan ke data SP lain harus mendapat 404,
+bukan 403: 403 menyatakan datanya ADA tetapi tidak boleh dilihat, dan itu sendiri
+kebocoran. Halaman `/uji-403` yang ada sekarang tetap berguna untuk galat kewenangan
+aksi, bukan untuk cakupan data.
+
+**Teknis.** Penyaringan wajib terjadi di tingkat query, bukan koleksi hasil: menyaring
+setelah mengambil membuat paginasi menghitung baris yang tidak boleh dilihat, sehingga
+jumlah halaman membocorkan banyaknya data SP lain.
+
+### Berkas yang akan disunting
+
+| Titik | Berkas | Perubahan |
+|---|---|---|
+| B | `agents/rules.md` bagian 5.0b | rancangan seam ditulis sebagai aturan yang mengikat tahap backend |
+| D2 | `agents/rules.md` bagian 4.0a | keputusan mengikat: Model lahir dengan `getRouteKeyName()` = `uuid` |
+| D2 | `agents/tasklist.md` Task 3.8 | urutan penerapan UUID ditegaskan |
+| F'5 | `agents/tasklist.md` Task 3.2 | teks `email atau NIK` dibetulkan menjadi email atau username |
+
+TIDAK ada kode aplikasi yang disentuh. Rute tetap memakai id integer; mengubahnya
+sekarang hanya menambah kerumitan di atas `DummyData` tanpa manfaat, sebab belum ada
+Model yang dapat menerjemahkan pengenal publik menjadi kunci internal.
+
+### Cara verifikasi
+
+1. `php artisan test` tetap 729 PASS. Bila ada satu saja yang berubah, berarti ada
+   kode yang tersentuh dan itu di luar cakupan bagian ini.
+2. `sim:tautan-statis` tetap 227; `pint --test` tetap 33 berkas.
+3. Berkas dokumen bebas BOM.
+4. Tidak ada rujukan silang yang menggantung: tiap nomor aturan yang disebut wajib ada.
+
+---
+
+### Hasil B + D2 + F'5
+
+Seluruhnya dokumen. `git diff` atas `app`, `resources`, `routes`, dan `tests`
+tidak bertambah satu baris pun pada bagian ini, dan 729 uji tetap hijau tanpa penyesuaian.
+
+**B.** `rules.md` bagian **5.0b-1** baru, sembilan poin (8 sampai 16) yang mengikat
+Tahap 3. Isi pokoknya:
+
+| Poin | Ketetapan |
+|---|---|
+| 8 | Titik penegakan TUNGGAL berupa Eloquent global scope, melekat pada model bukan pemanggilnya |
+| 8a | Penyaringan di controller dan di view DITOLAK, beserta alasannya masing-masing |
+| 9 | Penyaring dipasang pada pemilik SP; 13 tabel membawa SP langsung, sisanya mewarisi lewat induk |
+| 9a | `alsintan`/`saprotan` induk TIDAK disaring; yang disaring distribusinya |
+| 9b | Data referensi tidak pernah disaring |
+| 10 | Akun `Per SP` tanpa penugasan menerima NOL baris, bukan seluruhnya |
+| 11 | Data tak berhak membalas 404, bukan 403 |
+| 12 | Angka rekap yang menyempit wajib menyatakan cakupannya |
+| 13 | Penyaringan mendahului paginasi |
+| 14 | `Per Bidang` berdiri sendiri, hanya pada `pengaduan` |
+| 15 | Satu jalan memintas untuk artisan/seeder, dan wajib eksplisit |
+| 16 | Wajib disertai uji penjaga |
+
+**D2.** `rules.md` 4.0a mendapat poin 5a, 5b, dan 5c. Intinya: Model yang tabelnya
+berkolom `uuid` wajib lahir dengan `getRouteKeyName()` bernilai `uuid` sejak commit
+pertamanya, sebab pada saat itu biayanya satu method per model sedangkan sesudahnya
+menuntut penyisiran tiap `route()`. Rute tahap frontend sengaja TIDAK diubah sekarang.
+Task 3.8 pada `tasklist.md` ditegaskan sebagai pekerjaan yang menempel pada pembuatan
+Model, bukan task tersendiri di belakang antrean.
+
+**F'5.** Butir Task 3.2 masih berbunyi `email atau NIK`. Catatan di atasnya sudah
+menandainya usang sejak 2026-09-01, tetapi teks butirnya sendiri tidak pernah
+dibetulkan, sehingga pembaca yang melompat langsung ke butir itu tetap membaca
+ketentuan yang keliru. Kini dibetulkan menjadi email atau username, dengan ketentuan
+lamanya dicoret beserta alasan pencabutannya.
+
+### Koreksi terhadap laporan audit sendiri
+
+Laporan audit menyatakan seluruh pemanggilan `DummyData` terpusat di
+`ViewServiceProvider` dan menjadikannya modal bahwa seam cakupan data sudah setengah
+tersedia. Pencacahan ulang menunjukkan sebaliknya:
+
+| Tempat | Panggilan | Metode unik |
+|---|---|---|
+| `routes/web.php` | **167** | 65 |
+| `ViewServiceProvider` | 59 | - |
+| view Blade | 0 | - |
+
+Yang benar hanyalah bahwa VIEW tidak mengambil datanya sendiri. Pengambilan datanya
+justru tersebar di 167 titik pada closure rute. Kekeliruan ini berdampak nyata sebab
+angka itulah yang menentukan bentuk rancangan: dengan 167 titik, penegakan per
+pemanggilan berarti 167 peluang terlewat, dan yang terlewat gagal secara senyap.
+Itulah alasan poin 8 memilih global scope, bukan penyaringan di pemanggil.
+
+---
+
+## Bagian SELESAI: E (Master Wilayah + Form SP) (2026-09-02)
+
+### Keputusan pemilik proyek yang menambah rencana
+
+| # | Keputusan |
+|---|---|
+| 15 | `DummyData::kawasan()` mendapat `kabupaten_id`. Rantai E3 menuntut id, dan teks `'kabupaten' => 'Malaka'` adalah cacat yang sama dengan B-1: penautan lewat nama. Skema sudah benar lebih dulu (`kawasan_transmigrasi.kabupaten_id` FK). Teks dipertahankan sebagai label. |
+| 16 | Dua uji penjaga tab (`:5537` dan `:5548`) DIGANTI penjaga baru untuk datatable, bukan sekadar dihapus. Yang dijaga berpindah mengikuti fiturnya. |
+| 17 | Dropdown induk pada `form-wilayah` memakai `x-sim.pilih-cari`, sebab setelah E2 ia memuat 514 kabupaten. |
+
+### Masalah yang diperbaiki
+
+**E1.** Halaman `/wilayah` memakai 4 tab (Provinsi, Kabupaten, Kecamatan, Desa) dengan
+`x-sim.tabel-ringkas` yang merender SELURUH baris tanpa pencarian maupun paginasi.
+Dengan 514 kabupaten setelah E2, tab itu tidak dapat dipakai. Mencari satu nama juga
+menuntut petugas menebak lebih dulu ia ada di tab mana.
+
+Riwayat menunjukkan tab ini sudah dua kali melahirkan cacat: tab bawaan yang keliru
+(`wilayah.blade.php` 43-46) dan tingkat form yang tidak mengikuti tab (`form-wilayah`
+13-14). Menghapus tab menghapus kelas cacat itu, bukan memperbaikinya untuk ketiga kali.
+
+**E3.** `form-kawasan` SUDAH memakai pola dua tingkat yang teruji (`provinsiId` ->
+`kabupatenTersaring` -> `gantiProvinsi()`), sedangkan form SP menampilkan seluruh desa
+sekaligus. E3 meniru pola yang sudah ada, bukan mengarang baru.
+
+### Berkas yang akan disunting
+
+| Titik | Berkas | Perubahan |
+|---|---|---|
+| E2a | `DummyData::wilayah()` | provinsi + kabupaten dibaca dari `DataWilayah`; kecamatan + desa TETAP lokus |
+| E2b | `DummyData::kawasan()` | tambah `kabupaten_id`; teks `kabupaten` tetap sebagai label |
+| E1a | `pages/master/wilayah.blade.php` | 4 tab DIHAPUS; satu `x-sim.data-table` berkolom Nama, Tingkat, Induk, Kode, Aksi |
+| E1b | `pages/master/form-wilayah.blade.php` | dropdown induk provinsi/kabupaten jadi `x-sim.pilih-cari` |
+| E1c | `routes/web.php` | rute `/wilayah` menyusun baris rata (flat) lintas tingkat |
+| E3a | `pages/sp/form.blade.php` | Kawasan sebelum Desa; desa disaring menurut kabupaten kawasan |
+| E3b | `ViewServiceProvider` | suplai peta desa beserta `kabupaten_id` turunannya |
+| E1d | `tests/Feature/HalamanTest.php` | 2 uji tab diganti penjaga datatable |
+| E4 | `agents/` | catat E1 sampai E3 + rencana muat kecamatan/desa penuh di Tahap 3 |
+
+### Yang TIDAK diubah
+
+Kecamatan dan desa tetap wilayah LOKUS (4 dan 6 baris). Berkas sumber memuat 7.000
+kecamatan dan 83.000 kelurahan, sedangkan `pilih-cari` menyematkan seluruh opsi ke
+dalam HTML. Keduanya menunggu Tahap 3 ketika pemuatan bertahap lewat endpoint tersedia.
+Keputusan pemilik proyek, tercatat sebagai butir 4 di atas.
+
+Relasi kawasan TETAP ke kabupaten, BUKAN ke desa. Kawasan dan desa adalah dua cabang
+terpisah yang bertemu di SP (`rules.md` 4a.2); penyaringan desa memakai kabupaten
+milik kawasan, sehingga tidak ada relasi baru yang dikarang.
+
+### Penyisiran lima sudut (rules.md 20a poin 10)
+
+**Privasi.** Kosong. Wilayah administratif adalah data publik, tidak menunjuk orang,
+dan tidak tunduk cakupan data.
+
+**Siklus hidup.** Menghapus baris kabupaten yang masih ditunjuk transmigran ditolak FK
+RESTRICT (dipasang pada D1), dan itu benar. Yang perlu diperhatikan: kawasan kini
+menunjuk kabupaten lewat id, sehingga merapikan data master dapat memutus kaitannya.
+Skema sudah memasang RESTRICT pada `fk_kawasan_kabupaten`.
+
+**Kejujuran angka.** Tab lama menampilkan jumlah per tingkat pada judulnya, dan angka
+itu HILANG bila tab dihapus begitu saja. Karena itu filter Tingkat wajib mencantumkan
+jumlahnya, bukan sekadar nama tingkat. Tanpa itu pembaca kehilangan informasi yang
+sebelumnya ada, dan penghapusan tab berubah menjadi kemunduran.
+
+**Alur kerja.** Petugas yang terbiasa dengan tab akan mencari tab. Kolom Tingkat dan
+filter Tingkat menggantikannya, dan blok penjelas hierarki di atas tabel DIPERTAHANKAN
+sebab hierarki bercabang dua memang tidak lazim (`rules.md` 4a.2). Tautan lama
+`?tab=` tidak lagi bermakna; ia diabaikan, bukan menghasilkan galat.
+
+**Teknis.** Menyentuh berkas uji, sehingga dua penjaga tab diganti penjaga datatable.
+Tidak menyentuh rute mana pun kecuali penyusunan datanya, sehingga `sim:tautan-statis`
+seharusnya tetap 227. `form-wilayah` memakai `pilih-cari` yang menyematkan 514 opsi
+ke HTML; ukurannya wajar, tetapi menjadi alasan tambahan mengapa kecamatan dan desa
+penuh ditunda.
+
+### Cara verifikasi
+
+1. `php artisan test` wajib 729 PASS. Dua uji tab DIHARAPKAN gagal lebih dulu, lalu
+   diganti penjaga datatable dengan jumlah uji yang sama.
+2. `/wilayah` membalas 200 dan merender keempat tingkat dalam satu tabel.
+3. Filter Tingkat memuat 4 pilihan beserta jumlahnya (38, 514, 4, 6).
+4. `/kawasan` dan `/sp` tetap 200; form SP menyaring desa menurut kawasan terpilih.
+5. `sim:tautan-statis` tetap 227; `pint --test` tetap 33 berkas.
+6. Seluruh berkas tersunting bebas BOM.
+
+---
+
+### Hasil E
+
+**E2.** `DummyData::wilayah()` membaca provinsi (38) dan kabupaten (514) dari
+`DataWilayah`, menggantikan dua baris tulis tangan yang hanya memuat NTT dan Malaka.
+Idnya berpindah ke kode BPS, sehingga Malaka menjadi 5321 dan bukan 1; kecamatan lokus
+menyesuaikan diri. `kawasan()` mendapat `kabupaten_id`, dan `desaBerkabupaten()`
+menurunkan kabupaten desa lewat kecamatannya, tidak menyimpannya.
+
+**E1.** Empat tab pada `/wilayah` DICABUT, diganti satu `x-sim.data-table` berkolom
+Nama, Tingkat, Induk, Kode, Aksi, beserta pencarian, paginasi, dan filter Tingkat yang
+mencantumkan jumlah tiap tingkat. Dropdown induk pada `form-wilayah` memakai
+`x-sim.pilih-cari`; kabupaten membawa keterangan provinsi sebagai pembeda nama kembar.
+
+**E3.** Form SP menaruh Kawasan SEBELUM Desa, dan memilih kawasan menyaring daftar desa
+menjadi desa pada kabupaten kawasan itu. Penyaringannya menempuh KABUPATEN, bukan relasi
+kawasan-ke-desa yang memang sengaja tidak dimodelkan (`rules.md` 4a.2).
+
+| Pemeriksaan | Hasil |
+|---|---|
+| `php artisan test` | 729 PASS, assertions 6.377 -> **7.410** (penjaga baru menguji lebih banyak) |
+| kabupaten/kecamatan/desa yatim | 0 pada ketiga tingkat |
+| `kawasan.kabupaten_id` 5321 ada di master | YA |
+| `/wilayah` tanpa filter | 200, terpotong 25 baris per halaman |
+| `?tingkat=desa`, `?cari=malaka`, `?per_halaman=100` | seluruhnya menyempitkan dengan benar |
+| `/sp`, `/sp/1`, `/kawasan`, `/transmigran` | 200 |
+| Kawasan dirender sebelum Desa | YA |
+| `sim:tautan-statis` | 227, tidak berubah |
+| `pint --test` | 33 (pre-existing) setelah CRLF berkas tersunting dirapikan |
+
+### Tiga uji penjaga diarahkan ulang, bukan dilonggarkan
+
+Ketiganya gagal persis seperti yang diperkirakan rencana, dan tidak satu pun dihapus
+tanpa pengganti.
+
+| Uji lama | Nasib |
+|---|---|
+| `membuka master wilayah dari tingkat teratas` | Diganti `menyatukan keempat tingkat wilayah dalam satu tabel`. Kini justru menegakkan bahwa `hashTabs` dan `role=tablist` TIDAK ADA lagi. |
+| `menyesuaikan tingkat bawaan form wilayah dengan tab` | Diganti `menyaring daftar wilayah menurut tingkat beserta jumlahnya`. Menjaga hal yang menggantikan tab: jumlah per tingkat tetap terbaca, penyaring benar-benar menyempitkan, dan pencarian mencakup induk. |
+| `menandai wajib isian induk wilayah secara bersyarat` | DIPERTAHANKAN, pemeriksaannya dipindah dari teks sumber ke HTML hasil render. |
+
+Yang ketiga perlu dicatat alasannya. Ia memeriksa `name=` lewat `file_get_contents`,
+sedangkan `x-sim.pilih-cari` merender atribut itu di dalam komponennya. Halamannya
+sendiri BENAR: HTML hasil render tetap memuat ketiga `name=`, dan halamannya 200.
+Jadi ujinya mengunci CARA implementasi, bukan perilakunya. Pola ini sudah dikenal repo
+dan tercatat pada komentar `pilih-cari.blade.php` yang merujuk `notes.md` 1d.2.
+
+Pemeriksaan pasangan bersyarat tetap berbasis sumber, sebab ekspresi Alpine memang
+hidup di sana. Polanya dipersempit memakai `preg_match_all` yang menuntut awalan
+`required=` atau `disabled=`; hitungan `substr_count` polos ikut menangkap
+`x-show` sehingga menghasilkan 7, bukan 3.
+
+### Kekeliruan saya pada bagian ini
+
+**Ekspresi Alpine sempat ditulis berawalan titik dua.** `:required=` membuat Blade
+menilainya sebagai PHP, sehingga muncul `Undefined constant tingkat` dan halaman
+berbalas 500. Komponen membaca `\->get('required')`, sehingga ekspresinya
+harus diteruskan sebagai atribut biasa tanpa titik dua.
+
+**Suplai view baru sempat tidak didaftarkan.** `petaKawasanKabupaten` dipakai form SP
+sebelum ditambahkan ke daftar kunci `pages.sp.form`, dan `/sp` berbalas 500.
+Kekeliruan yang sejenis dengan tabrakan nama pada D1, dan sama-sama tertangkap
+pemeriksaan halaman sebelum uji dijalankan.
+
+### Yang TIDAK dikerjakan, beserta alasannya
+
+Kecamatan dan desa penuh (7.000 dan 83.000 baris) TETAP DITUNDA ke Tahap 3 sesuai
+keputusan pemilik proyek. Alasannya menguat setelah E1: `pilih-cari` menyematkan
+seluruh opsi ke dalam HTML, dan itu masih wajar untuk 514 kabupaten tetapi tidak untuk
+puluhan ribu desa. Pemuatan bertahap lewat endpoint baru tersedia setelah backend ada.
+
+---
+
+## Bagian SELESAI: D1 + F'4 (2026-09-02)
+
+### Keputusan pemilik proyek yang menambah/mengubah rencana
+
+| # | Keputusan |
+|---|---|
+| 11 | **D3 DITUNDA** ke bagian tersendiri. Alasan: menyentuh 21 titik uji bernomor hardcoded di `HalamanTest.php` + konflik format di CMS. Tidak dicampur dengan D1 agar diff tetap dapat ditinjau. |
+| 12 | **Bagian acak nomor pengaduan WAJIB dan di luar kendali CMS.** Dinas boleh mengatur awalan dan pola nomor urut, tetapi suffix acak selalu ditambahkan sistem dan tidak dapat dimatikan lewat CMS. Alasannya keamanan (`rules.md` 4.0a poin 4), bukan gaya penulisan: halaman lacak dapat diakses tanpa login. Template CMS `PGD-{TAHUN}-{NOMOR}` sekarang BERTENTANGAN dengan aturan itu; diselesaikan saat D3. |
+| 13 | `HalamanTest` penjaga nama kolom + `data-dictionary.md` diperbarui BERSAMA, bukan salah satu. |
+| 14 | `sebaranDaerahAsal()` diubah menjadi berbasis `kabupaten_id`; label dibaca dari master saat render. |
+
+### Masalah yang diperbaiki
+
+`transmigran.daerah_asal` adalah `VARCHAR(255)` teks bebas TANPA indeks, tetapi menjadi
+salah satu dari enam dasar rekap kependudukan (`rules.md` 10a poin 4a). Pada data nyata
+ejaannya beragam: `KUPANG`, `Kab. Kupang`, dan `KABUPATEN KUPANG` menjadi tiga baris
+berbeda meski menunjuk tempat yang sama. `UppercaseInput` menyeragamkan huruf besarnya,
+tetapi tidak ejaannya. Kegagalannya SENYAP: angkanya tampak wajar, tidak ada yang memerah.
+Cacat ini sudah diakui pada komentar `DummyData::sebaranDaerahAsal()` tetapi belum ditangani.
+
+Nama kabupaten juga TIDAK unik secara nasional. Contoh nyata pada dataset: `Kabupaten Kupang`
+(5301) berbeda dari `Kota Kupang` (5371), sedangkan data contoh hanya menulis `KUPANG`.
+Karena itu isian memakai searchable dropdown yang menampilkan nama provinsi di baris kedua.
+
+### Mengapa memakai tabel `kabupaten`, bukan `referensi`
+
+Tabel `provinsi` dan `kabupaten` SUDAH ADA pada skema dengan UNIQUE komposit
+`(provinsi_id, nama)`, yaitu justru penjaga yang dibutuhkan untuk nama kabupaten kembar.
+Menaruh daerah asal pada tabel `referensi` berarti membuat daftar wilayah KEDUA yang
+terpisah dari hierarki wilayah yang sudah ada, dan itu dua sumber kebenaran.
+`referensi` adalah daftar datar untuk nilai enum-like; wilayah administratif punya hierarki.
+
+### Berkas yang akan disunting
+
+| Titik | Berkas | Perubahan |
+|---|---|---|
+| D1a | `app/Support/DataWilayah.php` (BARU) | 38 provinsi + 552 kab/kota dari `database/data/wilayah_indonesia.sql`. Berkas terpisah sebab `DummyData.php` sudah 291 KB. |
+| D1b | `DummyData::transmigran()` | 8 baris: `daerah_asal` teks jadi `daerah_asal_kabupaten_id` |
+| D1c | `DummyData::sebaranDaerahAsal()` | kunci jadi `kabupaten_id`; label dibaca master saat render |
+| D1d | `database/data/schema.sql` | kolom jadi `daerah_asal_kabupaten_id BIGINT UNSIGNED NULL` + FK RESTRICT + indeks |
+| D1e | `pages/transmigran/form.blade.php` | `<input text>` jadi `<x-sim.pilih-cari keterangan-opsi=provinsi>` |
+| D1f | `ViewServiceProvider` | suplai `daftarKabupaten` ke form transmigran |
+| D1g | `pages/transmigran/detail.blade.php` | baca label lewat master |
+| D1h | `LaporanData.php` baris 709-710 | pengelompokan laporan ikut memakai label master |
+| D1i | `pages/laporan/isi/transmigran.blade.php` | 4 titik pemakaian `daerah_asal` |
+| D1j | `pages/kependudukan/rekap.blade.php` | rekap membaca label master |
+| D1k | `data-dictionary.md` baris 603 | kolom + tipe diperbarui |
+| D1l | `tests/Feature/HalamanTest.php` baris 302 | daftar nama kolom penjaga diperbarui |
+| F'4 | `tasklist.md` Task 2.14 | empat dasar jadi ENAM (tahun, SP, status, pekerjaan, daerah asal, pendidikan) |
+
+`pekerjaan_kepala_keluarga` TIDAK diubah. Keputusan `schema.sql` baris 617 (teks bebas
++ datalist) sudah benar: pekerjaan adalah himpunan TERBUKA dengan ekor panjang yang sah,
+sedangkan daerah asal himpunan TERTUTUP. Memperlakukan keduanya sama adalah kekeliruan
+analisis audit yang dikoreksi di sini.
+
+### Penyisiran lima sudut (rules.md 20a poin 10)
+
+**Privasi.** Daerah asal tampil pada Laporan Transmigran dan rekap kependudukan.
+Pada rekap ia sudah berupa agregat, tidak menunjuk orang. Pada laporan ia per baris KK,
+tetapi laporan memang untuk dinas dan sudah tunduk cakupan data saat RBAC aktif.
+Tidak ada perubahan tingkat keterbukaan: yang berubah hanya cara nilainya disimpan.
+
+**Siklus hidup.** Ini yang paling menuntut perhatian. Bila baris kabupaten dihapus
+sedangkan masih ada transmigran yang menunjuknya, FK RESTRICT menolak penghapusan,
+dan itu perilaku yang benar: daerah asal seorang transmigran tidak boleh lenyap
+karena admin merapikan data master. Kolomnya NULL-able sebab data lama boleh belum terisi.
+
+**Kejujuran angka.** Justru inilah yang diperbaiki: sebelum ini satu kabupaten dapat
+terpecah menjadi beberapa baris rekap karena beda ejaan, dan totalnya tetap benar
+sehingga tidak ada yang menyadari pembagiannya bocor. Penjaga yang sudah ada tetap
+berlaku: keenam dasar rekap wajib menghasilkan total KK yang sama (rules.md 10a poin 4b).
+
+**Alur kerja.** Data lama bertuliskan teks bebas tidak dapat dipetakan otomatis ke id
+tanpa menebak. Pada tahap ini belum ada data nyata sehingga tidak ada migrasi yang
+perlu dijalankan, TETAPI ini wajib diingat saat impor data produksi: perlu langkah
+pemetaan manual, bukan konversi diam-diam. Dicatat sebagai kewajiban tahap backend.
+
+**Teknis.** Dropdown memuat 552 opsi yang disematkan ke HTML lewat komponen pilih-cari.
+Ukurannya wajar (ratusan baris, bukan puluhan ribu), sehingga tidak menuntut endpoint
+bertahap. Kecamatan dan desa penuh (7.000 dan 83.000 baris) TETAP DITUNDA ke Tahap 3
+justru karena alasan ini. Tidak menyentuh rute mana pun, sehingga sim:tautan-statis
+seharusnya tetap 227.
+
+### Cara verifikasi
+
+1. `php artisan test` wajib 729 PASS. Satu uji DIHARAPKAN gagal lebih dulu
+   (`HalamanTest` penjaga nama kolom), lalu dibetulkan bersama kamus data.
+2. Muat `DataWilayah` lalu periksa: 38 provinsi, 552 kab/kota, tidak ada baris provinsi
+   yang nyasar ke daftar kabupaten, dan setiap `provinsi_id` punya induk.
+3. Periksa `Kabupaten Kupang` (5301) dan `Kota Kupang` (5371) sama-sama ada dan terpisah.
+4. `sebaranDaerahAsal()` totalnya tetap sama dengan `ringkasanDashboard()['jumlah_kk']`.
+5. Seluruh `daerah_asal_kabupaten_id` pada `transmigran()` wajib punya induk (tanpa orphan).
+6. `sim:tautan-statis` tetap 227; `pint --test` tetap 33 berkas (pre-existing).
+
+---
+
+### Hasil D1 + F'4
+
+`DataWilayah.php` baru: 38 provinsi + **514** kabupaten/kota.
+
+KOREKSI RENCANA: rencana menulis 552 kab/kota. Angka itu keliru. Berkas sumber memuat 552
+baris pada tabel `t_kota`, tetapi **38 di antaranya adalah baris PROVINSI yang nyasar**
+(berkode 2 digit, mis. `('53', 'Nusa Tenggara Timur')`). Setelah disaring menurut panjang
+kode, hasilnya 514 kabupaten/kota, dan itu memang jumlah resmi Indonesia. Rencana semula
+menduga hanya ada 1 baris nyasar; dugaan itu salah dan ditemukan saat pemeriksaan data.
+
+| Pemeriksaan data | Hasil |
+|---|---|
+| provinsi | 38 |
+| kabupaten/kota | 514 (416 Kabupaten + 98 Kota) |
+| kabupaten yatim (provinsi_id tanpa induk) | 0 |
+| id ganda | 0 provinsi, 0 kabupaten |
+| provinsi_id tidak cocok dua digit awal kodenya | 0 |
+| Kabupaten Kupang vs Kota Kupang | 5301 dan 5371, terpisah benar |
+| `daerah_asal_kabupaten_id` pada 8 transmigran | 0 orphan |
+| total `sebaranDaerahAsal()` | 1.140 = `ringkasanDashboard()['jumlah_kk']` |
+
+### Dua kekeliruan saya yang tertangkap uji
+
+**1. Tabrakan nama variabel view.** Saya menamai suplai baru `daftarKabupaten`, padahal
+nama itu SUDAH dipakai `pages.sp.form-kawasan` dengan bentuk berbeda (berkunci
+`id_kabupaten`, terbatas wilayah lokus). Deklarasi saya menimpanya, dan `/kawasan`
+berbalas HTTP 500. Diperiksa lewat `git stash`: 200 sebelum, 500 sesudah - jadi memang
+kesalahan saya, bukan cacat lama. Diganti `opsiDaerahAsal`, dan alasannya ditulis di
+tempatnya agar tidak terulang.
+
+**2. Uji rekap kependudukan.** `HalamanTest` membandingkan kunci `sebaranDaerahAsal()`
+dengan isi halaman. Setelah kuncinya menjadi id, ia mencari `5321` pada halaman yang
+merender `Kabupaten Malaka`. Uji ini BENAR dan tidak dilonggarkan; yang dibetulkan
+adalah sumbernya, menjadi `sebaranDaerahAsalBerlabel()` sesuai yang benar-benar dirender.
+
+Keduanya membenarkan urutan kerja yang disepakati: uji dijalankan sebagai penjaga, dan
+kegagalannya diperiksa lebih dulu alih-alih langsung disesuaikan.
+
+### Temuan sampingan: satu lagi penautan lewat nama
+
+`pages/laporan/isi/transmigran.blade.php` menyusun `petaRumah` berkunci NAMA penghuni,
+yaitu cacat yang sama dengan blocker B-1 tetapi di tempat berbeda dan tidak ikut terbaca
+saat audit awal. Ikut dibetulkan menjadi `transmigran_id` pada kesempatan ini, sebab
+berkas yang sama memang sedang disunting.
+
+### Verifikasi D1
+
+| Pemeriksaan | Hasil |
+|---|---|
+| `php artisan test` | 729 PASS / 6.377 assertions, sama dengan baseline |
+| `sim:tautan-statis` | 227, tidak berubah |
+| `pint --test` | sempat 34 (berkas baru ber-CRLF), dibetulkan `pint` sehingga kembali 33 seperti sebelumnya |
+| Halaman terdampak | `/kawasan`, `/transmigran`, `/transmigran/1`, `/kependudukan/rekap`, `/laporan/transmigran` seluruhnya 200 |
+| BOM | seluruh berkas tersunting bersih |
+
+### F'4
+
+Task 2.14 pada `tasklist.md` menulis `Empat dasar pengelompokan`, sedangkan
+implementasi dan `rules.md` 10a.4a memuat ENAM sejak daerah asal dan pendidikan
+ditambahkan 2026-08-25. Butirnya dibetulkan beserta catatan bahwa daerah asal kini FK.
+
+---
+
+## Bagian SELESAI pada sesi ini: C1 + C3 (2026-09-02)
+
+### C1 - Whitelist ekstensi berkas unggahan
+
+Berkas: `app/Support/PenyimpananDokumen.php` baris 190 (`susunNamaBerkas()`).
+
+Keadaan sekarang:
+```php
+$ekstensi = strtolower($berkas->getClientOriginalExtension() ?: $berkas->extension());
+```
+`getClientOriginalExtension()` membaca nama berkas yang DIKIRIM KLIEN, bukan isi berkasnya,
+sehingga penyerang dapat menentukan ekstensi apa pun, termasuk `.php`. Belum dapat dieksekusi
+sebab disk bersifat privat dan `DokumenController` mengalirkan isinya, tetapi ia menjadi
+celah nyata begitu ada satu saja `Storage::disk('public')` atau symlink ke folder itu.
+
+Rencana perubahan: dahulukan `extension()` (menebak dari MIME hasil pemeriksaan isi berkas),
+jatuh ke ekstensi klien hanya bila tebakan kosong, lalu SARING lewat daftar putih.
+Ekstensi di luar daftar ditolak dengan `InvalidArgumentException`, bukan didiamkan.
+
+PENJAGA: daftar putih WAJIB memakai `ValidationRules::JENIS_BERKAS` yang sudah ada
+(`jpg,jpeg,png,webp,pdf`), BUKAN daftar baru. Nilai itu sudah dipakai aturan validasi dan
+atribut `accept` pada `components/sim/file-upload.blade.php`; membuat daftar kedua berarti
+dua sumber kebenaran yang dapat berselisih diam-diam. Sejalan `rules.md` 14a poin 2
+(gambar dan PDF, wajib divalidasi tipenya di sisi server) dan 13.2 poin 6 (validasi terpusat).
+
+### C3 - Nama rute `sp.perbarui` terdaftar dua kali
+
+Berkas: `routes/web.php` baris 201-204 dan 2706-2709. Keduanya `PUT /sp/{id}` dengan
+pembatas `[0-9]+`; hanya nama parameter dan balikannya berbeda:
+
+| Baris | Parameter | Balikan |
+|---|---|---|
+| 204 | `{sp}` | `back()` - tetap di halaman rincian SP |
+| 2709 | `{id}` | `redirect()->route('sp.index')` - lompat ke daftar SP |
+
+Laravel memakai deklarasi TERAKHIR, sehingga perilaku yang berlaku sekarang adalah 2709.
+Akibatnya modal Ubah Data SP pada halaman rincian melempar pengguna ke daftar SP dan
+membuang posisi tab, padahal `rules.md` 4c poin 5 justru menyatakan tab dijaga lewat
+`?tab=` supaya posisinya bertahan saat form modal tersimpan.
+
+Rencana: PERTAHANKAN baris 204 (`back()`), CABUT baris 2706-2709.
+Alasan memilih yang bertahan: `back()` memenuhi 4c poin 5, dan halaman daftar SP tetap
+benar sebab `back()` mengembalikan ke halaman asal mana pun, termasuk `/sp`.
+Kebalikannya tidak berlaku: `redirect()->route('sp.index')` SELALU melempar ke daftar,
+juga ketika penyuntingan dilakukan dari halaman rincian.
+`sp.hapus` pada baris 2711-2714 TIDAK disentuh; ia tidak berganda.
+
+Tidak ada view yang perlu diubah: pemanggilan `route('sp.perbarui', ...)` tidak ditemukan
+di `resources` maupun `tests` (hanya dua deklarasinya sendiri), sebab alamat aksi modal
+disusun `x-sim.aksi-baris`.
+
+### Penyisiran lima sudut (`rules.md` 20a poin 10)
+
+| Sudut | Temuan |
+|---|---|
+| Privasi | C1 memperkuat: berkas dokumen kependudukan tidak lagi dapat diberi ekstensi karangan penyerang. Pemeriksaan hak akses pada `DokumenController` TETAP belum ada (ditandai `ponytail:` baris 45-47) dan itu memang pekerjaan Tahap 3, di luar cakupan putaran ini. |
+| Siklus hidup | C1: berkas LAMA yang terlanjur tersimpan berekstensi aneh tidak ikut terbetulkan; penyaringan hanya berlaku saat simpan/ganti. Pada tahap data contoh belum ada berkas nyata, sehingga tidak ada migrasi yang perlu dijalankan. Perlu diingat saat data produksi masuk. |
+| Kejujuran angka | Kosong. Kedua perubahan tidak menyentuh satu pun rekap, agregat, maupun grafik. |
+| Alur kerja | C1: berkas sah yang ditolak harus memberi pesan yang menyebut daftar jenis yang diterima, bukan gagal diam-diam. C3: memilih `back()` justru MEMPERBAIKI alur yang sekarang salah (terlempar ke daftar saat menyunting dari halaman rincian). |
+| Teknis | C3 menyentuh daftar rute, sehingga `TautanStatisTest` dan `sim:tautan-statis` wajib diperiksa ulang. Rute yang dicabut adalah PUT, tidak masuk daftar tautan statis (hanya GET), jadi jumlah 223 seharusnya tidak berubah. C1 tidak menyentuh rute mana pun. |
+
+### Cara verifikasi
+
+1. `php artisan test` wajib tetap 729 PASS / 6.377 assertions.
+2. `php artisan route:list` - pastikan `sp.perbarui` tinggal SATU baris.
+3. `php artisan sim:tautan-statis` - jumlah tautan tetap 223.
+4. C1 diperiksa lewat pemanggilan langsung `susunNamaBerkas()` dengan berkas beruji:
+   nama `x.php` wajib DITOLAK, `x.pdf` dan `x.jpg` wajib diterima.
+5. `vendor/bin/pint --test` diketahui GAGAL pada 33 berkas SEBELUM putaran ini
+   (diverifikasi lewat `git stash`); yang dijaga adalah jumlahnya tidak bertambah.
+
+### Berkas yang akan disunting pada C1 + C3
+
+- `app/Support/PenyimpananDokumen.php`
+- `routes/web.php`
+
+---
+
+### Hasil C1 + C3
+
+C1: ditambahkan `PenyimpananDokumen::ekstensiDiterima()` dan `ekstensiAman()`.
+`susunNamaBerkas()` kini memanggil `ekstensiAman()`, bukan `getClientOriginalExtension()`.
+Daftar putih dibaca dari `ValidationRules::JENIS_BERKAS` sehingga tetap satu sumber kebenaran.
+Ekstensi di luar daftar melempar `InvalidArgumentException` beserta daftar jenis yang diterima.
+
+Diuji langsung dengan empat berkas nyata:
+
+| Berkas uji | Hasil |
+|---|---|
+| PHP murni bernama `.php` | DITOLAK |
+| PNG asli bernama `.php` | DITERIMA, tersimpan `.png` (bukan `.php`) |
+| PNG bernama `.png` | DITERIMA `.png` |
+| PDF bernama `.pdf` | DITERIMA `.pdf` |
+
+Baris kedua adalah intinya: nama kiriman klien tidak lagi menentukan ekstensi tersimpan.
+
+C3: deklarasi kedua `sp.perbarui` (`routes/web.php` blok Rute tulis tambahan) DICABUT,
+diganti komentar yang menyebut alasannya. `sp.hapus` di sebelahnya tidak disentuh.
+
+### Verifikasi C1 + C3
+
+| Pemeriksaan | Hasil |
+|---|---|
+| `php artisan test` | 729 PASS / 6.377 assertions, sama dengan baseline |
+| `route:list` nama `sp.perbarui` | 1 baris (semula 2): `PUT sp/{sp}` |
+| Total rute | 152 -> 151, tepat satu yang hilang |
+| Nama rute ganda lain | NIHIL di seluruh 151 rute |
+| `pint --test` | 33 berkas gagal, sama persis dengan sebelum putaran ini |
+| `sim:tautan-statis` | 227 tautan, sama sebelum dan sesudah |
+
+KOREKSI RENCANA: rencana di atas menulis harapan 223 tautan statis. Angka sebenarnya 227
+baik SEBELUM maupun SESUDAH perubahan (diperiksa lewat `git stash`), jadi tidak ada
+yang berubah karenanya. Angka 223 berasal dari catatan Putaran 7 yang sudah usang.
+
+CATATAN BOM: `Set-Content` PowerShell menyisipkan BOM UTF-8 yang sempat merusak
+`PenyimpananDokumen.php` (galat `Namespace declaration statement has to be the very
+first statement`). Sudah dibersihkan; berkas yang disunting sesi ini diperiksa bebas BOM.
+
+---
+
+
+
 # Putaran 10 — Audit Frontend, Penamaan Daftar Pilihan, Konsistensi Field SP Dilayani, & Modul Pengelolaan Konten (CMS) 5 Tab SELESAI (2026-09-01)
 
 Rencana: `plan_penyempurnaan_frontend_dan_cms.md`, `plan_penambahan_upload_logo_favicon_cms.md`, `plan_audit_dan_konfigurasi_cms_laporan.md` & `walkthrough.md`.

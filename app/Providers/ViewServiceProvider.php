@@ -12,6 +12,7 @@ use App\Enums\PendidikanTerakhir;
 use App\Enums\PolaPermukiman;
 use App\Enums\StatusPanen;
 use App\Enums\TingkatKesuburanTanah;
+use App\Support\DataWilayah;
 use App\Support\DummyData;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\View;
@@ -55,11 +56,11 @@ class ViewServiceProvider extends ServiceProvider
         'pages.poktan.form' => ['daftarSp', 'daftarTransmigran', 'kontakTransmigran', 'lahanTransmigran', 'anggotaKeluargaPerKeluarga', 'opsiJabatanAnggota', 'anggotaPoktanPerPoktan'],
         'pages.poktan.form-anggota' => ['daftarTransmigran', 'kontakTransmigran', 'lahanTransmigran', 'opsiJabatanAnggota', 'anggotaKeluargaPerKeluarga'],
         'pages.lahan.form' => ['daftarTransmigran', 'daftarSp', 'opsiJenisDokumenLahan'],
-        'pages.transmigran.form' => ['daftarSp', 'saranPekerjaan', 'opsiAgama', 'opsiHubunganAnggota', 'opsiKegiatanAnggota', 'opsiPendidikan', 'opsiJenisKelamin'],
+        'pages.transmigran.form' => ['daftarSp', 'saranPekerjaan', 'opsiDaerahAsal', 'opsiAgama', 'opsiHubunganAnggota', 'opsiKegiatanAnggota', 'opsiPendidikan', 'opsiJenisKelamin'],
         'pages.panen.form' => ['satuanKomoditas', 'simbolSatuan', 'penanamanUntukPanen'],
         'pages.penanaman.form' => ['daftarPoktan', 'daftarKomoditas', 'petaPoktan', 'petaBenih'],
         'pages.pengaduan.form' => ['petaBidang', 'opsiKategoriPengaduan', 'opsiBidang', 'opsiPrioritasPengaduan', 'daftarSp'],
-        'pages.sp.form' => ['daftarDesa', 'daftarKawasan', 'opsiPolaPermukiman', 'opsiKesuburanTanah', 'opsiBentukWilayah'],
+        'pages.sp.form' => ['daftarDesa', 'daftarKawasan', 'petaKawasanKabupaten', 'opsiPolaPermukiman', 'opsiKesuburanTanah', 'opsiBentukWilayah'],
         'pages.sp.form-kawasan' => ['daftarProvinsi', 'daftarKabupaten'],
         'pages.sp.form-inventaris' => ['daftarSp', 'opsiJenisInventaris', 'opsiSumberDana', 'opsiStatusPenyerahan', 'opsiKondisi'],
         'pages.sp.form-fasilitas' => ['daftarSp', 'opsiJenisFasilitas', 'opsiSumberDana', 'opsiStatusPenyerahan', 'opsiKondisi'],
@@ -160,7 +161,21 @@ class ViewServiceProvider extends ServiceProvider
 
             // Hanya nama pekerjaannya yang dipakai, sebagai saran `<datalist>`.
             // Cacahnya tidak ikut, sebab isian ini bebas diketik.
+            //
+            // Pekerjaan SENGAJA tetap bebas diketik, berbeda dari daerah asal
+            // di bawah: himpunannya terbuka dan berekor panjang, sehingga
+            // mengunci ke data master akan menghalangi petugas ketika menemui
+            // pekerjaan yang belum terdaftar.
             'saranPekerjaan' => array_keys(DummyData::sebaranPekerjaan()),
+
+            // Daerah asal justru himpunan TERTUTUP, sehingga dipilih dari data
+            // master beserta nama provinsinya sebagai pembeda nama kembar.
+            //
+            // Namanya `opsiDaerahAsal`, BUKAN `daftarKabupaten`: kunci itu
+            // sudah dipakai form kawasan dengan bentuk yang berbeda
+            // (`id_kabupaten`, terbatas wilayah lokus). Dua daftar berbeda
+            // berbagi satu nama akan saling menimpa diam-diam.
+            'opsiDaerahAsal' => DataWilayah::opsiKabupaten(),
 
             'opsiKondisi' => DummyData::opsiReferensi(JenisReferensi::Kondisi),
             'opsiKondisiRumah' => DummyData::opsiReferensi(JenisReferensi::KondisiRumah),
@@ -225,7 +240,17 @@ class ViewServiceProvider extends ServiceProvider
             'daftarKawasan' => DummyData::kawasan(),
             'daftarProvinsi' => DummyData::wilayah()['provinsi'],
             'daftarKabupaten' => DummyData::wilayah()['kabupaten'],
-            'daftarDesa' => DummyData::wilayah()['desa'],
+
+            // Desa membawa `kabupaten_id` turunan, dibaca lewat kecamatannya.
+            // Dipakai form SP untuk menyaring desa menurut kabupaten kawasan
+            // terpilih. Diturunkan di sini, bukan di view, sebab view dilarang
+            // mengambil datanya sendiri.
+            'daftarDesa' => DummyData::desaBerkabupaten(),
+
+            // Peta id kawasan ke id kabupatennya, dibaca Alpine pada form SP.
+            'petaKawasanKabupaten' => array_column(
+                DummyData::kawasan(), 'kabupaten_id', 'id_kawasan_transmigrasi'
+            ),
             'opsiKategoriPengaduan' => DummyData::opsiReferensi(JenisReferensi::KategoriPengaduan),
             'opsiBidang' => DummyData::opsiReferensi(JenisReferensi::BidangPengaduan),
             'opsiPrioritasPengaduan' => DummyData::opsiReferensi(JenisReferensi::PrioritasPengaduan),

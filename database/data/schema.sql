@@ -602,6 +602,12 @@ CREATE TABLE `penilaian_sp` (
 -- 5.1 transmigran ---------------------------------------
 -- Satu baris = satu kepala keluarga / KK. usia & jumlah_anggota_keluarga TIDAK
 -- disimpan (diturunkan). status_anggota_poktan = penanda cepat (kebenaran di anggota_poktan).
+-- daerah_asal_kabupaten_id (2026-09-02): semula VARCHAR(255) teks bebas tanpa indeks,
+-- padahal menjadi salah satu dari enam dasar rekap kependudukan (rules.md 10a.4a).
+-- Teks bebas memecah satu kabupaten menjadi beberapa baris rekap karena beda ejaan,
+-- dan totalnya tetap benar sehingga kebocorannya tidak pernah terlihat. RESTRICT:
+-- merapikan data master tidak boleh melenyapkan daerah asal seorang transmigran.
+-- pekerjaan_kepala_keluarga SENGAJA tetap teks bebas: himpunannya terbuka (lihat bawah).
 CREATE TABLE `transmigran` (
   `id_transmigran`             BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `uuid`                       CHAR(36) NOT NULL,
@@ -616,7 +622,7 @@ CREATE TABLE `transmigran` (
   `pendidikan_terakhir`        ENUM('Tidak Sekolah','SD','SMP','SMA/SMK','Diploma','S1','S2','S3') NULL,
   `pekerjaan_kepala_keluarga`  VARCHAR(100) NOT NULL,    -- teks bebas (datalist), bukan enum
   `pendapatan_per_bulan`       DECIMAL(15,2) NULL,
-  `daerah_asal`                VARCHAR(255) NULL,
+  `daerah_asal_kabupaten_id`   BIGINT UNSIGNED NULL,     -- kabupaten/kota asal; NULL bila belum terdata
   `tahun_kedatangan`           YEAR NOT NULL,
   `status_tinggal`             ENUM('Aktif','Pindah Penduduk','Tidak Aktif') NOT NULL,
   `status_anggota_poktan`      ENUM('Ya','Tidak') NOT NULL,
@@ -634,8 +640,11 @@ CREATE TABLE `transmigran` (
   KEY `idx_transmigran_nama` (`nama_kepala_keluarga`),
   KEY `idx_transmigran_tahun_kedatangan` (`tahun_kedatangan`),
   KEY `idx_transmigran_pekerjaan` (`pekerjaan_kepala_keluarga`),
+  KEY `idx_transmigran_daerah_asal` (`daerah_asal_kabupaten_id`),
   CONSTRAINT `fk_transmigran_sp`
-    FOREIGN KEY (`satuan_permukiman_id`) REFERENCES `satuan_permukiman` (`id_satuan_permukiman`) ON DELETE RESTRICT ON UPDATE CASCADE
+    FOREIGN KEY (`satuan_permukiman_id`) REFERENCES `satuan_permukiman` (`id_satuan_permukiman`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `fk_transmigran_daerah_asal`
+    FOREIGN KEY (`daerah_asal_kabupaten_id`) REFERENCES `kabupaten` (`id_kabupaten`) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 5.2 anggota_keluarga -----------------------------

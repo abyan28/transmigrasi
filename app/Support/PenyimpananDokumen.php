@@ -5,6 +5,7 @@ namespace App\Support;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 
 /**
  * Mengelola penyimpanan dokumen dan foto pendukung.
@@ -35,6 +36,21 @@ class PenyimpananDokumen
 
     /** Batas ukuran berkas dalam byte, setara 5 MB. */
     public const MAKS_UKURAN_BYTE = 5 * 1024 * 1024;
+
+    /**
+     * Ekstensi yang boleh tersimpan ke disk.
+     *
+     * Dibaca dari ValidationRules agar tidak ada dua daftar yang dapat
+     * berselisih diam-diam: nilai yang sama dipakai aturan validasi dan
+     * atribut `accept` pada `components/sim/file-upload.blade.php`
+     * (agents/rules.md bagian 13.2 poin 6, validasi terpusat).
+     *
+     * @return array<int, string> Daftar ekstensi huruf kecil
+     */
+    public static function ekstensiDiterima(): array
+    {
+        return explode(',', ValidationRules::JENIS_BERKAS);
+    }
 
     /**
      * Menyimpan berkas unggahan dan mengembalikan path relatifnya.
@@ -187,7 +203,7 @@ class PenyimpananDokumen
      */
     public static function susunNamaBerkas(UploadedFile $berkas, string $namaDokumen, string $namaPemilik = ''): string
     {
-        $ekstensi = strtolower($berkas->getClientOriginalExtension() ?: $berkas->extension());
+        $ekstensi = self::ekstensiAman($berkas);
 
         // Spasi dibuang dan tiap kata diawali huruf besar, tetapi huruf besar
         // yang sudah ada di tengah kata dipertahankan. Dengan begitu masukan
@@ -200,5 +216,46 @@ class PenyimpananDokumen
         }
 
         return $dokumen . '_' . Str::slug($namaPemilik) . '.' . $ekstensi;
+    }
+
+    /**
+     * Menentukan ekstensi berkas yang aman disimpan ke disk.
+     *
+     * Ekstensi DITEBAK DARI ISI BERKAS lebih dulu, bukan dari nama yang
+     * dikirim peramban. getClientOriginalExtension() hanya memenggal nama
+     * berkas yang dikendalikan sepenuhnya oleh pengunggah, sehingga berkas
+     * apa pun dapat diberi nama sesuatu.pdf maupun sesuatu.php.
+     * extension() menebaknya dari tipe MIME hasil pemeriksaan isi berkas,
+     * yang tidak dapat dikarang lewat nama.
+     *
+     * Nama kiriman klien tetap dipakai sebagai cadangan ketika penebakan
+     * tidak menghasilkan apa pun, tetapi hasilnya SELALU disaring daftar
+     * putih, sehingga cadangan itu tidak membuka kembali celah yang sama.
+     *
+     * Berkas di luar daftar ditolak, bukan disimpan dengan nama seadanya:
+     * berkas yang tersimpan diam-diam akan ditemukan kembali suatu saat
+     * oleh kode lain yang belum tentu seketat ini (agents/rules.md 14a
+     * poin 2, jenis berkas wajib divalidasi di sisi server).
+     *
+     * @param  UploadedFile  $berkas  Berkas hasil unggahan
+     * @return string Ekstensi huruf kecil yang sudah dipastikan aman
+     *
+     * @throws InvalidArgumentException Bila jenis berkas tidak diterima
+     */
+    public static function ekstensiAman(UploadedFile $berkas): string
+    {
+        $diterima = self::ekstensiDiterima();
+
+        foreach ([$berkas->extension(), $berkas->getClientOriginalExtension()] as $calon) {
+            $calon = strtolower(trim((string) $calon));
+
+            if ($calon !== '' && in_array($calon, $diterima, true)) {
+                return $calon;
+            }
+        }
+
+        throw new InvalidArgumentException(
+            'Jenis berkas tidak diterima. Yang diterima: ' . implode(', ', $diterima) . '.'
+        );
     }
 }

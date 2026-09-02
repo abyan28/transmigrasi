@@ -299,7 +299,7 @@ it('memakai nama kolom kamus data pada isian form', function () {
     foreach ([
         'nama_kepala_keluarga', 'nik', 'no_kk', 'jenis_kelamin', 'agama', 'tempat_lahir',
         'tanggal_lahir', 'pendidikan_terakhir', 'pekerjaan_kepala_keluarga',
-        'pendapatan_per_bulan', 'daerah_asal',
+        'pendapatan_per_bulan', 'daerah_asal_kabupaten_id',
         'tahun_kedatangan', 'status_tinggal', 'telepon',
         'dokumen_pendukung', 'keterangan', 'satuan_permukiman_id',
     ] as $kolom) {
@@ -1008,8 +1008,11 @@ it('menyediakan tautan tetap bagi tiap tab rekap kependudukan', function () {
 it('merender keenam tab rekap kependudukan beserta isinya', function () {
     // Yang diperiksa BARISNYA terender, bukan sekadar halaman membalas 200:
     // tab yang tabelnya kosong tetap membalas 200 dan tampak sehat.
+    // Daerah asal memakai varian BERLABEL, sebab `sebaranDaerahAsal()`
+    // berkunci id kabupaten sejak 2026-09-02 sedangkan yang dirender
+    // halaman adalah namanya. Totalnya sama, hanya kuncinya yang berbeda.
     $harapan = [
-        'asal' => DummyData::sebaranDaerahAsal(),
+        'asal' => DummyData::sebaranDaerahAsalBerlabel(),
         'pendidikan' => DummyData::sebaranPendidikan(),
         'pekerjaan' => DummyData::sebaranPekerjaan(),
     ];
@@ -1788,15 +1791,23 @@ it('merender daftar pengaduan beserta seluruh barisnya', function () {
 });
 
 it('menyaring pengaduan menurut status, kategori, dan prioritas', function () {
+    // Nomornya dibaca dari data contoh, bukan diketik: sejak nomor memuat
+    // bagian acak, mengetiknya berarti mengunci nilai yang bukan bagian
+    // dari perilaku yang dijaga. Membacanya lewat penyaring yang sama juga
+    // membuat uji ini menegakkan HUBUNGAN status dengan barisnya, bukan
+    // sekadar mencocokkan teks.
+    $nomor = fn (string $kunci, $nilai) => collect(DummyData::pengaduan())
+        ->firstWhere($kunci, $nilai)['nomor_pengaduan'];
+
     $this->get(route('pengaduan.index', ['status' => 'Selesai']))
-        ->assertSee('PGD-2026-0005')
-        ->assertDontSee('PGD-2026-0001');
+        ->assertSee($nomor('status', 'Selesai'))
+        ->assertDontSee($nomor('status', 'Diproses'));
 
     $this->get(route('pengaduan.index', ['prioritas' => 'Mendesak']))
-        ->assertSee('PGD-2026-0004');
+        ->assertSee($nomor('prioritas', 'Mendesak'));
 
     $this->get(route('pengaduan.index', ['kategori' => 'Rumah']))
-        ->assertSee('PGD-2026-0002');
+        ->assertSee($nomor('kategori', 'Rumah'));
 });
 
 it('hanya menawarkan satu status berikutnya yang sah', function () {
@@ -1974,7 +1985,12 @@ it('merender halaman lacak pengaduan', function () {
 });
 
 it('menampilkan status dan catatan penanganan pada halaman lacak', function () {
-    $this->get(route('lacak-pengaduan', ['nomor' => 'PGD-2026-0005']))
+    // Nomornya DIBACA dari data contoh, tidak diketik (2026-09-02). Sejak
+    // nomor pengaduan memuat bagian acak, mengetiknya di sini berarti
+    // mengunci nilai yang memang bukan bagian dari perilaku yang dijaga.
+    $nomor = DummyData::pengaduan()[4]['nomor_pengaduan'];
+
+    $this->get(route('lacak-pengaduan', ['nomor' => $nomor]))
         ->assertOk()
         ->assertSee('Serangan hama pada tanaman jagung')
         ->assertSee('Pendampingan penyemprotan selesai, kondisi tanaman membaik. Petani diberi panduan pengendalian hama.');
@@ -1984,15 +2000,17 @@ it('tidak pernah menampilkan data pribadi pelapor pada halaman lacak', function 
     // Aturan privasi paling penting modul ini: siapa pun yang menebak nomor
     // pengaduan tidak boleh memanen data pribadi warga lain
     // (agents/rules.md bagian 10b poin 1c).
-    $isi = $this->get(route('lacak-pengaduan', ['nomor' => 'PGD-2026-0005']))->getContent();
+    $nomor = DummyData::pengaduan()[4]['nomor_pengaduan'];
 
-    $pengaduan = collect(DummyData::pengaduan())->firstWhere('nomor_pengaduan', 'PGD-2026-0005');
+    $isi = $this->get(route('lacak-pengaduan', ['nomor' => $nomor]))->getContent();
+
+    $pengaduan = collect(DummyData::pengaduan())->firstWhere('nomor_pengaduan', $nomor);
 
     expect($isi)->not->toContain($pengaduan['nama_pelapor'])
         ->and($isi)->not->toContain($pengaduan['kontak_pelapor']);
 
     // Nama petugas penangan pun tidak ditampilkan kepada warga.
-    foreach (DummyData::penangananPengaduan('PGD-2026-0005') as $jejak) {
+    foreach (DummyData::penangananPengaduan($nomor) as $jejak) {
         expect($isi)->not->toContain($jejak['petugas']);
     }
 });
@@ -2005,8 +2023,8 @@ it('menjelaskan jalan keluar saat nomor pengaduan tidak ditemukan', function () 
 });
 
 it('memberi keterangan pada pengaduan yang belum ditangani', function () {
-    // PGD-2026-0003 masih Menunggu Diterima dan belum punya riwayat.
-    $this->get(route('lacak-pengaduan', ['nomor' => 'PGD-2026-0003']))
+    // Baris ke-3 masih Menunggu Diterima dan belum punya riwayat.
+    $this->get(route('lacak-pengaduan', ['nomor' => DummyData::pengaduan()[2]['nomor_pengaduan']]))
         ->assertSee('Belum ada catatan penanganan');
 });
 
@@ -4080,7 +4098,7 @@ it('menampilkan dokumen tindak lanjut pada riwayat penanganan', function () {
     // Modal penanganan sudah lama menyediakan isian unggahnya, tetapi hasilnya
     // tidak pernah ditampilkan kembali sehingga berkas yang sudah diunggah
     // petugas tidak dapat dibuka siapa pun.
-    $riwayat = DummyData::penangananPengaduan('PGD-2026-0001');
+    $riwayat = DummyData::penangananPengaduan(DummyData::pengaduan()[0]['nomor_pengaduan']);
 
     $berdokumen = collect($riwayat)->firstWhere('dokumen_tindak_lanjut', '!=', null);
 
@@ -4096,7 +4114,7 @@ it('memberitahu warga adanya dokumen tanpa membuka berkasnya', function () {
     // sehingga siapa pun yang mengetahui nomornya akan ikut memperoleh
     // berkasnya. Dokumen tindak lanjut kerap memuat nama petugas dan hasil
     // peninjauan.
-    $isi = $this->get(route('lacak-pengaduan', ['nomor' => 'PGD-2026-0001']))
+    $isi = $this->get(route('lacak-pengaduan', ['nomor' => DummyData::pengaduan()[0]['nomor_pengaduan']]))
         ->assertOk()
         ->getContent();
 
@@ -4481,7 +4499,7 @@ it('memakai istilah email, bukan surel, pada teks yang dilihat pengguna', functi
     // dan uji lulus tanpa memeriksa apa pun.
     $isi = $this->withSession([
         'kredensial_baru' => ['nama' => 'UJI', 'email' => 'uji@malakakab.go.id', 'password' => 'Rahasia123'],
-        'nomor_pengaduan' => 'PGD-2026-0003',
+        'nomor_pengaduan' => DummyData::pengaduan()[2]['nomor_pengaduan'],
         'email_pelapor' => 'warga@contoh.id',
     ])->get($jalur)->assertOk()->getContent();
 
@@ -5531,61 +5549,76 @@ it('mencabut kewenangan export dari seluruh sumber kebenaran', function () {
 |--------------------------------------------------------------------------
 */
 
-it('membuka master wilayah dari tingkat teratas', function () {
-    // Tab bawaan sempat `kecamatan`, dan itu keliru pada dua hal: pembacaannya
-    // melompati dua tingkat pertama sehingga susunan hierarki yang dijelaskan
-    // di atasnya tidak terlihat, dan pengunjung mendapat alamat `?tab=kecamatan`
-    // seolah ia pernah memilihnya sendiri.
-    $sumber = file_get_contents(resource_path('views/pages/master/wilayah.blade.php'));
+it('menyatukan keempat tingkat wilayah dalam satu tabel, bukan empat tab', function () {
+    // Menggantikan uji tab bawaan (dicabut 2026-09-02 bersama tabnya).
+    // Sejak provinsi dan kabupaten dibaca dari data referensi nasional, tab
+    // Kabupaten memuat ratusan baris tanpa pencarian; menyatukannya juga
+    // menghapus keharusan menebak satu nama berada di tab mana.
+    $isi = $this->get(route('wilayah'))->assertOk()->getContent();
 
-    expect($sumber)->toContain("hashTabs('provinsi')")
-        ->and($sumber)->not->toContain("hashTabs('kecamatan')");
+    // Tab benar-benar tidak ada lagi, bukan sekadar tersembunyi.
+    $sumber = file_get_contents(resource_path('views/pages/master/wilayah.blade.php'));
+    expect($sumber)->not->toContain('hashTabs(')
+        ->and($sumber)->not->toContain('role="tablist"');
+
+    // Tingkat berpindah menjadi kolom sekaligus penyaring.
+    expect($isi)->toContain('name="tingkat"')
+        ->and($isi)->toContain('Tingkat Wilayah');
+
+    // Keempat tingkat tetap terjangkau dari satu halaman.
+    foreach (['provinsi', 'kabupaten', 'kecamatan', 'desa'] as $tingkat) {
+        expect($isi)->toContain('value="'.$tingkat.'"');
+    }
 });
 
-it('menyesuaikan tingkat bawaan form wilayah dengan tab yang dibuka', function () {
-    // Sebelumnya selalu `desa`, sehingga petugas yang membuka tab Kecamatan
-    // lalu menekan Tambah mendapat form bertingkat Desa dan harus menggantinya
-    // setiap kali.
-    $peta = [
-        '' => 'provinsi',
-        'kabupaten' => 'kabupaten',
-        'kecamatan' => 'kecamatan',
-        'desa' => 'desa',
-        // Nilai yang tidak dikenal jatuh ke tingkat teratas, bukan diteruskan
-        // apa adanya: alamat yang dikarang tidak boleh menghasilkan tingkat
-        // yang tidak ada pada daftar.
-        'ngawur' => 'provinsi',
-    ];
+it('menyaring daftar wilayah menurut tingkat beserta jumlahnya', function () {
+    // Judul tab lama menampilkan jumlah per tingkat. Menghapus tab tanpa
+    // memindahkan angka itu berarti pembaca kehilangan keterangan yang
+    // sebelumnya ada, dan perombakannya berubah menjadi kemunduran.
+    $w = DummyData::wilayah();
 
-    foreach ($peta as $tab => $harapan) {
-        $isi = $this->get(route('wilayah', $tab === '' ? [] : ['tab' => $tab]))
-            ->assertOk()
-            ->getContent();
+    $isi = $this->get(route('wilayah'))->assertOk()->getContent();
 
-        preg_match('/<option value="(\w+)" selected>/', $isi, $cocok);
-
-        expect($cocok[1] ?? null)->toBe($harapan, "tab '{$tab}' menghasilkan tingkat yang keliru");
+    foreach (['provinsi', 'kabupaten', 'kecamatan', 'desa'] as $tingkat) {
+        expect($isi)->toContain('('.count($w[$tingkat]).')');
     }
+
+    // Penyaringnya benar-benar menyempitkan, bukan sekadar tampil.
+    $desa = $this->get(route('wilayah', ['tingkat' => 'desa']))->assertOk()->getContent();
+
+    expect(substr_count($desa, 'formUbahWilayahBaris'))
+        ->toBeLessThan(substr_count($isi, 'formUbahWilayahBaris'));
+
+    // Pencarian mencakup induknya, sebab petugas kerap mengingat
+    // kabupatennya ketika nama kecamatannya sendiri sudah kabur.
+    $this->get(route('wilayah', ['cari' => 'Malaka']))->assertOk()->assertSee('Laen Manen');
 });
 
 it('menandai wajib isian induk wilayah secara bersyarat', function () {
-    // Ketiga isian induk saling meniadakan: hanya satu berlaku pada satu waktu.
-    // Dengan `required` tetap, peramban menuntut ketiganya terisi sekaligus dan
-    // form TIDAK PERNAH dapat dikirim untuk tingkat apa pun, sementara pesan
-    // galatnya menunjuk elemen tersembunyi sehingga petugas tidak melihat apa
-    // yang kurang.
-    $sumber = file_get_contents(resource_path('views/pages/master/form-wilayah.blade.php'));
+    // Ketiga isian induk saling meniadakan: hanya satu berlaku pada satu
+    // waktu. Dengan `required` tetap, peramban menuntut ketiganya terisi
+    // sekaligus dan form TIDAK PERNAH dapat dikirim untuk tingkat apa pun,
+    // sementara pesan galatnya menunjuk elemen tersembunyi sehingga petugas
+    // tidak melihat apa yang kurang.
+    //
+    // DIPERIKSA PADA HTML HASIL RENDER, bukan teks sumber (diubah
+    // 2026-09-02). Dua isian teratas kini memakai `x-sim.pilih-cari` yang
+    // merender atributnya di dalam komponen, sehingga pemeriksaan berbasis
+    // sumber mengunci CARA implementasinya, bukan perilakunya.
+    $isi = $this->get(route('wilayah'))->assertOk()->getContent();
 
     foreach (['provinsi_id', 'kabupaten_id', 'kecamatan_id'] as $isian) {
-        expect($sumber)->toContain('name="'.$isian.'"');
+        expect($isi)->toContain('name="'.$isian.'"');
     }
 
     // Tidak boleh ada `required` tetap pada ketiganya.
-    expect(preg_match('/name="(provinsi|kabupaten|kecamatan)_id"\s+required/', $sumber))->toBe(0);
+    expect(preg_match('/name="(provinsi|kabupaten|kecamatan)_id"[^>]*\srequired[\s>]/', $isi))->toBe(0);
 
-    // Sebaliknya, ketiganya wajib memakai pasangan bersyarat.
-    expect(substr_count($sumber, ':required="tingkat ==='))->toBe(3)
-        ->and(substr_count($sumber, ':disabled="tingkat !=='))->toBe(3);
+    // Sebaliknya, ketiganya wajib memakai pasangan bersyarat Alpine.
+    $sumber = file_get_contents(resource_path('views/pages/master/form-wilayah.blade.php'));
+
+    expect(preg_match_all('/:?required="tingkat === /', $sumber))->toBe(3)
+        ->and(preg_match_all('/:?disabled="tingkat !== /', $sumber))->toBe(3);
 });
 
 it('memilih kabupaten kawasan lewat dua tingkat', function () {
@@ -7055,7 +7088,7 @@ it('tidak menampilkan data aset pada halaman lacak publik', function () {
     // alamat maupun lahan keluarga tertentu kepada siapa pun yang mengetahui
     // nomornya. rules.md 10b poin 1c membatasinya pada status, tanggal, dan
     // catatan penanganan saja.
-    $isi = $this->get('/lacak-pengaduan/PGD-2026-0001')->getContent();
+    $isi = $this->get('/lacak-pengaduan/'.DummyData::pengaduan()[0]['nomor_pengaduan'])->getContent();
 
     expect($isi)->not->toContain('SALURAN IRIGASI BLOK A')
         ->and($isi)->not->toContain('LU-001')
@@ -7079,20 +7112,26 @@ it('menyediakan filter bidang pada daftar pengaduan', function () {
 });
 
 it('menyaring pengaduan menurut bidangnya', function () {
-    // PGD-2026-0003 berbidang Pertanian, PGD-2026-0002 berbidang
-    // Ketransmigrasian. Menyaring salah satu wajib menyingkirkan yang lain.
+    // Nomornya dibaca lewat bidangnya sendiri, bukan diketik: menyaring satu
+    // bidang wajib menyingkirkan bidang yang lain, dan itulah yang dijaga.
+    $nomor = fn ($bidang) => collect(DummyData::pengaduan())
+        ->firstWhere('bidang', $bidang)['nomor_pengaduan'];
+
     $pertanian = $this->get('/pengaduan?bidang=Pertanian')->getContent();
 
-    expect($pertanian)->toContain('PGD-2026-0003')
-        ->and($pertanian)->not->toContain('PGD-2026-0002');
+    expect($pertanian)->toContain($nomor('Pertanian'))
+        ->and($pertanian)->not->toContain($nomor('Ketransmigrasian'));
 });
 
 it('menyaring pengaduan yang bidangnya belum ditetapkan', function () {
     // Inilah antrean penyaringan awal Admin dan Dinas Transmigrasi.
+    $nomor = fn ($bidang) => collect(DummyData::pengaduan())
+        ->firstWhere('bidang', $bidang)['nomor_pengaduan'];
+
     $belum = $this->get('/pengaduan?bidang=belum')->getContent();
 
-    expect($belum)->toContain('PGD-2026-0004')
-        ->and($belum)->not->toContain('PGD-2026-0003');
+    expect($belum)->toContain($nomor(null))
+        ->and($belum)->not->toContain($nomor('Pertanian'));
 });
 
 it('menyatakan bidang kosong sebagai keterangan, bukan sel hampa', function () {
@@ -7774,7 +7813,7 @@ it('tidak mengirimkan aksi ke alamat berakar domain', function () {
         $uri = $rute->uri();
         $uri = preg_replace('/\{jenis\??\}/', 'kondisi', $uri);
         $uri = preg_replace('/\{kelompok\??\}/', 'sp', $uri);
-        $uri = preg_replace('/\{nomor\??\}/', 'PGD-2026-0001', $uri);
+        $uri = preg_replace('/\{nomor\??\}/', DummyData::pengaduan()[0]['nomor_pengaduan'], $uri);
         $uri = preg_replace('/\{[a-zA-Z_]+\??\}/', '1', $uri);
 
         if (str_contains($uri, '{')) {
@@ -7935,7 +7974,7 @@ it('memakai cangkang dua kolom baku pada halaman detail', function () {
         `tests/Browser/uji-lebar-halaman.mjs`.
 
         Akar masalah selalu bentuk yang sama: halaman menyimpang dari cangkang
-        dua kolom baku milik `pages/poktan/detail.blade.php` —
+        dua kolom baku milik `pages/poktan/detail.blade.php` ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â
 
           - trek grid kanan ditulis `1fr` polos (minimum otomatisnya
             `min-content`), bukan `minmax(0,1fr)`, sehingga isi selebar apa pun

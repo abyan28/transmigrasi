@@ -373,7 +373,8 @@ Dikerjakan **dua gelombang**. Gelombang 1 membangun alur inti agar dapat divalid
   * Rute `/sp/inventaris` dan `/sp/fasilitas` didaftarkan sebelum `/sp` agar tidak tertukar
 - [✓] ✅ Task 2.14 - Halaman rekap kependudukan `[Sedang]` (Selesai)
   * Memakai komposisi rekap: tabel agregat, baris total ditegaskan, tanpa kartu statistik
-  * Empat dasar pengelompokan: tahun, satuan permukiman, status tinggal, dan pekerjaan
+  * **Enam** dasar pengelompokan: tahun, satuan permukiman, status tinggal, pekerjaan, **daerah asal**, dan **pendidikan** (dua terakhir menyusul 2026-08-25; butir ini tertinggal menulis empat sampai dibetulkan 2026-09-02). Rujukan aturannya `rules.md` 10a.4a, dan rutenya membatasi `tahun|sp|status|pekerjaan|asal|pendidikan`
+  * Daerah asal sejak 2026-09-02 berupa FK ke `kabupaten`, bukan teks bebas
   * Menyajikan KK masuk dan keluar per tahun sesuai kewajiban `rules.md` 10a poin 4
 - [✓] ✅ Task 2.15 - Halaman poktan dan anggota poktan `[Sedang]` (Selesai)
   * Membuat daftar dan halaman rincian bertab: Anggota, Alsintan, Saprotan
@@ -913,11 +914,63 @@ pest 714, pint 31, `sim:tautan-statis` 223. Seluruh suite peramban hijau (termas
 
 Sembilan tahap SELESAI. **Belum diperiksa mata:** form repeater distribusi + form rincian kondisi di layar, Ctrl+P laporan.
 
+### Task yang terlewat dicatat, ditambahkan 2026-09-02 (F'2 dan F'3)
+
+Keempat halaman di bawah SUDAH ADA dan berfungsi, tetapi tidak pernah punya butir Task.
+Pekerjaannya tercatat pada Catatan Checkpoint atau tidak tercatat sama sekali, sehingga
+tidak terlihat oleh siapa pun yang membaca daftar tugas Tahap 2. Ditemukan lewat audit
+`tasklist.md` terhadap frontend.
+
+- [x] Task 2.31 - Modul Pengelolaan Konten (CMS) 5 tab `[Sulit]` (Selesai 2026-09-01)
+  * `/cms`, 61 KB, halaman terbesar kedua setelah dashboard. Lima tab: Identitas & Visual, Kop & Dokumen Laporan, Konten Profil & FAQ, Portal Pengaduan Warga, Pengumuman Dinas
+  * Semula hanya tercatat pada Catatan Checkpoint butir 31
+  * **Konflik yang belum diselesaikan:** template `formatNomor` bernilai `PGD-{TAHUN}-{NOMOR}` tanpa bagian acak, bertentangan dengan `rules.md` 4.0a poin 4. Diselesaikan bersama D3
+- [x] Task 2.32 - Halaman Panduan Penggunaan `[Sedang]` (Selesai 2026-08-31)
+  * `/panduan`, 35 KB. Panduan operasional per peran
+  * Sebelumnya tidak tercatat sama sekali; satu-satunya kata `panduan` pada berkas ini ada di Task 11.6 yang membahas SOP dan buku panduan, yaitu hal yang berbeda
+- [x] Task 2.33 - Halaman Tentang Sistem `[Mudah]` (Selesai 2026-08-31)
+  * `/tentang`, 21 KB. Profil sistem dan kawasan Kobalima Timur
+  * Sebelumnya tidak tercatat sama sekali
+- [x] Task 2.34 - Pengaturan Penilaian Kondisi SP `[Sedang]` (Selesai 2026-08-21)
+  * `/master/penilaian-kondisi` beserta `form-parameter-penilaian` dan `form-status-kondisi`
+  * Mewujudkan `rules.md` 10c.5.13a: bobot, ambang, dan nama status dapat disunting dinas, tidak lagi terkunci di dalam kode
+  * Dijaga `PengaturanPenilaianTest.php`, tetapi tidak pernah punya butir Task
+
+**Komponen dan partial yang ikut terlewat:** `sim/footer` dan `sim/footer-publik`
+(dua footer terpisah untuk petugas dan warga), serta `master/detail-referensi`
+(halaman per jenis daftar pilihan, berute `referensi.jenis`).
+
+
+### Putaran 11: perbaikan pra-backend hasil audit menyeluruh (2026-09-02)
+
+Rencana + penyisiran lima sudut: `session-notes.md` Putaran 11. Catatan hasil: `notes.md` bagian 6.
+
+Audit menyeluruh atas permintaan pemilik proyek sebelum tahap backend dimulai.
+
+- **A (blocker).** `rumah` menaut penghuni lewat NAMA, bukan id. Ditambahkan `transmigran_id` pada `DummyData::rumah()`; `rumahKosong()`, `transmigranTanpaRumah()`, rute `transmigran.detail`, dan `pages/rumah/form` ikut dibetulkan. Cacatnya sudah aktif: `transmigranTanpaRumah()` mengembalikan 8 dari 8 KK sebab pencocokan nama tidak pernah berhasil.
+- **C1.** Ekstensi berkas unggahan tidak lagi dipercaya dari nama kiriman klien. `PenyimpananDokumen::ekstensiAman()` menebak dari isi berkas lalu menyaring lewat `ValidationRules::JENIS_BERKAS`.
+- **C2.** Tujuh duplikasi kunci array `satuan_permukiman_id` pada `DummyData::transmigran()` dihapus.
+- **C3.** Nama rute `sp.perbarui` terdaftar dua kali; deklarasi kedua dicabut, versi ber-`back()` dipertahankan agar posisi tab tidak hilang (`rules.md` 4c poin 5).
+- **D1.** `transmigran.daerah_asal` menjadi FK `kabupaten` (`daerah_asal_kabupaten_id`), bukan teks bebas. Berkas baru `app/Support/DataWilayah.php` memuat 38 provinsi + 514 kabupaten/kota; isian memakai searchable dropdown bernama provinsi sebagai pembeda (Kabupaten Kupang vs Kota Kupang). `sebaranDaerahAsal()` berkunci id, dilabeli `sebaranDaerahAsalBerlabel()`. `pekerjaan_kepala_keluarga` SENGAJA tetap teks bebas: himpunannya terbuka.
+- **E.** Halaman Master Wilayah: 4 tab DICABUT, diganti satu `x-sim.data-table` (Nama, Tingkat, Induk, Kode, Aksi) beserta pencarian, paginasi, dan filter Tingkat bercantum jumlah. Provinsi (38) dan kabupaten (514) dibaca dari `DataWilayah`; kecamatan (4) dan desa (6) TETAP lokus sampai Tahap 3. Dropdown induk `form-wilayah` memakai `x-sim.pilih-cari`. Form SP menaruh Kawasan sebelum Desa, dan memilih kawasan menyaring desa menurut kabupaten kawasan itu (menempuh kabupaten, bukan relasi kawasan-ke-desa yang sengaja tidak dimodelkan, `rules.md` 4a.2). `kawasan` mendapat `kabupaten_id`; `desaBerkabupaten()` menurunkan kabupaten desa lewat kecamatan.
+- **F'2/F'3.** Empat halaman yang belum punya Task dicatat di bawah, beserta komponen dan partial yang belum tercatat.
+- **B + D2.** Rancangan penegakan cakupan data ditetapkan pada `rules.md` **5.0b-1** (sembilan poin, mengikat Tahap 3): titik penegakan tunggal berupa global scope pada model, penyaring dipasang pada pemilik SP bukan diulang pada turunannya, akun `Per SP` tanpa penugasan menerima nol baris, data tak berhak membalas 404 bukan 403, dan penyaringan mendahului paginasi. Keputusan UUID ditetapkan pada `rules.md` **4.0a poin 5a-5c**: Model lahir dengan `getRouteKeyName()` bernilai `uuid` sejak commit pertamanya. Keduanya dokumen; rute dan kode tidak disentuh.
+- **F'5.** Butir Task 3.2 dibetulkan dari `email atau NIK` menjadi email atau username.
+- **D3.** Nomor pengaduan memuat bagian acak enam karakter (`PGD-2026-0001-PMTUXK`), beralfabet tanpa `0`/`O`/`1`/`I`/`L` sebab warga menyalinnya dari layar ponsel. Halaman lacak dapat dibuka tanpa login, sehingga nomor berurutan membuat laporan warga dapat disusuri satu per satu. Konflik CMS diselesaikan: template menjadi `PGD-{TAHUN}-{NOMOR}-{ACAK}` beserta keterangan bahwa bagian acak di luar kendali dinas. `rules.md` 4.0a mendapat poin 4a-4d. Uji tidak lagi mengetik nomor melainkan membacanya dari `DummyData`.
+- **F.** Audit `tasklist.md` terhadap frontend. Rujukan `database/transmigrasi.sql` di 4 dokumen (8 titik) dibetulkan menjadi `database/data/schema.sql`. Task 2.14 dibetulkan dari empat menjadi enam dasar rekap kependudukan.
+
+pest 729 (6.377 assertions), rute 152 menjadi 151 tanpa nama ganda tersisa, `sim:tautan-statis` 227.
+pint tetap 33 berkas gagal seperti sebelum putaran ini (pre-existing, di luar cakupan).
+
+**SELURUH bagian rencana pra-backend SELESAI.** Tersisa hanya C4 (dead code:
+`dashboard/sp.blade.php`, `/galeri-komponen`, `/uji-403`) yang sengaja ditunda ke
+checklist pra-deploy, sebab dua rute itu masih berguna selama pengembangan antarmuka.
+
 ## Tahap 3 — Autentikasi dan Hak Akses
 
 > **Peringatan penerbitan statis.** Begitu login aktif, halaman berpelindung membalas pengalihan ke `/login`, bukan 200, sehingga `.github/workflows/deploy.yml` **gagal** dan situs GitHub Pages berhenti diperbarui. Putuskan lebih dulu: batasi `sim:tautan-statis` hanya ke halaman publik, atau hentikan penerbitan statis sama sekali. Lihat `notes.md` bagian 1b.7.
 
-> **Acuan skema untuk seluruh migration Tahap 3–9 (2026-09-01):** `database/transmigrasi.sql`
+> **Acuan skema untuk seluruh migration Tahap 3–9 (2026-09-01):** `database/data/schema.sql`
 > adalah skema DDL final (44 tabel bisnis, MySQL/MariaDB, siap PDM). Migration Laravel
 > menerjemahkannya, TIDAK menyusun ulang dari nol. Rekonsiliasi 15 konflik dokumentasi
 > tercatat pada `notes.md` butir 2026-09-01. Catatan Task 3.2 di bawah ("email atau NIK",
@@ -925,9 +978,10 @@ Sembilan tahap SELESAI. **Belum diperiksa mata:** form repeater distribusi + for
 > login memakai **email atau username**.
 
 - [ ] Task 3.1 - Migration dan model `user` beserta password dan timestamps `[Mudah]`
-  * Acuan struktur kolom, tipe, index, dan FK: `database/transmigrasi.sql` (tabel `user`, `role`, `permission`, `role_permission`, `user_satuan_permukiman`, `kode_pemulihan_sandi`, `audit_log`)
+  * Acuan struktur kolom, tipe, index, dan FK: `database/data/schema.sql` (tabel `user`, `role`, `permission`, `role_permission`, `user_satuan_permukiman`, `kode_pemulihan_sandi`, `audit_log`)
 - [ ] Task 3.2 - Implementasi login, logout, dan rate limiting `[Sedang]`
-  * Satu kolom kredensial menerima **email atau NIK**; sistem memilih kolom pencarian berdasarkan bentuk masukan (16 digit angka berarti NIK)
+  * Satu kolom kredensial menerima **email atau username**; keduanya unik antar-akun (`rules.md` 14b poin 4). Sistem memilih kolom pencarian berdasarkan bentuk masukannya
+  * ~~Ketentuan lama: `email atau NIK`, dengan 16 digit angka berarti NIK. **DICABUT** sebab seluruh pemegang akun adalah petugas dan warga tidak memiliki akun (`rules.md` 14b poin 6); `user` pun tidak lagi punya kolom `nik`. Teksnya baru dibetulkan 2026-09-02, sebelumnya hanya ditandai usang pada catatan di atas sehingga pembaca yang langsung melompat ke butir ini tetap membaca ketentuan yang keliru.~~
   * Tolak akun dengan `is_aktif = FALSE`
   * Middleware pemaksa ganti kata sandi bila `password_harus_diganti = TRUE`
   * **Tanpa rute pendaftaran dan tanpa rute pemulihan kata sandi** (`rules.md` §14b)
@@ -942,6 +996,7 @@ Sembilan tahap SELESAI. **Belum diperiksa mata:** form repeater distribusi + for
   * Global scope Eloquent menyaring menurut `role.cakupan_data`
   * Cakupan `Per SP` membaca penugasan dari `user_satuan_permukiman`
   * Akun `Per SP` tanpa penugasan tidak melihat data apa pun, bukan melihat seluruhnya
+  * **Rancangan penegakannya sudah ditetapkan pada `rules.md` 5.0b-1 (2026-09-02)** dan mengikat: titik penegakan tunggal berupa global scope pada model, penyaring dipasang pada pemilik SP bukan diulang pada turunannya, data tak berhak membalas 404 bukan 403, penyaringan mendahului paginasi, dan akun tanpa penugasan menerima nol baris
 - [ ] Task 3.4b - Sidebar dinamis berbasis izin `[Sedang]`
   * `MenuHelper` menyaring item menu menurut izin; kelompok kosong ikut hilang
 - [~] ~~Task 3.7 - Implementasi verifikasi data~~ **DIBATALKAN 2026-08-14**
@@ -960,6 +1015,9 @@ Sembilan tahap SELESAI. **Belum diperiksa mata:** form repeater distribusi + for
   * Diterapkan **bertahap**, dimulai dari modul berdata pribadi: transmigran, rumah, pengaduan
   * Primary key integer **tetap dipakai di dalam database** untuk relasi antar-tabel; UUID hanya pengenal publik
   * Alasan: id berurutan membocorkan perkiraan jumlah data (`rules.md` 4.0a)
+  * **DIKERJAKAN BERSAMAAN dengan pembuatan Model tiap modul, BUKAN sebagai task tersendiri di belakang** (`rules.md` 4.0a poin 5a, ditetapkan 2026-09-02). Model yang tabelnya berkolom `uuid` wajib lahir dengan `getRouteKeyName()` bernilai `uuid` sejak commit pertamanya; biaya penggantian naik terus selama ditunda
+  * Pembatas rute `where('id', '[0-9]+')` wajib ikut disesuaikan, sebab pembatas angka menolak UUID dan menghasilkan 404 yang membingungkan
+  * Lima tabel sudah menyediakan kolomnya: `transmigran`, `rumah`, `lahan`, `hasil_panen`, `pengaduan`
 - [ ] Task 3.9 - Slug pada data master `[Sedang]`
   * Diterapkan pada SP, kawasan, poktan, dan komoditas. Contoh `/dashboard/sp/kapitan-meo`
   * **Slug dilarang diturunkan dari data pribadi.** Nama orang pada URL tersimpan di riwayat peramban dan log server, sehingga justru menurunkan kerahasiaan dibanding id angka
