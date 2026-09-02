@@ -1,3 +1,233 @@
+# Putaran 15 - Utang Putaran 12, Lahan Satu Baris per KK, dan Penjaga Isian Yatim BERJALAN (2026-09-02)
+
+Rencana ditulis sebelum kode disentuh (`rules.md` 20b poin 12).
+
+## Pemicu
+
+Pemilik proyek menemukan dua hal yang saya lewatkan, dan keduanya benar:
+
+1. **Form Lahan tidak berubah** meski Putaran 12 mencabut `dokumen_lahan`.
+2. **Ada keputusan Putaran 12 yang tidak dikerjakan**, hilang karena tidak tercatat.
+
+Saya juga keliru menyajikan Form Lahan sebagai "keputusan skema dengan 3 pilihan",
+padahal `session-notes.md` baris 369 sudah memutuskannya (`Lahan TIDAK dapat pivot`),
+dan `rules.md` 7.6a melarang unggahan di sana dengan alasan yang saya tulis sendiri.
+Dua dari tiga pilihan yang saya tawarkan MELANGGAR aturan yang sudah ada.
+
+## Hasil audit ulang Putaran 12 (15 keputusan disisir)
+
+| # | Keputusan | Keadaan |
+|---|---|---|
+| 1-8, 12-15 | registry, pivot, HPL ke kawasan, SHM ke transmigran, UNIQUE lahan, pencabutan pola_tanam dll | SELESAI benar |
+| 9 | `transmigran.status_sertifikat` | **CACAT**: kolom + data + tampil di 3 tempat, tetapi TIDAK ADA isian form |
+| 11 | `alsintan` induk dapat foto | **TIDAK DIKERJAKAN**: `tasklist.md` 981 mengklaim selesai, nyatanya nol |
+| sisa | modul `dokumen_lahan` | **BANGKAI**: izin, enum, opsi referensi, dan 3 isian form masih hidup |
+
+Akar masalahnya satu: Putaran 12 memverifikasi SKEMA dengan impor MariaDB nyata,
+tetapi tidak punya penjaga yang membandingkan ISIAN FORM terhadap skema. Isian yatim
+karena itu tidak memerahkan apa pun - sama persis dengan empat kontrol mati Putaran 14.
+
+## Keputusan pemilik proyek (mengikat)
+
+| # | Keputusan |
+|---|---|
+| 1 | Bagian A, B, dan C dikerjakan berurutan tanpa henti selama aman |
+| 2 | Lahan menjadi **SATU BARIS per KK** (opsi i), bukan dua baris per peruntukan |
+| 3 | Form lahan **tetap multistep** seperti sekarang |
+| 4 | Koordinat memakai **opsi (a)**: dua pasang, pekarangan dan usaha terpisah |
+
+## Bagian A - Bereskan utang Putaran 12
+
+A1. Langkah 3 form lahan: cabut isian `file_dokumen` dan `jenis_dokumen`, ganti
+    menjadi BACAAN SHM/HPL beserta tautan, sepola tab Legalitas yang sudah benar.
+A2. Cabut bangkai `dokumen_lahan`: `opsiJenisDokumenLahan` (ViewServiceProvider 58
+    dan 186), `JenisReferensi::JenisDokumenLahan`, nilai referensi `[HPL, SHM]`,
+    dan izin `dokumen_lahan` pada matriks izin beserta 4 pemakaian di data role.
+A3. Alsintan induk mendapat foto, sejajar saprotan (keputusan 11 Putaran 12).
+A4. `status_sertifikat` mendapat isian pada form transmigran (keputusan 9).
+
+## Bagian B - Lahan satu baris per KK
+
+Struktur baru tabel `lahan`:
+
+| Kolom | Catatan |
+|---|---|
+| `transmigran_id` | **UNIQUE**, menggantikan `UNIQUE (transmigran_id, peruntukan_lahan)` |
+| `luas_pekarangan` | NULL bila keluarga belum menerima pekarangan |
+| `lintang_pekarangan`, `bujur_pekarangan` | koordinat bidang pekarangan |
+| `luas_usaha` | NULL bila belum menerima lahan usaha |
+| `luas_kering`, `luas_basah` | komposisi lahan USAHA saja; jumlahnya = `luas_usaha` |
+| `lintang_usaha`, `bujur_usaha` | koordinat bidang usaha |
+| `kode_lahan` | satu kode per keluarga |
+
+Yang DICABUT: `peruntukan_lahan`, `luas`, `lintang`, `bujur`, dan enum
+`PeruntukanLahan` beserta seluruh pemakaiannya.
+
+Data contoh berubah dari 6 baris menjadi 4 baris:
+
+```
+tm=1 : LP-001 (0,25 ha) + LU-001 (1,5 ha; k=1,5 b=0)   -> 1 baris
+tm=2 : LP-002 (0,25 ha) + LU-003 (2 ha; k=1,25 b=0,75) -> 1 baris
+tm=3 : LU-004 (1,25 ha; k=1,25 b=0) SAJA               -> 1 baris, pekarangan NULL
+tm=8 : LU-002 (0,75 ha; k=0 b=0,75) SAJA               -> 1 baris, pekarangan NULL
+```
+
+**Dua dari empat keluarga hanya punya lahan usaha.** Karena itu kolom pekarangan
+WAJIB nullable, dan tampilan wajib membedakan "belum menerima" dari "nol hektare".
+
+## Penyisiran lima sudut (rules.md 20a poin 10)
+
+**Privasi.** Tidak ada data baru yang terbuka. Menggabungkan dua baris menjadi satu
+tidak menambah bidang informasi, hanya memindahkannya. Koordinat tetap dua pasang,
+sehingga ketelitian lokasi tidak berkurang maupun bertambah.
+
+**Siklus hidup.** Ini yang paling menuntut perhatian. Keluarga yang baru menerima
+pekarangan menyunting BARIS YANG SUDAH ADA, bukan menambah baris. Akibatnya alur
+"tambah lahan usaha" untuk keluarga yang sudah punya pekarangan berubah dari
+penambahan menjadi penyuntingan; bila form tetap menyediakan "Tambah", ia akan
+ditolak UNIQUE. Halaman daftar wajib mengarahkan ke Ubah bila keluarganya sudah ada.
+
+**Kejujuran angka.** Paling berisiko pada putaran ini. `luas_pekarangan` NULL
+berarti BELUM MENERIMA, sedangkan 0 berarti menerima seluas nol - dua keadaan
+berbeda yang tidak boleh dicampur, sepola `status_sertifikat` 7.6c dan 10a.4c.
+Rekap luas (7.10) yang dahulu MENJUMLAH BARIS kini wajib MENJUMLAH KOLOM;
+melewatkan satu tempat membuat total luas mengecil tanpa memerahkan apa pun.
+Jumlah bidang juga tidak lagi sama dengan jumlah baris.
+
+**Alur kerja.** Petugas kehilangan kemampuan mendata dua bidang sebagai dua entri
+terpisah. Konsekuensi sadar dari keputusan pemilik proyek, sejalan dengan 7.9a yang
+sudah menerima konsekuensi serupa. Form tetap multistep sehingga kebiasaan mengisi
+tidak berubah bentuknya.
+
+**Teknis.** Menyentuh ~230 pemakaian kolom lahan, 6 rute, dan 139 baris uji di
+`HalamanTest`. `peruntukan_lahan` dipakai 37 kali termasuk `LaporanData` dan
+Monografi SP. Enum `PeruntukanLahan` dicabut, sehingga `EnumTest` ikut berubah.
+Tidak menyentuh rute baru, sehingga `sim:tautan-statis` diharapkan tetap 227.
+
+## Bagian C - Penjaga isian yatim
+
+Penjaga baru pada `HalamanTest`: setiap atribut `name=` pada berkas `pages/**/form*`
+wajib punya padanan di `schema.sql`, entah sebagai kolom tabel atau sebagai peran
+pivot berkas. Inilah yang absen sehingga tiga bangkai `dokumen_lahan` lolos berhari-hari.
+
+Daftar kecuali ditulis eksplisit beserta alasannya (penyaring, token, isian bantu
+yang memang bukan kolom), sebab penjaga tanpa daftar kecuali akan dimatikan orang
+berikutnya begitu ia memerah sekali secara keliru.
+
+## Urutan pengerjaan
+
+```
+A1+A2 (saling terkait: keduanya bangkai dokumen_lahan) -> test
+A3 alsintan foto                                       -> test
+A4 status_sertifikat                                   -> test
+B1 schema.sql + DummyData                              -> test
+B2 form + detail + index lahan                         -> test
+B3 pemakai lain: LaporanData, Monografi, transmigran   -> test
+C  penjaga isian yatim                                 -> test
+D  dokumentasi + commit
+```
+
+Baseline: **730 PASS / 7.421 assertions**, `sim:tautan-statis` 227, `pint` 33 pre-existing.
+
+## Cara verifikasi
+
+1. `php artisan test` hijau. Uji yang DIPERKIRAKAN merah: yang menghitung baris lahan,
+   yang menyebut `peruntukan_lahan`, dan `EnumTest` untuk `PeruntukanLahan`.
+   Bila ada yang lain, diperiksa lebih dulu sebelum disentuh.
+2. Total luas sebelum dan sesudah penggabungan WAJIB SAMA: 6,0 ha.
+3. `/lahan`, `/lahan/1`, `/transmigran/2`, `/laporan/transmigran` membalas 200.
+4. Penjaga Bagian C memerah bila isian yatim sengaja ditambahkan (diuji dengan
+   menambahkan satu isian palsu, memastikan merah, lalu mencabutnya).
+5. `sim:tautan-statis` tetap 227; `pint --test` tetap 33; seluruh berkas bebas BOM.
+
+## Yang TIDAK dikerjakan
+
+Migration Laravel dan model Eloquent tetap Tahap 3. Putaran ini hanya menyunting
+`schema.sql` sebagai acuan DDL, sejalan dengan cara Putaran 12.
+
+## HASIL (2026-09-03, diselesaikan oleh Claude setelah takeover dari opencode)
+
+**Selesai.** `pest` **731 PASS / 7.409 assertions** (baseline 730/7.421; +1 uji =
+penjaga isian yatim, beberapa uji lahan ditulis ulang sehingga assertion sedikit
+berkurang). `pint --test` **33 pre-existing** (tidak bertambah). Seluruh berkas
+bebas BOM. Total luas lahan **6,0 ha** (pekarangan 0,5 + usaha 5,5), 4 baris.
+
+### Kondisi saat takeover (audit repository, bukan TODO)
+
+opencode sudah menerapkan dengan benar: pencabutan enum `PeruntukanLahan` &
+`JenisDokumenLahan`, `schema.sql` tabel `lahan` struktur baru + `UNIQUE
+(transmigran_id)`, `DummyData::lahan()` 4 baris, `rekapLahanKeluarga()`,
+`referensi()`/`daftarIzin()`/`izinRole()` pencabutan `dokumen_lahan`,
+`LaporanData::bagianTambahanSp()`, `routes/web.php` `/lahan` index, form &
+index lahan. **Berhenti sebelum:** A3, A4, `lahan/detail`, B3 pemakai lain
+(sp/detail, transmigran/detail, laporan/isi/transmigran, routes web.php:954),
+Bagian C, dan seluruh perbaikan uji (61 merah saat takeover).
+
+### Yang dikerjakan pada sesi penyelesaian
+
+| Bagian | Hasil |
+|---|---|
+| A3 | `alsintan` induk dapat foto: berkas 37 + pivot `alsintan_berkas` peran `foto`, `lekatkanBerkas` peta `foto`, form dua kolom (foto + dokumen) sepola saprotan, detail tab dokumen. `/alsintan/1` kini 3 tautan berkas |
+| A4 | Enum `StatusSertifikat` (Sudah/Belum/Belum Didata) + isian `<select name="status_sertifikat">` pada langkah Penempatan form transmigran |
+| B2 | `lahan/detail` ditulis ulang (dua blok bidang, dua pasang koordinat, "belum menerima" vs 0); `transmigranTanpaLahan()` + form Tambah hanya menawarkan KK tanpa baris lahan (UNIQUE); label langkah modal |
+| B3 | `transmigran/detail` tab Lahan, `sp/detail` Bidang Lahan (cacah bidang ≠ cacah baris), `laporan/isi/transmigran` mode Gabungan + mode Data Lahan (satu keluarga bisa jadi dua baris laporan menurut peruntukan), `routes/web.php` totalLuas transmigran.detail, `daftarLahanLain` dicabut |
+| B (uji) | 3 `DummyDataTest`, `FormatNominalUangTest`, ~10 blok `HalamanTest` lahan, matriks izin (`dokumen_lahan` dicabut → `role()` jumlah_izin 95/47/44/49), `ReferensiTest`, uji koordinat |
+| C | `it tidak menyisakan isian form yatim...` di `HalamanTest`: setiap `name=`/`nama=` pada `pages/*/form*` wajib berpadanan di `schema.sql` (kolom mana pun) atau daftar kecuali eksplisit (peran berkas, pembungkus repeater, penyaring/token, pivot penugasan). **Diuji: `name="kolom_palsu_xyz"` → MERAH; dicabut → HIJAU.** Penjaga ini menemukan `satuan_permukiman_ids_lain` (pivot infrastruktur_sp/fasilitas_sp_cakupan) yang sah dan ditambahkan ke daftar kecuali |
+| D | `rules.md` §5.1 & §7.2/7.8/7.9, `data-dictionary.md` §6.1/§7.1/§7.2/§11.11/§11.14/§13, `erd.md` relasi #14 + indeks, `tasklist.md` |
+
+### Yang berbeda dari rencana
+
+1. **`peruntukan` pada Mode Data Lahan laporan transmigran.** Penyaring Alpine
+   `data-peruntukan` mencocokkan satu nilai persis (line 198 `filter-laporan.js`),
+   sedangkan satu baris KK kini memuat dua bidang. Diselesaikan dengan memecah
+   tampilan menjadi dua baris laporan per KK (satu pekarangan, satu usaha) -
+   sesuai judul laporan "menurut peruntukannya" - tanpa menyentuh JS.
+
+2. **`sim:tautan-statis` 227 → 224.** Ketiganya diwajibkan langsung Putaran 15:
+   `/lahan/5` dan `/lahan/6` (6 baris bidang → 4 baris KK), dan
+   `/master/referensi/jenis_dokumen_lahan` (referensi dicabut A2). Tidak ada uji
+   yang mengunci angka 227.
+
+3. **`kode_lahan` LP-001/LU-001 → LH-001..LH-004.** Satu kode per keluarga
+   (struktur mengikat menyebut `kode_lahan` "satu kode per keluarga"); data
+   contoh handover memakai kode lama untuk menunjukkan komposisi baris gabungan.
+
+4. ~~SHM belum punya isian unggah.~~ **Diselesaikan pada "Putaran 15 lanjutan" di bawah.**
+
+## Putaran 15 lanjutan - Unggahan SHM di Form Lahan + Rapikan Kartu (2026-09-03)
+
+Pemilik proyek meninjau hasil Putaran 15 dan meminta dua hal:
+
+1. **Unggahan SHM ada di FORM DATA LAHAN.** Putaran 12 menjadikan legalitas form
+   lahan "bacaan saja" dengan alasan unggahan per-bidang melahirkan salinan
+   sertifikat ganda. Alasan itu GUGUR sejak Putaran 15: satu keluarga tepat satu
+   baris lahan. Pemilik menetapkan form lahan sebagai tempat kanonis SHM
+   **dan** status sertifikat.
+   - `status_sertifikat` DIPINDAH dari form transmigran ke form lahan langkah 3
+     (atas pilihan pemilik saat ditanya - agar sebelahan dengan SHM).
+   - Berkas SHM tetap tersimpan pada `transmigran_berkas` peran `shm`, status
+     tetap kolom `transmigran.status_sertifikat`. Form lahan hanya permukaan
+     entrinya. `DummyData::lahan()` menempelkan `shm`/`status_sertifikat` per
+     baris dari keluarganya.
+   - HPL tetap bacaan (alas hak kawasan, diunggah dari Data Kawasan).
+   - `rules.md` 7.6a dibalik; `data-dictionary.md` §6.1/§7.2 disesuaikan.
+
+2. **Kartu `/lahan` 6 -> 4** (muat satu baris): Total Bidang, Luas Pekarangan,
+   Luas Lahan Usaha, Total Luas. Kartu "Lahan Usaha Kering/Basah" dibuang -
+   rinciannya sudah tampil per baris di kolom tabel. `luasKering`/`luasBasah`
+   dicabut dari `routes/web.php` `lahan.index`.
+
+**Hasil:** pest **732 PASS** (+1 dari dataset `['/lahan','shm']`), pint 33,
+`sim:tautan-statis` 224, total luas 6,0 ha, bebas BOM. Penjaga isian yatim
+menambah `shm` ke daftar kecuali (peran berkas `transmigran_berkas`). Uji
+`menjadikan langkah legalitas ... bacaan` ditulis ulang jadi `menyediakan
+unggahan SHM dan status sertifikat pada form lahan, HPL tetap bacaan`. Satu
+regresi tertangkap & dibetulkan: `x-sim.file-upload` SHM sempat mendahului
+`name="keterangan"` di langkah 3 (melanggar ui-spec 6.4a poin 5) - Catatan
+dipindah ke atas unggahan.
+
+---
+
 # Putaran 14 - UI Multi-Unggah Berkas BERJALAN (2026-09-02)
 
 Rencana ditulis sebelum kode disentuh (`rules.md` 20b poin 12).

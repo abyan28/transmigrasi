@@ -42,11 +42,12 @@ describe('Format Nominal Uang', function () {
     });
 
     it('tidak mengubah input angka non-uang menjadi x-uang', function () {
-        // Form Lahan: luas ha
+        // Form Lahan: luas ha (satu baris per KK sejak Putaran 15)
         $isiLahan = $this->get(route('lahan.index'))->getContent();
         expect($isiLahan)
-            ->toContain('type="number" id="tambah_luas"')
-            ->not->toContain('id="tambah_luas" name="luas" x-uang');
+            ->toContain('type="number" id="tambah_luas_pekarangan"')
+            ->not->toContain('name="luas_pekarangan" x-uang')
+            ->not->toContain('name="luas_usaha" x-uang');
 
         // Form Alsintan: jumlah unit & tahun
         $isiAlsintan = $this->get(route('alsintan.index'))->getContent();

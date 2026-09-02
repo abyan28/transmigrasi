@@ -502,9 +502,16 @@ CREATE TABLE `komoditas` (
 -- Nilai DINONAKTIFKAN (is_aktif=0), tidak pernah dihapus.
 -- bidang_id: self-FK, hanya untuk jenis 'kategori_pengaduan' (menunjuk baris jenis
 -- 'bidang_pengaduan'); NULL bermakna "bidang ditetapkan petugas per laporan".
+--
+-- 'jenis_dokumen_lahan' DICABUT dari ENUM `jenis` pada 2026-09-02 (Putaran 15).
+-- Nilainya dahulu HPL dan SHM, dan keduanya bukan dokumen tingkat bidang: HPL
+-- adalah alas hak kawasan milik instansi, SHM meliputi seluruh lahan satu
+-- keluarga (rules.md 7.6). Enum PHP, opsi referensi, dan rutenya sudah dicabut
+-- lebih dulu; nilai ENUM ini tertinggal sebagai bangkai yang tidak dipakai kode
+-- mana pun. Jangan ditambahkan kembali tanpa mencabut rules.md 7.6 lebih dulu.
 CREATE TABLE `referensi` (
   `id_referensi` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `jenis`        ENUM('sumber_dana','status_penyerahan','kondisi','kondisi_rumah','status_hunian','tipe_komoditas','prioritas_pengaduan','jenis_dokumen_lahan','jabatan_anggota_poktan','jenis_infrastruktur','jenis_fasilitas','bidang_pengaduan','kategori_pengaduan','jenis_alsintan','jenis_inventaris') NOT NULL,
+  `jenis`        ENUM('sumber_dana','status_penyerahan','kondisi','kondisi_rumah','status_hunian','tipe_komoditas','prioritas_pengaduan','jabatan_anggota_poktan','jenis_infrastruktur','jenis_fasilitas','bidang_pengaduan','kategori_pengaduan','jenis_alsintan','jenis_inventaris') NOT NULL,
   `nilai`        VARCHAR(100) NOT NULL,
   `urutan`       SMALLINT UNSIGNED NOT NULL DEFAULT 0,
   `nilai_skor`   DECIMAL(3,2) NULL,                  -- hanya jenis 'kondisi'
@@ -1275,13 +1282,25 @@ CREATE TABLE `lahan` (
   `satuan_permukiman_id` BIGINT UNSIGNED NOT NULL,
   `poktan_id`            BIGINT UNSIGNED NULL,           -- poktan pengelola bila ada
   `kode_lahan`           VARCHAR(50) NULL,
-  `peruntukan_lahan`     ENUM('Lahan Pekarangan','Lahan Usaha') NOT NULL,
-  `luas`                 DECIMAL(12,2) NOT NULL,          -- hektare; luas seluruh bidang
-  `luas_kering`          DECIMAL(12,2) NULL,              -- hektare; hanya lahan usaha
-  `luas_basah`           DECIMAL(12,2) NULL,              -- hektare; hanya lahan usaha
+  -- SATU BARIS = SATU KELUARGA (2026-09-02, Putaran 15). Sebelumnya satu baris
+  -- adalah satu BIDANG ber-`peruntukan_lahan`, sehingga keluarga dengan
+  -- pekarangan dan lahan usaha menempati dua baris. Disatukan sebab jumlahnya
+  -- memang tetap: tepat satu pekarangan dan satu lahan usaha (rules.md 7.8).
+  --
+  -- Kolom pekarangan NULLABLE: sebagian keluarga baru menerima lahan usaha.
+  -- NULL berarti BELUM MENERIMA, bukan menerima seluas nol hektare.
+  `luas_pekarangan`      DECIMAL(12,2) NULL,              -- hektare; NULL = belum menerima
+  `lintang_pekarangan`   DECIMAL(10,7) NULL,
+  `bujur_pekarangan`     DECIMAL(10,7) NULL,
+  -- Lahan usaha; `luas_kering` + `luas_basah` = `luas_usaha` (rules.md 7.5).
+  -- Koordinatnya TERPISAH dari pekarangan sebab keduanya berada di tempat
+  -- berbeda; menyatukannya berarti membuang lokasi yang sudah terdata.
+  `luas_usaha`           DECIMAL(12,2) NULL,              -- hektare; NULL = belum menerima
+  `luas_kering`          DECIMAL(12,2) NULL,
+  `luas_basah`           DECIMAL(12,2) NULL,
+  `lintang_usaha`        DECIMAL(10,7) NULL,
+  `bujur_usaha`          DECIMAL(10,7) NULL,
   `tujuan_pemanfaatan`   TEXT NULL,
-  `lintang`              DECIMAL(10,7) NULL,
-  `bujur`                DECIMAL(10,7) NULL,
   `keterangan`           TEXT NULL,
   `created_at`           TIMESTAMP NULL DEFAULT NULL,
   `updated_at`           TIMESTAMP NULL DEFAULT NULL,
@@ -1289,10 +1308,11 @@ CREATE TABLE `lahan` (
   PRIMARY KEY (`id_lahan`),
   UNIQUE KEY `uq_lahan_uuid` (`uuid`),
   UNIQUE KEY `uq_lahan_kode` (`kode_lahan`),
-  UNIQUE KEY `uq_lahan_transmigran_peruntukan` (`transmigran_id`,`peruntukan_lahan`),
-  KEY `idx_lahan_transmigran` (`transmigran_id`),
+  -- Satu keluarga tepat satu baris. Menggantikan UNIQUE (transmigran_id,
+  -- peruntukan_lahan) yang dahulu mengizinkan dua baris per keluarga.
+  -- Indeks idx_lahan_transmigran ikut dicabut: UNIQUE sudah menjadi indeks.
+  UNIQUE KEY `uq_lahan_transmigran` (`transmigran_id`),
   KEY `idx_lahan_sp` (`satuan_permukiman_id`),
-  KEY `idx_lahan_peruntukan` (`peruntukan_lahan`),
   KEY `idx_lahan_poktan` (`poktan_id`),
   CONSTRAINT `fk_lahan_transmigran`
     FOREIGN KEY (`transmigran_id`) REFERENCES `transmigran` (`id_transmigran`) ON DELETE CASCADE ON UPDATE CASCADE,

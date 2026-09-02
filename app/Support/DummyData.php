@@ -12,7 +12,6 @@ use App\Enums\JenisSaprotan;
 use App\Enums\KategoriPengaduan;
 use App\Enums\Kondisi;
 use App\Enums\KondisiRumah;
-use App\Enums\PeruntukanLahan;
 use App\Enums\PrioritasPengaduan;
 use App\Enums\StatusAnggotaKeluarga;
 use App\Enums\StatusHunian;
@@ -1074,6 +1073,11 @@ class DummyData
             ['id_berkas' => 34, 'uuid' => 'brk-0034', 'jenis_berkas_id' => null, 'nama_file' => 'kondisi-sekolah-dasar-atap.jpg', 'nama_asli' => 'kondisi-sekolah-dasar-atap.jpg', 'path' => 'fasilitas/3/kondisi-sekolah-dasar-atap.jpg', 'mime' => 'image/jpeg', 'ekstensi' => 'jpg', 'ukuran' => 738000, 'disk' => 'local', 'keterangan' => 'Atap ruang kelas bocor', 'user_id' => 1],
             ['id_berkas' => 35, 'uuid' => 'brk-0035', 'jenis_berkas_id' => null, 'nama_file' => 'foto-rumah-a-01-depan.jpg', 'nama_asli' => 'foto-rumah-a-01-depan.jpg', 'path' => 'rumah/1/foto-rumah-a-01-depan.jpg', 'mime' => 'image/jpeg', 'ekstensi' => 'jpg', 'ukuran' => 612000, 'disk' => 'local', 'keterangan' => 'Tampak depan', 'user_id' => 1],
             ['id_berkas' => 36, 'uuid' => 'brk-0036', 'jenis_berkas_id' => null, 'nama_file' => 'foto-rumah-a-01-dinding-retak.jpg', 'nama_asli' => 'foto-rumah-a-01-dinding-retak.jpg', 'path' => 'rumah/1/foto-rumah-a-01-dinding-retak.jpg', 'mime' => 'image/jpeg', 'ekstensi' => 'jpg', 'ukuran' => 559000, 'disk' => 'local', 'keterangan' => 'Dinding belakang retak', 'user_id' => 1],
+            // Putaran 15: foto barang pada alsintan INDUK, sejajar saprotan
+            // (keputusan 11 Putaran 12). Berbeda dari foto per baris distribusi
+            // yang merekam kondisi unit di tiap poktan, foto ini merekam wujud
+            // batch pengadaan saat diterima.
+            ['id_berkas' => 37, 'uuid' => 'brk-0037', 'jenis_berkas_id' => null, 'nama_file' => 'foto-traktor-roda-dua-pengadaan.jpg', 'nama_asli' => 'foto-traktor-roda-dua-pengadaan.jpg', 'path' => 'alsintan/1/foto-traktor-roda-dua-pengadaan.jpg', 'mime' => 'image/jpeg', 'ekstensi' => 'jpg', 'ukuran' => 571000, 'disk' => 'local', 'keterangan' => 'Wujud unit saat batch diterima', 'user_id' => 1],
         ];
     }
 
@@ -1160,7 +1164,8 @@ class DummyData
                 ['penanganan_pengaduan_id' => 6, 'berkas_id' => 20, 'peran' => 'tindak_lanjut', 'urutan' => 1],
             ],
             'alsintan_berkas' => [
-                ['alsintan_id' => 1, 'berkas_id' => 22, 'peran' => 'pendukung', 'urutan' => 0],
+                ['alsintan_id' => 1, 'berkas_id' => 37, 'peran' => 'foto', 'urutan' => 0],
+                ['alsintan_id' => 1, 'berkas_id' => 22, 'peran' => 'pendukung', 'urutan' => 1],
             ],
         ];
     }
@@ -1591,6 +1596,27 @@ class DummyData
         ));
     }
 
+    /**
+     * Daftar transmigran yang belum memiliki baris lahan.
+     *
+     * Sejak Putaran 15 satu keluarga tepat satu baris lahan, ditegakkan
+     * `UNIQUE (transmigran_id)`. Alur "Tambah Lahan" karena itu hanya berlaku
+     * bagi KK yang belum punya baris; KK yang sudah punya disunting lewat alur
+     * Ubah. Menawarkan Tambah untuk KK yang sudah terdata akan selalu ditolak
+     * UNIQUE, dan kegagalan itu tidak menjelaskan apa pun kepada petugas.
+     *
+     * @return array<int, array<string, mixed>> Transmigran tanpa baris lahan
+     */
+    public static function transmigranTanpaLahan(): array
+    {
+        $sudahPunya = array_filter(array_column(self::lahan(), 'transmigran_id'));
+
+        return array_values(array_filter(
+            self::transmigran(),
+            fn ($t) => ! in_array($t['id_transmigran'], $sudahPunya, true)
+        ));
+    }
+
 
 
     /**
@@ -1683,16 +1709,25 @@ class DummyData
     }
 
     /**
-     * Daftar lahan milik transmigran.
+     * Daftar lahan milik transmigran, SATU BARIS PER KELUARGA.
      *
-     * Satu transmigran umumnya menerima satu lahan pekarangan dan satu lahan
-     * usaha (agents/rules.md bagian 7.8). Jumlah itu kewajaran, bukan batas
-     * yang ditolak sistem, sehingga relasinya tetap satu-ke-banyak.
+     * DISATUKAN 2026-09-02 (Putaran 15). Sebelumnya satu baris adalah satu
+     * BIDANG, sehingga keluarga dengan pekarangan dan lahan usaha menempati dua
+     * baris. Jumlahnya memang tetap - tepat satu pekarangan dan satu lahan usaha
+     * (rules.md 7.8) - sehingga keduanya kini menjadi kolom, bukan baris.
      *
-     * LUAS KERING DAN BASAH ADALAH KOMPOSISI, BUKAN KATEGORI. Satu bidang
-     * lahan usaha dapat digarap sebagian kering dan sebagian basah sekaligus,
-     * dan jumlah keduanya wajib sama dengan `luas` (rules.md bagian 7.5).
-     * Lahan pekarangan tidak memiliki komposisi, keduanya null.
+     * KOORDINAT TETAP DUA PASANG. Pekarangan dan lahan usaha berada di tempat
+     * yang berbeda, sehingga menyatukannya menjadi satu titik berarti membuang
+     * lokasi yang sudah terdata.
+     *
+     * KOLOM PEKARANGAN NULL BERARTI BELUM MENERIMA, bukan menerima seluas nol.
+     * Dua dari empat keluarga pada data contoh memang hanya memegang lahan
+     * usaha, dan keadaan itu sengaja dipertahankan agar tampilan yang
+     * membedakan keduanya benar-benar teruji.
+     *
+     * LUAS KERING DAN BASAH ADALAH KOMPOSISI LAHAN USAHA, BUKAN KATEGORI. Satu
+     * bidang dapat digarap sebagian kering dan sebagian basah sekaligus, dan
+     * jumlah keduanya wajib sama dengan `luas_usaha` (rules.md 7.5).
      *
      * `transmigran_id` wajib ada pada setiap baris: rekap luas per keluarga
      * membacanya lewat id, bukan mencocokkan nama pemilik. Kolom `pemilik`
@@ -1703,99 +1738,103 @@ class DummyData
      */
     public static function lahan(): array
     {
-        return [
+        $data = [
+            // Pekarangan + lahan usaha seluruhnya kering. Bagian basah ditulis 0,
+            // bukan null, agar penjumlahan rekap tidak perlu membedakan nol dari
+            // kosong pada keluarga yang memang memegang lahan usaha.
             [
                 'id_lahan' => 1,
-                'kode_lahan' => 'LP-001',
+                'kode_lahan' => 'LH-001',
                 'transmigran_id' => 1,
                 'pemilik' => 'YOHANES BERE',
                 'satuan_permukiman' => 'SP Kapitan Meo',
                 'satuan_permukiman_id' => 1,
-                'peruntukan_lahan' => PeruntukanLahan::LahanPekarangan->value,
-                'luas' => 0.25,
-                'luas_kering' => null,
-                'luas_basah' => null,
-                'lintang' => -9.5124100,
-                'bujur' => 124.9126200,
-            ],
-            // Seluruhnya kering. Bagian basah ditulis 0, bukan null, agar
-            // penjumlahan rekap tidak perlu membedakan nol dari kosong.
-            [
-                'id_lahan' => 2,
-                'kode_lahan' => 'LU-001',
-                'transmigran_id' => 1,
-                'pemilik' => 'YOHANES BERE',
-                'satuan_permukiman' => 'SP Kapitan Meo',
-                'satuan_permukiman_id' => 1,
-                'peruntukan_lahan' => PeruntukanLahan::LahanUsaha->value,
-                'luas' => 1.50,
+                'luas_pekarangan' => 0.25,
+                'lintang_pekarangan' => -9.5124100,
+                'bujur_pekarangan' => 124.9126200,
+                'luas_usaha' => 1.50,
                 'luas_kering' => 1.50,
                 'luas_basah' => 0.00,
-                'lintang' => -9.5138400,
-                'bujur' => 124.9152700,
+                'lintang_usaha' => -9.5138400,
+                'bujur_usaha' => 124.9152700,
             ],
-            // Seluruhnya basah.
+            // Bidang usaha campuran, satu-satunya pada data contoh. Sengaja ada
+            // agar keadaan yang menjadi seluruh alasan pemecahan kolom kering dan
+            // basah benar-benar terlihat saat peninjauan, bukan hanya terbaca di
+            // dokumen. Uji integritas memeriksa jumlahnya sama dengan luas usaha.
             [
-                'id_lahan' => 3,
-                'kode_lahan' => 'LU-002',
-                'transmigran_id' => 8,
-                'pemilik' => 'YULITA HOAR',
-                'satuan_permukiman' => 'SP Kapitan Meo',
-                'satuan_permukiman_id' => 1,
-                'peruntukan_lahan' => PeruntukanLahan::LahanUsaha->value,
-                'luas' => 0.75,
-                'luas_kering' => 0.00,
-                'luas_basah' => 0.75,
-                'lintang' => -9.5471900,
-                'bujur' => 124.8873500,
-            ],
-            [
-                'id_lahan' => 4,
-                'kode_lahan' => 'LP-002',
+                'id_lahan' => 2,
+                'kode_lahan' => 'LH-002',
                 'transmigran_id' => 2,
                 'pemilik' => 'MARIA DA COSTA',
                 'satuan_permukiman' => 'SP Kapitan Meo',
                 'satuan_permukiman_id' => 1,
-                'peruntukan_lahan' => PeruntukanLahan::LahanPekarangan->value,
-                'luas' => 0.25,
-                'luas_kering' => null,
-                'luas_basah' => null,
-                'lintang' => -9.5483200,
-                'bujur' => 124.8891000,
-            ],
-            // Bidang campuran, satu-satunya pada data contoh. Sengaja ada
-            // agar keadaan yang menjadi seluruh alasan pemecahan kolom ini
-            // benar-benar terlihat saat peninjauan, bukan hanya terbaca di
-            // dokumen. Uji integritas memeriksa jumlahnya sama dengan luas.
-            [
-                'id_lahan' => 5,
-                'kode_lahan' => 'LU-003',
-                'transmigran_id' => 2,
-                'pemilik' => 'MARIA DA COSTA',
-                'satuan_permukiman' => 'SP Kapitan Meo',
-                'satuan_permukiman_id' => 1,
-                'peruntukan_lahan' => PeruntukanLahan::LahanUsaha->value,
-                'luas' => 2.00,
+                'luas_pekarangan' => 0.25,
+                'lintang_pekarangan' => -9.5483200,
+                'bujur_pekarangan' => 124.8891000,
+                'luas_usaha' => 2.00,
                 'luas_kering' => 1.25,
                 'luas_basah' => 0.75,
-                'lintang' => -9.4982600,
-                'bujur' => 124.9411800,
+                'lintang_usaha' => -9.4982600,
+                'bujur_usaha' => 124.9411800,
             ],
+            // BELUM MENERIMA PEKARANGAN. Kolom pekarangan null, bukan nol.
             [
-                'id_lahan' => 6,
-                'kode_lahan' => 'LU-004',
+                'id_lahan' => 3,
+                'kode_lahan' => 'LH-003',
                 'transmigran_id' => 3,
                 'pemilik' => 'PETRUS NAHAK',
                 'satuan_permukiman' => 'SP Tniumanu',
                 'satuan_permukiman_id' => 2,
-                'peruntukan_lahan' => PeruntukanLahan::LahanUsaha->value,
-                'luas' => 1.25,
+                'luas_pekarangan' => null,
+                'lintang_pekarangan' => null,
+                'bujur_pekarangan' => null,
+                'luas_usaha' => 1.25,
                 'luas_kering' => 1.25,
                 'luas_basah' => 0.00,
-                'lintang' => -9.4995300,
-                'bujur' => 124.9438100,
+                'lintang_usaha' => -9.4995300,
+                'bujur_usaha' => 124.9438100,
+            ],
+            // Seluruhnya basah, dan juga belum menerima pekarangan.
+            [
+                'id_lahan' => 4,
+                'kode_lahan' => 'LH-004',
+                'transmigran_id' => 8,
+                'pemilik' => 'YULITA HOAR',
+                'satuan_permukiman' => 'SP Kapitan Meo',
+                'satuan_permukiman_id' => 1,
+                'luas_pekarangan' => null,
+                'lintang_pekarangan' => null,
+                'bujur_pekarangan' => null,
+                'luas_usaha' => 0.75,
+                'luas_kering' => 0.00,
+                'luas_basah' => 0.75,
+                'lintang_usaha' => -9.5471900,
+                'bujur_usaha' => 124.8873500,
             ],
         ];
+
+        /*
+            SHM dan status sertifikat DITEMPELKAN dari keluarganya (Putaran 15
+            lanjutan, 2026-09-03). Keduanya secara hukum milik KELUARGA, bukan
+            bidang: SHM meliputi seluruh lahan satu KK dan tersimpan pada
+            `transmigran_berkas` peran `shm`, statusnya pada
+            `transmigran.status_sertifikat`. Yang berubah hanya permukaan
+            entrinya - sejak satu keluarga tepat satu baris lahan, form lahan
+            menjadi tempat kanonis mengunggahnya (rules.md 7.6a). Ditempel di
+            sini agar detail, form ubah, dan baris daftar membacanya seragam.
+        */
+        $statusPerKeluarga = array_column(self::transmigran(), 'status_sertifikat', 'id_transmigran');
+
+        return array_map(function (array $l) use ($statusPerKeluarga): array {
+            $shm = self::berkasSatu('transmigran_berkas', 'transmigran_id', $l['transmigran_id'], 'shm');
+
+            return $l + [
+                'shm' => $shm['nama_file'] ?? null,
+                'shm_meta' => $shm,
+                'status_sertifikat' => $statusPerKeluarga[$l['transmigran_id']] ?? 'Belum Didata',
+            ];
+        }, $data);
     }
 
     /**
@@ -3083,7 +3122,6 @@ class DummyData
             JenisReferensi::TipeKomoditas->value => ['Pangan', 'Palawija', 'Hortikultura'],
             // Berjenjang: urutannya dipakai menyortir daftar pengaduan.
             JenisReferensi::PrioritasPengaduan->value => ['Rendah', 'Sedang', 'Tinggi', 'Mendesak'],
-            JenisReferensi::JenisDokumenLahan->value => ['HPL', 'SHM'],
             // Tanpa `Ketua`: ketua ditetapkan pada profil poktan, dan
             // menyediakannya di sini membuat satu poktan dapat memiliki dua
             // ketua tanpa penjaga apa pun (rules.md 7a poin 4b).
@@ -3602,28 +3640,31 @@ class DummyData
             return $kosong;
         }
 
-        $bidang = array_values(array_filter(
-            self::lahan(),
-            fn ($l) => $l['transmigran_id'] === $transmigranId
-                && PeruntukanLahan::from($l['peruntukan_lahan'])->lahanUsaha()
-        ));
+        /*
+            Satu keluarga tepat satu baris sejak Putaran 15, sehingga tidak ada
+            lagi yang perlu dijumlahkan antar baris: cukup dibaca. Penyaring
+            peruntukan pun tidak diperlukan lagi, sebab lahan usaha kini kolom
+            tersendiri dan tidak mungkin tertukar dengan pekarangan.
+        */
+        $baris = collect(self::lahan())->firstWhere('transmigran_id', $transmigranId);
 
-        if ($bidang === []) {
+        // Keluarga yang belum menerima lahan usaha dihitung kosong, bukan nol
+        // paksa: `luas_usaha` null berarti belum menerima (rules.md 7.5a).
+        if ($baris === null || $baris['luas_usaha'] === null) {
             return $kosong;
         }
 
         return [
-            'kering' => round(array_sum(array_column($bidang, 'luas_kering')), 2),
-            'basah' => round(array_sum(array_column($bidang, 'luas_basah')), 2),
-            'total' => round(array_sum(array_column($bidang, 'luas')), 2),
-            // Koordinat bidang pertama. Satu keluarga umumnya menerima satu
-            // lahan usaha (rules.md 7.8), sehingga "pertama" hampir selalu
-            // berarti "satu-satunya". Bila kelak ada dua petak, yang tampil
-            // adalah petak pertama dan bidang lainnya tetap dapat dibuka dari
-            // modul lahan.
-            'lintang' => $bidang[0]['lintang'] ?? null,
-            'bujur' => $bidang[0]['bujur'] ?? null,
-            'jumlah_bidang' => count($bidang),
+            'kering' => round((float) ($baris['luas_kering'] ?? 0), 2),
+            'basah' => round((float) ($baris['luas_basah'] ?? 0), 2),
+            'total' => round((float) $baris['luas_usaha'], 2),
+            // Koordinat lahan USAHA, bukan pekarangan: inilah bidang yang
+            // digarap bersama kelompok.
+            'lintang' => $baris['lintang_usaha'] ?? null,
+            'bujur' => $baris['bujur_usaha'] ?? null,
+            // Selalu 1 bila keluarganya memegang lahan usaha. Dipertahankan
+            // agar pemanggil yang menampilkan jumlah bidang tidak perlu diubah.
+            'jumlah_bidang' => 1,
         ];
     }
 
@@ -3930,7 +3971,7 @@ class DummyData
             ['id_alsintan' => 5, 'jenis_alsintan' => 'Lainnya', 'nama_alat' => 'CANGKUL', 'jumlah_total' => 8, 'tahun_pengadaan' => 2019, 'sumber_dana' => 'Swadaya', 'keterangan' => null, 'dokumen_pendukung' => null],
         ];
 
-        $data = self::lekatkanBerkas($data, 'alsintan_berkas', 'alsintan_id', 'id_alsintan', ['pendukung' => 'dokumen_pendukung']);
+        $data = self::lekatkanBerkas($data, 'alsintan_berkas', 'alsintan_id', 'id_alsintan', ['foto' => 'foto', 'pendukung' => 'dokumen_pendukung']);
 
         $distribusiPer = [];
         foreach (self::alsintanDistribusi() as $d) {
@@ -4466,10 +4507,10 @@ class DummyData
     public static function role(): array
     {
         return [
-            ['id_role' => 1, 'nama' => 'Admin', 'deskripsi' => 'Akses penuh termasuk manajemen pengguna, role, dan audit log.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => true, 'is_aktif' => true, 'jumlah_izin' => 99, 'jumlah_pengguna' => 1],
-            ['id_role' => 2, 'nama' => 'Dinas Transmigrasi', 'deskripsi' => 'Mengelola data wilayah, transmigran, rumah, lahan, dan infrastruktur.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 49, 'jumlah_pengguna' => 1],
-            ['id_role' => 3, 'nama' => 'Dinas Pertanian', 'deskripsi' => 'Mengelola data poktan, komoditas, panen, alsintan, dan saprotan.', 'cakupan_data' => CakupanData::PerBidang->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 45, 'jumlah_pengguna' => 1],
-            ['id_role' => 4, 'nama' => 'Operator SP', 'deskripsi' => 'Memasukkan data pada satuan permukiman yang ditugaskan. Tanpa kewenangan hapus.', 'cakupan_data' => CakupanData::PerSp->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 51, 'jumlah_pengguna' => 2],
+            ['id_role' => 1, 'nama' => 'Admin', 'deskripsi' => 'Akses penuh termasuk manajemen pengguna, role, dan audit log.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => true, 'is_aktif' => true, 'jumlah_izin' => 95, 'jumlah_pengguna' => 1],
+            ['id_role' => 2, 'nama' => 'Dinas Transmigrasi', 'deskripsi' => 'Mengelola data wilayah, transmigran, rumah, lahan, dan infrastruktur.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 47, 'jumlah_pengguna' => 1],
+            ['id_role' => 3, 'nama' => 'Dinas Pertanian', 'deskripsi' => 'Mengelola data poktan, komoditas, panen, alsintan, dan saprotan.', 'cakupan_data' => CakupanData::PerBidang->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 44, 'jumlah_pengguna' => 1],
+            ['id_role' => 4, 'nama' => 'Operator SP', 'deskripsi' => 'Memasukkan data pada satuan permukiman yang ditugaskan. Tanpa kewenangan hapus.', 'cakupan_data' => CakupanData::PerSp->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 49, 'jumlah_pengguna' => 2],
 
             // Role buatan Admin, bukan bawaan sistem. Sengaja dibuat tanpa
             // pengguna agar keadaan "dapat dihapus" ikut terlihat pada
@@ -5597,7 +5638,6 @@ class DummyData
                 'kelompok' => 'Lahan',
                 'modul' => [
                     ['kunci' => 'lahan', 'nama' => 'Lahan', 'aksi' => $penuh],
-                    ['kunci' => 'dokumen_lahan', 'nama' => 'Dokumen lahan (HPL/SHM)', 'aksi' => $penuh],
                 ],
             ],
             [
@@ -5671,7 +5711,7 @@ class DummyData
                 // Admin: ia menyatakan siapa pemegang jatah lahan pada rentang
                 // waktu tertentu (rules.md 5.1 catatan 8).
                 'riwayat_kepala_keluarga' => $ltu,
-                'lahan' => $k, 'dokumen_lahan' => $k,
+                'lahan' => $k,
                 'poktan' => $k, 'anggota_poktan' => $ltu, 'alsintan' => $k, 'saprotan' => $k,
                 'komoditas' => $k, 'penanaman' => $k, 'hasil_panen' => $k,
                 'infrastruktur' => $k, 'pengaduan' => $k, 'penanganan_pengaduan' => $ltu,
@@ -5688,7 +5728,7 @@ class DummyData
                 'penilaian_kondisi' => ['lihat', 'ubah'],
                 'transmigran' => $ltu, 'rumah' => $ltu, 'riwayat_penghunian' => $lt,
                 'riwayat_kepala_keluarga' => $lt,
-                'lahan' => $ltu, 'dokumen_lahan' => $lt,
+                'lahan' => $ltu,
                 'poktan' => $l, 'anggota_poktan' => $l, 'alsintan' => $l, 'saprotan' => $l,
                 'komoditas' => $l, 'penanaman' => $l, 'hasil_panen' => $l,
                 'infrastruktur' => $ltu, 'pengaduan' => $ltu, 'penanganan_pengaduan' => $ltu,
@@ -5702,7 +5742,7 @@ class DummyData
                 'penilaian_kondisi' => $l,
                 'transmigran' => $l, 'rumah' => $l, 'riwayat_penghunian' => $l,
                 'riwayat_kepala_keluarga' => $l,
-                'lahan' => $l, 'dokumen_lahan' => $l,
+                'lahan' => $l,
                 'poktan' => $ltu, 'anggota_poktan' => $ltu, 'alsintan' => $ltu, 'saprotan' => $ltu,
                 'komoditas' => $ltu,
                 'penanaman' => $ltu, 'hasil_panen' => $ltu,
@@ -5718,7 +5758,7 @@ class DummyData
                 'penilaian_kondisi' => $l,
                 'transmigran' => $ltu, 'rumah' => $ltu, 'riwayat_penghunian' => $lt,
                 'riwayat_kepala_keluarga' => $l,
-                'lahan' => $ltu, 'dokumen_lahan' => $lt,
+                'lahan' => $ltu,
                 'poktan' => $ltu, 'anggota_poktan' => $ltu, 'alsintan' => $ltu, 'saprotan' => $ltu,
                 'komoditas' => $l, 'penanaman' => $ltu, 'hasil_panen' => $ltu,
                 'infrastruktur' => $ltu, 'pengaduan' => $lt,

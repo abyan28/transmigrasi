@@ -36,7 +36,6 @@ enum JenisReferensi: string
     case StatusHunian = 'status_hunian';
     case TipeKomoditas = 'tipe_komoditas';
     case PrioritasPengaduan = 'prioritas_pengaduan';
-    case JenisDokumenLahan = 'jenis_dokumen_lahan';
     case JabatanAnggotaPoktan = 'jabatan_anggota_poktan';
     case JenisInfrastruktur = 'jenis_infrastruktur';
     case JenisFasilitas = 'jenis_fasilitas';
@@ -60,7 +59,6 @@ enum JenisReferensi: string
             self::StatusHunian => 'Status Hunian',
             self::TipeKomoditas => 'Tipe Komoditas',
             self::PrioritasPengaduan => 'Prioritas Pengaduan',
-            self::JenisDokumenLahan => 'Jenis Dokumen Lahan',
             self::JabatanAnggotaPoktan => 'Jabatan Anggota Poktan',
             self::JenisInfrastruktur => 'Jenis Infrastruktur',
             self::JenisFasilitas => 'Jenis Fasilitas',
@@ -99,7 +97,6 @@ enum JenisReferensi: string
 
             self::KondisiRumah,
             self::StatusHunian,
-            self::JenisDokumenLahan => KelompokReferensi::RumahLahan,
 
             self::TipeKomoditas,
             self::JabatanAnggotaPoktan => KelompokReferensi::Pertanian,

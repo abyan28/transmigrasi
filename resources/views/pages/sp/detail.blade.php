@@ -303,9 +303,16 @@
                 <div x-show="tab === 'pertanian'" x-cloak role="tabpanel" class="p-5 space-y-6 sm:p-6">
                     {{-- Bidang Lahan --}}
                     <div>
+                        @php
+                            // Satu baris per KELUARGA sejak Putaran 15, sehingga
+                            // cacah BIDANG != cacah baris: satu baris dapat memuat
+                            // pekarangan dan lahan usaha sekaligus.
+                            $jumlahBidangSp = collect($lahan)->filter(fn ($l) => $l['luas_pekarangan'] !== null)->count()
+                                + collect($lahan)->filter(fn ($l) => $l['luas_usaha'] !== null)->count();
+                        @endphp
                         <div class="mb-3 flex items-center justify-between">
                             <h3 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">
-                                Bidang Lahan ({{ count($lahan) }} Bidang)
+                                Bidang Lahan ({{ $jumlahBidangSp }} Bidang / {{ count($lahan) }} KK)
                             </h3>
                             <a href="{{ route('lahan.index', ['sp' => $sp['id_satuan_permukiman']]) }}"
                                 class="text-theme-xs font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400">
@@ -316,7 +323,7 @@
                             <x-sim.empty-state judul="Belum ada data lahan"
                                 pesan="Data lahan akan tampil di sini setelah ditambahkan." />
                         @else
-                            <x-sim.tabel-ringkas judul="Daftar lahan di SP ini" :kolom="['Kode Lahan', 'Pemilik', 'Peruntukan', 'Luas (ha)']">
+                            <x-sim.tabel-ringkas judul="Daftar lahan di SP ini" :kolom="['Kode Lahan', 'Pemilik', 'Pekarangan (ha)', 'Lahan Usaha (ha)', 'Total (ha)']">
                                 @foreach ($lahan as $baris)
                                     <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                                         <td class="px-5 py-3">
@@ -328,11 +335,14 @@
                                         <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
                                             {{ $baris['pemilik'] }}
                                         </td>
-                                        <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
-                                            {{ $baris['peruntukan_lahan'] }}
+                                        <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
+                                            {{ $baris['luas_pekarangan'] === null ? 'belum menerima' : number_format($baris['luas_pekarangan'], 2, ',', '.') }}
                                         </td>
                                         <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
-                                            {{ number_format($baris['luas'], 2, ',', '.') }}
+                                            {{ $baris['luas_usaha'] === null ? 'belum menerima' : number_format($baris['luas_usaha'], 2, ',', '.') }}
+                                        </td>
+                                        <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
+                                            {{ number_format((float) ($baris['luas_pekarangan'] ?? 0) + (float) ($baris['luas_usaha'] ?? 0), 2, ',', '.') }}
                                         </td>
                                     </tr>
                                 @endforeach

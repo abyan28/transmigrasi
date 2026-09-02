@@ -351,18 +351,29 @@
 
                 {{-- Lahan --}}
                 <div x-show="tab === 'lahan'" x-cloak role="tabpanel">
-                    @if (empty($lahan))
+                    @php
+                        // Satu baris per KELUARGA sejak Putaran 15. Umumnya tepat
+                        // satu baris; tetap di-loop agar tabelnya kosong secara
+                        // jujur bila keluarganya belum punya baris lahan.
+                        $adaBaris = ! empty($lahan);
+                    @endphp
+                    @if (! $adaBaris)
                         <x-sim.empty-state judul="Belum ada data lahan"
                             pesan="Lahan pekarangan dan lahan usaha keluarga ini akan tampil di sini setelah didata." />
                     @else
                         {{--
-                            Kolom Status dihapus bersama pencabutan status hak
-                            atas tanah (2026-08-20). Sebelum itu isinya memang
-                            sudah kosong, sehingga tabel ini menjanjikan satu
-                            keterangan yang tidak pernah ada.
+                            Pekarangan dan lahan usaha kini kolom pada satu baris,
+                            bukan dua baris berperuntukan (Putaran 15). Yang belum
+                            diterima ditulis "belum menerima", BUKAN nol: nol
+                            berarti menerima seluas nol hektare (rules.md 7.5a).
                         --}}
-                        <x-sim.tabel-ringkas judul="Lahan milik keluarga ini" :kolom="['Kode', 'Peruntukan', 'Kering (ha)', 'Basah (ha)', 'Luas (ha)']">
+                        <x-sim.tabel-ringkas judul="Lahan milik keluarga ini" :kolom="['Kode', 'Pekarangan (ha)', 'Lahan Usaha (ha)', 'Kering (ha)', 'Basah (ha)', 'Total (ha)']">
                             @foreach ($lahan as $l)
+                                @php
+                                    $adaLp = $l['luas_pekarangan'] !== null;
+                                    $adaLu = $l['luas_usaha'] !== null;
+                                    $totalBaris = (float) ($l['luas_pekarangan'] ?? 0) + (float) ($l['luas_usaha'] ?? 0);
+                                @endphp
                                 <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                                     <td class="px-5 py-3">
                                         <a href="{{ route('lahan.detail', $l['id_lahan']) }}"
@@ -370,31 +381,40 @@
                                             {{ $l['kode_lahan'] }}
                                         </a>
                                     </td>
-                                    <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
-                                        {{ $l['peruntukan_lahan'] }}
+                                    <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
+                                        {{ $adaLp ? number_format($l['luas_pekarangan'], 2, ',', '.') : 'belum menerima' }}
                                     </td>
                                     <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
-                                        {{ $l['luas_kering'] === null ? '-' : number_format($l['luas_kering'], 2, ',', '.') }}
+                                        {{ $adaLu ? number_format($l['luas_usaha'], 2, ',', '.') : 'belum menerima' }}
                                     </td>
                                     <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
-                                        {{ $l['luas_basah'] === null ? '-' : number_format($l['luas_basah'], 2, ',', '.') }}
+                                        {{ $adaLu ? number_format($l['luas_kering'] ?? 0, 2, ',', '.') : '-' }}
                                     </td>
                                     <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
-                                        {{ number_format($l['luas'], 2, ',', '.') }}
+                                        {{ $adaLu ? number_format($l['luas_basah'] ?? 0, 2, ',', '.') : '-' }}
+                                    </td>
+                                    <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
+                                        {{ number_format($totalBaris, 2, ',', '.') }}
                                     </td>
                                 </tr>
                             @endforeach
 
                             {{-- Baris total memakai motif identitas garis atas navy --}}
                             <tr class="motif-baris-total">
-                                <td colspan="2" class="px-5 py-3 text-theme-sm text-gray-700 dark:text-gray-300">
+                                <td class="px-5 py-3 text-theme-sm text-gray-700 dark:text-gray-300">
                                     Total luas lahan
                                 </td>
                                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
-                                    {{ number_format(array_sum(array_column($lahan, 'luas_kering')), 2, ',', '.') }}
+                                    {{ number_format(array_sum(array_map(fn ($l) => (float) ($l['luas_pekarangan'] ?? 0), $lahan)), 2, ',', '.') }}
                                 </td>
                                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
-                                    {{ number_format(array_sum(array_column($lahan, 'luas_basah')), 2, ',', '.') }}
+                                    {{ number_format(array_sum(array_map(fn ($l) => (float) ($l['luas_usaha'] ?? 0), $lahan)), 2, ',', '.') }}
+                                </td>
+                                <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
+                                    {{ number_format(array_sum(array_map(fn ($l) => (float) ($l['luas_kering'] ?? 0), $lahan)), 2, ',', '.') }}
+                                </td>
+                                <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
+                                    {{ number_format(array_sum(array_map(fn ($l) => (float) ($l['luas_basah'] ?? 0), $lahan)), 2, ',', '.') }}
                                 </td>
                                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
                                     {{ number_format($totalLuas, 2, ',', '.') }}

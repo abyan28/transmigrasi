@@ -15,8 +15,8 @@
     dengan data pada halaman yang sedang dibuka.
 
     Pemakaian:
-        <x-sim.tautan-dokumen modul="lahan" :id="$lahan['id_lahan']"
-            :berkas="$d['file_dokumen']" />
+        <x-sim.tautan-dokumen modul="alsintan" :id="$data['id_alsintan']"
+            :berkas="$data['foto'] ?? null" />
 --}}
 @props([
     'modul',

@@ -128,11 +128,16 @@
                 @forelse ($transmigran as $t)
                     @php
                         $r = $petaRumah[$t['id_transmigran']] ?? null;
-                        $lahans = $petaLahan[$t['id_transmigran']] ?? [];
-                        $pekarangan = array_values(array_filter($lahans, fn ($x) => ($x['peruntukan_lahan'] ?? '') === \App\Enums\PeruntukanLahan::LahanPekarangan->value));
-                        $usaha = array_values(array_filter($lahans, fn ($x) => ($x['peruntukan_lahan'] ?? '') === \App\Enums\PeruntukanLahan::LahanUsaha->value));
-                        $totalLuasLahan = array_sum(array_column($lahans, 'luas'));
-                        $kodesLahan = implode(' ', array_column($lahans, 'kode_lahan'));
+                        // Satu baris per KELUARGA sejak Putaran 15: pekarangan dan
+                        // lahan usaha berada pada baris yang sama. NULL berarti
+                        // belum menerima bidang itu, bukan menerima seluas nol.
+                        $lahanKk = $petaLahan[$t['id_transmigran']][0] ?? null;
+                        $adaPekarangan = $lahanKk !== null && $lahanKk['luas_pekarangan'] !== null;
+                        $adaUsaha = $lahanKk !== null && $lahanKk['luas_usaha'] !== null;
+                        $totalLuasLahan = $lahanKk === null
+                            ? 0
+                            : (float) ($lahanKk['luas_pekarangan'] ?? 0) + (float) ($lahanKk['luas_usaha'] ?? 0);
+                        $kodesLahan = $lahanKk['kode_lahan'] ?? '';
                         $stringCari = strtolower(implode(' ', [
                             $t['nama_kepala_keluarga'],
                             $t['nik'],
@@ -225,13 +230,13 @@
 
                         {{-- Lahan Pekarangan --}}
                         <td class="px-2 py-1.5">
-                            @if (count($pekarangan) > 0)
-                                @foreach ($pekarangan as $lp)
-                                    <div class="text-theme-xs">
-                                        <span class="font-medium text-emerald-900 dark:text-emerald-200">{{ $lp['kode_lahan'] }}</span>
-                                        <span class="tabular-nums text-gray-500 dark:text-gray-400">({{ $angka($lp['luas'], 2) }} ha)</span>
-                                    </div>
-                                @endforeach
+                            @if ($adaPekarangan)
+                                <div class="text-theme-xs">
+                                    <span class="font-medium text-emerald-900 dark:text-emerald-200">{{ $lahanKk['kode_lahan'] }}</span>
+                                    <span class="tabular-nums text-gray-500 dark:text-gray-400">({{ $angka($lahanKk['luas_pekarangan'], 2) }} ha)</span>
+                                </div>
+                            @elseif ($lahanKk !== null)
+                                <span class="text-[11px] italic text-gray-400 dark:text-gray-500">Belum menerima</span>
                             @else
                                 <span class="text-[11px] italic text-gray-400 dark:text-gray-500">Belum ada</span>
                             @endif
@@ -239,20 +244,16 @@
 
                         {{-- Lahan Usaha --}}
                         <td class="px-2 py-1.5">
-                            @if (count($usaha) > 0)
-                                <div class="space-y-0.5">
-                                    @foreach ($usaha as $lu)
-                                        <div class="text-theme-xs">
-                                            <span class="font-semibold text-emerald-900 dark:text-emerald-200">{{ $lu['kode_lahan'] }}</span>
-                                            <span class="font-medium tabular-nums text-gray-800 dark:text-gray-200">{{ $angka($lu['luas'], 2) }} ha</span>
-                                            @if ($lu['luas_kering'] !== null || $lu['luas_basah'] !== null)
-                                                <span class="text-[10px] text-gray-500 dark:text-gray-400">
-                                                    (K: {{ $lu['luas_kering'] !== null ? $angka($lu['luas_kering'], 2) : '0' }} | B: {{ $lu['luas_basah'] !== null ? $angka($lu['luas_basah'], 2) : '0' }})
-                                                </span>
-                                            @endif
-                                        </div>
-                                    @endforeach
+                            @if ($adaUsaha)
+                                <div class="text-theme-xs">
+                                    <span class="font-semibold text-emerald-900 dark:text-emerald-200">{{ $lahanKk['kode_lahan'] }}</span>
+                                    <span class="font-medium tabular-nums text-gray-800 dark:text-gray-200">{{ $angka($lahanKk['luas_usaha'], 2) }} ha</span>
+                                    <span class="text-[10px] text-gray-500 dark:text-gray-400">
+                                        (K: {{ $angka($lahanKk['luas_kering'] ?? 0, 2) }} | B: {{ $angka($lahanKk['luas_basah'] ?? 0, 2) }})
+                                    </span>
                                 </div>
+                            @elseif ($lahanKk !== null)
+                                <span class="text-[11px] italic text-gray-400 dark:text-gray-500">Belum menerima</span>
                             @else
                                 <span class="text-[11px] italic text-gray-400 dark:text-gray-500">Belum ada</span>
                             @endif
@@ -509,18 +510,36 @@
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-                @forelse ($lahan as $l)
+                {{--
+                    Satu baris per KELUARGA sejak Putaran 15, tetapi laporan ini
+                    menyajikan lahan MENURUT PERUNTUKAN, sehingga satu keluarga
+                    yang memegang kedua bidang muncul sebagai DUA baris laporan -
+                    satu pekarangan, satu lahan usaha. `data-peruntukan` karena
+                    itu tetap satu nilai per baris dan penyaringnya tidak berubah.
+                --}}
+                @php
+                    $barisLahan = [];
+                    foreach ($lahan as $l) {
+                        if ($l['luas_pekarangan'] !== null) {
+                            $barisLahan[] = $l + ['_peruntukan' => 'Lahan Pekarangan', '_luas' => $l['luas_pekarangan'], '_kering' => null, '_basah' => null];
+                        }
+                        if ($l['luas_usaha'] !== null) {
+                            $barisLahan[] = $l + ['_peruntukan' => 'Lahan Usaha', '_luas' => $l['luas_usaha'], '_kering' => $l['luas_kering'], '_basah' => $l['luas_basah']];
+                        }
+                    }
+                @endphp
+                @forelse ($barisLahan as $l)
                     @php
                         $stringCariL = strtolower(implode(' ', [
                             $l['kode_lahan'],
                             $l['pemilik'],
                             $l['satuan_permukiman'],
-                            $l['peruntukan_lahan'],
+                            $l['_peruntukan'],
                             $statusSertifikat($l),
                         ]));
                     @endphp
                     <tr data-baris data-sp="{{ $l['satuan_permukiman_id'] }}"
-                        data-peruntukan="{{ $l['peruntukan_lahan'] }}"
+                        data-peruntukan="{{ $l['_peruntukan'] }}"
                         data-cari="{{ $stringCariL }}"
                         x-show="cocok($el)"
                         class="text-gray-700 transition-colors hover:bg-gray-50/60 dark:text-gray-300 dark:hover:bg-white/[0.02]">
@@ -529,7 +548,7 @@
                         <td class="px-2 py-1.5 font-medium text-gray-900 dark:text-white">{{ $l['pemilik'] }}</td>
                         <td class="px-2 py-1.5 font-medium text-gray-800 dark:text-white/90">{{ $l['satuan_permukiman'] }}</td>
                         <td class="px-2 py-1.5">
-                            @if ($l['peruntukan_lahan'] === \App\Enums\PeruntukanLahan::LahanUsaha->value)
+                            @if ($l['_peruntukan'] === 'Lahan Usaha')
                                 <span class="inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
                                     Lahan Usaha
                                 </span>
@@ -540,13 +559,13 @@
                             @endif
                         </td>
                         <td class="px-2 py-1.5 text-right font-semibold tabular-nums text-gray-900 dark:text-white">
-                            {{ $angka($l['luas'], 2) }}
+                            {{ $angka($l['_luas'], 2) }}
                         </td>
                         <td class="px-2 py-1.5 text-right tabular-nums">
-                            {{ $l['luas_kering'] !== '' && $l['luas_kering'] !== null ? $angka($l['luas_kering'], 2) : '-' }}
+                            {{ $l['_kering'] !== null ? $angka($l['_kering'], 2) : '-' }}
                         </td>
                         <td class="px-2 py-1.5 text-right tabular-nums">
-                            {{ $l['luas_basah'] !== '' && $l['luas_basah'] !== null ? $angka($l['luas_basah'], 2) : '-' }}
+                            {{ $l['_basah'] !== null ? $angka($l['_basah'], 2) : '-' }}
                         </td>
                         <td class="px-2 py-1.5 text-[11px] text-gray-600 dark:text-gray-400">
                             {{ $statusSertifikat($l) }}
@@ -560,7 +579,7 @@
                     </tr>
                 @endforelse
 
-                @if (count($lahan) > 0)
+                @if (count($barisLahan) > 0)
                     <tr x-show="cacahTampak($el.closest('tbody')) === 0" x-cloak>
                         <td colspan="9" class="px-3 py-8 text-center text-gray-500 dark:text-gray-400">
                             Tidak ada data bidang lahan yang cocok dengan kriteria filter atau pencarian.

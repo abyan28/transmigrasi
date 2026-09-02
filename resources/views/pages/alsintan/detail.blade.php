@@ -175,6 +175,13 @@
                             </dd>
                         </div>
                         <div>
+                            <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Foto barang</dt>
+                            <dd class="mt-0.5 text-theme-sm text-gray-800 dark:text-white/90">
+                                <x-sim.tautan-dokumen modul="alsintan" :id="$data['id_alsintan']"
+                                    :berkas="$data['foto'] ?? null" />
+                            </dd>
+                        </div>
+                        <div>
                             <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Dokumen pendukung</dt>
                             <dd class="mt-0.5 text-theme-sm text-gray-800 dark:text-white/90">
                                 <x-sim.tautan-dokumen modul="alsintan" :id="$data['id_alsintan']"

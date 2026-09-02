@@ -3,7 +3,6 @@
 namespace App\Support;
 
 use App\Enums\KondisiRumah;
-use App\Enums\PeruntukanLahan;
 use App\Enums\StatusAnggotaKeluarga;
 use App\Enums\StatusHunian;
 use App\Enums\StatusTinggal;
@@ -772,18 +771,39 @@ class LaporanData
 
         // --- Sosial Ekonomi ----------------------------------------------
         $lahanSp = array_values(array_filter(DummyData::lahan(), fn ($l) => $l['satuan_permukiman_id'] === $id));
-        $lahanGrup = [];
-        foreach ($lahanSp as $l) {
-            $j = $l['peruntukan_lahan'];
-            $lahanGrup[$j] ??= ['dibagikan' => 0.0, 'diusahakan' => 0.0];
-            $lahanGrup[$j]['dibagikan'] += (float) $l['luas'];
 
-            // Lahan usaha dihitung diusahakan; pekarangan tidak. Sebelum
-            // Putaran 12 penandanya kolom pola_tanam, yang dicabut bersama
-            // peralatan dan kendala atas keputusan pemilik proyek.
-            if (PeruntukanLahan::tryFrom($j)?->lahanUsaha() ?? false) {
-                $lahanGrup[$j]['diusahakan'] += (float) $l['luas'];
-            }
+        /*
+            MENJUMLAH KOLOM, BUKAN BARIS (diubah Putaran 15).
+
+            Sebelumnya tiap baris adalah satu bidang, sehingga pengelompokan
+            dilakukan menurut `peruntukan_lahan`. Sejak satu keluarga tepat satu
+            baris, kedua peruntukan berada pada baris yang SAMA dan yang
+            dijumlahkan adalah kolomnya masing-masing.
+
+            Keduanya tetap disajikan sebagai dua baris laporan, sebab yang
+            dibaca dinas adalah pembagian pekarangan dan usaha - bukan cara
+            penyimpanannya.
+
+            Lahan usaha dihitung diusahakan; pekarangan tidak. Keluarga yang
+            belum menerima salah satunya bernilai null dan ikut terhitung nol
+            lewat penjumlahan biasa, tanpa perlu percabangan.
+        */
+        $pekarangan = 0.0;
+        $usaha = 0.0;
+
+        foreach ($lahanSp as $l) {
+            $pekarangan += (float) ($l['luas_pekarangan'] ?? 0);
+            $usaha += (float) ($l['luas_usaha'] ?? 0);
+        }
+
+        $lahanGrup = [];
+
+        if ($pekarangan > 0) {
+            $lahanGrup['Lahan Pekarangan'] = ['dibagikan' => $pekarangan, 'diusahakan' => 0.0];
+        }
+
+        if ($usaha > 0) {
+            $lahanGrup['Lahan Usaha'] = ['dibagikan' => $usaha, 'diusahakan' => $usaha];
         }
         $barisLahan = [];
         foreach ($lahanGrup as $jenis => $v) {
@@ -1248,7 +1268,8 @@ class LaporanData
                     [
                         'kunci' => 'peruntukan',
                         'label' => 'Peruntukan Lahan',
-                        'opsi' => array_map(fn (PeruntukanLahan $c): string => $c->value, PeruntukanLahan::cases()),
+                        // Kedua bidang kini kolom pada satu baris, bukan nilai enum.
+                        'opsi' => ['Lahan Pekarangan', 'Lahan Usaha'],
                     ],
                 ],
                 'cakupanBawaan' => $cakupanBawaan,

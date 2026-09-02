@@ -3,7 +3,6 @@
 use App\Enums\AsalWakilPoktan;
 use App\Enums\JenisReferensi;
 use App\Enums\JenisSaprotan;
-use App\Enums\PeruntukanLahan;
 use App\Enums\PrioritasPengaduan;
 use App\Enums\StatusPanen;
 use App\Enums\StatusPengaduan;
@@ -952,7 +951,12 @@ Route::get('/transmigran/{id}', function (int $id) {
             ->firstWhere('transmigran_id', $data['id_transmigran']),
 
         'lahan' => $lahan,
-        'totalLuas' => array_sum(array_column($lahan, 'luas')),
+        // Satu baris per KK (Putaran 15): total luas keluarga adalah jumlah
+        // kolom pekarangan dan usaha, bukan jumlah baris.
+        'totalLuas' => array_sum(array_map(
+            fn ($l) => (float) ($l['luas_pekarangan'] ?? 0) + (float) ($l['luas_usaha'] ?? 0),
+            $lahan
+        )),
 
         // Dipisah per peran, sebab KTP, KK, dan SK penempatan adalah dokumen
         // yang berbeda dan tidak boleh saling menimpa (rules.md 14a.8b).
@@ -1192,7 +1196,14 @@ Route::get('/lahan', function () {
             return false;
         }
 
-        if ($filterJenis && $l['peruntukan_lahan'] !== $filterJenis) {
+        // Penyaring peruntukan kini menanyakan "punya bidang ini?", bukan
+        // "barisnya berperuntukan ini". Sejak satu keluarga tepat satu baris,
+        // kedua bidang berada pada baris yang sama.
+        if ($filterJenis === 'Lahan Pekarangan' && $l['luas_pekarangan'] === null) {
+            return false;
+        }
+
+        if ($filterJenis === 'Lahan Usaha' && $l['luas_usaha'] === null) {
             return false;
         }
 
@@ -1212,11 +1223,20 @@ Route::get('/lahan', function () {
         return true;
     }));
 
-    // Lahan usaha kini terbagi beberapa tahap, sehingga penjumlahannya tidak
-    // boleh lagi mencocokkan satu nilai teks. Daftar tahapnya dibaca dari enum
-    // agar penambahan tahap berikutnya tidak melewatkan halaman ini.
-    $nilaiLahanUsaha = PeruntukanLahan::nilaiLahanUsaha();
-    $bidangUsaha = array_filter($semua, fn ($l) => in_array($l['peruntukan_lahan'], $nilaiLahanUsaha, true));
+    /*
+        MENJUMLAH KOLOM, BUKAN BARIS (Putaran 15).
+
+        Sebelumnya luas per peruntukan dihitung dengan menyaring baris menurut
+        `peruntukan_lahan` lalu menjumlahkan kolom `luas`. Sejak kedua bidang
+        berada pada satu baris, yang dijumlahkan adalah kolomnya masing-masing.
+
+        Keluarga yang belum menerima salah satu bidang bernilai null dan ikut
+        terhitung nol lewat penjumlahan biasa, tanpa perlu percabangan.
+    */
+    $jumlahKolom = fn (array $rows, string $kolom): float => array_sum(array_map(
+        static fn ($r): float => (float) ($r[$kolom] ?? 0),
+        $rows
+    ));
 
     return view('pages.lahan.index', [
         'title' => 'Data Lahan',
@@ -1227,17 +1247,16 @@ Route::get('/lahan', function () {
         'filterJenis' => $filterJenis,
         'filterKategori' => $filterKategori,
         'adaFilter' => $cari !== '' || $filterSp || $filterJenis || $filterKategori,
-        'totalLuasTampil' => array_sum(array_column($baris, 'luas')),
-        'nilaiLahanUsaha' => $nilaiLahanUsaha,
-        'bidangUsaha' => $bidangUsaha,
-        'luasPekarangan' => array_sum(array_column(array_filter($semua, fn ($l) => ! in_array($l['peruntukan_lahan'], $nilaiLahanUsaha, true)), 'luas')),
-        'luasUsaha' => array_sum(array_column($bidangUsaha, 'luas')),
 
-        // Komposisi dijumlahkan dari kolomnya, bukan dari kategori bidang.
-        // Hanya lahan usaha yang memilikinya; pekarangan bernilai null dan
-        // tidak boleh ikut terjumlah.
-        'luasKering' => array_sum(array_column($bidangUsaha, 'luas_kering')),
-        'luasBasah' => array_sum(array_column($bidangUsaha, 'luas_basah')),
+        // Total luas satu baris adalah pekarangan ditambah usahanya.
+        'totalLuasTampil' => $jumlahKolom($baris, 'luas_pekarangan') + $jumlahKolom($baris, 'luas_usaha'),
+
+        'luasPekarangan' => $jumlahKolom($semua, 'luas_pekarangan'),
+        'luasUsaha' => $jumlahKolom($semua, 'luas_usaha'),
+
+        // Cacah bidang, bukan cacah baris: satu baris dapat memuat dua bidang.
+        'jumlahBidang' => count(array_filter($semua, fn ($l) => $l['luas_pekarangan'] !== null))
+            + count(array_filter($semua, fn ($l) => $l['luas_usaha'] !== null)),
 
         'daftarSp' => DummyData::satuanPermukiman(),
     ]);
@@ -1251,13 +1270,6 @@ Route::get('/lahan/{id}', function (int $id) {
     return view('pages.lahan.detail', [
         'title' => 'Lahan '.$data['kode_lahan'],
         'data' => $data,
-
-        // Bidang lain untuk pilihan "dokumen ini juga mencakup" (Putaran 7):
-        // satu HPL/SK lazim mencakup banyak bidang.
-        'daftarLahanLain' => array_values(array_filter(
-            DummyData::lahan(),
-            fn ($l) => $l['id_lahan'] !== $data['id_lahan'],
-        )),
 
         // Dibaca lewat id, bukan mencocokkan nama. Dua kepala keluarga dapat
         // bernama sama, dan pencocokan nama akan menautkan bidang ini ke

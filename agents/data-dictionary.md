@@ -608,7 +608,7 @@ Empat belas daftar disatukan pada satu tabel karena strukturnya identik. Empat b
 - **`bidang_id` hanya untuk `kategori_pengaduan`**, dan NULL di sana bermakna. Ia menyatakan kategori yang dapat jatuh ke dua dinas sekaligus, sehingga bidangnya wajib ditetapkan petugas sebelum status maju ke Diproses (`rules.md` 10b poin 7b). Nilai yang terisi hanya menetapkan bidang AWAL; petugas selalu dapat menimpanya.
 - **`urutan` bermakna pada `prioritas_pengaduan`**, sebab daftar pengaduan menyortir memakainya. Menukar urutan berarti menukar antrean petugas, bukan sekadar menukar tampilan.
 - **Jenisnya tetap enum**, tidak ikut menjadi data. `jenis` menyatakan daftar mana yang ada, bukan isinya; menjadikannya data membuat Admin dapat membuat jenis yang tidak satu pun kolom database menunjuknya.
-- Enum yang **tetap di dalam kode** dan tidak menjadi referensi: seluruh enum yang membawa perilaku (`StatusPengaduan` dengan state machine-nya, `StatusKondisiSp` dengan `dariSkor()`, `PeruntukanLahan` dengan `lahanUsaha()`, `AsalWakilPoktan`, `CakupanData`, `AksiPermission`, `AksiAuditLog`), serta enum yang nilainya terikat ketentuan luar (`JenisKelamin`, `PendidikanTerakhir`).
+- Enum yang **tetap di dalam kode** dan tidak menjadi referensi: seluruh enum yang membawa perilaku (`StatusPengaduan` dengan state machine-nya, `StatusKondisiSp` dengan `dariSkor()`, `AsalWakilPoktan`, `CakupanData`, `AksiPermission`, `AksiAuditLog`), serta enum yang nilainya terikat ketentuan luar (`JenisKelamin`, `PendidikanTerakhir`). `StatusSertifikat` (`Sudah`/`Belum`/`Belum Didata`) juga di kode, sepola `StatusTinggal`.
 
 ### 5.7 `status_kondisi_sp`
 
@@ -655,7 +655,7 @@ Data inti sistem, satu baris per **kepala keluarga**.
 | `tahun_kedatangan` | `YEAR` | TIDAK | IDX | Dasar grafik jumlah transmigran per tahun |
 | `status_tinggal` | `ENUM` | TIDAK | IDX | Lihat §11.8 |
 | `status_anggota_poktan` | `ENUM` | TIDAK | | Ya, Tidak |
-| `status_sertifikat` | `ENUM` | TIDAK | | Status sertifikat lahan keluarga: `Sudah`, `Belum`, `Belum Didata`. **Ditambahkan 2026-09-02.** SHM meliputi SELURUH lahan satu KK sehingga statusnya melekat di sini, bukan pada tiap bidang. `Belum Didata` memisahkan keluarga yang dipastikan belum bersertifikat dari yang belum pernah ditanyakan; tanpa itu laporan ke dinas mencampur keduanya (`rules.md` 7.6c) |
+| `status_sertifikat` | `ENUM` | TIDAK | | Status sertifikat lahan keluarga: `Sudah`, `Belum`, `Belum Didata` (enum `StatusSertifikat`). **Ditambahkan 2026-09-02; isian di form Data Lahan sejak 2026-09-03** (bukan form transmigran - `rules.md` 7.6a). SHM meliputi SELURUH lahan satu KK sehingga statusnya melekat di sini, bukan pada tiap bidang. `Belum Didata` memisahkan keluarga yang dipastikan belum bersertifikat dari yang belum pernah ditanyakan; tanpa itu laporan ke dinas mencampur keduanya (`rules.md` 7.6c) |
 | `telepon` | `VARCHAR(20)` | YA | | |
 | ~~`dokumen_pendukung`~~ | | | | **DIPINDAH 2026-09-02** ke registry `berkas` lewat pivot atau FK langsung (`rules.md` 14a.8) |
 | `keterangan` | `TEXT` | YA | | |
@@ -773,59 +773,50 @@ Jejak pergantian kedudukan kepala keluarga pada satu rumah tangga. Tidak pernah 
 
 Menggabungkan `lahan_sp`, `lahan_usaha_sp`, `kategori_lahan_sp`, dan `kategori_lahan` dari SQL referensi menjadi satu tabel (`erd.md` §8.2 nomor 18).
 
+**SATU BARIS = SATU KELUARGA (Putaran 15, 2026-09-02).** Sebelumnya satu baris adalah satu BIDANG ber-`peruntukan_lahan`, sehingga keluarga dengan pekarangan dan lahan usaha menempati dua baris. Disatukan sebab jumlahnya memang tetap: tepat satu pekarangan dan satu lahan usaha per keluarga (`rules.md` §7.8), dan ditegakkan `UNIQUE (transmigran_id)`. Kolom `peruntukan_lahan`, `luas`, `lintang`, `bujur` dan enum `PeruntukanLahan` dicabut seluruhnya.
+
 | Kolom | Tipe | Null | Kunci | Keterangan |
 |---|---|---|---|---|
 | `id_lahan` | `BIGINT UNSIGNED AUTO_INCREMENT` | TIDAK | PK | |
-| `transmigran_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | Pemilik; satu transmigran boleh punya banyak lahan |
+| `transmigran_id` | `BIGINT UNSIGNED` | TIDAK | FK, **UQ** | Pemilik; **satu keluarga tepat satu baris** |
 | `satuan_permukiman_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | |
 | `poktan_id` | `BIGINT UNSIGNED` | YA | FK | Poktan pengelola bila ada |
-| `kode_lahan` | `VARCHAR(50)` | YA | UQ | Identitas lahan (`rules.md` §7.1) |
-| `peruntukan_lahan` | `ENUM` | TIDAK | IDX | Lihat 11.11 |
-| `luas` | `DECIMAL(12,2)` | TIDAK | | Hektare; luas seluruh bidang |
-| `luas_kering` | `DECIMAL(12,2)` | YA | | Hektare; bagian lahan kering. Hanya untuk lahan usaha |
-| `luas_basah` | `DECIMAL(12,2)` | YA | | Hektare; bagian lahan basah. Hanya untuk lahan usaha |
-| ~~`status_hak`~~ | ~~`ENUM`~~ | | | **Dicabut menyeluruh 2026-08-29** beserta enum `StatusHakLahan` (§11.13). Form adalah satu-satunya jalan mengisinya; menyisakan kolomnya berarti keterangan yang tidak pernah terisi (kontrol mati R-26). Lihat `notes.md` butir 2026-08-29 |
+| `kode_lahan` | `VARCHAR(50)` | YA | UQ | Satu kode per keluarga (`rules.md` §7.1) |
+| `luas_pekarangan` | `DECIMAL(12,2)` | YA | | Hektare. **`NULL` = keluarga belum menerima pekarangan**, bukan menerima seluas nol |
+| `lintang_pekarangan` | `DECIMAL(10,7)` | YA | | Titik bidang pekarangan |
+| `bujur_pekarangan` | `DECIMAL(10,7)` | YA | | |
+| `luas_usaha` | `DECIMAL(12,2)` | YA | | Hektare. `NULL` = belum menerima lahan usaha. Komposisi: `luas_kering + luas_basah = luas_usaha` |
+| `luas_kering` | `DECIMAL(12,2)` | YA | | Hektare; bagian kering lahan USAHA |
+| `luas_basah` | `DECIMAL(12,2)` | YA | | Hektare; bagian basah lahan USAHA |
+| `lintang_usaha` | `DECIMAL(10,7)` | YA | | Titik bidang usaha, TERPISAH dari pekarangan |
+| `bujur_usaha` | `DECIMAL(10,7)` | YA | | |
+| ~~`status_hak`~~ | ~~`ENUM`~~ | | | **Dicabut menyeluruh 2026-08-29** beserta enum `StatusHakLahan` (§11.13) |
 | `tujuan_pemanfaatan` | `TEXT` | YA | | |
-| `lintang` | `DECIMAL(10,7)` | YA | | |
-| `bujur` | `DECIMAL(10,7)` | YA | | |
-| ~~`pola_tanam`~~ | | | | **DICABUT 2026-09-02** atas keputusan pemilik proyek, beserta tab Pengelolaan yang hanya menampung ketiganya (`rules.md` 7.7) |
-| ~~`peralatan_pertanian`~~ | | | | **DICABUT 2026-09-02** atas keputusan pemilik proyek, beserta tab Pengelolaan yang hanya menampung ketiganya (`rules.md` 7.7) |
-| ~~`kendala`~~ | | | | **DICABUT 2026-09-02** atas keputusan pemilik proyek, beserta tab Pengelolaan yang hanya menampung ketiganya (`rules.md` 7.7) |
+| ~~`pola_tanam` / `peralatan_pertanian` / `kendala`~~ | | | | **DICABUT 2026-09-02** (Putaran 12), beserta tab Pengelolaan (`rules.md` 7.7) |
 | `keterangan` | `TEXT` | YA | | |
 
 **Catatan:**
-- FK berada di tabel ini, **bukan** di `transmigran`, karena satu transmigran dapat memiliki lebih dari satu lahan usaha (`rules.md` §7.8).
-- Tiga kolom terakhir sebelum `keterangan` hanya relevan bila peruntukannya lahan usaha; untuk lahan pekarangan ketiganya dibiarkan `NULL`.
-- Rekap luas lahan **wajib** memakai `SUM(luas)`, bukan mengambil satu baris (`rules.md` §7.10).
-- **Kering dan basah adalah komposisi luas, bukan kategori bidang** (ditetapkan 2026-08-20 atas keterangan lapangan pemilik proyek). Sebelumnya sifat pengairan disimpan sebagai kolom enum `kategori_lahan` bernilai `Lahan Basah` atau `Lahan Kering`, sehingga satu bidang hanya boleh bersifat salah satu. Keadaan sebenarnya di Kobalima Timur: satu bidang lahan usaha seluas 1 ha dapat digarap 0,5 ha kering dan 0,5 ha basah sekaligus. Bidang campuran semacam itu **tidak dapat dicatat** oleh kolom enum, dan petugas terpaksa memilih salah satu — membuat separuh luasnya hilang dari rekap tanpa ada yang menyadarinya, kegagalan yang persis pernah terjadi pada penjumlahan luas (`notes.md` §1c.2 dan butir 2026-08-18).
-- **Bidangnya tetap satu baris dengan satu titik koordinat.** Yang dipecah hanya angka luasnya, sebab pemecahan kering/basah tidak melahirkan bidang baru dan tidak berpindah tempat. Karena itu dipilih dua kolom luas, bukan tabel komposisi tersendiri: kategorinya tetap dua dan tidak bertambah, sehingga tabel terpisah hanya menambah join tanpa menambah kemampuan.
-- **Aturan jumlah:** untuk lahan usaha, `luas_kering + luas_basah` wajib sama dengan `luas`. Bidang yang seluruhnya kering diisi `luas_kering = luas` dan `luas_basah = 0`, bukan `NULL`, agar penjumlahan rekap tidak perlu membedakan nol dari kosong.
-- Rekap luas kering dan basah memakai `SUM(luas_kering)` dan `SUM(luas_basah)` atas lahan berperuntukan usaha. Penyaringan "lahan basah" berarti `luas_basah > 0`, yaitu **bidang yang memiliki bagian basah**, bukan bidang yang seluruhnya basah.
+- `transmigran_id` **UNIQUE**: alur "Tambah Lahan" hanya menawarkan KK yang belum punya baris; KK yang sudah terdata disunting lewat alur Ubah (menawarkan Tambah untuk KK yang sudah ada akan selalu ditolak UNIQUE tanpa menjelaskan apa pun).
+- **`NULL` pada `luas_pekarangan` berarti BELUM MENERIMA**, bukan nol. Dua dari empat keluarga pada data contoh hanya memegang lahan usaha. Tampilan wajib membedakan "belum menerima" dari "0 ha" (sepola `status_sertifikat`, §6.1).
+- **Rekap luas MENJUMLAH KOLOM, bukan baris** (`rules.md` §7.10): `SUM(luas_pekarangan)` + `SUM(luas_usaha)`, serta `SUM(luas_kering)`/`SUM(luas_basah)` bila diperlukan. Setelah satu baris per KK, **jumlah baris lahan ≠ jumlah bidang lahan**.
+- **Kering dan basah adalah komposisi luas lahan USAHA, bukan kategori bidang** (2026-08-20). Satu bidang usaha 1 ha dapat digarap 0,5 ha kering + 0,5 ha basah sekaligus. Penyaringan "lahan basah" berarti `luas_basah > 0` (punya bagian basah), bukan seluruhnya basah.
+- **Aturan jumlah:** bila `luas_usaha` terisi, `luas_kering + luas_basah` wajib sama dengannya. Bidang seluruhnya kering diisi `luas_basah = 0`, bukan `NULL`.
+- **Koordinat dua pasang**, sebab pekarangan dan lahan usaha berada di tempat berbeda; menyatukannya jadi satu titik berarti membuang lokasi yang sudah terdata.
 
-### 7.2 `dokumen_lahan` (induk) + `dokumen_lahan_bidang`
+### 7.2 Legalitas lahan — DICABUT sebagai tabel (Putaran 12, 2026-09-02)
 
-Dokumen status lahan (HPL/SHM/SK). Dua arah relasi: satu lahan dapat memiliki lebih dari satu dokumen, **dan satu dokumen dapat mencakup banyak bidang** (Putaran 7, 2026-08-30). Satu HPL yang mencakup ratusan bidang dahulu harus diketik ulang dan berkasnya diunggah ulang per bidang; satu digit salah pada `nomor_dokumen` hanya terbetulkan di sebagian baris.
+Tabel `dokumen_lahan` dan pivot `dokumen_lahan_bidang` **DIHAPUS SELURUHNYA**. Pivot m2m itu menambal AKIBAT penempatan yang keliru: HPL adalah alas hak KAWASAN milik instansi, dan SHM meliputi seluruh lahan satu KELUARGA (pekarangan maupun usaha), sehingga tidak satu pun benar-benar milik bidang (`rules.md` §7.4a, §7.6).
 
-**`dokumen_lahan` (berkas):**
+Legalitas kini dibaca dari tempatnya yang benar:
 
-| Kolom | Tipe | Null | Kunci | Keterangan |
+| Dokumen | Tersimpan pada | Peran berkas | Diisi dari | Status |
 |---|---|---|---|---|
-| `id_dokumen_lahan` | `BIGINT UNSIGNED AUTO_INCREMENT` | TIDAK | PK | |
-| ~~`jenis_dokumen`~~ | | | | **DICABUT 2026-09-02**: tabel `dokumen_lahan` dihapus; SHM melekat pada transmigran dan HPL pada kawasan (`rules.md` 7.6) |
-| ~~`nomor_dokumen`~~ | | | | **DICABUT 2026-09-02**: tabel `dokumen_lahan` dihapus; SHM melekat pada transmigran dan HPL pada kawasan (`rules.md` 7.6) |
-| ~~`tanggal_terbit`~~ | | | | **DICABUT 2026-09-02**: tabel `dokumen_lahan` dihapus; SHM melekat pada transmigran dan HPL pada kawasan (`rules.md` 7.6) |
-| ~~`file_dokumen`~~ | | | | **DICABUT 2026-09-02**: tabel `dokumen_lahan` dihapus; SHM melekat pada transmigran dan HPL pada kawasan (`rules.md` 7.6) |
-| `keterangan` | `TEXT` | YA | | |
+| SHM | `transmigran` | `transmigran_berkas` peran `shm` | **form Data Lahan** (langkah 3) | `transmigran.status_sertifikat` (§6.1), juga di form Data Lahan |
+| HPL | `kawasan_transmigrasi` | `kawasan_transmigrasi_berkas` peran `hpl` | form Data Kawasan | — |
 
-**`dokumen_lahan_bidang` (penghubung m2m):**
+Enum `JenisDokumenLahan` beserta nilai referensi `jenis_dokumen_lahan` `[HPL, SHM]` dan izin `dokumen_lahan` dicabut Putaran 15 (isian bangkai `jenis_dokumen`/`file_dokumen` per bidang ikut dicabut).
 
-| Kolom | Tipe | Null | Kunci | Keterangan |
-|---|---|---|---|---|
-| `id_dokumen_lahan_bidang` | `BIGINT UNSIGNED AUTO_INCREMENT` | TIDAK | PK | |
-| `dokumen_lahan_id` | `BIGINT UNSIGNED` | TIDAK | FK, UQ¹ | `ON DELETE CASCADE` |
-| `lahan_id` | `BIGINT UNSIGNED` | TIDAK | FK, UQ¹ | |
-
-¹ UNIQUE `(dokumen_lahan_id, lahan_id)`. `DummyData::dokumenLahan(?lahanId)` tetap dapat disaring per bidang; `lahan_id` tunggal yang ditempel adalah bidang pertama (kompatibilitas pemanggil lama).
+**Form lahan langkah 3 (sejak 2026-09-03):** SHM dan status sertifikat adalah ISIAN — sejak satu keluarga tepat satu baris lahan, tidak ada lagi risiko salinan sertifikat ganda per-bidang yang dahulu menjadikannya "bacaan saja" (`rules.md` §7.6a). Berkasnya tetap tersimpan pada `transmigran_berkas`; form lahan hanya permukaan entrinya. HPL tetap BACAAN + tautan ke Data Kawasan.
 
 ---
 
@@ -1337,10 +1328,13 @@ Sengaja berbeda dari §11.5 karena `rules.md` §6a.3 menetapkan istilah `Tidak R
 ### 11.10 Status hunian
 `Dihuni` · `Tidak Dihuni`
 
-### 11.11 Peruntukan lahan
-`Lahan Pekarangan` — `Lahan Usaha`
+### 11.11 Peruntukan lahan — **DICABUT sebagai enum 2026-09-02 (Putaran 15)**
 
-Satu transmigran umumnya menerima **satu bidang tiap peruntukan** (`rules.md` 7.8). Nilai `Lahan Usaha I` dan `Lahan Usaha II` sempat ditambahkan pada 2026-08-18 atas dugaan pembagian bertahap, lalu dibatalkan pada hari yang sama setelah keadaan lapangan diketahui. Pemeriksaan "apakah ini lahan usaha" **dilarang** membandingkan satu nilai teks; pakai `PeruntukanLahan::lahanUsaha()`.
+Semula bernilai `Lahan Pekarangan` · `Lahan Usaha` sebagai kolom enum `peruntukan_lahan` yang menandai peruntukan tiap BARIS. Sejak satu keluarga tepat satu baris (§7.1), kedua bidang berada pada baris yang sama dan masing-masing menjadi kolom tersendiri (`luas_pekarangan`, `luas_usaha`). Enum `PeruntukanLahan` beserta method `lahanUsaha()`/`nilaiLahanUsaha()` dihapus.
+
+Nilai `Lahan Usaha I`/`Lahan Usaha II` yang sempat ditambahkan 2026-08-18 lalu dibatalkan pada hari yang sama tidak lagi relevan. Nomor bagian ini sengaja **tidak dipakai ulang** agar rujukan lama tetap dapat ditelusuri.
+
+Kata `Lahan Pekarangan`/`Lahan Usaha` tetap dipakai sebagai **label penyaring** pada halaman daftar dan laporan lahan (penyaring bertanya "keluarga ini punya bidang itu?"), bukan sebagai nilai enum.
 
 ### 11.12 Kategori lahan — **DICABUT 2026-08-20**
 
@@ -1357,10 +1351,9 @@ Rantai yang sebenarnya: tanah kawasan berstatus Hak Pengelolaan, lalu bidang-bid
 
 > Istilah pada daftar ini **masih menunggu konfirmasi dinas** (`notes.md` bagian 6), sebab berkas penetapan di tiap daerah dapat memakai sebutan berbeda.
 
-### 11.14 Jenis dokumen lahan
-`HPL` — `SHM`
+### 11.14 Jenis dokumen lahan — **DICABUT 2026-09-02 (Putaran 15)**
 
-**Diciutkan 6 → 2 nilai (2026-08-29).** `Surat Keterangan Pembagian Tanah`, `SKT`, `Surat Keterangan Desa`, dan `Lainnya` dibuang. HPL adalah alas hak kawasan yang terbit lebih dulu, SHM menyusul bertahun kemudian; tabel `dokumen_lahan` tetap terpisah agar sertifikasi berlapis terwakili. Lihat `notes.md` butir 2026-08-29.
+Semula bernilai `HPL` · `SHM` (enum `JenisDokumenLahan`, nilai referensi `jenis_dokumen_lahan`). Dicabut seluruhnya bersama tabel `dokumen_lahan`: HPL adalah alas hak KAWASAN dan SHM meliputi seluruh lahan satu KELUARGA, sehingga tidak ada dokumen yang dimiliki satu bidang saja (§7.2). Nomor bagian ini sengaja **tidak dipakai ulang**.
 
 ### 11.15 Jabatan anggota poktan
 `Sekretaris` — `Bendahara` — `Anggota`
@@ -1517,7 +1510,7 @@ Dahulu: diisi bila wakil keluarga di poktan bukan kepala keluarganya sendiri. Se
 
 ### 11.37 Jenis referensi
 
-`sumber_dana` - `status_penyerahan` - `kondisi` - `kondisi_rumah` - `status_hunian` - `tipe_komoditas` - `prioritas_pengaduan` - `jenis_dokumen_lahan` - `jabatan_anggota_poktan` - `jenis_infrastruktur` - `jenis_fasilitas` - `bidang_pengaduan` - `kategori_pengaduan` - `jenis_alsintan` - `jenis_inventaris`
+`sumber_dana` - `status_penyerahan` - `kondisi` - `kondisi_rumah` - `status_hunian` - `tipe_komoditas` - `prioritas_pengaduan` - `jabatan_anggota_poktan` - `jenis_infrastruktur` - `jenis_fasilitas` - `bidang_pengaduan` - `kategori_pengaduan` - `jenis_alsintan` - `jenis_inventaris`
 
 *(`kualitas_panen` dicabut — kualitas panen dihapus, `rules.md` §9. `jenis_alsintan` ditambahkan Putaran 7; `jenis_inventaris` ditambahkan Revisi 2026-08-30 untuk modul `inventaris_sp`.)*
 
@@ -1694,7 +1687,6 @@ Tanda centang berarti kewenangan tersebut dibuat untuk fitur bersangkutan.
 | `referensi` | v | v | v | |
 | `penilaian_kondisi` | v |   | v |   |
 | `lahan` | v | v | v | v |
-| `dokumen_lahan` | v | v | v | v |
 | `poktan` | v | v | v | v |
 | `anggota_poktan` | v | v | v |   |
 | `alsintan` | v | v | v | v |
@@ -1707,9 +1699,9 @@ Tanda centang berarti kewenangan tersebut dibuat untuk fitur bersangkutan.
 | `penanganan_pengaduan` | v | v | v |   |
 | `dashboard` | v |   |   |   |
 
-Total **99 kewenangan** dari 28 fitur, dihitung dari tabel di atas. Turun dari 101 pada 2026-08-22, ketika modul `musim_tanam` beserta empat kewenangannya dicabut dan `saprotan` tetap utuh.
+Total **95 kewenangan** dari 27 fitur, dihitung dari tabel di atas. Turun dari 99 pada 2026-09-02 (Putaran 15), ketika modul `dokumen_lahan` beserta empat kewenangannya dicabut: HPL adalah alas hak kawasan dan SHM meliputi seluruh lahan satu keluarga, sehingga tidak ada dokumen milik satu bidang (`rules.md` 7.4a). Sebelumnya turun dari 101 pada 2026-08-22 saat `musim_tanam` dicabut.
 
-Jumlah kewenangan yang benar-benar dipegang tiap role bawaan lebih sedikit, sesuai susunan pada `rules.md` 5.1: Admin 99, Dinas Transmigrasi 49, Dinas Pertanian 45, Operator SP 51.
+Jumlah kewenangan yang benar-benar dipegang tiap role bawaan lebih sedikit, sesuai susunan pada `rules.md` 5.1: Admin 95, Dinas Transmigrasi 47, Dinas Pertanian 44, Operator SP 49.
 
 ### 13.2 Kelompok fitur pada antarmuka
 
@@ -1720,7 +1712,7 @@ Agar halaman pengaturan role mudah dibaca, kewenangan dikelompokkan sesuai struk
 | Sistem | `pengguna`, `role`, `audit_log` |
 | Wilayah dan SP | `wilayah`, `kawasan`, `sp`, `inventaris_sp`, `fasilitas_sp`, `satuan`, `referensi`, `penilaian_kondisi` |
 | Kependudukan | `transmigran`, `rumah`, `riwayat_penghunian`, `riwayat_kepala_keluarga` |
-| Lahan | `lahan`, `dokumen_lahan` |
+| Lahan | `lahan` |
 | Kelembagaan | `poktan`, `anggota_poktan`, `alsintan`, `saprotan` |
 | Pertanian | `komoditas`, `penanaman`, `hasil_panen` |
 | Infrastruktur | `infrastruktur` |

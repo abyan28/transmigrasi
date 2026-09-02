@@ -55,7 +55,7 @@ class ViewServiceProvider extends ServiceProvider
         'pages.rumah.form' => ['transmigranTanpaRumah', 'daftarTransmigran', 'daftarSp', 'opsiKondisiRumah', 'opsiStatusHunian'],
         'pages.poktan.form' => ['daftarSp', 'daftarTransmigran', 'kontakTransmigran', 'lahanTransmigran', 'anggotaKeluargaPerKeluarga', 'opsiJabatanAnggota', 'anggotaPoktanPerPoktan'],
         'pages.poktan.form-anggota' => ['daftarTransmigran', 'kontakTransmigran', 'lahanTransmigran', 'opsiJabatanAnggota', 'anggotaKeluargaPerKeluarga'],
-        'pages.lahan.form' => ['daftarTransmigran', 'daftarSp', 'opsiJenisDokumenLahan'],
+        'pages.lahan.form' => ['daftarTransmigran', 'transmigranTanpaLahan', 'daftarSp'],
         'pages.transmigran.form' => ['daftarSp', 'saranPekerjaan', 'opsiDaerahAsal', 'opsiAgama', 'opsiHubunganAnggota', 'opsiKegiatanAnggota', 'opsiPendidikan', 'opsiJenisKelamin'],
         'pages.panen.form' => ['satuanKomoditas', 'simbolSatuan', 'penanamanUntukPanen'],
         'pages.penanaman.form' => ['daftarPoktan', 'daftarKomoditas', 'petaPoktan', 'petaBenih'],
@@ -157,6 +157,7 @@ class ViewServiceProvider extends ServiceProvider
             'daftarSp' => DummyData::satuanPermukiman(),
             'daftarTransmigran' => DummyData::transmigran(),
             'transmigranTanpaRumah' => DummyData::transmigranTanpaRumah(),
+            'transmigranTanpaLahan' => DummyData::transmigranTanpaLahan(),
             'sebaran' => DummyData::sebaranKomoditas(),
 
             // Hanya nama pekerjaannya yang dipakai, sebagai saran `<datalist>`.
@@ -183,7 +184,6 @@ class ViewServiceProvider extends ServiceProvider
             'opsiJenisInfrastruktur' => DummyData::opsiReferensi(JenisReferensi::JenisInfrastruktur),
             'opsiJenisAlsintan' => DummyData::opsiReferensi(JenisReferensi::JenisAlsintan),
             'opsiTipeKomoditas' => DummyData::opsiReferensi(JenisReferensi::TipeKomoditas),
-            'opsiJenisDokumenLahan' => DummyData::opsiReferensi(JenisReferensi::JenisDokumenLahan),
             'daftarRole' => DummyData::role(),
             'daftarPengguna' => DummyData::pengguna(),
 

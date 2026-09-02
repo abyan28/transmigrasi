@@ -230,14 +230,26 @@
         </div>
     </section>
 
-    {{-- Bagian 4: dokumentasi. Unggahan selalu paling bawah (ui-spec.md 6.4a). --}}
+    {{--
+        Bagian 4: dokumentasi. Unggahan selalu paling bawah (ui-spec.md 6.4a).
+
+        DUA KOLOM TERPISAH: foto dan dokumen, sejajar saprotan (keputusan 11
+        Putaran 12). Foto merekam wujud batch pengadaan saat diterima; dokumen
+        menyimpan berita acaranya. Foto KONDISI PER UNIT di tiap poktan tetap
+        diunggah dari halaman rincian, sebab kondisinya berbeda per distribusi.
+    --}}
     <section>
         <h3 class="{{ $kelasBagian }}">Dokumentasi</h3>
-        <div class="mt-3">
+        <div class="mt-3 grid gap-4 sm:grid-cols-2">
+            <x-sim.file-upload nama="foto" label="Foto Barang" :hanya-gambar="true"
+                nama-dokumen="Foto Alsintan" :nama-pemilik="$data['nama_alat'] ?? null"
+                :berkas-saat-ini="$data['foto'] ?? null"
+                keterangan="Wujud unit saat batch pengadaan diterima." />
+
             <x-sim.file-upload nama="dokumen_pendukung" label="Dokumen Pendukung"
                 nama-dokumen="Dokumen Alsintan" :nama-pemilik="$data['nama_alat'] ?? null"
                 :berkas-saat-ini="$data['dokumen_pendukung'] ?? null"
-                keterangan="Berita acara penyerahan atau bukti pengadaan. Foto kondisi per unit diunggah dari halaman rincian." />
+                keterangan="Berita acara penyerahan atau bukti pengadaan." />
         </div>
     </section>
 </div>

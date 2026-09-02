@@ -21,7 +21,6 @@ use App\Enums\JenisSaprotan;
 use App\Enums\KegiatanAnggota;
 use App\Enums\Kondisi;
 use App\Enums\PendidikanTerakhir;
-use App\Enums\PeruntukanLahan;
 use App\Enums\PolaPermukiman;
 use App\Enums\StatusAnggotaKeluarga;
 use App\Enums\StatusPanen;
@@ -581,39 +580,41 @@ it('merender daftar lahan beserta total luasnya', function () {
 
     $respons->assertOk();
 
-    // Rekap luas wajib memakai penjumlahan seluruh lahan, bukan satu baris
-    // (agents/rules.md bagian 7.10).
-    $total = array_sum(array_column(DummyData::lahan(), 'luas'));
+    // Rekap luas wajib MENJUMLAH KOLOM, bukan baris (Putaran 15, rules.md 7.10):
+    // pekarangan dan lahan usaha kini kolom pada satu baris per keluarga.
+    $total = array_sum(array_map(
+        fn ($l) => (float) ($l['luas_pekarangan'] ?? 0) + (float) ($l['luas_usaha'] ?? 0),
+        DummyData::lahan()
+    ));
     $respons->assertSee(number_format($total, 2, ',', '.'));
 });
 
 it('menyaring daftar lahan menurut peruntukan dan kategori', function () {
+    // Penyaring peruntukan kini menanyakan "keluarga ini punya bidang itu?",
+    // sebab satu baris memuat kedua bidang. LH-003 hanya memegang lahan usaha.
     $this->get(route('lahan.index', ['peruntukan_lahan' => 'Lahan Pekarangan']))
         ->assertOk()
-        ->assertSee('LP-001')
-        ->assertDontSee('LU-001');
+        ->assertSee('LH-001')
+        ->assertDontSee('LH-003');
 
     $this->get(route('lahan.index', ['peruntukan_lahan' => 'Lahan Usaha']))
         ->assertOk()
-        ->assertSee('LU-001')
-        ->assertDontSee('LP-001');
+        ->assertSee('LH-001')
+        ->assertSee('LH-003');
 
-    // Nilai penyaring komposisi adalah `basah`, bukan nama enum lama. Sempat
-    // tertulis `Lahan Basah` di sini, dan uji ini lolos secara kebetulan:
-    // nilai yang tidak dikenal membuat penyaringnya diabaikan, sehingga
-    // seluruh baris tetap muncul termasuk yang dicari.
+    // Nilai penyaring komposisi adalah `basah`, bukan nama enum lama.
     $this->get(route('lahan.index', ['kategori_lahan' => 'basah']))
         ->assertOk()
-        ->assertSee('LU-002')
-        ->assertDontSee('LU-001');
+        ->assertSee('LH-004')
+        ->assertDontSee('LH-003');
 });
 
 it('menampilkan legalitas lahan dari tempatnya yang benar', function () {
-    // Bidang lahan TIDAK memegang dokumennya sendiri (Putaran 12). SHM
-    // meliputi seluruh lahan satu keluarga sehingga melekat pada transmigran;
-    // HPL adalah alas hak kawasan milik instansi sehingga melekat pada kawasan
+    // Lahan TIDAK memegang dokumennya sendiri (Putaran 12). SHM meliputi
+    // seluruh lahan satu keluarga sehingga melekat pada transmigran; HPL
+    // adalah alas hak kawasan milik instansi sehingga melekat pada kawasan
     // (rules.md 7.4a). Tab Legalitas menampilkan keduanya sebagai BACAAN.
-    $isi = $this->get(route('lahan.detail', 5))->assertOk()->getContent();
+    $isi = $this->get(route('lahan.detail', 2))->assertOk()->getContent();
 
     expect($isi)->toContain('Sertifikat keluarga (SHM)')
         ->and($isi)->toContain('Alas hak kawasan (HPL)')
@@ -2823,7 +2824,7 @@ it('menyamakan daftar izin dengan kamus data dan rules', function () {
         'Riwayat kepala keluarga' => 'riwayat_kepala_keluarga',
         'Data master referensi' => 'referensi',
         'Penilaian kondisi SP' => 'penilaian_kondisi', 'Lahan' => 'lahan',
-        'Dokumen lahan (HPL/SHM)' => 'dokumen_lahan', 'Kelompok tani' => 'poktan',
+        'Kelompok tani' => 'poktan',
         'Anggota poktan' => 'anggota_poktan', 'Alsintan' => 'alsintan', 'Saprotan' => 'saprotan',
         'Komoditas' => 'komoditas',
         'Penanaman' => 'penanaman', 'Hasil panen' => 'hasil_panen',
@@ -3706,13 +3707,34 @@ it('melengkapi koordinat pada data contoh yang kamus datanya memuatnya', functio
     // tampak tidak berfungsi padahal kodenya benar.
     $kosong = [];
 
-    foreach (['lahan', 'rumah', 'poktan'] as $modul) {
+    foreach (['rumah', 'poktan'] as $modul) {
         foreach (DummyData::{$modul}() as $baris) {
             if (empty($baris['lintang']) || empty($baris['bujur'])) {
                 $kosong[] = $modul;
 
                 break;
             }
+        }
+    }
+
+    // Lahan memakai DUA PASANG koordinat sejak Putaran 15: pekarangan dan usaha
+    // terpisah. Lahan usaha SELALU terisi (setiap keluarga pada data contoh
+    // memegangnya); koordinat pekarangan wajib terisi HANYA bila keluarganya
+    // sudah menerima pekarangan - null di sana berarti belum menerima, bukan
+    // data yang hilang.
+    foreach (DummyData::lahan() as $baris) {
+        if (empty($baris['lintang_usaha']) || empty($baris['bujur_usaha'])) {
+            $kosong[] = 'lahan usaha';
+
+            break;
+        }
+    }
+
+    foreach (DummyData::lahan() as $baris) {
+        if ($baris['luas_pekarangan'] !== null && (empty($baris['lintang_pekarangan']) || empty($baris['bujur_pekarangan']))) {
+            $kosong[] = 'lahan pekarangan';
+
+            break;
         }
     }
 
@@ -6216,13 +6238,18 @@ it('menyediakan unggahan dokumen pada modul yang kolomnya sudah ada', function (
     ['/poktan', 'dokumen_pendukung'],
     ['/alsintan', 'dokumen_pendukung'],
     ['/saprotan', 'dokumen_pendukung'],
-    // Alsintan dan saprotan ikut memisahkan foto dari dokumen sejak
-    // 2026-08-22. Satu slot untuk keduanya memaksa petugas memilih salah
-    // satu, dan yang mengunggah dokumen setelah foto kehilangan fotonya
-    // tanpa peringatan apa pun. Sejak Putaran 7 foto alsintan melekat pada
-    // BARIS DISTRIBUSI (kondisi per unit), diunggah dari halaman rincian.
-    ['/alsintan/1', 'foto'],
+    // Saprotan memisahkan foto dari dokumen sejak 2026-08-22. Satu slot untuk
+    // keduanya memaksa petugas memilih salah satu, dan yang mengunggah dokumen
+    // setelah foto kehilangan fotonya tanpa peringatan apa pun.
     ['/saprotan', 'foto'],
+    // Alsintan INDUK mendapat foto barang pada Putaran 15 (keputusan 11
+    // Putaran 12), sejajar saprotan. Foto KONDISI PER UNIT tetap melekat pada
+    // baris distribusi, diunggah dari halaman rincian.
+    ['/alsintan', 'foto'],
+    ['/alsintan/1', 'foto'],
+    // SHM keluarga diunggah dari form lahan sejak 2026-09-03 (satu keluarga
+    // tepat satu baris lahan menghapus risiko salinan ganda per-bidang).
+    ['/lahan', 'shm'],
 ]);
 
 it('mengirim unggahan lewat form yang benar-benar menerima berkas', function () {
@@ -6559,53 +6586,68 @@ it('tidak menyentuh document.body sebelum DOM siap', function () {
 |--------------------------------------------------------------------------
 */
 
-it('menyediakan dokumen pertama langsung pada form lahan', function () {
-    // Dokumen semula hanya dapat diunggah lewat tab tersendiri di halaman
-    // rincian, sehingga keadaan yang paling lazim menuntut dua langkah.
+it('menyediakan unggahan SHM dan status sertifikat pada form lahan, HPL tetap bacaan', function () {
+    // Langkah 3 form lahan dahulu meminta petugas MEMILIH jenis dokumen
+    // (HPL/SHM) per bidang lalu mengunggah berkasnya - bangkai dari sebelum
+    // Putaran 12 (tabel `dokumen_lahan` dicabut, kolom tidak ada).
     //
-    // Nomor dokumen dan tanggal terbit DICABUT dari form lahan 2026-08-20 atas
-    // keputusan pemilik proyek, bersama status hak atas tanah. Keduanya tetap
-    // hidup pada modal Tambah Dokumen Lahan di halaman rincian, sebab keduanya
-    // memang keterangan per dokumen, bukan per bidang.
+    // Sejak satu keluarga tepat satu baris lahan (Putaran 15), risiko salinan
+    // sertifikat ganda per-bidang lenyap. Pemilik proyek menetapkan form lahan
+    // sebagai tempat kanonis SHM dan status sertifikat (rules.md 7.6a,
+    // 2026-09-03). Berkasnya tetap tersimpan pada `transmigran_berkas` peran
+    // `shm`, statusnya pada `transmigran.status_sertifikat`.
+    $sumber = file_get_contents(resource_path('views/pages/lahan/form.blade.php'));
+
+    // Isian dokumen per bidang tetap dicabut seluruhnya.
+    expect($sumber)->not->toContain('name="jenis_dokumen"')
+        ->and($sumber)->not->toContain('name="file_dokumen"')
+        ->and($sumber)->not->toContain('name="nomor_dokumen"')
+        ->and($sumber)->not->toContain('name="tanggal_terbit"');
+
     $isi = $this->get(route('lahan.index'))->assertOk()->getContent();
 
-    foreach (['jenis_dokumen', 'file_dokumen'] as $isian) {
+    // SHM diunggah, status sertifikat dipilih - keduanya dari form lahan.
+    $adaShm = str_contains($isi, 'name="shm"') || str_contains($isi, 'name="shm[]"');
+    expect($adaShm)->toBeTrue('form lahan wajib punya unggahan SHM');
+    expect($isi)->toContain('name="status_sertifikat"');
+
+    // HPL tetap BACAAN, diunggah dari Data Kawasan.
+    expect($isi)->toContain('Alas hak kawasan (HPL)');
+
+    // Status sertifikat tidak lagi di form transmigran (pindah ke form lahan).
+    expect(file_get_contents(resource_path('views/pages/transmigran/form.blade.php')))
+        ->not->toContain('name="status_sertifikat"');
+});
+
+it('mencatat lahan satu baris per KK dengan dua pasang koordinat', function () {
+    // SATU BARIS = SATU KELUARGA (Putaran 15). Pekarangan dan lahan usaha
+    // adalah KOLOM pada baris yang sama; koordinatnya TETAP DUA PASANG sebab
+    // kedua bidang berada di tempat berbeda.
+    $isi = $this->get(route('lahan.index'))->assertOk()->getContent();
+
+    foreach ([
+        'luas_pekarangan', 'luas_usaha',
+        'lintang_pekarangan', 'bujur_pekarangan',
+        'lintang_usaha', 'bujur_usaha',
+    ] as $isian) {
         expect($isi)->toContain('name="'.$isian.'"');
     }
 
-    expect($isi)->not->toContain('name="nomor_dokumen"')
-        ->and($isi)->not->toContain('name="tanggal_terbit"');
-});
+    // Enum peruntukan dicabut seluruhnya; kedua bidang kini kolom.
+    expect(enum_exists('App\Enums\PeruntukanLahan'))->toBeFalse();
 
-it('menyediakan dua peruntukan lahan, bukan lebih', function () {
-    // Tahap I dan II sempat ditambahkan pada 2026-08-18 atas dugaan bahwa
-    // lahan usaha dibagikan bertahap. Dugaan itu dibatalkan pada hari yang
-    // sama: satu transmigran menerima satu pekarangan dan satu lahan usaha.
-    // Pilihan yang tidak pernah berbeda hanya menambah keputusan bagi petugas.
-    $isi = $this->get(route('lahan.index'))->assertOk()->getContent();
+    // Nama kolom lama tidak boleh tertinggal di FORM (yang di-include di sini).
+    $form = file_get_contents(resource_path('views/pages/lahan/form.blade.php'));
+    expect($form)->not->toContain('name="peruntukan_lahan"')
+        ->and($form)->not->toContain('name="jenis_lahan"')
+        ->and($form)->not->toContain('name="status_kepemilikan"')
+        ->and($form)->not->toContain('PeruntukanLahan');
 
+    // Penyaring peruntukan tetap ada di HALAMAN DAFTAR (bukan form): ia kini
+    // menanyakan "punya bidang ini?" bukan "barisnya berperuntukan ini".
     expect($isi)->toContain('name="peruntukan_lahan"')
         ->and($isi)->not->toContain('Lahan Usaha I<')
-        ->and($isi)->not->toContain('Lahan Usaha II')
-        // Nama kolom lama tidak boleh tertinggal di mana pun.
-        ->and($isi)->not->toContain('name="jenis_lahan"')
-        ->and($isi)->not->toContain('name="status_kepemilikan"');
-});
-
-it('menempatkan area unggah dokumen di baris penuh, bukan berpasangan', function () {
-    // Area unggah jauh lebih tinggi daripada isian teks, sehingga menaruhnya
-    // dalam grid berpasangan menyisakan ruang kosong besar di kolom sebelahnya.
-    // Tiga belas form lain sudah menempatkannya di baris penuh.
-    $sumber = file_get_contents(resource_path('views/pages/lahan/form.blade.php'));
-
-    // Ketiga keterangan dokumen berjajar tiga kolom.
-    expect($sumber)->toContain('sm:grid-cols-3');
-
-    // Area unggah berada SETELAH grid ditutup, bukan di dalamnya.
-    preg_match('/sm:grid-cols-3(.*?)file_dokumen/s', $sumber, $cocok);
-
-    expect($cocok)->not->toBeEmpty()
-        ->and($cocok[1])->toContain('</div>');
+        ->and($isi)->not->toContain('Lahan Usaha II');
 });
 
 it('mencabut status hak atas tanah dari seluruh modul lahan', function () {
@@ -6626,10 +6668,10 @@ it('mencabut status hak atas tanah dari seluruh modul lahan', function () {
     }
 });
 
-it('menampilkan komposisi kering dan basah, bukan kategori tunggal', function () {
-    // Satu bidang dapat digarap sebagian kering dan sebagian basah sekaligus
-    // (rules.md 7.5). Kolom enum lama memaksa memilih salah satu, sehingga
-    // separuh luasnya hilang dari rekap tanpa ada yang menyadarinya.
+it('menampilkan komposisi kering dan basah lahan usaha, bukan kategori tunggal', function () {
+    // Satu bidang usaha dapat digarap sebagian kering dan sebagian basah
+    // sekaligus (rules.md 7.5). Kolom enum lama memaksa memilih salah satu,
+    // sehingga separuh luasnya hilang dari rekap tanpa ada yang menyadarinya.
     $isiDaftar = $this->get(route('lahan.index'))->assertOk()->getContent();
 
     expect($isiDaftar)->toContain('name="luas_kering"')
@@ -6638,9 +6680,9 @@ it('menampilkan komposisi kering dan basah, bukan kategori tunggal', function ()
         ->and($isiDaftar)->not->toContain('name="kategori_lahan" ')
         ->and(enum_exists('App\Enums\KategoriLahan'))->toBeFalse();
 
-    // Bidang campuran wajib terbaca sebagai satu bidang berkomposisi. LU-003
-    // milik MARIA DA COSTA adalah 1,25 ha kering + 0,75 ha basah.
-    $this->get(route('lahan.detail', 5))
+    // Lahan usaha campuran wajib terbaca sebagai satu bidang berkomposisi.
+    // LH-002 milik MARIA DA COSTA adalah 1,25 ha kering + 0,75 ha basah.
+    $this->get(route('lahan.detail', 2))
         ->assertOk()
         ->assertSee('Lahan kering')
         ->assertSee('Lahan basah')
@@ -6648,42 +6690,44 @@ it('menampilkan komposisi kering dan basah, bukan kategori tunggal', function ()
         ->assertSee('0,75 ha');
 });
 
-it('menyaring bidang yang memiliki bagian basah, bukan yang seluruhnya basah', function () {
+it('menyaring lahan usaha yang memiliki bagian basah, bukan yang seluruhnya basah', function () {
     // Inti perubahan 2026-08-20: penyaring menanyakan "punya bagian basah?".
-    // Bidang campuran wajib muncul pada kedua penyaring sekaligus, dan itulah
-    // yang membedakannya dari kolom enum lama.
+    // Lahan usaha campuran wajib muncul pada kedua penyaring sekaligus, dan
+    // itulah yang membedakannya dari kolom enum lama.
     $basah = $this->get(route('lahan.index', ['kategori_lahan' => 'basah']))
         ->assertOk()
-        // LU-003 campuran, LU-002 seluruhnya basah.
-        ->assertSee('LU-003')
-        ->assertSee('LU-002')
-        // LU-001 seluruhnya kering, tidak boleh muncul.
-        ->assertDontSee('LU-001');
+        // LH-002 campuran, LH-004 seluruhnya basah.
+        ->assertSee('LH-002')
+        ->assertSee('LH-004')
+        // LH-003 seluruhnya kering, tidak boleh muncul.
+        ->assertDontSee('LH-003');
 
     expect($basah)->not->toBeNull();
 
     $this->get(route('lahan.index', ['kategori_lahan' => 'kering']))
         ->assertOk()
-        ->assertSee('LU-003')
-        ->assertSee('LU-001')
-        ->assertDontSee('LU-002');
+        ->assertSee('LH-002')
+        ->assertSee('LH-003')
+        ->assertDontSee('LH-004');
 });
 
-it('menjumlahkan luas lahan usaha dari seluruh tahapnya', function () {
-    // Penjumlahan semula mencocokkan teks "Lahan Usaha" persis, sehingga
-    // bidang tahap kedua akan hilang dari rekap tanpa ada yang menyadarinya.
-    $nilaiUsaha = PeruntukanLahan::nilaiLahanUsaha();
-
-    $luasUsaha = array_sum(array_column(
-        array_filter(
-            DummyData::lahan(),
-            fn ($l) => in_array($l['peruntukan_lahan'], $nilaiUsaha, true)
-        ),
-        'luas'
+it('menjumlahkan luas lahan usaha dari kolomnya, bukan mencocokkan teks peruntukan', function () {
+    // Sejak satu baris per KK, luas usaha dibaca dari kolom `luas_usaha`
+    // langsung, bukan dengan menyaring baris menurut nilai teks peruntukan.
+    $luasUsaha = array_sum(array_map(
+        fn ($l) => (float) ($l['luas_usaha'] ?? 0),
+        DummyData::lahan()
     ));
 
-    // 1,50 + 0,75 + 2,00 + 1,25 = 5,50 hektare pada data contoh.
+    // 1,50 + 2,00 + 1,25 + 0,75 = 5,50 hektare pada data contoh.
     expect($luasUsaha)->toBe(5.5);
+
+    // Total luas seluruh lahan tetap 6,0 ha sebelum dan sesudah penggabungan.
+    $luasPekarangan = array_sum(array_map(
+        fn ($l) => (float) ($l['luas_pekarangan'] ?? 0),
+        DummyData::lahan()
+    ));
+    expect(round($luasPekarangan + $luasUsaha, 2))->toBe(6.0);
 
     $this->get(route('lahan.index'))
         ->assertOk()
@@ -7416,11 +7460,12 @@ it('menyediakan cara membuka berkas dari halaman rincian modulnya', function (st
     expect($cocok[0])->toHaveCount($jumlahBerkas, "berkas tertaut pada {$jalur} tidak sesuai");
 })->with([
     ['/poktan/1', 1],
-    // Kelimanya memisahkan foto dari dokumen, sehingga dua tautan. Alsintan
-    // dan saprotan menyusul 2026-08-25: kolom `foto` sudah lama terisi lewat
-    // form, tetapi halaman rincian dulu hanya memasang tautan dokumen.
-    ['/alsintan/1', 2],
+    // Saprotan memisahkan foto barang dari dokumen: dua tautan pada induk.
     ['/saprotan/1', 2],
+    // Alsintan: foto barang + dokumen pengadaan pada INDUK (Putaran 15,
+    // keputusan 11 Putaran 12), ditambah satu foto kondisi unit pada baris
+    // distribusi pertama = tiga tautan.
+    ['/alsintan/1', 3],
     // Tiga foto titik kerusakan ditambah satu dokumen pendukung sejak
     // Putaran 14. Tautannya hanya di panel rincian; form yang di-include
     // halaman ini menampilkan nama berkas saja agar tidak kembar.
@@ -7808,6 +7853,137 @@ it('tidak menyimpan komponen yang tidak dipakai siapa pun', function () {
     // daftar yatimnya kosong dan uji ini hijau tanpa memeriksa apa pun.
     expect(count($berkas))->toBeGreaterThan(25);
     expect($yatim)->toBe([]);
+});
+
+it('tidak menyisakan isian form yatim yang tak berpadanan di schema.sql', function () {
+    /*
+        Penjaga isian yatim, ditambahkan Putaran 15 (2026-09-02).
+
+        AKAR MASALAH. Putaran 12 mencabut tabel `dokumen_lahan` beserta kolom
+        `jenis_dokumen` dan `file_dokumen`, tetapi isian keduanya tetap hidup
+        pada form lahan selama berhari-hari. Skema diperiksa dengan impor MariaDB
+        nyata; ISIAN FORM tidak pernah dibandingkan terhadap skema, sehingga
+        isian yang kolomnya sudah tiada tidak memerahkan apa pun - persis nasib
+        empat kontrol mati Putaran 14.
+
+        Penjaga ini menutup celah itu: setiap atribut name= (juga nama= pada
+        komponen isian) pada berkas form di bawah pages/ wajib berpadanan di
+        schema.sql, entah sebagai KOLOM tabel mana pun, entah sebagai PERAN
+        BERKAS pada registry berkas (rules.md 14a.8).
+
+        DAFTAR KECUALI ditulis eksplisit beserta alasannya. Penjaga tanpa daftar
+        kecuali akan dimatikan orang berikutnya begitu ia memerah sekali secara
+        keliru.
+
+        DIUJI DENGAN ISIAN PALSU. Menambahkan `name="kolom_palsu_xyz"` ke salah
+        satu form membuat uji ini MERAH; mencabutnya kembali HIJAU. Dilakukan
+        saat penjaga ini dibuat, tidak ditinggalkan di kode.
+    */
+
+    // Sumber kebenaran: seluruh nama kolom pada seluruh CREATE TABLE.
+    $sql = file_get_contents(base_path('database/data/schema.sql'));
+    preg_match_all('/^\s+`([a-z_]+)`\s+[A-Z]/m', $sql, $m);
+    $kolom = array_flip($m[1]);
+
+    // Nama pembungkus repeater: barisnya larik, dan SUB-KUNCI-nya diperiksa
+    // tersendiri di bawah. Nama pembungkusnya sendiri bukan kolom.
+    $pembungkusRepeater = [
+        'anggota_keluarga' => 'baris anggota_keluarga (tabel anggota_keluarga)',
+        'anggota' => 'baris anggota poktan (tabel anggota_poktan)',
+        'distribusi' => 'baris distribusi alsintan (tabel alsintan_distribusi)',
+        'rute_aksesibilitas' => 'baris rute aksesibilitas (tabel rute_aksesibilitas_sp)',
+        'izin' => 'matriks kewenangan role (pivot role_permission), bukan kolom',
+    ];
+
+    // Peran berkas: berkasnya hidup di registry `berkas` lewat pivot/FK
+    // (rules.md 14a.8), bukan sebagai kolom pada tabel domainnya.
+    $peranBerkas = [
+        'foto' => 'peran berkas foto pada *_berkas',
+        'dokumen_pendukung' => 'peran berkas dokumen pada *_berkas',
+        'foto_rumah' => 'peran berkas foto pada rumah_berkas',
+        'dokumen_kawasan' => 'peran berkas pada kawasan_transmigrasi_berkas',
+        'bukti' => 'peran berkas bukti pada pengaduan_berkas',
+        'ktp' => 'peran berkas KTP pada transmigran_berkas',
+        'kk' => 'peran berkas KK pada transmigran_berkas',
+        'sk' => 'peran berkas SK penempatan pada transmigran_berkas',
+        'shm' => 'peran berkas SHM pada transmigran_berkas (diunggah dari form lahan sejak 2026-09-03)',
+    ];
+
+    // Isian yang memang BUKAN kolom: penyaring, token, pivot penugasan, dan
+    // isian bantu yang nilainya diturunkan bukan disimpan.
+    $dikecualikan = [
+        'satuan_permukiman' => 'isian pivot user_satuan_permukiman (penugasan SP), bukan kolom',
+        'satuan_permukiman_ids_lain' => 'isian pivot infrastruktur_sp / fasilitas_sp_cakupan (SP lain yang dilayani aset bersama), bukan kolom',
+        '_token' => 'token CSRF Laravel',
+        '_method' => 'penanda metode HTTP Laravel',
+        'cari' => 'kata kunci pencarian, bukan isian data',
+        'peruntukan_lahan' => 'penyaring daftar lahan (punya bidang ini?), bukan isian form; kolomnya dicabut Putaran 15',
+        'kategori_lahan' => 'penyaring komposisi lahan (punya bagian ini?), bukan kolom',
+        'tab' => 'penanda tab aktif pada URL',
+    ];
+
+    $orphan = [];
+
+    foreach (BerkasBlade::semua() as $path) {
+        $nama = BerkasBlade::namaPendek($path);
+
+        if (! preg_match('#/form[^/]*\.blade\.php$#', $nama) || ! str_contains($nama, 'pages/')) {
+            continue;
+        }
+
+        $isi = BerkasBlade::bersihkan(file_get_contents($path));
+
+        $terkumpul = [];
+
+        // 1. name="x" dan name="x[]" statik.
+        preg_match_all('/\bname="([a-zA-Z_][a-zA-Z0-9_]*)(\[\])?"/', $isi, $c1);
+        foreach ($c1[1] as $n) {
+            $terkumpul[$n] = 'name';
+        }
+
+        // 2. Sub-kunci repeater: name="wadah[${i}][sub]" -> sub.
+        preg_match_all('/\[\$\{[a-z]+\}\]\[([a-z_]+)\]/', $isi, $c2);
+        foreach ($c2[1] as $n) {
+            $terkumpul[$n] = 'repeater-subkunci';
+        }
+
+        // 3. Nama pembungkus repeater: name="wadah[${i}]...".
+        preg_match_all('/:?name="`?([a-z_]+)\[\$\{/', $isi, $c3);
+        foreach ($c3[1] as $n) {
+            $terkumpul[$n] = 'repeater-pembungkus';
+        }
+
+        // 4. Komponen isian: file-upload/berkas-unggah nama=, koordinat-input
+        //    nama-lintang/nama-bujur, pilih-cari nama=.
+        preg_match_all('/<x-sim\.(?:file-upload|berkas-unggah)\b[^>]*?\bnama="([a-z_]+)"/s', $isi, $c4);
+        foreach ($c4[1] as $n) {
+            $terkumpul[$n] = 'berkas';
+        }
+        preg_match_all('/\bnama-(?:lintang|bujur)="([a-z_]+)"/', $isi, $c5);
+        foreach ($c5[1] as $n) {
+            $terkumpul[$n] = 'koordinat';
+        }
+        preg_match_all('/<x-sim\.pilih-cari\b[^>]*?\bnama="([a-z_]+)"/s', $isi, $c6);
+        foreach ($c6[1] as $n) {
+            $terkumpul[$n] = 'pilih-cari';
+        }
+
+        foreach ($terkumpul as $isian => $asal) {
+            if (isset($kolom[$isian])
+                || isset($pembungkusRepeater[$isian])
+                || isset($peranBerkas[$isian])
+                || isset($dikecualikan[$isian])) {
+                continue;
+            }
+
+            $orphan[] = "{$nama}: name=\"{$isian}\" ({$asal}) tak berpadanan di schema.sql";
+        }
+    }
+
+    // Penjaga terhadap ujinya sendiri: bila pengumpulannya gagal, daftar
+    // yatimnya kosong dan uji ini hijau tanpa memeriksa apa pun.
+    expect($kolom)->toHaveKey('nama_kepala_keluarga');
+    expect($orphan)->toBe([]);
 });
 
 it('tidak mengirimkan aksi ke alamat berakar domain', function () {

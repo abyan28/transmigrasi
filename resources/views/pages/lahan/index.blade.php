@@ -26,22 +26,18 @@
     </x-sim.page-header>
 
     {{--
-        Empat kartu: dua peruntukan, lalu dua komposisi lahan usaha.
+        Empat kartu, satu baris: cacah bidang, lalu dua peruntukan, lalu total.
 
-        Kering dan basah sengaja diberi label "Lahan Usaha" agar tidak terbaca
-        sebagai bagian dari total seluruh lahan. Jumlah keduanya sama dengan
-        Luas Lahan Usaha, bukan dengan Total Luas, sebab pekarangan memang
-        tidak memiliki komposisi.
+        Komposisi kering/basah lahan usaha SENGAJA tidak dikartukan (dikurangi
+        2026-09-03 agar kartunya muat satu baris) - rinciannya sudah tampil per
+        baris pada kolom "Lahan Usaha (ha)" ("1,50 K / 0,00 B").
     --}}
-    <div class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <x-sim.stat-card label="Total Bidang Lahan" :nilai="number_format(count($semua), 0, ',', '.')" satuan="bidang" />
+    <div class="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <x-sim.stat-card label="Total Bidang Lahan" :nilai="number_format($jumlahBidang, 0, ',', '.')" satuan="bidang" />
+        <x-sim.stat-card label="Luas Lahan Pekarangan" :nilai="number_format($luasPekarangan, 2, ',', '.')" satuan="ha" />
         <x-sim.stat-card label="Luas Lahan Usaha" :nilai="number_format($luasUsaha, 2, ',', '.')" satuan="ha" />
-        <x-sim.stat-card label="Luas Lahan Pekarangan" :nilai="number_format($luasPekarangan, 2, ',', '.')"
-            satuan="ha" />
-        <x-sim.stat-card label="Lahan Usaha Kering" :nilai="number_format($luasKering, 2, ',', '.')" satuan="ha" />
-        <x-sim.stat-card label="Lahan Usaha Basah" :nilai="number_format($luasBasah, 2, ',', '.')" satuan="ha" />
         <x-sim.stat-card label="Total Luas"
-            :nilai="number_format(array_sum(array_column($semua, 'luas')), 2, ',', '.')" satuan="ha" />
+            :nilai="number_format($luasPekarangan + $luasUsaha, 2, ',', '.')" satuan="ha" />
     </div>
 
     <form method="GET" action="{{ route('lahan.index') }}">
@@ -74,8 +70,9 @@
                         <select id="filter_jenis" name="peruntukan_lahan"
                             class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
                             <option value="">Semua jenis</option>
-                            @foreach (\App\Enums\PeruntukanLahan::opsi() as $nilai => $label)
-                                <option value="{{ $nilai }}" @selected($filterJenis === $nilai)>{{ $label }}</option>
+                            {{-- Kedua bidang kini kolom pada satu baris, bukan nilai enum. --}}
+                            @foreach (['Lahan Pekarangan', 'Lahan Usaha'] as $nilai)
+                                <option value="{{ $nilai }}" @selected($filterJenis === $nilai)>{{ $nilai }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -129,9 +126,9 @@
             <x-slot:kepala>
                 <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Kode</th>
                 <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Pemilik</th>
-                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Jenis</th>
-                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Komposisi</th>
-                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Luas (ha)</th>
+                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Pekarangan (ha)</th>
+                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Lahan Usaha (ha)</th>
+                <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Total (ha)</th>
                 <th scope="col" class="px-5 py-3 text-right text-theme-xs font-medium text-gray-500 dark:text-gray-400">
                     Aksi
                 </th>
@@ -149,22 +146,35 @@
                         </p>
                     </td>
                     <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ $l['pemilik'] }}</td>
-                    <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ $l['peruntukan_lahan'] }}</td>
                     {{--
-                        Ditulis "1,25 K / 0,75 B" agar bidang campuran terbaca
-                        sebagai satu bidang berkomposisi, bukan sebagai dua
-                        baris. Pekarangan tidak memiliki komposisi.
+                        Kedua bidang pada satu baris (Putaran 15). Yang belum
+                        diterima ditulis tanda hubung, BUKAN nol: nol berarti
+                        menerima seluas nol hektare, dan keduanya berbeda.
                     --}}
                     <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
-                        @if ($l['luas_kering'] === null && $l['luas_basah'] === null)
-                            -
+                        @if ($l['luas_pekarangan'] === null)
+                            <span class="text-gray-400 dark:text-gray-500">belum menerima</span>
                         @else
-                            {{ number_format($l['luas_kering'] ?? 0, 2, ',', '.') }} K /
-                            {{ number_format($l['luas_basah'] ?? 0, 2, ',', '.') }} B
+                            {{ number_format($l['luas_pekarangan'], 2, ',', '.') }}
+                        @endif
+                    </td>
+                    {{--
+                        Ditulis "1,25 K / 0,75 B" agar bidang campuran terbaca
+                        sebagai satu bidang berkomposisi, bukan sebagai dua baris.
+                    --}}
+                    <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
+                        @if ($l['luas_usaha'] === null)
+                            <span class="text-gray-400 dark:text-gray-500">belum menerima</span>
+                        @else
+                            {{ number_format($l['luas_usaha'], 2, ',', '.') }}
+                            <span class="block text-theme-xs text-gray-500 dark:text-gray-400">
+                                {{ number_format($l['luas_kering'] ?? 0, 2, ',', '.') }} K /
+                                {{ number_format($l['luas_basah'] ?? 0, 2, ',', '.') }} B
+                            </span>
                         @endif
                     </td>
                     <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
-                        {{ number_format($l['luas'], 2, ',', '.') }}
+                        {{ number_format((float) ($l['luas_pekarangan'] ?? 0) + (float) ($l['luas_usaha'] ?? 0), 2, ',', '.') }}
                     </td>
                     <td class="px-5 py-3">
                         <div class="flex items-center justify-end gap-1">
@@ -242,13 +252,25 @@
                                 <p class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">{{ $l['pemilik'] }}</p>
                             </a>
                             <span class="shrink-0 text-theme-sm tabular-nums text-gray-700 dark:text-gray-300">
-                                {{ number_format($l['luas'], 2, ',', '.') }} ha
+                                {{ number_format((float) ($l['luas_pekarangan'] ?? 0) + (float) ($l['luas_usaha'] ?? 0), 2, ',', '.') }} ha
                             </span>
                         </div>
+                        {{--
+                            Bidang yang belum diterima tidak disebut sama sekali,
+                            bukan ditulis nol. Kartu sempit, dan "0,00 ha" terbaca
+                            sebagai sudah menerima seluas nol.
+                        --}}
                         <p class="mt-2 text-theme-xs text-gray-500 dark:text-gray-400">
-                            {{ $l['peruntukan_lahan'] }}@if ($l['luas_kering'] !== null || $l['luas_basah'] !== null)
-                                &middot; {{ number_format($l['luas_kering'] ?? 0, 2, ',', '.') }} ha kering,
-                                {{ number_format($l['luas_basah'] ?? 0, 2, ',', '.') }} ha basah
+                            @if ($l['luas_pekarangan'] !== null)
+                                Pekarangan {{ number_format($l['luas_pekarangan'], 2, ',', '.') }} ha
+                            @endif
+                            @if ($l['luas_pekarangan'] !== null && $l['luas_usaha'] !== null)
+                                &middot;
+                            @endif
+                            @if ($l['luas_usaha'] !== null)
+                                Usaha {{ number_format($l['luas_usaha'], 2, ',', '.') }} ha
+                                ({{ number_format($l['luas_kering'] ?? 0, 2, ',', '.') }} K /
+                                {{ number_format($l['luas_basah'] ?? 0, 2, ',', '.') }} B)
                             @endif
                         </p>
                     </div>
@@ -260,7 +282,7 @@
     @if ($bolehTambah)
         <x-sim.modal-form nama="formTambahLahan" judul="Tambah Data Lahan"
             keterangan="Isian bertanda bintang wajib diisi." :aksi="route('lahan.simpan')" ukuran="xl"
-            :langkah="['Identitas & Pemilik', 'Penggunaan & Lokasi', 'Legalitas & Berkas']"
+            :langkah="['Identitas & Pemilik', 'Kedua Bidang', 'Legalitas & Catatan']"
             label-simpan="Simpan Data Lahan">
             @include('pages.lahan.form', ['awalan' => 'tambah'])
         </x-sim.modal-form>
@@ -276,7 +298,7 @@
         <x-sim.modal-form nama="formUbahLahanBaris" judul="Ubah Data Lahan"
             keterangan="Perubahan tercatat pada audit log."
             pola-aksi="/lahan/:id" metode="PUT" ukuran="xl"
-            :langkah="['Identitas & Pemilik', 'Penggunaan & Lokasi', 'Legalitas & Berkas']"
+            :langkah="['Identitas & Pemilik', 'Kedua Bidang', 'Legalitas & Catatan']"
             label-simpan="Simpan Perubahan">
             @include('pages.lahan.form', ['awalan' => 'ubahBaris'])
         </x-sim.modal-form>
@@ -285,5 +307,5 @@
     {{-- Impor massal, lihat komponennya untuk alur tiga langkah --}}
     <x-sim.modal-impor nama="imporLahan" judul="Impor Data Lahan"
         entitas="lahan"
-        :kolom-wajib="['kode_lahan', 'satuan_permukiman', 'luas_ha', 'peruntukan_lahan', 'status_hak']" />
+        :kolom-wajib="['kode_lahan', 'satuan_permukiman', 'luas_pekarangan', 'luas_usaha']" />
 @endsection

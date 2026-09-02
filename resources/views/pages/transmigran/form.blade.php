@@ -301,6 +301,14 @@
                 </div>
 
                 {{--
+                    Status sertifikat DAN unggahan SHM diisi dari FORM DATA LAHAN
+                    (rules.md 7.6a, ditetapkan 2026-09-03): sejak satu keluarga
+                    tepat satu baris lahan, form lahan adalah tempat kanonis
+                    seluruh legalitas lahan keluarga. Halaman rincian transmigran
+                    tetap menampilkan statusnya sebagai bacaan.
+                --}}
+
+                {{--
                     Keanggotaan poktan TIDAK diisi di sini (rules.md 7a.8).
                     Ditetapkan dari sisi poktan, dan nilai di bawah dibaca
                     sebagai turunan dari keanggotaan berstatus Aktif.

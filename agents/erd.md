@@ -193,7 +193,7 @@ Kolom "Aturan hapus" memakai istilah SQL: `RESTRICT` mencegah penghapusan induk 
 | 12 | `riwayat_penghunian` | `rumah_id` | `rumah` | N:1 | CASCADE |
 | 13 | `riwayat_penghunian` | `transmigran_id` | `transmigran` | N:1 | RESTRICT |
 | 13a | `riwayat_kepala_keluarga` | `transmigran_id` | `transmigran` | N:1 | RESTRICT |
-| 14 | `lahan` | `transmigran_id` | `transmigran` | **N:1** | CASCADE |
+| 14 | `lahan` | `transmigran_id` | `transmigran` | **1:1 (UNIQUE)** | CASCADE |
 | 15 | `lahan` | `satuan_permukiman_id` | `satuan_permukiman` | N:1 | RESTRICT |
 | 16 | `lahan` | `poktan_id` | `poktan` | N:1 (nullable) | SET NULL |
 | 17 | ~~`dokumen_lahan`~~ | | | | **DICABUT 2026-09-02** |
@@ -233,6 +233,7 @@ Kolom "Aturan hapus" memakai istilah SQL: `RESTRICT` mencegah penghapusan induk 
 **Rekonsiliasi relasi terhadap keputusan terbaru (diterapkan pada `database/data/schema.sql`, 2026-09-01):**
 
 - **#17 `dokumen_lahan` DICABUT SELURUHNYA (Putaran 12, 2026-09-02)** beserta pivot `dokumen_lahan_bidang`. Pivot m2m itu menambal akibat penempatan yang keliru: HPL adalah alas hak KAWASAN dan SHM meliputi seluruh lahan satu KELUARGA, sehingga tidak satu pun benar-benar milik bidang. Legalitas kini dibaca lewat `transmigran_berkas` (peran `shm`) dan `kawasan_transmigrasi_berkas` (peran `hpl`); statusnya pada `transmigran.status_sertifikat`.
+- **#14 `lahan` → `transmigran` menjadi 1:1 (Putaran 15, 2026-09-02).** `UNIQUE (transmigran_id)` menggantikan `UNIQUE (transmigran_id, peruntukan_lahan)`. `lahan` menjadi **satu baris per keluarga**: kolom `peruntukan_lahan`, `luas`, `lintang`, `bujur` beserta enum `PeruntukanLahan` dicabut; digantikan `luas_pekarangan`/`lintang_pekarangan`/`bujur_pekarangan` dan `luas_usaha`/`luas_kering`/`luas_basah`/`lintang_usaha`/`bujur_usaha`. Kolom pekarangan nullable: `NULL` = belum menerima. Rekap luas menjumlah kolom, bukan baris.
 - **#22–#23 `alsintan` → `satuan_permukiman`/`poktan`** dicabut. `alsintan` = induk/pengadaan tanpa FK tersebut; distribusi ke poktan pada **`alsintan_distribusi`** (`alsintan_id` CASCADE, `poktan_id` RESTRICT, `penanda_terima_id` → `anggota_poktan` SET NULL). Putaran 7.
 - **#24–#26a `saprotan` → `satuan_permukiman`/`poktan`** dicabut. `saprotan` = induk (FK `satuan_id` RESTRICT, `komoditas_id` RESTRICT nullable); distribusi pada **`saprotan_distribusi`** (`saprotan_id` CASCADE, `poktan_id` RESTRICT). Putaran 7.
 - **#32a `penanaman.saprotan_id`** menjadi **`penanaman.saprotan_distribusi_id`** → `saprotan_distribusi`, **NOT NULL**, `ON DELETE RESTRICT` (wajib sejak 2026-08-30).
@@ -280,7 +281,7 @@ Dashboard dan halaman daftar mengandalkan filter wilayah dan periode, sehingga i
 | `transmigran` | `satuan_permukiman_id`, `nik`, `tahun_kedatangan`, `pekerjaan_kepala_keluarga` | Filter per SP, pencarian NIK, grafik per tahun, histogram pekerjaan |
 | `rumah` | `satuan_permukiman_id`, `status_hunian`, `kondisi` | Rekap rumah terhuni per SP |
 | `riwayat_penghunian` | `rumah_id`, `transmigran_id`, `tanggal_masuk`, `tanggal_keluar` | Grafik KK masuk dan keluar per tahun |
-| `lahan` | `transmigran_id`, `satuan_permukiman_id`, `peruntukan_lahan` | Rekap luas lahan per SP dan per jenis |
+| `lahan` | `transmigran_id` (UNIQUE), `satuan_permukiman_id` | Rekap luas lahan per SP; satu baris per KK (Putaran 15) |
 | `penanaman` | `poktan_id`, `komoditas_id`, `periode_tanam`, `saprotan_id` | Rekap tanam per periode dan komoditas; `saprotan_id` dipakai menghitung sisa benih |
 | `hasil_panen` | `penanaman_id`, `poktan_id`, `periode_panen` | Grafik produksi per tahun dan rekap per poktan |
 | `anggota_poktan` | `poktan_id`, `transmigran_id`, `status` | Daftar anggota aktif |
