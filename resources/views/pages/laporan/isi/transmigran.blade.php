@@ -31,6 +31,12 @@
         }
     }
 
+    // Status sertifikat dibaca dari KELUARGA pemilik bidang, bukan dari bidangnya
+    // (Putaran 12). SHM meliputi seluruh lahan satu KK, sehingga statusnya melekat
+    // di sana; menempelkannya per bidang membuat satu sertifikat terhitung berkali.
+    $petaSertifikat = collect($transmigran)->pluck('status_sertifikat', 'id_transmigran')->all();
+    $statusSertifikat = fn ($l) => $petaSertifikat[$l['transmigran_id'] ?? null] ?? 'Belum Didata';
+
     // Nama kabupaten asal, dibaca dari data master.
     $namaAsal = fn ($t) => \App\Support\DataWilayah::namaKabupaten($t['daerah_asal_kabupaten_id'] ?? null) ?? '-';
 
@@ -499,7 +505,7 @@
                     <th scope="col" class="px-2 py-1.5 text-right">Luas Total (ha)</th>
                     <th scope="col" class="px-2 py-1.5 text-right">Luas Kering (ha)</th>
                     <th scope="col" class="px-2 py-1.5 text-right">Luas Basah (ha)</th>
-                    <th scope="col" class="px-2 py-1.5 text-left">Pola Tanam</th>
+                    <th scope="col" class="px-2 py-1.5 text-left">Status Sertifikat</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
@@ -510,7 +516,7 @@
                             $l['pemilik'],
                             $l['satuan_permukiman'],
                             $l['peruntukan_lahan'],
-                            $l['pola_tanam'] ?? '',
+                            $statusSertifikat($l),
                         ]));
                     @endphp
                     <tr data-baris data-sp="{{ $l['satuan_permukiman_id'] }}"
@@ -543,7 +549,7 @@
                             {{ $l['luas_basah'] !== '' && $l['luas_basah'] !== null ? $angka($l['luas_basah'], 2) : '-' }}
                         </td>
                         <td class="px-2 py-1.5 text-[11px] text-gray-600 dark:text-gray-400">
-                            {{ $l['pola_tanam'] ?? '-' }}
+                            {{ $statusSertifikat($l) }}
                         </td>
                     </tr>
                 @empty

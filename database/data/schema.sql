@@ -118,7 +118,6 @@ CREATE TABLE `user` (
   `password_harus_diganti` TINYINT(1) NOT NULL DEFAULT 0,
   `telepon`                VARCHAR(20) NULL,
   `jabatan`                VARCHAR(100) NULL,
-  `foto`                   VARCHAR(255) NULL,
   `is_aktif`               TINYINT(1) NOT NULL DEFAULT 1,
   `last_login_at`          TIMESTAMP NULL DEFAULT NULL,
   `remember_token`         VARCHAR(100) NULL,
@@ -249,7 +248,6 @@ CREATE TABLE `kawasan_transmigrasi` (
   `tahun_penetapan`         YEAR NULL,
   `nomor_sk`                VARCHAR(100) NULL,
   `luas_total`              DECIMAL(12,2) NULL,
-  `dokumen_pendukung`       VARCHAR(255) NULL,
   `keterangan`              TEXT NULL,
   `created_at`              TIMESTAMP NULL DEFAULT NULL,
   `updated_at`              TIMESTAMP NULL DEFAULT NULL,
@@ -281,7 +279,7 @@ CREATE TABLE `satuan_permukiman` (
   `jumlah_kk_rencana`        INT UNSIGNED NULL,
   `lintang`                  DECIMAL(10,7) NULL,
   `bujur`                    DECIMAL(10,7) NULL,
-  `dokumen_pendukung`        VARCHAR(255) NULL,
+  `berkas_id`                 BIGINT UNSIGNED NULL,       -- FK dokumen; SK penetapan SP
   `keterangan`               TEXT NULL,
   -- Keadaan Wilayah -- letak astronomis
   `lintang_utara`            DECIMAL(10,7) NULL,
@@ -339,7 +337,10 @@ CREATE TABLE `satuan_permukiman` (
   CONSTRAINT `fk_sp_desa`
     FOREIGN KEY (`desa_id`) REFERENCES `desa` (`id_desa`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_sp_user`
-    FOREIGN KEY (`user_id`) REFERENCES `user` (`id_user`) ON DELETE SET NULL ON UPDATE CASCADE
+    FOREIGN KEY (`user_id`) REFERENCES `user` (`id_user`) ON DELETE SET NULL ON UPDATE CASCADE,
+  KEY `idx_sp_berkas` (`berkas_id`),
+  CONSTRAINT `fk_sp_berkas`
+    FOREIGN KEY (`berkas_id`) REFERENCES `berkas` (`id_berkas`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 2.7 user_satuan_permukiman (pivot N:M) -------------------------
@@ -400,8 +401,6 @@ CREATE TABLE `inventaris_sp` (
   `status_penyerahan`    VARCHAR(30) NOT NULL,           -- REF(jenis=status_penyerahan)
   `kondisi`              VARCHAR(20) NULL,               -- REF(jenis=kondisi)
   `rincian_kondisi`      JSON NULL,
-  `foto`                 VARCHAR(255) NULL,
-  `dokumen_pendukung`    VARCHAR(255) NULL,
   `keterangan`           TEXT NULL,
   `created_at`           TIMESTAMP NULL DEFAULT NULL,
   `updated_at`           TIMESTAMP NULL DEFAULT NULL,
@@ -429,8 +428,6 @@ CREATE TABLE `fasilitas_sp` (
   `rincian_kondisi`      JSON NULL,
   `lintang`              DECIMAL(10,7) NULL,
   `bujur`                DECIMAL(10,7) NULL,
-  `foto`                 VARCHAR(255) NULL,
-  `dokumen_pendukung`    VARCHAR(255) NULL,
   `keterangan`           TEXT NULL,
   `created_at`           TIMESTAMP NULL DEFAULT NULL,
   `updated_at`           TIMESTAMP NULL DEFAULT NULL,
@@ -595,6 +592,304 @@ CREATE TABLE `penilaian_sp` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
+
+-- #############################################################################
+-- DOMAIN 4b : REGISTRY DOKUMEN
+--
+-- Satu tempat bagi METADATA seluruh berkas sistem (Putaran 12, 2026-09-02),
+-- menggantikan 24 kolom VARCHAR path yang tersebar di 17 tabel.
+--
+-- Alasannya bukan keseragaman semata. Kolom path telanjang TIDAK merekam
+-- `mime` maupun `ukuran`, padahal rules.md 14a.1 dan 14a.2 mewajibkan
+-- keduanya divalidasi di sisi server; tanpa merekamnya, tidak ada cara
+-- memeriksa ulang apa yang sebenarnya tersimpan.
+--
+-- BUKAN tabel polymorphic. Tidak ada kolom `entity_type`/`entity_id`:
+-- kepemilikan dinyatakan pivot per domain (FK nyata di kedua arah) atau FK
+-- langsung pada tabel domain. Pilihan itu menjaga dua hal yang polymorphic
+-- justru mencabut: integritas referensial yang ditegakkan MySQL, dan
+-- penyaring cakupan data tunggal (rules.md 5.0b-1 poin 8) yang menempel
+-- pada model pemilik SP.
+-- #############################################################################
+
+-- 4b.1 dokumen ---------------------------------------------------------------
+CREATE TABLE `berkas` (
+  `id_berkas`       BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `uuid`             CHAR(36) NOT NULL,          -- pengenal publik; PK integer tetap kunci internal (4.0a.1)
+  `jenis_berkas_id` BIGINT UNSIGNED NULL,       -- REF(jenis=jenis_dokumen); NULL = tanpa penggolongan
+  `nama_file`        VARCHAR(255) NOT NULL,      -- nama tersimpan di disk
+  `nama_asli`        VARCHAR(255) NULL,          -- nama dari pengunggah, dipakai saat berkas diunduh
+  `path`             VARCHAR(255) NOT NULL,      -- relatif terhadap disk, bukan URL absolut
+  `mime`             VARCHAR(127) NOT NULL,      -- hasil pemeriksaan isi berkas, BUKAN klaim klien (14a.2)
+  `ekstensi`         VARCHAR(10)  NOT NULL,
+  `ukuran`           BIGINT UNSIGNED NOT NULL,   -- byte; batas 5 MB pada 14a.1 baru dapat diperiksa ulang lewat kolom ini
+  `disk`             VARCHAR(20) NOT NULL DEFAULT 'local', -- local / s3 / gcs; menyiapkan object storage (2.2.6)
+  `keterangan`       VARCHAR(500) NULL,          -- mis. 'tampak samping'; menggantikan kolom foto per-sisi
+  `user_id`          BIGINT UNSIGNED NULL,       -- NULL = unggahan kanal publik tanpa akun (10b.1)
+  `created_at`       TIMESTAMP NULL DEFAULT NULL,
+  `updated_at`       TIMESTAMP NULL DEFAULT NULL,
+  `deleted_at`       TIMESTAMP NULL DEFAULT NULL, -- berkas fisik dibersihkan terjadwal, bukan seketika
+  PRIMARY KEY (`id_berkas`),
+  UNIQUE KEY `uq_berkas_uuid` (`uuid`),
+  KEY `idx_berkas_jenis` (`jenis_berkas_id`),
+  KEY `idx_berkas_user` (`user_id`),
+  KEY `idx_berkas_disk` (`disk`),
+  CONSTRAINT `fk_berkas_jenis`
+    FOREIGN KEY (`jenis_berkas_id`) REFERENCES `referensi` (`id_referensi`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `fk_berkas_user`
+    FOREIGN KEY (`user_id`) REFERENCES `user` (`id_user`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 4b.2 pivot pemilik berkas --------------------------------------------------
+--
+-- Satu pivot per domain yang boleh memegang lebih dari satu berkas. Kolom
+-- `peran` menggantikan nama kolom lama: `foto` dan `dokumen_pendukung`
+-- yang dahulu dua kolom kini dua baris berperan berbeda.
+--
+-- `urutan` menentukan berkas mana yang tampil lebih dulu; berkas pertama
+-- lazim dipakai sebagai gambar utama pada daftar.
+--
+-- CASCADE ke induk domain, sebab tautannya memang tidak bermakna tanpa
+-- pemiliknya. CASCADE pula ke `berkas`, sebab baris pivot yang menunjuk
+-- berkas terhapus hanya menyisakan tautan menggantung.
+
+-- user_berkas: foto profil.
+--
+-- Memakai pivot meski foto profil selalu satu, sebab FK langsung pada tabel
+-- `user` melahirkan SIKLUS: `berkas.user_id` menunjuk `user`,
+-- sedangkan `user.foto_berkas_id` menunjuk balik ke `berkas`. Tidak ada
+-- urutan CREATE TABLE yang memenuhi keduanya, sedangkan kepala berkas ini
+-- menuntut parent sebelum child. Pivot memutus siklus itu.
+--
+-- Satu foto per pengguna ditegakkan UNIQUE pada `user_id` saja, tanpa
+-- `berkas_id`: itulah pembeda dari sepuluh pivot lain yang memang multifile.
+CREATE TABLE `user_berkas` (
+  `id_user_berkas` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `user_id` BIGINT UNSIGNED NOT NULL,
+  `berkas_id` BIGINT UNSIGNED NOT NULL,
+  `peran` VARCHAR(30) NOT NULL DEFAULT 'foto',
+  `urutan` SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  `created_at` TIMESTAMP NULL DEFAULT NULL,
+  `updated_at` TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (`id_user_berkas`),
+  UNIQUE KEY `uq_user_berkas` (`user_id`),
+  KEY `idx_user_berkas_berkas` (`berkas_id`),
+  CONSTRAINT `fk_user_berkas_induk`
+    FOREIGN KEY (`user_id`) REFERENCES `user` (`id_user`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_user_berkas_berkas`
+    FOREIGN KEY (`berkas_id`) REFERENCES `berkas` (`id_berkas`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- kawasan_transmigrasi_berkas: HPL, SK penetapan, peta kawasan
+CREATE TABLE `kawasan_transmigrasi_berkas` (
+  `id_kawasan_transmigrasi_berkas` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `kawasan_transmigrasi_id` BIGINT UNSIGNED NOT NULL,
+  `berkas_id` BIGINT UNSIGNED NOT NULL,
+  `peran` VARCHAR(30) NOT NULL,
+  `urutan` SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  `created_at` TIMESTAMP NULL DEFAULT NULL,
+  `updated_at` TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (`id_kawasan_transmigrasi_berkas`),
+  UNIQUE KEY `uq_kawasan_transmigrasi_berkas` (`kawasan_transmigrasi_id`,`berkas_id`),
+  KEY `idx_kawasan_transmigrasi_berkas_berkas` (`berkas_id`),
+  KEY `idx_kawasan_transmigrasi_berkas_peran` (`peran`),
+  CONSTRAINT `fk_kawasan_transmigrasi_berkas_induk`
+    FOREIGN KEY (`kawasan_transmigrasi_id`) REFERENCES `kawasan_transmigrasi` (`id_kawasan_transmigrasi`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_kawasan_transmigrasi_berkas_berkas`
+    FOREIGN KEY (`berkas_id`) REFERENCES `berkas` (`id_berkas`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- transmigran_berkas: KTP, KK, SK penempatan, SHM
+CREATE TABLE `transmigran_berkas` (
+  `id_transmigran_berkas` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `transmigran_id` BIGINT UNSIGNED NOT NULL,
+  `berkas_id` BIGINT UNSIGNED NOT NULL,
+  `peran` VARCHAR(30) NOT NULL,
+  `urutan` SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  `created_at` TIMESTAMP NULL DEFAULT NULL,
+  `updated_at` TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (`id_transmigran_berkas`),
+  UNIQUE KEY `uq_transmigran_berkas` (`transmigran_id`,`berkas_id`),
+  KEY `idx_transmigran_berkas_berkas` (`berkas_id`),
+  KEY `idx_transmigran_berkas_peran` (`peran`),
+  CONSTRAINT `fk_transmigran_berkas_induk`
+    FOREIGN KEY (`transmigran_id`) REFERENCES `transmigran` (`id_transmigran`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_transmigran_berkas_berkas`
+    FOREIGN KEY (`berkas_id`) REFERENCES `berkas` (`id_berkas`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- rumah_berkas: foto beberapa sisi, dokumen pendukung
+CREATE TABLE `rumah_berkas` (
+  `id_rumah_berkas` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `rumah_id` BIGINT UNSIGNED NOT NULL,
+  `berkas_id` BIGINT UNSIGNED NOT NULL,
+  `peran` VARCHAR(30) NOT NULL,
+  `urutan` SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  `created_at` TIMESTAMP NULL DEFAULT NULL,
+  `updated_at` TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (`id_rumah_berkas`),
+  UNIQUE KEY `uq_rumah_berkas` (`rumah_id`,`berkas_id`),
+  KEY `idx_rumah_berkas_berkas` (`berkas_id`),
+  KEY `idx_rumah_berkas_peran` (`peran`),
+  CONSTRAINT `fk_rumah_berkas_induk`
+    FOREIGN KEY (`rumah_id`) REFERENCES `rumah` (`id_rumah`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_rumah_berkas_berkas`
+    FOREIGN KEY (`berkas_id`) REFERENCES `berkas` (`id_berkas`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- inventaris_sp_berkas: foto kondisi per unit, berita acara
+CREATE TABLE `inventaris_sp_berkas` (
+  `id_inventaris_sp_berkas` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `inventaris_sp_id` BIGINT UNSIGNED NOT NULL,
+  `berkas_id` BIGINT UNSIGNED NOT NULL,
+  `peran` VARCHAR(30) NOT NULL,
+  `urutan` SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  `created_at` TIMESTAMP NULL DEFAULT NULL,
+  `updated_at` TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (`id_inventaris_sp_berkas`),
+  UNIQUE KEY `uq_inventaris_sp_berkas` (`inventaris_sp_id`,`berkas_id`),
+  KEY `idx_inventaris_sp_berkas_berkas` (`berkas_id`),
+  KEY `idx_inventaris_sp_berkas_peran` (`peran`),
+  CONSTRAINT `fk_inventaris_sp_berkas_induk`
+    FOREIGN KEY (`inventaris_sp_id`) REFERENCES `inventaris_sp` (`id_inventaris_sp`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_inventaris_sp_berkas_berkas`
+    FOREIGN KEY (`berkas_id`) REFERENCES `berkas` (`id_berkas`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- fasilitas_sp_berkas: foto kondisi per unit, berita acara
+CREATE TABLE `fasilitas_sp_berkas` (
+  `id_fasilitas_sp_berkas` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `fasilitas_sp_id` BIGINT UNSIGNED NOT NULL,
+  `berkas_id` BIGINT UNSIGNED NOT NULL,
+  `peran` VARCHAR(30) NOT NULL,
+  `urutan` SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  `created_at` TIMESTAMP NULL DEFAULT NULL,
+  `updated_at` TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (`id_fasilitas_sp_berkas`),
+  UNIQUE KEY `uq_fasilitas_sp_berkas` (`fasilitas_sp_id`,`berkas_id`),
+  KEY `idx_fasilitas_sp_berkas_berkas` (`berkas_id`),
+  KEY `idx_fasilitas_sp_berkas_peran` (`peran`),
+  CONSTRAINT `fk_fasilitas_sp_berkas_induk`
+    FOREIGN KEY (`fasilitas_sp_id`) REFERENCES `fasilitas_sp` (`id_fasilitas_sp`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_fasilitas_sp_berkas_berkas`
+    FOREIGN KEY (`berkas_id`) REFERENCES `berkas` (`id_berkas`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- infrastruktur_berkas: foto beberapa titik kerusakan
+CREATE TABLE `infrastruktur_berkas` (
+  `id_infrastruktur_berkas` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `infrastruktur_id` BIGINT UNSIGNED NOT NULL,
+  `berkas_id` BIGINT UNSIGNED NOT NULL,
+  `peran` VARCHAR(30) NOT NULL,
+  `urutan` SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  `created_at` TIMESTAMP NULL DEFAULT NULL,
+  `updated_at` TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (`id_infrastruktur_berkas`),
+  UNIQUE KEY `uq_infrastruktur_berkas` (`infrastruktur_id`,`berkas_id`),
+  KEY `idx_infrastruktur_berkas_berkas` (`berkas_id`),
+  KEY `idx_infrastruktur_berkas_peran` (`peran`),
+  CONSTRAINT `fk_infrastruktur_berkas_induk`
+    FOREIGN KEY (`infrastruktur_id`) REFERENCES `infrastruktur` (`id_infrastruktur`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_infrastruktur_berkas_berkas`
+    FOREIGN KEY (`berkas_id`) REFERENCES `berkas` (`id_berkas`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- alsintan_berkas: foto barang, berita acara pengadaan
+CREATE TABLE `alsintan_berkas` (
+  `id_alsintan_berkas` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `alsintan_id` BIGINT UNSIGNED NOT NULL,
+  `berkas_id` BIGINT UNSIGNED NOT NULL,
+  `peran` VARCHAR(30) NOT NULL,
+  `urutan` SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  `created_at` TIMESTAMP NULL DEFAULT NULL,
+  `updated_at` TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (`id_alsintan_berkas`),
+  UNIQUE KEY `uq_alsintan_berkas` (`alsintan_id`,`berkas_id`),
+  KEY `idx_alsintan_berkas_berkas` (`berkas_id`),
+  KEY `idx_alsintan_berkas_peran` (`peran`),
+  CONSTRAINT `fk_alsintan_berkas_induk`
+    FOREIGN KEY (`alsintan_id`) REFERENCES `alsintan` (`id_alsintan`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_alsintan_berkas_berkas`
+    FOREIGN KEY (`berkas_id`) REFERENCES `berkas` (`id_berkas`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- penanaman_berkas: berita acara tanam, foto hamparan, bukti benih
+CREATE TABLE `penanaman_berkas` (
+  `id_penanaman_berkas` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `penanaman_id` BIGINT UNSIGNED NOT NULL,
+  `berkas_id` BIGINT UNSIGNED NOT NULL,
+  `peran` VARCHAR(30) NOT NULL,
+  `urutan` SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  `created_at` TIMESTAMP NULL DEFAULT NULL,
+  `updated_at` TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (`id_penanaman_berkas`),
+  UNIQUE KEY `uq_penanaman_berkas` (`penanaman_id`,`berkas_id`),
+  KEY `idx_penanaman_berkas_berkas` (`berkas_id`),
+  KEY `idx_penanaman_berkas_peran` (`peran`),
+  CONSTRAINT `fk_penanaman_berkas_induk`
+    FOREIGN KEY (`penanaman_id`) REFERENCES `penanaman` (`id_penanaman`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_penanaman_berkas_berkas`
+    FOREIGN KEY (`berkas_id`) REFERENCES `berkas` (`id_berkas`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- hasil_panen_berkas: berita acara panen, foto hamparan, bukti timbangan
+CREATE TABLE `hasil_panen_berkas` (
+  `id_hasil_panen_berkas` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `hasil_panen_id` BIGINT UNSIGNED NOT NULL,
+  `berkas_id` BIGINT UNSIGNED NOT NULL,
+  `peran` VARCHAR(30) NOT NULL,
+  `urutan` SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  `created_at` TIMESTAMP NULL DEFAULT NULL,
+  `updated_at` TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (`id_hasil_panen_berkas`),
+  UNIQUE KEY `uq_hasil_panen_berkas` (`hasil_panen_id`,`berkas_id`),
+  KEY `idx_hasil_panen_berkas_berkas` (`berkas_id`),
+  KEY `idx_hasil_panen_berkas_peran` (`peran`),
+  CONSTRAINT `fk_hasil_panen_berkas_induk`
+    FOREIGN KEY (`hasil_panen_id`) REFERENCES `hasil_panen` (`id_hasil_panen`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_hasil_panen_berkas_berkas`
+    FOREIGN KEY (`berkas_id`) REFERENCES `berkas` (`id_berkas`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- pengaduan_berkas: beberapa foto bukti dari pelapor
+CREATE TABLE `pengaduan_berkas` (
+  `id_pengaduan_berkas` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `pengaduan_id` BIGINT UNSIGNED NOT NULL,
+  `berkas_id` BIGINT UNSIGNED NOT NULL,
+  `peran` VARCHAR(30) NOT NULL,
+  `urutan` SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  `created_at` TIMESTAMP NULL DEFAULT NULL,
+  `updated_at` TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (`id_pengaduan_berkas`),
+  UNIQUE KEY `uq_pengaduan_berkas` (`pengaduan_id`,`berkas_id`),
+  KEY `idx_pengaduan_berkas_berkas` (`berkas_id`),
+  KEY `idx_pengaduan_berkas_peran` (`peran`),
+  CONSTRAINT `fk_pengaduan_berkas_induk`
+    FOREIGN KEY (`pengaduan_id`) REFERENCES `pengaduan` (`id_pengaduan`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_pengaduan_berkas_berkas`
+    FOREIGN KEY (`berkas_id`) REFERENCES `berkas` (`id_berkas`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- penanganan_pengaduan_berkas: dokumen tindak lanjut tiap tahap
+CREATE TABLE `penanganan_pengaduan_berkas` (
+  `id_penanganan_pengaduan_berkas` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `penanganan_pengaduan_id` BIGINT UNSIGNED NOT NULL,
+  `berkas_id` BIGINT UNSIGNED NOT NULL,
+  `peran` VARCHAR(30) NOT NULL,
+  `urutan` SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  `created_at` TIMESTAMP NULL DEFAULT NULL,
+  `updated_at` TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (`id_penanganan_pengaduan_berkas`),
+  UNIQUE KEY `uq_penanganan_pengaduan_berkas` (`penanganan_pengaduan_id`,`berkas_id`),
+  KEY `idx_penanganan_pengaduan_berkas_berkas` (`berkas_id`),
+  KEY `idx_penanganan_pengaduan_berkas_peran` (`peran`),
+  CONSTRAINT `fk_penanganan_pengaduan_berkas_induk`
+    FOREIGN KEY (`penanganan_pengaduan_id`) REFERENCES `penanganan_pengaduan` (`id_penanganan_pengaduan`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_penanganan_pengaduan_berkas_berkas`
+    FOREIGN KEY (`berkas_id`) REFERENCES `berkas` (`id_berkas`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
 -- #############################################################################
 -- DOMAIN 5 : KEPENDUDUKAN
 -- #############################################################################
@@ -626,8 +921,13 @@ CREATE TABLE `transmigran` (
   `tahun_kedatangan`           YEAR NOT NULL,
   `status_tinggal`             ENUM('Aktif','Pindah Penduduk','Tidak Aktif') NOT NULL,
   `status_anggota_poktan`      ENUM('Ya','Tidak') NOT NULL,
+  -- Sertifikat (SHM) meliputi SELURUH lahan satu KK, pekarangan maupun usaha,
+  -- sehingga statusnya melekat di sini dan bukan pada tiap bidang.
+  -- 'Belum Didata' memisahkan keluarga yang dipastikan belum bersertifikat dari
+  -- yang belum pernah ditanyakan; tanpa itu keduanya terhitung sama dan laporan
+  -- ke dinas menyebut angka yang keliru tanpa memerahkan apa pun.
+  `status_sertifikat`          ENUM('Sudah','Belum','Belum Didata') NOT NULL DEFAULT 'Belum Didata',
   `telepon`                    VARCHAR(20) NULL,
-  `dokumen_pendukung`          VARCHAR(255) NULL,
   `keterangan`                 TEXT NULL,
   `created_at`                 TIMESTAMP NULL DEFAULT NULL,
   `updated_at`                 TIMESTAMP NULL DEFAULT NULL,
@@ -640,6 +940,7 @@ CREATE TABLE `transmigran` (
   KEY `idx_transmigran_nama` (`nama_kepala_keluarga`),
   KEY `idx_transmigran_tahun_kedatangan` (`tahun_kedatangan`),
   KEY `idx_transmigran_pekerjaan` (`pekerjaan_kepala_keluarga`),
+  KEY `idx_transmigran_sertifikat` (`status_sertifikat`),
   KEY `idx_transmigran_daerah_asal` (`daerah_asal_kabupaten_id`),
   CONSTRAINT `fk_transmigran_sp`
     FOREIGN KEY (`satuan_permukiman_id`) REFERENCES `satuan_permukiman` (`id_satuan_permukiman`) ON DELETE RESTRICT ON UPDATE CASCADE,
@@ -698,9 +999,7 @@ CREATE TABLE `rumah` (
   `luas_bangunan`        DECIMAL(8,2) NULL,           -- meter persegi
   `lintang`              DECIMAL(10,7) NULL,
   `bujur`                DECIMAL(10,7) NULL,
-  `foto_rumah`           VARCHAR(255) NULL,
   `catatan_hunian`       TEXT NULL,
-  `dokumen_pendukung`    VARCHAR(255) NULL,
   `created_at`           TIMESTAMP NULL DEFAULT NULL,
   `updated_at`           TIMESTAMP NULL DEFAULT NULL,
   `deleted_at`           TIMESTAMP NULL DEFAULT NULL,
@@ -793,7 +1092,7 @@ CREATE TABLE `poktan` (
   `luas_basah_ketua`          DECIMAL(12,2) NULL,        -- hektare; hanya Bukan Transmigran
   `lintang`                   DECIMAL(10,7) NULL,
   `bujur`                     DECIMAL(10,7) NULL,
-  `dokumen_pendukung`         VARCHAR(255) NULL,
+  `berkas_id`                BIGINT UNSIGNED NULL,       -- FK dokumen; SK pembentukan
   `keterangan`                TEXT NULL,
   `created_at`                TIMESTAMP NULL DEFAULT NULL,
   `updated_at`                TIMESTAMP NULL DEFAULT NULL,
@@ -809,7 +1108,10 @@ CREATE TABLE `poktan` (
   CONSTRAINT `fk_poktan_ketua_transmigran`
     FOREIGN KEY (`ketua_transmigran_id`) REFERENCES `transmigran` (`id_transmigran`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_poktan_ketua_anggota_keluarga`
-    FOREIGN KEY (`ketua_anggota_keluarga_id`) REFERENCES `anggota_keluarga` (`id_anggota_keluarga`) ON DELETE SET NULL ON UPDATE CASCADE
+    FOREIGN KEY (`ketua_anggota_keluarga_id`) REFERENCES `anggota_keluarga` (`id_anggota_keluarga`) ON DELETE SET NULL ON UPDATE CASCADE,
+  KEY `idx_poktan_berkas` (`berkas_id`),
+  CONSTRAINT `fk_poktan_berkas`
+    FOREIGN KEY (`berkas_id`) REFERENCES `berkas` (`id_berkas`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 6.2 anggota_poktan ------------
@@ -857,7 +1159,6 @@ CREATE TABLE `alsintan` (
   `jumlah_total`      INT UNSIGNED NOT NULL,
   `tahun_pengadaan`   YEAR NULL,
   `sumber_dana`       VARCHAR(50) NULL,                -- REF(jenis=sumber_dana)
-  `dokumen_pendukung` VARCHAR(255) NULL,
   `keterangan`        TEXT NULL,
   `created_at`        TIMESTAMP NULL DEFAULT NULL,
   `updated_at`        TIMESTAMP NULL DEFAULT NULL,
@@ -879,7 +1180,7 @@ CREATE TABLE `alsintan_distribusi` (
   `kondisi`                VARCHAR(20) NULL,           -- REF(jenis=kondisi)
   `penanda_terima_id`      BIGINT UNSIGNED NULL,       -- -> anggota_poktan
   `tanggal_serah`          DATE NULL,
-  `foto`                   VARCHAR(255) NULL,
+  `foto_berkas_id`        BIGINT UNSIGNED NULL,        -- FK dokumen; kondisi unit di poktan ini
   `keterangan`             TEXT NULL,
   `created_at`             TIMESTAMP NULL DEFAULT NULL,
   `updated_at`             TIMESTAMP NULL DEFAULT NULL,
@@ -892,7 +1193,10 @@ CREATE TABLE `alsintan_distribusi` (
   CONSTRAINT `fk_alsintan_distribusi_poktan`
     FOREIGN KEY (`poktan_id`) REFERENCES `poktan` (`id_poktan`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_alsintan_distribusi_penanda`
-    FOREIGN KEY (`penanda_terima_id`) REFERENCES `anggota_poktan` (`id_anggota_poktan`) ON DELETE SET NULL ON UPDATE CASCADE
+    FOREIGN KEY (`penanda_terima_id`) REFERENCES `anggota_poktan` (`id_anggota_poktan`) ON DELETE SET NULL ON UPDATE CASCADE,
+  KEY `idx_alsintan_distribusi_foto` (`foto_berkas_id`),
+  CONSTRAINT `fk_alsintan_distribusi_foto`
+    FOREIGN KEY (`foto_berkas_id`) REFERENCES `berkas` (`id_berkas`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 6.5 saprotan (induk / pengadaan) --
@@ -910,8 +1214,8 @@ CREATE TABLE `saprotan` (
   `jadwal_tanam`     CHAR(7) NULL,                      -- rencana tanam YYYY-MM
   `tahun_pengadaan`  YEAR NOT NULL,                     -- tahun anggaran
   `sumber_dana`      VARCHAR(50) NULL,                  -- REF(jenis=sumber_dana)
-  `foto`             VARCHAR(255) NULL,
-  `dokumen_pendukung` VARCHAR(255) NULL,
+  `foto_berkas_id`  BIGINT UNSIGNED NULL,              -- FK dokumen; foto barang
+  `berkas_id`       BIGINT UNSIGNED NULL,              -- FK dokumen; berita acara penyaluran
   `keterangan`       TEXT NULL,
   `created_at`       TIMESTAMP NULL DEFAULT NULL,
   `updated_at`       TIMESTAMP NULL DEFAULT NULL,
@@ -924,7 +1228,13 @@ CREATE TABLE `saprotan` (
   CONSTRAINT `fk_saprotan_satuan`
     FOREIGN KEY (`satuan_id`) REFERENCES `satuan` (`id_satuan`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_saprotan_komoditas`
-    FOREIGN KEY (`komoditas_id`) REFERENCES `komoditas` (`id_komoditas`) ON DELETE RESTRICT ON UPDATE CASCADE
+    FOREIGN KEY (`komoditas_id`) REFERENCES `komoditas` (`id_komoditas`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  KEY `idx_saprotan_foto` (`foto_berkas_id`),
+  CONSTRAINT `fk_saprotan_foto`
+    FOREIGN KEY (`foto_berkas_id`) REFERENCES `berkas` (`id_berkas`) ON DELETE SET NULL ON UPDATE CASCADE,
+  KEY `idx_saprotan_berkas` (`berkas_id`),
+  CONSTRAINT `fk_saprotan_berkas`
+    FOREIGN KEY (`berkas_id`) REFERENCES `berkas` (`id_berkas`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 6.6 saprotan_distribusi ----------
@@ -972,9 +1282,6 @@ CREATE TABLE `lahan` (
   `tujuan_pemanfaatan`   TEXT NULL,
   `lintang`              DECIMAL(10,7) NULL,
   `bujur`                DECIMAL(10,7) NULL,
-  `pola_tanam`           VARCHAR(255) NULL,               -- khusus lahan usaha
-  `peralatan_pertanian`  TEXT NULL,                       -- khusus lahan usaha
-  `kendala`              TEXT NULL,                       -- khusus lahan usaha
   `keterangan`           TEXT NULL,
   `created_at`           TIMESTAMP NULL DEFAULT NULL,
   `updated_at`           TIMESTAMP NULL DEFAULT NULL,
@@ -982,6 +1289,7 @@ CREATE TABLE `lahan` (
   PRIMARY KEY (`id_lahan`),
   UNIQUE KEY `uq_lahan_uuid` (`uuid`),
   UNIQUE KEY `uq_lahan_kode` (`kode_lahan`),
+  UNIQUE KEY `uq_lahan_transmigran_peruntukan` (`transmigran_id`,`peruntukan_lahan`),
   KEY `idx_lahan_transmigran` (`transmigran_id`),
   KEY `idx_lahan_sp` (`satuan_permukiman_id`),
   KEY `idx_lahan_peruntukan` (`peruntukan_lahan`),
@@ -993,39 +1301,6 @@ CREATE TABLE `lahan` (
   CONSTRAINT `fk_lahan_poktan`
     FOREIGN KEY (`poktan_id`) REFERENCES `poktan` (`id_poktan`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- 7.2 dokumen_lahan (induk) -------------
--- Berkas status lahan. nomor_dokumen & tanggal_terbit WAJIB dipertahankan (data legal).
-CREATE TABLE `dokumen_lahan` (
-  `id_dokumen_lahan` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `jenis_dokumen`    VARCHAR(50) NOT NULL,             -- REF(jenis=jenis_dokumen_lahan): HPL / SHM
-  `nomor_dokumen`    VARCHAR(100) NULL,
-  `tanggal_terbit`   DATE NULL,
-  `file_dokumen`     VARCHAR(255) NOT NULL,            -- path berkas
-  `keterangan`       TEXT NULL,
-  `created_at`       TIMESTAMP NULL DEFAULT NULL,
-  `updated_at`       TIMESTAMP NULL DEFAULT NULL,
-  `deleted_at`       TIMESTAMP NULL DEFAULT NULL,
-  PRIMARY KEY (`id_dokumen_lahan`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- 7.3 dokumen_lahan_bidang (pivot M:N) --
--- Satu dokumen (HPL/SK) dapat mencakup banyak bidang (Putaran 7, 2026-08-30).
-CREATE TABLE `dokumen_lahan_bidang` (
-  `id_dokumen_lahan_bidang` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `dokumen_lahan_id`        BIGINT UNSIGNED NOT NULL,
-  `lahan_id`                BIGINT UNSIGNED NOT NULL,
-  `created_at`              TIMESTAMP NULL DEFAULT NULL,
-  `updated_at`              TIMESTAMP NULL DEFAULT NULL,
-  PRIMARY KEY (`id_dokumen_lahan_bidang`),
-  UNIQUE KEY `uq_dokumen_lahan_bidang` (`dokumen_lahan_id`,`lahan_id`),
-  KEY `idx_dokumen_lahan_bidang_lahan` (`lahan_id`),
-  CONSTRAINT `fk_dokumen_lahan_bidang_dokumen`
-    FOREIGN KEY (`dokumen_lahan_id`) REFERENCES `dokumen_lahan` (`id_dokumen_lahan`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_dokumen_lahan_bidang_lahan`
-    FOREIGN KEY (`lahan_id`) REFERENCES `lahan` (`id_lahan`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 
 -- #############################################################################
 -- DOMAIN 8 : PRODUKSI PERTANIAN
@@ -1060,7 +1335,6 @@ CREATE TABLE `penanaman` (
   `volume_benih`            DECIMAL(12,3) NOT NULL,
   `realisasi_tanam`         DECIMAL(12,2) NOT NULL,     -- hektare yang benar-benar ditanami
   `periode_tanam`           CHAR(7) NOT NULL,           -- YYYY-MM
-  `dokumen_pendukung`       VARCHAR(255) NULL,
   `keterangan`              TEXT NULL,
   `created_at`              TIMESTAMP NULL DEFAULT NULL,
   `updated_at`              TIMESTAMP NULL DEFAULT NULL,
@@ -1095,7 +1369,6 @@ CREATE TABLE `hasil_panen` (
   `produktivitas`     DECIMAL(12,3) NOT NULL,            -- per hektare, satuan baku komoditas
   `produksi`          DECIMAL(12,3) NOT NULL,            -- disimpan apa adanya, tanpa konversi
   `harga_jual`        DECIMAL(15,2) NULL,                -- rupiah per satuan baku
-  `dokumen_pendukung` VARCHAR(255) NULL,
   `keterangan`        TEXT NULL,
   `created_at`        TIMESTAMP NULL DEFAULT NULL,
   `updated_at`        TIMESTAMP NULL DEFAULT NULL,
@@ -1131,8 +1404,6 @@ CREATE TABLE `infrastruktur` (
   `kapasitas`            VARCHAR(100) NULL,             -- mis. "debit 5 liter/detik", "panjang 2 km"
   `lintang`              DECIMAL(10,7) NULL,
   `bujur`                DECIMAL(10,7) NULL,
-  `foto`                 VARCHAR(255) NULL,
-  `dokumen_pendukung`    VARCHAR(255) NULL,
   `keterangan`           TEXT NULL,
   `created_at`           TIMESTAMP NULL DEFAULT NULL,
   `updated_at`           TIMESTAMP NULL DEFAULT NULL,
@@ -1188,7 +1459,6 @@ CREATE TABLE `pengaduan` (
   `prioritas`            VARCHAR(20) NOT NULL,           -- REF(jenis=prioritas_pengaduan)
   `lintang`              DECIMAL(10,7) NULL,
   `bujur`                DECIMAL(10,7) NULL,
-  `dokumen_pendukung`    VARCHAR(255) NULL,              -- bukti dari pelapor
   `created_at`           TIMESTAMP NULL DEFAULT NULL,
   `updated_at`           TIMESTAMP NULL DEFAULT NULL,
   `deleted_at`           TIMESTAMP NULL DEFAULT NULL,
@@ -1220,7 +1490,6 @@ CREATE TABLE `penanganan_pengaduan` (
   `status_sesudah`          ENUM('Menunggu Diterima','Diterima','Diproses','Selesai') NOT NULL,
   `tanggal_penanganan`      DATE NOT NULL,
   `catatan`                 TEXT NOT NULL,
-  `dokumen_tindak_lanjut`   VARCHAR(255) NULL,
   `created_at`              TIMESTAMP NULL DEFAULT NULL,
   `updated_at`              TIMESTAMP NULL DEFAULT NULL,
   PRIMARY KEY (`id_penanganan_pengaduan`),

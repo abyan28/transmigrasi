@@ -393,7 +393,7 @@ class LaporanData
      *
      * Grain berpindah dari pengadaan ke distribusi sejak Putaran 7: satu batch
      * dapat dibagikan ke banyak poktan lintas SP. `jenis_alat` kini benar-benar
-     * `jenis_alsintan` (data master §11.37), bukan `nama_alat` yang dipakai
+     * `jenis_alsintan` (data master Ã‚Â§11.37), bukan `nama_alat` yang dipakai
      * ulang. Pengadaan yang belum disalurkan ke satu poktan pun tidak
      * menghasilkan baris di sini.
      *
@@ -777,7 +777,11 @@ class LaporanData
             $j = $l['peruntukan_lahan'];
             $lahanGrup[$j] ??= ['dibagikan' => 0.0, 'diusahakan' => 0.0];
             $lahanGrup[$j]['dibagikan'] += (float) $l['luas'];
-            if (! empty($l['pola_tanam'])) {
+
+            // Lahan usaha dihitung diusahakan; pekarangan tidak. Sebelum
+            // Putaran 12 penandanya kolom pola_tanam, yang dicabut bersama
+            // peralatan dan kendala atas keputusan pemilik proyek.
+            if (PeruntukanLahan::tryFrom($j)?->lahanUsaha() ?? false) {
                 $lahanGrup[$j]['diusahakan'] += (float) $l['luas'];
             }
         }
@@ -791,20 +795,20 @@ class LaporanData
             self::angka(array_sum(array_column($lahanGrup, 'diusahakan'))),
         ];
 
-        // Cacah BIDANG berdokumen per jenis (Putaran 7): satu dokumen dapat
-        // mencakup banyak bidang, jadi yang dihitung adalah bidangnya.
-        $idLahanSp = array_column($lahanSp, 'id_lahan');
-        $dokGrup = [];
-        foreach (DummyData::dokumenLahan() as $d) {
-            foreach ($d['lahan_ids'] as $lahanId) {
-                if (in_array($lahanId, $idLahanSp, true)) {
-                    $dokGrup[$d['jenis_dokumen']] = ($dokGrup[$d['jenis_dokumen']] ?? 0) + 1;
-                }
-            }
-        }
+        // Sertifikat tanah dihitung dari status pada KELUARGA, bukan dari cacah
+        // dokumen per bidang (Putaran 12). SHM meliputi seluruh lahan satu KK,
+        // sehingga menghitungnya per bidang melipatgandakan satu sertifikat yang
+        // sama. Belum Didata sengaja tampil terpisah: ia bukan elum punya,
+        // melainkan belum pernah ditanyakan petugas.
+        $idTransSp = array_column(array_values(array_filter(
+            DummyData::transmigran(),
+            fn ($x) => $x['satuan_permukiman_id'] === $id
+        )), 'status_sertifikat');
+
+        $sertGrup = array_count_values($idTransSp);
         $barisDok = [];
-        foreach ($dokGrup as $jenis => $n) {
-            $barisDok[] = [$jenis, $n];
+        foreach (['Sudah', 'Belum', 'Belum Didata'] as $s) {
+            $barisDok[] = [$s, $sertGrup[$s] ?? 0];
         }
 
         $panenGrup = [];
@@ -1385,7 +1389,7 @@ class LaporanData
                 }
             }
 
-            // rules.md §16c: luas_lahan dihitung dari himpunan poktan unik
+            // rules.md Ã‚Â§16c: luas_lahan dihitung dari himpunan poktan unik
             if (in_array('luas_lahan', $kolomJumlah, true)) {
                 $poktanUnikSp = [];
                 $luasUnik = 0.0;
@@ -1399,7 +1403,7 @@ class LaporanData
                 $subtotal['luas_lahan'] = $luasUnik;
             }
 
-            // rules.md §16c: belum_ditanam dihitung per poktan unik: sum(max(0, luas_poktan - tanam_poktan))
+            // rules.md Ã‚Â§16c: belum_ditanam dihitung per poktan unik: sum(max(0, luas_poktan - tanam_poktan))
             if (in_array('belum_ditanam', $kolomJumlah, true)) {
                 $tanamPerPoktan = [];
                 $luasPerPoktan = [];

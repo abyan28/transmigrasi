@@ -630,7 +630,7 @@ it('menautkan tiap distribusi alsintan ke pengadaan dan poktan yang sah', functi
             ->and($d['satuan_permukiman_id'])->not->toBeNull()
             ->and($d['jumlah'])->toBeGreaterThan(0);
 
-        // SP mengikuti poktan, tidak dipilih terpisah (rules.md §7b poin 3).
+        // SP mengikuti poktan, tidak dipilih terpisah (rules.md Â§7b poin 3).
         $poktan = collect(DummyData::poktan())->firstWhere('id_poktan', $d['poktan_id']);
         expect($d['satuan_permukiman_id'])->toBe($poktan['satuan_permukiman_id']);
 
@@ -650,7 +650,7 @@ it('mencatat rincian kondisi per unit pada fasilitas dan inventaris SP', functio
         foreach ($daftar as $a) {
             expect($a)->toHaveKey('rincian_kondisi');
 
-            // Σ rincian = jumlah.
+            // Î£ rincian = jumlah.
             $nama = $a['nama_barang'] ?? $a['nama_fasilitas'] ?? '?';
             expect(array_sum($a['rincian_kondisi']))->toBe($a['jumlah'], "rincian kondisi {$nama}");
 
@@ -659,7 +659,7 @@ it('mencatat rincian kondisi per unit pada fasilitas dan inventaris SP', functio
                 expect(Kondisi::tryFrom($k))->not->toBeNull("kondisi '{$k}' bukan enum");
             }
 
-            // `kondisi` kepala tidak diturunkan — tetap salah satu kunci rincian
+            // `kondisi` kepala tidak diturunkan â€” tetap salah satu kunci rincian
             // ATAU nilai lama (bila jumlah 1).
             expect($a['kondisi'])->toBeString();
         }
@@ -671,38 +671,31 @@ it('mencatat rincian kondisi per unit pada fasilitas dan inventaris SP', functio
     expect($beragam)->not->toBeNull('data contoh wajib memuat aset ber-rincian kondisi beragam');
 });
 
-it('membiarkan satu dokumen lahan mencakup banyak bidang', function () {
-    // Putaran 7: satu HPL / SK pencadangan lazim mencakup ratusan bidang.
-    // Model lama membawa satu lahan_id per baris, memaksa dokumen yang sama
-    // diketik ulang dan berkasnya diunggah ulang per bidang.
-    $idLahan = array_column(DummyData::lahan(), 'id_lahan');
+it('menaruh legalitas lahan pada tempatnya, bukan pada bidangnya', function () {
+    // Putaran 12 membalik Putaran 7. Pivot `dokumen_lahan_bidang` dahulu
+    // dibuat agar satu HPL dapat mencakup ratusan bidang, tetapi itu menambal
+    // AKIBAT, bukan sebab: HPL adalah alas hak KAWASAN milik instansi dan
+    // tidak pernah menjadi hak seorang transmigran (rules.md 7.4a), sedangkan
+    // SHM meliputi seluruh lahan satu keluarga sekaligus.
+    //
+    // Setelah keduanya ditempatkan benar, bidang lahan tidak memegang dokumen
+    // apa pun dan pivot m2m itu hilang tanpa kehilangan kemampuan apa pun.
+    expect(method_exists(DummyData::class, 'dokumenLahan'))->toBeFalse()
+        ->and(method_exists(DummyData::class, 'dokumenLahanBidang'))->toBeFalse();
 
-    foreach (DummyData::dokumenLahan() as $d) {
-        expect($d)->toHaveKey('lahan_ids')
-            ->and($d['lahan_ids'])->not->toBeEmpty()
-            // Kompatibilitas: lahan_id tunggal = bidang pertama.
-            ->and($d['lahan_id'])->toBe($d['lahan_ids'][0]);
+    // SHM melekat pada keluarga, diunggah SEKALI untuk seluruh bidangnya.
+    $shm = DummyData::berkasSatu('transmigran_berkas', 'transmigran_id', 2, 'shm');
+    expect($shm)->not->toBeNull('data contoh wajib memuat satu SHM milik keluarga');
 
-        foreach ($d['lahan_ids'] as $lid) {
-            expect($idLahan)->toContain($lid);
-        }
-    }
+    // HPL melekat pada kawasan, satu untuk seluruh bidang di dalamnya.
+    $hpl = DummyData::berkasSatu('kawasan_transmigrasi_berkas', 'kawasan_transmigrasi_id', 1, 'hpl');
+    expect($hpl)->not->toBeNull('data contoh wajib memuat HPL kawasan');
 
-    // Data contoh wajib memuat satu dokumen lintas bidang.
-    $lintas = collect(DummyData::dokumenLahan())->first(fn ($d) => count($d['lahan_ids']) > 1);
-    expect($lintas)->not->toBeNull('data contoh wajib memuat dokumen lahan lintas bidang');
-
-    // Penyaringan per bidang mengembalikan dokumen yang mencakupnya.
-    foreach ($lintas['lahan_ids'] as $lid) {
-        expect(collect(DummyData::dokumenLahan($lid))->pluck('id_dokumen_lahan'))
-            ->toContain($lintas['id_dokumen_lahan']);
-    }
-
-    // Tabel penghubung menautkan ke dokumen yang sah.
-    $idDok = array_column(DummyData::dokumenLahan(), 'id_dokumen_lahan');
-    foreach (DummyData::dokumenLahanBidang() as $b) {
-        expect($idDok)->toContain($b['dokumen_lahan_id'])
-            ->and($idLahan)->toContain($b['lahan_id']);
+    // Statusnya dicatat tersendiri, sebab ketiadaan unggahan TIDAK berarti
+    // belum bersertifikat: ia dapat berarti belum diunggah petugas.
+    foreach (DummyData::transmigran() as $t) {
+        expect($t)->toHaveKey('status_sertifikat')
+            ->and(['Sudah', 'Belum', 'Belum Didata'])->toContain($t['status_sertifikat']);
     }
 });
 

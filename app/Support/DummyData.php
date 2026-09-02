@@ -57,7 +57,7 @@ class DummyData
      */
     public static function kawasan(): array
     {
-        return [
+        $data = [
             [
                 'id_kawasan_transmigrasi' => 1,
                 'nama' => 'Kobalima Timur',
@@ -77,9 +77,10 @@ class DummyData
                 'luas_total' => 4250.75,
                 'jumlah_sp' => 6,
                 'keterangan' => 'Kawasan mencakup empat kecamatan, sehingga tidak dapat diwakili satu wilayah administratif.',
-                'dokumen_pendukung' => 'sk-penetapan-kobalima-timur.pdf',
             ],
         ];
+
+        return self::lekatkanBerkas($data, 'kawasan_transmigrasi_berkas', 'kawasan_transmigrasi_id', 'id_kawasan_transmigrasi', ['sk' => 'dokumen_pendukung']);
     }
 
     /**
@@ -107,7 +108,7 @@ class DummyData
                 'lintang' => -9.5123450,
                 'bujur' => 124.9123450,
                 'keterangan' => 'SP tertua di kawasan, seluruh lahan usaha sudah dibagikan.',
-                'dokumen_pendukung' => 'sk-penempatan-kapitan-meo.pdf',
+                'berkas_id' => 2,
             ],
             [
                 'id_satuan_permukiman' => 2,
@@ -123,7 +124,7 @@ class DummyData
                 'lintang' => -9.4980120,
                 'bujur' => 124.8875600,
                 'keterangan' => null,
-                'dokumen_pendukung' => 'sk-penempatan-tniumanu.pdf',
+                'berkas_id' => 3,
             ],
             [
                 'id_satuan_permukiman' => 3,
@@ -190,6 +191,12 @@ class DummyData
                 'dokumen_pendukung' => null,
             ],
         ];
+
+        $data = array_map(function (array $s): array {
+            $berkas = self::cariBerkas($s['berkas_id'] ?? null);
+
+            return $s + ['dokumen_pendukung' => $berkas['nama_file'] ?? null, 'dokumen_pendukung_meta' => $berkas];
+        }, $data);
 
         // Field "Keadaan Wilayah" (Bab II Monografi) disatukan di sini agar
         // baris identitas di atas tetap terbaca sekali pandang. Rombongan C,
@@ -424,6 +431,7 @@ class DummyData
                 'tahun_kedatangan' => 2016,
                 'status_tinggal' => StatusTinggal::Aktif->value,
                 'status_anggota_poktan' => 'Ya',
+                'status_sertifikat' => 'Sudah',
                 'telepon' => '081234567801',
                 'satuan_permukiman' => 'SP Kapitan Meo',
                 'satuan_permukiman_id' => 1,
@@ -444,6 +452,7 @@ class DummyData
                 'tahun_kedatangan' => 2016,
                 'status_tinggal' => StatusTinggal::Aktif->value,
                 'status_anggota_poktan' => 'Ya',
+                'status_sertifikat' => 'Sudah',
                 'telepon' => '081234567802',
                 'satuan_permukiman' => 'SP Kapitan Meo',
                 'satuan_permukiman_id' => 1,
@@ -464,6 +473,7 @@ class DummyData
                 'tahun_kedatangan' => 2016,
                 'status_tinggal' => StatusTinggal::Aktif->value,
                 'status_anggota_poktan' => 'Tidak',
+                'status_sertifikat' => 'Belum',
                 'telepon' => '081234567803',
                 'satuan_permukiman' => 'SP Tniumanu',
                 'satuan_permukiman_id' => 2,
@@ -484,6 +494,7 @@ class DummyData
                 'tahun_kedatangan' => 2017,
                 'status_tinggal' => StatusTinggal::Aktif->value,
                 'status_anggota_poktan' => 'Tidak',
+                'status_sertifikat' => 'Belum Didata',
                 'telepon' => '081234567804',
                 'satuan_permukiman' => 'SP Harekakae',
                 'satuan_permukiman_id' => 3,
@@ -504,6 +515,7 @@ class DummyData
                 'tahun_kedatangan' => 2017,
                 'status_tinggal' => StatusTinggal::PindahPenduduk->value,
                 'status_anggota_poktan' => 'Ya',
+                'status_sertifikat' => 'Belum',
                 'telepon' => '081234567805',
                 'satuan_permukiman' => 'SP Weoe / Uluk Lubuk',
                 'satuan_permukiman_id' => 4,
@@ -524,6 +536,7 @@ class DummyData
                 'tahun_kedatangan' => 2018,
                 'status_tinggal' => StatusTinggal::Aktif->value,
                 'status_anggota_poktan' => 'Tidak',
+                'status_sertifikat' => 'Belum Didata',
                 'telepon' => '081234567806',
                 'satuan_permukiman' => 'SP Tualaran',
                 'satuan_permukiman_id' => 5,
@@ -544,6 +557,7 @@ class DummyData
                 'tahun_kedatangan' => 2018,
                 'status_tinggal' => StatusTinggal::Aktif->value,
                 'status_anggota_poktan' => 'Ya',
+                'status_sertifikat' => 'Sudah',
                 'telepon' => '081234567807',
                 'satuan_permukiman' => 'SP Weain',
                 'satuan_permukiman_id' => 6,
@@ -564,6 +578,7 @@ class DummyData
                 'tahun_kedatangan' => 2019,
                 'status_tinggal' => StatusTinggal::Aktif->value,
                 'status_anggota_poktan' => 'Ya',
+                'status_sertifikat' => 'Belum',
                 'telepon' => '081234567808',
                 'satuan_permukiman' => 'SP Kapitan Meo',
                 'satuan_permukiman_id' => 1,
@@ -875,7 +890,7 @@ class DummyData
         ];
 
         // Peristiwa mutasi anggota keluarga (Putaran 6). Baris tetap ada,
-        // hanya ditandai. Kepala keluarga tidak di sini — peristiwanya lewat
+        // hanya ditandai. Kepala keluarga tidak di sini ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â peristiwanya lewat
         // alur ganti kepala keluarga.
         $peristiwa = [
             12 => ['status' => 'Meninggal', 'tanggal_peristiwa' => '2024-03-12',
@@ -1000,6 +1015,224 @@ class DummyData
             'jenis_kelamin' => $a['jenis_kelamin'] ?? null,
             'usia' => $usia($a['tanggal_lahir'] ?? null),
         ], $anggota);
+    }
+
+    /**
+     * Registry metadata seluruh berkas sistem (Putaran 12, 2026-09-02).
+     *
+     * Menggantikan 24 kolom VARCHAR path yang dahulu tersebar di 17 tabel.
+     * Alasannya bukan keseragaman semata: kolom path telanjang TIDAK merekam
+     * `mime` maupun `ukuran`, padahal agents/rules.md 14a.1 dan 14a.2
+     * mewajibkan keduanya divalidasi di sisi server. Tanpa merekamnya, tidak
+     * ada cara memeriksa ulang apa yang sebenarnya tersimpan.
+     *
+     * BUKAN tabel polymorphic. Kepemilikan dinyatakan pivot per domain, bukan
+     * kolom `entity_type`/`entity_id`; lihat berkasPemilik().
+     *
+     * @return array<int, array<string, mixed>> Metadata berkas
+     */
+    public static function berkas(): array
+    {
+        return [
+            ['id_berkas' => 1, 'uuid' => 'brk-0001', 'jenis_berkas_id' => null, 'nama_file' => 'sk-penetapan-kobalima-timur.pdf', 'nama_asli' => 'sk-penetapan-kobalima-timur.pdf', 'path' => 'kawasan/1/sk-penetapan-kobalima-timur.pdf', 'mime' => 'application/pdf', 'ekstensi' => 'pdf', 'ukuran' => 412000, 'disk' => 'local', 'keterangan' => 'SK Penetapan Kawasan', 'user_id' => 1],
+            ['id_berkas' => 2, 'uuid' => 'brk-0002', 'jenis_berkas_id' => null, 'nama_file' => 'sk-penempatan-kapitan-meo.pdf', 'nama_asli' => 'sk-penempatan-kapitan-meo.pdf', 'path' => 'sp/1/sk-penempatan-kapitan-meo.pdf', 'mime' => 'application/pdf', 'ekstensi' => 'pdf', 'ukuran' => 298000, 'disk' => 'local', 'keterangan' => 'SK Penempatan SP', 'user_id' => 1],
+            ['id_berkas' => 3, 'uuid' => 'brk-0003', 'jenis_berkas_id' => null, 'nama_file' => 'sk-penempatan-tniumanu.pdf', 'nama_asli' => 'sk-penempatan-tniumanu.pdf', 'path' => 'sp/2/sk-penempatan-tniumanu.pdf', 'mime' => 'application/pdf', 'ekstensi' => 'pdf', 'ukuran' => 287000, 'disk' => 'local', 'keterangan' => 'SK Penempatan SP', 'user_id' => 1],
+            ['id_berkas' => 4, 'uuid' => 'brk-0004', 'jenis_berkas_id' => null, 'nama_file' => 'bast-panen-jagung-apr-2026.pdf', 'nama_asli' => 'bast-panen-jagung-apr-2026.pdf', 'path' => 'panen/1/bast-panen-jagung-apr-2026.pdf', 'mime' => 'application/pdf', 'ekstensi' => 'pdf', 'ukuran' => 180500, 'disk' => 'local', 'keterangan' => 'Berita acara panen', 'user_id' => 1],
+            ['id_berkas' => 5, 'uuid' => 'brk-0005', 'jenis_berkas_id' => null, 'nama_file' => 'foto-panen-padi-mei-2026.jpg', 'nama_asli' => 'foto-panen-padi-mei-2026.jpg', 'path' => 'panen/3/foto-panen-padi-mei-2026.jpg', 'mime' => 'image/jpeg', 'ekstensi' => 'jpg', 'ukuran' => 742000, 'disk' => 'local', 'keterangan' => 'Foto hamparan panen', 'user_id' => 1],
+            ['id_berkas' => 6, 'uuid' => 'brk-0006', 'jenis_berkas_id' => null, 'nama_file' => 'foto-saluran-tersumbat.jpg', 'nama_asli' => 'foto-saluran-tersumbat.jpg', 'path' => 'pengaduan/1/foto-saluran-tersumbat.jpg', 'mime' => 'image/jpeg', 'ekstensi' => 'jpg', 'ukuran' => 865000, 'disk' => 'local', 'keterangan' => 'Bukti dari pelapor', 'user_id' => 1],
+            ['id_berkas' => 7, 'uuid' => 'brk-0007', 'jenis_berkas_id' => null, 'nama_file' => 'foto-daun-jagung-terserang.jpg', 'nama_asli' => 'foto-daun-jagung-terserang.jpg', 'path' => 'pengaduan/5/foto-daun-jagung-terserang.jpg', 'mime' => 'image/jpeg', 'ekstensi' => 'jpg', 'ukuran' => 921000, 'disk' => 'local', 'keterangan' => 'Bukti dari pelapor', 'user_id' => 1],
+            ['id_berkas' => 8, 'uuid' => 'brk-0008', 'jenis_berkas_id' => null, 'nama_file' => 'kondisi-irigasi-blok-a.jpg', 'nama_asli' => 'kondisi-irigasi-blok-a.jpg', 'path' => 'infrastruktur/1/kondisi-irigasi-blok-a.jpg', 'mime' => 'image/jpeg', 'ekstensi' => 'jpg', 'ukuran' => 688000, 'disk' => 'local', 'keterangan' => 'Foto kondisi lapangan', 'user_id' => 1],
+            ['id_berkas' => 9, 'uuid' => 'brk-0009', 'jenis_berkas_id' => null, 'nama_file' => 'berkas-pembangunan-irigasi.pdf', 'nama_asli' => 'berkas-pembangunan-irigasi.pdf', 'path' => 'infrastruktur/1/berkas-pembangunan-irigasi.pdf', 'mime' => 'application/pdf', 'ekstensi' => 'pdf', 'ukuran' => 1240000, 'disk' => 'local', 'keterangan' => 'Berkas pembangunan', 'user_id' => 1],
+            ['id_berkas' => 10, 'uuid' => 'brk-0010', 'jenis_berkas_id' => null, 'nama_file' => 'kondisi-kursi-plastik.jpg', 'nama_asli' => 'kondisi-kursi-plastik.jpg', 'path' => 'inventaris/2/kondisi-kursi-plastik.jpg', 'mime' => 'image/jpeg', 'ekstensi' => 'jpg', 'ukuran' => 534000, 'disk' => 'local', 'keterangan' => 'Foto kondisi barang', 'user_id' => 1],
+            ['id_berkas' => 11, 'uuid' => 'brk-0011', 'jenis_berkas_id' => null, 'nama_file' => 'berita-acara-kursi.pdf', 'nama_asli' => 'berita-acara-kursi.pdf', 'path' => 'inventaris/2/berita-acara-kursi.pdf', 'mime' => 'application/pdf', 'ekstensi' => 'pdf', 'ukuran' => 165000, 'disk' => 'local', 'keterangan' => 'Berita acara', 'user_id' => 1],
+            ['id_berkas' => 12, 'uuid' => 'brk-0012', 'jenis_berkas_id' => null, 'nama_file' => 'kondisi-sekolah-dasar.jpg', 'nama_asli' => 'kondisi-sekolah-dasar.jpg', 'path' => 'fasilitas/1/kondisi-sekolah-dasar.jpg', 'mime' => 'image/jpeg', 'ekstensi' => 'jpg', 'ukuran' => 712000, 'disk' => 'local', 'keterangan' => 'Foto kondisi bangunan', 'user_id' => 1],
+            ['id_berkas' => 13, 'uuid' => 'brk-0013', 'jenis_berkas_id' => null, 'nama_file' => 'sk-pembentukan-mekar-jaya.pdf', 'nama_asli' => 'sk-pembentukan-mekar-jaya.pdf', 'path' => 'poktan/1/sk-pembentukan-mekar-jaya.pdf', 'mime' => 'application/pdf', 'ekstensi' => 'pdf', 'ukuran' => 221000, 'disk' => 'local', 'keterangan' => 'SK pembentukan', 'user_id' => 1],
+            ['id_berkas' => 14, 'uuid' => 'brk-0014', 'jenis_berkas_id' => null, 'nama_file' => 'bast-tanam-jagung-nov-2025.pdf', 'nama_asli' => 'bast-tanam-jagung-nov-2025.pdf', 'path' => 'penanaman/1/bast-tanam-jagung-nov-2025.pdf', 'mime' => 'application/pdf', 'ekstensi' => 'pdf', 'ukuran' => 193000, 'disk' => 'local', 'keterangan' => 'Berita acara tanam', 'user_id' => 1],
+            ['id_berkas' => 15, 'uuid' => 'brk-0015', 'jenis_berkas_id' => null, 'nama_file' => 'foto-traktor-roda-dua.jpg', 'nama_asli' => 'foto-traktor-roda-dua.jpg', 'path' => 'alsintan-distribusi/1/foto-traktor-roda-dua.jpg', 'mime' => 'image/jpeg', 'ekstensi' => 'jpg', 'ukuran' => 604000, 'disk' => 'local', 'keterangan' => 'Kondisi unit di poktan', 'user_id' => 1],
+            ['id_berkas' => 16, 'uuid' => 'brk-0016', 'jenis_berkas_id' => null, 'nama_file' => 'foto-benih-jagung.jpg', 'nama_asli' => 'foto-benih-jagung.jpg', 'path' => 'saprotan/1/foto-benih-jagung.jpg', 'mime' => 'image/jpeg', 'ekstensi' => 'jpg', 'ukuran' => 498000, 'disk' => 'local', 'keterangan' => 'Foto barang', 'user_id' => 1],
+            ['id_berkas' => 17, 'uuid' => 'brk-0017', 'jenis_berkas_id' => null, 'nama_file' => 'bast-benih-jagung.pdf', 'nama_asli' => 'bast-benih-jagung.pdf', 'path' => 'saprotan/1/bast-benih-jagung.pdf', 'mime' => 'application/pdf', 'ekstensi' => 'pdf', 'ukuran' => 176000, 'disk' => 'local', 'keterangan' => 'Berita acara penyaluran', 'user_id' => 1],
+            ['id_berkas' => 18, 'uuid' => 'brk-0018', 'jenis_berkas_id' => null, 'nama_file' => 'BeritaAcaraPeninjauan_pgd-2026-0001.pdf', 'nama_asli' => 'BeritaAcaraPeninjauan_pgd-2026-0001.pdf', 'path' => 'pengaduan/1/BeritaAcaraPeninjauan_pgd-2026-0001.pdf', 'mime' => 'application/pdf', 'ekstensi' => 'pdf', 'ukuran' => 156000, 'disk' => 'local', 'keterangan' => 'Dokumen tindak lanjut', 'user_id' => 1],
+            ['id_berkas' => 19, 'uuid' => 'brk-0019', 'jenis_berkas_id' => null, 'nama_file' => 'HasilPemeriksaanHama_pgd-2026-0005.pdf', 'nama_asli' => 'HasilPemeriksaanHama_pgd-2026-0005.pdf', 'path' => 'pengaduan/5/HasilPemeriksaanHama_pgd-2026-0005.pdf', 'mime' => 'application/pdf', 'ekstensi' => 'pdf', 'ukuran' => 143000, 'disk' => 'local', 'keterangan' => 'Dokumen tindak lanjut', 'user_id' => 1],
+            ['id_berkas' => 20, 'uuid' => 'brk-0020', 'jenis_berkas_id' => null, 'nama_file' => 'BeritaAcaraPenyelesaian_pgd-2026-0005.pdf', 'nama_asli' => 'BeritaAcaraPenyelesaian_pgd-2026-0005.pdf', 'path' => 'pengaduan/5/BeritaAcaraPenyelesaian_pgd-2026-0005.pdf', 'mime' => 'application/pdf', 'ekstensi' => 'pdf', 'ukuran' => 171000, 'disk' => 'local', 'keterangan' => 'Dokumen tindak lanjut', 'user_id' => 1],
+            ['id_berkas' => 21, 'uuid' => 'brk-0021', 'jenis_berkas_id' => null, 'nama_file' => 'bast-sekolah-dasar.pdf', 'nama_asli' => 'bast-sekolah-dasar.pdf', 'path' => 'fasilitas/3/bast-sekolah-dasar.pdf', 'mime' => 'application/pdf', 'ekstensi' => 'pdf', 'ukuran' => 208000, 'disk' => 'local', 'keterangan' => 'Berita acara serah terima', 'user_id' => 1],
+            ['id_berkas' => 23, 'uuid' => 'brk-0023', 'jenis_berkas_id' => null, 'nama_file' => 'kondisi-sekolah-dasar-tniumanu.jpg', 'nama_asli' => 'kondisi-sekolah-dasar-tniumanu.jpg', 'path' => 'fasilitas/3/kondisi-sekolah-dasar-tniumanu.jpg', 'mime' => 'image/jpeg', 'ekstensi' => 'jpg', 'ukuran' => 655000, 'disk' => 'local', 'keterangan' => 'Foto kondisi bangunan', 'user_id' => 1],
+            ['id_berkas' => 24, 'uuid' => 'brk-0024', 'jenis_berkas_id' => null, 'nama_file' => 'SHM-MLK-2021-0871.pdf', 'nama_asli' => 'SHM-MLK-2021-0871.pdf', 'path' => 'transmigran/2/SHM-MLK-2021-0871.pdf', 'mime' => 'application/pdf', 'ekstensi' => 'pdf', 'ukuran' => 331000, 'disk' => 'local', 'keterangan' => 'Sertifikat hak milik; meliputi pekarangan dan lahan usaha', 'user_id' => 1],
+            ['id_berkas' => 25, 'uuid' => 'brk-0025', 'jenis_berkas_id' => null, 'nama_file' => 'HPL-NTT-2016-0142.pdf', 'nama_asli' => 'HPL-NTT-2016-0142.pdf', 'path' => 'kawasan/1/HPL-NTT-2016-0142.pdf', 'mime' => 'application/pdf', 'ekstensi' => 'pdf', 'ukuran' => 587000, 'disk' => 'local', 'keterangan' => 'Hak Pengelolaan atas tanah kawasan; milik instansi, bukan per bidang', 'user_id' => 1],
+            ['id_berkas' => 26, 'uuid' => 'brk-0026', 'jenis_berkas_id' => null, 'nama_file' => 'peta-kawasan-kobalima-timur.pdf', 'nama_asli' => 'peta-kawasan-kobalima-timur.pdf', 'path' => 'kawasan/1/peta-kawasan-kobalima-timur.pdf', 'mime' => 'application/pdf', 'ekstensi' => 'pdf', 'ukuran' => 1450000, 'disk' => 'local', 'keterangan' => 'Peta cakupan kawasan', 'user_id' => 1],
+            ['id_berkas' => 22, 'uuid' => 'brk-0022', 'jenis_berkas_id' => null, 'nama_file' => 'berita-acara-traktor.pdf', 'nama_asli' => 'berita-acara-traktor.pdf', 'path' => 'alsintan/1/berita-acara-traktor.pdf', 'mime' => 'application/pdf', 'ekstensi' => 'pdf', 'ukuran' => 189000, 'disk' => 'local', 'keterangan' => 'Berita acara pengadaan', 'user_id' => 1],
+        ];
+    }
+
+    /**
+     * Tautan berkas ke pemiliknya, menggantikan kolom path pada tabel domain.
+     *
+     * Berbentuk pivot per domain, BUKAN polymorphic. Dua alasannya menentukan:
+     * foreign key tetap dapat ditegakkan basis data di kedua arah, dan
+     * penyaring cakupan data tetap tunggal sebab tiap pivot punya induk yang
+     * tetap (agents/rules.md 5.0b-1 poin 8). Tabel polymorphic mencabut
+     * keduanya sekaligus.
+     *
+     * `peran` menggantikan nama kolom lama: `foto` dan `dokumen_pendukung`
+     * yang dahulu dua kolom kini dua baris berperan berbeda.
+     *
+     * @return array<string, array<int, array<string, mixed>>> Peta pivot ke barisnya
+     */
+    public static function berkasPemilik(): array
+    {
+        return [
+            'kawasan_transmigrasi_berkas' => [
+                ['kawasan_transmigrasi_id' => 1, 'berkas_id' => 1, 'peran' => 'sk', 'urutan' => 0],
+                // HPL adalah alas hak KAWASAN, bukan dokumen per bidang lahan
+                // (rules.md 7.4a). Sebelum Putaran 12 ia salah tempat pada
+                // dokumen_lahan, dan dari situ lahir pivot m2m yang menambal akibatnya.
+                ['kawasan_transmigrasi_id' => 1, 'berkas_id' => 25, 'peran' => 'hpl', 'urutan' => 1],
+                ['kawasan_transmigrasi_id' => 1, 'berkas_id' => 26, 'peran' => 'peta', 'urutan' => 2],
+            ],
+            'transmigran_berkas' => [
+                // SHM meliputi SELURUH lahan satu KK, pekarangan maupun usaha,
+                // sehingga melekat pada keluarganya dan diunggah sekali saja.
+                ['transmigran_id' => 2, 'berkas_id' => 24, 'peran' => 'shm', 'urutan' => 0],
+            ],
+            'satuan_permukiman_berkas' => [
+                ['satuan_permukiman_id' => 1, 'berkas_id' => 2, 'peran' => 'sk', 'urutan' => 0],
+                ['satuan_permukiman_id' => 2, 'berkas_id' => 3, 'peran' => 'sk', 'urutan' => 0],
+            ],
+            'hasil_panen_berkas' => [
+                ['hasil_panen_id' => 1, 'berkas_id' => 4, 'peran' => 'pendukung', 'urutan' => 0],
+                ['hasil_panen_id' => 3, 'berkas_id' => 5, 'peran' => 'pendukung', 'urutan' => 0],
+            ],
+            'pengaduan_berkas' => [
+                ['pengaduan_id' => 1, 'berkas_id' => 6, 'peran' => 'bukti', 'urutan' => 0],
+                ['pengaduan_id' => 5, 'berkas_id' => 7, 'peran' => 'bukti', 'urutan' => 0],
+            ],
+            'infrastruktur_berkas' => [
+                ['infrastruktur_id' => 1, 'berkas_id' => 8, 'peran' => 'foto', 'urutan' => 0],
+                ['infrastruktur_id' => 1, 'berkas_id' => 9, 'peran' => 'pendukung', 'urutan' => 1],
+            ],
+            'inventaris_sp_berkas' => [
+                ['inventaris_sp_id' => 2, 'berkas_id' => 10, 'peran' => 'foto', 'urutan' => 0],
+                ['inventaris_sp_id' => 2, 'berkas_id' => 11, 'peran' => 'pendukung', 'urutan' => 1],
+            ],
+            'fasilitas_sp_berkas' => [
+                ['fasilitas_sp_id' => 1, 'berkas_id' => 12, 'peran' => 'foto', 'urutan' => 0],
+                ['fasilitas_sp_id' => 3, 'berkas_id' => 23, 'peran' => 'foto', 'urutan' => 0],
+                ['fasilitas_sp_id' => 3, 'berkas_id' => 21, 'peran' => 'pendukung', 'urutan' => 1],
+            ],
+            'penanaman_berkas' => [
+                ['penanaman_id' => 1, 'berkas_id' => 14, 'peran' => 'pendukung', 'urutan' => 0],
+            ],
+            'penanganan_pengaduan_berkas' => [
+                ['penanganan_pengaduan_id' => 1, 'berkas_id' => 18, 'peran' => 'tindak_lanjut', 'urutan' => 0],
+                ['penanganan_pengaduan_id' => 5, 'berkas_id' => 19, 'peran' => 'tindak_lanjut', 'urutan' => 0],
+                ['penanganan_pengaduan_id' => 6, 'berkas_id' => 20, 'peran' => 'tindak_lanjut', 'urutan' => 1],
+            ],
+            'alsintan_berkas' => [
+                ['alsintan_id' => 1, 'berkas_id' => 22, 'peran' => 'pendukung', 'urutan' => 0],
+            ],
+        ];
+    }
+
+    /**
+     * Menempelkan nama berkas dari registry ke baris domain.
+     *
+     * Selama tahap frontend, view membaca berkas lewat kunci lamanya
+     * (`foto`, `dokumen_pendukung`, dan sejenisnya). Nilainya kini TIDAK
+     * lagi disimpan pada baris domain melainkan pada registry `berkas()`,
+     * sehingga tanpa penempelan ini setiap tautan berkas menjadi kosong.
+     *
+     * Penempelan dilakukan di sini, bukan di view, sebab view dilarang
+     * mengambil datanya sendiri. Bentuknya sengaja mempertahankan kunci lama
+     * agar perpindahan ke registry tidak menuntut 25 view disunting
+     * serentak; yang berubah hanya ASAL nilainya.
+     *
+     * `*_berkas_meta` membawa metadata penuh (mime, ukuran, peran) bagi
+     * pemakai yang memerlukannya, misalnya penanda jenis berkas.
+     *
+     * @param  array<int, array<string, mixed>>  $baris  Baris domain
+     * @param  string  $pivot  Nama pivot pada berkasPemilik()
+     * @param  string  $kunciInduk  Nama kolom induk pada pivot
+     * @param  string  $kunciId  Nama kolom id pada baris domain
+     * @param  array<string, string>  $peta  Peta peran ke nama kunci lama
+     * @return array<int, array<string, mixed>> Baris beserta berkasnya
+     */
+    private static function lekatkanBerkas(array $baris, string $pivot, string $kunciInduk, string $kunciId, array $peta): array
+    {
+        return array_map(function (array $b) use ($pivot, $kunciInduk, $kunciId, $peta) {
+            foreach ($peta as $peran => $kunciLama) {
+                $berkas = self::berkasSatu($pivot, $kunciInduk, (int) $b[$kunciId], $peran);
+
+                $b[$kunciLama] = $berkas['nama_file'] ?? null;
+                $b[$kunciLama . '_meta'] = $berkas;
+            }
+
+            return $b;
+        }, $baris);
+    }
+
+    /**
+     * Berkas milik satu baris domain, terurut.
+     *
+     * Dipakai view menggantikan pembacaan kolom path langsung. Mengembalikan
+     * larik, sebab sebelas domain kini boleh memegang lebih dari satu berkas;
+     * domain yang hanya memegang satu tetap memakai bentuk yang sama agar
+     * pemanggilnya tidak perlu tahu bedanya.
+     *
+     * @param  string  $pivot  Nama pivot, contoh `rumah_berkas`
+     * @param  string  $kunci  Nama kolom induk, contoh `rumah_id`
+     * @param  int  $id  Nilai id induk
+     * @param  string|null  $peran  Menyaring satu peran; null berarti seluruhnya
+     * @return array<int, array<string, mixed>> Berkas beserta metadatanya
+     */
+    public static function berkasMilik(string $pivot, string $kunci, int $id, ?string $peran = null): array
+    {
+        $baris = self::berkasPemilik()[$pivot] ?? [];
+        $peta = array_column(self::berkas(), null, 'id_berkas');
+
+        $hasil = [];
+
+        foreach ($baris as $b) {
+            if (($b[$kunci] ?? null) !== $id) {
+                continue;
+            }
+
+            if ($peran !== null && $b['peran'] !== $peran) {
+                continue;
+            }
+
+            if (isset($peta[$b['berkas_id']])) {
+                $hasil[] = $peta[$b['berkas_id']] + ['peran' => $b['peran'], 'urutan' => $b['urutan']];
+            }
+        }
+
+        usort($hasil, fn ($a, $b) => $a['urutan'] <=> $b['urutan']);
+
+        return $hasil;
+    }
+
+    /**
+     * Satu berkas milik domain, atau null bila tidak ada.
+     *
+     * Peredam bagi pemanggil yang memang hanya menampilkan satu berkas,
+     * misalnya foto utama pada halaman daftar.
+     *
+     * @return array<string, mixed>|null Berkas pertama menurut urutan
+     */
+    public static function berkasSatu(string $pivot, string $kunci, int $id, ?string $peran = null): ?array
+    {
+        return self::berkasMilik($pivot, $kunci, $id, $peran)[0] ?? null;
+    }
+
+    /**
+     * Metadata satu berkas menurut idnya.
+     *
+     * Dipakai FK langsung pada domain berkas tunggal, yang menyimpan
+     * `berkas_id` alih-alih menempuh pivot.
+     *
+     * @return array<string, mixed>|null Berkas, atau null bila id tak dikenal
+     */
+    public static function cariBerkas(?int $id): ?array
+    {
+        return $id === null ? null : (array_column(self::berkas(), null, 'id_berkas')[$id] ?? null);
     }
 
     /**
@@ -1325,67 +1558,7 @@ class DummyData
         ));
     }
 
-    /**
-     * Dokumen status lahan (HPL, SHM, dan sejenisnya).
-     *
-     * Dipisah dari tabel lahan karena satu lahan dapat memiliki lebih dari
-     * satu dokumen (agents/data-dictionary.md bagian 7.2).
-     *
-     * @param  int|null  $lahanId  Menyaring dokumen satu lahan; null berarti seluruhnya
-     * @return array<int, array<string, mixed>> Dokumen lahan
-     */
-    public static function dokumenLahan(?int $lahanId = null): array
-    {
-        // INDUK: mendeskripsikan BERKASnya. Satu HPL / SK pencadangan lazim
-        // mencakup banyak bidang (Putaran 7); model lama membawa satu
-        // `lahan_id` per baris, sehingga satu dokumen harus diketik ulang dan
-        // berkasnya diunggah ulang per bidang, lalu satu digit yang salah pada
-        // `nomor_dokumen` hanya terbetulkan di sebagian baris.
-        $induk = [
-            ['id_dokumen_lahan' => 1, 'jenis_dokumen' => 'HPL', 'nomor_dokumen' => 'HPL/NTT/2016/0142', 'tanggal_terbit' => '2016-11-08', 'file_dokumen' => 'lahan/dokumen/1/HPL-NTT-2016-0142.pdf', 'keterangan' => 'Hak pengelolaan blok pekarangan dan usaha SP Kapitan Meo tahap awal.'],
-            ['id_dokumen_lahan' => 3, 'jenis_dokumen' => 'SHM', 'nomor_dokumen' => 'SHM/MLK/2021/0871', 'tanggal_terbit' => '2021-03-19', 'file_dokumen' => 'lahan/dokumen/3/SHM-MLK-2021-0871.pdf', 'keterangan' => 'Sertifikat hak milik atas nama pemilik lahan.'],
-            ['id_dokumen_lahan' => 4, 'jenis_dokumen' => 'HPL', 'nomor_dokumen' => 'HPL/NTT/2017/0219', 'tanggal_terbit' => '2017-02-27', 'file_dokumen' => 'lahan/dokumen/4/HPL-NTT-2017-0219.pdf', 'keterangan' => null],
-        ];
 
-        $bidangPer = [];
-        foreach (self::dokumenLahanBidang() as $b) {
-            $bidangPer[$b['dokumen_lahan_id']][] = $b['lahan_id'];
-        }
-
-        $data = array_map(function (array $d) use ($bidangPer): array {
-            $ids = $bidangPer[$d['id_dokumen_lahan']] ?? [];
-
-            return $d + [
-                'lahan_ids' => $ids,
-                // Kompatibilitas: pemanggil lama yang membaca `lahan_id` tunggal
-                // mendapat bidang pertama.
-                'lahan_id' => $ids[0] ?? null,
-            ];
-        }, $induk);
-
-        if ($lahanId === null) {
-            return $data;
-        }
-
-        return array_values(array_filter($data, fn ($b) => in_array($lahanId, $b['lahan_ids'], true)));
-    }
-
-    /**
-     * Bidang lahan yang dicakup tiap dokumen (Putaran 7), tabel penghubung
-     * many-to-many.
-     *
-     * @return array<int, array{dokumen_lahan_id: int, lahan_id: int}>
-     */
-    public static function dokumenLahanBidang(): array
-    {
-        return [
-            // HPL/NTT/2016/0142 mencakup pekarangan DAN lahan usaha Yohanes Bere.
-            ['dokumen_lahan_id' => 1, 'lahan_id' => 1],
-            ['dokumen_lahan_id' => 1, 'lahan_id' => 2],
-            ['dokumen_lahan_id' => 3, 'lahan_id' => 5],
-            ['dokumen_lahan_id' => 4, 'lahan_id' => 6],
-        ];
-    }
 
     /**
      * Data master satuan beserta faktor konversinya ke ton.
@@ -1525,7 +1698,6 @@ class DummyData
                 'luas' => 1.50,
                 'luas_kering' => 1.50,
                 'luas_basah' => 0.00,
-                'pola_tanam' => 'MONOKULTUR JAGUNG',
                 'lintang' => -9.5138400,
                 'bujur' => 124.9152700,
             ],
@@ -1541,7 +1713,6 @@ class DummyData
                 'luas' => 0.75,
                 'luas_kering' => 0.00,
                 'luas_basah' => 0.75,
-                'pola_tanam' => 'PADI SAWAH',
                 'lintang' => -9.5471900,
                 'bujur' => 124.8873500,
             ],
@@ -1574,7 +1745,6 @@ class DummyData
                 'luas' => 2.00,
                 'luas_kering' => 1.25,
                 'luas_basah' => 0.75,
-                'pola_tanam' => 'TUMPANG SARI JAGUNG DAN KACANG',
                 'lintang' => -9.4982600,
                 'bujur' => 124.9411800,
             ],
@@ -1589,7 +1759,6 @@ class DummyData
                 'luas' => 1.25,
                 'luas_kering' => 1.25,
                 'luas_basah' => 0.00,
-                'pola_tanam' => 'MONOKULTUR JAGUNG',
                 'lintang' => -9.4995300,
                 'bujur' => 124.9438100,
             ],
@@ -1664,7 +1833,6 @@ class DummyData
                 'produksi' => 4.250,
                 'harga_jual' => 4500000,
                 'keterangan' => 'Sebagian hamparan terendam saat hujan deras awal April.',
-                'dokumen_pendukung' => 'bast-panen-jagung-apr-2026.pdf',
             ],
             [
                 'id_hasil_panen' => 2,
@@ -1707,7 +1875,6 @@ class DummyData
                 'keterangan' => null,
                 // Foto, bukan PDF. Sengaja berbeda dari baris pertama agar
                 // pelepasan batasan `:hanya-gambar` ikut terlihat pada data.
-                'dokumen_pendukung' => 'foto-panen-padi-mei-2026.jpg',
             ],
             // Satuan kilogram, sehingga produktivitasnya pun kg/ha. Satuan
             // TIDAK dipaksa ton: cabai memang ditimbang kilogram, dan
@@ -1773,6 +1940,8 @@ class DummyData
                 'dokumen_pendukung' => null,
             ],
         ];
+
+        $data = self::lekatkanBerkas($data, 'hasil_panen_berkas', 'hasil_panen_id', 'id_hasil_panen', ['pendukung' => 'dokumen_pendukung']);
 
         // `poktan_id` DITURUNKAN dari penanamannya (Putaran 7), bukan disimpan
         // pada baris ini. Kolom sebelahnya `satuan_id` memang disalin dari
@@ -2096,7 +2265,7 @@ class DummyData
      */
     public static function pengaduan(): array
     {
-        return [
+        $data = [
             [
                 'id_pengaduan' => 1,
                 'nomor_pengaduan' => 'PGD-2026-0001-PMTUXK',
@@ -2126,7 +2295,6 @@ class DummyData
                  * PETUGAS. Keduanya perlu terpisah agar terbaca siapa yang
                  * menyerahkan berkas mana.
                  */
-                'dokumen_pendukung' => 'foto-saluran-tersumbat.jpg',
             ],
             [
                 'id_pengaduan' => 2,
@@ -2202,7 +2370,6 @@ class DummyData
                 'deskripsi' => 'Sebagian tanaman jagung terserang hama ulat, mohon pendampingan penyuluh.',
                 'status' => StatusPengaduan::Selesai->value,
                 'prioritas' => PrioritasPengaduan::Tinggi->value,
-                'dokumen_pendukung' => 'foto-daun-jagung-terserang.jpg',
             ],
 
             /*
@@ -2287,6 +2454,8 @@ class DummyData
                 'prioritas' => PrioritasPengaduan::Sedang->value,
             ],
         ];
+
+        return self::lekatkanBerkas($data, 'pengaduan_berkas', 'pengaduan_id', 'id_pengaduan', ['bukti' => 'dokumen_pendukung']);
     }
 
     /**
@@ -2318,7 +2487,7 @@ class DummyData
                     'status_sebelum' => StatusPengaduan::Diterima->value,
                     'status_sesudah' => StatusPengaduan::Diproses->value,
                     'catatan' => 'Peninjauan selesai. Pembersihan saluran dijadwalkan pekan depan bersama warga.',
-                    'dokumen_tindak_lanjut' => 'pengaduan/1/BeritaAcaraPeninjauan_pgd-2026-0001.pdf',
+                    'dokumen_tindak_lanjut' => self::cariBerkas(18)['nama_file'] ?? null,
                 ],
             ],
             'PGD-2026-0002-3EKHZA' => [
@@ -2346,7 +2515,7 @@ class DummyData
                     'status_sebelum' => StatusPengaduan::Diterima->value,
                     'status_sesudah' => StatusPengaduan::Diproses->value,
                     'catatan' => 'Penyuluh meninjau lahan dan mengambil sampel tanaman terserang.',
-                    'dokumen_tindak_lanjut' => 'pengaduan/5/HasilPemeriksaanHama_pgd-2026-0005.pdf',
+                    'dokumen_tindak_lanjut' => self::cariBerkas(19)['nama_file'] ?? null,
                 ],
                 [
                     'tanggal_penanganan' => '2026-08-04',
@@ -2354,7 +2523,7 @@ class DummyData
                     'status_sebelum' => StatusPengaduan::Diproses->value,
                     'status_sesudah' => StatusPengaduan::Selesai->value,
                     'catatan' => 'Pendampingan penyemprotan selesai, kondisi tanaman membaik. Petani diberi panduan pengendalian hama.',
-                    'dokumen_tindak_lanjut' => 'pengaduan/5/BeritaAcaraPenyelesaian_pgd-2026-0005.pdf',
+                    'dokumen_tindak_lanjut' => self::cariBerkas(20)['nama_file'] ?? null,
                 ],
             ],
             'PGD-2026-0006-KCJSY6' => [
@@ -2490,8 +2659,6 @@ class DummyData
                 // agar tampilan pada halaman rincian benar-benar teruji; baris
                 // lain dibiarkan kosong supaya keadaan kosong ikut terlihat.
                 'keterangan' => 'Bagian hilir tertimbun longsor sejak Januari 2026.',
-                'foto' => 'kondisi-irigasi-blok-a.jpg',
-                'dokumen_pendukung' => 'berkas-pembangunan-irigasi.pdf',
             ],
             [
                 'id_infrastruktur' => 2,
@@ -2587,6 +2754,8 @@ class DummyData
             ['id_infrastruktur' => 34, 'nama' => 'MENARA TELEKOMUNIKASI TUALARAN', 'jenis' => JenisInfrastruktur::Telekomunikasi->value, 'satuan_permukiman' => 'SP Tualaran', 'satuan_permukiman_id' => 5, 'tahun_perolehan' => 2023, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Jangkauan 4G'],
             ['id_infrastruktur' => 35, 'nama' => 'SANITASI KOMUNAL TUALARAN', 'jenis' => JenisInfrastruktur::Sanitasi->value, 'satuan_permukiman' => 'SP Tualaran', 'satuan_permukiman_id' => 5, 'tahun_perolehan' => 2019, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::RusakRingan->value, 'kapasitas' => 'Melayani 38 KK'],
         ];
+
+        $data = self::lekatkanBerkas($data, 'infrastruktur_berkas', 'infrastruktur_id', 'id_infrastruktur', ['foto' => 'foto', 'pendukung' => 'dokumen_pendukung']);
 
         // Cakupan layanan lintas SP (Putaran 7). Sebelumnya kenyataan ini
         // hanya tertulis di `kapasitas` sebagai teks ("Melayani 3 SP sekitar"),
@@ -2733,15 +2902,17 @@ class DummyData
     {
         // `rincian_kondisi` (Putaran 7): histogram kondisi per jenis barang,
         // sehingga "sebagian retak" jadi angka, bukan kalimat. Tetap per
-        // jenis, bukan per unit — kursi ke-3 masih tak dapat dibedakan dari
+        // jenis, bukan per unit ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â kursi ke-3 masih tak dapat dibedakan dari
         // kursi ke-7.
         $data = [
             ['id_inventaris_sp' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'jenis_inventaris' => 'Perabotan', 'nama_barang' => 'MEJA KANTOR', 'jumlah' => 12, 'satuan_barang' => 'unit', 'tahun_perolehan' => 2016, 'sumber_dana' => 'APBN', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Baik', 'keterangan' => null],
-            ['id_inventaris_sp' => 2, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'jenis_inventaris' => 'Perabotan', 'nama_barang' => 'KURSI PLASTIK', 'jumlah' => 60, 'satuan_barang' => 'buah', 'tahun_perolehan' => 2016, 'sumber_dana' => 'APBN', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Rusak Ringan', 'rincian_kondisi' => ['Baik' => 43, 'Rusak Ringan' => 15, 'Rusak Berat' => 2], 'keterangan' => 'Sebagian retak pada sandaran.', 'foto' => 'kondisi-kursi-plastik.jpg', 'dokumen_pendukung' => 'berita-acara-kursi.pdf'],
+            ['id_inventaris_sp' => 2, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'jenis_inventaris' => 'Perabotan', 'nama_barang' => 'KURSI PLASTIK', 'jumlah' => 60, 'satuan_barang' => 'buah', 'tahun_perolehan' => 2016, 'sumber_dana' => 'APBN', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Rusak Ringan', 'rincian_kondisi' => ['Baik' => 43, 'Rusak Ringan' => 15, 'Rusak Berat' => 2], 'keterangan' => 'Sebagian retak pada sandaran.'],
             ['id_inventaris_sp' => 3, 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'jenis_inventaris' => 'Elektronik & Mesin', 'nama_barang' => 'GENSET 5000 WATT', 'jumlah' => 1, 'satuan_barang' => 'unit', 'tahun_perolehan' => 2018, 'sumber_dana' => 'APBD Kabupaten', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Baik', 'keterangan' => null],
             ['id_inventaris_sp' => 4, 'satuan_permukiman_id' => 3, 'satuan_permukiman' => 'SP Harekakae', 'jenis_inventaris' => 'Elektronik & Mesin', 'nama_barang' => 'KOMPUTER DESKTOP', 'jumlah' => 2, 'satuan_barang' => 'unit', 'tahun_perolehan' => 2019, 'sumber_dana' => 'Dinas Transmigrasi Kabupaten', 'status_penyerahan' => 'Dalam Proses', 'kondisi' => 'Baik', 'keterangan' => 'Berita acara sedang diproses.'],
             ['id_inventaris_sp' => 5, 'satuan_permukiman_id' => 5, 'satuan_permukiman' => 'SP Tualaran', 'jenis_inventaris' => 'Peralatan Kantor', 'nama_barang' => 'LEMARI ARSIP', 'jumlah' => 4, 'satuan_barang' => 'unit', 'tahun_perolehan' => 2019, 'sumber_dana' => 'APBD Provinsi', 'status_penyerahan' => 'Belum Diserahkan', 'kondisi' => 'Baik', 'rincian_kondisi' => ['Baik' => 3, 'Rusak Ringan' => 1], 'keterangan' => null],
         ];
+
+        $data = self::lekatkanBerkas($data, 'inventaris_sp_berkas', 'inventaris_sp_id', 'id_inventaris_sp', ['foto' => 'foto', 'pendukung' => 'dokumen_pendukung']);
 
         return self::denganRincianKondisi($data);
     }
@@ -2759,7 +2930,7 @@ class DummyData
         $data = [
             ['id_fasilitas_sp' => 1, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'jenis_fasilitas' => 'Balai Pertemuan', 'nama_fasilitas' => 'BALAI PERTEMUAN', 'jumlah' => 1, 'tahun_perolehan' => 2016, 'sumber_dana' => 'APBN', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Baik', 'lintang' => -9.5124500, 'bujur' => 124.9125000, 'keterangan' => null],
             ['id_fasilitas_sp' => 2, 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'jenis_fasilitas' => 'Kesehatan', 'nama_fasilitas' => 'PUSKESMAS PEMBANTU', 'jumlah' => 1, 'tahun_perolehan' => 2017, 'sumber_dana' => 'APBD Kabupaten', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Baik', 'lintang' => -9.5127000, 'bujur' => 124.9128000, 'keterangan' => null],
-            ['id_fasilitas_sp' => 3, 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'jenis_fasilitas' => 'Pendidikan Dasar', 'nama_fasilitas' => 'SEKOLAH DASAR', 'jumlah' => 1, 'tahun_perolehan' => 2016, 'sumber_dana' => 'APBN', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Rusak Ringan', 'lintang' => -9.4982000, 'bujur' => 124.8878000, 'keterangan' => 'Plafon ruang kelas dua bocor.', 'foto' => 'kondisi-sekolah-dasar.jpg', 'dokumen_pendukung' => 'bast-sekolah-dasar.pdf'],
+            ['id_fasilitas_sp' => 3, 'satuan_permukiman_id' => 2, 'satuan_permukiman' => 'SP Tniumanu', 'jenis_fasilitas' => 'Pendidikan Dasar', 'nama_fasilitas' => 'SEKOLAH DASAR', 'jumlah' => 1, 'tahun_perolehan' => 2016, 'sumber_dana' => 'APBN', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Rusak Ringan', 'lintang' => -9.4982000, 'bujur' => 124.8878000, 'keterangan' => 'Plafon ruang kelas dua bocor.'],
             ['id_fasilitas_sp' => 4, 'satuan_permukiman_id' => 3, 'satuan_permukiman' => 'SP Harekakae', 'jenis_fasilitas' => 'Ibadah', 'nama_fasilitas' => 'RUMAH IBADAH', 'jumlah' => 2, 'tahun_perolehan' => 2017, 'sumber_dana' => 'Lembaga Swadaya Masyarakat', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Baik', 'lintang' => -9.4554000, 'bujur' => 124.9453000, 'keterangan' => null],
             // "Dua pos lapuk" kini DATA, bukan kalimat di keterangan (Putaran 7).
             ['id_fasilitas_sp' => 5, 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain', 'jenis_fasilitas' => 'Keamanan', 'nama_fasilitas' => 'POS KAMLING', 'jumlah' => 3, 'tahun_perolehan' => 2018, 'sumber_dana' => 'APBD Provinsi', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Rusak Berat', 'rincian_kondisi' => ['Baik' => 1, 'Rusak Berat' => 2], 'lintang' => -9.3766000, 'bujur' => 125.0346000, 'keterangan' => 'Dua pos lapuk dimakan rayap.'],
@@ -2794,6 +2965,8 @@ class DummyData
             ['id_fasilitas_sp' => 25, 'satuan_permukiman_id' => 5, 'satuan_permukiman' => 'SP Tualaran', 'jenis_fasilitas' => 'Kesehatan', 'nama_fasilitas' => 'POSKESDES TUALARAN', 'jumlah' => 1, 'tahun_perolehan' => 2022, 'sumber_dana' => 'APBN', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Baik', 'lintang' => -9.3985000, 'bujur' => 125.0134000, 'keterangan' => null],
             ['id_fasilitas_sp' => 26, 'satuan_permukiman_id' => 5, 'satuan_permukiman' => 'SP Tualaran', 'jenis_fasilitas' => 'Balai Pertemuan', 'nama_fasilitas' => 'BALAI PERTEMUAN NAET', 'jumlah' => 1, 'tahun_perolehan' => 2021, 'sumber_dana' => 'APBD Kabupaten', 'status_penyerahan' => 'Sudah Diserahkan', 'kondisi' => 'Baik', 'lintang' => -9.3979000, 'bujur' => 125.0141000, 'keterangan' => null],
         ];
+
+        $data = self::lekatkanBerkas($data, 'fasilitas_sp_berkas', 'fasilitas_sp_id', 'id_fasilitas_sp', ['foto' => 'foto', 'pendukung' => 'dokumen_pendukung']);
 
         // Cakupan layanan lintas SP (Putaran 7), pola sama dengan
         // infrastruktur: SMP Satu Atap dan Puskesmas Pembantu di satu SP
@@ -3135,7 +3308,7 @@ class DummyData
      * per unit (pos ke-2 masih tak dapat dibedakan dari pos ke-3), melainkan
      * histogram kondisi per jenis.
      *
-     * `kondisi` TIDAK diturunkan darinya — ia tetap penilaian umum yang diketik
+     * `kondisi` TIDAK diturunkan darinya ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â ia tetap penilaian umum yang diketik
      * petugas (lencana daftar, cacah "perlu perbaikan"). Baris yang sudah
      * membawa `rincian_kondisi` literal dipakai apa adanya; sisanya diisi
      * `[kondisi => jumlah]`.
@@ -3435,7 +3608,7 @@ class DummyData
     public static function poktan(): array
     {
         $data = [
-            ['id_poktan' => 1, 'nama' => 'POKTAN MEKAR JAYA', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'asal_ketua' => AsalWakilPoktan::KepalaKeluarga->value, 'ketua_transmigran_id' => 1, 'ketua_anggota_keluarga_id' => null, 'nama_ketua' => null, 'nik_ketua' => null, 'hubungan_ketua' => null, 'telepon_ketua' => '081234567801', 'email_ketua' => 'yohanes.bere@example.id', 'alamat_ketua' => 'RT 02 RW 01, SP Kapitan Meo', 'tahun_berdiri' => 2016, 'jumlah_anggota' => 24, 'luas_kering_ketua' => null, 'luas_basah_ketua' => null, 'lintang' => -9.5127800, 'bujur' => 124.9131400, 'keterangan' => 'Kelompok aktif mengikuti pelatihan penyuluh setiap musim.', 'dokumen_pendukung' => 'sk-pembentukan-mekar-jaya.pdf'],
+            ['id_poktan' => 1, 'nama' => 'POKTAN MEKAR JAYA', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'asal_ketua' => AsalWakilPoktan::KepalaKeluarga->value, 'ketua_transmigran_id' => 1, 'ketua_anggota_keluarga_id' => null, 'nama_ketua' => null, 'nik_ketua' => null, 'hubungan_ketua' => null, 'telepon_ketua' => '081234567801', 'email_ketua' => 'yohanes.bere@example.id', 'alamat_ketua' => 'RT 02 RW 01, SP Kapitan Meo', 'tahun_berdiri' => 2016, 'jumlah_anggota' => 24, 'luas_kering_ketua' => null, 'luas_basah_ketua' => null, 'lintang' => -9.5127800, 'bujur' => 124.9131400, 'keterangan' => 'Kelompok aktif mengikuti pelatihan penyuluh setiap musim.', 'berkas_id' => 13],
             ['id_poktan' => 2, 'nama' => 'POKTAN SUBUR MAKMUR', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'asal_ketua' => AsalWakilPoktan::KepalaKeluarga->value, 'ketua_transmigran_id' => 2, 'ketua_anggota_keluarga_id' => null, 'nama_ketua' => null, 'nik_ketua' => null, 'hubungan_ketua' => null, 'telepon_ketua' => '081234567802', 'email_ketua' => null, 'alamat_ketua' => null, 'tahun_berdiri' => 2017, 'jumlah_anggota' => 18, 'luas_kering_ketua' => null, 'luas_basah_ketua' => null, 'lintang' => -9.5476500, 'bujur' => 124.8882300],
             // Ketua diwakili anggota keluarga, bukan kepala keluarganya.
             // Keadaan lapangannya: kepala keluarga PETRUS NAHAK merantau,
@@ -3451,6 +3624,14 @@ class DummyData
             // tidak terdata pada tabel lahan.
             ['id_poktan' => 4, 'nama' => 'POKTAN HARAPAN BARU', 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain', 'asal_ketua' => AsalWakilPoktan::BukanTransmigran->value, 'ketua_transmigran_id' => null, 'ketua_anggota_keluarga_id' => null, 'nama_ketua' => 'YOSEPH KLAU', 'nik_ketua' => '5321010207700099', 'hubungan_ketua' => null, 'telepon_ketua' => '081234567890', 'email_ketua' => null, 'alamat_ketua' => 'Desa Weain, Kobalima Timur', 'tahun_berdiri' => 2019, 'jumlah_anggota' => 15, 'luas_kering_ketua' => 0.80, 'luas_basah_ketua' => 0.20, 'lintang' => -9.5731200, 'bujur' => 124.8654900],
         ];
+
+        // Nama berkas dibaca dari registry lewat FK langsung (Putaran 12):
+        // baris poktan menyimpan $berkas_id, bukan lagi path berkasnya.
+        $data = array_map(function (array $p): array {
+            $berkas = self::cariBerkas($p['berkas_id'] ?? null);
+
+            return $p + ['dokumen_pendukung' => $berkas['nama_file'] ?? null, 'dokumen_pendukung_meta' => $berkas];
+        }, $data);
 
         // Nama, NIK, dan hubungan ketua DISELESAIKAN di sini lewat identitasWakil,
         // agar setiap tempat yang menampilkannya (daftar, rincian, laporan)
@@ -3689,7 +3870,7 @@ class DummyData
      * tidak saling tahu dan dapat berselisih diam-diam.
      *
      * Kini baris ini hanya mendeskripsikan BENDAnya: `jenis_alsintan` (data
-     * master, §11.37), `nama_alat`, `jumlah_total`, `tahun_pengadaan`,
+     * master, Ãƒâ€šÃ‚Â§11.37), `nama_alat`, `jumlah_total`, `tahun_pengadaan`,
      * `sumber_dana`. Poktan penerima, jumlah per poktan, kondisi per poktan,
      * penanda tangan, dan tanggal serah pindah ke `alsintanDistribusi()`.
      * `distribusi[]`, `jumlah_tersalur`, `jumlah_belum_tersalur`, dan
@@ -3706,7 +3887,7 @@ class DummyData
         $data = [
             // Satu batch traktor dibagikan ke tiga poktan di tiga SP berbeda.
             // Inilah kasus yang model lama memaksa diketik jadi tiga baris.
-            ['id_alsintan' => 1, 'jenis_alsintan' => 'Traktor Roda Dua', 'nama_alat' => 'TRAKTOR RODA DUA KUBOTA', 'jumlah_total' => 4, 'tahun_pengadaan' => 2018, 'sumber_dana' => 'APBN', 'keterangan' => 'Bantuan mekanisasi lahan kering, dibagi rata tiga poktan.', 'dokumen_pendukung' => 'berita-acara-traktor.pdf'],
+            ['id_alsintan' => 1, 'jenis_alsintan' => 'Traktor Roda Dua', 'nama_alat' => 'TRAKTOR RODA DUA KUBOTA', 'jumlah_total' => 4, 'tahun_pengadaan' => 2018, 'sumber_dana' => 'APBN', 'keterangan' => 'Bantuan mekanisasi lahan kering, dibagi rata tiga poktan.'],
             ['id_alsintan' => 2, 'jenis_alsintan' => 'Pompa Air', 'nama_alat' => 'POMPA AIR 3 INCI', 'jumlah_total' => 3, 'tahun_pengadaan' => 2019, 'sumber_dana' => 'APBD Kabupaten', 'keterangan' => null, 'dokumen_pendukung' => null],
             ['id_alsintan' => 3, 'jenis_alsintan' => 'Hand Sprayer', 'nama_alat' => 'HAND SPRAYER', 'jumlah_total' => 2, 'tahun_pengadaan' => 2021, 'sumber_dana' => 'Swadaya', 'keterangan' => 'Dibeli dari iuran anggota dua kelompok.', 'dokumen_pendukung' => null],
             // BELUM TERSALURKAN, satu-satunya pada data contoh. Barang sudah
@@ -3715,6 +3896,8 @@ class DummyData
             ['id_alsintan' => 4, 'jenis_alsintan' => 'Mesin Perontok', 'nama_alat' => 'MESIN PERONTOK JAGUNG', 'jumlah_total' => 2, 'tahun_pengadaan' => 2020, 'sumber_dana' => 'Dinas Pertanian Kabupaten', 'keterangan' => 'Menunggu penetapan poktan penerima.', 'dokumen_pendukung' => null],
             ['id_alsintan' => 5, 'jenis_alsintan' => 'Lainnya', 'nama_alat' => 'CANGKUL', 'jumlah_total' => 8, 'tahun_pengadaan' => 2019, 'sumber_dana' => 'Swadaya', 'keterangan' => null, 'dokumen_pendukung' => null],
         ];
+
+        $data = self::lekatkanBerkas($data, 'alsintan_berkas', 'alsintan_id', 'id_alsintan', ['pendukung' => 'dokumen_pendukung']);
 
         $distribusiPer = [];
         foreach (self::alsintanDistribusi() as $d) {
@@ -3747,7 +3930,7 @@ class DummyData
      * induk, sebab kondisi diamati per unit di lapangan: traktor di satu poktan
      * dapat rusak berat sementara yang di poktan lain masih baik. `poktan_id`,
      * `satuan_permukiman_id`, dan `satuan_permukiman` MENGIKUTI poktan
-     * (rules.md §7b poin 3), tidak dipilih terpisah. `penanda_terima` dan
+     * (rules.md Ãƒâ€šÃ‚Â§7b poin 3), tidak dipilih terpisah. `penanda_terima` dan
      * `poktan` ditempel sebagai turunan.
      *
      * @return array<int, array<string, mixed>> Data distribusi alsintan
@@ -3755,7 +3938,7 @@ class DummyData
     public static function alsintanDistribusi(): array
     {
         $data = [
-            ['id_alsintan_distribusi' => 1, 'alsintan_id' => 1, 'poktan_id' => 1, 'jumlah' => 2, 'kondisi' => 'Baik', 'penanda_terima_id' => 1, 'tanggal_serah' => '2018-11-20', 'foto' => 'foto-traktor-roda-dua.jpg', 'keterangan' => 'Servis berkala terakhir Maret 2026.'],
+            ['id_alsintan_distribusi' => 1, 'alsintan_id' => 1, 'poktan_id' => 1, 'jumlah' => 2, 'kondisi' => 'Baik', 'penanda_terima_id' => 1, 'tanggal_serah' => '2018-11-20', 'foto_berkas_id' => 15, 'keterangan' => 'Servis berkala terakhir Maret 2026.'],
             ['id_alsintan_distribusi' => 2, 'alsintan_id' => 1, 'poktan_id' => 3, 'jumlah' => 1, 'kondisi' => 'Rusak Ringan', 'penanda_terima_id' => 5, 'tanggal_serah' => '2018-11-22', 'foto' => null, 'keterangan' => 'Kopling mulai selip, sudah diajukan perbaikan.'],
             ['id_alsintan_distribusi' => 3, 'alsintan_id' => 1, 'poktan_id' => 4, 'jumlah' => 1, 'kondisi' => 'Baik', 'penanda_terima_id' => 6, 'tanggal_serah' => '2018-12-05', 'foto' => null, 'keterangan' => null],
             ['id_alsintan_distribusi' => 4, 'alsintan_id' => 2, 'poktan_id' => 1, 'jumlah' => 3, 'kondisi' => 'Rusak Ringan', 'penanda_terima_id' => 2, 'tanggal_serah' => '2019-07-14', 'foto' => null, 'keterangan' => null],
@@ -3781,6 +3964,8 @@ class DummyData
             $pt = $d['penanda_terima_id'] ?? null;
 
             return $d + [
+                'foto' => self::cariBerkas($d['foto_berkas_id'] ?? null)['nama_file'] ?? null,
+                'foto_meta' => self::cariBerkas($d['foto_berkas_id'] ?? null),
                 'poktan' => $p['nama'] ?? null,
                 'satuan_permukiman_id' => $p['satuan_permukiman_id'] ?? null,
                 'satuan_permukiman' => $p['satuan_permukiman'] ?? null,
@@ -3802,7 +3987,7 @@ class DummyData
      * Kini baris ini mendeskripsikan BENDAnya: `jenis`, `nama`, `komoditas_id`
      * (WAJIB bila Benih, kosong bagi jenis lain), `varietas` (idem),
      * `jadwal_tanam`, `jumlah_total`, `satuan_id`, `tahun_pengadaan` (tahun
-     * anggaran, §8.4), `sumber_dana`. Poktan penerima, jumlah per poktan, dan
+     * anggaran, Ãƒâ€šÃ‚Â§8.4), `sumber_dana`. Poktan penerima, jumlah per poktan, dan
      * tanggal serah pindah ke `saprotanDistribusi()`. `distribusi[]`,
      * `jumlah_tersalur`, `jumlah_belum_tersalur`, `poktan_penerima` ditempel
      * di sini sebagai turunan.
@@ -3838,10 +4023,10 @@ class DummyData
      * Distribusi pengadaan saprotan ke poktan, satu baris per poktan penerima.
      *
      * Ditambahkan 2026-08-30 (Putaran 7). `poktan_id`, `satuan_permukiman_id`,
-     * dan `satuan_permukiman` MENGIKUTI poktan (rules.md §7c poin 4), tidak
+     * dan `satuan_permukiman` MENGIKUTI poktan (rules.md Ãƒâ€šÃ‚Â§7c poin 4), tidak
      * dipilih terpisah. `sisa_benih` dihitung PER BARIS (jatah poktan ini
      * dikurangi pemakaian penanaman yang menunjuk baris ini), tidak disimpan
-     * (rules.md §7c poin 8). `poktan`, `komoditas`, `varietas`,
+     * (rules.md Ãƒâ€šÃ‚Â§7c poin 8). `poktan`, `komoditas`, `varietas`,
      * `tahun_pengadaan`, dan `jenis` ditempel dari pengadaan sebagai turunan.
      *
      * @return array<int, array<string, mixed>> Data distribusi saprotan
@@ -3916,10 +4101,10 @@ class DummyData
      */
     private static function saprotanPengadaan(): array
     {
-        return [
+        $data = [
             // Benih jagung hibrida dibagikan ke DUA poktan. Model lama memaksa
             // ini jadi dua baris terpisah.
-            ['id_saprotan' => 1, 'jenis' => 'Benih', 'nama' => 'BENIH JAGUNG HIBRIDA', 'komoditas_id' => 1, 'komoditas' => 'JAGUNG', 'varietas' => 'Hibrida Bisi-18', 'jadwal_tanam' => '2026-02', 'jumlah_total' => 250.0, 'satuan_id' => 3, 'satuan' => 'Kilogram', 'tahun_pengadaan' => 2025, 'sumber_dana' => 'Dinas Pertanian Kabupaten', 'keterangan' => 'Disalurkan menjelang penanaman awal tahun.', 'foto' => 'foto-benih-jagung.jpg', 'dokumen_pendukung' => 'bast-benih-jagung.pdf'],
+            ['id_saprotan' => 1, 'jenis' => 'Benih', 'nama' => 'BENIH JAGUNG HIBRIDA', 'komoditas_id' => 1, 'komoditas' => 'JAGUNG', 'varietas' => 'Hibrida Bisi-18', 'jadwal_tanam' => '2026-02', 'jumlah_total' => 250.0, 'satuan_id' => 3, 'satuan' => 'Kilogram', 'tahun_pengadaan' => 2025, 'sumber_dana' => 'Dinas Pertanian Kabupaten', 'keterangan' => 'Disalurkan menjelang penanaman awal tahun.', 'foto_berkas_id' => 16, 'berkas_id' => 17],
             ['id_saprotan' => 2, 'jenis' => 'Pupuk', 'nama' => 'PUPUK UREA', 'komoditas_id' => null, 'komoditas' => null, 'varietas' => null, 'jadwal_tanam' => null, 'jumlah_total' => 1200.0, 'satuan_id' => 3, 'satuan' => 'Kilogram', 'tahun_pengadaan' => 2025, 'sumber_dana' => 'APBN', 'keterangan' => 'Sebagian masih di gudang UPT.', 'foto' => null, 'dokumen_pendukung' => null],
             ['id_saprotan' => 3, 'jenis' => 'Pestisida', 'nama' => 'INSEKTISIDA CAIR', 'komoditas_id' => null, 'komoditas' => null, 'varietas' => null, 'jadwal_tanam' => null, 'jumlah_total' => 40.0, 'satuan_id' => 4, 'satuan' => 'Liter', 'tahun_pengadaan' => 2026, 'sumber_dana' => 'Dinas Pertanian Kabupaten', 'keterangan' => null, 'foto' => null, 'dokumen_pendukung' => null],
             ['id_saprotan' => 4, 'jenis' => 'Benih', 'nama' => 'BENIH PADI IR64', 'komoditas_id' => 2, 'komoditas' => 'PADI', 'varietas' => 'IR64', 'jadwal_tanam' => '2026-03', 'jumlah_total' => 80.0, 'satuan_id' => 3, 'satuan' => 'Kilogram', 'tahun_pengadaan' => 2025, 'sumber_dana' => 'APBD Provinsi', 'keterangan' => null, 'foto' => null, 'dokumen_pendukung' => null],
@@ -3933,6 +4118,19 @@ class DummyData
             ['id_saprotan' => 8, 'jenis' => 'Benih', 'nama' => 'BENIH JAGUNG SWADAYA KELOMPOK', 'komoditas_id' => 1, 'komoditas' => 'JAGUNG', 'varietas' => 'Lokal Kobalima', 'jadwal_tanam' => '2026-06', 'jumlah_total' => 15.0, 'satuan_id' => 3, 'satuan' => 'Kilogram', 'tahun_pengadaan' => 2026, 'sumber_dana' => 'Swadaya', 'keterangan' => 'Dibeli kelompok dari kas iuran anggota.', 'foto' => null, 'dokumen_pendukung' => null],
             ['id_saprotan' => 9, 'jenis' => 'Benih', 'nama' => 'BENIH PADI LOKAL SWADAYA', 'komoditas_id' => 2, 'komoditas' => 'PADI', 'varietas' => 'Lokal Kobalima', 'jadwal_tanam' => '2026-01', 'jumlah_total' => 12.0, 'satuan_id' => 3, 'satuan' => 'Kilogram', 'tahun_pengadaan' => 2025, 'sumber_dana' => 'Swadaya', 'keterangan' => 'Sisa gabah panen lalu yang disisihkan untuk benih.', 'foto' => null, 'dokumen_pendukung' => null],
         ];
+
+        // Foto barang dan berita acara dibaca dari registry lewat FK langsung.
+        return array_map(function (array $s): array {
+            $foto = self::cariBerkas($s['foto_berkas_id'] ?? null);
+            $dok = self::cariBerkas($s['berkas_id'] ?? null);
+
+            return $s + [
+                'foto' => $foto['nama_file'] ?? null,
+                'foto_meta' => $foto,
+                'dokumen_pendukung' => $dok['nama_file'] ?? null,
+                'dokumen_pendukung_meta' => $dok,
+            ];
+        }, $data);
     }
 
     /**
@@ -4126,8 +4324,8 @@ class DummyData
      */
     public static function penanaman(): array
     {
-        return [
-            ['id_penanaman' => 1, 'poktan_id' => 1, 'poktan' => 'POKTAN MEKAR JAYA', 'komoditas_id' => 1, 'komoditas' => 'JAGUNG', 'saprotan_distribusi_id' => 1, 'volume_benih' => 22.5, 'realisasi_tanam' => 1.50, 'periode_tanam' => '2025-11', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'keterangan' => null, 'dokumen_pendukung' => 'bast-tanam-jagung-nov-2025.pdf'],
+        $data = [
+            ['id_penanaman' => 1, 'poktan_id' => 1, 'poktan' => 'POKTAN MEKAR JAYA', 'komoditas_id' => 1, 'komoditas' => 'JAGUNG', 'saprotan_distribusi_id' => 1, 'volume_benih' => 22.5, 'realisasi_tanam' => 1.50, 'periode_tanam' => '2025-11', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'keterangan' => null],
             ['id_penanaman' => 2, 'poktan_id' => 1, 'poktan' => 'POKTAN MEKAR JAYA', 'komoditas_id' => 2, 'komoditas' => 'PADI', 'saprotan_distribusi_id' => 5, 'volume_benih' => 20.0, 'realisasi_tanam' => 0.75, 'periode_tanam' => '2025-12', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'keterangan' => null],
             ['id_penanaman' => 3, 'poktan_id' => 1, 'poktan' => 'POKTAN MEKAR JAYA', 'komoditas_id' => 1, 'komoditas' => 'JAGUNG', 'saprotan_distribusi_id' => 1, 'volume_benih' => 30.0, 'realisasi_tanam' => 2.00, 'periode_tanam' => '2025-11', 'satuan_permukiman_id' => 1, 'satuan_permukiman' => 'SP Kapitan Meo', 'keterangan' => 'Penanaman bertahap, sisa lahan menyusul.'],
             // Tanpa benih tercatat: cabai ditanam dari bibit swadaya yang
@@ -4157,6 +4355,8 @@ class DummyData
             // yang sudah dikunci uji peramban.
             ['id_penanaman' => 7, 'poktan_id' => 4, 'poktan' => 'POKTAN HARAPAN BARU', 'komoditas_id' => 2, 'komoditas' => 'PADI', 'saprotan_distribusi_id' => 10, 'volume_benih' => 12.0, 'realisasi_tanam' => 0.50, 'periode_tanam' => '2026-01', 'satuan_permukiman_id' => 6, 'satuan_permukiman' => 'SP Weain', 'keterangan' => 'Benih swadaya kelompok, disisihkan dari gabah panen sebelumnya.'],
         ];
+
+        return self::lekatkanBerkas($data, 'penanaman_berkas', 'penanaman_id', 'id_penanaman', ['pendukung' => 'dokumen_pendukung']);
     }
 
     /**
@@ -4511,7 +4711,7 @@ class DummyData
 
     /**
      * Menyesuaikan sebaran kategori agar jumlah totalnya tepat sama dengan jumlah KK pada tahun tertentu.
-     * Menjamin rekonsiliasi total 100% konsisten antar-tab (rules.md §10a.4b).
+     * Menjamin rekonsiliasi total 100% konsisten antar-tab (rules.md Ãƒâ€šÃ‚Â§10a.4b).
      *
      * @param  array<string, int>  $sebaran  Peta kategori => jumlah KK pada tahun terakhir (1140)
      * @param  int|null  $tahun  Tahun yang dipilih
@@ -5059,8 +5259,8 @@ class DummyData
     public static function strukturUmurSp(int $id): array
     {
         $kelompok = [
-            '0–4', '5–9', '10–14', '15–19', '20–24', '25–29', '30–34',
-            '35–39', '40–44', '45–49', '50–54', '55–59', '60–64', '65+',
+            '0ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“4', '5ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“9', '10ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“14', '15ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“19', '20ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“24', '25ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“29', '30ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“34',
+            '35ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“39', '40ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“44', '45ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“49', '50ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“54', '55ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“59', '60ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“64', '65+',
         ];
 
         // Bobot piramida: balita dan usia produktif besar, lansia kecil.

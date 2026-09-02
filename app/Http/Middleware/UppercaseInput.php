@@ -55,7 +55,6 @@ class UppercaseInput
         'alasan',
         'alasan_keluar',
         'alasan_tidak_dihuni',
-        'kendala',
         'tujuan_pemanfaatan',
     ];
 

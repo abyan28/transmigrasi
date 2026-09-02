@@ -49,7 +49,7 @@ Pola ini dipilih agar kode mudah dibaca (`transmigran_id` langsung terbaca menun
 
 ## 2. Daftar Tabel
 
-Total **44 tabel bisnis aktif**, dikelompokkan menjadi 9 domain. (Angka "37" pada revisi
+Total **55 tabel bisnis aktif** (Putaran 12 menambah registry `berkas` + 12 pivot, dan mencabut `dokumen_lahan` + `dokumen_lahan_bidang`), dikelompokkan menjadi 9 domain. (Angka "37" pada revisi
 awal dokumen ini **usang**: Rombongan B menambah `anggota_keluarga`; Rombongan C menambah
 `rute_aksesibilitas_sp`; Putaran 7 memecah alsintan/saprotan menjadi induk + `*_distribusi`,
 menambah `dokumen_lahan_bidang`, `infrastruktur_sp`, `fasilitas_sp_cakupan`; data master
@@ -64,7 +64,8 @@ ada pada `database/data/schema.sql` — lihat `notes.md` butir 2026-09-01.)
 | 4 | Master Referensi & Penilaian | `satuan`, `komoditas`, `referensi`, `parameter_penilaian_sp`, `status_kondisi_sp`, `penilaian_sp` |
 | 5 | Kependudukan | `transmigran`, `anggota_keluarga`, `rumah`, `riwayat_penghunian`, `riwayat_kepala_keluarga` |
 | 6 | Kelembagaan & Sarana | `poktan`, `anggota_poktan`, `alsintan`, `alsintan_distribusi`, `saprotan`, `saprotan_distribusi` |
-| 7 | Lahan | `lahan`, `dokumen_lahan`, `dokumen_lahan_bidang` |
+| 4b | Berkas | `berkas` (registry metadata) + 12 pivot `*_berkas`; **ditambahkan Putaran 12** menggantikan 24 kolom path yang tersebar di 17 tabel |
+| 7 | Lahan | `lahan` (dokumennya DICABUT 2026-09-02: SHM melekat pada transmigran, HPL pada kawasan) |
 | 8 | Produksi Pertanian | `komoditas_poktan`, `penanaman`, `hasil_panen` |
 | 9 | Infrastruktur & Pengaduan | `infrastruktur`, `infrastruktur_sp`, `pengaduan`, `penanganan_pengaduan` |
 
@@ -195,7 +196,7 @@ Kolom "Aturan hapus" memakai istilah SQL: `RESTRICT` mencegah penghapusan induk 
 | 14 | `lahan` | `transmigran_id` | `transmigran` | **N:1** | CASCADE |
 | 15 | `lahan` | `satuan_permukiman_id` | `satuan_permukiman` | N:1 | RESTRICT |
 | 16 | `lahan` | `poktan_id` | `poktan` | N:1 (nullable) | SET NULL |
-| 17 | `dokumen_lahan` | `lahan_id` | `lahan` | N:1 | CASCADE |
+| 17 | ~~`dokumen_lahan`~~ | | | | **DICABUT 2026-09-02** |
 | 18 | `poktan` | `satuan_permukiman_id` | `satuan_permukiman` | N:1 | RESTRICT |
 | 19 | `poktan` | `ketua_transmigran_id` | `transmigran` | N:1 (nullable) | SET NULL |
 
@@ -231,7 +232,7 @@ Kolom "Aturan hapus" memakai istilah SQL: `RESTRICT` mencegah penghapusan induk 
 
 **Rekonsiliasi relasi terhadap keputusan terbaru (diterapkan pada `database/data/schema.sql`, 2026-09-01):**
 
-- **#17 `dokumen_lahan.lahan_id`** dicabut. `dokumen_lahan` menjadi **induk** (jenis, nomor, tanggal terbit, berkas); relasi ke bidang lewat pivot M:N **`dokumen_lahan_bidang`** (`dokumen_lahan_id` CASCADE, `lahan_id` CASCADE, UNIQUE gabungan). Putaran 7-G.
+- **#17 `dokumen_lahan` DICABUT SELURUHNYA (Putaran 12, 2026-09-02)** beserta pivot `dokumen_lahan_bidang`. Pivot m2m itu menambal akibat penempatan yang keliru: HPL adalah alas hak KAWASAN dan SHM meliputi seluruh lahan satu KELUARGA, sehingga tidak satu pun benar-benar milik bidang. Legalitas kini dibaca lewat `transmigran_berkas` (peran `shm`) dan `kawasan_transmigrasi_berkas` (peran `hpl`); statusnya pada `transmigran.status_sertifikat`.
 - **#22–#23 `alsintan` → `satuan_permukiman`/`poktan`** dicabut. `alsintan` = induk/pengadaan tanpa FK tersebut; distribusi ke poktan pada **`alsintan_distribusi`** (`alsintan_id` CASCADE, `poktan_id` RESTRICT, `penanda_terima_id` → `anggota_poktan` SET NULL). Putaran 7.
 - **#24–#26a `saprotan` → `satuan_permukiman`/`poktan`** dicabut. `saprotan` = induk (FK `satuan_id` RESTRICT, `komoditas_id` RESTRICT nullable); distribusi pada **`saprotan_distribusi`** (`saprotan_id` CASCADE, `poktan_id` RESTRICT). Putaran 7.
 - **#32a `penanaman.saprotan_id`** menjadi **`penanaman.saprotan_distribusi_id`** → `saprotan_distribusi`, **NOT NULL**, `ON DELETE RESTRICT` (wajib sejak 2026-08-30).
@@ -497,7 +498,7 @@ Urutan berikut wajib dipatuhi agar foreign key selalu menemukan tabel induknya.
 21. poktan                       (butuh satuan_permukiman, transmigran)
 22. anggota_poktan               (butuh poktan, transmigran)
 23. lahan                        (butuh transmigran, satuan_permukiman, poktan)
-24. dokumen_lahan                (butuh lahan)
+24. berkas                       (butuh user + referensi; registry Putaran 12)
 25. alsintan                     (butuh poktan, satuan_permukiman)
 26. saprotan                     (butuh poktan, satuan_permukiman, satuan, komoditas)
 27. komoditas_poktan             (butuh komoditas, poktan)
@@ -523,7 +524,7 @@ Urutan berikut wajib dipatuhi agar foreign key selalu menemukan tabel induknya.
 `rute_aksesibilitas_sp` (setelah `satuan_permukiman`) ·
 `alsintan_distribusi` (setelah `alsintan` + `anggota_poktan`) ·
 `saprotan_distribusi` (setelah `saprotan` + `poktan`, sebelum `penanaman`) ·
-`dokumen_lahan_bidang` (setelah `dokumen_lahan` + `lahan`) ·
+12 pivot `*_berkas` (setelah `berkas` + induknya masing-masing) ·
 `infrastruktur_sp` (setelah `infrastruktur`) ·
 `fasilitas_sp_cakupan` (setelah `fasilitas_sp`). Domain Lahan diletakkan **setelah**
 Kelembagaan karena `lahan.poktan_id` menaut ke `poktan`.

@@ -593,35 +593,35 @@ it('menyaring daftar lahan menurut peruntukan dan kategori', function () {
         ->assertDontSee('LU-001');
 });
 
-it('menampilkan dokumen lahan pada tab tersendiri', function () {
-    // Satu lahan dapat memiliki lebih dari satu dokumen, sehingga dokumen
-    // dikelola terpisah dari form lahan (data-dictionary.md bagian 7.2).
-    $isi = $this->get(route('lahan.detail', 1))
-        ->assertOk()
-        ->assertSee('HPL/NTT/2016/0142')
-        ->getContent();
+it('menampilkan legalitas lahan dari tempatnya yang benar', function () {
+    // Bidang lahan TIDAK memegang dokumennya sendiri (Putaran 12). SHM
+    // meliputi seluruh lahan satu keluarga sehingga melekat pada transmigran;
+    // HPL adalah alas hak kawasan milik instansi sehingga melekat pada kawasan
+    // (rules.md 7.4a). Tab Legalitas menampilkan keduanya sebagai BACAAN.
+    $isi = $this->get(route('lahan.detail', 5))->assertOk()->getContent();
 
-    // Sejak modal-form mendukung aksi dinamis, tujuan form disimpan pada
-    // atribut Alpine dan dirender lewat @js(), sehingga garis miringnya
-    // ter-escape menjadi \/. Yang diperiksa karena itu adalah tujuannya,
-    // bukan bentuk penulisannya.
-    expect(str_replace('\\/', '/', $isi))
-        ->toContain(route('lahan.dokumen.simpan', 1));
+    expect($isi)->toContain('Sertifikat keluarga (SHM)')
+        ->and($isi)->toContain('Alas hak kawasan (HPL)')
+        // Status sertifikat dibaca dari keluarganya, bukan dari bidangnya.
+        ->and($isi)->toContain('Status sertifikat')
+        // Tautan ke tempat penyuntingannya, sebab di sini hanya bacaan.
+        ->and($isi)->toContain('Buka data keluarga')
+        ->and($isi)->toContain('Buka data kawasan');
 });
 
-it('menyembunyikan tab pengelolaan untuk lahan pekarangan', function () {
-    // Pola tanam, peralatan, dan kendala hanya berlaku bagi lahan usaha
-    // (data-dictionary.md bagian 7.1).
-    $pekarangan = $this->get(route('lahan.detail', 1))->getContent();
-    $usaha = $this->get(route('lahan.detail', 2))->getContent();
+it('tidak lagi menyediakan unggahan dokumen pada halaman lahan', function () {
+    // Menyediakannya di sini akan melahirkan salinan sertifikat yang sama pada
+    // tiap bidang, lalu satu digit salah hanya terbetulkan di sebagian.
+    $isi = $this->get(route('lahan.detail', 1))->assertOk()->getContent();
 
-    expect($pekarangan)->not->toContain('Kendala yang dihadapi')
-        ->and($usaha)->toContain('Kendala yang dihadapi');
-});
+    expect($isi)->not->toContain('formDokumenLahan')
+        ->and($isi)->not->toContain('Tambah Dokumen Lahan');
 
-it('menampilkan keadaan kosong untuk lahan tanpa dokumen', function () {
-    // Lahan 3 belum memiliki dokumen pada data contoh.
-    $this->get(route('lahan.detail', 3))->assertSee('Belum ada dokumen lahan');
+    // Ketiga kolom pengelolaan dicabut beserta tabnya.
+    $sumber = file_get_contents(resource_path('views/pages/lahan/form.blade.php'));
+    expect($sumber)->not->toContain('name="pola_tanam"')
+        ->and($sumber)->not->toContain('name="peralatan_pertanian"')
+        ->and($sumber)->not->toContain('name="kendala"');
 });
 
 it('membalas 404 untuk lahan yang tidak ada', function () {
@@ -6554,15 +6554,6 @@ it('menyediakan dokumen pertama langsung pada form lahan', function () {
         ->and($isi)->not->toContain('name="tanggal_terbit"');
 });
 
-it('mempertahankan tab dokumen untuk berkas tambahan', function () {
-    // Dokumen kedua tetap perlu tempat, misalnya bidang yang sertifikatnya
-    // terbit menyusul setelah surat keterangan pembagian tanah.
-    $this->get(route('lahan.detail', 1))
-        ->assertOk()
-        ->assertSee('Tambah Dokumen Lahan')
-        ->assertSee('Dokumen pertama diisi pada form lahan');
-});
-
 it('menyediakan dua peruntukan lahan, bukan lebih', function () {
     // Tahap I dan II sempat ditambahkan pada 2026-08-18 atas dugaan bahwa
     // lahan usaha dibagikan bertahap. Dugaan itu dibatalkan pada hari yang
@@ -7974,7 +7965,7 @@ it('memakai cangkang dua kolom baku pada halaman detail', function () {
         `tests/Browser/uji-lebar-halaman.mjs`.
 
         Akar masalah selalu bentuk yang sama: halaman menyimpang dari cangkang
-        dua kolom baku milik `pages/poktan/detail.blade.php` ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â
+        dua kolom baku milik `pages/poktan/detail.blade.php` ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â
 
           - trek grid kanan ditulis `1fr` polos (minimum otomatisnya
             `min-content`), bukan `minmax(0,1fr)`, sehingga isi selebar apa pun

@@ -1215,7 +1215,6 @@ Route::get('/lahan/{id}', function (int $id) {
     return view('pages.lahan.detail', [
         'title' => 'Lahan '.$data['kode_lahan'],
         'data' => $data,
-        'dokumen' => DummyData::dokumenLahan($data['id_lahan']),
 
         // Bidang lain untuk pilihan "dokumen ini juga mencakup" (Putaran 7):
         // satu HPL/SK lazim mencakup banyak bidang.
@@ -1230,7 +1229,11 @@ Route::get('/lahan/{id}', function (int $id) {
         'pemilik' => collect(DummyData::transmigran())
             ->firstWhere('id_transmigran', $data['transmigran_id']),
 
-        'opsiJenisDokumenLahan' => DummyData::opsiReferensi(JenisReferensi::JenisDokumenLahan),
+        // Legalitas dibaca dari tempatnya yang benar (Putaran 12): SHM melekat
+        // pada keluarga sebab meliputi seluruh bidangnya, HPL melekat pada
+        // kawasan sebab ia alas hak milik instansi (rules.md 7.4a).
+        'shm' => DummyData::berkasSatu('transmigran_berkas', 'transmigran_id', $data['transmigran_id'], 'shm'),
+        'hpl' => DummyData::berkasSatu('kawasan_transmigrasi_berkas', 'kawasan_transmigrasi_id', 1, 'hpl'),
     ]);
 })->where('id', '[0-9]+')->name('lahan.detail');
 

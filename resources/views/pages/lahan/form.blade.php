@@ -210,28 +210,6 @@
                 </div>
             </div>
 
-            <div class="mt-4 grid gap-4 sm:grid-cols-2">
-                <div class="sm:col-span-2">
-                    <label for="{{ $awalan }}_pola_tanam" class="{{ $kelasLabel }}">Pola Tanam</label>
-                    <input type="text" id="{{ $awalan }}_pola_tanam" name="pola_tanam"
-                        value="{{ old('pola_tanam', $data['pola_tanam'] ?? '') }}" maxlength="255"
-                        placeholder="Contoh: monokultur jagung, tumpang sari" class="{{ $kelasKontrol }}" />
-                </div>
-
-                <div>
-                    <label for="{{ $awalan }}_peralatan" class="{{ $kelasLabel }}">Peralatan Pertanian</label>
-                    <textarea id="{{ $awalan }}_peralatan" name="peralatan_pertanian" rows="3"
-                        placeholder="Peralatan yang dipakai menggarap lahan"
-                        class="{{ $kelasArea }}">{{ old('peralatan_pertanian', $data['peralatan_pertanian'] ?? '') }}</textarea>
-                </div>
-
-                <div>
-                    <label for="{{ $awalan }}_kendala" class="{{ $kelasLabel }}">Kendala yang Dihadapi</label>
-                    <textarea id="{{ $awalan }}_kendala" name="kendala" rows="3"
-                        placeholder="Contoh: kekurangan air pada musim kemarau"
-                        class="{{ $kelasArea }}">{{ old('kendala', $data['kendala'] ?? '') }}</textarea>
-                </div>
-            </div>
         </div>
 
         <div x-show="! lahanUsaha" class="rounded-lg bg-gray-50 p-4 text-theme-sm text-gray-600 dark:bg-white/[0.03] dark:text-gray-400">

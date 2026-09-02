@@ -111,7 +111,7 @@ Akun untuk masuk ke sistem. Menggantikan tabel `users` bawaan Laravel; model waj
 | `password_harus_diganti` | `BOOLEAN` | TIDAK | | Bawaan `FALSE`. Bernilai `TRUE` setelah Admin menyetel ulang kata sandi, memaksa penggantian saat login berikutnya |
 | `telepon` | `VARCHAR(20)` | YA | | Format `08xxxxxxxxxx` |
 | `jabatan` | `VARCHAR(100)` | YA | | Jabatan pada instansi, contoh "Staf Bidang Ketransmigrasian" |
-| `foto` | `VARCHAR(255)` | YA | | Path foto profil |
+| ~~`foto`~~ | | | | **DIPINDAH 2026-09-02** ke registry `berkas` lewat pivot atau FK langsung (`rules.md` 14a.8) |
 | `is_aktif` | `BOOLEAN` | TIDAK | | Bawaan `TRUE`; akun nonaktif ditolak saat login |
 | `last_login_at` | `TIMESTAMP` | YA | | Pemantauan aktivitas akun |
 | `remember_token` | `VARCHAR(100)` | YA | | Bawaan Laravel |
@@ -296,7 +296,7 @@ Kawasan transmigrasi sebagai unit program. Berbeda dari `kecamatan` dan `desa` y
 | `tahun_penetapan` | `YEAR` | YA | | Tahun kawasan ditetapkan pemerintah |
 | `nomor_sk` | `VARCHAR(100)` | YA | | Nomor SK penetapan kawasan |
 | `luas_total` | `DECIMAL(12,2)` | YA | | Hektare; luas kawasan keseluruhan |
-| `dokumen_pendukung` | `VARCHAR(255)` | YA | | Path SK penetapan atau peta kawasan |
+| ~~`dokumen_pendukung`~~ | | | | **DIPINDAH 2026-09-02** ke registry `berkas` lewat pivot atau FK langsung (`rules.md` 14a.8) |
 | `keterangan` | `TEXT` | YA | | |
 
 ¹ UNIQUE gabungan `(kabupaten_id, nama)`.
@@ -320,7 +320,7 @@ Satuan Permukiman (SP), unit lokus utama sistem. Seluruh data operasional bermua
 | `jumlah_kk_rencana` | `INT UNSIGNED` | YA | | Daya tampung rencana, pembanding realisasi |
 | `lintang` | `DECIMAL(10,7)` | YA | | Titik pusat SP |
 | `bujur` | `DECIMAL(10,7)` | YA | | Titik pusat SP |
-| `dokumen_pendukung` | `VARCHAR(255)` | YA | | Path berkas |
+| ~~`dokumen_pendukung`~~ | | | | **DIPINDAH 2026-09-02** ke registry `berkas` lewat pivot atau FK langsung (`rules.md` 14a.8) |
 | `keterangan` | `TEXT` | YA | | Catatan bebas |
 
 **Field Keadaan Wilayah** (Bab II Laporan Monografi; ditambahkan 2026-08-28, Rombongan C). Semuanya `NULL`-able dan dokumenter: dipakai laporan, tidak dihitung. Angka rentang disimpan sebagai pasangan min/maks.
@@ -393,8 +393,8 @@ Barang bergerak milik SP (`rules.md` §4b).
 | `status_penyerahan` | `ENUM` | TIDAK | | Lihat §11.4 |
 | `kondisi` | `ENUM` | YA | | Lihat §11.5. **Penilaian umum petugas** (lencana, cacah "perlu perbaikan"); tidak diturunkan dari `rincian_kondisi` |
 | `rincian_kondisi` | `JSON` | YA | | Peta kondisi → jumlah unit (Putaran 7). Σ = `jumlah`. "Sebagian retak" jadi angka. Tetap per jenis, bukan per unit |
-| `foto` | `VARCHAR(255)` | YA | | Dokumentasi kondisi barang |
-| `dokumen_pendukung` | `VARCHAR(255)` | YA | | Berita acara atau bukti pengadaan |
+| ~~`foto`~~ | | | | **DIPINDAH 2026-09-02** ke registry `berkas` lewat pivot atau FK langsung (`rules.md` 14a.8) |
+| ~~`dokumen_pendukung`~~ | | | | **DIPINDAH 2026-09-02** ke registry `berkas` lewat pivot atau FK langsung (`rules.md` 14a.8) |
 | `keterangan` | `TEXT` | YA | | |
 
 **Catatan:**
@@ -420,8 +420,8 @@ Bangunan dan fasilitas tetap milik SP. Struktur sama persis dengan `inventaris_s
 | `rincian_kondisi` | `JSON` | YA | | Peta kondisi → jumlah unit (Putaran 7). Σ = `jumlah`. Lihat catatan §4.1 |
 | `lintang` | `DECIMAL(10,7)` | YA | | Lokasi fasilitas |
 | `bujur` | `DECIMAL(10,7)` | YA | | Lokasi fasilitas |
-| `foto` | `VARCHAR(255)` | YA | | Dokumentasi kondisi bangunan |
-| `dokumen_pendukung` | `VARCHAR(255)` | YA | | Berita acara serah terima atau berkas pembangunan |
+| ~~`foto`~~ | | | | **DIPINDAH 2026-09-02** ke registry `berkas` lewat pivot atau FK langsung (`rules.md` 14a.8) |
+| ~~`dokumen_pendukung`~~ | | | | **DIPINDAH 2026-09-02** ke registry `berkas` lewat pivot atau FK langsung (`rules.md` 14a.8) |
 | `keterangan` | `TEXT` | YA | | |
 
 **Catatan:**
@@ -430,6 +430,57 @@ Bangunan dan fasilitas tetap milik SP. Struktur sama persis dengan `inventaris_s
 - `jenis_fasilitas` dan `nama_fasilitas` sengaja berdampingan. Enum diperlukan agar penilaian kondisi SP dapat menghitung otomatis, sebab teks bebas membuat "SEKOLAH DASAR" dan "SD Negeri 1" tidak terbaca sebagai hal yang sama. Nama bebas tetap dipertahankan agar petugas dapat menulis sebutan yang dikenal warga setempat.
 
 ---
+
+
+## 4b. Registry Berkas
+
+Satu tempat bagi metadata seluruh berkas sistem, ditambahkan 2026-09-02 (Putaran 12)
+menggantikan 24 kolom path yang tersebar di 17 tabel. Aturannya pada `rules.md` 14a
+poin 8 sampai 10.
+
+### 4b.1 `berkas`
+
+| Kolom | Tipe | Null | Kunci | Keterangan |
+|---|---|---|---|---|
+| `id_berkas` | `BIGINT UNSIGNED` | TIDAK | PK | Integer, bukan UUID: lebih ringan sebagai indeks dan direferensikan 17 FK (`rules.md` 4.0a.1) |
+| `uuid` | `CHAR(36)` | TIDAK | UNIQUE | Pengenal publik |
+| `jenis_berkas_id` | `BIGINT UNSIGNED` | YA | FK `referensi` | Penggolongan berkas, mis. HPL/SHM; NULL berarti tanpa penggolongan |
+| `nama_file` | `VARCHAR(255)` | TIDAK | | Nama tersimpan di disk |
+| `nama_asli` | `VARCHAR(255)` | YA | | Nama dari pengunggah, dipakai saat berkas diunduh |
+| `path` | `VARCHAR(255)` | TIDAK | | Relatif terhadap disk, bukan URL absolut |
+| `mime` | `VARCHAR(127)` | TIDAK | | Hasil pemeriksaan isi berkas, BUKAN klaim klien (14a.2) |
+| `ekstensi` | `VARCHAR(10)` | TIDAK | | |
+| `ukuran` | `BIGINT UNSIGNED` | TIDAK | | Byte; batas 5 MB pada 14a.1 baru dapat diperiksa ulang lewat kolom ini |
+| `disk` | `VARCHAR(20)` | TIDAK | | `local` / `s3` / `gcs`; menyiapkan object storage (2.2.6) |
+| `keterangan` | `VARCHAR(500)` | YA | | Mis. tampak samping; menggantikan kolom foto per sisi |
+| `user_id` | `BIGINT UNSIGNED` | YA | FK `user` | NULL = unggahan kanal publik tanpa akun (10b.1) |
+
+### 4b.2 Pivot pemilik berkas
+
+Dua belas pivot berpola sama: `<induk>_id`, `berkas_id`, `peran`, `urutan`,
+UNIQUE gabungan keduanya, CASCADE ke kedua sisi.
+
+| Pivot | Peran yang dipakai |
+|---|---|
+| `transmigran_berkas` | `shm`, `ktp`, `kk`, `sk` |
+| `kawasan_transmigrasi_berkas` | `hpl`, `sk`, `peta` |
+| `rumah_berkas` | `foto`, `pendukung` |
+| `inventaris_sp_berkas` | `foto`, `pendukung` |
+| `fasilitas_sp_berkas` | `foto`, `pendukung` |
+| `infrastruktur_berkas` | `foto`, `pendukung` |
+| `alsintan_berkas` | `foto`, `pendukung` |
+| `penanaman_berkas` | `pendukung` |
+| `hasil_panen_berkas` | `pendukung` |
+| `pengaduan_berkas` | `bukti` |
+| `penanganan_pengaduan_berkas` | `tindak_lanjut` |
+| `user_berkas` | `foto`; UNIQUE hanya pada `user_id` sebab foto profil selalu satu |
+
+### 4b.3 Foreign key langsung
+
+Domain yang berkasnya memang selalu satu memakai FK langsung tanpa pivot,
+dengan `ON DELETE SET NULL` sebab menghapus berkas tidak boleh menghapus barisnya:
+`satuan_permukiman.berkas_id`, `poktan.berkas_id`, `saprotan.foto_berkas_id`,
+`saprotan.berkas_id`, dan `alsintan_distribusi.foto_berkas_id`.
 
 ## 5. Domain Master Referensi
 
@@ -604,8 +655,9 @@ Data inti sistem, satu baris per **kepala keluarga**.
 | `tahun_kedatangan` | `YEAR` | TIDAK | IDX | Dasar grafik jumlah transmigran per tahun |
 | `status_tinggal` | `ENUM` | TIDAK | IDX | Lihat §11.8 |
 | `status_anggota_poktan` | `ENUM` | TIDAK | | Ya, Tidak |
+| `status_sertifikat` | `ENUM` | TIDAK | | Status sertifikat lahan keluarga: `Sudah`, `Belum`, `Belum Didata`. **Ditambahkan 2026-09-02.** SHM meliputi SELURUH lahan satu KK sehingga statusnya melekat di sini, bukan pada tiap bidang. `Belum Didata` memisahkan keluarga yang dipastikan belum bersertifikat dari yang belum pernah ditanyakan; tanpa itu laporan ke dinas mencampur keduanya (`rules.md` 7.6c) |
 | `telepon` | `VARCHAR(20)` | YA | | |
-| `dokumen_pendukung` | `VARCHAR(255)` | YA | | KTP, KK, SK penempatan |
+| ~~`dokumen_pendukung`~~ | | | | **DIPINDAH 2026-09-02** ke registry `berkas` lewat pivot atau FK langsung (`rules.md` 14a.8) |
 | `keterangan` | `TEXT` | YA | | |
 
 **Catatan:**
@@ -662,9 +714,9 @@ Satu baris per anggota keluarga transmigran **selain kepala keluarga**. Ditambah
 | `luas_bangunan` | `DECIMAL(8,2)` | YA | | Meter persegi |
 | `lintang` | `DECIMAL(10,7)` | YA | | |
 | `bujur` | `DECIMAL(10,7)` | YA | | |
-| `foto_rumah` | `VARCHAR(255)` | YA | | |
+| ~~`foto_rumah`~~ | | | | **DIPINDAH 2026-09-02** ke registry `berkas` lewat pivot atau FK langsung (`rules.md` 14a.8) |
 | `catatan_hunian` | `TEXT` | YA | | Termasuk catatan rumah ditinggal sementara |
-| `dokumen_pendukung` | `VARCHAR(255)` | YA | | |
+| ~~`dokumen_pendukung`~~ | | | | **DIPINDAH 2026-09-02** ke registry `berkas` lewat pivot atau FK langsung (`rules.md` 14a.8) |
 
 **Catatan penting:** `transmigran_id` memiliki constraint `UNIQUE` yang **wajib dibuat di level database**, bukan sekadar validasi form (`rules.md` §6a.6). Constraint ini sekaligus menjamin dua aturan: satu rumah hanya satu KK, dan satu KK hanya satu rumah. Saat menautkan KK, antarmuka hanya menampilkan rumah dengan `transmigran_id` bernilai `NULL`.
 
@@ -736,9 +788,9 @@ Menggabungkan `lahan_sp`, `lahan_usaha_sp`, `kategori_lahan_sp`, dan `kategori_l
 | `tujuan_pemanfaatan` | `TEXT` | YA | | |
 | `lintang` | `DECIMAL(10,7)` | YA | | |
 | `bujur` | `DECIMAL(10,7)` | YA | | |
-| `pola_tanam` | `VARCHAR(255)` | YA | | Khusus lahan usaha: monokultur, tumpang sari |
-| `peralatan_pertanian` | `TEXT` | YA | | Khusus lahan usaha |
-| `kendala` | `TEXT` | YA | | Khusus lahan usaha |
+| ~~`pola_tanam`~~ | | | | **DICABUT 2026-09-02** atas keputusan pemilik proyek, beserta tab Pengelolaan yang hanya menampung ketiganya (`rules.md` 7.7) |
+| ~~`peralatan_pertanian`~~ | | | | **DICABUT 2026-09-02** atas keputusan pemilik proyek, beserta tab Pengelolaan yang hanya menampung ketiganya (`rules.md` 7.7) |
+| ~~`kendala`~~ | | | | **DICABUT 2026-09-02** atas keputusan pemilik proyek, beserta tab Pengelolaan yang hanya menampung ketiganya (`rules.md` 7.7) |
 | `keterangan` | `TEXT` | YA | | |
 
 **Catatan:**
@@ -759,10 +811,10 @@ Dokumen status lahan (HPL/SHM/SK). Dua arah relasi: satu lahan dapat memiliki le
 | Kolom | Tipe | Null | Kunci | Keterangan |
 |---|---|---|---|---|
 | `id_dokumen_lahan` | `BIGINT UNSIGNED AUTO_INCREMENT` | TIDAK | PK | |
-| `jenis_dokumen` | `ENUM` | TIDAK | | Lihat §11.14 |
-| `nomor_dokumen` | `VARCHAR(100)` | YA | | |
-| `tanggal_terbit` | `DATE` | YA | | |
-| `file_dokumen` | `VARCHAR(255)` | TIDAK | | Path berkas |
+| ~~`jenis_dokumen`~~ | | | | **DICABUT 2026-09-02**: tabel `dokumen_lahan` dihapus; SHM melekat pada transmigran dan HPL pada kawasan (`rules.md` 7.6) |
+| ~~`nomor_dokumen`~~ | | | | **DICABUT 2026-09-02**: tabel `dokumen_lahan` dihapus; SHM melekat pada transmigran dan HPL pada kawasan (`rules.md` 7.6) |
+| ~~`tanggal_terbit`~~ | | | | **DICABUT 2026-09-02**: tabel `dokumen_lahan` dihapus; SHM melekat pada transmigran dan HPL pada kawasan (`rules.md` 7.6) |
+| ~~`file_dokumen`~~ | | | | **DICABUT 2026-09-02**: tabel `dokumen_lahan` dihapus; SHM melekat pada transmigran dan HPL pada kawasan (`rules.md` 7.6) |
 | `keterangan` | `TEXT` | YA | | |
 
 **`dokumen_lahan_bidang` (penghubung m2m):**
@@ -800,7 +852,7 @@ Dokumen status lahan (HPL/SHM/SK). Dua arah relasi: satu lahan dapat memiliki le
 | `luas_basah_ketua` | `DECIMAL(12,2)` | YA | | Hektare; **hanya** bila `asal_ketua` = `Bukan Transmigran` |
 | `lintang` | `DECIMAL(10,7)` | YA | | |
 | `bujur` | `DECIMAL(10,7)` | YA | | |
-| `dokumen_pendukung` | `VARCHAR(255)` | YA | | SK pembentukan |
+| ~~`dokumen_pendukung`~~ | | | | **DIPINDAH 2026-09-02** ke registry `berkas` lewat pivot atau FK langsung (`rules.md` 14a.8) |
 | `keterangan` | `TEXT` | YA | | |
 
 **Catatan:**
@@ -869,7 +921,7 @@ Alat dan mesin pertanian. **Diubah Putaran 7 (2026-08-30): satu pengadaan, banya
 | `jumlah_total` | `INT UNSIGNED` | TIDAK | | Unit yang diadakan; Σ `alsintan_distribusi.jumlah` ≤ nilai ini |
 | `tahun_pengadaan` | `YEAR` | YA | IDX | Tahun alat diadakan |
 | `sumber_dana` | `ENUM` | YA | | Lihat §11.3 |
-| `dokumen_pendukung` | `VARCHAR(255)` | YA | | Berita acara atau bukti pengadaan |
+| ~~`dokumen_pendukung`~~ | | | | **DIPINDAH 2026-09-02** ke registry `berkas` lewat pivot atau FK langsung (`rules.md` 14a.8) |
 | `keterangan` | `TEXT` | YA | | |
 
 **`alsintan_distribusi` (satu baris per poktan penerima):**
@@ -883,7 +935,7 @@ Alat dan mesin pertanian. **Diubah Putaran 7 (2026-08-30): satu pengadaan, banya
 | `kondisi` | `ENUM` | YA | | Lihat §11.5. Melekat di sini, bukan pengadaan: diamati per unit di lapangan |
 | `penanda_terima_id` | `BIGINT UNSIGNED` | YA | FK, IDX | Anggota poktan penerima yang menandatangani berita acara. BUKAN pemilik (`rules.md` §7b poin 8). Menunjuk `anggota_poktan.id` |
 | `tanggal_serah` | `DATE` | YA | | Tanggal serah terima ke poktan ini |
-| `foto` | `VARCHAR(255)` | YA | | Dokumentasi kondisi unit di poktan ini |
+| ~~`foto`~~ | | | | **DIPINDAH 2026-09-02** ke registry `berkas` lewat pivot atau FK langsung (`rules.md` 14a.8) |
 | `keterangan` | `TEXT` | YA | | |
 
 Turunan pada `alsintan()`: `satuan_permukiman_id` per baris distribusi mengikuti poktannya; `jumlah_tersalur`, `jumlah_belum_tersalur` (barang di gudang UPT). `penanda_terima` (nama) dihitung dari `anggotaPoktan()`.
@@ -916,8 +968,8 @@ Sarana produksi pertanian: benih, pupuk, pestisida, mulsa. **Diubah Putaran 7 (2
 | `jadwal_tanam` | `CHAR(7)` | YA | | Rencana tanam `YYYY-MM` dari berita acara. Tetap di pengadaan, bukan distribusi |
 | `tahun_pengadaan` | `YEAR` | TIDAK | IDX | **Tahun anggaran APBD/APBN**, bukan tahun barang diterima. Sumbu pengelompokan laporan panen. Tetap di pengadaan |
 | `sumber_dana` | `ENUM` | YA | | Lihat §11.3 |
-| `foto` | `VARCHAR(255)` | YA | | Dokumentasi barang |
-| `dokumen_pendukung` | `VARCHAR(255)` | YA | | Berita acara penyaluran |
+| ~~`foto`~~ | | | | **DIPINDAH 2026-09-02** ke registry `berkas` lewat pivot atau FK langsung (`rules.md` 14a.8) |
+| ~~`dokumen_pendukung`~~ | | | | **DIPINDAH 2026-09-02** ke registry `berkas` lewat pivot atau FK langsung (`rules.md` 14a.8) |
 | `keterangan` | `TEXT` | YA | | |
 
 **`saprotan_distribusi` (satu baris per poktan penerima):**
@@ -994,7 +1046,7 @@ Catatan penanaman: kelompok tani mana, menanam komoditas apa, kapan, seluas bera
 | `volume_benih` | `DECIMAL(12,3)` | TIDAK | | **Wajib sejak 2026-08-24** |
 | `realisasi_tanam` | `DECIMAL(12,2)` | TIDAK | | Hektare yang benar-benar ditanami |
 | `periode_tanam` | `CHAR(7)` | TIDAK | IDX | Bulan tanam, bentuk `YYYY-MM` |
-| `dokumen_pendukung` | `VARCHAR(255)` | YA | | Berita acara tanam atau foto hamparan |
+| ~~`dokumen_pendukung`~~ | | | | **DIPINDAH 2026-09-02** ke registry `berkas` lewat pivot atau FK langsung (`rules.md` 14a.8) |
 | `keterangan` | `TEXT` | YA | | |
 
 > **Catatan 2026-09-01:** Constraint `UNIQUE (poktan_id, komoditas_id, periode_tanam)` **dicabut**. Satu kelompok tani dapat mencatat lebih dari satu kali penanaman pada bulan yang sama (misal penanaman bertahap di awal dan akhir bulan, atau dari bantuan benih berbeda). `saprotan_id` diperbarui menjadi `saprotan_distribusi_id` mengikuti relasi jatah poktan Putaran 7.
@@ -1073,7 +1125,7 @@ Alasan tidak menyimpannya: kolom tersimpan menjadi salah begitu satu baris panen
 | `produktivitas` | `DECIMAL(12,3)` | TIDAK | | Per hektare, dalam satuan baku komoditas |
 | `produksi` | `DECIMAL(12,3)` | TIDAK | | Disimpan apa adanya, tanpa konversi |
 | `harga_jual` | `DECIMAL(15,2)` | YA | | Rupiah per satuan baku |
-| `dokumen_pendukung` | `VARCHAR(255)` | YA | | Berita acara panen, foto hamparan, atau bukti timbangan |
+| ~~`dokumen_pendukung`~~ | | | | **DIPINDAH 2026-09-02** ke registry `berkas` lewat pivot atau FK langsung (`rules.md` 14a.8) |
 | `keterangan` | `TEXT` | YA | | |
 
 > **Catatan 2026-08-24.** Kedua kolom terakhir sudah tercantum di sini dan sudah punya isian di form sejak 2026-08-22, tetapi **tidak pernah ada pada data**. Halaman rincian membacanya lewat `?? '-'`, sehingga selalu bertuliskan "-" tanpa pernah memerahkan apa pun: petugas mengetik catatan, menekan simpan, dan catatannya lenyap tanpa pesan. Keterangan `dokumen_pendukung` ikut dibetulkan dari "Foto panen", sebab pembatasan gambar-saja sudah dicabut pada tanggal yang sama.
@@ -1152,8 +1204,8 @@ Pendataan **aset** infrastruktur. Pelaporan kerusakan ditangani fitur Pengaduan 
 | `kapasitas` | `VARCHAR(100)` | YA | | Contoh: "debit 5 liter/detik", "panjang 2 km" |
 | `lintang` | `DECIMAL(10,7)` | YA | | |
 | `bujur` | `DECIMAL(10,7)` | YA | | |
-| `foto` | `VARCHAR(255)` | YA | | Dokumentasi kondisi lapangan |
-| `dokumen_pendukung` | `VARCHAR(255)` | YA | | |
+| ~~`foto`~~ | | | | **DIPINDAH 2026-09-02** ke registry `berkas` lewat pivot atau FK langsung (`rules.md` 14a.8) |
+| ~~`dokumen_pendukung`~~ | | | | **DIPINDAH 2026-09-02** ke registry `berkas` lewat pivot atau FK langsung (`rules.md` 14a.8) |
 | `keterangan` | `TEXT` | YA | | |
 
 **`infrastruktur_sp` — cakupan layanan lintas SP (Putaran 7, 2026-08-30).** Satu irigasi, jalan masuk kawasan, atau kios "melayani 3 SP" tidak berhenti di batas satu SP; sebelumnya kenyataan itu hanya tertulis di `kapasitas` sebagai teks, dan `PenilaianKondisiSp` menyaring `=== satuan_permukiman_id` sehingga SP tetangga jatuh ke `Perlu Penanganan` lewat aturan primer nol (skor SP yang **salah**).
@@ -1188,7 +1240,7 @@ Pendataan **aset** infrastruktur. Pelaporan kerusakan ditangani fitur Pengaduan 
 | `prioritas` | `ENUM` | TIDAK | IDX | Lihat §11.24 |
 | `lintang` | `DECIMAL(10,7)` | YA | | Titik kejadian |
 | `bujur` | `DECIMAL(10,7)` | YA | | Titik kejadian |
-| `dokumen_pendukung` | `VARCHAR(255)` | YA | | Foto bukti dari **pelapor**, diserahkan saat melapor. Berbeda dari `penanganan_pengaduan.dokumen_tindak_lanjut` yang diunggah **petugas**; keduanya tampil terpisah pada halaman rincian beserta label yang menyebut siapa penyerahnya |
+| ~~`dokumen_pendukung`~~ | | | | **DIPINDAH 2026-09-02** ke registry `berkas` lewat pivot atau FK langsung (`rules.md` 14a.8) |
 
 **Catatan:**
 - Kolom `catatan_penanganan` dan `id_status_penanganan` pada SQL referensi **dihapus**; keduanya duplikatif (`notes.md` §1.5).
@@ -1225,7 +1277,7 @@ Riwayat penanganan. Satu pengaduan punya banyak baris; setiap perubahan status m
 | `status_sesudah` | `ENUM` | TIDAK | | Lihat §11.23 |
 | `tanggal_penanganan` | `DATE` | TIDAK | IDX | |
 | `catatan` | `TEXT` | TIDAK | | Tindakan yang dilakukan |
-| `dokumen_tindak_lanjut` | `VARCHAR(255)` | YA | | |
+| ~~`dokumen_tindak_lanjut`~~ | | | | **DIPINDAH 2026-09-02** ke registry `berkas` lewat pivot atau FK langsung (`rules.md` 14a.8) |
 
 **Catatan:** alur status wajib berurutan Menunggu Diterima → Diterima → Diproses → Selesai (`rules.md` §10b.4). Validasi urutan dilakukan di sisi aplikasi; setiap penyimpanan baris baru juga memperbarui `pengaduan.status`.
 

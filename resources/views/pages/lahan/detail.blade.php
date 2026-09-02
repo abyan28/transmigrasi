@@ -1,23 +1,21 @@
 {{--
-    Rincian satu lahan beserta dokumen status lahannya.
+    Rincian satu bidang lahan.
 
-    Dokumen HPL dan SHM dikelola di sini, bukan di dalam form lahan, karena
-    satu lahan dapat memiliki lebih dari satu dokumen DAN satu dokumen dapat
-    mencakup banyak bidang (agents/data-dictionary.md bagian 7.2; relasi
-    many-to-many lewat `dokumen_lahan_bidang` sejak Putaran 7). Nomor dokumen
-    dan tanggal terbit tetap hidup di tab ini meski isiannya dicabut dari form
-    lahan pada 2026-08-20, sebab keduanya keterangan per dokumen, bukan per
-    bidang.
+    Bidang TIDAK memegang dokumennya sendiri (Putaran 12, 2026-09-02). SHM
+    meliputi seluruh lahan satu keluarga sehingga melekat pada transmigran;
+    HPL adalah alas hak kawasan milik instansi sehingga melekat pada kawasan
+    (rules.md 7.4a). Tab Legalitas menampilkan keduanya sebagai bacaan beserta
+    tautan ke tempat penyuntingannya.
 
-    Bagian pengelolaan (pola tanam, peralatan, kendala) hanya ditampilkan bila
-    lahan berjenis Lahan Usaha, mengikuti aturan bahwa keempat kolom itu tidak
-    berlaku untuk lahan pekarangan.
+    Pola tanam, peralatan, dan kendala DICABUT pada tanggal yang sama atas
+    keputusan pemilik proyek, beserta tab Pengelolaan yang hanya menampung
+    ketiganya.
 --}}
 @extends('layouts.app')
 
 @section('content')
     @php
-        // `$dokumen`, `$pemilik`, dan `$opsiJenisDokumenLahan` datang dari
+        // `$pemilik`, `$shm`, dan `$hpl` datang dari
         // rute `lahan.detail`.
 
         // Lahan usaha terbagi beberapa tahap, sehingga tidak boleh dicocokkan
@@ -117,17 +115,11 @@
                     role="tablist" aria-label="Rincian lahan">
                     @php
                         $tab = ['rincian' => 'Rincian'];
-                        if ($lahanUsaha) {
-                            $tab['pengelolaan'] = 'Pengelolaan';
-                        }
-                        $tab['dokumen'] = 'Dokumen (' . count($dokumen) . ')';
+                        $tab['dokumen'] = 'Legalitas';
                         $tab['log'] = 'Catatan Log';
                     @endphp
                     @foreach ($tab as $kunci => $label)
                         <button type="button" role="tab" @click="setTab('{{ $kunci }}')"
-                            :aria-selected="tab === '{{ $kunci }}'"
-                            :class="tab === '{{ $kunci }}'
-                                ? 'border-brand-500 text-brand-600 dark:text-brand-400'
                                 : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
                             class="shrink-0 border-b-2 px-4 py-2.5 text-theme-sm font-medium transition focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
                             {{ $label }}
@@ -172,85 +164,73 @@
                     </dl>
                 </div>
 
-                {{-- Pengelolaan, hanya untuk lahan usaha --}}
-                @if ($lahanUsaha)
-                    <div x-show="tab === 'pengelolaan'" x-cloak role="tabpanel" class="p-5 sm:p-6">
-                        <dl class="space-y-4">
-                            <div>
-                                <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Pola tanam</dt>
-                                <dd class="mt-0.5 text-theme-sm text-gray-800 dark:text-white/90">
-                                    {{ $data['pola_tanam'] ?? '-' }}
-                                </dd>
-                            </div>
-                            <div>
-                                <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Peralatan pertanian</dt>
-                                <dd class="mt-0.5 text-theme-sm text-gray-800 dark:text-white/90">
-                                    {{ $data['peralatan_pertanian'] ?? '-' }}
-                                </dd>
-                            </div>
-                            <div>
-                                <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Kendala yang dihadapi</dt>
-                                <dd class="mt-0.5 text-theme-sm text-gray-800 dark:text-white/90">
-                                    {{ $data['kendala'] ?? '-' }}
-                                </dd>
-                            </div>
-                        </dl>
-                    </div>
-                @endif
+                {{-- Legalitas: SHM milik keluarga, HPL milik kawasan --}}
+                <div x-show="tab === 'dokumen'" x-cloak role="tabpanel" class="p-5 sm:p-6">
+                    {{--
+                        Bidang lahan TIDAK memegang dokumennya sendiri (Putaran 12).
+                        SHM meliputi seluruh lahan satu keluarga, pekarangan maupun
+                        usaha, sehingga ia melekat pada transmigran dan diunggah
+                        sekali. HPL adalah alas hak KAWASAN milik instansi, bukan hak
+                        seorang transmigran (rules.md 7.4a), sehingga ia melekat pada
+                        kawasan dan cukup satu untuk seluruh bidang di dalamnya.
 
-                {{-- Dokumen status lahan --}}
-                <div x-show="tab === 'dokumen'" x-cloak role="tabpanel">
-                    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 p-5 dark:border-gray-800">
-                        {{--
-                            Sejak 2026-08-18 dokumen PERTAMA diisi langsung pada form lahan,
-                            sebab itulah keadaan yang paling lazim. Tab ini tetap ada untuk
-                            dokumen kedua dan seterusnya, misalnya bidang yang sertifikatnya
-                            terbit menyusul setelah surat keterangan pembagian tanah.
-                        --}}
-                        <p class="text-theme-xs text-gray-500 dark:text-gray-400">
-                            Dokumen pertama diisi pada form lahan. Tab ini untuk dokumen tambahan, masing-masing
-                            dengan nomor dan tanggal terbitnya sendiri. Satu HPL atau SK dapat mencakup beberapa
-                            bidang sekaligus.
-                        </p>
-                        @if ($bolehUbah)
-                            <button type="button" @click="$dispatch('buka-modal', 'formDokumenLahan')"
-                                class="rounded-lg border border-gray-300 px-3 py-2 text-theme-xs font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
-                                Tambah Dokumen Lahan
-                            </button>
-                        @endif
-                    </div>
+                        Keduanya ditampilkan di sini sebagai bacaan beserta tautan ke
+                        tempat penyuntingannya. Menyediakan unggahan di halaman ini
+                        akan melahirkan salinan sertifikat yang sama pada tiap bidang,
+                        lalu satu digit salah hanya terbetulkan di sebagian.
+                    --}}
+                    <div class="space-y-4">
+                        <div class="rounded-lg border border-gray-200 p-4 dark:border-gray-800">
+                            <div class="flex flex-wrap items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                    <p class="text-theme-sm font-medium text-gray-800 dark:text-white/90">Sertifikat keluarga (SHM)</p>
+                                    <p class="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
+                                        Berlaku untuk seluruh bidang milik {{ $pemilik['nama_kepala_keluarga'] ?? 'keluarga ini' }},
+                                        pekarangan maupun lahan usaha.
+                                    </p>
+                                    <p class="mt-2 text-theme-xs">
+                                        Status sertifikat:
+                                        <span class="font-medium text-gray-800 dark:text-white/90">{{ $pemilik['status_sertifikat'] ?? 'Belum Didata' }}</span>
+                                    </p>
+                                </div>
+                                <div class="shrink-0 text-right">
+                                    @if ($shm)
+                                        <x-sim.tautan-dokumen modul="transmigran" :id="$data['transmigran_id']"
+                                            :berkas="$shm['nama_file']" />
+                                    @else
+                                        <span class="text-theme-xs text-gray-500 dark:text-gray-400">Belum diunggah</span>
+                                    @endif
+                                    <a href="{{ route('transmigran.detail', $data['transmigran_id']) }}"
+                                        class="mt-1.5 block text-theme-xs font-medium text-brand-600 hover:underline dark:text-brand-400">
+                                        Buka data keluarga
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
 
-                    @if (empty($dokumen))
-                        <x-sim.empty-state judul="Belum ada dokumen lahan"
-                            pesan="Dokumen HPL, SHM, atau surat keterangan desa dapat diunggah lewat tombol Tambah Dokumen Lahan." />
-                    @else
-                        <x-sim.tabel-ringkas judul="Dokumen kepemilikan lahan ini" :kolom="['Jenis', 'Nomor Dokumen', 'Bidang Dicakup', 'Tanggal Terbit', 'Berkas']">
-                            @foreach ($dokumen as $d)
-                                <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
-                                    <td class="px-5 py-3 text-theme-sm font-medium text-gray-800 dark:text-white/90">
-                                        {{ $d['jenis_dokumen'] }}
-                                    </td>
-                                    <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
-                                        {{ $d['nomor_dokumen'] ?? '-' }}
-                                    </td>
-                                    <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
-                                        {{ count($d['lahan_ids']) }} bidang
-                                    </td>
-                                    <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
-                                        @if ($d['tanggal_terbit'])
-                                            {{ \Illuminate\Support\Carbon::parse($d['tanggal_terbit'])->translatedFormat('d F Y') }}
-                                        @else
-                                            -
-                                        @endif
-                                    </td>
-                                        <td class="px-5 py-3">
-                                            <x-sim.tautan-dokumen modul="lahan" :id="$data['id_lahan']"
-                                                :berkas="$d['file_dokumen']" />
-                                        </td>
-                                </tr>
-                            @endforeach
-                        </x-sim.tabel-ringkas>
-                    @endif
+                        <div class="rounded-lg border border-gray-200 p-4 dark:border-gray-800">
+                            <div class="flex flex-wrap items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                    <p class="text-theme-sm font-medium text-gray-800 dark:text-white/90">Alas hak kawasan (HPL)</p>
+                                    <p class="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
+                                        Hak Pengelolaan atas tanah kawasan, dipegang instansi. Satu HPL menaungi
+                                        seluruh bidang di dalam kawasan, sehingga tidak diunggah per bidang.
+                                    </p>
+                                </div>
+                                <div class="shrink-0 text-right">
+                                    @if ($hpl)
+                                        <x-sim.tautan-dokumen modul="kawasan" :id="1" :berkas="$hpl['nama_file']" />
+                                    @else
+                                        <span class="text-theme-xs text-gray-500 dark:text-gray-400">Belum diunggah</span>
+                                    @endif
+                                    <a href="{{ route('kawasan') }}"
+                                        class="mt-1.5 block text-theme-xs font-medium text-brand-600 hover:underline dark:text-brand-400">
+                                        Buka data kawasan
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
 
@@ -271,71 +251,5 @@
             @include('pages.lahan.form', ['data' => $data, 'awalan' => 'ubah'])
         </x-sim.modal-form>
 
-        {{-- Modal unggah dokumen lahan, terpisah dari form lahan --}}
-        <x-sim.modal-form nama="formDokumenLahan" judul="Tambah Dokumen Lahan"
-            :keterangan="'Dokumen untuk lahan ' . $data['kode_lahan'] . '.'"
-            :aksi="route('lahan.dokumen.simpan', $data['id_lahan'])" ukuran="lg"
-            label-simpan="Simpan Dokumen Lahan">
-            <div class="grid gap-4 sm:grid-cols-2">
-                <div>
-                    <label for="dok_jenis" class="mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400">
-                        Jenis Dokumen<span class="text-error-500">*</span>
-                    </label>
-                    <select id="dok_jenis" name="jenis_dokumen" required
-                        class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
-                        @foreach ($opsiJenisDokumenLahan as $nilai => $label)
-                            <option value="{{ $nilai }}">{{ $label }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div>
-                    <label for="dok_nomor" class="mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400">
-                        Nomor Dokumen
-                    </label>
-                    <input type="text" id="dok_nomor" name="nomor_dokumen" maxlength="100"
-                        placeholder="Contoh: HPL/NTT/2016/0142"
-                        class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90" />
-                </div>
-
-                <div>
-                    <label for="dok_tanggal" class="mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400">
-                        Tanggal Terbit
-                    </label>
-                    <input type="date" id="dok_tanggal" name="tanggal_terbit" max="{{ date('Y-m-d') }}"
-                        class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90" />
-                </div>
-
-                {{--
-                    Bidang lain yang dicakup dokumen yang sama (Putaran 7).
-                    Satu HPL atau SK pencadangan lazim mencakup banyak bidang;
-                    tanpa ini dokumen itu harus diketik ulang dan berkasnya
-                    diunggah ulang per bidang.
-                --}}
-                <div class="sm:col-span-2">
-                    <x-sim.pilih-cari-banyak nama="lahan_ids_lain" label="Bidang Lain yang Dicakup Dokumen Ini"
-                        :opsi="$daftarLahanLain" kunci="id_lahan" teks="kode_lahan"
-                        keterangan-opsi="pemilik,satuan_permukiman"
-                        :terpilih="[]"
-                        placeholder="Kosongkan bila dokumen ini hanya untuk bidang ini"
-                        keterangan="Bidang ini otomatis termasuk. Isi hanya bidang tambahan yang tercatat pada dokumen yang sama." />
-                </div>
-
-                <div class="sm:col-span-2">
-                    <x-sim.file-upload nama="file_dokumen" label="Berkas Dokumen" :wajib="true"
-                        nama-dokumen="Dokumen Lahan" :nama-pemilik="$data['pemilik']"
-                        keterangan="Unggah hasil pindaian dokumen asli." />
-                </div>
-
-                <div class="sm:col-span-2">
-                    <label for="dok_keterangan"
-                        class="mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400">
-                        Keterangan
-                    </label>
-                    <textarea id="dok_keterangan" name="keterangan" rows="2"
-                        class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90"></textarea>
-                </div>
-            </div>
-        </x-sim.modal-form>
     @endif
 @endsection

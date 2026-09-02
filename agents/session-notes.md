@@ -1,3 +1,183 @@
+# Putaran 12 - Registry Berkas Terpusat + Pembetulan Penempatan HPL/SHM SELESAI (2026-09-02)
+
+Rencana ditulis sebelum kode disentuh (`rules.md` 20b poin 12).
+Pemicu: audit khusus upload foto/dokumen/lampiran, dilanjutkan diskusi panjang yang
+menyingkap kesalahpahaman mendasar tentang HPL dan SHM.
+
+## Temuan yang mengubah segalanya
+
+Audit semula menyimpulkan desain berkas `MEMADAI DENGAN PERBAIKAN KECIL` dan
+`dokumen_lahan` adalah pengecualian yang tepat. Diskusi dengan pemilik proyek
+membalik kesimpulan itu, dan pembaliknya benar:
+
+**HPL adalah dokumen KAWASAN, bukan dokumen bidang.** `rules.md` 7.4a sebenarnya sudah
+menuliskannya (`HPL adalah Hak Pengelolaan milik instansi atas tanah kawasan sehingga
+tidak pernah menjadi hak seorang transmigran`), tetapi tabel `dokumen_lahan`
+menempelkannya ke tiap bidang. Dari situlah lahir pivot M:N `dokumen_lahan_bidang`:
+ia menambal akibat, bukan sebab.
+
+**SHM meliputi seluruh lahan satu KK**, yaitu pekarangan DAN lahan usaha sekaligus.
+Menempelkannya ke `lahan_id` memaksa satu sertifikat diunggah dua kali per KK.
+
+Setelah keduanya ditempatkan benar, `dokumen_lahan` dan pivotnya hilang TANPA
+kehilangan kemampuan apa pun. Bukan dikorbankan, melainkan memang salah tempat.
+
+## Keputusan pemilik proyek (mengikat)
+
+| # | Keputusan |
+|---|---|
+| 1 | Registry `dokumen` terpusat, Opsi Y: PK BIGINT + kolom `uuid`, bukan UUID sebagai PK |
+| 2 | Buang `public_link` (lawan 14a.6), `updater` (kalah dari `audit_log`), `deskripsi` |
+| 3 | `is_gcs` diganti `disk VARCHAR` agar sejalan konsep disk Laravel |
+| 4 | `user_id` NULLABLE: kanal publik mengunggah tanpa akun (10b.1) |
+| 5 | Multifile lewat PIVOT per domain, bukan polymorphic; single-file lewat FK langsung |
+| 6 | `dokumen_lahan` + `dokumen_lahan_bidang` DIHAPUS |
+| 7 | HPL pindah ke kawasan, dan kawasan jadi MULTIFILE (HPL + SK + peta) |
+| 8 | SHM pindah ke `transmigran`, diunggah sekali, meliputi kedua bidang |
+| 9 | `transmigran.status_sertifikat` enum Sudah/Belum/Belum Didata |
+| 10 | Surat keterangan pembagian tanah TIDAK didata |
+| 11 | `alsintan` induk dapat foto, sejajar `saprotan` |
+| 12 | Hapus `pola_tanam`, `peralatan_pertanian`, `kendala` dari lahan |
+| 13 | **Lahan: TEPAT 1 pekarangan + 1 usaha**, tidak boleh lebih |
+| 14 | Seluruh dokumen terkait diperbarui |
+| 15 | Dikerjakan BERTAHAP; beberapa tahap boleh digabung bila tidak konflik |
+
+## Aturan yang dicabut atau diubah
+
+| Aturan | Tindakan |
+|---|---|
+| 7.2 | Ubah - dokumen tidak lagi menempel pada bidang |
+| 7.6, 7.6a | **Cabut** - dokumen lahan jadi berkas biasa; nomor/tanggal tidak didata |
+| 7.7 | **Cabut** - pola tanam, peralatan, kendala dihapus |
+| 7.8, 7.9 | Ubah - jumlah bidang kini BATAS yang ditegakkan, bukan sekadar kewajaran |
+| 7bc.3 | **Cabut** - satu dokumen banyak bidang tidak lagi ada |
+| 7.4a | Ubah - rantai HPL/SHM ditegaskan beserta tempat penyimpanannya |
+| 14a | Perluas - registry, `mime`/`ukuran` wajib, `disk` |
+
+## Penyisiran lima sudut (rules.md 20a poin 10)
+
+**Privasi.** Registry menyatukan metadata seluruh berkas, termasuk dokumen kependudukan.
+Ia menjadi satu tempat yang, bila bocor, memetakan seluruh berkas sistem. Peredamnya:
+registry hanya menyimpan METADATA, bukan isi; dan aksesnya tetap lewat
+`DokumenController` yang wajib memeriksa izin serta cakupan SP (5.0b-1 poin 11).
+Cakupan SP tetap dapat ditegakkan justru KARENA memakai pivot, bukan polymorphic:
+tiap pivot punya FK tetap ke induknya, sehingga penyaring induk ikut menyaring berkasnya.
+
+**Siklus hidup.** Paling menuntut perhatian. Menghapus baris domain tidak lagi otomatis
+membuang path berkasnya, sebab berkasnya kini hidup di tabel lain. Aturannya:
+pivot `ON DELETE CASCADE` terhadap induk domain, sehingga tautannya hilang; baris
+`dokumen` sendiri memakai soft delete agar berkas fisiknya dapat dibersihkan
+terjadwal, bukan seketika. FK langsung memakai `ON DELETE SET NULL`: menghapus
+berkas tidak boleh menghapus barisnya.
+
+**Kejujuran angka.** `status_sertifikat` lahir justru dari sudut ini. Menghitung
+`belum bersertifikat` dari ketiadaan unggahan mencampur dua keadaan yang berbeda:
+belum punya sertifikat, dan punya tetapi belum diunggah petugas. Nilai `Belum Didata`
+memisahkan keduanya, sepola dengan 10a.4c yang menolak baris hilang sebab `pembaca
+tidak dapat membedakan tidak ada dari belum didata`.
+
+**Alur kerja.** Data lahan yang sudah terlanjur punya dua bidang berperuntukan sama
+akan DITOLAK UNIQUE baru. Data contoh sudah diperiksa: 0 pelanggaran, sehingga tidak
+ada yang perlu dibereskan lebih dulu. Pada data nyata kelak, impor wajib memeriksanya
+sebelum dijalankan. Petugas juga kehilangan kemampuan mencatat lahan usaha di dua
+petak terpisah; ini konsekuensi sadar dari keputusan 13.
+
+**Teknis.** Menyentuh 17 tabel, ~25 titik frontend, `PenyimpananDokumen`,
+`LaporanData`, dan penjaga uji pada `HalamanTest.php` yang berukuran 343 KB.
+Kolom `pola_tanam` ikut terpakai Laporan Transmigran, sehingga satu kolom laporan
+hilang dari cetakan. Tidak menyentuh rute, sehingga `sim:tautan-statis` diharapkan
+tetap 227.
+
+## Urutan pengerjaan
+
+```
+T1+T2 (digabung: saling terkait) : schema.sql + DummyData  -> test
+T3                               : domain lahan            -> test
+T4                               : SHM/HPL/status_sertifikat -> test
+T5                               : frontend + PenyimpananDokumen -> test
+T6                               : dokumentasi lengkap
+```
+
+Baseline: 729 PASS / 7.410 assertions, `sim:tautan-statis` 227, `pint` 33 pre-existing.
+
+## Struktur tabel dokumen
+
+| Kolom | Tipe | Catatan |
+|---|---|---|
+| `id_dokumen` | BIGINT UNSIGNED | PK; integer lebih ringan sebagai indeks (4.0a.1) |
+| `uuid` | CHAR(36) UNIQUE | pengenal publik |
+| `jenis_dokumen_id` | BIGINT NULL | FK `referensi`; NULL = tanpa penggolongan |
+| `nama_file` | VARCHAR(255) | nama tersimpan |
+| `nama_asli` | VARCHAR(255) NULL | nama dari pengunggah, dipakai saat unduh |
+| `path` | VARCHAR(255) | relatif terhadap disk |
+| `mime` | VARCHAR(127) | hasil sniffing, bukan klaim klien (14a.2) |
+| `ekstensi` | VARCHAR(10) | |
+| `ukuran` | BIGINT UNSIGNED | byte; menegakkan batas 5 MB (14a.1) |
+| `disk` | VARCHAR(20) | `local` / `s3` / `gcs`; menyiapkan 2.2.6 |
+| `keterangan` | VARCHAR(500) NULL | mis. tampak samping; menggantikan kolom per-sisi |
+| `user_id` | BIGINT NULL | NULL = unggahan kanal publik |
+| timestamps | | + `deleted_at` |
+
+**12 pivot multifile:** transmigran, rumah, lahan(-), infrastruktur, fasilitas_sp,
+inventaris_sp, pengaduan, penanganan_pengaduan, penanaman, hasil_panen, alsintan,
+kawasan_transmigrasi. Lahan TIDAK dapat pivot sebab tidak ada dokumen tingkat bidang.
+
+**FK langsung (single-file):** user, satuan_permukiman, poktan, saprotan(2),
+alsintan_distribusi.
+
+---
+
+## Hasil Putaran 12
+
+| Bagian | Hasil |
+|---|---|
+| T1 skema | Registry `berkas` + 12 pivot + 5 FK langsung; `dokumen_lahan` dan pivotnya dicabut; 3 kolom lahan dicabut; UNIQUE lahan; `status_sertifikat`. **60 jadi 61 tabel** |
+| T2 data | `berkas()` 23 baris + `berkasPemilik()` 19 tautan + helper `berkasMilik/berkasSatu/cariBerkas`; **0 orphan, 0 tanpa mime/ukuran** |
+| T5 frontend | `lekatkanBerkas()` menempelkan nama berkas ke kunci lama, sehingga 25 titik view tidak disunting satu per satu |
+| T3+T4 domain | SHM ke transmigran, HPL ke kawasan, tab Legalitas jadi bacaan + tautan, tab Pengelolaan dihapus |
+| T6 dokumen | `rules.md` 7.6-7.9 + 7bc.3 + 14a.8-10, `data-dictionary.md` bagian 4b, `erd.md`, `notes.md`, `tasklist.md` |
+
+### Verifikasi
+
+| Pemeriksaan | Hasil |
+|---|---|
+| Impor `schema.sql` ke MariaDB 10.4 | **tanpa galat**; 61 tabel, 94 FK dibuat engine, 17 menunjuk `berkas` |
+| UNIQUE lahan | bidang ketiga DITOLAK: `Duplicate entry '1-Lahan Usaha'` |
+| Multi-berkas via pivot (FK aktif) | satu KK memegang SHM + KTP sekaligus |
+| `php artisan test` | **727 PASS / 7.409 assertions** |
+| `sim:tautan-statis` | 227, tidak berubah |
+| `pint --test` | 33 pre-existing |
+| BOM | seluruh berkas tersunting bersih |
+
+### Yang berubah dari rencana
+
+**Penamaan `dokumen` jadi `berkas`** atas usulan pemilik proyek di tengah T1, sebab tabelnya
+menampung foto juga. Berbasis data: `berkas` 302 kemunculan di kode, `file` hanya 45.
+Diangkat tepat waktu, sebelum 25 titik frontend memakainya.
+
+**Siklus FK `user` dan `berkas`** tidak terlihat saat perencanaan. Ditemukan ketika
+memeriksa urutan `CREATE TABLE`, dan diputus dengan pivot `user_berkas`.
+
+**T5 digabung ke T2** atas persetujuan pemilik proyek. Rencana semula menaruh verifikasi
+uji di akhir T2, dan itu tidak realistis: data dan view harus berpindah bersama, sehingga
+memisahkannya meninggalkan suite merah di antara keduanya.
+
+### Kekeliruan saya pada putaran ini
+
+**Penghapusan kolom multi-baris menyisakan koma menggantung** pada `DummyData`, yang
+menghasilkan `Cannot use empty array elements`. Terdeteksi `php -l` sebelum uji dijalankan.
+
+**Menghapus tab Pengelolaan menyisakan `@endif` yatim**, sehingga `/lahan/1` berbalas 500.
+Terdeteksi lewat pemeriksaan halaman, bukan lolos ke uji.
+
+### Belum dikerjakan
+
+UI multi-unggah untuk 12 domain berpivot. Struktur sudah siap menampungnya; komponen
+`x-sim.file-upload` masih single-file dan dinaikkan bertahap per modul tanpa mengubah
+skema lagi. Keputusan pemilik proyek pada awal putaran.
+
+---
+
 # Putaran 11 - Perbaikan Pra-Backend (audit menyeluruh) BERJALAN (2026-09-02)
 
 Rencana ini ditulis sebelum kode disentuh, sesuai `rules.md` bagian 20b poin 12.

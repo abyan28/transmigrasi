@@ -966,6 +966,28 @@ pint tetap 33 berkas gagal seperti sebelum putaran ini (pre-existing, di luar ca
 `dashboard/sp.blade.php`, `/galeri-komponen`, `/uji-403`) yang sengaja ditunda ke
 checklist pra-deploy, sebab dua rute itu masih berguna selama pengembangan antarmuka.
 
+### Putaran 12: registry berkas + pembetulan penempatan HPL/SHM (2026-09-02)
+
+Rencana + penyisiran lima sudut: `session-notes.md` Putaran 12. Catatan hasil: `notes.md` bagian 6.
+
+Dipicu audit khusus upload berkas, lalu berkembang setelah diskusi menyingkap bahwa HPL
+dan SHM selama ini ditempatkan pada tingkat yang keliru.
+
+- **Registry `berkas`** menggantikan 24 kolom path pada 17 tabel. Merekam `mime`, `ukuran`, dan `disk` yang selama ini hilang padahal 14a.1-2 mewajibkannya. BUKAN polymorphic: 12 pivot per domain + 5 FK langsung, sehingga FK tetap ditegakkan basis data dan penyaring cakupan data tetap tunggal.
+- **`dokumen_lahan` + `dokumen_lahan_bidang` DICABUT.** HPL adalah alas hak kawasan, SHM meliputi seluruh lahan satu keluarga; setelah keduanya ditempatkan benar, pivot m2m itu tidak lagi dibutuhkan. Membalik Putaran 7 poin G.
+- **`transmigran.status_sertifikat`** (Sudah/Belum/Belum Didata): ketiadaan unggahan tidak boleh terbaca sebagai belum bersertifikat.
+- **Lahan tepat 1 pekarangan + 1 usaha**, ditegakkan `UNIQUE (transmigran_id, peruntukan_lahan)`. Membalik 7.9.
+- **`pola_tanam`, `peralatan_pertanian`, `kendala` dicabut** beserta tab Pengelolaan. Kolom laporan diganti Status Sertifikat.
+- **`alsintan` induk mendapat foto**, sejajar `saprotan` yang sudah punya.
+
+Skema DIVERIFIKASI dengan impor nyata ke MariaDB 10.4: 61 tabel, 94 FK terbentuk,
+UNIQUE lahan menolak bidang ketiga. pest 727, `sim:tautan-statis` 227, pint 33 pre-existing.
+
+**Belum dikerjakan:** UI multi-unggah untuk 12 domain berpivot. Struktur sudah siap
+menampungnya; komponen `x-sim.file-upload` masih single dan dinaikkan bertahap per modul
+tanpa mengubah skema lagi.
+
+
 ## Tahap 3 — Autentikasi dan Hak Akses
 
 > **Peringatan penerbitan statis.** Begitu login aktif, halaman berpelindung membalas pengalihan ke `/login`, bukan 200, sehingga `.github/workflows/deploy.yml` **gagal** dan situs GitHub Pages berhenti diperbarui. Putuskan lebih dulu: batasi `sim:tautan-statis` hanya ke halaman publik, atau hentikan penerbitan statis sama sekali. Lihat `notes.md` bagian 1b.7.
