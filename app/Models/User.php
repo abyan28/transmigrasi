@@ -2,47 +2,63 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
+/**
+ * Akun petugas. Menggantikan tabel `users` bawaan Laravel.
+ *
+ * - PK `id_user`, tabel `user` (bentuk tunggal, `rules.md` 4.0).
+ * - Seluruh pemegang akun adalah petugas; warga tidak punya akun (`rules.md` §5).
+ * - Login memakai email ATAU username pada satu isian (Task 3.2).
+ * - Helper pemeriksa izin (`punyaIzin()`, cakupan data) ditambahkan Task 3.3
+ *   bersama RBAC; model ini baru menyediakan strukturnya.
+ */
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    /** @use HasFactory<UserFactory> */
+    use HasFactory, Notifiable, SoftDeletes;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
+    protected $table = 'user';
+
+    protected $primaryKey = 'id_user';
+
     protected $fillable = [
-        'name',
+        'role_id',
+        'nama',
+        'username',
         'email',
         'password',
+        'telepon',
+        'jabatan',
+        'is_aktif',
+        'password_harus_diganti',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'password_harus_diganti' => 'boolean',
+            'is_aktif' => 'boolean',
+            'last_login_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Role yang menentukan kewenangan dan cakupan data pengguna.
+     */
+    public function role(): BelongsTo
+    {
+        return $this->belongsTo(Role::class, 'role_id', 'id_role');
     }
 }

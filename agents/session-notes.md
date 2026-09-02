@@ -1,3 +1,63 @@
+# Tahap 3 Â· Task 3.1 - Migration + Model Eloquent BERJALAN (2026-09-03)
+
+Menerjemahkan `database/data/schema.sql` (55 tabel bisnis) menjadi migration +
+model. **Menerjemahkan, bukan menyusun ulang.** Mengikuti rencana Putaran 13
+(bagian di bawah, baris ~373-519) dengan penyesuaian pasca-Putaran-15.
+Rencana lengkap: `.claude/plans/logical-whistling-salamander.md`.
+
+## Keputusan B3 (strategi uji DB) - DITERAPKAN
+
+- 732 uji lama **tetap** SQLite `:memory:` (`phpunit.xml`), `RefreshDatabase` MATI.
+- Grup baru **`tests/Database/`** (BUKAN `tests/Feature/Database/` - Pest tak
+  mengizinkan dua base class bertumpuk pada satu pohon). Base class
+  `Tests\DatabaseTestCase`: koneksi `mysql_testing` (DB `sim_transmigrasi_test`)
+  + `RefreshDatabase`. Di sini ENUM/UNSIGNED/FK/UNIQUE ditegakkan sungguhan.
+  Auto-SKIP (bukan gagal) bila MySQL tak tersedia.
+- `phpunit.xml`: testsuite ke-3 `Database`. `pest` default menjalankan ketiganya.
+- **Penjaga terpenting:** `php artisan sim:banding-skema` (`app/Console/Commands/
+  BandingSkema.php`) - impor `schema.sql` ke `transmigrasi_skema_ref`,
+  `migrate:fresh` ke `sim_transmigrasi_test`, bandingkan `information_schema`
+  (kolom+tipe+null, indeks, FK+aksi; nama ikut dibandingkan). Wajib NOL SELISIH
+  tiap batch. `--hanya=<tabel>` per batch, `--lengkap` untuk verifikasi akhir.
+- Tabel bawaan Laravel (`cache`/`jobs`/dll.) dikecualikan dari `sim:banding-skema`
+  (nama indeksnya mengikuti bawaan, strukturnya identik). `sessions` DIBANDINGKAN.
+- CI job MySQL: BELUM (CI belum punya job pest sama sekali) - ditambahkan nanti.
+
+## Jebakan bawaan Laravel yang dibereskan (B0)
+
+- `0001_01_01_000000_create_users_table.php` **di-`git mv` jadi
+  `create_sessions_table.php`** dan ditulis ulang: hanya `sessions` (cocok
+  `schema.sql`). `users` + `password_reset_tokens` bawaan TIDAK dibuat.
+- `app/Models/User.php` ditulis ulang: `$table='user'`, `$primaryKey='id_user'`,
+  `SoftDeletes`, relasi `role()` eksplisit, cast `password=>hashed` dll.
+- `UserFactory` disesuaikan (`nama`/`username`/`role_id`, tanpa `email_verified_at`).
+  `RoleFactory` + `PermissionFactory` baru. `DatabaseSeeder` dikosongkan
+  (seeder role/izin/wilayah/admin = Task 3.3 & 4.1).
+- `ValidationRules::email()/username()` (baris 137/155) DIBIARKAN - benar untuk
+  skema target, hidup otomatis begitu tabel `user` ada.
+
+## Progres batch
+
+| Batch | Status | Isi |
+|---|---|---|
+| B0 fondasi | **SELESAI** | rename+tulis ulang `create_sessions_table`, `DatabaseTestCase`, `sim:banding-skema`, factory/seeder |
+| B1 Domain 1 | **SELESAI** | role, permission, role_permission, user, kode_pemulihan_sandi, audit_log + model `Role`/`Permission`/`User` + `tests/Database/Domain1PenggunaSistemTest` (10 uji) |
+| B2 Domain 2 | belum | provinsi..satuan_permukiman, user_satuan_permukiman, rute_aksesibilitas_sp |
+| B3-B9 | belum | lihat plan file / tabel batch |
+
+**Verifikasi B0+B1:** `sim:banding-skema --hanya=<Domain 1>` NOL SELISIH ·
+`pest` **742 PASS** (732 lama + 10 Database) · `pint --test` 31 (turun dari 33) ·
+`sim:tautan-statis` 224 · `migrate:fresh` MariaDB 10.4.32 bersih.
+
+**Urutan migration = topological sort dependensi FK, BUKAN urutan file
+`schema.sql`.** Batch berikutnya: `referensi`+`satuan`+`komoditas`+`berkas`
+naik sebelum `satuan_permukiman`; 12 pivot `*_berkas` turun ke setelah induknya.
+
+**TIDAK disentuh:** `DummyData`, view, rute, 732 uji lama, autentikasi/RBAC/
+cakupan data (Task 3.2+).
+
+---
+
 # Putaran 15 - Utang Putaran 12, Lahan Satu Baris per KK, dan Penjaga Isian Yatim BERJALAN (2026-09-02)
 
 Rencana ditulis sebelum kode disentuh (`rules.md` 20b poin 12).

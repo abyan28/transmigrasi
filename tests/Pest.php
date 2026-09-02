@@ -15,6 +15,11 @@ pest()->extend(Tests\TestCase::class)
  // ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
     ->in('Feature');
 
+// Grup uji migration & model Eloquent (Task 3.1): MySQL/MariaDB nyata +
+// RefreshDatabase. Dipisah ke tests/Database/ (bukan tests/Feature/) sebab
+// Pest tidak mengizinkan dua base class bertumpuk pada satu pohon direktori.
+pest()->extend(Tests\DatabaseTestCase::class)->in('Database');
+
 /*
 |--------------------------------------------------------------------------
 | Expectations

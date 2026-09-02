@@ -2,22 +2,22 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
+/**
+ * Kerangka seeder.
+ *
+ * Isi sesungguhnya menyusul bertahap:
+ * - role bawaan + kewenangan  -> Task 3.3 (RBAC)
+ * - wilayah + SP lokus        -> Task 4.1
+ * - akun Admin awal           -> Task 3.5
+ *
+ * Task 3.1 hanya menerjemahkan skema; belum ada data awal yang ditanam.
+ */
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        //
     }
 }
