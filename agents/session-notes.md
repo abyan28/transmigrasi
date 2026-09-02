@@ -42,12 +42,19 @@ Rencana lengkap: `.claude/plans/logical-whistling-salamander.md`.
 |---|---|---|
 | B0 fondasi | **SELESAI** | rename+tulis ulang `create_sessions_table`, `DatabaseTestCase`, `sim:banding-skema`, factory/seeder |
 | B1 Domain 1 | **SELESAI** | role, permission, role_permission, user, kode_pemulihan_sandi, audit_log + model `Role`/`Permission`/`User` + `tests/Database/Domain1PenggunaSistemTest` (10 uji) |
-| B2 Domain 2 | belum | provinsi..satuan_permukiman, user_satuan_permukiman, rute_aksesibilitas_sp |
+| B2 Domain 2 | **SELESAI** | provinsi, kabupaten, kecamatan, desa, kawasan_transmigrasi, `referensi`, `berkas` (ditarik maju - topo-sort), satuan_permukiman, user_satuan_permukiman, rute_aksesibilitas_sp + 9 model + `tests/Database/Domain2WilayahSpTest` (10 uji) |
 | B3-B9 | belum | lihat plan file / tabel batch |
 
 **Verifikasi B0+B1:** `sim:banding-skema --hanya=<Domain 1>` NOL SELISIH ·
 `pest` **742 PASS** (732 lama + 10 Database) · `pint --test` 31 (turun dari 33) ·
 `sim:tautan-statis` 224 · `migrate:fresh` MariaDB 10.4.32 bersih.
+
+**Verifikasi B2:** `sim:banding-skema --hanya=<10 tabel B2>` NOL SELISIH ·
+`pest tests/Database` **20 PASS** · `pest` (SQLite) tetap **732 PASS** ·
+`pint --test` tetap 31 (berkas B2 lolos). `referensi`+`berkas` masuk B2 (bukan
+B4) sebab `satuan_permukiman.berkas_id` -> `berkas` -> `referensi`. Model B2
+tanpa `HasFactory` - uji Database pakai `::create()` langsung + helper `buatSp()`;
+factory ditunda ke Tahap 4 (CRUD).
 
 **Urutan migration = topological sort dependensi FK, BUKAN urutan file
 `schema.sql`.** Batch berikutnya: `referensi`+`satuan`+`komoditas`+`berkas`

@@ -5,6 +5,7 @@ namespace App\Models;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -60,5 +61,22 @@ class User extends Authenticatable
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class, 'role_id', 'id_role');
+    }
+
+    /**
+     * SP yang ditugaskan ke pengguna ini. Hanya bermakna bagi role bercakupan
+     * `Per SP`; akun `Per SP` tanpa penugasan melihat NOL baris (`rules.md`
+     * 5.0b-1 poin 10), ditegakkan global scope pada Task 3.4.
+     */
+    public function satuanPermukiman(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            SatuanPermukiman::class,
+            'user_satuan_permukiman',
+            'user_id',
+            'satuan_permukiman_id',
+            'id_user',
+            'id_satuan_permukiman',
+        )->withTimestamps();
     }
 }
