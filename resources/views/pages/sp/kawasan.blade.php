@@ -73,18 +73,29 @@
                         {{ $k['jumlah_sp'] }} SP di {{ count($kecamatan) }} kecamatan</dd>
                 </div>
                 {{--
-                    Salinan SK, ditambahkan 2026-08-25. Form kawasan sudah lama
-                    menyediakan isian unggahnya, tetapi kawasan tidak punya
-                    halaman rincian sendiri sehingga berkasnya tidak pernah
-                    punya tempat tampil di mana pun. Nomor SK saja tidak cukup:
-                    yang diminta saat pemeriksaan adalah salinannya.
+                    Berkas kawasan, ditambahkan 2026-08-25 lalu dijamakkan
+                    Putaran 14. Kawasan tidak punya halaman rincian sendiri,
+                    sehingga inilah satu-satunya tempat berkasnya dapat dibuka.
+
+                    Dulu hanya SK yang tampil, padahal registry juga memegang
+                    HPL (alas hak kawasan) dan peta cakupan: keduanya terunggah
+                    tetapi tidak dapat dibuka dari mana pun (R-26).
                 --}}
-                <div>
-                    <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Salinan SK</dt>
-                    <dd class="mt-0.5 text-theme-sm text-gray-800 dark:text-white/90">
-                        <x-sim.tautan-dokumen modul="kawasan"
-                            :id="$k['id_kawasan_transmigrasi']"
-                            :berkas="$k['dokumen_pendukung'] ?? null" />
+                <div class="sm:col-span-2">
+                    <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Berkas kawasan</dt>
+                    <dd class="mt-0.5 space-y-1 text-theme-sm text-gray-800 dark:text-white/90">
+                        @forelse ($berkasKawasan[$k['id_kawasan_transmigrasi']] ?? [] as $b)
+                            <div>
+                                <x-sim.tautan-dokumen modul="kawasan"
+                                    :id="$k['id_kawasan_transmigrasi']" :berkas="$b['nama_file']" />
+                                <span class="text-theme-xs text-gray-500 dark:text-gray-400">
+                                    {{ $b['keterangan'] ?? strtoupper($b['peran']) }}
+                                </span>
+                            </div>
+                        @empty
+                            <x-sim.tautan-dokumen modul="kawasan"
+                                :id="$k['id_kawasan_transmigrasi']" :berkas="null" />
+                        @endforelse
                     </dd>
                 </div>
             </dl>

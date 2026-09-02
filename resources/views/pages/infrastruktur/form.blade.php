@@ -175,10 +175,9 @@
             tertimpa dokumen pengadaan, atau sebaliknya.
         --}}
         <div class="mt-4 grid gap-4 sm:grid-cols-2">
-            <x-sim.file-upload nama="foto" label="Foto Kondisi" :hanya-gambar="true"
-                nama-dokumen="Foto Infrastruktur" :nama-pemilik="$data['nama'] ?? null"
-                :berkas-saat-ini="$data['foto'] ?? null"
-                keterangan="Dokumentasi kondisi aset saat pendataan." />
+            <x-sim.berkas-unggah nama="foto" label="Foto Kondisi" :hanya-gambar="true"
+                :tersimpan="$berkasFoto ?? []"
+                keterangan="Satu aset dapat punya beberapa titik kerusakan, sehingga boleh diunggah lebih dari satu foto." />
 
             <x-sim.file-upload nama="dokumen_pendukung" label="Dokumen Pendukung"
                 nama-dokumen="Dokumen Infrastruktur" :nama-pemilik="$data['nama'] ?? null"

@@ -176,10 +176,13 @@
             setelah foto akan kehilangan fotonya tanpa peringatan apa pun.
         --}}
         <div class="mt-4 grid gap-4 sm:grid-cols-2">
-            <x-sim.file-upload nama="foto" label="Foto Kondisi" :hanya-gambar="true"
-                nama-dokumen="Foto Fasilitas" :nama-pemilik="$data['nama_fasilitas'] ?? null"
-                :berkas-saat-ini="$data['foto'] ?? null"
-                keterangan="Dokumentasi keadaan bangunan saat pendataan." />
+            {{--
+                Foto dijamakkan Putaran 14: satu bangunan sekolah punya beberapa
+                sisi yang kondisinya berbeda, dan satu foto tidak mewakilinya.
+            --}}
+            <x-sim.berkas-unggah nama="foto" label="Foto Kondisi" :hanya-gambar="true"
+                :tersimpan="$berkasFoto ?? []"
+                keterangan="Dokumentasi keadaan bangunan saat pendataan; boleh beberapa sisi." />
 
             <x-sim.file-upload nama="dokumen_pendukung" label="Dokumen Pendukung"
                 nama-dokumen="Dokumen Fasilitas" :nama-pemilik="$data['nama_fasilitas'] ?? null"

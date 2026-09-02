@@ -199,6 +199,7 @@
                     max="{{ date('Y') }}" class="{{ $kelasKontrol }} tabular-nums" />
             </div>
 
+            <div class="sm:col-span-2">
                 <label for="{{ $awalan }}_keterangan_kawasan" class="{{ $kelasLabel }}">Catatan</label>
                 <textarea id="{{ $awalan }}_keterangan_kawasan" name="keterangan" rows="2" maxlength="255"
                     placeholder="Catatan tambahan mengenai kawasan ini."
@@ -206,9 +207,19 @@
             </div>
 
             <div class="sm:col-span-2">
-            <div class="sm:col-span-2">
-                <x-sim.file-upload nama="dokumen_pendukung" label="Salinan SK Penetapan"
-                    keterangan="PDF atau gambar, maksimal 5 MB." />
+                {{--
+                    Kawasan memegang TIGA jenis berkas berbeda: SK penetapan, HPL
+                    (alas hak kawasan, rules.md 7.4a), dan peta cakupan. Sebelum
+                    Putaran 14 hanya SK yang punya isian, sehingga HPL dan peta
+                    yang sudah ada di registry tidak dapat ditambah dari layar.
+
+                    Tanpa `tersimpan`: form ini dipakai untuk tambah dan ubah-baris
+                    yang keduanya tidak terikat satu kawasan tertentu, sehingga tidak
+                    ada daftar berkas yang sahih untuk ditampilkan di sini. Berkas
+                    yang sudah ada dibuka lewat kartu kawasan di halaman yang sama.
+                --}}
+                <x-sim.berkas-unggah nama="dokumen_kawasan" label="Berkas Kawasan"
+                    keterangan="SK penetapan, HPL, dan peta cakupan. PDF atau gambar, maksimal 5 MB per berkas." />
             </div>
         </div>
     </section>

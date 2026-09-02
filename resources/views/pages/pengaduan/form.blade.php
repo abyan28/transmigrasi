@@ -191,10 +191,9 @@
     <section class="border-t border-gray-200 pt-5 dark:border-gray-800">
         <h3 class="{{ $kelasBagian }}">Bukti Pendukung</h3>
         <div class="mt-3">
-            <x-sim.file-upload nama="dokumen_pendukung" label="Foto atau Dokumen Bukti"
-                nama-dokumen="Bukti Pengaduan" :nama-pemilik="$data['nama_pelapor'] ?? null"
-                :berkas-saat-ini="$data['dokumen_pendukung'] ?? null"
-                keterangan="Foto kondisi di lapangan membantu petugas menilai penanganan yang diperlukan." />
+            <x-sim.berkas-unggah nama="bukti" label="Foto atau Dokumen Bukti"
+                :tersimpan="$berkasBukti ?? []"
+                keterangan="Beberapa foto dari sudut berbeda membantu petugas menilai penanganan yang diperlukan." />
         </div>
     </section>
 

@@ -301,10 +301,25 @@ it('memakai nama kolom kamus data pada isian form', function () {
         'tanggal_lahir', 'pendidikan_terakhir', 'pekerjaan_kepala_keluarga',
         'pendapatan_per_bulan', 'daerah_asal_kabupaten_id',
         'tahun_kedatangan', 'status_tinggal', 'telepon',
-        'dokumen_pendukung', 'keterangan', 'satuan_permukiman_id',
+        'keterangan', 'satuan_permukiman_id',
     ] as $kolom) {
         expect($isi)->toContain('name="'.$kolom.'"');
     }
+
+    /*
+        `dokumen_pendukung` DICABUT dari daftar di atas pada Putaran 14.
+
+        KTP, KK, dan SK penempatan adalah tiga dokumen berbeda, tetapi dulu
+        berbagi satu kolom, sehingga mengunggah KK menimpa KTP yang sudah ada
+        tanpa peringatan apa pun. Putaran 12 memindahkannya ke registri
+        `berkas` lewat pivot berperan, dan kolomnya sudah tidak ada lagi pada
+        schema.sql. Ketiganya kini punya isian sendiri-sendiri.
+    */
+    foreach (['ktp', 'kk', 'sk'] as $peran) {
+        expect($isi)->toContain('name="'.$peran.'[]"');
+    }
+
+    expect($isi)->not->toContain('name="dokumen_pendukung"');
 
     // `status_anggota_poktan` sengaja BUKAN isian (rules.md 7a.8). Nilainya
     // turunan dari keanggotaan berstatus Aktif pada `anggota_poktan`, dan
@@ -6177,7 +6192,15 @@ it('menyediakan unggahan dokumen pada modul yang kolomnya sudah ada', function (
     // tetapi tujuh form tidak pernah punya isiannya. Akibatnya SK pembentukan
     // poktan dan berita acara penyaluran saprotan tidak dapat diunggah ke mana
     // pun, padahal justru keduanya yang diminta saat pemeriksaan.
-    $this->get($jalur)->assertOk()->assertSee('name="'.$isian.'"', false);
+    // Isian jamak menulis name="foto[]", sebab satu aset dapat punya beberapa
+    // berkas (Putaran 14). Yang dijaga adalah ADANYA isian bagi kolom itu,
+    // bukan tunggal atau jamaknya.
+    $isi = $this->get($jalur)->assertOk()->getContent();
+
+    $ada = str_contains($isi, 'name="'.$isian.'"')
+        || str_contains($isi, 'name="'.$isian.'[]"');
+
+    expect($ada)->toBeTrue("isian berkas {$isian} tidak ada pada {$jalur}");
 })->with([
     ['/sp', 'dokumen_pendukung'],
     ['/sp/inventaris', 'dokumen_pendukung'],
@@ -7398,14 +7421,30 @@ it('menyediakan cara membuka berkas dari halaman rincian modulnya', function (st
     // form, tetapi halaman rincian dulu hanya memasang tautan dokumen.
     ['/alsintan/1', 2],
     ['/saprotan/1', 2],
-    ['/sp/infrastruktur/1', 2],
-    ['/sp/inventaris/2', 2],
-    ['/sp/fasilitas/3', 2],
+    // Tiga foto titik kerusakan ditambah satu dokumen pendukung sejak
+    // Putaran 14. Tautannya hanya di panel rincian; form yang di-include
+    // halaman ini menampilkan nama berkas saja agar tidak kembar.
+    ['/sp/infrastruktur/1', 4],
+    // Foto barang dijamakkan Putaran 14 (dua sudut) + satu dokumen.
+    ['/sp/inventaris/2', 3],
+    // Foto bangunan dijamakkan Putaran 14 (dua sisi) + satu dokumen.
+    ['/sp/fasilitas/3', 3],
     // Rincian SP adalah halaman detail SP, satu-satunya tempat dokumen
     // penetapan dapat dibuka.
     ['/sp/1', 1],
     // Bukti dari pelapor, terpisah dari dokumen tindak lanjut milik petugas.
     ['/pengaduan/1', 2],
+    // Empat berkas keluarga: SHM, KTP, KK, dan SK penempatan. Panel Dokumen
+    // sempat membaca kolom `dokumen_pendukung` yang sudah dicabut Putaran 12,
+    // sehingga keempatnya terunggah tetapi tidak dapat dibuka dari mana pun.
+    ['/transmigran/2', 4],
+    // Dua foto sisi rumah. Pivot `rumah_berkas` ada di schema.sql sejak
+    // Putaran 12 tetapi belum pernah punya data contoh.
+    ['/rumah/1', 2],
+    // Kawasan tidak punya halaman rincian sendiri, sehingga kartu pada
+    // halaman daftar inilah satu-satunya tempat berkasnya dapat dibuka.
+    // Dulu hanya SK yang tampil; HPL dan peta tidak dapat dicapai.
+    ['/kawasan', 3],
 ]);
 
 it('menaruh catatan sebelum unggahan pada setiap form', function () {

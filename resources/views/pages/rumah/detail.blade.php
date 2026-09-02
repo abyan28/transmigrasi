@@ -226,16 +226,28 @@
 
                 {{-- Dokumentasi --}}
                 <div x-show="tab === 'dokumentasi'" x-cloak role="tabpanel">
-                    @if (empty($data['foto_rumah']) && empty($data['dokumen_pendukung']))
+                    {{--
+                        Foto dibaca dari registry (jamak), dokumen pendukung masih
+                        dari kunci lama. Penjaga kosongnya wajib memeriksa KEDUANYA;
+                        memeriksa `$data['foto_rumah']` saja membuat foto yang ada di
+                        registry tidak pernah dirender - kontrol mati yang sama seperti
+                        panel Dokumen transmigran (R-26).
+                    --}}
+                    @if (empty($berkasFotoRumah) && empty($data['dokumen_pendukung']))
                         <x-sim.empty-state judul="Belum ada dokumentasi"
                             pesan="Foto kondisi rumah dan dokumen pendukung dapat diunggah lewat tombol Ubah Data Rumah." />
                     @else
                             <div class="space-y-3 p-5 sm:p-6">
-                                @if (! empty($data['foto_rumah']))
+                                @if (! empty($berkasFotoRumah))
                                     <div>
                                         <p class="mb-1.5 text-theme-xs text-gray-500 dark:text-gray-400">Foto Rumah</p>
-                                        <x-sim.tautan-dokumen modul="rumah" :id="$data['id_rumah']"
-                                            :berkas="$data['foto_rumah']" />
+                                        {{-- Jamak sejak Putaran 14; kondisi dinilai dari beberapa sisi. --}}
+                                        <div class="space-y-1">
+                                            @foreach ($berkasFotoRumah as $b)
+                                                <x-sim.tautan-dokumen modul="rumah" :id="$data['id_rumah']"
+                                                    :berkas="$b['nama_file']" />
+                                            @endforeach
+                                        </div>
                                     </div>
                                 @endif
 

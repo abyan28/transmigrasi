@@ -649,9 +649,26 @@ Route::get('/kawasan', function () {
     $daftarSp = DummyData::satuanPermukiman();
     $rekap = DummyData::rekapPerSp();
 
+    /*
+     * Berkas kawasan dipetakan per id LEBIH DULU, bukan dicari di dalam
+     * perulangan kartu kawasan. Memanggil berkasMilik() di dalam @foreach
+     * berarti satu penelusuran registry per kawasan (N+1), bentuk yang
+     * sudah tercatat pada notes.md 1g.5.
+     */
+    $berkasKawasan = [];
+
+    foreach ($daftarKawasan = DummyData::kawasan() as $k) {
+        $berkasKawasan[$k['id_kawasan_transmigrasi']] = DummyData::berkasMilik(
+            'kawasan_transmigrasi_berkas',
+            'kawasan_transmigrasi_id',
+            $k['id_kawasan_transmigrasi']
+        );
+    }
+
     return view('pages.sp.kawasan', [
         'title' => 'Kawasan Transmigrasi',
-        'kawasan' => DummyData::kawasan(),
+        'kawasan' => $daftarKawasan,
+        'berkasKawasan' => $berkasKawasan,
         'daftarSp' => $daftarSp,
         'rekap' => $rekap,
         'totalKk' => array_sum(array_column($rekap, 'jumlah_kk')),
@@ -752,6 +769,9 @@ Route::get('/sp/inventaris/{id}', function (int $id) {
     return view('pages.sp.detail-inventaris', [
         'title' => $data['nama_barang'],
         'data' => $data,
+
+        // Foto jamak sejak Putaran 14; satu barang kerap difoto beberapa sudut.
+        'berkasFoto' => DummyData::berkasMilik('inventaris_sp_berkas', 'inventaris_sp_id', $id, 'foto'),
     ]);
 })->where('id', '[0-9]+')->name('sp.inventaris.detail');
 
@@ -764,6 +784,9 @@ Route::get('/sp/fasilitas/{id}', function (int $id) {
         'title' => $data['nama_fasilitas'],
         'data' => $data,
         'daftarSp' => DummyData::satuanPermukiman(),
+
+        // Foto jamak sejak Putaran 14; satu bangunan punya beberapa sisi.
+        'berkasFoto' => DummyData::berkasMilik('fasilitas_sp_berkas', 'fasilitas_sp_id', $id, 'foto'),
     ]);
 })->where('id', '[0-9]+')->name('sp.fasilitas.detail');
 
@@ -930,6 +953,16 @@ Route::get('/transmigran/{id}', function (int $id) {
 
         'lahan' => $lahan,
         'totalLuas' => array_sum(array_column($lahan, 'luas')),
+
+        // Dipisah per peran, sebab KTP, KK, dan SK penempatan adalah dokumen
+        // yang berbeda dan tidak boleh saling menimpa (rules.md 14a.8b).
+        'berkasKtp' => DummyData::berkasMilik('transmigran_berkas', 'transmigran_id', $data['id_transmigran'], 'ktp'),
+        'berkasKk' => DummyData::berkasMilik('transmigran_berkas', 'transmigran_id', $data['id_transmigran'], 'kk'),
+        'berkasSk' => DummyData::berkasMilik('transmigran_berkas', 'transmigran_id', $data['id_transmigran'], 'sk'),
+
+        // Seluruh berkas keluarga tanpa saringan peran, untuk panel Dokumen.
+        // Termasuk SHM, yang tidak punya isian unggah tersendiri di form.
+        'berkasKeluarga' => DummyData::berkasMilik('transmigran_berkas', 'transmigran_id', $data['id_transmigran']),
 
         // Anggota keluarga selain kepala keluarga (Rombongan B, 2026-08-28).
         // Dibaca lewat id, sejalan dengan lahan.
@@ -1108,6 +1141,9 @@ Route::get('/rumah/{id}', function (int $id) {
         'title' => 'Rumah '.$data['no_rumah'],
         'data' => $data,
         'riwayat' => DummyData::riwayatPenghunian($data['id_rumah']),
+
+        // Foto jamak sejak Putaran 14; kondisi rumah dinilai dari beberapa sisi.
+        'berkasFotoRumah' => DummyData::berkasMilik('rumah_berkas', 'rumah_id', $id, 'foto'),
     ]);
 })->where('id', '[0-9]+')->name('rumah.detail');
 
@@ -2511,6 +2547,11 @@ Route::get('/sp/infrastruktur/{id}', function (int $id) {
         'title' => $data['nama'],
         'data' => $data,
         'daftarSp' => DummyData::satuanPermukiman(),
+
+        // Satu aset dapat punya beberapa titik kerusakan, sehingga fotonya
+        // jamak. Diambil di sini, sebab view dilarang mengambil datanya
+        // sendiri (notes.md 1g.5).
+        'berkasFoto' => DummyData::berkasMilik('infrastruktur_berkas', 'infrastruktur_id', $id, 'foto'),
     ]);
 })->where('id', '[0-9]+')->name('infrastruktur.detail');
 

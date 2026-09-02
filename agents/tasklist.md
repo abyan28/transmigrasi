@@ -985,7 +985,45 @@ UNIQUE lahan menolak bidang ketiga. pest 727, `sim:tautan-statis` 227, pint 33 p
 
 **Belum dikerjakan:** UI multi-unggah untuk 12 domain berpivot. Struktur sudah siap
 menampungnya; komponen `x-sim.file-upload` masih single dan dinaikkan bertahap per modul
-tanpa mengubah skema lagi.
+tanpa mengubah skema lagi. **Sebagian dikerjakan Putaran 14 (3 dari 12 domain).**
+
+### Putaran 14: UI multi-unggah berkas + 3 domain percontohan (2026-09-02)
+
+Rencana + penyisiran lima sudut: `session-notes.md` Putaran 14. Catatan hasil: `notes.md` bagian 6.
+
+Menindaklanjuti sisa Putaran 12. Registry sudah sanggup memegang banyak berkas per
+pemilik, tetapi tidak ada satu pun layar yang dapat mencapainya. Keputusan pemilik
+proyek: komponen dulu + 3 domain percontohan, bukan 12 domain sekaligus.
+
+- **Komponen `x-sim.berkas-unggah`**: pilih beberapa berkas sekaligus, pratinjau gambar, hapus per berkas, batas 5 MB DIPERIKSA PER BERKAS dengan pesan menyebut nama berkasnya. `x-sim.file-upload` TIDAK dicabut; 22 titik unggah lain memang single.
+- **Tiga domain percontohan**: infrastruktur (beberapa titik kerusakan), pengaduan (beberapa sudut foto), transmigran (KTP/KK/SK dokumen berbeda jenis).
+- **Dua kontrol mati (R-26) ditemukan dan diperbaiki**: panel Dokumen transmigran masih membaca `dokumen_pendukung` yang sudah dicabut sehingga 4 berkas nyata tak terlihat; rincian infrastruktur hanya menautkan 1 dari 3 foto.
+- **Tautan buka milik panel rincian, bukan form.** Rincian meng-include formnya sendiri, sehingga memasang tautan di komponen menerbitkan tautan kembar.
+- **Tiga penjaga uji diperbarui atas persetujuan pemilik proyek** (pola terima `[]`, jumlah tautan 2 -> 4, `dokumen_pendukung` diganti `ktp[]`/`kk[]`/`sk[]`).
+
+pest 727 (7.415 assertions), `sim:tautan-statis` 227, pint 33 pre-existing.
+
+**Lanjutan pada putaran yang sama:** rencana "9 domain sisanya" DIKOREKSI setelah
+`schema.sql` diperiksa. Poktan, saprotan, dan SP memakai FK langsung (14a.8c) sehingga
+memang selalu satu; `user_berkas` ber-UNIQUE pada `user_id` saja (14a.8d); dan
+`penanganan_pengaduan` tidak punya kolom id pada `DummyData` sehingga pivotnya tidak
+dapat dicocokkan. Yang benar-benar layak jamak hanya EMPAT, dan keempatnya dikerjakan:
+
+- **Kawasan** (SK + HPL + peta): kontrol mati ketiga. Kawasan tidak punya halaman rincian, dan kartu pada `/kawasan` hanya menampilkan SK, sehingga HPL dan peta tidak dapat dibuka dari mana pun.
+- **Rumah** (dua sisi): pivot `rumah_berkas` ada sejak Putaran 12 tetapi belum pernah punya data contoh. Panel dokumentasinya juga kontrol mati keempat - penjaga kosongnya membaca kunci lama.
+- **Inventaris SP** dan **Fasilitas SP** (beberapa sudut/sisi atas satu objek).
+
+Tiga penjaga BARU ditambahkan (`/transmigran/2`, `/rumah/1`, `/kawasan`) agar keempat
+kontrol mati itu tidak diam-diam kembali.
+
+pest 730 (7.421 assertions), `sim:tautan-statis` 227, pint 33 pre-existing, nol tautan kembar.
+
+**Belum dikerjakan:** isian unggah Form Lahan yang tidak punya tempat penyimpanan
+(lihat "Masih menunggu" di bagian akhir berkas ini) - menyangkut keputusan skema.
+
+**Belum dikerjakan:** 9 domain berpivot sisanya (poktan, alsintan, saprotan, inventaris,
+fasilitas, SP, kawasan, penanganan pengaduan, user). Polanya sudah terbukti pada tiga
+domain; sisanya mengikuti tanpa mengubah skema maupun komponen.
 
 
 ## Tahap 3 — Autentikasi dan Hak Akses
@@ -1377,6 +1415,7 @@ Aturan modul yang mudah terlewat, tercatat agar tidak terulang:
 31. **Pembangunan Modul Pengelolaan Konten (CMS) 5 Tab (2026-09-01):** Antarmuka CMS murni frontend dibangun pada `/cms` di bawah grup Administrasi Sistem (izin `cms.lihat`), mencakup: *Identitas & Visual* (upload logo/favicon/banner), *Kop & Dokumen Laporan* (kop surat & pejabat penandatangan dengan live paper preview), *Konten Profil & FAQ*, *Portal Pengaduan Warga*, dan *Pengumuman Dinas*.
 
 **Masih menunggu:**
+- **Isian unggah pada Form Lahan tidak punya tempat penyimpanan (ditemukan Putaran 14, BELUM diputuskan).** `pages/lahan/form.blade.php` memasang `x-sim.file-upload nama="file_dokumen"` berlabel "Berkas Dokumen", tetapi tabel `lahan` pada `schema.sql` **tidak punya kolom berkas**, tidak ada pivot `lahan_berkas`, dan `DummyData::lahan()` tidak punya kunci `file_dokumen`. Berkasnya tidak akan tersimpan ke mana pun. Ini sisa pencabutan `dokumen_lahan` pada Putaran 12: tabelnya dicabut sebab HPL milik kawasan dan SHM milik keluarga, tetapi isian pada formnya ikut tercabut. Tiga pilihan: **(a)** cabut isiannya (paling sejalan dengan Putaran 12 - berkas lahan memang sudah pindah ke kawasan dan transmigran), **(b)** tambah pivot `lahan_berkas` bila ternyata ada dokumen yang benar-benar milik satu bidang, atau **(c)** biarkan sampai Tahap 8. Tidak disentuh sebab menyangkut keputusan skema, bukan sekadar tampilan.
 - Referensi tata letak Figma (tidak memblokir; sementara memakai tata letak bawaan TailAdmin).
 - Daftar satuan final per komoditas dari konfirmasi lapangan (sementara: Ton, Kuintal, Kilogram).
 - ~~Konfirmasi apakah lahan pekarangan bisa lebih dari satu per KK~~ **TERJAWAB 2026-08-18: tidak.** Satu transmigran menerima satu lahan pekarangan dan satu lahan usaha (`rules.md` 7.8). Relasi tetap one-to-many sebab satu KK memegang dua bidang berbeda peruntukan.

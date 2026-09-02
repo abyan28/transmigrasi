@@ -159,10 +159,14 @@
                 lama ada pada kamus data tetapi baru mendapat isian 2026-08-19.
             --}}
             <div class="grid gap-4 sm:col-span-2 sm:grid-cols-2">
-                <x-sim.file-upload nama="foto" label="Foto Kondisi" :hanya-gambar="true"
-                    nama-dokumen="Foto Inventaris" :nama-pemilik="$data['nama_barang'] ?? null"
-                    :berkas-saat-ini="$data['foto'] ?? null"
-                    keterangan="Dokumentasi keadaan barang saat pendataan." />
+                {{--
+                    Foto dijamakkan Putaran 14: satu barang kerap perlu beberapa
+                    sudut pemotretan (tampak depan, nomor inventaris, bagian rusak).
+                    Dokumen pendukung tetap tunggal, sebab berita acaranya satu.
+                --}}
+                <x-sim.berkas-unggah nama="foto" label="Foto Kondisi" :hanya-gambar="true"
+                    :tersimpan="$berkasFoto ?? []"
+                    keterangan="Dokumentasi keadaan barang saat pendataan; boleh beberapa sudut." />
 
                 <x-sim.file-upload nama="dokumen_pendukung" label="Dokumen Pendukung"
                     nama-dokumen="Dokumen Inventaris" :nama-pemilik="$data['nama_barang'] ?? null"

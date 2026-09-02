@@ -181,10 +181,14 @@
     <section class="border-t border-gray-200 pt-5 dark:border-gray-800">
         <h3 class="{{ $kelasBagian }}">Dokumentasi</h3>
         <div class="mt-3 grid gap-4 sm:grid-cols-2">
-            <x-sim.file-upload nama="foto_rumah" label="Foto Rumah" :hanya-gambar="true"
-                nama-dokumen="Foto Rumah" :nama-pemilik="$data['no_rumah'] ?? null"
-                :berkas-saat-ini="$data['foto_rumah'] ?? null"
-                keterangan="Foto tampak depan yang memperlihatkan kondisi bangunan." />
+            {{--
+                Foto dijamakkan Putaran 14: kondisi rumah dinilai dari beberapa
+                sisi (tampak depan, atap, dinding retak), dan satu foto tampak
+                depan tidak memperlihatkan kerusakan di sisi lain.
+            --}}
+            <x-sim.berkas-unggah nama="foto_rumah" label="Foto Rumah" :hanya-gambar="true"
+                :tersimpan="$berkasFotoRumah ?? []"
+                keterangan="Tampak depan dan sisi lain yang memperlihatkan kondisi bangunan." />
 
             <x-sim.file-upload nama="dokumen_pendukung" label="Dokumen Pendukung"
                 nama-dokumen="Dokumen Rumah" :nama-pemilik="$data['no_rumah'] ?? null"

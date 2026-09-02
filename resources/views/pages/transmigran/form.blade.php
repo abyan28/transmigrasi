@@ -541,12 +541,22 @@
                     class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">{{ old('keterangan', $data['keterangan'] ?? '') }}</textarea>
             </div>
 
-            <x-sim.file-upload nama="dokumen_pendukung" label="Kartu Keluarga (KK)"
-                nama-dokumen="Kartu Keluarga"
-                :wajib="true"
-                :nama-pemilik="$data['nama_kepala_keluarga'] ?? null"
-                :berkas-saat-ini="$data['dokumen_pendukung'] ?? null"
+            {{--
+                KTP, KK, dan SK penempatan adalah tiga dokumen BERBEDA. Sebelum
+                Putaran 12 ketiganya berbagi satu kolom dokumen_pendukung,
+                sehingga mengunggah KK menimpa KTP yang sudah ada.
+            --}}
+            <x-sim.berkas-unggah nama="ktp" label="Kartu Tanda Penduduk (KTP)"
+                :tersimpan="$berkasKtp ?? []"
+                keterangan="KTP kepala keluarga dan anggota dewasa boleh diunggah sekaligus." />
+
+            <x-sim.berkas-unggah nama="kk" label="Kartu Keluarga (KK)" :wajib="true"
+                :tersimpan="$berkasKk ?? []"
                 keterangan="Unggah hasil pindaian atau foto Kartu Keluarga (KK) yang terbaca jelas." />
+
+            <x-sim.berkas-unggah nama="sk" label="SK Penempatan"
+                :tersimpan="$berkasSk ?? []"
+                keterangan="Surat keputusan penempatan transmigran." />
         </div>
     </section>
     </div>

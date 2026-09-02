@@ -1,3 +1,249 @@
+# Putaran 14 - UI Multi-Unggah Berkas BERJALAN (2026-09-02)
+
+Rencana ditulis sebelum kode disentuh (`rules.md` 20b poin 12).
+
+## Pemicu
+
+Putaran 12 menyiapkan struktur multi-berkas (12 pivot, `berkasMilik()` yang mengembalikan
+larik, kolom `peran` dan `urutan`), tetapi antarmukanya tetap single-file. Kemampuan itu
+karena itu belum terpakai sama sekali: `file-upload.blade.php` baris 46 masih membaca
+`files[0]`, dan tidak ada satu pun tombol tambah berkas di seluruh halaman.
+
+Pemilik proyek menegur ketika pengerjaan melompat ke Tahap 3. Teguran itu benar: ada
+pekerjaan tertunda yang lebih dekat, dan melewatinya membiarkan struktur yang sudah
+dibayar menganggur.
+
+## Keputusan pemilik proyek
+
+| # | Keputusan |
+|---|---|
+| 1 | **Komponen dulu + 3 domain percontohan**, bukan 12 sekaligus. Pola dibuktikan di layar sebelum disebar |
+| 2 | Tiga domainnya: **infrastruktur** (beberapa titik kerusakan), **pengaduan** (beberapa foto bukti), **transmigran** (KTP/KK/SK/SHM terpisah) |
+| 3 | Rencana Task 3.1 ditandai DITUNDA, tidak dicabut, agar penyisirannya tidak disusun ulang |
+
+## Cakupan
+
+| Titik | Berkas | Perubahan |
+|---|---|---|
+| A | `components/sim/berkas-unggah.blade.php` (BARU) | Komponen multi-berkas: daftar berkas tersimpan, unggah beberapa sekaligus, hapus per berkas, penanda peran |
+| B | `components/sim/file-upload.blade.php` | TETAP, tidak disentuh. Dipakai 22 titik single-file yang memang hanya butuh satu |
+| C | `pages/infrastruktur/form` + `detail` | Foto beberapa titik kerusakan |
+| D | `pages/pengaduan/form` + `detail` | Beberapa foto bukti dari pelapor |
+| E | `pages/transmigran/form` + `detail` | KTP, KK, SK penempatan, SHM terpisah |
+| F | `DummyData` | Tambah beberapa berkas contoh agar keadaan multi benar-benar terlihat |
+| G | `ViewServiceProvider` / rute | Suplai daftar berkas per domain |
+
+**Komponen lama TIDAK dihapus.** Dua puluh dua titik unggah lain memang single-file
+(foto profil, SK kawasan, berita acara), dan memaksanya memakai komponen multi hanya
+menambah kontrol yang tidak pernah dipakai. Keduanya berdampingan sesuai sifat domainnya.
+
+## Penyisiran lima sudut (rules.md 20a poin 10)
+
+**Privasi.** Berkas pengaduan berasal dari kanal publik tanpa login. Menampilkan daftar
+berkas pada halaman lacak berarti warga lain yang mengetahui nomornya ikut melihatnya;
+penjaga yang sudah ada (`memberitahu warga adanya dokumen tanpa membuka berkasnya`)
+wajib tetap hijau, dan daftar multi-berkas TIDAK boleh melonggarkannya.
+
+**Siklus hidup.** Menghapus satu berkas dari daftar berarti menghapus baris pivot, bukan
+baris `berkas` itu sendiri; berkas fisik dibersihkan terjadwal lewat `deleted_at`
+(14a.8). Pada tahap frontend penghapusan belum benar-benar terjadi, sehingga tombolnya
+wajib jujur menyatakan itu, bukan tampak berfungsi lalu tidak mengubah apa pun (R-26).
+
+**Kejujuran angka.** Kosong. Tidak menyentuh rekap mana pun. Yang perlu dijaga: cacah
+berkas pada label tab wajib membaca daftar sebenarnya, bukan angka tetap.
+
+**Alur kerja.** Petugas mengunggah beberapa berkas sekaligus, dan tiap berkas boleh
+diberi keterangan sendiri (mis. tampak samping). Urutannya menentukan mana yang tampil
+sebagai gambar utama pada halaman daftar. Batas 5 MB berlaku PER BERKAS, bukan total,
+sehingga pesan galatnya wajib menyebut berkas yang mana.
+
+**Teknis.** Nama isian menjadi larik (`berkas[]`), yang mengubah bentuk kiriman form.
+Uji penjaga `memakai nama kolom kamus data pada isian form` memeriksa `name=` pada HTML,
+sehingga perlu diperiksa apakah pola lariknya masih cocok. Uji
+`menyediakan cara membuka berkas dari halaman rincian modulnya` menghitung tautan
+`/dokumen/...` per halaman; menambah berkas contoh pada domain yang diuji akan
+mengubah cacahnya, jadi angka harapannya ikut disesuaikan.
+
+## Cara verifikasi
+
+1. `php artisan test` kembali hijau. Kegagalan yang DIPERKIRAKAN hanya pada uji yang
+   menghitung tautan berkas; bila ada yang lain, diperiksa lebih dulu sebelum disentuh.
+2. Halaman `/infrastruktur/1`, `/pengaduan/1`, `/transmigran/1` membalas 200 dan
+   menampilkan LEBIH DARI SATU berkas.
+3. Penjaga privasi lacak publik tetap hijau.
+4. `sim:tautan-statis` tetap 227; `pint --test` tetap 33 pre-existing.
+5. Seluruh berkas tersunting bebas BOM.
+
+## Yang TIDAK dikerjakan
+
+Sembilan domain berpivot lainnya (rumah, kawasan, inventaris SP, fasilitas SP, alsintan,
+penanaman, hasil panen, penanganan pengaduan, pengguna) menyusul setelah pola terbukti
+di layar. Struktur basis datanya sudah siap, sehingga penerapannya tidak menuntut
+perubahan skema lagi.
+
+Penyimpanan sungguhan juga belum: unggahan masih berhenti di `DummyData` seperti seluruh
+modul lain pada tahap ini.
+
+## HASIL (diisi setelah pengerjaan)
+
+**Selesai.** pest 727 PASS (7.415 assertions), `sim:tautan-statis` 227, pint 33 pre-existing.
+
+Yang berbeda dari rencana, beserta alasannya:
+
+1. **Prop `modul`/`idPemilik` dibuat lalu DICABUT lagi.** Rencana mengira komponen perlu
+   memasang tautan buka berkas. Ternyata halaman rincian meng-include formnya sendiri,
+   sehingga tautannya kembar: uji menghitung 5 tautan pada `/sp/infrastruktur/1`, bukan 2.
+   Diputuskan tautan adalah milik panel rincian, form cukup menampilkan nama. Ditetapkan
+   sebagai `rules.md` 14a.11b.
+
+2. **Dua kontrol mati (R-26) ditemukan, yang tidak diperkirakan sama sekali.** Keduanya
+   tidak memerahkan apa pun sebelum ini:
+   - Panel Dokumen rincian transmigran masih membaca `dokumen_pendukung` yang sudah
+     dicabut Putaran 12, sehingga menampilkan "Belum ada dokumen" padahal empat berkas
+     nyata ada di registry.
+   - Rincian infrastruktur menautkan `$data['foto']` yang hanya memuat satu nama,
+     sehingga dua foto titik kerusakan lain tidak dapat dibuka.
+   Keduanya adalah utang Putaran 12 yang baru terlihat ketika datanya benar-benar jamak.
+
+3. **Tiga penjaga uji diperbarui, atas persetujuan pemilik proyek lebih dulu.** Sesuai
+   aturan, pengerjaan BERHENTI dan melapor ketika uji merah, bukan menyesuaikan sendiri.
+   Ketiganya menguji hal yang masih berlaku, tetapi mengasumsikan satu berkas.
+
+4. **`berkasBukti` pada rute `pengaduan.detail` dicabut sebagai kode mati.** Rincian
+   pengaduan tidak pernah meng-include formnya; form pengaduan hanya hidup di halaman
+   indeks. Ketahuan saat memeriksa mengapa `bukti[]` tidak muncul di `/pengaduan/1`.
+
+5. **Prop `wajib` ditambahkan** yang tidak ada di rencana, sebab isian KK sebelumnya
+   `required` dan sifat itu akan hilang diam-diam bila tidak dibawa serta.
+
+6. **Rencana "9 domain sisanya" pada bagian di atas TERNYATA SALAH.** Ditulis dari ingatan
+   atas 14a.8b, tanpa memeriksa `schema.sql`. Setelah diperiksa: poktan, saprotan, dan SP
+   memakai FK langsung (14a.8c), `user_berkas` sengaja dibatasi satu (14a.8d), dan
+   `penanganan_pengaduan` tidak punya kolom id untuk dicocokkan. Yang layak jamak hanya
+   EMPAT. Ini penegasan bahwa daftar kerja pun wajib diperiksa ke sumbernya, bukan
+   diteruskan begitu saja.
+
+7. **Dua kontrol mati tambahan ditemukan** di luar dua yang sudah dicatat: kartu kawasan
+   (HPL dan peta tidak dapat dibuka dari mana pun) dan panel dokumentasi rumah (penjaga
+   kosongnya membaca kunci lama). Totalnya EMPAT kontrol mati pada satu putaran, seluruhnya
+   utang Putaran 12 yang baru terlihat ketika datanya benar-benar jamak.
+
+8. **Dua Blade sempat rusak** oleh penghapusan rentang berbasis nomor baris yang meleset
+   satu baris, mencabut `<div>` pembuka pada form fasilitas dan form kawasan. Ditangkap
+   penjaga `menyeimbangkan tag HTML`, bukan oleh mata. Penyuntingan berbasis nomor baris
+   pada berkas yang baru saja disunting menuntut pembacaan ulang lebih dulu.
+
+9. **Satu temuan DILAPORKAN, tidak dikerjakan:** isian unggah pada Form Lahan tidak punya
+   kolom, pivot, maupun kunci `DummyData` - berkasnya tidak akan tersimpan ke mana pun.
+   Sisa pencabutan `dokumen_lahan` pada Putaran 12. Menyangkut keputusan skema, sehingga
+   dicatat pada "Masih menunggu" di `tasklist.md` untuk diputuskan pemilik proyek.
+
+---
+
+# Putaran 13 - Migration dan Model Eloquent (Task 3.1) DITUNDA (2026-09-02)
+
+> **DITUNDA sebelum satu baris kode pun ditulis.** Pemilik proyek menegur bahwa UI
+> multi-unggah untuk 12 domain berpivot BELUM dikerjakan, padahal strukturnya sudah
+> siap sejak Putaran 12. Melompat ke Tahap 3 adalah kekeliruan saya: pesan `lanjutkan
+> tahap berikutnya` saya baca sebagai butir berikutnya pada `tasklist.md`, tanpa memeriksa
+> lebih dulu adakah pekerjaan tertunda yang lebih dekat. Rencana di bawah beserta
+> penyisiran lima sudutnya DIPERTAHANKAN agar tidak perlu disusun ulang, dan dipakai
+> apa adanya ketika Task 3.1 benar-benar dikerjakan.
+
+Rencana ditulis sebelum kode disentuh (`rules.md` 20b poin 12).
+
+## Keputusan pemilik proyek
+
+| # | Keputusan |
+|---|---|
+| 1 | **Urutan B lalu A**: migration + model dikerjakan LEBIH DULU tanpa menyentuh autentikasi; login, RBAC, dan penyesuaian uji menyusul pada putaran terpisah |
+| 2 | Penerbitan GitHub Pages **dibatasi ke halaman publik** saat login aktif, bukan dihentikan. Diputuskan sekarang, diterapkan pada putaran berikutnya |
+
+## Mengapa dipisah dari login
+
+Mengaktifkan autentikasi mematikan sekitar 330 titik uji sekaligus: `TautanStatisTest`
+menuntut 227 URL membalas 200, dan `HalamanTest` memuat 327 pemanggilan `\->get()`
+tanpa login. Bila 44 model dibangun pada saat yang sama, kegagalan model tidak dapat
+dibedakan dari kegagalan yang sekadar menuntut `actingAs()`.
+
+Task 3.1 sendiri TIDAK menyentuh autentikasi, sehingga 727 uji wajib tetap hijau
+sepanjang pengerjaan. Itu sekaligus penjaganya: satu saja uji berubah berarti ada yang
+tersentuh di luar cakupan.
+
+## Cakupan
+
+Menerjemahkan `database/data/schema.sql` menjadi migration Laravel beserta Model
+Eloquentnya. **Menerjemahkan, bukan menyusun ulang** (`tasklist.md` Tahap 3).
+
+| Bagian | Isi |
+|---|---|
+| Migration | 61 tabel, urutan mengikuti dependensi pada `schema.sql` |
+| Model | Satu per tabel bisnis, tanpa model bagi pivot murni yang cukup `belongsToMany` |
+| Relasi | WAJIB menyebut kunci asing dan kunci lokal secara eksplisit (`rules.md` 4.0) |
+| Soft delete | Hanya pada 22 tabel yang memang memilikinya; tabel riwayat dan referensi TIDAK |
+
+## Penjaga yang wajib dipatuhi
+
+1. **PK `id_<tabel>`, FK `<tabel>_id`** (`rules.md` 4.0). Berbeda dari asumsi bawaan Eloquent,
+   sehingga tiap model wajib mendeklarasikan `\` dan tiap relasi wajib
+   menyebut kuncinya. Melewatkannya menghasilkan query yang mencari `id` dan gagal senyap.
+2. **Koordinat `DECIMAL(10,7)`**, bukan `GEOMETRY`.
+3. **Uang `DECIMAL(15,2)`, luas `DECIMAL(12,2)`, volume panen `DECIMAL(12,3)`.**
+4. **Berkas berupa path `VARCHAR(255)`**, tidak pernah BLOB.
+5. **Nama tabel bentuk TUNGGAL**, sehingga `\` wajib disetel; Eloquent menjamakkannya.
+6. Migration TIDAK boleh menambah atau mengurangi kolom terhadap `schema.sql`.
+
+## Penyisiran lima sudut (rules.md 20a poin 10)
+
+**Privasi.** Kosong pada putaran ini. Model belum dipakai rute mana pun, dan pembatasan
+cakupan data baru dipasang bersama RBAC (5.0b-1). Yang perlu diingat: global scope
+cakupan akan menempel pada model-model inilah, sehingga penamaan relasinya sekarang
+menentukan kemudahan penegakannya nanti.
+
+**Siklus hidup.** Referential action pada `schema.sql` sudah dipikirkan per relasi
+(RESTRICT untuk master, CASCADE untuk anak sejati, SET NULL untuk opsional). Migration
+wajib menyalinnya apa adanya; menerjemahkannya menjadi `cascadeOnDelete()` di mana-mana
+akan menghapus data yang seharusnya menahan penghapusan induknya.
+
+**Kejujuran angka.** Kosong. Tidak menyentuh satu pun rekap; `DummyData` tetap menjadi
+sumber tampilan sampai putaran berikutnya.
+
+**Alur kerja.** Model berdiri berdampingan dengan `DummyData` tanpa menggantikannya.
+Peralihan tampilan dari data contoh ke Eloquent adalah pekerjaan terpisah, sebab ia
+menuntut seeder terlebih dahulu agar halaman tidak mendadak kosong.
+
+**Teknis.** Uji memakai SQLite `:memory:` dengan `RefreshDatabase` MATI, sehingga uji yang
+ada tidak menyentuh basis data sama sekali. Menambahkan migration karena itu TIDAK
+mengubah hasilnya, dan itu memang yang diharapkan. Konsekuensinya: kebenaran migration
+tidak terjaga uji yang ada, sehingga wajib diverifikasi lewat `migrate:fresh` nyata ke
+MariaDB dan dibandingkan terhadap `schema.sql`.
+
+Perbedaan dialek juga perlu diperhatikan: `schema.sql` memakai ENUM MySQL, sedangkan
+SQLite tidak mengenalnya. Bila kelak uji memakai basis data, ENUM diterjemahkan menjadi
+`string` berpenjaga aplikasi.
+
+## Cara verifikasi
+
+1. `php artisan migrate:fresh` ke MariaDB nyata berhasil tanpa galat.
+2. **Bandingkan hasilnya terhadap `schema.sql`**: jumlah tabel, jumlah kolom per tabel,
+   dan jumlah foreign key wajib sama. Ini penjaga terpenting putaran ini, sebab uji
+   yang ada tidak menyentuh basis data.
+3. `php artisan test` wajib tetap **727 PASS**. Satu saja berubah berarti ada yang
+   tersentuh di luar cakupan.
+4. `sim:tautan-statis` tetap 227; `pint --test` tetap 33 pre-existing.
+5. Model dimuat dan relasinya dipanggil tanpa galat kunci.
+
+## Berkas yang akan disunting
+
+- `database/migrations/` (baru, banyak berkas)
+- `app/Models/` (baru, satu per tabel bisnis)
+- `app/Models/User.php` (disesuaikan: PK `id_user`, tabel `user`, kolom mengikuti skema)
+- `database/migrations/0001_01_01_000000_create_users_table.php` (dicabut, digantikan)
+
+TIDAK disentuh: `DummyData`, view, rute, dan seluruh berkas uji.
+
+---
+
 # Putaran 12 - Registry Berkas Terpusat + Pembetulan Penempatan HPL/SHM SELESAI (2026-09-02)
 
 Rencana ditulis sebelum kode disentuh (`rules.md` 20b poin 12).

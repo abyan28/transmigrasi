@@ -1060,6 +1060,20 @@ class DummyData
             ['id_berkas' => 25, 'uuid' => 'brk-0025', 'jenis_berkas_id' => null, 'nama_file' => 'HPL-NTT-2016-0142.pdf', 'nama_asli' => 'HPL-NTT-2016-0142.pdf', 'path' => 'kawasan/1/HPL-NTT-2016-0142.pdf', 'mime' => 'application/pdf', 'ekstensi' => 'pdf', 'ukuran' => 587000, 'disk' => 'local', 'keterangan' => 'Hak Pengelolaan atas tanah kawasan; milik instansi, bukan per bidang', 'user_id' => 1],
             ['id_berkas' => 26, 'uuid' => 'brk-0026', 'jenis_berkas_id' => null, 'nama_file' => 'peta-kawasan-kobalima-timur.pdf', 'nama_asli' => 'peta-kawasan-kobalima-timur.pdf', 'path' => 'kawasan/1/peta-kawasan-kobalima-timur.pdf', 'mime' => 'application/pdf', 'ekstensi' => 'pdf', 'ukuran' => 1450000, 'disk' => 'local', 'keterangan' => 'Peta cakupan kawasan', 'user_id' => 1],
             ['id_berkas' => 22, 'uuid' => 'brk-0022', 'jenis_berkas_id' => null, 'nama_file' => 'berita-acara-traktor.pdf', 'nama_asli' => 'berita-acara-traktor.pdf', 'path' => 'alsintan/1/berita-acara-traktor.pdf', 'mime' => 'application/pdf', 'ekstensi' => 'pdf', 'ukuran' => 189000, 'disk' => 'local', 'keterangan' => 'Berita acara pengadaan', 'user_id' => 1],
+            // Berkas tambahan (Putaran 14) agar keadaan MULTI benar-benar terlihat
+            // di layar, bukan hanya mungkin secara struktur.
+            ['id_berkas' => 27, 'uuid' => 'brk-0027', 'jenis_berkas_id' => null, 'nama_file' => 'kondisi-irigasi-blok-a-hilir.jpg', 'nama_asli' => 'kondisi-irigasi-blok-a-hilir.jpg', 'path' => 'infrastruktur/1/kondisi-irigasi-blok-a-hilir.jpg', 'mime' => 'image/jpeg', 'ekstensi' => 'jpg', 'ukuran' => 702000, 'disk' => 'local', 'keterangan' => 'Titik kedua: bagian hilir tertimbun longsor', 'user_id' => 1],
+            ['id_berkas' => 28, 'uuid' => 'brk-0028', 'jenis_berkas_id' => null, 'nama_file' => 'kondisi-irigasi-blok-a-pintu-air.jpg', 'nama_asli' => 'kondisi-irigasi-blok-a-pintu-air.jpg', 'path' => 'infrastruktur/1/kondisi-irigasi-blok-a-pintu-air.jpg', 'mime' => 'image/jpeg', 'ekstensi' => 'jpg', 'ukuran' => 664000, 'disk' => 'local', 'keterangan' => 'Titik ketiga: pintu air macet', 'user_id' => 1],
+            ['id_berkas' => 29, 'uuid' => 'brk-0029', 'jenis_berkas_id' => null, 'nama_file' => 'foto-saluran-tersumbat-dekat.jpg', 'nama_asli' => 'foto-saluran-tersumbat-dekat.jpg', 'path' => 'pengaduan/1/foto-saluran-tersumbat-dekat.jpg', 'mime' => 'image/jpeg', 'ekstensi' => 'jpg', 'ukuran' => 813000, 'disk' => 'local', 'keterangan' => 'Foto dekat sumbatan', 'user_id' => null],
+            ['id_berkas' => 30, 'uuid' => 'brk-0030', 'jenis_berkas_id' => null, 'nama_file' => 'KartuTandaPenduduk_maria-da-costa.jpg', 'nama_asli' => 'KartuTandaPenduduk_maria-da-costa.jpg', 'path' => 'transmigran/2/KartuTandaPenduduk_maria-da-costa.jpg', 'mime' => 'image/jpeg', 'ekstensi' => 'jpg', 'ukuran' => 388000, 'disk' => 'local', 'keterangan' => 'KTP kepala keluarga', 'user_id' => 1],
+            ['id_berkas' => 31, 'uuid' => 'brk-0031', 'jenis_berkas_id' => null, 'nama_file' => 'KartuKeluarga_maria-da-costa.pdf', 'nama_asli' => 'KartuKeluarga_maria-da-costa.pdf', 'path' => 'transmigran/2/KartuKeluarga_maria-da-costa.pdf', 'mime' => 'application/pdf', 'ekstensi' => 'pdf', 'ukuran' => 246000, 'disk' => 'local', 'keterangan' => 'Kartu keluarga', 'user_id' => 1],
+            ['id_berkas' => 32, 'uuid' => 'brk-0032', 'jenis_berkas_id' => null, 'nama_file' => 'SkPenempatan_maria-da-costa.pdf', 'nama_asli' => 'SkPenempatan_maria-da-costa.pdf', 'path' => 'transmigran/2/SkPenempatan_maria-da-costa.pdf', 'mime' => 'application/pdf', 'ekstensi' => 'pdf', 'ukuran' => 275000, 'disk' => 'local', 'keterangan' => 'SK penempatan transmigran', 'user_id' => 1],
+            // Putaran 14 lanjutan: berkas jamak bagi domain yang bentuk jamaknya
+            // memang nyata di lapangan (beberapa sudut/sisi atas satu objek).
+            ['id_berkas' => 33, 'uuid' => 'brk-0033', 'jenis_berkas_id' => null, 'nama_file' => 'kondisi-kursi-plastik-sandaran.jpg', 'nama_asli' => 'kondisi-kursi-plastik-sandaran.jpg', 'path' => 'inventaris/2/kondisi-kursi-plastik-sandaran.jpg', 'mime' => 'image/jpeg', 'ekstensi' => 'jpg', 'ukuran' => 421000, 'disk' => 'local', 'keterangan' => 'Sandaran retak', 'user_id' => 1],
+            ['id_berkas' => 34, 'uuid' => 'brk-0034', 'jenis_berkas_id' => null, 'nama_file' => 'kondisi-sekolah-dasar-atap.jpg', 'nama_asli' => 'kondisi-sekolah-dasar-atap.jpg', 'path' => 'fasilitas/3/kondisi-sekolah-dasar-atap.jpg', 'mime' => 'image/jpeg', 'ekstensi' => 'jpg', 'ukuran' => 738000, 'disk' => 'local', 'keterangan' => 'Atap ruang kelas bocor', 'user_id' => 1],
+            ['id_berkas' => 35, 'uuid' => 'brk-0035', 'jenis_berkas_id' => null, 'nama_file' => 'foto-rumah-a-01-depan.jpg', 'nama_asli' => 'foto-rumah-a-01-depan.jpg', 'path' => 'rumah/1/foto-rumah-a-01-depan.jpg', 'mime' => 'image/jpeg', 'ekstensi' => 'jpg', 'ukuran' => 612000, 'disk' => 'local', 'keterangan' => 'Tampak depan', 'user_id' => 1],
+            ['id_berkas' => 36, 'uuid' => 'brk-0036', 'jenis_berkas_id' => null, 'nama_file' => 'foto-rumah-a-01-dinding-retak.jpg', 'nama_asli' => 'foto-rumah-a-01-dinding-retak.jpg', 'path' => 'rumah/1/foto-rumah-a-01-dinding-retak.jpg', 'mime' => 'image/jpeg', 'ekstensi' => 'jpg', 'ukuran' => 559000, 'disk' => 'local', 'keterangan' => 'Dinding belakang retak', 'user_id' => 1],
         ];
     }
 
@@ -1092,6 +1106,12 @@ class DummyData
                 // SHM meliputi SELURUH lahan satu KK, pekarangan maupun usaha,
                 // sehingga melekat pada keluarganya dan diunggah sekali saja.
                 ['transmigran_id' => 2, 'berkas_id' => 24, 'peran' => 'shm', 'urutan' => 0],
+                // KTP, KK, dan SK penempatan adalah TIGA dokumen berbeda. Sebelum
+                // Putaran 12 ketiganya dipaksa ke satu kolom dokumen_pendukung,
+                // sehingga hanya satu yang benar-benar dapat disimpan.
+                ['transmigran_id' => 2, 'berkas_id' => 30, 'peran' => 'ktp', 'urutan' => 1],
+                ['transmigran_id' => 2, 'berkas_id' => 31, 'peran' => 'kk', 'urutan' => 2],
+                ['transmigran_id' => 2, 'berkas_id' => 32, 'peran' => 'sk', 'urutan' => 3],
             ],
             'satuan_permukiman_berkas' => [
                 ['satuan_permukiman_id' => 1, 'berkas_id' => 2, 'peran' => 'sk', 'urutan' => 0],
@@ -1103,20 +1123,33 @@ class DummyData
             ],
             'pengaduan_berkas' => [
                 ['pengaduan_id' => 1, 'berkas_id' => 6, 'peran' => 'bukti', 'urutan' => 0],
+                ['pengaduan_id' => 1, 'berkas_id' => 29, 'peran' => 'bukti', 'urutan' => 1],
                 ['pengaduan_id' => 5, 'berkas_id' => 7, 'peran' => 'bukti', 'urutan' => 0],
             ],
             'infrastruktur_berkas' => [
+                // Satu irigasi 1,2 km punya beberapa titik kerusakan, dan satu
+                // foto tidak sanggup menunjukkan seluruhnya.
                 ['infrastruktur_id' => 1, 'berkas_id' => 8, 'peran' => 'foto', 'urutan' => 0],
-                ['infrastruktur_id' => 1, 'berkas_id' => 9, 'peran' => 'pendukung', 'urutan' => 1],
+                ['infrastruktur_id' => 1, 'berkas_id' => 27, 'peran' => 'foto', 'urutan' => 1],
+                ['infrastruktur_id' => 1, 'berkas_id' => 28, 'peran' => 'foto', 'urutan' => 2],
+                ['infrastruktur_id' => 1, 'berkas_id' => 9, 'peran' => 'pendukung', 'urutan' => 3],
+            ],
+            // Pivot ini ada di schema.sql sejak Putaran 12 tetapi belum pernah
+            // punya data contoh, sehingga bentuk jamaknya tidak teruji di layar.
+            'rumah_berkas' => [
+                ['rumah_id' => 1, 'berkas_id' => 35, 'peran' => 'foto', 'urutan' => 0],
+                ['rumah_id' => 1, 'berkas_id' => 36, 'peran' => 'foto', 'urutan' => 1],
             ],
             'inventaris_sp_berkas' => [
                 ['inventaris_sp_id' => 2, 'berkas_id' => 10, 'peran' => 'foto', 'urutan' => 0],
-                ['inventaris_sp_id' => 2, 'berkas_id' => 11, 'peran' => 'pendukung', 'urutan' => 1],
+                ['inventaris_sp_id' => 2, 'berkas_id' => 33, 'peran' => 'foto', 'urutan' => 1],
+                ['inventaris_sp_id' => 2, 'berkas_id' => 11, 'peran' => 'pendukung', 'urutan' => 2],
             ],
             'fasilitas_sp_berkas' => [
                 ['fasilitas_sp_id' => 1, 'berkas_id' => 12, 'peran' => 'foto', 'urutan' => 0],
                 ['fasilitas_sp_id' => 3, 'berkas_id' => 23, 'peran' => 'foto', 'urutan' => 0],
-                ['fasilitas_sp_id' => 3, 'berkas_id' => 21, 'peran' => 'pendukung', 'urutan' => 1],
+                ['fasilitas_sp_id' => 3, 'berkas_id' => 34, 'peran' => 'foto', 'urutan' => 1],
+                ['fasilitas_sp_id' => 3, 'berkas_id' => 21, 'peran' => 'pendukung', 'urutan' => 2],
             ],
             'penanaman_berkas' => [
                 ['penanaman_id' => 1, 'berkas_id' => 14, 'peran' => 'pendukung', 'urutan' => 0],

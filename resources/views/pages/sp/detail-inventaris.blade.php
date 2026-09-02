@@ -144,9 +144,15 @@
                         <div class="grid gap-4 sm:grid-cols-2">
                             <div>
                                 <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Foto kondisi</dt>
-                                <dd class="mt-0.5 text-theme-sm text-gray-800 dark:text-white/90">
-                                    <x-sim.tautan-dokumen modul="inventaris_sp" :id="$data['id_inventaris_sp']"
-                                        :berkas="$data['foto'] ?? null" />
+                                <dd class="mt-0.5 space-y-1 text-theme-sm text-gray-800 dark:text-white/90">
+                                    {{-- Jamak sejak Putaran 14; satu barang beberapa sudut. --}}
+                                    @forelse ($berkasFoto as $b)
+                                        <x-sim.tautan-dokumen modul="inventaris_sp"
+                                            :id="$data['id_inventaris_sp']" :berkas="$b['nama_file']" />
+                                    @empty
+                                        <x-sim.tautan-dokumen modul="inventaris_sp"
+                                            :id="$data['id_inventaris_sp']" :berkas="null" />
+                                    @endforelse
                                 </dd>
                             </div>
                             <div>
