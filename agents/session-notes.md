@@ -1,3 +1,64 @@
+# Tahap 3 Â· Task 3.4b + 3.5 + 3.5b - Manajemen pengguna BERJALAN (2026-09-03)
+
+Rencana ditulis sebelum kode disentuh (`rules.md` 20b poin 12). Tiga task
+dikerjakan sekaligus (izin pemilik proyek: "beberapa task sekaligus selama
+tidak ada konflik"). Commit terpisah per task.
+
+## Rencana
+
+### Task 3.4b -- Sidebar dinamis berbasis izin
+- `MenuHelper::bolehLihat($izin)`: `null` -> true; selain itu
+  `Auth::user()?->punyaIzin($izin) ?? false`. Ganti ponytail lama.
+- Machinery `getMenuGroups()` (saring submenu, buang kelompok kosong) SUDAH ada
+  sejak Tahap 2 -- hanya `bolehLihat()` yang perlu disambungkan.
+- Uji `tests/Feature`: `actingAs(new User([]))` (tanpa role -> `punyaIzin` false
+  untuk semua) -> menu menyusut jadi item ber-`permission = null` saja
+  (Panduan, Tentang); pengguna semu `semuaIzin` -> banyak kelompok. Tanpa DB.
+
+### Task 3.5 -- CRUD manajemen pengguna (backend)
+- `app/Http/Controllers/PengaturanPenggunaController.php`: `index()` masih baca
+  `DummyData` (peralihan tampilan -> Tahap 4, pola sama `PengaturanRoleController`);
+  `simpan/perbarui/setelSandi/nonaktifkan/aktifkan` menulis tabel `user` nyata.
+  - `simpan`: validasi `nama` (`ValidationRules::nama`), `email`
+    (`ValidationRules::email`), `role_id` (`exists:role,id_role`), `jabatan`
+    nullable, `telepon` (`ValidationRules::telepon`). TANPA username/password
+    (`rules.md` 14b poin 3/5). Bangkitkan `Str::password(14)`. Simpan hash,
+    `password_harus_diganti = true`, `is_aktif = true`, `username = null`. Role
+    `Per SP` -> wajib `satuan_permukiman[]` (`exists`) -> `attach`. Audit
+    `Tambah`. Flash `kredensial_baru` (tampil sekali).
+  - `perbarui`: `nama/email/role_id/jabatan/telepon`; TAK PERNAH password
+    (poin 14). Kelola penugasan SP bila role Per SP. Audit `Ubah` + diff.
+  - `setelSandi`: bangkitkan sandi sementara, timpa hash,
+    `password_harus_diganti = true`, audit `ResetKataSandi`
+    `data_baru['jalur'] = 'Admin'` (poin 13/15). Flash sandi sekali.
+  - `nonaktifkan`/`aktifkan`: `is_aktif` false/true, audit `NonaktifkanAkun`/
+    `AktifkanAkun`. `nonaktifkan` -> `abort_if` sasaran Admin aktif terakhir
+    (poin 16); pemeriksaan DI SERVER.
+  - TANPA hapus: `rules.md` 5.1 "Manajemen pengguna | L T U" -- tak ada Hapus.
+    Rute `pengguna.hapus` tetap `abort(405)`.
+- Rewire 6 closure `pengguna.*` di `routes/internal.php` -> controller.
+- Seeder `AdminAwalSeeder`: buat 1 akun Admin bila belum ada Admin mana pun
+  (`password_harus_diganti = true`, kredensial dari `config`/tetap
+  terdokumentasi). `DatabaseSeeder` memanggilnya sesudah `PermissionRoleSeeder`.
+- Uji `tests/Database/PengaturanPenggunaTest.php` (~12): sandi sementara +
+  flag; Per SP wajib SP; reset sandi; nonaktif/aktif; lindungan Admin terakhir;
+  audit tercatat. Hapus uji Feature "membuat rute tulis pengguna" (jadi
+  controller DB, seperti role Task 3.3 C5).
+- **DITUNDA:** kirim kredensial ke surel (`rules.md` 14b poin 3a) -- butuh
+  Mailable + template, task tersendiri. TODO ditandai di controller.
+
+### Task 3.5b -- Perintah artisan pemulihan darurat Admin
+- `app/Console/Commands/PulihkanAdmin.php` sig `sim:pulihkan-admin {identitas?}`
+  (`rules.md` 14b poin 17). Cari akun Admin (arg username/email; bila satu Admin
+  dan tanpa arg -> akun itu; bila banyak dan tanpa arg -> minta arg). Bangkitkan
+  sandi sementara, timpa hash, `password_harus_diganti = true`, cetak ke
+  terminal. Audit `ResetKataSandi` `user_id = null` (sistem)
+  `data_baru['jalur'] = 'Artisan darurat'`.
+- Uji `tests/Database/PulihkanAdminTest.php`: reset + flag + audit; tolak bila
+  bukan Admin; minta arg bila Admin > 1.
+
+---
+
 # Tahap 3 Â· Task 3.4 - Cakupan data (global scope) SELESAI (2026-09-03)
 
 Rencana ditulis sebelum kode disentuh (`rules.md` 20b poin 12). Rancangan
