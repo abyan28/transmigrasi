@@ -1,3 +1,79 @@
+# Tahap 4 Task 4.1b - CRUD kawasan + unggahan berkas nyata SELESAI (2026-09-03)
+
+**Unggahan sungguhan PERTAMA di proyek ini.** Sepanjang Tahap 2-3 seluruh
+isian berkas berhenti di data contoh; mulai task ini registry `berkas` +
+`PenyimpananDokumen` dipakai nyata.
+
+## Yang dikerjakan
+
+- **`MenyimpanBerkas`** (trait baru, `app/Http/Controllers/Concerns/`) --
+  menyimpan unggahan ke cakram PRIVAT lalu melekatkannya lewat pivot `*_berkas`
+  milik modulnya. Ditulis sekali sebab empat modul melakukan hal sama persis
+  (kawasan, inventaris SP, fasilitas SP, infrastruktur SP); menyalinnya ke tiap
+  controller berarti empat tempat yang dapat berselisih diam-diam. `uuid`
+  dibangkitkan di sini sebab model `Berkas` belum punya observer auto-generate.
+- **`KawasanController`** menggantikan 4 closure. `berkas` dan
+  `kabupaten.provinsi` di-eager-load, `satuanPermukiman` di-`withCount` --
+  daftar berkas per kartu kawasan sebelumnya rawan N+1 (notes.md 1g.5).
+- **`KawasanSeeder`** + **`BerkasSeeder`** -- keduanya membaca `DummyData`
+  supaya id sama persis dengan yang masih dipakai modul lain selama Tahap 4.
+- Penghapusan ditolak bila kawasan masih menaungi SP; pivot dilepas tetapi
+  baris registry `berkas` TIDAK ikut hilang (Task 3.1 B4) sebab registry
+  melayani banyak modul.
+
+## Temuan 1: view menuntut label yang sempat hilang
+
+Lima uji `HalamanTest` memerah `Undefined array key "kabupaten"`. Controller
+semula hanya menyuplai `kabupaten_id`, padahal kartu kawasan menampilkan nama
+kabupaten dan provinsinya, serta `jumlah_sp`.
+
+Ditambahkan sebagai label tampilan yang dibaca lewat relasi ter-eager-load --
+kebenarannya tetap `kabupaten_id` (`rules.md` 4a: pencocokan lewat nama putus
+diam-diam begitu ejaan data master berubah).
+
+## Temuan 2: `BerkasSeeder` melanggar FK di suite Feature
+
+Lima belas uji `DummyDataTest` memerah `FOREIGN KEY constraint failed`. Data
+contoh menyetel `berkas.user_id = 1`, sedangkan suite Feature tidak menanam
+akun sama sekali -- ia memakai pengguna semu yang tak dipersist.
+
+`user_id` karena itu SENGAJA dikosongkan seeder. Kolomnya memang nullable:
+kanal publik mengunggah tanpa akun (Putaran 12 keputusan 4), sehingga
+ketiadaan pengunggah bukan galat.
+
+## Pivot ditanam BERTAHAP
+
+`BerkasSeeder::PIVOT_SIAP` membatasi pivot yang ditanam pada modul yang
+induknya sudah bertabel isi -- saat ini hanya `kawasan_transmigrasi_berkas`.
+Menanam pivot bagi induk yang tabelnya masih kosong hanya akan melanggar FK.
+Daftar ini bertambah seiring modulnya dikerjakan sepanjang Tahap 4-8.
+
+## Utang yang dicatat, bukan ditebak
+
+Form kawasan mengirim SATU isian multi-berkas `dokumen_kawasan[]`, sehingga
+peran tiap berkas (`hpl`/`sk`/`peta`) belum dapat dibedakan dari sana.
+Seluruhnya direkam berperan `sk` -- peran bawaan yang sama dipakai `DummyData`.
+Penajaman peran per berkas menuntut isian pemilih di form (perubahan UI) dan
+dicatat di docblock controllernya, bukan dikarang di peladen.
+
+## Verifikasi
+
+- `pest` **975 PASS / 8.110 assertions** (968 + 7 uji baru). Durasi 125 detik.
+- Uji unggahan memakai `Storage::fake` dan memeriksa: berkas fisik ada di
+  cakram, `uuid` terisi, `disk` = local, `peran` = sk, `urutan` berurutan, dan
+  **path tidak menyentuh folder publik**. Batas 5 MB diuji PER BERKAS.
+- `pint --test` **26** - `sim:tautan-statis` **14** -
+  `sim:banding-skema --lengkap` **NOL SELISIH**.
+- Manual: `/kawasan` 200, menampilkan Kobalima Timur + Kabupaten Malaka, dan
+  **3 tautan berkas** (sk, hpl, peta) terbit.
+
+## Sisa `DummyData`
+
+216 -> **212** pemanggilan (149 `routes/internal.php`, 59
+`ViewServiceProvider`, 4 `routes/web.php`).
+
+---
+
 # Tahap 4 Task 4.5 + 4.7 - Master Satuan & Daftar Pilihan SELESAI (2026-09-03)
 
 Dua task dikerjakan berurutan atas permintaan pemilik proyek (kerjakan

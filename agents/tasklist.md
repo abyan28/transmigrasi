@@ -1205,7 +1205,7 @@ domain; sisanya mengikuti tanpa mengubah skema maupun komponen.
   * Model `Referensi` **sudah ada** (Task 3.1 B2); `JenisReferensi` enum menentukan kelompoknya
   * **Induk seluruh dropdown sistem** (kondisi, sumber dana, jenis alsintan, kategori/bidang/prioritas pengaduan, dll). `DummyData::opsiReferensi()` diganti kueri; `ViewServiceProvider` ikut beralih
   * Nilai yang sedang dipakai baris lain **dinonaktifkan, bukan dihapus**, supaya data lama tetap terbaca
-- [ ] Task 4.1b - CRUD kawasan transmigrasi + unggah HPL/SK/peta `[Sedang]`
+- [x] Task 4.1b - CRUD kawasan transmigrasi + unggah HPL/SK/peta `[Sedang]` -- **SELESAI 2026-09-03**. `KawasanController` + `KawasanSeeder` + `BerkasSeeder`; trait `MenyimpanBerkas` (dipakai ulang 4.3/4.4/4.6). **Unggahan sungguhan pertama di proyek**: berkas masuk cakram privat, registry + pivot terisi, batas 5 MB per berkas. 7 uji. Utang tercatat: peran per berkas menunggu isian pemilih di form
   * Model `KawasanTransmigrasi` + pivot `kawasan_transmigrasi_berkas` **sudah ada** (Task 3.1 B2/B4)
   * Tampilan form (`sp/form-kawasan`) sudah selesai pada Task 2.30, multi-berkas. Peran `hpl`/`sk`/`peta`. HPL alas hak KAWASAN milik instansi (`rules.md` 7.4a) -- bukan per bidang lahan. Kawasan tak punya halaman rincian sendiri; berkasnya dibuka dari kartu di `/kawasan`
   * Unggahan sungguhan pertama di proyek ini: `PenyimpananDokumen` + registry `berkas` mulai dipakai nyata, bukan lagi berhenti di data contoh

@@ -21,6 +21,7 @@ use App\Enums\StatusKondisiSp;
 use App\Enums\StatusPanen;
 use App\Enums\StatusPengaduan;
 use App\Http\Controllers\DokumenController;
+use App\Http\Controllers\KawasanController;
 use App\Http\Controllers\MasterReferensiController;
 use App\Http\Controllers\MasterSatuanController;
 use App\Http\Controllers\PengaturanPenggunaController;
@@ -374,36 +375,7 @@ Route::put('/cms', function () {
     return redirect()->route('cms')->with('sukses', 'Pengaturan konten berhasil disimpan.');
 })->name('cms.simpan');
 
-Route::get('/kawasan', function () {
-    $daftarSp = DummyData::satuanPermukiman();
-    $rekap = DummyData::rekapPerSp();
-
-    /*
-     * Berkas kawasan dipetakan per id LEBIH DULU, bukan dicari di dalam
-     * perulangan kartu kawasan. Memanggil berkasMilik() di dalam @foreach
-     * berarti satu penelusuran registry per kawasan (N+1), bentuk yang
-     * sudah tercatat pada notes.md 1g.5.
-     */
-    $berkasKawasan = [];
-
-    foreach ($daftarKawasan = DummyData::kawasan() as $k) {
-        $berkasKawasan[$k['id_kawasan_transmigrasi']] = DummyData::berkasMilik(
-            'kawasan_transmigrasi_berkas',
-            'kawasan_transmigrasi_id',
-            $k['id_kawasan_transmigrasi']
-        );
-    }
-
-    return view('pages.sp.kawasan', [
-        'title' => 'Kawasan Transmigrasi',
-        'kawasan' => $daftarKawasan,
-        'berkasKawasan' => $berkasKawasan,
-        'daftarSp' => $daftarSp,
-        'rekap' => $rekap,
-        'totalKk' => array_sum(array_column($rekap, 'jumlah_kk')),
-        'kecamatan' => array_unique(array_column($daftarSp, 'kecamatan')),
-    ]);
-})->name('kawasan');
+Route::get('/kawasan', [KawasanController::class, 'index'])->name('kawasan');
 
 // Rute beruas dua didaftarkan sebelum /sp agar tidak tertukar.
 Route::get('/sp/inventaris', function () {
@@ -565,11 +537,7 @@ Route::post('/wilayah', [WilayahController::class, 'simpan'])->name('wilayah.sim
 
 Route::post('/master/satuan', [MasterSatuanController::class, 'simpan'])->name('satuan.simpan');
 
-Route::post('/kawasan', function () {
-    // Tahap 4: simpan beserta unggahan salinan SK penetapan.
-    return redirect()->route('kawasan')
-        ->with('sukses', 'Data kawasan transmigrasi tersimpan.');
-})->name('kawasan.simpan');
+Route::post('/kawasan', [KawasanController::class, 'simpan'])->name('kawasan.simpan');
 
 Route::post('/sp', function () {
     // Tahap 4: SP menempel pada desa dan kawasan sekaligus, sehingga kedua
@@ -2413,13 +2381,11 @@ Route::delete('/sp/fasilitas/{id}', function (int $id) {
     return redirect()->route('sp.fasilitas')->with('sukses', 'Data fasilitas dihapus.');
 })->where('id', '[0-9]+')->name('fasilitas.hapus');
 
-Route::put('/kawasan/{id}', function (int $id) {
-    return redirect()->route('kawasan')->with('sukses', 'Perubahan data kawasan tersimpan.');
-})->where('id', '[0-9]+')->name('kawasan.perbarui');
+Route::put('/kawasan/{id}', [KawasanController::class, 'perbarui'])
+    ->where('id', '[0-9]+')->name('kawasan.perbarui');
 
-Route::delete('/kawasan/{id}', function (int $id) {
-    return redirect()->route('kawasan')->with('sukses', 'Kawasan transmigrasi dihapus.');
-})->where('id', '[0-9]+')->name('kawasan.hapus');
+Route::delete('/kawasan/{id}', [KawasanController::class, 'hapus'])
+    ->where('id', '[0-9]+')->name('kawasan.hapus');
 
 /*
  * Tingkat dibawa DI ALAMAT, bukan hanya di body (Task 4.1).
