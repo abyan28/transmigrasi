@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\DisaringLewatInduk;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -13,6 +14,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class SaprotanDistribusi extends Model
 {
+    use DisaringLewatInduk;
+
+    protected static string $indukCakupan = 'poktan';
+
     protected $table = 'saprotan_distribusi';
 
     protected $primaryKey = 'id_saprotan_distribusi';

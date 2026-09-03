@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\CakupanDataSp;
+use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -13,6 +15,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * pivot `infrastruktur_sp` (WAJIB memuat SP pangkal). `jenis`/`sumber_dana`/
  * `kondisi` = TEKS nilai referensi. `kondisi` = sumber grafik status.
  */
+#[ScopedBy([CakupanDataSp::class])]
 class Infrastruktur extends Model
 {
     use SoftDeletes;

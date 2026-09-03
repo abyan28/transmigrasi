@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\AsalWakilPoktan;
 use App\Enums\StatusKeaktifanAnggota;
+use App\Models\Concerns\DisaringLewatInduk;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -16,7 +17,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class AnggotaPoktan extends Model
 {
+    use DisaringLewatInduk;
     use SoftDeletes;
+
+    protected static string $indukCakupan = 'poktan';
 
     protected $table = 'anggota_poktan';
 

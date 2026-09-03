@@ -1,4 +1,4 @@
-# Tahap 3 Â· Task 3.4 - Cakupan data (global scope) BERJALAN (2026-09-03)
+# Tahap 3 Â· Task 3.4 - Cakupan data (global scope) SELESAI (2026-09-03)
 
 Rencana ditulis sebelum kode disentuh (`rules.md` 20b poin 12). Rancangan
 penegakan MENGIKAT: `rules.md` 5.0b-1 (ditetapkan 2026-09-02).
@@ -65,6 +65,49 @@ penegakan MENGIKAT: `rules.md` 5.0b-1 (ditetapkan 2026-09-02).
   (Tahap 4). Sekarang scope cukup bikin `find()` mengembalikan null -> caller
   `findOrFail` -> 404 otomatis saat Tahap 4.
 - `MenuHelper` (3.4b), akun `Per SP` seeder (3.5).
+
+## HASIL Task 3.4 (2026-09-03)
+
+Commit tunggal `Tahap 3 Task 3.4: global scope cakupan data pada 19 model`.
+Belum di-push. Verifikasi: pest Feature 732 PASS, pest tests/Database 146 PASS
+(+10 `CakupanDataTest`), pint bersih (berkas Task 3.4 saja), `sim:banding-skema`
+NOL SELISIH, `sim:tautan-statis` 14.
+
+- **`app/Models/Scopes/CakupanDataSp.php`** -- `implements Scope`. `apply()`:
+  `penggunaWajibDisaring()` null (tamu/artisan/seeder/job, tanpa role, atau
+  role `Semua`) -> tak menyaring. `PerSp` -> `whereIn('<tabel>.
+  satuan_permukiman_id', spDitugaskan())`; daftar kosong -> `whereRaw('1 = 0')`
+  (NOL baris, poin 10). `PerBidang` + tabel `pengaduan` -> `where('bidang',
+  'Pertanian')` (poin 14, `rules.md` 5.0b poin 6a); model lain berjangkauan
+  penuh. Helper statis `penggunaWajibDisaring()` / `spDitugaskan()` /
+  `bidangDinas()` dipakai bersama trait.
+- **`app/Models/Concerns/DisaringLewatInduk.php`** -- trait; `bootX()` daftar
+  global scope `cakupanViaInduk` = `whereHas(static::$indukCakupan)` bila
+  `penggunaWajibDisaring() !== null`. Delegasi murni -- scope induk yang
+  menyaring SP.
+- **10 model pemilik langsung** dapat `#[ScopedBy([CakupanDataSp::class])]`:
+  `Transmigran`, `Rumah`, `Lahan`, `Poktan`, `Infrastruktur`, `Pengaduan`,
+  `InventarisSp`, `FasilitasSp`, `PenilaianSp`, `RuteAksesibilitasSp`.
+- **9 model turunan** dapat `use DisaringLewatInduk` + `$indukCakupan`:
+  `AnggotaKeluarga`/`RiwayatKepalaKeluarga` (`transmigran`), `RiwayatPenghunian`
+  (`rumah`), `AnggotaPoktan`/`Penanaman`/`AlsintanDistribusi`/`SaprotanDistribusi`
+  (`poktan`), `HasilPanen` (`penanaman`), `PenangananPengaduan` (`pengaduan`).
+  `PenangananPengaduan` di luar rencana awal -- Domain 9 masuk lewat kerja
+  paralel setelah rencana ditulis; anak `pengaduan` jadi ikut disaring.
+- **`tests/Database/CakupanDataTest.php`** (10 uji): tamu non-HTTP tak
+  menyaring; `Semua` lihat semua; `Per SP` 1 penugasan -> hanya SP itu;
+  `Per SP` tanpa penugasan -> 0 baris; turunan ikut tersaring lewat induk;
+  referensi (`SatuanPermukiman`) tak tersaring; `withoutGlobalScope` melewati;
+  `count()`/`paginate()->total()` menghitung setelah saring; `Per Bidang` hanya
+  pengaduan `Pertanian`; `Per Bidang` penuh pada model non-pengaduan.
+
+### Tertunda sesudah 3.4
+- 404 baris tak berhak di rute detail -> Tahap 4 (rute pakai Eloquent
+  `findOrFail`).
+- `MenuHelper` filter menu per izin -> Task 3.4b.
+- Seeder akun `Per SP` + penugasan SP awal -> Task 3.5.
+- `UppercaseInput` tak berjalan di uji (hanya middleware HTTP) -> assertion
+  data uji pakai teks apa adanya.
 
 ---
 

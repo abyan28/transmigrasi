@@ -1111,11 +1111,12 @@ domain; sisanya mengikuti tanpa mengubah skema maupun komponen.
 - [✓] Task 3.3b - Halaman pengaturan role dan izin `[Sulit]` (Tampilan selesai Task 2.27; backend CRUD SELESAI bersama Task 3.3 C5)
   * Daftar role, form dengan matriks centang izin dikelompokkan per modul
   * Role terkunci ditampilkan hanya-baca; role bawaan tidak dapat dihapus
-- [ ] Task 3.4 - Pembatasan akses pada level query (cakupan data) `[Sulit]`
+- [✓] Task 3.4 - Pembatasan akses pada level query (cakupan data) `[Sulit]`
   * Global scope Eloquent menyaring menurut `role.cakupan_data`
   * Cakupan `Per SP` membaca penugasan dari `user_satuan_permukiman`
   * Akun `Per SP` tanpa penugasan tidak melihat data apa pun, bukan melihat seluruhnya
   * **Rancangan penegakannya sudah ditetapkan pada `rules.md` 5.0b-1 (2026-09-02)** dan mengikat: titik penegakan tunggal berupa global scope pada model, penyaring dipasang pada pemilik SP bukan diulang pada turunannya, data tak berhak membalas 404 bukan 403, penyaringan mendahului paginasi, dan akun tanpa penugasan menerima nol baris
+  * **SELESAI 2026-09-03:** `CakupanDataSp` (`#[ScopedBy]` pada 10 model pemilik SP) + trait `DisaringLewatInduk` (`whereHas(induk)` pada 9 model turunan). `Per SP` tanpa penugasan → `whereRaw('1 = 0')`. `Per Bidang` (Dinas Pertanian) → `pengaduan` bidang `Pertanian` saja. Tamu/artisan/seeder/role `Semua` → tak menyaring. 10 uji `tests/Database/CakupanDataTest.php`. 404 rute-detail + `MenuHelper` (3.4b) + seeder akun `Per SP` (3.5) ditunda. HASIL lengkap di `session-notes.md`.
 - [ ] Task 3.4b - Sidebar dinamis berbasis izin `[Sedang]`
   * `MenuHelper` menyaring item menu menurut izin; kelompok kosong ikut hilang
 - [~] ~~Task 3.7 - Implementasi verifikasi data~~ **DIBATALKAN 2026-08-14**

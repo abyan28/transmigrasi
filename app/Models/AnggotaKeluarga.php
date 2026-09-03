@@ -8,6 +8,7 @@ use App\Enums\JenisKelamin;
 use App\Enums\KegiatanAnggota;
 use App\Enums\PendidikanTerakhir;
 use App\Enums\StatusAnggotaKeluarga;
+use App\Models\Concerns\DisaringLewatInduk;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -20,7 +21,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class AnggotaKeluarga extends Model
 {
+    use DisaringLewatInduk;
     use SoftDeletes;
+
+    protected static string $indukCakupan = 'transmigran';
 
     protected $table = 'anggota_keluarga';
 

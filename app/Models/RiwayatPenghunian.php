@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\DisaringLewatInduk;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -11,6 +12,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class RiwayatPenghunian extends Model
 {
+    use DisaringLewatInduk;
+
+    protected static string $indukCakupan = 'rumah';
+
     protected $table = 'riwayat_penghunian';
 
     protected $primaryKey = 'id_riwayat_penghunian';

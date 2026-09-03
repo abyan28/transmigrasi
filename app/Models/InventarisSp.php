@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\CakupanDataSp;
+use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -13,6 +15,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * SUM = `jumlah`. Kolom `jenis_inventaris`/`sumber_dana`/`status_penyerahan`/
  * `kondisi` menyimpan TEKS nilai referensi, bukan enum.
  */
+#[ScopedBy([CakupanDataSp::class])]
 class InventarisSp extends Model
 {
     use SoftDeletes;

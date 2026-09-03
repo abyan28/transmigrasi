@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Enums\StatusKondisiSp;
+use App\Models\Scopes\CakupanDataSp;
+use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -14,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * `status` = enum tetap 3 nilai, sama persis `App\Enums\StatusKondisiSp`
  * (bukan admin-managed) -> aman di-cast.
  */
+#[ScopedBy([CakupanDataSp::class])]
 class PenilaianSp extends Model
 {
     protected $table = 'penilaian_sp';

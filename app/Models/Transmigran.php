@@ -8,6 +8,8 @@ use App\Enums\PendidikanTerakhir;
 use App\Enums\StatusAnggotaPoktan;
 use App\Enums\StatusSertifikat;
 use App\Enums\StatusTinggal;
+use App\Models\Scopes\CakupanDataSp;
+use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -23,6 +25,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  *
  * Pengenal publik URL: `uuid` -- data pribadi tak boleh terekspos lewat id urut.
  */
+#[ScopedBy([CakupanDataSp::class])]
 class Transmigran extends Model
 {
     use SoftDeletes;

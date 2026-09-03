@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Enums\StatusPengaduan;
 use App\Enums\SumberLaporan;
+use App\Models\Scopes\CakupanDataSp;
+use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -18,6 +20,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  *
  * Pengenal publik URL: `uuid` (bukan `nomor_pengaduan` yang tampil ke pelapor).
  */
+#[ScopedBy([CakupanDataSp::class])]
 class Pengaduan extends Model
 {
     use SoftDeletes;

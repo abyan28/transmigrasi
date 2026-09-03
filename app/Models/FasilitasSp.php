@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Enums\JenisFasilitas;
+use App\Models\Scopes\CakupanDataSp;
+use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -13,6 +15,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * penilaian kondisi SP) -> di-cast. `satuan_permukiman_id` = lokasi/pangkal;
  * SP yang DILAYANI ada di pivot `fasilitas_sp_cakupan` (WAJIB memuat SP pangkal).
  */
+#[ScopedBy([CakupanDataSp::class])]
 class FasilitasSp extends Model
 {
     use SoftDeletes;

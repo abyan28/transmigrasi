@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\DisaringLewatInduk;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -18,7 +19,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class HasilPanen extends Model
 {
+    use DisaringLewatInduk;
     use SoftDeletes;
+
+    protected static string $indukCakupan = 'penanaman';
 
     protected $table = 'hasil_panen';
 

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\StatusPengaduan;
+use App\Models\Concerns\DisaringLewatInduk;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -14,6 +15,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  */
 class PenangananPengaduan extends Model
 {
+    use DisaringLewatInduk;
+
+    protected static string $indukCakupan = 'pengaduan';
+
     protected $table = 'penanganan_pengaduan';
 
     protected $primaryKey = 'id_penanganan_pengaduan';

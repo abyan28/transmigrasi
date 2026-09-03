@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\AlasanPergantianKK;
 use App\Enums\HubunganAnggotaKeluarga;
+use App\Models\Concerns\DisaringLewatInduk;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -14,6 +15,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class RiwayatKepalaKeluarga extends Model
 {
+    use DisaringLewatInduk;
+
+    protected static string $indukCakupan = 'transmigran';
+
     protected $table = 'riwayat_kepala_keluarga';
 
     protected $primaryKey = 'id_riwayat_kepala_keluarga';

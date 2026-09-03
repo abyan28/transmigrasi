@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\CakupanDataSp;
+use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * Rute pencapaian ke satu SP (Tabel 2.1 Monografi). 1:N, tanpa soft delete.
  */
+#[ScopedBy([CakupanDataSp::class])]
 class RuteAksesibilitasSp extends Model
 {
     protected $table = 'rute_aksesibilitas_sp';
