@@ -1,3 +1,96 @@
+# Tahap 3 Â· Task 3.11 - Pemulihan kata sandi lewat kode verifikasi BERJALAN (2026-09-03)
+
+Rencana ditulis sebelum kode disentuh (`rules.md` 20b poin 12). Pemilik proyek
+menyetel mail server Mailjet di `.env` (`MAIL_MAILER=smtp`, host
+`in-v3.mailjet.com`) dan minta lanjut task Tahap 3.
+
+## Keputusan pemilik proyek
+
+- **`password_harus_diganti` TIDAK diset** pada reset lewat kode verifikasi
+  (petugas sudah memilih sandi final di form). Hanya jalur Admin (sandi
+  sementara) yang menyetelnya. `rules.md` 14b poin 13 diperbarui agar eksplisit
+  membedakan kedua jalur.
+
+## Penyisiran skenario (`rules.md` 20a)
+
+- **Privasi:** `POST /lupa-kata-sandi` balas SAMA baik akun ada/tidak (poin 9) --
+  redirect identik + kerja bcrypt tetap dijalankan walau akun tak ada (ratakan
+  waktu). Kode disimpan sebagai SIDIK (`kode_hash`), bukan angkanya. Tabel tak
+  simpan email tujuan. Kunci rate-limit = sidik kredensial, tak membocorkan.
+- **Siklus hidup:** akun nonaktif -> kode tak diterbitkan; bila akun dinonaktif
+  antara terbit & pakai -> `aturUlang` tolak (perlakuan = kode tak sah). Akun
+  soft-deleted -> tak ditemukan (scope bawaan). Kode lama DIBATALKAN saat kode
+  baru diminta (`kedaluwarsa_pada = now()`).
+- **Kejujuran angka:** audit `Reset Kata Sandi` jalur `Kode verifikasi` --
+  beda dari jalur `Admin`/`Artisan darurat`.
+- **Alur kerja:** 4 closure dummy di `routes/web.php` -> controller. Petugas
+  salah ketik kredensial -> minta lagi (maks 3/jam); kode lama hangus.
+- **Teknis:** rute `guest` GET (`/lupa-kata-sandi`, `/verifikasi-kode`) tetap
+  terbit statis. Uji Feature "membuat rute tulis pemulihan" tetap lolos (gagal
+  validasi -> redirect, sebelum sentuh DB). Perilaku nyata -> tests/Database.
+  Mailable pertama di proyek; kirim dibungkus try/catch + `Log::error` supaya
+  gangguan SMTP tak jadi 500 yang membocorkan.
+
+## Rencana
+
+### C1 -- Model + Mailable + templat
+- `app/Models/KodePemulihanSandi.php`: `$table='kode_pemulihan_sandi'`,
+  `$primaryKey='id_kode_pemulihan'`, `$fillable`, casts (`kedaluwarsa_pada`,
+  `dipakai_pada` -> datetime; `percobaan` -> int). `CREATED_AT='created_at'`,
+  `UPDATED_AT=null` (tabel tanpa `updated_at`). Relasi `pengguna()` belongsTo
+  User. Scope `masihBerlaku()` (`dipakai_pada` null, `kedaluwarsa_pada` > now,
+  `percobaan` < 5).
+- `app/Mail/KodePemulihanSandiMail.php` + `resources/views/emails/
+  kode-pemulihan-sandi.blade.php`: kode 6 digit, berlaku 15 menit, "abaikan
+  bila bukan Anda", sebut jalur Admin. Teks Indonesia.
+
+### C2 -- Controller + rute
+- `app/Http/Controllers/Auth/PemulihanSandiController.php`:
+  - `tampilPermintaan()` -> view `lupa-kata-sandi`.
+  - `kirimKode(Request)`: validasi `kredensial` (required). Cari User aktif by
+    email/username. Rate-limit 3/jam: hitung baris `kode_pemulihan_sandi`
+    `created_at > now()->subHour()` utk user itu; >= 3 -> lewati pembuatan
+    (tetap redirect generik). Bila boleh: batalkan kode lama
+    (`kedaluwarsa_pada = now()` utk yang belum dipakai), buat kode
+    `str_pad(random_int(0, 999999), 6)`, simpan `Hash::make($kode)`,
+    `kedaluwarsa_pada = now()->addMinutes(15)`. Kirim `KodePemulihanSandiMail`
+    (try/catch). Simpan `session('pemulihan_user_id')`. Bila user null: tetap
+    `Hash::make(kode buang)` (ratakan waktu). SELALU
+    `redirect()->route('verifikasi-kode')`.
+  - `tampilVerifikasi()` -> view `verifikasi-kode`.
+  - `aturUlang(Request)`: validasi `kode` (`digits:6`), `password_baru`
+    (`ValidationRules::password(konfirmasi:false)`), `password_baru_konfirmasi`
+    (`same:password_baru`). Ambil `session('pemulihan_user_id')`; null ->
+    galat generik. Ambil kode `masihBerlaku()` terbaru user; tak ada -> galat
+    generik "Kode salah atau sudah kedaluwarsa". `Hash::check` -> gagal:
+    `increment('percobaan')`, galat generik. Sukses: `dipakai_pada = now()`,
+    `User::update(['password' => $baru])` (TANPA `password_harus_diganti`),
+    audit `ResetKataSandi` `user_id` = pemilik, `data_baru['jalur'] =
+    'Kode verifikasi'`, `session()->forget`, `Auth::logout` (jaga2),
+    redirect `login` + sukses.
+- `routes/web.php`: 4 closure -> `[PemulihanSandiController::class, ...]`.
+- `ValidationRules::password(bool $wajib = true, bool $konfirmasi = true)` --
+  param baru; `confirmed` hanya bila `$konfirmasi`.
+
+### C3 -- Uji `tests/Database/PemulihanSandiTest.php` (~14)
+- balasan identik akun ada/tidak; kode tersimpan sbg hash bukan angka;
+  reset sukses -> sandi berubah, `password_harus_diganti` TETAP false, audit
+  jalur "Kode verifikasi"; kode salah -> `percobaan++`, sandi tak berubah;
+  kode hangus stlh 5 percobaan; kode kedaluwarsa ditolak; kode sekali pakai
+  (`dipakai_pada`); minta kode baru -> kode lama batal; batas 3/jam;
+  akun nonaktif -> tak ada kode terbit; `Mail::fake` -> mailable terkirim ke
+  email user dgn kode benar.
+
+### C4 -- docs: `rules.md` 14b poin 13 (bedakan jalur), `tasklist` 3.11 [âœ“],
+  `session-notes` HASIL, `data-dictionary` bila perlu.
+
+### DITUNDA
+- Kirim kredensial akun baru / reset Admin ke surel (Task 3.5 tunda) -- Mailable
+  kedua, bisa menyusul karena infra mail sudah tegak di C1.
+- Ratakan waktu balas lebih ketat (konstanta sleep) -- cukup bcrypt utk kini.
+
+---
+
 # Tahap 3 Â· Task 3.4b + 3.5 + 3.5b - Manajemen pengguna SELESAI (2026-09-03)
 
 Rencana ditulis sebelum kode disentuh (`rules.md` 20b poin 12). Tiga task
