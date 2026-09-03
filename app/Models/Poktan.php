@@ -104,6 +104,11 @@ class Poktan extends Model
         return $this->hasMany(Penanaman::class, 'poktan_id', 'id_poktan');
     }
 
+    public function infrastruktur(): HasMany
+    {
+        return $this->hasMany(Infrastruktur::class, 'poktan_id', 'id_poktan');
+    }
+
     /**
      * Komoditas yang diusahakan poktan ini (pivot M:N `komoditas_poktan`).
      */

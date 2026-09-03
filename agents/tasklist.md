@@ -1085,9 +1085,9 @@ domain; sisanya mengikuti tanpa mengubah skema maupun komponen.
 > "16 digit angka berarti NIK") **usang**: `user` tidak lagi punya kolom `nik`/`transmigran_id`;
 > login memakai **email atau username**.
 
-- [ ] Task 3.1 - Migration + model seluruh 55 tabel bisnis, `Model User` ditulis ulang `[Sulit]`
-  * **Bukan `[Mudah]`.** Cakupan penuh Putaran 13: ~55 migration + ~55 model Eloquent, urutan mengikuti `CREATE TABLE` pada `schema.sql`. Rincian, penjaga, dan cara verifikasi: `session-notes.md` 373–500. Lihat blok "⚑ BACA SEBELUM TASK 3.1" di atas untuk jebakan migration bawaan & strategi uji DB
-  * `uuid` dipasang bersamaan Model (`rules.md` 4.0a 5a), diawali modul berdata pribadi (transmigran, rumah, pengaduan)
+- [x] Task 3.1 - Migration + model seluruh 55 tabel bisnis, `Model User` ditulis ulang `[Sulit]` — **SELESAI 2026-09-03** (commit B0–B9). 58 migration + 36 model, `sim:banding-skema --lengkap` NOL SELISIH, 82 uji `tests/Database/` (MySQL nyata), 732 uji lama tetap hijau. Rincian & keputusan: `session-notes.md` blok "HASIL Task 3.1"
+  * Cakupan penuh Putaran 13: ~55 migration + model Eloquent. Rincian, penjaga, dan cara verifikasi: `session-notes.md` 373–500. Lihat blok "⚑ BACA SEBELUM TASK 3.1" di atas untuk jebakan migration bawaan & strategi uji DB
+  * `uuid` sebagai `getRouteKeyName()` sudah dipasang di model; auto-generate `uuid` (observer/trait) & factory ditunda ke Tahap 4
   * Acuan kolom/tipe/index/FK: `database/data/schema.sql` — SATU-SATUNYA sumber kebenaran
 - [ ] Task 3.2 - Implementasi login, logout, dan rate limiting `[Sedang]`
   * Satu kolom kredensial menerima **email atau username**; keduanya unik antar-akun (`rules.md` 14b poin 4). Sistem memilih kolom pencarian berdasarkan bentuk masukannya

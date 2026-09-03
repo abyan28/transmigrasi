@@ -138,6 +138,19 @@ class SatuanPermukiman extends Model
     }
 
     /**
+     * Infrastruktur yang BERPANGKAL di SP ini.
+     */
+    public function infrastruktur(): HasMany
+    {
+        return $this->hasMany(Infrastruktur::class, 'satuan_permukiman_id', 'id_satuan_permukiman');
+    }
+
+    public function pengaduan(): HasMany
+    {
+        return $this->hasMany(Pengaduan::class, 'satuan_permukiman_id', 'id_satuan_permukiman');
+    }
+
+    /**
      * Petugas yang ditugaskan ke SP ini (cakupan data `Per SP`).
      */
     public function petugas(): BelongsToMany

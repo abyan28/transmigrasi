@@ -1,4 +1,4 @@
-# Tahap 3 Â· Task 3.1 - Migration + Model Eloquent BERJALAN (2026-09-03)
+# Tahap 3 Â· Task 3.1 - Migration + Model Eloquent SELESAI (2026-09-03)
 
 Menerjemahkan `database/data/schema.sql` (55 tabel bisnis) menjadi migration +
 model. **Menerjemahkan, bukan menyusun ulang.** Mengikuti rencana Putaran 13
@@ -49,7 +49,12 @@ Rencana lengkap: `.claude/plans/logical-whistling-salamander.md`.
 | B6 Domain 6 | **SELESAI** | poktan, anggota_poktan, alsintan, alsintan_distribusi, saprotan, saprotan_distribusi + pivot alsintan_berkas + 6 model + `tests/Database/Domain6KelembagaanTest` (8 uji). Helper uji dipusatkan ke `tests/Database/DatabaseHelpers.php` (`require_once`) |
 | B7 Domain 7 | **SELESAI** | lahan (satu tabel) + model `Lahan` + `tests/Database/Domain7LahanTest` (7 uji) |
 | B8 Domain 8 | **SELESAI** | komoditas_poktan (pivot), penanaman, hasil_panen + pivot penanaman_berkas, hasil_panen_berkas + 2 model + `tests/Database/Domain8ProduksiTest` (8 uji) |
-| B9 | belum | infrastruktur, infrastruktur_sp, pengaduan, penanganan_pengaduan (+ 3 pivot berkas) |
+| B9 Domain 9 | **SELESAI** | infrastruktur, infrastruktur_sp (pivot), pengaduan, penanganan_pengaduan + pivot infrastruktur_berkas, pengaduan_berkas, penanganan_pengaduan_berkas + 3 model + `tests/Database/Domain9InfrastrukturPengaduanTest` (9 uji) |
+
+**Task 3.1 SELESAI (2026-09-03).** 58 migration (55 tabel bisnis + 3 berkas
+infra Laravel: `sessions`, `cache`+`cache_locks`, `jobs`+`job_batches`+
+`failed_jobs`), 36 model Eloquent di `app/Models/` (sisanya pivot murni tanpa
+model), 9 berkas uji `tests/Database/` (82 uji). Lihat blok HASIL di bawah.
 
 **Verifikasi B0+B1:** `sim:banding-skema --hanya=<Domain 1>` NOL SELISIH ·
 `pest` **742 PASS** (732 lama + 10 Database) · `pint --test` 31 (turun dari 33) ·
@@ -118,9 +123,44 @@ saprotan_distribusi RESTRICT (jatah benih). `hasil_panen` uuid route key,
 (ditegakkan aplikasi, bukan UNIQUE). Tak ada kolom ENUM di domain ini -- semua
 DECIMAL/CHAR(7). `Poktan::komoditas()` + `Komoditas::poktan()` M:N.
 
+**Verifikasi B9:** `sim:banding-skema --hanya=<7 tabel B9>` NOL SELISIH ·
+`pest tests/Database` **82 PASS** · `pest` (SQLite) tetap **732 PASS** ·
+`pint --test` tetap 31. `pengaduan.sumber_laporan` -> `SumberLaporan`,
+`pengaduan.status` + `penanganan_pengaduan.status_sebelum`/`status_sesudah` ->
+`StatusPengaduan`. `kategori`/`bidang`/`prioritas` = teks REF. `pengaduan` FK
+user + SP RESTRICT (jejak & lokus tak boleh hilang); `penanganan_pengaduan`
+tabel riwayat tanpa soft delete, FK pengaduan CASCADE, user RESTRICT.
+`infrastruktur_sp` pivot cakupan lintas SP (WAJIB memuat SP pangkal).
+
+## HASIL Task 3.1 (2026-09-03)
+
+- **58 migration**, `sim:banding-skema --lengkap` **NOL SELISIH** untuk seluruh
+  55 tabel bisnis + `sessions`. `migrate:fresh` ke MariaDB 10.4.32 bersih.
+- **36 model** `app/Models/`; tiap relasi menyebut kunci eksplisit (`rules.md`
+  4.0). 20 tabel ber-`SoftDeletes` sesuai daftar rencana. `getRouteKeyName()`:
+  `uuid` (transmigran, rumah, pengaduan, lahan, hasil_panen), `slug`
+  (satuan_permukiman, kawasan_transmigrasi, poktan, komoditas).
+- Pivot murni tanpa model: role_permission, komoditas_poktan,
+  user_satuan_permukiman, fasilitas_sp_cakupan, infrastruktur_sp, 12 `*_berkas`.
+- **9 berkas uji `tests/Database/`, 82 uji** (MySQL nyata, `Tests\DatabaseTestCase`).
+  732 uji lama tetap SQLite, tetap hijau. `pint` tetap 31 pre-existing.
+- **Beda dari rencana Putaran 13:** (1) B3 test-DB memakai `tests/Database/`
+  top-level (Pest tak izinkan base-class bertumpuk); (2) model TIDAK diberi
+  `HasFactory` (factory = Tahap 4) - uji Database pakai `::create()` + helper
+  `DatabaseHelpers.php`; (3) kolom REF (`komoditas.tipe`, `*.kondisi`,
+  `*.sumber_dana`, `jabatan`, `jenis_alsintan`, `pengaduan.kategori/bidang/
+  prioritas`, dll.) disimpan TEKS, tidak di-cast enum - Admin boleh tambah nilai
+  lewat master; hanya ENUM sungguhan di schema yang di-cast; (4) `referensi` +
+  `berkas` ditarik ke B2 (topo-sort); (5) model belum auto-generate `uuid`
+  (observer/trait = Tahap 4).
+- **BELUM (batch/tahap terpisah):** login/RBAC/global scope/penyesuaian ±330 uji
+  (Task 3.2+), CI job pest+MySQL, seeder role/izin/wilayah/admin (Task 3.3 & 4.1),
+  peralihan view dari `DummyData` ke Eloquent (Tahap 4), pembatas rute
+  `->where('id','[0-9]+')` -> uuid/slug (tahap frontend).
+
 **Urutan migration = topological sort dependensi FK, BUKAN urutan file
-`schema.sql`.** Batch berikutnya: `referensi`+`satuan`+`komoditas`+`berkas`
-naik sebelum `satuan_permukiman`; 12 pivot `*_berkas` turun ke setelah induknya.
+`schema.sql`.** Deviasi: `referensi`+`berkas` naik sebelum `satuan_permukiman`;
+12 pivot `*_berkas` turun ke setelah induk domainnya.
 
 **TIDAK disentuh:** `DummyData`, view, rute, 732 uji lama, autentikasi/RBAC/
 cakupan data (Task 3.2+).
