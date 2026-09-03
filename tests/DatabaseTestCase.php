@@ -22,6 +22,20 @@ abstract class DatabaseTestCase extends TestCase
 {
     use RefreshDatabase;
 
+    /**
+     * Grup ini SENGAJA tidak mewarisi seeder data master milik `Tests\TestCase`.
+     *
+     * Uji di sini menyusun barisnya sendiri untuk menguji constraint (UNIQUE,
+     * FK, ENUM), sehingga tabel yang sudah terisi justru membuatnya bertabrakan:
+     * `Domain2WilayahSpTest` membuat `bidang_pengaduan` sendiri dan langsung
+     * kena `uq_referensi_jenis_nilai` begitu `ReferensiSeeder` menanamnya lebih
+     * dulu. Uji yang memerlukan data master memanggil seedernya sendiri lewat
+     * `$this->seed(...)` di `beforeEach` masing-masing.
+     *
+     * @var class-string|null
+     */
+    protected $seeder = null;
+
     protected static bool $dbDisiapkan = false;
 
     protected ?string $lewatiAlasan = null;

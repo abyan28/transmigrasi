@@ -2,7 +2,7 @@
 
 namespace Tests;
 
-use Database\Seeders\WilayahSeeder;
+use Database\Seeders\DataMasterSeeder;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 
 /**
@@ -18,7 +18,7 @@ abstract class TestCase extends BaseTestCase
      * Seeder yang dijalankan `RefreshDatabase` SEKALI per kelas uji, bukan
      * per uji.
      *
-     * Wilayah adalah data master yang diandaikan ada oleh banyak halaman
+     * Data master (wilayah, satuan) diandaikan ADA oleh banyak halaman
      * (dropdown provinsi/kabupaten pada form SP, form transmigran, penyaring
      * laporan). Menanamnya lewat `$this->seed()` di `beforeEach` menulis 552
      * baris provinsi+kabupaten sebanyak 732 kali dan terukur menaikkan suite
@@ -27,5 +27,5 @@ abstract class TestCase extends BaseTestCase
      *
      * @var class-string
      */
-    protected $seeder = WilayahSeeder::class;
+    protected $seeder = DataMasterSeeder::class;
 }

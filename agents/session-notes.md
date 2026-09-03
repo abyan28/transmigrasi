@@ -1,3 +1,102 @@
+# Tahap 4 Task 4.5 + 4.7 - Master Satuan & Daftar Pilihan SELESAI (2026-09-03)
+
+Dua task dikerjakan berurutan atas permintaan pemilik proyek (kerjakan
+beberapa task sekaligus selama tak ada konflik). Keduanya data master yang
+DIANDAIKAN ADA oleh modul-modul Tahap 5-8.
+
+## Task 4.5 - Data master satuan
+
+- `SatuanSeeder` -- Ton (1), Kuintal (0,1), Kilogram (0,001). Idempoten lewat
+  `updateOrCreate` pada `nama` yang UNIQUE.
+- `MasterSatuanController` menggantikan 4 closure. `withCount(komoditas)`
+  menyuplai `dipakai_komoditas` yang sudah dibaca tampilan.
+- **`faktor_ke_ton` divalidasi `gt:0`**, bukan sekadar `numeric`. Faktor nol
+  membuat volume panen LENYAP dari rekap dan faktor negatif membalik tandanya
+  -- keduanya kegagalan senyap. Diuji dengan tiga nilai (0, -1, -0.5).
+- Penghapusan ditolak dengan kalimat terbaca bila satuan masih dipakai
+  komoditas; FK RESTRICT menahannya, tetapi galat SQL mentah tak dapat
+  ditindaklanjuti petugas.
+
+## Task 4.7 - Daftar Pilihan (referensi)
+
+- `ReferensiSeeder` -- 76 baris, 14 jenis, dibaca dari `DummyData::referensi()`
+  (pola sama `PermissionRoleSeeder`). **Dibaca, bukan disalin ulang, sebab
+  id-nya sudah ditunjuk pihak lain:** `PenilaianKondisiSp::parameter()`
+  merujuk `referensi_id` untuk jenis infrastruktur dan fasilitas. Menyusun
+  ulang daftarnya akan menggeser id itu diam-diam dan membuat penilaian
+  kondisi SP menunjuk jenis yang keliru. Dijaga uji yang membandingkan
+  SELURUH 76 baris terhadap `DummyData`.
+- `MasterReferensiController` menggantikan 4 closure, termasuk redirect 301
+  alamat lama `?tab={jenis}`.
+- **Keunikan ditegakkan DALAM jenis, bukan lintas jenis:** "Lainnya" sah
+  muncul pada banyak daftar sekaligus.
+- **Tanpa rute hapus**, disengaja: nilai dinonaktifkan lewat `is_aktif`.
+  Menghapusnya membuat data lama menunjuk pilihan yang lenyap dan rekapnya
+  kehilangan baris tanpa pesan apa pun.
+- Kolom yang tak berlaku bagi jenisnya DIKOSONGKAN, bukan dibiarkan terbawa:
+  skor pada daftar tak berskor tak pernah dibaca siapa pun dan hanya
+  menyesatkan pembaca tabel.
+- Self-FK `bidang_id` terjaga: 8 kategori berbidang, sisanya NULL sebab dapat
+  jatuh ke dua dinas sekaligus (`rules.md` 10b poin 7b).
+
+## Temuan 1: `UppercaseInput` merusak `jenis` (pengulangan Task 4.1)
+
+Persis kasus `tingkat` kemarin: middleware mengubah `sumber_dana` menjadi
+`SUMBER_DANA`, lalu validasi enum menolaknya. Ditambahkan ke daftar kecuali
+bersama `tingkat`, dengan komentar yang menyatukan alasan keduanya: **penunjuk
+sasaran, bukan isi data.**
+
+Dua kali berturut-turut pada dua task berbeda. Pola yang perlu diingat saat
+menambah isian pemilih baru sepanjang Tahap 4-8.
+
+## Temuan 2: grup Database ikut kebagian seeder Feature
+
+Lima uji Task 3.1 memerah `UniqueConstraintViolationException`.
+`Tests\DatabaseTestCase` **mewarisi** `Tests\TestCase`, sehingga properti
+`$seeder` yang dipasang Task 4.1 ikut terbawa ke grup Database.
+
+Uji di sana menyusun barisnya SENDIRI untuk menguji constraint, sehingga
+tabel yang sudah terisi justru membuatnya bertabrakan: `Domain2WilayahSpTest`
+membuat `bidang_pengaduan` sendiri lalu kena `uq_referensi_jenis_nilai`
+begitu `ReferensiSeeder` menanamnya lebih dulu.
+
+Diperbaiki dengan `protected $seeder = null` eksplisit pada `DatabaseTestCase`
+beserta alasannya. Uji yang memerlukan data master memanggil seedernya sendiri
+lewat `$this->seed(...)` di `beforeEach` masing-masing.
+
+## `DataMasterSeeder` (baru)
+
+Membungkus seluruh seeder data master yang diandaikan tampilan
+(`WilayahSeeder` + `SatuanSeeder` + `ReferensiSeeder`), dipakai
+`Tests\TestCase::$seeder`. Menambah data master sepanjang Tahap 4 cukup
+mendaftarkannya DI SINI; berkas uji tidak perlu disentuh lagi.
+
+Sengaja TIDAK menanam role/izin/akun: suite Feature memakai pengguna semu
+bertanda `semuaIzin`, sehingga menanamnya hanya memperlambat tanpa dipakai.
+
+## Verifikasi
+
+- `pest` **968 PASS / 8.076 assertions** (947 + 21 uji baru: 11 satuan, 10
+  referensi). Durasi **114 detik**, praktis sama dengan baseline 111 detik.
+- `pint --test` **26** (baseline). Tiga berkas pre-existing yang sempat ikut
+  dirapikan pint (`FondasiTest`, `FormatNominalUangTest`, `BerkasBlade`)
+  DIKEMBALIKAN -- di luar cakupan kedua task ini.
+- `sim:tautan-statis` **14** - `sim:banding-skema --lengkap` **NOL SELISIH**.
+- Manual: `/master/satuan`, `/master/referensi`, `/master/referensi/sumber_dana`,
+  `/master/referensi/kategori_pengaduan` seluruhnya 200; bidang penanganan
+  tampil; `?tab=sumber_dana` membalas **301** ke halaman daftarnya.
+- Basis data: `referensi` 76 baris / 14 jenis / 8 berbidang / 1 nonaktif --
+  identik dengan `DummyData`.
+
+## Sisa `DummyData`
+
+217 -> **216** pemanggilan (153 `routes/internal.php`, 59
+`ViewServiceProvider`, 4 `routes/web.php`). Turunnya kecil sebab
+`ReferensiSeeder` justru MEMBACA `DummyData` sebagai sumber kebenaran id;
+pencabutannya menunggu seluruh pemakai referensi beralih.
+
+---
+
 # Tahap 4 Task 4.1 - CRUD wilayah bertingkat SELESAI (2026-09-03)
 
 Task pertama Tahap 4, sekaligus **peralihan pertama tampilan dari `DummyData`

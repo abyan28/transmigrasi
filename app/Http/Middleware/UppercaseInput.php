@@ -51,10 +51,12 @@ class UppercaseInput
         'cakupan_data',
         'izin',
 
-        // Tingkat wilayah ('provinsi'..'desa') memilih TABEL sasaran, bukan isi
-        // data. Dikapitalkan, ia tak lagi cocok dengan daftar tingkat yang sah
-        // dan seluruh penyimpanan wilayah ditolak validasi (Task 4.1).
+        // Penunjuk sasaran, bukan isi data. Dikapitalkan, keduanya tak lagi
+        // cocok dengan daftar nilai yang sah dan seluruh penyimpanannya ditolak
+        // validasi: 'tingkat' memilih TABEL wilayah (4.1), 'jenis' memilih
+        // DAFTAR referensi dan berpasangan dengan ENUM basis data (4.7).
         'tingkat',
+        'jenis',
 
         // Teks naratif, huruf kapital seluruhnya menyulitkan pembacaan
         'deskripsi',

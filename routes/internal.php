@@ -21,6 +21,8 @@ use App\Enums\StatusKondisiSp;
 use App\Enums\StatusPanen;
 use App\Enums\StatusPengaduan;
 use App\Http\Controllers\DokumenController;
+use App\Http\Controllers\MasterReferensiController;
+use App\Http\Controllers\MasterSatuanController;
 use App\Http\Controllers\PengaturanPenggunaController;
 use App\Http\Controllers\PengaturanRoleController;
 use App\Http\Controllers\WilayahController;
@@ -272,12 +274,7 @@ Route::get('/uji-403', function () {
 */
 Route::get('/wilayah', [WilayahController::class, 'index'])->name('wilayah');
 
-Route::get('/master/satuan', function () {
-    return view('pages.master.satuan', [
-        'title' => 'Data Master Satuan',
-        'satuan' => DummyData::satuan(),
-    ]);
-})->name('master.satuan');
+Route::get('/master/satuan', [MasterSatuanController::class, 'index'])->name('master.satuan');
 
 /*
  * Data master referensi.
@@ -296,100 +293,15 @@ Route::get('/master/satuan', function () {
  * menunjuk pilihan yang lenyap, dan rekapnya kehilangan baris itu tanpa pesan
  * apa pun.
  */
-Route::get('/master/referensi', function () {
-    // Alamat lama `?tab={jenis}` dialihkan, bukan dibiarkan mati. Bentuk itu
-    // sempat dipakai form untuk menentukan jenis awal, dan tautan yang sudah
-    // tersimpan siapa pun tidak boleh mendarat di halaman yang salah tanpa
-    // penjelasan.
-    $tabLama = JenisReferensi::tryFrom((string) request('tab'));
+Route::get('/master/referensi', [MasterReferensiController::class, 'index'])->name('master.referensi');
 
-    if ($tabLama !== null) {
-        return redirect()->route('referensi.jenis', ['jenis' => $tabLama->value], 301);
-    }
+Route::get('/master/referensi/{jenis}', [MasterReferensiController::class, 'jenis'])
+    ->where('jenis', '[a-z_]+')->name('referensi.jenis');
 
-    $semua = DummyData::referensi();
+Route::post('/master/referensi', [MasterReferensiController::class, 'simpan'])->name('referensi.simpan');
 
-    // Dihitung sekali, dipakai seluruh kartu.
-    $jumlah = [];
-    $nonaktif = [];
-
-    foreach ($semua as $b) {
-        $jumlah[$b['jenis']] = ($jumlah[$b['jenis']] ?? 0) + 1;
-
-        if (! $b['is_aktif']) {
-            $nonaktif[$b['jenis']] = ($nonaktif[$b['jenis']] ?? 0) + 1;
-        }
-    }
-
-    return view('pages.master.referensi', [
-        'title' => 'Data Master Daftar Pilihan',
-        'semua' => $semua,
-        'jumlah' => $jumlah,
-        'nonaktif' => $nonaktif,
-    ]);
-})->name('master.referensi');
-
-Route::get('/master/referensi/{jenis}', function (string $jenis) {
-    $pilihan = JenisReferensi::tryFrom($jenis);
-
-    // Jenis karangan membalas 404, bukan halaman kosong: daftar yang tidak ada
-    // dan daftar yang kebetulan masih kosong adalah dua keadaan berbeda, dan
-    // menyamakannya membuat salah ketik tampak seperti data yang belum diisi.
-    abort_if($pilihan === null, 404);
-
-    $baris = DummyData::referensi($pilihan);
-
-    /*
-     * Nama bidang penanganan tiap baris, dikumpulkan sekali.
-     *
-     * Bentuk lamanya memanggil `referensiNilai()` DI DALAM perulangan tabel,
-     * yakni satu penelusuran seluruh data referensi untuk setiap baris yang
-     * berbidang.
-     */
-    $nilaiBidang = [];
-    foreach ($baris as $b) {
-        if ($b['bidang_id'] !== null) {
-            $nilaiBidang[$b['bidang_id']] ??= DummyData::referensiNilai($b['bidang_id']);
-        }
-    }
-
-    return view('pages.master.detail-referensi', [
-        'title' => $pilihan->label(),
-        'jenis' => $pilihan,
-        'baris' => $baris,
-        'jumlahNonaktif' => count(array_filter($baris, fn ($b) => ! $b['is_aktif'])),
-        'nilaiBidang' => $nilaiBidang,
-    ]);
-})->where('jenis', '[a-z_]+')->name('referensi.jenis');
-
-Route::post('/master/referensi', function () {
-    // Tahap 4: simpan baris baru pada tabel `referensi`, lalu perbarui urutan
-    // pada jenis yang sama bila nomornya bertabrakan.
-    //
-    // Kembali ke halaman DAFTARNYA, bukan ke indeks: petugas baru saja
-    // menambah satu nilai dan perlu melihat hasilnya pada daftar itu juga.
-    $jenis = JenisReferensi::tryFrom((string) request('jenis'));
-
-    return redirect()
-        ->route(
-            $jenis !== null ? 'referensi.jenis' : 'master.referensi',
-            $jenis !== null ? ['jenis' => $jenis->value] : []
-        )
-        ->with('sukses', 'Pilihan baru tersimpan dan langsung tersedia pada form.');
-})->name('referensi.simpan');
-
-Route::put('/master/referensi/{id}', function (int $id) {
-    // Tahap 4: penonaktifan hanya menyetel `is_aktif`, tidak menyentuh baris
-    // data lain yang sudah memakai nilainya.
-    $jenis = JenisReferensi::tryFrom((string) request('jenis'));
-
-    return redirect()
-        ->route(
-            $jenis !== null ? 'referensi.jenis' : 'master.referensi',
-            $jenis !== null ? ['jenis' => $jenis->value] : []
-        )
-        ->with('sukses', 'Perubahan pilihan tersimpan.');
-})->where('id', '[0-9]+')->name('referensi.perbarui');
+Route::put('/master/referensi/{id}', [MasterReferensiController::class, 'perbarui'])
+    ->where('id', '[0-9]+')->name('referensi.perbarui');
 
 /*
  * Pengaturan penilaian kondisi SP.
@@ -651,12 +563,7 @@ Route::get('/sp', function () {
  */
 Route::post('/wilayah', [WilayahController::class, 'simpan'])->name('wilayah.simpan');
 
-Route::post('/master/satuan', function () {
-    // Tahap 4: faktor_ke_ton wajib lebih besar dari nol, sebab dipakai
-    // sebagai pengali pada seluruh rekap panen.
-    return redirect()->route('master.satuan')
-        ->with('sukses', 'Data master satuan tersimpan.');
-})->name('satuan.simpan');
+Route::post('/master/satuan', [MasterSatuanController::class, 'simpan'])->name('satuan.simpan');
 
 Route::post('/kawasan', function () {
     // Tahap 4: simpan beserta unggahan salinan SK penetapan.
@@ -2531,16 +2438,11 @@ Route::delete('/wilayah/{tingkat}/{id}', [WilayahController::class, 'hapus'])
     ->where('tingkat', 'provinsi|kabupaten|kecamatan|desa')
     ->where('id', '[0-9]+')->name('wilayah.hapus');
 
-Route::put('/master/satuan/{id}', function (int $id) {
-    // Tahap 4: perubahan faktor konversi TIDAK mengubah panen yang sudah
-    // tersimpan, sebab tiap panen menyalin satuannya sendiri.
-    return redirect()->route('master.satuan')->with('sukses', 'Perubahan data satuan tersimpan.');
-})->where('id', '[0-9]+')->name('satuan.perbarui');
+Route::put('/master/satuan/{id}', [MasterSatuanController::class, 'perbarui'])
+    ->where('id', '[0-9]+')->name('satuan.perbarui');
 
-Route::delete('/master/satuan/{id}', function (int $id) {
-    // Tahap 4: tolak bila masih dipakai komoditas mana pun.
-    return redirect()->route('master.satuan')->with('sukses', 'Data satuan dihapus.');
-})->where('id', '[0-9]+')->name('satuan.hapus');
+Route::delete('/master/satuan/{id}', [MasterSatuanController::class, 'hapus'])
+    ->where('id', '[0-9]+')->name('satuan.hapus');
 
 Route::delete('/poktan/{id}', function (int $id) {
     return redirect()->route('poktan.index')->with('sukses', 'Kelompok tani dihapus.');

@@ -1195,11 +1195,11 @@ domain; sisanya mengikuti tanpa mengubah skema maupun komponen.
   * Tampilan `/wilayah` sudah selesai pada Task 2.30 (satu daftar rata, empat tingkat)
   * **`provinsi`/`kabupaten` seeder dari `app/Support/DataWilayah.php`** (38 + 514 berkode BPS); kecamatan/desa TETAP lokus sampai pengambilan bertahap lewat endpoint (`rules.md` 4a.9a)
   * CRUD kecamatan & desa; penghapusan ditolak bila masih dipakai SP (FK RESTRICT)
-- [ ] Task 4.5 - Data master satuan + faktor konversi ke ton `[Mudah]`
+- [x] Task 4.5 - Data master satuan + faktor konversi ke ton `[Mudah]` -- **SELESAI 2026-09-03**. `SatuanSeeder` (Ton/Kuintal/Kilogram) + `MasterSatuanController`; `faktor_ke_ton` divalidasi `gt:0` sebab faktor nol membuat volume panen lenyap dari rekap. Hapus ditolak bila masih dipakai komoditas. 11 uji
   * Model `Satuan` **sudah ada** (Task 3.1 B3). Tampilan form beserta pratinjau konversi sudah selesai pada Task 2.30
   * Seeder awal: Ton (1), Kuintal (0,1), Kilogram (0,001)
   * Didahulukan sebab `komoditas.satuan_id` dan konversi volume panen bergantung padanya
-- [ ] Task 4.7 - CRUD Daftar Pilihan (data referensi) `[Sedang]` (BARU 2026-09-03)
+- [x] Task 4.7 - CRUD Daftar Pilihan (data referensi) `[Sedang]` -- **SELESAI 2026-09-03**. `ReferensiSeeder` (76 baris, 14 jenis, dibaca dari `DummyData` sebab id-nya ditunjuk `PenilaianKondisiSp`) + `MasterReferensiController`; keunikan DALAM jenis, tanpa rute hapus, redirect 301 alamat lama. 10 uji
   * Menu **Data Master > Daftar Pilihan**, `/master/referensi` + `/master/referensi/{jenis}`. Tampilan selesai Task 2.30; penamaan ditetapkan 2026-09-01 (catatan 29)
   * **Celah yang ditemukan 2026-09-03:** menu ini tidak pernah punya task backend sama sekali
   * Model `Referensi` **sudah ada** (Task 3.1 B2); `JenisReferensi` enum menentukan kelompoknya
