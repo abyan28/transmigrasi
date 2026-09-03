@@ -17,7 +17,13 @@ use Illuminate\Support\Str;
  * - Kata sandi dari `SIM_ADMIN_PASSWORD` bila diset; selain itu dibangkitkan
  *   acak dan dicetak SATU KALI ke terminal (`rules.md` 14b poin 3).
  * - `password_harus_diganti = TRUE`: Admin pertama tetap wajib mengganti
- *   sandi + membuat username saat masuk pertama (poin 5).
+ *   sandi + membuat username saat masuk pertama (poin 5). Dapat dimatikan
+ *   lewat `SIM_ADMIN_WAJIB_GANTI=false` UNTUK PENGEMBANGAN LOKAL saja, supaya
+ *   akun telusur tidak terlempar ke halaman ganti sandi tiap kali basis data
+ *   dibangun ulang. Default `true` -- pemasangan di server tetap patuh poin 5
+ *   tanpa perlu menyetel apa pun.
+ * - Pengecualian ini HANYA berlaku bagi akun seed ini. Akun yang dibuat Admin
+ *   lewat sistem tetap ditandai wajib-ganti oleh `PengaturanPenggunaController`.
  * - Idempoten: dijalankan ulang tidak membuat akun kedua.
  */
 class AdminAwalSeeder extends Seeder
@@ -52,7 +58,7 @@ class AdminAwalSeeder extends Seeder
             'email' => $email,
             'password' => $sandi,
             'is_aktif' => true,
-            'password_harus_diganti' => true,
+            'password_harus_diganti' => (bool) env('SIM_ADMIN_WAJIB_GANTI', true),
         ])->save();
 
         $this->command?->info("Akun Admin awal dibuat: {$email}");

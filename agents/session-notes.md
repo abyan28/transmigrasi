@@ -1,3 +1,96 @@
+# DB dev tertinggal sejak Task 3.1 -- dimigrasikan + akun admin lokal (2026-09-03)
+
+Pemilik proyek memeriksa phpMyAdmin dan bertanya mengapa Tahap 3 yang sudah
+selesai belum tampak di basis data. Ternyata benar: **DB dev tidak pernah
+di-migrate sejak Tahap 3 dimulai.**
+
+## Temuan
+
+| Basis data | Tabel | Keadaan saat ditemukan |
+|---|---|---|
+| `sim_transmigrasi` (DB dev) | **9** | tabel bawaan Laravel pra-Tahap-3: `users`, `password_reset_tokens`, `cache`, `jobs`, `sessions` |
+| `sim_transmigrasi_test` | 62 | 58 migration Tahap 3 lengkap |
+| `transmigrasi_skema_ref` | 61 | hasil impor `schema.sql` |
+
+`sim_transmigrasi.migrations` hanya berisi **3 baris**, dan ketiganya menunjuk
+berkas yang **sudah tidak ada lagi** -- `0001_01_01_000000_create_users_table`
+di-`git mv` menjadi `create_sessions_table` pada Task 3.1 (B0). Jadi isinya
+potret keadaan sebelum Tahap 3 dibuka.
+
+## Mengapa tidak ada yang memerah
+
+Dua sebab yang saling menutupi, dan ini yang perlu diingat:
+
+1. **Seluruh penjaga skema memakai DB LAIN.** `tests/Database/` ber-`RefreshDatabase`
+   ke `sim_transmigrasi_test`; `sim:banding-skema` `migrate:fresh` juga ke sana.
+   Migration karena itu terus-menerus diverifikasi -- hanya tidak pernah di DB dev.
+2. **Tidak ada satu pun query Eloquent di jalur tampilan.** Halaman masih membaca
+   `app/Support/DummyData.php` seluruhnya; peralihan ke Eloquent baru Tahap 4.
+   DB dev kosong pun web tetap tampil normal.
+
+Akibatnya `php artisan migrate` biasa akan GAGAL di DB dev: tabel `sessions`
+sudah ada tetapi namanya tak tercatat di `migrations`, sehingga Laravel mencoba
+`CREATE TABLE sessions` dan menabrak "table already exists". Wajib `migrate:fresh`.
+
+**Pelajarannya:** basis data uji yang selalu hijau tidak membuktikan apa pun
+tentang basis data dev. Keduanya perlu disebut terpisah saat memverifikasi.
+
+## Yang dikerjakan
+
+- `migrate:fresh --seed` ke `sim_transmigrasi`. 9 tabel lama dibuang (nol data
+  bisnis di dalamnya), 58 tabel Tahap 3 terbangun, `PermissionRoleSeeder` +
+  `AdminAwalSeeder` jalan. 45 baris `sessions` ikut terbuang -- sesi login lokal
+  yang sedang terbuka ter-logout, tidak ada konsekuensi lain.
+- **`SIM_ADMIN_WAJIB_GANTI` (BARU)** pada `AdminAwalSeeder`. Default **`true`**:
+  pemasangan di server dinas tetap patuh `rules.md` 14b poin 5 tanpa menyetel
+  apa pun. `.env` lokal (gitignored) menyetelnya `false` + `SIM_ADMIN_USERNAME=admin`
+  + `SIM_ADMIN_PASSWORD=admin`, atas permintaan pemilik proyek, supaya akun
+  telusur tidak terlempar ke `/ganti-kata-sandi` tiap kali DB dibangun ulang.
+- Pengecualian ini **hanya** menyentuh akun seed. Akun yang dibuat Admin lewat
+  sistem tetap ditandai wajib-ganti oleh `PengaturanPenggunaController` (baris
+  105 dan 167) -- tidak ada kode yang perlu diubah untuk itu.
+- `.env.example` mendokumentasikan kelima kunci `SIM_ADMIN_*` sebagai komentar
+  tanpa nilai aktif, beserta peringatan jangan diisi di server.
+
+## Uji yang merah, dan mengapa itu benar
+
+`tests/Database/AdminAwalSeederTest.php:25` mengunci `password_harus_diganti`
+bernilai TRUE, lalu **merah** begitu flag ditambahkan -- sebab uji ikut membaca
+`.env` mesin pengembang. Penjaganya bekerja sebagaimana mestinya.
+
+Diperbaiki di ujinya, bukan dilonggarkan: `beforeEach` kini **membuang**
+`SIM_ADMIN_WAJIB_GANTI` dari environment lebih dulu, sehingga yang dijaga adalah
+perilaku BAWAAN -- apa yang terjadi di server yang tidak menyetel apa pun.
+Ditambah satu uji baru yang mengunci arah sebaliknya (`=false` -> tidak wajib
+ganti), supaya nilai bawaannya tidak dapat berubah diam-diam menjadi longgar.
+
+> **Aturan:** uji tidak boleh mewarisi setelan `.env` mesin siapa pun. Nilai yang
+> menentukan hasil wajib dinyatakan di dalam ujinya sendiri.
+
+## Verifikasi
+
+- `sim_transmigrasi`: **62 tabel** (58 bisnis/infra + `migrations`), `migrations`
+  58 baris, `role` 5 (4 bawaan + 1 contoh non-bawaan, memang rancangan seeder),
+  `permission` 97, `user` 1 (`admin`, `password_harus_diganti = 0`).
+- `sim:banding-skema --lengkap` **NOL SELISIH**.
+- **Login HTTP sungguhan** dengan `SIM_MASUK_OTOMATIS=false`: `admin`/`admin`
+  -> 302 ke `/` (BUKAN ke `/ganti-kata-sandi`); `/`, `/transmigran`, `/pengguna`,
+  `/audit-log` seluruhnya 200. Tanpa login: `/` dan `/transmigran` -> 302 ke
+  `/login`, `/pengaduan-warga` tetap 200.
+- `pest` **937 PASS / 7.910 assertions** (936 + 1 uji baru). Perlu
+  `php -d memory_limit=1G`; batas 128 MB bawaan habis saat merender jejak galat.
+- `pint --test` **26** (tak berubah; berkas tersunting bersih) ·
+  `sim:tautan-statis` **14**.
+
+## TIDAK disentuh
+
+`app/Observers/`, `tests/Database/AuditLogOtomatisTest.php`, `app/Models/AuditLog.php`,
+`app/Providers/AppServiceProvider.php` -- pekerjaan Task 3.6 yang belum di-commit.
+Observernya ikut aktif saat seeding, jadi `audit_log` dapat terisi sendiri; itu
+wajar, bukan bug. Tidak ada commit dibuat pada sesi ini.
+
+---
+
 # Tahap 3 Â· Sisa Tahap 3: Task 3.9 + 3.10 + 3.6 SELESAI (2026-09-03)
 
 Pemilik proyek: "kerjakan semua sisa Tahap 3 selama tidak ada konflik".
