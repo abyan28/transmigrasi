@@ -1,3 +1,91 @@
+# Tahap 3 Â· Task 3.3 - RBAC dinamis BERJALAN (2026-09-03)
+
+Rencana ditulis sebelum kode disentuh (`rules.md` 20b poin 12).
+
+## Konteks & fakta eksplorasi
+
+- **Model siap:** `Role` (pivot `permissions()`), `Permission` (`nama` unik e.g.
+  `transmigran.lihat`, `modul`, `aksi` enum lihat/tambah/ubah/hapus, `label`,
+  `urutan`), pivot `role_permission`. Semua dari Task 3.1.
+- **Data sumber ada di `DummyData`** (dari Task 2.27): `daftarIzin()` ->
+  **95 permission** (8 modul-kelompok, aksi per modul bervariasi -- `export`
+  dicabut 2026-08-17), `izinRole(int)` -> peta izin per role (id 1-5),
+  `role()` -> 4 bawaan (Admin id1 terkunci, Dinas Transmigrasi id2, Dinas
+  Pertanian id3 `PerBidang`, Operator SP id4 `PerSp`) + 1 non-bawaan
+  (Pendamping Lapangan id5). Catatan: `rules.md` 5.0a tabel bilang Dinas
+  Pertanian `Semua` tapi 5.0b.6a + `DummyData` bilang `PerBidang` -- ikut
+  `DummyData` (sudah direkonsiliasi Task 2.27).
+- `DatabaseSeeder::run()` kosong, menunggu Task 3.3 (role+izin) & 3.5 (admin).
+- Rute stub: `pengaturan.role` (GET, baca `DummyData::role()`), `role.simpan`/
+  `role.perbarui`/`role.hapus` (closure kosong di `routes/internal.php`).
+- TODO penanda: `MenuHelper.php:380` (`// Ganti dengan auth()->user()->punyaIzin`),
+  `DokumenController.php:46` (`// Ganti dengan Gate::authorize`).
+- **Pengguna semu** (bypass `MasukOtomatisLokal` + `beforeEach` uji Feature) =
+  `new User(...)` tak dipersist, tanpa `role`. `punyaIzin()` WAJIB menangani
+  ini -> flag `semuaIzin` (konstruksi dev/uji, bukan role nyata).
+
+## Rencana (menunggu keputusan cakupan penegakan)
+
+### A. Seeder `PermissionRoleSeeder` (dipanggil `DatabaseSeeder`)
+- Tanam **95 `permission`** dari `DummyData::daftarIzin()` (nama = `<modul>.<aksi>`,
+  `label`, `urutan` dari urutan daftar).
+- Tanam **5 `role`** dari `DummyData::role()` (`is_bawaan`/`is_terkunci`/`cakupan_data`).
+- Pasang pivot `role_permission` dari `DummyData::izinRole($id)`.
+- Idempoten (`updateOrCreate` / `sync`) -- boleh dijalankan ulang.
+
+### B. `User::punyaIzin(string $izin): bool` + `punyaAksi(string $modul, string $aksi)`
+- `$this->semuaIzin === true` -> true (pengguna semu dev/uji).
+- else `$this->role?->permissions->contains('nama', $izin) ?? false`.
+- Deklarasi `public bool $semuaIzin = false;` pada model `User`.
+- Eager-load `role.permissions` sekali per request (hindari N+1).
+
+### C. Blade `@can` / Gate
+- Daftarkan Gate dinamis di `AppServiceProvider::boot()`:
+  `Gate::before(fn (User $u, string $izin) => $u->punyaIzin($izin) ?: null)`.
+- `@can('transmigran.ubah')` langsung jalan di Blade.
+
+### D. Middleware `izin` (`EnsureIzin`)
+- Alias `izin` di `bootstrap/app.php`. Param: `izin:transmigran,ubah`.
+- **`lihat` sebagai prasyarat** (`tasklist` 3.3): `izin:transmigran,ubah`
+  otomatis juga menuntut `transmigran.lihat`.
+- Tamu izin ditolak -> **403** (kewenangan aksi, `rules.md` 5.0b-1 poin 11 --
+  beda dari cakupan data yang 404).
+
+### E. Backend role CRUD (`role.simpan`/`perbarui`/`hapus`)
+- Controller `PengaturanRoleController`. `simpan`/`perbarui`: validasi +
+  `sync` pivot izin; tolak `is_terkunci` (`rules.md` 5.0a); audit `Ubah Izin Role`.
+- `hapus`: tolak `is_bawaan` ATAU masih dipakai akun (`rules.md` 5.0c 8-9);
+  alasan ke audit log. **Modul ini beralih baca Eloquent** (pengecualian
+  terarah dari "Tahap 4 yang mengalihkan") -- `pengaturan.role` view baca
+  `Role::with('permissions')` bukan `DummyData::role()`.
+
+### F. Bypass dev/uji
+- `MasukOtomatisLokal`: `$dev->semuaIzin = true`.
+- `tests/Pest.php` `beforeEach`: `$user->semuaIzin = true`.
+
+### G. Uji (`tests/Database/`, MySQL nyata)
+- `RbacSeederTest`: 95 permission, 5 role, pivot Admin=95/Operator SP sesuai
+  `izinRole(4)`, idempoten.
+- `PunyaIzinTest`: role dgn izin -> true; tanpa -> false; `semuaIzin` -> true;
+  tanpa role -> false.
+- `IzinMiddlewareTest` / route: user tanpa `x.hapus` -> DELETE 403; dgn -> lolos;
+  `lihat` prasyarat.
+- `PengaturanRoleTest`: simpan/sync izin; tolak role terkunci; tolak hapus bawaan.
+
+### CAKUPAN PENEGAKAN RUTE -- keputusan pemilik proyek
+- **Opsi A (mekanik dulu):** lampirkan `izin:...` HANYA ke rute `role.*` +
+  `pengguna.*` (Task 3.5 butuh). ~130 rute lain menyusul Task 3.3c.
+- **Opsi B (penuh):** lampirkan `izin:modul,aksi` ke seluruh ~137 rute internal
+  di `routes/internal.php` sekaligus + sesuaikan uji.
+
+### DITUNDA (bukan 3.3)
+- `MenuHelper` filter izin -> Task 3.4b. Cakupan data (global scope) -> Task 3.4.
+- Peralihan view non-role ke Eloquent -> Tahap 4.
+- `migrate:fresh` + `db:seed` ke `sim_transmigrasi` dev -> saat pemilik siap
+  (bypass `semuaIzin` bikin RBAC jalan lokal tanpa itu).
+
+---
+
 # Tahap 3 Â· Task 3.2b - Penegakan `auth` + migrasi uji + bypass lokal SELESAI (2026-09-03)
 
 Rencana ditulis sebelum kode disentuh (`rules.md` 20b poin 12). Rencana lengkap:
