@@ -20,10 +20,10 @@ Pemilik proyek pilih **"Penuh sekarang"** -- penegakan izin pada seluruh rute.
   `transmigran.lihat` MAUPUN `transmigran.ubah` (prasyarat `lihat`,
   data-dictionary 13.3.4). Tolak **403** (kewenangan aksi; cakupan data 404 =
   Task 3.4).
-- **`PetaIzinRute`** (C4): peta terpusat nama-rute -> "modul,aksi" (123 rute) +
-  daftar pengecualian sengaja (profil sendiri, ganti-kata-sandi, tentang/
-  panduan, **cms** [GAP: tak ada di katalog 95 izin], template-impor [stub],
-  dokumen.tampilkan [cek dinamis di controller], dev). `bootstrap/app.php`
+- **`PetaIzinRute`** (C4): peta terpusat nama-rute -> "modul,aksi" (125 rute)
+  + daftar pengecualian sengaja (profil sendiri, ganti-kata-sandi, tentang/
+  panduan, template-impor [stub], dokumen.tampilkan [cek dinamis di
+  controller], dev). `bootstrap/app.php`
   `then:` melampirkan `izin:` dgn iterasi objek Route (bukan `getByName` --
   `->name()` dipanggil setelah rute terdaftar). `DokumenController` cek
   `punyaAksi({modul}, 'lihat')` 403. Setiap rute ber-`auth` kini punya `izin:`
@@ -41,11 +41,15 @@ Pemilik proyek pilih **"Penuh sekarang"** -- penegakan izin pada seluruh rute.
 + AutentikasiTest disesuaikan) · `pint --test` **28** (turun dari 30) ·
 `sim:tautan-statis` 14 · `sim:banding-skema --lengkap` NOL SELISIH.
 
+**C7 (2026-09-03):** CMS dapat kewenangan sendiri (`cms.lihat`/`cms.ubah`),
+dipegang Admin + Dinas Transmigrasi. Katalog izin 95 -> **97** (28 fitur);
+`data-dictionary.md` 13.1/13.2 + `rules.md` 5.1 disesuaikan. Semua rute
+internal kini benar-benar ber-`izin`.
+
 **DITUNDA:** `MenuHelper` filter izin -> Task 3.4b · cakupan data (global
 scope, 404) -> Task 3.4 · peralihan view non-role ke Eloquent -> Tahap 4 ·
-CMS kewenangan sendiri -> keputusan pemilik (MenuHelper rujuk `cms.lihat`
-yang tak ada di katalog) · `migrate:fresh`+`db:seed` ke `sim_transmigrasi`
-dev -> saat pemilik siap (bypass `semuaIzin` bikin RBAC jalan lokal tanpa itu).
+`migrate:fresh`+`db:seed` ke `sim_transmigrasi` dev -> saat pemilik siap
+(bypass `semuaIzin` bikin RBAC jalan lokal tanpa itu).
 
 ---
 
