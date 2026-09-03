@@ -347,7 +347,7 @@ Setelah ketiganya diperbaiki, jumlah halaman terbit naik dari 113 menjadi **122*
 
 Begitu Tahap 3 dan seterusnya berjalan, sistem memerlukan PHP dan basis data yang hidup, sehingga **GitHub Pages tidak lagi memadai**. Yang perlu diputuskan saat itu:
 
-1. **Autentikasi mematikan penggilasan.** Setelah Tahap 3 aktif, halaman yang butuh login akan membalas pengalihan ke `/login`, bukan 200, dan penerbitan gagal. ~~Pilihannya: batasi daftar gilas hanya ke halaman publik, atau hentikan penerbitan statis sama sekali.~~ **DIPUTUSKAN 2026-09-03: batasi ke halaman publik saja** (landing, portal & lacak pengaduan warga, `/login`, `/lupa-kata-sandi`, `/verifikasi-kode`). Kerjakan bersama Task 3.2: saring `app/Console/Commands/DaftarTautanStatis.php` ke allowlist rute tanpa `auth`. Lihat §6 butir "[decided 2026-09-03]".
+1. **Autentikasi mematikan penggilasan.** Setelah Tahap 3 aktif, halaman yang butuh login akan membalas pengalihan ke `/login`, bukan 200, dan penerbitan gagal. ~~Pilihannya: batasi daftar gilas hanya ke halaman publik, atau hentikan penerbitan statis sama sekali.~~ **DIPUTUSKAN 2026-09-03: batasi ke halaman publik saja.** **DIKERJAKAN Task 3.2b (2026-09-03, commit `40e487a`):** `DaftarTautanStatis` menyaring rute ber-`auth` lewat `gatherMiddleware()` dan `rincianDariDataContoh()` dipangkas ke `/lacak-pengaduan/{nomor}`. `sim:tautan-statis` **224 → 14 URL** (`/login`, `/lupa-kata-sandi`, `/verifikasi-kode`, `/pengaduan-warga`, `/lacak-pengaduan` + 9 nomor). CATATAN: tak ada halaman landing publik terpisah -- `/` (`beranda`) kini terkunci `auth`. Bila dinas ingin landing publik, itu rute + view baru (belum dijadwalkan).
 2. **Pindah ke hosting ber-PHP.** `prd.md` A9 sudah menetapkan hosting dengan SSL dan cadangan terjadwal. Alur kerja ini dapat dihapus atau dialihkan menjadi penerbitan pratinjau saja.
 3. **Yang tetap berguna** meski beralih hosting: penyeragaman `asset()`, `url()`, dan `route()` pada 1b.3, serta kepercayaan pada `X-Forwarded-*` di `bootstrap/app.php`. Keduanya justru **syarat** untuk hosting di belakang reverse proxy.
 
@@ -3661,11 +3661,11 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
     `/lupa-kata-sandi`, `/verifikasi-kode`) tetap berguna dipratinjau dinas & warga,
     dan biayanya kecil — cukup menyaring daftar rute di
     `app/Console/Commands/DaftarTautanStatis.php` ke allowlist rute tanpa `auth`.
-    **Pekerjaan konkretnya masuk Task 3.2** (bersama pemasangan middleware auth):
-    saat itu, tandai rute publik, ubah `DaftarTautanStatis` agar hanya memuat yang
-    tak berpelindung, dan `TautanStatisTest` menyesuaikan angka. `deploy.yml` boleh
-    tetap jalan sebagai penerbitan pratinjau halaman publik, atau dimatikan bila
-    dinas sudah punya hosting ber-PHP (lihat A2). Ref `notes.md` 1b.7 poin 1.
+    ~~Pekerjaan konkretnya masuk Task 3.2~~ **DIKERJAKAN Task 3.2b (2026-09-03, commit
+    `40e487a`):** `DaftarTautanStatis` menyaring `gatherMiddleware()`; `sim:tautan-statis`
+    224 → 14 URL publik; `TautanStatisTest` crawl `auth()->logout()` (cermin `deploy.yml`).
+    Tak ada landing publik terpisah — `/` kini `auth`. `deploy.yml` tetap jalan sebagai
+    pratinjau halaman publik (auth + pengaduan). Ref `notes.md` 1b.7 poin 1.
   * **A2 — Spesifikasi hosting belum dikonfirmasi; diblokir menunggu input dinas.**
     Yang WAJIB dipastikan sebelum Tahap 11 (idealnya sebelum Tahap 3 dimulai agar
     asumsi migration/queue/storage tidak salah):

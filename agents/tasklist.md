@@ -1096,12 +1096,12 @@ domain; sisanya mengikuti tanpa mengubah skema maupun komponen.
   * Middleware pemaksa ganti kata sandi bila `password_harus_diganti = TRUE` — kelas + uji ✓; **pelampiran ke rute = Task 3.2b**
   * **Tanpa rute pendaftaran dan tanpa rute pemulihan kata sandi** (`rules.md` §14b) — ✓
   * Throttle masuk 5 kegagalan/menit ✓; matriks rate-limit lain (120/40/10/3) = Task 3.10
-- [ ] Task 3.2b - Penegakan `auth` + migrasi uji HTTP `[Sulit]` (BARU 2026-09-03)
-  * Bungkus rute internal dengan `auth` + `pastikan.ganti.sandi`; `guest` pada rute login/lupa-sandi
-  * Suite Feature beralih `RefreshDatabase` (SQLite) + `beforeEach` global `actingAs(User)` di `tests/Pest.php` → hanya ~30 uji perilaku-tamu yang diedit tangan (bukan ~350)
-  * Kolom username di `ganti-kata-sandi` (`rules.md` 14b poin 5) + cek ketersediaan
-  * Peralihan `DummyData::penggunaSaatIni()` → `Auth::user()` pada view/rute profil
-  * **Koordinasikan dengan agen paralel** — menyentuh `HalamanTest.php` (8300 baris)
+- [✓] Task 3.2b - Penegakan `auth` + migrasi uji HTTP `[Sulit]` — **SELESAI 2026-09-03** (commit `e5c0fc0`, `40e487a`). Rincian: `session-notes.md` blok "HASIL Task 3.2b"
+  * Rute dipisah: `routes/web.php` = publik saja; `routes/internal.php` (baru) = sisanya, dibungkus `['web','auth','pastikan.ganti.sandi']` lewat `then:` di `bootstrap/app.php`. `guest` pada 6 rute masuk/pemulihan. ✓
+  * `tests/Pest.php` `beforeEach` global `actingAs(new User(...))` (tanpa DB / `RefreshDatabase` — user tak dipersist cukup lolos `auth`). 10 edit `HalamanTest` + 1 `TautanStatisTest` + 4 uji integrasi `AutentikasiTest`. ✓
+  * Bypass `MasukOtomatisLokal` + `config/sim.php` (`SIM_MASUK_OTOMATIS`, default nyala di `local`). ✓
+  * `sim:tautan-statis` disaring ke rute publik (224 → 14 URL). ✓
+  * **DITUNDA:** kolom username di `ganti-kata-sandi` (`rules.md` 14b.5) → Task 3.5; `DummyData::penggunaSaatIni()` → `Auth::user()` → Tahap 4; halaman landing publik → keputusan pemilik
 - [ ] Task 3.3 - Implementasi RBAC dinamis `[Sulit]`
   * Model `Role`, `Permission`, relasi many-to-many, seeder ±120 izin dan 4 role bawaan
   * Middleware pemeriksa izin, helper `can()` untuk Blade

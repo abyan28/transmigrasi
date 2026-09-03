@@ -1,7 +1,51 @@
-# Tahap 3 Â· Task 3.2b - Penegakan `auth` + migrasi uji + bypass lokal BERJALAN (2026-09-03)
+# Tahap 3 Â· Task 3.2b - Penegakan `auth` + migrasi uji + bypass lokal SELESAI (2026-09-03)
 
 Rencana ditulis sebelum kode disentuh (`rules.md` 20b poin 12). Rencana lengkap:
 `.claude/plans/logical-whistling-salamander.md`.
+
+## HASIL Task 3.2b (2026-09-03)
+
+Commit `e5c0fc0` (C1), `40e487a` (C2-C4). **Rute internal kini WAJIB login.**
+Pemilik proyek tetap bisa menelusuri lokal lewat bypass auto-login.
+
+- **`routes/web.php`** menyusut ke rute publik saja (152 baris): `guest` group
+  (login, login.kirim, lupa-kata-sandi x2, verifikasi-kode, atur-ulang-sandi),
+  `logout` bare, `auth` group (ganti-kata-sandi x2), lalu kanal pengaduan warga.
+- **`routes/internal.php`** (BARU) = sisa rute, dibungkus
+  `['web','auth','pastikan.ganti.sandi']` lewat closure `then:` di
+  `bootstrap/app.php`. `route:list` tetap **151 rute**, set identik -- hanya
+  middleware berubah (137 internal, 6 guest, 2 auth, 5 web-only, 1 health).
+- **`MasukOtomatisLokal`** (C1): auto-login pengguna semu (tak dipersist) bila
+  `APP_ENV=local` DAN `config('sim.masuk_otomatis')`. Prepend ke grup `web`.
+  `config/sim.php` default nyala di `local`. `redirectUsersTo('/')` sebab
+  bawaan `/dashboard` tak ada.
+- **`tests/Pest.php`**: `beforeEach` global `actingAs(new User(['nama'=>'DEV',
+  'password_harus_diganti'=>false]))` untuk grup Feature -- tak dipersist, tanpa
+  DB, tak mengubah HTML.
+- **`HalamanTest`**: 10 titik disesuaikan (`auth()->logout()` untuk halaman
+  guest; `withoutMiddleware(RedirectIfAuthenticated::class)` untuk uji campuran;
+  `$lewati` + `login`/`lupa-kata-sandi`/`verifikasi-kode` pada smoke rute; uji
+  "komoditas utama" kini baca `routes/internal.php` juga).
+- **`TautanStatisTest`**: `auth()->logout()` -- cerminkan crawl `deploy.yml`
+  tanpa login.
+- **`AutentikasiTest`**: +4 uji integrasi penegakan rute.
+- **`DaftarTautanStatis`**: saring rute ber-`auth` lewat `gatherMiddleware()`;
+  `rincianDariDataContoh()` dipangkas ke `/lacak-pengaduan/{nomor}` saja.
+  `sim:tautan-statis` **224 -> 14** URL publik. (Keputusan `notes.md` §1b.7 / A1.)
+
+**Verifikasi:** `pest` Feature **732 PASS** (7202 asersi -- turun sebab
+`TautanStatisTest` crawl 14 bukan 224) · `pest tests/Database` **102 PASS**
+(98 + 4) · `pint --test` **29** (turun dari 30) · `sim:banding-skema --lengkap`
+NOL SELISIH · kernel manual: bypass ON -> `/` = 200; `SIM_MASUK_OTOMATIS=false`
+-> `/` = 302 `/login`, `/login` = 200.
+
+**DITUNDA:** username saat ganti-sandi pertama (`rules.md` 14b.5) -> Task 3.5;
+`penggunaSaatIni()` -> `Auth::user()` -> Tahap 4 (dev lihat "NARA WIJAYA" di
+header walau login sebagai "PENGEMBANG LOKAL" -- kosmetik); halaman landing
+publik (`/` kini terkunci, situs statis hanya 14 URL auth/pengaduan) ->
+keputusan pemilik; CI job pest+MySQL -> nanti.
+
+---
 
 ## Konteks
 
