@@ -16,7 +16,6 @@ use App\Models\Berkas;
 use App\Models\Desa;
 use App\Models\Kabupaten;
 use App\Models\KawasanTransmigrasi;
-use App\Models\Kecamatan;
 use App\Models\Provinsi;
 use App\Models\Referensi;
 use App\Models\Role;
@@ -28,32 +27,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
-/**
- * Membuat satu SP lengkap dengan rantai wilayah + kawasannya.
- *
- * Dipakai bersama oleh uji grup Database batch berikutnya (Domain 3+ menaut SP).
- */
-if (! function_exists('buatSp')) {
-    function buatSp(array $atribut = []): SatuanPermukiman
-    {
-        $prov = Provinsi::create(['nama' => 'Nusa Tenggara Timur '.Str::random(4)]);
-        $kab = Kabupaten::create(['provinsi_id' => $prov->id_provinsi, 'nama' => 'Malaka '.Str::random(4)]);
-        $kec = Kecamatan::create(['kabupaten_id' => $kab->id_kabupaten, 'nama' => 'Kobalima Timur '.Str::random(4)]);
-        $desa = Desa::create(['kecamatan_id' => $kec->id_kecamatan, 'nama' => 'Kapitan Meo '.Str::random(4)]);
-        $kawasan = KawasanTransmigrasi::create([
-            'kabupaten_id' => $kab->id_kabupaten,
-            'nama' => 'Kobalima Timur '.Str::random(4),
-            'slug' => 'kobalima-timur-'.Str::lower(Str::random(6)),
-        ]);
-
-        return SatuanPermukiman::create(array_merge([
-            'kawasan_id' => $kawasan->id_kawasan_transmigrasi,
-            'desa_id' => $desa->id_desa,
-            'nama' => 'SP Kapitan Meo '.Str::random(4),
-            'slug' => 'sp-kapitan-meo-'.Str::lower(Str::random(6)),
-        ], $atribut));
-    }
-}
+require_once __DIR__.'/DatabaseHelpers.php';
 
 it('membuat kesepuluh tabel batch ini', function () {
     foreach ([

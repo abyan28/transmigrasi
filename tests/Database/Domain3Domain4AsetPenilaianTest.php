@@ -28,10 +28,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
-function buatSatuanTon(): Satuan
-{
-    return Satuan::create(['nama' => 'Ton '.Str::random(4), 'simbol' => 't', 'faktor_ke_ton' => '1.000000']);
-}
+require_once __DIR__.'/DatabaseHelpers.php';
 
 it('membuat kedelapan tabel batch ini', function () {
     foreach ([

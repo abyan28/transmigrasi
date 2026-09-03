@@ -46,7 +46,8 @@ Rencana lengkap: `.claude/plans/logical-whistling-salamander.md`.
 | B3 Domain 3+4 | **SELESAI** | satuan, komoditas, status_kondisi_sp, parameter_penilaian_sp, penilaian_sp, inventaris_sp, fasilitas_sp, fasilitas_sp_cakupan (pivot) + 7 model + `tests/Database/Domain3Domain4AsetPenilaianTest` (14 uji) |
 | B4 Domain 4b | **SELESAI** | user_berkas, kawasan_transmigrasi_berkas, inventaris_sp_berkas, fasilitas_sp_berkas (4 dari 12 pivot `*_berkas` -- yang induknya sudah ada) + relasi `belongsToMany` pada 4 model induk + `tests/Database/Domain4bBerkasPivotTest` (5 uji). 8 pivot sisa menyusul di B5-B9 |
 | B5 Domain 5 | **SELESAI** | transmigran, anggota_keluarga, rumah, riwayat_penghunian, riwayat_kepala_keluarga + pivot transmigran_berkas, rumah_berkas + 5 model + `tests/Database/Domain5KependudukanTest` (11 uji) |
-| B6-B9 | belum | lihat plan file / tabel batch |
+| B6 Domain 6 | **SELESAI** | poktan, anggota_poktan, alsintan, alsintan_distribusi, saprotan, saprotan_distribusi + pivot alsintan_berkas + 6 model + `tests/Database/Domain6KelembagaanTest` (8 uji). Helper uji dipusatkan ke `tests/Database/DatabaseHelpers.php` (`require_once`) |
+| B7-B9 | belum | lihat plan file / tabel batch |
 
 **Verifikasi B0+B1:** `sim:banding-skema --hanya=<Domain 1>` NOL SELISIH ·
 `pest` **742 PASS** (732 lama + 10 Database) · `pint --test` 31 (turun dari 33) ·
@@ -86,6 +87,17 @@ UNIQUE nullable (1:1 dua arah) -> `Transmigran::rumah()` hasOne + FK SET NULL.
 (riwayat_penghunian, riwayat_kepala_keluarga) tanpa soft delete, FK transmigran
 RESTRICT. Model belum auto-generate `uuid` (sama seperti `Berkas`) -- observer/
 trait ditunda ke Tahap 4.
+
+**Verifikasi B6:** `sim:banding-skema --hanya=<7 tabel B6>` NOL SELISIH ·
+`pest tests/Database` **58 PASS** · `pest` (SQLite) tetap **732 PASS** ·
+`pint --test` tetap 31. `poktan.asal_ketua` & `anggota_poktan.asal_wakil` pakai
+`AsalWakilPoktan` (satu tipe, tapi 'Bukan Transmigran' tak berlaku di anggota --
+ditegakkan aplikasi). `anggota_poktan.status` -> `StatusKeaktifanAnggota` (BUKAN
+`StatusAnggotaPoktan` yg 'Ya'/'Tidak'). `alsintan`/`saprotan` = induk pengadaan
+(pola 1 pengadaan -> N distribusi); tabel `*_distribusi` tanpa soft delete.
+`jabatan`/`jenis_alsintan`/`kondisi` = teks REF. Helper uji Database dipindah
+dari tiap berkas ke `DatabaseHelpers.php` bersama (buatSp/buatBerkas/
+buatSatuanTon/buatTransmigran/buatPoktan) supaya `pest <satu-berkas>` jalan sendiri.
 
 **Urutan migration = topological sort dependensi FK, BUKAN urutan file
 `schema.sql`.** Batch berikutnya: `referensi`+`satuan`+`komoditas`+`berkas`

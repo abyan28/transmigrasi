@@ -20,29 +20,13 @@ use App\Models\AnggotaKeluarga;
 use App\Models\RiwayatKepalaKeluarga;
 use App\Models\RiwayatPenghunian;
 use App\Models\Rumah;
-use App\Models\SatuanPermukiman;
 use App\Models\Transmigran;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
-function buatTransmigran(?SatuanPermukiman $sp = null, array $atribut = []): Transmigran
-{
-    $sp ??= buatSp();
-
-    return Transmigran::create(array_merge([
-        'uuid' => (string) Str::uuid(),
-        'satuan_permukiman_id' => $sp->id_satuan_permukiman,
-        'nik' => (string) random_int(1000000000000000, 9999999999999999),
-        'no_kk' => (string) random_int(1000000000000000, 9999999999999999),
-        'nama_kepala_keluarga' => 'Mateus Bere '.Str::random(4),
-        'pekerjaan_kepala_keluarga' => 'Petani',
-        'tahun_kedatangan' => 2015,
-        'status_tinggal' => StatusTinggal::Aktif->value,
-        'status_anggota_poktan' => 'Ya',
-    ], $atribut));
-}
+require_once __DIR__.'/DatabaseHelpers.php';
 
 it('membuat kelima tabel + dua pivot batch ini', function () {
     foreach ([

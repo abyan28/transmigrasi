@@ -20,20 +20,8 @@ use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Str;
 
-function buatBerkas(?int $userId = null): Berkas
-{
-    return Berkas::create([
-        'uuid' => (string) Str::uuid(),
-        'nama_file' => 'x-'.Str::random(6).'.pdf',
-        'path' => 'uji/'.Str::random(8).'.pdf',
-        'mime' => 'application/pdf',
-        'ekstensi' => 'pdf',
-        'ukuran' => 2048,
-        'user_id' => $userId,
-    ]);
-}
+require_once __DIR__.'/DatabaseHelpers.php';
 
 it('membuat keempat pivot berkas batch ini', function () {
     foreach ([
