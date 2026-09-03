@@ -10,10 +10,12 @@
 
 use App\Enums\AksiAuditLog;
 use App\Enums\CakupanData;
+use App\Mail\KredensialAkunMail;
 use App\Models\AuditLog;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 require_once __DIR__.'/DatabaseHelpers.php';
@@ -191,6 +193,30 @@ it('mengizinkan menonaktifkan Admin bila masih ada Admin aktif lain', function (
     $this->post(route('pengguna.nonaktifkan', $adminLain->id_user))->assertRedirect();
 
     expect($adminLain->refresh()->is_aktif)->toBeFalse();
+});
+
+it('mengirim kata sandi sementara ke surel petugas saat akun dibuat', function () {
+    Mail::fake();
+    aktingAdmin();
+    $role = roleSemua();
+
+    $this->post(route('pengguna.simpan'), [
+        'nama' => 'Nara Wijaya',
+        'email' => 'nara@malakakab.go.id',
+        'role_id' => $role->id_role,
+    ]);
+
+    Mail::assertSent(KredensialAkunMail::class, fn ($m) => $m->hasTo('nara@malakakab.go.id') && $m->akunBaru === true);
+});
+
+it('mengirim kata sandi sementara ke surel saat disetel ulang', function () {
+    Mail::fake();
+    aktingAdmin();
+    $target = User::factory()->create(['email' => 'target@malakakab.go.id']);
+
+    $this->post(route('pengguna.setel-sandi', $target->id_user));
+
+    Mail::assertSent(KredensialAkunMail::class, fn ($m) => $m->hasTo('target@malakakab.go.id') && $m->akunBaru === false);
 });
 
 it('mencatat audit Tambah saat akun dibuat', function () {

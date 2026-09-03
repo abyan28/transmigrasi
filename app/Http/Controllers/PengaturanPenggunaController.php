@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\AksiAuditLog;
 use App\Enums\CakupanData;
+use App\Mail\KredensialAkunMail;
 use App\Models\AuditLog;
 use App\Models\Role;
 use App\Models\User;
@@ -12,6 +13,8 @@ use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 /**
@@ -19,8 +22,9 @@ use Illuminate\Support\Str;
  *
  * - Tidak ada pendaftaran mandiri; seluruh akun dibuat di sini (poin 1).
  * - Kata sandi awal DIBANGKITKAN sistem, ditandai `password_harus_diganti`,
- *   ditampilkan SATU KALI (poin 3). Admin tak pernah dapat membacanya ulang;
- *   hanya hash yang tersimpan (poin 14).
+ *   ditampilkan SATU KALI (poin 3) DAN dikirim ke surel petugas sebagai
+ *   salinan (poin 3a). Admin tak pernah dapat membacanya ulang; hanya hash
+ *   yang tersimpan (poin 14).
  * - Username TIDAK diisi Admin (poin 5). Skema `user.username` NOT NULL,
  *   sehingga akun baru diberi username SEMENTARA (`petugas.xxxxxxxx`, format
  *   sah). Penggantiannya oleh petugas sendiri saat masuk pertama menyusul
@@ -33,9 +37,6 @@ use Illuminate\Support\Str;
  * Seperti `PengaturanRoleController`, `index()` MASIH membaca `DummyData`
  * (peralihan tampilan ke Eloquent = Tahap 4). Tulisan menyentuh tabel `user`
  * nyata; uji memeriksa basis data langsung, bukan lewat halaman.
- *
- * DITUNDA: pengiriman kredensial ke surel petugas (`rules.md` 14b poin 3a) --
- * butuh Mailable + templat, dikerjakan sebagai task tersendiri.
  */
 class PengaturanPenggunaController extends Controller
 {
@@ -114,6 +115,8 @@ class PengaturanPenggunaController extends Controller
             'role' => $role->nama,
         ]);
 
+        $this->kirimKredensial($pengguna, $sandiSementara, akunBaru: true);
+
         return redirect()->route('pengguna.index')
             ->with('sukses', 'Akun petugas tersimpan. Serahkan kata sandi sementara secara langsung.')
             ->with('kredensial_baru', [
@@ -166,6 +169,8 @@ class PengaturanPenggunaController extends Controller
 
         // `rules.md` 14b poin 15: catat pelaku, sasaran, waktu, dan JALUR.
         $this->catat($request, $pengguna, AksiAuditLog::ResetKataSandi, ['jalur' => 'Admin']);
+
+        $this->kirimKredensial($pengguna, $sandiSementara, akunBaru: false);
 
         return redirect()->route('pengguna.index')
             ->with('sukses', 'Kata sandi sementara dibuat. Serahkan langsung kepada petugas yang bersangkutan.')
@@ -282,6 +287,22 @@ class PengaturanPenggunaController extends Controller
         } while (User::withTrashed()->where('username', $kandidat)->exists());
 
         return $kandidat;
+    }
+
+    /**
+     * Kirim kata sandi sementara ke surel petugas sebagai SALINAN penyerahan
+     * langsung (`rules.md` 14b poin 3a). Gangguan SMTP tidak boleh menggagalkan
+     * pembuatan akun -- Admin masih memegang nilai yang tampil di layar.
+     */
+    private function kirimKredensial(User $pengguna, string $sandiSementara, bool $akunBaru): void
+    {
+        try {
+            Mail::to($pengguna->email)->send(
+                new KredensialAkunMail($pengguna->nama, $pengguna->email, $sandiSementara, $akunBaru)
+            );
+        } catch (\Throwable $e) {
+            Log::error('Gagal mengirim kredensial akun ke surel: '.$e->getMessage());
+        }
     }
 
     /**

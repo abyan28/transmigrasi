@@ -36,10 +36,15 @@ tests/Database 177 PASS (+12 `PemulihanSandiTest`), pint bersih,
   `password_harus_diganti`, jalur kode verifikasi tidak.
 
 ### DITUNDA
-- Mailable kredensial akun baru + reset sandi Admin ke surel (Task 3.5 tunda) --
-  infra mail sudah tegak, tinggal Mailable kedua + wiring di
-  `PengaturanPenggunaController` + `AdminAwalSeeder`.
 - Ratakan waktu balas lebih ketat (sleep konstan) -- bcrypt cukup untuk kini.
+
+### SUSULAN (2026-09-03, commit terpisah)
+- **Kredensial akun ke surel (Task 3.5 poin 3a) SELESAI.** `KredensialAkunMail`
+  (+ templat `emails/kredensial-akun`) dikirim `PengaturanPenggunaController::
+  simpan` (`akunBaru=true`) dan `setelSandi` (`akunBaru=false`), dibungkus
+  try/catch + `Log::error`. 2 uji `Mail::fake` di `PengaturanPenggunaTest`.
+  `AdminAwalSeeder` tetap cetak-terminal saja (bootstrap, mail belum tentu
+  siap saat deploy perdana).
 
 ---
 
