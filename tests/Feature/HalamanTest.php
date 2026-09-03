@@ -2655,13 +2655,14 @@ it('menyajikan role terkunci sebagai hanya baca', function () {
     expect(substr_count($potongan, '&#10003;'))->toBe($adminRole['jumlah_izin']);
 });
 
-it('membuat rute tulis pengguna dan role mengembalikan redirect', function () {
+it('membuat rute tulis pengguna mengembalikan redirect', function () {
+    // `role.simpan`/`role.perbarui` kini controller nyata yang menyentuh DB
+    // (Task 3.3 C5) -- diuji di tests/Database/PengaturanRoleTest, bukan di
+    // suite Feature yang tanpa basis data.
     $this->post(route('pengguna.simpan'))->assertRedirect();
     $this->put(route('pengguna.perbarui', 1))->assertRedirect();
     $this->post(route('pengguna.setel-sandi', 1))->assertRedirect();
     $this->post(route('pengguna.nonaktifkan', 1))->assertRedirect();
-    $this->post(route('role.simpan'))->assertRedirect();
-    $this->put(route('role.perbarui', 2))->assertRedirect();
 });
 
 /*

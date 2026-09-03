@@ -44,6 +44,12 @@ class UppercaseInput
         'url',
         'tautan',
 
+        // Nilai enum/sistem yang peka huruf besar-kecil: cakupan data role
+        // ('Per SP') dan matriks kewenangan ('lihat', 'ubah'). `izin`
+        // dikecualikan sebagai SUBPOHON -- seluruh nilai di bawahnya ikut aman.
+        'cakupan_data',
+        'izin',
+
         // Teks naratif, huruf kapital seluruhnya menyulitkan pembacaan
         'deskripsi',
         'deskripsi_pengaduan',
@@ -106,7 +112,11 @@ class UppercaseInput
     {
         foreach ($data as $kunci => $nilai) {
             if (is_array($nilai)) {
-                $data[$kunci] = $this->ubahRekursif($nilai);
+                // Kunci array yang dikecualikan menutup seluruh subpohonnya,
+                // mis. `izin[transmigran][0] = 'lihat'` tidak boleh jadi 'LIHAT'.
+                if ($this->bolehDiubah((string) $kunci)) {
+                    $data[$kunci] = $this->ubahRekursif($nilai);
+                }
 
                 continue;
             }

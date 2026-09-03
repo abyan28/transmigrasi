@@ -21,6 +21,7 @@ use App\Enums\StatusKondisiSp;
 use App\Enums\StatusPanen;
 use App\Enums\StatusPengaduan;
 use App\Http\Controllers\DokumenController;
+use App\Http\Controllers\PengaturanRoleController;
 use App\Support\DummyData;
 use App\Support\LaporanData;
 use App\Support\PenilaianKondisiSp;
@@ -2514,35 +2515,14 @@ Route::post('/pengguna/{id}/aktifkan', function (int $id) {
         ->with('sukses', 'Akun diaktifkan kembali. Petugas dapat masuk memakai kredensial yang sama.');
 })->where('id', '[0-9]+')->name('pengguna.aktifkan');
 
-Route::get('/pengaturan/role', function () {
-    return view('pages.pengguna.role', [
-        'title' => 'Role dan Hak Akses',
-        'role' => DummyData::role(),
-        'pengguna' => DummyData::pengguna(),
-    ]);
-})->name('pengaturan.role');
-
-Route::post('/pengaturan/role', function () {
-    // Tahap 3: simpan role beserta pasangan izinnya pada tabel pivot.
-    return redirect()->route('pengaturan.role')
-        ->with('sukses', 'Role baru tersimpan.');
-})->name('role.simpan');
-
-Route::put('/pengaturan/role/{id}', function (int $id) {
-    // Tahap 3: tolak perubahan pada role terkunci (rules.md 5.0a), lalu
-    // segarkan izin seluruh akun yang memakai role ini.
-    return redirect()->route('pengaturan.role')
-        ->with('sukses', 'Susunan izin role tersimpan.');
-})->where('id', '[0-9]+')->name('role.perbarui');
-
-Route::delete('/pengaturan/role/{id}', function (int $id) {
-    // Tahap 3: tolak bila role bawaan atau masih dipakai minimal satu akun
-    // (rules.md 5.0c poin 8 dan 9). Kedua pemeriksaan wajib diulang di sisi
-    // server, sebab penyembunyian tombol saja tidak menghalangi permintaan
-    // langsung. Alasan penghapusan ikut dicatat pada audit log.
-    return redirect()->route('pengaturan.role')
-        ->with('sukses', 'Role dihapus. Susunan kewenangan akun lain tidak terpengaruh.');
-})->where('id', '[0-9]+')->name('role.hapus');
+// Pengelolaan role & kewenangan (Task 3.3). `index` masih baca DummyData
+// (tampilan -> Eloquent = Tahap 4); tulis ke tabel `role`/`role_permission`.
+Route::get('/pengaturan/role', [PengaturanRoleController::class, 'index'])->name('pengaturan.role');
+Route::post('/pengaturan/role', [PengaturanRoleController::class, 'simpan'])->name('role.simpan');
+Route::put('/pengaturan/role/{id}', [PengaturanRoleController::class, 'perbarui'])
+    ->where('id', '[0-9]+')->name('role.perbarui');
+Route::delete('/pengaturan/role/{id}', [PengaturanRoleController::class, 'hapus'])
+    ->where('id', '[0-9]+')->name('role.hapus');
 
 Route::get('/audit-log', function () {
     $semua = DummyData::auditLog();
