@@ -103,7 +103,7 @@ class ValidationRules
         return [
             $wajib ? 'required' : 'nullable',
             'string',
-            'max:' . $maks,
+            'max:'.$maks,
         ];
     }
 
@@ -174,19 +174,20 @@ class ValidationRules
      * Aturan kata sandi: minimal 8 karakter serta memuat huruf dan angka.
      *
      * @param  bool  $wajib  Diisi false pada form ubah data, agar kata sandi lama dipertahankan bila dikosongkan
+     * @param  bool  $konfirmasi  Sertakan aturan `confirmed` (mensyaratkan kolom `<nama>_confirmation`). Dimatikan bila kolom ulangannya bernama lain dan diperiksa lewat `same:`.
      * @return array<int, string> Daftar aturan siap pakai
      */
-    public static function password(bool $wajib = true): array
+    public static function password(bool $wajib = true, bool $konfirmasi = true): array
     {
-        return [
+        return array_values(array_filter([
             $wajib ? 'required' : 'nullable',
             'string',
             'min:8',
             'max:255',
             'regex:/[A-Za-z]/',
             'regex:/[0-9]/',
-            'confirmed',
-        ];
+            $konfirmasi ? 'confirmed' : null,
+        ]));
     }
 
     /**
@@ -201,7 +202,7 @@ class ValidationRules
             $wajib ? 'required' : 'nullable',
             'integer',
             'min:1900',
-            'max:' . date('Y'),
+            'max:'.date('Y'),
         ];
     }
 
@@ -289,8 +290,8 @@ class ValidationRules
         return [
             $wajib ? 'required' : 'nullable',
             'file',
-            'mimes:' . self::JENIS_BERKAS,
-            'max:' . self::MAKS_UKURAN_BERKAS_KB,
+            'mimes:'.self::JENIS_BERKAS,
+            'max:'.self::MAKS_UKURAN_BERKAS_KB,
         ];
     }
 
@@ -306,7 +307,7 @@ class ValidationRules
             $wajib ? 'required' : 'nullable',
             'image',
             'mimes:jpg,jpeg,png,webp',
-            'max:' . self::MAKS_UKURAN_BERKAS_KB,
+            'max:'.self::MAKS_UKURAN_BERKAS_KB,
         ];
     }
 

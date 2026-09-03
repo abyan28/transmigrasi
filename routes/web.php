@@ -3,6 +3,7 @@
 use App\Enums\JenisReferensi;
 use App\Http\Controllers\Auth\GantiKataSandiController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\PemulihanSandiController;
 use App\Support\DummyData;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -36,32 +37,13 @@ Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'tampil'])->name('login');
     Route::post('/login', [LoginController::class, 'masuk'])->name('login.kirim');
 
-    Route::get('/lupa-kata-sandi', function () {
-        return view('pages.auth.lupa-kata-sandi', ['title' => 'Lupa Kata Sandi']);
-    })->name('lupa-kata-sandi');
-
-    Route::post('/lupa-kata-sandi', function () {
-        // Tahap 3: batalkan kode lama milik akun ini, buat kode enam digit baru,
-        // simpan sidiknya beserta kedaluwarsa 15 menit, lalu kirim lewat surel.
-        //
-        // Redirect ini berlaku SAMA baik akun ditemukan maupun tidak
-        // (rules.md 14b poin 9). Membedakan keduanya menjadikan halaman ini
-        // alat memeriksa siapa saja yang memiliki akun.
-        return redirect()->route('verifikasi-kode');
-    })->name('lupa-kata-sandi.kirim');
-
-    Route::get('/verifikasi-kode', function () {
-        return view('pages.auth.verifikasi-kode', ['title' => 'Masukkan Kode Verifikasi']);
-    })->name('verifikasi-kode');
-
-    Route::post('/atur-ulang-sandi', function () {
-        // Tahap 3: cocokkan sidik kode, periksa kedaluwarsa dan hitungan
-        // percobaan, tandai kode terpakai, simpan hash kata sandi baru, lalu
-        // catat audit log beraksi Reset Kata Sandi atas nama pemilik akun
-        // (rules.md 14b poin 15).
-        return redirect()->route('login')
-            ->with('sukses', 'Kata sandi berhasil diganti. Silakan masuk memakai kata sandi baru Anda.');
-    })->name('atur-ulang-sandi');
+    // Pemulihan kata sandi mandiri lewat kode verifikasi 6 digit (Task 3.11).
+    // Balasan POST /lupa-kata-sandi SAMA baik akun ada maupun tidak
+    // (rules.md 14b poin 9). Perilaku nyata diuji di tests/Database.
+    Route::get('/lupa-kata-sandi', [PemulihanSandiController::class, 'tampilPermintaan'])->name('lupa-kata-sandi');
+    Route::post('/lupa-kata-sandi', [PemulihanSandiController::class, 'kirimKode'])->name('lupa-kata-sandi.kirim');
+    Route::get('/verifikasi-kode', [PemulihanSandiController::class, 'tampilVerifikasi'])->name('verifikasi-kode');
+    Route::post('/atur-ulang-sandi', [PemulihanSandiController::class, 'aturUlang'])->name('atur-ulang-sandi');
 });
 
 // Keluar boleh dari keadaan apa pun (termasuk saat wajib ganti kata sandi).

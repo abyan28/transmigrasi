@@ -1,4 +1,49 @@
-# Tahap 3 Â· Task 3.11 - Pemulihan kata sandi lewat kode verifikasi BERJALAN (2026-09-03)
+# Tahap 3 Â· Task 3.11 - Pemulihan kata sandi lewat kode verifikasi SELESAI (2026-09-03)
+
+## HASIL (2026-09-03)
+
+Commit tunggal. Belum di-push. Verifikasi: pest Feature 733 PASS, pest
+tests/Database 177 PASS (+12 `PemulihanSandiTest`), pint bersih,
+`sim:banding-skema` NOL SELISIH, `sim:tautan-statis` 14.
+
+- **`app/Models/KodePemulihanSandi.php`** -- `const UPDATED_AT = null` (tabel
+  tanpa `updated_at`), scope `masihBerlaku()` (belum dipakai, belum
+  kedaluwarsa, `percobaan < 5`), relasi `pengguna()`.
+- **`app/Mail/KodePemulihanSandiMail.php`** + `resources/views/emails/
+  kode-pemulihan-sandi.blade.php` -- Mailable PERTAMA di proyek. Teks polos,
+  tanpa gambar/tautan lacak. `$kode` + `$menitBerlaku` publik.
+- **`app/Http/Controllers/Auth/PemulihanSandiController.php`**:
+  `tampilPermintaan`/`kirimKode`/`tampilVerifikasi`/`aturUlang`. `kirimKode`:
+  cari User AKTIF by email/username; user null -> tetap `Hash::make` (ratakan
+  waktu) + redirect generik; batas 3/jam via hitung `created_at`; batalkan
+  kode lama (`kedaluwarsa_pada = now()`); buat kode `random_int(0,999999)`
+  6 digit, simpan `Hash::make`, kedaluwarsa +15 mnt; kirim mail (try/catch +
+  `Log::error`); `session('pemulihan_user_id')`. `aturUlang`: validasi kode
+  (`digits:6`) + `password_baru` (`ValidationRules::password(konfirmasi:false)`)
+  + `password_baru_konfirmasi` (`same:`); ambil user dari sesi; kode
+  `masihBerlaku()` terbaru; `Hash::check` gagal -> `increment('percobaan')` +
+  galat generik; sukses -> `dipakai_pada=now()`, set password (TANPA
+  `password_harus_diganti`), audit `ResetKataSandi` jalur `Kode verifikasi`,
+  `session forget`, `Auth::logout`, redirect `login`.
+- **`routes/web.php`** -- 4 closure dummy -> controller.
+- **`app/Support/ValidationRules.php`** -- `password(bool $wajib = true,
+  bool $konfirmasi = true)`; `confirmed` hanya bila `$konfirmasi`. (Pint ikut
+  merapikan 5 spasi concat lama di berkas yang sama.)
+- **`app/Http/Middleware/UppercaseInput.php`** -- `password_baru_konfirmasi`
+  masuk `$kecualikan` (kalau tidak, term konfirmasi jadi HURUF BESAR sedang
+  `password_baru` tidak -> `same:` selalu gagal).
+- **`agents/rules.md` 14b poin 13** -- dipecah: jalur Admin/artisan menyetel
+  `password_harus_diganti`, jalur kode verifikasi tidak.
+
+### DITUNDA
+- Mailable kredensial akun baru + reset sandi Admin ke surel (Task 3.5 tunda) --
+  infra mail sudah tegak, tinggal Mailable kedua + wiring di
+  `PengaturanPenggunaController` + `AdminAwalSeeder`.
+- Ratakan waktu balas lebih ketat (sleep konstan) -- bcrypt cukup untuk kini.
+
+---
+
+# Tahap 3 Â· Task 3.11 (RENCANA LAMA) - lihat HASIL di atas
 
 Rencana ditulis sebelum kode disentuh (`rules.md` 20b poin 12). Pemilik proyek
 menyetel mail server Mailjet di `.env` (`MAIL_MAILER=smtp`, host

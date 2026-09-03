@@ -1150,8 +1150,9 @@ domain; sisanya mengikuti tanpa mengubah skema maupun komponen.
   * **Dihitung per akun untuk halaman internal**, bukan per IP: satu kantor dinas kerap memakai satu sambungan bersama, sehingga hitungan per IP membuat operator saling menghabiskan jatah
   * Rute export massal dan unggah template **wajib dikecualikan** dan diberi batas tersendiri (`rules.md` 14c)
 
-- [ ] Task 3.11 - Pemulihan kata sandi lewat kode verifikasi `[Sedang]`
+- [✓] Task 3.11 - Pemulihan kata sandi lewat kode verifikasi `[Sedang]`
   * Tampilan sudah selesai pada Tahap 2: `/lupa-kata-sandi` dan `/verifikasi-kode`
+  * **SELESAI 2026-09-03:** `PemulihanSandiController` (4 aksi) + model `KodePemulihanSandi` + `KodePemulihanSandiMail` (+ templat `emails/kode-pemulihan-sandi`). Kode 6 digit disimpan sbg `Hash::make` (sidik), berlaku 15 mnt, sekali pakai (`dipakai_pada`), maks 5 percobaan (`percobaan++`), maks 3 permintaan/jam (hitung `created_at`), kode lama dibatalkan saat minta baru. `POST /lupa-kata-sandi` balas identik akun ada/tidak (bcrypt tetap jalan). Reset lewat kode **TIDAK** menyetel `password_harus_diganti` (keputusan pemilik 2026-09-03; `rules.md` 14b poin 13 diperbarui). Audit `Reset Kata Sandi` jalur `Kode verifikasi`. Mailjet SMTP di `.env`; kirim dibungkus try/catch + `Log::error`. `UppercaseInput` kecualikan `password_baru_konfirmasi`. `ValidationRules::password(konfirmasi:)`. 12 uji Database (`PemulihanSandiTest`). **DITUNDA:** Mailable kredensial akun baru / reset Admin ke surel (Task 3.5 tunda) — infra mail sudah tegak.
   * Membuat tabel `kode_pemulihan_sandi` (`erd.md` bagian 9): sidik kode, kedaluwarsa, percobaan, dipakai_pada
   * **Yang disimpan adalah sidik kode, bukan angkanya.** Basis data yang bocor tidak boleh langsung memberi jalan masuk
   * Kode enam digit, berlaku 15 menit, sekali pakai, maksimal 5 percobaan, 3 permintaan per jam per akun
