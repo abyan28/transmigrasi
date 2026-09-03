@@ -17,14 +17,16 @@ use Tests\TestCase;
 
 pest()->extend(TestCase::class)
     ->beforeEach(function () {
-        // Task 3.2b: seluruh rute internal kini ber-`auth`. Autentikasi
-        // pengguna semu -- TIDAK dipersist, tanpa DB -- supaya ~340 panggilan
-        // HTTP di suite Feature tetap membalas 200. Ini tak mengubah satu byte
-        // pun HTML yang dirender: tak ada `@auth`/`Auth::` di resources/views/,
-        // dan header/profil dibaca dari `DummyData::penggunaSaatIni()`.
-        // Uji perilaku-tamu (halaman /login dsb.) memakai `auth()->logout()`
-        // atau `withoutMiddleware(RedirectIfAuthenticated::class)` di dalamnya.
-        $this->actingAs(new User(['nama' => 'DEV', 'password_harus_diganti' => false]));
+        // Task 3.2b/3.3: seluruh rute internal ber-`auth` + `izin`. Autentikasi
+        // pengguna semu -- TIDAK dipersist, tanpa DB -- bertanda `semuaIzin`
+        // supaya ~340 panggilan HTTP suite Feature tetap 200. Tak mengubah satu
+        // byte pun HTML: tak ada `@auth`/`Auth::` di resources/views/, header/
+        // profil dari `DummyData::penggunaSaatIni()`. Uji perilaku-tamu memakai
+        // `auth()->logout()` / `withoutMiddleware(RedirectIfAuthenticated::class)`.
+        $semu = new User(['nama' => 'DEV', 'password_harus_diganti' => false]);
+        $semu->semuaIzin = true;
+
+        $this->actingAs($semu);
     })
     ->in('Feature');
 

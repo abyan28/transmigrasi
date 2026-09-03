@@ -16,8 +16,8 @@ use Illuminate\Notifications\Notifiable;
  * - PK `id_user`, tabel `user` (bentuk tunggal, `rules.md` 4.0).
  * - Seluruh pemegang akun adalah petugas; warga tidak punya akun (`rules.md` §5).
  * - Login memakai email ATAU username pada satu isian (Task 3.2).
- * - Helper pemeriksa izin (`punyaIzin()`, cakupan data) ditambahkan Task 3.3
- *   bersama RBAC; model ini baru menyediakan strukturnya.
+ * - `punyaIzin()` / `punyaAksi()` = pemeriksa kewenangan RBAC (Task 3.3).
+ *   Cakupan data (global scope) menyusul Task 3.4.
  */
 class User extends Authenticatable
 {
@@ -27,6 +27,14 @@ class User extends Authenticatable
     protected $table = 'user';
 
     protected $primaryKey = 'id_user';
+
+    /**
+     * Menandai pengguna semu bertanda SELURUH kewenangan, dipakai HANYA oleh
+     * bypass `MasukOtomatisLokal` (env lokal) dan `beforeEach` suite Feature.
+     * Bukan role nyata: instance ini tak dipersist dan tak punya `role`.
+     * `punyaIzin()` memeriksa flag ini lebih dulu.
+     */
+    public bool $semuaIzin = false;
 
     protected $fillable = [
         'role_id',
@@ -95,5 +103,38 @@ class User extends Authenticatable
             'id_user',
             'id_berkas',
         )->withPivot('peran', 'urutan')->withTimestamps();
+    }
+
+    /**
+     * Apakah pengguna memegang satu kewenangan, mis. `transmigran.ubah`.
+     *
+     * Pemeriksaan `lihat` sebagai prasyarat aksi lain (`data-dictionary.md`
+     * 13.3 poin 4) ditegakkan middleware `izin`, bukan di sini -- metode ini
+     * menjawab persis kewenangan yang ditanya.
+     *
+     * Role non-aktif menghilangkan seluruh kewenangannya (Admin menonaktifkan
+     * role, penggunanya kehilangan akses sampai dipindahkan).
+     */
+    public function punyaIzin(string $izin): bool
+    {
+        if ($this->semuaIzin) {
+            return true;
+        }
+
+        $role = $this->role;
+
+        if ($role === null || ! $role->is_aktif) {
+            return false;
+        }
+
+        return $role->permissions->contains('nama', $izin);
+    }
+
+    /**
+     * Bentuk `modul` + `aksi` terpisah dari `punyaIzin()`.
+     */
+    public function punyaAksi(string $modul, string $aksi): bool
+    {
+        return $this->punyaIzin($modul.'.'.$aksi);
     }
 }

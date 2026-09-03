@@ -46,12 +46,18 @@ class MasukOtomatisLokal
 
     private function penggunaPengembang(): User
     {
-        return new User([
+        $dev = new User([
             'nama' => 'PENGEMBANG LOKAL',
             'username' => 'dev',
             'email' => 'dev@lokal.test',
             'is_aktif' => true,
             'password_harus_diganti' => false,
         ]);
+
+        // Tak punya role nyata (tak dipersist) -> tandai seluruh kewenangan
+        // supaya rute ber-`izin` (Task 3.3) tetap terbuka saat menelusuri.
+        $dev->semuaIzin = true;
+
+        return $dev;
     }
 }

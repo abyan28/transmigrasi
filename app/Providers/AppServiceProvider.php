@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\User;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -20,6 +22,22 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->samakanAlamatDasar();
+        $this->daftarkanGateIzin();
+    }
+
+    /**
+     * Menyambungkan RBAC ke lapisan otorisasi Laravel (Task 3.3).
+     *
+     * `Gate::before` menjadikan tiap nama kewenangan (`transmigran.ubah`)
+     * langsung dapat diperiksa lewat `@can(...)` di Blade, `$user->can(...)`,
+     * dan middleware `can:`. Mengembalikan `null` bila tidak berwenang supaya
+     * gate/policy lain tetap sempat berjalan, bukan langsung menolak.
+     */
+    private function daftarkanGateIzin(): void
+    {
+        Gate::before(function (?User $pengguna, string $izin) {
+            return $pengguna?->punyaIzin($izin) ? true : null;
+        });
     }
 
     /**
