@@ -9,7 +9,6 @@
  */
 
 use App\Enums\BidangPengaduan;
-use App\Enums\CakupanData;
 use App\Enums\JenisInfrastruktur;
 use App\Enums\JenisReferensi;
 use App\Enums\JenisSaprotan;
@@ -505,21 +504,11 @@ it('menyamakan jumlah penghuni aktif dengan rumah terhuni', function () {
 |--------------------------------------------------------------------------
 | Pengguna sistem
 |--------------------------------------------------------------------------
+|
+| `DummyData::penggunaSaatIni()` dihapus pada Task 3.13: header dan halaman
+| profil kini membaca `Auth::user()` sungguhan lewat `PetaPenggunaTampilan`.
+| Uji perilakunya ada di tests/Database/ProfilTest.php.
 */
-
-it('menyediakan akun contoh beserta role dan cakupan datanya', function () {
-    $pengguna = DummyData::penggunaSaatIni();
-
-    expect($pengguna)->toHaveKeys(['id_user', 'nama', 'username', 'email', 'role'])
-        ->and($pengguna['role'])->toHaveKeys(['nama', 'cakupan_data'])
-        ->and(CakupanData::tryFrom($pengguna['role']['cakupan_data']))->not->toBeNull();
-});
-
-it('memakai username berhuruf kecil sesuai aturan kredensial', function () {
-    // Username hanya boleh memuat huruf kecil, angka, titik, dan garis bawah
-    // (agents/rules.md bagian 14b poin 5).
-    expect(DummyData::penggunaSaatIni()['username'])->toMatch('/^[a-z0-9._]{3,50}$/');
-});
 
 it('menyusun inisial dari maksimal dua kata pertama nama', function () {
     expect(DummyData::inisial('NARA WIJAYA'))->toBe('NW')

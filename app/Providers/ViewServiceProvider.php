@@ -14,7 +14,9 @@ use App\Enums\StatusPanen;
 use App\Enums\TingkatKesuburanTanah;
 use App\Support\DataWilayah;
 use App\Support\DummyData;
+use App\Support\PetaPenggunaTampilan;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -99,8 +101,10 @@ class ViewServiceProvider extends ServiceProvider
             $tampilan->with('memakaiDataContoh', DummyData::MEMAKAI_DATA_CONTOH);
         });
 
+        // Menu pengguna di header, disisipkan `layouts.app` pada setiap halaman.
+        // Task 3.13: dari pengguna sungguhan yang masuk, bukan `DummyData`.
         View::composer('components.header.user-dropdown', function ($tampilan): void {
-            $pengguna = DummyData::penggunaSaatIni();
+            $pengguna = PetaPenggunaTampilan::untuk(Auth::user());
 
             $tampilan->with('pengguna', $pengguna)
                 ->with('inisialPengguna', DummyData::inisial($pengguna['nama']));

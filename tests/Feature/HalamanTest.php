@@ -174,13 +174,17 @@ it('memasang penelusuran klik pada grafik bersumbu satuan permukiman', function 
 */
 
 it('merender halaman profil beserta identitas akun', function () {
-    $pengguna = DummyData::penggunaSaatIni();
+    // Task 3.13: profil membaca Auth::user() sungguhan, bukan DummyData.
+    $pengguna = User::factory()->create([
+        'nama' => 'PETUGAS UJI PROFIL',
+        'username' => 'petugas.uji.profil',
+    ]);
 
-    $this->get(route('profil'))
+    $this->actingAs($pengguna)->get(route('profil'))
         ->assertOk()
-        ->assertSee($pengguna['nama'])
-        ->assertSee($pengguna['username'])
-        ->assertSee($pengguna['role']['nama']);
+        ->assertSee('PETUGAS UJI PROFIL')
+        ->assertSee('petugas.uji.profil')
+        ->assertSee($pengguna->role->nama);
 });
 
 it('menampilkan nama dan username sebagai teks, bukan isian yang dapat diubah', function () {
@@ -5567,10 +5571,10 @@ it('memberi audit log filter rentang tahun untuk pertama kalinya', function () {
         ->assertSee('name="tahun_dari"', false)
         ->assertSee('name="tahun_sampai"', false);
 
-    // Data contoh audit log belum lintas tahun, jadi wiringnya dibuktikan
-    // lewat rentang di luar jangkauan: daftar wajib kosong, bukan utuh.
-    expect($this->get('/audit-log?tahun_dari=2099')->assertOk()->viewData('baris'))->toBe([]);
-    expect($this->get('/audit-log?tahun_sampai=2000')->assertOk()->viewData('baris'))->toBe([]);
+    // Rentang di luar jangkauan wajib menyaring habis. `baris` kini paginator
+    // Eloquent (Task 3.12), sehingga dibuktikan lewat `total()`, bukan `[]`.
+    expect($this->get('/audit-log?tahun_dari=2099')->assertOk()->viewData('baris')->total())->toBe(0);
+    expect($this->get('/audit-log?tahun_sampai=2000')->assertOk()->viewData('baris')->total())->toBe(0);
 });
 
 it('tidak memasang filter rentang tahun pada halaman rekap agregat', function () {

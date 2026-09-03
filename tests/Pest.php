@@ -41,10 +41,12 @@ pest()->extend(TestCase::class)
 
         // Task 3.2b/3.3: seluruh rute internal ber-`auth` + `izin`. Autentikasi
         // pengguna semu -- TIDAK dipersist, tanpa DB -- bertanda `semuaIzin`
-        // supaya ~340 panggilan HTTP suite Feature tetap 200. Tak mengubah satu
-        // byte pun HTML: tak ada `@auth`/`Auth::` di resources/views/, header/
-        // profil dari `DummyData::penggunaSaatIni()`. Uji perilaku-tamu memakai
-        // `auth()->logout()` / `withoutMiddleware(RedirectIfAuthenticated::class)`.
+        // supaya ~340 panggilan HTTP suite Feature tetap 200. Header & halaman
+        // profil (Task 3.13) memakai `PetaPenggunaTampilan::untuk(Auth::user())`
+        // yang null-safe: pengguna semu tanpa role merender lewat cabang
+        // default (role "—"). Uji yang butuh identitas nyata mempersist
+        // User-nya sendiri. Uji perilaku-tamu memakai `auth()->logout()` /
+        // `withoutMiddleware(RedirectIfAuthenticated::class)`.
         $semu = new User(['nama' => 'DEV', 'password_harus_diganti' => false]);
         $semu->semuaIzin = true;
 

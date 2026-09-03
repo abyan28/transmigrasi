@@ -4638,43 +4638,6 @@ class DummyData
     */
 
     /**
-     * Data pengguna yang sedang masuk, untuk halaman profil dan menu header.
-     *
-     * Seluruh pengguna sistem adalah petugas; warga tidak memiliki akun
-     * (agents/rules.md bagian 5.0 poin 5). Struktur mengikuti kolom tabel
-     * `user` dan `role` pada agents/data-dictionary.md bagian 2.1 dan 2.1a.
-     *
-     * @return array<string, mixed> Data akun beserta role dan penugasannya
-     */
-    public static function penggunaSaatIni(): array
-    {
-        return [
-            'id_user' => 1,
-            'nama' => 'NARA WIJAYA',
-            'username' => 'nara.wijaya',
-            'email' => 'nara.wijaya@malakakab.go.id',
-            'telepon' => '081234567890',
-            'jabatan' => 'Staf Bidang Ketransmigrasian',
-            'foto' => null,
-            'is_aktif' => true,
-            'password_harus_diganti' => false,
-            'last_login_at' => '2026-08-11 07:42:00',
-            'created_at' => '2026-02-03 09:15:00',
-            'role' => [
-                'id_role' => 2,
-                'nama' => 'Dinas Transmigrasi',
-                'deskripsi' => 'Memantau dashboard dan laporan kawasan, serta mengelola data wilayah, transmigran, rumah, dan lahan.',
-                'cakupan_data' => CakupanData::Semua->value,
-                'is_bawaan' => true,
-                'is_terkunci' => false,
-            ],
-            // Hanya bermakna untuk role bercakupan Per SP. Untuk cakupan Semua
-            // daftar ini diabaikan (agents/data-dictionary.md bagian 2.1d).
-            'satuan_permukiman' => [],
-        ];
-    }
-
-    /**
      * Inisial nama untuk avatar berbasis huruf.
      *
      * Sistem sengaja tidak memakai foto orang sebagai penanda pengguna

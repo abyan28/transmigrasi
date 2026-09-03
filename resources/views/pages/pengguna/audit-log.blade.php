@@ -30,7 +30,7 @@
     <x-sim.halaman-daftar judul="Audit Log"
         keterangan="Jejak perubahan data penting beserta pelaku dan waktunya."
         :remah="\App\Helpers\RemahHelper::untuk('/audit-log')"
-        :jumlah="count($baris)" :kata-kunci="$cari" :aksi-url="route('audit-log')"
+        :jumlah="$baris->total()" :kata-kunci="$cari" :aksi-url="route('audit-log')"
         placeholder-cari="Cari keterangan atau nama tabel" judul-kosong="Belum ada catatan audit"
         pesan-kosong="Perubahan data akan tercatat di sini secara otomatis.">
 
@@ -89,7 +89,21 @@
                     {{ $a['nama_tabel'] }}
                     <span class="tabular-nums">#{{ $a['record_id'] }}</span>
                 </td>
-                <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ $a['ringkasan'] }}</td>
+                <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">
+                    {{ $a['ringkasan'] }}
+                    @if ($a['perubahan'])
+                        <dl class="mt-1.5 space-y-1 text-theme-xs">
+                            @foreach ($a['perubahan'] as $p)
+                                <div class="flex flex-wrap items-baseline gap-x-1.5">
+                                    <dt class="font-medium text-gray-500 dark:text-gray-400">{{ $p['kolom'] }}:</dt>
+                                    <dd class="text-gray-400 line-through dark:text-gray-500">{{ $p['lama'] }}</dd>
+                                    <span aria-hidden="true" class="text-gray-400">&rarr;</span>
+                                    <dd class="text-gray-700 dark:text-gray-300">{{ $p['baru'] }}</dd>
+                                </div>
+                            @endforeach
+                        </dl>
+                    @endif
+                </td>
                 <td class="px-5 py-3 text-theme-xs tabular-nums text-gray-500 dark:text-gray-400">
                     {{ $a['ip_address'] }}</td>
             </tr>
@@ -102,6 +116,9 @@
                         <p class="text-theme-sm text-gray-800 dark:text-white/90">{{ $a['ringkasan'] }}</p>
                         <x-sim.status-badge :teks="$a['aksi']" :warna="$warnaAksi[$a['aksi']] ?? 'gray'" ukuran="sm" />
                     </div>
+                    <p class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                        {{ $a['nama_tabel'] }} <span class="tabular-nums">#{{ $a['record_id'] }}</span>
+                    </p>
                     <p class="mt-1.5 text-theme-xs tabular-nums text-gray-500 dark:text-gray-400">
                         {{ $a['pengguna'] }} &middot;
                         {{ \Illuminate\Support\Carbon::parse($a['waktu'])->translatedFormat('d M Y, H:i') }}
@@ -109,6 +126,14 @@
                 </div>
             @endforeach
         </x-slot:kartu>
+
+        <x-slot:setelahTabel>
+            @if ($baris->hasPages())
+                <div class="border-t border-gray-200 px-5 py-4 dark:border-gray-800">
+                    {{ $baris->onEachSide(1)->links() }}
+                </div>
+            @endif
+        </x-slot:setelahTabel>
     </x-sim.halaman-daftar>
 
     <p class="mt-4 rounded-lg bg-gray-50 p-3.5 text-theme-xs text-gray-600 dark:bg-white/[0.03] dark:text-gray-400">

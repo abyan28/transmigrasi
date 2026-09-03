@@ -20,6 +20,7 @@ use App\Enums\PrioritasPengaduan;
 use App\Enums\StatusKondisiSp;
 use App\Enums\StatusPanen;
 use App\Enums\StatusPengaduan;
+use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\DokumenController;
 use App\Http\Controllers\FasilitasSpController;
 use App\Http\Controllers\InfrastrukturController;
@@ -30,6 +31,7 @@ use App\Http\Controllers\MasterSatuanController;
 use App\Http\Controllers\PengaturanPenggunaController;
 use App\Http\Controllers\PengaturanRoleController;
 use App\Http\Controllers\PenilaianKondisiController;
+use App\Http\Controllers\ProfilController;
 use App\Http\Controllers\SpController;
 use App\Http\Controllers\WilayahController;
 use App\Support\DummyData;
@@ -214,29 +216,12 @@ Route::get('/dashboard/sp/{sp}', function (int $sp) {
 Route::put('/sp/{sp}', [SpController::class, 'perbarui'])
     ->where('sp', '[0-9]+')->name('sp.perbarui');
 
-Route::get('/profil', function () {
-    $pengguna = DummyData::penggunaSaatIni();
-
-    return view('pages.profil.index', [
-        'title' => 'Profil Saya',
-        'pengguna' => $pengguna,
-        'inisialPengguna' => DummyData::inisial($pengguna['nama']),
-    ]);
-})->name('profil');
-
-Route::put('/profil', function () {
-    // Tahap 3: validasi memakai ValidationRules lalu simpan data kontak.
-    return back()->with('sukses', 'Data kontak Anda tersimpan.');
-})->name('profil.simpan');
-
-Route::get('/profil/kata-sandi', function () {
-    return view('pages.profil.kata-sandi', ['title' => 'Ubah Kata Sandi']);
-})->name('profil.kata-sandi');
-
-Route::put('/profil/kata-sandi', function () {
-    // Tahap 3: periksa kata sandi lama, simpan hash baru, catat audit log.
-    return redirect()->route('profil')->with('sukses', 'Kata sandi berhasil diperbarui.');
-})->name('profil.kata-sandi.simpan');
+// Profil sendiri (Task 3.13). Tanpa `izin:` (PetaIzinRute::dikecualikan) --
+// tiap pengguna berhak menyunting kontak & sandinya sendiri.
+Route::get('/profil', [ProfilController::class, 'index'])->name('profil');
+Route::put('/profil', [ProfilController::class, 'simpan'])->name('profil.simpan');
+Route::get('/profil/kata-sandi', [ProfilController::class, 'tampilKataSandi'])->name('profil.kata-sandi');
+Route::put('/profil/kata-sandi', [ProfilController::class, 'simpanKataSandi'])->name('profil.kata-sandi.simpan');
 
 Route::get('/tentang', function () {
     return view('pages.tentang.index', ['title' => 'Tentang Sistem']);
@@ -1979,57 +1964,9 @@ Route::put('/pengaturan/role/{id}', [PengaturanRoleController::class, 'perbarui'
 Route::delete('/pengaturan/role/{id}', [PengaturanRoleController::class, 'hapus'])
     ->where('id', '[0-9]+')->name('role.hapus');
 
-Route::get('/audit-log', function () {
-    $semua = DummyData::auditLog();
-
-    $cari = trim((string) request('cari', ''));
-    $filterAksi = request('aksi');
-    $filterPengguna = request('pengguna');
-
-    // Penyaring rentang tahun ditambahkan 2026-08-28 (rules.md 12 poin 12);
-    // audit log memperolehnya untuk pertama kalinya. Aman: tiap baris satu
-    // peristiwa, menyaring rentang hanya menyempitkan daftar.
-    $filterTahunDari = request('tahun_dari');
-    $filterTahunSampai = request('tahun_sampai');
-    $tahunPeristiwa = fn ($a) => $a['waktu']
-        ? (int) substr($a['waktu'], 0, 4)
-        : null;
-
-    $baris = array_values(array_filter($semua, function ($a) use ($cari, $filterAksi, $filterPengguna) {
-        if ($cari !== '' && ! str_contains(mb_strtolower($a['ringkasan']), mb_strtolower($cari))
-            && ! str_contains(mb_strtolower($a['nama_tabel']), mb_strtolower($cari))) {
-            return false;
-        }
-        if ($filterAksi && $a['aksi'] !== $filterAksi) {
-            return false;
-        }
-        if ($filterPengguna && $a['pengguna'] !== $filterPengguna) {
-            return false;
-        }
-
-        return true;
-    }));
-
-    $baris = DummyData::saringRentangTahun($baris, $filterTahunDari, $filterTahunSampai, $tahunPeristiwa);
-
-    $daftarTahun = array_values(array_filter(array_unique(array_map($tahunPeristiwa, $semua))));
-    rsort($daftarTahun);
-
-    return view('pages.pengguna.audit-log', [
-        'title' => 'Audit Log',
-        'semua' => $semua,
-        'baris' => $baris,
-        'cari' => $cari,
-        'filterAksi' => $filterAksi,
-        'filterPengguna' => $filterPengguna,
-        'filterTahunDari' => $filterTahunDari,
-        'filterTahunSampai' => $filterTahunSampai,
-        'adaFilter' => $cari !== '' || $filterAksi || $filterPengguna || $filterTahunDari || $filterTahunSampai,
-        'daftarAksi' => array_values(array_unique(array_column($semua, 'aksi'))),
-        'daftarPengguna' => array_values(array_unique(array_column($semua, 'pengguna'))),
-        'daftarTahun' => $daftarTahun,
-    ]);
-})->name('audit-log');
+// Audit Log (Task 3.12). HANYA-BACA -- tak ada rute tulis. `izin:audit_log,
+// lihat` terlampir otomatis lewat nama rute (bootstrap/app.php).
+Route::get('/audit-log', [AuditLogController::class, 'index'])->name('audit-log');
 
 /*
 |--------------------------------------------------------------------------

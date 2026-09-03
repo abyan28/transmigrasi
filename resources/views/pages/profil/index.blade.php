@@ -11,14 +11,15 @@
     (agents/ui-spec.md bagian 2.2): ringkasan entitas menetap di kiri, konci
     bertab di kanan.
 
-    Data masih berupa contoh. Penyambungan ke akun sungguhan dikerjakan pada
-    Tahap 3 bersama autentikasi.
+    Task 3.13: `$pengguna` dinormalkan dari `Auth::user()` sungguhan oleh
+    `App\Support\PetaPenggunaTampilan` (lewat `ProfilController`), sehingga
+    view tetap membaca larik seperti semula.
 --}}
 @extends('layouts.app')
 
 @section('content')
     @php
-        // `$pengguna` dan `$inisialPengguna` datang dari rute `profil`.
+        // `$pengguna` dan `$inisialPengguna` datang dari `ProfilController`.
         $role = $pengguna['role'];
         $cakupan = \App\Enums\CakupanData::dari($role['cakupan_data']);
     @endphp
@@ -76,13 +77,17 @@
                     <div>
                         <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Masuk terakhir</dt>
                         <dd class="mt-0.5 text-theme-sm text-gray-800 dark:text-white/90">
-                            {{ \Illuminate\Support\Carbon::parse($pengguna['last_login_at'])->translatedFormat('d F Y, H:i') }} WITA
+                            @if ($pengguna['last_login_at'])
+                                {{ \Illuminate\Support\Carbon::parse($pengguna['last_login_at'])->translatedFormat('d F Y, H:i') }} WITA
+                            @else
+                                Belum pernah
+                            @endif
                         </dd>
                     </div>
                     <div>
                         <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Akun dibuat</dt>
                         <dd class="mt-0.5 text-theme-sm text-gray-800 dark:text-white/90">
-                            {{ \Illuminate\Support\Carbon::parse($pengguna['created_at'])->translatedFormat('d F Y') }}
+                            {{ $pengguna['created_at'] ? \Illuminate\Support\Carbon::parse($pengguna['created_at'])->translatedFormat('d F Y') : '-' }}
                         </dd>
                     </div>
                 </dl>
