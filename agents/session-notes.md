@@ -1,3 +1,96 @@
+# Audit celah backend: tasklist Tahap 4-10 dirapikan (2026-09-03)
+
+Pemilik proyek bertanya sebelum Tahap 4 dibuka: menu Laporan, Data Master
+(wilayah/satuan/daftar pilihan/penilaian kondisi SP), Pengelolaan Konten, dan
+Bantuan & Info ada di bagian mana pada `tasklist.md`? Dan apakah SELURUH menu
+frontend sudah punya task backend?
+
+**Jawabannya: belum.** Menu disisir satu per satu dari `MenuHelper.php` terhadap
+Tahap 4-11. Hasilnya empat kelompok temuan.
+
+## A. Tujuh menu tanpa task backend sama sekali
+
+| Menu | Path | Keadaan |
+|---|---|---|
+| Data Master > Wilayah | `/wilayah` | Task 4.1 hanya menyebut migration+seeder; CRUD-nya tak ada |
+| Data Master > **Daftar Pilihan** | `/master/referensi` | **NOL task** -- padahal induk seluruh dropdown |
+| Data Master > Penilaian Kondisi SP | `/master/penilaian-kondisi` | Task 9.5 hanya "bobot" pada konteks dashboard; CRUD parameter/ambang tak bertuan |
+| **Pengelolaan Konten (CMS)** | `/cms` | **NOL task** -- 5 tab, seluruhnya nilai tetap di Alpine |
+| Audit Log (halaman) | `/audit-log` | Task 3.6 hanya PENCATATAN; halaman+filter tak ada |
+| Profil & ubah sandi | `/profil` | **NOL task** -- rute masih `return back()` kosong |
+| Unduh berkas & template impor | `/dokumen/*`, `/template-impor/*` | Nol task |
+
+`/panduan` dan `/tentang` (Bantuan & Info) memang tak perlu task tersendiri --
+isinya statis dan diatur lewat CMS, jadi ikut Task 9.6.
+
+## B. Lima task cakupannya USANG
+
+Task **4.1, 5.1, 6.1, 7.1, 8.2** semuanya berbunyi "Migration dan model ...",
+padahal **Task 3.1 sudah membuat 58 migration + 36 model** untuk seluruh 55
+tabel bisnis, terverifikasi NOL SELISIH. Dibiarkan, pengerjaannya akan
+membangun ulang yang sudah ada.
+
+Kelimanya ditulis ulang menjadi "Peralihan ... ke Eloquent" beserta penunjuk
+bahwa struktur DB-nya sudah lahir di Task 3.1 batch mana.
+
+## C. Infrastruktur SP salah tahap -- DIPINDAH 8.1 -> 4.6
+
+Di sidebar, Infrastruktur SP berada dalam grup **Wilayah & SP** bersama
+Kawasan/SP/Inventaris/Fasilitas. Susunan lama menempatkannya di Tahap 8 bersama
+Pengaduan -- warisan urutan sebelum menu dirombak. `infrastruktur_sp` pun ber-FK
+ke `satuan_permukiman` yang baru lahir di Tahap 4.
+
+Dipindah ke **Task 4.6**. Pengaduan TETAP di Tahap 8, dan judul tahapnya
+disesuaikan menjadi "Backend Pengaduan".
+
+## D. Tujuh laporan tanpa task pengisian data
+
+`LaporanData::meta()` memuat 7 laporan (indikator-kawasan, monografi-sp,
+transmigran, poktan, alsintan, saprotan, hasil-panen). Tahap 10 hanya membahas
+EXPORT Excel/PDF; mengisi datanya dari Eloquent tidak pernah punya task.
+Ditambahkan sebagai **Task 10.5**.
+
+## Yang dikerjakan
+
+- **8 task baru/pindah:** 4.6 (pindahan), 4.7, 4.8, 3.12, 3.13, 9.6, 10.5, 10.6
+- **5 task ditulis ulang:** 4.1, 5.1, 6.1, 7.1, 8.2
+- **Blok "BACA DULU"** di kepala Tahap 4 mencatat bahwa migration+model sudah
+  ada, menyebut skala peralihan (**221 pemanggilan `DummyData`**: 158
+  `routes/internal.php`, 59 `ViewServiceProvider`, 4 `routes/web.php`; **nol
+  controller domain** -- seluruh rute masih closure), dan menetapkan urutan
+  Tahap 4 mengikuti dependensi FK: **4.1 -> 4.5 -> 4.7 -> 4.1b -> 4.2 -> 4.3 ->
+  4.4 -> 4.6 -> 4.8**.
+
+`4.7` (Daftar Pilihan) sengaja didahulukan atas keputusan pemilik proyek: ia
+induk seluruh dropdown, sehingga mengerjakannya belakangan berarti form Tahap
+5-8 disentuh dua kali.
+
+Task **3.12** dan **3.13** bernomor Tahap 3 sebab domainnya autentikasi/audit,
+tetapi dikerjakan berbarengan Tahap 4 -- keduanya kecil dan menghapus pemakaian
+terakhir `DummyData::penggunaSaatIni()`.
+
+## Keputusan pemilik proyek yang mengikat
+
+| # | Keputusan |
+|---|---|
+| 1 | Tasklist dirapikan LEBIH DULU sebelum satu baris kode Tahap 4 ditulis |
+| 2 | Daftar Pilihan masuk Tahap 4, bukan ditunda |
+| 3 | View dialihkan ke Eloquent **langsung per modul**, bukan menunggu seluruh Tahap 4 selesai |
+
+Konsekuensi keputusan 3 yang diterima sadar: uji `HalamanTest` modul terkait
+akan merah saat sumber datanya berpindah. Sesuai aturan repo, pengerjaan
+**BERHENTI dan melapor** ketika itu terjadi, bukan menyesuaikan uji sendiri.
+Tiap modul yang beralih WAJIB punya seeder data contoh supaya halaman tidak
+mendadak kosong dan penjaga tampilan tetap bermakna.
+
+## Catatan
+
+Perubahan ini **nol kode** -- hanya `agents/tasklist.md`. Sengaja dicommit
+terpisah dari pengerjaan Tahap 4 supaya perubahan rencana tidak bercampur
+dengan perubahan perilaku.
+
+---
+
 # Nama sistem menjadi DIGITRANS + DB dev jadi `digitrans` (2026-09-03)
 
 Pemilik proyek menetapkan nama sistem: **DIGITRANS** (Digitalisasi
