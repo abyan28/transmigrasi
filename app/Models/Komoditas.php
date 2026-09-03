@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -38,5 +39,20 @@ class Komoditas extends Model
     public function satuan(): BelongsTo
     {
         return $this->belongsTo(Satuan::class, 'satuan_id', 'id_satuan');
+    }
+
+    /**
+     * Poktan yang mengusahakan komoditas ini (pivot M:N `komoditas_poktan`).
+     */
+    public function poktan(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Poktan::class,
+            'komoditas_poktan',
+            'komoditas_id',
+            'poktan_id',
+            'id_komoditas',
+            'id_poktan',
+        )->withTimestamps();
     }
 }

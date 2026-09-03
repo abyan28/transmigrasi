@@ -48,7 +48,8 @@ Rencana lengkap: `.claude/plans/logical-whistling-salamander.md`.
 | B5 Domain 5 | **SELESAI** | transmigran, anggota_keluarga, rumah, riwayat_penghunian, riwayat_kepala_keluarga + pivot transmigran_berkas, rumah_berkas + 5 model + `tests/Database/Domain5KependudukanTest` (11 uji) |
 | B6 Domain 6 | **SELESAI** | poktan, anggota_poktan, alsintan, alsintan_distribusi, saprotan, saprotan_distribusi + pivot alsintan_berkas + 6 model + `tests/Database/Domain6KelembagaanTest` (8 uji). Helper uji dipusatkan ke `tests/Database/DatabaseHelpers.php` (`require_once`) |
 | B7 Domain 7 | **SELESAI** | lahan (satu tabel) + model `Lahan` + `tests/Database/Domain7LahanTest` (7 uji) |
-| B8-B9 | belum | lihat plan file / tabel batch |
+| B8 Domain 8 | **SELESAI** | komoditas_poktan (pivot), penanaman, hasil_panen + pivot penanaman_berkas, hasil_panen_berkas + 2 model + `tests/Database/Domain8ProduksiTest` (8 uji) |
+| B9 | belum | infrastruktur, infrastruktur_sp, pengaduan, penanganan_pengaduan (+ 3 pivot berkas) |
 
 **Verifikasi B0+B1:** `sim:banding-skema --hanya=<Domain 1>` NOL SELISIH ·
 `pest` **742 PASS** (732 lama + 10 Database) · `pint --test` 31 (turun dari 33) ·
@@ -108,6 +109,14 @@ transmigran_id` (bukan komposit dengan peruntukan), dua pasang koordinat
 CASCADE, SP RESTRICT, poktan SET NULL. uuid route key. `Transmigran::lahan()`
 hasOne. UNIQUE `transmigran_id` tak melihat `deleted_at` -> KK dengan lahan
 ter-soft-delete belum bisa dapat baris baru tanpa restore/forceDelete.
+
+**Verifikasi B8:** `sim:banding-skema --hanya=<5 tabel B8>` NOL SELISIH ·
+`pest tests/Database` **73 PASS** · `pest` (SQLite) tetap **732 PASS** ·
+`pint --test` tetap 31. `penanaman` berpusat poktan (bukan lahan); FK
+saprotan_distribusi RESTRICT (jatah benih). `hasil_panen` uuid route key,
+`satuan_id` snapshot dari komoditas (FK RESTRICT), 1:1 dengan penanaman
+(ditegakkan aplikasi, bukan UNIQUE). Tak ada kolom ENUM di domain ini -- semua
+DECIMAL/CHAR(7). `Poktan::komoditas()` + `Komoditas::poktan()` M:N.
 
 **Urutan migration = topological sort dependensi FK, BUKAN urutan file
 `schema.sql`.** Batch berikutnya: `referensi`+`satuan`+`komoditas`+`berkas`

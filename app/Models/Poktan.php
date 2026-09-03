@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\AsalWakilPoktan;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -96,5 +97,25 @@ class Poktan extends Model
     public function lahan(): HasMany
     {
         return $this->hasMany(Lahan::class, 'poktan_id', 'id_poktan');
+    }
+
+    public function penanaman(): HasMany
+    {
+        return $this->hasMany(Penanaman::class, 'poktan_id', 'id_poktan');
+    }
+
+    /**
+     * Komoditas yang diusahakan poktan ini (pivot M:N `komoditas_poktan`).
+     */
+    public function komoditas(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Komoditas::class,
+            'komoditas_poktan',
+            'poktan_id',
+            'komoditas_id',
+            'id_poktan',
+            'id_komoditas',
+        )->withTimestamps();
     }
 }

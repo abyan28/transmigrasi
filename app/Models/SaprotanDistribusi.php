@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Distribusi saprotan ke satu poktan penerima. Sisa benih DIHITUNG per baris
@@ -34,5 +35,13 @@ class SaprotanDistribusi extends Model
     public function poktan(): BelongsTo
     {
         return $this->belongsTo(Poktan::class, 'poktan_id', 'id_poktan');
+    }
+
+    /**
+     * Penanaman yang memakai jatah benih dari distribusi ini (untuk hitung sisa).
+     */
+    public function penanaman(): HasMany
+    {
+        return $this->hasMany(Penanaman::class, 'saprotan_distribusi_id', 'id_saprotan_distribusi');
     }
 }
