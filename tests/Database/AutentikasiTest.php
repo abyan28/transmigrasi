@@ -207,7 +207,7 @@ it('mencatat audit log Login, Logout, dan Reset Kata Sandi', function () {
 
 /*
 |--------------------------------------------------------------------------
-| Middleware PastikanGantiKataSandi (dibangun, belum dilampirkan ke rute)
+| Middleware PastikanGantiKataSandi -- unit (dilampirkan ke rute internal di C2)
 |--------------------------------------------------------------------------
 */
 
@@ -245,4 +245,38 @@ it('meloloskan tamu dan pengguna tanpa flag', function () {
     $biasa = Request::create('/beranda');
     $biasa->setUserResolver(fn () => new User(['password_harus_diganti' => false]));
     expect((new PastikanGantiKataSandi)->handle($biasa, fn () => new Response('ok'))->getContent())->toBe('ok');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Penegakan rute (Task 3.2b) -- `auth` + `guest` + `pastikan.ganti.sandi`
+| terpasang di routes/internal.php / routes/web.php. Env uji = `testing`,
+| jadi MasukOtomatisLokal tidak aktif.
+|--------------------------------------------------------------------------
+*/
+
+it('mengalihkan tamu dari rute internal ke halaman masuk', function () {
+    $this->get(route('beranda'))->assertRedirect(route('login'));
+    $this->get(route('transmigran.index'))->assertRedirect(route('login'));
+});
+
+it('meloloskan pengguna yang sudah masuk ke rute internal', function () {
+    $this->actingAs(User::factory()->create())
+        ->get(route('beranda'))
+        ->assertOk();
+});
+
+it('mengunci pengguna berkata-sandi-sementara ke halaman ganti kata sandi', function () {
+    $user = User::factory()->harusGantiSandi()->create();
+
+    $this->actingAs($user)->get(route('beranda'))->assertRedirect(route('ganti-kata-sandi'));
+    // Halaman ganti sandi sendiri + keluar tetap dapat dibuka.
+    $this->actingAs($user)->get(route('ganti-kata-sandi'))->assertOk();
+    $this->actingAs($user)->post(route('logout'))->assertRedirect(route('login'));
+});
+
+it('mengalihkan pengguna yang sudah masuk dari halaman masuk ke beranda', function () {
+    $this->actingAs(User::factory()->create())
+        ->get(route('login'))
+        ->assertRedirect('/');
 });

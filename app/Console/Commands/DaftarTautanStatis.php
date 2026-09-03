@@ -2,24 +2,21 @@
 
 namespace App\Console\Commands;
 
-use App\Enums\JenisReferensi;
 use App\Support\DummyData;
-use App\Support\LaporanData;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Route;
-use RuntimeException;
 
 /**
- * Menuliskan seluruh alamat yang perlu digilas menjadi berkas statis.
+ * Menuliskan alamat HALAMAN PUBLIK yang perlu digilas menjadi berkas statis.
  *
- * Penggilas mengikuti tautan dari halaman ke halaman, tetapi tidak semua
- * halaman tertaut dari halaman lain. Galeri komponen dan halaman uji 403 hanya
- * dapat dicapai bila alamatnya diketahui lebih dulu, sedangkan halaman rincian
- * bergantung pada isi data contoh yang dapat bertambah sewaktu-waktu.
+ * Sejak Task 3.2b seluruh rute internal ber-`auth` dan membalas pengalihan ke
+ * `/login` (bukan 200), sehingga penerbitan statis dibatasi ke halaman yang
+ * boleh dibuka tanpa login: masuk, pemulihan kata sandi, dan kanal pengaduan
+ * warga (keputusan `agents/notes.md` §1b.7 poin 1 / §6 A1). Rute ber-`auth`
+ * dilewati otomatis lewat pemeriksaan `gatherMiddleware()`.
  *
- * Daftar ini dibangkitkan dari sumbernya langsung, bukan ditulis tangan, agar
- * penambahan data contoh tidak diam-diam meninggalkan halaman yang tidak ikut
- * tergilas. Dipakai oleh alur kerja `.github/workflows/deploy.yml`.
+ * Daftar ini dibangkitkan dari sumbernya langsung, bukan ditulis tangan.
+ * Dipakai oleh alur kerja `.github/workflows/deploy.yml`.
  *
  * Lihat agents/notes.md bagian 1b mengenai penyajian statis di GitHub Pages.
  */
@@ -59,21 +56,23 @@ class DaftarTautanStatis extends Command
     }
 
     /**
-     * Alamat yang sengaja tidak ikut digilas.
+     * Alamat yang sengaja tidak ikut digilas walau publik.
      *
-     * - `uji-403` memang membalas 403 sebagai pemicu tampilan galat, sehingga
-     *   penggilas akan menganggapnya kegagalan.
+     * - `uji-403` membalas 403 sebagai pemicu tampilan galat (kini ber-`auth`
+     *   juga, jadi tersaring dua kali).
      * - `up` adalah pemeriksa kesehatan bawaan Laravel, bukan halaman.
+     * - `infrastruktur` adalah rute lama ber-redirect 301.
      *
      * @var list<string>
      */
     private const DIKECUALIKAN = ['uji-403', 'up', 'infrastruktur'];
 
     /**
-     * Seluruh rute GET yang tidak memerlukan parameter.
+     * Rute GET PUBLIK tanpa parameter (tidak ber-`auth`).
      *
-     * Rute pengunduhan dokumen sengaja dilewati karena melayani berkas dari
-     * cakram privat, bukan halaman, dan tidak ada wujud statisnya.
+     * Rute internal membalas pengalihan ke `/login`, bukan 200, sehingga tidak
+     * boleh masuk daftar gilas. Rute pengunduhan dokumen juga dilewati -- ia
+     * melayani berkas dari cakram privat, bukan halaman.
      *
      * @return list<string>
      */
@@ -96,6 +95,11 @@ class DaftarTautanStatis extends Command
                 continue;
             }
 
+            // Rute ber-`auth` tidak punya wujud statis: tamu diarahkan ke /login.
+            if (in_array('auth', $rute->gatherMiddleware(), true)) {
+                continue;
+            }
+
             $hasil[] = '/'.ltrim($uri === '/' ? '' : $uri, '/');
         }
 
@@ -103,93 +107,26 @@ class DaftarTautanStatis extends Command
     }
 
     /**
-     * Halaman rincian, satu per baris data contoh.
+     * Halaman rincian berparameter yang PUBLIK.
+     *
+     * Sejak Task 3.2b hanya tinggal tautan tetap lacak pengaduan
+     * (`/lacak-pengaduan/{nomor}`). Seluruh rincian modul (transmigran, rumah,
+     * lahan, panen, SP, dst.) dan tab rekap kini ber-`auth` dan tidak lagi
+     * digilas -- riwayatnya ada di kontrol versi bila kelak dibutuhkan
+     * pratinjau internal.
      *
      * @return list<string>
      */
     private function rincianDariDataContoh(): array
     {
-        $peta = [
-            'transmigran' => ['transmigran', 'id_transmigran'],
-            'rumah' => ['rumah', 'id_rumah'],
-            'lahan' => ['lahan', 'id_lahan'],
-            'panen' => ['hasilPanen', 'id_hasil_panen'],
-            'pengaduan' => ['pengaduan', 'id_pengaduan'],
-            'poktan' => ['poktan', 'id_poktan'],
-            'alsintan' => ['alsintan', 'id_alsintan'],
-            'saprotan' => ['saprotan', 'id_saprotan'],
-            'komoditas' => ['komoditas', 'id_komoditas'],
-            'sp/infrastruktur' => ['infrastruktur', 'id_infrastruktur'],
-            'penanaman' => ['penanaman', 'id_penanaman'],
-            'sp/inventaris' => ['inventarisSp', 'id_inventaris_sp'],
-            'sp/fasilitas' => ['fasilitasSp', 'id_fasilitas_sp'],
-            'sp' => ['satuanPermukiman', 'id_satuan_permukiman'],
-        ];
-
         $hasil = [];
 
-        foreach ($peta as $awalan => [$sumber, $kunci]) {
-            foreach (DummyData::$sumber() as $baris) {
-                // Kunci yang salah tulis WAJIB menghentikan penerbitan, bukan
-                // dilewati diam-diam. Pemeriksaan `isset` sebelumnya membuat
-                // kekeliruan `no_sp` (seharusnya `id_satuan_permukiman`) lolos
-                // tanpa jejak, sehingga enam halaman rincian SP tidak pernah
-                // ikut tergilas dan baru ketahuan sebagai 404 di situs terbit.
-                if (! array_key_exists($kunci, $baris)) {
-                    throw new RuntimeException(sprintf(
-                        'Kunci "%s" tidak ada pada DummyData::%s(). Kunci yang tersedia: %s.',
-                        $kunci,
-                        $sumber,
-                        implode(', ', array_keys($baris)),
-                    ));
-                }
-
-                $hasil[] = '/'.$awalan.'/'.$baris[$kunci];
-            }
-        }
-
-        // Tautan tetap lacak pengaduan memakai nomor, bukan id.
+        // Tautan tetap lacak pengaduan memakai nomor, bukan id. Halaman lacak
+        // publik: warga membuka laporannya tanpa akun (rules.md 10b poin 1).
         foreach (DummyData::pengaduan() as $baris) {
             if (isset($baris['nomor_pengaduan'])) {
                 $hasil[] = '/lacak-pengaduan/'.$baris['nomor_pengaduan'];
             }
-        }
-
-        // Tautan tetap tab rekap panen. Nilainya terbatas dan ditentukan
-        // tampilan, bukan data, sehingga disebut langsung. Daftar ini wajib
-        // sejalan dengan batasan `where` pada rute `panen.rekap.kelompok`.
-        foreach (['sp', 'komoditas', 'poktan'] as $kelompok) {
-            $hasil[] = '/panen/rekap/'.$kelompok;
-        }
-
-        // Tautan tetap tab rekap pengaduan, mengikuti pola yang sama. Daftar
-        // ini wajib sejalan dengan batasan `where` pada rute
-        // `pengaduan.rekap.kelompok` dan $labelKelompok pada viewnya.
-        foreach (['kategori', 'status', 'sp', 'prioritas', 'bidang'] as $kelompok) {
-            $hasil[] = '/pengaduan/rekap/'.$kelompok;
-        }
-
-        // Tautan tetap tab rekap kependudukan, mengikuti pola yang sama.
-        // Daftar ini wajib sejalan dengan batasan `where` pada rute
-        // `kependudukan.rekap.kelompok` dan $labelKelompok pada viewnya.
-        foreach (['tahun', 'sp', 'status', 'pekerjaan', 'asal', 'pendidikan'] as $kelompok) {
-            $hasil[] = '/kependudukan/rekap/'.$kelompok;
-        }
-
-        // Tampilan dokumen polos tiap laporan. Rute /laporan/{slug}/dokumen
-        // berparameter sehingga tidak ikut ruteTanpaParameter(); slugnya
-        // dibaca dari LaporanData::meta() agar laporan baru ikut tergilas
-        // dengan sendirinya.
-        foreach (array_keys(LaporanData::meta()) as $slug) {
-            $hasil[] = '/laporan/'.$slug.'/dokumen';
-        }
-
-        // Halaman satu daftar referensi. Dibaca dari enumnya, bukan disebut
-        // satu per satu: jenis baru wajib ikut terperiksa dengan sendirinya,
-        // sebab halaman yang tidak masuk daftar ini tidak pernah tergilas dan
-        // barulah ketahuan sebagai 404 di situs terbit.
-        foreach (JenisReferensi::cases() as $jenis) {
-            $hasil[] = '/master/referensi/'.$jenis->value;
         }
 
         return $hasil;

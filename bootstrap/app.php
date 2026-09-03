@@ -6,12 +6,19 @@ use App\Http\Middleware\UppercaseInput;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Support\Facades\Route;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
+        then: function (): void {
+            // Rute internal: WAJIB login + kunci kata-sandi-sementara.
+            // routes/web.php menyimpan rute publik saja (Task 3.2b).
+            Route::middleware(['web', 'auth', 'pastikan.ganti.sandi'])
+                ->group(base_path('routes/internal.php'));
+        },
     )
     ->withMiddleware(function (Middleware $middleware): void {
         // Mempercayai header X-Forwarded-* agar asset() dan url() memakai skema

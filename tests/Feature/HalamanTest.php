@@ -31,6 +31,7 @@ use App\Helpers\MenuHelper;
 use App\Helpers\RemahHelper;
 use App\Support\DummyData;
 use App\Support\LaporanData;
+use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
@@ -2045,6 +2046,9 @@ it('memberi keterangan pada pengaduan yang belum ditangani', function () {
 });
 
 it('menautkan halaman masuk petugas ke kanal pengaduan warga', function () {
+    // Suite Feature diautentikasi global (Task 3.2b); halaman /login ber-`guest`.
+    auth()->logout();
+
     $this->get(route('login'))
         ->assertSee(route('pengaduan-warga'), false)
         ->assertSee(route('lacak-pengaduan'), false);
@@ -2146,6 +2150,10 @@ it('menulis pesan galat tanpa istilah teknis', function () {
 it('menyediakan tombol ganti tema pada seluruh jenis tata letak', function () {
     // Mode terang dan gelap sama-sama wajib berfungsi penuh (R-34), termasuk
     // pada halaman galat dan halaman publik yang memakai tata letak berbeda.
+    // Uji menyentuh beranda (auth) DAN login (guest) sekaligus, jadi lepaskan
+    // pengalihan `guest` alih-alih logout (Task 3.2b).
+    $this->withoutMiddleware(RedirectIfAuthenticated::class);
+
     foreach ([route('beranda'), route('login'), route('pengaduan-warga')] as $alamat) {
         expect($this->get($alamat)->getContent())->toContain('theme.toggle');
     }
@@ -2452,7 +2460,8 @@ it('menautkan menu pengguna hanya ke halaman yang benar-benar ada', function () 
 });
 
 it('membuat rute profil dan kata sandi dapat diakses', function () {
-    foreach (['profil', 'profil.kata-sandi', 'ganti-kata-sandi', 'login'] as $namaRute) {
+    // `login` (guest) dipindah ke uji halaman masuk sendiri (Task 3.2b).
+    foreach (['profil', 'profil.kata-sandi', 'ganti-kata-sandi'] as $namaRute) {
         $this->get(route($namaRute))->assertOk();
     }
 });
@@ -2472,10 +2481,13 @@ it('merender setiap rute GET yang terdaftar tanpa galat', function () {
     // Uji ini membaca daftar rute langsung dari router, bukan dari daftar
     // yang ditulis tangan, sehingga rute baru otomatis ikut teruji.
     $lewati = [
-        'up',              // health check bawaan Laravel
-        'uji-403',         // sengaja mengembalikan 403
-        'logout',          // mengubah keadaan, diuji terpisah
-        'infrastruktur',   // rute lama dengan redirect 301, diuji terpisah
+        'up',               // health check bawaan Laravel
+        'uji-403',          // sengaja mengembalikan 403
+        'logout',           // mengubah keadaan, diuji terpisah
+        'infrastruktur',    // rute lama dengan redirect 301, diuji terpisah
+        'login',            // ber-`guest`: mengalihkan user uji yang sudah masuk (Task 3.2b)
+        'lupa-kata-sandi',  // ber-`guest`, diuji terpisah
+        'verifikasi-kode',  // ber-`guest`, diuji terpisah
     ];
 
     $gagal = [];
@@ -2659,11 +2671,15 @@ it('membuat rute tulis pengguna dan role mengembalikan redirect', function () {
 */
 
 it('merender halaman pemulihan kata sandi', function () {
+    auth()->logout(); // rute ber-`guest` (Task 3.2b)
+
     $this->get(route('lupa-kata-sandi'))->assertOk();
     $this->get(route('verifikasi-kode'))->assertOk();
 });
 
 it('tidak membocorkan apakah sebuah akun terdaftar', function () {
+    auth()->logout(); // rute ber-`guest` (Task 3.2b)
+
     // rules.md 14b poin 9. Pesan yang membedakan "terkirim" dan "tidak
     // ditemukan" mengubah halaman publik ini menjadi alat memeriksa siapa
     // saja yang memiliki akun dinas.
@@ -2685,6 +2701,8 @@ it('menawarkan jalur admin pada setiap halaman pemulihan', function () {
     // persisnya. Ketiga halaman menuliskannya dengan susunan berbeda sesuai
     // konteks masing-masing, dan penyuntingan teks tidak boleh membuat uji ini
     // gagal selama jalurnya masih ditawarkan.
+    auth()->logout(); // rute ber-`guest` (Task 3.2b)
+
     foreach ([route('lupa-kata-sandi'), route('verifikasi-kode'), route('login')] as $tujuan) {
         $isi = strtolower($this->get($tujuan)->getContent());
 
@@ -2693,6 +2711,8 @@ it('menawarkan jalur admin pada setiap halaman pemulihan', function () {
 });
 
 it('mengirim kode enam digit, bukan tautan sekali klik', function () {
+    auth()->logout(); // rute ber-`guest` (Task 3.2b)
+
     $isi = $this->get(route('verifikasi-kode'))->getContent();
 
     expect($isi)->toContain('pattern="[0-9]{6}"')
@@ -2701,6 +2721,8 @@ it('mengirim kode enam digit, bukan tautan sekali klik', function () {
 });
 
 it('menautkan halaman masuk ke pemulihan kata sandi', function () {
+    auth()->logout(); // rute ber-`guest` (Task 3.2b)
+
     $isi = $this->get(route('login'))->getContent();
 
     expect($isi)->toContain(route('lupa-kata-sandi'))
@@ -2708,6 +2730,8 @@ it('menautkan halaman masuk ke pemulihan kata sandi', function () {
 });
 
 it('membuat rute tulis pemulihan mengembalikan redirect', function () {
+    auth()->logout(); // rute ber-`guest`: pertahankan redirect rutenya sendiri, bukan pengalihan guest (Task 3.2b)
+
     $this->post(route('lupa-kata-sandi.kirim'))->assertRedirect();
     $this->post(route('atur-ulang-sandi'))->assertRedirect();
 });
@@ -4531,6 +4555,10 @@ it('memakai istilah email, bukan surel, pada teks yang dilihat pengguna', functi
     // sebab komentar kode bebas memakai istilah mana pun; yang mengikat hanya
     // teks yang benar-benar sampai ke pengguna.
     //
+    // Dataset mencampur halaman auth (guest) dan internal (auth); lepaskan
+    // pengalihan `guest` agar halaman /login dsb. tetap dirender (Task 3.2b).
+    $this->withoutMiddleware(RedirectIfAuthenticated::class);
+
     // Sesi diisi lebih dulu agar spanduk yang hanya muncul setelah pengiriman
     // formulir ikut terperiksa. Tanpa itu, sebagian teks tidak pernah dirender
     // dan uji lulus tanpa memeriksa apa pun.
@@ -6943,6 +6971,7 @@ it('memilih komoditas utama dashboard menurut nilai, bukan urutan larik', functi
         disisir dari seluruh tempat yang mungkin memuatnya.
     */
     $sumber = file_get_contents(base_path('routes/web.php'))
+        .file_get_contents(base_path('routes/internal.php'))
         .file_get_contents(resource_path('views/pages/dashboard/index.blade.php'));
 
     expect($sumber)->toContain('max($sebaranKomoditas)')

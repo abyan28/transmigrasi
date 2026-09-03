@@ -3,6 +3,11 @@
 use Illuminate\Support\Facades\Artisan;
 
 it('menghasilkan URL statis yang seluruhnya merespons HTTP 200', function () {
+    // deploy.yml meng-crawl tanpa login; cerminkan itu. Suite Feature
+    // diautentikasi global (Task 3.2b), jadi keluar dulu supaya halaman
+    // ber-`guest` (/login dsb.) dirender alih-alih dialihkan.
+    auth()->logout();
+
     Artisan::call('sim:tautan-statis');
     $output = trim(Artisan::output());
 

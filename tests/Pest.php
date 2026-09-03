@@ -1,5 +1,9 @@
 <?php
 
+use App\Models\User;
+use Tests\DatabaseTestCase;
+use Tests\TestCase;
+
 /*
 |--------------------------------------------------------------------------
 | Test Case
@@ -11,14 +15,23 @@
 |
 */
 
-pest()->extend(Tests\TestCase::class)
- // ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
+pest()->extend(TestCase::class)
+    ->beforeEach(function () {
+        // Task 3.2b: seluruh rute internal kini ber-`auth`. Autentikasi
+        // pengguna semu -- TIDAK dipersist, tanpa DB -- supaya ~340 panggilan
+        // HTTP di suite Feature tetap membalas 200. Ini tak mengubah satu byte
+        // pun HTML yang dirender: tak ada `@auth`/`Auth::` di resources/views/,
+        // dan header/profil dibaca dari `DummyData::penggunaSaatIni()`.
+        // Uji perilaku-tamu (halaman /login dsb.) memakai `auth()->logout()`
+        // atau `withoutMiddleware(RedirectIfAuthenticated::class)` di dalamnya.
+        $this->actingAs(new User(['nama' => 'DEV', 'password_harus_diganti' => false]));
+    })
     ->in('Feature');
 
 // Grup uji migration & model Eloquent (Task 3.1): MySQL/MariaDB nyata +
 // RefreshDatabase. Dipisah ke tests/Database/ (bukan tests/Feature/) sebab
 // Pest tidak mengizinkan dua base class bertumpuk pada satu pohon direktori.
-pest()->extend(Tests\DatabaseTestCase::class)->in('Database');
+pest()->extend(DatabaseTestCase::class)->in('Database');
 
 /*
 |--------------------------------------------------------------------------
