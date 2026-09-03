@@ -160,6 +160,8 @@ class PetaIzinRute
             'role.perbarui' => 'role,ubah',
             'role.hapus' => 'role,hapus',
             'audit-log' => 'audit_log,lihat',
+            'cms' => 'cms,lihat',
+            'cms.simpan' => 'cms,ubah',
 
             // Laporan (per LaporanData::meta()); dokumen polos = dashboard sbg lantai
             'laporan.indikator-kawasan' => 'dashboard,lihat',
@@ -190,10 +192,6 @@ class PetaIzinRute
             'tentang', 'panduan',
             // Dev-only, dijadwalkan dihapus sebelum penyerahan.
             'galeri-komponen', 'uji-403',
-            // GAP: `MenuHelper` merujuk `cms.lihat` tetapi CMS tak ada di katalog
-            // 95 izin (data-dictionary 13.1). Dibiarkan tanpa `izin` sampai
-            // pemilik proyek memutuskan apakah CMS perlu kewenangan sendiri.
-            'cms', 'cms.simpan',
             // Stub: mengembalikan pesan "belum tersedia", tanpa data.
             'template-impor',
             // Pemeriksaan `{modul}.lihat` dinamis di dalam DokumenController.

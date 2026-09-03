@@ -75,7 +75,7 @@ it('menolak menyunting role Admin yang terkunci (403)', function () {
         'nama' => 'Admin', 'cakupan_data' => 'Semua', 'izin' => ['dashboard' => ['lihat']],
     ])->assertForbidden();
 
-    expect(Role::find(1)->permissions()->count())->toBe(95); // tak berubah
+    expect(Role::find(1)->permissions()->count())->toBe(97); // tak berubah
 });
 
 it('menolak menghapus role bawaan (403)', function () {

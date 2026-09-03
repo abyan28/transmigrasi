@@ -1697,11 +1697,12 @@ Tanda centang berarti kewenangan tersebut dibuat untuk fitur bersangkutan.
 | `infrastruktur` | v | v | v | v |
 | `pengaduan` | v | v | v | v |
 | `penanganan_pengaduan` | v | v | v |   |
+| `cms` | v |   | v |   |
 | `dashboard` | v |   |   |   |
 
-Total **95 kewenangan** dari 27 fitur, dihitung dari tabel di atas. Turun dari 99 pada 2026-09-02 (Putaran 15), ketika modul `dokumen_lahan` beserta empat kewenangannya dicabut: HPL adalah alas hak kawasan dan SHM meliputi seluruh lahan satu keluarga, sehingga tidak ada dokumen milik satu bidang (`rules.md` 7.4a). Sebelumnya turun dari 101 pada 2026-08-22 saat `musim_tanam` dicabut.
+Total **97 kewenangan** dari 28 fitur, dihitung dari tabel di atas. Naik dari 95 pada 2026-09-03 (Task 3.3), ketika modul `cms` (Pengelolaan Konten) diberi kewenangannya sendiri `cms.lihat` + `cms.ubah`, dipegang Admin dan Dinas Transmigrasi. Sebelumnya turun dari 99 pada 2026-09-02 (Putaran 15) saat `dokumen_lahan` dicabut, dan dari 101 pada 2026-08-22 saat `musim_tanam` dicabut.
 
-Jumlah kewenangan yang benar-benar dipegang tiap role bawaan lebih sedikit, sesuai susunan pada `rules.md` 5.1: Admin 95, Dinas Transmigrasi 47, Dinas Pertanian 44, Operator SP 49.
+Jumlah kewenangan yang benar-benar dipegang tiap role bawaan lebih sedikit, sesuai susunan pada `rules.md` 5.1: Admin 97, Dinas Transmigrasi 49, Dinas Pertanian 44, Operator SP 49.
 
 ### 13.2 Kelompok fitur pada antarmuka
 
@@ -1709,7 +1710,7 @@ Agar halaman pengaturan role mudah dibaca, kewenangan dikelompokkan sesuai struk
 
 | Kelompok | Fitur |
 |---|---|
-| Sistem | `pengguna`, `role`, `audit_log` |
+| Sistem | `pengguna`, `role`, `audit_log`, `cms` |
 | Wilayah dan SP | `wilayah`, `kawasan`, `sp`, `inventaris_sp`, `fasilitas_sp`, `satuan`, `referensi`, `penilaian_kondisi` |
 | Kependudukan | `transmigran`, `rumah`, `riwayat_penghunian`, `riwayat_kepala_keluarga` |
 | Lahan | `lahan` |

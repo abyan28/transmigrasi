@@ -410,6 +410,7 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **-*
 | Infrastruktur SP | L T U H | L T U | L T U | L T U |
 | Pengaduan | L T U H | L T U | L T U | L T |
 | Penanganan pengaduan | L T U | L T U | L T U | - |
+| Pengelolaan Konten (CMS) | L U | L U | - | - |
 | Dashboard | L | L | L | L |
 
 **Cakupan data tiap role:** Admin, Dinas Transmigrasi, dan Dinas Pertanian bercakupan `Semua`. Operator SP bercakupan `Per SP`, sehingga seluruh kewenangannya otomatis terbatas pada SP yang ditugaskan padanya.

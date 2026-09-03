@@ -72,5 +72,5 @@ it('memuat kewenangan tanpa query berulang lewat eager load role.permissions', f
     expect(DB::getQueryLog())->toBeEmpty();
     DB::disableQueryLog();
 
-    expect(Permission::count())->toBe(95); // sanity
+    expect(Permission::count())->toBe(97); // sanity
 });

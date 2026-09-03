@@ -1200,7 +1200,7 @@ class DummyData
                 $berkas = self::berkasSatu($pivot, $kunciInduk, (int) $b[$kunciId], $peran);
 
                 $b[$kunciLama] = $berkas['nama_file'] ?? null;
-                $b[$kunciLama . '_meta'] = $berkas;
+                $b[$kunciLama.'_meta'] = $berkas;
             }
 
             return $b;
@@ -1616,8 +1616,6 @@ class DummyData
             fn ($t) => ! in_array($t['id_transmigran'], $sudahPunya, true)
         ));
     }
-
-
 
     /**
      * Data master satuan beserta faktor konversinya ke ton.
@@ -4507,8 +4505,8 @@ class DummyData
     public static function role(): array
     {
         return [
-            ['id_role' => 1, 'nama' => 'Admin', 'deskripsi' => 'Akses penuh termasuk manajemen pengguna, role, dan audit log.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => true, 'is_aktif' => true, 'jumlah_izin' => 95, 'jumlah_pengguna' => 1],
-            ['id_role' => 2, 'nama' => 'Dinas Transmigrasi', 'deskripsi' => 'Mengelola data wilayah, transmigran, rumah, lahan, dan infrastruktur.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 47, 'jumlah_pengguna' => 1],
+            ['id_role' => 1, 'nama' => 'Admin', 'deskripsi' => 'Akses penuh termasuk manajemen pengguna, role, dan audit log.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => true, 'is_aktif' => true, 'jumlah_izin' => 97, 'jumlah_pengguna' => 1],
+            ['id_role' => 2, 'nama' => 'Dinas Transmigrasi', 'deskripsi' => 'Mengelola data wilayah, transmigran, rumah, lahan, dan infrastruktur.', 'cakupan_data' => CakupanData::Semua->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 49, 'jumlah_pengguna' => 1],
             ['id_role' => 3, 'nama' => 'Dinas Pertanian', 'deskripsi' => 'Mengelola data poktan, komoditas, panen, alsintan, dan saprotan.', 'cakupan_data' => CakupanData::PerBidang->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 44, 'jumlah_pengguna' => 1],
             ['id_role' => 4, 'nama' => 'Operator SP', 'deskripsi' => 'Memasukkan data pada satuan permukiman yang ditugaskan. Tanpa kewenangan hapus.', 'cakupan_data' => CakupanData::PerSp->value, 'is_bawaan' => true, 'is_terkunci' => false, 'is_aktif' => true, 'jumlah_izin' => 49, 'jumlah_pengguna' => 2],
 
@@ -4817,6 +4815,7 @@ class DummyData
         foreach ($sebaran as $kunci => $nilai) {
             if ($nilai === 0) {
                 $hasil[$kunci] = 0;
+
                 continue;
             }
             $dibulatkan = (int) round($nilai * $rasio);
@@ -5595,6 +5594,9 @@ class DummyData
                     // akun mana pun (rules.md 5.0c poin 8 dan 9).
                     ['kunci' => 'role', 'nama' => 'Pengaturan role', 'aksi' => $penuh],
                     ['kunci' => 'audit_log', 'nama' => 'Audit log', 'aksi' => $bacaSaja],
+                    // Pengelolaan Konten (CMS 5 tab). Isinya disunting, bukan
+                    // ditambah/dihapus: himpunan blok kontennya tetap.
+                    ['kunci' => 'cms', 'nama' => 'Pengelolaan konten', 'aksi' => ['lihat', 'ubah']],
                 ],
             ],
             [
@@ -5719,9 +5721,11 @@ class DummyData
                 // Akun tidak pernah dihapus, hanya dinonaktifkan, sehingga
                 // modul pengguna berhenti di ubah (rules.md 14b poin 16).
                 'pengguna' => $ltu, 'role' => $k, 'audit_log' => $l,
+                'cms' => ['lihat', 'ubah'],
             ],
             // Dinas Transmigrasi. Mengelola wilayah, kependudukan, dan lahan.
-            // Pada modul pertanian hanya dapat melihat.
+            // Pada modul pertanian hanya dapat melihat. Memegang CMS bersama
+            // Admin: dinas pengelola kawasan yang menyunting isi halaman publik.
             2 => [
                 'wilayah' => $l, 'kawasan' => $l, 'sp' => $ltu,
                 'inventaris_sp' => $ltu, 'fasilitas_sp' => $ltu, 'satuan' => $l, 'referensi' => $ltu,
@@ -5733,6 +5737,7 @@ class DummyData
                 'komoditas' => $l, 'penanaman' => $l, 'hasil_panen' => $l,
                 'infrastruktur' => $ltu, 'pengaduan' => $ltu, 'penanganan_pengaduan' => $ltu,
                 'dashboard' => $l,
+                'cms' => ['lihat', 'ubah'],
             ],
             // Dinas Pertanian. Mengelola kelembagaan dan produksi pertanian.
             // Pada modul kependudukan hanya dapat melihat.

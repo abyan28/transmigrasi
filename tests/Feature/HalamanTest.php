@@ -2854,7 +2854,8 @@ it('menyamakan daftar izin dengan kamus data dan rules', function () {
         'Komoditas' => 'komoditas',
         'Penanaman' => 'penanaman', 'Hasil panen' => 'hasil_panen',
         'Infrastruktur SP' => 'infrastruktur', 'Pengaduan' => 'pengaduan',
-        'Penanganan pengaduan' => 'penanganan_pengaduan', 'Dashboard' => 'dashboard',
+        'Penanganan pengaduan' => 'penanganan_pengaduan',
+        'Pengelolaan Konten (CMS)' => 'cms', 'Dashboard' => 'dashboard',
     ];
 
     $izinRules = [];
