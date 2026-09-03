@@ -1,3 +1,60 @@
+# Tahap 3 Â· Task 3.2b - Penegakan `auth` + migrasi uji + bypass lokal BERJALAN (2026-09-03)
+
+Rencana ditulis sebelum kode disentuh (`rules.md` 20b poin 12). Rencana lengkap:
+`.claude/plans/logical-whistling-salamander.md`.
+
+## Konteks
+
+Task 3.2 "mekanik" selesai (`4e252a0`): mesin auth jalan penuh, tapi **belum ada
+rute yang mewajibkan login**. Task 3.2b menutup itu + menambah bypass auto-login
+env `local` supaya pemilik proyek tetap bisa telusur bebas.
+
+## Fakta eksplorasi (3 agen, 2026-09-03)
+
+- `routes/web.php` (2931 baris) **100% flat** -- nol `Route::group`/`middleware`.
+- **Layout aman:** publik/auth/error pakai `layouts.publik`/`fullscreen-layout` --
+  nol sidebar/`user-dropdown`/`penggunaSaatIni()`. **Nol `@auth`/`Auth::` di
+  seluruh `resources/views/`** -> mengautentikasi user uji tak mengubah HTML.
+- `penggunaSaatIni()` dipakai 2 tempat: `routes/web.php:271` + `ViewServiceProvider.php:103`.
+- `guest` bawaan L12 arahkan ke `/dashboard` yang **tak ada** -> butuh
+  `$middleware->redirectUsersTo('/')`. `auth` bawaan arahkan tamu ke `login` (ada).
+- `new User(['password_harus_diganti'=>false])` (tak dipersist) cukup lolos
+  `auth`+`pastikan.ganti.sandi` -> **`RefreshDatabase` TIDAK perlu** untuk Feature.
+- `DaftarTautanStatis` tak sadar middleware (emit 224). `TautanStatisTest` tak
+  kunci angka. `deploy.yml` crawl tanpa login -> 302 mematikan deploy.
+- **Bypass auto-login belum ada di mana pun** -- desain baru.
+- `/` (`beranda`) = dashboard (internal). Tak ada landing publik terpisah.
+
+## Cakupan
+
+MASUK: (1) `auth`+`pastikan.ganti.sandi` pada rute internal, `guest` pada 6 rute
+auth; (2) `redirectUsersTo('/')`; (3) middleware `MasukOtomatisLokal` +
+`config/sim.php` (bypass `local`); (4) `tests/Pest.php` `beforeEach` global
+`actingAs(new User(...))` grup Feature; (5) ~11 edit body uji (10 `HalamanTest`,
+1 `TautanStatisTest`); (6) `DaftarTautanStatis` disaring ke publik; (7) uji
+integrasi baru `AutentikasiTest`; (8) update docs + `notes.md` §1b.7/§6.
+
+DITUNDA: username saat ganti-sandi pertama (`rules.md` 14b.5) -> Task 3.5;
+`penggunaSaatIni()`->`Auth::user()` -> Tahap 4; halaman landing publik ->
+keputusan pemilik; CI job pest+MySQL -> nanti.
+
+## Urutan commit (tiap Cn = checkpoint bersih)
+
+| C | Isi | Risiko |
+|---|---|---|
+| C0 | Rencana -> `session-notes.md` (blok ini) | nihil |
+| C1 | `MasukOtomatisLokal` + `config/sim.php` + `bootstrap/app.php` | rendah |
+| C2 | `routes/web.php` bungkus grup + `guest` | **TINGGI konflik agen paralel** -- commit atomik |
+| C3 | `tests/Pest.php` `beforeEach` + 11 edit body + uji integrasi | sedang |
+| C4 | `DaftarTautanStatis` saring publik | rendah |
+| C5 | Docs (`tasklist`/`notes`/`session-notes` HASIL) | nihil |
+
+Verifikasi penuh setelah C3 & C4: `pest` Feature **732 PASS**, `pest tests/Database`
+98+ PASS, `pint` 31, `sim:tautan-statis` ~6 URL, `sim:banding-skema --lengkap`
+NOL SELISIH. Manual: `SIM_MASUK_OTOMATIS=true` -> `/` tanpa login; `=false` -> redirect `/login`.
+
+---
+
 # Tahap 3 Â· Task 3.2 - Login, Logout, Throttle Masuk SELESAI (mekanik) (2026-09-03)
 
 Rencana ditulis sebelum kode disentuh (`rules.md` 20b poin 12).
