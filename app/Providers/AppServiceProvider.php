@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\User;
+use App\Observers\AuditLogObserver;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -27,6 +28,19 @@ class AppServiceProvider extends ServiceProvider
         $this->samakanAlamatDasar();
         $this->daftarkanGateIzin();
         $this->daftarkanBatasLaju();
+        $this->daftarkanAuditOtomatis();
+    }
+
+    /**
+     * Memasang `AuditLogObserver` pada seluruh model data (Task 3.6).
+     * Daftarnya di `AuditLogObserver::MODEL`; dipasang lewat perulangan supaya
+     * ke-32 model tidak perlu disunting satu per satu.
+     */
+    private function daftarkanAuditOtomatis(): void
+    {
+        foreach (AuditLogObserver::MODEL as $model) {
+            $model::observe(AuditLogObserver::class);
+        }
     }
 
     /**

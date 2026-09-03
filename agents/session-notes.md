@@ -1,7 +1,10 @@
-# Tahap 3 Â· Sisa Tahap 3: Task 3.9 + 3.10 + 3.6 (2026-09-03)
+# Tahap 3 Â· Sisa Tahap 3: Task 3.9 + 3.10 + 3.6 SELESAI (2026-09-03)
 
 Pemilik proyek: "kerjakan semua sisa Tahap 3 selama tidak ada konflik".
-Commit terpisah per task. Belum di-push.
+Commit terpisah per task. Belum di-push. Ketiganya SELESAI -- Tahap 3 tuntas
+(Task 3.7 dibatalkan, 3.8 dikerjakan berbarengan Model tiap Task 3.1).
+Verifikasi akhir: Feature 733, Database 203, `sim:banding-skema` NOL SELISIH,
+`sim:tautan-statis` 14, pint bersih.
 
 ## Task 3.9 -- Slug data master  [SELESAI]
 
@@ -54,28 +57,45 @@ Rencana awal (arsip):
 - Uji `tests/Database/PembatasanLajuTest.php` (atau Feature): batas baca/tulis,
   publik, pengecualian ekspor, pesan Indonesia.
 
-## Task 3.6 -- Audit log perubahan data otomatis  [BELUM]
+## Task 3.6 -- Audit log perubahan data otomatis  [SELESAI]
 
-Rencana:
-- `app/Models/Concerns/DicatatAuditLog.php` (trait) + observer/closure model
-  event `created`/`updated`/`deleted`/`restored` -> `AuditLog::create`.
-- Hanya kolom BERUBAH masuk `data_lama`/`data_baru`; `password` +
-  `remember_token` WAJIB dikecualikan (`data-dictionary.md` 2.2).
-- `record_id` = PK; `user_id` = `Auth::id()`; aksi map:
-  created->Tambah, updated->Ubah, deleted (soft)->Hapus, forceDeleted->Hapus,
-  restored->Pulihkan.
-- Lewati bila tak ada perubahan bermakna (updated tanpa dirty selain
-  timestamps).
-- Dipasang pada model DATA UTAMA (bukan pivot, bukan referensi murni). Daftar
-  pasti disusun saat kerja: transmigran, rumah, lahan, poktan, penanaman,
-  hasil_panen, pengaduan, infrastruktur, satuan_permukiman, kawasan,
-  inventaris_sp, fasilitas_sp, dst. TIDAK: `audit_log` sendiri,
-  `kode_pemulihan_sandi`, tabel pivot `*_berkas`.
-- `AksiAuditLog::Login/Logout/ResetKataSandi/...` tetap dicatat manual di
-  controllernya -- trait ini hanya untuk perubahan DATA.
-- Uji `tests/Database/AuditLogOtomatisTest.php`: create->Tambah, update->Ubah
-  hanya kolom berubah, password tak pernah masuk, soft delete->Hapus,
-  restore->Pulihkan, pelaku terekam, aksi non-data tak ganda.
+HASIL: `App\Observers\AuditLogObserver` (const `MODEL` = 32 kelas) dipasang
+lewat perulangan `AppServiceProvider::daftarkanAuditOtomatis()` -- tanpa
+menyunting model. `created`->Tambah, `updated`->Ubah (hanya kolom berubah,
+`data_lama` = irisan `getOriginal()`), `deleted`->Hapus, `restored`->Pulihkan.
+Dikecualikan: `password`, `remember_token`, `created_at`, `updated_at`,
+`deleted_at`. `updated` tanpa kolom bermakna -> dilewati. `restore()` tak lagi
+bikin baris "Ubah" hantu (deleted_at dikecualikan). TIDAK diobservasi:
+`User`/`Role`/`Permission` (manual + konteks), `AuditLog`/`KodePemulihanSandi`/
+`Berkas`/pivot. Feature 733, Database 203 (+8 `AuditLogOtomatisTest`),
+`sim:banding-skema` NOL SELISIH. `AuditLog` model docstring diperbarui.
+
+Rencana awal (arsip):
+- `app/Observers/AuditLogObserver.php` -- observer terpusat, DIDAFTARKAN lewat
+  loop di `AppServiceProvider::boot()` (tanpa menyunting 32 model -> kurangi
+  permukaan konflik).
+- Event: `created`->Tambah (`data_baru` = atribut bersih, `data_lama` null),
+  `updated`->Ubah (`data_baru` = `getChanges()` bersih, `data_lama` =
+  irisannya dari `getOriginal()`), `deleted`->Hapus (`data_lama` = original
+  bersih, `data_baru` null; soft & force sama), `restored`->Pulihkan.
+- DIKECUALIKAN dari catatan: `password`, `remember_token`, `created_at`,
+  `updated_at`, `deleted_at` (`data-dictionary.md` 2.2 + supaya `restore()`
+  yang memicu `updated` (deleted_at->null) TIDAK jadi baris "Ubah" hantu ->
+  `restored` yang menanganinya).
+- `updated` tanpa kolom berubah bermakna -> DILEWATI.
+- `user_id` = `Auth::id()`; `ip_address`/`user_agent` dari `request()` bila ada.
+- Model DIAUDIT (const `AuditLogObserver::MODEL`): seluruh data operasional +
+  master wilayah/SP/pertanian + referensi. TIDAK: `User`/`Role`/`Permission`
+  (sudah dicatat manual di controllernya dgn konteks -> hindari ganda),
+  `AuditLog`, `KodePemulihanSandi`, `Berkas`, tabel pivot.
+- `Login/Logout/Reset Kata Sandi/Nonaktifkan/Aktifkan/Ubah Izin Role` tetap
+  manual di controller -- observer ini HANYA perubahan DATA.
+- Uji `tests/Database/AuditLogOtomatisTest.php`: create->Tambah; update->Ubah
+  hanya kolom berubah; `password` tak pernah masuk (uji lewat model lain yg
+  tak diaudit? -> pakai model diaudit tanpa password, mis. Transmigran, +
+  1 uji khusus User TIDAK memicu observer); soft delete->Hapus; restore->
+  Pulihkan (tanpa "Ubah" hantu); pelaku terekam saat `actingAs`; model tak
+  terdaftar (mis. `Berkas`) tak menghasilkan baris.
 
 ---
 

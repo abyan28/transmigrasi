@@ -11,9 +11,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * disimpan (`data_lama`/`data_baru`); kolom `password` WAJIB dikecualikan.
  * Tabel riwayat: TANPA soft delete, tidak pernah disunting.
  *
- * Task 3.2 memakai model ini hanya untuk mencatat Login/Logout/Reset Kata
- * Sandi lewat `AuditLog::create()` langsung. Pencatatan otomatis atas
- * perubahan data (observer + diffing) adalah Task 3.6.
+ * Kejadian akun (Login/Logout/Reset Kata Sandi/Nonaktifkan/Aktifkan/Ubah Izin
+ * Role) dicatat manual lewat `AuditLog::create()` di controllernya karena
+ * butuh konteks tambahan. Perubahan DATA (Tambah/Ubah/Hapus/Pulihkan pada 32
+ * model) dicatat otomatis oleh `App\Observers\AuditLogObserver` (Task 3.6),
+ * hanya kolom yang berubah, `password` selalu dikecualikan.
  */
 class AuditLog extends Model
 {

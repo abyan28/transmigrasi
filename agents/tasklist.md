@@ -1133,7 +1133,8 @@ domain; sisanya mengikuti tanpa mengubah skema maupun komponen.
 - [✓] Task 3.5b - Perintah artisan pemulihan darurat kata sandi Admin `[Mudah]`
   * Jalur pemulihan lewat terminal server bila seluruh Admin kehilangan akses (`rules.md` §14b poin 13)
   * **SELESAI 2026-09-03:** `sim:pulihkan-admin {identitas?}` — reset sandi 1 akun Admin (role terkunci), tandai wajib-ganti, audit `Reset Kata Sandi` `user_id` NULL jalur `Artisan darurat`. Tanpa arg bila Admin tunggal; minta arg (username/email) bila > 1. 5 uji Database (`PulihkanAdminTest`).
-- [ ] Task 3.6 - Implementasi audit log perubahan data `[Sedang]`
+- [✓] Task 3.6 - Implementasi audit log perubahan data `[Sedang]`
+  * **SELESAI 2026-09-03:** `App\Observers\AuditLogObserver` dipasang pada 32 model data lewat perulangan di `AppServiceProvider::daftarkanAuditOtomatis()` (`AuditLogObserver::MODEL`). `created`→Tambah, `updated`→Ubah (hanya kolom berubah; `data_lama` = irisan `getOriginal`), `deleted`→Hapus, `restored`→Pulihkan. Dikecualikan dari catatan: `password`, `remember_token`, `created_at`, `updated_at`, `deleted_at` (yang terakhir supaya `restore()` tak bikin baris "Ubah" hantu). `user_id` = `Auth::id()`. TIDAK diobservasi: `User`/`Role`/`Permission` (dicatat manual dengan konteks di controllernya), `AuditLog`/`KodePemulihanSandi`/`Berkas`/pivot. 8 uji `AuditLogOtomatisTest`.
 - [ ] Task 3.8 - Pengenal UUID pada alamat URL `[Sedang]`
   * Diterapkan **bertahap**, dimulai dari modul berdata pribadi: transmigran, rumah, pengaduan
   * Primary key integer **tetap dipakai di dalam database** untuk relasi antar-tabel; UUID hanya pengenal publik
