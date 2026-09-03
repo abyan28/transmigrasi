@@ -1,7 +1,7 @@
 # tasklist.md
 ## Daftar Tugas — Sistem Informasi Digitalisasi Monitoring Pertanian dan Tata Kelola Data Kawasan Transmigrasi Kobalima Timur
 
-**Progress: 84%**
+**Progress: 86%**
 *(Tahap 0 selesai 8 task. **Tahap 1 SELESAI** 12 task. **TAHAP 2 SELESAI SELURUHNYA.** Gelombang 1 dan 2 tuntas, 32 halaman berdiri. **Delivery Gate kedua gelombang sudah dijalankan** dan laporannya lengkap (`delivery-gate-gelombang-1.md` dan `-2.md`). Dua hal ditunda beralasan, bukan lolos diam-diam: keadaan memuat dan galat menunggu backend Tahap 3, dan pemeriksaan 360px pada perangkat nyata menunggu manusia. Siap masuk checkpoint validasi bersama tim dan dinas, lalu Tahap 3.)*
 
 Acuan: `prd.md`, `rules.md`, `workflow.md`, `ui-spec.md`, `erd.md`, `data-dictionary.md`, `notes.md`.
@@ -1028,7 +1028,9 @@ fasilitas, SP, kawasan, penanganan pengaduan, user). Polanya sudah terbukti pada
 domain; sisanya mengikuti tanpa mengubah skema maupun komponen.
 
 
-## Tahap 3 — Autentikasi dan Hak Akses
+## Tahap 3 — Autentikasi dan Hak Akses  **SELESAI 2026-09-03**
+
+> **Seluruh Tahap 3 tuntas** (3.1–3.6, 3.8, 3.9, 3.10, 3.11 + 3.2b, 3.3b, 3.4b, 3.5b). Task 3.7 dibatalkan. Uji: Feature 733 + Database 203 hijau, `sim:banding-skema` NOL SELISIH. HASIL tiap task di bawah dan di `session-notes.md`.
 
 > ## ⚑ BACA SEBELUM TASK 3.1 (konsolidasi keputusan pra-Tahap-3, 2026-09-03)
 >
@@ -1135,13 +1137,14 @@ domain; sisanya mengikuti tanpa mengubah skema maupun komponen.
   * **SELESAI 2026-09-03:** `sim:pulihkan-admin {identitas?}` — reset sandi 1 akun Admin (role terkunci), tandai wajib-ganti, audit `Reset Kata Sandi` `user_id` NULL jalur `Artisan darurat`. Tanpa arg bila Admin tunggal; minta arg (username/email) bila > 1. 5 uji Database (`PulihkanAdminTest`).
 - [✓] Task 3.6 - Implementasi audit log perubahan data `[Sedang]`
   * **SELESAI 2026-09-03:** `App\Observers\AuditLogObserver` dipasang pada 32 model data lewat perulangan di `AppServiceProvider::daftarkanAuditOtomatis()` (`AuditLogObserver::MODEL`). `created`→Tambah, `updated`→Ubah (hanya kolom berubah; `data_lama` = irisan `getOriginal`), `deleted`→Hapus, `restored`→Pulihkan. Dikecualikan dari catatan: `password`, `remember_token`, `created_at`, `updated_at`, `deleted_at` (yang terakhir supaya `restore()` tak bikin baris "Ubah" hantu). `user_id` = `Auth::id()`. TIDAK diobservasi: `User`/`Role`/`Permission` (dicatat manual dengan konteks di controllernya), `AuditLog`/`KodePemulihanSandi`/`Berkas`/pivot. 8 uji `AuditLogOtomatisTest`.
-- [ ] Task 3.8 - Pengenal UUID pada alamat URL `[Sedang]`
+- [✓] Task 3.8 - Pengenal UUID pada alamat URL `[Sedang]`
   * Diterapkan **bertahap**, dimulai dari modul berdata pribadi: transmigran, rumah, pengaduan
   * Primary key integer **tetap dipakai di dalam database** untuk relasi antar-tabel; UUID hanya pengenal publik
   * Alasan: id berurutan membocorkan perkiraan jumlah data (`rules.md` 4.0a)
   * **DIKERJAKAN BERSAMAAN dengan pembuatan Model tiap modul, BUKAN sebagai task tersendiri di belakang** (`rules.md` 4.0a poin 5a, ditetapkan 2026-09-02). Model yang tabelnya berkolom `uuid` wajib lahir dengan `getRouteKeyName()` bernilai `uuid` sejak commit pertamanya; biaya penggantian naik terus selama ditunda
   * Pembatas rute `where('id', '[0-9]+')` wajib ikut disesuaikan, sebab pembatas angka menolak UUID dan menghasilkan 404 yang membingungkan
   * Lima tabel sudah menyediakan kolomnya: `transmigran`, `rumah`, `lahan`, `hasil_panen`, `pengaduan`
+  * **SELESAI (bagian model) 2026-09-03:** kelima model lahir dengan `getRouteKeyName() => 'uuid'` + `uuid` di `$fillable` sejak Task 3.1 (6 uji Domain menjaganya). Penukaran *route-model-binding* + pembatas `where(...)` per modul menyusul saat rutenya pindah dari closure `DummyData` ke controller nyata (Tahap 4-9) — bukan pekerjaan tersendiri.
 - [✓] Task 3.9 - Slug pada data master `[Sedang]`
   * Diterapkan pada SP, kawasan, poktan, dan komoditas. Contoh `/dashboard/sp/kapitan-meo`
   * **Slug dilarang diturunkan dari data pribadi.** Nama orang pada URL tersimpan di riwayat peramban dan log server, sehingga justru menurunkan kerahasiaan dibanding id angka
