@@ -135,13 +135,13 @@ internal, sehingga penerjemahannya terpaksa ditulis tangan lalu dibuang lagi.
 Pembatas rutenya (`[0-9]+`) wajib ikut disesuaikan pada saat Model dibuat, sebab
 pembatas angka akan menolak UUID dan menghasilkan 404 yang membingungkan.
 
-6. Pembatasan laju melengkapi, bukan menggantikan, pengenal tak tertebak (Â§14c).
+6. Pembatasan laju melengkapi, bukan menggantikan, pengenal tak tertebak (§14c).
 
 **Aturan tambahan:**
 1. Semua tabel memiliki `created_at` dan `updated_at`.
 2. Tabel data utama memakai soft delete (`deleted_at`); tabel referensi dan tabel riwayat tidak.
 3. Semua tabel memakai `ENGINE=InnoDB`, `CHARSET=utf8mb4`, `COLLATE=utf8mb4_unicode_ci`.
-4. Nilai enum tidak ditulis langsung di kode maupun view, melainkan didefinisikan sebagai **PHP Enum** di `app/Enums/` sesuai daftar pada `data-dictionary.md` Â§11.
+4. Nilai enum tidak ditulis langsung di kode maupun view, melainkan didefinisikan sebagai **PHP Enum** di `app/Enums/` sesuai daftar pada `data-dictionary.md` §11.
 
 #### 4.1 Aturan umum
 
@@ -177,15 +177,15 @@ pembatas angka akan menolak UUID dan menghasilkan 404 yang membingungkan.
 1. Data wilayah mengikuti hierarki **bercabang dua** yang berpisah di tingkat kabupaten:
 
    ```
-   provinsi â†’ kabupaten â”€â”¬â”€ kecamatan â†’ desa â”€â”€â”€â”€â”€â”
-                         â”‚  (cabang administratif) â”‚
-                         â””â”€ kawasan transmigrasi â”€â”€â”´â”€â†’ satuan permukiman (SP)
+   provinsi → kabupaten ─┬─ kecamatan → desa ─────┐
+                         │  (cabang administratif) │
+                         └─ kawasan transmigrasi ──┴─→ satuan permukiman (SP)
                             (cabang program)
    ```
 
 2. **Cabang administratif** mencatat pembagian pemerintahan. **Cabang program** mencatat kawasan transmigrasi, yaitu wilayah perencanaan yang dapat memotong batas kecamatan. Keduanya bertemu di SP.
 3. Setiap SP wajib menaut ke **satu desa** dan **satu kawasan transmigrasi** sekaligus. Informasi kecamatan tidak disimpan langsung pada SP, melainkan dibaca lewat desanya.
-4. Setiap SP wajib menyimpan: nama SP, desa, kawasan, titik koordinat, luas lahan, dokumen pendukung, dan penanggung jawab data. Inventaris dan fasilitas SP dikelola sebagai daftar terpisah yang menempel pada SP (Â§4b).
+4. Setiap SP wajib menyimpan: nama SP, desa, kawasan, titik koordinat, luas lahan, dokumen pendukung, dan penanggung jawab data. Inventaris dan fasilitas SP dikelola sebagai daftar terpisah yang menempel pada SP (§4b).
 4a. **SP menyimpan field "Keadaan Wilayah"** (letak astronomis dan ekonomis, batas wilayah, SK pencadangan, pola permukiman, tanah, topografi, iklim, sumberdaya air) untuk Laporan Monografi SP. Seluruhnya opsional dan dokumenter: dipakai laporan, tidak dihitung. Angka rentang disimpan sebagai pasangan min/maks, bukan teks. Ditambahkan 2026-08-28 (Rombongan C), mengikuti Bab II Laporan Monografi.
 4b. **Batas wilayah Utara/Timur/Selatan/Barat dihidupkan kembali 2026-08-28** setelah dicabut 2026-08-18. Alasan pencabutan (isinya sebutan naratif, tak dipakai hitungan/indikator/peta) tetap benar, tetapi Bab II Laporan Monografi memuatnya sehingga dinas memerlukannya. Riwayat pencabutan dipertahankan pada `notes.md` bagian 6.
 4c. **Rute aksesibilitas SP** (rute perjalanan menuju SP: jarak, sarana angkutan, kondisi jalan, waktu tempuh, ongkos) disimpan sebagai daftar terpisah `rute_aksesibilitas_sp`, mengikuti Tabel 2.1 Monografi.
@@ -247,7 +247,7 @@ pembatas angka akan menolak UUID dan menghasilkan 404 yang membingungkan.
    - **Kewenangan** menjawab *boleh melakukan apa*, contoh `transmigran.lihat` dan `transmigran.ubah`,
    - **Cakupan data** menjawab *boleh melihat data siapa*, dengan nilai `Semua` atau `Per SP`.
 4. Daftar kewenangan ditanam sistem lewat seeder dan **tidak dapat ditambah atau dihapus Admin**, karena setiap kewenangan harus punya pasangan pemeriksa di dalam kode. Admin hanya memasangkannya ke role.
-5. **Seluruh pengguna sistem adalah petugas.** Warga transmigran tidak memiliki akun; data mereka dikelola petugas, sedangkan pengaduan diajukan lewat kanal publik tanpa login (Â§10b).
+5. **Seluruh pengguna sistem adalah petugas.** Warga transmigran tidak memiliki akun; data mereka dikelola petugas, sedangkan pengaduan diajukan lewat kanal publik tanpa login (§10b).
 
 #### 5.0a Empat role bawaan
 
@@ -378,7 +378,7 @@ Dibuat lewat seeder sebagai konfigurasi awal agar sistem langsung dapat dipakai.
 
 #### 5.1 Susunan kewenangan role bawaan
 
-> **Kedudukan tabel ini.** Sejak role menjadi dinamis (Â§5.0), tabel di bawah bukan lagi aturan permanen yang dikunci di dalam kode, melainkan **konfigurasi awal** yang ditanam seeder. Admin dapat mengubahnya lewat menu Pengaturan Role, kecuali baris role Admin yang terkunci.
+> **Kedudukan tabel ini.** Sejak role menjadi dinamis (§5.0), tabel di bawah bukan lagi aturan permanen yang dikunci di dalam kode, melainkan **konfigurasi awal** yang ditanam seeder. Admin dapat mengubahnya lewat menu Pengaturan Role, kecuali baris role Admin yang terkunci.
 
 Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **-** = tanpa akses
 
@@ -421,7 +421,7 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **-*
 3. Operator SP sengaja tidak diberi kewenangan hapus. Ia bertugas memasukkan dan memutakhirkan data, sedangkan penghapusan menjadi kewenangan dinas dan admin.
 4. **Operator SP tidak memegang kewenangan apa pun pada Penanganan pengaduan,** dan inilah pembeda pokoknya dari role dinas. Menangani pengaduan berarti **memutuskan tindak lanjut atas nama dinas** beserta menutup laporan warga; itu kewenangan jabatan, bukan soal kemampuan teknis. Operator SP tetap boleh melihat dan mencatat pengaduan dari wilayahnya, sehingga laporan warga tidak pernah tertahan menunggu petugas dinas hadir di lokus.
 5. **Ekspor tidak lagi menjadi kewenangan tersendiri** (dicabut 2026-08-17). Mengekspor adalah cara lain membaca data yang **sudah** boleh dilihat, bukan tindakan baru, sehingga ia mengikuti kewenangan `lihat` pada fitur yang bersangkutan. Sebelumnya huruf `E` berdiri terpisah, tetapi 24 sel memberi `lihat` tanpa `export` tanpa alasan yang dapat dijelaskan, dan Admin terpaksa menyusun satu maksud dua kali. Pembatasan sebaran data ditangani **cakupan data** (5.2): Operator SP hanya dapat mengekspor data SP yang ditugaskan padanya, sebab penyaringannya terjadi di tingkat query, bukan di tombol.
-6. **Inventaris SP dan Fasilitas SP adalah dua fitur terpisah**, masing-masing dengan kewenangannya sendiri. Keduanya memang bernilai sama pada konfigurasi awal, tetapi tetap dipisah karena berupa dua tabel dan dua halaman yang berbeda (Â§4b poin 1), sehingga Admin dapat memberi kewenangan berbeda antara aset bergerak dan bangunan fasilitas. Sampai 2026-08-12 keduanya tertulis sebagai satu baris di sini, tidak sejalan dengan `data-dictionary.md` Â§13.1, `erd.md`, dan `ui-spec.md` yang sejak awal memisahkannya.
+6. **Inventaris SP dan Fasilitas SP adalah dua fitur terpisah**, masing-masing dengan kewenangannya sendiri. Keduanya memang bernilai sama pada konfigurasi awal, tetapi tetap dipisah karena berupa dua tabel dan dua halaman yang berbeda (§4b poin 1), sehingga Admin dapat memberi kewenangan berbeda antara aset bergerak dan bangunan fasilitas. Sampai 2026-08-12 keduanya tertulis sebagai satu baris di sini, tidak sejalan dengan `data-dictionary.md` §13.1, `erd.md`, dan `ui-spec.md` yang sejak awal memisahkannya.
 7. Anggota poktan yang berhenti ditandai berstatus "Sudah Keluar", bukan dihapus, agar riwayat tetap utuh.
 8. **Riwayat kepala keluarga tidak dapat dihapus siapa pun**, termasuk Admin. Admin hanya memegang `ubah` untuk membetulkan salah ketik pada tanggal atau sebab; tanpa itu petugas akan mencatat suksesi kedua sebagai penebus kekeliruan yang pertama. Riwayat ini menyangkut keabsahan penguasaan lahan, sebab ia menyatakan siapa pemegang jatah pada rentang waktu tertentu (6.5f).
 
@@ -587,7 +587,7 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **-*
 1. Sistem harus mendukung komoditas unggulan kawasan, terutama komoditas utama yang disebut dalam proposal, yaitu jagung.
 2. Komoditas harus dapat dikaitkan dengan poktan, penanaman, dan hasil panen.
 3. Sistem harus mendukung penandaan komoditas unggulan.
-3a. **Unggulan ditandai petugas, bukan dihitung sistem** (ditegaskan 2026-08-18). Dasarnya proposal atau kebijakan dinas, sebagaimana poin 1 yang menyebut jagung "disebut dalam proposal" â€” penetapannya mendahului data panen mana pun. Menghitungnya dari volume terbesar akan menutup kasus yang justru paling perlu ditandai: komoditas prioritas program yang volumenya masih kecil karena baru dirintis. Perhitungan otomatis juga membuat jumlah penanda aksen gold tidak terkendali, bertentangan dengan `ui-spec.md` 2.4 yang membatasi pemakaiannya.
+3a. **Unggulan ditandai petugas, bukan dihitung sistem** (ditegaskan 2026-08-18). Dasarnya proposal atau kebijakan dinas, sebagaimana poin 1 yang menyebut jagung "disebut dalam proposal" — penetapannya mendahului data panen mana pun. Menghitungnya dari volume terbesar akan menutup kasus yang justru paling perlu ditandai: komoditas prioritas program yang volumenya masih kecil karena baru dirintis. Perhitungan otomatis juga membuat jumlah penanda aksen gold tidak terkendali, bertentangan dengan `ui-spec.md` 2.4 yang membatasi pemakaiannya.
 3b. Form komoditas **menampilkan volume tercatat sebagai bahan pertimbangan**, beserta peringatan bila yang ditandai bukan bervolume terbesar. Peringatan itu **tidak menghalangi penyimpanan**: unggulan bervolume kecil adalah keadaan yang sah, yang tidak boleh terjadi hanyalah petugas menandainya tanpa menyadari keadaan itu.
 3c. **"Komoditas utama" pada dashboard berbeda dari "komoditas unggulan"** dan keduanya sengaja tidak disatukan. Utama dihitung dari volume terbesar dan berubah mengikuti musim; unggulan ditetapkan program dan tidak berubah hanya karena panen satu musim naik atau turun. Pemilihan komoditas utama wajib memakai nilai terbesar, bukan urutan larik.
 4. Setiap komoditas wajib memiliki **satuan panen baku** yang ditetapkan pada data master, misalnya jagung dalam ton dan cabai dalam kilogram.
@@ -657,7 +657,7 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **-*
 16d. **Pemisahan Sumber Dana pada Laporan Hasil Panen (2026-09-01):** Laporan hasil panen mendukung penyaringan menurut `sumber_dana` (`APBN`, `APBD Provinsi`, `APBD Kabupaten`, `Swadaya`, atau `Semua`). Ini memungkinkan instansi mencetak laporan pertanggungjawaban khusus bantuan APBN/APBD (tanpa bercampur swadaya) maupun mencetak laporan menyeluruh produksi kawasan.
 
 ### 10. Aturan Fitur Infrastruktur SP
-1. Fitur infrastruktur berisi **pendataan aset**, bukan pelaporan masalah. Pelaporan kerusakan ditangani fitur Pengaduan (Â§10b).
+1. Fitur infrastruktur berisi **pendataan aset**, bukan pelaporan masalah. Pelaporan kerusakan ditangani fitur Pengaduan (§10b).
 2. Infrastruktur yang dicatat minimal mencakup:
    - air,
    - irigasi,
@@ -669,7 +669,7 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **-*
    - gudang,
    - pasar atau kios saprotan.
 
-   **Jalan penghubung dan jalan produksi sengaja dibedakan.** Jalan penghubung menentukan apakah warga, petugas, dan kendaraan darurat dapat mencapai SP; jalan produksi menentukan apakah hasil panen dapat diangkut dari lahan. Keduanya berbeda dampak dan berbeda bobot pada penilaian kondisi SP (Â§10c).
+   **Jalan penghubung dan jalan produksi sengaja dibedakan.** Jalan penghubung menentukan apakah warga, petugas, dan kendaraan darurat dapat mencapai SP; jalan produksi menentukan apakah hasil panen dapat diangkut dari lahan. Keduanya berbeda dampak dan berbeda bobot pada penilaian kondisi SP (§10c).
 3. Setiap infrastruktur wajib mencatat nama, tahun perolehan, sumber dana, dan kondisi terkini.
 4. Setiap infrastruktur dapat disertai foto kondisi lapangan dan titik koordinat.
 5. Infrastruktur wajib tertaut ke desa/SP, dan ke poktan bila relevan.
@@ -697,7 +697,7 @@ Parameter dikelompokkan menurut satu pertanyaan: **tanpa ini, apakah tempat ters
 #### 10c.3 Bobot
 
 5. Bobot awal: **Primer 5, Sekunder 3, Tersier 1**. Jarak ini disengaja agar kegagalan pada layanan dasar tidak tertutupi oleh kelengkapan fasilitas penunjang.
-6. Bobot **disimpan sebagai data** pada tabel `parameter_penilaian_sp`, bukan ditulis di dalam kode, sehingga Admin dapat menyesuaikannya lewat antarmuka tanpa mengubah struktur database. Pola ini mengikuti keputusan yang sama pada role dinamis (Â§5.0) dan faktor konversi satuan (Â§8a).
+6. Bobot **disimpan sebagai data** pada tabel `parameter_penilaian_sp`, bukan ditulis di dalam kode, sehingga Admin dapat menyesuaikannya lewat antarmuka tanpa mengubah struktur database. Pola ini mengikuti keputusan yang sama pada role dinamis (§5.0) dan faktor konversi satuan (§8a).
 7. Parameter dapat dinonaktifkan tanpa dihapus, agar riwayat penilaian yang memakainya tetap dapat dibaca.
 7a. **Barisnya dihasilkan dari jenis infrastruktur dan fasilitas** pada data master, bukan ditulis satu per satu. Daftar tulis tangan membuat jenis yang ditambahkan Admin tidak pernah ikut dinilai: dropdownnya hidup dan petugas dapat mendata asetnya, tetapi skor tidak berubah sama sekali. Keadaan itu pernah terjadi dan baru ketahuan setelah empat jenis fasilitas terlewat.
 7b. **Jenis baru belum dinilai sampai dinas mencentangnya.** Menambah jenis adalah pendataan, memasukkannya ke penilaian adalah kebijakan; menyatukan keduanya membuat skor seluruh SP turun hanya karena satu pilihan dropdown bertambah.
@@ -734,7 +734,7 @@ Parameter dikelompokkan menurut satu pertanyaan: **tanpa ini, apakah tempat ters
     | **Berkembang** | Skor 55 sampai 79, tanpa parameter primer bernilai nol |
     | **Perlu Penanganan** | Skor < 55, **atau** ada parameter primer bernilai nol |
 
-13. Bobot pada Â§10c.3 dan ambang pada poin 12 adalah **keputusan kebijakan, bukan keputusan teknis**. Keduanya wajib divalidasi dinas sebelum dipakai pada laporan resmi.
+13. Bobot pada §10c.3 dan ambang pada poin 12 adalah **keputusan kebijakan, bukan keputusan teknis**. Keduanya wajib divalidasi dinas sebelum dipakai pada laporan resmi.
 13a. **Ketiganya kini dapat disunting dinas**, tidak lagi terkunci di dalam kode: nilai kondisi aset lewat data master referensi, sedangkan bobot dan ambang lewat `/master/penilaian-kondisi`. Sebelumnya hanya yang pertama yang berupa data, sehingga separuh perhitungan dapat diatur dan separuhnya tidak.
 13b. **Nama status juga dapat disesuaikan**, sebab tiap dinas punya istilah sendiri. Yang tersimpan tetap nilai enum; yang berubah hanya teks tampilnya. Jumlahnya tetap tiga, sebab perhitungan hanya mengenal tiga keluaran.
 13c. Larangan istilah merendahkan pada A10c.1 berlaku atas **nilai bawaan**. Wording hasil suntingan dinas tidak diperiksa sistem, sehingga tanggung jawabnya berpindah ke dinas yang menyuntingnya.
@@ -742,7 +742,7 @@ Parameter dikelompokkan menurut satu pertanyaan: **tanpa ini, apakah tempat ters
 #### 10c.6 Riwayat penilaian
 
 14. Setiap penilaian **disimpan sebagai baris riwayat**, memuat skor, label, tanggal penilaian, rincian nilai tiap parameter, dan **salinan bobot yang berlaku saat itu**.
-15. Alasannya: bobot dapat diubah Admin. Tanpa salinan, laporan yang sudah dicetak dan dikirim ke dinas akan berbeda dari yang ditampilkan sistem setelah bobot diubah. Prinsip ini sama dengan penyalinan `satuan_id` pada hasil panen (`data-dictionary.md` Â§9.3).
+15. Alasannya: bobot dapat diubah Admin. Tanpa salinan, laporan yang sudah dicetak dan dikirim ke dinas akan berbeda dari yang ditampilkan sistem setelah bobot diubah. Prinsip ini sama dengan penyalinan `satuan_id` pada hasil panen (`data-dictionary.md` §9.3).
 16. Riwayat memungkinkan perkembangan kondisi SP terbaca dari waktu ke waktu, misalnya kenaikan dari Perlu Penanganan menjadi Berkembang setelah jalan penghubung diperbaiki. Perkembangan ini justru lebih berguna bagi perencanaan daripada angka hari ini saja.
 17. Penilaian **tidak dihitung ulang secara diam-diam** saat halaman dibuka. Penilaian baru dibuat sebagai baris baru, sehingga yang lama tetap utuh.
 
@@ -779,7 +779,7 @@ Parameter dikelompokkan menurut satu pertanyaan: **tanpa ini, apakah tempat ters
 3. Kategori pengaduan memakai pilihan baku: lahan usaha, lahan pekarangan, rumah, infrastruktur, inventaris SP, fasilitas SP, kelompok tani, alsintan, saprotan, produksi panen, bencana, dan lainnya. Tiga perubahan pada 2026-08-19: nilai "peralatan dan perlengkapan" **dipecah** menjadi inventaris SP dan fasilitas SP sebab satu kategori menaungi dua daftar berbeda; **saprotan ditambahkan** agar keluhan bibit, pupuk, serta obat tidak menumpang pada produksi panen; dan **kelompok tani ditambahkan** sebab poktan adalah modul penuh tetapi keluhan atasnya terpaksa masuk kategori "lainnya" yang justru berbidang kosong.
 
 3a. **Daftar kategori memetakan modul yang dapat diadukan warga**, dan pemetaannya wajib lengkap dua arah: tiap modul yang mungkin dikeluhkan punya kategorinya, dan tiap kategori punya modul padanannya. Modul internal sistem, data referensi, serta data pribadi transmigran sengaja tidak berkategori; rinciannya pada `data-dictionary.md` §11.21. Menambah modul baru yang dapat dikeluhkan warga menuntut pemeriksaan ulang daftar ini.
-4. Alur status penanganan wajib berurutan: **Menunggu Diterima â†’ Diterima â†’ Diproses â†’ Selesai**.
+4. Alur status penanganan wajib berurutan: **Menunggu Diterima → Diterima → Diproses → Selesai**.
 5. Setiap perubahan status wajib menyimpan riwayat berisi petugas penangan, tanggal penanganan, catatan, dan dokumen tindak lanjut.
 5a. **Isian penanganan sama di mana pun dibuka**, baik lewat halaman rincian maupun lewat kolom aksi pada halaman daftar. Meminta hal berbeda pada dua tempat menghasilkan riwayat yang timpang: sebagian jejak bertanggal dan berdokumen, sebagian tidak.
 5b. **Dokumen tindak lanjut yang sudah diunggah wajib dapat dibuka kembali** pada riwayat penanganan. Menyediakan isian unggah tanpa menampilkan hasilnya membuat berkas tersimpan tanpa dapat dijangkau siapa pun, termasuk oleh yang mengunggahnya.
@@ -875,9 +875,9 @@ Empat kategori terakhir sengaja dibiarkan kosong sebab pokok masalahnya dapat ja
 
 #### 13.0 Filter desain ANTISLOP (WAJIB)
 
-`ANTISLOP-ID.md` berlaku sebagai **filter** untuk seluruh pekerjaan antarmuka. Ia tidak menetapkan arah desain; arah ditetapkan `ui-spec.md` Â§2, sedangkan ANTISLOP menyaring hasilnya.
+`ANTISLOP-ID.md` berlaku sebagai **filter** untuk seluruh pekerjaan antarmuka. Ia tidak menetapkan arah desain; arah ditetapkan `ui-spec.md` §2, sedangkan ANTISLOP menyaring hasilnya.
 
-**Arah desain yang mengikat** (`ui-spec.md` Â§2):
+**Arah desain yang mengikat** (`ui-spec.md` §2):
 - Dial: **ENERGI 1 / RITME 2 / GERAK 1**
 - Motif identitas: bentuk sudut miring dari logo Kementerian, diulang di empat titik
 - Aksen tunggal: gold, dipakai hemat pada empat hal saja
@@ -893,9 +893,9 @@ Empat kategori terakhir sengaja dibiarkan kosong sebab pokok masalahnya dapat ja
 | R-17, R-38 | Selama tahap data dummy, setiap halaman wajib menampilkan penanda **"Data contoh"** yang terlihat jelas. Angka dummy dilarang disajikan seolah data nyata |
 | R-23 | Dilarang membuat logo, avatar, atau aset visual tanpa instruksi. Pakai placeholder berlabel jujur |
 | R-24, R-26 | Menu dan tombol hanya untuk halaman/aksi yang benar-benar ada. Kontrol mati dihapus, bukan dibiarkan diam |
-| R-25 | Kontras WCAG AA wajib dipenuhi pada **kedua** mode tema (`ui-spec.md` Â§3.2) |
+| R-25 | Kontras WCAG AA wajib dipenuhi pada **kedua** mode tema (`ui-spec.md` §3.2) |
 | R-30 | TailAdmin adalah fondasi berlisensi MIT dengan palet ditimpa penuh dan motif identitas sendiri, bukan peniruan identitas produk lain |
-| R-31 | Setiap keputusan desain utama wajib punya alasan satu baris, dicatat pada `ui-spec.md` Â§2.5 |
+| R-31 | Setiap keputusan desain utama wajib punya alasan satu baris, dicatat pada `ui-spec.md` §2.5 |
 | R-32 | Seluruh alur wajib dapat dioperasikan dengan keyboard, dengan indikator fokus terlihat di kedua mode |
 | R-33 | Dilarang menambahkan fitur lewat script yang menulis ulang berkas sumber atau CSS |
 | R-34 | Mode terang dan gelap sama-sama wajib berfungsi penuh |
@@ -930,11 +930,11 @@ Pola berikut adalah **standar yang harus dibangun dan dipatuhi** sejak awal proy
 2. Paginasi tabel bawaan **25 baris**, dengan pilihan 10, 25, 50, dan 100.
 3. Angka desimal memakai koma sebagai pemisah desimal dan titik sebagai pemisah ribuan.
 4. Volume panen ditampilkan dengan 3 angka desimal beserta satuannya; luas lahan dengan 2 angka desimal beserta satuan hektare.
-5. Data kosong ditampilkan sebagai tanda hubung `â€”`, bukan string kosong atau teks `null`.
+5. Data kosong ditampilkan sebagai tanda hubung `—`, bukan string kosong atau teks `null`.
 6. Setiap halaman daftar dan detail wajib menangani lima keadaan: kosong, memuat, galat, tanpa kewenangan, dan hasil pencarian nihil.
 7. Pesan galat dan validasi wajib berbahasa Indonesia yang mudah dipahami operator lapangan, bukan istilah teknis.
 8. Palet warna, tipografi, komponen bersama, struktur menu, dan inventaris halaman mengikuti `ui-spec.md`.
-9. Kombinasi warna wajib memenuhi rasio kontras WCAG AA sesuai tabel pada `ui-spec.md` Â§3.2.
+9. Kombinasi warna wajib memenuhi rasio kontras WCAG AA sesuai tabel pada `ui-spec.md` §3.2.
 
 ### 14. Aturan Keamanan
 1. Sistem wajib menggunakan HTTPS.
@@ -992,7 +992,7 @@ Pola berikut adalah **standar yang harus dibangun dan dipatuhi** sejak awal proy
 
 #### Pemulihan kata sandi
 
-> **Perubahan 2026-08-12.** Sebelumnya sistem sama sekali tidak menyediakan pemulihan mandiri. Alasannya waktu itu: tidak semua transmigran memiliki alamat surel. Alasan tersebut **gugur** setelah ditetapkan bahwa warga tidak memiliki akun sama sekali (Â§5.0 poin 5), sehingga seluruh pemegang akun adalah petugas bersurel dinas. Jalur mandiri kini ditambahkan **sebagai pelengkap**, bukan pengganti. Alasan kedua, yaitu jaringan lokus yang tidak selalu memadai, masih berlaku dan itulah sebabnya jalur Admin dipertahankan.
+> **Perubahan 2026-08-12.** Sebelumnya sistem sama sekali tidak menyediakan pemulihan mandiri. Alasannya waktu itu: tidak semua transmigran memiliki alamat surel. Alasan tersebut **gugur** setelah ditetapkan bahwa warga tidak memiliki akun sama sekali (§5.0 poin 5), sehingga seluruh pemegang akun adalah petugas bersurel dinas. Jalur mandiri kini ditambahkan **sebagai pelengkap**, bukan pengganti. Alasan kedua, yaitu jaringan lokus yang tidak selalu memadai, masih berlaku dan itulah sebabnya jalur Admin dipertahankan.
 
 **Dua jalur pemulihan, keduanya sah:**
 
@@ -1004,7 +1004,7 @@ Pola berikut adalah **standar yang harus dibangun dan dipatuhi** sejak awal proy
 7. Sistem mengirim **kode verifikasi enam digit**, bukan tautan yang dapat diklik. Kode dapat dibaca dari layar lain lalu diketik, sehingga tetap dapat dipakai ketika surel hanya dapat dibuka di perangkat berbeda atau ketika peramban gagal memuat tautan panjang di jaringan lemah.
 8. Kode berlaku **15 menit**, sekali pakai, dan hangus begitu kode baru diminta. Kode lama wajib dibatalkan agar tidak ada dua kode sah beredar bersamaan.
 9. Halaman permintaan kode **tidak pernah menyatakan apakah alamat terdaftar**. Pesan yang ditampilkan selalu sama, sebab pesan yang membedakan keduanya mengubah halaman ini menjadi alat memeriksa siapa saja yang memiliki akun.
-10. Permintaan kode dibatasi **3 kali per jam per akun** dan percobaan pemasukan kode dibatasi **5 kali per kode** (Â§14c). Setelah itu kode hangus dan petugas wajib meminta yang baru.
+10. Permintaan kode dibatasi **3 kali per jam per akun** dan percobaan pemasukan kode dibatasi **5 kali per kode** (§14c). Setelah itu kode hangus dan petugas wajib meminta yang baru.
 11. Jalur Admin pada poin 12 sampai 15 **tetap berlaku penuh** dan tidak boleh dihapus. Jalur inilah satu-satunya yang bekerja tanpa sambungan surel.
 12. Pengguna yang lupa kata sandi dapat menghubungi Admin. Admin menyetel ulang lewat Manajemen Pengguna, lalu menyerahkan kata sandi sementara **secara langsung**. Sejak 2026-08-14 kata sandi tersebut dikirim juga ke surel pengguna, tetapi penyerahan langsung tetap wajib dilakukan: jalur Admin justru disediakan untuk petugas di lokus bersinyal lemah, yang belum tentu dapat membuka surelnya saat itu juga.
 13. **Penyetelan ulang oleh Admin** (dan perintah artisan darurat) menghasilkan kata sandi **sementara**, sehingga `password_harus_diganti` bernilai `TRUE`: pengguna diarahkan ke halaman ganti kata sandi saat masuk berikutnya dan **tidak dapat mengakses halaman lain** sebelum menggantinya. **Pemulihan lewat kode verifikasi TIDAK menyetel `password_harus_diganti`** (diubah 2026-09-03): pada jalur itu pengguna sudah mengetik sendiri kata sandi finalnya di halaman verifikasi, sehingga memaksanya mengganti lagi hanya menyuruh mengetik dua kali. Alasan kolom ini sejak awal adalah mencegah kata sandi sementara buatan Admin dipakai terus-menerus (`notes.md` 2026-08-11), dan jalur kode verifikasi tidak pernah membuat kata sandi sementara.
@@ -1030,7 +1030,7 @@ Pola berikut adalah **standar yang harus dibangun dan dipatuhi** sejak awal proy
 | Halaman baca internal | **120 per menit** | per akun | Operator tercepat jarang melewati 30 halaman per menit, sehingga batas ini tidak pernah terasa |
 | Halaman tulis internal | **40 per menit** | per akun | Penyimpanan data selalu diselingi pengisian form |
 | Lacak pengaduan publik | **10 per menit** | per alamat IP | Warga memeriksa satu atau dua nomor; pemanen otomatis memerlukan ribuan |
-| Kirim pengaduan publik | **3 per jam** | per alamat IP | Sudah ditetapkan pada Â§10b poin 1d |
+| Kirim pengaduan publik | **3 per jam** | per alamat IP | Sudah ditetapkan pada §10b poin 1d |
 | Percobaan masuk | **5 kegagalan per menit** | per alamat IP dan akun | Hanya kegagalan yang dihitung; masuk yang berhasil tidak terpengaruh |
 
 #### 14c.3 Ketentuan
@@ -1038,7 +1038,7 @@ Pola berikut adalah **standar yang harus dibangun dan dipatuhi** sejak awal proy
 4. Permintaan aset statis seperti CSS, gambar, dan JavaScript **tidak dihitung**.
 5. Penolakan karena pembatasan laju wajib memakai pesan berbahasa Indonesia yang menyebut jalan keluarnya, bukan kode galat teknis. Contoh untuk kanal publik: "Anda sudah mengirim beberapa pengaduan. Silakan coba lagi satu jam lagi."
 6. Rute yang secara wajar menembakkan banyak permintaan sekaligus, misalnya export massal dan unggah template luring, **wajib dikecualikan** dari batas halaman biasa dan diberi batasnya sendiri. Menaikkan batas untuk seluruh pengguna demi satu fitur adalah penyelesaian yang keliru.
-7. Sistem tidak memakai CAPTCHA, sesuai Â§10b poin 1g.
+7. Sistem tidak memakai CAPTCHA, sesuai §10b poin 1g.
 
 ### 15. Aturan Backup dan Pemeliharaan
 1. Backup data harus dilakukan secara terjadwal.
@@ -1053,7 +1053,7 @@ Pola berikut adalah **standar yang harus dibangun dan dipatuhi** sejak awal proy
 3. Bug bersifat blocker wajib diselesaikan sebelum deployment.
 4. Hasil pengujian dicatat dalam dokumen testing beserta daftar bug dan status penyelesaiannya.
 5. Masukan pengguna dari beta testing dipisahkan menjadi revisi wajib dan usulan pengembangan lanjutan.
-6. Pengujian antarmuka wajib dilakukan pada **matriks 2 mode tema Ã— 2 lebar layar** (360px dan 1280px).
+6. Pengujian antarmuka wajib dilakukan pada **matriks 2 mode tema × 2 lebar layar** (360px dan 1280px).
 
 #### 16.0a Uji wajib menyasar janji, bukan kode yang sudah ditulis
 
@@ -1097,7 +1097,7 @@ Sebelum menyatakan pekerjaan antarmuka selesai, **wajib** menjalankan Delivery G
 ### 19. Aturan Penulisan Kode
 1. Setiap fungsi yang dibuat wajib diberi komentar dalam **Bahasa Indonesia** agar mudah dipahami programmer berikutnya.
 2. Komentar menjelaskan tujuan fungsi, parameter penting, dan nilai yang dikembalikan, bukan mengulang isi baris kode.
-3. Penamaan tabel dan kolom mengikuti skema database yang sudah disepakati pada `erd.md` dan `data-dictionary.md`, dengan konvensi PK `id_namatabel` dan FK `namatabel_id` sesuai Â§4.0.
+3. Penamaan tabel dan kolom mengikuti skema database yang sudah disepakati pada `erd.md` dan `data-dictionary.md`, dengan konvensi PK `id_namatabel` dan FK `namatabel_id` sesuai §4.0.
 4. Logika yang dipakai berulang diletakkan pada service atau helper bersama, tidak disalin ke banyak controller.
 5. Struktur kode mengikuti pola MVC Laravel beserta migration, middleware, dan service layer.
 6. Setiap model wajib mendeklarasikan `$primaryKey`, `$fillable`, dan `$casts` secara eksplisit; dilarang mengandalkan asumsi bawaan Eloquent.
@@ -1123,13 +1123,13 @@ Sebelum menyatakan pekerjaan antarmuka selesai, **wajib** menjalankan Delivery G
 
 ### 20. Aturan Pengerjaan AI (Tasklist)
 Setiap kali selesai mengerjakan satu tugas/fitur, AI wajib memperbarui `agents/tasklist.md` sebelum melaporkan hasil kepada user, dengan ketentuan:
-1. Tandai task yang selesai dengan centang `[âœ“]`.
-2. Tambahkan emoji âœ… di depan task.
+1. Tandai task yang selesai dengan centang `[✓]`.
+2. Tambahkan emoji ✅ di depan task.
 3. Perbarui progres keseluruhan proyek, misalnya `Progress: 35%`.
 4. Tambahkan catatan singkat di bawah task mengenai file yang dibuat atau diubah.
 
    ```markdown
-   - [âœ“] âœ… Task 2.3 - Membuat Room Migration `[Mudah]` (Selesai)
+   - [✓] ✅ Task 2.3 - Membuat Room Migration `[Mudah]` (Selesai)
      * Membuat file `database/migrations/xxxx_create_students_table.php`
    ```
 5. Perbarui `tasklist.md` setiap selesai satu task, bukan diakhir sesi.

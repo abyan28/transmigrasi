@@ -892,7 +892,7 @@ wajar, bukan bug. Tidak ada commit dibuat pada sesi ini.
 
 ---
 
-# Tahap 3 Â· Sisa Tahap 3: Task 3.9 + 3.10 + 3.6 SELESAI (2026-09-03)
+# Tahap 3 · Sisa Tahap 3: Task 3.9 + 3.10 + 3.6 SELESAI (2026-09-03)
 
 Pemilik proyek: "kerjakan semua sisa Tahap 3 selama tidak ada konflik".
 Commit terpisah per task. Belum di-push. Ketiganya SELESAI -- Tahap 3 tuntas
@@ -993,7 +993,7 @@ Rencana awal (arsip):
 
 ---
 
-# Tahap 3 Â· Task 3.11 - Pemulihan kata sandi lewat kode verifikasi SELESAI (2026-09-03)
+# Tahap 3 · Task 3.11 - Pemulihan kata sandi lewat kode verifikasi SELESAI (2026-09-03)
 
 ## HASIL (2026-09-03)
 
@@ -1043,7 +1043,7 @@ tests/Database 177 PASS (+12 `PemulihanSandiTest`), pint bersih,
 
 ---
 
-# Tahap 3 Â· Task 3.11 (RENCANA LAMA) - lihat HASIL di atas
+# Tahap 3 · Task 3.11 (RENCANA LAMA) - lihat HASIL di atas
 
 Rencana ditulis sebelum kode disentuh (`rules.md` 20b poin 12). Pemilik proyek
 menyetel mail server Mailjet di `.env` (`MAIL_MAILER=smtp`, host
@@ -1126,7 +1126,7 @@ menyetel mail server Mailjet di `.env` (`MAIL_MAILER=smtp`, host
   akun nonaktif -> tak ada kode terbit; `Mail::fake` -> mailable terkirim ke
   email user dgn kode benar.
 
-### C4 -- docs: `rules.md` 14b poin 13 (bedakan jalur), `tasklist` 3.11 [âœ“],
+### C4 -- docs: `rules.md` 14b poin 13 (bedakan jalur), `tasklist` 3.11 [✓],
   `session-notes` HASIL, `data-dictionary` bila perlu.
 
 ### DITUNDA
@@ -1136,7 +1136,7 @@ menyetel mail server Mailjet di `.env` (`MAIL_MAILER=smtp`, host
 
 ---
 
-# Tahap 3 Â· Task 3.4b + 3.5 + 3.5b - Manajemen pengguna SELESAI (2026-09-03)
+# Tahap 3 · Task 3.4b + 3.5 + 3.5b - Manajemen pengguna SELESAI (2026-09-03)
 
 Rencana ditulis sebelum kode disentuh (`rules.md` 20b poin 12). Tiga task
 dikerjakan sekaligus (izin pemilik proyek: "beberapa task sekaligus selama
@@ -1239,7 +1239,7 @@ Verifikasi: pest Feature 733 PASS, pest tests/Database 165 PASS, pint bersih
 
 ---
 
-# Tahap 3 Â· Task 3.4 - Cakupan data (global scope) SELESAI (2026-09-03)
+# Tahap 3 · Task 3.4 - Cakupan data (global scope) SELESAI (2026-09-03)
 
 Rencana ditulis sebelum kode disentuh (`rules.md` 20b poin 12). Rancangan
 penegakan MENGIKAT: `rules.md` 5.0b-1 (ditetapkan 2026-09-02).
@@ -1352,7 +1352,7 @@ NOL SELISIH, `sim:tautan-statis` 14.
 
 ---
 
-# Tahap 3 Â· Task 3.3 - RBAC dinamis SELESAI (2026-09-03)
+# Tahap 3 · Task 3.3 - RBAC dinamis SELESAI (2026-09-03)
 
 Rencana ditulis sebelum kode disentuh (`rules.md` 20b poin 12).
 
@@ -1491,7 +1491,7 @@ scope, 404) -> Task 3.4 · peralihan view non-role ke Eloquent -> Tahap 4 ·
 
 ---
 
-# Tahap 3 Â· Task 3.2b - Penegakan `auth` + migrasi uji + bypass lokal SELESAI (2026-09-03)
+# Tahap 3 · Task 3.2b - Penegakan `auth` + migrasi uji + bypass lokal SELESAI (2026-09-03)
 
 Rencana ditulis sebelum kode disentuh (`rules.md` 20b poin 12). Rencana lengkap:
 `.claude/plans/logical-whistling-salamander.md`.
@@ -1592,7 +1592,7 @@ NOL SELISIH. Manual: `SIM_MASUK_OTOMATIS=true` -> `/` tanpa login; `=false` -> r
 
 ---
 
-# Tahap 3 Â· Task 3.2 - Login, Logout, Throttle Masuk SELESAI (mekanik) (2026-09-03)
+# Tahap 3 · Task 3.2 - Login, Logout, Throttle Masuk SELESAI (mekanik) (2026-09-03)
 
 Rencana ditulis sebelum kode disentuh (`rules.md` 20b poin 12).
 
@@ -1726,7 +1726,7 @@ dikerjakan terpisah nanti.
 
 ---
 
-# Tahap 3 Â· Task 3.1 - Migration + Model Eloquent SELESAI (2026-09-03)
+# Tahap 3 · Task 3.1 - Migration + Model Eloquent SELESAI (2026-09-03)
 
 Menerjemahkan `database/data/schema.sql` (55 tabel bisnis) menjadi migration +
 model. **Menerjemahkan, bukan menyusun ulang.** Mengikuti rencana Putaran 13
