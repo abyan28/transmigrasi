@@ -30,7 +30,7 @@ class DokumenController extends Controller
      */
     public function tampilkan(Request $request, string $modul, int $id, string $namaBerkas): StreamedResponse
     {
-        $path = PenyimpananDokumen::folder($modul, $id) . '/' . $namaBerkas;
+        $path = PenyimpananDokumen::folder($modul, $id).'/'.$namaBerkas;
 
         // Menolak upaya menembus folder lain lewat penulisan path,
         // misalnya "../../.env" yang diselundupkan pada nama berkas.
@@ -42,9 +42,15 @@ class DokumenController extends Controller
             abort(404, 'Dokumen tidak ditemukan.');
         }
 
-        // ponytail: pemeriksaan izin menyusul pada Tahap 3 setelah RBAC aktif.
-        // Ganti dengan Gate::authorize("{$modul}.lihat") beserta pemeriksaan
-        // cakupan data, agar operator SP tidak dapat membuka dokumen SP lain.
+        // Kewenangan `lihat` pada modul pemilik berkas (Task 3.3). Diperiksa di
+        // sini, bukan lewat middleware `izin:`, sebab modulnya berupa parameter
+        // rute yang dinamis. Cakupan data (operator SP tak boleh membuka
+        // dokumen SP lain) menyusul Task 3.4.
+        abort_unless(
+            $request->user()?->punyaAksi($modul, 'lihat') === true,
+            403,
+            'Anda tidak memiliki kewenangan membuka dokumen ini.',
+        );
 
         return Storage::disk(PenyimpananDokumen::DISK)->response($path);
     }

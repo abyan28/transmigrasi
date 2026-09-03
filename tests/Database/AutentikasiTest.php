@@ -261,9 +261,12 @@ it('mengalihkan tamu dari rute internal ke halaman masuk', function () {
 });
 
 it('meloloskan pengguna yang sudah masuk ke rute internal', function () {
-    $this->actingAs(User::factory()->create())
-        ->get(route('beranda'))
-        ->assertOk();
+    // Uji ini menjaga pintu `auth`, bukan `izin` (Task 3.3) -- pakai pengguna
+    // bertanda `semuaIzin` supaya `izin:dashboard,lihat` tak ikut menolak.
+    $user = User::factory()->create();
+    $user->semuaIzin = true;
+
+    $this->actingAs($user)->get(route('beranda'))->assertOk();
 });
 
 it('mengunci pengguna berkata-sandi-sementara ke halaman ganti kata sandi', function () {

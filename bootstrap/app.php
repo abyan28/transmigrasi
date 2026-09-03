@@ -4,6 +4,7 @@ use App\Http\Middleware\EnsureIzin;
 use App\Http\Middleware\MasukOtomatisLokal;
 use App\Http\Middleware\PastikanGantiKataSandi;
 use App\Http\Middleware\UppercaseInput;
+use App\Support\PetaIzinRute;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -19,6 +20,20 @@ return Application::configure(basePath: dirname(__DIR__))
             // routes/web.php menyimpan rute publik saja (Task 3.2b).
             Route::middleware(['web', 'auth', 'pastikan.ganti.sandi'])
                 ->group(base_path('routes/internal.php'));
+
+            // Task 3.3: lampirkan `izin:<modul>,<aksi>` per rute dari peta
+            // terpusat. Iterasi objek Route langsung (bukan getByName) sebab
+            // `->name()` di internal.php dipanggil setelah rute terdaftar,
+            // sehingga peta nama koleksi belum tentu memuatnya di titik ini.
+            $peta = PetaIzinRute::peta();
+
+            foreach (Route::getRoutes()->getRoutes() as $rute) {
+                $nama = $rute->getName();
+
+                if ($nama !== null && isset($peta[$nama])) {
+                    $rute->middleware("izin:{$peta[$nama]}");
+                }
+            }
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
