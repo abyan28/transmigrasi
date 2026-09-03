@@ -3,6 +3,7 @@
 namespace App\Helpers;
 
 use App\Support\LaporanData;
+use Illuminate\Support\Facades\Auth;
 
 class MenuHelper
 {
@@ -315,9 +316,9 @@ class MenuHelper
      * disembunyikan lewat CSS. Kelompok yang seluruh itemnya tersaring ikut
      * dibuang agar tidak ada judul kelompok kosong (agents/ui-spec.md 5.2).
      *
-     * CATATAN: pemeriksaan izin sebenarnya baru aktif pada Tahap 3 setelah
-     * tabel role dan permission dibuat. Sementara ini seluruh menu tampil
-     * agar tata letak dapat dikerjakan lebih dulu.
+     * Sejak Task 3.4b pemeriksaan izin sungguh berjalan lewat
+     * bolehLihat() -> User::punyaIzin(). Pengguna semu bertanda semuaIzin
+     * (bypass lokal + suite Feature) tetap melihat seluruh menu.
      *
      * @return array<int, array<string, mixed>> Kelompok menu siap render
      */
@@ -376,9 +377,7 @@ class MenuHelper
             return true;
         }
 
-        // ponytail: selalu true sampai tabel permission ada (Tahap 3).
-        // Ganti dengan auth()->user()->punyaIzin($permission) saat RBAC aktif.
-        return true;
+        return Auth::user()?->punyaIzin($permission) ?? false;
     }
 
     /**

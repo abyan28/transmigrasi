@@ -29,6 +29,7 @@ use App\Enums\SumberDana;
 use App\Enums\TingkatKesuburanTanah;
 use App\Helpers\MenuHelper;
 use App\Helpers\RemahHelper;
+use App\Models\User;
 use App\Support\DummyData;
 use App\Support\LaporanData;
 use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
@@ -3303,6 +3304,37 @@ it('menyaring submenu menurut izin, bukan hanya item induknya', function () {
             }
         }
     }
+});
+
+it('menyembunyikan menu berizin dari pengguna tanpa kewenangan (Task 3.4b)', function () {
+    // Pengguna tanpa role: punyaIzin() menjawab false untuk semua, sehingga
+    // hanya item ber-permission null yang tersisa (Panduan, Tentang). Kelompok
+    // lain hilang seluruhnya karena tak menyisakan satu item pun.
+    $this->actingAs(new User(['nama' => 'TANPA IZIN']));
+
+    $grup = MenuHelper::getMenuGroups();
+    $judul = array_column($grup, 'title');
+
+    expect($judul)->toBe(['Administrasi Sistem']);
+
+    $tautan = [];
+    foreach ($grup[0]['items'] as $item) {
+        foreach ($item['subItems'] ?? [$item] as $sub) {
+            $tautan[] = $sub['path'];
+        }
+    }
+    expect($tautan)->toEqualCanonicalizing(['/panduan', '/tentang']);
+});
+
+it('menampilkan seluruh menu bagi pengguna bertanda semuaIzin', function () {
+    // Bypass lokal + beforeEach suite ini memakai pengguna semu semuaIzin.
+    $semu = new User(['nama' => 'DEV']);
+    $semu->semuaIzin = true;
+    $this->actingAs($semu);
+
+    $judul = array_column(MenuHelper::getMenuGroups(), 'title');
+
+    expect($judul)->toContain('Transmigrasi', 'Pertanian', 'Pengaduan', 'Laporan', 'Administrasi Sistem');
 });
 
 /*

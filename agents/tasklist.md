@@ -1117,8 +1117,9 @@ domain; sisanya mengikuti tanpa mengubah skema maupun komponen.
   * Akun `Per SP` tanpa penugasan tidak melihat data apa pun, bukan melihat seluruhnya
   * **Rancangan penegakannya sudah ditetapkan pada `rules.md` 5.0b-1 (2026-09-02)** dan mengikat: titik penegakan tunggal berupa global scope pada model, penyaring dipasang pada pemilik SP bukan diulang pada turunannya, data tak berhak membalas 404 bukan 403, penyaringan mendahului paginasi, dan akun tanpa penugasan menerima nol baris
   * **SELESAI 2026-09-03:** `CakupanDataSp` (`#[ScopedBy]` pada 10 model pemilik SP) + trait `DisaringLewatInduk` (`whereHas(induk)` pada 9 model turunan). `Per SP` tanpa penugasan → `whereRaw('1 = 0')`. `Per Bidang` (Dinas Pertanian) → `pengaduan` bidang `Pertanian` saja. Tamu/artisan/seeder/role `Semua` → tak menyaring. 10 uji `tests/Database/CakupanDataTest.php`. 404 rute-detail + `MenuHelper` (3.4b) + seeder akun `Per SP` (3.5) ditunda. HASIL lengkap di `session-notes.md`.
-- [ ] Task 3.4b - Sidebar dinamis berbasis izin `[Sedang]`
+- [✓] Task 3.4b - Sidebar dinamis berbasis izin `[Sedang]`
   * `MenuHelper` menyaring item menu menurut izin; kelompok kosong ikut hilang
+  * **SELESAI 2026-09-03:** `MenuHelper::bolehLihat()` menyambung ke `User::punyaIzin()` (`Auth::user()?->punyaIzin($izin) ?? false`). Machinery `getMenuGroups()` (saring submenu, buang kelompok kosong) sudah ada sejak Tahap 2. Pengguna semu `semuaIzin` tetap lihat semua. 2 uji Feature.
 - [~] ~~Task 3.7 - Implementasi verifikasi data~~ **DIBATALKAN 2026-08-14**
   * Fitur verifikasi dicabut seluruhnya atas kesepakatan tim, sehingga task ini tidak akan dikerjakan.
   * Yang ikut dihapus: enum `StatusVerifikasi`, tabel `verifikasi` pada ERD, aturan `rules.md` 5.2, delapan rute verifikasi/tolak, dan indikator 15 Mutu Data pada dashboard.
