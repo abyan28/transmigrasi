@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureIzin;
 use App\Http\Middleware\MasukOtomatisLokal;
 use App\Http\Middleware\PastikanGantiKataSandi;
 use App\Http\Middleware\UppercaseInput;
@@ -41,10 +42,12 @@ return Application::configure(basePath: dirname(__DIR__))
             UppercaseInput::class,
         ]);
 
-        // Alias middleware autentikasi (Task 3.2). `pastikan.ganti.sandi`
-        // dilampirkan ke grup rute internal di `routes/web.php` (Task 3.2b).
+        // Alias middleware. `pastikan.ganti.sandi` (Task 3.2b) dilampirkan ke
+        // grup rute internal lewat `then:` di atas; `izin` (Task 3.3) dipasang
+        // per-rute di `routes/internal.php`, mis. `izin:transmigran,ubah`.
         $middleware->alias([
             'pastikan.ganti.sandi' => PastikanGantiKataSandi::class,
+            'izin' => EnsureIzin::class,
         ]);
 
         // Tamu yang sudah masuk lalu membuka rute ber-`guest` (mis. /login)
