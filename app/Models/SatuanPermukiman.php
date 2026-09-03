@@ -98,6 +98,25 @@ class SatuanPermukiman extends Model
         return $this->hasMany(RuteAksesibilitasSp::class, 'satuan_permukiman_id', 'id_satuan_permukiman');
     }
 
+    public function inventaris(): HasMany
+    {
+        return $this->hasMany(InventarisSp::class, 'satuan_permukiman_id', 'id_satuan_permukiman');
+    }
+
+    /**
+     * Fasilitas yang BERDIRI di SP ini (pangkal). Fasilitas yang MELAYANI SP ini
+     * tanpa berpangkal di sini dibaca lewat pivot `fasilitas_sp_cakupan`.
+     */
+    public function fasilitas(): HasMany
+    {
+        return $this->hasMany(FasilitasSp::class, 'satuan_permukiman_id', 'id_satuan_permukiman');
+    }
+
+    public function penilaian(): HasMany
+    {
+        return $this->hasMany(PenilaianSp::class, 'satuan_permukiman_id', 'id_satuan_permukiman');
+    }
+
     /**
      * Petugas yang ditugaskan ke SP ini (cakupan data `Per SP`).
      */
