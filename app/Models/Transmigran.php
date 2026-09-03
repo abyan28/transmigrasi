@@ -89,6 +89,14 @@ class Transmigran extends Model
         return $this->hasMany(RiwayatPenghunian::class, 'transmigran_id', 'id_transmigran');
     }
 
+    /**
+     * Lahan keluarga ini (satu baris per KK -- `lahan.transmigran_id` UNIQUE).
+     */
+    public function lahan(): HasOne
+    {
+        return $this->hasOne(Lahan::class, 'transmigran_id', 'id_transmigran');
+    }
+
     public function riwayatKepalaKeluarga(): HasMany
     {
         return $this->hasMany(RiwayatKepalaKeluarga::class, 'transmigran_id', 'id_transmigran');

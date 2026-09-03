@@ -132,6 +132,11 @@ class SatuanPermukiman extends Model
         return $this->hasMany(Poktan::class, 'satuan_permukiman_id', 'id_satuan_permukiman');
     }
 
+    public function lahan(): HasMany
+    {
+        return $this->hasMany(Lahan::class, 'satuan_permukiman_id', 'id_satuan_permukiman');
+    }
+
     /**
      * Petugas yang ditugaskan ke SP ini (cakupan data `Per SP`).
      */

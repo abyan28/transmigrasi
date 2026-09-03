@@ -89,4 +89,12 @@ class Poktan extends Model
     {
         return $this->hasMany(SaprotanDistribusi::class, 'poktan_id', 'id_poktan');
     }
+
+    /**
+     * Lahan yang dikelola poktan ini.
+     */
+    public function lahan(): HasMany
+    {
+        return $this->hasMany(Lahan::class, 'poktan_id', 'id_poktan');
+    }
 }

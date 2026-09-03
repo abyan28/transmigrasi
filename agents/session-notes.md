@@ -47,7 +47,8 @@ Rencana lengkap: `.claude/plans/logical-whistling-salamander.md`.
 | B4 Domain 4b | **SELESAI** | user_berkas, kawasan_transmigrasi_berkas, inventaris_sp_berkas, fasilitas_sp_berkas (4 dari 12 pivot `*_berkas` -- yang induknya sudah ada) + relasi `belongsToMany` pada 4 model induk + `tests/Database/Domain4bBerkasPivotTest` (5 uji). 8 pivot sisa menyusul di B5-B9 |
 | B5 Domain 5 | **SELESAI** | transmigran, anggota_keluarga, rumah, riwayat_penghunian, riwayat_kepala_keluarga + pivot transmigran_berkas, rumah_berkas + 5 model + `tests/Database/Domain5KependudukanTest` (11 uji) |
 | B6 Domain 6 | **SELESAI** | poktan, anggota_poktan, alsintan, alsintan_distribusi, saprotan, saprotan_distribusi + pivot alsintan_berkas + 6 model + `tests/Database/Domain6KelembagaanTest` (8 uji). Helper uji dipusatkan ke `tests/Database/DatabaseHelpers.php` (`require_once`) |
-| B7-B9 | belum | lihat plan file / tabel batch |
+| B7 Domain 7 | **SELESAI** | lahan (satu tabel) + model `Lahan` + `tests/Database/Domain7LahanTest` (7 uji) |
+| B8-B9 | belum | lihat plan file / tabel batch |
 
 **Verifikasi B0+B1:** `sim:banding-skema --hanya=<Domain 1>` NOL SELISIH ·
 `pest` **742 PASS** (732 lama + 10 Database) · `pint --test` 31 (turun dari 33) ·
@@ -98,6 +99,15 @@ ditegakkan aplikasi). `anggota_poktan.status` -> `StatusKeaktifanAnggota` (BUKAN
 `jabatan`/`jenis_alsintan`/`kondisi` = teks REF. Helper uji Database dipindah
 dari tiap berkas ke `DatabaseHelpers.php` bersama (buatSp/buatBerkas/
 buatSatuanTon/buatTransmigran/buatPoktan) supaya `pest <satu-berkas>` jalan sendiri.
+
+**Verifikasi B7:** `sim:banding-skema --hanya=lahan` NOL SELISIH ·
+`pest tests/Database` **65 PASS** · `pest` (SQLite) tetap **732 PASS** ·
+`pint --test` tetap 31. `lahan` = SATU BARIS per KK (Putaran 15): `UNIQUE
+transmigran_id` (bukan komposit dengan peruntukan), dua pasang koordinat
+`*_pekarangan`/`*_usaha`, `luas_*` NULL = belum menerima. FK transmigran
+CASCADE, SP RESTRICT, poktan SET NULL. uuid route key. `Transmigran::lahan()`
+hasOne. UNIQUE `transmigran_id` tak melihat `deleted_at` -> KK dengan lahan
+ter-soft-delete belum bisa dapat baris baru tanpa restore/forceDelete.
 
 **Urutan migration = topological sort dependensi FK, BUKAN urutan file
 `schema.sql`.** Batch berikutnya: `referensi`+`satuan`+`komoditas`+`berkas`
