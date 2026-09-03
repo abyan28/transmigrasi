@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Middleware\MasukOtomatisLokal;
+use App\Http\Middleware\PastikanGantiKataSandi;
+use App\Http\Middleware\UppercaseInput;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -17,19 +20,30 @@ return Application::configure(basePath: dirname(__DIR__))
         // sebagai mixed content.
         $middleware->trustProxies(at: '*');
 
+        // Bypass masuk lingkungan lokal (Task 3.2b). Dijalankan SEBELUM `auth`
+        // (prepend) agar rute internal dapat ditelusuri tanpa login manual saat
+        // APP_ENV=local + SIM_MASUK_OTOMATIS. Tak berefek di lingkungan lain.
+        $middleware->web(prepend: [
+            MasukOtomatisLokal::class,
+        ]);
+
         // Menyeragamkan isian teks pengguna menjadi huruf kapital agar rekap
         // per wilayah tidak terpecah oleh perbedaan penulisan.
         // Rincian dan daftar pengecualian ada pada agents/rules.md bagian 13.2 poin 4.
         $middleware->web(append: [
-            \App\Http\Middleware\UppercaseInput::class,
+            UppercaseInput::class,
         ]);
 
-        // Alias middleware autentikasi (Task 3.2). `pastikan.ganti.sandi` sudah
-        // siap dipakai tetapi BELUM dilampirkan ke grup rute mana pun -- itu
-        // Task 3.2b bersama `auth` dan penyesuaian ±350 uji HTTP.
+        // Alias middleware autentikasi (Task 3.2). `pastikan.ganti.sandi`
+        // dilampirkan ke grup rute internal di `routes/web.php` (Task 3.2b).
         $middleware->alias([
-            'pastikan.ganti.sandi' => \App\Http\Middleware\PastikanGantiKataSandi::class,
+            'pastikan.ganti.sandi' => PastikanGantiKataSandi::class,
         ]);
+
+        // Tamu yang sudah masuk lalu membuka rute ber-`guest` (mis. /login)
+        // diarahkan ke beranda. Bawaan Laravel menuju /dashboard yang tidak
+        // ada di aplikasi ini.
+        $middleware->redirectUsersTo('/');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
