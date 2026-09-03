@@ -23,6 +23,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             \App\Http\Middleware\UppercaseInput::class,
         ]);
+
+        // Alias middleware autentikasi (Task 3.2). `pastikan.ganti.sandi` sudah
+        // siap dipakai tetapi BELUM dilampirkan ke grup rute mana pun -- itu
+        // Task 3.2b bersama `auth` dan penyesuaian ±350 uji HTTP.
+        $middleware->alias([
+            'pastikan.ganti.sandi' => \App\Http\Middleware\PastikanGantiKataSandi::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

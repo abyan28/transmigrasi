@@ -1085,16 +1085,23 @@ domain; sisanya mengikuti tanpa mengubah skema maupun komponen.
 > "16 digit angka berarti NIK") **usang**: `user` tidak lagi punya kolom `nik`/`transmigran_id`;
 > login memakai **email atau username**.
 
-- [x] Task 3.1 - Migration + model seluruh 55 tabel bisnis, `Model User` ditulis ulang `[Sulit]` — **SELESAI 2026-09-03** (commit B0–B9). 58 migration + 36 model, `sim:banding-skema --lengkap` NOL SELISIH, 82 uji `tests/Database/` (MySQL nyata), 732 uji lama tetap hijau. Rincian & keputusan: `session-notes.md` blok "HASIL Task 3.1"
+- [✓] Task 3.1 - Migration + model seluruh 55 tabel bisnis, `Model User` ditulis ulang `[Sulit]` — **SELESAI 2026-09-03** (commit B0–B9). 58 migration + 36 model, `sim:banding-skema --lengkap` NOL SELISIH, 82 uji `tests/Database/` (MySQL nyata), 732 uji lama tetap hijau. Rincian & keputusan: `session-notes.md` blok "HASIL Task 3.1"
   * Cakupan penuh Putaran 13: ~55 migration + model Eloquent. Rincian, penjaga, dan cara verifikasi: `session-notes.md` 373–500. Lihat blok "⚑ BACA SEBELUM TASK 3.1" di atas untuk jebakan migration bawaan & strategi uji DB
   * `uuid` sebagai `getRouteKeyName()` sudah dipasang di model; auto-generate `uuid` (observer/trait) & factory ditunda ke Tahap 4
   * Acuan kolom/tipe/index/FK: `database/data/schema.sql` — SATU-SATUNYA sumber kebenaran
-- [ ] Task 3.2 - Implementasi login, logout, dan rate limiting `[Sedang]`
+- [✓] Task 3.2 - Implementasi login, logout, dan rate limiting `[Sedang]` — **MEKANIK SELESAI 2026-09-03**. Pemilik proyek pilih "mekanik dulu, penegakan menyusul" (opsi 2): mesin auth berjalan penuh + 16 uji `tests/Database/AutentikasiTest`, tetapi rute internal BELUM dibungkus `auth` → Task 3.2b. Rincian: `session-notes.md` blok "HASIL Task 3.2"
   * Satu kolom kredensial menerima **email atau username**; keduanya unik antar-akun (`rules.md` 14b poin 4). Sistem memilih kolom pencarian berdasarkan bentuk masukannya
   * ~~Ketentuan lama: `email atau NIK`, dengan 16 digit angka berarti NIK. **DICABUT** sebab seluruh pemegang akun adalah petugas dan warga tidak memiliki akun (`rules.md` 14b poin 6); `user` pun tidak lagi punya kolom `nik`. Teksnya baru dibetulkan 2026-09-02, sebelumnya hanya ditandai usang pada catatan di atas sehingga pembaca yang langsung melompat ke butir ini tetap membaca ketentuan yang keliru.~~
-  * Tolak akun dengan `is_aktif = FALSE`
-  * Middleware pemaksa ganti kata sandi bila `password_harus_diganti = TRUE`
-  * **Tanpa rute pendaftaran dan tanpa rute pemulihan kata sandi** (`rules.md` §14b)
+  * Tolak akun dengan `is_aktif = FALSE` — ✓ (pesan khusus, dibedakan dari kredensial salah)
+  * Middleware pemaksa ganti kata sandi bila `password_harus_diganti = TRUE` — kelas + uji ✓; **pelampiran ke rute = Task 3.2b**
+  * **Tanpa rute pendaftaran dan tanpa rute pemulihan kata sandi** (`rules.md` §14b) — ✓
+  * Throttle masuk 5 kegagalan/menit ✓; matriks rate-limit lain (120/40/10/3) = Task 3.10
+- [ ] Task 3.2b - Penegakan `auth` + migrasi uji HTTP `[Sulit]` (BARU 2026-09-03)
+  * Bungkus rute internal dengan `auth` + `pastikan.ganti.sandi`; `guest` pada rute login/lupa-sandi
+  * Suite Feature beralih `RefreshDatabase` (SQLite) + `beforeEach` global `actingAs(User)` di `tests/Pest.php` → hanya ~30 uji perilaku-tamu yang diedit tangan (bukan ~350)
+  * Kolom username di `ganti-kata-sandi` (`rules.md` 14b poin 5) + cek ketersediaan
+  * Peralihan `DummyData::penggunaSaatIni()` → `Auth::user()` pada view/rute profil
+  * **Koordinasikan dengan agen paralel** — menyentuh `HalamanTest.php` (8300 baris)
 - [ ] Task 3.3 - Implementasi RBAC dinamis `[Sulit]`
   * Model `Role`, `Permission`, relasi many-to-many, seeder ±120 izin dan 4 role bawaan
   * Middleware pemeriksa izin, helper `can()` untuk Blade

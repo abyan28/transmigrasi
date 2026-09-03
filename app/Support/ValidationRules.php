@@ -123,6 +123,20 @@ class ValidationRules
     }
 
     /**
+     * Aturan isian kredensial pada halaman masuk: satu kolom menerima email
+     * ATAU username (`rules.md` 14b poin 4). Tidak diperiksa formatnya di sini
+     * -- pencocokan dilakukan terhadap dua kolom sekaligus di controller, dan
+     * pesan galat sengaja tidak membeda-bedakan agar halaman ini tidak menjadi
+     * alat memeriksa akun mana yang terdaftar.
+     *
+     * @return array<int, string> Daftar aturan siap pakai
+     */
+    public static function kredensialMasuk(): array
+    {
+        return ['required', 'string', 'max:255'];
+    }
+
+    /**
      * Aturan alamat surel, unik pada tabel pengguna.
      *
      * @param  int|null  $abaikanId  Id pengguna yang dikecualikan saat mengubah data

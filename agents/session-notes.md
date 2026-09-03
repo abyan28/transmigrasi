@@ -1,3 +1,137 @@
+# Tahap 3 Â· Task 3.2 - Login, Logout, Throttle Masuk SELESAI (mekanik) (2026-09-03)
+
+Rencana ditulis sebelum kode disentuh (`rules.md` 20b poin 12).
+
+## HASIL Task 3.2 (2026-09-03)
+
+Seluruh mesin autentikasi berjalan; rute internal **belum** dibungkus `auth`
+(opsi "mekanik dulu" -- penegakan = Task 3.2b, baris tasklist baru).
+
+- **`app/Http/Controllers/Auth/LoginController.php`** -- `tampil`/`masuk`/`keluar`.
+  `masuk`: validasi `kredensial`+`password`; cari user `where('email')->orWhere('username')`;
+  tolak `is_aktif=FALSE` dengan pesan KHUSUS sebelum cek sandi; `Hash::check` +
+  `Auth::login` (bukan `Auth::attempt` -- hindari tebak kolom); `session()->regenerate`;
+  tulis `last_login_at`; audit `Login`; `password_harus_diganti` -> `ganti-kata-sandi`,
+  selain itu `redirect()->intended(beranda)`. `keluar`: audit `Logout` lalu
+  `Auth::logout` + `session()->invalidate` + `regenerateToken`.
+- **Throttle** (`rules.md` 14c.2): `RateLimiter`, kunci `lower(kredensial)|ip`,
+  `hit(...,60)` hanya saat gagal, `clear` saat sukses, blokir di percobaan ke-6
+  dengan pesan Indonesia + detik tersisa. Matriks rate-limit lain (120/40/10/3
+  per menit/jam) tetap Task 3.10.
+- **`GantiKataSandiController`** -- `simpan`: cek `Auth::check` sendiri (middleware
+  belum dilampirkan); validasi `ValidationRules::password()`; `update(['password'
+  => ..., 'password_harus_diganti' => false])`; audit `Reset Kata Sandi` atas
+  nama pemilik.
+- **`app/Http/Middleware/PastikanGantiKataSandi.php`** -- alias `pastikan.ganti.sandi`
+  di `bootstrap/app.php`. **BELUM dilampirkan ke grup rute** (Task 3.2b).
+- **`app/Models/AuditLog.php`** (B1 hanya buat migrasi) -- model minimal, cast
+  `aksi=>AksiAuditLog`, `data_lama/baru=>array`, relasi `pelaku()`. Dipakai
+  `AuditLog::create()` langsung; observer/diffing otomatis = Task 3.6.
+- **`ValidationRules::kredensialMasuk()`** -- `required|string|max:255` (format
+  tak diperiksa; pesan galat tak membeda-bedakan, `rules.md` 14b poin 9).
+- **`routes/web.php`** -- 5 closure auth -> controller. Path & nama rute sama
+  persis, jadi `sim:tautan-statis` tetap 224.
+
+**Verifikasi:** `pest tests/Database` **98 PASS** (82 + 16 `AutentikasiTest`) ·
+`pest` (SQLite) tetap **732 PASS** · `pint --test` tetap 31 (berkas baru bersih) ·
+`sim:tautan-statis` 224 · `sim:banding-skema --lengkap` NOL SELISIH.
+
+**GAP tercatat:** `rules.md` 14b poin 5 minta username dibuat saat ganti sandi
+pertama; view `ganti-kata-sandi.blade.php` belum punya kolomnya -> Task 3.2b/3.5.
+`config/auth.php` `passwords.users.table` masih `password_reset_tokens` (tak
+dibuat) -> broker sandi Task 3.11.
+
+---
+
+## Keputusan pemilik proyek (2026-09-03)
+
+**Opsi "mekanik dulu, penegakan menyusul".** Bangun seluruh mesin autentikasi +
+uji terhadap MySQL nyata, TANPA membungkus rute internal dengan `auth`. Pemilik
+proyek ingin tetap bisa membuka halaman utama/dll tanpa login saat mengecek,
+walau fungsi login sudah berjalan. Pembungkusan middleware + migrasi ~350 uji
+HTTP (`HalamanTest` 343 panggilan, `TautanStatis` ~224 URL) = **Task 3.2b**,
+dikerjakan terpisah nanti.
+
+- 732 uji lama **tetap SQLite, tetap hijau, tidak disentuh**. Itu penjaganya:
+  satu berubah = ada yang tersentuh di luar cakupan.
+- Uji autentikasi baru di grup `tests/Database/` (MySQL nyata, `DatabaseTestCase`).
+
+## Cakupan Task 3.2
+
+| # | Bagian | Berkas |
+|---|---|---|
+| A | `POST /login` sungguhan | `app/Http/Controllers/Auth/LoginController.php` (dari closure) |
+| B | Throttle masuk 5 kegagalan/menit per IP+akun (`rules.md` 14c.2) | di LoginController, `RateLimiter` |
+| C | `POST /logout` -- `Auth::logout` + invalidasi sesi | LoginController |
+| D | `POST /ganti-kata-sandi.simpan` -- simpan hash + kosongkan flag | `GantiKataSandiController` |
+| E | Middleware `PastikanGantiKataSandi` (dibangun + alias, **belum dilampirkan**) | `app/Http/Middleware/` |
+| F | Model `AuditLog` (B1 hanya buat migrasi) + catat aksi Login/Logout/Reset Kata Sandi | `app/Models/AuditLog.php` |
+| H | `tests/Database/AutentikasiTest.php` (~13 uji, MySQL nyata) | + helper `buatUser()` di `DatabaseHelpers.php` |
+
+### A. Login
+- Validasi `kredensial`+`password`+`ingat_saya` (opsional). Method baru
+  `ValidationRules::kredensialMasuk()`.
+- Kredensial memuat `@` -> cari `email`, selain itu -> `username`. Aman:
+  `where('email',$k)->orWhere('username',$k)`.
+- User ada tapi `is_aktif = FALSE` -> tolak pesan KHUSUS ("Akun Anda dinonaktifkan.
+  Hubungi Admin.") -- dibedakan dari kredensial salah (`rules.md` 14b, tasklist).
+- `Auth::attempt`. Gagal -> `back()->withErrors(['kredensial' => ...])->onlyInput('kredensial')`.
+- Sukses: `session()->regenerate()`, tulis `last_login_at`, `RateLimiter::clear`,
+  audit `Login`. `password_harus_diganti` -> `route('ganti-kata-sandi')`, selain
+  itu `redirect()->intended(route('beranda'))`.
+
+### B. Throttle (`rules.md` 14c.2: 5 kegagalan/menit, per IP+akun, hanya kegagalan)
+- Kunci: `Str::lower($kredensial).'|'.$request->ip()`.
+- `tooManyAttempts($key,5)` -> pesan Indonesia dgn `availableIn` detik.
+- `RateLimiter::hit($key,60)` HANYA saat gagal; `clear` saat sukses.
+
+### C. Logout
+- `Auth::logout()` + `session()->invalidate()` + `session()->regenerateToken()`,
+  audit `Logout`, redirect `login` + flash sukses.
+
+### D. Ganti kata sandi wajib
+- Handler cek `Auth::check()` sendiri (middleware E belum dilampirkan).
+- Validasi `ValidationRules::password()` (min 8, huruf+angka, `confirmed`).
+- `$user->update(['password' => $baru, 'password_harus_diganti' => false])`
+  (cast `hashed`). Audit `Reset Kata Sandi` atas nama pemilik (`rules.md` 14b.15).
+- **GAP dicatat:** `rules.md` 14b.5 minta username dibuat di sini juga; view
+  `ganti-kata-sandi.blade.php` BELUM punya kolomnya. Task 3.2 TIDAK menambah
+  (perubahan UI) -> Task 3.2b/3.5.
+
+### E. Middleware `PastikanGantiKataSandi`
+- `Auth::check() && user->password_harus_diganti` & rute bukan `ganti-kata-sandi*`/
+  `logout` -> `redirect()->route('ganti-kata-sandi')`. Alias di `bootstrap/app.php`.
+- **TIDAK dilampirkan ke grup rute mana pun di Task 3.2.** Task 3.2b yang lampirkan.
+
+### F. AuditLog
+- Model minimal: `$table='audit_log'`, `$primaryKey='id_audit_log'`, cast
+  `aksi=>AksiAuditLog::class`, `data_lama/data_baru=>'array'`, relasi `pelaku()`
+  belongsTo User. Untuk Login: `nama_tabel='user'`, `record_id=user id`.
+- **Bukan** observer/diffing otomatis -- itu Task 3.6. Cukup `AuditLog::create()`
+  langsung di controller auth.
+
+### G. `config/auth.php`
+- `passwords.users.table` masih `password_reset_tokens` (tabel tak dibuat).
+  Broker sandi = Task 3.11. BIARKAN + catat di sini.
+
+## Verifikasi
+- `pest tests/Database` hijau (82 + ~13 baru).
+- `pest` (SQLite) tetap **732 PASS** (rute GET tak berubah perilaku; hanya
+  `login.kirim`/`logout`/`ganti-kata-sandi.simpan` POST yang berisi -- tak
+  dipanggil 732 uji; `HalamanTest:7600` hanya memeriksa markup form + `Route::has`).
+- `pint --test` tetap 31 · `sim:tautan-statis` tetap 224 ·
+  `sim:banding-skema --lengkap` masih NOL SELISIH (tak sentuh migrasi).
+
+## DITUNDA ke Task 3.2b
+- Bungkus rute internal dgn `auth` + `pastikan.ganti.sandi`; `guest` di rute login.
+- Migrasi ~350 uji HTTP: `RefreshDatabase` + `beforeEach` global `actingAs(User)`
+  di `tests/Pest.php`, lalu edit ~30 uji perilaku-tamu (login page saat login,
+  `merender setiap rute GET`, `route profil/kata-sandi/ganti-kata-sandi/login`).
+- Kolom username di `ganti-kata-sandi` (`rules.md` 14b.5) + cek ketersediaan.
+- Peralihan `DummyData::penggunaSaatIni()` -> `Auth::user()`.
+
+---
+
 # Tahap 3 Â· Task 3.1 - Migration + Model Eloquent SELESAI (2026-09-03)
 
 Menerjemahkan `database/data/schema.sql` (55 tabel bisnis) menjadi migration +

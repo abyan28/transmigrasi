@@ -6,6 +6,8 @@ use App\Enums\JenisSaprotan;
 use App\Enums\PrioritasPengaduan;
 use App\Enums\StatusPanen;
 use App\Enums\StatusPengaduan;
+use App\Http\Controllers\Auth\GantiKataSandiController;
+use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DokumenController;
 use App\Support\DummyData;
 use App\Support\LaporanData;
@@ -218,53 +220,21 @@ Route::put('/sp/{sp}', function (int $sp) {
 | (agents/rules.md bagian 14b poin 7 sampai 12).
 |
 */
-Route::get('/login', function () {
-    return view('pages.auth.signin', ['title' => 'Masuk']);
-})->name('login');
-
 /*
- * Penerima kredensial. DITAMBAHKAN 2026-08-25.
- *
- * Sebelumnya form masuk sama sekali tidak dirangkai: tanpa `action`, tanpa
- * `method`, dan tanpa rute penerima, sehingga tombol Masuk hanya memuat ulang
- * halaman. Tiga form autentikasi lainnya sudah lengkap sejak awal, jadi ini
- * bukan penundaan yang disengaja melainkan satu form yang terlewat.
+ * Masuk dan keluar sistem (Task 3.2, 2026-09-03). Logika sudah berjalan penuh:
+ * email atau username pada satu kolom, tolak akun nonaktif dengan pesan khusus,
+ * throttle 5 kegagalan per menit, regenerasi sesi, catat `last_login_at` dan
+ * audit log. Rute internal BELUM dibungkus `auth` -- itu Task 3.2b.
  */
-Route::post('/login', function () {
-    // Tahap 3: Auth::attempt() menerima email MAUPUN username pada satu kolom
-    // yang sama, sehingga pencocokan dilakukan dua kali terhadap kolom berbeda.
-    //
-    // Yang wajib ikut dikerjakan, seluruhnya sudah punya tempat di tampilan:
-    // - tolak akun ber-`is_aktif` FALSE beserta pesan yang membedakannya dari
-    //   kredensial salah, sebab petugas yang akunnya dinonaktifkan perlu tahu
-    //   harus menghubungi Admin, bukan mencoba lagi;
-    // - batasi percobaan agar kata sandi tidak dapat ditebak beruntun
-    //   (rules.md 14b);
-    // - regenerasi sesi setelah berhasil, mencegah session fixation;
-    // - catat `last_login_at`, dipakai halaman rincian pengguna;
-    // - bila `password_harus_diganti` bernilai TRUE, alihkan ke
-    //   `ganti-kata-sandi`, BUKAN ke beranda. Rutenya sudah ada dan halamannya
-    //   sudah jadi, tetapi belum ada satu pun jalur yang menuju ke sana.
-    //
-    // Kegagalan wajib kembali dengan galat bernama `kredensial`, sebab itulah
-    // kunci yang dibaca @error pada signin.blade.php.
-    return redirect()->route('beranda');
-})->name('login.kirim');
+Route::get('/login', [LoginController::class, 'tampil'])->name('login');
+Route::post('/login', [LoginController::class, 'masuk'])->name('login.kirim');
+Route::post('/logout', [LoginController::class, 'keluar'])->name('logout');
 
-Route::post('/logout', function () {
-    // Tahap 3: Auth::logout() beserta invalidasi sesi.
-    return redirect()->route('login')->with('sukses', 'Anda sudah keluar dari sistem.');
-})->name('logout');
-
-// Halaman wajib ganti kata sandi, muncul ketika password_harus_diganti bernilai TRUE.
-Route::get('/ganti-kata-sandi', function () {
-    return view('pages.auth.ganti-kata-sandi', ['title' => 'Ganti Kata Sandi']);
-})->name('ganti-kata-sandi');
-
-Route::post('/ganti-kata-sandi', function () {
-    // Tahap 3: simpan hash baru, kosongkan password_harus_diganti, catat audit log.
-    return redirect()->route('beranda')->with('sukses', 'Kata sandi berhasil diganti.');
-})->name('ganti-kata-sandi.simpan');
+// Halaman wajib ganti kata sandi, muncul ketika password_harus_diganti bernilai
+// TRUE. Penegakan oleh middleware `pastikan.ganti.sandi` -- dibangun di Task 3.2,
+// dilampirkan ke grup rute di Task 3.2b.
+Route::get('/ganti-kata-sandi', [GantiKataSandiController::class, 'tampil'])->name('ganti-kata-sandi');
+Route::post('/ganti-kata-sandi', [GantiKataSandiController::class, 'simpan'])->name('ganti-kata-sandi.simpan');
 
 /*
  * Pemulihan kata sandi mandiri, memakai kode enam digit ke surel dinas.
