@@ -250,8 +250,9 @@ it('meloloskan tamu dan pengguna tanpa flag', function () {
 /*
 |--------------------------------------------------------------------------
 | Penegakan rute (Task 3.2b) -- `auth` + `guest` + `pastikan.ganti.sandi`
-| terpasang di routes/internal.php / routes/web.php. Env uji = `testing`,
-| jadi MasukOtomatisLokal tidak aktif.
+| terpasang di routes/internal.php / routes/web.php. Bypass masuk otomatis
+| lingkungan lokal DICABUT 2026-09-03, sehingga tak ada lagi jalan pintas
+| yang dapat menutupi kegagalan penegakan ini.
 |--------------------------------------------------------------------------
 */
 
@@ -282,4 +283,34 @@ it('mengalihkan pengguna yang sudah masuk dari halaman masuk ke beranda', functi
     $this->actingAs(User::factory()->create())
         ->get(route('login'))
         ->assertRedirect('/');
+});
+
+it('mencatat keluar atas pengguna tersimpan, bukan pengguna tanpa id_user', function () {
+    /*
+     * Regresi nyata 2026-09-03. Bypass `MasukOtomatisLokal` (dicabut bersama
+     * uji ini) meng-`Auth::login()` instance `new User(...)` yang TIDAK PERNAH
+     * di-`save()`, sehingga `id_user` bernilai null. `LoginController::catat()`
+     * mengisi `record_id` dari nilai itu, dan `audit_log.record_id` NOT NULL
+     * menolaknya: menekan Keluar membalas 500, bukan keluar dari sistem.
+     *
+     * Lolos berbulan-bulan sebab suite Feature memakai SQLite yang tidak
+     * menegakkan NOT NULL sekeras MySQL, dan sebab tabel `audit_log` belum ada
+     * di basis data dev sampai migrasinya dijalankan. Karena itu uji ini
+     * berumah di grup Database (MySQL nyata), bukan di Feature.
+     */
+    $user = User::factory()->create();
+
+    $sebelum = AuditLog::where('aksi', AksiAuditLog::Logout)->count();
+
+    $this->actingAs($user)->post(route('logout'))->assertRedirect(route('login'));
+
+    $catatan = AuditLog::where('aksi', AksiAuditLog::Logout)->latest('id_audit_log')->first();
+
+    expect(AuditLog::where('aksi', AksiAuditLog::Logout)->count())->toBe($sebelum + 1)
+        ->and($catatan->record_id)->not->toBeNull()
+        ->and($catatan->record_id)->toBe($user->id_user)
+        ->and($catatan->user_id)->toBe($user->id_user);
+
+    // Sesi benar-benar berakhir: rute internal kembali menolak.
+    $this->get(route('beranda'))->assertRedirect(route('login'));
 });

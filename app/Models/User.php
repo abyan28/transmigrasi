@@ -30,9 +30,13 @@ class User extends Authenticatable
 
     /**
      * Menandai pengguna semu bertanda SELURUH kewenangan, dipakai HANYA oleh
-     * bypass `MasukOtomatisLokal` (env lokal) dan `beforeEach` suite Feature.
-     * Bukan role nyata: instance ini tak dipersist dan tak punya `role`.
-     * `punyaIzin()` memeriksa flag ini lebih dulu.
+     * `beforeEach` suite Feature (`tests/Pest.php`). Bukan role nyata:
+     * instance ini tak dipersist dan tak punya `role`. `punyaIzin()` memeriksa
+     * flag ini lebih dulu.
+     *
+     * Bypass `MasukOtomatisLokal` dahulu juga memakainya; DICABUT 2026-09-03
+     * sebab pengguna tak dipersist berarti `id_user` null, dan itu melanggar
+     * `audit_log.record_id` NOT NULL begitu keluar dari sistem.
      */
     public bool $semuaIzin = false;
 

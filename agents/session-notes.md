@@ -1,3 +1,100 @@
+# Bypass masuk otomatis lokal DICABUT + bug keluar-sistem (2026-09-03)
+
+Pemilik proyek menekan Keluar dan menerima **500**; sesudahnya `/login` selalu
+dilempar ke dashboard sehingga halaman masuk mustahil dibuka. Keduanya berasal
+dari satu akar: middleware `MasukOtomatisLokal` (Task 3.2b, C1).
+
+## Akar
+
+`MasukOtomatisLokal::penggunaPengembang()` membuat `new User([...])` yang
+**tidak pernah di-`save()`**, lalu `Auth::login()`. Instance tanpa baris di
+basis data berarti `id_user` bernilai **null**.
+
+Rantainya:
+
+1. Keluar -> `LoginController::keluar()` -> `catat()`
+2. `catat()` mengisi `'record_id' => $pengguna->id_user` -> **null**
+3. `audit_log.record_id` **NOT NULL** -> MySQL menolak -> **500**
+
+Gejala kedua satu paket: middleware di-`prepend` ke grup `web`, sehingga ia
+meng-`Auth::login()` SEBELUM `guest` dievaluasi. `guest` selalu melihat
+pengguna sudah masuk, lalu melempar ke beranda. Selama flag menyala, halaman
+login tidak akan pernah dapat dibuka.
+
+## Mengapa baru muncul sekarang
+
+Tabel `audit_log` belum ada di DB dev sampai migrasi hari ini. Sebelumnya
+`catat()` gagal dengan "table doesn't exist" -- sama-sama galat, hanya belum
+pernah ada yang mencoba keluar. Migrasi memindahkan kegagalannya ke constraint
+kolom, dan di situlah ia terlihat.
+
+Sebab kedua yang lebih penting: **suite Feature memakai SQLite**, yang tidak
+menegakkan NOT NULL sekeras MySQL. Bug yang hidup di jalur autentikasi karena
+itu tidak dapat ditangkap di sana.
+
+## Keputusan: dicabut, bukan diperbaiki
+
+Pemilik proyek memilih meniadakan bypass supaya `auth`, `guest`, dan
+`pastikan.ganti.sandi` benar-benar teruji sehari-hari. Sejalan dengan itu,
+**alasan lahirnya sudah gugur**: docblocknya berbunyi "basis data lokal belum
+di-seed akun mana pun sampai Tahap 4", padahal `AdminAwalSeeder` kini menanam
+akun Admin sungguhan ber-97-dari-97 izin. Mencabut lebih murah daripada
+memperbaiki, dan menghapus satu jalan pintas yang dapat menutupi kegagalan
+penegakan rute.
+
+Dicabut: `app/Http/Middleware/MasukOtomatisLokal.php` (berkas), blok `prepend`
++ `use` di `bootstrap/app.php`, kunci `masuk_otomatis` di `config/sim.php`,
+`SIM_MASUK_OTOMATIS` di `.env.example` dan `.env`.
+
+**TIDAK disentuh:** `beforeEach` global `tests/Pest.php`. Itu mekanisme
+terpisah (`actingAs()` di suite Feature, bukan lewat middleware); menyentuhnya
+memerahkan ~340 panggilan HTTP tanpa alasan. Properti `User::$semuaIzin` tetap
+hidup karena dipakai di sana -- hanya docblocknya dibetulkan.
+
+## Penjaga baru
+
+`AutentikasiTest` -- "mencatat keluar atas pengguna tersimpan, bukan pengguna
+tanpa id_user". Berumah di grup **Database** (MySQL nyata), sebab justru
+SQLite-lah yang membuat bug ini tak terlihat.
+
+**Dibuktikan menangkap:** `$user` diganti sementara menjadi `new User([...])`
+tak-tersimpan -> uji MERAH dengan galat identik yang dilaporkan pemilik proyek
+(`Column 'record_id' cannot be null`, aksi Logout); dikembalikan -> HIJAU.
+
+> **Aturan:** pengguna terautentikasi wajib punya baris di basis data. Instance
+> `new User()` yang tak dipersist boleh hidup di uji yang tak menyentuh DB,
+> tidak pernah di jalur permintaan sungguhan.
+
+## Verifikasi
+
+- `pest` **938 PASS / 7.918 assertions** (937 + 1 penjaga baru). Perlu
+  `php -d memory_limit=1G`.
+- `pint --test` **26** (tak berubah) - `sim:tautan-statis` **14** -
+  `route:list` **151** (set rute identik; hanya middleware berkurang satu).
+- Manual `php artisan serve`, DB dev, `audit_log` dikosongkan lebih dulu:
+
+  | Langkah | Hasil |
+  |---|---|
+  | Tamu buka `/` | 302 -> `/login` |
+  | Tamu buka `/login` | 200, tampil |
+  | POST login `admin`/`admin` | 302 -> `/` |
+  | `/`, `/transmigran`, `/audit-log` | 200 |
+  | **POST `/logout`** | **302 -> `/login`** (dulu 500) |
+  | Sesudah keluar, `/transmigran` | 302 -> `/login` |
+  | Sesudah keluar, `/login` | 200 (dulu dilempar ke dashboard) |
+
+- `audit_log` sesudahnya: 2 baris, Login + Logout, `record_id = 1` keduanya,
+  **nol** baris ber-`record_id` null.
+
+## Konsekuensi sehari-hari
+
+Login tiap sesi habis (120 menit) dan tiap `migrate:fresh --seed`. Kredensial
+`admin`/`admin` bertahan sebab `SIM_ADMIN_*` ada di `.env` lokal. Header masih
+menampilkan "NARA WIJAYA" (`DummyData::penggunaSaatIni()`) sampai peralihan
+Eloquent Tahap 4 -- kosmetik.
+
+---
+
 # DB dev tertinggal sejak Task 3.1 -- dimigrasikan + akun admin lokal (2026-09-03)
 
 Pemilik proyek memeriksa phpMyAdmin dan bertanya mengapa Tahap 3 yang sudah

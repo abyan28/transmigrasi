@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Middleware\EnsureIzin;
-use App\Http\Middleware\MasukOtomatisLokal;
 use App\Http\Middleware\PastikanGantiKataSandi;
 use App\Http\Middleware\UppercaseInput;
 use App\Support\PetaIzinRute;
@@ -65,13 +64,6 @@ return Application::configure(basePath: dirname(__DIR__))
         // reverse proxy. Tanpa ini aset dicetak http:// lalu diblokir browser
         // sebagai mixed content.
         $middleware->trustProxies(at: '*');
-
-        // Bypass masuk lingkungan lokal (Task 3.2b). Dijalankan SEBELUM `auth`
-        // (prepend) agar rute internal dapat ditelusuri tanpa login manual saat
-        // APP_ENV=local + SIM_MASUK_OTOMATIS. Tak berefek di lingkungan lain.
-        $middleware->web(prepend: [
-            MasukOtomatisLokal::class,
-        ]);
 
         // Menyeragamkan isian teks pengguna menjadi huruf kapital agar rekap
         // per wilayah tidak terpecah oleh perbedaan penulisan.
