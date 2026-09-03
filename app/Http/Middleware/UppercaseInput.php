@@ -59,6 +59,25 @@ class UppercaseInput
         'jenis',
         'jenis_fasilitas',
 
+        // Nilai referensi (Task 4.3/4.4/4.6): TEKS yang dicocokkan ke tabel
+        // `referensi` lewat ValidationRules::referensi(). Dikapitalkan, ia
+        // tersimpan dengan kapitalisasi berbeda dari daftar pilihannya --
+        // lolos validasi (kolasi MySQL case-insensitive) tetapi data tak
+        // seragam. Ditegakkan tests/Feature/UppercaseInputTest.php.
+        'kondisi',
+        'sumber_dana',
+        'status_penyerahan',
+        'jenis_inventaris',
+
+        // Pemilih laten: kolom SP yang untuk sementara divalidasi sebagai
+        // string bebas, tetapi enum-nya (PolaPermukiman / BentukWilayah /
+        // TingkatKesuburanTanah) menunggu dipakai Tahap 5+. Ditambahkan lebih
+        // dulu agar pola tiga kali di Tahap 4 tidak terulang; penjaga uji buta
+        // terhadapnya selama masih string bebas.
+        'pola_permukiman',
+        'bentuk_wilayah',
+        'tingkat_kesuburan_tanah',
+
         // Teks naratif, huruf kapital seluruhnya menyulitkan pembacaan
         'deskripsi',
         'deskripsi_pengaduan',
