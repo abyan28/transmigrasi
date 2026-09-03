@@ -1,3 +1,85 @@
+# Tahap 3 susulan: penjaga UppercaseInput + Task 3.12 + 3.13 SELESAI (2026-09-04)
+
+Lanjutan dari AI sebelumnya yang berhenti di tengah (galat sintaks
+`tests/Feature/UppercaseInputTest.php`). Verifikasi akhir: pest Feature
+**732** + Database **288** PASS, `sim:banding-skema --lengkap` NOL SELISIH,
+`sim:tautan-statis` 14, pint bersih (berkas lingkup ini). **Belum di-push.**
+
+## 0. Mojibake (commit `<lihat git log>`)
+Perbaikan encoding 4 berkas `agents/*.md` oleh AI sebelumnya (sudah selesai,
+tinggal di-commit). Murni `Â§`->`§`, box-drawing, `→`; penanda `[x]`->`[✓]`.
+
+## 1. Penjaga UppercaseInput
+- `tests/Feature/UppercaseInputTest.php`: selesaikan galat sintaks (`$pesan`
+  string tak ditutup baris 83-84; `expect()->toBe([], $msg)` -> `assertSame`).
+  `isianPemilih()` menyisir `app/Http/Controllers/**` untuk `Rule::enum/in` +
+  `ValidationRules::referensi(` (regex satu baris), lalu 2 `it()`: (a) tiap
+  nama pemilih ada di `$kecualikan`/`$kecualikanAkhiran`; (b) penjaga bagi
+  penjaga -- `isianPemilih()` tak kosong & memuat `jenis_fasilitas`/`kondisi`.
+- `app/Http/Middleware/UppercaseInput.php` `$kecualikan` +7: `kondisi`,
+  `sumber_dana`, `status_penyerahan`, `jenis_inventaris` (bocor nyata --
+  dikapitalkan lalu tersimpan `'BAIK'` vs `referensi.'Baik'`; lolos karena
+  kolasi `utf8mb4_unicode_ci` case-insensitive) + `pola_permukiman`,
+  `bentuk_wilayah`, `tingkat_kesuburan_tanah` (pemilih laten SP; regex buta
+  selama masih string bebas).
+- Titik buta penjaga didokumentasikan di docblock uji.
+
+## 2. Task 3.12 -- Audit Log
+- `app/Http/Controllers/AuditLogController.php` (`index`): `AuditLog::with
+  ('pelaku')` + `when()` filter (`cari` LIKE `nama_tabel`/`aksi`; `aksi`;
+  `pengguna` -> `'Sistem'`=`whereNull(user_id)` / lainnya `whereHas('pelaku',
+  nama=)`; `tahun_dari/sampai` -> `whereYear`, tukar bila terbalik) ->
+  `paginate(25)->withQueryString()->through(petakan)`.
+- `petakan()` -> larik kunci lama + `ringkasan` (disintesis) + `perubahan`
+  (list `{kolom, lama, baru}`; nilai di-stringify; rahasia disaring lagi di
+  sini). `daftarAksi` = distinct dari DB (bukan `AksiAuditLog::nilai()` --
+  hindari kontrol mati + "Ubah Izin Role" menabrak penjaga istilah "izin").
+  `daftarTahun` = `range(maks, min)` dari `MAX/MIN(created_at)` (portabel, tanpa
+  `YEAR()`).
+- `routes/internal.php`: 51-baris closure -> `Route::get('/audit-log',
+  [AuditLogController::class, 'index'])`. Nama tetap -> `izin:audit_log,lihat`
+  + `throttle:baca-internal` otomatis. **Tak ada rute tulis.**
+- View `pages/pengguna/audit-log.blade.php`: `:jumlah` -> `$baris->total()`;
+  sel Keterangan +`<dl>` selisih; kartu mobile + tabel-id; `<x-slot:setelahTabel>`
+  `$baris->links()` (Laravel `pagination::tailwind`).
+- `tests/Database/AuditLogTest.php` 10 uji. `HalamanTest` penjaga rentang-tahun
+  `viewData('baris')->toBe([])` -> `->total())->toBe(0)`.
+- `DummyData::auditLog()` **tetap** (dipakai `ViewServiceProvider` riwayat-akun
+  + `riwayatData()` tab Catatan Log).
+
+## 3. Task 3.13 -- Profil + ubah kata sandi
+- `app/Support/PetaPenggunaTampilan::untuk(?User): array` -- normalizer ke
+  bentuk `penggunaSaatIni()`. `cakupan_data` tetap STRING. Null-safe: pengguna
+  semu (`new User(['nama'=>'DEV'])`, `->exists` false) -> cabang default
+  (role `-`). `satuan_permukiman` = `->satuanPermukiman->pluck('nama')`.
+- `app/Http/Controllers/ProfilController.php`: `index` (normalizer + inisial),
+  `simpan` (`email`+`telepon`, audit `Ubah` manual sebab `user` bukan model
+  diobservasi), `tampilKataSandi`, `simpanKataSandi` (`password_lama` =>
+  `current_password`; `password` => `ValidationRules::password()`; **tanpa**
+  `password_harus_diganti`; audit `ResetKataSandi` `jalur=Mandiri`).
+- `routes/internal.php` 4 closure -> controller (nama tetap; sudah di
+  `PetaIzinRute::dikecualikan()`).
+- `ViewServiceProvider` composer `components.header.user-dropdown` ->
+  `PetaPenggunaTampilan::untuk(Auth::user())`.
+- View `profil/index.blade.php`: hanya `last_login_at`/`created_at` diberi
+  guard null (`@if` / ternary) + docblock; sisanya **0 edit**.
+- `DummyData::penggunaSaatIni()` **DIHAPUS**. `inisial()` tetap.
+- `tests/Pest.php` komentar diperbarui (pengguna semu tetap tak dipersist).
+- `tests/Database/ProfilTest.php` 8 uji. `HalamanTest:176` ditulis ulang pakai
+  `User::factory()->create()` + `actingAs`. `DummyDataTest`: 2 uji
+  `penggunaSaatIni()` dihapus, `inisial()` tetap.
+
+## DITUNDA / catatan
+- **Utang pint lama 26 berkas** (`app/Enums/*` EOF newline, `config/*`
+  `fully_qualified_strict_types`, `PenyimpananDokumen` `concat_space`, dst.).
+  Berasal dari commit rename `961948d` dan `8ceedc3`/`4a08e68` -- jauh sebelum
+  sesi ini. `pint --dirty` atas berkas lingkup ini bersih; sweep 26-berkas
+  di luar lingkup "tahap susulan 3", dibersihkan terpisah.
+- Username self-service saat masuk pertama (`rules.md` 14b poin 5) tetap di
+  alur `ganti-kata-sandi` wajib, belum ada kolomnya (DITUNDA sejak Task 3.2b).
+
+---
+
 # Tahap 4 Task 4.8 - Penilaian Kondisi SP SELESAI -- TAHAP 4 TUNTAS (2026-09-03)
 
 Task terakhir Tahap 4. Seluruh sembilan task selesai.

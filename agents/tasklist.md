@@ -1,7 +1,7 @@
 # tasklist.md
 ## Daftar Tugas — Sistem Informasi Digitalisasi Monitoring Pertanian dan Tata Kelola Data Kawasan Transmigrasi Kobalima Timur
 
-**Progress: 86%**
+**Progress: 87%**
 *(Tahap 0 selesai 8 task. **Tahap 1 SELESAI** 12 task. **TAHAP 2 SELESAI SELURUHNYA.** Gelombang 1 dan 2 tuntas, 32 halaman berdiri. **Delivery Gate kedua gelombang sudah dijalankan** dan laporannya lengkap (`delivery-gate-gelombang-1.md` dan `-2.md`). Dua hal ditunda beralasan, bukan lolos diam-diam: keadaan memuat dan galat menunggu backend Tahap 3, dan pemeriksaan 360px pada perangkat nyata menunggu manusia. Siap masuk checkpoint validasi bersama tim dan dinas, lalu Tahap 3.)*
 
 Acuan: `prd.md`, `rules.md`, `workflow.md`, `ui-spec.md`, `erd.md`, `data-dictionary.md`, `notes.md`.
@@ -1233,14 +1233,20 @@ domain; sisanya mengikuti tanpa mengubah skema maupun komponen.
 Keduanya berdomain autentikasi/audit sehingga bernomor Tahap 3, tetapi kecil dan
 menghapus sisa terakhir `DummyData::penggunaSaatIni()` -- dikerjakan berbarengan Tahap 4.
 
-- [ ] Task 3.12 - Halaman & filter Audit Log `[Sedang]` (BARU 2026-09-03)
-  * **Celah yang ditemukan 2026-09-03:** Task 3.6 hanya mencakup PENCATATAN otomatis (selesai, observer di 32 model). Halaman `/audit-log` yang menampilkannya tidak pernah punya task
-  * Daftar + filter (pelaku, aksi, tabel, rentang tanggal) + paginasi; `data_lama`/`data_baru` ditampilkan sebagai selisih terbaca
-  * Hanya-baca. Audit log **tidak boleh** disunting atau dihapus lewat antarmuka mana pun
-- [ ] Task 3.13 - Profil pengguna & ubah kata sandi `[Mudah]` (BARU 2026-09-03)
-  * **Celah yang ditemukan 2026-09-03:** `/profil` dan `/profil/kata-sandi` tidak pernah punya task backend; rutenya masih `return back()` kosong
-  * Menghapus pemakaian terakhir `DummyData::penggunaSaatIni()` (rute profil + `ViewServiceProvider` composer `user-dropdown`), diganti `Auth::user()`. Sesudah ini header menampilkan pengguna yang benar-benar masuk, bukan "NARA WIJAYA"
-  * Ubah kata sandi memeriksa sandi lama lebih dulu, lalu catat audit `Reset Kata Sandi` atas nama pemilik akun (`rules.md` 14b poin 15)
+- [✓] ✅ Penjaga uji `UppercaseInput` vs isian pemilih `[Mudah]` -- **SELESAI 2026-09-04**
+  * `tests/Feature/UppercaseInputTest.php` menyisir seluruh controller untuk `Rule::enum/in` + `ValidationRules::referensi()` lalu menuntut tiap nama isian pemilih ada di `UppercaseInput::$kecualikan` -- merah **saat controller ditulis**, bukan saat data gagal tersimpan. Membalik pola 3x Tahap 4 (`tingkat`/`jenis`/`jenis_fasilitas`, selalu ketahuan setelah uji merah)
+  * Menutup 4 kolom yang bocor: `kondisi`, `sumber_dana`, `status_penyerahan`, `jenis_inventaris` (dikapitalkan dari form, tersimpan beda kapitalisasi dari tabel `referensi`; lolos validasi karena kolasi MySQL case-insensitive). + 3 pemilih laten SP (`pola_permukiman`, `bentuk_wilayah`, `tingkat_kesuburan_tanah`)
+- [✓] ✅ Task 3.12 - Halaman & filter Audit Log `[Sedang]` -- **SELESAI 2026-09-04**
+  * `AuditLogController@index` menggantikan closure `DummyData`. Daftar + filter (pelaku/aksi/rentang tahun/kata kunci) + `paginate(25)`. `data_lama`/`data_baru` sebagai selisih terbaca per kolom
+  * HANYA-BACA: tak ada rute tulis. Kolom rahasia (`password` dll.) disaring berlapis di controller walau `AuditLogObserver` sudah mengecualikannya
+  * `daftarAksi` data-driven (aksi yang benar-benar tercatat), bukan 10 nilai enum -- menghindari opsi filter mati + "Ubah Izin Role" yang menabrak penjaga istilah "izin"
+  * 10 uji `tests/Database/AuditLogTest.php`; penjaga `HalamanTest` rentang-tahun disesuaikan ke `->total()` (paginator)
+- [✓] ✅ Task 3.13 - Profil pengguna & ubah kata sandi `[Mudah]` -- **SELESAI 2026-09-04**
+  * `ProfilController`: `simpan` (email/telepon + audit `Ubah`), `simpanKataSandi` (`current_password` lalu hash; **TIDAK** menyetel `password_harus_diganti` -- `rules.md` 14b poin 13; audit `Reset Kata Sandi` jalur `Mandiri`, poin 15)
+  * `App\Support\PetaPenggunaTampilan::untuk(Auth::user())` menormalkan model ke bentuk larik `penggunaSaatIni()` (null-safe untuk pengguna semu suite Feature). View profil + komponen `user-dropdown` **tak disunting**
+  * `ViewServiceProvider` composer `user-dropdown` + 4 rute `profil*` beralih ke `Auth::user()`. **`DummyData::penggunaSaatIni()` DIHAPUS** -- pemakai terakhir hilang. Username tetap baca-saja (dibuat saat masuk pertama, poin 5)
+  * 8 uji `tests/Database/ProfilTest.php`; `HalamanTest` "merender profil" ditulis ulang memakai `User` persisted; 2 uji `DummyDataTest` yang menguji `penggunaSaatIni()` dihapus
+  * **DITUNDA:** utang pint lama 26 berkas (EOF newline + `concat_space`, dari commit rename DIGITRANS `961948d` dan lebih lama) -- di luar lingkup, dibersihkan terpisah
 
 ## Tahap 5 — Backend Kependudukan
 
@@ -1429,7 +1435,7 @@ sistem informasi transmigrasi/     <- root Laravel sekaligus root proyek
 |---|---|
 | `app/Support/ValidationRules.php` | 16 aturan validasi, 40 pesan galat Bahasa Indonesia, label kolom |
 | `app/Support/PenyimpananDokumen.php` | Simpan, ganti, hapus dokumen di disk privat beserta pola penamaan |
-| `app/Http/Middleware/UppercaseInput.php` | Menyeragamkan isian teks jadi huruf kapital, 24 kolom dikecualikan |
+| `app/Http/Middleware/UppercaseInput.php` | Menyeragamkan isian teks jadi huruf kapital; isian pemilih dikecualikan (ditegakkan `tests/Feature/UppercaseInputTest.php`) |
 | `app/Http/Controllers/DokumenController.php` | Melayani unduhan berkas privat setelah pemeriksaan hak akses |
 | `app/Helpers/MenuHelper.php` | Menu sidebar dinamis berbasis izin |
 | `tests/Feature/FondasiTest.php` | 22 uji, 150 pernyataan, seluruhnya lulus |
