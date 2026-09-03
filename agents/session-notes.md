@@ -1,3 +1,103 @@
+# Tahap 4 Task 4.1 - CRUD wilayah bertingkat SELESAI (2026-09-03)
+
+Task pertama Tahap 4, sekaligus **peralihan pertama tampilan dari `DummyData`
+ke Eloquent**. Karena itu ia menentukan pola seluruh Tahap 4-8, bukan hanya
+dirinya sendiri.
+
+## Yang dikerjakan
+
+- **`WilayahSeeder`** -- 38 provinsi + 514 kabupaten se-Indonesia dari
+  `DataWilayah`; kecamatan (4) dan desa (6) HANYA wilayah lokus. **Id dipaksa
+  sama dengan kode BPS** (Malaka 5321, NTT 53), bukan auto-increment, supaya id
+  di basis data sama persis dengan yang dipakai `DataWilayah`/`DummyData` dan
+  peralihan tak menggeser satu pun rujukan modul lain. Idempoten.
+- **`WilayahController`** -- `index`/`simpan`/`perbarui`/`hapus` menggantikan 4
+  closure. Empat tingkat dilayani satu controller lewat konstanta `TINGKAT`
+  (kelas, kunci, kolom+relasi induk, daftar turunan): menambah tingkat cukup
+  menyentuh satu tempat. Nama induk lewat eager loading -- daftarnya 500+ baris,
+  membacanya per baris menghasilkan ratusan kueri untuk satu halaman.
+- Penghapusan **ditolak dengan kalimat terbaca** bila wilayah masih menaungi
+  turunan atau SP. FK RESTRICT sudah menahannya, tetapi galat SQL mentah tidak
+  dapat ditindaklanjuti petugas.
+- `/wilayah` beralih penuh ke Eloquent: penyaring tingkat, pencarian
+  nama/induk/kode, dan paginasi kini kueri, bukan `array_filter`.
+
+## Temuan 1: alamat `/wilayah/{id}` tidak pernah cukup
+
+Kunci utama keempat tabel wilayah berdiri sendiri-sendiri, sehingga **id 1 sah
+sebagai kecamatan (Laen Manen) MAUPUN desa (Kapitan Meo)**. Untuk Ubah masih
+tertolong sebab form mengirim `tingkat` di body; **Hapus tidak** -- `DELETE
+/wilayah/1` tak membawa body apa pun, dan peladen mustahil tahu yang dimaksud.
+
+Menebaknya berarti membuang baris yang keliru tanpa memerahkan apa pun. Cacat
+ini tak terlihat sepanjang Tahap 2 sebab datanya masih larik.
+
+Atas keputusan pemilik proyek: tingkat disisipkan ke alamat menjadi
+**`/wilayah/{tingkat}/{id}`**, dibatasi `where('tingkat', 'provinsi|kabupaten|
+kecamatan|desa')`. Alamat menjadi jujur menyebut apa yang dituju.
+
+Konsekuensi yang tidak diperkirakan: `x-sim.modal-form` hanya mengganti penanda
+`:id`, sehingga `:tingkat` akan terkirim apa adanya. Diperbaiki di akarnya --
+kini setiap penanda `:sesuatu` diganti properti bernama sama pada baris yang
+dibuka. Penanda tanpa padanan **DIBIARKAN UTUH**, bukan dijadikan string
+kosong: alamat cacat lebih baik gagal terang-terangan daripada menunjuk baris
+yang keliru. Dua puluh empat pemanggil lain memakai `:id` dan tetap terlayani.
+
+## Temuan 2: `UppercaseInput` merusak `tingkat`
+
+Middleware mengubah `kecamatan` menjadi `KECAMATAN`, lalu validasi menolaknya
+-- seluruh penyimpanan wilayah gagal dengan "Tingkat wilayah tidak sah."
+Ditemukan uji, bukan mata.
+
+`tingkat` ditambahkan ke daftar kecuali, sebaris dengan `cakupan_data` dan
+`izin` yang dikecualikan atas alasan sama: **nilai sistem yang memilih tabel
+sasaran, bukan isi data.**
+
+## Temuan 3: strategi uji Tahap 2 tak menyanggupi Eloquent
+
+Tujuh uji `HalamanTest` memerah serentak: `no such table: provinsi`. Suite
+Feature memakai SQLite `:memory:` dengan `RefreshDatabase` **MATI** (keputusan
+Task 3.1 B3) -- tabelnya tak pernah dibuat. Empat menguji `/wilayah` langsung,
+tiga menyapu seluruh rute GET dan kena imbas.
+
+Ketujuhnya menguji hal yang MASIH BERLAKU; yang berubah hanyalah dari mana
+halaman mengambil data. Dilaporkan lebih dulu, tidak disesuaikan sendiri.
+
+Keputusan pemilik proyek: **nyalakan `RefreshDatabase` + seed di suite Feature.**
+Sekali kerja, berlaku untuk seluruh Tahap 4-8. Ketujuh uji pulih **tanpa satu
+pun diubah isinya** -- bukti bahwa yang kurang memang datanya, bukan ujinya.
+
+### Biaya kecepatan, dan cara membayarnya
+
+Penempatan seeder ternyata menentukan segalanya:
+
+| Cara | Feature | Keterangan |
+|---|---|---|
+| `$this->seed()` di `beforeEach` | **516 detik** | 552 baris ditulis ulang 732 kali |
+| `RefreshDatabase::$seeder` di `Tests\TestCase` | **66 detik** | sekali per kelas, dipakai ulang lewat transaksi |
+
+Suite penuh **111 detik**, sama persis dengan baseline sebelum Task 4.1 -- nol
+biaya kecepatan. Bedanya satu baris, dan seluruhnya pada penempatan.
+
+## Verifikasi
+
+- `pest` **947 PASS / 7.946 assertions** (940 + 9 uji baru; 7 uji lama pulih
+  utuh). Perlu `php -d memory_limit=1G`.
+- `pint --test` **26** (kembali ke baseline setelah 4 berkas baru dirapikan) ·
+  `sim:tautan-statis` **14** · `sim:banding-skema --lengkap` **NOL SELISIH**.
+- Manual `migrate:fresh --seed` + HTTP: `/wilayah` 200 memuat **562 baris**
+  (38+514+4+6); tambah kecamatan lewat form -> 302 dan tersimpan; penyaring
+  tingkat, pencarian, paginasi berfungsi; alamat hapus terbit sebagai
+  `/wilayah/desa/3`, bukan `/wilayah/3`.
+
+## Sisa `DummyData`
+
+221 -> **217** pemanggilan. Turun bertahap sepanjang Tahap 4-9; selama itu
+sebagian halaman membaca basis data sementara sebagian masih data contoh. Itu
+keadaan wajar, bukan pekerjaan setengah jadi.
+
+---
+
 # Audit celah backend: tasklist Tahap 4-10 dirapikan (2026-09-03)
 
 Pemilik proyek bertanya sebelum Tahap 4 dibuka: menu Laporan, Data Master

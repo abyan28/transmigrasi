@@ -114,7 +114,7 @@
                     <td class="px-5 py-3 text-right">
                         <x-sim.aksi-baris modal-ubah="formUbahWilayahBaris"
                             :data-baris="$b['asli'] + ['id' => $b['id'], 'tingkat' => $b['tingkat']]"
-                            :hapus-url="'/wilayah/' . $b['id']"
+                            :hapus-url="'/wilayah/' . $b['tingkat'] . '/' . $b['id']"
                             konfirmasi-hapus="hapusWilayah" :label="$b['nama']" />
                     </td>
                 </tr>
@@ -132,7 +132,7 @@
                             </div>
                             <x-sim.aksi-baris modal-ubah="formUbahWilayahBaris"
                                 :data-baris="$b['asli'] + ['id' => $b['id'], 'tingkat' => $b['tingkat']]"
-                                :hapus-url="'/wilayah/' . $b['id']"
+                                :hapus-url="'/wilayah/' . $b['tingkat'] . '/' . $b['id']"
                                 konfirmasi-hapus="hapusWilayah" :label="$b['nama']" />
                         </div>
                     </div>
@@ -150,7 +150,7 @@
 
     <x-sim.modal-form nama="formUbahWilayahBaris" judul="Ubah Wilayah Administratif"
         keterangan="Tingkat wilayah menentukan induk yang diminta."
-        pola-aksi="/wilayah/:id" metode="PUT" ukuran="md" label-simpan="Simpan Perubahan">
+        pola-aksi="/wilayah/:tingkat/:id" metode="PUT" ukuran="md" label-simpan="Simpan Perubahan">
         @include('pages.master.form-wilayah', ['awalan' => 'ubahBaris'])
     </x-sim.modal-form>
 

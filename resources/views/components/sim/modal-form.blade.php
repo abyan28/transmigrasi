@@ -28,7 +28,7 @@
 
     /*
         Pola aksi untuk modal yang dipakai bergantian oleh banyak baris tabel,
-        contoh `/transmigran/:id`. Penanda :id diganti nilai sebenarnya saat
+        contoh `/transmigran/:id`. Penanda `:nama` diganti nilai sebenarnya saat
         modal dibuka, sehingga satu modal cukup melayani seluruh baris.
 
         Tanpa ini, tombol Ubah di setiap baris memerlukan modalnya sendiri,
@@ -194,9 +194,19 @@
                 return this.aksiStatis;
             }
 
-            const id = this.baris ? (this.baris.id ?? '') : '';
+            // Setiap penanda :sesuatu diganti properti bernama sama pada
+            // baris yang sedang dibuka. Semula hanya :id yang dikenali,
+            // sehingga pola bertingkat seperti /wilayah/:tingkat/:id akan
+            // mengirim kata :tingkat apa adanya ke peladen.
+            //
+            // Penanda yang tidak punya padanan DIBIARKAN UTUH, bukan dijadikan
+            // string kosong: alamat yang cacat lebih baik gagal terang-terangan
+            // daripada menunjuk baris yang keliru.
+            return this.polaAksi.replace(/:([a-z_]+)/gi, (penanda, nama) => {
+                const nilai = this.baris ? this.baris[nama] : undefined;
 
-            return this.polaAksi.replace(':id', id);
+                return nilai === undefined || nilai === null ? penanda : nilai;
+            });
         },
 
         tutup() {

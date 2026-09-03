@@ -1190,7 +1190,7 @@ domain; sisanya mengikuti tanpa mengubah skema maupun komponen.
 > Eloquent WAJIB punya seeder data contoh, supaya halaman tidak mendadak kosong dan penjaga
 > tampilan tetap bermakna.
 
-- [ ] Task 4.1 - CRUD wilayah bertingkat + seeder provinsi/kabupaten `[Sedang]`
+- [x] Task 4.1 - CRUD wilayah bertingkat + seeder provinsi/kabupaten `[Sedang]` -- **SELESAI 2026-09-03**. `WilayahSeeder` (38 provinsi + 514 kabupaten, id = kode BPS; kecamatan/desa lokus) + `WilayahController` + `/wilayah` beralih penuh ke Eloquent. Tiga temuan: alamat `/wilayah/{id}` ambigu -> `/wilayah/{tingkat}/{id}`, `UppercaseInput` merusak `tingkat`, dan suite Feature perlu `RefreshDatabase` + seeder per-kelas. Rincian: `session-notes.md` blok Task 4.1
   * Migration & model `Provinsi`/`Kabupaten`/`Kecamatan`/`Desa` **sudah ada** (Task 3.1 B2)
   * Tampilan `/wilayah` sudah selesai pada Task 2.30 (satu daftar rata, empat tingkat)
   * **`provinsi`/`kabupaten` seeder dari `app/Support/DataWilayah.php`** (38 + 514 berkode BPS); kecamatan/desa TETAP lokus sampai pengambilan bertahap lewat endpoint (`rules.md` 4a.9a)

@@ -23,6 +23,7 @@ use App\Enums\StatusPengaduan;
 use App\Http\Controllers\DokumenController;
 use App\Http\Controllers\PengaturanPenggunaController;
 use App\Http\Controllers\PengaturanRoleController;
+use App\Http\Controllers\WilayahController;
 use App\Support\DummyData;
 use App\Support\LaporanData;
 use App\Support\PenilaianKondisiSp;
@@ -269,99 +270,7 @@ Route::get('/uji-403', function () {
 | keterbacaan susunan wilayah, bukan kecepatan penyuntingan.
 |
 */
-Route::get('/wilayah', function () {
-    $wilayah = DummyData::wilayah();
-
-    /*
-     * Keempat tingkat disatukan menjadi SATU daftar rata (2026-09-02),
-     * menggantikan empat tab yang masing-masing merender seluruh barisnya.
-     *
-     * Dua alasan. Pertama, sejak provinsi dan kabupaten dibaca dari data
-     * referensi nasional, tab Kabupaten memuat 514 baris tanpa pencarian
-     * maupun paginasi. Kedua, mencari satu nama menuntut petugas menebak
-     * lebih dulu ia berada di tab mana, padahal yang ia tahu hanya namanya.
-     *
-     * Tingkat berubah dari tab menjadi KOLOM sekaligus penyaring, sehingga
-     * keempatnya tetap dapat dilihat terpisah maupun sekaligus.
-     */
-    $induk = [
-        'provinsi' => fn (array $b) => null,
-        'kabupaten' => fn (array $b) => $b['provinsi'] ?? null,
-        'kecamatan' => fn (array $b) => $b['kabupaten'] ?? null,
-        'desa' => fn (array $b) => $b['kecamatan'] ?? null,
-    ];
-
-    $kunciId = [
-        'provinsi' => 'id_provinsi',
-        'kabupaten' => 'id_kabupaten',
-        'kecamatan' => 'id_kecamatan',
-        'desa' => 'id_desa',
-    ];
-
-    $baris = [];
-    $cacah = [];
-
-    foreach ($kunciId as $tingkat => $kunci) {
-        $cacah[$tingkat] = count($wilayah[$tingkat]);
-
-        foreach ($wilayah[$tingkat] as $b) {
-            $baris[] = [
-                'id' => $b[$kunci],
-                'tingkat' => $tingkat,
-                'nama' => $b['nama'],
-                'induk' => $induk[$tingkat]($b),
-                'kode' => $b['kode'] ?? null,
-                'asli' => $b,
-            ];
-        }
-    }
-
-    $filterTingkat = request()->query('tingkat');
-    $cari = trim((string) request()->query('cari', ''));
-
-    if ($filterTingkat !== null && $filterTingkat !== '' && isset($kunciId[$filterTingkat])) {
-        $baris = array_values(array_filter($baris, fn ($b) => $b['tingkat'] === $filterTingkat));
-    } else {
-        $filterTingkat = '';
-    }
-
-    // Dicocokkan pada nama MAUPUN induknya: petugas kerap mengingat
-    // kabupatennya ketika nama kecamatannya sendiri sudah kabur.
-    if ($cari !== '') {
-        $baris = array_values(array_filter(
-            $baris,
-            fn ($b) => str_contains(mb_strtolower($b['nama']), mb_strtolower($cari))
-                || str_contains(mb_strtolower((string) $b['induk']), mb_strtolower($cari))
-                || str_contains(mb_strtolower((string) $b['kode']), mb_strtolower($cari))
-        ));
-    }
-
-    // Dipotong menurut halaman, sebab daftarnya kini memuat ratusan baris dan
-    // merender seluruhnya membuat halaman berat tanpa ada yang membacanya.
-    // Jumlah SEBELUM pemotongan tetap dibawa agar paginasi dan keterangan
-    // "menampilkan sekian dari sekian" menyebut angka yang benar.
-    $jumlah = count($baris);
-    $perHalaman = (int) request()->query('per_halaman', 25);
-
-    if (! in_array($perHalaman, [10, 25, 50, 100], true)) {
-        $perHalaman = 25;
-    }
-
-    $halaman = max(1, (int) request()->query('page', 1));
-    $barisHalaman = array_slice($baris, ($halaman - 1) * $perHalaman, $perHalaman);
-
-    return view('pages.master.wilayah', [
-        'title' => 'Data Master Wilayah',
-        'wilayah' => $wilayah,
-        'baris' => $barisHalaman,
-        'jumlahBaris' => $jumlah,
-        'perHalaman' => $perHalaman,
-        'cacahTingkat' => $cacah,
-        'filterTingkat' => $filterTingkat,
-        'cari' => $cari,
-        'adaFilter' => $filterTingkat !== '' || $cari !== '',
-    ]);
-})->name('wilayah');
+Route::get('/wilayah', [WilayahController::class, 'index'])->name('wilayah');
 
 Route::get('/master/satuan', function () {
     return view('pages.master.satuan', [
@@ -740,12 +649,7 @@ Route::get('/sp', function () {
  * Rute tulis data master kawasan. Tampilannya selesai pada Tahap 2;
  * penyimpanan sungguhan dikerjakan pada Tahap 4.
  */
-Route::post('/wilayah', function () {
-    // Tahap 4: simpan pada tabel sesuai tingkat yang dipilih. Provinsi tidak
-    // memiliki induk, sehingga kolom induknya diabaikan.
-    return redirect()->route('wilayah')
-        ->with('sukses', 'Data wilayah tersimpan.');
-})->name('wilayah.simpan');
+Route::post('/wilayah', [WilayahController::class, 'simpan'])->name('wilayah.simpan');
 
 Route::post('/master/satuan', function () {
     // Tahap 4: faktor_ke_ton wajib lebih besar dari nol, sebab dipakai
@@ -2610,13 +2514,22 @@ Route::delete('/kawasan/{id}', function (int $id) {
     return redirect()->route('kawasan')->with('sukses', 'Kawasan transmigrasi dihapus.');
 })->where('id', '[0-9]+')->name('kawasan.hapus');
 
-Route::put('/wilayah/{id}', function (int $id) {
-    return redirect()->route('wilayah')->with('sukses', 'Perubahan data wilayah tersimpan.');
-})->where('id', '[0-9]+')->name('wilayah.perbarui');
+/*
+ * Tingkat dibawa DI ALAMAT, bukan hanya di body (Task 4.1).
+ *
+ * Kunci utama keempat tabel wilayah berdiri sendiri-sendiri, sehingga id 1 sah
+ * sebagai kecamatan (Laen Manen) MAUPUN desa (Kapitan Meo). Alamat lama
+ * `/wilayah/{id}` karena itu tidak pernah cukup menunjuk satu baris, dan
+ * penghapusan yang menebak tingkatnya akan membuang baris yang keliru tanpa
+ * memerahkan apa pun.
+ */
+Route::put('/wilayah/{tingkat}/{id}', [WilayahController::class, 'perbarui'])
+    ->where('tingkat', 'provinsi|kabupaten|kecamatan|desa')
+    ->where('id', '[0-9]+')->name('wilayah.perbarui');
 
-Route::delete('/wilayah/{id}', function (int $id) {
-    return redirect()->route('wilayah')->with('sukses', 'Data wilayah dihapus.');
-})->where('id', '[0-9]+')->name('wilayah.hapus');
+Route::delete('/wilayah/{tingkat}/{id}', [WilayahController::class, 'hapus'])
+    ->where('tingkat', 'provinsi|kabupaten|kecamatan|desa')
+    ->where('id', '[0-9]+')->name('wilayah.hapus');
 
 Route::put('/master/satuan/{id}', function (int $id) {
     // Tahap 4: perubahan faktor konversi TIDAK mengubah panen yang sudah

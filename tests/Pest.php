@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\DatabaseTestCase;
 use Tests\TestCase;
 
@@ -16,7 +17,28 @@ use Tests\TestCase;
 */
 
 pest()->extend(TestCase::class)
+    ->use(RefreshDatabase::class)
     ->beforeEach(function () {
+        // Task 4.1: sejak tampilan beralih dari `DummyData` ke Eloquent,
+        // suite Feature MEMBUTUHKAN skema. `RefreshDatabase` dinyalakan --
+        // tetap SQLite `:memory:` (`phpunit.xml`) sehingga cepat, hanya kini
+        // bertabel. Sebelumnya mati sepanjang Tahap 2-3 sebab tak satu pun
+        // halaman menyentuh basis data.
+        //
+        // `WilayahSeeder` ikut ditanam sebab wilayah adalah data master yang
+        // DIANDAIKAN ADA oleh banyak halaman: dropdown provinsi/kabupaten pada
+        // form SP, form transmigran, dan penyaring laporan. Tanpa itu puluhan
+        // uji tampilan memerah bukan karena perilakunya salah, melainkan karena
+        // datanya kosong -- dan penjaga yang memerah tanpa sebab akan dimatikan
+        // orang berikutnya.
+        //
+        // Ditanam lewat `RefreshDatabase::\` (sekali per kelas uji,
+        // hasilnya dipakai ulang lewat transaksi), BUKAN `\->seed()` di
+        // sini. Menanamnya per-uji berarti menulis 552 baris provinsi+kabupaten
+        // sebanyak 732 kali: terukur menaikkan suite Feature dari ~60 detik
+        // menjadi 516 detik. Beda keduanya hanya satu baris, dan seluruhnya
+        // ada pada penempatan.
+
         // Task 3.2b/3.3: seluruh rute internal ber-`auth` + `izin`. Autentikasi
         // pengguna semu -- TIDAK dipersist, tanpa DB -- bertanda `semuaIzin`
         // supaya ~340 panggilan HTTP suite Feature tetap 200. Tak mengubah satu
