@@ -1209,7 +1209,7 @@ domain; sisanya mengikuti tanpa mengubah skema maupun komponen.
   * Model `KawasanTransmigrasi` + pivot `kawasan_transmigrasi_berkas` **sudah ada** (Task 3.1 B2/B4)
   * Tampilan form (`sp/form-kawasan`) sudah selesai pada Task 2.30, multi-berkas. Peran `hpl`/`sk`/`peta`. HPL alas hak KAWASAN milik instansi (`rules.md` 7.4a) -- bukan per bidang lahan. Kawasan tak punya halaman rincian sendiri; berkasnya dibuka dari kartu di `/kawasan`
   * Unggahan sungguhan pertama di proyek ini: `PenyimpananDokumen` + registry `berkas` mulai dipakai nyata, bukan lagi berhenti di data contoh
-- [ ] Task 4.2 - CRUD satuan permukiman (SP) beserta koordinat `[Sedang]`
+- [x] Task 4.2 - CRUD satuan permukiman (SP) beserta koordinat `[Sedang]` -- **SELESAI 2026-09-03**. `SpSeeder` (6 SP lokus, `desa_id` diturunkan dari nama) + `SpController`; penjaga rentang min/maks keadaan wilayah (5 pasangan + pH) sebab rentang terbalik terbaca sebagai rentang kosong pada Monografi SP. Hapus diperiksa terhadap 7 relasi turunan. 8 uji
   * Model `SatuanPermukiman` **sudah ada**, `getRouteKeyName()` = `slug` (Task 3.9)
   * Tampilan form dan halaman rincian sudah selesai pada Task 2.30; tersisa controller dan penyimpanan
   * Menjadi **induk** Task 4.3/4.4/4.6, sehingga dikerjakan lebih dulu daripada ketiganya

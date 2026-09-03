@@ -26,6 +26,7 @@ use App\Http\Controllers\MasterReferensiController;
 use App\Http\Controllers\MasterSatuanController;
 use App\Http\Controllers\PengaturanPenggunaController;
 use App\Http\Controllers\PengaturanRoleController;
+use App\Http\Controllers\SpController;
 use App\Http\Controllers\WilayahController;
 use App\Support\DummyData;
 use App\Support\LaporanData;
@@ -206,10 +207,8 @@ Route::get('/dashboard/sp/{sp}', function (int $sp) {
     return redirect()->route('sp.detail', ['sp' => $sp], 301);
 })->where('sp', '[0-9]+')->name('dashboard.sp');
 
-Route::put('/sp/{sp}', function (int $sp) {
-    // Tahap 4: simpan perubahan data SP
-    return back()->with('sukses', 'Perubahan data satuan permukiman tersimpan.');
-})->where('sp', '[0-9]+')->name('sp.perbarui');
+Route::put('/sp/{sp}', [SpController::class, 'perbarui'])
+    ->where('sp', '[0-9]+')->name('sp.perbarui');
 
 Route::get('/profil', function () {
     $pengguna = DummyData::penggunaSaatIni();
@@ -491,43 +490,7 @@ Route::get('/sp/fasilitas/{id}', function (int $id) {
     ]);
 })->where('id', '[0-9]+')->name('sp.fasilitas.detail');
 
-Route::get('/sp', function () {
-    $semua = DummyData::satuanPermukiman();
-
-    $cari = trim((string) request('cari', ''));
-    $filterKecamatan = request('kecamatan');
-
-    $baris = array_values(array_filter($semua, function ($sp) use ($cari, $filterKecamatan) {
-        if ($cari !== '' && ! str_contains(mb_strtolower($sp['nama']), mb_strtolower($cari))
-            && ! str_contains(mb_strtolower($sp['desa']), mb_strtolower($cari))) {
-            return false;
-        }
-
-        if ($filterKecamatan && $sp['kecamatan'] !== $filterKecamatan) {
-            return false;
-        }
-
-        return true;
-    }));
-
-    return view('pages.sp.index', [
-        'title' => 'Satuan Permukiman',
-        'semua' => $semua,
-        'baris' => $baris,
-        'rekap' => collect(DummyData::rekapPerSp())->keyBy('satuan_permukiman_id'),
-
-        // Status kondisi layanan dasar tiap SP, indikator ke-16.
-        'kondisi' => collect(PenilaianKondisiSp::nilaiSeluruhSp())->keyBy('satuan_permukiman_id'),
-
-        'cari' => $cari,
-        'filterKecamatan' => $filterKecamatan,
-        'adaFilter' => $cari !== '' || $filterKecamatan,
-        'daftarKecamatan' => array_values(array_unique(array_column($semua, 'kecamatan'))),
-        'totalLuas' => array_sum(array_column($semua, 'luas_lahan')),
-        'totalRencana' => array_sum(array_column($semua, 'jumlah_kk_rencana')),
-        'totalTerisi' => array_sum(array_column($semua, 'jumlah_kk_terisi')),
-    ]);
-})->name('sp.index');
+Route::get('/sp', [SpController::class, 'index'])->name('sp.index');
 
 /*
  * Rute tulis data master kawasan. Tampilannya selesai pada Tahap 2;
@@ -539,12 +502,7 @@ Route::post('/master/satuan', [MasterSatuanController::class, 'simpan'])->name('
 
 Route::post('/kawasan', [KawasanController::class, 'simpan'])->name('kawasan.simpan');
 
-Route::post('/sp', function () {
-    // Tahap 4: SP menempel pada desa dan kawasan sekaligus, sehingga kedua
-    // foreign key wajib terisi (erd.md bagian 7.0).
-    return redirect()->route('sp.index')
-        ->with('sukses', 'Data satuan permukiman tersimpan.');
-})->name('sp.simpan');
+Route::post('/sp', [SpController::class, 'simpan'])->name('sp.simpan');
 
 Route::post('/sp/inventaris', function () {
     // Tahap 4: barang bergerak milik SP.
@@ -2359,10 +2317,8 @@ Route::get('/dokumen/{modul}/{id}/{namaBerkas}', [DokumenController::class, 'tam
 // melempar petugas ke daftar SP beserta hilangnya posisi tab. Yang dipertahankan
 // adalah versi ber-`back()`, sebab ia memenuhi rules.md 4c poin 5 dan tetap benar
 // ketika penyuntingan dilakukan dari halaman daftar. Dicabut 2026-09-02.
-Route::delete('/sp/{id}', function (int $id) {
-    // Tahap 4: memakai soft delete, sebab seluruh data kawasan menaut SP.
-    return redirect()->route('sp.index')->with('sukses', 'Satuan permukiman dihapus.');
-})->where('id', '[0-9]+')->name('sp.hapus');
+Route::delete('/sp/{id}', [SpController::class, 'hapus'])
+    ->where('id', '[0-9]+')->name('sp.hapus');
 
 Route::put('/sp/inventaris/{id}', function (int $id) {
     return redirect()->route('sp.inventaris')->with('sukses', 'Perubahan data inventaris tersimpan.');

@@ -1,3 +1,53 @@
+# Tahap 4 Task 4.2 - CRUD satuan permukiman SELESAI (2026-09-03)
+
+SP adalah **induk** inventaris, fasilitas, dan infrastruktur, sehingga
+dikerjakan sebelum ketiganya.
+
+## Yang dikerjakan
+
+- **`SpSeeder`** -- enam SP lokus. `desa_id` diturunkan dari NAMA desa pada
+  data contoh (yang hanya menyimpan labelnya); nama yang tak ditemukan
+  DILEWATI dengan peringatan, bukan ditanam ber-`desa_id` karangan yang akan
+  menautkan SP ke wilayah keliru.
+- **`SpController`** menggantikan 4 closure. `desa.kecamatan` dan `kawasan`
+  di-eager-load supaya label wilayah tidak dikueri per baris.
+- Penghapusan diperiksa terhadap TUJUH relasi turunan satu per satu, supaya
+  alasannya menyebut modul mana yang menahan; galat FK mentah hanya menyebut
+  nama tabel.
+
+## Penjaga rentang min/maks
+
+Keadaan wilayah punya lima pasangan min/maks (kemiringan, curah hujan, suhu,
+angin, penyinaran) ditambah pH tanah. Maks WAJIB `gte` minnya.
+
+Tanpa itu petugas dapat menyimpan rentang TERBALIK -- mis. curah hujan
+3000-500 -- yang lolos diam-diam lalu terbaca sebagai rentang kosong pada
+Laporan Monografi SP. Diuji dengan dua pasangan terbalik sekaligus satu
+pasangan sah bernilai sama (min = maks), sebab rentang setitik itu sah.
+
+Daftar pasangannya ditulis SEKALI pada konstanta `RENTANG`; aturan dan
+pesannya diturunkan dari sana supaya keduanya tidak dapat berselisih.
+
+## `jumlah_kk_terisi` BUKAN kolom
+
+Ia turunan cacah transmigran. Selama Tahap 5 belum berjalan, angkanya masih
+dibaca dari `DummyData::rekapPerSp()` -- dicatat di docblock controller supaya
+tidak ada yang mengira nilainya sudah nyata.
+
+## Verifikasi
+
+- `pest` **983 PASS / 8.136 assertions** (975 + 8 uji baru). **Nol uji lama
+  merah** -- peralihan ini tidak mengubah bentuk data yang dibaca tampilan.
+- `pint --test` **26** - `sim:tautan-statis` **14** -
+  `sim:banding-skema --lengkap` **NOL SELISIH**.
+- Basis data: 6 SP, `desa_id` 1-6 benar, slug otomatis dari nama.
+
+## Sisa `DummyData`
+
+212 -> **210** pemanggilan (147 `routes/internal.php`).
+
+---
+
 # Tahap 4 Task 4.1b - CRUD kawasan + unggahan berkas nyata SELESAI (2026-09-03)
 
 **Unggahan sungguhan PERTAMA di proyek ini.** Sepanjang Tahap 2-3 seluruh
