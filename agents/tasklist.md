@@ -1167,7 +1167,7 @@ domain; sisanya mengikuti tanpa mengubah skema maupun komponen.
   * Waktu balasan sebaiknya diseragamkan, sebab selisih waktu proses juga membocorkan keberadaan akun
   * Jalur Admin pada Task 3.5 **tetap berlaku** dan tidak boleh dihapus
 
-## Tahap 4 - Backend Data Master Kawasan
+## Tahap 4 - Backend Data Master Kawasan  **SELESAI 2026-09-03** (9 task)
 
 > **BACA DULU (ditulis ulang 2026-09-03).** Task 3.1 sudah membuat **58 migration + 36 model**
 > untuk SELURUH 55 tabel bisnis, terverifikasi `sim:banding-skema --lengkap` NOL SELISIH.
@@ -1222,7 +1222,7 @@ domain; sisanya mengikuti tanpa mengubah skema maupun komponen.
   * **Alasan pindah:** di sidebar, Infrastruktur SP berada dalam grup **Wilayah & SP** bersama Kawasan/SP/Inventaris/Fasilitas, sedangkan susunan lama menempatkannya di Tahap 8 bersama Pengaduan -- warisan urutan sebelum menu dirombak. `infrastruktur_sp` pun ber-FK ke `satuan_permukiman` yang baru lahir di Tahap 4. Pengaduan TETAP di Tahap 8; keduanya beda domain meski dahulu satu tahap
   * Model `Infrastruktur` + pivot `infrastruktur_sp` (cakupan lintas SP, WAJIB memuat SP pangkal) **sudah ada** (Task 3.1 B9)
   * Tampilan form dan halaman rincian sudah selesai pada Task 2.29 dan 2.30, termasuk multi-berkas foto titik kerusakan (Putaran 14)
-- [ ] Task 4.8 - CRUD parameter & ambang Penilaian Kondisi SP `[Sedang]` (BARU 2026-09-03)
+- [x] Task 4.8 - CRUD parameter & ambang Penilaian Kondisi SP `[Sedang]` -- **SELESAI 2026-09-03**. `PenilaianKondisiController` + `PenilaianKondisiSeeder`; penjaga ambang WAJIB menurun (ambang Mandiri < Berkembang membuat Berkembang mustahil dicapai) + tolak bobot desimal yang dibulatkan diam-diam oleh TINYINT. 8 uji
   * Menu **Data Master > Penilaian Kondisi SP**, `/master/penilaian-kondisi`. Tampilan selesai Task 2.34
   * **Celah yang ditemukan 2026-09-03:** Task 9.5 hanya menyebut "pengaturan bobot" pada konteks dashboard, sehingga CRUD parameter dan ambang statusnya tidak pernah bertuan
   * Model `ParameterPenilaianSp` + `StatusKondisiSp` (data ambang) **sudah ada** (Task 3.1 B3). `App\Support\PenilaianKondisiSp` beralih membaca basis data

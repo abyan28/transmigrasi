@@ -29,6 +29,7 @@ use App\Http\Controllers\MasterReferensiController;
 use App\Http\Controllers\MasterSatuanController;
 use App\Http\Controllers\PengaturanPenggunaController;
 use App\Http\Controllers\PengaturanRoleController;
+use App\Http\Controllers\PenilaianKondisiController;
 use App\Http\Controllers\SpController;
 use App\Http\Controllers\WilayahController;
 use App\Support\DummyData;
@@ -322,44 +323,13 @@ Route::put('/master/referensi/{id}', [MasterReferensiController::class, 'perbaru
  * infrastruktur dan fasilitas pada data master, sedangkan status wajib tetap
  * tiga sebab `StatusKondisiSp::dariSkor()` hanya mengembalikan tiga keluaran.
  */
-Route::get('/master/penilaian-kondisi', function () {
-    $parameter = DummyData::parameterPenilaian();
-    $dinilai = array_filter($parameter, fn ($p) => $p['is_dinilai']);
+Route::get('/master/penilaian-kondisi', [PenilaianKondisiController::class, 'index'])->name('master.penilaian-kondisi');
 
-    // Dikelompokkan per sumber, sebab keduanya dibaca dari tabel berbeda dan
-    // petugas mencarinya lewat modul tempat ia mendata asetnya.
-    $perSumber = [];
-    foreach ($parameter as $p) {
-        $perSumber[$p['sumber']][] = $p;
-    }
+Route::put('/master/penilaian-kondisi/parameter/{id}', [PenilaianKondisiController::class, 'parameter'])
+    ->where('id', '[0-9]+')->name('penilaian-kondisi.parameter');
 
-    return view('pages.master.penilaian-kondisi', [
-        'title' => 'Penilaian Kondisi SP',
-        'parameter' => $parameter,
-        'status' => DummyData::statusKondisiSp(),
-        'dinilai' => $dinilai,
-        'totalBobot' => array_sum(array_column($dinilai, 'bobot')),
-        'perSumber' => $perSumber,
-    ]);
-})->name('master.penilaian-kondisi');
-
-Route::put('/master/penilaian-kondisi/parameter/{id}', function (int $id) {
-    // Tahap 4: sunting `parameter_penilaian_sp`. Penilaian yang sudah
-    // tersimpan tidak dihitung ulang, sebab `penilaian_sp.rincian` menyalin
-    // bobot yang berlaku saat penilaian dibuat (rules.md 10c.6).
-    return redirect()->route('master.penilaian-kondisi')
-        ->with('sukses', 'Parameter penilaian tersimpan dan berlaku pada penilaian berikutnya.');
-})->where('id', '[0-9]+')->name('penilaian-kondisi.parameter');
-
-Route::put('/master/penilaian-kondisi/status/{kode}', function (string $kode) {
-    abort_if(StatusKondisiSp::tryFrom($kode) === null, 404);
-
-    // Tahap 4: ambang wajib menurun menurut urutan status. Ambang Mandiri
-    // yang lebih kecil daripada Berkembang membuat Berkembang mustahil
-    // dicapai, sebab pembacaannya berhenti pada ambang tertinggi yang cocok.
-    return redirect()->route('master.penilaian-kondisi')
-        ->with('sukses', 'Status kondisi SP tersimpan.');
-})->name('penilaian-kondisi.status');
+Route::put('/master/penilaian-kondisi/status/{kode}', [PenilaianKondisiController::class, 'status'])
+    ->name('penilaian-kondisi.status');
 
 /*
  * Pengelolaan Konten Sistem (CMS).

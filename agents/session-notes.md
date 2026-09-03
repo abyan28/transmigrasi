@@ -1,3 +1,85 @@
+# Tahap 4 Task 4.8 - Penilaian Kondisi SP SELESAI -- TAHAP 4 TUNTAS (2026-09-03)
+
+Task terakhir Tahap 4. Seluruh sembilan task selesai.
+
+## Yang dikerjakan
+
+- **`PenilaianKondisiController`** menggantikan 3 closure: daftar parameter
+  (18 baris), sunting bobot, dan sunting ambang status.
+- Parameter **dinonaktifkan, bukan dihapus**, agar riwayat penilaian yang
+  memakainya tetap terbaca.
+
+## Penjaga ambang menurun
+
+Ambang WAJIB menurun menurut urutan status (80 -> 55 -> 0). Pembacaan status
+berhenti pada ambang tertinggi yang cocok, sehingga ambang Mandiri yang lebih
+KECIL daripada Berkembang membuat **Berkembang mustahil dicapai** -- seluruh SP
+di rentang itu terbaca Mandiri.
+
+Kegagalan senyap: tak ada galat, hanya satu status yang lenyap dari kawasan
+tanpa ada yang menyadarinya. Diperiksa terhadap TETANGGA langsung (atas dan
+bawah), dan diuji dua arah sekaligus satu perubahan sah.
+
+## Temuan 1: bobot desimal dibulatkan diam-diam
+
+Uji menyimpan bobot `12.5` lalu membaca **13**. Kolom `bobot` bertipe
+**TINYINT UNSIGNED** di skema, sedangkan validasi saya menuliskannya
+`numeric` -- desimal diterima lalu dibulatkan MySQL tanpa peringatan.
+
+Bahayanya bukan pembulatannya, melainkan **senyapnya**: petugas menyusun bobot
+agar berjumlah tepat 100, menyimpan, lalu totalnya meleset tanpa ada yang
+memberi tahu. Validasi diperketat ke `integer` dan ditambahkan uji yang
+mengunci penolakannya.
+
+## Temuan 2: dua kunci tampilan hilang
+
+Halaman membalas 500 dua kali berturut-turut:
+
+1. `Undefined array key "nilai_jenis"` -- nama referensi yang ditunjuk
+   parameter, ditambahkan lewat relasi `referensi` yang di-eager-load.
+2. `Attempt to read property "value" on string` -- view memanggil
+   `$p['tingkat']->value`, sedangkan kolom ENUM itu belum di-cast model
+   sehingga Eloquent menyerahkannya sebagai string biasa. Dikembalikan sebagai
+   `TingkatKebutuhan` di controller.
+
+Keduanya jenis kesalahan yang sama: bentuk data dari Eloquent tidak persis
+sama dengan bentuk dari `DummyData`, dan hanya ketahuan saat halamannya
+benar-benar dirender.
+
+## Verifikasi akhir Tahap 4
+
+- `pest` **1.003 PASS / 8.252 assertions** (995 + 8 uji baru).
+- `pint --test` **26** - `sim:tautan-statis` **14** -
+  `sim:banding-skema --lengkap` **NOL SELISIH**.
+- Manual: **14 dari 14** halaman Tahap 4 membalas 200 -- beranda, wilayah,
+  kawasan, SP, inventaris, fasilitas, infrastruktur, satuan, referensi,
+  penilaian kondisi, beserta empat halaman rincian.
+
+## Tahap 4 tuntas -- 9 task
+
+| Task | Isi |
+|---|---|
+| 4.1 | Wilayah bertingkat + seeder 38 provinsi / 514 kabupaten |
+| 4.5 | Master satuan + faktor konversi ton |
+| 4.7 | Daftar Pilihan (referensi) -- induk seluruh dropdown |
+| 4.1b | Kawasan + unggahan berkas nyata pertama |
+| 4.2 | Satuan permukiman + penjaga rentang min/maks |
+| 4.3 | Inventaris SP |
+| 4.4 | Fasilitas SP + cakupan lintas SP |
+| 4.6 | Infrastruktur SP (pindahan dari 8.1) |
+| 4.8 | Parameter bobot + ambang penilaian kondisi |
+
+## Sisa `DummyData`
+
+221 -> **189** pemanggilan (126 `routes/internal.php`, 59
+`ViewServiceProvider`, 4 `routes/web.php`). Turun 32 sepanjang Tahap 4.
+
+`ViewServiceProvider` belum tersentuh sama sekali: 59 pemanggilannya melayani
+dropdown lintas modul yang baru dapat dicabut setelah modul pemakainya
+beralih (Tahap 5-8).
+
+---
+
 # Tahap 4 Task 4.6 - Infrastruktur SP SELESAI (2026-09-03)
 
 Dipindah dari Task 8.1 pada audit tasklist: di sidebar ia berada dalam grup
