@@ -1,3 +1,73 @@
+# Tahap 3 Â· Task 3.4 - Cakupan data (global scope) BERJALAN (2026-09-03)
+
+Rencana ditulis sebelum kode disentuh (`rules.md` 20b poin 12). Rancangan
+penegakan MENGIKAT: `rules.md` 5.0b-1 (ditetapkan 2026-09-02).
+
+## Fakta
+
+- `CakupanData` enum: `Semua` / `Per SP` / `Per Bidang`. Role menyimpannya
+  (`Role::$casts`). `User::role` + `User::satuanPermukiman()` (belongsToMany
+  `user_satuan_permukiman`) sudah ada (Task 3.1).
+- **10 model ber-`satuan_permukiman_id` langsung:** `Transmigran`, `Rumah`,
+  `Lahan`, `Poktan`, `Infrastruktur`, `Pengaduan`, `InventarisSp`, `FasilitasSp`,
+  `PenilaianSp`, `RuteAksesibilitasSp`. (`rules.md` 5.0b-1 poin 9 sebut 13 tabel
+  -- 3 sisanya pivot tanpa model: `fasilitas_sp_cakupan`, `infrastruktur_sp`,
+  `user_satuan_permukiman`.)
+- **8 model mewarisi SP lewat induk:** `AnggotaKeluarga`/`RiwayatKepalaKeluarga`
+  (via `transmigran`), `RiwayatPenghunian` (via `rumah`), `AnggotaPoktan`/
+  `Penanaman` (via `poktan`), `HasilPanen` (via `penanaman`->`poktan`),
+  `AlsintanDistribusi`/`SaprotanDistribusi` (via `poktan`).
+- **TIDAK disaring:** `alsintan`/`saprotan` induk (deskripsi benda),
+  data referensi (wilayah, kawasan, satuan, komoditas, `Referensi`,
+  `ParameterPenilaianSp`, `StatusKondisiSp`, `Role`, `Permission`),
+  `SatuanPermukiman` sendiri (poin 9b).
+- Tampilan masih `DummyData` -> global scope **belum berefek di layar** sampai
+  Tahap 4. Task 3.4 = pasang mesin + uji Eloquent.
+- Belum ada global scope mana pun di `app/`.
+
+## Rencana
+
+### C1 -- `CakupanDataSp` scope + 10 model pemilik langsung
+- `app/Models/Scopes/CakupanDataSp.php` implements `Scope`. `apply()`:
+  - `Auth::user()` null (artisan/seeder/job) -> **tak menyaring** TAPI hanya
+    lewat jalur eksplisit; default null-user = NOL baris? `rules.md` 5.0b-1
+    poin 15: tanpa user "wajib LENGKAP tetapi hanya lewat pemanggilan yang
+    menyatakannya sendiri". Praktik: null user -> scope tak menyaring (data
+    lengkap) sebab konteks non-HTTP; permintaan HTTP selalu ber-user (`auth`).
+    Uji tanpa `actingAs` = konteks non-HTTP -> lengkap.
+  - `cakupan_data === Semua` -> tak menyaring.
+  - `cakupan_data === PerSp` -> `whereIn('<tabel>.satuan_permukiman_id',
+    $user->satuanPermukiman->pluck('id'))`. **Daftar kosong -> `whereRaw('1=0')`**
+    (NOL baris, BUKAN bypass -- poin 10).
+  - `cakupan_data === PerBidang` -> tak menyaring di scope umum (hanya
+    `pengaduan`, ditangani C2).
+- Pasang lewat atribut `#[ScopedBy([CakupanDataSp::class])]` pada 10 model.
+- Helper `Model::tanpaCakupan()` / macro `withoutGlobalScope` untuk jalur
+  eksplisit (laporan lintas-SP, ekspor -- poin 15).
+
+### C2 -- model turunan + `Per Bidang` pengaduan
+- 8 model turunan: scope tipis `whereHas('<induk>')` (delegasi -- poin 9,
+  "tidak diulang"). `HasilPanen` -> `whereHas('penanaman')`.
+- `Pengaduan`: scope terpisah/tambahan -> `PerBidang` = `where('bidang',
+  BidangPengaduan::dariDinas($user))` ATAU union "bidang null" (poin 6b:
+  filter sediakan "Belum ditentukan"). Cek `BidangPengaduan` enum + peta dinas.
+
+### C3 -- uji `tests/Database/CakupanDataTest.php`
+- `Semua` -> lihat semua; `Per SP` + 1 penugasan -> hanya SP itu; `Per SP`
+  tanpa penugasan -> 0 baris; turunan ikut tersaring; referensi tak tersaring;
+  `alsintan`/`saprotan` induk tak tersaring; `tanpaCakupan()` -> lengkap;
+  paginasi menghitung setelah saring; null user (non-HTTP) -> lengkap.
+
+### C4 -- docs (`tasklist` 3.4 [✓], `session-notes` HASIL)
+
+### DITUNDA
+- 404 untuk baris tak berhak di rute detail -> butuh rute pakai Eloquent
+  (Tahap 4). Sekarang scope cukup bikin `find()` mengembalikan null -> caller
+  `findOrFail` -> 404 otomatis saat Tahap 4.
+- `MenuHelper` (3.4b), akun `Per SP` seeder (3.5).
+
+---
+
 # Tahap 3 Â· Task 3.3 - RBAC dinamis SELESAI (2026-09-03)
 
 Rencana ditulis sebelum kode disentuh (`rules.md` 20b poin 12).
