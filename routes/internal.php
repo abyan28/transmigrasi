@@ -22,6 +22,7 @@ use App\Enums\StatusPanen;
 use App\Enums\StatusPengaduan;
 use App\Http\Controllers\DokumenController;
 use App\Http\Controllers\FasilitasSpController;
+use App\Http\Controllers\InfrastrukturController;
 use App\Http\Controllers\InventarisSpController;
 use App\Http\Controllers\KawasanController;
 use App\Http\Controllers\MasterReferensiController;
@@ -1965,95 +1966,25 @@ Route::post('/penanaman', function () {
         ->with('sukses', 'Catatan penanaman tersimpan.');
 })->name('penanaman.simpan');
 
-Route::get('/sp/infrastruktur', function () {
-    $semua = DummyData::infrastruktur();
-
-    $cari = trim((string) request('cari', ''));
-    $filterSp = request('sp');
-    $filterJenis = request('jenis');
-    $filterKondisi = request('kondisi');
-
-    $baris = array_values(array_filter($semua, function ($i) use ($cari, $filterSp, $filterJenis, $filterKondisi) {
-        if ($cari !== '' && ! str_contains(mb_strtolower($i['nama']), mb_strtolower($cari))) {
-            return false;
-        }
-        if ($filterSp && (string) $i['satuan_permukiman_id'] !== (string) $filterSp) {
-            return false;
-        }
-        if ($filterJenis && $i['jenis'] !== $filterJenis) {
-            return false;
-        }
-        if ($filterKondisi && $i['kondisi'] !== $filterKondisi) {
-            return false;
-        }
-
-        return true;
-    }));
-
-    return view('pages.infrastruktur.index', [
-        'title' => 'Infrastruktur SP',
-        'semua' => $semua,
-        'baris' => $baris,
-
-        // Rekap kondisi per jenis, dipakai tabel ringkas di bawah daftar.
-        // Sengaja dihitung atas SELURUH data, bukan hasil penyaringan, sebab
-        // yang dijawabnya adalah keadaan kawasan, bukan keadaan tampilan.
-        'statusJenis' => DummyData::statusInfrastruktur(),
-
-        'cari' => $cari,
-        'filterSp' => $filterSp,
-        'filterJenis' => $filterJenis,
-        'filterKondisi' => $filterKondisi,
-        'adaFilter' => $cari !== '' || $filterSp || $filterJenis || $filterKondisi,
-        'rusakBerat' => count(array_filter($semua, fn ($i) => $i['kondisi'] === 'Rusak Berat')),
-        'perluPerbaikan' => count(array_filter($semua, fn ($i) => $i['kondisi'] !== 'Baik')),
-
-        'daftarSp' => DummyData::satuanPermukiman(),
-        'opsiFilterJenis' => DummyData::opsiFilterReferensi(JenisReferensi::JenisInfrastruktur),
-        'opsiFilterKondisi' => DummyData::opsiFilterReferensi(JenisReferensi::Kondisi),
-    ]);
-})->name('infrastruktur.index');
+Route::get('/sp/infrastruktur', [InfrastrukturController::class, 'index'])->name('infrastruktur.index');
 
 // Redirect 301 untuk kompatibilitas alamat lama /infrastruktur
 Route::get('/infrastruktur', function () {
     return redirect()->route('infrastruktur.index', request()->query(), 301);
 });
 
-Route::get('/sp/infrastruktur/{id}', function (int $id) {
-    $data = collect(DummyData::infrastruktur())->firstWhere('id_infrastruktur', $id);
-
-    abort_if($data === null, 404);
-
-    return view('pages.infrastruktur.detail', [
-        'title' => $data['nama'],
-        'data' => $data,
-        'daftarSp' => DummyData::satuanPermukiman(),
-
-        // Satu aset dapat punya beberapa titik kerusakan, sehingga fotonya
-        // jamak. Diambil di sini, sebab view dilarang mengambil datanya
-        // sendiri (notes.md 1g.5).
-        'berkasFoto' => DummyData::berkasMilik('infrastruktur_berkas', 'infrastruktur_id', $id, 'foto'),
-    ]);
-})->where('id', '[0-9]+')->name('infrastruktur.detail');
+Route::get('/sp/infrastruktur/{id}', [InfrastrukturController::class, 'detail'])
+    ->where('id', '[0-9]+')->name('infrastruktur.detail');
 
 // Redirect 301 untuk kompatibilitas alamat lama /infrastruktur/{id}
 Route::get('/infrastruktur/{id}', function (int $id) {
     return redirect()->route('infrastruktur.detail', ['id' => $id], 301);
 })->where('id', '[0-9]+');
 
-Route::post('/sp/infrastruktur', function () {
-    // Tahap 8: validasi, simpan, catat audit log. Modul pendataan aset,
-    // sehingga tidak ada alur laporan kerusakan di sini.
-    return redirect()->route('infrastruktur.index')
-        ->with('sukses', 'Data aset infrastruktur tersimpan.');
-})->name('infrastruktur.simpan');
+Route::post('/sp/infrastruktur', [InfrastrukturController::class, 'simpan'])->name('infrastruktur.simpan');
 
-Route::put('/sp/infrastruktur/{id}', function (int $id) {
-    // Tahap 8: perubahan kondisi ikut memengaruhi penilaian kondisi SP pada
-    // penilaian berikutnya, bukan penilaian yang sudah tersimpan.
-    return redirect()->route('infrastruktur.detail', $id)
-        ->with('sukses', 'Perubahan data aset tersimpan.');
-})->where('id', '[0-9]+')->name('infrastruktur.perbarui');
+Route::put('/sp/infrastruktur/{id}', [InfrastrukturController::class, 'perbarui'])
+    ->where('id', '[0-9]+')->name('infrastruktur.perbarui');
 
 // Manajemen pengguna oleh Admin (Task 3.5, `rules.md` 14b). `index()` masih
 // baca DummyData (peralihan tampilan -> Tahap 4); tulisan menyentuh tabel
@@ -2287,9 +2218,8 @@ Route::delete('/komoditas/{id}', function (int $id) {
     return redirect()->route('komoditas.index')->with('sukses', 'Data komoditas dihapus.');
 })->where('id', '[0-9]+')->name('komoditas.hapus');
 
-Route::delete('/sp/infrastruktur/{id}', function (int $id) {
-    return redirect()->route('infrastruktur.index')->with('sukses', 'Data aset infrastruktur dihapus.');
-})->where('id', '[0-9]+')->name('infrastruktur.hapus');
+Route::delete('/sp/infrastruktur/{id}', [InfrastrukturController::class, 'hapus'])
+    ->where('id', '[0-9]+')->name('infrastruktur.hapus');
 
 Route::delete('/pengguna/{id}', function (int $id) {
     // Tahap 3: akun tidak pernah dihapus, hanya dinonaktifkan (rules.md 14b).

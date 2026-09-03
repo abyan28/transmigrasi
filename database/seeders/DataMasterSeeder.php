@@ -26,6 +26,7 @@ class DataMasterSeeder extends Seeder
         $this->call(KawasanSeeder::class);
         $this->call(SpSeeder::class);
         $this->call(AsetSpSeeder::class);
+        $this->call(InfrastrukturSeeder::class);
         $this->call(BerkasSeeder::class);
     }
 }

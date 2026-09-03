@@ -1,3 +1,52 @@
+# Tahap 4 Task 4.6 - Infrastruktur SP SELESAI (2026-09-03)
+
+Dipindah dari Task 8.1 pada audit tasklist: di sidebar ia berada dalam grup
+**Wilayah & SP**, dan `infrastruktur_sp` ber-FK ke `satuan_permukiman` yang
+baru lahir di Tahap 4.
+
+## Yang dikerjakan
+
+- **`InfrastrukturSeeder`** -- 35 aset + 39 baris cakupan (4 di antaranya
+  melayani lebih dari satu SP).
+- **`InfrastrukturController`** menggantikan 5 closure, memakai trait
+  `MenyimpanBerkas` dan pola cakupan yang sama dengan fasilitas SP.
+- **`PenilaianKondisiSeeder`** (untuk Task 4.8) -- parameter bobot + ambang
+  status. Keduanya keputusan KEBIJAKAN yang wajib divalidasi dinas
+  (`rules.md` 10c poin 13), bukan angka teknis.
+
+## `satuan_permukiman_id` adalah PANGKAL, bukan satu-satunya yang dilayani
+
+Pivot `infrastruktur_sp` mencatat SP mana saja yang benar-benar DILAYANI.
+Sebelum Putaran 7, kenyataan itu hanya tertulis pada `kapasitas` sebagai teks
+("Melayani 3 SP sekitar") sebab satu FK tunggal tak menampungnya -- dan
+penilaian kondisi SP karena itu tak dapat membacanya.
+
+SP pangkal SELALU disertakan apa pun isian form, dijaga uji atas SELURUH baris.
+
+## Temuan: `BerkasSeeder` menuntut urutan pemanggilan
+
+Delapan uji `AsetSpTest` mendadak memerah `FOREIGN KEY constraint fails
+(infrastruktur_berkas)` begitu `infrastruktur_berkas` masuk `PIVOT_SIAP`.
+
+Sebabnya `BerkasSeeder` menanam pivot SELURUH modul yang siap sekaligus,
+sehingga berkas uji yang memanggilnya WAJIB menanam seluruh induk lebih dulu.
+Ditambahkan `InfrastrukturSeeder` pada `beforeEach`-nya beserta komentar yang
+menyebutkan alasannya, supaya pemanggil berikutnya tidak terjebak sama.
+
+## Verifikasi
+
+- `pest` **995 PASS / 8.230 assertions** (991 + 4 uji baru).
+- `pint --test` **26** - `sim:tautan-statis` **14** -
+  `sim:banding-skema --lengkap` **NOL SELISIH**.
+- Manual: `/sp/infrastruktur`, rincian, penyaring kondisi, dan
+  `/master/penilaian-kondisi` seluruhnya 200.
+
+## Sisa `DummyData`
+
+199 -> **191** pemanggilan (128 `routes/internal.php`).
+
+---
+
 # Tahap 4 Task 4.3 + 4.4 - Inventaris & Fasilitas SP SELESAI (2026-09-03)
 
 Dikerjakan berpasangan sebab strukturnya sama persis -- aset milik SP beserta
