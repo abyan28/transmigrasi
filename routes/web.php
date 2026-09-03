@@ -81,7 +81,7 @@ Route::get('/pengaduan-warga', function () {
     ]);
 })->name('pengaduan-warga');
 
-Route::post('/pengaduan-warga', function (Request $permintaan) {
+Route::middleware('throttle:kirim-pengaduan')->post('/pengaduan-warga', function (Request $permintaan) {
     // Tahap 8: simpan pengaduan berstatus Menunggu Diterima, catat ip_pelapor,
     // buat nomor pengaduan berbagian acak, lalu kirim nomornya ke surel pelapor
     // bila diisi.
@@ -125,11 +125,13 @@ $susunLacakPengaduan = function (?string $nomorRute = null) {
     ]);
 };
 
-Route::get('/lacak-pengaduan', fn () => $susunLacakPengaduan())->name('lacak-pengaduan');
+Route::middleware('throttle:lacak-publik')->group(function () use ($susunLacakPengaduan) {
+    Route::get('/lacak-pengaduan', fn () => $susunLacakPengaduan())->name('lacak-pengaduan');
 
-// Tautan tetap per nomor pengaduan. Hasil pencarian menjadi dapat ditandai dan
-// dibagikan, dan inilah yang membuat halaman lacak tetap bekerja pada build
-// statis GitHub Pages, tempat kueri `?nomor=` tidak dapat dilayani.
-// Lihat agents/notes.md bagian 1b.
-Route::get('/lacak-pengaduan/{nomor}', fn (string $nomor) => $susunLacakPengaduan($nomor))
-    ->where('nomor', '[A-Za-z0-9\-]+')->name('lacak-pengaduan.nomor');
+    // Tautan tetap per nomor pengaduan. Hasil pencarian menjadi dapat ditandai
+    // dan dibagikan, dan inilah yang membuat halaman lacak tetap bekerja pada
+    // build statis GitHub Pages, tempat kueri `?nomor=` tidak dapat dilayani.
+    // Lihat agents/notes.md bagian 1b.
+    Route::get('/lacak-pengaduan/{nomor}', fn (string $nomor) => $susunLacakPengaduan($nomor))
+        ->where('nomor', '[A-Za-z0-9\-]+')->name('lacak-pengaduan.nomor');
+});

@@ -1146,10 +1146,11 @@ domain; sisanya mengikuti tanpa mengubah skema maupun komponen.
   * **Slug dilarang diturunkan dari data pribadi.** Nama orang pada URL tersimpan di riwayat peramban dan log server, sehingga justru menurunkan kerahasiaan dibanding id angka
   * Slug tidak berubah meski nama disunting, agar tautan yang sudah dibagikan tidak rusak
   * **SELESAI 2026-09-03:** trait `BerslugOtomatis` (`creating` → `Str::slug(nama)` bila kosong, unik lewat `-2/-3/...`, dipangkas 110 char; `updating` → slug dirty dikembalikan). Dipasang `KawasanTransmigrasi`/`SatuanPermukiman`/`Komoditas`/`Poktan`. Keunikan diperiksa `withoutGlobalScopes()` (ikut lepas soft-delete + cakupan Poktan). Slug isian pemanggil dihormati. 9 uji `SlugOtomatisTest`.
-- [ ] Task 3.10 - Pembatasan laju per jenis akses `[Sedang]`
+- [✓] Task 3.10 - Pembatasan laju per jenis akses `[Sedang]`
   * Halaman baca 120 per menit **per akun**, tulis 40 per menit, lacak publik 10 per menit per IP, kirim pengaduan 3 per jam per IP, login 5 kegagalan per menit
   * **Dihitung per akun untuk halaman internal**, bukan per IP: satu kantor dinas kerap memakai satu sambungan bersama, sehingga hitungan per IP membuat operator saling menghabiskan jatah
   * Rute export massal dan unggah template **wajib dikecualikan** dan diberi batas tersendiri (`rules.md` 14c)
+  * **SELESAI 2026-09-03:** 5 limiter di `AppServiceProvider::daftarkanBatasLaju()` (angka dari `config/sim.php` `batas_laju.*`, flag `aktif` dibaca per-request). `bootstrap/app.php` `then:` melampirkan `throttle:baca-internal`/`throttle:tulis-internal` per rute internal (GET vs tulis), `throttle:berkas-besar` untuk `template-impor`/`laporan.dokumen`/`dokumen.tampilkan`. `routes/web.php`: `throttle:lacak-publik` + `throttle:kirim-pengaduan`. Pesan 429 Indonesia. `phpunit.xml` `SIM_BATAS_LAJU=false`. Login tetap di `LoginController`. 7 uji `PembatasanLajuTest`.
 
 - [✓] Task 3.11 - Pemulihan kata sandi lewat kode verifikasi `[Sedang]`
   * Tampilan sudah selesai pada Tahap 2: `/lupa-kata-sandi` dan `/verifikasi-kode`

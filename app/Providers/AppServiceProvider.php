@@ -3,7 +3,10 @@
 namespace App\Providers;
 
 use App\Models\User;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -23,6 +26,53 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->samakanAlamatDasar();
         $this->daftarkanGateIzin();
+        $this->daftarkanBatasLaju();
+    }
+
+    /**
+     * Mendefinisikan pembatas laju bernama (Task 3.10, `rules.md` 14c).
+     *
+     * Halaman internal dihitung PER AKUN, bukan per IP: satu kantor dinas
+     * kerap berbagi satu sambungan, sehingga hitungan per IP membuat operator
+     * saling menghabiskan jatah. Kanal publik tetap per IP. Angkanya dari
+     * `config/sim.php` supaya dapat disetel lapangan.
+     *
+     * Percobaan masuk (5 kegagalan/menit) ditangani `LoginController` sendiri
+     * lewat `RateLimiter` manual -- tidak didaftarkan di sini.
+     */
+    private function daftarkanBatasLaju(): void
+    {
+        // `config()` dibaca DI DALAM tiap closure (saat permintaan), bukan
+        // ditangkap di sini, supaya uji dapat menyalakannya lewat config().
+        $perAkun = fn (Request $r): string => (string) ($r->user()?->getAuthIdentifier() ?? $r->ip());
+
+        $internal = fn (string $kunci) => fn (Request $r) => config('sim.batas_laju.aktif')
+            ? Limit::perMinute((int) config("sim.batas_laju.{$kunci}"))->by($perAkun($r))
+                ->response($this->tanggapanBatas('Terlalu banyak permintaan dalam waktu singkat. Tunggu sebentar, lalu muat ulang halaman.'))
+            : Limit::none();
+
+        RateLimiter::for('baca-internal', $internal('baca_internal'));
+        RateLimiter::for('tulis-internal', $internal('tulis_internal'));
+        RateLimiter::for('berkas-besar', $internal('berkas_besar'));
+
+        RateLimiter::for('lacak-publik', fn (Request $r) => config('sim.batas_laju.aktif')
+            ? Limit::perMinute((int) config('sim.batas_laju.lacak_publik'))->by($r->ip())
+                ->response($this->tanggapanBatas('Terlalu banyak pencarian dari jaringan ini. Silakan coba lagi satu menit lagi.'))
+            : Limit::none());
+
+        RateLimiter::for('kirim-pengaduan', fn (Request $r) => config('sim.batas_laju.aktif')
+            ? Limit::perHour((int) config('sim.batas_laju.kirim_pengaduan'))->by($r->ip())
+                ->response($this->tanggapanBatas('Anda sudah mengirim beberapa pengaduan. Silakan coba lagi satu jam lagi.'))
+            : Limit::none());
+    }
+
+    /**
+     * Penanggap 429 berbahasa Indonesia yang menyebut jalan keluarnya, bukan
+     * kode galat teknis (`rules.md` 14c.3 poin 5).
+     */
+    private function tanggapanBatas(string $pesan): callable
+    {
+        return fn (Request $request, array $headers) => response($pesan, 429, $headers);
     }
 
     /**

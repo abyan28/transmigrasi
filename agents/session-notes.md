@@ -19,9 +19,23 @@ Commit terpisah per task. Belum di-push.
   nama berbeda yang meluruh sama ("Ubi Kayu" vs "Ubi-Kayu").
 - 9 uji `tests/Database/SlugOtomatisTest.php`. Feature 733, Database 188.
 
-## Task 3.10 -- Pembatasan laju per jenis akses  [BERJALAN]
+## Task 3.10 -- Pembatasan laju per jenis akses  [SELESAI]
 
-Rencana:
+HASIL: `AppServiceProvider::daftarkanBatasLaju()` mendefinisikan 5 limiter
+bernama; `config('sim.batas_laju.*')` (angka + flag `aktif`) dibaca DI DALAM
+closure supaya uji bisa menyalakannya. `phpunit.xml` -> `SIM_BATAS_LAJU=false`
+(uji penyapu rute tak terkena). `bootstrap/app.php` `then:` melampirkan
+`throttle:` per rute: internal ber-`auth` -> `baca-internal` (GET, 120/mnt/akun)
+atau `tulis-internal` (tulis, 40/mnt/akun); `template-impor`/`laporan.dokumen`/
+`dokumen.tampilkan` -> `berkas-besar` (30/mnt). Publik di `routes/web.php`:
+`lacak-pengaduan*` -> `lacak-publik` (10/mnt/IP), `pengaduan-warga.kirim` ->
+`kirim-pengaduan` (3/jam/IP). Pesan 429 Indonesia menyebut jalan keluar.
+PENTING: pakai `$rute->middleware()` bukan `gatherMiddleware()` di loop --
+yang terakhir men-cache hasil sehingga throttle tak terbawa. 62 baca + 74
+tulis + 3 besar + 3 publik. 7 uji `PembatasanLajuTest`. Login (5 gagal/mnt)
+tetap di `LoginController` manual.
+
+Rencana awal (arsip):
 - `RateLimiter` di `AppServiceProvider::boot()` (atau `bootstrap/app.php`):
   - `bacaInternal` 120/mnt per `Auth::id()` (fallback IP).
   - `tulisInternal` 40/mnt per `Auth::id()`.

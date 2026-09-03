@@ -25,7 +25,14 @@ return Application::configure(basePath: dirname(__DIR__))
             // terpusat. Iterasi objek Route langsung (bukan getByName) sebab
             // `->name()` di internal.php dipanggil setelah rute terdaftar,
             // sehingga peta nama koleksi belum tentu memuatnya di titik ini.
+            //
+            // Task 3.10: sekalian lampirkan pembatas laju. Rute internal
+            // (ber-`auth`) dibagi baca vs tulis (`rules.md` 14c.2). Rute
+            // berkas besar -- unduh template, dokumen resmi, berkas unggahan --
+            // dikecualikan ke batas sendiri (`rules.md` 14c.3 poin 6). Rute
+            // publik diberi `throttle:` langsung di routes/web.php.
             $peta = PetaIzinRute::peta();
+            $berkasBesar = ['template-impor', 'laporan.dokumen', 'dokumen.tampilkan'];
 
             foreach (Route::getRoutes()->getRoutes() as $rute) {
                 $nama = $rute->getName();
@@ -33,6 +40,22 @@ return Application::configure(basePath: dirname(__DIR__))
                 if ($nama !== null && isset($peta[$nama])) {
                     $rute->middleware("izin:{$peta[$nama]}");
                 }
+
+                // `middleware()` (larik mentah), BUKAN `gatherMiddleware()`:
+                // yang terakhir menyimpan hasilnya (`computedMiddleware`),
+                // sehingga throttle yang dilampirkan sesudahnya tidak ikut
+                // terbawa saat permintaan.
+                if (! in_array('auth', $rute->middleware(), true)) {
+                    continue;
+                }
+
+                $metode = $rute->methods();
+
+                $rute->middleware(match (true) {
+                    in_array($nama, $berkasBesar, true) => 'throttle:berkas-besar',
+                    in_array('GET', $metode, true) => 'throttle:baca-internal',
+                    default => 'throttle:tulis-internal',
+                });
             }
         },
     )
