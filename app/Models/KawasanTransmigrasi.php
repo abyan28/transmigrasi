@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BerslugOtomatis;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -13,10 +14,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * batas kecamatan. HPL kawasan melekat di sini (`rules.md` 7.4a), lewat pivot
  * `kawasan_transmigrasi_berkas` (batch berikutnya).
  *
- * Pengenal publik URL: `slug` -- bukan data pribadi, boleh terbaca.
+ * Pengenal publik URL: `slug` -- bukan data pribadi, boleh terbaca. Diturunkan
+ * dari `nama` saat dibuat lalu tidak berubah (Task 3.9).
  */
 class KawasanTransmigrasi extends Model
 {
+    use BerslugOtomatis;
     use SoftDeletes;
 
     protected $table = 'kawasan_transmigrasi';

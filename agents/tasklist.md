@@ -1141,10 +1141,11 @@ domain; sisanya mengikuti tanpa mengubah skema maupun komponen.
   * **DIKERJAKAN BERSAMAAN dengan pembuatan Model tiap modul, BUKAN sebagai task tersendiri di belakang** (`rules.md` 4.0a poin 5a, ditetapkan 2026-09-02). Model yang tabelnya berkolom `uuid` wajib lahir dengan `getRouteKeyName()` bernilai `uuid` sejak commit pertamanya; biaya penggantian naik terus selama ditunda
   * Pembatas rute `where('id', '[0-9]+')` wajib ikut disesuaikan, sebab pembatas angka menolak UUID dan menghasilkan 404 yang membingungkan
   * Lima tabel sudah menyediakan kolomnya: `transmigran`, `rumah`, `lahan`, `hasil_panen`, `pengaduan`
-- [ ] Task 3.9 - Slug pada data master `[Sedang]`
+- [✓] Task 3.9 - Slug pada data master `[Sedang]`
   * Diterapkan pada SP, kawasan, poktan, dan komoditas. Contoh `/dashboard/sp/kapitan-meo`
   * **Slug dilarang diturunkan dari data pribadi.** Nama orang pada URL tersimpan di riwayat peramban dan log server, sehingga justru menurunkan kerahasiaan dibanding id angka
   * Slug tidak berubah meski nama disunting, agar tautan yang sudah dibagikan tidak rusak
+  * **SELESAI 2026-09-03:** trait `BerslugOtomatis` (`creating` → `Str::slug(nama)` bila kosong, unik lewat `-2/-3/...`, dipangkas 110 char; `updating` → slug dirty dikembalikan). Dipasang `KawasanTransmigrasi`/`SatuanPermukiman`/`Komoditas`/`Poktan`. Keunikan diperiksa `withoutGlobalScopes()` (ikut lepas soft-delete + cakupan Poktan). Slug isian pemanggil dihormati. 9 uji `SlugOtomatisTest`.
 - [ ] Task 3.10 - Pembatasan laju per jenis akses `[Sedang]`
   * Halaman baca 120 per menit **per akun**, tulis 40 per menit, lacak publik 10 per menit per IP, kirim pengaduan 3 per jam per IP, login 5 kegagalan per menit
   * **Dihitung per akun untuk halaman internal**, bukan per IP: satu kantor dinas kerap memakai satu sambungan bersama, sehingga hitungan per IP membuat operator saling menghabiskan jatah

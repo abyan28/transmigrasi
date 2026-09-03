@@ -1,3 +1,70 @@
+# Tahap 3 Â· Sisa Tahap 3: Task 3.9 + 3.10 + 3.6 (2026-09-03)
+
+Pemilik proyek: "kerjakan semua sisa Tahap 3 selama tidak ada konflik".
+Commit terpisah per task. Belum di-push.
+
+## Task 3.9 -- Slug data master  [SELESAI]
+
+- `app/Models/Concerns/BerslugOtomatis.php`: `creating` -> slug dari `nama`
+  (`Str::slug`) bila kosong; unik (`-2`, `-3`, ...) diperiksa
+  `withoutGlobalScopes()` (ikut lepas SoftDeletingScope -> baris terhapus lunak
+  terhitung, dan cakupan data Poktan diabaikan); dipangkas 110 char (kolom
+  `VARCHAR(120)`). `updating` -> `slug` dirty dikembalikan ke `getOriginal`
+  (tak berubah selamanya, `rules.md` 4.0a poin 3). Slug yang sudah diisi
+  pemanggil dihormati.
+- Dipasang: `KawasanTransmigrasi`, `SatuanPermukiman`, `Komoditas`, `Poktan`
+  (keempat tabel ber-kolom `slug`; semua `getRouteKeyName()='slug'` sejak
+  Task 3.1).
+- Catatan: keempat tabel juga UNIQUE `nama`, jadi tabrakan slug hanya dari
+  nama berbeda yang meluruh sama ("Ubi Kayu" vs "Ubi-Kayu").
+- 9 uji `tests/Database/SlugOtomatisTest.php`. Feature 733, Database 188.
+
+## Task 3.10 -- Pembatasan laju per jenis akses  [BERJALAN]
+
+Rencana:
+- `RateLimiter` di `AppServiceProvider::boot()` (atau `bootstrap/app.php`):
+  - `bacaInternal` 120/mnt per `Auth::id()` (fallback IP).
+  - `tulisInternal` 40/mnt per `Auth::id()`.
+  - `lacakPublik` 10/mnt per IP.
+  - `kirimPengaduan` 3/jam per IP (`rules.md` 10b 1d / 14c.2).
+  - login sudah ditangani `LoginController` (RateLimiter manual) -- tidak
+    disentuh.
+- Terapkan di `bootstrap/app.php` `then:`: rute GET internal ->
+  `throttle:bacaInternal`; rute tulis (POST/PUT/PATCH/DELETE) internal ->
+  `throttle:tulisInternal`. KECUALIKAN rute ekspor massal + unggah template
+  (`rules.md` 14c.3 poin 6) -> daftar nama rute dikecualikan / batas sendiri.
+  Rute publik `lacak-pengaduan*` + `pengaduan-warga.kirim` di `routes/web.php`.
+- Pesan 429 berbahasa Indonesia menyebut jalan keluar (`rules.md` 14c.3 poin 5)
+  -> `RateLimiter::...->response(fn () => ...)`.
+- Aset statis (CSS/JS/gambar) tak dihitung -- otomatis, di luar grup `web`.
+- Uji `tests/Database/PembatasanLajuTest.php` (atau Feature): batas baca/tulis,
+  publik, pengecualian ekspor, pesan Indonesia.
+
+## Task 3.6 -- Audit log perubahan data otomatis  [BELUM]
+
+Rencana:
+- `app/Models/Concerns/DicatatAuditLog.php` (trait) + observer/closure model
+  event `created`/`updated`/`deleted`/`restored` -> `AuditLog::create`.
+- Hanya kolom BERUBAH masuk `data_lama`/`data_baru`; `password` +
+  `remember_token` WAJIB dikecualikan (`data-dictionary.md` 2.2).
+- `record_id` = PK; `user_id` = `Auth::id()`; aksi map:
+  created->Tambah, updated->Ubah, deleted (soft)->Hapus, forceDeleted->Hapus,
+  restored->Pulihkan.
+- Lewati bila tak ada perubahan bermakna (updated tanpa dirty selain
+  timestamps).
+- Dipasang pada model DATA UTAMA (bukan pivot, bukan referensi murni). Daftar
+  pasti disusun saat kerja: transmigran, rumah, lahan, poktan, penanaman,
+  hasil_panen, pengaduan, infrastruktur, satuan_permukiman, kawasan,
+  inventaris_sp, fasilitas_sp, dst. TIDAK: `audit_log` sendiri,
+  `kode_pemulihan_sandi`, tabel pivot `*_berkas`.
+- `AksiAuditLog::Login/Logout/ResetKataSandi/...` tetap dicatat manual di
+  controllernya -- trait ini hanya untuk perubahan DATA.
+- Uji `tests/Database/AuditLogOtomatisTest.php`: create->Tambah, update->Ubah
+  hanya kolom berubah, password tak pernah masuk, soft delete->Hapus,
+  restore->Pulihkan, pelaku terekam, aksi non-data tak ganda.
+
+---
+
 # Tahap 3 Â· Task 3.11 - Pemulihan kata sandi lewat kode verifikasi SELESAI (2026-09-03)
 
 ## HASIL (2026-09-03)

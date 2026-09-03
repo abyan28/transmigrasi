@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\AsalWakilPoktan;
+use App\Models\Concerns\BerslugOtomatis;
 use App\Models\Scopes\CakupanDataSp;
 use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 use Illuminate\Database\Eloquent\Model;
@@ -21,6 +22,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 #[ScopedBy([CakupanDataSp::class])]
 class Poktan extends Model
 {
+    use BerslugOtomatis;
     use SoftDeletes;
 
     protected $table = 'poktan';
