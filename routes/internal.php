@@ -21,11 +21,11 @@ use App\Enums\StatusKondisiSp;
 use App\Enums\StatusPanen;
 use App\Enums\StatusPengaduan;
 use App\Http\Controllers\DokumenController;
+use App\Http\Controllers\PengaturanPenggunaController;
 use App\Http\Controllers\PengaturanRoleController;
 use App\Support\DummyData;
 use App\Support\LaporanData;
 use App\Support\PenilaianKondisiSp;
-use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
@@ -2417,103 +2417,19 @@ Route::put('/sp/infrastruktur/{id}', function (int $id) {
         ->with('sukses', 'Perubahan data aset tersimpan.');
 })->where('id', '[0-9]+')->name('infrastruktur.perbarui');
 
-Route::get('/pengguna', function () {
-    $semua = DummyData::pengguna();
-
-    $cari = trim((string) request('cari', ''));
-    $filterRole = request('role');
-    $filterAktif = request('aktif');
-
-    $baris = array_values(array_filter($semua, function ($u) use ($cari, $filterRole, $filterAktif) {
-        if ($cari !== '' && ! str_contains(mb_strtolower($u['nama']), mb_strtolower($cari))
-            && ! str_contains(mb_strtolower($u['username']), mb_strtolower($cari))) {
-            return false;
-        }
-        if ($filterRole && $u['role'] !== $filterRole) {
-            return false;
-        }
-        if ($filterAktif !== null && $filterAktif !== '' && (string) (int) $u['is_aktif'] !== $filterAktif) {
-            return false;
-        }
-
-        return true;
-    }));
-
-    // Admin aktif terakhir tidak boleh dinonaktifkan (rules.md 14b poin 16),
-    // agar sistem tidak pernah kehilangan seluruh jalur administrasinya.
-    $jumlahAdminAktif = count(array_filter(
-        $semua,
-        fn ($u) => $u['role'] === 'Admin' && $u['is_aktif'],
-    ));
-
-    return view('pages.pengguna.index', [
-        'title' => 'Manajemen Pengguna',
-        'semua' => $semua,
-        'baris' => $baris,
-        'cari' => $cari,
-        'filterRole' => $filterRole,
-        'filterAktif' => $filterAktif,
-        'adaFilter' => $cari !== '' || $filterRole || ($filterAktif !== null && $filterAktif !== ''),
-        'aktif' => count(array_filter($semua, fn ($u) => $u['is_aktif'])),
-        'perluGanti' => count(array_filter($semua, fn ($u) => $u['password_harus_diganti'])),
-        'daftarRole' => array_values(array_unique(array_column($semua, 'role'))),
-        'jumlahAdminAktif' => $jumlahAdminAktif,
-
-        // Inisial avatar tiap baris, dahulu dihitung ulang di dalam perulangan.
-        'inisial' => collect($semua)
-            ->mapWithKeys(fn ($u) => [$u['id_user'] => DummyData::inisial($u['nama'])])
-            ->all(),
-    ]);
-})->name('pengguna.index');
-
-Route::post('/pengguna', function (Request $permintaan) {
-    // Tahap 3: validasi lewat ValidationRules, bangkitkan kata sandi sementara,
-    // simpan hashnya, tandai password_harus_diganti, simpan penugasan SP, catat
-    // audit log, lalu kirim kredensial ke surel petugas.
-    //
-    // Username sengaja tidak diminta di sini. Petugas membuatnya sendiri saat
-    // pertama kali masuk, bersamaan dengan penggantian kata sandi sementara
-    // (rules.md 14b).
-    return redirect()->route('pengguna.index')
-        ->with('sukses', 'Akun petugas tersimpan.')
-        ->with('kredensial_baru', [
-            'nama' => $permintaan->input('nama', 'petugas'),
-            'email' => $permintaan->input('email', '-'),
-            // Tahap 3: dibangkitkan Str::password(), bukan nilai tetap seperti ini.
-            'password' => 'Tmg-7K4pQ2',
-        ]);
-})->name('pengguna.simpan');
-
-Route::put('/pengguna/{id}', function (int $id) {
-    // Tahap 3: kata sandi tidak pernah ikut diperbarui di sini
-    // (rules.md 14b poin 14).
-    return redirect()->route('pengguna.index')
-        ->with('sukses', 'Perubahan data akun tersimpan.');
-})->where('id', '[0-9]+')->name('pengguna.perbarui');
-
-Route::post('/pengguna/{id}/setel-sandi', function (int $id) {
-    // Tahap 3: timpa hash kata sandi, setel password_harus_diganti menjadi
-    // TRUE, lalu catat audit log beraksi Reset Kata Sandi beserta pelakunya
-    // (rules.md 14b poin 13 dan 15).
-    return redirect()->route('pengguna.index')
-        ->with('sukses', 'Kata sandi sementara tersimpan. Serahkan langsung kepada petugas yang bersangkutan.');
-})->where('id', '[0-9]+')->name('pengguna.setel-sandi');
-
-Route::post('/pengguna/{id}/nonaktifkan', function (int $id) {
-    // Tahap 3: tolak bila sasaran adalah Admin aktif terakhir
-    // (rules.md 14b poin 16). Pemeriksaan wajib diulang di sisi server,
-    // sebab penyembunyian tombol saja tidak menghalangi permintaan langsung.
-    return redirect()->route('pengguna.index')
-        ->with('sukses', 'Akun dinonaktifkan. Seluruh riwayat tindakannya tetap tersimpan.');
-})->where('id', '[0-9]+')->name('pengguna.nonaktifkan');
-
-Route::post('/pengguna/{id}/aktifkan', function (int $id) {
-    // Tahap 3: setel is_aktif menjadi TRUE, catat audit log dengan aksi
-    // AktifkanAkun. Akun yang dipulihkan memakai kredensial lamanya, sebab
-    // penonaktifan tidak pernah mengubah kata sandi.
-    return redirect()->route('pengguna.index')
-        ->with('sukses', 'Akun diaktifkan kembali. Petugas dapat masuk memakai kredensial yang sama.');
-})->where('id', '[0-9]+')->name('pengguna.aktifkan');
+// Manajemen pengguna oleh Admin (Task 3.5, `rules.md` 14b). `index()` masih
+// baca DummyData (peralihan tampilan -> Tahap 4); tulisan menyentuh tabel
+// `user` nyata -- diuji di tests/Database/PengaturanPenggunaTest.
+Route::get('/pengguna', [PengaturanPenggunaController::class, 'index'])->name('pengguna.index');
+Route::post('/pengguna', [PengaturanPenggunaController::class, 'simpan'])->name('pengguna.simpan');
+Route::put('/pengguna/{id}', [PengaturanPenggunaController::class, 'perbarui'])
+    ->where('id', '[0-9]+')->name('pengguna.perbarui');
+Route::post('/pengguna/{id}/setel-sandi', [PengaturanPenggunaController::class, 'setelSandi'])
+    ->where('id', '[0-9]+')->name('pengguna.setel-sandi');
+Route::post('/pengguna/{id}/nonaktifkan', [PengaturanPenggunaController::class, 'nonaktifkan'])
+    ->where('id', '[0-9]+')->name('pengguna.nonaktifkan');
+Route::post('/pengguna/{id}/aktifkan', [PengaturanPenggunaController::class, 'aktifkan'])
+    ->where('id', '[0-9]+')->name('pengguna.aktifkan');
 
 // Pengelolaan role & kewenangan (Task 3.3). `index` masih baca DummyData
 // (tampilan -> Eloquent = Tahap 4); tulis ke tabel `role`/`role_permission`.

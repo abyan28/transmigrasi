@@ -1124,13 +1124,15 @@ domain; sisanya mengikuti tanpa mengubah skema maupun komponen.
   * Fitur verifikasi dicabut seluruhnya atas kesepakatan tim, sehingga task ini tidak akan dikerjakan.
   * Yang ikut dihapus: enum `StatusVerifikasi`, tabel `verifikasi` pada ERD, aturan `rules.md` 5.2, delapan rute verifikasi/tolak, dan indikator 15 Mutu Data pada dashboard.
   * Rincian keputusan beserta dampaknya tercatat pada `notes.md` tabel keputusan bertanggal 2026-08-14.
-- [ ] Task 3.5 - CRUD manajemen pengguna oleh Admin `[Sedang]`
+- [✓] Task 3.5 - CRUD manajemen pengguna oleh Admin `[Sedang]`
   * Termasuk tindakan **setel ulang kata sandi**: membuat kata sandi sementara dan menandai `password_harus_diganti = TRUE`
   * Penonaktifan akun memakai `is_aktif = FALSE`, bukan penghapusan
   * Sistem menolak penonaktifan atau penghapusan akun Admin terakhir yang masih aktif
   * Seluruh tindakan tercatat di audit log: `Reset Kata Sandi`, `Nonaktifkan Akun`, `Aktifkan Akun`
-- [ ] Task 3.5b - Perintah artisan pemulihan darurat kata sandi Admin `[Mudah]`
+  * **SELESAI 2026-09-03:** `PengaturanPenggunaController` (`simpan/perbarui/setelSandi/nonaktifkan/aktifkan`) menulis tabel `user` nyata; `index()` masih baca DummyData (pola `PengaturanRoleController`, peralihan Tahap 4). Sandi awal `Str::password(14)`, hash, `password_harus_diganti`, tampil sekali. Role `Per SP` wajib penugasan SP. Lindungan Admin aktif terakhir (`is_terkunci`) di server. TANPA hapus (modul `pengguna` tak punya izin `hapus`). `AdminAwalSeeder` (akun Admin pertama, idempoten). 14 uji Database (`PengaturanPenggunaTest` 11 + `AdminAwalSeederTest` 3). **DITUNDA:** username self-service saat masuk pertama (skema NOT NULL → username sementara `petugas.xxxxxxxx`); kirim kredensial ke surel (butuh Mailable).
+- [✓] Task 3.5b - Perintah artisan pemulihan darurat kata sandi Admin `[Mudah]`
   * Jalur pemulihan lewat terminal server bila seluruh Admin kehilangan akses (`rules.md` §14b poin 13)
+  * **SELESAI 2026-09-03:** `sim:pulihkan-admin {identitas?}` — reset sandi 1 akun Admin (role terkunci), tandai wajib-ganti, audit `Reset Kata Sandi` `user_id` NULL jalur `Artisan darurat`. Tanpa arg bila Admin tunggal; minta arg (username/email) bila > 1. 5 uji Database (`PulihkanAdminTest`).
 - [ ] Task 3.6 - Implementasi audit log perubahan data `[Sedang]`
 - [ ] Task 3.8 - Pengenal UUID pada alamat URL `[Sedang]`
   * Diterapkan **bertahap**, dimulai dari modul berdata pribadi: transmigran, rumah, pengaduan

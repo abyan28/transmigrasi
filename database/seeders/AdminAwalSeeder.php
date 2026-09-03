@@ -1,0 +1,64 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\Role;
+use App\Models\User;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
+
+/**
+ * Akun Admin pertama (Task 3.5, `rules.md` 14b poin 1).
+ *
+ * Tanpa pendaftaran mandiri, sistem yang baru dipasang tidak memiliki satu
+ * pun akun -- tidak ada jalan masuk. Seeder ini menanam SATU akun Admin bila
+ * belum ada akun berrole Admin (role terkunci) mana pun.
+ *
+ * - Kata sandi dari `SIM_ADMIN_PASSWORD` bila diset; selain itu dibangkitkan
+ *   acak dan dicetak SATU KALI ke terminal (`rules.md` 14b poin 3).
+ * - `password_harus_diganti = TRUE`: Admin pertama tetap wajib mengganti
+ *   sandi + membuat username saat masuk pertama (poin 5).
+ * - Idempoten: dijalankan ulang tidak membuat akun kedua.
+ */
+class AdminAwalSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $roleAdmin = Role::where('is_terkunci', true)->first();
+
+        if ($roleAdmin === null) {
+            $this->command?->warn('Role Admin belum ada -- jalankan PermissionRoleSeeder lebih dulu.');
+
+            return;
+        }
+
+        if (User::where('role_id', $roleAdmin->id_role)->exists()) {
+            $this->command?->info('Akun Admin sudah ada -- AdminAwalSeeder dilewati.');
+
+            return;
+        }
+
+        $email = env('SIM_ADMIN_EMAIL', 'admin@malakakab.go.id');
+        $sandiDiset = (string) env('SIM_ADMIN_PASSWORD', '');
+        $sandi = $sandiDiset !== '' ? $sandiDiset : Str::password(16, symbols: false);
+
+        $admin = new User;
+        $admin->forceFill([
+            'role_id' => $roleAdmin->id_role,
+            'nama' => env('SIM_ADMIN_NAMA', 'ADMINISTRATOR SISTEM'),
+            // `user.username` NOT NULL; Admin mengganti nilai sementara ini
+            // saat masuk pertama, bersama kata sandi wajib-ganti.
+            'username' => env('SIM_ADMIN_USERNAME', 'admin'),
+            'email' => $email,
+            'password' => $sandi,
+            'is_aktif' => true,
+            'password_harus_diganti' => true,
+        ])->save();
+
+        $this->command?->info("Akun Admin awal dibuat: {$email}");
+
+        if ($sandiDiset === '') {
+            $this->command?->warn("Kata sandi sementara (tampil sekali): {$sandi}");
+        }
+    }
+}

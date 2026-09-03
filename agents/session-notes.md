@@ -1,8 +1,50 @@
-# Tahap 3 Â· Task 3.4b + 3.5 + 3.5b - Manajemen pengguna BERJALAN (2026-09-03)
+# Tahap 3 Â· Task 3.4b + 3.5 + 3.5b - Manajemen pengguna SELESAI (2026-09-03)
 
 Rencana ditulis sebelum kode disentuh (`rules.md` 20b poin 12). Tiga task
 dikerjakan sekaligus (izin pemilik proyek: "beberapa task sekaligus selama
-tidak ada konflik"). Commit terpisah per task.
+tidak ada konflik"). Commit terpisah per task. Belum di-push.
+
+## HASIL (2026-09-03)
+
+Verifikasi: pest Feature 733 PASS, pest tests/Database 165 PASS, pint bersih
+(berkas ketiga task saja), `sim:banding-skema` NOL SELISIH, `sim:tautan-statis`
+14.
+
+- **3.4b** commit `71f8e89`. `MenuHelper::bolehLihat()` ->
+  `Auth::user()?->punyaIzin($izin) ?? false`. 2 uji Feature (tanpa role -> menu
+  cuma Panduan/Tentang; `semuaIzin` -> semua kelompok).
+- **3.5** `PengaturanPenggunaController` (6 aksi; `index()` baca DummyData +
+  filter, tulisan ke `user`). `simpan`: `Str::password(14, symbols:false)`,
+  hash, `password_harus_diganti=true`, `is_aktif=true`, username SEMENTARA
+  `petugas.xxxxxxxx` (skema `user.username` NOT NULL -> tak bisa null),
+  flash `kredensial_baru` sekali. Role `Per SP` -> `satuan_permukiman[]` wajib
+  (`min:1`, `exists`) -> `sync`. `perbarui`: tak sentuh password; role bukan
+  `Per SP` -> lepas semua penugasan SP. `setelSandi`: audit `ResetKataSandi`
+  `data_baru['jalur']='Admin'`. `nonaktifkan`: `abort_if` Admin aktif terakhir
+  (role `is_terkunci`, hitung di server) -> 422. TANPA `hapus` (modul
+  `pengguna` = L T U saja, `DummyData::daftarIzin`). 6 closure `pengguna.*` di
+  `routes/internal.php` -> controller. `AdminAwalSeeder` (akun Admin pertama,
+  idempoten; kredensial dari `SIM_ADMIN_*` env atau acak+cetak) dipanggil
+  `DatabaseSeeder` sesudah `PermissionRoleSeeder`. Uji Feature "membuat rute
+  tulis pengguna" DIHAPUS (jadi controller DB). 14 uji Database.
+- **3.5b** `app/Console/Commands/PulihkanAdmin.php` sig
+  `sim:pulihkan-admin {identitas?}`. Cari akun role `is_terkunci`; tanpa arg &
+  Admin tunggal -> akun itu; > 1 -> minta arg (username/email) + tabel;
+  0 -> gagal. Reset `Str::password(16)`, `password_harus_diganti=true`, cetak
+  sandi ke terminal, audit `ResetKataSandi` `user_id=null`
+  `data_baru['jalur']='Artisan darurat'`. 5 uji Database.
+
+### DITUNDA (dicatat, bukan lupa)
+- **Username self-service saat masuk pertama** (`rules.md` 14b poin 5): form
+  `ganti-kata-sandi` belum punya kolom username; `GantiKataSandiController`
+  belum memprosesnya; pemeriksaan ketersediaan saat diketik (poin 5a) belum
+  ada. Sampai itu, username sementara `petugas.xxxxxxxx` mengisi kolom NOT
+  NULL. Perlu: kolom di view (bersyarat: hanya bila `username` masih pola
+  sementara), validasi `ValidationRules::username()` di controller, endpoint
+  cek ketersediaan. Cocok digabung Task 3.11 atau task UI tersendiri.
+- **Kirim kredensial ke surel** petugas / Admin awal (`rules.md` 14b poin 3a):
+  butuh Mailable + templat + `Mail::to()`. `MAIL_MAILER=log` sudah siap.
+- **Peralihan `pengguna.index` ke Eloquent**: Tahap 4 (seluruh modul).
 
 ## Rencana
 
