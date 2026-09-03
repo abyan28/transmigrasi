@@ -45,7 +45,8 @@ Rencana lengkap: `.claude/plans/logical-whistling-salamander.md`.
 | B2 Domain 2 | **SELESAI** | provinsi, kabupaten, kecamatan, desa, kawasan_transmigrasi, `referensi`, `berkas` (ditarik maju - topo-sort), satuan_permukiman, user_satuan_permukiman, rute_aksesibilitas_sp + 9 model + `tests/Database/Domain2WilayahSpTest` (10 uji) |
 | B3 Domain 3+4 | **SELESAI** | satuan, komoditas, status_kondisi_sp, parameter_penilaian_sp, penilaian_sp, inventaris_sp, fasilitas_sp, fasilitas_sp_cakupan (pivot) + 7 model + `tests/Database/Domain3Domain4AsetPenilaianTest` (14 uji) |
 | B4 Domain 4b | **SELESAI** | user_berkas, kawasan_transmigrasi_berkas, inventaris_sp_berkas, fasilitas_sp_berkas (4 dari 12 pivot `*_berkas` -- yang induknya sudah ada) + relasi `belongsToMany` pada 4 model induk + `tests/Database/Domain4bBerkasPivotTest` (5 uji). 8 pivot sisa menyusul di B5-B9 |
-| B5-B9 | belum | lihat plan file / tabel batch |
+| B5 Domain 5 | **SELESAI** | transmigran, anggota_keluarga, rumah, riwayat_penghunian, riwayat_kepala_keluarga + pivot transmigran_berkas, rumah_berkas + 5 model + `tests/Database/Domain5KependudukanTest` (11 uji) |
+| B6-B9 | belum | lihat plan file / tabel batch |
 
 **Verifikasi B0+B1:** `sim:banding-skema --hanya=<Domain 1>` NOL SELISIH ·
 `pest` **742 PASS** (732 lama + 10 Database) · `pint --test` 31 (turun dari 33) ·
@@ -76,6 +77,15 @@ enum `App\Enums\StatusKondisiSp` (perilaku).
 UNIQUE `user_id` saja (satu foto/pengguna) -> `User::fotoProfil()`. CASCADE dua
 arah: pivot ikut hilang saat induk domain ATAU baris `berkas` registry hilang,
 tapi `berkas` registry TIDAK ikut saat induk domain hilang.
+
+**Verifikasi B5:** `sim:banding-skema --hanya=<7 tabel B5>` NOL SELISIH ·
+`pest tests/Database` **50 PASS** · `pest` (SQLite) tetap **732 PASS** ·
+`pint --test` tetap 31. `transmigran`/`rumah` uuid route key; `rumah.transmigran_id`
+UNIQUE nullable (1:1 dua arah) -> `Transmigran::rumah()` hasOne + FK SET NULL.
+`rumah.kondisi`/`status_hunian` TEKS REF (bukan enum). Tabel riwayat
+(riwayat_penghunian, riwayat_kepala_keluarga) tanpa soft delete, FK transmigran
+RESTRICT. Model belum auto-generate `uuid` (sama seperti `Berkas`) -- observer/
+trait ditunda ke Tahap 4.
 
 **Urutan migration = topological sort dependensi FK, BUKAN urutan file
 `schema.sql`.** Batch berikutnya: `referensi`+`satuan`+`komoditas`+`berkas`

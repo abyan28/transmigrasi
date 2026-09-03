@@ -117,6 +117,16 @@ class SatuanPermukiman extends Model
         return $this->hasMany(PenilaianSp::class, 'satuan_permukiman_id', 'id_satuan_permukiman');
     }
 
+    public function transmigran(): HasMany
+    {
+        return $this->hasMany(Transmigran::class, 'satuan_permukiman_id', 'id_satuan_permukiman');
+    }
+
+    public function rumah(): HasMany
+    {
+        return $this->hasMany(Rumah::class, 'satuan_permukiman_id', 'id_satuan_permukiman');
+    }
+
     /**
      * Petugas yang ditugaskan ke SP ini (cakupan data `Per SP`).
      */
