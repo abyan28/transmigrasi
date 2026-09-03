@@ -14,8 +14,8 @@ use Throwable;
  * cepat dan tak menyentuh basis data. SQLite tidak menegakkan ENUM, UNSIGNED,
  * maupun sebagian aturan FK, sehingga penjaga skema di sana menjadi fiksi.
  *
- * Basis data uji `sim_transmigrasi_test` (env `DB_TEST_DATABASE`) DIPISAH dari
- * DB dev `sim_transmigrasi`. Bila MySQL tak tersedia, uji di-SKIP -- bukan gagal
+ * Basis data uji `digitrans_test` (env `DB_TEST_DATABASE`) DIPISAH dari
+ * DB dev `digitrans`. Bila MySQL tak tersedia, uji di-SKIP -- bukan gagal
  * -- supaya kontributor tanpa MySQL tetap dapat menjalankan `pest`.
  */
 abstract class DatabaseTestCase extends TestCase

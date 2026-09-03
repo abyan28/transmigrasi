@@ -31,7 +31,7 @@ class KodePemulihanSandiMail extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: 'Kode Pemulihan Kata Sandi SIM Transmigrasi');
+        return new Envelope(subject: 'Kode Pemulihan Kata Sandi DIGITRANS - Digitalisasi Transmigrasi');
     }
 
     public function content(): Content

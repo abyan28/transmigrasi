@@ -2,7 +2,7 @@
 
 /*
 |--------------------------------------------------------------------------
-| Rute Internal SIM Transmigrasi (Task 3.2b)
+| Rute Internal DIGITRANS (Task 3.2b)
 |--------------------------------------------------------------------------
 |
 | Dimuat oleh bootstrap/app.php lewat closure `then:` dengan middleware

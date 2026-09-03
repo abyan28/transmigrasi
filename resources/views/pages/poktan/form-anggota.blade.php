@@ -99,7 +99,7 @@
                 teks="nama_kepala_keluarga" keterangan-opsi="satuan_permukiman"
                 :terpilih="old('transmigran_id', $data['transmigran_id'] ?? null)"
                 placeholder="Pilih keluarga transmigran"
-                keterangan="Keanggotaan melekat pada keluarga transmigran. Anggota non-transmigran tidak didata pada SIM Transmigrasi."
+                keterangan="Keanggotaan melekat pada keluarga transmigran. Anggota non-transmigran tidak didata pada DIGITRANS."
                 @change="gantiKeluarga($event.target.value)" />
         </div>
 

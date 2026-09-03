@@ -60,7 +60,7 @@
             {{-- ====================================================================== --}}
             <div x-show="tab === 'identitas'" role="tabpanel" class="p-5 sm:p-6"
                 x-data="{
-                    namaApp: 'Sistem Informasi Monitoring Pertanian & Tata Kelola Kawasan',
+                    namaApp: 'DIGITRANS - Digitalisasi Transmigrasi',
                     subjudul: 'Kawasan Transmigrasi Kobalima Timur â€¢ Kabupaten Malaka, Provinsi Nusa Tenggara Timur',
                     instansiPusat: 'Kementerian Transmigrasi Republik Indonesia',
                     instansiDaerah: 'Dinas Transmigrasi dan Tenaga Kerja Kabupaten Malaka',

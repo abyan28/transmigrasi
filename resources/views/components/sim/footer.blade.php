@@ -1,5 +1,5 @@
 {{--
-    Global Footer aplikasi SIM Transmigrasi (Tata Letak CMS / Admin).
+    Global Footer aplikasi DIGITRANS (Tata Letak CMS / Admin).
 
     Dirancang ramping (slim bar) 1 baris agar tidak membebani tampilan kerja
     petugas internal, menyajikan hak cipta resmi, status versi prototipe,

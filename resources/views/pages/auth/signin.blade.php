@@ -190,8 +190,16 @@
                         sendiri, tidak perlu ditelusuri ke elemen induk.
                     --}}
                     <div class="flex max-w-xs flex-col items-center">
+                        {{--
+                            Titik temu PERTAMA dengan sistem, sehingga nama
+                            ditulis lengkap beserta kepanjangannya -- bukan
+                            `config('app.name')` yang hanya memuat akronim.
+                            Petugas yang sudah masuk melihat "DIGITRANS" saja
+                            di header dan sidebar; di sinilah singkatan itu
+                            dijelaskan sekali.
+                        --}}
                         <p class="text-center text-lg font-semibold text-white dark:text-white">
-                            {{ config('app.name') }}
+                            DIGITRANS &ndash; Digitalisasi Transmigrasi
                         </p>
                         <p class="mt-2 text-center text-sm text-gray-400 dark:text-white/60">
                             Monitoring Pertanian dan Tata Kelola Data

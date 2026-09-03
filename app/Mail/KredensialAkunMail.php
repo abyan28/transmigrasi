@@ -35,9 +35,12 @@ class KredensialAkunMail extends Mailable
 
     public function envelope(): Envelope
     {
+        // Subjek memakai nama LENGKAP: surel mendarat di kotak masuk pribadi
+        // bersama ratusan pesan lain, sehingga akronim saja tidak cukup
+        // dikenali penerima yang baru pertama kali menerimanya.
         return new Envelope(subject: $this->akunBaru
-            ? 'Akun SIM Transmigrasi Anda telah dibuat'
-            : 'Kata sandi SIM Transmigrasi Anda telah disetel ulang');
+            ? 'Akun DIGITRANS - Digitalisasi Transmigrasi Anda telah dibuat'
+            : 'Kata sandi DIGITRANS - Digitalisasi Transmigrasi Anda telah disetel ulang');
     }
 
     public function content(): Content

@@ -5,12 +5,12 @@
 
 @if ($akunBaru)
     <p>
-        Akun Anda pada SIM Transmigrasi Kabupaten Malaka telah dibuat oleh
-        admin. Berikut kredensial masuk sementara Anda:
+        Akun Anda pada DIGITRANS Kobalima Timur, Kabupaten Malaka, telah dibuat
+        oleh admin. Berikut kredensial masuk sementara Anda:
     </p>
 @else
     <p>
-        Kata sandi akun SIM Transmigrasi Anda telah disetel ulang oleh admin.
+        Kata sandi akun DIGITRANS Kobalima Timur Anda telah disetel ulang oleh admin.
         Berikut kata sandi sementara Anda:
     </p>
 @endif
@@ -34,5 +34,5 @@
 
 <p>
     Salam,<br>
-    Tim SIM Transmigrasi
+    Tim DIGITRANS Kobalima Timur
 </p>

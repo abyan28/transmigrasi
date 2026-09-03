@@ -68,13 +68,13 @@ return [
          * Uji suite utama tetap SQLite `:memory:` (`phpunit.xml`) supaya cepat
          * dan tak menyentuh DB. Uji migration & constraint memerlukan MySQL/
          * MariaDB nyata: SQLite tidak menegakkan ENUM/UNSIGNED. Basis data
-         * sekali-pakai, DIPISAH dari DB dev `sim_transmigrasi`.
+         * sekali-pakai, DIPISAH dari DB dev `digitrans`.
          */
         'mysql_testing' => [
             'driver' => 'mysql',
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '3306'),
-            'database' => env('DB_TEST_DATABASE', 'sim_transmigrasi_test'),
+            'database' => env('DB_TEST_DATABASE', 'digitrans_test'),
             'username' => env('DB_USERNAME', 'root'),
             'password' => env('DB_PASSWORD', ''),
             'unix_socket' => env('DB_SOCKET', ''),

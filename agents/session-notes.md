@@ -1,3 +1,95 @@
+# Nama sistem menjadi DIGITRANS + DB dev jadi `digitrans` (2026-09-03)
+
+Pemilik proyek menetapkan nama sistem: **DIGITRANS** (Digitalisasi
+Transmigrasi), menggantikan "SIM Transmigrasi".
+
+## Temuan penyisiran: "SIM" punya DUA makna di repo ini
+
+853 kemunculan `SIM`, dan hampir seluruhnya BUKAN nama produk:
+
+| Bentuk | Jumlah | Diganti? |
+|---|---|---|
+| `x-sim.*` komponen Blade | ~800 | **TIDAK** |
+| `sim:*` perintah artisan | 5 | **TIDAK** |
+| `config/sim.php` | 8 | **TIDAK** |
+| **"SIM Transmigrasi"** teks tampilan | **24** | **YA** |
+
+Kelompok teknis sengaja dibiarkan: tak seorang pengguna pun melihat `x-sim.`
+di layar, sehingga menggantinya berarti menyentuh ratusan Blade untuk nol
+manfaat. Yang diganti hanya yang benar-benar terbaca manusia.
+
+## Temuan kedua: sistem ini punya TIGA nama berbeda
+
+- `cms/index.blade.php:63` -> "Sistem Informasi Monitoring Pertanian & Tata
+  Kelola Kawasan"
+- `README.md:1` -> "Sistem Informasi Kawasan Transmigrasi Kobalima Timur"
+- `APP_NAME` -> "SIM Transmigrasi"
+
+Ketiganya hidup berdampingan tanpa ada yang menyadari. DIGITRANS menyatukannya
+-- perbaikan yang tidak diminta tetapi ikut didapat.
+
+## Pembagian tiga bentuk nama
+
+Prinsipnya: **makin jauh pembaca dari layar sistem, makin lengkap namanya.**
+
+| Bentuk | Tempat | Alasan |
+|---|---|---|
+| `DIGITRANS` | `APP_NAME` -> judul tab, header, sidebar, footer internal, halaman galat | Dilihat petugas puluhan kali sehari; ruang sempit, nama panjang jadi bising |
+| `DIGITRANS - Digitalisasi Transmigrasi` | `/login`, CMS "Nama Resmi Aplikasi", subjek surel, README | Titik temu PERTAMA; pembaca belum tentu tahu akronimnya |
+| `DIGITRANS Kobalima Timur` | badan surel, footer publik | Keluar dari sistem menuju kotak masuk pribadi; penerima perlu tahu KAWASAN mana, sebab kelak ada DIGITRANS kawasan lain |
+
+`signin.blade.php` sengaja memakai teks eksplisit, BUKAN `config('app.name')`,
+supaya halaman masuk memuat kepanjangannya sementara header tetap ringkas.
+`app-header` + `sidebar` justru sebaliknya: teks keras diganti
+`config('app.name')` supaya penggantian berikutnya cukup di satu tempat.
+
+## Yang TIDAK disentuh
+
+- **Kop dokumen laporan.** Diperiksa lebih dulu, bukan diasumsikan:
+  `components/sim/kop-laporan.blade.php` menyebut Kementerian dan Dinas dari
+  `LaporanData::instansi()`, tidak pernah nama aplikasi. Nol perubahan.
+  (`layouts/dokumen.blade.php:9` memakai `config('app.name')` hanya di
+  `<title>` -- judul tab peramban, bukan bagian tercetak.)
+- `x-sim.*`, `sim:*`, `config/sim.php` -- namespace teknis.
+
+## Basis data: `sim_transmigrasi` -> `digitrans`
+
+`.env`, `.env.example`, `config/database.php`, `DatabaseTestCase`,
+`BandingSkema` (opsi `--skema-db`/`--migrasi-db`), README. DB uji ikut:
+`digitrans_test`, `digitrans_skema_ref` -- keduanya terbentuk sendiri saat
+`pest`/`sim:banding-skema` dijalankan.
+
+`DB_TEST_DATABASE` ternyata belum ada di `.env` (hanya di `.env.example`),
+sehingga ditambahkan -- tanpa itu grup uji Database tetap menunjuk DB lama.
+
+Tiga DB lama (`sim_transmigrasi`, `sim_transmigrasi_test`,
+`transmigrasi_skema_ref`, ~11,5 MB) **dihapus SETELAH pemilik proyek
+mengonfirmasi sendiri dapat login dan logout di peramban** -- bukan setelah
+verifikasi otomatis saja. Isinya hanya hasil seed; nol data lapangan.
+
+## Efek samping yang disengaja
+
+Nama cookie sesi diturunkan dari `APP_NAME` (`config/session.php:132`):
+`sim-transmigrasi-session` -> `digitrans-session`. Seluruh sesi aktif terputus
+sekali. Kredensial `admin`/`admin` tetap berlaku.
+
+## Verifikasi
+
+- Nol "SIM Transmigrasi" tersisa di seluruh kode di luar `agents/`.
+- `pest` **938 PASS / 7.918 assertions** (tak berubah -- suite tak pernah
+  menyebut nama produk). `pest tests/Database` 205 PASS diulang SESUDAH DB lama
+  dihapus, memastikan tak ada yang diam-diam bergantung padanya.
+- `sim:banding-skema --lengkap` **NOL SELISIH** terhadap DB baru.
+- `pint --test` **26** - `sim:tautan-statis` **14** - `route:list` **151**.
+- DB `digitrans`: 62 tabel, 58 migrasi, role 5, permission 97, admin 1.
+- HTTP: `/login` 200 berjudul "Masuk | DIGITRANS" + nama panjang; login
+  `admin`/`admin` -> 302 `/`; `/` berjudul "Dashboard | DIGITRANS", 5
+  kemunculan DIGITRANS, **nol** sisa nama lama; `/pengaduan-warga` 200 dengan
+  footer publik ber-DIGITRANS.
+- Pemilik proyek mengonfirmasi login dan logout berjalan di peramban.
+
+---
+
 # Bypass masuk otomatis lokal DICABUT + bug keluar-sistem (2026-09-03)
 
 Pemilik proyek menekan Keluar dan menerima **500**; sesudahnya `/login` selalu

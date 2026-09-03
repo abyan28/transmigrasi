@@ -1,7 +1,12 @@
-# Sistem Informasi Kawasan Transmigrasi Kobalima Timur
+# DIGITRANS &ndash; Digitalisasi Transmigrasi
 
 Sistem informasi berbasis web untuk digitalisasi monitoring pertanian dan tata kelola data
 kawasan transmigrasi Kobalima Timur, Kabupaten Malaka, Nusa Tenggara Timur.
+
+Nama sistem dipakai dalam tiga bentuk, menurut jarak pembaca dari layar: **DIGITRANS** pada
+antarmuka sehari-hari (judul tab, header, sidebar, footer), **DIGITRANS &ndash; Digitalisasi
+Transmigrasi** pada titik temu pertama (halaman masuk, CMS, subjek surel), dan **DIGITRANS
+Kobalima Timur** pada yang keluar dari sistem (badan surel, footer publik).
 
 Data transmigran, rumah, lahan, komoditas, hasil panen, alsintan, saprotan, infrastruktur,
 kelembagaan poktan, dan pengaduan kawasan dikumpulkan dalam satu platform, lalu dipakai untuk
@@ -43,7 +48,7 @@ simpan, ubah, dan hapus saat ini mengembalikan pesan tanpa menulis apa pun.
 |---|---|
 | Framework | Laravel 12.65 |
 | PHP | 8.2.12 (XAMPP) |
-| Basis data | MySQL / MariaDB, nama `sim_transmigrasi` |
+| Basis data | MySQL / MariaDB, nama `digitrans` |
 | Gaya | Tailwind CSS v4 |
 | Interaktivitas | Alpine.js 3.14 |
 | Build | Vite 7 |
@@ -90,8 +95,8 @@ php artisan key:generate
 Sesuaikan basis data pada `.env`, lalu buat dan migrasikan:
 
 ```bash
-mysql -u root -e "CREATE DATABASE sim_transmigrasi;"
-php artisan migrate
+mysql -u root -e "CREATE DATABASE digitrans;"
+php artisan migrate --seed
 npm run build
 ```
 

@@ -52,7 +52,7 @@
             <a href="{{ route('beranda') }}" class="flex items-center gap-2 xl:hidden" aria-label="Beranda {{ config('app.name') }}">
                 <img src="{{ asset('images/logo/logo-kementrans-128.png') }}" alt="Logo Kementerian Transmigrasi"
                     class="h-8 w-8" width="32" height="32" />
-                <span class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">SIM Transmigrasi</span>
+                <span class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">{{ config('app.name') }}</span>
             </a>
 
             <!-- Application Menu Toggle (mobile only) -->

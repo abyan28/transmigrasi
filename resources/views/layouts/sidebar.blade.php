@@ -108,7 +108,7 @@
                     Sebelumnya memakai text-white saja, yang membuat nama sistem
                     tidak terbaca sama sekali di mode terang (R-25 dan R-34).
                 --}}
-                <span class="text-theme-sm font-semibold text-navy-500 dark:text-white">SIM Transmigrasi</span>
+                <span class="text-theme-sm font-semibold text-navy-500 dark:text-white">{{ config('app.name') }}</span>
                 <span class="text-theme-xs text-gray-500 dark:text-navy-200">Kobalima Timur</span>
             </span>
         </a>

@@ -18,7 +18,7 @@
                         height="32" />
                     <div>
                         <span class="block text-theme-sm font-semibold text-gray-800 dark:text-white/90">
-                            {{ config('app.name', 'SIM Transmigrasi') }}
+                            {{ config('app.name', 'DIGITRANS') }}
                         </span>
                         <span class="block text-theme-xs text-gray-500 dark:text-gray-400">
                             Kawasan Kobalima Timur &bull; Malaka

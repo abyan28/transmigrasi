@@ -19,13 +19,13 @@ use Illuminate\Support\Facades\DB;
  * sama seperti `schema.sql` supaya jejaknya dapat ditelusuri.
  *
  * Basis data uji dibuat dari variabel .env (`DB_HOST`/`DB_USERNAME`/`DB_PASSWORD`).
- * DB dev `sim_transmigrasi` TIDAK disentuh.
+ * DB dev `digitrans` TIDAK disentuh.
  */
 class BandingSkema extends Command
 {
     protected $signature = 'sim:banding-skema
-        {--skema-db=transmigrasi_skema_ref : Nama DB sekali-pakai untuk impor schema.sql}
-        {--migrasi-db=sim_transmigrasi_test : Nama DB sekali-pakai untuk migrate:fresh}
+        {--skema-db=digitrans_skema_ref : Nama DB sekali-pakai untuk impor schema.sql}
+        {--migrasi-db=digitrans_test : Nama DB sekali-pakai untuk migrate:fresh}
         {--hanya= : Batasi perbandingan ke tabel yang namanya diberikan (koma)}
         {--lengkap : Gagal bila ada tabel schema.sql yang belum dimigrasikan (verifikasi akhir Task 3.1)}';
 

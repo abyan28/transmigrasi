@@ -6,7 +6,7 @@
 
 <p>
     Kami menerima permintaan pemulihan kata sandi untuk akun Anda pada
-    SIM Transmigrasi Kabupaten Malaka. Masukkan kode berikut pada halaman
+    DIGITRANS Kobalima Timur, Kabupaten Malaka. Masukkan kode berikut pada halaman
     verifikasi:
 </p>
 
@@ -28,5 +28,5 @@
 
 <p>
     Salam,<br>
-    Tim SIM Transmigrasi
+    Tim DIGITRANS Kobalima Timur
 </p>
