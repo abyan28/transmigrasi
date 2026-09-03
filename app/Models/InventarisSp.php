@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -37,5 +38,20 @@ class InventarisSp extends Model
     public function satuanPermukiman(): BelongsTo
     {
         return $this->belongsTo(SatuanPermukiman::class, 'satuan_permukiman_id', 'id_satuan_permukiman');
+    }
+
+    /**
+     * Foto kondisi per unit + berita acara, lewat pivot `inventaris_sp_berkas`.
+     */
+    public function berkas(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Berkas::class,
+            'inventaris_sp_berkas',
+            'inventaris_sp_id',
+            'berkas_id',
+            'id_inventaris_sp',
+            'id_berkas',
+        )->withPivot('peran', 'urutan')->withTimestamps();
     }
 }

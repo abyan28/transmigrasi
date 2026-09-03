@@ -44,7 +44,8 @@ Rencana lengkap: `.claude/plans/logical-whistling-salamander.md`.
 | B1 Domain 1 | **SELESAI** | role, permission, role_permission, user, kode_pemulihan_sandi, audit_log + model `Role`/`Permission`/`User` + `tests/Database/Domain1PenggunaSistemTest` (10 uji) |
 | B2 Domain 2 | **SELESAI** | provinsi, kabupaten, kecamatan, desa, kawasan_transmigrasi, `referensi`, `berkas` (ditarik maju - topo-sort), satuan_permukiman, user_satuan_permukiman, rute_aksesibilitas_sp + 9 model + `tests/Database/Domain2WilayahSpTest` (10 uji) |
 | B3 Domain 3+4 | **SELESAI** | satuan, komoditas, status_kondisi_sp, parameter_penilaian_sp, penilaian_sp, inventaris_sp, fasilitas_sp, fasilitas_sp_cakupan (pivot) + 7 model + `tests/Database/Domain3Domain4AsetPenilaianTest` (14 uji) |
-| B4-B9 | belum | lihat plan file / tabel batch |
+| B4 Domain 4b | **SELESAI** | user_berkas, kawasan_transmigrasi_berkas, inventaris_sp_berkas, fasilitas_sp_berkas (4 dari 12 pivot `*_berkas` -- yang induknya sudah ada) + relasi `belongsToMany` pada 4 model induk + `tests/Database/Domain4bBerkasPivotTest` (5 uji). 8 pivot sisa menyusul di B5-B9 |
+| B5-B9 | belum | lihat plan file / tabel batch |
 
 **Verifikasi B0+B1:** `sim:banding-skema --hanya=<Domain 1>` NOL SELISIH ·
 `pest` **742 PASS** (732 lama + 10 Database) · `pint --test` 31 (turun dari 33) ·
@@ -67,6 +68,14 @@ master. `fasilitas_sp.jenis_fasilitas` (ENUM sungguhan) -> `JenisFasilitas`;
 `parameter_penilaian_sp.tingkat`/`sumber` ENUM tanpa PHP Enum -> string.
 Model `App\Models\StatusKondisiSp` (data ambang) hidup berdampingan dengan
 enum `App\Enums\StatusKondisiSp` (perilaku).
+
+**Verifikasi B4:** `sim:banding-skema --hanya=<4 pivot>` NOL SELISIH ·
+`pest tests/Database` **39 PASS** · `pest` (SQLite) tetap **732 PASS** ·
+`pint --test` tetap 31. Pivot `*_berkas` = pivot murni tanpa model; relasi
+`belongsToMany(...)->withPivot('peran','urutan')` pada induk. `user_berkas`
+UNIQUE `user_id` saja (satu foto/pengguna) -> `User::fotoProfil()`. CASCADE dua
+arah: pivot ikut hilang saat induk domain ATAU baris `berkas` registry hilang,
+tapi `berkas` registry TIDAK ikut saat induk domain hilang.
 
 **Urutan migration = topological sort dependensi FK, BUKAN urutan file
 `schema.sql`.** Batch berikutnya: `referensi`+`satuan`+`komoditas`+`berkas`

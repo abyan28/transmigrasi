@@ -60,4 +60,19 @@ class FasilitasSp extends Model
             'id_satuan_permukiman',
         )->withTimestamps();
     }
+
+    /**
+     * Foto kondisi per unit + berita acara, lewat pivot `fasilitas_sp_berkas`.
+     */
+    public function berkas(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Berkas::class,
+            'fasilitas_sp_berkas',
+            'fasilitas_sp_id',
+            'berkas_id',
+            'id_fasilitas_sp',
+            'id_berkas',
+        )->withPivot('peran', 'urutan')->withTimestamps();
+    }
 }

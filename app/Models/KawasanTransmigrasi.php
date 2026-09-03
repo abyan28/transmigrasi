@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -47,5 +48,21 @@ class KawasanTransmigrasi extends Model
     public function satuanPermukiman(): HasMany
     {
         return $this->hasMany(SatuanPermukiman::class, 'kawasan_id', 'id_kawasan_transmigrasi');
+    }
+
+    /**
+     * Dokumen kawasan (HPL, SK penetapan, peta) lewat pivot
+     * `kawasan_transmigrasi_berkas`. HPL kawasan melekat di sini (`rules.md` 7.4a).
+     */
+    public function berkas(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Berkas::class,
+            'kawasan_transmigrasi_berkas',
+            'kawasan_transmigrasi_id',
+            'berkas_id',
+            'id_kawasan_transmigrasi',
+            'id_berkas',
+        )->withPivot('peran', 'urutan')->withTimestamps();
     }
 }

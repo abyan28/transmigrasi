@@ -79,4 +79,21 @@ class User extends Authenticatable
             'id_satuan_permukiman',
         )->withTimestamps();
     }
+
+    /**
+     * Foto profil lewat pivot `user_berkas` (UNIQUE `user_id` -- paling banyak
+     * satu). Pivot dipakai, bukan FK langsung, untuk memutus siklus
+     * `berkas.user_id` -> `user`.
+     */
+    public function fotoProfil(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Berkas::class,
+            'user_berkas',
+            'user_id',
+            'berkas_id',
+            'id_user',
+            'id_berkas',
+        )->withPivot('peran', 'urutan')->withTimestamps();
+    }
 }
