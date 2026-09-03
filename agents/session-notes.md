@@ -1,3 +1,66 @@
+# Tahap 4 Task 4.3 + 4.4 - Inventaris & Fasilitas SP SELESAI (2026-09-03)
+
+Dikerjakan berpasangan sebab strukturnya sama persis -- aset milik SP beserta
+kondisi, sumber dana, dan status penyerahan. Yang membedakan hanya koordinat
+dan cakupan lintas SP milik fasilitas.
+
+## Yang dikerjakan
+
+- **`AsetSpSeeder`** -- inventaris (5) + fasilitas (26) + pivot cakupan (29).
+- **`InventarisSpController`** & **`FasilitasSpController`** menggantikan 10
+  closure; keduanya memakai trait `MenyimpanBerkas` dari Task 4.1b.
+- **`ValidationRules::referensi()`** (BARU) -- kolom REF divalidasi terhadap
+  tabel `referensi` yang AKTIF, bukan daftar tetap di dalam kode. Nilai yang
+  sudah dinonaktifkan tetap terbaca pada data lama tetapi ditolak pada data
+  baru. Inilah yang menghidupkan Task 4.7 secara nyata.
+- Cakupan fasilitas: **SP pangkal SELALU disertakan** apa pun isian form --
+  fasilitas yang tak melayani SP tempatnya berdiri tidak masuk akal.
+
+## Temuan 1: `status_penyerahan` NOT NULL, validasi menandainya opsional
+
+Penyimpanan fasilitas gagal `Field 'status_penyerahan' doesn't have a default
+value`. Skema menandainya NOT NULL tanpa default, sedangkan validasi saya
+menuliskannya `nullable`.
+
+Yang dibetulkan **validasinya**, bukan skemanya: status penyerahan memang
+wajib diketahui: barang yang belum jelas diserahkan atau belum tidak dapat
+dipertanggungjawabkan pada laporan aset.
+
+## Temuan 2: `UppercaseInput` merusak `jenis_fasilitas` (pengulangan ketiga)
+
+Setelah `tingkat` (4.1) dan `jenis` (4.7), kini `jenis_fasilitas` -- ENUM
+berhuruf campur yang dikapitalkan lalu ditolak validasi. Ketiganya kini
+sebaris di daftar kecuali.
+
+**Pola yang perlu diingat:** setiap isian yang nilainya MEMILIH sesuatu
+(tabel, daftar, enum) wajib masuk daftar kecuali sejak awal, bukan setelah
+ujinya memerah.
+
+## Temuan 3: satu peran berkas hilang dari tampilan
+
+Uji `menyediakan cara membuka berkas` menuntut 3 tautan pada
+`/sp/fasilitas/3`, terbit 2. Controller hanya menyuplai peran `foto`,
+sedangkan view juga membaca `dokumen_pendukung`.
+
+Penjaga ini bekerja persis sebagaimana dirancang Putaran 14: ia menghitung
+tautan berkas nyata per halaman, sehingga peran yang lupa disuplai langsung
+memerah.
+
+## Verifikasi
+
+- `pest` **991 PASS / 8.186 assertions** (983 + 8 uji baru).
+- `pint --test` **26** (baseline; `PenyimpananDokumen.php` yang sempat ikut
+  dirapikan pint DIKEMBALIKAN -- di luar cakupan).
+- `sim:tautan-statis` **14** - `sim:banding-skema --lengkap` **NOL SELISIH**.
+- Manual: `/sp`, `/sp/inventaris`, `/sp/fasilitas`, kedua halaman rincian, dan
+  dua penyaring seluruhnya 200; `/sp/fasilitas/3` menerbitkan 3 tautan berkas.
+
+## Sisa `DummyData`
+
+210 -> **199** pemanggilan (136 `routes/internal.php`). Menembus bawah 200.
+
+---
+
 # Tahap 4 Task 4.2 - CRUD satuan permukiman SELESAI (2026-09-03)
 
 SP adalah **induk** inventaris, fasilitas, dan infrastruktur, sehingga

@@ -2,6 +2,9 @@
 
 namespace App\Support;
 
+use App\Enums\JenisReferensi;
+use Illuminate\Validation\Rule;
+
 /**
  * Kumpulan aturan validasi yang dipakai berulang di banyak form.
  *
@@ -435,6 +438,32 @@ class ValidationRules
             'kawasan_id' => 'kawasan transmigrasi',
             'desa_id' => 'desa',
             'role_id' => 'role',
+        ];
+    }
+
+    /**
+     * Aturan kolom REF: teks yang wajib ada pada daftar pilihan yang AKTIF.
+     *
+     * Kolom semacam `kondisi`, `sumber_dana`, dan `jenis_inventaris` disimpan
+     * TEKS, bukan enum PHP, sebab Admin boleh menambah nilainya lewat menu
+     * Daftar Pilihan (Task 4.7). Validasinya karena itu menengok tabel
+     * `referensi`, bukan daftar tetap di dalam kode.
+     *
+     * Hanya baris ber-`is_aktif` yang diterima: nilai yang sudah dinonaktifkan
+     * tetap terbaca pada data lama, tetapi tidak boleh dipakai pada data baru.
+     *
+     * @param  bool  $wajib  Menentukan apakah kolom harus diisi
+     * @return array<int, mixed> Daftar aturan siap pakai
+     */
+    public static function referensi(JenisReferensi $jenis, bool $wajib = false): array
+    {
+        return [
+            $wajib ? 'required' : 'nullable',
+            'string',
+            'max:100',
+            Rule::exists('referensi', 'nilai')
+                ->where('jenis', $jenis->value)
+                ->where('is_aktif', true),
         ];
     }
 }

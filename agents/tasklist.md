@@ -1213,10 +1213,10 @@ domain; sisanya mengikuti tanpa mengubah skema maupun komponen.
   * Model `SatuanPermukiman` **sudah ada**, `getRouteKeyName()` = `slug` (Task 3.9)
   * Tampilan form dan halaman rincian sudah selesai pada Task 2.30; tersisa controller dan penyimpanan
   * Menjadi **induk** Task 4.3/4.4/4.6, sehingga dikerjakan lebih dulu daripada ketiganya
-- [ ] Task 4.3 - CRUD inventaris SP (nama, tahun, sumber dana, status penyerahan, dokumen) `[Sedang]`
+- [x] Task 4.3 - CRUD inventaris SP (nama, tahun, sumber dana, status penyerahan, dokumen) `[Sedang]` -- **SELESAI 2026-09-03**. `InventarisSpController` + `AsetSpSeeder`; kolom REF divalidasi ke tabel `referensi` lewat `ValidationRules::referensi()` (baru), menolak nilai karangan maupun yang sudah dinonaktifkan
   * Model `InventarisSp` + pivot berkas **sudah ada** (Task 3.1 B3/B4). Tampilan form sudah selesai pada Task 2.30
   * Kolom REF (`sumber_dana`, `status_penyerahan`, `kondisi`, `jenis_inventaris`) dibaca dari `referensi` (Task 4.7), bukan enum PHP
-- [ ] Task 4.4 - CRUD fasilitas SP `[Mudah]`
+- [x] Task 4.4 - CRUD fasilitas SP `[Mudah]` -- **SELESAI 2026-09-03**. `FasilitasSpController`; cakupan lintas SP di-sync dengan SP pangkal SELALU disertakan. 8 uji bersama Task 4.3
   * Model `FasilitasSp` + pivot cakupan lintas SP **sudah ada**. Tampilan form sudah selesai pada Task 2.30
 - [ ] Task 4.6 - CRUD infrastruktur SP sebagai pendataan aset `[Sedang]` (DIPINDAH dari Task 8.1, 2026-09-03)
   * **Alasan pindah:** di sidebar, Infrastruktur SP berada dalam grup **Wilayah & SP** bersama Kawasan/SP/Inventaris/Fasilitas, sedangkan susunan lama menempatkannya di Tahap 8 bersama Pengaduan -- warisan urutan sebelum menu dirombak. `infrastruktur_sp` pun ber-FK ke `satuan_permukiman` yang baru lahir di Tahap 4. Pengaduan TETAP di Tahap 8; keduanya beda domain meski dahulu satu tahap

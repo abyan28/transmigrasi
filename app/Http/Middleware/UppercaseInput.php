@@ -57,6 +57,7 @@ class UppercaseInput
         // DAFTAR referensi dan berpasangan dengan ENUM basis data (4.7).
         'tingkat',
         'jenis',
+        'jenis_fasilitas',
 
         // Teks naratif, huruf kapital seluruhnya menyulitkan pembacaan
         'deskripsi',

@@ -28,7 +28,11 @@ class BerkasSeeder extends Seeder
      *
      * @var list<string>
      */
-    private const PIVOT_SIAP = ['kawasan_transmigrasi_berkas'];
+    private const PIVOT_SIAP = [
+        'kawasan_transmigrasi_berkas',
+        'inventaris_sp_berkas',
+        'fasilitas_sp_berkas',
+    ];
 
     public function run(): void
     {
