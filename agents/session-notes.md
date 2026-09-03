@@ -1,6 +1,53 @@
-# Tahap 3 Â· Task 3.3 - RBAC dinamis BERJALAN (2026-09-03)
+# Tahap 3 Â· Task 3.3 - RBAC dinamis SELESAI (2026-09-03)
 
 Rencana ditulis sebelum kode disentuh (`rules.md` 20b poin 12).
+
+## HASIL Task 3.3 (2026-09-03)
+
+Commit `1f2c024`(C1) `665b09f`(C2) `0592738`(C3) `ab05534`(C4) `a7b02d5`(C5).
+Pemilik proyek pilih **"Penuh sekarang"** -- penegakan izin pada seluruh rute.
+
+- **`PermissionRoleSeeder`** (C1): 95 `permission` + 5 `role` + pivot dari
+  `DummyData::daftarIzin()/izinRole()/role()`. Idempoten. `DatabaseSeeder`
+  memanggilnya. Pivot: Admin 95, Dinas Trans 47, Dinas Tani 44, Operator SP 49
+  (tanpa `penanganan_pengaduan`), Pendamping 16.
+- **`User::punyaIzin()`/`punyaAksi()`** (C2): role aktif memegang izin ->
+  true; role non-aktif mencabut semua; properti publik `semuaIzin` (default
+  false) menjawab true lebih dulu -- dipakai bypass `MasukOtomatisLokal` +
+  `beforeEach` uji Feature (pengguna semu tak dipersist, tanpa role).
+  `AppServiceProvider` `Gate::before` -> `@can('x.ubah')`, `$user->can(...)`.
+- **`EnsureIzin` (alias `izin`)** (C3): `izin:transmigran,ubah` menuntut BAIK
+  `transmigran.lihat` MAUPUN `transmigran.ubah` (prasyarat `lihat`,
+  data-dictionary 13.3.4). Tolak **403** (kewenangan aksi; cakupan data 404 =
+  Task 3.4).
+- **`PetaIzinRute`** (C4): peta terpusat nama-rute -> "modul,aksi" (123 rute) +
+  daftar pengecualian sengaja (profil sendiri, ganti-kata-sandi, tentang/
+  panduan, **cms** [GAP: tak ada di katalog 95 izin], template-impor [stub],
+  dokumen.tampilkan [cek dinamis di controller], dev). `bootstrap/app.php`
+  `then:` melampirkan `izin:` dgn iterasi objek Route (bukan `getByName` --
+  `->name()` dipanggil setelah rute terdaftar). `DokumenController` cek
+  `punyaAksi({modul}, 'lihat')` 403. Setiap rute ber-`auth` kini punya `izin:`
+  ATAU ada di pengecualian (2 redirect 301 tak bernama -> rute ber-izin -> 403).
+- **`PengaturanRoleController`** (C5): `role.simpan/perbarui/hapus` menulis
+  `role`+`role_permission` nyata (`index()` masih DummyData -> Tahap 4). Tolak
+  nama duplikat/pendek, aksi-tanpa-lihat, sunting role terkunci (403), hapus
+  bawaan (403)/dipakai-akun (422)/tanpa-alasan. Audit `Ubah Izin Role`/`Hapus`.
+- **FIX `UppercaseInput`**: kecualikan `cakupan_data` + subpohon `izin`
+  (middleware meng-uppercase `'lihat'`->`'LIHAT'`, `'Per SP'`->`'PER SP'`).
+  `ubahRekursif` kini hormati pengecualian pada kunci array.
+
+**Verifikasi:** `pest` Feature **732 PASS** · `pest tests/Database` **136 PASS**
+(RbacSeeder 6, PunyaIzin 6, IzinRute 5, IzinPenegakanRute 8, PengaturanRole 10,
++ AutentikasiTest disesuaikan) · `pint --test` **28** (turun dari 30) ·
+`sim:tautan-statis` 14 · `sim:banding-skema --lengkap` NOL SELISIH.
+
+**DITUNDA:** `MenuHelper` filter izin -> Task 3.4b · cakupan data (global
+scope, 404) -> Task 3.4 · peralihan view non-role ke Eloquent -> Tahap 4 ·
+CMS kewenangan sendiri -> keputusan pemilik (MenuHelper rujuk `cms.lihat`
+yang tak ada di katalog) · `migrate:fresh`+`db:seed` ke `sim_transmigrasi`
+dev -> saat pemilik siap (bypass `semuaIzin` bikin RBAC jalan lokal tanpa itu).
+
+---
 
 ## Konteks & fakta eksplorasi
 

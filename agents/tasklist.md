@@ -1102,11 +1102,13 @@ domain; sisanya mengikuti tanpa mengubah skema maupun komponen.
   * Bypass `MasukOtomatisLokal` + `config/sim.php` (`SIM_MASUK_OTOMATIS`, default nyala di `local`). ✓
   * `sim:tautan-statis` disaring ke rute publik (224 → 14 URL). ✓
   * **DITUNDA:** kolom username di `ganti-kata-sandi` (`rules.md` 14b.5) → Task 3.5; `DummyData::penggunaSaatIni()` → `Auth::user()` → Tahap 4; halaman landing publik → keputusan pemilik
-- [ ] Task 3.3 - Implementasi RBAC dinamis `[Sulit]`
-  * Model `Role`, `Permission`, relasi many-to-many, seeder ±120 izin dan 4 role bawaan
-  * Middleware pemeriksa izin, helper `can()` untuk Blade
-  * Izin `lihat` sebagai prasyarat aksi lain pada modul yang sama
-- [x] Task 3.3b - Halaman pengaturan role dan izin `[Sulit]` (Tampilan selesai pada Task 2.27)
+- [✓] Task 3.3 - Implementasi RBAC dinamis `[Sulit]` — **SELESAI 2026-09-03** (commit C1–C5, `1f2c024`..`a7b02d5`). Pemilik proyek pilih "penuh sekarang". Rincian: `session-notes.md` blok "HASIL Task 3.3"
+  * `PermissionRoleSeeder`: 95 izin + 5 role + pivot dari `DummyData::daftarIzin()/izinRole()/role()`, idempoten. ✓
+  * `User::punyaIzin()`/`punyaAksi()` + `Gate::before` → `@can()`; flag `semuaIzin` untuk pengguna semu dev/uji. ✓
+  * Middleware `izin:<modul>,<aksi>` (`EnsureIzin`) pada 123 rute lewat `PetaIzinRute` + `bootstrap/app.php`; `izin lihat` sebagai prasyarat; 403 untuk kewenangan aksi. ✓
+  * Backend `role.simpan/perbarui/hapus` (`PengaturanRoleController`): tulis `role`+`role_permission`, tolak role terkunci/bawaan/dipakai, audit. ✓
+  * **DITUNDA:** `MenuHelper` filter izin → Task 3.4b; peralihan `pengaturan.role` view ke Eloquent → Tahap 4; CMS kewenangan → keputusan pemilik (GAP)
+- [✓] Task 3.3b - Halaman pengaturan role dan izin `[Sulit]` (Tampilan selesai Task 2.27; backend CRUD SELESAI bersama Task 3.3 C5)
   * Daftar role, form dengan matriks centang izin dikelompokkan per modul
   * Role terkunci ditampilkan hanya-baca; role bawaan tidak dapat dihapus
 - [ ] Task 3.4 - Pembatasan akses pada level query (cakupan data) `[Sulit]`
