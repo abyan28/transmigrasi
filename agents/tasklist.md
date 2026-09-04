@@ -1517,14 +1517,14 @@ menghapus sisa terakhir `DummyData::penggunaSaatIni()` -- dikerjakan berbarengan
 
 ## Tahap 9 — Dashboard dengan Data Nyata
 
-> **9.1 SELESAI, 9.2-9.4 menyusul (keputusan pemilik 2026-09-04, `rules.md` 8g
-> DIBALIK):** ketakutan sesi sebelumnya (dashboard "wajib" berskala kawasan
-> ~1140 KK tetap, sistem cuma melacak 8 KK contoh -> perlu tabel
-> `statistik_kawasan_tahunan`) SALAH PREMIS -- ditantang pemilik proyek: `prd.md`
-> §7.8 justru minta grafik "tiap tahun", artinya dashboard SEHARUSNYA tumbuh
-> mengikuti data yang benar-benar tercatat, bukan angka kawasan tetap. Basis
-> data kecil sekarang itu jujur (pendataan sungguhan belum berjalan), bukan
-> alasan memalsukan skala. Lihat `rules.md` 8g untuk redaksi lengkap pembalikan.
+> **9.1-9.4 SELESAI (keputusan pemilik 2026-09-04, `rules.md` 8g DIBALIK):**
+> ketakutan sesi sebelumnya (dashboard "wajib" berskala kawasan ~1140 KK tetap,
+> sistem cuma melacak 8 KK contoh -> perlu tabel `statistik_kawasan_tahunan`)
+> SALAH PREMIS -- ditantang pemilik proyek: `prd.md` §7.8 justru minta grafik
+> "tiap tahun", artinya dashboard SEHARUSNYA tumbuh mengikuti data yang
+> benar-benar tercatat, bukan angka kawasan tetap. Basis data kecil sekarang
+> itu jujur (pendataan sungguhan belum berjalan), bukan alasan memalsukan
+> skala. Lihat `rules.md` 8g untuk redaksi lengkap pembalikan.
 
 - [✓] Task 9.1 - Ganti data dummy dashboard dengan query nyata `[Sulit]` -- ✅ **SELESAI 2026-09-04**
   * **HASIL:** `App\Support\RekapDashboard` (baru) mengumpulkan seluruh 17 indikator
@@ -1557,9 +1557,20 @@ menghapus sisa terakhir `DummyData::penggunaSaatIni()` -- dikerjakan berbarengan
     tanpa galat `ONLY_FULL_GROUP_BY`). Produktivitas tetap **tertimbang** (9.8d).
   * **Kemenangan cepat yang dikerjakan bersamaan:** pengaduan-per-status
     (`RekapPengaduan`) dan status infrastruktur disambung ke dashboard.
-- [ ] Task 9.2 - Filter wilayah dan periode terhubung ke seluruh visualisasi `[Sedang]`
-- [ ] Task 9.3 - Drill-down klik grafik menuju rincian per SP `[Sulit]`
-- [ ] Task 9.4 - Optimasi query dashboard (indeks, agregasi, eager loading) `[Sulit]`
+- [✓] Task 9.2 - Filter wilayah dan periode terhubung ke seluruh visualisasi `[Sedang]` -- ✅ **SELESAI 2026-09-05**
+  * **HASIL:** bilah filter dashboard (`sp`, `tahun_awal`, `tahun_akhir`) yang tadinya cuma menulis query string sekarang benar-benar menyaring lewat GET biasa (BUKAN pola hash Laporan -- dashboard bukan dokumen cetak, `rules.md` 12 poin 5 tak berlaku di sini). `App\Support\RekapDashboard`: hampir seluruh metode publik menerima `?int $spId` opsional (`terapkanSp()` privat, pola sama `CakupanDataSp` -- kolom `satuan_permukiman_id` langsung, bukan pivot cakupan layanan); `RekapPanen::rekap()` disaring lewat NAMA SP (`namaSp()` privat menerjemahkan id->nama). `App\Support\RekapPengaduan::rekap()` ikut menerima `?int $spId`.
+  * **`deret()` TIDAK dipotong tahun di dalam dirinya sendiri** -- taksiran kumulatif wajib dihitung dari titik nol yang benar. Pemotongan tampilan ke [Tahun Mulai, Tahun Akhir] dikerjakan `RekapDashboard::potongDeret()` (baru) SETELAH deret penuh dihitung. Tahun Akhir terpilih juga menjadi tahun acuan kartu produksi (ringkasan/komoditas utama), menggantikan "tahun terakhir" bawaan.
+  * SP/tahun karangan pada query string **diabaikan diam-diam** (jatuh ke "seluruh kawasan"/"seluruh tahun"), bukan galat -- filter dashboard kenyamanan penyaringan, bukan validasi input.
+  * **"Perbandingan Antar Satuan Permukiman" SENGAJA TIDAK ikut menyempit menurut SP** -- premisnya membandingkan seluruh SP, menyaring ke satu SP meniadakan grafiknya sendiri (dicatat di `routes/internal.php` + blade). Tahun Akhir tetap berlaku padanya.
+  * `HalamanTest` +4 uji (SP menyempit, SP karangan diabaikan, tahun memotong deret, Perbandingan Antar SP dikecualikan). `RekapDashboardTest.php` +4 uji MySQL nyata (identitas ringkasan(spId) per-SP, `whereHas` bersarang `hargaRataRata`, `potongDeret`, render rute penuh dengan filter aktif).
+- [✓] Task 9.3 - Drill-down klik grafik menuju rincian per SP `[Sulit]` -- ✅ **sudah terpasang sejak Putaran 8 (2026-08-31), diverifikasi 2026-09-05**
+  * `rules.md` 11 poin 5: hanya visualisasi "rekap gabungan seluruh SP" yang wajib drill-down. Di dashboard, satu-satunya visualisasi berbentuk itu adalah "Perbandingan Antar SP" -- sudah punya `dataPointSelection` -> `drilldownSp()` (`resources/js/chart-config.js`) menuju `/sp/{id}`, dan tabel "Kondisi Layanan Dasar per SP" sudah bertaut per baris. Grafik lain (per tahun/pekerjaan/status/komoditas) BUKAN rekap-per-SP, drill-down tidak berlaku.
+  * Tidak ada kode baru yang dibutuhkan; diverifikasi ulang saat Task 9.2 (grafik ini sengaja dikecualikan dari filter SP, drill-down-nya tetap menuju SP yang diklik apa pun filternya).
+- [✓] Task 9.4 - Optimasi query dashboard (indeks, agregasi, eager loading) `[Sulit]` -- ✅ **SELESAI 2026-09-05**
+  * **Audit menyeluruh:** seluruh metode `RekapDashboard` sudah memakai `selectRaw`/`groupBy`/`count`/`sum`/`avg` teragregasi di level SQL (bukan `get()` lalu hitung di PHP), dan `RekapPanen::penanaman()` (basis panen/harga) sudah eager-load `poktan.satuanPermukiman`, `poktan.anggota`, `komoditas`, `hasilPanen.satuan` sejak Task 7 -- tanpa N+1 baru.
+  * **Celah nyata ditemukan:** `transmigran.status_tinggal` (difilter/di-GROUP BY di hampir SETIAP metode RekapDashboard -- `ringkasan`, `deret`, `rekapPenghuni`, `sebaranPekerjaan`, `pendapatanSaatIni`, `jumlahKkJiwa`) dan `pendidikan_terakhir` (di-GROUP BY `pendidikanPerTahun()`) TIDAK punya indeks. Ditambahkan `idx_transmigran_status_tinggal` + `idx_transmigran_pendidikan` (migrasi `transmigran` + `schema.sql`, `sim:banding-skema` NOL SELISIH). Kolom lain yang dipakai (`satuan_permukiman_id`, `tahun_kedatangan`, `tahun_keluar`, `pekerjaan_kepala_keluarga`, `status`/`kondisi`/`jenis` infrastruktur, `status` pengaduan, `periode_panen` hasil_panen) SUDAH terindeks sejak domain masing-masing dibuat.
+  * Paginasi tidak berlaku: dashboard menyajikan agregat/rekap, bukan daftar baris mentah.
+  * `PenilaianKondisiSp::nilaiSeluruhSp()` (Task 4.8, dipakai dashboard) TIDAK disentuh -- biayanya bertumbuh mengikuti JUMLAH SP (~6-20, terstruktur tetap), bukan jumlah transaksi, jadi tidak melebar seiring pendataan bertambah seperti yang dikhawatirkan poin 7.
 - [✓] Task 9.5 - Halaman pengaturan bobot penilaian kondisi SP `[Sedang]` -- ✅ **dikerjakan sebagai Task 4.8** (`PenilaianKondisiController` + `PenilaianKondisiSeeder`, 8 uji); lihat catatan Task 4.8
   * Admin dapat menyesuaikan bobot tiap parameter dan menonaktifkan parameter tanpa mengubah kode
   * Parameter **dinonaktifkan, bukan dihapus**, agar riwayat penilaian yang memakainya tetap terbaca

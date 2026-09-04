@@ -1,3 +1,81 @@
+# Task 9.2-9.4 SELESAI - Filter, drill-down, dan optimasi query dashboard (2026-09-05)
+
+Sisa Tahap 9 dikerjakan sekaligus atas permintaan pemilik proyek, di atas
+`RekapDashboard` yang berdiri dari Task 9.1 sehari sebelumnya.
+
+## Task 9.2 -- filter wilayah + periode
+
+Bilah filter dashboard (`sp`, `tahun_awal`, `tahun_akhir`) sudah berbentuk
+kontrol nyata sejak sebelumnya (menulis query string), tetapi belum
+menyaring apa pun. Sekarang tersambung sungguhan:
+
+- `RekapDashboard`: hampir seluruh metode publik menerima `?int $spId`
+  opsional lewat `terapkanSp()` privat (pola sama `App\Models\Scopes\
+  CakupanDataSp` -- `satuan_permukiman_id` langsung, BUKAN pivot cakupan
+  layanan infrastruktur). `RekapPanen::rekap()` disaring lewat NAMA SP
+  (kelas itu memang mengelompokkan by nama, bukan id) lewat `namaSp()`
+  privat. `RekapPengaduan::rekap()` ikut menerima `?int $spId`.
+- **`deret()` SENGAJA tidak memotong tahun di dalam dirinya sendiri** --
+  taksiran kumulatif (jumlah KK/jiwa/petani per tahun) wajib dihitung dari
+  titik nol yang benar; memotong dulu baru menaksir akan salah mulai dari
+  tahun potongan pertama. `RekapDashboard::potongDeret()` (baru) memotong
+  larik yang SUDAH lengkap ke [Tahun Mulai, Tahun Akhir] SETELAH dihitung.
+- Tahun Akhir terpilih menjadi tahun acuan kartu produksi (ringkasan,
+  komoditas utama), menggantikan "tahun terakhir yang terdata" bawaan.
+- SP/tahun karangan pada query string diabaikan diam-diam (fallback ke
+  "seluruh kawasan"/"seluruh tahun"), BUKAN galat -- filter dashboard
+  kenyamanan penyaringan, bukan validasi input yang bisa disalahkan pengguna.
+- **"Perbandingan Antar Satuan Permukiman" SENGAJA TIDAK ikut menyempit
+  menurut SP** -- premisnya membandingkan seluruh SP; menyaringnya ke satu
+  SP meniadakan grafiknya sendiri. Tahun Akhir tetap berlaku padanya
+  (kolom volume panen). Dicatat di `routes/internal.php` dan blade.
+- Bukan pola hash `#sp=..` seperti Laporan (`rules.md` 12 poin 5): dashboard
+  bukan dokumen yang dicetak/difoto, dan query string sudah dipakai 17
+  halaman daftar lain -- GET biasa sudah tepat di sini.
+
+## Task 9.3 -- drill-down klik grafik
+
+Ternyata **sudah terpasang sejak Putaran 8 (2026-08-31)**, hanya belum
+ditandai selesai di tasklist. `rules.md` 11 poin 5 hanya mewajibkan
+drill-down pada visualisasi "rekap gabungan seluruh SP" -- satu-satunya di
+dashboard adalah grafik "Perbandingan Antar SP", yang sudah punya
+`dataPointSelection` -> `drilldownSp()` (`resources/js/chart-config.js`)
+menuju `/sp/{id}`; tabel "Kondisi Layanan Dasar per SP" juga sudah bertaut
+per baris. Grafik lain (per tahun/pekerjaan/status/komoditas) bukan
+rekap-per-SP, drill-down tidak berlaku menurut definisi rules.md sendiri.
+Tidak ada kode baru; diverifikasi ulang saat Task 9.2 (grafik ini sengaja
+dikecualikan dari filter SP, drill-down-nya tetap menuju SP yang diklik).
+
+## Task 9.4 -- optimasi query
+
+Audit menyeluruh: seluruh metode `RekapDashboard` sudah agregat di level
+SQL (`selectRaw`/`groupBy`/`count`/`sum`/`avg`, bukan `get()` lalu hitung di
+PHP), dan `RekapPanen::penanaman()` (basis panen/harga, Task 7) sudah
+eager-load `poktan.satuanPermukiman`, `poktan.anggota`, `komoditas`,
+`hasilPanen.satuan` -- tanpa N+1 baru yang ditemukan.
+
+**Celah nyata:** `transmigran.status_tinggal` (difilter/di-GROUP BY di
+hampir SETIAP metode RekapDashboard) dan `pendidikan_terakhir` (di-GROUP BY
+`pendidikanPerTahun()`) tidak punya indeks. Ditambahkan
+`idx_transmigran_status_tinggal` + `idx_transmigran_pendidikan` (migrasi +
+schema.sql, `sim:banding-skema` NOL SELISIH). Kolom lain yang dipakai
+dashboard (SP, tahun_kedatangan, tahun_keluar, pekerjaan, status/kondisi/
+jenis infrastruktur, status pengaduan, periode_panen) SUDAH terindeks sejak
+domain masing-masing dibuat -- kerja disiplin dari awal, bukan celah baru.
+
+`PenilaianKondisiSp::nilaiSeluruhSp()` (Task 4.8) TIDAK disentuh: biayanya
+bertumbuh mengikuti JUMLAH SP (~6-20, terstruktur tetap), bukan jumlah
+transaksi, sehingga tidak melebar seiring pendataan bertambah seperti yang
+dikhawatirkan `rules.md` 11 poin 7.
+
+## Verifikasi
+
+Feature 738 hijau (+4 uji Task 9.2), Database 455 hijau (+4 uji Task 9.2),
+pint bersih, `sim:banding-skema --lengkap` NOL SELISIH (2 indeks baru).
+Tahap 9 (9.1-9.4) genap selesai.
+
+---
+
 # Task 9.1 SELESAI - Dashboard & kependudukan dari data nyata, rules.md 8g dibalik (2026-09-04)
 
 **Keputusan pemilik proyek 2026-09-04:** sesi sebelumnya menunda Task 9.1
