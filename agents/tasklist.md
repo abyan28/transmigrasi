@@ -1591,7 +1591,7 @@ menghapus sisa terakhir `DummyData::penggunaSaatIni()` -- dikerjakan berbarengan
 
 ## Tahap 10 - Laporan dan Export
 
-- [✓] Task 10.5 - Isi 7 laporan dari Eloquent `[Sulit]` (BARU 2026-09-03) -- ✅ **5/7 SELESAI 2026-09-04**
+- [✓] Task 10.5 - Isi 7 laporan dari Eloquent `[Sulit]` (BARU 2026-09-03) -- ✅ **7/7 SELESAI 2026-09-04**
   * **Celah yang ditemukan 2026-09-03:** Tahap 10 hanya membahas EXPORT, sedangkan mengisi datanya dari basis data tidak pernah punya task. `app/Support/LaporanData.php` masih sepenuhnya data contoh
   * Tujuh laporan pada `LaporanData::meta()`: `indikator-kawasan`, `monografi-sp`, `transmigran`, `poktan`, `alsintan`, `saprotan`, `hasil-panen`
   * Dikerjakan SETELAH Tahap 4-8, sebab tiap laporan membaca modul yang datanya baru nyata di tahap-tahap itu

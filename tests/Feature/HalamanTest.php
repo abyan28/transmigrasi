@@ -5379,11 +5379,13 @@ it('menandai hanya laporan yang bilah filternya sudah dipasang', function () {
 });
 
 it('menjaga jumlah enam SP = angka kawasan pada Rekap Indikator Kawasan', function () {
-    // rules.md 12 poin 10: angka tingkat kawasan tetap dari dashboard;
-    // rincian per SP berjumlah PERSIS sama dengannya, sehingga filter SP yang
-    // menjumlah ulang tabel per SP tidak pernah membantah blok ringkasan.
+    // rules.md 12 poin 10 & Task 9.1 lanjutan (2026-09-04, rules.md 8g
+    // dibalik): angka tingkat kawasan sekarang dari RekapDashboard (Eloquent
+    // nyata, bukan larik tetap DummyData); rincian per SP berjumlah PERSIS
+    // sama dengannya, sehingga filter SP yang menjumlah ulang tabel per SP
+    // tidak pernah membantah blok ringkasan.
     $perSp = LaporanData::indikatorKawasan()['perSp'];
-    $kawasan = DummyData::ringkasanDashboard();
+    $kawasan = RekapDashboard::ringkasan();
 
     // Hanya indikator yang bersifat JUMLAH. Rata-rata (produktivitas, harga)
     // dan cacah kelembagaan dikecualikan: bukan penjumlahan lintas SP.

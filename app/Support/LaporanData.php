@@ -6,9 +6,11 @@ use App\Enums\KondisiRumah;
 use App\Enums\StatusAnggotaKeluarga;
 use App\Enums\StatusHunian;
 use App\Enums\StatusTinggal;
+use App\Models\Alsintan;
 use App\Models\Lahan;
 use App\Models\Poktan;
 use App\Models\Rumah;
+use App\Models\Saprotan;
 use App\Models\SatuanPermukiman;
 use App\Models\Transmigran;
 use Illuminate\Support\Carbon;
@@ -649,30 +651,22 @@ class LaporanData
     }
 
     /**
-     * Keadaan penduduk satu SP pada satu tahun (Putaran 6).
+     * Keadaan penduduk satu SP pada satu tahun.
      *
-     * KK mengikuti `rekapPerSpTahun()`; jiwa diskalakan dari `jiwaPerSp()`
-     * menurut porsi KK tahun itu terhadap tahun terakhir; laki dan perempuan
-     * memakai nisbah `strukturUmurSp()`. Semua angka contoh turunan.
+     * Task 9.1 lanjutan (2026-09-04, `rules.md` 8g dibalik):
+     * `RekapDashboard::kkJiwaSpTahun()` -- KK/jiwa taksiran kumulatif dari
+     * `tahun_kedatangan`/`tahun_keluar` sungguhan, laki/perempuan dari
+     * `jenis_kelamin` sungguhan (kepala keluarga + anggota keluarga aktif),
+     * BUKAN lagi larik tetap `rekapPerSpTahun()`/`jiwaPerSp()`/
+     * `strukturUmurSp()`. Struktur umur (berbasis usia) dan mutasi penduduk
+     * TETAP dikarang deterministik (`bagianTambahanSp()` di bawah) -- tak ada
+     * tabel usia per kelompok, di luar lingkup Task 9.1.
      *
      * @return array{kk: int, jiwa: int, laki: int, perempuan: int}
      */
     public static function keadaanPendudukTahun(int $id, int $tahun): array
     {
-        $tahunAkhir = self::tahunDokumenBawaan();
-        $rekapAkhir = collect(DummyData::rekapPerSp())->firstWhere('satuan_permukiman_id', $id);
-        $rekapTahun = collect(DummyData::rekapPerSpTahun($tahun))->firstWhere('satuan_permukiman_id', $id);
-
-        $kkAkhir = (int) ($rekapAkhir['jumlah_kk'] ?? 0);
-        $kk = (int) ($rekapTahun['jumlah_kk'] ?? 0);
-        $jiwaAkhir = DummyData::jiwaPerSp()[$id] ?? 0;
-        $jiwa = $kkAkhir > 0 ? (int) round($jiwaAkhir * $kk / $kkAkhir) : 0;
-
-        $struktur = DummyData::strukturUmurSp($id);
-        $lakiAkhir = array_sum(array_column($struktur, 'laki'));
-        $laki = $jiwaAkhir > 0 ? (int) round($jiwa * $lakiAkhir / $jiwaAkhir) : 0;
-
-        return ['kk' => $kk, 'jiwa' => $jiwa, 'laki' => $laki, 'perempuan' => $jiwa - $laki];
+        return RekapDashboard::kkJiwaSpTahun($id, $tahun);
     }
 
     /**
@@ -1002,8 +996,16 @@ class LaporanData
             return $memo;
         }
 
-        $rekap = collect(DummyData::rekapPerSp())->keyBy('satuan_permukiman_id');
+        // Task 9.1 lanjutan (2026-09-04, `rules.md` 8g dibalik): ikhtisar
+        // kk_terisi/rumah_terhuni/produksi_ton/pengaduan_terbuka dari
+        // `RekapDashboard`, bukan larik tetap `DummyData::rekapPerSp()`/
+        // `rekapPerSpTahun()` -- keduanya kini kunci `satuan_permukiman_id`
+        // yang SAMA jadi tinggal ditukar sumbernya. `daftarTahunLaporan()`
+        // menggantikan `tahunLaporan()` sekalian, agar tahunnya sejalan
+        // dengan `indikatorKawasan()`.
+        $rekap = collect(RekapDashboard::perSp())->keyBy('satuan_permukiman_id');
         $kawasan = DummyData::kawasan()[0] ?? ['kabupaten' => '-', 'provinsi' => '-'];
+        $daftarTahunLaporan = RekapDashboard::daftarTahunLaporan();
 
         $poktanPerSp = [];
         foreach (DummyData::poktan() as $p) {
@@ -1016,11 +1018,11 @@ class LaporanData
                 + (float) $t['realisasi_tanam'];
         }
 
-        // Rekap per SP untuk tiap tahun laporan (Putaran 5), agar ikhtisar dan
-        // Bab II "Iklim" dapat mengikuti tahun terpilih.
+        // Rekap per SP untuk tiap tahun laporan, agar ikhtisar dan Bab II
+        // "Iklim" dapat mengikuti tahun terpilih.
         $rekapTahun = [];
-        foreach (DummyData::tahunLaporan() as $tahun) {
-            $rekapTahun[$tahun] = collect(DummyData::rekapPerSpTahun($tahun))->keyBy('satuan_permukiman_id');
+        foreach ($daftarTahunLaporan as $tahun) {
+            $rekapTahun[$tahun] = collect(RekapDashboard::perSp($tahun))->keyBy('satuan_permukiman_id');
         }
 
         $baris = [];
@@ -1035,7 +1037,7 @@ class LaporanData
             // Angka ikhtisar yang berubah antar tahun. Kolom struktural (luas
             // wilayah, KK rencana, poktan, lahan tergarap) tetap.
             $perTahun = [];
-            foreach (DummyData::tahunLaporan() as $tahun) {
+            foreach ($daftarTahunLaporan as $tahun) {
                 $rt = $rekapTahun[$tahun]->get($id);
                 $perTahun[$tahun] = [
                     'kk_terisi' => (int) ($rt['jumlah_kk'] ?? 0),
@@ -1068,7 +1070,7 @@ class LaporanData
 
             // Kalimat kelompok "Iklim" untuk tiap tahun laporan.
             $iklimTahun[$id] = [];
-            foreach (DummyData::tahunLaporan() as $tahun) {
+            foreach ($daftarTahunLaporan as $tahun) {
                 $iklimTahun[$id][$tahun] = self::bab2($s, $tahun)['Iklim'];
             }
 
@@ -1085,7 +1087,7 @@ class LaporanData
             // Keadaan penduduk "sekarang" untuk tiap tahun laporan, agar
             // pemilih tahun mengubah angka KK dan jiwa di sisi peramban.
             $kependudukanTahun[$id] = [];
-            foreach (DummyData::tahunLaporan() as $tahun) {
+            foreach ($daftarTahunLaporan as $tahun) {
                 $kependudukanTahun[$id][$tahun] = self::keadaanPendudukTahun($id, $tahun);
             }
 
@@ -1115,7 +1117,7 @@ class LaporanData
             'monografi' => $monografi,
             'iklimTahun' => $iklimTahun,
             'kependudukanTahun' => $kependudukanTahun,
-            'daftarTahun' => DummyData::tahunLaporan(),
+            'daftarTahun' => $daftarTahunLaporan,
         ];
     }
 
@@ -1127,34 +1129,39 @@ class LaporanData
      * berjalan, beda dari Laporan Hasil Panen yang memakai tahun pengadaan
      * bantuan (rules.md 9 poin 16; basis tahun dipisah menurut tujuan).
      *
-     * `perSp` TETAP `rekapPerSp()` (tahun terakhir) supaya penjaga "jumlah enam
-     * SP = angka kawasan" tak berubah. `perSpTahun` dan `ringkasanTahun`
-     * (Putaran 5) melayani pemilih tahun tunggal di sisi peramban.
+     * Task 9.1 lanjutan (2026-09-04, `rules.md` 8g dibalik): seluruhnya dari
+     * `App\Support\RekapDashboard` (Eloquent), bukan `DummyData::ringkasanDashboard()`
+     * / `rekapPerSp()` / `indikatorKawasanTahun()` (larik tetap berskala
+     * kawasan lama). `perSp` TETAP tahun terakhir (`RekapDashboard::perSp()`
+     * tanpa argumen) supaya penjaga "jumlah enam SP = angka kawasan" tak
+     * berubah. `perSpTahun` dan `ringkasanTahun` melayani pemilih tahun
+     * tunggal di sisi peramban -- lihat `RekapDashboard::ringkasanTahun()`
+     * untuk kolom mana yang genuinely per tahun vs. keadaan sekarang.
      *
      * @return array{kawasan: array, ringkasan: array, perSp: array, perSpTahun: array, ringkasanTahun: array, daftarTahun: list<int>}
      */
     public static function indikatorKawasan(): array
     {
-        $r = DummyData::ringkasanDashboard();
-
         $kelembagaan = [
-            'poktan' => count(DummyData::poktan()),
-            'alsintan' => count(DummyData::alsintan()),
-            'saprotan' => count(DummyData::saprotan()),
+            'poktan' => Poktan::count(),
+            'alsintan' => Alsintan::count(),
+            'saprotan' => Saprotan::count(),
         ];
 
+        $daftarTahun = RekapDashboard::daftarTahunLaporan();
+
         $perSpTahun = [];
-        foreach (DummyData::tahunLaporan() as $tahun) {
-            $perSpTahun[$tahun] = DummyData::rekapPerSpTahun($tahun);
+        foreach ($daftarTahun as $tahun) {
+            $perSpTahun[$tahun] = RekapDashboard::perSp($tahun);
         }
 
         return [
             'kawasan' => DummyData::kawasan()[0] ?? [],
-            'ringkasan' => $r + $kelembagaan,
-            'perSp' => DummyData::rekapPerSp(),
+            'ringkasan' => RekapDashboard::ringkasan() + $kelembagaan,
+            'perSp' => RekapDashboard::perSp(),
             'perSpTahun' => $perSpTahun,
-            'ringkasanTahun' => DummyData::indikatorKawasanTahun(),
-            'daftarTahun' => DummyData::tahunLaporan(),
+            'ringkasanTahun' => RekapDashboard::ringkasanTahun(),
+            'daftarTahun' => $daftarTahun,
         ];
     }
 

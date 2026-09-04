@@ -2,11 +2,13 @@
 
 namespace App\Support;
 
+use App\Enums\JenisKelamin;
 use App\Enums\PendidikanTerakhir;
 use App\Enums\StatusAnggotaKeluarga;
 use App\Enums\StatusHunian;
 use App\Enums\StatusPengaduan;
 use App\Enums\StatusTinggal;
+use App\Models\AnggotaKeluarga;
 use App\Models\HasilPanen;
 use App\Models\Infrastruktur;
 use App\Models\Lahan;
@@ -180,6 +182,11 @@ class RekapDashboard
         $lahanPerSp = Lahan::query()
             ->selectRaw('satuan_permukiman_id, sum(luas_usaha) as total')
             ->groupBy('satuan_permukiman_id')->pluck('total', 'satuan_permukiman_id');
+        // Sama seperti rumah/lahan: keadaan sekarang, tak ikut `$tahun` --
+        // `pengaduan` tak menyimpan pada tahun mana ia "terbuka".
+        $pengaduanPerSp = Pengaduan::whereNot('status', StatusPengaduan::Selesai->value)
+            ->selectRaw('satuan_permukiman_id, count(*) as jumlah')
+            ->groupBy('satuan_permukiman_id')->pluck('jumlah', 'satuan_permukiman_id');
 
         return SatuanPermukiman::orderBy('nama')->get()->map(fn (SatuanPermukiman $sp): array => [
             'satuan_permukiman_id' => $sp->id_satuan_permukiman,
@@ -188,6 +195,7 @@ class RekapDashboard
             'rumah_terhuni' => (int) ($rumahPerSp[$sp->id_satuan_permukiman] ?? 0),
             'luas_lahan' => round((float) ($lahanPerSp[$sp->id_satuan_permukiman] ?? 0), 2),
             'volume_panen' => round((float) ($panenPerSp[$sp->nama]['produksi_ton'] ?? 0), 2),
+            'pengaduan_terbuka' => (int) ($pengaduanPerSp[$sp->id_satuan_permukiman] ?? 0),
         ])->all();
     }
 
@@ -215,6 +223,38 @@ class RekapDashboard
         }
 
         return $hasil;
+    }
+
+    /**
+     * Keadaan penduduk (KK, jiwa, laki, perempuan) satu SP pada satu tahun --
+     * taksiran kumulatif yang sama dengan `deret()`/`hadirPadaTahun()`,
+     * disaring per SP (Task 9.1 lanjutan, melepas blokir `LaporanData::
+     * monografiSp()` bagian "Keadaan Penduduk Sekarang").
+     *
+     * Laki/perempuan dari `jenis_kelamin` SUNGGUHAN (kepala keluarga +
+     * anggota keluarga aktif) -- BUKAN struktur umur (berbasis usia). Struktur
+     * umur dan mutasi penduduk TETAP dikarang deterministik
+     * (`LaporanData::bagianTambahanSp()`), sebab tak ada tabel usia per
+     * kelompok; itu di luar lingkup Task 9.1.
+     *
+     * @return array{kk: int, jiwa: int, laki: int, perempuan: int}
+     */
+    public static function kkJiwaSpTahun(int $id, int $tahun): array
+    {
+        $hadir = self::hadirPadaTahun($tahun)->where('satuan_permukiman_id', $id)->get();
+
+        $lakiKepala = $hadir->filter(fn (Transmigran $t) => $t->jenis_kelamin === JenisKelamin::LakiLaki)->count();
+
+        $anggota = AnggotaKeluarga::query()
+            ->whereIn('transmigran_id', $hadir->pluck('id_transmigran'))
+            ->where('status', StatusAnggotaKeluarga::Aktif->value)
+            ->get();
+        $lakiAnggota = $anggota->filter(fn (AnggotaKeluarga $a) => $a->jenis_kelamin === JenisKelamin::LakiLaki)->count();
+
+        $jiwa = $hadir->count() + $anggota->count();
+        $laki = $lakiKepala + $lakiAnggota;
+
+        return ['kk' => $hadir->count(), 'jiwa' => $jiwa, 'laki' => $laki, 'perempuan' => $jiwa - $laki];
     }
 
     /**
@@ -407,6 +447,66 @@ class RekapDashboard
         $tahun = RekapPanen::tahunTercatat();
 
         return $tahun[0] ?? (int) date('Y');
+    }
+
+    /**
+     * Lima tahun terakhir dari rentang nyata (`deret()`), untuk pemilih
+     * tahun tunggal pada `LaporanData::indikatorKawasan()`/`monografiSp()` --
+     * dibatasi lima untuk menahan ukuran DOM (Task 10.5 "Putaran 5"), sama
+     * seperti `DummyData::tahunLaporan()` yang digantikannya.
+     *
+     * @return list<int>
+     */
+    public static function daftarTahunLaporan(): array
+    {
+        return array_slice(self::deret()['tahun'], -5);
+    }
+
+    /**
+     * Ringkasan kawasan per tahun untuk `LaporanData::indikatorKawasan()`
+     * (Task 9.1 lanjutan, melepas blokir `rules.md` 8g lama).
+     *
+     * `jumlah_kk`/`jumlah_jiwa`/`jumlah_petani`/`harga_rata_rata` dan lima
+     * agregat produksi genuinely per tahun (`deret()`/`totalPanenTahun()` --
+     * baris bertanggal per transaksi). `rumah_total`/`rumah_terhuni`/
+     * `luas_lahan_total`/`pengaduan_terbuka` TIDAK dapat direkonstruksi per
+     * tahun -- tabel keadaan-sekarang tanpa riwayat (sama alasan
+     * `pendapatanSaatIni()` menggantikan tren tahunan pendapatan) -- nilainya
+     * SAMA untuk seluruh tahun, keadaan sekarang, bukan angka tahun itu.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function ringkasanTahun(): array
+    {
+        $sekarang = self::ringkasan();
+        $deret = self::deret();
+
+        $hasil = [];
+        foreach (self::daftarTahunLaporan() as $tahun) {
+            $i = array_search($tahun, $deret['tahun'], true);
+            $panen = self::totalPanenTahun($tahun);
+
+            $hasil[$tahun] = [
+                'jumlah_kk' => $i !== false ? $deret['jumlah_kk'][$i] : 0,
+                'jumlah_jiwa' => $i !== false ? $deret['jumlah_jiwa'][$i] : 0,
+                'jumlah_petani' => $i !== false ? $deret['jumlah_petani'][$i] : 0,
+                'harga_rata_rata' => $i !== false ? $deret['harga_rata_rata'][$i] : 0.0,
+                'volume_panen_ton' => $panen['produksi_ton'],
+                'realisasi_tanam_ha' => $panen['realisasi_tanam'],
+                'hasil_panen_ha' => $panen['hasil_panen'],
+                'puso_ha' => $panen['puso'],
+                'belum_dipanen_ha' => $panen['belum_dipanen'],
+                'produktivitas_ton_ha' => $panen['hasil_panen'] > 0
+                    ? round($panen['produksi_ton'] / $panen['hasil_panen'], 3) : 0.0,
+                // Keadaan sekarang, bukan angka tahun itu -- lihat docblock.
+                'rumah_total' => $sekarang['rumah_total'],
+                'rumah_terhuni' => $sekarang['rumah_terhuni'],
+                'luas_lahan_total' => $sekarang['luas_lahan_total'],
+                'pengaduan_terbuka' => $sekarang['pengaduan_terbuka'],
+            ];
+        }
+
+        return $hasil;
     }
 
     /**

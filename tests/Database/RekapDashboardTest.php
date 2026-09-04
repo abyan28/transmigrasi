@@ -10,6 +10,7 @@
 use App\Enums\PendidikanTerakhir;
 use App\Models\Transmigran;
 use App\Models\User;
+use App\Support\LaporanData;
 use App\Support\RekapDashboard;
 use Database\Seeders\DaftarPilihanSeeder;
 use Database\Seeders\HasilPanenSeeder;
@@ -91,4 +92,21 @@ it('merender dashboard dan rekap kependudukan tanpa galat query MySQL', function
     foreach (['tahun', 'sp', 'status', 'pekerjaan', 'asal', 'pendidikan'] as $kelompok) {
         $this->get(route('kependudukan.rekap.kelompok', ['kelompok' => $kelompok]))->assertOk();
     }
+});
+
+it('merender laporan indikator-kawasan dan monografi-sp tanpa galat query MySQL setelah Task 9.1 lanjutan', function () {
+    // rules.md 8g dibalik 2026-09-04: kedua laporan ini sebelumnya TERBLOKIR
+    // (Task 10.5) sebab bergantung pada larik tetap DummyData berskala
+    // kawasan. Sekarang lewat RekapDashboard -- diuji terpisah di MySQL
+    // sungguhan sebab groupBy/selectRaw pada kkJiwaSpTahun()/ringkasanTahun()
+    // belum tentu aman di sana (ONLY_FULL_GROUP_BY dsb).
+    $this->get(route('laporan.indikator-kawasan'))->assertOk();
+    $this->get(route('laporan.monografi-sp'))->assertOk();
+});
+
+it('menyamakan identitas kk perSp indikator-kawasan dengan RekapDashboard::ringkasan di MySQL nyata', function () {
+    $perSp = LaporanData::indikatorKawasan()['perSp'];
+    $ringkasan = RekapDashboard::ringkasan();
+
+    expect(array_sum(array_column($perSp, 'jumlah_kk')))->toBe($ringkasan['jumlah_kk']);
 });
