@@ -1,3 +1,39 @@
+# Tahap 6 - Backend Lahan & Kelembagaan (mulai 2026-09-04)
+
+## STATUS
+- **6.1 + 6.2 + 6.3 (lahan)** -- ✅ SELESAI (commit `2931e6c`). `LahanController`,
+  `LahanSeeder`, `luas_usaha` diturunkan kering+basah, SHM/status_sertifikat ke
+  `transmigran`. Feature 732, Database 334, semua hijau.
+- **6.4 + 6.5 (poktan + anggota_poktan)** -- BERIKUTNYA. Riset di bawah.
+- **6.6 (alsintan)**, **6.7 (saprotan)** -- belum diriset.
+
+## Riset Task 6.4 + 6.5 (poktan / anggota_poktan) -- `[Sulit]` sebenarnya
+
+Model `Poktan` (slug route key, `BerslugOtomatis` + `SoftDeletes`, `#[ScopedBy CakupanDataSp]`)
+dan `AnggotaPoktan` (`DisaringLewatInduk` induk `poktan`, `SoftDeletes`) SUDAH ADA.
+
+### Kerumitan
+1. **Ketua 3 jalur** (`asal_ketua` enum `AsalWakilPoktan`):
+   - `Kepala Keluarga` -> `ketua_transmigran_id` wajib; nama/nik/telepon dari relasi transmigran
+   - `Anggota Keluarga` -> `ketua_transmigran_id` + `ketua_anggota_keluarga_id` wajib (dipilih dari `anggota_keluarga` keluarga itu); identitas dari baris anggota_keluarga
+   - `Bukan Transmigran` -> `nama_ketua` + `nik_ketua` wajib + `luas_kering_ketua`/`luas_basah_ketua` diketik (satu-satunya jalur yang mengetik luas)
+   Validasi bersyarat `required_if:asal_ketua,...`. `AsalWakilPoktan::nilaiAnggota()` = 2 nilai (tanpa Bukan Transmigran) untuk anggota_poktan.
+2. **`poktan.form` LANGKAH 3 = repeater anggota** (`anggota[i][transmigran_id|jabatan|keterangan]`) -- membuat baris `anggota_poktan` dengan default `tanggal_masuk`=hari ini, `status`=Aktif, `asal_wakil`=Kepala Keluarga, `anggota_keluarga_id`=null. Sinkron id-based (pola `TransmigranController::sinkronAnggota` + penanda `_anggota_disunting`; modal ubah-per-baris `awalan=ubahBaris` TAK memuat anggota).
+3. **`poktan.form-anggota` + rute `anggota-poktan.simpan`/`anggota-poktan.perbarui`** = alur anggota PENUH (status lifecycle: `Sudah Keluar` wajib `tanggal_keluar`; `asal_wakil` 2-jalur; `anggota_keluarga_id` bila Anggota Keluarga). `anggota-poktan.perbarui` = SATU-SATUNYA jalur ubah status/tanggal keluar. Pindah poktan = tandai Sudah Keluar lalu baris BARU di poktan tujuan (jangan pindah `poktan_id`).
+4. **Aturan lintas-poktan (rules.md 6.4)**: satu transmigran hanya boleh `status=Aktif` di SATU poktan. `UNIQUE (poktan_id, transmigran_id)` TAK menangkapnya (poktan beda). Validasi manual: `AnggotaPoktan::where('transmigran_id',X)->where('status','Aktif')->where('poktan_id','!=',$ini)->exists()`.
+5. **Derivasi di mapping** (`jumlah_anggota`, `nama_ketua`, `luas_lahan` kelompok, `komoditas`): pola `DummyData::identitasWakil()` (3 jalur) + `rekapLahanPoktan()` (jumlah bidang ketua + anggota Aktif dari tabel `lahan` -- yang KINI Eloquent). Cek `DummyData::poktan()`/`anggotaPoktan()` kunci TAMPILAN (`nama_ketua`, `nama`, `nik`, `telepon`, `luas_kering`, `luas_basah`, `hubungan_wakil`, `dokumen_pendukung`).
+6. `berkas_id` (SK poktan) = FK TUNGGAL langsung ke `berkas` (bukan pivot). Upload -> buat Berkas -> set `poktan.berkas_id`. `DummyData::poktan()` id 1 -> `berkas_id` 13.
+7. `slug` UNIQUE via `BerslugOtomatis` (dari `nama`). `nama` juga UNIQUE. `PoktanSeeder` belum ada.
+8. `ViewServiceProvider` `pages.poktan.form`/`form-anggota` arms: `daftarTransmigran` (sudah Eloquent), `kontakTransmigran`/`lahanTransmigran` (dari `petaKeluarga()` -- masih DummyData::transmigran + rekapLahanKeluarga; pindah ke Eloquent), `anggotaKeluargaPerKeluarga` (DummyData), `opsiJabatanAnggota` (referensi), `anggotaPoktanPerPoktan` (DummyData::anggotaPoktan).
+9. `jabatan` = REF `JenisReferensi::JabatanAnggotaPoktan` (TANPA "Ketua") -> `ValidationRules::referensi(...)`. `jabatan` -> `UppercaseInput::$kecualikan`? cek. `asal_ketua`/`asal_wakil` -> Rule::enum -> `$kecualikan`.
+10. HalamanTest poktan: bagian besar ~L1160-1420 (luas lahan rekap "dari himpunan poktan bukan tiap penanaman"), identitas ketua 3 jalur, `poktan.detail` link-balik. `Domain6KelembagaanTest.php` = uji skema Task 3.1.
+11. `poktan_id` pada `lahan` (Task 6.1 seed NULL) -- BISA diisi dari sini? tidak; lahan.poktan_id diisi dari modul lahan bila perlu. Biarkan.
+
+### Pendekatan disarankan
+Dua controller: `PoktanController` (index/detail/simpan/perbarui/hapus + repeater anggota sederhana) + `AnggotaPoktanController` (simpan/perbarui alur penuh). `PoktanSeeder` (poktan + anggota_poktan dari DummyData). Rekomendasikan KERJAKAN DENGAN KONTEKS SEGAR -- ini `[Sulit]`.
+
+---
+
 # Tahap 5 - Backend Kependudukan (mulai 2026-09-04)
 
 Riset 2 agen Explore (Tahap-4 peralihan + modul transmigran) sudah dirangkum.
