@@ -1,3 +1,108 @@
+# Task 10.1-10.3 SELESAI - Export Excel & PDF sisi peramban (2026-09-05)
+
+Sisa Tahap 10 yang tertunda (Task 10.1-10.3) didiskusikan lebih dulu atas
+permintaan pemilik proyek, sebelum dikerjakan -- lihat ringkasan diskusi
+dan keputusan di `rules.md` §12 poin 14.
+
+## Membalik premis "tunggu hosting"
+
+Penundaan 2026-08-29/09-04 beralasan "jangan tambah paket Composer sebelum
+spesifikasi hosting Task 11.3 jelas" (server mungkin tak punya ekstensi
+PHP, Chrome/Node, atau biner seperti wkhtmltopdf). Ditawarkan dan
+disepakati membalik premisnya: kerjakan export **sepenuhnya sisi
+peramban** -- tak ada paket Composer, tak ada biner server, sehingga tidak
+perlu menunggu apa pun. Dua alasan teknis mendukungnya, keduanya sudah
+ada di repo sebelum sesi ini:
+
+1. `/laporan/{slug}/dokumen` sudah punya `@media print` matang sejak
+   Putaran 3 D2 (2026-08-28) -- kop surat, ukuran A4/F4, kepadatan tabel
+   cetak, diverifikasi Putaran 7 (28/28 lulus tanpa gulir mendatar di
+   ketujuh laporan).
+2. Tiap tabel laporan sudah wajib `<caption>` sebagai anak pertama, dan
+   baris tersaring filter Alpine disembunyikan `x-show` (TIDAK dihapus
+   dari DOM) -- basis yang pas untuk exporter generik tanpa kode
+   per-laporan.
+
+## Task 10.2 -- PDF lewat cetak peramban
+
+Tombol "Unduh PDF" membuka rute dokumen dengan hash SAMA seperti "Generate
+Laporan" (filter aktif) ditambah `cetak=1`; `filterLaporan.dariHash()`
+(`resources/js/filter-laporan.js`) memanggil `window.print()` lewat
+`$nextTick()` begitu Alpine selesai menerapkan filter -- baris tersaring
+sudah tersembunyi SEBELUM dialog cetak terbuka. "Generate Laporan" TETAP
+tanpa auto-cetak. Dialog cetak peramban ("Simpan sebagai PDF") disepakati
+cukup, bukan unduhan sekali klik.
+
+## Task 10.1 -- Excel lewat SheetJS
+
+`resources/js/export-laporan.js` (`window.exportLaporan.keExcel($root,
+slug)`): SATU worksheet per `<table class="tabel-dokumen">` yang
+ditemukan, nama lembar dari `<caption>`-nya. `XLSX.utils.table_to_sheet(
+tabel, {display:true, raw:true})` -- `display:true` melewati baris
+tersembunyi filter Alpine (itulah Task 10.3, tanpa logika terpisah);
+`raw:true` menahan SheetJS menebak tipe sel dengan kaidah AS (salah
+membaca "1.234" sebagai 1,234). Konversi angka Indonesia dikerjakan
+sendiri sesudahnya, HANYA pada sel berpola ribuan/desimal aman
+(`/^-?\d{1,3}(\.\d{3})+(,\d+)?$|^-?\d+,\d+$/`) -- deretan digit polos
+(NIK, no_kk, telepon, tahun) sengaja dibiarkan teks, bukan angka, sebab
+itu pengenal bukan kuantitas dan konversinya berisiko menghilangkan nol
+di depan.
+
+**Paket `xlsx` diinstal dari CDN SheetJS sendiri**
+(`https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz`), BUKAN npm
+registry: `npm install xlsx` awalnya menghasilkan 12 kerentanan termasuk
+`xlsx` sendiri (prototype pollution + ReDoS, keduanya "No fix available"
+di npm) -- rilis npm terakhir memang 0.18.5 dari 2022, SheetJS pindah
+distribusi ke CDN sendiri sesudahnya. Diverifikasi lewat WebFetch advisory
+GHSA-4r6h-8v6p-xvw6: "Workflows that do not read arbitrary files (for
+example, exporting data to spreadsheet file) are unaffected" -- jalur
+pakai di sini murni TULIS, bukan baca berkas tak tepercaya, tetapi versi
+CDN dipilih tetap demi `npm audit` bersih. Dimuat lewat `import()`
+DINAMIS di dalam `keExcel()` (bukan diimpor statis di `app.js`) --
+pustakanya ~1 MB, Vite memecahnya jadi chunk terpisah, hanya diunduh
+peramban saat tombol benar-benar diklik (dikonfirmasi: `app-*.js` tidak
+membengkak, ada `xlsx-*.js` terpisah 500 KB / gzip 163 KB).
+
+## Task 10.3 -- tanpa kode terpisah, diverifikasi eksplisit
+
+Terpenuhi *by construction* dari kedua mekanisme di atas. Ditulis uji
+peramban baru `tests/Browser/uji-export-laporan.mjs` (Edge headless + CDP,
+pola sama `uji-filter-laporan.mjs`) supaya klaim ini bukan asumsi:
+mengunduh .xlsx sungguhan lalu membaca ulang isinya dan mencocokkan jumlah
+baris dengan baris yang TAMPAK di DOM (bukan seluruh baris tabel), banyak
+tabel menghasilkan banyak lembar tanpa nama kembar, `window.print()`
+sungguhan terpicu otomatis pada hash `cetak=1`, dan baris tersaring tetap
+tersembunyi pada dokumen yang "dicetak". 17/17 pemeriksaan lulus.
+
+**Dua celah lingkungan ditemukan saat menulis uji ini** (bukan bagian
+Task 10, tapi relevan bagi uji peramban lain ke depan yang mengunduh
+berkas):
+1. Edge headless TANPA `--user-data-dir` memuat profil ASLI pengguna
+   (bukan profil sementara) -- `Browser.setDownloadBehavior` diam-diam
+   kalah oleh pengaturan unduhan profil sungguhan itu, dan berkas mendarat
+   di folder Unduhan asli, bukan direktori sementara uji. Uji peramban
+   lain di repo ini (`uji-filter-laporan.mjs`, dst.) tidak pernah
+   mengunduh apa pun sehingga celah ini tak pernah terlihat sebelumnya.
+2. Build ESM `node_modules/xlsx/xlsx.mjs` tidak mendeteksi modul `fs`
+   Node secara otomatis (variabel internal `_fs` tetap `undefined`), jadi
+   `XLSX.readFile()`/`.readFileSync()` SheetJS SENDIRI selalu melempar
+   "Cannot access file" apa pun keadaan berkasnya. Perbaikannya baca lewat
+   `node:fs` sendiri lalu serahkan Buffer-nya ke `XLSX.read()`, melewati
+   deteksi lingkungan itu sama sekali.
+
+## Verifikasi
+
+Feature 738 hijau (2 uji lama disesuaikan -- placeholder "segera hadir"
+diganti pemeriksaan tombol sungguhan), pint bersih, `npm run build` bersih
+(chunk `xlsx` terpisah dari `app.js`), uji peramban baru 17/17 lulus.
+Database DEV lokal (`digitrans`, terpisah dari `digitrans_test`) sekalian
+disegarkan (`migrate:fresh --seed`) -- sempat basi sejak Task 9.1 menambah
+kolom `tahun_keluar` + dua indeks lewat migrasi yang diedit di tempat,
+sehingga `indikator-kawasan` sempat 500 saat diuji manual; ditemukan dan
+diperbaiki di sesi ini.
+
+---
+
 # Task 9.2-9.4 SELESAI - Filter, drill-down, dan optimasi query dashboard (2026-09-05)
 
 Sisa Tahap 9 dikerjakan sekaligus atas permintaan pemilik proyek, di atas

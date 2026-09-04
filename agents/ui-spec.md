@@ -916,7 +916,7 @@ Input lintang dan bujur, tombol "Ambil lokasi saat ini" (Geolocation API), serta
 
 ### 6.9 `<x-sim.kerangka-laporan>` (2026-08-28, diperbarui Putaran 3)
 
-Kerangka satu halaman laporan di menu "Laporan". Setiap laporan memuat: judul dokumen, **pernyataan cakupan sebagai kalimat** di kepala kertas (disusun otomatis dari filter aktif — `rules.md` §12 poin 8), tabel isinya, dan tombol unduh jujur "segera hadir" (R-26; pembangkitan PDF/Excel Tahap 10).
+Kerangka satu halaman laporan di menu "Laporan". Setiap laporan memuat: judul dokumen, **pernyataan cakupan sebagai kalimat** di kepala kertas (disusun otomatis dari filter aktif — `rules.md` §12 poin 8), tabel isinya, dan sepasang tombol unduh sungguhan (Task 10.1/10.2, 2026-09-05, `rules.md` §12 poin 14): **"Unduh PDF"** memicu dialog cetak peramban lewat rute dokumen + `cetak=1`; **"Unduh Excel"** membaca tabel yang sudah dirender lewat SheetJS (`window.exportLaporan.keExcel`) — keduanya sepenuhnya sisi peramban, tanpa paket Composer.
 
 **Tampilan "kertas".** Isi dibungkus `<article class="kertas-dokumen dokumen-{orientasi} ...">`. Orientasi diturunkan dari `LaporanData::orientasi($slug)` — ≥ 9 kolom (`KOLOM_LANDSCAPE`) → landscape. Lebar: di aplikasi laporan landscape memenuhi ruang (`max-w-full`), potret `max-w-5xl`; pada rute dokumen `max-w-[1200px]` / `max-w-[820px]` (proporsi A4). Metadata kepala (cakupan, dasar periode, sumber, catatan, judul) dibaca dari **`LaporanData::meta($slug)`** — satu sumber, tidak lagi menelusuri `MenuHelper`.
 

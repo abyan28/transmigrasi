@@ -1654,9 +1654,18 @@ menghapus sisa terakhir `DummyData::penggunaSaatIni()` -- dikerjakan berbarengan
   * `HalamanTest` "menyediakan rute unduh template CSV" (14 entitas + 404),
     `IzinPenegakanRuteTest` +1 (cakupan berkas), `PembatasanLajuTest` disesuaikan.
 
-- [ ] Task 10.1 - Export Excel untuk data utama `[Sedang]` -- **DITUNDA 2026-09-04** (keputusan pemilik: tunggu keputusan hosting Task 11.3 sebelum menambah paket Composer)
-- [ ] Task 10.2 - Export PDF untuk data utama + kop logo `[Sedang]` -- **DITUNDA 2026-09-04**, sama seperti 10.1
-- [ ] Task 10.3 - Filter laporan sebelum export `[Sedang]` -- **DITUNDA 2026-09-04**, sama seperti 10.1
+- [✓] Task 10.1 - Export Excel untuk data utama `[Sedang]` -- ✅ **SELESAI 2026-09-05** (dibalik dari DITUNDA 2026-09-04)
+  * **Keputusan pemilik 2026-09-05, didiskusikan dulu:** premis "tunggu hosting Task 11.3 sebelum menambah paket Composer" dibalik -- export dikerjakan **sepenuhnya sisi peramban**, tidak menyentuh Composer/hosting sama sekali. `rules.md` §12 poin 14 untuk redaksi lengkap.
+  * **HASIL:** `resources/js/export-laporan.js` (`window.exportLaporan.keExcel($root, slug)`) + `xlsx` (SheetJS, dari CDN SheetJS sendiri -- rilis npm 0.18.5 berstatus 2 CVE "No fix available", HANYA memengaruhi baca berkas tak tepercaya, tetap dihindari demi kebersihan `npm audit`). `import()` DINAMIS (bukan statis di `app.js`, ~1 MB, dipecah jadi chunk terpisah Vite) -- hanya dimuat saat tombol diklik.
+  * SATU worksheet per `<table class="tabel-dokumen">`, nama lembar dari `<caption>`-nya (dipangkas 31 karakter, disambiguasi bila kembar). Konversi angka Indonesia (`1.234,56` → number asli) HANYA pada sel berpola ribuan/desimal -- NIK/no_kk/telepon/tahun (digit polos tanpa pemisah) sengaja dibiarkan teks, bukan angka.
+  * Tombol placeholder jujur "segera hadir" (`kerangka-laporan.blade.php`, pola R-26) diganti tombol sungguhan -- berlaku otomatis ketujuh laporan (komponen bersama).
+- [✓] Task 10.2 - Export PDF untuk data utama + kop logo `[Sedang]` -- ✅ **SELESAI 2026-09-05**, satu paket keputusan dengan 10.1
+  * **HASIL:** tombol "Unduh PDF" memakai ulang `@media print` yang sudah matang sejak Putaran 3 D2 (kop surat, ukuran A4/F4) lewat dialog cetak peramban -- href sama seperti "Generate Laporan" (rute dokumen + filter lewat hash) ditambah `cetak=1`; `filterLaporan.dariHash()` (`resources/js/filter-laporan.js`) memanggil `window.print()` sendiri begitu rute dokumen terbuka dengan flag itu. "Generate Laporan" TETAP tanpa auto-cetak.
+  * Dialog cetak peramban ("Simpan sebagai PDF") disepakati cukup -- bukan unduhan sekali klik tanpa dialog.
+- [✓] Task 10.3 - Filter laporan sebelum export `[Sedang]` -- ✅ **SELESAI 2026-09-05, tanpa kode terpisah**
+  * Terpenuhi *by construction* dari 10.1/10.2: `table_to_sheet(tabel, {display:true})` melewati baris yang disembunyikan `x-show` filter Alpine; rute dokumen PDF menerapkan filter dari hash SEBELUM `window.print()` dipanggil (`$nextTick`). Diverifikasi eksplisit (bukan diasumsikan) lewat uji peramban di bawah.
+  * `tests/Browser/uji-export-laporan.mjs` (baru, Edge headless + CDP, pola sama `uji-filter-laporan.mjs`): 17 pemeriksaan -- unduhan .xlsx sungguhan dibaca ulang & dicocokkan dengan baris tampak (bukan seluruh baris), banyak tabel -> banyak lembar tanpa nama kembar, `window.print()` sungguhan terpicu otomatis pada `#...&cetak=1`, baris tersaring tetap tersembunyi pada dokumen yang "dicetak".
+  * **Dua celah lingkungan ditemukan saat menulis uji ini** (dicatat, bukan bagian Task 10 tapi memengaruhi uji peramban ke depan): (1) Edge headless TANPA `--user-data-dir` memuat profil ASLI pengguna, sehingga `Browser.setDownloadBehavior` diam-diam kalah oleh pengaturan unduhan profil itu dan berkas mendarat di folder Unduhan sungguhan -- uji peramban yang mengunduh berkas WAJIB `--user-data-dir` terisolasi; (2) build ESM `xlsx.mjs` tidak mendeteksi `fs` Node secara otomatis, `XLSX.readFile()` SELALU melempar "Cannot access file" di Node terlepas dari keadaan berkas -- baca lewat `XLSX.read(fs.readFileSync(path))`.
 - [✓] Task 10.4 - Template isian luring yang dapat diunduh dan diunggah kembali `[Sulit]` -- ✅ **8/14 entitas SELESAI 2026-09-04**
   * **HASIL:** `App\Support\ImporEngine` -- mesin generik, satu metode `barisX()`
     per entitas: petakan baris CSV -> cari relasi lewat NAMA (bukan id) ke basis
