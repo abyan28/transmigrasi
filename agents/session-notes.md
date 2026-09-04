@@ -1,3 +1,35 @@
+# Tahap 8 SELESAI - Backend Pengaduan (2026-09-04, commit `b4c2968`)
+
+Task 8.2-8.7 dalam satu commit (domain terpaut erat).
+
+- `PengaduanController` (index/detail/simpan/perbarui/tangani/hapus/rekap) +
+  `PengaduanPublikController` (formWarga/kirim/lacak).
+- `App\Support\NomorPengaduan` (8.7) + `App\Support\RekapPengaduan` (8.6).
+- `PengaduanSeeder`: pengaduan (id 1-9 dipaksa, nomor DummyData dipertahankan) +
+  riwayat penanganan + pivot bukti/tindak_lanjut. **Membuat 3 petugas (NARA
+  WIJAYA / SITI RAHMAWATI / AGUS PRASETYO) + 1 role minimal** -- `penanganan_
+  pengaduan.user_id` NOT NULL sedangkan `DataMasterSeeder` sengaja tak menanam
+  akun. `firstOrCreate` by nama, idempoten. Ditambahkan ke `DataMasterSeeder`
+  + `DatabaseSeeder`.
+- Rute pengaduan + `pengaduan.perbarui` PUT BARU (view index sudah menautnya
+  lewat `pola-aksi="/pengaduan/:id"` tetapi rutenya belum ada) -> controller.
+  Rute publik (`routes/web.php`) -> `PengaduanPublikController`.
+- Throttle `kirim-pengaduan` (3/jam) & `lacak-publik` (10/mnt) SUDAH ada di
+  `AppServiceProvider` + `config/sim.php` sejak sebelumnya -- tak disentuh.
+- **Pengiriman surel nomor pengaduan = TODO** (menunggu layanan email, ~Task
+  11.x). Banner "belum aktif" sudah di view publik.
+- `UppercaseInput::$kecualikan` +`kategori`/`bidang`/`prioritas`/`status_sesudah`.
+- `HalamanTest` "mengarahkan tombol lacak ke nomor yang benar-benar ada"
+  disesuaikan: nomor kini DIBUAT sistem (bukan stub hardcoded), jadi uji kirim
+  payload sah lalu memastikan nomor itu ada di DB + halaman lacak berisi.
+- `tests/Database/PengaduanTest.php` (+12) & `PengaduanPublikTest.php` (+7).
+- Verifikasi: Feature 732, Database 416, pint bersih, banding-skema NOL SELISIH,
+  tautan-statis 14.
+- **Sisa Tahap 8: tidak ada.** Berikutnya Tahap 9 (dashboard data nyata),
+  Tahap 10.5 (isi 7 laporan dari Eloquent), Tahap 9.6 (CMS).
+
+--- catatan agen lain (arsip) ---
+
 # Rename `referensi` -> `daftar_pilihan` (2026-09-04)
 
 Penyeragaman istilah atas permintaan pemilik proyek. Sub-menunya sudah bernama
