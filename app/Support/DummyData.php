@@ -513,6 +513,9 @@ class DummyData
                 'daerah_asal_kabupaten_id' => 5304,
                 'tahun_kedatangan' => 2017,
                 'status_tinggal' => StatusTinggal::PindahPenduduk->value,
+                // Sejalan riwayat penghunian rumah A-03 (lihat DummyData::rumah()):
+                // pindah 2025-09-30. Sumber dashboard "KK Keluar per tahun".
+                'tahun_keluar' => 2025,
                 'status_anggota_poktan' => 'Ya',
                 'status_sertifikat' => 'Belum',
                 'telepon' => '081234567805',

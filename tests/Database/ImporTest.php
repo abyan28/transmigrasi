@@ -112,6 +112,22 @@ it('melewati baris transmigran yang SP-nya tidak ditemukan, sisanya tetap tersim
     expect(Transmigran::where('nik', '5321019999999902')->exists())->toBeFalse();
 });
 
+it('mewajibkan tahun_keluar pada impor transmigran begitu status_tinggal bukan Aktif', function () {
+    $csv = "nik,nama_lengkap,no_kk,satuan_permukiman,pekerjaan,tahun_kedatangan,status_tinggal,tahun_keluar\n"
+        ."5321019999999904,BUDI TIGA,5321010102159904,SP Kapitan Meo,PETANI,2018,Pindah Penduduk,\n"
+        ."5321019999999905,BUDI EMPAT,5321010102159905,SP Kapitan Meo,PETANI,2018,Pindah Penduduk,2025\n";
+
+    $r = $this->post(route('impor.unggah', 'transmigran'), ['berkas' => berkasCsvImpor($csv)])->assertOk();
+
+    expect($r->json('disimpan'))->toBe(1)
+        ->and($r->json('gagal'))->toHaveCount(1)
+        ->and($r->json('gagal.0.pesan'))->toContain('tahun_keluar');
+
+    $tersimpan = Transmigran::where('nik', '5321019999999905')->first();
+    expect($tersimpan)->not->toBeNull()
+        ->and((int) $tersimpan->tahun_keluar)->toBe(2025);
+});
+
 it('mengimpor baris infrastruktur dan menautkan cakupan ke SP-nya sendiri', function () {
     $csv = "satuan_permukiman,nama_aset,jenis,kondisi,tahun_perolehan,sumber_dana,kapasitas,lintang,bujur,keterangan\n"
         ."SP Kapitan Meo,Jembatan Uji,Jalan Penghubung,Baik,2020,APBN,,,,\n";

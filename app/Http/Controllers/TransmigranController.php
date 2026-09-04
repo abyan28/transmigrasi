@@ -482,6 +482,7 @@ class TransmigranController extends Controller
             'daerah_asal_kabupaten_id' => $t->daerah_asal_kabupaten_id,
             'tahun_kedatangan' => (int) $t->tahun_kedatangan,
             'status_tinggal' => $t->status_tinggal->value,
+            'tahun_keluar' => $t->tahun_keluar === null ? null : (int) $t->tahun_keluar,
             'status_anggota_poktan' => $t->status_anggota_poktan->value,
             'status_sertifikat' => $t->status_sertifikat->value,
             'telepon' => $t->telepon,
@@ -564,6 +565,13 @@ class TransmigranController extends Controller
             'tahun_kedatangan' => ValidationRules::tahun(wajib: true),
             'daerah_asal_kabupaten_id' => ['nullable', 'integer', Rule::exists('kabupaten', 'id_kabupaten')],
             'status_tinggal' => ['required', Rule::enum(StatusTinggal::class)],
+            // Sumber "KK Keluar per tahun" pada dashboard (rules.md 8g, dibalik
+            // 2026-09-04): wajib diisi begitu KK ditandai keluar, sebab
+            // status_tinggal sendiri tidak menyimpan kapan berubah.
+            'tahun_keluar' => [
+                'nullable', 'integer', 'min:1900', 'max:'.date('Y'),
+                'required_if:status_tinggal,Pindah Penduduk,Tidak Aktif',
+            ],
             'telepon' => ValidationRules::telepon(),
             'keterangan' => ['nullable', 'string', 'max:1000'],
 
@@ -597,12 +605,19 @@ class TransmigranController extends Controller
             'satuan_permukiman_id.required' => 'Satuan permukiman wajib dipilih.',
             'tahun_kedatangan.required' => 'Tahun kedatangan wajib diisi.',
             'status_tinggal.required' => 'Status tinggal wajib dipilih.',
+            'tahun_keluar.required_if' => 'Tahun keluar wajib diisi saat status tinggal bukan Aktif.',
             'anggota_keluarga.*.hubungan.required' => 'Hubungan anggota keluarga wajib dipilih.',
             'anggota_keluarga.*.nama_lengkap.required' => 'Nama anggota keluarga wajib diisi.',
             'anggota_keluarga.*.nama_lengkap.regex' => 'Nama hanya boleh berisi huruf, spasi, titik, dan tanda petik.',
             'anggota_keluarga.*.nik.digits' => 'NIK anggota keluarga harus 16 digit angka.',
             'anggota_keluarga.*.nik.distinct' => 'Ada NIK anggota keluarga yang sama diisi dua kali.',
         ] + ValidationRules::pesan());
+
+        // Kembali Aktif -> tahun keluar tidak lagi berlaku, bukan sisa data lama
+        // yang diam-diam terus tersimpan.
+        if ($data['status_tinggal'] === StatusTinggal::Aktif->value) {
+            $data['tahun_keluar'] = null;
+        }
 
         return $data;
     }

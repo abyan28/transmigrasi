@@ -38,7 +38,7 @@ class Transmigran extends Model
         'uuid', 'satuan_permukiman_id', 'nik', 'no_kk', 'nama_kepala_keluarga',
         'jenis_kelamin', 'agama', 'tempat_lahir', 'tanggal_lahir', 'pendidikan_terakhir',
         'pekerjaan_kepala_keluarga', 'pendapatan_per_bulan', 'daerah_asal_kabupaten_id',
-        'tahun_kedatangan', 'status_tinggal', 'status_anggota_poktan', 'status_sertifikat',
+        'tahun_kedatangan', 'status_tinggal', 'tahun_keluar', 'status_anggota_poktan', 'status_sertifikat',
         'telepon', 'keterangan',
     ];
 

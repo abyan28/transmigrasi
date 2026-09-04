@@ -164,6 +164,38 @@ it('menolak NIK yang sudah dipakai transmigran lain', function () {
     ]))->assertSessionHasErrors('nik');
 });
 
+it('mewajibkan tahun keluar begitu status tinggal bukan Aktif (rules.md 8g)', function () {
+    $this->post(route('transmigran.simpan'), dataTransmigranBaru([
+        'status_tinggal' => 'Pindah Penduduk',
+    ]))->assertSessionHasErrors('tahun_keluar');
+
+    $this->post(route('transmigran.simpan'), dataTransmigranBaru([
+        'status_tinggal' => 'Pindah Penduduk',
+        'tahun_keluar' => 2026,
+    ]))->assertSessionDoesntHaveErrors('tahun_keluar');
+
+    $kk = Transmigran::where('nik', '5321010101900777')->first();
+    expect((int) $kk->tahun_keluar)->toBe(2026);
+});
+
+it('mengosongkan tahun keluar begitu status tinggal disunting balik ke Aktif', function () {
+    $yohanes = Transmigran::where('nama_kepala_keluarga', 'YOHANES BERE')->first();
+
+    $this->put(route('transmigran.perbarui', $yohanes->id_transmigran), array_merge(
+        dataTransmigranBaru(['nik' => $yohanes->nik, 'no_kk' => $yohanes->no_kk]),
+        ['status_tinggal' => 'Pindah Penduduk', 'tahun_keluar' => 2024],
+    ))->assertRedirect();
+
+    expect((int) $yohanes->refresh()->tahun_keluar)->toBe(2024);
+
+    $this->put(route('transmigran.perbarui', $yohanes->id_transmigran), array_merge(
+        dataTransmigranBaru(['nik' => $yohanes->nik, 'no_kk' => $yohanes->no_kk]),
+        ['status_tinggal' => 'Aktif'],
+    ))->assertRedirect();
+
+    expect($yohanes->refresh()->tahun_keluar)->toBeNull();
+});
+
 it('memperbarui transmigran dan menyinkronkan daftar anggota keluarga', function () {
     $petrus = Transmigran::with('anggotaKeluarga')->where('nama_kepala_keluarga', 'PETRUS NAHAK')->first();
     $istri = $petrus->anggotaKeluarga->firstWhere('hubungan', HubunganAnggotaKeluarga::Istri);

@@ -50,6 +50,7 @@
 
 <div class="space-y-6"
     x-data="{
+        statusTinggal: @js($data['status_tinggal'] ?? 'Aktif'),
         tanggalLahirKk: @js($data['tanggal_lahir'] ?? ''),
         anggota: @js(collect($anggotaKeluargaData)->map(fn ($a) => [
             'id' => $a['id_anggota_keluarga'] ?? '',
@@ -288,7 +289,7 @@
                     <label for="{{ $awalan }}_status_tinggal" class="{{ $kelasLabel }}">
                         Status Tinggal Keluarga<span class="text-error-500">*</span>
                     </label>
-                    <select id="{{ $awalan }}_status_tinggal" name="status_tinggal" required
+                    <select id="{{ $awalan }}_status_tinggal" name="status_tinggal" x-model="statusTinggal" required
                         class="{{ $kelasKontrol }}">
                         @foreach (\App\Enums\StatusTinggal::opsi() as $nilai => $label)
                             <option value="{{ $nilai }}" @selected(old('status_tinggal', $data['status_tinggal'] ?? 'Aktif') === $nilai)>
@@ -298,6 +299,25 @@
                     </select>
                     <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
                         Status keberadaan keluarga inti di satuan permukiman.
+                    </p>
+                </div>
+
+                {{--
+                    Sumber "KK Keluar per tahun" dashboard (rules.md 8g, dibalik
+                    2026-09-04): status_tinggal sendiri tidak menyimpan kapan
+                    berubah, sehingga tahunnya diminta di sini begitu KK ditandai
+                    keluar.
+                --}}
+                <div x-show="statusTinggal !== 'Aktif'" x-cloak>
+                    <label for="{{ $awalan }}_tahun_keluar" class="{{ $kelasLabel }}">
+                        Tahun Keluar<span class="text-error-500">*</span>
+                    </label>
+                    <input type="number" id="{{ $awalan }}_tahun_keluar" name="tahun_keluar"
+                        value="{{ old('tahun_keluar', $data['tahun_keluar'] ?? '') }}"
+                        :required="statusTinggal !== 'Aktif'" min="1900" max="{{ date('Y') }}"
+                        placeholder="{{ date('Y') }}" class="{{ $kelasKontrol }} tabular-nums" />
+                    <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                        Tahun keluarga ditandai pindah atau tidak aktif.
                     </p>
                 </div>
 

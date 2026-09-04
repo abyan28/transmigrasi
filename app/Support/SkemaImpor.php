@@ -125,6 +125,7 @@ class SkemaImpor
                 ['daerah_asal_kabupaten', false, 'Kota Kupang', 'Nama kabupaten/kota asal'],
                 ['tahun_kedatangan', true, '2016', 'Tahun (YYYY)'],
                 ['status_tinggal', true, 'Aktif', 'Salah satu nilai baku', ['enum:status_tinggal']],
+                ['tahun_keluar', false, '', 'Wajib bila status_tinggal bukan Aktif; tahun keluarga ditandai pindah/tidak aktif'],
                 ['telepon', false, '081234567801', self::T],
                 ['keterangan', false, '', self::T],
             ],

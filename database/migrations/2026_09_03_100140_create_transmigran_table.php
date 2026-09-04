@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\Schema;
  * `usia`/`jumlah_anggota_keluarga` TIDAK disimpan (diturunkan). `status_sertifikat`
  * (SHM) melekat di KK, bukan per bidang lahan (`rules.md` 7.6). `pekerjaan_kepala_keluarga`
  * sengaja teks bebas. FK SP + daerah asal RESTRICT. Soft delete aktif.
+ *
+ * `tahun_keluar` (2026-09-04): tahun `status_tinggal` berubah ke Pindah
+ * Penduduk/Tidak Aktif -- sumber dashboard "KK Keluar per tahun".
  */
 return new class extends Migration
 {
@@ -33,6 +36,7 @@ return new class extends Migration
             $table->unsignedBigInteger('daerah_asal_kabupaten_id')->nullable();
             $table->year('tahun_kedatangan');
             $table->enum('status_tinggal', ['Aktif', 'Pindah Penduduk', 'Tidak Aktif']);
+            $table->year('tahun_keluar')->nullable();
             $table->enum('status_anggota_poktan', ['Ya', 'Tidak']);
             $table->enum('status_sertifikat', ['Sudah', 'Belum', 'Belum Didata'])->default('Belum Didata');
             $table->string('telepon', 20)->nullable();
@@ -46,6 +50,7 @@ return new class extends Migration
             $table->index('satuan_permukiman_id', 'idx_transmigran_sp');
             $table->index('nama_kepala_keluarga', 'idx_transmigran_nama');
             $table->index('tahun_kedatangan', 'idx_transmigran_tahun_kedatangan');
+            $table->index('tahun_keluar', 'idx_transmigran_tahun_keluar');
             $table->index('pekerjaan_kepala_keluarga', 'idx_transmigran_pekerjaan');
             $table->index('status_sertifikat', 'idx_transmigran_sertifikat');
             $table->index('daerah_asal_kabupaten_id', 'idx_transmigran_daerah_asal');

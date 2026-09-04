@@ -927,6 +927,13 @@ CREATE TABLE `transmigran` (
   `daerah_asal_kabupaten_id`   BIGINT UNSIGNED NULL,     -- kabupaten/kota asal; NULL bila belum terdata
   `tahun_kedatangan`           YEAR NOT NULL,
   `status_tinggal`             ENUM('Aktif','Pindah Penduduk','Tidak Aktif') NOT NULL,
+  -- Tahun `status_tinggal` berubah ke Pindah Penduduk/Tidak Aktif (ditambahkan
+  -- 2026-09-04, keputusan pemilik proyek): sumber "KK Keluar per tahun" pada
+  -- dashboard (rules.md 8g dibalik). NULL selama Aktif; diisi form saat status
+  -- disunting keluar, dikosongkan lagi bila disunting balik ke Aktif. Riwayat
+  -- SEBELUM kolom ini ada tetap tak terlacak -- itu keterbatasan yang disadari,
+  -- bukan cacat.
+  `tahun_keluar`               YEAR NULL,
   `status_anggota_poktan`      ENUM('Ya','Tidak') NOT NULL,
   -- Sertifikat (SHM) meliputi SELURUH lahan satu KK, pekarangan maupun usaha,
   -- sehingga statusnya melekat di sini dan bukan pada tiap bidang.
@@ -946,6 +953,7 @@ CREATE TABLE `transmigran` (
   KEY `idx_transmigran_sp` (`satuan_permukiman_id`),
   KEY `idx_transmigran_nama` (`nama_kepala_keluarga`),
   KEY `idx_transmigran_tahun_kedatangan` (`tahun_kedatangan`),
+  KEY `idx_transmigran_tahun_keluar` (`tahun_keluar`),
   KEY `idx_transmigran_pekerjaan` (`pekerjaan_kepala_keluarga`),
   KEY `idx_transmigran_sertifikat` (`status_sertifikat`),
   KEY `idx_transmigran_daerah_asal` (`daerah_asal_kabupaten_id`),

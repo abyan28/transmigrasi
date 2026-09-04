@@ -308,6 +308,7 @@ class ImporEngine
             'daerah_asal_kabupaten_id' => $kabupatenId,
             'tahun_kedatangan' => self::angka($b, 'tahun_kedatangan'),
             'status_tinggal' => self::teks($b, 'status_tinggal'),
+            'tahun_keluar' => self::angka($b, 'tahun_keluar'),
             'telepon' => self::teks($b, 'telepon'),
             'keterangan' => self::teks($b, 'keterangan'),
         ];
@@ -327,15 +328,22 @@ class ImporEngine
             'daerah_asal_kabupaten_id' => ['nullable', 'integer'],
             'tahun_kedatangan' => ['required', 'integer', 'min:1900', 'max:'.date('Y')],
             'status_tinggal' => ['required', Rule::enum(StatusTinggal::class)],
+            // Sumber "KK Keluar per tahun" dashboard (rules.md 8g, dibalik 2026-09-04).
+            'tahun_keluar' => [
+                'nullable', 'integer', 'min:1900', 'max:'.date('Y'),
+                'required_if:status_tinggal,Pindah Penduduk,Tidak Aktif',
+            ],
             'telepon' => ['nullable', 'string', 'regex:/^(08|\+62)[0-9]{8,13}$/'],
             'keterangan' => ['nullable', 'string', 'max:1000'],
         ], self::PESAN_UMUM + [
             'satuan_permukiman_id.required' => 'Kolom satuan_permukiman wajib diisi dan namanya harus sudah terdaftar.',
+            'tahun_keluar.required_if' => 'Kolom tahun_keluar wajib diisi saat status_tinggal bukan Aktif.',
         ], [
             'nik' => 'nik', 'nama_kepala_keluarga' => 'nama_lengkap', 'no_kk' => 'no_kk',
             'satuan_permukiman_id' => 'satuan_permukiman', 'jenis_kelamin' => 'jenis_kelamin',
             'agama' => 'agama', 'tempat_lahir' => 'tempat_lahir', 'tanggal_lahir' => 'tanggal_lahir',
             'pendidikan_terakhir' => 'pendidikan_terakhir', 'pekerjaan_kepala_keluarga' => 'pekerjaan',
+            'tahun_keluar' => 'tahun_keluar',
             'pendapatan_per_bulan' => 'pendapatan_per_bulan',
             'daerah_asal_kabupaten_id' => 'daerah_asal_kabupaten', 'tahun_kedatangan' => 'tahun_kedatangan',
             'status_tinggal' => 'status_tinggal', 'telepon' => 'telepon', 'keterangan' => 'keterangan',
@@ -345,7 +353,12 @@ class ImporEngine
             return $v->errors()->first();
         }
 
-        Transmigran::create($v->validated() + ['uuid' => (string) Str::uuid()]);
+        $tervalidasi = $v->validated();
+        if ($tervalidasi['status_tinggal'] === StatusTinggal::Aktif->value) {
+            $tervalidasi['tahun_keluar'] = null;
+        }
+
+        Transmigran::create($tervalidasi + ['uuid' => (string) Str::uuid()]);
 
         return null;
     }

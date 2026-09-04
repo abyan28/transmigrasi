@@ -79,8 +79,13 @@
                     </div>
                 </div>
 
-                <div class="mt-4 flex flex-wrap gap-2">
+                <div class="mt-4 flex flex-wrap items-center gap-2">
                     <x-sim.status-badge :status="$statusTinggal" />
+                    @if ($data['tahun_keluar'] ?? null)
+                        <span class="text-theme-xs text-gray-500 dark:text-gray-400">
+                            sejak {{ $data['tahun_keluar'] }}
+                        </span>
+                    @endif
                 </div>
 
                 <dl class="mt-5 space-y-3 border-t border-gray-200 pt-5 text-theme-sm dark:border-gray-800">
