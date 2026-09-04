@@ -57,6 +57,11 @@ Route::post('/logout', [LoginController::class, 'keluar'])->name('logout');
 Route::middleware('auth')->group(function () {
     Route::get('/ganti-kata-sandi', [GantiKataSandiController::class, 'tampil'])->name('ganti-kata-sandi');
     Route::post('/ganti-kata-sandi', [GantiKataSandiController::class, 'simpan'])->name('ganti-kata-sandi.simpan');
+    // Task 3.14: cek ketersediaan username saat diketik (rules.md 14b poin 5a).
+    // Di grup ini, BUKAN routes/internal.php: `pastikan.ganti.sandi` akan
+    // memantulkan pengguna berflag wajib-ganti yang justru sedang memakainya.
+    Route::get('/ganti-kata-sandi/cek-username', [GantiKataSandiController::class, 'cekUsername'])
+        ->name('ganti-kata-sandi.cek-username');
 });
 
 /*

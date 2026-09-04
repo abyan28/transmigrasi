@@ -18,6 +18,8 @@ beforeEach(function () {
     // apa yang terjadi di server dinas yang tidak menyetel apa pun.
     putenv('SIM_ADMIN_WAJIB_GANTI');
     unset($_ENV['SIM_ADMIN_WAJIB_GANTI'], $_SERVER['SIM_ADMIN_WAJIB_GANTI']);
+    putenv('SIM_ADMIN_USERNAME');
+    unset($_ENV['SIM_ADMIN_USERNAME'], $_SERVER['SIM_ADMIN_USERNAME']);
 
     $this->seed(PermissionRoleSeeder::class);
 });
@@ -30,7 +32,10 @@ it('menanam satu akun Admin ketika belum ada akun mana pun', function () {
 
     expect($admin)->toHaveCount(1)
         ->and($admin->first()->password_harus_diganti)->toBeTrue()
-        ->and($admin->first()->is_aktif)->toBeTrue();
+        ->and($admin->first()->is_aktif)->toBeTrue()
+        // Tanpa SIM_ADMIN_USERNAME: Admin awal ikut membuat usernamenya sendiri
+        // saat masuk pertama (Task 3.14).
+        ->and($admin->first()->perluBuatUsername())->toBeTrue();
 });
 
 it('mematikan wajib-ganti hanya bila SIM_ADMIN_WAJIB_GANTI disetel false', function () {

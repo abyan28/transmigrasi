@@ -22,6 +22,9 @@ use Illuminate\Support\Str;
  *   akun telusur tidak terlempar ke halaman ganti sandi tiap kali basis data
  *   dibangun ulang. Default `true` -- pemasangan di server tetap patuh poin 5
  *   tanpa perlu menyetel apa pun.
+ * - Username: `SIM_ADMIN_USERNAME` bila diisi; selain itu username SEMENTARA
+ *   (`petugas.xxxxxxxx`), sehingga Admin awal ikut membuat miliknya sendiri
+ *   saat masuk pertama (poin 5), sama seperti akun yang dibuat lewat sistem.
  * - Pengecualian ini HANYA berlaku bagi akun seed ini. Akun yang dibuat Admin
  *   lewat sistem tetap ditandai wajib-ganti oleh `PengaturanPenggunaController`.
  * - Idempoten: dijalankan ulang tidak membuat akun kedua.
@@ -52,9 +55,9 @@ class AdminAwalSeeder extends Seeder
         $admin->forceFill([
             'role_id' => $roleAdmin->id_role,
             'nama' => env('SIM_ADMIN_NAMA', 'ADMINISTRATOR SISTEM'),
-            // `user.username` NOT NULL; Admin mengganti nilai sementara ini
-            // saat masuk pertama, bersama kata sandi wajib-ganti.
-            'username' => env('SIM_ADMIN_USERNAME', 'admin'),
+            // `user.username` NOT NULL; bila `SIM_ADMIN_USERNAME` tak diisi,
+            // Admin membuat miliknya sendiri saat masuk pertama.
+            'username' => env('SIM_ADMIN_USERNAME') ?: User::buatUsernameSementara(),
             'email' => $email,
             'password' => $sandi,
             'is_aktif' => true,

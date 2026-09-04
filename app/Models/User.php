@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
 
 /**
  * Akun petugas. Menggantikan tabel `users` bawaan Laravel.
@@ -18,11 +19,21 @@ use Illuminate\Notifications\Notifiable;
  * - Login memakai email ATAU username pada satu isian (Task 3.2).
  * - `punyaIzin()` / `punyaAksi()` = pemeriksa kewenangan RBAC (Task 3.3).
  *   Cakupan data (global scope) menyusul Task 3.4.
+ * - Username DIBUAT petugas sendiri saat masuk pertama (`rules.md` 14b poin 5).
+ *   Sampai itu akun memakai username SEMENTARA berawalan `petugas.`; lihat
+ *   `buatUsernameSementara()` / `perluBuatUsername()` (Task 3.14).
  */
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, SoftDeletes;
+
+    /**
+     * Awalan username yang dibangkitkan sistem sebagai pengisi sementara
+     * kolom `user.username` (NOT NULL) sebelum petugas membuat miliknya
+     * sendiri saat masuk pertama.
+     */
+    public const AWALAN_USERNAME_SEMENTARA = 'petugas.';
 
     protected $table = 'user';
 
@@ -140,5 +151,32 @@ class User extends Authenticatable
     public function punyaAksi(string $modul, string $aksi): bool
     {
         return $this->punyaIzin($modul.'.'.$aksi);
+    }
+
+    /**
+     * Username sementara berformat sah (`rules.md` 14b poin 5a) untuk mengisi
+     * kolom NOT NULL saat Admin membuat akun. Diperiksa keunikannya walau
+     * tabrakan praktis mustahil. Dipakai `PengaturanPenggunaController` dan
+     * `AdminAwalSeeder`; digantikan petugas lewat form ganti-kata-sandi.
+     */
+    public static function buatUsernameSementara(): string
+    {
+        do {
+            $kandidat = self::AWALAN_USERNAME_SEMENTARA.Str::lower(Str::random(8));
+        } while (self::withTrashed()->where('username', $kandidat)->exists());
+
+        return $kandidat;
+    }
+
+    /**
+     * Apakah pengguna belum pernah membuat usernamenya sendiri -- masih
+     * memakai pengisi sementara (atau, pada instance uji yang tak dipersist,
+     * belum berisi). Menjadi pemicu kolom username pada halaman ganti kata
+     * sandi wajib (Task 3.14).
+     */
+    public function perluBuatUsername(): bool
+    {
+        return $this->username === null
+            || str_starts_with((string) $this->username, self::AWALAN_USERNAME_SEMENTARA);
     }
 }

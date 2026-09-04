@@ -1075,7 +1075,7 @@ domain; sisanya mengikuti tanpa mengubah skema maupun komponen.
 > **5. A2 hosting** — 6 spesifikasi menunggu input dinas (blockquote di bawah);
 > Tahap 3 boleh mulai di XAMPP lokal, Task 3.10 & 11.3 yang menahan diri.
 
-> **Penerbitan statis — KEPUTUSAN DIAMBIL 2026-09-03 (audit pra-Tahap-3):** batasi `sim:tautan-statis` ke **halaman publik saja** (opsi a), bukan menghentikan penerbitan. Halaman berpelindung membalas redirect ke `/login` (bukan 200) begitu login aktif, sehingga `deploy.yml` gagal bila daftar rute tak disaring. **Kerjakan bersama Task 3.2:** tandai rute publik, saring `app/Console/Commands/DaftarTautanStatis.php` ke allowlist rute tanpa `auth`, sesuaikan `TautanStatisTest`. `deploy.yml` boleh tetap jalan sebagai pratinjau halaman publik, atau dimatikan bila hosting ber-PHP sudah siap (lihat catatan hosting di bawah). Ref `notes.md` 1b.7.
+> **Penerbitan statis — KEPUTUSAN DIAMBIL 2026-09-03 (audit pra-Tahap-3):** batasi `sim:tautan-statis` ke **halaman publik saja** (opsi a), bukan menghentikan penerbitan. **DIKERJAKAN Task 3.2b** (`DaftarTautanStatis` menyaring `gatherMiddleware()`; 224 → 14 URL). **2026-09-04: pemicu otomatis `push` pada `deploy.yml` DICABUT** (`on: workflow_dispatch` saja) — pratinjau kini manual. Penghentian penuh + pindah hosting ber-PHP = **Task 11.3**. `rules.md:854/859` & `ui-spec.md:929/947` (filter hash-fragment, "query string tak dilayani GitHub Pages") **tetap apa adanya**: `workflow_dispatch` masih bisa menerbitkan manual, jadi kendalanya masih berlaku. Ref `notes.md` 1b.7.
 
 > **Spesifikasi hosting (A2) — MENUNGGU INPUT DINAS.** Sebelum Task 3.10 (rate limit) & Task 11.3 (deployment): konfirmasi versi PHP (target 8.2.x), MySQL/MariaDB + versi, kapasitas storage privat + ketersediaan S3/GCS, dukungan cron untuk backup terjadwal, SSL + domain, dan apakah di belakang reverse proxy. Daftar lengkap di `notes.md` §6 butir "[decided 2026-09-03]" dan §4 poin 7. Tahap 3 boleh berjalan di XAMPP lokal tanpa risiko sambil menunggu.
 
@@ -1248,6 +1248,12 @@ menghapus sisa terakhir `DummyData::penggunaSaatIni()` -- dikerjakan berbarengan
   * 8 uji `tests/Database/ProfilTest.php`; `HalamanTest` "merender profil" ditulis ulang memakai `User` persisted; 2 uji `DummyDataTest` yang menguji `penggunaSaatIni()` dihapus
   * **DITUNDA:** utang pint lama 26 berkas (EOF newline + `concat_space`, dari commit rename DIGITRANS `961948d` dan lebih lama) -- di luar lingkup, dibersihkan terpisah
 
+- [ ] Task 3.14 - Username saat masuk pertama `[Sedang]` (BARU 2026-09-04)
+  * **Celah tak bertuan:** `rules.md` 14b poin 5 & 5a -- username dibuat petugas sendiri saat masuk pertama, bareng ganti kata sandi wajib. Dilempar Task 3.2b -> 3.5, lalu 3.5 ditutup `[✓]` sambil menundanya lagi. `GantiKataSandiController` hanya memproses `password`; view tak punya kolom username; sampai diisi akun memakai username SEMENTARA `petugas.xxxxxxxx`
+  * `GantiKataSandiController` menampilkan + memproses kolom username **bersyarat** (`User::perluBuatUsername()` -- masih pola sementara / null). Endpoint JSON `ganti-kata-sandi.cek-username` untuk pemeriksaan ketersediaan saat diketik (poin 5a); pertama kali repo punya endpoint JSON + `fetch` (Alpine `x-data` inline, URL dari Blade)
+  * Helper temp-username dipindah ke `User::buatUsernameSementara()` -- dipakai bersama `PengaturanPenggunaController` + `AdminAwalSeeder` (Admin awal ikut membuat username sendiri bila `SIM_ADMIN_USERNAME` kosong)
+  * Rute di `routes/web.php` grup `auth` (BUKAN internal -- `pastikan.ganti.sandi` akan memantulkan pengguna wajib-ganti yang memakainya)
+
 ## Tahap 5 — Backend Kependudukan
 
 - [ ] Task 5.1 - Peralihan transmigran + `anggota_keluarga` ke Eloquent `[Sedang]`
@@ -1371,7 +1377,7 @@ menghapus sisa terakhir `DummyData::penggunaSaatIni()` -- dikerjakan berbarengan
 - [ ] Task 11.1 - Alpha testing internal (login, role, CRUD, filter, upload, export, audit log) `[Sulit]`
 - [ ] Task 11.2 - Perbaikan bug blocker `[Sedang]`
 - [ ] Task 11.3 - Deployment ke hosting + domain, SSL, storage, backup terjadwal `[Sulit]`
-  * **Prasyarat:** hentikan atau batasi penerbitan statis GitHub Pages lebih dulu. Rinciannya pada `notes.md` bagian 1b.7
+  * **Prasyarat:** hentikan penerbitan statis GitHub Pages sepenuhnya + pindah hosting. **Sebagian sudah 2026-09-04:** pemicu otomatis `push` `deploy.yml` dicabut (kini `workflow_dispatch` manual). Sisa: hapus/arsipkan `deploy.yml`, `DaftarTautanStatis`, `TautanStatisTest`; nilai kembali pembenaran filter hash-fragment (`rules.md:854/859`, `ui-spec.md:929/947`). Rinciannya `notes.md` 1b.7
   * Penyeragaman `asset()`/`url()`/`route()` (1b.3) dan kepercayaan `X-Forwarded-*` di `bootstrap/app.php` **tetap diperlukan**, sebab keduanya syarat hosting di belakang reverse proxy
 - [ ] Task 11.4 - Simulasi input data awal per desa/SP prioritas `[Sedang]`
 - [ ] Task 11.5 - Beta testing bersama dinas dan pengguna lapangan `[Sedang]`

@@ -96,7 +96,7 @@ class PengaturanPenggunaController extends Controller
         $pengguna->forceFill([
             'role_id' => $role->id_role,
             'nama' => $data['nama'],
-            'username' => $this->usernameSementara(),
+            'username' => User::buatUsernameSementara(),
             'email' => $data['email'],
             'password' => $sandiSementara,
             'telepon' => $data['telepon'] ?? null,
@@ -273,20 +273,6 @@ class PengaturanPenggunaController extends Controller
         // Tanpa simbol -- kata sandi ini diketik ulang petugas di lokus, dan
         // dibacakan lewat telepon bila perlu. Tetap lolos aturan (huruf + angka).
         return Str::password(14, symbols: false);
-    }
-
-    /**
-     * Username sementara berformat sah (`rules.md` 14b poin 5a). Diganti
-     * petugas sendiri saat masuk pertama; sampai itu ia hanya pengisi kolom
-     * NOT NULL. Diperiksa keunikannya, walau tabrakan praktis mustahil.
-     */
-    private function usernameSementara(): string
-    {
-        do {
-            $kandidat = 'petugas.'.Str::lower(Str::random(8));
-        } while (User::withTrashed()->where('username', $kandidat)->exists());
-
-        return $kandidat;
     }
 
     /**

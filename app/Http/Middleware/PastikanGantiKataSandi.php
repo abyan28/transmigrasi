@@ -15,8 +15,10 @@ use Symfony\Component\HttpFoundation\Response;
  * ini, kata sandi yang diserahkan lisan atau lewat surel tetap berlaku
  * selamanya.
  *
- * Task 3.2: kelas ini SUDAH dibangun dan diberi alias, tetapi BELUM dilampirkan
- * ke grup rute mana pun -- pelampirannya menyusul di Task 3.2b bersama `auth`.
+ * Dilampirkan ke grup rute internal lewat `bootstrap/app.php` (`then:` +
+ * `->middleware(['web','auth','pastikan.ganti.sandi'])`). Rute `ganti-kata-sandi*`
+ * ada di `routes/web.php` grup `auth` -- di luar middleware ini, dan `$dikecualikan`
+ * di bawah menjaganya tetap terbuka andai kelak ikut dilampiri.
  */
 class PastikanGantiKataSandi
 {

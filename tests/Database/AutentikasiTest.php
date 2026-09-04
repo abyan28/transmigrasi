@@ -180,6 +180,105 @@ it('mengarahkan tamu yang menyimpan ganti kata sandi ke halaman masuk', function
 
 /*
 |--------------------------------------------------------------------------
+| Username saat masuk pertama (Task 3.14, rules.md 14b poin 5 & 5a)
+|--------------------------------------------------------------------------
+*/
+
+it('meminta username pada akun ber-username sementara', function () {
+    $user = User::factory()->harusGantiSandi()->create(['username' => User::buatUsernameSementara()]);
+
+    $this->actingAs($user)->get(route('ganti-kata-sandi'))
+        ->assertOk()
+        ->assertSee('name="username"', false);
+});
+
+it('menyimpan username pilihan petugas bersama kata sandi baru', function () {
+    $user = User::factory()->harusGantiSandi()->create(['username' => User::buatUsernameSementara()]);
+
+    $this->actingAs($user)->post(route('ganti-kata-sandi.simpan'), [
+        'username' => 'yosef.klau',
+        'password' => 'sandibaru123',
+        'password_confirmation' => 'sandibaru123',
+    ])->assertRedirect(route('beranda'));
+
+    $segar = $user->fresh();
+    expect($segar->username)->toBe('yosef.klau')
+        ->and($segar->password_harus_diganti)->toBeFalse()
+        ->and(Hash::check('sandibaru123', $segar->password))->toBeTrue()
+        ->and($segar->perluBuatUsername())->toBeFalse();
+
+    $audit = AuditLog::where('user_id', $user->id_user)
+        ->where('aksi', AksiAuditLog::ResetKataSandi)->first();
+    expect($audit->data_baru['jalur'])->toBe('Masuk pertama');
+});
+
+it('menolak menyimpan tanpa username saat masih sementara', function () {
+    $user = User::factory()->harusGantiSandi()->create(['username' => User::buatUsernameSementara()]);
+
+    $this->actingAs($user)->post(route('ganti-kata-sandi.simpan'), [
+        'password' => 'sandibaru123',
+        'password_confirmation' => 'sandibaru123',
+    ])->assertSessionHasErrors('username');
+
+    expect($user->fresh()->password_harus_diganti)->toBeTrue();
+});
+
+it('menolak username yang sudah dipakai akun lain', function () {
+    User::factory()->create(['username' => 'yosef.klau']);
+    $user = User::factory()->harusGantiSandi()->create(['username' => User::buatUsernameSementara()]);
+
+    $this->actingAs($user)->post(route('ganti-kata-sandi.simpan'), [
+        'username' => 'yosef.klau',
+        'password' => 'sandibaru123',
+        'password_confirmation' => 'sandibaru123',
+    ])->assertSessionHasErrors('username');
+});
+
+it('menolak username berhuruf besar atau berspasi', function () {
+    $user = User::factory()->harusGantiSandi()->create(['username' => User::buatUsernameSementara()]);
+
+    $this->actingAs($user)->post(route('ganti-kata-sandi.simpan'), [
+        'username' => 'Yosef Klau',
+        'password' => 'sandibaru123',
+        'password_confirmation' => 'sandibaru123',
+    ])->assertSessionHasErrors('username');
+});
+
+it('tidak meminta username pada akun yang usernamenya sudah asli', function () {
+    $user = User::factory()->harusGantiSandi()->create(['username' => 'nara.wijaya']);
+
+    $this->actingAs($user)->get(route('ganti-kata-sandi'))
+        ->assertOk()
+        ->assertDontSee('name="username"', false);
+
+    // Username yang dikirim diam-diam TIDAK menimpa yang sudah ada.
+    $this->actingAs($user)->post(route('ganti-kata-sandi.simpan'), [
+        'username' => 'coba.timpa',
+        'password' => 'sandibaru123',
+        'password_confirmation' => 'sandibaru123',
+    ])->assertRedirect(route('beranda'));
+
+    expect($user->fresh()->username)->toBe('nara.wijaya');
+});
+
+it('memeriksa ketersediaan username lewat endpoint JSON', function () {
+    User::factory()->create(['username' => 'sudah.ada']);
+    $user = User::factory()->harusGantiSandi()->create(['username' => User::buatUsernameSementara()]);
+
+    $this->actingAs($user);
+
+    $this->getJson(route('ganti-kata-sandi.cek-username', ['username' => 'baru.sekali']))
+        ->assertOk()->assertExactJson(['tersedia' => true]);
+    $this->getJson(route('ganti-kata-sandi.cek-username', ['username' => 'sudah.ada']))
+        ->assertOk()->assertExactJson(['tersedia' => false]);
+    $this->getJson(route('ganti-kata-sandi.cek-username', ['username' => 'HURUF BESAR']))
+        ->assertOk()->assertExactJson(['tersedia' => false]);
+    $this->getJson(route('ganti-kata-sandi.cek-username'))
+        ->assertOk()->assertExactJson(['tersedia' => false]);
+});
+
+/*
+|--------------------------------------------------------------------------
 | Audit log
 |--------------------------------------------------------------------------
 */
