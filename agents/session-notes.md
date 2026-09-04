@@ -12,12 +12,24 @@
   `anggotaPerPoktan` -> Eloquent, `UppercaseInput` +`jenis_alsintan`,
   `PoktanController::alsintanPoktan()` -> Eloquent. `tests/Database/AlsintanTest.php`
   +9. Feature 732, Database 355, pint bersih, NOL SELISIH, tautan-statis 14. Riset di bawah (untuk arsip).
-- **6.7 (saprotan)** -- SEBAGIAN TERBLOKIR: `saprotan.komoditas_id` (wajib bila
-  `jenis=Benih`) menaut ke `komoditas` yang belum di-seed / belum Eloquent
-  (Task 7.1). Opsi: (a) kerjakan setelah 7.1, atau (b) kerjakan jalur non-Benih
-  penuh + `komoditas_id` divalidasi `Rule::exists` yang otomatis menolak Benih
-  sampai komoditas ada. Rekomendasi: gabung dengan Task 7.1 atau kerjakan
-  keduanya (7.1 dulu) dalam satu sesi.
+- **7.1 (komoditas -> Eloquent)** -- ✅ SELESAI (commit setelah `9e0c4f0`).
+  `KomoditasController` (index/detail/simpan/perbarui; hapus tetap stub 7.2),
+  `KomoditasSeeder` (satuan_id via NAMA), `ViewServiceProvider` `daftarKomoditas`
+  + `satuanKomoditas` -> Eloquent, `UppercaseInput` +`tipe`.
+  Feature 732, Database 362, semua hijau.
+- **6.7 (saprotan)** -- ⚠️ TERBLOKIR KEPUTUSAN PEMILIK, bukan lagi 7.1.
+  `saprotanPengadaan()` baris 3 (`INSEKTISIDA CAIR`, `satuan` = **'Liter'**,
+  `satuan_id` 4) dan baris 5 (`MULSA PLASTIK HITAM PERAK`, `satuan` = **'Rol'**,
+  `satuan_id` 5) menunjuk satuan yang TIDAK ADA di `SatuanSeeder` (hanya
+  Ton/Kuintal/Kilogram; `MasterSatuanTest` mengunci `Satuan::count()` = 3).
+  `saprotan.satuan_id` FK NOT NULL -> seeder saprotan tak bisa jalan tanpa
+  keputusan. Opsi untuk pemilik:
+  (a) Liter/Rol/dll jadi data master satuan (longgarkan asumsi "satuan berat
+      saja" + makna `faktor_ke_ton`; `MasterSatuanTest` ikut disesuaikan);
+  (b) `saprotan` punya kolom satuan teks bebas sendiri, lepas dari FK `satuan`;
+  (c) batasi saprotan ke 3 satuan berat + betulkan data contoh baris 3 & 5.
+  Rekomendasi: (a) — pestisida memang lazim diukur Liter; `faktor_ke_ton`
+  nullable-kan untuk satuan non-berat, atau abaikan pada rekap non-panen.
 
 ## Riset Task 6.6 (alsintan) -- pola INDUK + DISTRIBUSI (mirip Infrastruktur+cakupan)
 
