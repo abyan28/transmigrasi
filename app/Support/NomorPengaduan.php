@@ -22,20 +22,21 @@ use Illuminate\Support\Str;
  */
 class NomorPengaduan
 {
-    private const AWALAN = 'PGD';
-
     /** Tanpa huruf/angka yang mudah tertukar saat dibacakan (0/O, 1/I). */
     private const ABJAD_ACAK = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
 
     public static function buat(?int $tahun = null): string
     {
         $tahun ??= (int) date('Y');
-        $urut = self::urutBerikutnya($tahun);
+        // Awalan dapat diatur dinas lewat Pengelolaan Konten (Task 9.6);
+        // bagian acak SELALU ditambahkan sistem (`rules.md` 4a).
+        $awalan = KontenSistem::awalanNomorPengaduan();
+        $urut = self::urutBerikutnya($awalan, $tahun);
 
         // Tabrakan bagian acak nyaris mustahil (~10^9 ruang), tetapi kolom
         // `nomor_pengaduan` UNIQUE -- diulang bila toh bertabrakan.
         do {
-            $nomor = sprintf('%s-%d-%04d-%s', self::AWALAN, $tahun, $urut, self::bagianAcak());
+            $nomor = sprintf('%s-%d-%04d-%s', $awalan, $tahun, $urut, self::bagianAcak());
         } while (Pengaduan::withTrashed()->where('nomor_pengaduan', $nomor)->exists());
 
         return $nomor;
@@ -46,9 +47,9 @@ class NomorPengaduan
      * yang sudah dipakai tahun itu (bukan sekadar cacah baris -- baris yang
      * dihapus tetap memesan nomornya).
      */
-    private static function urutBerikutnya(int $tahun): int
+    private static function urutBerikutnya(string $awalan, int $tahun): int
     {
-        $awalanTahun = self::AWALAN.'-'.$tahun.'-';
+        $awalanTahun = $awalan.'-'.$tahun.'-';
 
         $tertinggi = Pengaduan::withTrashed()
             ->where('nomor_pengaduan', 'like', $awalanTahun.'%')

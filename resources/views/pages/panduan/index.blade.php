@@ -405,33 +405,18 @@
                         </div>
                     </div>
 
+                    {{-- Isi FAQ diatur dari Pengelolaan Konten (Task 9.6). --}}
                     <div class="mt-5 space-y-4">
-                        <div class="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
-                            <h4 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">
-                                Bagaimana jika terjadi pergantian pengurus atau suksesi Kepala Keluarga?
-                            </h4>
-                            <p class="mt-1.5 text-theme-xs leading-relaxed text-gray-600 dark:text-gray-400">
-                                Masuk ke menu <strong>Penduduk &amp; Lahan &rarr; Transmigran</strong>, buka rincian transmigran bersangkutan, lalu pilih tombol suksesi/pembaruan data keluarga. Sistem akan menyimpan riwayat perubahan secara otomatis di audit log tanpa menghapus jejak data awal.
+                        @forelse (\App\Support\KontenSistem::faq() as $faq)
+                            <div class="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
+                                <h4 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">{{ $faq['tanya'] }}</h4>
+                                <p class="mt-1.5 text-theme-xs leading-relaxed text-gray-600 dark:text-gray-400">{{ $faq['jawab'] }}</p>
+                            </div>
+                        @empty
+                            <p class="text-theme-xs text-gray-500 dark:text-gray-400">
+                                Belum ada tanya jawab yang didaftarkan. Admin dapat menambahkannya lewat Pengelolaan Konten.
                             </p>
-                        </div>
-
-                        <div class="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
-                            <h4 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">
-                                Mengapa tombol Hapus tidak muncul pada akun Operator SP?
-                            </h4>
-                            <p class="mt-1.5 text-theme-xs leading-relaxed text-gray-600 dark:text-gray-400">
-                                Operator SP hanya memiliki hak menambahkan dan memperbarui data lapangan demi mencegah hilangnya data penting secara tidak sengaja. Operasi penghapusan data master hanya dapat diproses oleh Administrator atau Dinas berwenang.
-                            </p>
-                        </div>
-
-                        <div class="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
-                            <h4 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">
-                                Bagaimana cara mengganti tema mode gelap atau mode terang?
-                            </h4>
-                            <p class="mt-1.5 text-theme-xs leading-relaxed text-gray-600 dark:text-gray-400">
-                                Klik ikon tombol matahari/bulan pada bilah atas (*header*) sebelah kanan. Pilihan tema tersimpan otomatis di perangkat Anda.
-                            </p>
-                        </div>
+                        @endforelse
                     </div>
                 </section>
             </main>

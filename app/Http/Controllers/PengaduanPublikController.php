@@ -9,6 +9,7 @@ use App\Enums\SumberLaporan;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
 use App\Models\Pengaduan;
 use App\Support\DummyData;
+use App\Support\KontenSistem;
 use App\Support\NomorPengaduan;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
@@ -42,6 +43,7 @@ class PengaduanPublikController extends Controller
             'title' => 'Kirim Pengaduan',
             'daftarSp' => DummyData::satuanPermukiman(),
             'opsiKategoriPengaduan' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::KategoriPengaduan),
+            'portal' => KontenSistem::portal(),
         ]);
     }
 

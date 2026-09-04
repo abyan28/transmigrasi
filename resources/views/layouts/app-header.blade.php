@@ -49,10 +49,10 @@
             </button>
 
             {{-- Logo, hanya tampil pada perangkat mobile karena sidebar tersembunyi --}}
-            <a href="{{ route('beranda') }}" class="flex items-center gap-2 xl:hidden" aria-label="Beranda {{ config('app.name') }}">
+            <a href="{{ route('beranda') }}" class="flex items-center gap-2 xl:hidden" aria-label="Beranda {{ \App\Support\KontenSistem::namaAplikasi() }}">
                 <img src="{{ asset('images/logo/logo-kementrans-128.png') }}" alt="Logo Kementerian Transmigrasi"
                     class="h-8 w-8" width="32" height="32" />
-                <span class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">{{ config('app.name') }}</span>
+                <span class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">{{ \App\Support\KontenSistem::namaAplikasi() }}</span>
             </a>
 
             <!-- Application Menu Toggle (mobile only) -->

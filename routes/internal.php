@@ -20,6 +20,7 @@ use App\Enums\StatusPengaduan;
 use App\Http\Controllers\AlsintanController;
 use App\Http\Controllers\AnggotaPoktanController;
 use App\Http\Controllers\AuditLogController;
+use App\Http\Controllers\CmsController;
 use App\Http\Controllers\DokumenController;
 use App\Http\Controllers\FasilitasSpController;
 use App\Http\Controllers\HasilPanenController;
@@ -44,6 +45,7 @@ use App\Http\Controllers\SpController;
 use App\Http\Controllers\TransmigranController;
 use App\Http\Controllers\WilayahController;
 use App\Support\DummyData;
+use App\Support\KontenSistem;
 use App\Support\LaporanData;
 use App\Support\PenilaianKondisiSp;
 use App\Support\RekapPanen;
@@ -84,6 +86,8 @@ Route::get('/', function () {
 
     return view('pages.dashboard.index', [
         'title' => 'Dashboard',
+        // Banner pengumuman dinas, diatur lewat Pengelolaan Konten (Task 9.6).
+        'pengumuman' => KontenSistem::pengumuman(),
         'ringkasan' => $ringkasan,
         'deret' => $deret,
         'rekapSp' => $rekapSp,
@@ -351,15 +355,8 @@ Route::put('/master/penilaian-kondisi/status/{kode}', [PenilaianKondisiControlle
  * Mengelola narasi profil kawasan, panduan operasional, identitas aplikasi,
  * portal publik warga, dan banner pengumuman dinas tanpa mengubah kode.
  */
-Route::get('/cms', function () {
-    return view('pages.cms.index', [
-        'title' => 'Pengelolaan Konten',
-    ]);
-})->name('cms');
-
-Route::put('/cms', function () {
-    return redirect()->route('cms')->with('sukses', 'Pengaturan konten berhasil disimpan.');
-})->name('cms.simpan');
+Route::get('/cms', [CmsController::class, 'index'])->name('cms');
+Route::put('/cms', [CmsController::class, 'simpan'])->name('cms.simpan');
 
 Route::get('/kawasan', [KawasanController::class, 'index'])->name('kawasan');
 

@@ -140,6 +140,20 @@ class UppercaseInput
     ];
 
     /**
+     * Rute yang isiannya TIDAK diseragamkan sama sekali.
+     *
+     * Pengelolaan Konten (Task 9.6) menyimpan teks lembaga, kop dokumen, narasi
+     * profil, dan FAQ -- kapitalisasi baku merusak maknanya ("Kementerian
+     * Transmigrasi" jadi "KEMENTERIAN TRANSMIGRASI"). Ini konten redaksional,
+     * bukan isi data lapangan yang dijaga keseragamannya.
+     *
+     * @var array<int, string>
+     */
+    protected array $ruteDikecualikan = [
+        'cms.simpan',
+    ];
+
+    /**
      * Menjalankan middleware pada setiap permintaan yang membawa data.
      *
      * @param  Request  $request  Permintaan masuk
@@ -150,6 +164,10 @@ class UppercaseInput
     {
         // Permintaan tanpa badan data tidak perlu diproses.
         if ($request->isMethod('GET') || $request->isMethod('HEAD')) {
+            return $next($request);
+        }
+
+        if (in_array($request->route()?->getName(), $this->ruteDikecualikan, true)) {
             return $next($request);
         }
 

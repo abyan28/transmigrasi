@@ -97,7 +97,7 @@
             proporsi, atau memotongnya (agents/ui-spec.md bagian 3.7).
             Saat sidebar diciutkan, hanya lambangnya yang tampil.
         --}}
-        <a href="{{ route('beranda') }}" class="flex items-center gap-3" aria-label="Beranda {{ config('app.name') }}">
+        <a href="{{ route('beranda') }}" class="flex items-center gap-3" aria-label="Beranda {{ \App\Support\KontenSistem::namaAplikasi() }}">
             <img src="{{ asset('images/logo/logo-kementrans-128.png') }}" alt="Logo Kementerian Transmigrasi"
                 class="h-10 w-10 shrink-0" width="40" height="40" />
             <span x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
@@ -108,7 +108,7 @@
                     Sebelumnya memakai text-white saja, yang membuat nama sistem
                     tidak terbaca sama sekali di mode terang (R-25 dan R-34).
                 --}}
-                <span class="text-theme-sm font-semibold text-navy-500 dark:text-white">{{ config('app.name') }}</span>
+                <span class="text-theme-sm font-semibold text-navy-500 dark:text-white">{{ \App\Support\KontenSistem::namaAplikasi() }}</span>
                 <span class="text-theme-xs text-gray-500 dark:text-navy-200">Kobalima Timur</span>
             </span>
         </a>

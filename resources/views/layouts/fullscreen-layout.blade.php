@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ $title ?? 'Beranda' }} | {{ config('app.name') }}</title>
+    <title>{{ $title ?? 'Beranda' }} | {{ \App\Support\KontenSistem::namaAplikasi() }}</title>
 
     {{-- Favicon dan ikon perangkat, diturunkan dari logo resmi Kementerian --}}
     <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">

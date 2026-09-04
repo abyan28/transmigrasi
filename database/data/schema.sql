@@ -1524,6 +1524,25 @@ CREATE TABLE `penanganan_pengaduan` (
 
 
 -- #############################################################################
+-- DOMAIN 11 : PENGATURAN SISTEM (CMS)
+-- #############################################################################
+
+-- 11.1 pengaturan ----------------------
+-- Penyimpanan kunci-nilai untuk Pengelolaan Konten Sistem (Task 9.6): identitas
+-- aplikasi, kop dokumen laporan, narasi profil, portal warga, pengumuman.
+-- `nilai` selalu TEXT; `tipe` menandai cara membacanya (teks/boolean/json/berkas).
+-- Berkas (logo/favicon) menyimpan id_berkas sebagai `nilai`.
+CREATE TABLE `pengaturan` (
+  `kunci`      VARCHAR(100) NOT NULL,
+  `nilai`      TEXT NULL,
+  `tipe`       VARCHAR(20) NOT NULL DEFAULT 'teks',
+  `created_at` TIMESTAMP NULL DEFAULT NULL,
+  `updated_at` TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (`kunci`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- #############################################################################
 -- TABEL INFRASTRUKTUR FRAMEWORK LARAVEL
 -- Bukan bagian ERD bisnis (erd.md 9). Disertakan agar hasil import langsung
 -- menjadi database Laravel yang utuh. Struktur mengikuti migration bawaan Laravel 12.

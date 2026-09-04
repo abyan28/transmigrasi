@@ -60,9 +60,8 @@
                     <h3 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">
                         Latar Belakang &amp; Tujuan
                     </h3>
-                    <p class="mt-2 text-theme-sm leading-relaxed text-gray-600 dark:text-gray-400">
-                        Kawasan Transmigrasi Kobalima Timur memiliki potensi agroekologis yang strategis dengan komoditas unggulan utama tanaman jagung, padi, palawija, dan hortikultura. Sistem informasi ini dikembangkan sebagai basis data terpadu untuk mendigitalisasi pemantauan kondisi kependudukan, penguasaan lahan usaha dan pekarangan, sarana produksi, bantuan alat mesin pertanian, realisasi penanaman, serta hasil panen secara transparan dan akuntabel.
-                    </p>
+                    {{-- Narasi diatur dari Pengelolaan Konten (Task 9.6). --}}
+                    <p class="mt-2 whitespace-pre-line text-theme-sm leading-relaxed text-gray-600 dark:text-gray-400">{{ \App\Support\KontenSistem::tentang() }}</p>
                 </div>
                 <div>
                     <h3 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">

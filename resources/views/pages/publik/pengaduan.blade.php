@@ -107,9 +107,9 @@
         <h1 class="text-title-sm font-semibold text-navy-500 dark:text-white">
             Sampaikan Pengaduan Anda
         </h1>
+        {{-- Teks sambutan diatur dari Pengelolaan Konten (Task 9.6). --}}
         <p class="mt-2 text-theme-sm text-gray-600 dark:text-gray-400">
-            Anda tidak perlu membuat akun. Isi keterangan di bawah ini, lalu kirim.
-            Petugas akan menindaklanjuti laporan Anda.
+            {{ $portal['sambutan'] ?? 'Anda tidak perlu membuat akun. Isi keterangan di bawah ini, lalu kirim.' }}
         </p>
     </div>
 
@@ -315,6 +315,9 @@
             <p class="mt-3 text-center text-theme-xs text-gray-500 dark:text-gray-400">
                 Dengan mengirim, Anda menyatakan keterangan di atas benar adanya.
             </p>
+            @if (! empty($portal['disclaimer']))
+                <p class="mt-2 text-center text-theme-xs text-gray-500 dark:text-gray-400">{{ $portal['disclaimer'] }}</p>
+            @endif
         </div>
     </form>
 @endsection

@@ -22,6 +22,23 @@
         `$dataGrafik` yang menjadi bahan grafiknya. Lihat routes/web.php.
     --}}
 
+    {{-- Banner pengumuman dinas, diatur lewat Pengelolaan Konten (Task 9.6). --}}
+    @if (! empty($pengumuman))
+        @php
+            $ragamBanner = [
+                'info' => 'border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-200',
+                'success' => 'border-green-200 bg-green-50 text-green-900 dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-200',
+                'warning' => 'border-yellow-300 bg-yellow-50 text-yellow-900 dark:border-yellow-500/30 dark:bg-yellow-500/10 dark:text-yellow-200',
+                'error' => 'border-red-200 bg-red-50 text-red-900 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200',
+            ];
+        @endphp
+        <div class="cetak-sembunyi mb-5 rounded-xl border p-4 {{ $ragamBanner[$pengumuman['tipe']] ?? $ragamBanner['info'] }}"
+            role="status">
+            <p class="text-theme-sm font-bold">{{ $pengumuman['judul'] }}</p>
+            <p class="mt-1 text-theme-xs leading-relaxed opacity-90">{{ $pengumuman['isi'] }}</p>
+        </div>
+    @endif
+
     <x-sim.page-header judul="Dashboard Kawasan Kobalima Timur"
         keterangan="Ringkasan kependudukan, lahan, produksi, dan pengaduan di enam satuan permukiman."
         :remah="\App\Helpers\RemahHelper::untuk('/')" />

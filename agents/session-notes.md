@@ -1,3 +1,32 @@
+# Task 9.6 SELESAI - Backend CMS (2026-09-04)
+
+- Tabel `pengaturan` (kunci VARCHAR(100) PK, nilai TEXT NULL, tipe, timestamps) --
+  schema.sql "DOMAIN 11" + migrasi `..._100190_create_pengaturan_table`.
+- `App\Support\KontenSistem` = repositori pusat. `BAWAAN` peta ~30 kunci->default;
+  `ambil/simpan/semua`; pembaca ber-nama (`namaAplikasi/subjudul/footer/kop/ttd/
+  tentang/faq/portal/pengumuman/awalanNomorPengaduan`). TANPA cache statis (aman uji).
+  `identitas.nama_app` bawaannya `config('app.name')`.
+- `CmsController` index/simpan; `simpan` men-dispatch per `tab` ke `simpanIdentitas/
+  Laporan/Informasi/Portal/Pengumuman` (validasi masing-masing).
+- View `pages/cms/index.blade.php` DITULIS ULANG: 843 baris mock Alpine -> ~560
+  baris 5 `<form method=POST @method(PUT)>` + `<input hidden name=tab>`. Pratinjau
+  hidup tab kop & pengumuman; repeater FAQ tab informasi.
+- Konsumen: `layouts/*` + judul tab -> `KontenSistem::namaAplikasi()`;
+  `LaporanData::instansi()` -> `KontenSistem::kop()` (bawaan dipilih agar HalamanTest
+  ttg "Kabupaten Malaka"/"Nusa Tenggara Timur" tetap hijau); `NomorPengaduan::buat()`
+  -> `awalanNomorPengaduan()`; `/panduan` FAQ, `/tentang` narasi, portal warga
+  sambutan/disclaimer, banner pengumuman dashboard.
+- `UppercaseInput`: +`$ruteDikecualikan = ['cms.simpan']` (teks konten tak dikapital).
+- **Ditunda:** unggah logo/favicon (cakram privat `rules.md` 14a; catatan di view);
+  blok TTD di dokumen laporan menyusul Task 10.5.
+- `tests/Database/CmsTest.php` +11. Verifikasi: Feature 732, Database 426, pint
+  bersih, banding-skema NOL SELISIH, tautan-statis 14.
+- **Tahap 9.1-9.4 DITUNDA** (keputusan pemilik 2026-09-04): dashboard wajib
+  berskala kawasan (`rules.md` 8g) tapi sistem hanya melacak 8 KK contoh; butuh
+  tabel `statistik_kawasan_tahunan` input dinas dulu. Berikutnya: Task 10.5.
+
+--- arsip ---
+
 # Tahap 8 SELESAI - Backend Pengaduan (2026-09-04, commit `b4c2968`)
 
 Task 8.2-8.7 dalam satu commit (domain terpaut erat).

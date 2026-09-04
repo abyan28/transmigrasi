@@ -22,7 +22,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ $title ?? 'Pengaduan Warga' }} | {{ config('app.name') }}</title>
+    <title>{{ $title ?? 'Pengaduan Warga' }} | {{ \App\Support\KontenSistem::namaAplikasi() }}</title>
 
     <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/logo/favicon-32.png') }}">

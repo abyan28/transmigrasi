@@ -1517,7 +1517,15 @@ menghapus sisa terakhir `DummyData::penggunaSaatIni()` -- dikerjakan berbarengan
 
 ## Tahap 9 — Dashboard dengan Data Nyata
 
-- [ ] Task 9.1 - Ganti data dummy dashboard dengan query nyata `[Sulit]`
+> **9.1-9.4 DITUNDA (keputusan pemilik 2026-09-04):** dashboard & rekap kependudukan
+> WAJIB berskala kawasan (~1140 KK, 3250 ha, 1847 ton/thn per `rules.md` 8g), tetapi
+> sistem hanya melacak 8 KK contoh -- menjumlahkan tabel transaksi menghasilkan angka
+> absurd dan dilarang. Butuh tabel `statistik_kawasan_tahunan` (input dinas) lebih
+> dulu; keputusannya "kerjakan yang lain (9.6, 10.5) dulu". Bagian yang MEMANG
+> terlacak (pengaduan, infrastruktur, penilaian SP, komoditas) tetap dari Eloquent
+> saat konversi kelak.
+
+- [ ] Task 9.1 - Ganti data dummy dashboard dengan query nyata `[Sulit]` `[DITUNDA -- butuh tabel statistik kawasan]`
   * **Lima agregat produksi wajib ikut diganti**, ditambahkan 2026-08-24 sebagai indikator 17: `realisasi_tanam_ha`, `hasil_panen_ha`, `puso_ha`, `belum_dipanen_ha`, `produktivitas_ton_ha`
   * **IKUT: `/kependudukan/rekap`** (`KependudukanController`, Task 5.5 hanya peralihan struktural). Angka agregatnya masih `DummyData::rekap*` berskala kawasan; `perSp` butuh lahan (Tahap 6). Uji `HalamanTest` kependudukan mengunci angka sintetis -> perlu ditulis ulang saat konversi
   * Kedua identitas pada `rules.md` 9.9 dan 9.11 wajib tetap berlaku setelah diganti kueri, dan sudah dijaga uji. Produktivitas **tertimbang** (9.8d), bukan rata-rata kolom
@@ -1525,15 +1533,29 @@ menghapus sisa terakhir `DummyData::penggunaSaatIni()` -- dikerjakan berbarengan
 - [ ] Task 9.2 - Filter wilayah dan periode terhubung ke seluruh visualisasi `[Sedang]`
 - [ ] Task 9.3 - Drill-down klik grafik menuju rincian per SP `[Sulit]`
 - [ ] Task 9.4 - Optimasi query dashboard (indeks, agregasi, eager loading) `[Sulit]`
-- [ ] Task 9.5 - Halaman pengaturan bobot penilaian kondisi SP `[Sedang]`
+- [✓] Task 9.5 - Halaman pengaturan bobot penilaian kondisi SP `[Sedang]` -- ✅ **dikerjakan sebagai Task 4.8** (`PenilaianKondisiController` + `PenilaianKondisiSeeder`, 8 uji); lihat catatan Task 4.8
   * Admin dapat menyesuaikan bobot tiap parameter dan menonaktifkan parameter tanpa mengubah kode
   * Parameter **dinonaktifkan, bukan dihapus**, agar riwayat penilaian yang memakainya tetap terbaca
   * Perubahan bobot **tidak mengubah penilaian lama**, sebab tiap penilaian menyimpan salinan bobot yang berlaku saat itu
   * Menampilkan pratinjau dampak perubahan bobot sebelum disimpan
   * Luas lahan memakai penjumlahan seluruh lahan; volume panen dikonversi ke ton
 
-- [ ] Task 9.6 - Backend Pengelolaan Konten (CMS) 5 tab `[Sulit]` (BARU 2026-09-03)
+- [✓] Task 9.6 - Backend Pengelolaan Konten (CMS) 5 tab `[Sulit]` (BARU 2026-09-03) -- ✅ **SELESAI 2026-09-04**
   * Menu **Pengelolaan Konten**, `/cms`. Tampilan 5 tab selesai Task 2.31 (catatan 31)
+  * **HASIL:** tabel `pengaturan` (kunci-nilai, `tipe` teks/boolean/json/berkas) +
+    `App\Support\KontenSistem` (repositori pusat: `ambil/simpan/semua` + pembaca
+    ber-nama `namaAplikasi/kop/ttd/tentang/faq/portal/pengumuman/awalanNomorPengaduan`)
+    + `CmsController` (5 tab -> `simpanIdentitas/Laporan/Informasi/Portal/Pengumuman`,
+    validasi per tab) + `resources/views/pages/cms/index.blade.php` ditulis ulang
+    dari mock Alpine jadi 5 `<form>` nyata.
+  * **Konsumen tersambung:** `layouts/*` + judul tab -> `KontenSistem::namaAplikasi()`;
+    `LaporanData::instansi()` -> `KontenSistem::kop()`; `NomorPengaduan::buat()` ->
+    `KontenSistem::awalanNomorPengaduan()`; `/panduan` FAQ + `/tentang` narasi +
+    portal warga sambutan/disclaimer + banner pengumuman dashboard.
+  * **Ditunda:** unggah logo/favicon (kendala cakram privat `rules.md` 14a) --
+    ada catatan di view; blok TTD di dokumen laporan menyusul di Task 10.5.
+  * `tests/Database/CmsTest.php` +11 uji. Suite Database 426 hijau, NOL SELISIH,
+    tautan-statis tetap 14.
   * **Celah yang ditemukan 2026-09-03:** modul ini tidak pernah punya task backend sama sekali; seluruh isinya masih nilai tetap di `x-data` Alpine, tak satu pun tersimpan
   * Lima tab: Identitas & Visual (nama resmi aplikasi, subjudul, instansi, logo, favicon), Kop Dokumen, Profil Kawasan, Portal Warga, Pengumuman
   * **Menghidupi dua halaman Bantuan & Info** yang isinya statis: `/panduan` dan `/tentang`. Keduanya tidak butuh task tersendiri -- teksnya diatur dari sini

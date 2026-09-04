@@ -69,18 +69,16 @@ class LaporanData
      */
     public static function instansi(): array
     {
-        $kawasan = DummyData::kawasan()[0] ?? ['kabupaten' => '-', 'provinsi' => '-'];
-        $kabupaten = $kawasan['kabupaten'] ?? '-';
+        // Teks kop dari Pengelolaan Konten (Task 9.6); dinas menyuntingnya lewat
+        // /cms tab "Kop & Dokumen Laporan". Bawaannya = teks lama.
+        $kop = KontenSistem::kop();
 
         return [
-            'kementerian' => 'Kementerian Transmigrasi Republik Indonesia',
-            'pemerintah' => 'Pemerintah Kabupaten '.$kabupaten,
-            'dinas' => 'Dinas Tenaga Kerja dan Transmigrasi Kabupaten '.$kabupaten,
-            'alamat' => 'Jalan Raya Betun, Kompleks Perkantoran Pemerintah Daerah Kab. '
-                .$kabupaten.', '.($kawasan['provinsi'] ?? '-'),
-            // Placeholder dari berkas rujukan, bukan kontak resmi. Istilah
-            // "Email", bukan "Surel" (ui-spec.md 10.1).
-            'kontak' => 'Telepon (0389) 123456  |  Email distrans@malakakab.go.id',
+            'kementerian' => $kop['kementerian'],
+            'pemerintah' => $kop['pemerintah'],
+            'dinas' => $kop['dinas'],
+            'alamat' => $kop['alamat'],
+            'kontak' => $kop['kontak'],
             'logoKementerian' => 'images/logo/logo-kementrans-128.png',
             'lambangKabupaten' => 'images/logo/lambang-malaka.png',
         ];
