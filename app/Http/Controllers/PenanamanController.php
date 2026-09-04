@@ -11,6 +11,7 @@ use App\Models\Poktan;
 use App\Models\SaprotanDistribusi;
 use App\Support\DummyData;
 use App\Support\KonversiPanen;
+use App\Support\PenyajianPanen;
 use App\Support\RekapPoktan;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
@@ -236,43 +237,35 @@ class PenanamanController extends Controller
     /**
      * Larik ber-kunci PERSIS satu baris `DummyData::penanaman()`.
      *
+     * Pemetaan dipindah ke `App\Support\PenyajianPanen` (Task 10.5) supaya
+     * halaman daftar/rincian dan Laporan Hasil Panen membaca satu sumber.
+     *
      * @return array<string, mixed>
      */
     private function baris(Penanaman $p): array
     {
-        return [
-            'id_penanaman' => $p->id_penanaman,
-            'poktan_id' => $p->poktan_id,
-            'poktan' => $p->poktan?->nama,
-            'komoditas_id' => $p->komoditas_id,
-            'komoditas' => $p->komoditas?->nama,
-            'saprotan_distribusi_id' => $p->saprotan_distribusi_id,
-            'volume_benih' => (float) $p->volume_benih,
-            'realisasi_tanam' => (float) $p->realisasi_tanam,
-            'periode_tanam' => $p->periode_tanam,
-            'satuan_permukiman_id' => $p->poktan?->satuan_permukiman_id,
-            'satuan_permukiman' => $p->poktan?->satuanPermukiman?->nama,
-            'keterangan' => $p->keterangan,
-            'dokumen_pendukung' => $p->berkas->firstWhere('pivot.peran', 'pendukung')?->nama_file
-                ?? $p->berkas->first()?->nama_file,
-        ];
+        return PenyajianPanen::barisPenanaman($p);
     }
 
     /**
+     * Subhimpunan baris hasil panen yang ditampilkan pada tab Penanaman.
+     *
      * @return array<string, mixed>
      */
     private function barisPanen(HasilPanen $h): array
     {
+        $b = PenyajianPanen::barisPanen($h);
+
         return [
-            'id_hasil_panen' => $h->id_hasil_panen,
-            'uuid' => $h->uuid,
-            'periode_panen' => $h->periode_panen,
-            'realisasi_panen' => (float) $h->realisasi_panen,
-            'puso' => $h->puso === null ? null : (float) $h->puso,
-            'produktivitas' => (float) $h->produktivitas,
-            'produksi' => (float) $h->produksi,
-            'harga_jual' => $h->harga_jual === null ? null : (float) $h->harga_jual,
-            'satuan' => $h->satuan?->nama,
+            'id_hasil_panen' => $b['id_hasil_panen'],
+            'uuid' => $b['uuid'],
+            'periode_panen' => $b['periode_panen'],
+            'realisasi_panen' => $b['realisasi_panen'],
+            'puso' => $b['puso'],
+            'produktivitas' => $b['produktivitas'],
+            'produksi' => $b['produksi'],
+            'harga_jual' => $b['harga_jual'],
+            'satuan' => $b['satuan'],
         ];
     }
 

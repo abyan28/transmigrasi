@@ -7,6 +7,7 @@ use App\Enums\StatusAnggotaKeluarga;
 use App\Enums\StatusHunian;
 use App\Enums\StatusTinggal;
 use App\Models\Lahan;
+use App\Models\Poktan;
 use App\Models\Rumah;
 use App\Models\SatuanPermukiman;
 use App\Models\Transmigran;
@@ -272,7 +273,7 @@ class LaporanData
     {
         static $peta = null;
 
-        return $peta ??= collect(DummyData::penanaman())->keyBy('id_penanaman')->all();
+        return $peta ??= collect(PenyajianPanen::penanaman())->keyBy('id_penanaman')->all();
     }
 
     /** @return array<int, array<string, mixed>> */
@@ -280,7 +281,7 @@ class LaporanData
     {
         static $peta = null;
 
-        return $peta ??= collect(DummyData::saprotan())->keyBy('id_saprotan')->all();
+        return $peta ??= collect(PenyajianSaprotan::daftar())->keyBy('id_saprotan')->all();
     }
 
     /** @return array<int, array<string, mixed>> */
@@ -288,7 +289,26 @@ class LaporanData
     {
         static $peta = null;
 
-        return $peta ??= collect(DummyData::saprotanDistribusi())->keyBy('id_saprotan_distribusi')->all();
+        return $peta ??= collect(PenyajianSaprotan::distribusi())->keyBy('id_saprotan_distribusi')->all();
+    }
+
+    /**
+     * Luas lahan kelompok (kering + basah) per poktan, diturunkan lewat
+     * `App\Support\RekapPoktan` -- pengganti `DummyData::rekapLahanPoktan()`.
+     *
+     * @return array<int, float>
+     */
+    private static function luasTotalPoktan(): array
+    {
+        static $peta = null;
+
+        return $peta ??= Poktan::withoutGlobalScopes()
+            ->with('anggota')
+            ->get()
+            ->mapWithKeys(fn (Poktan $p): array => [
+                $p->id_poktan => RekapPoktan::kekuatan($p)['luas_total'],
+            ])
+            ->all();
     }
 
     /**
@@ -332,11 +352,11 @@ class LaporanData
         $penanaman = self::petaPenanaman();
         $distribusi = self::petaSaprotanDistribusi();
         $anggotaAktif = self::anggotaAktifPerPoktan();
-        $luasPoktan = [];
+        $luasPoktan = self::luasTotalPoktan();
 
         $baris = [];
 
-        foreach (DummyData::hasilPanen() as $h) {
+        foreach (PenyajianPanen::hasilPanen() as $h) {
             $tanam = $penanaman[$h['penanaman_id']] ?? null;
             $pok = $poktan[$h['poktan_id']] ?? null;
 
@@ -345,7 +365,6 @@ class LaporanData
             }
 
             $pid = $pok['id_poktan'];
-            $luasPoktan[$pid] ??= (float) (DummyData::rekapLahanPoktan($pid)['luas_total'] ?? 0.0);
 
             // Jejak varietas & tahun pengadaan: hasil_panen -> penanaman
             // -> saprotan_distribusi -> pengadaan (Putaran 7).
@@ -380,7 +399,7 @@ class LaporanData
                 'puso' => $puso,
                 'belum_dipanen' => $belumDipanen,
                 'produktivitas' => (float) $h['produktivitas'],
-                'produksi_ton' => round(DummyData::keTon((float) $h['produksi'], $h['satuan']), 2),
+                'produksi_ton' => round(KonversiPanen::keTon((float) $h['produksi'], $h['satuan']), 2),
                 'keterangan' => $h['keterangan'] ?? null,
             ];
         }
@@ -450,7 +469,7 @@ class LaporanData
     {
         $poktan = self::petaPoktan();
         $anggotaAktif = self::anggotaAktifPerPoktan();
-        $luasPoktan = [];
+        $luasPoktan = self::luasTotalPoktan();
 
         $benih = [];
         $nonBenih = [];
@@ -459,14 +478,13 @@ class LaporanData
         // satu pengadaan), sejak Putaran 7. Pengadaan yang belum disalurkan
         // ke satu poktan pun tidak menghasilkan baris di sini. Jadwal tanam
         // tetap dari pengadaan (rencana bantuan).
-        $jadwal = collect(DummyData::saprotan())->pluck('jadwal_tanam', 'id_saprotan')->all();
+        $jadwal = collect(PenyajianSaprotan::daftar())->pluck('jadwal_tanam', 'id_saprotan')->all();
 
-        foreach (DummyData::saprotanDistribusi() as $d) {
+        foreach (PenyajianSaprotan::distribusi() as $d) {
             $pok = $poktan[$d['poktan_id']] ?? null;
 
             if ($d['jenis'] === 'Benih') {
                 $pid = $d['poktan_id'];
-                $luasPoktan[$pid] ??= DummyData::rekapLahanPoktan($pid)['luas_total'];
 
                 $benih[] = [
                     'sp_id' => $d['satuan_permukiman_id'],

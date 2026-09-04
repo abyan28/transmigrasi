@@ -7,6 +7,7 @@ use App\Models\HasilPanen;
 use App\Models\Penanaman;
 use App\Support\DummyData;
 use App\Support\KonversiPanen;
+use App\Support\PenyajianPanen;
 use App\Support\RekapPoktan;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
@@ -209,31 +210,14 @@ class HasilPanenController extends Controller
     /**
      * Larik ber-kunci PERSIS satu baris `DummyData::hasilPanen()`.
      *
+     * Pemetaan dipindah ke `App\Support\PenyajianPanen` (Task 10.5) supaya
+     * halaman daftar/rincian dan Laporan Hasil Panen membaca satu sumber.
+     *
      * @return array<string, mixed>
      */
     private function baris(HasilPanen $h): array
     {
-        $tanam = $h->penanaman;
-
-        return [
-            'id_hasil_panen' => $h->id_hasil_panen,
-            'uuid' => $h->uuid,
-            'penanaman_id' => $h->penanaman_id,
-            'poktan_id' => $tanam?->poktan_id,
-            'poktan' => $tanam?->poktan?->nama,
-            'komoditas' => $tanam?->komoditas?->nama,
-            'satuan' => $h->satuan?->nama,
-            'satuan_permukiman' => $tanam?->poktan?->satuanPermukiman?->nama,
-            'satuan_permukiman_id' => $tanam?->poktan?->satuan_permukiman_id,
-            'periode_panen' => $h->periode_panen,
-            'realisasi_panen' => (float) $h->realisasi_panen,
-            'puso' => $h->puso === null ? null : (float) $h->puso,
-            'produktivitas' => (float) $h->produktivitas,
-            'produksi' => (float) $h->produksi,
-            'harga_jual' => $h->harga_jual === null ? null : (float) $h->harga_jual,
-            'keterangan' => $h->keterangan,
-            'dokumen_pendukung' => $h->berkas->first()?->nama_file,
-        ];
+        return PenyajianPanen::barisPanen($h);
     }
 
     /**

@@ -6,8 +6,8 @@ use App\Enums\JenisDaftarPilihan;
 use App\Enums\JenisSaprotan;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
 use App\Models\Saprotan;
-use App\Models\SaprotanDistribusi;
 use App\Support\DummyData;
+use App\Support\PenyajianSaprotan;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -223,56 +223,14 @@ class SaprotanController extends Controller
     /**
      * Larik ber-kunci PERSIS satu baris `DummyData::saprotan()` mapped.
      *
+     * Pemetaan dipindah ke `App\Support\PenyajianSaprotan` (Task 10.5) supaya
+     * halaman daftar/rincian dan Laporan Saprotan membaca satu sumber.
+     *
      * @return array<string, mixed>
      */
     private function baris(Saprotan $s): array
     {
-        $benih = $s->jenis === JenisSaprotan::Benih;
-
-        $distribusi = $s->distribusi
-            ->sortBy('id_saprotan_distribusi')
-            ->map(function (SaprotanDistribusi $d) use ($benih) {
-                $jumlah = (float) $d->jumlah;
-                $terpakai = (float) $d->penanaman->sum('volume_benih');
-
-                return [
-                    'id_saprotan_distribusi' => $d->id_saprotan_distribusi,
-                    'saprotan_id' => $d->saprotan_id,
-                    'poktan_id' => $d->poktan_id,
-                    'poktan' => $d->poktan?->nama,
-                    'satuan_permukiman_id' => $d->poktan?->satuan_permukiman_id,
-                    'satuan_permukiman' => $d->poktan?->satuanPermukiman?->nama,
-                    'jumlah' => $jumlah,
-                    'tanggal_serah' => $d->tanggal_serah?->toDateString(),
-                    'keterangan' => $d->keterangan,
-                    'sisa_benih' => $benih ? max(0.0, round($jumlah - $terpakai, 3)) : null,
-                ];
-            })
-            ->values();
-
-        $tersalur = round((float) $distribusi->sum('jumlah'), 3);
-
-        return [
-            'id_saprotan' => $s->id_saprotan,
-            'jenis' => $s->jenis?->value,
-            'nama' => $s->nama,
-            'komoditas_id' => $s->komoditas_id,
-            'komoditas' => $s->komoditas?->nama,
-            'varietas' => $s->varietas,
-            'jadwal_tanam' => $s->jadwal_tanam,
-            'jumlah_total' => (float) $s->jumlah_total,
-            'satuan_id' => $s->satuan_id,
-            'satuan' => $s->satuan?->nama,
-            'tahun_pengadaan' => $s->tahun_pengadaan === null ? null : (int) $s->tahun_pengadaan,
-            'sumber_dana' => $s->sumber_dana,
-            'keterangan' => $s->keterangan,
-            'distribusi' => $distribusi->all(),
-            'jumlah_tersalur' => $tersalur,
-            'jumlah_belum_tersalur' => max(0.0, round((float) $s->jumlah_total - $tersalur, 3)),
-            'poktan_penerima' => $distribusi->pluck('poktan')->filter()->unique()->values()->all(),
-            'foto' => $s->foto?->nama_file,
-            'dokumen_pendukung' => $s->berkas?->nama_file,
-        ];
+        return PenyajianSaprotan::baris($s);
     }
 
     /**
