@@ -957,6 +957,12 @@ CREATE TABLE `transmigran` (
   KEY `idx_transmigran_pekerjaan` (`pekerjaan_kepala_keluarga`),
   KEY `idx_transmigran_sertifikat` (`status_sertifikat`),
   KEY `idx_transmigran_daerah_asal` (`daerah_asal_kabupaten_id`),
+  -- Ditambahkan 2026-09-05 (Task 9.4, rules.md 11 poin 7): status_tinggal
+  -- difilter/di-GROUP BY hampir tiap kueri RekapDashboard (ringkasan, deret,
+  -- rekapPenghuni, sebaranPekerjaan, pendapatanSaatIni, jumlahKkJiwa) tanpa
+  -- indeks sebelumnya; pendidikan_terakhir di-GROUP BY pendidikanPerTahun().
+  KEY `idx_transmigran_status_tinggal` (`status_tinggal`),
+  KEY `idx_transmigran_pendidikan` (`pendidikan_terakhir`),
   CONSTRAINT `fk_transmigran_sp`
     FOREIGN KEY (`satuan_permukiman_id`) REFERENCES `satuan_permukiman` (`id_satuan_permukiman`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_transmigran_daerah_asal`

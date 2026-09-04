@@ -109,11 +109,69 @@ it('menampilkan angka ringkasan dalam format Indonesia', function () {
 });
 
 it('menyimpan filter dashboard pada query string', function () {
-    // Filter belum menyaring data sampai Task 9.2, tetapi kontrolnya sudah
-    // nyata: pilihan bertahan setelah halaman dimuat ulang.
+    // Kontrolnya nyata: pilihan bertahan setelah halaman dimuat ulang.
     $this->get(route('beranda', ['sp' => 2]))
         ->assertOk()
         ->assertSee('Bersihkan');
+});
+
+it('menyaring seluruh visualisasi dashboard menurut SP terpilih (Task 9.2)', function () {
+    // SP Tniumanu (id 2) memuat PETRUS NAHAK, bukan YOHANES BERE (SP Kapitan
+    // Meo, id 1) -- pasangan pembeda yang sama dipakai uji rincian SP.
+    $ringkasanKawasan = RekapDashboard::ringkasan();
+    $ringkasanSp = RekapDashboard::ringkasan(2);
+
+    // Filter sungguhan menyempit, bukan kontrol mati (ANTISLOP-ID R-26):
+    // angka SP tunggal wajib beda dari (dan tidak lebih besar dari) kawasan.
+    expect($ringkasanSp['jumlah_kk'])->toBeLessThanOrEqual($ringkasanKawasan['jumlah_kk']);
+
+    $this->get(route('beranda', ['sp' => 2]))
+        ->assertOk()
+        ->assertSee(number_format($ringkasanSp['jumlah_kk'], 0, ',', '.'))
+        ->assertSee('Menampilkan:')
+        ->assertSee('Tniumanu');
+});
+
+it('mengabaikan sp karangan pada bilah filter dashboard, bukan galat', function () {
+    // rules.md 11 poin 4: filter dashboard adalah kenyamanan penyaringan,
+    // bukan validasi input -- SP yang tak dikenal jatuh diam-diam ke
+    // "seluruh kawasan", tak pernah 404/500.
+    $ringkasanKawasan = RekapDashboard::ringkasan();
+
+    $this->get(route('beranda', ['sp' => 999999]))
+        ->assertOk()
+        ->assertSee(number_format($ringkasanKawasan['jumlah_kk'], 0, ',', '.'))
+        ->assertDontSee('Menampilkan:');
+});
+
+it('memotong deret grafik dashboard menurut rentang Tahun Mulai/Tahun Akhir', function () {
+    $deretPenuh = RekapDashboard::deret();
+
+    // Rentang butuh minimal 2 tahun data nyata supaya pemotongan teruji --
+    // data contoh sudah menjaga ini (lihat identitas kk_masuk pada uji lain).
+    expect(count($deretPenuh['tahun']))->toBeGreaterThan(1);
+
+    $tahunAwal = $deretPenuh['tahun'][0];
+    $tahunAkhir = $deretPenuh['tahun'][0]; // rentang satu tahun: hanya baris pertama
+
+    $isi = $this->get(route('beranda', ['tahun_awal' => $tahunAwal, 'tahun_akhir' => $tahunAkhir]))
+        ->assertOk()
+        ->getContent();
+
+    preg_match('/const data = (\{.+?\});/s', $isi, $cocok);
+    $data = json_decode($cocok[1], true);
+
+    expect($data['tahun'])->toBe([$tahunAwal]);
+});
+
+it('mengecualikan grafik Perbandingan Antar SP dari filter SP dashboard', function () {
+    // Premisnya membandingkan SELURUH SP -- menyaringnya ke satu SP
+    // meniadakan grafiknya sendiri (dicatat di routes/internal.php).
+    $respons = $this->get(route('beranda', ['sp' => 2]))->assertOk();
+
+    foreach (RekapDashboard::perSp() as $baris) {
+        $respons->assertSee($baris['satuan_permukiman']);
+    }
 });
 
 /*

@@ -6,13 +6,16 @@
     grafik dua kolom yang TIDAK sama lebar, agar dashboard terbaca berbeda dari
     halaman daftar dan halaman rekap (bagian 2.2).
 
-    Seluruh angka masih berasal dari app/Support/DummyData.php. Penggantian ke
-    query nyata dikerjakan pada Task 9.1 tanpa mengubah berkas ini, karena nama
-    kunci array sudah mengikuti kamus data.
+    Seluruh angka dari App\Support\RekapDashboard (Eloquent, Task 9.1,
+    rules.md 8g dibalik 2026-09-04) -- lihat kelas itu untuk taksiran mana
+    yang genuinely per tahun vs. keadaan sekarang.
 
-    Filter wilayah dan periode sudah berbentuk kontrol nyata yang menulis query
-    string, tetapi penyaringan datanya baru aktif pada Task 9.2. Kontrol tetap
-    berfungsi mengubah URL, bukan tombol mati (ANTISLOP-ID R-26).
+    Filter wilayah + periode (Task 9.2, rules.md 11 poin 4) menyaring SELURUH
+    visualisasi lewat query string biasa (`?sp=&tahun_awal=&tahun_akhir=`) --
+    ganjil dari pola hash Laporan sebab dashboard bukan dokumen cetak
+    (`rules.md` 12 poin 5 tidak berlaku di sini). "Perbandingan Antar SP"
+    SENGAJA tidak ikut menyempit menurut SP (lihat catatan di rute) --
+    Tahun Akhir tetap berlaku padanya.
 --}}
 @extends('layouts.app')
 
@@ -99,6 +102,19 @@
             <x-sim.tombol-filter :ada-filter="request()->hasAny(['sp', 'tahun_awal', 'tahun_akhir'])"
                 :url-bersih="route('beranda')" />
         </div>
+
+        @if ($filterSpAktif || $filterTahunAwal || $filterTahunAkhir)
+            <p class="mt-3 text-theme-xs text-gray-500 dark:text-gray-400">
+                Menampilkan:
+                <span class="font-medium text-gray-700 dark:text-gray-300">
+                    {{ $filterSpAktif ? $daftarSp->firstWhere('id_satuan_permukiman', $filterSpAktif)?->nama : 'Seluruh kawasan' }}
+                </span>,
+                <span class="font-medium text-gray-700 dark:text-gray-300">
+                    {{ $filterTahunAwal ?? $deret['tahun'][0] }}&ndash;{{ $filterTahunAkhir ?? end($deret['tahun']) }}
+                </span>
+                &mdash; kecuali "Perbandingan Antar Satuan Permukiman", yang selalu menampilkan keenam SP.
+            </p>
+        @endif
     </form>
 
     {{-- ============================================================

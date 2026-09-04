@@ -58,28 +58,63 @@ use App\Support\RekapPengaduan;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 
-// Dashboard monitoring kawasan, 15 indikator dengan data contoh.
-// Penggantian ke query nyata dikerjakan pada Tahap 9.
+// Dashboard monitoring kawasan, 17 indikator dari data nyata (Task 9.1).
 Route::get('/', function () {
     // Task 9.1 (rules.md 8g dibalik 2026-09-04): angka dari Eloquent, bukan
     // larik tetap DummyData. Lihat App\Support\RekapDashboard.
-    $ringkasan = RekapDashboard::ringkasan();
-    $deret = RekapDashboard::deret();
-    $rekapSp = RekapDashboard::perSp();
+    //
+    // Task 9.2 (2026-09-05, rules.md 11 poin 4): bilah filter wilayah +
+    // periode disambung ke seluruh visualisasi lewat query string (GET biasa
+    // -- BUKAN pola hash Laporan; dashboard bukan dokumen yang dicetak/
+    // difoto, `rules.md` 12 poin 5 tidak berlaku di sini, dan query string
+    // sudah dipakai 17 halaman daftar lain). SP yang tidak dikenal atau
+    // rentang tahun yang tak masuk akal DIABAIKAN secara diam-diam (jatuh ke
+    // "seluruh kawasan"/"seluruh tahun"), bukan galat -- filter dashboard
+    // adalah kenyamanan penyaringan, bukan validasi input.
+    $daftarSp = SatuanPermukiman::orderBy('nama')->get();
+    $spId = $daftarSp->contains('id_satuan_permukiman', (int) request('sp'))
+        ? (int) request('sp') : null;
 
-    $penilaianSp = PenilaianKondisiSp::nilaiSeluruhSp();
-    $statusInfra = RekapDashboard::statusInfrastruktur();
-    $sebaranPekerjaan = RekapDashboard::sebaranPekerjaan();
-    $rekapStatusPengaduan = RekapPengaduan::rekap('status');
-    $sebaranKomoditas = RekapDashboard::sebaranKomoditas();
-    $rekapPenghuni = RekapDashboard::rekapPenghuni();
-    $pendapatanSaatIni = RekapDashboard::pendapatanSaatIni();
+    $deretPenuh = RekapDashboard::deret($spId);
+    $tahunAwal = request()->filled('tahun_awal') && in_array((int) request('tahun_awal'), $deretPenuh['tahun'], true)
+        ? (int) request('tahun_awal') : null;
+    $tahunAkhir = request()->filled('tahun_akhir') && in_array((int) request('tahun_akhir'), $deretPenuh['tahun'], true)
+        ? (int) request('tahun_akhir') : null;
+    if ($tahunAwal !== null && $tahunAkhir !== null && $tahunAwal > $tahunAkhir) {
+        [$tahunAwal, $tahunAkhir] = [$tahunAkhir, $tahunAwal];
+    }
+    $deret = RekapDashboard::potongDeret($deretPenuh, $tahunAwal, $tahunAkhir);
+
+    // Tahun Akhir terpilih menjadi tahun acuan kartu produksi (ringkasan,
+    // komoditas utama) selagi filter periode aktif -- selain itu tetap tahun
+    // terakhir yang benar-benar terdata.
+    $tahunAcuan = $tahunAkhir ?? RekapDashboard::tahunTerakhir();
+
+    $ringkasan = RekapDashboard::ringkasan($spId, $tahunAcuan);
+    // Perbandingan Antar SP TIDAK ikut menyempit menurut SP -- premisnya
+    // justru membandingkan seluruh SP; menyaringnya ke satu SP meniadakan
+    // grafiknya sendiri. Tahun Akhir tetap berlaku (volume panennya).
+    $rekapSp = RekapDashboard::perSp($tahunAcuan);
+
+    $penilaianSp = $spId === null
+        ? PenilaianKondisiSp::nilaiSeluruhSp()
+        : array_values(array_filter(
+            PenilaianKondisiSp::nilaiSeluruhSp(),
+            fn ($p) => $p['satuan_permukiman_id'] === $spId,
+        ));
+    $statusInfra = RekapDashboard::statusInfrastruktur($spId);
+    $sebaranPekerjaan = RekapDashboard::sebaranPekerjaan($spId);
+    $rekapStatusPengaduan = RekapPengaduan::rekap('status', $spId);
+    $sebaranKomoditas = RekapDashboard::sebaranKomoditas($spId, $tahunAcuan);
+    $rekapPenghuni = RekapDashboard::rekapPenghuni($spId);
+    $pendapatanSaatIni = RekapDashboard::pendapatanSaatIni($spId);
 
     // Isu prioritas: pengaduan yang belum selesai, diurutkan dari yang paling
     // mendesak. Larik ber-kunci PERSIS bekas `DummyData::pengaduan()`, sebab
     // penyaringan/pengurutan di bawah + tampilannya di Blade masih memakai
     // bentuk larik lama.
     $pengaduan = Pengaduan::query()
+        ->when($spId !== null, fn ($q) => $q->where('satuan_permukiman_id', $spId))
         ->with('satuanPermukiman')
         ->get()
         ->map(fn (Pengaduan $p): array => [
@@ -99,9 +134,10 @@ Route::get('/', function () {
      * Dibaca dari deret, BUKAN dari `date('Y')`. Yang dapat dijamin benar
      * adalah "angka ini milik tahun terakhir yang terdata"; menyebutnya tahun
      * berjalan menjanjikan hal yang belum tentu benar begitu tahun berganti
-     * sementara datanya belum masuk.
+     * sementara datanya belum masuk. `$tahunAcuan` (bukan selalu tahun
+     * terakhir) sejak filter periode aktif -- lihat catatan di atas.
      */
-    $tahunTerakhir = RekapDashboard::tahunTerakhir();
+    $tahunTerakhir = $tahunAcuan;
 
     $urutanPrioritas = ['Mendesak' => 0, 'Tinggi' => 1, 'Sedang' => 2, 'Rendah' => 3];
     $isuPrioritas = array_filter($pengaduan, fn ($p) => $p['status'] !== 'Selesai');
@@ -115,9 +151,16 @@ Route::get('/', function () {
         'deret' => $deret,
         'rekapSp' => $rekapSp,
 
-        // Indikator ke-16: kondisi layanan dasar tiap SP.
+        // Indikator ke-16: kondisi layanan dasar tiap SP. `rekapKondisi`
+        // dihitung ulang dari `$penilaianSp` yang SUDAH menyempit (bukan
+        // `PenilaianKondisiSp::rekapStatus()`, yang selalu kawasan penuh),
+        // supaya kartu ringkasan status tidak membantah tabel di bawahnya
+        // saat filter SP aktif (Task 9.2).
         'penilaianSp' => $penilaianSp,
-        'rekapKondisi' => PenilaianKondisiSp::rekapStatus(),
+        'rekapKondisi' => collect(\App\Enums\StatusKondisiSp::cases())
+            ->mapWithKeys(fn ($s) => [$s->value => 0])
+            ->merge(collect($penilaianSp)->countBy(fn ($p) => $p['status']->value))
+            ->all(),
 
         // Penyebab utama tiap SP, dahulu dihitung di dalam perulangan tabel.
         'penyebabSp' => collect($penilaianSp)
@@ -129,9 +172,15 @@ Route::get('/', function () {
         'rekapStatusPengaduan' => $rekapStatusPengaduan,
         'sebaranKomoditas' => $sebaranKomoditas,
         'rekapPenghuni' => $rekapPenghuni,
-        'daftarSp' => SatuanPermukiman::orderBy('nama')->get(),
+        'daftarSp' => $daftarSp,
         'pengaduan' => $pengaduan,
         'pendapatanSaatIni' => $pendapatanSaatIni,
+
+        // Bilah filter (Task 9.2): dipakai Blade menandai pilihan yang
+        // sedang aktif dan menyusun tautan drill-down yang membawa filter.
+        'filterSpAktif' => $spId,
+        'filterTahunAwal' => $tahunAwal,
+        'filterTahunAkhir' => $tahunAkhir,
 
         'persenHuni' => $ringkasan['rumah_total'] > 0 ? round($ringkasan['rumah_terhuni'] / $ringkasan['rumah_total'] * 100) : 0,
         'tahunTerakhir' => $tahunTerakhir,
@@ -162,8 +211,12 @@ Route::get('/', function () {
          * "Utama" berbeda dari "unggulan": yang ini dihitung dari volume dan
          * berubah mengikuti musim, sedangkan unggulan ditetapkan menurut
          * proposal atau kebijakan dinas (`rules.md` 8.1) dan ditandai petugas.
+         *
+         * Diturunkan dari `$sebaranKomoditas` yang sudah dihitung di atas
+         * (sama SP/tahun acuan), bukan pemanggilan kedua yang mengulang
+         * kueri `RekapPanen::rekap()`.
          */
-        'komoditasUtama' => RekapDashboard::komoditasUtama(),
+        'komoditasUtama' => $sebaranKomoditas === [] ? null : array_key_first($sebaranKomoditas),
 
         'isuPrioritas' => $isuPrioritas,
 

@@ -54,6 +54,11 @@ return new class extends Migration
             $table->index('pekerjaan_kepala_keluarga', 'idx_transmigran_pekerjaan');
             $table->index('status_sertifikat', 'idx_transmigran_sertifikat');
             $table->index('daerah_asal_kabupaten_id', 'idx_transmigran_daerah_asal');
+            // Task 9.4 (2026-09-05): status_tinggal difilter/di-GROUP BY hampir
+            // tiap kueri RekapDashboard; pendidikan_terakhir di-GROUP BY
+            // pendidikanPerTahun(). Lihat catatan schema.sql.
+            $table->index('status_tinggal', 'idx_transmigran_status_tinggal');
+            $table->index('pendidikan_terakhir', 'idx_transmigran_pendidikan');
 
             $table->foreign('satuan_permukiman_id', 'fk_transmigran_sp')
                 ->references('id_satuan_permukiman')->on('satuan_permukiman')

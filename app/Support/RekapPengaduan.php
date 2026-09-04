@@ -20,13 +20,17 @@ class RekapPengaduan
 {
     /**
      * @param  string  $kelompok  kategori | status | sp | prioritas | bidang
+     * @param  ?int  $spId  Menyempitkan ke satu SP (Task 9.2, bilah filter dashboard)
      * @return array<int, array<string, mixed>> Terbanyak dulu
      */
-    public static function rekap(string $kelompok = 'kategori'): array
+    public static function rekap(string $kelompok = 'kategori', ?int $spId = null): array
     {
         $peta = [];
 
-        $pengaduan = Pengaduan::query()->with('satuanPermukiman')->get();
+        $pengaduan = Pengaduan::query()
+            ->when($spId !== null, fn ($q) => $q->where('satuan_permukiman_id', $spId))
+            ->with('satuanPermukiman')
+            ->get();
 
         foreach ($pengaduan as $p) {
             $kunci = match ($kelompok) {

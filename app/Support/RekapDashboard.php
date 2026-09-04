@@ -46,25 +46,32 @@ class RekapDashboard
     /**
      * Ringkasan kartu utama dashboard.
      *
+     * Task 9.2 (2026-09-05): `$spId` menyempitkan seluruh angka ke satu SP
+     * (bilah filter dashboard, `satuan_permukiman_id` -- pola sama
+     * `CakupanDataSp`, bukan pivot cakupan layanan); `$tahun` menggantikan
+     * "tahun terakhir" bawaan untuk bagian produksi saat filter periode aktif
+     * (Tahun Akhir). Keduanya `null` = perilaku lama, seluruh kawasan/tahun
+     * terakhir.
+     *
      * @return array<string, mixed>
      */
-    public static function ringkasan(): array
+    public static function ringkasan(?int $spId = null, ?int $tahun = null): array
     {
-        $tahun = self::tahunTerakhir();
-        $totalPanen = self::totalPanenTahun($tahun);
-        $kkJiwa = self::jumlahKkJiwa();
+        $tahun ??= self::tahunTerakhir();
+        $totalPanen = self::totalPanenTahun($tahun, $spId);
+        $kkJiwa = self::jumlahKkJiwa($spId);
 
         return [
             'jumlah_kk' => $kkJiwa['jumlah_kk'],
             'jumlah_jiwa' => $kkJiwa['jumlah_jiwa'],
-            'jumlah_petani' => Transmigran::where('status_tinggal', StatusTinggal::Aktif->value)
-                ->where('pekerjaan_kepala_keluarga', 'PETANI')->count(),
-            'rumah_terhuni' => Rumah::where('status_hunian', StatusHunian::Dihuni->value)->count(),
-            'rumah_total' => Rumah::count(),
-            'luas_lahan_total' => round((float) Lahan::sum('luas_usaha'), 2),
-            'pengaduan_terbuka' => Pengaduan::whereNot('status', StatusPengaduan::Selesai->value)->count(),
+            'jumlah_petani' => self::terapkanSp(Transmigran::where('status_tinggal', StatusTinggal::Aktif->value)
+                ->where('pekerjaan_kepala_keluarga', 'PETANI'), $spId)->count(),
+            'rumah_terhuni' => self::terapkanSp(Rumah::where('status_hunian', StatusHunian::Dihuni->value), $spId)->count(),
+            'rumah_total' => self::terapkanSp(Rumah::query(), $spId)->count(),
+            'luas_lahan_total' => round((float) self::terapkanSp(Lahan::query(), $spId)->sum('luas_usaha'), 2),
+            'pengaduan_terbuka' => self::terapkanSp(Pengaduan::whereNot('status', StatusPengaduan::Selesai->value), $spId)->count(),
             'volume_panen_ton' => $totalPanen['produksi_ton'],
-            'harga_rata_rata' => self::hargaRataRata($tahun),
+            'harga_rata_rata' => self::hargaRataRata($tahun, $spId),
             'realisasi_tanam_ha' => $totalPanen['realisasi_tanam'],
             'hasil_panen_ha' => $totalPanen['hasil_panen'],
             'puso_ha' => $totalPanen['puso'],
@@ -81,23 +88,30 @@ class RekapDashboard
      * waktu, bukan titik tersebar. Nol pada tahun yang belum ada datanya --
      * itu keadaan sungguhan, bukan kekosongan yang disembunyikan.
      *
+     * Rentang tahunnya SENGAJA tidak dipotong di sini walau bilah filter
+     * dashboard punya Tahun Mulai/Tahun Akhir (Task 9.2) -- pemotongan
+     * tampilan dilakukan pemanggil (`routes/internal.php`) atas larik yang
+     * sudah lengkap, supaya taksiran kumulatif tetap dihitung dari titik nol
+     * yang benar (memotong dulu lalu menaksir akan salah mulai dari tahun
+     * potongan pertama).
+     *
      * @return array<string, mixed>
      */
-    public static function deret(): array
+    public static function deret(?int $spId = null): array
     {
-        $tahunMasuk = (int) (Transmigran::min('tahun_kedatangan') ?? date('Y'));
+        $tahunMasukQuery = self::terapkanSp(Transmigran::query(), $spId);
+        $tahunMasuk = (int) ($tahunMasukQuery->min('tahun_kedatangan') ?? date('Y'));
         $tahunIni = (int) date('Y');
         $tahun = range($tahunMasuk, $tahunIni);
 
-        $masukPerTahun = Transmigran::query()
+        $masukPerTahun = self::terapkanSp(Transmigran::query(), $spId)
             ->selectRaw('tahun_kedatangan, count(*) as jumlah')
             ->groupBy('tahun_kedatangan')->pluck('jumlah', 'tahun_kedatangan');
-        $keluarPerTahun = Transmigran::query()
+        $keluarPerTahun = self::terapkanSp(Transmigran::query(), $spId)
             ->whereNotNull('tahun_keluar')
             ->selectRaw('tahun_keluar, count(*) as jumlah')
             ->groupBy('tahun_keluar')->pluck('jumlah', 'tahun_keluar');
-        $petaniPerTahun = Transmigran::query()
-            ->where('pekerjaan_kepala_keluarga', 'PETANI')
+        $petaniPerTahun = self::terapkanSp(Transmigran::where('pekerjaan_kepala_keluarga', 'PETANI'), $spId)
             ->selectRaw('tahun_kedatangan, count(*) as jumlah')
             ->groupBy('tahun_kedatangan')->pluck('jumlah', 'tahun_kedatangan');
 
@@ -106,7 +120,7 @@ class RekapDashboard
         // adalah tabel keadaan-sekarang), tetapi dihitung dari data nyata dan
         // tumbuh benar seiring pendataan, bukan angka tetap.
         $kk = [];
-        $jiwaPerKk = self::rasioJiwaPerKkSaatIni();
+        $jiwaPerKk = self::rasioJiwaPerKkSaatIni($spId);
         $petaniKumulatif = [];
         $kumulatif = 0;
         $petaniKum = 0;
@@ -131,9 +145,46 @@ class RekapDashboard
             'jumlah_petani' => $petaniKumulatif,
             'kk_masuk' => array_map(fn ($t) => (int) ($masukPerTahun[$t] ?? 0), $tahun),
             'kk_keluar' => array_map(fn ($t) => (int) ($keluarPerTahun[$t] ?? 0), $tahun),
-            'volume_panen' => array_map(fn ($t) => self::totalPanenTahun($t)['produksi_ton'], $tahun),
-            'harga_rata_rata' => array_map(fn ($t) => self::hargaRataRata($t), $tahun),
+            'volume_panen' => array_map(fn ($t) => self::totalPanenTahun($t, $spId)['produksi_ton'], $tahun),
+            'harga_rata_rata' => array_map(fn ($t) => self::hargaRataRata($t, $spId), $tahun),
         ];
+    }
+
+    /**
+     * Memotong larik `deret()` ke rentang [Tahun Mulai, Tahun Akhir] bilah
+     * filter dashboard (Task 9.2). Dikerjakan SETELAH `deret()` dihitung
+     * penuh -- lihat catatan di `deret()` perihal taksiran kumulatif.
+     *
+     * Batas di luar rentang nyata diabaikan (bukan galat): pengguna boleh
+     * mengetik tahun karangan di query string, dan yang benar adalah
+     * menjepitnya ke rentang yang ada, bukan menghasilkan larik kosong.
+     *
+     * @param  array<string, mixed>  $deret  Hasil `deret()`
+     * @return array<string, mixed>
+     */
+    public static function potongDeret(array $deret, ?int $tahunAwal, ?int $tahunAkhir): array
+    {
+        if ($tahunAwal === null && $tahunAkhir === null) {
+            return $deret;
+        }
+
+        $indeks = [];
+        foreach ($deret['tahun'] as $i => $t) {
+            if (($tahunAwal === null || $t >= $tahunAwal) && ($tahunAkhir === null || $t <= $tahunAkhir)) {
+                $indeks[] = $i;
+            }
+        }
+
+        if ($indeks === []) {
+            return $deret;
+        }
+
+        $hasil = [];
+        foreach ($deret as $kunci => $nilai) {
+            $hasil[$kunci] = array_values(array_intersect_key($nilai, array_flip($indeks)));
+        }
+
+        return $hasil;
     }
 
     /**
@@ -143,10 +194,10 @@ class RekapDashboard
      *
      * @return array{rata_rata: float, jumlah_kk: int}
      */
-    public static function pendapatanSaatIni(): array
+    public static function pendapatanSaatIni(?int $spId = null): array
     {
-        $aktif = Transmigran::where('status_tinggal', StatusTinggal::Aktif->value)
-            ->whereNotNull('pendapatan_per_bulan');
+        $aktif = self::terapkanSp(Transmigran::where('status_tinggal', StatusTinggal::Aktif->value)
+            ->whereNotNull('pendapatan_per_bulan'), $spId);
 
         return [
             'rata_rata' => round((float) $aktif->avg('pendapatan_per_bulan'), 0),
@@ -351,9 +402,9 @@ class RekapDashboard
     /**
      * @return array<string, int>
      */
-    public static function sebaranPekerjaan(): array
+    public static function sebaranPekerjaan(?int $spId = null): array
     {
-        return Transmigran::where('status_tinggal', StatusTinggal::Aktif->value)
+        return self::terapkanSp(Transmigran::where('status_tinggal', StatusTinggal::Aktif->value), $spId)
             ->selectRaw('pekerjaan_kepala_keluarga, count(*) as jumlah')
             ->groupBy('pekerjaan_kepala_keluarga')
             ->orderByDesc('jumlah')
@@ -365,9 +416,9 @@ class RekapDashboard
     /**
      * @return array<string, int>
      */
-    public static function rekapPenghuni(): array
+    public static function rekapPenghuni(?int $spId = null): array
     {
-        return Transmigran::query()
+        return self::terapkanSp(Transmigran::query(), $spId)
             ->selectRaw('status_tinggal, count(*) as jumlah')
             ->groupBy('status_tinggal')
             ->pluck('jumlah', 'status_tinggal')
@@ -376,13 +427,15 @@ class RekapDashboard
     }
 
     /**
-     * Volume panen tahun terakhir per komoditas, dalam ton.
+     * Volume panen per komoditas dalam ton, tahun terakhir kecuali `$tahun`
+     * diisi (Task 9.2, filter periode dashboard memakai Tahun Akhir).
      *
      * @return array<string, float>
      */
-    public static function sebaranKomoditas(): array
+    public static function sebaranKomoditas(?int $spId = null, ?int $tahun = null): array
     {
-        $baris = RekapPanen::rekap('komoditas', self::tahunTerakhir());
+        $namaSp = self::namaSp($spId);
+        $baris = RekapPanen::rekap('komoditas', $tahun ?? self::tahunTerakhir(), $namaSp);
 
         $hasil = [];
         foreach ($baris as $b) {
@@ -397,13 +450,15 @@ class RekapDashboard
     /**
      * Kondisi infrastruktur per jenis. Tabel kecil (puluhan aset per
      * kawasan), tidak kena masalah skala populasi -- selalu boleh dihitung
-     * dari Eloquent langsung.
+     * dari Eloquent langsung. `$spId` menyaring pada SP pangkal
+     * (`satuan_permukiman_id`), sama seperti `CakupanDataSp` -- bukan pivot
+     * cakupan layanan, sebab infrastruktur lintas-SP tetap "berpangkal" satu.
      *
      * @return array<int, array{jenis: string, baik: int, rusak_ringan: int, rusak_berat: int}>
      */
-    public static function statusInfrastruktur(): array
+    public static function statusInfrastruktur(?int $spId = null): array
     {
-        $baris = Infrastruktur::query()
+        $baris = self::terapkanSp(Infrastruktur::query(), $spId)
             ->selectRaw('jenis, kondisi, count(*) as jumlah')
             ->groupBy('jenis', 'kondisi')
             ->get();
@@ -431,9 +486,9 @@ class RekapDashboard
      * Komoditas dengan volume terbesar tahun terakhir ("komoditas utama",
      * beda dari "komoditas unggulan" yang ditetapkan petugas -- rules.md 8.3c).
      */
-    public static function komoditasUtama(): ?string
+    public static function komoditasUtama(?int $spId = null, ?int $tahun = null): ?string
     {
-        $sebaran = self::sebaranKomoditas();
+        $sebaran = self::sebaranKomoditas($spId, $tahun);
 
         return $sebaran === [] ? null : array_key_first($sebaran);
     }
@@ -516,9 +571,9 @@ class RekapDashboard
      *
      * @return array{realisasi_tanam: float, hasil_panen: float, puso: float, belum_dipanen: float, produksi_ton: float}
      */
-    private static function totalPanenTahun(int $tahun): array
+    private static function totalPanenTahun(int $tahun, ?int $spId = null): array
     {
-        $baris = collect(RekapPanen::rekap('sp', $tahun));
+        $baris = collect(RekapPanen::rekap('sp', $tahun, self::namaSp($spId)));
 
         return [
             'realisasi_tanam' => round((float) $baris->sum('realisasi_tanam'), 2),
@@ -535,23 +590,35 @@ class RekapDashboard
      * untuk alasan produktivitas HARUS tertimbang sedangkan harga di sini
      * sengaja tidak, sebab satuannya sendiri belum seragam sebelum konversi).
      */
-    private static function hargaRataRata(int $tahun): float
+    private static function hargaRataRata(int $tahun, ?int $spId = null): float
     {
-        $rata = HasilPanen::query()
-            ->whereNotNull('harga_jual')
-            ->where('periode_panen', 'like', $tahun.'-%')
-            ->avg('harga_jual');
+        $namaSp = self::namaSp($spId);
 
-        return round((float) ($rata ?? 0), 0);
+        // `harga_jual` ada di hasil_panen, bukan di penanaman/SP langsung --
+        // disaring lewat relasi penanaman.poktan.satuanPermukiman, sebab
+        // `RekapPanen::rekap()` (basis penanaman) juga menyaring lewat rute
+        // yang sama (rules.md 8g: satu jalur perhitungan, tak saling membantah).
+        $query = HasilPanen::query()
+            ->whereNotNull('harga_jual')
+            ->where('periode_panen', 'like', $tahun.'-%');
+
+        if ($namaSp !== null) {
+            $query->whereHas(
+                'penanaman.poktan.satuanPermukiman',
+                fn ($q) => $q->where('nama', $namaSp),
+            );
+        }
+
+        return round((float) ($query->avg('harga_jual') ?? 0), 0);
     }
 
     /**
      * Rasio jiwa per KK di antara transmigran AKTIF saat ini, dipakai
      * menaksir jiwa pada deret tahun sebelumnya (lihat `deret()`).
      */
-    private static function rasioJiwaPerKkSaatIni(): float
+    private static function rasioJiwaPerKkSaatIni(?int $spId = null): float
     {
-        $kkJiwa = self::jumlahKkJiwa();
+        $kkJiwa = self::jumlahKkJiwa($spId);
 
         return $kkJiwa['jumlah_kk'] > 0 ? $kkJiwa['jumlah_jiwa'] / $kkJiwa['jumlah_kk'] : 1.0;
     }
@@ -559,10 +626,10 @@ class RekapDashboard
     /**
      * @return array{jumlah_kk: int, jumlah_jiwa: int}
      */
-    private static function jumlahKkJiwa(): array
+    private static function jumlahKkJiwa(?int $spId = null): array
     {
-        $jiwaAktif = Transmigran::query()
-            ->where('status_tinggal', StatusTinggal::Aktif->value)
+        $jiwaAktif = self::terapkanSp(Transmigran::query()
+            ->where('status_tinggal', StatusTinggal::Aktif->value), $spId)
             ->withCount(['anggotaKeluarga as jiwa_aktif' => fn ($q) => $q->where('status', StatusAnggotaKeluarga::Aktif->value)])
             ->get();
 
@@ -570,5 +637,24 @@ class RekapDashboard
             'jumlah_kk' => $jiwaAktif->count(),
             'jumlah_jiwa' => $jiwaAktif->count() + (int) $jiwaAktif->sum('jiwa_aktif'),
         ];
+    }
+
+    /**
+     * Menyempitkan sebuah query ke satu SP lewat `satuan_permukiman_id`
+     * langsung -- pola sama `App\Models\Scopes\CakupanDataSp`, bukan pivot
+     * cakupan layanan (Task 9.2, bilah filter dashboard).
+     */
+    private static function terapkanSp(Builder $query, ?int $spId): Builder
+    {
+        return $spId === null ? $query : $query->where('satuan_permukiman_id', $spId);
+    }
+
+    /**
+     * Nama SP dari id-nya, dipakai memanggil `RekapPanen::rekap()` yang
+     * menyaring lewat NAMA (bukan id) -- lihat kelas itu.
+     */
+    private static function namaSp(?int $spId): ?string
+    {
+        return $spId === null ? null : SatuanPermukiman::where('id_satuan_permukiman', $spId)->value('nama');
     }
 }

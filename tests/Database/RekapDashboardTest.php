@@ -8,6 +8,7 @@
  */
 
 use App\Enums\PendidikanTerakhir;
+use App\Models\SatuanPermukiman;
 use App\Models\Transmigran;
 use App\Models\User;
 use App\Support\LaporanData;
@@ -109,4 +110,52 @@ it('menyamakan identitas kk perSp indikator-kawasan dengan RekapDashboard::ringk
     $ringkasan = RekapDashboard::ringkasan();
 
     expect(array_sum(array_column($perSp, 'jumlah_kk')))->toBe($ringkasan['jumlah_kk']);
+});
+
+/*
+ * Task 9.2 (2026-09-05, rules.md 11 poin 4) -- filter wilayah + periode.
+ * `Builder::where('satuan_permukiman_id', ...)` dan `whereHas()` bersarang
+ * (hargaRataRata) belum tentu aman di MySQL sungguhan sebagaimana di SQLite.
+ */
+it('menjumlahkan ringkasan(spId) per SP sama dengan ringkasan kawasan penuh di MySQL nyata', function () {
+    $kawasan = RekapDashboard::ringkasan();
+
+    $totalKk = 0;
+    foreach (SatuanPermukiman::pluck('id_satuan_permukiman') as $id) {
+        $totalKk += RekapDashboard::ringkasan((int) $id)['jumlah_kk'];
+    }
+
+    expect($totalKk)->toBe($kawasan['jumlah_kk']);
+});
+
+it('menghitung hargaRataRata per SP lewat whereHas bersarang tanpa galat MySQL', function () {
+    $id = SatuanPermukiman::query()->value('id_satuan_permukiman');
+
+    // Hanya menuntut tak melempar galat (mis. ONLY_FULL_GROUP_BY pada
+    // whereHas bertingkat penanaman.poktan.satuanPermukiman) -- nilainya
+    // boleh nol bila SP itu kebetulan belum panen tahun acuan.
+    $r = RekapDashboard::ringkasan((int) $id);
+
+    expect($r['harga_rata_rata'])->toBeGreaterThanOrEqual(0.0);
+});
+
+it('memotong deret ber-spId lewat potongDeret tanpa galat MySQL', function () {
+    $id = SatuanPermukiman::query()->value('id_satuan_permukiman');
+    $deret = RekapDashboard::deret((int) $id);
+
+    expect(count($deret['tahun']))->toBeGreaterThan(0);
+
+    $dipotong = RekapDashboard::potongDeret($deret, $deret['tahun'][0], $deret['tahun'][0]);
+
+    expect($dipotong['tahun'])->toBe([$deret['tahun'][0]])
+        ->and($dipotong['jumlah_kk'])->toHaveCount(1);
+});
+
+it('merender dashboard dengan filter sp dan periode aktif tanpa galat query MySQL', function () {
+    $id = SatuanPermukiman::query()->value('id_satuan_permukiman');
+    $tahun = (int) date('Y');
+
+    $this->get(route('beranda', ['sp' => $id, 'tahun_awal' => $tahun, 'tahun_akhir' => $tahun]))
+        ->assertOk()
+        ->assertSee('Menampilkan:');
 });
