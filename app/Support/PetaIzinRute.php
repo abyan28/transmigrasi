@@ -198,6 +198,9 @@ class PetaIzinRute
             'template-impor',
             // Pemeriksaan `{modul}.lihat` dinamis di dalam DokumenController.
             'dokumen.tampilkan',
+            // Pemeriksaan `{modul}.tambah` dinamis di dalam ImporController
+            // (Task 10.4) -- modulnya parameter rute, sama seperti dua di atas.
+            'impor.unggah',
         ];
     }
 }

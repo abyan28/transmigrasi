@@ -269,7 +269,7 @@ class SkemaImpor
                 ['satuan', false, 'unit', self::T],
                 ['status_penyerahan', true, 'Sudah Diserahkan', 'Nilai baku', ['dp']],
                 ['kondisi', false, 'Baik', 'Nilai baku', ['dp']],
-                ['jenis_inventaris', false, 'Elektronik', 'Nilai baku', ['dp']],
+                ['jenis_inventaris', true, 'Perabotan', 'Nilai baku', ['dp']],
                 ['tahun_perolehan', false, '2020', 'Tahun (YYYY)'],
                 ['sumber_dana', false, 'APBN', 'Nilai baku', ['dp']],
                 ['keterangan', false, '', self::T],

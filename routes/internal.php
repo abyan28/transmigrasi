@@ -24,6 +24,7 @@ use App\Http\Controllers\CmsController;
 use App\Http\Controllers\DokumenController;
 use App\Http\Controllers\FasilitasSpController;
 use App\Http\Controllers\HasilPanenController;
+use App\Http\Controllers\ImporController;
 use App\Http\Controllers\InfrastrukturController;
 use App\Http\Controllers\InventarisSpController;
 use App\Http\Controllers\KawasanController;
@@ -1055,3 +1056,16 @@ Route::delete('/pengguna/{id}', function (int $id) {
 */
 Route::get('/template-impor/{entitas}', [TemplateImporController::class, 'unduh'])
     ->where('entitas', '[a-z\-]+')->name('template-impor');
+
+/*
+|--------------------------------------------------------------------------
+| Impor data massal (Task 10.4, 1/2)
+|--------------------------------------------------------------------------
+|
+| Menerima berkas CSV terisi dari langkah 2 modal impor. Delapan entitas
+| berdiri sendiri sudah aktif (App\Support\ImporEngine::entitasAktif());
+| entitas lain membalas 404 -- modalnya tetap menampilkan spanduk "Fitur
+| belum aktif" sampai jalur enam entitas berantai selesai.
+*/
+Route::post('/impor/{entitas}', [ImporController::class, 'unggah'])
+    ->where('entitas', '[a-z\-]+')->name('impor.unggah');

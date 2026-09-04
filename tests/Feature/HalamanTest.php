@@ -4029,11 +4029,18 @@ it('memandu impor lewat tiga langkah beserta kolom wajibnya', function () {
         ->and($isi)->toContain('nama_lengkap');
 });
 
-it('menyatakan terus terang bahwa impor belum tersambung backend', function () {
+it('menyatakan terus terang bahwa impor entitas berantai belum tersambung backend', function () {
     // Tombolnya terlihat berfungsi penuh padahal penyimpanannya belum ada.
     // Tanpa peringatan ini petugas dapat mengira datanya sudah masuk, lalu
-    // kehilangan hasil pendataan sehari penuh.
-    $this->get('/transmigran')->assertSee('Fitur belum aktif.');
+    // kehilangan hasil pendataan sehari penuh. Berlaku untuk enam entitas
+    // berantai (Task 10.4, 2/2 -- belum dikerjakan): poktan salah satunya.
+    $this->get('/poktan')->assertSee('Fitur belum aktif.');
+});
+
+it('tidak lagi menampilkan spanduk belum aktif pada delapan entitas mandiri (Task 10.4)', function () {
+    // transmigran salah satu dari delapan entitas yang mesin impornya sudah
+    // sungguhan (App\Support\ImporEngine::entitasAktif()).
+    $this->get('/transmigran')->assertDontSee('Fitur belum aktif.');
 });
 
 it('menyediakan rute unduh template CSV untuk seluruh entitas (Task 10.6)', function () {

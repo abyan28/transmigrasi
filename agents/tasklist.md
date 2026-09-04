@@ -1608,10 +1608,39 @@ menghapus sisa terakhir `DummyData::penggunaSaatIni()` -- dikerjakan berbarengan
   * `HalamanTest` "menyediakan rute unduh template CSV" (14 entitas + 404),
     `IzinPenegakanRuteTest` +1 (cakupan berkas), `PembatasanLajuTest` disesuaikan.
 
-- [ ] Task 10.1 - Export Excel untuk data utama `[Sedang]`
-- [ ] Task 10.2 - Export PDF untuk data utama + kop logo `[Sedang]`
-- [ ] Task 10.3 - Filter laporan sebelum export `[Sedang]`
-- [ ] Task 10.4 - Template isian luring yang dapat diunduh dan diunggah kembali `[Sulit]`
+- [ ] Task 10.1 - Export Excel untuk data utama `[Sedang]` -- **DITUNDA 2026-09-04** (keputusan pemilik: tunggu keputusan hosting Task 11.3 sebelum menambah paket Composer)
+- [ ] Task 10.2 - Export PDF untuk data utama + kop logo `[Sedang]` -- **DITUNDA 2026-09-04**, sama seperti 10.1
+- [ ] Task 10.3 - Filter laporan sebelum export `[Sedang]` -- **DITUNDA 2026-09-04**, sama seperti 10.1
+- [✓] Task 10.4 - Template isian luring yang dapat diunduh dan diunggah kembali `[Sulit]` -- ✅ **8/14 entitas SELESAI 2026-09-04**
+  * **HASIL:** `App\Support\ImporEngine` -- mesin generik, satu metode `barisX()`
+    per entitas: petakan baris CSV -> cari relasi lewat NAMA (bukan id) ke basis
+    data yang SUDAH ADA -> `Illuminate\Support\Facades\Validator` dgn aturan
+    setara `*Controller::validasi()` -> simpan bila sah. Baris bermasalah
+    dilewati + dicatat nomor barisnya, sisanya tetap tersimpan (SATU permintaan,
+    tanpa langkah pratinjau terpisah) -- sesuai janji modal impor sejak awal.
+  * **8 entitas mandiri aktif** (`ImporEngine::entitasAktif()`): satuan, wilayah
+    (4 tingkat + resolusi induk), komoditas, transmigran, infrastruktur,
+    inventaris-sp, fasilitas-sp, alsintan. `ImporController::unggah` (POST
+    `/impor/{entitas}`, JSON) -- kewenangan `{modul}.tambah` diperiksa dinamis
+    (pola sama `DokumenController`), berkas selain .csv ditolak 422 pesan jujur.
+  * `resources/views/components/sim/modal-impor.blade.php` disambungkan
+    sungguhan (fetch POST FormData + CSRF) utk 8 entitas itu; spanduk "Fitur
+    belum aktif" TETAP tampil utk 6 entitas berantai (rumah, lahan, poktan,
+    saprotan, penanaman, hasil-panen) -- langkah 2/3-nya masih contoh statis.
+  * **Celah pra-ada ditemukan (di luar lingkup, dicatat saja):**
+    `InventarisSpController::validasi()` menandai `jenis_inventaris` nullable
+    padahal kolom skema NOT NULL tanpa default -- form manual mengandalkan
+    `<select>` yang selalu terisi. Jalur impor diwajibkan agar galatnya rapi,
+    bukan SQL mentah; form manualnya sendiri tidak disentuh (bukan bagian
+    Task 10.4).
+  * **Sisa (Task 10.4, 2/2, menyusul):** 6 entitas berantai. Butuh pencarian
+    lintas-entitas lebih banyak per baris + aturan bersyarat per entitas (ketua
+    poktan 3 jalur, benih wajib komoditas+varietas, dst) -- mesinnya SAMA,
+    tinggal menulis `barisX()` untuk keenamnya.
+  * `tests/Database/ImporTest.php` +14 (satu per entitas + baris campur
+    sah/gagal + berkas non-CSV + entitas belum aktif + tanpa kewenangan).
+    `HalamanTest` +2 (spanduk hanya utk entitas berantai). Feature 733,
+    Database 441, pint bersih, banding-skema NOL SELISIH.
 
 ## Tahap 11 — Pengujian, Deployment, dan Serah Terima
 

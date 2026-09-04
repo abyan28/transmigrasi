@@ -31,7 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
             // dikecualikan ke batas sendiri (`rules.md` 14c.3 poin 6). Rute
             // publik diberi `throttle:` langsung di routes/web.php.
             $peta = PetaIzinRute::peta();
-            $berkasBesar = ['template-impor', 'laporan.dokumen', 'dokumen.tampilkan'];
+            $berkasBesar = ['template-impor', 'laporan.dokumen', 'dokumen.tampilkan', 'impor.unggah'];
 
             foreach (Route::getRoutes()->getRoutes() as $rute) {
                 $nama = $rute->getName();

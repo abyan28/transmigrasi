@@ -18,9 +18,13 @@
     sedangkan berkas berisi ratusan baris tidak mungkin diperiksa manual.
     Karena itu kegagalan selalu disertai nomor baris dan alasannya.
 
-    BELUM TERSAMBUNG BACKEND. Sesuai strategi Tahap 2, antarmukanya dibangun
-    lebih dulu dengan data contoh. Spanduk peringatan di dalam modal WAJIB
-    ada agar petugas tidak mengira datanya sudah benar-benar masuk.
+    Delapan entitas berdiri sendiri sudah TERSAMBUNG BACKEND sungguhan
+    (Task 10.4, 1/2): satuan, wilayah, komoditas, transmigran, infrastruktur,
+    inventaris-sp, fasilitas-sp, alsintan (`App\Support\ImporEngine::
+    entitasAktif()`). Enam entitas berantai (rumah, lahan, poktan, saprotan,
+    penanaman, hasil-panen) menyusul -- spanduk "Fitur belum aktif" TETAP
+    tampil untuk entitas itu saja, dan langkah 2-3 memakai contoh statis
+    seperti sebelumnya, supaya petugas tidak mengira datanya sudah masuk.
 
     Pemakaian:
         <x-sim.modal-impor nama="imporTransmigran" judul="Impor Data Transmigran"
@@ -35,19 +39,34 @@
     'kolomWajib' => [],
 ])
 
+@php
+    // Satu sumber dengan App\Support\ImporEngine::entitasAktif() -- diketik
+    // ulang di sini (bukan dipanggil PHP-nya) supaya nilainya bisa langsung
+    // ditulis ke JSON JS tanpa bolak-balik permintaan.
+    $entitasAktif = ['satuan', 'wilayah', 'komoditas', 'transmigran', 'infrastruktur', 'inventaris-sp', 'fasilitas-sp', 'alsintan'];
+    $aktif = in_array($entitas, $entitasAktif, true);
+@endphp
+
 <div x-data="{
         terbuka: false,
         langkah: 1,
         berkas: null,
+        berkasAsli: null,
         galat: '',
         memproses: false,
+        aktif: @js($aktif),
+        disimpan: 0,
+        gagalBaris: [],
         maksByte: {{ 5 * 1024 * 1024 }},
 
         buka() {
             this.terbuka = true;
             this.langkah = 1;
             this.berkas = null;
+            this.berkasAsli = null;
             this.galat = '';
+            this.disimpan = 0;
+            this.gagalBaris = [];
             window.kunciGulir?.kunci();
 
             this.$nextTick(() => {
@@ -71,6 +90,7 @@
 
             if (! f) {
                 this.berkas = null;
+                this.berkasAsli = null;
                 return;
             }
 
@@ -80,6 +100,7 @@
                 this.galat = 'Ukuran berkas maksimal 5 MB. Berkas Anda ' + this.ukuran(f.size) + '.';
                 peristiwa.target.value = '';
                 this.berkas = null;
+                this.berkasAsli = null;
                 return;
             }
 
@@ -88,33 +109,77 @@
                 this.galat = 'Berkas harus berformat Excel (.xlsx atau .xls) atau CSV. Unduh templatenya lebih dulu bila belum punya.';
                 peristiwa.target.value = '';
                 this.berkas = null;
+                this.berkasAsli = null;
                 return;
             }
 
             this.berkas = { nama: f.name, ukuran: this.ukuran(f.size) };
+            this.berkasAsli = f;
         },
 
         hapusBerkas() {
             this.berkas = null;
+            this.berkasAsli = null;
             this.galat = '';
             if (this.$refs.masukan) {
                 this.$refs.masukan.value = '';
             }
         },
 
-        proses() {
+        async proses() {
             if (! this.berkas) {
                 this.galat = 'Pilih berkas lebih dulu.';
                 return;
             }
 
-            // Jeda singkat meniru unggahan sungguhan, sehingga tata letak
-            // langkah ketiga sudah teruji dalam keadaan menunggu.
+            if (! this.aktif) {
+                // Entitas belum tersambung backend -- contoh statis, sama
+                // seperti sebelum Task 10.4.
+                this.memproses = true;
+                setTimeout(() => {
+                    this.memproses = false;
+                    this.disimpan = 18;
+                    this.gagalBaris = [
+                        { baris: 4, pesan: 'Kolom wajib masih kosong' },
+                        { baris: 9, pesan: 'Data serupa sudah terdaftar sebelumnya' },
+                        { baris: 15, pesan: 'Format tanggal tidak dikenali, gunakan format 31/12/2026' },
+                    ];
+                    this.langkah = 3;
+                }, 700);
+                return;
+            }
+
             this.memproses = true;
-            setTimeout(() => {
-                this.memproses = false;
+            this.galat = '';
+
+            const data = new FormData();
+            data.append('berkas', this.berkasAsli);
+
+            try {
+                const r = await fetch(@js(route('impor.unggah', $entitas)), {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+                        'Accept': 'application/json',
+                    },
+                    body: data,
+                });
+
+                const hasil = await r.json().catch(() => null);
+
+                if (! r.ok) {
+                    this.galat = hasil?.pesan || hasil?.message || 'Berkas gagal diproses. Coba lagi.';
+                    return;
+                }
+
+                this.disimpan = hasil.disimpan ?? 0;
+                this.gagalBaris = hasil.gagal ?? [];
                 this.langkah = 3;
-            }, 700);
+            } catch (e) {
+                this.galat = 'Tidak dapat menghubungi server. Periksa sambungan lalu coba lagi.';
+            } finally {
+                this.memproses = false;
+            }
         },
 
         ukuran(byte) {
@@ -201,18 +266,20 @@
                 {{-- Badan, satu-satunya wilayah yang menggulir. `min-h-0` wajib
                      ada agar item flex mau menyusut di bawah tinggi isinya. --}}
                 <div class="min-h-0 flex-1 overflow-y-auto px-5 py-4">
-                    {{--
-                        Spanduk kejujuran. Tombol ini terlihat berfungsi penuh
-                        padahal penyimpanannya belum ada, sehingga tanpa
-                        peringatan petugas dapat mengira datanya sudah masuk.
-                    --}}
-                    <div class="mb-4 rounded-lg border border-yellow-300 bg-yellow-50 p-3.5 dark:border-yellow-500/30 dark:bg-yellow-500/10">
-                        <p class="text-theme-xs text-yellow-800 dark:text-yellow-200">
-                            <span class="font-medium">Fitur belum aktif.</span>
-                            Tampilan impor sudah disiapkan, tetapi penyimpanan datanya menunggu
-                            backend selesai. Berkas yang diunggah di sini belum tersimpan.
-                        </p>
-                    </div>
+                    @unless ($aktif)
+                        {{--
+                            Spanduk kejujuran. Tombol ini terlihat berfungsi penuh
+                            padahal penyimpanannya belum ada, sehingga tanpa
+                            peringatan petugas dapat mengira datanya sudah masuk.
+                        --}}
+                        <div class="mb-4 rounded-lg border border-yellow-300 bg-yellow-50 p-3.5 dark:border-yellow-500/30 dark:bg-yellow-500/10">
+                            <p class="text-theme-xs text-yellow-800 dark:text-yellow-200">
+                                <span class="font-medium">Fitur belum aktif.</span>
+                                Tampilan impor sudah disiapkan, tetapi penyimpanan datanya menunggu
+                                backend selesai. Berkas yang diunggah di sini belum tersimpan.
+                            </p>
+                        </div>
+                    @endunless
 
                     {{-- ---------------------------------------- Langkah 1 --}}
                     <div x-show="langkah === 1">
@@ -309,14 +376,14 @@
                     <div x-show="langkah === 3" x-cloak>
                         <div class="grid gap-4 sm:grid-cols-2">
                             <div class="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
-                                <p class="text-theme-xs text-gray-500 dark:text-gray-400">Baris siap disimpan</p>
-                                <p class="mt-1 text-title-sm font-bold tabular-nums text-success-600 dark:text-success-400">
-                                    18
+                                <p class="text-theme-xs text-gray-500 dark:text-gray-400" x-text="aktif ? 'Baris tersimpan' : 'Baris siap disimpan'"></p>
+                                <p class="mt-1 text-title-sm font-bold tabular-nums text-success-600 dark:text-success-400"
+                                    x-text="disimpan">
                                 </p>
                             </div>
                             <div class="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
                                 <p class="text-theme-xs text-gray-500 dark:text-gray-400">Baris bermasalah</p>
-                                <p class="mt-1 text-title-sm font-bold tabular-nums text-error-500">3</p>
+                                <p class="mt-1 text-title-sm font-bold tabular-nums text-error-500" x-text="gagalBaris.length"></p>
                             </div>
                         </div>
 
@@ -327,7 +394,7 @@
                             memaksa petugas menebak dan biasanya berakhir dengan
                             mengulang seluruh pekerjaan.
                         --}}
-                        <div class="mt-4">
+                        <div class="mt-4" x-show="gagalBaris.length > 0">
                             <p class="mb-2 text-theme-xs font-medium text-gray-700 dark:text-gray-300">
                                 Baris yang perlu diperbaiki
                             </p>
@@ -343,18 +410,14 @@
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
-                                        @foreach ([
-                                            ['baris' => 4, 'sebab' => 'Kolom wajib masih kosong'],
-                                            ['baris' => 9, 'sebab' => 'Data serupa sudah terdaftar sebelumnya'],
-                                            ['baris' => 15, 'sebab' => 'Format tanggal tidak dikenali, gunakan format 31/12/2026'],
-                                        ] as $galat)
+                                        <template x-for="galat in gagalBaris" :key="galat.baris">
                                             <tr>
-                                                <td class="px-3 py-2 tabular-nums text-gray-800 dark:text-white/90">
-                                                    {{ $galat['baris'] }}</td>
-                                                <td class="px-3 py-2 text-gray-600 dark:text-gray-400">
-                                                    {{ $galat['sebab'] }}</td>
+                                                <td class="px-3 py-2 tabular-nums text-gray-800 dark:text-white/90"
+                                                    x-text="galat.baris"></td>
+                                                <td class="px-3 py-2 text-gray-600 dark:text-gray-400"
+                                                    x-text="galat.pesan"></td>
                                             </tr>
-                                        @endforeach
+                                        </template>
                                     </tbody>
                                 </table>
                             </div>

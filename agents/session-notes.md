@@ -1,3 +1,44 @@
+# Task 10.6 + Task 10.4 (8/14) SELESAI - Berkas privat + mesin impor CSV (2026-09-04)
+
+**Keputusan pemilik proyek 2026-09-04:** Task 10.1-10.3 (export laporan
+Excel/PDF) DITUNDA sampai keputusan hosting Task 11.3 -- pemilik memilih
+tidak menambah paket Composer sebelum hosting jelas. Urutan disepakati:
+10.6 -> 10.4 (8 entitas mandiri) -> 10.1-10.3 (nanti).
+
+## Task 10.6 -- berkas privat + template
+
+- `DokumenController::tampilkan` +lapis cakupan data lewat
+  `App\Support\PetaModulBerkas` (modul -> model, scope `CakupanDataSp`
+  otomatis berlaku lewat `::query()->whereKey($id)->exists()`).
+- `/template-impor/{entitas}` -> `TemplateImporController` (CSV sungguhan:
+  baris `#` petunjuk + nilai baku, baris judul kolom, 2 baris contoh).
+  `App\Support\SkemaImpor` = satu sumber susunan kolom 14 entitas.
+
+## Task 10.4 (1/2) -- mesin impor, 8 entitas mandiri
+
+- `App\Support\ImporEngine`: parser CSV generik (lewati `#`/baris kosong,
+  petakan header->posisi) + `barisX()` per entitas (resolusi relasi BY NAMA
+  ke DB yang sudah ada, `Validator::make` dgn aturan setara controller
+  manual, simpan bila sah). SATU permintaan validasi+simpan (tanpa langkah
+  pratinjau terpisah) -- baris gagal dilewati + dicatat nomor barisnya,
+  cocok janji modal "baris bermasalah dilewati, sisanya tetap disimpan".
+- 8 aktif: satuan, wilayah (4 tingkat), komoditas, transmigran,
+  infrastruktur, inventaris-sp, fasilitas-sp, alsintan. `ImporController`
+  POST `/impor/{entitas}` JSON, kewenangan `{modul}.tambah` dinamis.
+- `modal-impor.blade.php`: fetch POST FormData+CSRF utk 8 entitas; 6 entitas
+  berantai (rumah/lahan/poktan/saprotan/penanaman/hasil-panen) TETAP
+  spanduk "Fitur belum aktif" + contoh statis -- menyusul sesi lain, mesin
+  yang sama tinggal ditambah `barisX()`-nya (lebih banyak resolusi
+  lintas-entitas + aturan bersyarat per entitas).
+- **Celah pra-ada ditemukan (dicatat, TIDAK diperbaiki -- di luar lingkup):**
+  `InventarisSpController::validasi()` `jenis_inventaris` nullable padahal
+  kolom skema NOT NULL tanpa default. Form manual lolos karena `<select>`
+  selalu berisi; jalur impor diwajibkan sendiri agar galatnya Indonesia rapi.
+- Verifikasi: Feature 733, Database 441, pint bersih, banding-skema NOL
+  SELISIH, tautan-statis 14.
+
+--- arsip ---
+
 # Task 10.5 (5/7) SELESAI - Laporan dari Eloquent (2026-09-04)
 
 Lima laporan transaksi kini sepenuhnya ber-Eloquent (bukan DummyData):
