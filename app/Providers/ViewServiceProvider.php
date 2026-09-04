@@ -12,9 +12,11 @@ use App\Enums\PendidikanTerakhir;
 use App\Enums\PolaPermukiman;
 use App\Enums\StatusPanen;
 use App\Enums\TingkatKesuburanTanah;
+use App\Models\Transmigran;
 use App\Support\DataWilayah;
 use App\Support\DummyData;
 use App\Support\PetaPenggunaTampilan;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
@@ -159,8 +161,14 @@ class ViewServiceProvider extends ServiceProvider
             'daftarSatuan' => DummyData::satuan(),
             'daftarKomoditas' => DummyData::komoditas(),
             'daftarSp' => DummyData::satuanPermukiman(),
-            'daftarTransmigran' => DummyData::transmigran(),
-            'transmigranTanpaRumah' => DummyData::transmigranTanpaRumah(),
+
+            // Task 5.1/5.2 -> transmigran ber-Eloquent; Task 5.3 -> rumah juga,
+            // sehingga `transmigranTanpaRumah` wajib membaca tabel `rumah` nyata
+            // agar rumah yang baru didata langsung menyingkirkan KK-nya dari
+            // daftar. `daftarTransmigran` dipakai juga form poktan/lahan (Tahap 6,
+            // masih DummyData) -- bentuknya dijaga sama seperti `DummyData::transmigran()`.
+            'daftarTransmigran' => self::daftarTransmigran(),
+            'transmigranTanpaRumah' => self::daftarTransmigran(fn ($q) => $q->whereDoesntHave('rumah')),
             'transmigranTanpaLahan' => DummyData::transmigranTanpaLahan(),
             'sebaran' => DummyData::sebaranKomoditas(),
 
@@ -346,6 +354,31 @@ class ViewServiceProvider extends ServiceProvider
 
             default => throw new \InvalidArgumentException("Kunci rujukan tidak dikenal: {$kunci}"),
         };
+    }
+
+    /**
+     * Daftar transmigran ringkas untuk `pilih-cari` pada form rumah, poktan,
+     * dan lahan. Ber-kunci sama seperti `DummyData::transmigran()` yang
+     * dipakai berdampingan modul Tahap 6.
+     *
+     * @param  (callable(Builder): mixed)|null  $saring
+     * @return array<int, array<string, mixed>>
+     */
+    private static function daftarTransmigran(?callable $saring = null): array
+    {
+        $kueri = Transmigran::query()->with('satuanPermukiman')->orderBy('id_transmigran');
+
+        if ($saring !== null) {
+            $saring($kueri);
+        }
+
+        return $kueri->get()->map(fn (Transmigran $t) => [
+            'id_transmigran' => $t->id_transmigran,
+            'nama_kepala_keluarga' => $t->nama_kepala_keluarga,
+            'nik' => $t->nik,
+            'satuan_permukiman' => $t->satuanPermukiman?->nama,
+            'satuan_permukiman_id' => $t->satuan_permukiman_id,
+        ])->all();
     }
 
     /**

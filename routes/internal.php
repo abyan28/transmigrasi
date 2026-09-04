@@ -32,6 +32,7 @@ use App\Http\Controllers\PengaturanPenggunaController;
 use App\Http\Controllers\PengaturanRoleController;
 use App\Http\Controllers\PenilaianKondisiController;
 use App\Http\Controllers\ProfilController;
+use App\Http\Controllers\RumahController;
 use App\Http\Controllers\SpController;
 use App\Http\Controllers\TransmigranController;
 use App\Http\Controllers\WilayahController;
@@ -430,85 +431,21 @@ Route::delete('/transmigran/{id}', [TransmigranController::class, 'hapus'])
 | baru tanpa menimpa data lama (rules.md bagian 6a poin 8 dan 9).
 |
 */
-Route::get('/rumah', function () {
-    $semua = DummyData::rumah();
+// Task 5.3 + 5.4: seluruhnya `RumahController` + Eloquent. Pergantian penghuni
+// menutup baris `riwayat_penghunian` terbuka lalu membuka yang baru tanpa
+// menimpa data lama (rules.md 6a.9).
+Route::get('/rumah', [RumahController::class, 'index'])->name('rumah.index');
 
-    $cari = trim((string) request('cari', ''));
-    $filterSp = request('sp');
-    $filterKondisi = request('kondisi');
-    $filterHunian = request('status_hunian');
+Route::get('/rumah/{id}', [RumahController::class, 'detail'])
+    ->where('id', '[0-9]+')->name('rumah.detail');
 
-    $baris = array_values(array_filter($semua, function ($r) use ($cari, $filterSp, $filterKondisi, $filterHunian) {
-        if ($cari !== '') {
-            $cocok = str_contains(mb_strtolower((string) $r['no_rumah']), mb_strtolower($cari))
-                || str_contains(mb_strtolower((string) ($r['penghuni'] ?? '')), mb_strtolower($cari));
+Route::post('/rumah', [RumahController::class, 'simpan'])->name('rumah.simpan');
 
-            if (! $cocok) {
-                return false;
-            }
-        }
+Route::put('/rumah/{id}', [RumahController::class, 'perbarui'])
+    ->where('id', '[0-9]+')->name('rumah.perbarui');
 
-        if ($filterSp && (string) $r['satuan_permukiman_id'] !== (string) $filterSp) {
-            return false;
-        }
-
-        if ($filterKondisi && $r['kondisi'] !== $filterKondisi) {
-            return false;
-        }
-
-        if ($filterHunian && $r['status_hunian'] !== $filterHunian) {
-            return false;
-        }
-
-        return true;
-    }));
-
-    return view('pages.rumah.index', [
-        'title' => 'Rumah dan Hunian',
-        'semua' => $semua,
-        'baris' => $baris,
-        'cari' => $cari,
-        'filterSp' => $filterSp,
-        'filterKondisi' => $filterKondisi,
-        'filterHunian' => $filterHunian,
-        'adaFilter' => $cari !== '' || $filterSp || $filterKondisi || $filterHunian,
-        'jumlahDihuni' => count(array_filter($semua, fn ($r) => $r['status_hunian'] === 'Dihuni')),
-        'jumlahRusak' => count(array_filter($semua, fn ($r) => $r['kondisi'] !== 'Tidak Rusak')),
-
-        'daftarSp' => DummyData::satuanPermukiman(),
-        'opsiFilterKondisiRumah' => DummyData::opsiFilterReferensi(JenisReferensi::KondisiRumah),
-        'opsiFilterStatusHunian' => DummyData::opsiFilterReferensi(JenisReferensi::StatusHunian),
-    ]);
-})->name('rumah.index');
-
-Route::get('/rumah/{id}', function (int $id) {
-    $data = collect(DummyData::rumah())->firstWhere('id_rumah', $id);
-
-    abort_if($data === null, 404);
-
-    return view('pages.rumah.detail', [
-        'title' => 'Rumah '.$data['no_rumah'],
-        'data' => $data,
-        'riwayat' => DummyData::riwayatPenghunian($data['id_rumah']),
-
-        // Foto jamak sejak Putaran 14; kondisi rumah dinilai dari beberapa sisi.
-        'berkasFotoRumah' => DummyData::berkasMilik('rumah_berkas', 'rumah_id', $id, 'foto'),
-    ]);
-})->where('id', '[0-9]+')->name('rumah.detail');
-
-Route::post('/rumah', function () {
-    return redirect()->route('rumah.index')
-        ->with('sukses', 'Data rumah tersimpan.');
-})->name('rumah.simpan');
-
-Route::put('/rumah/{id}', function (int $id) {
-    // Tahap 5: pergantian penghuni menambah baris riwayat_penghunian baru.
-    return redirect()->route('rumah.detail', $id)->with('sukses', 'Perubahan data rumah tersimpan.');
-})->where('id', '[0-9]+')->name('rumah.perbarui');
-
-Route::delete('/rumah/{id}', function () {
-    return redirect()->route('rumah.index')->with('sukses', 'Data rumah dihapus.');
-})->where('id', '[0-9]+')->name('rumah.hapus');
+Route::delete('/rumah/{id}', [RumahController::class, 'hapus'])
+    ->where('id', '[0-9]+')->name('rumah.hapus');
 
 /*
 |--------------------------------------------------------------------------

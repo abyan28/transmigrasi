@@ -34,6 +34,7 @@ class BerkasSeeder extends Seeder
         'fasilitas_sp_berkas',
         'infrastruktur_berkas',
         'transmigran_berkas',
+        'rumah_berkas',
     ];
 
     public function run(): void

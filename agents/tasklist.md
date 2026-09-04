@@ -1,7 +1,7 @@
 # tasklist.md
 ## Daftar Tugas — Sistem Informasi Digitalisasi Monitoring Pertanian dan Tata Kelola Data Kawasan Transmigrasi Kobalima Timur
 
-**Progress: 90%**
+**Progress: 91%**
 *(Tahap 0 selesai 8 task. **Tahap 1 SELESAI** 12 task. **TAHAP 2 SELESAI SELURUHNYA.** Gelombang 1 dan 2 tuntas, 32 halaman berdiri. **Delivery Gate kedua gelombang sudah dijalankan** dan laporannya lengkap (`delivery-gate-gelombang-1.md` dan `-2.md`). Dua hal ditunda beralasan, bukan lolos diam-diam: keadaan memuat dan galat menunggu backend Tahap 3, dan pemeriksaan 360px pada perangkat nyata menunggu manusia. Siap masuk checkpoint validasi bersama tim dan dinas, lalu Tahap 3.)*
 
 Acuan: `prd.md`, `rules.md`, `workflow.md`, `ui-spec.md`, `erd.md`, `data-dictionary.md`, `notes.md`.
@@ -1272,10 +1272,32 @@ menghapus sisa terakhir `DummyData::penggunaSaatIni()` -- dikerjakan berbarengan
   * `BerkasSeeder::PIVOT_SIAP` +`transmigran_berkas`; `TransmigranSeeder` dipindah SEBELUM `BerkasSeeder` + tanam `riwayat_kepala_keluarga` dari `DummyData`
   * `uuid` transmigran dibangkitkan di `simpan()` (`Str::uuid()`) -- model belum punya hook; trait bersama menyusul saat Rumah/Lahan/Pengaduan ikut
   * Uji: `tests/Database/TransmigranTest.php` +10; `HalamanTest` L399/L5788 disesuaikan (bare POST kini validasi, bukan sukses) + `_anggota_disunting` di allowlist penjaga form-yatim. Verifikasi: Feature 732, Database 313, pint bersih, banding-skema NOL SELISIH, tautan-statis 14
-- [ ] Task 5.3 - CRUD rumah dan kondisi hunian + foto dan koordinat `[Sedang]`
+- [✓] Task 5.3 - CRUD rumah dan kondisi hunian + foto dan koordinat `[Sedang]` ✅ SELESAI 2026-09-04
   * UNIQUE constraint dua arah rumah–KK; dropdown hanya menampilkan rumah kosong
-- [ ] Task 5.4 - Riwayat penghunian rumah (masuk, keluar, alasan) `[Sedang]`
+- [✓] Task 5.4 - Riwayat penghunian rumah (masuk, keluar, alasan) `[Sedang]` ✅ SELESAI 2026-09-04 (bersama 5.3)
   * Pergantian penghuni tidak menimpa data lama
+  * HASIL (5.3+5.4, satu commit): `RumahController` (index/detail/simpan/perbarui/hapus).
+    `perbarui` mendeteksi pergantian `transmigran_id` -> tutup baris `riwayat_penghunian`
+    terbuka (`tanggal_keluar`=hari ini + `alasan_keluar` dari isian form baru) lalu
+    buka baris baru; penutupan iteratif (bukan mass-update) supaya AuditLogObserver
+    menangkap. `status_hunian`='Tidak Dihuni' memaksa `transmigran_id`=NULL.
+    `Rule::unique('rumah','transmigran_id')` (dua arah, sepola `uq_rumah_transmigran`).
+  * `detail()`: penghuni sekarang + `riwayat` + `berkasFotoRumah` -> Eloquent
+    (`riwayat_penghunian` menurunkan `no_rumah`/`transmigran` yang di data contoh
+    denormalisasi -- kolom nyatanya cuma rumah_id/transmigran_id/tanggal/alasan).
+  * `form.blade`: +isian `alasan_keluar` (textarea, hanya bila `$data['transmigran_id']`
+    ada). `UppercaseInput::$kecualikan` +`status_hunian`.
+  * `ViewServiceProvider`: `daftarTransmigran` + `transmigranTanpaRumah` -> Eloquent
+    lewat helper `daftarTransmigran(?callable)`. `daftarTransmigran` dipakai juga
+    form poktan/lahan (Tahap 6) -- bentuk dijaga sama (`id_transmigran`,
+    `nama_kepala_keluarga`, `nik`, `satuan_permukiman`, `satuan_permukiman_id`).
+  * `RumahSeeder` baru (rumah + `riwayat_penghunian`, `uuid` stabil), didaftar
+    `DataMasterSeeder`+`DatabaseSeeder` antara Transmigran & Berkas.
+    `BerkasSeeder::PIVOT_SIAP` +`rumah_berkas`.
+  * `kondisi`/`status_hunian` = `ValidationRules::referensi(JenisReferensi::KondisiRumah/StatusHunian)`.
+  * `tests/Database/RumahTest.php` +12; `AsetSpTest` +seed `RumahSeeder` (pivot).
+    Verifikasi: Feature 732, Database 325, pint bersih, banding-skema NOL SELISIH,
+    tautan-statis 14
 - [ ] Task 5.5 - Rekap kependudukan kawasan (KK masuk/keluar per tahun) `[Sedang]`
 
 ## Tahap 6 — Backend Lahan dan Kelembagaan

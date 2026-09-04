@@ -16,6 +16,7 @@ use Database\Seeders\BerkasSeeder;
 use Database\Seeders\InfrastrukturSeeder;
 use Database\Seeders\KawasanSeeder;
 use Database\Seeders\ReferensiSeeder;
+use Database\Seeders\RumahSeeder;
 use Database\Seeders\SpSeeder;
 use Database\Seeders\TransmigranSeeder;
 use Database\Seeders\WilayahSeeder;
@@ -33,11 +34,11 @@ beforeEach(function () {
     $this->seed(SpSeeder::class);
     $this->seed(ReferensiSeeder::class);
     $this->seed(AsetSpSeeder::class);
-    // `BerkasSeeder` menanam pivot SELURUH modul yang siap, termasuk
-    // infrastruktur dan transmigran -- induknya wajib ada lebih dulu atau
-    // FK-nya gagal.
+    // `BerkasSeeder` menanam pivot SELURUH modul yang siap (infrastruktur,
+    // transmigran, rumah) -- induknya wajib ada lebih dulu atau FK-nya gagal.
     $this->seed(InfrastrukturSeeder::class);
     $this->seed(TransmigranSeeder::class);
+    $this->seed(RumahSeeder::class);
     $this->seed(BerkasSeeder::class);
 });
 

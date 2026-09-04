@@ -33,15 +33,31 @@ Kerja per subtask, commit bersih tiap subtask. `main` pada `ec42345`.
     L4461 (`rumah/form` wajib), L4488 (`'rumah'=>['kode_rumah']` -- form tak boleh
     punya `name="kode_rumah"`).
 
+### HASIL Task 5.3 + 5.4 (2026-09-04) -- rumah + riwayat penghunian
+`RumahController` (5 aksi). `perbarui` mendeteksi pergantian `transmigran_id`,
+menutup baris `riwayat_penghunian` terbuka (iteratif -> observer) + `alasan_keluar`
+dari isian form baru, lalu buka baris baru. `status_hunian`='Tidak Dihuni' ->
+`transmigran_id`=NULL. `Rule::unique('rumah','transmigran_id')`. `detail()` penghuni
+sekarang/riwayat/foto -> Eloquent. `ViewServiceProvider::daftarTransmigran(?callable)`
+helper baru; arm `daftarTransmigran`+`transmigranTanpaRumah` -> Eloquent.
+`RumahSeeder` baru (+riwayat_penghunian). `BerkasSeeder` +`rumah_berkas`.
+`UppercaseInput` +`status_hunian`. `form.blade` +isian `alasan_keluar`.
+`tests/Database/RumahTest.php` +12.
+
 ## STATUS SESI 2026-09-04
 
-Selesai + commit bersih: **Task 5.1** (`666eca3`) + **Task 5.2** (`7dc0ef6`).
-Verifikasi akhir keduanya: Feature **732**, Database **313**, `pint --test`
-bersih, `sim:banding-skema --lengkap` NOL SELISIH, `sim:tautan-statis` **14**.
-Berhenti di sini (checkpoint bersih) sebelum 5.3 -- 5.3+5.4 unit besar yang
-menyentuh `ViewServiceProvider` (merembet ke form poktan/lahan Tahap 6) +
-semantik transaksi `riwayat_penghunian`; lebih aman dengan konteks segar.
+Selesai + commit: **5.1** (`666eca3`), **5.2** (`7dc0ef6`), docs (`9c7b8ab`).
+**5.3+5.4** siap di-commit (Feature 732 ✓; Database + schema-compare menunggu
+verifikasi -- schema-compare gagal sekali karena tabrakan dgn suite Database
+yang jalan bersamaan di `digitrans_test`, ULANGI SENDIRIAN).
 Belum di-push (push diblokir harness).
+
+### SISA Tahap 5
+- **5.5 Rekap kependudukan kawasan** `[Sedang]` -- agregat kawasan ~1140 KK dari
+  `DummyData::rekap*` (sintetis, di-skala per tahun). Rute `kependudukan.rekap`
+  + `kependudukan.rekap.{kelompok}` closures. Pilihan: GROUP BY nyata dari
+  transmigran+anggota (tapi data contoh cuma 8 KK -> angka rekap jadi remeh) ATAU
+  pertahankan `DummyData::rekap*` (agregat "seperti lapangan"). Riset dulu.
 - **5.5 Rekap kependudukan kawasan** `[Sedang]` (agregat kawasan ~1140 KK -
   `DummyData::rekap*` masih sintetis; ganti GROUP BY nyata atau pertahankan)
 

@@ -28,8 +28,10 @@ class DataMasterSeeder extends Seeder
         $this->call(AsetSpSeeder::class);
         $this->call(InfrastrukturSeeder::class);
         $this->call(PenilaianKondisiSeeder::class);
-        // Sebelum BerkasSeeder: pivot `transmigran_berkas` menaut ke transmigran.
+        // Sebelum BerkasSeeder: pivot `transmigran_berkas`/`rumah_berkas` menaut
+        // ke induknya. RumahSeeder setelah TransmigranSeeder (FK transmigran_id).
         $this->call(TransmigranSeeder::class);
+        $this->call(RumahSeeder::class);
         $this->call(BerkasSeeder::class);
     }
 }

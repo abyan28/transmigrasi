@@ -32,6 +32,7 @@ class DatabaseSeeder extends Seeder
         $this->call(InfrastrukturSeeder::class);
         $this->call(PenilaianKondisiSeeder::class);
         $this->call(TransmigranSeeder::class);
+        $this->call(RumahSeeder::class);
         $this->call(BerkasSeeder::class);
     }
 }

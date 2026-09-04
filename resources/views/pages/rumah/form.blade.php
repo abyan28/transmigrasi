@@ -114,6 +114,25 @@
                     class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">{{ old('alasan_tidak_dihuni', $data['alasan_tidak_dihuni'] ?? '') }}</textarea>
             </div>
 
+            {{--
+                Alasan penghuni sebelumnya keluar, dicatat pada riwayat penghunian
+                saat penghuni diganti atau dikosongkan (rules.md 6a.9). Hanya
+                tampil bila rumah ini memang sedang berpenghuni.
+            --}}
+            @if (! empty($data['transmigran_id']))
+                <div class="sm:col-span-2">
+                    <label for="{{ $awalan }}_alasan_keluar" class="{{ $kelasLabel }}">
+                        Alasan Penghuni Sebelumnya Keluar
+                    </label>
+                    <textarea id="{{ $awalan }}_alasan_keluar" name="alasan_keluar" rows="2" maxlength="2000"
+                        placeholder="Diisi hanya bila Anda mengganti atau mengosongkan penghuni"
+                        class="w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90"></textarea>
+                    <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                        Tercatat pada riwayat penghunian; data penghuni lama tidak terhapus.
+                    </p>
+                </div>
+            @endif
+
             <div class="sm:col-span-2">
                 <label for="{{ $awalan }}_catatan_hunian" class="{{ $kelasLabel }}">Catatan Hunian</label>
                 <textarea id="{{ $awalan }}_catatan_hunian" name="catatan_hunian" rows="2" maxlength="1000"

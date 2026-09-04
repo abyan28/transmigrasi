@@ -65,6 +65,7 @@ class UppercaseInput
         // lolos validasi (kolasi MySQL case-insensitive) tetapi data tak
         // seragam. Ditegakkan tests/Feature/UppercaseInputTest.php.
         'kondisi',
+        'status_hunian',
         'sumber_dana',
         'status_penyerahan',
         'jenis_inventaris',
