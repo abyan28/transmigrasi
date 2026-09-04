@@ -46,6 +46,7 @@ use App\Http\Controllers\WilayahController;
 use App\Support\DummyData;
 use App\Support\LaporanData;
 use App\Support\PenilaianKondisiSp;
+use App\Support\RekapPanen;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 
@@ -515,7 +516,7 @@ $susunRekapPanen = function (?string $kelompokRute = null) {
      * MEMAKAI TAHUN PANEN, bukan tahun tanam. Ini rekap PANEN, sehingga yang
      * menggolongkan adalah peristiwa panennya.
      */
-    $daftarTahun = DummyData::tahunPanenTercatat();
+    $daftarTahun = RekapPanen::tahunTercatat();
     $tahunPanen = (int) request('tahun', date('Y'));
 
     /*
@@ -532,7 +533,7 @@ $susunRekapPanen = function (?string $kelompokRute = null) {
      * memiliki satu dari masing-masing; menawarkan sisanya berarti menyuguhkan
      * pilihan yang DIJAMIN menghasilkan tabel kosong.
      */
-    $opsiFilter = DummyData::opsiFilterRekapPanen($tahunPanen);
+    $opsiFilter = RekapPanen::opsiFilter($tahunPanen);
 
     /*
      * Nilai yang tidak lagi tersedia DILEPAS, bukan dibiarkan menghasilkan
@@ -555,7 +556,7 @@ $susunRekapPanen = function (?string $kelompokRute = null) {
     $filterSp = $filterSp !== '' ? $filterSp : null;
     $filterKomoditas = $filterKomoditas !== '' ? $filterKomoditas : null;
 
-    $rekap = DummyData::rekapPanen($kelompok, $tahunPanen, $filterSp, $filterKomoditas);
+    $rekap = RekapPanen::rekap($kelompok, $tahunPanen, $filterSp, $filterKomoditas);
 
     // Dipakai judul tabel dan baris total. Angka rekap tanpa cakupannya tidak
     // dapat disalin ke laporan mana pun.
@@ -1132,10 +1133,8 @@ Route::delete('/penanaman/{id}', [PenanamanController::class, 'hapus'])
 Route::delete('/saprotan/{id}', [SaprotanController::class, 'hapus'])
     ->where('id', '[0-9]+')->name('saprotan.hapus');
 
-Route::delete('/komoditas/{id}', function (int $id) {
-    // Tahap 7: tolak bila masih dipakai penanaman atau hasil panen.
-    return redirect()->route('komoditas.index')->with('sukses', 'Data komoditas dihapus.');
-})->where('id', '[0-9]+')->name('komoditas.hapus');
+Route::delete('/komoditas/{id}', [KomoditasController::class, 'hapus'])
+    ->where('id', '[0-9]+')->name('komoditas.hapus');
 
 Route::delete('/sp/infrastruktur/{id}', [InfrastrukturController::class, 'hapus'])
     ->where('id', '[0-9]+')->name('infrastruktur.hapus');

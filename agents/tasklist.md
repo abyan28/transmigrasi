@@ -1,7 +1,7 @@
 # tasklist.md
 ## Daftar Tugas — Sistem Informasi Digitalisasi Monitoring Pertanian dan Tata Kelola Data Kawasan Transmigrasi Kobalima Timur
 
-**Progress: 98%**
+**Progress: 99%**
 *(Tahap 0 selesai 8 task. **Tahap 1 SELESAI** 12 task. **TAHAP 2 SELESAI SELURUHNYA.** Gelombang 1 dan 2 tuntas, 32 halaman berdiri. **Delivery Gate kedua gelombang sudah dijalankan** dan laporannya lengkap (`delivery-gate-gelombang-1.md` dan `-2.md`). Dua hal ditunda beralasan, bukan lolos diam-diam: keadaan memuat dan galat menunggu backend Tahap 3, dan pemeriksaan 360px pada perangkat nyata menunggu manusia. Siap masuk checkpoint validasi bersama tim dan dinas, lalu Tahap 3.)*
 
 Acuan: `prd.md`, `rules.md`, `workflow.md`, `ui-spec.md`, `erd.md`, `data-dictionary.md`, `notes.md`.
@@ -1409,8 +1409,14 @@ menghapus sisa terakhir `DummyData::penggunaSaatIni()` -- dikerjakan berbarengan
   * Rute komoditas → controller. `UppercaseInput::$kecualikan` +`tipe`.
   * `tests/Database/KomoditasTest.php` +7. Verifikasi: Feature 732, Database 362,
     pint bersih, banding-skema NOL SELISIH, tautan-statis 14.
-- [ ] Task 7.2 - CRUD komoditas + penanda unggulan + satuan baku per komoditas `[Sedang]`
+- [✓] ✅ Task 7.2 - CRUD komoditas + penanda unggulan + satuan baku per komoditas `[Sedang]` (Selesai)
   * Tampilan form dan halaman rincian sudah selesai pada Task 2.29 dan 2.30
+  * **HASIL 2026-09-04:** CRUD komoditas inti sudah pada 7.1 (`KomoditasController`
+    index/detail/simpan/perbarui). Task 7.2 melengkapi `hapus`: soft delete
+    ditolak bila `withCount(['penanaman','saprotan']) > 0` (alasan disampaikan
+    sebagai kalimat, bukan galat FK mentah); jika lolos, `komoditas_poktan`
+    di-`detach` lalu di-soft-delete. Relasi `Komoditas::penanaman()`/`saprotan()`
+    ditambahkan. Rute `komoditas.hapus` → controller. `KomoditasTest.php` +2.
 - [✓] ✅ Task 7.3 - CRUD penanaman `[Sedang]` (Selesai)
   * Tampilan kedua form sudah selesai pada Task 2.30
   * **HASIL 2026-09-04:** `PenanamanController` (index/detail/simpan/perbarui/hapus).
@@ -1439,10 +1445,18 @@ menghapus sisa terakhir `DummyData::penggunaSaatIni()` -- dikerjakan berbarengan
     membaca `satuan.faktor_ke_ton` (Eloquent). Satuan non-berat (NULL) → faktor 0
     (menjumlahkannya sebagai tonase adalah kekeliruan). Dipakai `HasilPanenController`
     + `PenanamanController`; `DummyData::keTon` tetap untuk dashboard sampai Tahap rekap.
-- [ ] Task 7.6 - Rekap panen per wilayah, poktan, komoditas, dan periode `[Sedang]`
+- [✓] ✅ Task 7.6 - Rekap panen per wilayah, poktan, komoditas, dan periode `[Sedang]` (Selesai)
   * Tampilannya sudah dirombak 2026-08-24: basis **penanaman** bukan hasil panen, terikat satu **tahun panen**
   * Saat backend masuk, `DummyData::rekapPanen()` diganti kueri agregat. Aturannya pada `rules.md` 9.8a-8i; yang paling mudah keliru adalah produktivitas tertimbang (8d) dan pembulatan (8e)
   * **Penggolongan tahunnya bukan kolom melainkan turunan** (`tahunRekapPanen()`): sudah dipanen ikut tahun panennya, belum dipanen ikut tahun berjalan. Yang kedua **berpindah sendiri** saat tahun berganti, sehingga kueri wajib menghitungnya tiap kali dijalankan, bukan menyimpannya (`rules.md` 9.8c-1 dan 8c-2)
+  * **HASIL 2026-09-04:** `App\Support\RekapPanen` (rekap + tahunRekap + tahunTercatat
+    + opsiFilter), ber-Eloquent, mereproduksi algoritme `DummyData::rekapPanen`
+    PERSIS (basis penanaman, tahun panen turunan, produktivitas tertimbang dari
+    angka terbulat, nilai_jual tak dibulatkan, `usort` produksi_ton desc). Pakai
+    `RekapPoktan::kekuatan` + `KonversiPanen::keTon`. Closure `$susunRekapPanen`
+    (rute `panen.rekap` + `panen.rekap.kelompok`) → `RekapPanen::`.
+    `tests/Database/RekapPanenTest.php` +7 (termasuk uji kesetaraan angka dengan
+    acuan DummyData). Dashboard `DummyData::rekapPanen` tetap sampai Tahap dashboard.
 
 ## Tahap 8 - Backend Pengaduan
 

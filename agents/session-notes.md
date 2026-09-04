@@ -12,11 +12,18 @@
   `anggotaPerPoktan` -> Eloquent, `UppercaseInput` +`jenis_alsintan`,
   `PoktanController::alsintanPoktan()` -> Eloquent. `tests/Database/AlsintanTest.php`
   +9. Feature 732, Database 355, pint bersih, NOL SELISIH, tautan-statis 14. Riset di bawah (untuk arsip).
-- **7.1 (komoditas -> Eloquent)** -- ✅ SELESAI (commit setelah `9e0c4f0`).
-  `KomoditasController` (index/detail/simpan/perbarui; hapus tetap stub 7.2),
-  `KomoditasSeeder` (satuan_id via NAMA), `ViewServiceProvider` `daftarKomoditas`
-  + `satuanKomoditas` -> Eloquent, `UppercaseInput` +`tipe`.
-  Feature 732, Database 362, semua hijau.
+- **Tahap 7 SELESAI (7.1-7.6)** -- 2026-09-04.
+  * 7.1 komoditas -> Eloquent (`KomoditasController`, `KomoditasSeeder`).
+  * 7.2 komoditas hapus + guard penanaman/saprotan.
+  * 7.3 penanaman (`PenanamanController`, `PenanamanSeeder`, `App\Support\RekapPoktan`).
+  * 7.4 hasil panen (`HasilPanenController`, `HasilPanenSeeder`; identitas
+    realisasi+puso=tanam, produksi dihitung ulang, satuan snapshot).
+  * 7.5 `App\Support\KonversiPanen::keTon`.
+  * 7.6 `App\Support\RekapPanen` (reproduksi `DummyData::rekapPanen` persis).
+  * Composer arms -> Eloquent: `daftarKomoditas`, `satuanKomoditas`, `daftarSatuan`,
+    `daftarPoktan`, `anggotaPerPoktan`, `petaPoktan`, `petaBenih`, `penanamanUntukPanen`.
+  * DummyData masih dipakai dashboard (`rekapPanen`, `keTon`, `rekapLahanPoktan`)
+    -> Tahap dashboard.
 - **6.7 (saprotan)** -- ✅ SELESAI. Opsi A dipilih pemilik: Liter/Rol jadi satuan
   master, `satuan.faktor_ke_ton` DINULLABLE-kan (schema + migration + dictionary
   §5.1 + MasterSatuanController/form + MasterSatuanTest 3→5). `SaprotanController`

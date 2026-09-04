@@ -6,6 +6,7 @@ use App\Models\Concerns\BerslugOtomatis;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -56,5 +57,18 @@ class Komoditas extends Model
             'id_komoditas',
             'id_poktan',
         )->withTimestamps();
+    }
+
+    public function penanaman(): HasMany
+    {
+        return $this->hasMany(Penanaman::class, 'komoditas_id', 'id_komoditas');
+    }
+
+    /**
+     * Pengadaan saprotan berjenis Benih untuk komoditas ini.
+     */
+    public function saprotan(): HasMany
+    {
+        return $this->hasMany(Saprotan::class, 'komoditas_id', 'id_komoditas');
     }
 }

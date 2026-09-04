@@ -8,12 +8,22 @@
  */
 
 use App\Models\Komoditas;
+use App\Models\Penanaman;
 use App\Models\Satuan;
 use App\Models\User;
 use App\Support\DummyData;
+use Database\Seeders\HasilPanenSeeder;
+use Database\Seeders\KawasanSeeder;
 use Database\Seeders\KomoditasSeeder;
+use Database\Seeders\LahanSeeder;
+use Database\Seeders\PenanamanSeeder;
+use Database\Seeders\PoktanSeeder;
 use Database\Seeders\ReferensiSeeder;
+use Database\Seeders\SaprotanSeeder;
 use Database\Seeders\SatuanSeeder;
+use Database\Seeders\SpSeeder;
+use Database\Seeders\TransmigranSeeder;
+use Database\Seeders\WilayahSeeder;
 
 require_once __DIR__.'/DatabaseHelpers.php';
 
@@ -92,4 +102,36 @@ it('memperbarui satuan baku komoditas', function () {
 
     expect($jagung->refresh()->satuan_id)->toBe($lain)
         ->and($jagung->is_unggulan)->toBeFalse();
+});
+
+it('menghapus komoditas yang belum dipakai secara halus', function () {
+    $ubi = Komoditas::where('nama', 'UBI KAYU')->value('id_komoditas');
+
+    $this->delete(route('komoditas.hapus', $ubi))->assertRedirect(route('komoditas.index'));
+
+    expect(Komoditas::find($ubi))->toBeNull()
+        ->and(Komoditas::withTrashed()->find($ubi)->trashed())->toBeTrue();
+});
+
+it('menolak menghapus komoditas yang masih dipakai penanaman', function () {
+    // Rantai penanaman butuh poktan/lahan/saprotan.
+    $this->seed(WilayahSeeder::class);
+    $this->seed(KawasanSeeder::class);
+    $this->seed(SpSeeder::class);
+    $this->seed(TransmigranSeeder::class);
+    $this->seed(LahanSeeder::class);
+    $this->seed(PoktanSeeder::class);
+    $this->seed(SaprotanSeeder::class);
+    $this->seed(PenanamanSeeder::class);
+    $this->seed(HasilPanenSeeder::class);
+
+    $jagung = Komoditas::where('nama', 'JAGUNG')->value('id_komoditas');
+    expect(Penanaman::where('komoditas_id', $jagung)->exists())->toBeTrue();
+
+    $this->from(route('komoditas.detail', $jagung))
+        ->delete(route('komoditas.hapus', $jagung))
+        ->assertRedirect(route('komoditas.detail', $jagung))
+        ->assertSessionHas('galat');
+
+    expect(Komoditas::find($jagung))->not->toBeNull();
 });

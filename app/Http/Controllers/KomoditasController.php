@@ -86,6 +86,33 @@ class KomoditasController extends Controller
     }
 
     /**
+     * Penghapusan DITOLAK bila komoditas masih dipakai penanaman atau pengadaan
+     * benih (Task 7.2). FK RESTRICT sudah menahannya, tetapi galat SQL mentah
+     * tak dapat ditindaklanjuti petugas -- alasannya disampaikan lebih dulu.
+     */
+    public function hapus(int $id): RedirectResponse
+    {
+        $komoditas = Komoditas::withCount(['penanaman', 'saprotan'])->findOrFail($id);
+
+        $penahan = [];
+        if ($komoditas->penanaman_count > 0) {
+            $penahan[] = $komoditas->penanaman_count.' catatan penanaman';
+        }
+        if ($komoditas->saprotan_count > 0) {
+            $penahan[] = $komoditas->saprotan_count.' pengadaan benih';
+        }
+
+        if ($penahan !== []) {
+            return back()->with('galat', 'Komoditas ini masih dipakai '.implode(' dan ', $penahan).' sehingga tidak dapat dihapus.');
+        }
+
+        $komoditas->poktan()->detach();
+        $komoditas->delete();
+
+        return redirect()->route('komoditas.index')->with('sukses', 'Data komoditas dihapus.');
+    }
+
+    /**
      * @return array<int, array<string, mixed>>
      */
     private function daftar(): array
