@@ -1588,10 +1588,25 @@ menghapus sisa terakhir `DummyData::penggunaSaatIni()` -- dikerjakan berbarengan
     `DummyData::{alsintan,saprotan,hasilPanen}()` (daftar SP sengaja tetap master
     `DummyData::satuanPermukiman()` -- dijaga uji "opsi SP dari data master").
     Konten laporan sudah Eloquent; hanya isi dropdown filter yang belum ikut.
-- [ ] Task 10.6 - Unduh berkas & template impor `[Sedang]` (BARU 2026-09-03)
+- [✓] Task 10.6 - Unduh berkas & template impor `[Sedang]` (BARU 2026-09-03) -- ✅ **SELESAI 2026-09-04**
   * **Celah yang ditemukan 2026-09-03:** `/dokumen/{modul}/{id}/{namaBerkas}` sudah punya `DokumenController` tetapi masih melayani dari data contoh; `/template-impor/{entitas}` belum berisi
   * Berkas dilayani dari cakram **privat**, tidak pernah dari `public/` (`rules.md` 14a). Pemeriksaan izin + cakupan data dilakukan sebelum berkas dikirim
   * Template impor melengkapi Task 10.4 (isian luring yang dapat diunggah kembali)
+  * **HASIL:**
+    - `DokumenController::tampilkan` -- lapis kedua **cakupan data**: baris pemilik
+      diambil lewat `App\Support\PetaModulBerkas` -> modelnya, sehingga scope
+      `CakupanDataSp` berlaku. Operator Per SP -> 404 utk berkas SP lain.
+    - `/template-impor/{entitas}` -> `TemplateImporController` menghasilkan **CSV
+      sungguhan**: baris petunjuk `#`, daftar nilai baku tiap kolom pilihan
+      (enum + daftar_pilihan aktif dari DB), baris judul kolom, 2 baris contoh.
+      Susunan kolom 14 entitas di `App\Support\SkemaImpor` (satu sumber,
+      `rules.md` 12.13).
+    - Modal impor: teks langkah 1 + label tombol disesuaikan (CSV, bukan Excel).
+  * **Ditunda ke Task 10.1:** template `.xlsx` dengan dropdown validasi data --
+    terikat keputusan mesin ekspor (belum diputuskan, tunggu hosting Task 11.3).
+    CSV memenuhi PRD 8.1 (isi luring, unggah kembali) tanpa paket tambahan.
+  * `HalamanTest` "menyediakan rute unduh template CSV" (14 entitas + 404),
+    `IzinPenegakanRuteTest` +1 (cakupan berkas), `PembatasanLajuTest` disesuaikan.
 
 - [ ] Task 10.1 - Export Excel untuk data utama `[Sedang]`
 - [ ] Task 10.2 - Export PDF untuk data utama + kop logo `[Sedang]`

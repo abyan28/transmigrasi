@@ -34,6 +34,7 @@ use App\Models\SatuanPermukiman;
 use App\Models\User;
 use App\Support\DummyData;
 use App\Support\LaporanData;
+use App\Support\SkemaImpor;
 use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\File;
@@ -4035,12 +4036,23 @@ it('menyatakan terus terang bahwa impor belum tersambung backend', function () {
     $this->get('/transmigran')->assertSee('Fitur belum aktif.');
 });
 
-it('menyediakan rute unduh template untuk seluruh entitas', function () {
+it('menyediakan rute unduh template CSV untuk seluruh entitas (Task 10.6)', function () {
     // Satu rute melayani semua entitas, sebab yang membedakan hanya susunan
-    // kolomnya. Empat belas rute terpisah hanya akan menyalin penanganan
-    // yang sama empat belas kali.
-    $this->get(route('template-impor', 'transmigran'))->assertRedirect();
-    $this->get(route('template-impor', 'hasil-panen'))->assertRedirect();
+    // kolomnya -- dibaca dari App\Support\SkemaImpor.
+    foreach (SkemaImpor::entitas() as $entitas) {
+        $r = $this->get(route('template-impor', $entitas))->assertOk();
+
+        expect($r->headers->get('content-type'))->toContain('text/csv')
+            ->and($r->headers->get('content-disposition'))->toContain('template-impor-'.$entitas.'.csv');
+
+        // Baris judul kolom nyata, bukan sekadar komentar.
+        $isi = $r->streamedContent();
+        $kolomPertama = SkemaImpor::kolom($entitas)[0]['kolom'];
+        expect($isi)->toContain($kolomPertama)->toContain('# TEMPLATE IMPOR');
+    }
+
+    // Entitas tak dikenal -> 404.
+    $this->get(route('template-impor', 'tidak-ada'))->assertNotFound();
 });
 
 /*

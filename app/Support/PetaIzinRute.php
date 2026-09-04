@@ -192,7 +192,9 @@ class PetaIzinRute
             'tentang', 'panduan',
             // Dev-only, dijadwalkan dihapus sebelum penyerahan.
             'galeri-komponen', 'uji-403',
-            // Stub: mengembalikan pesan "belum tersedia", tanpa data.
+            // Template impor: hanya susunan kolom kosong + baris contoh, tanpa
+            // data nyata. Tautannya hanya muncul di halaman modul yang sudah
+            // menuntut `{modul}.lihat` untuk dibuka.
             'template-impor',
             // Pemeriksaan `{modul}.lihat` dinamis di dalam DokumenController.
             'dokumen.tampilkan',

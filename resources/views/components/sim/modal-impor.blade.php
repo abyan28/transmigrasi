@@ -217,9 +217,12 @@
                     {{-- ---------------------------------------- Langkah 1 --}}
                     <div x-show="langkah === 1">
                         <p class="text-theme-sm text-gray-600 dark:text-gray-400">
-                            Unduh berkas template lebih dulu, lalu isi datanya memakai Excel.
-                            Template dapat diisi tanpa sambungan internet, sehingga pendataan
-                            tetap berjalan di lokasi yang sinyalnya lemah.
+                            Unduh berkas template lebih dulu (format CSV, terbuka di Excel
+                            maupun aplikasi lembar kerja lain), lalu isi datanya. Template
+                            dapat diisi tanpa sambungan internet, sehingga pendataan tetap
+                            berjalan di lokasi yang sinyalnya lemah. Baris berawalan
+                            <span class="font-mono">#</span> berisi petunjuk dan diabaikan
+                            saat impor.
                         </p>
 
                         @if (! empty($kolomWajib))
@@ -248,7 +251,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round"
                                     d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
                             </svg>
-                            Unduh Template Excel
+                            Unduh Template CSV
                         </a>
                     </div>
 

@@ -72,7 +72,7 @@ it('mengecualikan rute berkas besar dari batas halaman baca', function () {
     // Lebih dari batas baca (2), masih di bawah batas berkas besar (20).
     for ($i = 0; $i < 6; $i++) {
         $this->get(route('template-impor', ['entitas' => 'transmigran']))
-            ->assertStatus(302);
+            ->assertOk();
     }
 });
 

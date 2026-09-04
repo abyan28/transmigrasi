@@ -42,6 +42,7 @@ use App\Http\Controllers\ProfilController;
 use App\Http\Controllers\RumahController;
 use App\Http\Controllers\SaprotanController;
 use App\Http\Controllers\SpController;
+use App\Http\Controllers\TemplateImporController;
 use App\Http\Controllers\TransmigranController;
 use App\Http\Controllers\WilayahController;
 use App\Support\DummyData;
@@ -1046,13 +1047,11 @@ Route::delete('/pengguna/{id}', function (int $id) {
 | mengunggahnya kembali saat sambungan tersedia.
 |
 | Satu rute melayani seluruh entitas, sebab yang membedakan hanya susunan
-| kolomnya. Mendaftarkan empat belas rute terpisah hanya akan menyalin
-| penanganan yang sama empat belas kali.
+| kolomnya. Susunan itu dibaca dari App\Support\SkemaImpor (satu sumber).
 |
-| Tahap 10: menghasilkan berkas .xlsx sungguhan beserta baris contoh dan
-| daftar nilai baku pada kolom berjenis pilihan.
+| Task 10.6: berkas CSV sungguhan -- baris petunjuk berawalan #, daftar nilai
+| baku tiap kolom pilihan, baris judul kolom, lalu dua baris contoh. Format
+| .xlsx berdaftar-pilihan menyusul bersama keputusan mesin ekspor (Task 10.1).
 */
-Route::get('/template-impor/{entitas}', function (string $entitas) {
-    return back()->with('info', 'Template impor '.str_replace('-', ' ', $entitas)
-        .' akan tersedia setelah backend selesai.');
-})->where('entitas', '[a-z\-]+')->name('template-impor');
+Route::get('/template-impor/{entitas}', [TemplateImporController::class, 'unduh'])
+    ->where('entitas', '[a-z\-]+')->name('template-impor');
