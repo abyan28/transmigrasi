@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AsalWakilPoktan;
-use App\Enums\JenisReferensi;
+use App\Enums\JenisDaftarPilihan;
 use App\Enums\JenisSaprotan;
 use App\Enums\StatusKeaktifanAnggota;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
@@ -515,7 +515,7 @@ class PoktanController extends Controller
             '_anggota_disunting' => ['nullable', 'string'],
             'anggota' => ['nullable', 'array'],
             'anggota.*.transmigran_id' => ['required', 'integer', Rule::exists('transmigran', 'id_transmigran')],
-            'anggota.*.jabatan' => ValidationRules::referensi(JenisReferensi::JabatanAnggotaPoktan, wajib: true),
+            'anggota.*.jabatan' => ValidationRules::daftarPilihan(JenisDaftarPilihan::JabatanAnggotaPoktan, wajib: true),
             'anggota.*.keterangan' => ['nullable', 'string', 'max:255'],
         ], [
             'satuan_permukiman_id.required' => 'Satuan permukiman wajib dipilih.',

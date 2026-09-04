@@ -247,8 +247,8 @@ class MenuHelper
                             ],
                             [
                                 'name' => 'Daftar Pilihan',
-                                'path' => '/master/referensi',
-                                'permission' => 'referensi.lihat',
+                                'path' => '/master/daftar-pilihan',
+                                'permission' => 'daftar_pilihan.lihat',
                             ],
                             [
                                 // Bukan sekadar daftar nilai: di sinilah bobot

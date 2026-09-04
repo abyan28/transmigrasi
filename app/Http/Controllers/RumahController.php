@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\JenisReferensi;
+use App\Enums\JenisDaftarPilihan;
 use App\Enums\StatusHunian;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
 use App\Models\Rumah;
@@ -71,8 +71,8 @@ class RumahController extends Controller
             'jumlahDihuni' => count(array_filter($semua, fn ($r) => $r['status_hunian'] === StatusHunian::Dihuni->value)),
             'jumlahRusak' => count(array_filter($semua, fn ($r) => $r['kondisi'] !== 'Tidak Rusak')),
             'daftarSp' => DummyData::satuanPermukiman(),
-            'opsiFilterKondisiRumah' => DummyData::opsiFilterReferensi(JenisReferensi::KondisiRumah),
-            'opsiFilterStatusHunian' => DummyData::opsiFilterReferensi(JenisReferensi::StatusHunian),
+            'opsiFilterKondisiRumah' => DummyData::opsiFilterDaftarPilihan(JenisDaftarPilihan::KondisiRumah),
+            'opsiFilterStatusHunian' => DummyData::opsiFilterDaftarPilihan(JenisDaftarPilihan::StatusHunian),
         ]);
     }
 
@@ -250,8 +250,8 @@ class RumahController extends Controller
                 Rule::unique('rumah', 'transmigran_id')->ignore($rumah?->id_rumah, 'id_rumah'),
             ],
             'no_rumah' => ['nullable', 'string', 'max:50'],
-            'kondisi' => ValidationRules::referensi(JenisReferensi::KondisiRumah, wajib: true),
-            'status_hunian' => ValidationRules::referensi(JenisReferensi::StatusHunian, wajib: true),
+            'kondisi' => ValidationRules::daftarPilihan(JenisDaftarPilihan::KondisiRumah, wajib: true),
+            'status_hunian' => ValidationRules::daftarPilihan(JenisDaftarPilihan::StatusHunian, wajib: true),
             'alasan_tidak_dihuni' => ['nullable', 'string', 'max:2000', 'required_if:status_hunian,Tidak Dihuni'],
             'catatan_hunian' => ['nullable', 'string', 'max:2000'],
             'alasan_keluar' => ['nullable', 'string', 'max:2000'],

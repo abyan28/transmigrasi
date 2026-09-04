@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Auth;
  * menyalin logika SP.
  *
  * TIDAK DISARING (poin 9a/9b): `alsintan`/`saprotan` induk (deskripsi benda),
- * seluruh data referensi (wilayah, kawasan, satuan, komoditas, referensi,
+ * seluruh data referensi (wilayah, kawasan, satuan, komoditas, daftar_pilihan,
  * parameter_penilaian_sp, status_kondisi_sp, role, permission), dan
  * `SatuanPermukiman` sendiri.
  *

@@ -7,8 +7,8 @@
 use App\Models\ParameterPenilaianSp;
 use App\Models\StatusKondisiSp;
 use App\Models\User;
+use Database\Seeders\DaftarPilihanSeeder;
 use Database\Seeders\PenilaianKondisiSeeder;
-use Database\Seeders\ReferensiSeeder;
 
 require_once __DIR__.'/DatabaseHelpers.php';
 
@@ -16,7 +16,7 @@ beforeEach(function () {
     $petugas = User::factory()->create();
     $petugas->semuaIzin = true;
     $this->actingAs($petugas);
-    $this->seed(ReferensiSeeder::class);
+    $this->seed(DaftarPilihanSeeder::class);
     $this->seed(PenilaianKondisiSeeder::class);
 });
 

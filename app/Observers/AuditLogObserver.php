@@ -8,6 +8,7 @@ use App\Models\AlsintanDistribusi;
 use App\Models\AnggotaKeluarga;
 use App\Models\AnggotaPoktan;
 use App\Models\AuditLog;
+use App\Models\DaftarPilihan;
 use App\Models\Desa;
 use App\Models\FasilitasSp;
 use App\Models\HasilPanen;
@@ -25,7 +26,6 @@ use App\Models\Pengaduan;
 use App\Models\PenilaianSp;
 use App\Models\Poktan;
 use App\Models\Provinsi;
-use App\Models\Referensi;
 use App\Models\RiwayatKepalaKeluarga;
 use App\Models\RiwayatPenghunian;
 use App\Models\Rumah;
@@ -75,7 +75,7 @@ class AuditLogObserver
 
     /**
      * Model yang perubahannya dicatat otomatis. Data operasional + master
-     * wilayah/SP/pertanian + referensi. TIDAK termasuk `User`/`Role`/
+     * wilayah/SP/pertanian + daftar pilihan. TIDAK termasuk `User`/`Role`/
      * `Permission` (dicatat manual dengan konteks), tabel riwayat sistem
      * (`audit_log`, `kode_pemulihan_sandi`), `Berkas`, dan tabel pivot.
      *
@@ -96,7 +96,7 @@ class AuditLogObserver
         PenilaianSp::class,
         InventarisSp::class,
         FasilitasSp::class,
-        Referensi::class,
+        DaftarPilihan::class,
         Transmigran::class,
         AnggotaKeluarga::class,
         RiwayatKepalaKeluarga::class,

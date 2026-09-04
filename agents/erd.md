@@ -56,7 +56,7 @@ bawah dikelompokkan 9 domain; bila berbeda dari `schema.sql`, `schema.sql` yang 
 
 Riwayat pertumbuhan dari "37 tabel" revisi awal: Rombongan B `anggota_keluarga`; Rombongan C
 `rute_aksesibilitas_sp`; Putaran 7 memecah alsintan/saprotan jadi induk + `*_distribusi` +
-`infrastruktur_sp` + `fasilitas_sp_cakupan`; `referensi` menjadi tabel; `status_kondisi_sp`
+`infrastruktur_sp` + `fasilitas_sp_cakupan`; `daftar_pilihan` menjadi tabel; `status_kondisi_sp`
 (2026-09-01); Putaran 12 menambah registry `berkas` + 12 pivot `*_berkas` dan **mencabut**
 `dokumen_lahan` + `dokumen_lahan_bidang` (yang sempat ada sejak Putaran 7). Putaran 15
 menyatukan `lahan` menjadi satu baris per KK tanpa mengubah jumlah tabel.
@@ -66,7 +66,7 @@ menyatukan `lahan` menjadi satu baris per KK tanpa mengubah jumlah tabel.
 | 1 | Pengguna & Sistem | `role`, `permission`, `role_permission`, `user`, `kode_pemulihan_sandi`, `audit_log` |
 | 2 | Master Wilayah & SP | `provinsi`, `kabupaten`, `kecamatan`, `desa`, `kawasan_transmigrasi`, `satuan_permukiman`, `user_satuan_permukiman`, `rute_aksesibilitas_sp` |
 | 3 | Aset SP | `inventaris_sp`, `fasilitas_sp`, `fasilitas_sp_cakupan` |
-| 4 | Master Referensi & Penilaian | `satuan`, `komoditas`, `referensi`, `parameter_penilaian_sp`, `status_kondisi_sp`, `penilaian_sp` |
+| 4 | Master Daftar Pilihan & Penilaian | `satuan`, `komoditas`, `daftar_pilihan`, `parameter_penilaian_sp`, `status_kondisi_sp`, `penilaian_sp` |
 | 5 | Kependudukan | `transmigran`, `anggota_keluarga`, `rumah`, `riwayat_penghunian`, `riwayat_kepala_keluarga` |
 | 6 | Kelembagaan & Sarana | `poktan`, `anggota_poktan`, `alsintan`, `alsintan_distribusi`, `saprotan`, `saprotan_distribusi` |
 | 4b | Berkas | `berkas` (registry metadata) + 12 pivot `*_berkas`; **ditambahkan Putaran 12** menggantikan 24 kolom path yang tersebar di 17 tabel |
@@ -510,7 +510,7 @@ Urutan berikut wajib dipatuhi agar foreign key selalu menemukan tabel induknya.
 21. poktan                       (butuh satuan_permukiman, transmigran)
 22. anggota_poktan               (butuh poktan, transmigran)
 23. lahan                        (butuh transmigran, satuan_permukiman, poktan)
-24. berkas                       (butuh user + referensi; registry Putaran 12)
+24. berkas                       (butuh user + daftar_pilihan; registry Putaran 12)
 25. alsintan                     (butuh poktan, satuan_permukiman)
 26. saprotan                     (butuh poktan, satuan_permukiman, satuan, komoditas)
 27. komoditas_poktan             (butuh komoditas, poktan)
@@ -530,7 +530,7 @@ Urutan berikut wajib dipatuhi agar foreign key selalu menemukan tabel induknya.
 **Catatan langkah 5 dan 13:** `kawasan_transmigrasi` hanya bergantung pada `kabupaten`, sehingga dapat dibuat kapan saja setelah langkah 2. Ia diletakkan sebelum `satuan_permukiman` karena SP menaut ke keduanya.
 
 **Sisipan tabel baca (urutan pada `database/data/schema.sql`, 2026-09-01):**
-`referensi` (setelah `komoditas`, sebelum `parameter_penilaian_sp` yang menautnya) ·
+`daftar_pilihan` (setelah `komoditas`, sebelum `parameter_penilaian_sp` yang menautnya) ·
 `status_kondisi_sp` (tanpa FK, di mana saja) ·
 `anggota_keluarga` (setelah `transmigran`) ·
 `rute_aksesibilitas_sp` (setelah `satuan_permukiman`) ·

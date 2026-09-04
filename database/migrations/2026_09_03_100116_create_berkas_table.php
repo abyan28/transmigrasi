@@ -41,7 +41,7 @@ return new class extends Migration
             $table->index('disk', 'idx_berkas_disk');
 
             $table->foreign('jenis_berkas_id', 'fk_berkas_jenis')
-                ->references('id_referensi')->on('referensi')
+                ->references('id_daftar_pilihan')->on('daftar_pilihan')
                 ->onDelete('set null')->onUpdate('cascade');
             $table->foreign('user_id', 'fk_berkas_user')
                 ->references('id_user')->on('user')

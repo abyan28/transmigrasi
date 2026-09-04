@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\JenisDaftarPilihan;
 use App\Enums\JenisFasilitas;
-use App\Enums\JenisReferensi;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
 use App\Models\FasilitasSp;
 use App\Support\DummyData;
@@ -22,7 +22,7 @@ use Illuminate\Validation\Rule;
  * berdiri tidak masuk akal.
  *
  * `jenis_fasilitas` adalah ENUM sungguhan di skema (Task 3.1 B3), berbeda dari
- * kolom REF lain pada modul ini yang dibaca dari tabel `referensi`.
+ * kolom REF lain pada modul ini yang dibaca dari tabel `daftar_pilihan`.
  */
 class FasilitasSpController extends Controller
 {
@@ -58,7 +58,7 @@ class FasilitasSpController extends Controller
             'totalUnit' => array_sum(array_column($semua, 'jumlah')),
             'rusak' => count(array_filter($semua, fn ($b) => $b['kondisi'] !== 'Baik')),
             'daftarSp' => DummyData::satuanPermukiman(),
-            'opsiFilterKondisi' => DummyData::opsiFilterReferensi(JenisReferensi::Kondisi),
+            'opsiFilterKondisi' => DummyData::opsiFilterDaftarPilihan(JenisDaftarPilihan::Kondisi),
         ]);
     }
 
@@ -176,10 +176,10 @@ class FasilitasSpController extends Controller
             'nama_fasilitas' => ['required', 'string', 'max:150'],
             'jumlah' => ['required', 'integer', 'min:1', 'max:100000'],
             'tahun_perolehan' => ValidationRules::tahun(),
-            'sumber_dana' => ValidationRules::referensi(JenisReferensi::SumberDana),
+            'sumber_dana' => ValidationRules::daftarPilihan(JenisDaftarPilihan::SumberDana),
             // NOT NULL di skema, karena itu WAJIB -- bukan sekadar opsional.
-            'status_penyerahan' => ValidationRules::referensi(JenisReferensi::StatusPenyerahan, wajib: true),
-            'kondisi' => ValidationRules::referensi(JenisReferensi::Kondisi),
+            'status_penyerahan' => ValidationRules::daftarPilihan(JenisDaftarPilihan::StatusPenyerahan, wajib: true),
+            'kondisi' => ValidationRules::daftarPilihan(JenisDaftarPilihan::Kondisi),
             'lintang' => ValidationRules::lintang(),
             'bujur' => ValidationRules::bujur(),
             'keterangan' => ['nullable', 'string', 'max:500'],

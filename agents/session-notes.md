@@ -1,3 +1,68 @@
+# Rename `referensi` -> `daftar_pilihan` (2026-09-04)
+
+Penyeragaman istilah atas permintaan pemilik proyek. Sub-menunya sudah bernama
+"Daftar Pilihan" sejak Tahap 2 (catatan tasklist 29, 2026-09-01), sementara
+tabel, kelas, enum, rute, dan modul izin masih menyebut "referensi" -- dua
+istilah untuk satu hal, dan itu ambigu bagi pembaca kode maupun petugas.
+
+## Cakupan
+716 kemunculan di 85 berkas, 7 lapisan. Dikerjakan bertahap, tiap fase
+diverifikasi sebelum lanjut.
+
+| Lapisan | Perubahan |
+|---|---|
+| DB | tabel `referensi` -> `daftar_pilihan`; PK `id_referensi` -> `id_daftar_pilihan`; `parameter_penilaian_sp.referensi_id` -> `daftar_pilihan_id`; 3 FK + 4 indeks + 1 unique ikut berganti nama |
+| Skema | `database/data/schema.sql` + 5 migration (`create_referensi_table` di-`git mv`) |
+| Model | `Referensi` -> `DaftarPilihan`; relasi `ParameterPenilaianSp::referensi()` -> `daftarPilihan()` |
+| Enum | `JenisReferensi` -> `JenisDaftarPilihan`, `KelompokReferensi` -> `KelompokDaftarPilihan`. **Nilai case TIDAK berubah** (`sumber_dana`, `kondisi_rumah`, dst.) -- itu isi tabel, bukan namanya |
+| Method | `DummyData::referensi/opsiReferensi/opsiFilterReferensi/referensiNilai/referensiId` dan `ValidationRules::referensi()` -> berawalan `daftarPilihan` |
+| Controller | `MasterReferensiController` -> `MasterDaftarPilihanController` |
+| Rute | 4 nama rute -> `master.daftar-pilihan`, `daftar-pilihan.{jenis,simpan,perbarui}`; URL `/master/referensi` -> `/master/daftar-pilihan` |
+| Izin | modul `referensi` -> `daftar_pilihan` (`PetaIzinRute`, `MenuHelper`, `DummyData::daftarIzin` + 4 matriks role) |
+| View | 3 berkas di-`git mv` (`referensi`, `detail-referensi`, `form-referensi`) + pemakainya |
+| Uji | `ReferensiTest` -> `DaftarPilihanTest`, `MasterReferensiTest` -> `MasterDaftarPilihanTest`, `uji-master-referensi.mjs` -> `uji-master-daftar-pilihan.mjs` |
+| Dokumen | `rules.md` (matriks izin 5.1), `data-dictionary.md` (5.6, 11.37, 13.1), `erd.md`, `ui-spec.md`, `tasklist.md` |
+
+## Tiga hal yang bukan sekadar cari-ganti
+
+1. **Modul izin tersimpan sebagai DATA.** `permission` memuat 3 baris ber-modul
+   `referensi` dan `role_permission` menunjuk 8 di antaranya. Rename di kode saja
+   membuat seeder MEMBUAT IZIN BARU dan meninggalkan yang lama sebagai yatim --
+   setiap role diam-diam kehilangan akses menu Daftar Pilihan. Ditangani migration
+   `2026_09_04_120000_ubah_modul_izin_referensi_jadi_daftar_pilihan`: `UPDATE`,
+   bukan hapus-tanam, sehingga `id_permission` tetap dan pivotnya utuh.
+   Terverifikasi pada DB dev: id 35/36/37 bertahan, 8 baris pivot bertahan.
+
+2. **Alamat lama dipertahankan sebagai redirect 301.** `/master/referensi` dan
+   `/master/referensi/{jenis}` tetap terdaftar, mengalihkan permanen ke alamat
+   baru. Tautan yang sudah dibagikan atau ditandai petugas tidak boleh berujung
+   404 hanya karena istilahnya berganti (pola sama dengan `dashboard.sp`).
+   Konsekuensinya `master/referensi` masuk daftar `$lewati` pada penyapu
+   "merender setiap rute GET" -- sepola dengan `infrastruktur` yang juga 301.
+
+3. **Penjaga yang nyaris buta.** `UppercaseInputTest::isianPemilih()` mencocokkan
+   `ValidationRules::referensi\(` lewat regex. Bila hanya methodnya yang direname,
+   regexnya berhenti cocok dan penjaga itu lulus tanpa memeriksa apa pun -- 18
+   isian pemilih akan bocor dari pengecualian kapitalisasi tanpa ada yang tahu.
+   Ditemukan karena ujinya memerah (`toContain('kondisi')` gagal), bukan karena
+   sengaja dicari.
+
+## Yang SENGAJA tidak diubah
+Kata "referensi" sebagai kata umum bahasa Indonesia tetap: "data referensi
+nasional" (provinsi/kabupaten BPS), "SQL referensi" (berkas `docs/*.sql`),
+"Referensi wilayah" pada docblock model wilayah, "integritas referensial".
+Mengubahnya justru merusak makna. Catatan historis di `session-notes.md` dan
+`notes.md` juga tidak disunting -- itu arsip keputusan, bukan spesifikasi.
+
+## Verifikasi
+`pest` Feature **732 PASS** (7.207 assertions) + Database **399 PASS** (1.589) ·
+`pint --test` bersih (18 berkas kena `ordered_imports` akibat rename, sudah
+di-`pint`) · `sim:banding-skema --lengkap` **NOL SELISIH** · `sim:tautan-statis`
+**14**. DB dev di-`migrate:fresh --seed`: tabel `referensi` hilang,
+`daftar_pilihan` 76 baris, FK `fk_daftar_pilihan_bidang` /
+`fk_parameter_penilaian_daftar_pilihan` / `fk_berkas_jenis` menunjuk tabel baru.
+
+---
 # Tahap 6 - Backend Lahan & Kelembagaan (mulai 2026-09-04)
 
 ## STATUS

@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\JenisReferensi;
-use App\Models\Referensi;
+use App\Enums\JenisDaftarPilihan;
+use App\Models\DaftarPilihan;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -21,32 +21,32 @@ use Illuminate\Validation\Rule;
  * dinonaktifkan lewat `is_aktif`. Menghapusnya membuat data lama menunjuk
  * pilihan yang lenyap, dan rekapnya kehilangan baris itu tanpa pesan apa pun.
  */
-class MasterReferensiController extends Controller
+class MasterDaftarPilihanController extends Controller
 {
     public function index(Request $request): RedirectResponse|View
     {
         // Alamat lama `?tab={jenis}` dialihkan, bukan dibiarkan mati. Tautan
         // yang sudah tersimpan siapa pun tidak boleh mendarat di halaman
         // yang salah tanpa penjelasan.
-        $tabLama = JenisReferensi::tryFrom((string) $request->query('tab'));
+        $tabLama = JenisDaftarPilihan::tryFrom((string) $request->query('tab'));
 
         if ($tabLama !== null) {
-            return redirect()->route('referensi.jenis', ['jenis' => $tabLama->value], 301);
+            return redirect()->route('daftar-pilihan.jenis', ['jenis' => $tabLama->value], 301);
         }
 
-        $semua = Referensi::query()->orderBy('jenis')->orderBy('urutan')->get();
+        $semua = DaftarPilihan::query()->orderBy('jenis')->orderBy('urutan')->get();
 
-        return view('pages.master.referensi', [
+        return view('pages.master.daftar-pilihan', [
             'title' => 'Data Master Daftar Pilihan',
-            'semua' => $semua->map(fn (Referensi $r) => $this->baris($r))->all(),
-            'jumlah' => $semua->countBy(fn (Referensi $r) => $r->jenis->value)->all(),
-            'nonaktif' => $semua->reject->is_aktif->countBy(fn (Referensi $r) => $r->jenis->value)->all(),
+            'semua' => $semua->map(fn (DaftarPilihan $r) => $this->baris($r))->all(),
+            'jumlah' => $semua->countBy(fn (DaftarPilihan $r) => $r->jenis->value)->all(),
+            'nonaktif' => $semua->reject->is_aktif->countBy(fn (DaftarPilihan $r) => $r->jenis->value)->all(),
         ]);
     }
 
     public function jenis(string $jenis): View
     {
-        $pilihan = JenisReferensi::tryFrom($jenis);
+        $pilihan = JenisDaftarPilihan::tryFrom($jenis);
 
         // Jenis karangan membalas 404, bukan halaman kosong: daftar yang
         // tidak ada dan daftar yang kebetulan masih kosong adalah dua
@@ -56,19 +56,19 @@ class MasterReferensiController extends Controller
 
         // `bidang` di-eager-load supaya nama bidang tiap baris tidak dibaca
         // satu per satu di dalam perulangan tabel.
-        $baris = Referensi::query()
+        $baris = DaftarPilihan::query()
             ->with('bidang')
             ->where('jenis', $pilihan->value)
             ->orderBy('urutan')
             ->get();
 
-        return view('pages.master.detail-referensi', [
+        return view('pages.master.detail-daftar-pilihan', [
             'title' => $pilihan->label(),
             'jenis' => $pilihan,
-            'baris' => $baris->map(fn (Referensi $r) => $this->baris($r))->all(),
+            'baris' => $baris->map(fn (DaftarPilihan $r) => $this->baris($r))->all(),
             'jumlahNonaktif' => $baris->reject->is_aktif->count(),
-            'nilaiBidang' => $baris->pluck('bidang')->filter()->unique('id_referensi')
-                ->mapWithKeys(fn (Referensi $b) => [$b->id_referensi => $b->nilai])->all(),
+            'nilaiBidang' => $baris->pluck('bidang')->filter()->unique('id_daftar_pilihan')
+                ->mapWithKeys(fn (DaftarPilihan $b) => [$b->id_daftar_pilihan => $b->nilai])->all(),
         ]);
     }
 
@@ -76,7 +76,7 @@ class MasterReferensiController extends Controller
     {
         $data = $this->validasi($request);
 
-        Referensi::create($data + ['is_aktif' => $request->boolean('is_aktif', true)]);
+        DaftarPilihan::create($data + ['is_aktif' => $request->boolean('is_aktif', true)]);
 
         return $this->kembali($data['jenis'], 'Pilihan baru tersimpan dan langsung tersedia pada form.');
     }
@@ -87,10 +87,10 @@ class MasterReferensiController extends Controller
      */
     public function perbarui(Request $request, int $id): RedirectResponse
     {
-        $referensi = Referensi::findOrFail($id);
-        $data = $this->validasi($request, $referensi);
+        $daftarPilihan = DaftarPilihan::findOrFail($id);
+        $data = $this->validasi($request, $daftarPilihan);
 
-        $referensi->update($data + ['is_aktif' => $request->boolean('is_aktif')]);
+        $daftarPilihan->update($data + ['is_aktif' => $request->boolean('is_aktif')]);
 
         return $this->kembali($data['jenis'], 'Perubahan pilihan tersimpan.');
     }
@@ -101,24 +101,24 @@ class MasterReferensiController extends Controller
      */
     private function kembali(string $jenis, string $pesan): RedirectResponse
     {
-        $pilihan = JenisReferensi::tryFrom($jenis);
+        $pilihan = JenisDaftarPilihan::tryFrom($jenis);
 
         return redirect()->route(
-            $pilihan !== null ? 'referensi.jenis' : 'master.referensi',
+            $pilihan !== null ? 'daftar-pilihan.jenis' : 'master.daftar-pilihan',
             $pilihan !== null ? ['jenis' => $pilihan->value] : [],
         )->with('sukses', $pesan);
     }
 
     /**
      * Bentuk larik yang dikenali tampilan. Nama kuncinya wajib sama dengan
-     * `DummyData::referensi()` supaya view tidak perlu disentuh.
+     * `DummyData::daftarPilihan()` supaya view tidak perlu disentuh.
      *
      * @return array<string, mixed>
      */
-    private function baris(Referensi $r): array
+    private function baris(DaftarPilihan $r): array
     {
         return [
-            'id_referensi' => $r->id_referensi,
+            'id_daftar_pilihan' => $r->id_daftar_pilihan,
             'jenis' => $r->jenis->value,
             'jenis_label' => $r->jenis->label(),
             'nilai' => $r->nilai,
@@ -132,26 +132,26 @@ class MasterReferensiController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function validasi(Request $request, ?Referensi $referensi = null): array
+    private function validasi(Request $request, ?DaftarPilihan $daftarPilihan = null): array
     {
-        $jenis = JenisReferensi::tryFrom((string) $request->input('jenis'));
+        $jenis = JenisDaftarPilihan::tryFrom((string) $request->input('jenis'));
 
         $data = $request->validate([
-            'jenis' => ['required', Rule::enum(JenisReferensi::class)],
+            'jenis' => ['required', Rule::enum(JenisDaftarPilihan::class)],
             'nilai' => [
                 'required', 'string', 'max:100',
                 // Unik DALAM jenisnya, bukan lintas jenis: "Lainnya" sah
                 // muncul pada banyak daftar sekaligus.
-                Rule::unique('referensi', 'nilai')
+                Rule::unique('daftar_pilihan', 'nilai')
                     ->where('jenis', $jenis?->value)
-                    ->ignore($referensi?->id_referensi, 'id_referensi'),
+                    ->ignore($daftarPilihan?->id_daftar_pilihan, 'id_daftar_pilihan'),
             ],
             'urutan' => ['nullable', 'integer', 'min:1', 'max:999'],
             // Hanya bermakna bagi jenis berskor (`kondisi`); dipakai
             // menghitung kondisi SP, sehingga rentangnya dikunci 0..1.
             'nilai_skor' => ['nullable', 'numeric', 'min:0', 'max:1'],
             // Hanya bermakna bagi `kategori_pengaduan` (self-FK).
-            'bidang_id' => ['nullable', 'integer', Rule::exists('referensi', 'id_referensi')],
+            'bidang_id' => ['nullable', 'integer', Rule::exists('daftar_pilihan', 'id_daftar_pilihan')],
         ], [
             'nilai.required' => 'Nilai pilihan wajib diisi.',
             'nilai.unique' => 'Nilai ini sudah ada pada daftar yang sama.',
@@ -163,7 +163,7 @@ class MasterReferensiController extends Controller
         // dan hanya menyesatkan pembaca tabel.
         $data['nilai_skor'] = $jenis?->berskor() ? ($data['nilai_skor'] ?? null) : null;
         $data['bidang_id'] = $jenis?->berbidang() ? ($data['bidang_id'] ?? null) : null;
-        $data['urutan'] ??= (int) Referensi::where('jenis', $jenis?->value)->max('urutan') + 1;
+        $data['urutan'] ??= (int) DaftarPilihan::where('jenis', $jenis?->value)->max('urutan') + 1;
 
         return $data;
     }

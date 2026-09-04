@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Schema;
  * Terjemahan `database/data/schema.sql` -- DOMAIN 3, tabel `inventaris_sp`.
  *
  * Barang bergerak milik SP. `jenis_inventaris`/`sumber_dana`/`status_penyerahan`/
- * `kondisi` = VARCHAR REF (dikelola tabel `referensi`), bukan ENUM.
+ * `kondisi` = VARCHAR REF (dikelola tabel `daftar_pilihan`), bukan ENUM.
  * `rincian_kondisi` JSON: peta kondisi->jumlah unit. Soft delete aktif.
  */
 return new class extends Migration

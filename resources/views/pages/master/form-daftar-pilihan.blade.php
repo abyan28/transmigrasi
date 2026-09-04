@@ -1,5 +1,5 @@
 {{--
-    Isian satu nilai referensi, dipakai bersama modal tambah dan modal ubah.
+    Isian satu nilai daftar pilihan, dipakai bersama modal tambah dan modal ubah.
 
     Nama kolom mengikuti agents/data-dictionary.md bagian 5.6.
 
@@ -12,7 +12,7 @@
       benar-benar dipakai menyortir, bukan sekadar mengatur tampilan.
 --}}
 @php
-    use App\Enums\JenisReferensi;
+    use App\Enums\JenisDaftarPilihan;
 
     $awalan = $awalan ?? 'tambah';
     $data = $data ?? [];
@@ -27,18 +27,18 @@
     $jenisAwal = old('jenis', $data['jenis'] ?? $jenis->value);
 
     $berskor = array_values(array_map(
-        fn (JenisReferensi $j) => $j->value,
-        array_filter(JenisReferensi::cases(), fn (JenisReferensi $j) => $j->berskor())
+        fn (JenisDaftarPilihan $j) => $j->value,
+        array_filter(JenisDaftarPilihan::cases(), fn (JenisDaftarPilihan $j) => $j->berskor())
     ));
 
     $berjenjang = array_values(array_map(
-        fn (JenisReferensi $j) => $j->value,
-        array_filter(JenisReferensi::cases(), fn (JenisReferensi $j) => $j->berjenjang())
+        fn (JenisDaftarPilihan $j) => $j->value,
+        array_filter(JenisDaftarPilihan::cases(), fn (JenisDaftarPilihan $j) => $j->berjenjang())
     ));
 
     $berbidang = array_values(array_map(
-        fn (JenisReferensi $j) => $j->value,
-        array_filter(JenisReferensi::cases(), fn (JenisReferensi $j) => $j->berbidang())
+        fn (JenisDaftarPilihan $j) => $j->value,
+        array_filter(JenisDaftarPilihan::cases(), fn (JenisDaftarPilihan $j) => $j->berbidang())
     ));
 
     // `$daftarBidang` disuplai ViewServiceProvider.
@@ -68,10 +68,10 @@
 
     <div class="grid gap-4 sm:grid-cols-2">
         <div>
-            <label for="{{ $awalan }}_nilai_referensi" class="{{ $kelasLabel }}">
+            <label for="{{ $awalan }}_nilai_daftar_pilihan" class="{{ $kelasLabel }}">
                 Nilai<span class="text-error-500">*</span>
             </label>
-            <input type="text" id="{{ $awalan }}_nilai_referensi" name="nilai" required maxlength="100"
+            <input type="text" id="{{ $awalan }}_nilai_daftar_pilihan" name="nilai" required maxlength="100"
                 value="{{ old('nilai', $data['nilai'] ?? '') }}"
                 placeholder="Contoh: APBD Provinsi" class="{{ $kelasKontrol }}" />
             <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
@@ -80,10 +80,10 @@
         </div>
 
         <div>
-            <label for="{{ $awalan }}_urutan_referensi" class="{{ $kelasLabel }}">
+            <label for="{{ $awalan }}_urutan_daftar_pilihan" class="{{ $kelasLabel }}">
                 Urutan<span class="text-error-500">*</span>
             </label>
-            <input type="number" id="{{ $awalan }}_urutan_referensi" name="urutan" required min="1" step="1"
+            <input type="number" id="{{ $awalan }}_urutan_daftar_pilihan" name="urutan" required min="1" step="1"
                 value="{{ old('urutan', $data['urutan'] ?? 1) }}" class="{{ $kelasKontrol }} tabular-nums" />
             <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400" x-show="! jenisBerjenjang">
                 Mengatur urutan tampil pada dropdown.
@@ -123,8 +123,8 @@
             class="{{ $kelasKontrol }}">
             <option value="">Ditetapkan petugas per laporan</option>
             @foreach ($daftarBidang as $b)
-                <option value="{{ $b['id_referensi'] }}"
-                    @selected((string) old('bidang_id', $data['bidang_id'] ?? '') === (string) $b['id_referensi'])>
+                <option value="{{ $b['id_daftar_pilihan'] }}"
+                    @selected((string) old('bidang_id', $data['bidang_id'] ?? '') === (string) $b['id_daftar_pilihan'])>
                     {{ $b['nilai'] }}
                 </option>
             @endforeach

@@ -13,8 +13,8 @@ use App\Models\Rumah;
 use App\Models\Transmigran;
 use App\Models\User;
 use App\Support\DummyData;
+use Database\Seeders\DaftarPilihanSeeder;
 use Database\Seeders\KawasanSeeder;
-use Database\Seeders\ReferensiSeeder;
 use Database\Seeders\RumahSeeder;
 use Database\Seeders\SpSeeder;
 use Database\Seeders\TransmigranSeeder;
@@ -31,7 +31,7 @@ beforeEach(function () {
     $this->seed(WilayahSeeder::class);
     $this->seed(KawasanSeeder::class);
     $this->seed(SpSeeder::class);
-    $this->seed(ReferensiSeeder::class);
+    $this->seed(DaftarPilihanSeeder::class);
     $this->seed(TransmigranSeeder::class);
     $this->seed(RumahSeeder::class);
 });

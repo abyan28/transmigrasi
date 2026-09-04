@@ -6,8 +6,8 @@ use App\Enums\Agama;
 use App\Enums\AsalWakilPoktan;
 use App\Enums\BentukWilayah;
 use App\Enums\HubunganAnggotaKeluarga;
+use App\Enums\JenisDaftarPilihan;
 use App\Enums\JenisKelamin;
-use App\Enums\JenisReferensi;
 use App\Enums\JenisSaprotan;
 use App\Enums\KegiatanAnggota;
 use App\Enums\PendidikanTerakhir;
@@ -87,7 +87,7 @@ class ViewServiceProvider extends ServiceProvider
 
         'pages.pengguna.form-role' => ['kelompokIzin', 'izinPerRole'],
         'pages.master.form-wilayah' => ['wilayah'],
-        'pages.master.form-referensi' => ['daftarBidang'],
+        'pages.master.form-daftar-pilihan' => ['daftarBidang'],
     ];
 
     public function boot(): void
@@ -159,7 +159,7 @@ class ViewServiceProvider extends ServiceProvider
     /**
      * Satu-satunya tempat nama kunci diterjemahkan menjadi datanya.
      *
-     * `opsiReferensi()` dan `opsiFilterReferensi()` sengaja TIDAK dipertukarkan.
+     * `opsiDaftarPilihan()` dan `opsiFilterDaftarPilihan()` sengaja TIDAK dipertukarkan.
      * Yang pertama hanya memuat nilai aktif sebab form menawarkan pilihan untuk
      * data baru; yang kedua ikut memuat nilai nonaktif sebab filter menyaring
      * data lama. Kunci berawalan `opsiFilter` karena itu milik halaman daftar,
@@ -234,12 +234,12 @@ class ViewServiceProvider extends ServiceProvider
             // berbagi satu nama akan saling menimpa diam-diam.
             'opsiDaerahAsal' => DataWilayah::opsiKabupaten(),
 
-            'opsiKondisi' => DummyData::opsiReferensi(JenisReferensi::Kondisi),
-            'opsiKondisiRumah' => DummyData::opsiReferensi(JenisReferensi::KondisiRumah),
-            'opsiStatusHunian' => DummyData::opsiReferensi(JenisReferensi::StatusHunian),
-            'opsiJenisInfrastruktur' => DummyData::opsiReferensi(JenisReferensi::JenisInfrastruktur),
-            'opsiJenisAlsintan' => DummyData::opsiReferensi(JenisReferensi::JenisAlsintan),
-            'opsiTipeKomoditas' => DummyData::opsiReferensi(JenisReferensi::TipeKomoditas),
+            'opsiKondisi' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::Kondisi),
+            'opsiKondisiRumah' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::KondisiRumah),
+            'opsiStatusHunian' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::StatusHunian),
+            'opsiJenisInfrastruktur' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::JenisInfrastruktur),
+            'opsiJenisAlsintan' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::JenisAlsintan),
+            'opsiTipeKomoditas' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::TipeKomoditas),
             'daftarRole' => DummyData::role(),
             'daftarPengguna' => DummyData::pengguna(),
 
@@ -259,9 +259,9 @@ class ViewServiceProvider extends ServiceProvider
             'wilayah' => DummyData::wilayah(),
             'kelompokIzin' => DummyData::daftarIzin(),
 
-            // Termasuk yang NONAKTIF, sebab form referensi menampilkan bidang
+            // Termasuk yang NONAKTIF, sebab form daftar pilihan menampilkan bidang
             // penanganan yang sudah tercatat pada baris lama.
-            'daftarBidang' => DummyData::referensi(JenisReferensi::BidangPengaduan, true),
+            'daftarBidang' => DummyData::daftarPilihan(JenisDaftarPilihan::BidangPengaduan, true),
 
             /*
              * Izin milik setiap role, dipetakan menurut id.
@@ -289,9 +289,9 @@ class ViewServiceProvider extends ServiceProvider
                 ->mapWithKeys(fn ($v, $k) => [(int) $k => $v])
                 ->all(),
 
-            'opsiStatusPenyerahan' => DummyData::opsiReferensi(JenisReferensi::StatusPenyerahan),
-            'opsiJenisFasilitas' => DummyData::opsiReferensi(JenisReferensi::JenisFasilitas),
-            'opsiJenisInventaris' => DummyData::opsiReferensi(JenisReferensi::JenisInventaris),
+            'opsiStatusPenyerahan' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::StatusPenyerahan),
+            'opsiJenisFasilitas' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::JenisFasilitas),
+            'opsiJenisInventaris' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::JenisInventaris),
             'daftarKawasan' => DummyData::kawasan(),
             'daftarProvinsi' => DummyData::wilayah()['provinsi'],
             'daftarKabupaten' => DummyData::wilayah()['kabupaten'],
@@ -306,16 +306,16 @@ class ViewServiceProvider extends ServiceProvider
             'petaKawasanKabupaten' => array_column(
                 DummyData::kawasan(), 'kabupaten_id', 'id_kawasan_transmigrasi'
             ),
-            'opsiKategoriPengaduan' => DummyData::opsiReferensi(JenisReferensi::KategoriPengaduan),
-            'opsiBidang' => DummyData::opsiReferensi(JenisReferensi::BidangPengaduan),
-            'opsiPrioritasPengaduan' => DummyData::opsiReferensi(JenisReferensi::PrioritasPengaduan),
+            'opsiKategoriPengaduan' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::KategoriPengaduan),
+            'opsiBidang' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::BidangPengaduan),
+            'opsiPrioritasPengaduan' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::PrioritasPengaduan),
 
             // Peta kategori ke bidang, dibaca Alpine agar bidang terisi seketika
             // saat kategori dipilih. Kategori netral bernilai string kosong, dan
             // nilainya SELALU dapat ditimpa petugas (rules.md 5.0b).
             'petaBidang' => DummyData::petaBidangKategori(),
-            'opsiSumberDana' => DummyData::opsiReferensi(JenisReferensi::SumberDana),
-            'opsiJabatanAnggota' => DummyData::opsiReferensi(JenisReferensi::JabatanAnggotaPoktan),
+            'opsiSumberDana' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::SumberDana),
+            'opsiJabatanAnggota' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::JabatanAnggotaPoktan),
 
             // Enum langsung, bukan lewat data master: keenamnya baku dari
             // Dukcapil dan tidak di-CRUD dinas (keputusan pemilik proyek

@@ -22,7 +22,7 @@ class DataMasterSeeder extends Seeder
     {
         $this->call(WilayahSeeder::class);
         $this->call(SatuanSeeder::class);
-        $this->call(ReferensiSeeder::class);
+        $this->call(DaftarPilihanSeeder::class);
         $this->call(KawasanSeeder::class);
         $this->call(SpSeeder::class);
         $this->call(AsetSpSeeder::class);

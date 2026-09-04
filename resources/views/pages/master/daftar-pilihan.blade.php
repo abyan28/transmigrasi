@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 {{--
-    Indeks data master referensi: empat belas daftar sebagai kartu.
+    Indeks data master daftar pilihan: empat belas daftar sebagai kartu.
 
     SEMULA BERUPA TAB, dan itu berhenti bekerja karena jumlahnya. Dengan
     sembilan daftar keempatnya masih muat dalam satu baris; setelah menjadi
@@ -19,15 +19,15 @@
 
 @section('content')
     @php
-        use App\Enums\KelompokReferensi;
+        use App\Enums\KelompokDaftarPilihan;
 
         // `$semua`, `$jumlah`, dan `$nonaktif` datang dari rute
-        // `master.referensi`. Lihat routes/web.php.
+        // `master.daftar-pilihan`. Lihat routes/internal.php.
     @endphp
 
     <x-sim.page-header judul="Data Master Daftar Pilihan"
         keterangan="Pilihan pada form yang dapat ditambah dan disunting tanpa mengubah kode."
-        :remah="\App\Helpers\RemahHelper::untuk('/master/referensi')" />
+        :remah="\App\Helpers\RemahHelper::untuk('/master/daftar-pilihan')" />
 
     <div class="mb-6 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
         <h2 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">Cara Kerja Daftar Ini</h2>
@@ -43,7 +43,7 @@
         </p>
     </div>
     <div class="space-y-6">
-        @foreach (KelompokReferensi::cases() as $kelompok)
+        @foreach (KelompokDaftarPilihan::cases() as $kelompok)
             <section>
                 <div class="mb-3">
                     <h2 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">
@@ -56,7 +56,7 @@
 
                 <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                     @foreach ($kelompok->jenis() as $j)
-                        <a href="{{ route('referensi.jenis', ['jenis' => $j->value]) }}"
+                        <a href="{{ route('daftar-pilihan.jenis', ['jenis' => $j->value]) }}"
                             class="group flex flex-col rounded-2xl border border-gray-200 bg-white p-5 transition hover:border-brand-300 hover:shadow-theme-sm focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-800 dark:bg-white/[0.03] dark:hover:border-brand-500/50">
                             <div class="flex items-start justify-between gap-3">
                                 <h3 class="text-theme-sm font-medium text-gray-800 group-hover:text-brand-600 dark:text-white/90 dark:group-hover:text-brand-400">

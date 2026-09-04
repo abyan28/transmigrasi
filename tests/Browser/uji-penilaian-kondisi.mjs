@@ -147,7 +147,7 @@ async function main() {
 
         periksa('dua tab dirender', awal.jumlahTab === 2, `dapat ${awal.jumlahTab}`);
 
-        // Dua tab boleh, berbeda dari referensi yang tabnya dibongkar jadi
+        // Dua tab boleh, berbeda dari daftar pilihan yang tabnya dibongkar jadi
         // kartu: yang membatasi lebar judul terhadap wadahnya, bukan cacahnya.
         periksa('kedua tab terlihat tanpa menggulir', awal.tabTerlihat === 2, `terlihat ${awal.tabTerlihat}`);
         periksa('tidak ada gulir mendatar', awal.gulirMendatar === false);

@@ -7,12 +7,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * Parameter penilaian kondisi SP + bobotnya (data, bukan konstanta kode).
- * `referensi_id` menunjuk baris `referensi` (jenis jenis_infrastruktur /
+ * `daftar_pilihan_id` menunjuk baris `daftar_pilihan` (jenis jenis_infrastruktur /
  * jenis_fasilitas) lewat id -- rujukan berbasis id, bukan teks, supaya
- * perbaikan ejaan nilai tidak memutus parameter (`JenisReferensi::dirujukParameter`).
+ * perbaikan ejaan nilai tidak memutus parameter (`JenisDaftarPilihan::dirujukParameter`).
  *
  * `tingkat`/`sumber` ENUM tetap, tanpa PHP Enum khusus: dibaca apa adanya.
- * Tabel referensi: tanpa soft delete (dinonaktifkan lewat `is_dinilai`).
+ * Tabel rujukan: tanpa soft delete (dinonaktifkan lewat `is_dinilai`).
  */
 class ParameterPenilaianSp extends Model
 {
@@ -21,7 +21,7 @@ class ParameterPenilaianSp extends Model
     protected $primaryKey = 'id_parameter_penilaian_sp';
 
     protected $fillable = [
-        'kode', 'nama', 'tingkat', 'bobot', 'sumber', 'referensi_id', 'is_dinilai', 'urutan',
+        'kode', 'nama', 'tingkat', 'bobot', 'sumber', 'daftar_pilihan_id', 'is_dinilai', 'urutan',
     ];
 
     protected function casts(): array
@@ -34,10 +34,10 @@ class ParameterPenilaianSp extends Model
     }
 
     /**
-     * Nilai referensi (jenis infrastruktur / fasilitas) yang dinilai parameter ini.
+     * Nilai daftar pilihan (jenis infrastruktur / fasilitas) yang dinilai parameter ini.
      */
-    public function referensi(): BelongsTo
+    public function daftarPilihan(): BelongsTo
     {
-        return $this->belongsTo(Referensi::class, 'referensi_id', 'id_referensi');
+        return $this->belongsTo(DaftarPilihan::class, 'daftar_pilihan_id', 'id_daftar_pilihan');
     }
 }

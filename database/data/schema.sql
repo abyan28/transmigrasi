@@ -30,8 +30,8 @@
 --   - ENGINE=InnoDB, CHARSET=utf8mb4, COLLATE=utf8mb4_unicode_ci.
 --
 -- Kolom bertanda "REF(jenis=...)" menyimpan TEKS yang nilainya dikelola Admin
--- lewat tabel referensi (data-dictionary.md 5.6); ditulis VARCHAR agar nilai
--- baru cukup INSERT ke referensi tanpa ALTER TABLE. Enum berperilaku tetap ENUM.
+-- lewat tabel daftar_pilihan (data-dictionary.md 5.6); ditulis VARCHAR agar nilai
+-- baru cukup INSERT ke daftar_pilihan tanpa ALTER TABLE. Enum tetap berperilaku ENUM.
 --
 -- Invariant aritmetika (luas_kering+luas_basah=luas; realisasi_panen+puso=
 -- realisasi_tanam; SUM(distribusi.jumlah)<=jumlah_total; produksi=realisasi_panen
@@ -458,7 +458,7 @@ CREATE TABLE `fasilitas_sp_cakupan` (
 
 
 -- #############################################################################
--- DOMAIN 4 : MASTER REFERENSI & PENILAIAN KONDISI SP
+-- DOMAIN 4 : MASTER DAFTAR PILIHAN & PENILAIAN KONDISI SP
 -- #############################################################################
 
 -- 4.1 satuan --------------------------------------------------------
@@ -496,9 +496,9 @@ CREATE TABLE `komoditas` (
     FOREIGN KEY (`satuan_id`) REFERENCES `satuan` (`id_satuan`) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 4.3 referensi -------------------------------------------------
+-- 4.3 daftar_pilihan --------------------------------------------
 -- Daftar pilihan yang dikelola Admin. Kolom pemakainya menyimpan TEKS nilai
--- (bukan id) -- kecuali parameter_penilaian_sp.referensi_id yang menunjuk id.
+-- (bukan id) -- kecuali parameter_penilaian_sp.daftar_pilihan_id yang menunjuk id.
 -- Nilai DINONAKTIFKAN (is_aktif=0), tidak pernah dihapus.
 -- bidang_id: self-FK, hanya untuk jenis 'kategori_pengaduan' (menunjuk baris jenis
 -- 'bidang_pengaduan'); NULL bermakna "bidang ditetapkan petugas per laporan".
@@ -506,11 +506,11 @@ CREATE TABLE `komoditas` (
 -- 'jenis_dokumen_lahan' DICABUT dari ENUM `jenis` pada 2026-09-02 (Putaran 15).
 -- Nilainya dahulu HPL dan SHM, dan keduanya bukan dokumen tingkat bidang: HPL
 -- adalah alas hak kawasan milik instansi, SHM meliputi seluruh lahan satu
--- keluarga (rules.md 7.6). Enum PHP, opsi referensi, dan rutenya sudah dicabut
--- lebih dulu; nilai ENUM ini tertinggal sebagai bangkai yang tidak dipakai kode
--- mana pun. Jangan ditambahkan kembali tanpa mencabut rules.md 7.6 lebih dulu.
-CREATE TABLE `referensi` (
-  `id_referensi` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+-- keluarga (rules.md 7.6). Enum PHP, opsi daftar pilihan, dan rutenya sudah
+-- dicabut lebih dulu; nilai ENUM ini tertinggal sebagai bangkai yang tidak
+-- dipakai kode mana pun. Jangan ditambahkan kembali tanpa mencabut rules.md 7.6.
+CREATE TABLE `daftar_pilihan` (
+  `id_daftar_pilihan` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `jenis`        ENUM('sumber_dana','status_penyerahan','kondisi','kondisi_rumah','status_hunian','tipe_komoditas','prioritas_pengaduan','jabatan_anggota_poktan','jenis_infrastruktur','jenis_fasilitas','bidang_pengaduan','kategori_pengaduan','jenis_alsintan','jenis_inventaris') NOT NULL,
   `nilai`        VARCHAR(100) NOT NULL,
   `urutan`       SMALLINT UNSIGNED NOT NULL DEFAULT 0,
@@ -519,19 +519,19 @@ CREATE TABLE `referensi` (
   `is_aktif`     TINYINT(1) NOT NULL DEFAULT 1,
   `created_at`   TIMESTAMP NULL DEFAULT NULL,
   `updated_at`   TIMESTAMP NULL DEFAULT NULL,
-  PRIMARY KEY (`id_referensi`),
-  UNIQUE KEY `uq_referensi_jenis_nilai` (`jenis`,`nilai`),
-  KEY `idx_referensi_jenis` (`jenis`),
-  KEY `idx_referensi_aktif` (`is_aktif`),
-  KEY `idx_referensi_bidang` (`bidang_id`),
-  CONSTRAINT `fk_referensi_bidang`
-    FOREIGN KEY (`bidang_id`) REFERENCES `referensi` (`id_referensi`) ON DELETE SET NULL ON UPDATE CASCADE
+  PRIMARY KEY (`id_daftar_pilihan`),
+  UNIQUE KEY `uq_daftar_pilihan_jenis_nilai` (`jenis`,`nilai`),
+  KEY `idx_daftar_pilihan_jenis` (`jenis`),
+  KEY `idx_daftar_pilihan_aktif` (`is_aktif`),
+  KEY `idx_daftar_pilihan_bidang` (`bidang_id`),
+  CONSTRAINT `fk_daftar_pilihan_bidang`
+    FOREIGN KEY (`bidang_id`) REFERENCES `daftar_pilihan` (`id_daftar_pilihan`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 4.4 parameter_penilaian_sp ---------------------------------
 -- Parameter penilaian kondisi SP + bobotnya (data, bukan konstanta kode).
 -- Baris dihasilkan dari jenis infrastruktur/fasilitas; dinonaktifkan, bukan dihapus.
--- referensi_id menunjuk baris referensi (jenis jenis_infrastruktur / jenis_fasilitas).
+-- daftar_pilihan_id menunjuk baris daftar_pilihan (jenis jenis_infrastruktur / jenis_fasilitas).
 CREATE TABLE `parameter_penilaian_sp` (
   `id_parameter_penilaian_sp` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `kode`         VARCHAR(50) NOT NULL,
@@ -539,7 +539,7 @@ CREATE TABLE `parameter_penilaian_sp` (
   `tingkat`      ENUM('Primer','Sekunder','Tersier') NOT NULL,
   `bobot`        TINYINT UNSIGNED NOT NULL,
   `sumber`       ENUM('Infrastruktur','Fasilitas') NOT NULL,
-  `referensi_id` BIGINT UNSIGNED NOT NULL,
+  `daftar_pilihan_id` BIGINT UNSIGNED NOT NULL,
   `is_dinilai`   TINYINT(1) NOT NULL DEFAULT 0,
   `urutan`       SMALLINT UNSIGNED NOT NULL DEFAULT 0,
   `created_at`   TIMESTAMP NULL DEFAULT NULL,
@@ -547,9 +547,9 @@ CREATE TABLE `parameter_penilaian_sp` (
   PRIMARY KEY (`id_parameter_penilaian_sp`),
   UNIQUE KEY `uq_parameter_penilaian_kode` (`kode`),
   KEY `idx_parameter_penilaian_tingkat` (`tingkat`),
-  KEY `idx_parameter_penilaian_referensi` (`referensi_id`),
-  CONSTRAINT `fk_parameter_penilaian_referensi`
-    FOREIGN KEY (`referensi_id`) REFERENCES `referensi` (`id_referensi`) ON DELETE RESTRICT ON UPDATE CASCADE
+  KEY `idx_parameter_penilaian_daftar_pilihan` (`daftar_pilihan_id`),
+  CONSTRAINT `fk_parameter_penilaian_daftar_pilihan`
+    FOREIGN KEY (`daftar_pilihan_id`) REFERENCES `daftar_pilihan` (`id_daftar_pilihan`) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 4.5 status_kondisi_sp ------------------------------------
@@ -642,7 +642,7 @@ CREATE TABLE `berkas` (
   KEY `idx_berkas_user` (`user_id`),
   KEY `idx_berkas_disk` (`disk`),
   CONSTRAINT `fk_berkas_jenis`
-    FOREIGN KEY (`jenis_berkas_id`) REFERENCES `referensi` (`id_referensi`) ON DELETE SET NULL ON UPDATE CASCADE,
+    FOREIGN KEY (`jenis_berkas_id`) REFERENCES `daftar_pilihan` (`id_daftar_pilihan`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_berkas_user`
     FOREIGN KEY (`user_id`) REFERENCES `user` (`id_user`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

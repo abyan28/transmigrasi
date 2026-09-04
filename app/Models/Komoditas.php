@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
- * Jenis komoditas pertanian. `tipe` disimpan sebagai TEKS nilai referensi
+ * Jenis komoditas pertanian. `tipe` disimpan sebagai TEKS nilai daftar pilihan
  * (jenis `tipe_komoditas`), bukan di-cast ke PHP Enum: Admin boleh menambah
  * tipe baru lewat data master tanpa ALTER TABLE (`data-dictionary.md` 5.6).
  *

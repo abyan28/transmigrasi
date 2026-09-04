@@ -14,7 +14,7 @@
 |
 */
 
-use App\Enums\JenisReferensi;
+use App\Enums\JenisDaftarPilihan;
 use App\Enums\PrioritasPengaduan;
 use App\Enums\StatusKondisiSp;
 use App\Enums\StatusPengaduan;
@@ -30,7 +30,7 @@ use App\Http\Controllers\KawasanController;
 use App\Http\Controllers\KependudukanController;
 use App\Http\Controllers\KomoditasController;
 use App\Http\Controllers\LahanController;
-use App\Http\Controllers\MasterReferensiController;
+use App\Http\Controllers\MasterDaftarPilihanController;
 use App\Http\Controllers\MasterSatuanController;
 use App\Http\Controllers\PenanamanController;
 use App\Http\Controllers\PengaturanPenggunaController;
@@ -251,8 +251,8 @@ Route::get('/galeri-komponen', function () {
         'ringkasan' => DummyData::ringkasanDashboard(),
         'transmigran' => DummyData::transmigran(),
         'daftarSp' => DummyData::satuanPermukiman(),
-        'opsiPrioritasPengaduan' => DummyData::opsiReferensi(JenisReferensi::PrioritasPengaduan),
-        'opsiKondisiRumah' => DummyData::opsiReferensi(JenisReferensi::KondisiRumah),
+        'opsiPrioritasPengaduan' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::PrioritasPengaduan),
+        'opsiKondisiRumah' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::KondisiRumah),
     ]);
 })->name('galeri-komponen');
 
@@ -275,7 +275,7 @@ Route::get('/wilayah', [WilayahController::class, 'index'])->name('wilayah');
 Route::get('/master/satuan', [MasterSatuanController::class, 'index'])->name('master.satuan');
 
 /*
- * Data master referensi.
+ * Data master daftar pilihan.
  *
  * Empat belas daftar pilihan yang sebelumnya ditulis sebagai enum di dalam
  * kode, kini dikelola Admin dan Dinas Transmigrasi lewat antarmuka (kamus
@@ -290,16 +290,36 @@ Route::get('/master/satuan', [MasterSatuanController::class, 'index'])->name('ma
  * dinonaktifkan lewat kolom `is_aktif`. Menghapusnya membuat data lama
  * menunjuk pilihan yang lenyap, dan rekapnya kehilangan baris itu tanpa pesan
  * apa pun.
+ *
+ * Istilahnya diseragamkan menjadi "daftar pilihan" pada 2026-09-04. Sub-menunya
+ * sudah bernama demikian sejak Tahap 2, sementara tabel, kelas, dan alamatnya
+ * masih menyebut "referensi" -- dua istilah untuk satu hal.
  */
-Route::get('/master/referensi', [MasterReferensiController::class, 'index'])->name('master.referensi');
+Route::get('/master/daftar-pilihan', [MasterDaftarPilihanController::class, 'index'])
+    ->name('master.daftar-pilihan');
 
-Route::get('/master/referensi/{jenis}', [MasterReferensiController::class, 'jenis'])
-    ->where('jenis', '[a-z_]+')->name('referensi.jenis');
+Route::get('/master/daftar-pilihan/{jenis}', [MasterDaftarPilihanController::class, 'jenis'])
+    ->where('jenis', '[a-z_]+')->name('daftar-pilihan.jenis');
 
-Route::post('/master/referensi', [MasterReferensiController::class, 'simpan'])->name('referensi.simpan');
+Route::post('/master/daftar-pilihan', [MasterDaftarPilihanController::class, 'simpan'])
+    ->name('daftar-pilihan.simpan');
 
-Route::put('/master/referensi/{id}', [MasterReferensiController::class, 'perbarui'])
-    ->where('id', '[0-9]+')->name('referensi.perbarui');
+Route::put('/master/daftar-pilihan/{id}', [MasterDaftarPilihanController::class, 'perbarui'])
+    ->where('id', '[0-9]+')->name('daftar-pilihan.perbarui');
+
+/*
+ * Alamat lama `/master/referensi` dialihkan permanen, bukan dibiarkan mati.
+ * Tautan yang sudah dibagikan atau ditandai petugas tidak boleh berujung 404
+ * hanya karena istilahnya berganti. Pola yang sama dipakai `dashboard.sp`.
+ *
+ * Redirect 301 (permanen), sehingga peramban dan mesin pengindeks memperbarui
+ * catatannya sendiri dan tautan lama berhenti dipakai dengan sendirinya.
+ */
+Route::get('/master/referensi', fn () => redirect()->route('master.daftar-pilihan', [], 301));
+
+Route::get('/master/referensi/{jenis}', fn (string $jenis) => redirect()
+    ->route('daftar-pilihan.jenis', ['jenis' => $jenis], 301))
+    ->where('jenis', '[a-z_]+');
 
 /*
  * Pengaturan penilaian kondisi SP.
@@ -308,7 +328,7 @@ Route::put('/master/referensi/{id}', [MasterReferensiController::class, 'perbaru
  * status. Keduanya adalah keputusan KEBIJAKAN yang wajib divalidasi dinas
  * (rules.md 10c poin 13), bukan angka teknis.
  *
- * Dua tab BOLEH di sini, berbeda dari data master referensi yang tabnya
+ * Dua tab BOLEH di sini, berbeda dari data master daftar pilihan yang tabnya
  * dibongkar menjadi kartu: yang membatasi bukan cacah tab melainkan lebar
  * judulnya terhadap wadahnya (ui-spec.md 5.1d), dan dua judul pendek jelas
  * muat dalam satu baris.
@@ -767,9 +787,9 @@ Route::get('/pengaduan', function () {
             && $p['status'] !== StatusPengaduan::Selesai->value)),
 
         'daftarSp' => DummyData::satuanPermukiman(),
-        'opsiFilterBidang' => DummyData::opsiFilterReferensi(JenisReferensi::BidangPengaduan),
-        'opsiFilterKategori' => DummyData::opsiFilterReferensi(JenisReferensi::KategoriPengaduan),
-        'opsiFilterPrioritas' => DummyData::opsiFilterReferensi(JenisReferensi::PrioritasPengaduan),
+        'opsiFilterBidang' => DummyData::opsiFilterDaftarPilihan(JenisDaftarPilihan::BidangPengaduan),
+        'opsiFilterKategori' => DummyData::opsiFilterDaftarPilihan(JenisDaftarPilihan::KategoriPengaduan),
+        'opsiFilterPrioritas' => DummyData::opsiFilterDaftarPilihan(JenisDaftarPilihan::PrioritasPengaduan),
     ]);
 })->name('pengaduan.index');
 
@@ -811,7 +831,7 @@ Route::get('/pengaduan/{id}', function (int $id) {
         'title' => $data['nomor_pengaduan'],
         'data' => $data,
         'riwayat' => DummyData::penangananPengaduan($data['nomor_pengaduan']),
-        'opsiBidang' => DummyData::opsiReferensi(JenisReferensi::BidangPengaduan),
+        'opsiBidang' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::BidangPengaduan),
     ]);
 })->where('id', '[0-9]+')->name('pengaduan.detail');
 
@@ -925,7 +945,7 @@ Route::put('/saprotan/{id}', [SaprotanController::class, 'perbarui'])
     ->where('id', '[0-9]+')->name('saprotan.perbarui');
 
 /*
- * Data komoditas (Task 7.1: peralihan ke Eloquent). `tipe` = TEKS referensi;
+ * Data komoditas (Task 7.1: peralihan ke Eloquent). `tipe` = TEKS daftar pilihan;
  * `slug` otomatis. Satuan baku mengunci satuan pencatatan panen berikutnya.
  */
 Route::get('/komoditas', [KomoditasController::class, 'index'])->name('komoditas.index');

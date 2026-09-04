@@ -5,7 +5,7 @@
 
     TIGA HAL SENGAJA TIDAK DAPAT DISUNTING:
 
-    - `jenis` dan `referensi_id`, sebab barisnya dihasilkan dari data master
+    - `jenis` dan `daftar_pilihan_id`, sebab barisnya dihasilkan dari data master
       jenis. Menggantinya di sini akan membuat parameter mencari aset berjenis
       lain tanpa jejak apa pun pada daftar jenisnya.
     - `kode`, sebab ia penunjuk yang tersalin ke riwayat penilaian. Mengubahnya
@@ -49,7 +49,7 @@
             x-text="baris?.nilai_jenis ?? '-'"></p>
         <p class="mt-2 text-theme-xs text-gray-500 dark:text-gray-400">
             Dibaca dari tabel <span x-text="(baris?.sumber ?? '') === 'Fasilitas' ? 'fasilitas SP' : 'infrastruktur'"></span>.
-            Untuk mengubah namanya, sunting jenisnya pada data master referensi.
+            Untuk mengubah namanya, sunting jenisnya pada data master daftar pilihan.
         </p>
     </div>
 

@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * Barang bergerak milik SP. `kondisi` = penilaian umum petugas, BUKAN turunan
  * `rincian_kondisi`. `rincian_kondisi` JSON: peta kondisi->jumlah unit,
  * SUM = `jumlah`. Kolom `jenis_inventaris`/`sumber_dana`/`status_penyerahan`/
- * `kondisi` menyimpan TEKS nilai referensi, bukan enum.
+ * `kondisi` menyimpan TEKS nilai daftar pilihan, bukan enum.
  */
 #[ScopedBy([CakupanDataSp::class])]
 class InventarisSp extends Model

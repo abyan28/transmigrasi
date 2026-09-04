@@ -13,7 +13,7 @@
  * terkunci, dan parameter tidak dapat ditambah lewat antarmuka.
  */
 
-use App\Enums\JenisReferensi;
+use App\Enums\JenisDaftarPilihan;
 use App\Enums\StatusKondisiSp;
 use App\Enums\TingkatKebutuhan;
 use App\Helpers\MenuHelper;
@@ -26,8 +26,8 @@ it('menghasilkan parameter dari data master jenis, bukan daftar tulis tangan', f
     // baris, sehingga jenis yang ditambahkan Admin tidak pernah ikut dinilai.
     // Dropdownnya hidup, petugas dapat mendata asetnya, tetapi skor SP tidak
     // berubah sama sekali.
-    $jenisInfra = array_column(DummyData::referensi(JenisReferensi::JenisInfrastruktur), 'nilai');
-    $jenisFasilitas = array_column(DummyData::referensi(JenisReferensi::JenisFasilitas), 'nilai');
+    $jenisInfra = array_column(DummyData::daftarPilihan(JenisDaftarPilihan::JenisInfrastruktur), 'nilai');
+    $jenisFasilitas = array_column(DummyData::daftarPilihan(JenisDaftarPilihan::JenisFasilitas), 'nilai');
 
     $nilaiJenis = array_column(DummyData::parameterPenilaian(), 'nilai_jenis');
 
@@ -41,7 +41,7 @@ it('menghasilkan parameter dari data master jenis, bukan daftar tulis tangan', f
 
     // Sumbernya disimpulkan dari jenisnya, tidak diisi manual.
     foreach (DummyData::parameterPenilaian() as $p) {
-        $harusnya = $p['jenis'] === JenisReferensi::JenisFasilitas->value ? 'Fasilitas' : 'Infrastruktur';
+        $harusnya = $p['jenis'] === JenisDaftarPilihan::JenisFasilitas->value ? 'Fasilitas' : 'Infrastruktur';
 
         expect($p['sumber'])->toBe($harusnya);
     }
@@ -193,7 +193,7 @@ it('mengunci tingkat tiga parameter primer', function () {
 it('menyediakan halaman pengaturan penilaian beserta kedua tabnya', function () {
     $isi = $this->get(route('master.penilaian-kondisi'))->assertOk()->getContent();
 
-    // Dua tab boleh di sini, berbeda dari data master referensi yang tabnya
+    // Dua tab boleh di sini, berbeda dari data master daftar pilihan yang tabnya
     // dibongkar menjadi kartu: yang membatasi lebar judul terhadap wadahnya,
     // bukan cacah tabnya (ui-spec.md 5.1d).
     expect(substr_count($isi, 'role="tab"'))->toBe(2);

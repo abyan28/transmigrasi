@@ -9,7 +9,7 @@
     nilai kondisi aset sudah lebih dulu dapat disunting. Separuh perhitungan
     dapat diatur, separuhnya terkunci.
 
-    DUA TAB BOLEH DI SINI, berbeda dari data master referensi yang tabnya
+    DUA TAB BOLEH DI SINI, berbeda dari data master daftar pilihan yang tabnya
     dibongkar menjadi kartu. Yang membatasi bukan cacah tab melainkan lebar
     judulnya terhadap wadahnya (ui-spec.md 5.1d); dua judul pendek jelas muat.
 --}}

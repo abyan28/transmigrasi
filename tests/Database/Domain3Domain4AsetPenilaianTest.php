@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Task 3.1 -- DOMAIN 3 (Aset SP) + DOMAIN 4 (Master Referensi & Penilaian).
+ * Task 3.1 -- DOMAIN 3 (Aset SP) + DOMAIN 4 (Master Daftar Pilihan & Penilaian).
  *
  * Tabel: satuan, komoditas, status_kondisi_sp, parameter_penilaian_sp,
  * penilaian_sp, inventaris_sp, fasilitas_sp, fasilitas_sp_cakupan (pivot).
@@ -11,15 +11,15 @@
  * `buatSp()` di-share dari Domain2WilayahSpTest.
  */
 
+use App\Enums\JenisDaftarPilihan;
 use App\Enums\JenisFasilitas;
-use App\Enums\JenisReferensi;
 use App\Enums\StatusKondisiSp as StatusKondisiSpEnum;
+use App\Models\DaftarPilihan;
 use App\Models\FasilitasSp;
 use App\Models\InventarisSp;
 use App\Models\Komoditas;
 use App\Models\ParameterPenilaianSp;
 use App\Models\PenilaianSp;
-use App\Models\Referensi;
 use App\Models\Satuan;
 use App\Models\StatusKondisiSp;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -113,27 +113,27 @@ it('menolak nilai di luar ENUM jenis_fasilitas pada lapisan basis data', functio
     ]))->toThrow(QueryException::class);
 });
 
-it('merujuk parameter penilaian ke baris referensi lewat id', function () {
-    $ref = Referensi::create(['jenis' => JenisReferensi::JenisFasilitas->value, 'nilai' => 'Pendidikan Dasar']);
+it('merujuk parameter penilaian ke baris daftar pilihan lewat id', function () {
+    $ref = DaftarPilihan::create(['jenis' => JenisDaftarPilihan::JenisFasilitas->value, 'nilai' => 'Pendidikan Dasar']);
     $parameter = ParameterPenilaianSp::create([
         'kode' => 'pendidikan_dasar', 'nama' => 'Pendidikan Dasar', 'tingkat' => 'Primer',
-        'bobot' => 10, 'sumber' => 'Fasilitas', 'referensi_id' => $ref->id_referensi, 'is_dinilai' => true,
+        'bobot' => 10, 'sumber' => 'Fasilitas', 'daftar_pilihan_id' => $ref->id_daftar_pilihan, 'is_dinilai' => true,
     ]);
 
-    expect($parameter->referensi->id_referensi)->toBe($ref->id_referensi)
+    expect($parameter->daftarPilihan->id_daftar_pilihan)->toBe($ref->id_daftar_pilihan)
         ->and($parameter->tingkat)->toBe('Primer')
         ->and($parameter->bobot)->toBe(10)
         ->and($parameter->is_dinilai)->toBeTrue();
 
-    // referensi yang dirujuk parameter tidak boleh dihapus (RESTRICT).
+    // daftar pilihan yang dirujuk parameter tidak boleh dihapus (RESTRICT).
     expect(fn () => $ref->delete())->toThrow(QueryException::class);
 });
 
 it('mewajibkan kode parameter penilaian unik', function () {
-    $ref = Referensi::create(['jenis' => JenisReferensi::JenisInfrastruktur->value, 'nilai' => 'Air']);
+    $ref = DaftarPilihan::create(['jenis' => JenisDaftarPilihan::JenisInfrastruktur->value, 'nilai' => 'Air']);
     $atribut = [
         'kode' => 'air_bersih', 'nama' => 'Air Bersih', 'tingkat' => 'Primer',
-        'bobot' => 15, 'sumber' => 'Infrastruktur', 'referensi_id' => $ref->id_referensi,
+        'bobot' => 15, 'sumber' => 'Infrastruktur', 'daftar_pilihan_id' => $ref->id_daftar_pilihan,
     ];
     ParameterPenilaianSp::create($atribut);
 

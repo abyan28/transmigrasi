@@ -54,13 +54,13 @@ class UppercaseInput
         // Penunjuk sasaran, bukan isi data. Dikapitalkan, keduanya tak lagi
         // cocok dengan daftar nilai yang sah dan seluruh penyimpanannya ditolak
         // validasi: 'tingkat' memilih TABEL wilayah (4.1), 'jenis' memilih
-        // DAFTAR referensi dan berpasangan dengan ENUM basis data (4.7).
+        // DAFTAR pilihan dan berpasangan dengan ENUM basis data (4.7).
         'tingkat',
         'jenis',
         'jenis_fasilitas',
 
-        // Nilai referensi (Task 4.3/4.4/4.6): TEKS yang dicocokkan ke tabel
-        // `referensi` lewat ValidationRules::referensi(). Dikapitalkan, ia
+        // Nilai daftar pilihan (Task 4.3/4.4/4.6): TEKS yang dicocokkan ke tabel
+        // `referensi` lewat ValidationRules::daftarPilihan(). Dikapitalkan, ia
         // tersimpan dengan kapitalisasi berbeda dari daftar pilihannya --
         // lolos validasi (kolasi MySQL case-insensitive) tetapi data tak
         // seragam. Ditegakkan tests/Feature/UppercaseInputTest.php.

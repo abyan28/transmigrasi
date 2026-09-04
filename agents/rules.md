@@ -83,7 +83,7 @@ Skema final ada pada `erd.md`, rincian kolom pada `data-dictionary.md`. Berkas `
 | Luas lahan | `DECIMAL(12,2)`, satuan hektare | |
 | Volume panen | `DECIMAL(12,3)` | 3 desimal agar panen 1 kg tetap terekam |
 | Dokumen dan foto | `VARCHAR(255)` berisi path berkas | dilarang memakai `BLOB` |
-| Nama wilayah | disimpan sebagai baris pada tabel referensi | dilarang memakai `ENUM` berisi nama wilayah |
+| Nama wilayah | disimpan sebagai baris pada tabel daftar pilihan | dilarang memakai `ENUM` berisi nama wilayah |
 
 **Konsekuensi pola PK/FK:** karena berbeda dari asumsi bawaan Eloquent, setiap model wajib mendeklarasikan `protected $primaryKey` dan setiap definisi relasi wajib menyebutkan kunci asing serta kunci lokal secara eksplisit. Contoh:
 
@@ -321,7 +321,7 @@ Dibuat lewat seeder sebagai konfigurasi awal agar sistem langsung dapat dipakai.
    berhak. Yang disaring adalah distribusinya.
 
 9b. **Data referensi tidak pernah disaring:** wilayah, kawasan, satuan, komoditas,
-   `referensi`, `parameter_penilaian_sp`, `status_kondisi_sp`, role, dan permission.
+   `daftar_pilihan`, `parameter_penilaian_sp`, `status_kondisi_sp`, role, dan permission.
    Seluruhnya data master yang justru dibutuhkan tiap pengguna untuk membaca datanya
    sendiri; menyaringnya membuat dropdown kosong tanpa sebab yang terlihat.
 
@@ -397,7 +397,7 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **-*
 | Rumah & hunian | L T U H | L T U | L | L T U |
 | Riwayat penghunian | L T U H | L T | L | L T |
 | Riwayat kepala keluarga | L T U | L T | L | L |
-| Data master referensi | L T U | L T U | L | L |
+| Data master daftar pilihan | L T U | L T U | L | L |
 | Penilaian kondisi SP | L U | L U | L | L |
 | Lahan | L T U H | L T U | L | L T U |
 | Kelompok tani | L T U H | L | L T U | L T U |
@@ -735,7 +735,7 @@ Parameter dikelompokkan menurut satu pertanyaan: **tanpa ini, apakah tempat ters
     | **Perlu Penanganan** | Skor < 55, **atau** ada parameter primer bernilai nol |
 
 13. Bobot pada §10c.3 dan ambang pada poin 12 adalah **keputusan kebijakan, bukan keputusan teknis**. Keduanya wajib divalidasi dinas sebelum dipakai pada laporan resmi.
-13a. **Ketiganya kini dapat disunting dinas**, tidak lagi terkunci di dalam kode: nilai kondisi aset lewat data master referensi, sedangkan bobot dan ambang lewat `/master/penilaian-kondisi`. Sebelumnya hanya yang pertama yang berupa data, sehingga separuh perhitungan dapat diatur dan separuhnya tidak.
+13a. **Ketiganya kini dapat disunting dinas**, tidak lagi terkunci di dalam kode: nilai kondisi aset lewat data master daftar pilihan, sedangkan bobot dan ambang lewat `/master/penilaian-kondisi`. Sebelumnya hanya yang pertama yang berupa data, sehingga separuh perhitungan dapat diatur dan separuhnya tidak.
 13b. **Nama status juga dapat disesuaikan**, sebab tiap dinas punya istilah sendiri. Yang tersimpan tetap nilai enum; yang berubah hanya teks tampilnya. Jumlahnya tetap tiga, sebab perhitungan hanya mengenal tiga keluaran.
 13c. Larangan istilah merendahkan pada A10c.1 berlaku atas **nilai bawaan**. Wording hasil suntingan dinas tidak diperiksa sistem, sehingga tanggung jawabnya berpindah ke dinas yang menyuntingnya.
 
@@ -793,7 +793,7 @@ Parameter dikelompokkan menurut satu pertanyaan: **tanpa ini, apakah tempat ters
 6d. Setiap isian koordinat, baik pada kanal publik maupun form petugas, **wajib menyediakan pemilihan lewat peta** di samping pengambilan lokasi otomatis. GPS ponsel di lokus kerap meleset puluhan meter, sedangkan pelapor paling mengetahui letak sebenarnya. Peta memakai ubin OpenStreetMap tanpa kunci API, dimuat hanya ketika dibuka. Bila peta gagal dimuat karena jaringan lemah, isian manual dan tombol lokasi otomatis tetap berfungsi.
 7. Pengaduan diteruskan ke dinas sesuai bidangnya: bidang pertanian ke Dinas Pertanian, bidang ketransmigrasian ke Dinas Transmigrasi. **Satu laporan ditangani satu dinas**, sehingga alur statusnya tunggal dan tidak dipecah per bidang.
 
-    7a. **Bidang diturunkan dari kategori sebagai nilai awal.** Petanya berupa DATA pada `referensi.bidang_id`, bukan `match` di dalam kode, sebab kategori kini dapat ditambah Admin lewat data master; `match` tanpa `default` akan melempar `UnhandledMatchError` begitu ada yang memilih kategori baru. Kategori yang menunjuk urusan tertentu langsung mengisi bidangnya:
+    7a. **Bidang diturunkan dari kategori sebagai nilai awal.** Petanya berupa DATA pada `daftar_pilihan.bidang_id`, bukan `match` di dalam kode, sebab kategori kini dapat ditambah Admin lewat data master; `match` tanpa `default` akan melempar `UnhandledMatchError` begitu ada yang memilih kategori baru. Kategori yang menunjuk urusan tertentu langsung mengisi bidangnya:
 
 | Kategori | Bidang bawaan |
 |---|---|

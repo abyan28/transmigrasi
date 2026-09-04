@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AsalWakilPoktan;
-use App\Enums\JenisReferensi;
+use App\Enums\JenisDaftarPilihan;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
 use App\Models\Alsintan;
 use App\Models\AlsintanDistribusi;
@@ -72,7 +72,7 @@ class AlsintanController extends Controller
             'rusak' => count(array_filter($semua, fn ($a) => in_array('Rusak Ringan', array_column($a['distribusi'], 'kondisi'), true)
                 || in_array('Rusak Berat', array_column($a['distribusi'], 'kondisi'), true))),
             'daftarSp' => DummyData::satuanPermukiman(),
-            'opsiFilterKondisi' => DummyData::opsiFilterReferensi(JenisReferensi::Kondisi),
+            'opsiFilterKondisi' => DummyData::opsiFilterDaftarPilihan(JenisDaftarPilihan::Kondisi),
         ]);
     }
 
@@ -89,7 +89,7 @@ class AlsintanController extends Controller
         return view('pages.alsintan.detail', [
             'title' => $alsintan->nama_alat,
             'data' => $this->baris($alsintan),
-            'opsiKondisi' => DummyData::opsiReferensi(JenisReferensi::Kondisi),
+            'opsiKondisi' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::Kondisi),
         ]);
     }
 
@@ -161,7 +161,7 @@ class AlsintanController extends Controller
             ->firstOrFail();
 
         $data = $request->validate([
-            'kondisi' => ValidationRules::referensi(JenisReferensi::Kondisi, wajib: true),
+            'kondisi' => ValidationRules::daftarPilihan(JenisDaftarPilihan::Kondisi, wajib: true),
             'foto' => ValidationRules::foto(),
         ], [
             'kondisi.required' => 'Kondisi wajib dipilih.',
@@ -331,11 +331,11 @@ class AlsintanController extends Controller
     private function validasi(Request $request, ?Alsintan $alsintan = null): array
     {
         return $request->validate([
-            'jenis_alsintan' => ValidationRules::referensi(JenisReferensi::JenisAlsintan, wajib: true),
+            'jenis_alsintan' => ValidationRules::daftarPilihan(JenisDaftarPilihan::JenisAlsintan, wajib: true),
             'nama_alat' => ['required', 'string', 'max:255'],
             'jumlah_total' => ['required', 'integer', 'min:1', 'max:999999'],
             'tahun_pengadaan' => ValidationRules::tahun(),
-            'sumber_dana' => ValidationRules::referensi(JenisReferensi::SumberDana),
+            'sumber_dana' => ValidationRules::daftarPilihan(JenisDaftarPilihan::SumberDana),
             'keterangan' => ['nullable', 'string', 'max:1000'],
 
             'poktan_id' => ['nullable', 'array'],
@@ -356,7 +356,7 @@ class AlsintanController extends Controller
                 }
             }],
             'distribusi.*.jumlah' => ['required', 'integer', 'min:0', 'max:999999'],
-            'distribusi.*.kondisi' => ValidationRules::referensi(JenisReferensi::Kondisi, wajib: true),
+            'distribusi.*.kondisi' => ValidationRules::daftarPilihan(JenisDaftarPilihan::Kondisi, wajib: true),
             'distribusi.*.penanda_terima_id' => ['nullable', 'integer', Rule::exists('anggota_poktan', 'id_anggota_poktan')],
             'distribusi.*.tanggal_serah' => ['nullable', 'date', 'before_or_equal:today'],
 

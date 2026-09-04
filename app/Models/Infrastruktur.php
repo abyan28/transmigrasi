@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * Aset infrastruktur SP. Pelaporan kerusakan mengalir ke fitur Pengaduan.
  * `satuan_permukiman_id` = lokasi/pangkal (wajib); SP yang DILAYANI ada di
  * pivot `infrastruktur_sp` (WAJIB memuat SP pangkal). `jenis`/`sumber_dana`/
- * `kondisi` = TEKS nilai referensi. `kondisi` = sumber grafik status.
+ * `kondisi` = TEKS nilai daftar pilihan. `kondisi` = sumber grafik status.
  */
 #[ScopedBy([CakupanDataSp::class])]
 class Infrastruktur extends Model

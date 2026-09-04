@@ -14,8 +14,8 @@ use Illuminate\Database\Seeder;
  * (`rules.md` 10c poin 13), bukan angka teknis -- karena itu dikelola lewat
  * antarmuka, bukan ditanam mati di dalam kode.
  *
- * `referensi_id` menunjuk baris `referensi` (jenis infrastruktur/fasilitas),
- * sehingga `ReferensiSeeder` WAJIB berjalan lebih dulu.
+ * `daftar_pilihan_id` menunjuk baris `daftar_pilihan` (jenis infrastruktur/fasilitas),
+ * sehingga `DaftarPilihanSeeder` WAJIB berjalan lebih dulu.
  */
 class PenilaianKondisiSeeder extends Seeder
 {
@@ -29,7 +29,7 @@ class PenilaianKondisiSeeder extends Seeder
                     'tingkat' => $p['tingkat'] ?? null,
                     'bobot' => $p['bobot'],
                     'sumber' => $p['sumber'],
-                    'referensi_id' => $p['referensi_id'] ?? null,
+                    'daftar_pilihan_id' => $p['daftar_pilihan_id'] ?? null,
                     'is_dinilai' => $p['is_dinilai'],
                     'urutan' => $p['urutan'] ?? $urutan + 1,
                 ],

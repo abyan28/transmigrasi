@@ -28,7 +28,7 @@ abstract class DatabaseTestCase extends TestCase
      * Uji di sini menyusun barisnya sendiri untuk menguji constraint (UNIQUE,
      * FK, ENUM), sehingga tabel yang sudah terisi justru membuatnya bertabrakan:
      * `Domain2WilayahSpTest` membuat `bidang_pengaduan` sendiri dan langsung
-     * kena `uq_referensi_jenis_nilai` begitu `ReferensiSeeder` menanamnya lebih
+     * kena `uq_daftar_pilihan_jenis_nilai` begitu `DaftarPilihanSeeder` menanamnya lebih
      * dulu. Uji yang memerlukan data master memanggil seedernya sendiri lewat
      * `$this->seed(...)` di `beforeEach` masing-masing.
      *

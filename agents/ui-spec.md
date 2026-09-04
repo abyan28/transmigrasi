@@ -431,11 +431,11 @@ Dua halaman berikut dapat diakses siapa pun tanpa akun, sebagai kanal pengaduan 
 | Form fasilitas SP | modal | A, DT |
 | Data master satuan | `GET /master/satuan` | A |
 | Form data master satuan | modal | A |
-| Indeks data master referensi | `GET /master/referensi` | A, DT |
+| Indeks data master daftar pilihan | `GET /master/daftar-pilihan` | A, DT |
 | Pengaturan penilaian kondisi SP | `GET /master/penilaian-kondisi` | A, DT |
 | Form parameter dan status penilaian | modal | A, DT |
-| Satu daftar referensi | `GET /master/referensi/{jenis}` | A, DT |
-| Form nilai referensi | modal | A, DT |
+| Satu daftar pilihan | `GET /master/daftar-pilihan/{jenis}` | A, DT |
+| Form nilai daftar pilihan | modal | A, DT |
 
 ### 4.4 Kependudukan
 
@@ -565,7 +565,7 @@ Dua penempatan yang perlu diketahui, sebab tidak mengikuti struktur tabel:
 | **Laporan** | Dokumen Cetak | 7 Laporan Resmi | `/laporan/{slug}` | `laporan.lihat` |
 | **Administrasi Sistem** | Data Master | Data Master Wilayah | `/wilayah` | `wilayah.lihat` |
 | | | Data Master Satuan | `/master/satuan` | `satuan.lihat` |
-| | | Data Master Daftar Pilihan | `/master/referensi` | `referensi.lihat` |
+| | | Data Master Daftar Pilihan | `/master/daftar-pilihan` | `daftar_pilihan.lihat` |
 | | | Penilaian Kondisi SP | `/master/penilaian-kondisi` | `penilaian_kondisi.lihat` |
 | | Pengelolaan Konten | CMS / Konten Sistem | `/cms` | `cms.lihat` |
 | | Pengaturan Sistem | Pengguna | `/pengguna` | `pengguna.lihat` |
@@ -726,7 +726,7 @@ Seluruh komponen dibuat sebagai Blade component di `resources/views/components/`
 
 Tab hanya bekerja selama **seluruh judulnya muat dalam satu baris tanpa gulir mendatar**. Melewati batas itu, tab berhenti menjadi navigasi dan berubah menjadi tempat bersembunyi.
 
-> **Ditemukan 2026-08-21.** Halaman `/master/referensi` dibangun dengan sembilan tab dan bekerja baik. Setelah daftarnya bertambah menjadi empat belas, pengukuran di peramban menunjukkan bar tab mencapai **2309px pada ruang 705px**: hanya **empat tab yang terlihat, sepuluh tersembunyi**. Tidak ada yang tampak rusak, sebab keempat belas tab tetap ada di HTML dan `overflow-x-auto` bekerja persis seperti seharusnya.
+> **Ditemukan 2026-08-21.** Halaman `/master/daftar-pilihan` dibangun dengan sembilan tab dan bekerja baik. Setelah daftarnya bertambah menjadi empat belas, pengukuran di peramban menunjukkan bar tab mencapai **2309px pada ruang 705px**: hanya **empat tab yang terlihat, sepuluh tersembunyi**. Tidak ada yang tampak rusak, sebab keempat belas tab tetap ada di HTML dan `overflow-x-auto` bekerja persis seperti seharusnya.
 
 1. **Ambangnya bukan angka, melainkan lebar.** Empat tab berjudul panjang dapat melewati batas lebih dulu daripada delapan tab berjudul pendek. Yang menentukan adalah jumlah lebar judulnya terhadap lebar wadahnya, bukan cacahnya.
 2. **Gulir mendatar bukan penyelamat.** Ia menyembunyikan gejala, bukan menyelesaikan masalah: bar gulir mendatar termasuk hal yang paling sering tidak disadari orang, dan pengguna yang tidak menyadarinya menyimpulkan daftar itu memang tidak ada.
@@ -751,7 +751,7 @@ Isian yang sumbernya **tabel data**, bukan enum, memakai `x-sim.pilih-cari`. Con
 5. **Kotak pencarian selalu dirender, tanpa ambang jumlah opsi** (ambang 8 dicabut 2026-08-20). Yang menentukan bukan jumlah opsi hari ini, melainkan **apakah daftarnya bertambah ketika petugas menambah data**. Bila ya, pencariannya memang diperlukan, dan menyembunyikannya sampai melewati ambang hanya membuat satu komponen berperilaku dua macam tanpa dapat diduga pemakainya.
 5a. **Ambang itu dicabut karena dasarnya keliru, bukan karena tidak nyaman.** Perbandingannya dilakukan terhadap jumlah baris `DummyData`, yaitu data yang dikarang AI sendiri, sehingga kalimat "poktan baru 4 baris jadi wajar belum muncul" adalah penalaran melingkar yang dilarang `rules.md` 19a. Kekeliruan yang sama terulang **tiga kali** pada butir ini: ditetapkan 2026-08-17, ditandai perlu tinjau ulang 2026-08-19, lalu dipakai lagi sebagai pembenaran 2026-08-20. Lihat `notes.md` 1c.2 pelanggaran keenam.
 5b. Alasan lama juga sudah tidak berlaku sejak komponen dibangun ulang. Kotak pencarian kini berada **di dalam panel** yang harus dibuka lebih dulu, bukan berjajar di luar sebagai kontrol kedua, sehingga yang hendak mengklik tetap mengklik tanpa melewati apa pun.
-5c. **Tabel referensi kecil dikecualikan.** Isian `satuan_id` tetap `<select>` biasa: ia memang dapat ditambah Admin lewat data master, tetapi satuan takaran tidak akan pernah menuntut pencarian. Pengecualian ini disebut satu per satu, bukan dinyatakan sebagai ambang, agar tidak ada lagi yang perlu ditebak.
+5c. **Tabel rujukan kecil dikecualikan.** Isian `satuan_id` tetap `<select>` biasa: ia memang dapat ditambah Admin lewat data master, tetapi satuan takaran tidak akan pernah menuntut pencarian. Pengecualian ini disebut satu per satu, bukan dinyatakan sebagai ambang, agar tidak ada lagi yang perlu ditebak.
 6. Pencarian mencocokkan **teks utama maupun keterangannya**, sebab petugas kerap mengingat asal SP lebih dulu daripada nama lengkapnya.
 7. **Escape berlapis.** Panel wajib memakai `@keydown.escape.stop`: tekanan pertama menutup panel, tekanan kedua barulah menutup modal. Tanpa `.stop`, satu tekanan menutup keduanya sekaligus dan pengguna kehilangan seluruh isian yang sedang diketik.
 8. **Tinggi panel wajib dibatasi beserta gulirnya sendiri.** Badan `x-sim.modal-form` memakai `overflow-y-auto`, sehingga panel yang lebih tinggi daripada sisa ruang akan terpotong, bukan mengambang keluar.

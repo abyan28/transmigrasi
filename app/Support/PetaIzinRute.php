@@ -31,7 +31,7 @@ class PetaIzinRute
             'sp.simpan' => 'sp,tambah',
             'sp.hapus' => 'sp,hapus',
 
-            // Data master wilayah & satuan & referensi
+            // Data master wilayah & satuan & daftar pilihan
             'wilayah' => 'wilayah,lihat',
             'wilayah.simpan' => 'wilayah,tambah',
             'wilayah.perbarui' => 'wilayah,ubah',
@@ -40,10 +40,10 @@ class PetaIzinRute
             'satuan.simpan' => 'satuan,tambah',
             'satuan.perbarui' => 'satuan,ubah',
             'satuan.hapus' => 'satuan,hapus',
-            'master.referensi' => 'referensi,lihat',
-            'referensi.jenis' => 'referensi,lihat',
-            'referensi.simpan' => 'referensi,tambah',
-            'referensi.perbarui' => 'referensi,ubah',
+            'master.daftar-pilihan' => 'daftar_pilihan,lihat',
+            'daftar-pilihan.jenis' => 'daftar_pilihan,lihat',
+            'daftar-pilihan.simpan' => 'daftar_pilihan,tambah',
+            'daftar-pilihan.perbarui' => 'daftar_pilihan,ubah',
             'master.penilaian-kondisi' => 'penilaian_kondisi,lihat',
             'penilaian-kondisi.parameter' => 'penilaian_kondisi,ubah',
             'penilaian-kondisi.status' => 'penilaian_kondisi,ubah',

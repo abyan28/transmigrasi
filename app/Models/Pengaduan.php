@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * Pengaduan warga. Kanal PUBLIK tanpa login: `user_id` NULL bila dari warga,
  * terisi bila dicatat petugas. `bidang` NULL = belum ditetapkan. `status` =
  * terkini saja; riwayat perubahan di `penanganan_pengaduan`. `kategori`/
- * `bidang`/`prioritas` = TEKS nilai referensi.
+ * `bidang`/`prioritas` = TEKS nilai daftar pilihan.
  *
  * Pengenal publik URL: `uuid` (bukan `nomor_pengaduan` yang tampil ke pelapor).
  */

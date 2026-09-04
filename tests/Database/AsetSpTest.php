@@ -13,9 +13,9 @@ use App\Models\InventarisSp;
 use App\Models\User;
 use Database\Seeders\AsetSpSeeder;
 use Database\Seeders\BerkasSeeder;
+use Database\Seeders\DaftarPilihanSeeder;
 use Database\Seeders\InfrastrukturSeeder;
 use Database\Seeders\KawasanSeeder;
-use Database\Seeders\ReferensiSeeder;
 use Database\Seeders\RumahSeeder;
 use Database\Seeders\SpSeeder;
 use Database\Seeders\TransmigranSeeder;
@@ -32,7 +32,7 @@ beforeEach(function () {
     $this->seed(WilayahSeeder::class);
     $this->seed(KawasanSeeder::class);
     $this->seed(SpSeeder::class);
-    $this->seed(ReferensiSeeder::class);
+    $this->seed(DaftarPilihanSeeder::class);
     $this->seed(AsetSpSeeder::class);
     // `BerkasSeeder` menanam pivot SELURUH modul yang siap (infrastruktur,
     // transmigran, rumah) -- induknya wajib ada lebih dulu atau FK-nya gagal.
@@ -87,7 +87,7 @@ it('menyimpan inventaris baru beserta fotonya', function () {
 });
 
 it('menolak kolom REF yang tidak ada pada daftar pilihan', function () {
-    // Kolom REF disimpan TEKS dan dicocokkan ke tabel `referensi`, bukan enum
+    // Kolom REF disimpan TEKS dan dicocokkan ke tabel `daftar_pilihan`, bukan enum
     // PHP -- tetapi nilai karangan tetap wajib ditolak.
     $this->post(route('inventaris.simpan'), [
         'satuan_permukiman_id' => 1,
@@ -99,7 +99,7 @@ it('menolak kolom REF yang tidak ada pada daftar pilihan', function () {
     expect(InventarisSp::where('nama_barang', 'BARANG SESAT')->exists())->toBeFalse();
 });
 
-it('menolak nilai referensi yang sudah dinonaktifkan', function () {
+it('menolak nilai daftar pilihan yang sudah dinonaktifkan', function () {
     // Nilai nonaktif tetap terbaca pada data lama, tetapi tidak boleh dipakai
     // pada data baru.
     $this->post(route('inventaris.simpan'), [

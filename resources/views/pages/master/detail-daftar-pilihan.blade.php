@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 {{--
-    Satu daftar referensi, satu halaman.
+    Satu daftar pilihan, satu halaman.
 
     Menggantikan tab pada halaman indeks. Ketika daftarnya masih sembilan,
     keempatnya muat sebagai tab dalam satu baris; setelah menjadi empat belas,
@@ -16,15 +16,15 @@
 @section('content')
     @php
         // `$baris`, `$jumlahNonaktif`, dan peta `$nilaiBidang` datang dari rute
-        // `referensi.jenis`. Lihat routes/web.php.
+        // `daftar-pilihan.jenis`. Lihat routes/internal.php.
         $bolehUbah = true;
     @endphp
 
     <x-sim.page-header :judul="$jenis->label()"
         keterangan="Pilihan pada form yang dapat ditambah dan disunting tanpa mengubah kode."
-        :remah="\App\Helpers\RemahHelper::untuk('/master/referensi', $jenis->label())">
+        :remah="\App\Helpers\RemahHelper::untuk('/master/daftar-pilihan', $jenis->label())">
         <x-slot:aksi>
-            <a href="{{ route('master.referensi') }}"
+            <a href="{{ route('master.daftar-pilihan') }}"
                 class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-theme-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"
                     aria-hidden="true">
@@ -34,7 +34,7 @@
             </a>
 
             @if ($bolehUbah)
-                <button type="button" @click="$dispatch('buka-modal', 'formTambahReferensi')"
+                <button type="button" @click="$dispatch('buka-modal', 'formTambahDaftarPilihan')"
                     class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
                         aria-hidden="true">
@@ -115,8 +115,8 @@
                             dinonaktifkan lewat tombol ubah, sehingga data lama
                             tetap terbaca.
                         --}}
-                        <x-sim.aksi-baris modal-ubah="formUbahReferensi"
-                            :data-baris="$b + ['id' => $b['id_referensi']]"
+                        <x-sim.aksi-baris modal-ubah="formUbahDaftarPilihan"
+                            :data-baris="$b + ['id' => $b['id_daftar_pilihan']]"
                             :label="$b['nilai']" />
                     </td>
                 </tr>
@@ -150,16 +150,16 @@
     </div>
 
     @if ($bolehUbah)
-        <x-sim.modal-form nama="formTambahReferensi" judul="Tambah Pilihan"
+        <x-sim.modal-form nama="formTambahDaftarPilihan" judul="Tambah Pilihan"
             :keterangan="'Nilai baru langsung tersedia pada form yang memakai ' . $jenis->label() . '.'"
-            :aksi="route('referensi.simpan')" ukuran="lg" label-simpan="Simpan Pilihan">
-            @include('pages.master.form-referensi', ['awalan' => 'tambah', 'jenis' => $jenis])
+            :aksi="route('daftar-pilihan.simpan')" ukuran="lg" label-simpan="Simpan Pilihan">
+            @include('pages.master.form-daftar-pilihan', ['awalan' => 'tambah', 'jenis' => $jenis])
         </x-sim.modal-form>
 
-        <x-sim.modal-form nama="formUbahReferensi" judul="Ubah Pilihan"
+        <x-sim.modal-form nama="formUbahDaftarPilihan" judul="Ubah Pilihan"
             keterangan="Nilai yang tidak lagi dipakai dinonaktifkan, bukan dihapus."
-            pola-aksi="/master/referensi/:id" metode="PUT" ukuran="lg" label-simpan="Simpan Perubahan">
-            @include('pages.master.form-referensi', ['awalan' => 'ubahBaris', 'jenis' => $jenis])
+            pola-aksi="/master/daftar-pilihan/:id" metode="PUT" ukuran="lg" label-simpan="Simpan Perubahan">
+            @include('pages.master.form-daftar-pilihan', ['awalan' => 'ubahBaris', 'jenis' => $jenis])
         </x-sim.modal-form>
     @endif
 @endsection

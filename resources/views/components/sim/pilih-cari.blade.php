@@ -10,7 +10,7 @@
     Dua hal yang TIDAK memakainya:
     - Enum seperti kondisi atau jenis fasilitas, sebab nilainya tidak bertambah
       dari tambah data.
-    - Tabel referensi kecil seperti `satuan`, yang memang dapat ditambah Admin
+    - Tabel rujukan kecil seperti `satuan`, yang memang dapat ditambah Admin
       tetapi jumlahnya tidak akan pernah menuntut pencarian.
 
     Kotak pencarian SELALU ada, tanpa ambang jumlah opsi. Alasan pencabutan
@@ -123,7 +123,7 @@
     // bukan berjajar di luar sebagai kontrol kedua. Yang hendak mengklik tetap
     // mengklik tanpa melewati apa pun.
     //
-    // Isian yang sumbernya tabel referensi kecil seperti `satuan` sengaja tidak
+    // Isian yang sumbernya tabel rujukan kecil seperti `satuan` sengaja tidak
     // memakai komponen ini sama sekali (ui-spec.md bagian 6.0a).
 
     $kelasKontrol = 'h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30';

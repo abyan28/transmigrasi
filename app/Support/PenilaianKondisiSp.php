@@ -32,10 +32,10 @@ use App\Enums\TingkatKebutuhan;
 class PenilaianKondisiSp
 {
     /**
-     * Nilai skor untuk tiap kondisi aset, dibaca dari data master referensi.
+     * Nilai skor untuk tiap kondisi aset, dibaca dari data master daftar pilihan.
      *
      * SEJAK 2026-08-20 BUKAN LAGI KONSTANTA. Nilainya berpindah ke kolom
-     * `referensi.nilai_skor` agar Admin dapat menyesuaikannya lewat antarmuka,
+     * `daftar_pilihan.nilai_skor` agar Admin dapat menyesuaikannya lewat antarmuka,
      * sejalan dengan bobot parameter yang sudah lebih dulu berupa data
      * (erd.md 7.3). Sebelumnya bobot dapat disunting tetapi nilai kondisinya
      * tidak, padahal keduanya sama-sama menentukan skor akhir.
@@ -123,9 +123,9 @@ class PenilaianKondisiSp
             //
             // Bila idnya tidak ditemukan, parameter itu DILEWATI, bukan dinilai
             // nol. Menilainya nol berarti seluruh SP mendadak dianggap tidak
-            // punya air hanya karena satu baris referensi hilang, dan pada
+            // punya air hanya karena satu baris daftar pilihan hilang, dan pada
             // parameter primer itu langsung menjatuhkan status setiap SP.
-            $jenisRujukan = DummyData::referensiNilai($par['referensi_id']);
+            $jenisRujukan = DummyData::daftarPilihanNilai($par['daftar_pilihan_id']);
 
             if ($jenisRujukan === null) {
                 continue;

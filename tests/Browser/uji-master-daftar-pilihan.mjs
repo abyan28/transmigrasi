@@ -1,5 +1,5 @@
 /**
- * Uji peramban untuk halaman indeks data master referensi.
+ * Uji peramban untuk halaman indeks data master daftar pilihan.
  *
  * Mengapa uji peramban: alasan perubahan ini adalah ANGKA YANG DIUKUR di
  * peramban, bukan markup. Dengan empat belas tab, bar tab mencapai 2309px
@@ -12,7 +12,7 @@
  * dependensi. Menuntut peladen hidup di 127.0.0.1:8099.
  *
  *   php artisan serve --port=8099
- *   node tests/Browser/uji-master-referensi.mjs
+ *   node tests/Browser/uji-master-daftar-pilihan.mjs
  */
 
 import { spawn } from 'node:child_process';
@@ -130,10 +130,10 @@ async function main() {
         };
 
         // Indeks: seluruh daftar wajib terlihat sekaligus.
-        await buka('/master/referensi');
+        await buka('/master/daftar-pilihan');
 
         const indeks = JSON.parse(await nilai(`(() => {
-            const kartu = [...document.querySelectorAll('a[href*="/master/referensi/"]')];
+            const kartu = [...document.querySelectorAll('a[href*="/master/daftar-pilihan/"]')];
             // Terlihat berarti BENAR-BENAR DI DALAM LAYAR, bukan sekadar
             // punya ukuran. Elemen yang terdorong ke luar batas mendatar tetap
             // melaporkan lebar dan tinggi seperti biasa, dan justru itulah
@@ -170,12 +170,12 @@ async function main() {
         periksa('empat kelompok dirender', indeks.kelompok.length === 4, indeks.kelompok.join(', '));
 
         // Kartu benar-benar menuju halaman daftarnya, bukan sekadar tampak.
-        await nilai(`document.querySelector('a[href$="/master/referensi/sumber_dana"]').click()`);
+        await nilai(`document.querySelector('a[href$="/master/daftar-pilihan/sumber_dana"]').click()`);
         await tidur(900);
 
         const tujuan = await nilai('location.pathname');
 
-        periksa('klik kartu membuka halaman daftarnya', tujuan === '/master/referensi/sumber_dana', tujuan);
+        periksa('klik kartu membuka halaman daftarnya', tujuan === '/master/daftar-pilihan/sumber_dana', tujuan);
 
         const halamanJenis = JSON.parse(await nilai(`(() => {
             const tersembunyi = document.querySelector('input[type="hidden"][name="jenis"]');
@@ -183,7 +183,7 @@ async function main() {
             return JSON.stringify({
                 jenisTerkunci: tersembunyi ? tersembunyi.value : null,
                 adaDropdownJenis: !! document.querySelector('select[name="jenis"]'),
-                adaTautanKembali: !! document.querySelector('a[href$="/master/referensi"]'),
+                adaTautanKembali: !! document.querySelector('a[href$="/master/daftar-pilihan"]'),
                 barisTabel: document.querySelectorAll('tbody tr').length,
             });
         })()`));

@@ -900,7 +900,7 @@ Rencana `C:\Users\v28mt\.claude\plans\linked-sprouting-aho.md`; catatan `notes.m
 
 Cacat FATAL: `alsintan`/`saprotan` bawa satu `poktan_id` → satu batch bantuan ke banyak poktan diketik ulang per poktan. Audit menemukan 3 instans sama.
 
-- **A ✅** data master `jenis_alsintan` (`JenisReferensi::JenisAlsintan`, deklarasi PALING AKHIR). `sim:tautan-statis` 222→223.
+- **A ✅** data master `jenis_alsintan` (`JenisDaftarPilihan::JenisAlsintan`, deklarasi PALING AKHIR). `sim:tautan-statis` 222→223.
 - **B+C ✅** `<x-sim.pilih-cari-banyak>` + alsintan `alsintan()` induk + `alsintanDistribusi()`. Form: repeater distribusi (jumlah bagi rata otomatis, kondisi/penanda per poktan). Index 1 baris/pengadaan.
 - **D ✅** saprotan induk + `saprotanDistribusi()`. `penanaman.saprotan_id`→`saprotan_distribusi_id`. `sisaBenih()` grain turun ke distribusi (§7c.8 utuh). `satuan`→`satuan_id` dibetulkan.
 - **E ✅** infrastruktur lintas SP: `+satuan_permukiman_ids` + `infrastrukturCakupan()`. `PenilaianKondisiSp` baca cakupan. **Memperbaiki skor SP yang salah** (primer nol).
@@ -937,8 +937,8 @@ tidak terlihat oleh siapa pun yang membaca daftar tugas Tahap 2. Ditemukan lewat
   * Dijaga `PengaturanPenilaianTest.php`, tetapi tidak pernah punya butir Task
 
 **Komponen dan partial yang ikut terlewat:** `sim/footer` dan `sim/footer-publik`
-(dua footer terpisah untuk petugas dan warga), serta `master/detail-referensi`
-(halaman per jenis daftar pilihan, berute `referensi.jenis`).
+(dua footer terpisah untuk petugas dan warga), serta `master/detail-daftar-pilihan`
+(halaman per jenis daftar pilihan, berute `daftar-pilihan.jenis`).
 
 
 ### Putaran 11: perbaikan pra-backend hasil audit menyeluruh (2026-09-02)
@@ -1199,11 +1199,11 @@ domain; sisanya mengikuti tanpa mengubah skema maupun komponen.
   * Model `Satuan` **sudah ada** (Task 3.1 B3). Tampilan form beserta pratinjau konversi sudah selesai pada Task 2.30
   * Seeder awal: Ton (1), Kuintal (0,1), Kilogram (0,001)
   * Didahulukan sebab `komoditas.satuan_id` dan konversi volume panen bergantung padanya
-- [✓] Task 4.7 - CRUD Daftar Pilihan (data referensi) `[Sedang]` -- **SELESAI 2026-09-03**. `ReferensiSeeder` (76 baris, 14 jenis, dibaca dari `DummyData` sebab id-nya ditunjuk `PenilaianKondisiSp`) + `MasterReferensiController`; keunikan DALAM jenis, tanpa rute hapus, redirect 301 alamat lama. 10 uji
-  * Menu **Data Master > Daftar Pilihan**, `/master/referensi` + `/master/referensi/{jenis}`. Tampilan selesai Task 2.30; penamaan ditetapkan 2026-09-01 (catatan 29)
+- [✓] Task 4.7 - CRUD Daftar Pilihan `[Sedang]` -- **SELESAI 2026-09-03**. `DaftarPilihanSeeder` (76 baris, 14 jenis, dibaca dari `DummyData` sebab id-nya ditunjuk `PenilaianKondisiSp`) + `MasterReferensiController`; keunikan DALAM jenis, tanpa rute hapus, redirect 301 alamat lama. 10 uji
+  * Menu **Data Master > Daftar Pilihan**, `/master/daftar-pilihan` + `/master/daftar-pilihan/{jenis}`. Tampilan selesai Task 2.30; penamaan ditetapkan 2026-09-01 (catatan 29)
   * **Celah yang ditemukan 2026-09-03:** menu ini tidak pernah punya task backend sama sekali
-  * Model `Referensi` **sudah ada** (Task 3.1 B2); `JenisReferensi` enum menentukan kelompoknya
-  * **Induk seluruh dropdown sistem** (kondisi, sumber dana, jenis alsintan, kategori/bidang/prioritas pengaduan, dll). `DummyData::opsiReferensi()` diganti kueri; `ViewServiceProvider` ikut beralih
+  * Model `DaftarPilihan` **sudah ada** (Task 3.1 B2); `JenisDaftarPilihan` enum menentukan kelompoknya
+  * **Induk seluruh dropdown sistem** (kondisi, sumber dana, jenis alsintan, kategori/bidang/prioritas pengaduan, dll). `DummyData::opsiDaftarPilihan()` diganti kueri; `ViewServiceProvider` ikut beralih
   * Nilai yang sedang dipakai baris lain **dinonaktifkan, bukan dihapus**, supaya data lama tetap terbaca
 - [✓] Task 4.1b - CRUD kawasan transmigrasi + unggah HPL/SK/peta `[Sedang]` -- **SELESAI 2026-09-03**. `KawasanController` + `KawasanSeeder` + `BerkasSeeder`; trait `MenyimpanBerkas` (dipakai ulang 4.3/4.4/4.6). **Unggahan sungguhan pertama di proyek**: berkas masuk cakram privat, registry + pivot terisi, batas 5 MB per berkas. 7 uji. Utang tercatat: peran per berkas menunggu isian pemilih di form
   * Model `KawasanTransmigrasi` + pivot `kawasan_transmigrasi_berkas` **sudah ada** (Task 3.1 B2/B4)
@@ -1215,7 +1215,7 @@ domain; sisanya mengikuti tanpa mengubah skema maupun komponen.
   * Menjadi **induk** Task 4.3/4.4/4.6, sehingga dikerjakan lebih dulu daripada ketiganya
 - [✓] Task 4.3 - CRUD inventaris SP (nama, tahun, sumber dana, status penyerahan, dokumen) `[Sedang]` -- **SELESAI 2026-09-03**. `InventarisSpController` + `AsetSpSeeder`; kolom REF divalidasi ke tabel `referensi` lewat `ValidationRules::referensi()` (baru), menolak nilai karangan maupun yang sudah dinonaktifkan
   * Model `InventarisSp` + pivot berkas **sudah ada** (Task 3.1 B3/B4). Tampilan form sudah selesai pada Task 2.30
-  * Kolom REF (`sumber_dana`, `status_penyerahan`, `kondisi`, `jenis_inventaris`) dibaca dari `referensi` (Task 4.7), bukan enum PHP
+  * Kolom REF (`sumber_dana`, `status_penyerahan`, `kondisi`, `jenis_inventaris`) dibaca dari `daftar_pilihan` (Task 4.7), bukan enum PHP
 - [✓] Task 4.4 - CRUD fasilitas SP `[Mudah]` -- **SELESAI 2026-09-03**. `FasilitasSpController`; cakupan lintas SP di-sync dengan SP pangkal SELALU disertakan. 8 uji bersama Task 4.3
   * Model `FasilitasSp` + pivot cakupan lintas SP **sudah ada**. Tampilan form sudah selesai pada Task 2.30
 - [✓] Task 4.6 - CRUD infrastruktur SP sebagai pendataan aset `[Sedang]` (DIPINDAH dari Task 8.1) -- **SELESAI 2026-09-03**. `InfrastrukturController` + `InfrastrukturSeeder` (35 aset, 39 cakupan); `satuan_permukiman_id` = pangkal, pivot `infrastruktur_sp` = SP yang benar-benar dilayani. 4 uji
@@ -1294,7 +1294,7 @@ menghapus sisa terakhir `DummyData::penggunaSaatIni()` -- dikerjakan berbarengan
   * `RumahSeeder` baru (rumah + `riwayat_penghunian`, `uuid` stabil), didaftar
     `DataMasterSeeder`+`DatabaseSeeder` antara Transmigran & Berkas.
     `BerkasSeeder::PIVOT_SIAP` +`rumah_berkas`.
-  * `kondisi`/`status_hunian` = `ValidationRules::referensi(JenisReferensi::KondisiRumah/StatusHunian)`.
+  * `kondisi`/`status_hunian` = `ValidationRules::daftarPilihan(JenisDaftarPilihan::KondisiRumah/StatusHunian)`.
   * `tests/Database/RumahTest.php` +12; `AsetSpTest` +seed `RumahSeeder` (pivot).
     Verifikasi: Feature 732, Database 325, pint bersih, banding-skema NOL SELISIH,
     tautan-statis 14
@@ -1397,7 +1397,7 @@ menghapus sisa terakhir `DummyData::penggunaSaatIni()` -- dikerjakan berbarengan
   * Migration & model `Komoditas` + pivot `komoditas_poktan` **sudah ada** (Task 3.1 B3/B8); `getRouteKeyName()` = `slug` (Task 3.9). `komoditas.tipe` disimpan TEKS lewat `referensi`, bukan enum PHP
   * **HASIL 2026-09-04:** `KomoditasController` (index/detail/simpan/perbarui —
     hapus tetap stub untuk 7.2). `baris()` ber-kunci sama `DummyData::komoditas()`.
-    `tipe` divalidasi `ValidationRules::referensi(TipeKomoditas)`; `slug` otomatis;
+    `tipe` divalidasi `ValidationRules::daftarPilihan(TipeKomoditas)`; `slug` otomatis;
     `is_unggulan` dari `$request->boolean()`. `detail` riwayat penanaman masih
     `DummyData::penanaman()` (Tahap 7 lanjutan).
   * `KomoditasSeeder` baru — `satuan_id` diresolusi lewat NAMA satuan (id data

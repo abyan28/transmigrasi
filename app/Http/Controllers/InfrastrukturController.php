@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\JenisReferensi;
+use App\Enums\JenisDaftarPilihan;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
 use App\Models\Infrastruktur;
 use App\Support\DummyData;
@@ -62,8 +62,8 @@ class InfrastrukturController extends Controller
             'rusakBerat' => count(array_filter($semua, fn ($i) => $i['kondisi'] === 'Rusak Berat')),
             'perluPerbaikan' => count(array_filter($semua, fn ($i) => $i['kondisi'] !== 'Baik')),
             'daftarSp' => DummyData::satuanPermukiman(),
-            'opsiFilterJenis' => DummyData::opsiFilterReferensi(JenisReferensi::JenisInfrastruktur),
-            'opsiFilterKondisi' => DummyData::opsiFilterReferensi(JenisReferensi::Kondisi),
+            'opsiFilterJenis' => DummyData::opsiFilterDaftarPilihan(JenisDaftarPilihan::JenisInfrastruktur),
+            'opsiFilterKondisi' => DummyData::opsiFilterDaftarPilihan(JenisDaftarPilihan::Kondisi),
         ]);
     }
 
@@ -175,10 +175,10 @@ class InfrastrukturController extends Controller
         $data = $request->validate([
             'satuan_permukiman_id' => ['required', 'integer', Rule::exists('satuan_permukiman', 'id_satuan_permukiman')],
             'nama' => ['required', 'string', 'max:150'],
-            'jenis' => ValidationRules::referensi(JenisReferensi::JenisInfrastruktur, wajib: true),
+            'jenis' => ValidationRules::daftarPilihan(JenisDaftarPilihan::JenisInfrastruktur, wajib: true),
             'tahun_perolehan' => ValidationRules::tahun(),
-            'sumber_dana' => ValidationRules::referensi(JenisReferensi::SumberDana),
-            'kondisi' => ValidationRules::referensi(JenisReferensi::Kondisi, wajib: true),
+            'sumber_dana' => ValidationRules::daftarPilihan(JenisDaftarPilihan::SumberDana),
+            'kondisi' => ValidationRules::daftarPilihan(JenisDaftarPilihan::Kondisi, wajib: true),
             'kapasitas' => ['nullable', 'string', 'max:100'],
             'lintang' => ValidationRules::lintang(),
             'bujur' => ValidationRules::bujur(),

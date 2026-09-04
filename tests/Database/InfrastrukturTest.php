@@ -6,9 +6,9 @@
 
 use App\Models\Infrastruktur;
 use App\Models\User;
+use Database\Seeders\DaftarPilihanSeeder;
 use Database\Seeders\InfrastrukturSeeder;
 use Database\Seeders\KawasanSeeder;
-use Database\Seeders\ReferensiSeeder;
 use Database\Seeders\SpSeeder;
 use Database\Seeders\WilayahSeeder;
 
@@ -21,7 +21,7 @@ beforeEach(function () {
     $this->seed(WilayahSeeder::class);
     $this->seed(KawasanSeeder::class);
     $this->seed(SpSeeder::class);
-    $this->seed(ReferensiSeeder::class);
+    $this->seed(DaftarPilihanSeeder::class);
     $this->seed(InfrastrukturSeeder::class);
 });
 

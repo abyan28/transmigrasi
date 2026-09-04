@@ -11,7 +11,7 @@ use Illuminate\Database\Seeder;
  * - akun Admin awal           -> `AdminAwalSeeder` (Task 3.5) [SELESAI]
  * - wilayah bertingkat        -> `WilayahSeeder` (Task 4.1) [SELESAI]
  * - satuan berat + konversi    -> SatuanSeeder (Task 4.5) [SELESAI]
- * - daftar pilihan (referensi) -> `ReferensiSeeder` (Task 4.7) [SELESAI]
+ * - daftar pilihan            -> `DaftarPilihanSeeder` (Task 4.7) [SELESAI]
  * - SP lokus + turunannya     -> Task 4.2
  *
  * Urutan mengikuti dependensi: wilayah ditanam sebelum SP, sebab
@@ -25,7 +25,7 @@ class DatabaseSeeder extends Seeder
         $this->call(AdminAwalSeeder::class);
         $this->call(WilayahSeeder::class);
         $this->call(SatuanSeeder::class);
-        $this->call(ReferensiSeeder::class);
+        $this->call(DaftarPilihanSeeder::class);
         $this->call(KawasanSeeder::class);
         $this->call(SpSeeder::class);
         $this->call(AsetSpSeeder::class);

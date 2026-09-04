@@ -9,8 +9,8 @@
  */
 
 use App\Enums\BidangPengaduan;
+use App\Enums\JenisDaftarPilihan;
 use App\Enums\JenisInfrastruktur;
-use App\Enums\JenisReferensi;
 use App\Enums\JenisSaprotan;
 use App\Enums\KategoriPengaduan;
 use App\Enums\Kondisi;
@@ -600,7 +600,7 @@ it('memisahkan pengadaan alsintan dari distribusinya ke poktan', function () {
             ->and($a)->not->toHaveKey('kondisi');
 
         // Jenis alsintan wajib nilai data master yang sah.
-        expect(array_keys(DummyData::opsiReferensi(JenisReferensi::JenisAlsintan)))
+        expect(array_keys(DummyData::opsiDaftarPilihan(JenisDaftarPilihan::JenisAlsintan)))
             ->toContain($a['jenis_alsintan']);
 
         // Sigma distribusi tidak melebihi jumlah total; sisa terhitung benar.

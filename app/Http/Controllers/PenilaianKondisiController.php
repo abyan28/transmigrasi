@@ -26,7 +26,7 @@ class PenilaianKondisiController extends Controller
     public function index(): View
     {
         $parameter = ParameterPenilaianSp::query()
-            ->with('referensi')
+            ->with('daftarPilihan')
             ->orderBy('urutan')
             ->get()
             ->map(fn (ParameterPenilaianSp $p) => [
@@ -39,11 +39,11 @@ class PenilaianKondisiController extends Controller
                 'tingkat' => TingkatKebutuhan::tryFrom((string) $p->tingkat),
                 'bobot' => (float) $p->bobot,
                 'sumber' => $p->sumber,
-                'referensi_id' => $p->referensi_id,
+                'daftar_pilihan_id' => $p->daftar_pilihan_id,
                 // Nama jenis yang ditunjuk parameter ini. Dibaca lewat relasi
                 // ter-eager-load, bukan kueri per baris.
-                'jenis' => $p->referensi?->jenis?->value,
-                'nilai_jenis' => $p->referensi?->nilai,
+                'jenis' => $p->daftarPilihan?->jenis?->value,
+                'nilai_jenis' => $p->daftarPilihan?->nilai,
                 'is_dinilai' => $p->is_dinilai,
                 'urutan' => $p->urutan,
             ])

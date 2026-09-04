@@ -1,6 +1,6 @@
 <?php
 
-use App\Enums\JenisReferensi;
+use App\Enums\JenisDaftarPilihan;
 use App\Http\Controllers\Auth\GantiKataSandiController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PemulihanSandiController;
@@ -82,7 +82,7 @@ Route::get('/pengaduan-warga', function () {
     return view('pages.publik.pengaduan', [
         'title' => 'Kirim Pengaduan',
         'daftarSp' => DummyData::satuanPermukiman(),
-        'opsiKategoriPengaduan' => DummyData::opsiReferensi(JenisReferensi::KategoriPengaduan),
+        'opsiKategoriPengaduan' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::KategoriPengaduan),
     ]);
 })->name('pengaduan-warga');
 

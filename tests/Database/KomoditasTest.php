@@ -4,7 +4,7 @@
  * Task 7.1 (komoditas -> Eloquent).
  *
  * Yang dijaga: seed dari data contoh; slug otomatis; tipe disimpan TEKS
- * referensi; nama unik; satuan panen baku wajib; is_unggulan checkbox.
+ * daftar pilihan; nama unik; satuan panen baku wajib; is_unggulan checkbox.
  */
 
 use App\Models\Komoditas;
@@ -12,13 +12,13 @@ use App\Models\Penanaman;
 use App\Models\Satuan;
 use App\Models\User;
 use App\Support\DummyData;
+use Database\Seeders\DaftarPilihanSeeder;
 use Database\Seeders\HasilPanenSeeder;
 use Database\Seeders\KawasanSeeder;
 use Database\Seeders\KomoditasSeeder;
 use Database\Seeders\LahanSeeder;
 use Database\Seeders\PenanamanSeeder;
 use Database\Seeders\PoktanSeeder;
-use Database\Seeders\ReferensiSeeder;
 use Database\Seeders\SaprotanSeeder;
 use Database\Seeders\SatuanSeeder;
 use Database\Seeders\SpSeeder;
@@ -32,7 +32,7 @@ beforeEach(function () {
     $petugas->semuaIzin = true;
     $this->actingAs($petugas);
     $this->seed(SatuanSeeder::class);
-    $this->seed(ReferensiSeeder::class);
+    $this->seed(DaftarPilihanSeeder::class);
     $this->seed(KomoditasSeeder::class);
 });
 

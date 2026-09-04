@@ -5,7 +5,7 @@ namespace App\Enums;
 use App\Enums\Concerns\PunyaLabel;
 
 /**
- * Jenis daftar pilihan yang dikelola Admin lewat data master referensi.
+ * Jenis daftar pilihan yang dikelola Admin lewat data master daftar pilihan.
  *
  * ENUM INI SENDIRI TIDAK IKUT MENJADI DATA MASTER, dan itu disengaja. Ia
  * menyatakan daftar mana saja yang ada, bukan isi daftarnya. Menjadikannya
@@ -16,7 +16,7 @@ use App\Enums\Concerns\PunyaLabel;
  * Setiap nilai di sini WAJIB punya kolom yang membacanya. Menambah satu nilai
  * karena itu selalu berpasangan dengan menyunting kolom pada kamus data.
  *
- * Dua jenis memakai kolom tambahan pada tabel `referensi`:
+ * Dua jenis memakai kolom tambahan pada tabel `daftar_pilihan`:
  * - `kondisi` memakai `nilai_skor`, sebab nilainya dipakai menghitung skor
  *   kondisi SP (agents/rules.md bagian 10c). `kondisi_rumah` TIDAK, meski
  *   tampak serupa; lihat keterangan pada berskor().
@@ -25,7 +25,7 @@ use App\Enums\Concerns\PunyaLabel;
  *
  * Daftar nilai baku ada pada agents/data-dictionary.md bagian 11.37.
  */
-enum JenisReferensi: string
+enum JenisDaftarPilihan: string
 {
     use PunyaLabel;
 
@@ -82,9 +82,9 @@ enum JenisReferensi: string
      * bentuk daftarnya. Petugas mencari `jenis_fasilitas` karena sedang
      * mengurus aset satuan permukiman, bukan karena ingat isinya sembilan.
      *
-     * @return KelompokReferensi Kelompok pada halaman indeks
+     * @return KelompokDaftarPilihan Kelompok pada halaman indeks
      */
-    public function kelompok(): KelompokReferensi
+    public function kelompok(): KelompokDaftarPilihan
     {
         return match ($this) {
             self::SumberDana,
@@ -93,17 +93,17 @@ enum JenisReferensi: string
             self::JenisInfrastruktur,
             self::JenisFasilitas,
             self::JenisAlsintan,
-            self::JenisInventaris => KelompokReferensi::AsetInfrastruktur,
+            self::JenisInventaris => KelompokDaftarPilihan::AsetInfrastruktur,
 
             self::KondisiRumah,
             self::StatusHunian,
 
             self::TipeKomoditas,
-            self::JabatanAnggotaPoktan => KelompokReferensi::Pertanian,
+            self::JabatanAnggotaPoktan => KelompokDaftarPilihan::Pertanian,
 
             self::KategoriPengaduan,
             self::BidangPengaduan,
-            self::PrioritasPengaduan => KelompokReferensi::Pengaduan,
+            self::PrioritasPengaduan => KelompokDaftarPilihan::Pengaduan,
         };
     }
 
@@ -148,7 +148,7 @@ enum JenisReferensi: string
      *
      * `parameter_penilaian_sp.jenis_rujukan` menunjuk satu nilai pada kedua
      * daftar ini, misalnya parameter `air_bersih` menunjuk jenis infrastruktur
-     * `Air`. Rujukan itu memakai `referensi_id`, bukan teks: bila Admin
+     * `Air`. Rujukan itu memakai `daftar_pilihan_id`, bukan teks: bila Admin
      * memperbaiki ejaan `Air` menjadi `Air Bersih`, rujukan berbasis teks putus
      * tanpa pesan apa pun dan parameter itu diam-diam menilai SP sebagai tidak
      * punya air, sehingga status SP jatuh karena satu penyuntingan ejaan.

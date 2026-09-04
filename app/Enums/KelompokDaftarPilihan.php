@@ -5,9 +5,9 @@ namespace App\Enums;
 use App\Enums\Concerns\PunyaLabel;
 
 /**
- * Pengelompokan daftar referensi pada halaman indeks data master.
+ * Pengelompokan daftar pilihan pada halaman indeks data master.
  *
- * ADA KARENA JUMLAHNYA, bukan karena kerapian. Ketika daftar referensi masih
+ * ADA KARENA JUMLAHNYA, bukan karena kerapian. Ketika daftar pilihan masih
  * sembilan, seluruhnya muat sebagai tab dalam satu baris. Setelah menjadi
  * empat belas, bar tab mencapai 2309px pada ruang 705px: hanya empat tab yang
  * terlihat dan sepuluh sisanya tersembunyi di balik gulir mendatar, yang
@@ -23,7 +23,7 @@ use App\Enums\Concerns\PunyaLabel;
  * ketahuan saat itu juga alih-alih memunculkan kartu yatim yang tidak masuk
  * kelompok mana pun.
  */
-enum KelompokReferensi: string
+enum KelompokDaftarPilihan: string
 {
     use PunyaLabel;
 
@@ -66,15 +66,15 @@ enum KelompokReferensi: string
     }
 
     /**
-     * Daftar referensi yang termasuk kelompok ini, terurut.
+     * daftar pilihan yang termasuk kelompok ini, terurut.
      *
-     * @return array<int, JenisReferensi> Jenis pada kelompok ini
+     * @return array<int, JenisDaftarPilihan> Jenis pada kelompok ini
      */
     public function jenis(): array
     {
         return array_values(array_filter(
-            JenisReferensi::cases(),
-            fn (JenisReferensi $j) => $j->kelompok() === $this
+            JenisDaftarPilihan::cases(),
+            fn (JenisDaftarPilihan $j) => $j->kelompok() === $this
         ));
     }
 }

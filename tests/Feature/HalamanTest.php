@@ -2492,6 +2492,7 @@ it('merender setiap rute GET yang terdaftar tanpa galat', function () {
         'uji-403',          // sengaja mengembalikan 403
         'logout',           // mengubah keadaan, diuji terpisah
         'infrastruktur',    // rute lama dengan redirect 301, diuji terpisah
+        'master/referensi', // alamat lama daftar pilihan, redirect 301, diuji terpisah
         'login',            // ber-`guest`: mengalihkan user uji yang sudah masuk (Task 3.2b)
         'lupa-kata-sandi',  // ber-`guest`, diuji terpisah
         'verifikasi-kode',  // ber-`guest`, diuji terpisah
@@ -2848,7 +2849,7 @@ it('menyamakan daftar izin dengan kamus data dan rules', function () {
         'Transmigran' => 'transmigran', 'Rumah & hunian' => 'rumah',
         'Riwayat penghunian' => 'riwayat_penghunian',
         'Riwayat kepala keluarga' => 'riwayat_kepala_keluarga',
-        'Data master referensi' => 'referensi',
+        'Data master daftar pilihan' => 'daftar_pilihan',
         'Penilaian kondisi SP' => 'penilaian_kondisi', 'Lahan' => 'lahan',
         'Kelompok tani' => 'poktan',
         'Anggota poktan' => 'anggota_poktan', 'Alsintan' => 'alsintan', 'Saprotan' => 'saprotan',

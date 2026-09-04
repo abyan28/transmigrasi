@@ -6,8 +6,8 @@ use App\Enums\AlasanPergantianKK;
 use App\Enums\AsalWakilPoktan;
 use App\Enums\CakupanData;
 use App\Enums\HubunganAnggotaKeluarga;
+use App\Enums\JenisDaftarPilihan;
 use App\Enums\JenisInfrastruktur;
-use App\Enums\JenisReferensi;
 use App\Enums\JenisSaprotan;
 use App\Enums\KategoriPengaduan;
 use App\Enums\Kondisi;
@@ -3083,7 +3083,7 @@ class DummyData
     }
 
     /**
-     * Daftar pilihan yang dikelola Admin lewat data master referensi.
+     * Daftar pilihan yang dikelola Admin lewat data master daftar pilihan.
      *
      * Menggantikan sembilan enum yang sebelumnya ditulis di dalam kode. Yang
      * tersimpan pada kolom pemakainya tetap TEKS `nilai`, bukan id, sebab
@@ -3094,11 +3094,11 @@ class DummyData
      * dana membuat baris infrastruktur lama menunjuk nilai yang lenyap, dan
      * rekapnya kehilangan baris itu tanpa pesan apa pun.
      *
-     * @param  JenisReferensi|null  $jenis  Menyaring satu jenis; null berarti seluruhnya
+     * @param  JenisDaftarPilihan|null  $jenis  Menyaring satu jenis; null berarti seluruhnya
      * @param  bool  $hanyaAktif  Menyaring nilai yang masih ditawarkan
      * @return array<int, array<string, mixed>> Data referensi, terurut
      */
-    public static function referensi(?JenisReferensi $jenis = null, bool $hanyaAktif = false): array
+    public static function daftarPilihan(?JenisDaftarPilihan $jenis = null, bool $hanyaAktif = false): array
     {
         $data = [];
         $id = 1;
@@ -3106,38 +3106,38 @@ class DummyData
         // Disusun dari daftar per jenis agar urutan dan penomorannya konsisten
         // tanpa perlu menuliskan id satu per satu.
         $daftar = [
-            JenisReferensi::SumberDana->value => [
+            JenisDaftarPilihan::SumberDana->value => [
                 'APBN', 'APBD Provinsi', 'APBD Kabupaten', 'Dinas Transmigrasi Kabupaten',
                 'Dinas Pertanian Kabupaten', 'Lembaga Swadaya Masyarakat', 'Swadaya', 'Lainnya',
             ],
-            JenisReferensi::StatusPenyerahan->value => [
+            JenisDaftarPilihan::StatusPenyerahan->value => [
                 'Sudah Diserahkan', 'Dalam Proses', 'Belum Diserahkan',
             ],
             // Berskor: nilainya dipakai menghitung kondisi SP (rules.md 10c).
-            JenisReferensi::Kondisi->value => ['Baik', 'Rusak Ringan', 'Rusak Berat', 'Hilang'],
-            JenisReferensi::KondisiRumah->value => ['Tidak Rusak', 'Rusak Ringan', 'Rusak Berat'],
-            JenisReferensi::StatusHunian->value => ['Dihuni', 'Tidak Dihuni'],
-            JenisReferensi::TipeKomoditas->value => ['Pangan', 'Palawija', 'Hortikultura'],
+            JenisDaftarPilihan::Kondisi->value => ['Baik', 'Rusak Ringan', 'Rusak Berat', 'Hilang'],
+            JenisDaftarPilihan::KondisiRumah->value => ['Tidak Rusak', 'Rusak Ringan', 'Rusak Berat'],
+            JenisDaftarPilihan::StatusHunian->value => ['Dihuni', 'Tidak Dihuni'],
+            JenisDaftarPilihan::TipeKomoditas->value => ['Pangan', 'Palawija', 'Hortikultura'],
             // Berjenjang: urutannya dipakai menyortir daftar pengaduan.
-            JenisReferensi::PrioritasPengaduan->value => ['Rendah', 'Sedang', 'Tinggi', 'Mendesak'],
+            JenisDaftarPilihan::PrioritasPengaduan->value => ['Rendah', 'Sedang', 'Tinggi', 'Mendesak'],
             // Tanpa `Ketua`: ketua ditetapkan pada profil poktan, dan
             // menyediakannya di sini membuat satu poktan dapat memiliki dua
             // ketua tanpa penjaga apa pun (rules.md 7a poin 4b).
-            JenisReferensi::JabatanAnggotaPoktan->value => ['Sekretaris', 'Bendahara', 'Anggota'],
-            // Dirujuk parameter penilaian SP lewat `referensi_id`, bukan teks.
+            JenisDaftarPilihan::JabatanAnggotaPoktan->value => ['Sekretaris', 'Bendahara', 'Anggota'],
+            // Dirujuk parameter penilaian SP lewat `daftar_pilihan_id`, bukan teks.
             // Urutannya karena itu TIDAK boleh diacak sembarangan: id-nya
             // sudah ditunjuk `PenilaianKondisiSp::parameter()`.
-            JenisReferensi::JenisInfrastruktur->value => [
+            JenisDaftarPilihan::JenisInfrastruktur->value => [
                 'Air', 'Sanitasi', 'Irigasi', 'Listrik', 'Jalan Penghubung',
                 'Jalan Produksi', 'Telekomunikasi', 'Gudang', 'Pasar atau Kios Saprotan', 'Lainnya',
             ],
-            JenisReferensi::JenisFasilitas->value => [
+            JenisDaftarPilihan::JenisFasilitas->value => [
                 'Kesehatan', 'Pendidikan Dasar', 'Pendidikan Lanjutan', 'Ibadah',
                 'Balai Pertemuan', 'Pasar atau Kios', 'Olahraga', 'Keamanan', 'Lainnya',
             ],
             // Bidang didaftarkan SEBELUM kategori, sebab kategori merujuknya.
-            JenisReferensi::BidangPengaduan->value => ['Ketransmigrasian', 'Pertanian'],
-            JenisReferensi::KategoriPengaduan->value => [
+            JenisDaftarPilihan::BidangPengaduan->value => ['Ketransmigrasian', 'Pertanian'],
+            JenisDaftarPilihan::KategoriPengaduan->value => [
                 'Lahan Usaha', 'Lahan Pekarangan', 'Rumah', 'Infrastruktur',
                 'Inventaris SP', 'Fasilitas SP', 'Kelompok Tani', 'Alsintan',
                 'Saprotan', 'Produksi Panen', 'Bencana', 'Lainnya',
@@ -3148,11 +3148,11 @@ class DummyData
             // sudah ditunjuk PenilaianKondisiSp::parameter(). Sebelumnya alsintan
             // tidak punya `jenis` sama sekali; "Jenis Alat" pada laporan adalah
             // `nama_alat` yang dipakai ulang.
-            JenisReferensi::JenisAlsintan->value => [
+            JenisDaftarPilihan::JenisAlsintan->value => [
                 'Traktor Roda Dua', 'Traktor Roda Empat', 'Pompa Air', 'Hand Sprayer',
                 'Mesin Perontok', 'Cultivator', 'Alat Panen', 'Lainnya',
             ],
-            JenisReferensi::JenisInventaris->value => [
+            JenisDaftarPilihan::JenisInventaris->value => [
                 'Peralatan Kantor', 'Elektronik & Mesin', 'Perabotan', 'Kendaraan Operasional', 'Peralatan Lainnya',
             ],
         ];
@@ -3187,22 +3187,22 @@ class DummyData
         // Satu nilai sengaja dinonaktifkan agar keadaan itu ikut terlihat saat
         // peninjauan: ia tetap terbaca pada data lama, hanya tidak lagi
         // ditawarkan pada data baru.
-        $nonaktif = [JenisReferensi::SumberDana->value => ['Lembaga Swadaya Masyarakat']];
+        $nonaktif = [JenisDaftarPilihan::SumberDana->value => ['Lembaga Swadaya Masyarakat']];
 
         // Id bidang dikumpulkan saat barisnya dibuat, lalu dipakai kategori.
         // Berhasil karena bidang didaftarkan lebih dulu pada $daftar di atas.
         $idBidang = [];
 
         foreach ($daftar as $kunciJenis => $nilai) {
-            $jenisIni = JenisReferensi::from($kunciJenis);
+            $jenisIni = JenisDaftarPilihan::from($kunciJenis);
 
             foreach (array_values($nilai) as $urutan => $satu) {
-                if ($jenisIni === JenisReferensi::BidangPengaduan) {
+                if ($jenisIni === JenisDaftarPilihan::BidangPengaduan) {
                     $idBidang[$satu] = $id;
                 }
 
                 $data[] = [
-                    'id_referensi' => $id++,
+                    'id_daftar_pilihan' => $id++,
                     'jenis' => $kunciJenis,
                     'jenis_label' => $jenisIni->label(),
                     'nilai' => $satu,
@@ -3228,7 +3228,7 @@ class DummyData
     }
 
     /**
-     * Peta nilai referensi untuk dropdown, hanya yang masih aktif.
+     * Peta nilai daftar pilihan untuk dropdown, hanya yang masih aktif.
      *
      * Menggantikan pemanggilan `Enum::opsi()` pada view. Bentuk kembaliannya
      * sengaja disamakan, yaitu peta nilai ke label, sehingga view yang beralih
@@ -3238,14 +3238,14 @@ class DummyData
      * BARU. Data lama yang memakainya tetap menampilkan teksnya apa adanya,
      * sebab yang tersimpan memang teks itu sendiri, bukan id.
      *
-     * @param  JenisReferensi  $jenis  Daftar yang diambil
+     * @param  JenisDaftarPilihan  $jenis  Daftar yang diambil
      * @return array<string, string> Peta nilai ke label
      */
-    public static function opsiReferensi(JenisReferensi $jenis): array
+    public static function opsiDaftarPilihan(JenisDaftarPilihan $jenis): array
     {
         $hasil = [];
 
-        foreach (self::referensi($jenis, true) as $baris) {
+        foreach (self::daftarPilihan($jenis, true) as $baris) {
             $hasil[$baris['nilai']] = $baris['nilai'];
         }
 
@@ -3253,22 +3253,22 @@ class DummyData
     }
 
     /**
-     * Id baris referensi dari jenis dan nilainya.
+     * Id baris daftar pilihan dari jenis dan nilainya.
      *
      * Dipakai `PenilaianKondisiSp::parameter()` untuk menunjuk jenis rujukan
-     * lewat `referensi_id`, bukan teks. Nilai NONAKTIF tetap ditemukan, sebab
+     * lewat `daftar_pilihan_id`, bukan teks. Nilai NONAKTIF tetap ditemukan, sebab
      * parameter yang sudah menunjuknya harus tetap dapat membacanya; yang
      * berhenti adalah menawarkannya sebagai pilihan baru.
      *
-     * @param  JenisReferensi  $jenis  Daftar yang dicari
+     * @param  JenisDaftarPilihan  $jenis  Daftar yang dicari
      * @param  string  $nilai  Teks nilainya
-     * @return int|null Id referensi, null bila tidak ada
+     * @return int|null Id daftar pilihan, null bila tidak ada
      */
-    public static function referensiId(JenisReferensi $jenis, string $nilai): ?int
+    public static function daftarPilihanId(JenisDaftarPilihan $jenis, string $nilai): ?int
     {
-        foreach (self::referensi($jenis) as $baris) {
+        foreach (self::daftarPilihan($jenis) as $baris) {
             if ($baris['nilai'] === $nilai) {
-                return $baris['id_referensi'];
+                return $baris['id_daftar_pilihan'];
             }
         }
 
@@ -3276,18 +3276,18 @@ class DummyData
     }
 
     /**
-     * Nilai referensi dari idnya.
+     * Nilai daftar pilihan dari idnya.
      *
-     * Kebalikan referensiId(). Dipakai penilaian kondisi SP untuk mencocokkan
+     * Kebalikan daftarPilihanId(). Dipakai penilaian kondisi SP untuk mencocokkan
      * parameter dengan kolom `jenis` pada aset, yang masih menyimpan teks.
      *
-     * @param  int  $id  Id referensi
+     * @param  int  $id  Id daftar pilihan
      * @return string|null Teks nilainya, null bila tidak ada
      */
-    public static function referensiNilai(int $id): ?string
+    public static function daftarPilihanNilai(int $id): ?string
     {
-        foreach (self::referensi() as $baris) {
-            if ($baris['id_referensi'] === $id) {
+        foreach (self::daftarPilihan() as $baris) {
+            if ($baris['id_daftar_pilihan'] === $id) {
                 return $baris['nilai'];
             }
         }
@@ -3296,23 +3296,23 @@ class DummyData
     }
 
     /**
-     * Peta nilai referensi untuk FILTER, termasuk yang sudah nonaktif.
+     * Peta nilai daftar pilihan untuk FILTER, termasuk yang sudah nonaktif.
      *
-     * Berbeda dari opsiReferensi() dan perbedaannya disengaja. Dropdown pada
+     * Berbeda dari opsiDaftarPilihan() dan perbedaannya disengaja. Dropdown pada
      * form menawarkan pilihan untuk data BARU, sehingga nilai nonaktif memang
      * tidak boleh ikut. Dropdown filter menyaring data LAMA, dan data lama
      * masih memakai nilai yang kini nonaktif. Memakai daftar aktif di filter
      * membuat baris-baris itu tidak dapat dicari sama sekali: nilainya ada di
      * kolom, tetapi tidak ada pilihan yang cocok untuk memanggilnya.
      *
-     * @param  JenisReferensi  $jenis  Daftar yang diambil
+     * @param  JenisDaftarPilihan  $jenis  Daftar yang diambil
      * @return array<string, string> Peta nilai ke label
      */
-    public static function opsiFilterReferensi(JenisReferensi $jenis): array
+    public static function opsiFilterDaftarPilihan(JenisDaftarPilihan $jenis): array
     {
         $hasil = [];
 
-        foreach (self::referensi($jenis) as $baris) {
+        foreach (self::daftarPilihan($jenis) as $baris) {
             $hasil[$baris['nilai']] = $baris['nilai'];
         }
 
@@ -3336,10 +3336,10 @@ class DummyData
     {
         $hasil = [];
 
-        foreach (self::referensi(JenisReferensi::KategoriPengaduan) as $baris) {
+        foreach (self::daftarPilihan(JenisDaftarPilihan::KategoriPengaduan) as $baris) {
             $hasil[$baris['nilai']] = $baris['bidang_id'] === null
                 ? ''
-                : (self::referensiNilai($baris['bidang_id']) ?? '');
+                : (self::daftarPilihanNilai($baris['bidang_id']) ?? '');
         }
 
         return $hasil;
@@ -3358,7 +3358,7 @@ class DummyData
     {
         $hasil = [];
 
-        foreach (self::referensi(JenisReferensi::Kondisi) as $baris) {
+        foreach (self::daftarPilihan(JenisDaftarPilihan::Kondisi) as $baris) {
             if ($baris['nilai_skor'] !== null) {
                 $hasil[$baris['nilai']] = (float) $baris['nilai_skor'];
             }
@@ -3443,7 +3443,7 @@ class DummyData
         // $kode DITULIS TETAP, tidak diturunkan dari nama jenisnya. Ia penunjuk
         // yang tersalin ke $penilaian_sp.rincian`, sehingga menurunkannya dari
         // teks jenis membuat penilaian lama kehilangan pasangannya begitu Admin
-        // memperbaiki ejaan. Alasannya sama dengan $referensi_id` menggantikan
+        // memperbaiki ejaan. Alasannya sama dengan $daftar_pilihan_id` menggantikan
         // rujukan berbasis teks.
         $berlaku = [
             // Primer: tanpa ini tempat tidak layak dihuni.
@@ -3476,10 +3476,10 @@ class DummyData
         $hasil = [];
         $id = 1;
 
-        foreach ([JenisReferensi::JenisInfrastruktur, JenisReferensi::JenisFasilitas] as $jenis) {
-            $sumber = $jenis === JenisReferensi::JenisFasilitas ? 'Fasilitas' : 'Infrastruktur';
+        foreach ([JenisDaftarPilihan::JenisInfrastruktur, JenisDaftarPilihan::JenisFasilitas] as $jenis) {
+            $sumber = $jenis === JenisDaftarPilihan::JenisFasilitas ? 'Fasilitas' : 'Infrastruktur';
 
-            foreach (self::referensi($jenis) as $urutan => $baris) {
+            foreach (self::daftarPilihan($jenis) as $urutan => $baris) {
                 $cocok = $berlaku[$baris['nilai']] ?? null;
 
                 $hasil[] = [
@@ -3490,7 +3490,7 @@ class DummyData
                     'bobot' => ($cocok[2] ?? TingkatKebutuhan::Tersier)->bobotBawaan(),
                     'sumber' => $sumber,
                     'jenis' => $jenis->value,
-                    'referensi_id' => $baris['id_referensi'],
+                    'daftar_pilihan_id' => $baris['id_daftar_pilihan'],
                     'nilai_jenis' => $baris['nilai'],
                     'is_dinilai' => $cocok !== null,
                     'urutan' => $urutan + 1,
@@ -3529,7 +3529,7 @@ class DummyData
      *
      * Status juga BUKAN pilihan melainkan kesimpulan: tidak ada satu pun form
      * yang menyuruh petugas memilihnya, ia selalu hasil hitungan. Itu sebabnya
-     * ia tidak ikut menjadi baris pada data master referensi, yang seluruh
+     * ia tidak ikut menjadi baris pada data master daftar pilihan, yang seluruh
      * isinya adalah pilihan pada dropdown.
      *
      * `ambang_bawah` pada status terendah bernilai 0 dan tidak disunting: ia
@@ -5578,10 +5578,10 @@ class DummyData
                     ['kunci' => 'inventaris_sp', 'nama' => 'Inventaris SP', 'aksi' => $penuh],
                     ['kunci' => 'fasilitas_sp', 'nama' => 'Fasilitas SP', 'aksi' => $penuh],
                     ['kunci' => 'satuan', 'nama' => 'Data master satuan', 'aksi' => $penuh],
-                    // Tanpa hapus: nilai referensi dinonaktifkan, bukan
+                    // Tanpa hapus: nilai daftar pilihan dinonaktifkan, bukan
                     // dihapus, agar data lama yang memakainya tetap terbaca
                     // (kamus data 5.6).
-                    ['kunci' => 'referensi', 'nama' => 'Data master referensi', 'aksi' => $tanpaHapus],
+                    ['kunci' => 'daftar_pilihan', 'nama' => 'Data master daftar pilihan', 'aksi' => $tanpaHapus],
                     // Hanya lihat dan ubah. Parameter penilaian TIDAK dapat
                     // ditambah maupun dihapus lewat antarmuka: barisnya
                     // dihasilkan dari jenis infrastruktur dan fasilitas, dan
@@ -5673,7 +5673,7 @@ class DummyData
             // Admin. Kolom kedua tabel rules.md 5.1.
             1 => [
                 'wilayah' => $k, 'kawasan' => $k, 'sp' => $k,
-                'inventaris_sp' => $k, 'fasilitas_sp' => $k, 'satuan' => $k, 'referensi' => $ltu,
+                'inventaris_sp' => $k, 'fasilitas_sp' => $k, 'satuan' => $k, 'daftar_pilihan' => $ltu,
                 'penilaian_kondisi' => ['lihat', 'ubah'],
                 'transmigran' => $k, 'rumah' => $k, 'riwayat_penghunian' => $k,
                 // Riwayat suksesi tidak dapat dihapus siapa pun, termasuk
@@ -5695,7 +5695,7 @@ class DummyData
             // Admin: dinas pengelola kawasan yang menyunting isi halaman publik.
             2 => [
                 'wilayah' => $l, 'kawasan' => $l, 'sp' => $ltu,
-                'inventaris_sp' => $ltu, 'fasilitas_sp' => $ltu, 'satuan' => $l, 'referensi' => $ltu,
+                'inventaris_sp' => $ltu, 'fasilitas_sp' => $ltu, 'satuan' => $l, 'daftar_pilihan' => $ltu,
                 'penilaian_kondisi' => ['lihat', 'ubah'],
                 'transmigran' => $ltu, 'rumah' => $ltu, 'riwayat_penghunian' => $lt,
                 'riwayat_kepala_keluarga' => $lt,
@@ -5710,7 +5710,7 @@ class DummyData
             // Pada modul kependudukan hanya dapat melihat.
             3 => [
                 'wilayah' => $l, 'kawasan' => $l, 'sp' => $l,
-                'inventaris_sp' => $l, 'fasilitas_sp' => $l, 'satuan' => $l, 'referensi' => $l,
+                'inventaris_sp' => $l, 'fasilitas_sp' => $l, 'satuan' => $l, 'daftar_pilihan' => $l,
                 'penilaian_kondisi' => $l,
                 'transmigran' => $l, 'rumah' => $l, 'riwayat_penghunian' => $l,
                 'riwayat_kepala_keluarga' => $l,
@@ -5726,7 +5726,7 @@ class DummyData
             // penanganan pengaduan.
             4 => [
                 'wilayah' => $l, 'kawasan' => $l, 'sp' => $l,
-                'inventaris_sp' => $ltu, 'fasilitas_sp' => $ltu, 'satuan' => $l, 'referensi' => $l,
+                'inventaris_sp' => $ltu, 'fasilitas_sp' => $ltu, 'satuan' => $l, 'daftar_pilihan' => $l,
                 'penilaian_kondisi' => $l,
                 'transmigran' => $ltu, 'rumah' => $ltu, 'riwayat_penghunian' => $lt,
                 'riwayat_kepala_keluarga' => $l,

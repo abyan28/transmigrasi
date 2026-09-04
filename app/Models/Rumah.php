@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 /**
  * Rumah SP. Relasi rumah<->KK satu-ke-satu dua arah: FK di sini,
  * `transmigran_id` UNIQUE nullable (NULL = rumah kosong). `kondisi`/
- * `status_hunian` = TEKS nilai referensi, bukan enum. FK SP RESTRICT,
+ * `status_hunian` = TEKS nilai daftar pilihan, bukan enum. FK SP RESTRICT,
  * FK transmigran SET NULL.
  *
  * Pengenal publik URL: `uuid` -- lokasi rumah warga tak diekspos lewat id urut.

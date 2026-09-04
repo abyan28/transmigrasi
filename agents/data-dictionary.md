@@ -15,7 +15,7 @@ Dokumen ini merinci setiap kolom pada 33 tabel yang dirancang di `erd.md`. Dipak
 2. [Domain Pengguna dan Sistem](#2-domain-pengguna-dan-sistem) &mdash; termasuk `kode_pemulihan_sandi` (2.3)
 3. [Domain Master Wilayah](#3-domain-master-wilayah)
 4. [Domain Aset SP](#4-domain-aset-sp)
-5. [Domain Master Referensi](#5-domain-master-referensi)
+5. [Domain Master Daftar Pilihan](#5-domain-master-daftar-pilihan)
 6. [Domain Kependudukan](#6-domain-kependudukan)
 7. [Domain Lahan](#7-domain-lahan)
 8. [Domain Kelembagaan dan Sarana](#8-domain-kelembagaan-dan-sarana)
@@ -384,7 +384,7 @@ Barang bergerak milik SP (`rules.md` §4b).
 |---|---|---|---|---|
 | `id_inventaris_sp` | `BIGINT UNSIGNED AUTO_INCREMENT` | TIDAK | PK | |
 | `satuan_permukiman_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | |
-| `jenis_inventaris` | `VARCHAR(100)` | TIDAK | IDX | Master referensi (Revisi 2026-08-30). Opsi baku: Peralatan Kantor, Elektronik & Mesin, Perabotan, Kendaraan Operasional, Peralatan Lainnya |
+| `jenis_inventaris` | `VARCHAR(100)` | TIDAK | IDX | Master daftar pilihan (Revisi 2026-08-30). Opsi baku: Peralatan Kantor, Elektronik & Mesin, Perabotan, Kendaraan Operasional, Peralatan Lainnya |
 | `nama_barang` | `VARCHAR(255)` | TIDAK | | |
 | `jumlah` | `INT UNSIGNED` | TIDAK | | Bawaan 1 |
 | `satuan_barang` | `VARCHAR(50)` | YA | | Teks bebas: unit, buah, set |
@@ -444,7 +444,7 @@ poin 8 sampai 10.
 |---|---|---|---|---|
 | `id_berkas` | `BIGINT UNSIGNED` | TIDAK | PK | Integer, bukan UUID: lebih ringan sebagai indeks dan direferensikan 17 FK (`rules.md` 4.0a.1) |
 | `uuid` | `CHAR(36)` | TIDAK | UNIQUE | Pengenal publik |
-| `jenis_berkas_id` | `BIGINT UNSIGNED` | YA | FK `referensi` | Penggolongan berkas, mis. HPL/SHM; NULL berarti tanpa penggolongan |
+| `jenis_berkas_id` | `BIGINT UNSIGNED` | YA | FK `daftar_pilihan` | Penggolongan berkas, mis. HPL/SHM; NULL berarti tanpa penggolongan |
 | `nama_file` | `VARCHAR(255)` | TIDAK | | Nama tersimpan di disk |
 | `nama_asli` | `VARCHAR(255)` | YA | | Nama dari pengunggah, dipakai saat berkas diunduh |
 | `path` | `VARCHAR(255)` | TIDAK | | Relatif terhadap disk, bukan URL absolut |
@@ -482,7 +482,7 @@ dengan `ON DELETE SET NULL` sebab menghapus berkas tidak boleh menghapus barisny
 `satuan_permukiman.berkas_id`, `poktan.berkas_id`, `saprotan.foto_berkas_id`,
 `saprotan.berkas_id`, dan `alsintan_distribusi.foto_berkas_id`.
 
-## 5. Domain Master Referensi
+## 5. Domain Master Daftar Pilihan
 
 ### 5.1 `satuan`
 
@@ -536,19 +536,19 @@ Bobot disimpan sebagai **data**, bukan ditulis di dalam kode, agar Admin dapat m
 | `tingkat` | `ENUM` | TIDAK | IDX | Lihat 11.29 |
 | `bobot` | `TINYINT UNSIGNED` | TIDAK | | Bawaan mengikuti tingkat: Primer 5, Sekunder 3, Tersier 1. Disunting dinas lewat `/master/penilaian-kondisi` |
 | `sumber` | `ENUM` | TIDAK | | Lihat 11.31; menentukan tabel mana yang dibaca |
-| `referensi_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | Baris `referensi` yang dicari pada tabel sumber, contoh jenis infrastruktur `Air` |
+| `daftar_pilihan_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | Baris `daftar_pilihan` yang dicari pada tabel sumber, contoh jenis infrastruktur `Air` |
 | `is_dinilai` | `BOOLEAN` | TIDAK | | Parameter yang tidak dicentang tetap tercatat tetapi tidak menambah pembagi skor |
 | `urutan` | `SMALLINT UNSIGNED` | TIDAK | | Urutan tampil pada halaman pengaturan dan rincian skor |
 
 **Catatan:**
 - Parameter **dinonaktifkan, bukan dihapus**, agar riwayat penilaian yang memakainya tetap dapat dibaca.
-- `sumber` dan `referensi_id` menjelaskan dari mana nilai kondisi diambil: parameter `air_bersih` membaca `infrastruktur` berjenis `Air`, sedangkan `kesehatan` membaca `fasilitas_sp` berjenis `Kesehatan`.
+- `sumber` dan `daftar_pilihan_id` menjelaskan dari mana nilai kondisi diambil: parameter `air_bersih` membaca `infrastruktur` berjenis `Air`, sedangkan `kesehatan` membaca `fasilitas_sp` berjenis `Kesehatan`.
 - **Barisnya DIHASILKAN dari jenis infrastruktur dan fasilitas**, tidak ditulis satu per satu. Sebelumnya daftar parameter berupa tiga belas baris tulis tangan di dalam kode, sehingga jenis yang ditambahkan Admin tidak pernah ikut dinilai: dropdownnya hidup dan petugas dapat mendata asetnya, tetapi skor SP tidak berubah sama sekali. POS KAMLING di SP Weain berkondisi Rusak Berat terdata rapi dan tidak menyumbang apa pun, semata karena daftar itu berhenti di baris ke tiga belas.
 - **Jenis baru lahir dalam keadaan `is_dinilai` bernilai salah.** Menambah jenis adalah tindakan pendataan, sedangkan memasukkannya ke penilaian adalah keputusan kebijakan. Menyatukan keduanya membuat skor seluruh SP turun hanya karena Admin menambah satu pilihan dropdown, sebab pembaginya ikut bertambah.
 - **`sumber` disimpulkan dari jenisnya**, tidak diisi manual: jenis infrastruktur selalu dibaca dari tabel `infrastruktur` kolom `jenis`, jenis fasilitas dari `fasilitas_sp` kolom `jenis_fasilitas`. Menyimpannya sebagai isian terpisah membuka peluang parameter menunjuk tabel yang tidak memuat jenisnya.
 - **`tingkat` tiga parameter primer terkunci** (`air_bersih`, `jalan_penghubung`, `listrik`). Memindahkannya ke tingkat lain bukan menurunkan bobot, melainkan mencabut aturan primer nol, sehingga SP tanpa listrik berhenti otomatis berstatus Perlu Penanganan.
 - **`kode` ditulis tetap, tidak diturunkan dari nama jenisnya.** Ia penunjuk yang tersalin ke `penilaian_sp.rincian`, sehingga menurunkannya dari teks membuat penilaian lama kehilangan pasangannya begitu Admin memperbaiki ejaan.
-- `referensi_id` **menggantikan `jenis_rujukan` yang dulu berupa teks**, sejak jenis infrastruktur dan fasilitas menjadi data master. Rujukan berbasis teks putus tanpa pesan apa pun begitu Admin memperbaiki ejaannya, dan parameter itu lalu diam-diam menilai setiap SP sebagai tidak punya aset tersebut. Bila idnya tidak ditemukan, parameter **dilewati**, bukan dinilai nol: menilainya nol berarti seluruh SP jatuh statusnya hanya karena satu baris referensi hilang.
+- `daftar_pilihan_id` **menggantikan `jenis_rujukan` yang dulu berupa teks**, sejak jenis infrastruktur dan fasilitas menjadi data master. Rujukan berbasis teks putus tanpa pesan apa pun begitu Admin memperbaiki ejaannya, dan parameter itu lalu diam-diam menilai setiap SP sebagai tidak punya aset tersebut. Bila idnya tidak ditemukan, parameter **dilewati**, bukan dinilai nol: menilainya nol berarti seluruh SP jatuh statusnya hanya karena satu baris referensi hilang.
 
 ### 5.5 `penilaian_sp`
 
@@ -580,7 +580,7 @@ Riwayat penilaian kondisi SP. Satu SP memiliki banyak baris, satu untuk setiap k
 ]
 ```
 
-### 5.6 `referensi`
+### 5.6 `daftar_pilihan`
 
 Daftar pilihan yang **dikelola Admin lewat antarmuka**, bukan ditulis sebagai enum di dalam kode (`rules.md` §4 poin 4 dan §13.0; kriteria enum-vs-master pada bulir terakhir §5.6 ini).
 
@@ -588,7 +588,7 @@ Empat belas daftar disatukan pada satu tabel karena strukturnya identik. Empat b
 
 | Kolom | Tipe | Null | Kunci | Keterangan |
 |---|---|---|---|---|
-| `id_referensi` | `BIGINT UNSIGNED AUTO_INCREMENT` | TIDAK | PK | |
+| `id_daftar_pilihan` | `BIGINT UNSIGNED AUTO_INCREMENT` | TIDAK | PK | |
 | `jenis` | `ENUM` | TIDAK | IDX, UQ¹ | Lihat 11.37; menentukan daftar mana nilai ini termasuk |
 | `nilai` | `VARCHAR(100)` | TIDAK | UQ¹ | Teks yang tampil sekaligus tersimpan pada kolom pemakainya |
 | `urutan` | `SMALLINT UNSIGNED` | TIDAK | | Urutan tampil; bermakna pada jenis berjenjang |
@@ -608,7 +608,7 @@ Empat belas daftar disatukan pada satu tabel karena strukturnya identik. Empat b
 - **`bidang_id` hanya untuk `kategori_pengaduan`**, dan NULL di sana bermakna. Ia menyatakan kategori yang dapat jatuh ke dua dinas sekaligus, sehingga bidangnya wajib ditetapkan petugas sebelum status maju ke Diproses (`rules.md` 10b poin 7b). Nilai yang terisi hanya menetapkan bidang AWAL; petugas selalu dapat menimpanya.
 - **`urutan` bermakna pada `prioritas_pengaduan`**, sebab daftar pengaduan menyortir memakainya. Menukar urutan berarti menukar antrean petugas, bukan sekadar menukar tampilan.
 - **Jenisnya tetap enum**, tidak ikut menjadi data. `jenis` menyatakan daftar mana yang ada, bukan isinya; menjadikannya data membuat Admin dapat membuat jenis yang tidak satu pun kolom database menunjuknya.
-- Enum yang **tetap di dalam kode** dan tidak menjadi referensi: seluruh enum yang membawa perilaku (`StatusPengaduan` dengan state machine-nya, `StatusKondisiSp` dengan `dariSkor()`, `AsalWakilPoktan`, `CakupanData`, `AksiPermission`, `AksiAuditLog`), serta enum yang nilainya terikat ketentuan luar (`JenisKelamin`, `PendidikanTerakhir`). `StatusSertifikat` (`Sudah`/`Belum`/`Belum Didata`) juga di kode, sepola `StatusTinggal`.
+- Enum yang **tetap di dalam kode** dan tidak menjadi daftar pilihan: seluruh enum yang membawa perilaku (`StatusPengaduan` dengan state machine-nya, `StatusKondisiSp` dengan `dariSkor()`, `AsalWakilPoktan`, `CakupanData`, `AksiPermission`, `AksiAuditLog`), serta enum yang nilainya terikat ketentuan luar (`JenisKelamin`, `PendidikanTerakhir`). `StatusSertifikat` (`Sudah`/`Belum`/`Belum Didata`) juga di kode, sepola `StatusTinggal`.
 
 ### 5.7 `status_kondisi_sp`
 
@@ -626,7 +626,7 @@ Ambang skor dan teks tampil (wording) predikat kondisi SP, disunting dinas lewat
 
 **Catatan:**
 - **Jumlahnya tetap tiga** dan tidak dapat ditambah/dihapus: `dariSkor()` hanya mengembalikan tiga keluaran dan `penilaian_sp.status` bertipe `ENUM`. Yang berubah lewat CMS hanya `nama`, `keterangan`, dan `ambang_bawah`.
-- Nilai kondisi berskor (Baik 1,0 / Rusak Ringan 0,5 / Rusak Berat 0,2 / Hilang 0) tetap pada `referensi` (jenis `kondisi`, kolom `nilai_skor`), bukan di sini. Bobot parameter tetap pada `parameter_penilaian_sp.bobot`.
+- Nilai kondisi berskor (Baik 1,0 / Rusak Ringan 0,5 / Rusak Berat 0,2 / Hilang 0) tetap pada `daftar_pilihan` (jenis `kondisi`, kolom `nilai_skor`), bukan di sini. Bobot parameter tetap pada `parameter_penilaian_sp.bobot`.
 
 ---
 
@@ -1508,13 +1508,13 @@ Pemeriksaan "apakah identitasnya dapat dibaca lewat relasi" **dilarang** memband
 
 Dahulu: diisi bila wakil keluarga di poktan bukan kepala keluarganya sendiri. Sengaja kasar dan tidak dirinci, sebab sistem belum mendata anggota keluarga satu per satu (`erd.md` §7.4, kini dibalik).
 
-### 11.37 Jenis referensi
+### 11.37 Jenis daftar pilihan
 
 `sumber_dana` - `status_penyerahan` - `kondisi` - `kondisi_rumah` - `status_hunian` - `tipe_komoditas` - `prioritas_pengaduan` - `jabatan_anggota_poktan` - `jenis_infrastruktur` - `jenis_fasilitas` - `bidang_pengaduan` - `kategori_pengaduan` - `jenis_alsintan` - `jenis_inventaris`
 
 *(`kualitas_panen` dicabut — kualitas panen dihapus, `rules.md` §9. `jenis_alsintan` ditambahkan Putaran 7; `jenis_inventaris` ditambahkan Revisi 2026-08-30 untuk modul `inventaris_sp`.)*
 
-Menyatakan daftar mana saja yang dikelola Admin lewat data master referensi (5.6). **Enum ini sendiri tidak ikut menjadi data**, sebab ia menyatakan daftar mana yang ada, bukan isi daftarnya.
+Menyatakan daftar mana saja yang dikelola Admin lewat data master daftar pilihan (5.6). **Enum ini sendiri tidak ikut menjadi data**, sebab ia menyatakan daftar mana yang ada, bukan isi daftarnya.
 
 Setiap nilai di sini **wajib punya kolom yang membacanya**. Menambah satu nilai karena itu selalu berpasangan dengan menyunting kolom pada kamus data; tanpa itu, daftar yang dikelolanya tidak pernah tampil di mana pun.
 
@@ -1684,7 +1684,7 @@ Tanda centang berarti kewenangan tersebut dibuat untuk fitur bersangkutan.
 | `rumah` | v | v | v | v |
 | `riwayat_penghunian` | v | v | v | v |
 | `riwayat_kepala_keluarga` | v | v | v | |
-| `referensi` | v | v | v | |
+| `daftar_pilihan` | v | v | v | |
 | `penilaian_kondisi` | v |   | v |   |
 | `lahan` | v | v | v | v |
 | `poktan` | v | v | v | v |
@@ -1711,7 +1711,7 @@ Agar halaman pengaturan role mudah dibaca, kewenangan dikelompokkan sesuai struk
 | Kelompok | Fitur |
 |---|---|
 | Sistem | `pengguna`, `role`, `audit_log`, `cms` |
-| Wilayah dan SP | `wilayah`, `kawasan`, `sp`, `inventaris_sp`, `fasilitas_sp`, `satuan`, `referensi`, `penilaian_kondisi` |
+| Wilayah dan SP | `wilayah`, `kawasan`, `sp`, `inventaris_sp`, `fasilitas_sp`, `satuan`, `daftar_pilihan`, `penilaian_kondisi` |
 | Kependudukan | `transmigran`, `rumah`, `riwayat_penghunian`, `riwayat_kepala_keluarga` |
 | Lahan | `lahan` |
 | Kelembagaan | `poktan`, `anggota_poktan`, `alsintan`, `saprotan` |

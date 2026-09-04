@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\JenisReferensi;
+use App\Enums\JenisDaftarPilihan;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
 use App\Models\InventarisSp;
 use App\Support\DummyData;
@@ -16,7 +16,7 @@ use Illuminate\Validation\Rule;
  * Inventaris SP -- barang bergerak milik satuan permukiman (Task 4.3).
  *
  * Kolom REF (`jenis_inventaris`, `sumber_dana`, `status_penyerahan`,
- * `kondisi`) disimpan TEKS dan divalidasi terhadap tabel `referensi`
+ * `kondisi`) disimpan TEKS dan divalidasi terhadap tabel `daftar_pilihan`
  * (Task 4.7), bukan enum PHP -- Admin boleh menambah nilai lewat master.
  *
  * `rincian_kondisi` adalah histogram kondisi PER JENIS barang, bukan per
@@ -59,7 +59,7 @@ class InventarisSpController extends Controller
             'sudahDiserahkan' => count(array_filter($semua, fn ($b) => $b['status_penyerahan'] === 'Sudah Diserahkan')),
             'perluPerhatian' => count(array_filter($semua, fn ($b) => $b['kondisi'] !== 'Baik')),
             'daftarSp' => DummyData::satuanPermukiman(),
-            'opsiFilterStatusPenyerahan' => DummyData::opsiFilterReferensi(JenisReferensi::StatusPenyerahan),
+            'opsiFilterStatusPenyerahan' => DummyData::opsiFilterDaftarPilihan(JenisDaftarPilihan::StatusPenyerahan),
         ]);
     }
 
@@ -161,13 +161,13 @@ class InventarisSpController extends Controller
             'jumlah' => ['required', 'integer', 'min:1', 'max:1000000'],
             'satuan_barang' => ['nullable', 'string', 'max:20'],
             'tahun_perolehan' => ValidationRules::tahun(),
-            // Kolom REF: TEKS yang dicocokkan ke tabel `referensi`, bukan enum
+            // Kolom REF: TEKS yang dicocokkan ke tabel `daftar_pilihan`, bukan enum
             // PHP -- Admin boleh menambah nilainya lewat master (Task 4.7).
-            'jenis_inventaris' => ValidationRules::referensi(JenisReferensi::JenisInventaris),
-            'sumber_dana' => ValidationRules::referensi(JenisReferensi::SumberDana),
+            'jenis_inventaris' => ValidationRules::daftarPilihan(JenisDaftarPilihan::JenisInventaris),
+            'sumber_dana' => ValidationRules::daftarPilihan(JenisDaftarPilihan::SumberDana),
             // NOT NULL di skema, karena itu WAJIB -- bukan sekadar opsional.
-            'status_penyerahan' => ValidationRules::referensi(JenisReferensi::StatusPenyerahan, wajib: true),
-            'kondisi' => ValidationRules::referensi(JenisReferensi::Kondisi),
+            'status_penyerahan' => ValidationRules::daftarPilihan(JenisDaftarPilihan::StatusPenyerahan, wajib: true),
+            'kondisi' => ValidationRules::daftarPilihan(JenisDaftarPilihan::Kondisi),
             'keterangan' => ['nullable', 'string', 'max:500'],
             'foto' => ['nullable', 'array'],
             'foto.*' => ValidationRules::foto(),

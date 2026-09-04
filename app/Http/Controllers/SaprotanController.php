@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\JenisReferensi;
+use App\Enums\JenisDaftarPilihan;
 use App\Enums\JenisSaprotan;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
 use App\Models\Saprotan;
@@ -294,7 +294,7 @@ class SaprotanController extends Controller
             'satuan_id' => ['required', 'integer', Rule::exists('satuan', 'id_satuan')],
             'jadwal_tanam' => ['nullable', 'date_format:Y-m'],
             'tahun_pengadaan' => ValidationRules::tahun(wajib: true),
-            'sumber_dana' => ValidationRules::referensi(JenisReferensi::SumberDana),
+            'sumber_dana' => ValidationRules::daftarPilihan(JenisDaftarPilihan::SumberDana),
             'keterangan' => ['nullable', 'string', 'max:1000'],
 
             'poktan_id' => ['nullable', 'array'],

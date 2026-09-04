@@ -6,7 +6,7 @@
  * Middleware ini mengapitalkan seluruh isian teks kecuali yang terdaftar
  * (`rules.md` 13.2 poin 4). Default itu benar untuk isi data -- nama orang,
  * alamat, nama barang -- tetapi SELALU salah untuk isian yang MEMILIH
- * sesuatu: tingkat wilayah, jenis referensi, nilai enum. Dikapitalkan,
+ * sesuatu: tingkat wilayah, jenis daftar pilihan, nilai enum. Dikapitalkan,
  * nilainya tak lagi cocok dengan daftar yang sah dan seluruh penyimpanan
  * ditolak validasi.
  *
@@ -20,8 +20,8 @@
  * tersimpan di tangan petugas.
  *
  * Titik buta yang DISENGAJA (perlu penambahan manual ke `$kecualikan`):
- * - `Rule::exists('referensi', 'nilai')` yang ditulis inline, bukan lewat
- *   `ValidationRules::referensi()`;
+ * - `Rule::exists('daftar_pilihan', 'nilai')` yang ditulis inline, bukan lewat
+ *   `ValidationRules::daftarPilihan()`;
  * - kunci bertitik seperti `izin.*.*` (regexnya hanya `[a-z_]+`);
  * - aturan `Rule::enum`/`Rule::in` yang jatuh ke baris berikutnya setelah
  *   isi kurung siku lain;
@@ -52,8 +52,8 @@ function isianPemilih(): array
         $isi = file_get_contents($satu);
 
         // `nama_isian` => [ ... Rule::enum(...) / Rule::in(...) /
-        // ValidationRules::referensi(...) ... ] pada larik aturan validasi.
-        $pola = "/'([a-z_]+)'\s*=>\s*(?:\[[^\]]*?)?(?:Rule::(?:enum|in)\(|ValidationRules::referensi\()/s";
+        // ValidationRules::daftarPilihan(...) ... ] pada larik aturan validasi.
+        $pola = "/'([a-z_]+)'\s*=>\s*(?:\[[^\]]*?)?(?:Rule::(?:enum|in)\(|ValidationRules::daftarPilihan\()/s";
 
         preg_match_all($pola, $isi, $cocok);
 

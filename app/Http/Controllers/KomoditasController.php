@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\JenisReferensi;
+use App\Enums\JenisDaftarPilihan;
 use App\Models\Komoditas;
 use App\Support\DummyData;
 use App\Support\ValidationRules;
@@ -14,7 +14,7 @@ use Illuminate\Validation\Rule;
 /**
  * Data Komoditas (Task 7.1: peralihan ke Eloquent).
  *
- * `tipe` disimpan TEKS nilai referensi (`tipe_komoditas`), bukan enum PHP --
+ * `tipe` disimpan TEKS nilai daftar pilihan (`tipe_komoditas`), bukan enum PHP --
  * Admin boleh menambah tipe lewat data master. `slug` otomatis
  * (`BerslugOtomatis`). Satuan panen baku (`satuan_id`) mengunci satuan setiap
  * pencatatan panen komoditas ini; perubahannya hanya berlaku bagi panen
@@ -49,7 +49,7 @@ class KomoditasController extends Controller
             'filterTipe' => $filterTipe,
             'adaFilter' => $cari !== '' || $filterTipe,
             'unggulan' => count(array_filter($semua, fn ($k) => $k['is_unggulan'])),
-            'opsiFilterTipe' => DummyData::opsiFilterReferensi(JenisReferensi::TipeKomoditas),
+            'opsiFilterTipe' => DummyData::opsiFilterDaftarPilihan(JenisDaftarPilihan::TipeKomoditas),
         ]);
     }
 
@@ -153,7 +153,7 @@ class KomoditasController extends Controller
                 'required', 'string', 'max:100',
                 Rule::unique('komoditas', 'nama')->ignore($komoditas?->id_komoditas, 'id_komoditas'),
             ],
-            'tipe' => ValidationRules::referensi(JenisReferensi::TipeKomoditas, wajib: true),
+            'tipe' => ValidationRules::daftarPilihan(JenisDaftarPilihan::TipeKomoditas, wajib: true),
             'satuan_id' => ['required', 'integer', Rule::exists('satuan', 'id_satuan')],
             'is_unggulan' => ['nullable', 'boolean'],
             'deskripsi' => ['nullable', 'string', 'max:1000'],

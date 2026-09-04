@@ -48,7 +48,7 @@
                     <x-sim.status-badge :status="$status" />
                 @endforeach
                 {{--
-                    Kedua daftar ini kini data master referensi, bukan enum,
+                    Kedua daftar ini kini data master daftar pilihan, bukan enum,
                     sehingga badge-nya diberi teks dan warna langsung. Peragaan
                     di atas tetap memakai enum sebab `StatusPengaduan` memang
                     tetap enum: ia membawa state machine.

@@ -9,7 +9,7 @@
     tingkat sebagai kolom sekaligus penyaring.
 
     Sebelum 2026-09-02 halaman ini memakai empat tab, dan itu tidak lagi
-    memadai. Sejak provinsi dan kabupaten dibaca dari data referensi nasional,
+    memadai. Sejak provinsi dan kabupaten dibaca dari data rujukan nasional,
     tab Kabupaten memuat 514 baris tanpa pencarian maupun paginasi. Mencari
     satu nama juga menuntut petugas menebak lebih dulu ia berada di tab mana,
     padahal yang ia ketahui hanya namanya.

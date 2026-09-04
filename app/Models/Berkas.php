@@ -40,11 +40,11 @@ class Berkas extends Model
     }
 
     /**
-     * Penggolongan berkas (jenis `jenis_dokumen` pada referensi); NULL = tanpa golongan.
+     * Penggolongan berkas (jenis `jenis_dokumen` pada daftar pilihan); NULL = tanpa golongan.
      */
     public function jenisBerkas(): BelongsTo
     {
-        return $this->belongsTo(Referensi::class, 'jenis_berkas_id', 'id_referensi');
+        return $this->belongsTo(DaftarPilihan::class, 'jenis_berkas_id', 'id_daftar_pilihan');
     }
 
     /**

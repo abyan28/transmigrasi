@@ -1,23 +1,23 @@
 <?php
 
 /*
- * Task 3.1 -- DOMAIN 2 (Master Wilayah & SP) + `referensi` + `berkas`.
+ * Task 3.1 -- DOMAIN 2 (Master Wilayah & SP) + `daftar_pilihan` + `berkas`.
  *
- * `referensi` dan `berkas` ikut di batch ini sebab `satuan_permukiman.berkas_id`
- * -> `berkas` -> `referensi` (topological sort, bukan urutan file schema.sql).
+ * `daftar_pilihan` dan `berkas` ikut di batch ini sebab `satuan_permukiman.berkas_id`
+ * -> `berkas` -> `daftar_pilihan` (topological sort, bukan urutan file schema.sql).
  *
  * Berjalan di MySQL/MariaDB nyata. Kecocokan kolom/indeks/FK dijaga terpisah
  * oleh `php artisan sim:banding-skema`. Uji ini menjaga model & relasinya.
  */
 
-use App\Enums\JenisReferensi;
+use App\Enums\JenisDaftarPilihan;
 use App\Enums\PolaPermukiman;
 use App\Models\Berkas;
+use App\Models\DaftarPilihan;
 use App\Models\Desa;
 use App\Models\Kabupaten;
 use App\Models\KawasanTransmigrasi;
 use App\Models\Provinsi;
-use App\Models\Referensi;
 use App\Models\Role;
 use App\Models\RuteAksesibilitasSp;
 use App\Models\SatuanPermukiman;
@@ -32,7 +32,7 @@ require_once __DIR__.'/DatabaseHelpers.php';
 it('membuat kesepuluh tabel batch ini', function () {
     foreach ([
         'provinsi', 'kabupaten', 'kecamatan', 'desa', 'kawasan_transmigrasi',
-        'referensi', 'berkas', 'satuan_permukiman', 'user_satuan_permukiman',
+        'daftar_pilihan', 'berkas', 'satuan_permukiman', 'user_satuan_permukiman',
         'rute_aksesibilitas_sp',
     ] as $tabel) {
         expect(Schema::hasTable($tabel))->toBeTrue("tabel {$tabel} tidak dibuat");
@@ -44,7 +44,7 @@ it('memakai PK dan nama tabel bentuk tunggal', function () {
         ->and((new SatuanPermukiman)->getKeyName())->toBe('id_satuan_permukiman')
         ->and((new KawasanTransmigrasi)->getKeyName())->toBe('id_kawasan_transmigrasi')
         ->and((new RuteAksesibilitasSp)->getKeyName())->toBe('id_rute_aksesibilitas_sp')
-        ->and((new Referensi)->getKeyName())->toBe('id_referensi')
+        ->and((new DaftarPilihan)->getKeyName())->toBe('id_daftar_pilihan')
         ->and((new Berkas)->getKeyName())->toBe('id_berkas');
 });
 
@@ -74,22 +74,22 @@ it('menautkan penugasan SP dua arah lewat pivot user_satuan_permukiman', functio
         ->and($sp->petugas->pluck('id_user'))->toContain($user->id_user);
 });
 
-it('meng-cast ENUM keadaan wilayah SP dan jenis referensi', function () {
+it('meng-cast ENUM keadaan wilayah SP dan jenis daftar pilihan', function () {
     $sp = buatSp(['pola_permukiman' => PolaPermukiman::Linear->value, 'luas_lahan' => '12.50']);
-    $ref = Referensi::create(['jenis' => JenisReferensi::SumberDana->value, 'nilai' => 'APBN']);
+    $ref = DaftarPilihan::create(['jenis' => JenisDaftarPilihan::SumberDana->value, 'nilai' => 'APBN']);
 
     expect($sp->pola_permukiman)->toBe(PolaPermukiman::Linear)
         ->and($sp->luas_lahan)->toBe('12.50')
-        ->and($ref->jenis)->toBe(JenisReferensi::SumberDana)
+        ->and($ref->jenis)->toBe(JenisDaftarPilihan::SumberDana)
         ->and($ref->fresh()->is_aktif)->toBeTrue();
 });
 
-it('menegakkan self-FK referensi.bidang_id dan FK berkas ke referensi/user', function () {
-    $bidang = Referensi::create(['jenis' => JenisReferensi::BidangPengaduan->value, 'nilai' => 'Pertanian']);
-    $kategori = Referensi::create([
-        'jenis' => JenisReferensi::KategoriPengaduan->value, 'nilai' => 'Hama', 'bidang_id' => $bidang->id_referensi,
+it('menegakkan self-FK daftar_pilihan.bidang_id dan FK berkas ke daftar_pilihan/user', function () {
+    $bidang = DaftarPilihan::create(['jenis' => JenisDaftarPilihan::BidangPengaduan->value, 'nilai' => 'Pertanian']);
+    $kategori = DaftarPilihan::create([
+        'jenis' => JenisDaftarPilihan::KategoriPengaduan->value, 'nilai' => 'Hama', 'bidang_id' => $bidang->id_daftar_pilihan,
     ]);
-    expect($kategori->bidang->id_referensi)->toBe($bidang->id_referensi);
+    expect($kategori->bidang->id_daftar_pilihan)->toBe($bidang->id_daftar_pilihan);
 
     $user = User::factory()->create(['role_id' => Role::factory()->create()->id_role]);
     $berkas = Berkas::create([
@@ -99,9 +99,9 @@ it('menegakkan self-FK referensi.bidang_id dan FK berkas ke referensi/user', fun
     ]);
     expect($berkas->pengunggah->id_user)->toBe($user->id_user);
 
-    // bidang_id menunjuk referensi yang tak ada -> ditolak FK.
-    expect(fn () => Referensi::create([
-        'jenis' => JenisReferensi::KategoriPengaduan->value, 'nilai' => 'Palsu', 'bidang_id' => 999999,
+    // bidang_id menunjuk daftar pilihan yang tak ada -> ditolak FK.
+    expect(fn () => DaftarPilihan::create([
+        'jenis' => JenisDaftarPilihan::KategoriPengaduan->value, 'nilai' => 'Palsu', 'bidang_id' => 999999,
     ]))->toThrow(QueryException::class);
 });
 
@@ -117,10 +117,10 @@ it('menegakkan FK RESTRICT wilayah dan UNIQUE komposit', function () {
         ->toThrow(QueryException::class);
 });
 
-it('mengaktifkan soft delete pada kawasan & SP, tidak pada referensi & rute', function () {
+it('mengaktifkan soft delete pada kawasan & SP, tidak pada daftar pilihan & rute', function () {
     expect(in_array(SoftDeletes::class, class_uses_recursive(SatuanPermukiman::class), true))->toBeTrue()
         ->and(in_array(SoftDeletes::class, class_uses_recursive(KawasanTransmigrasi::class), true))->toBeTrue()
-        ->and(in_array(SoftDeletes::class, class_uses_recursive(Referensi::class), true))->toBeFalse()
+        ->and(in_array(SoftDeletes::class, class_uses_recursive(DaftarPilihan::class), true))->toBeFalse()
         ->and(in_array(SoftDeletes::class, class_uses_recursive(RuteAksesibilitasSp::class), true))->toBeFalse();
 
     $sp = buatSp();

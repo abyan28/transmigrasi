@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Schema;
  * Terjemahan `database/data/schema.sql` -- DOMAIN 4, tabel `komoditas`.
  *
  * `tipe` = VARCHAR REF(jenis=tipe_komoditas), bukan ENUM: nilainya dikelola
- * tabel `referensi`. `slug` = pengenal publik URL. Soft delete aktif.
+ * tabel `daftar_pilihan`. `slug` = pengenal publik URL. Soft delete aktif.
  */
 return new class extends Migration
 {
