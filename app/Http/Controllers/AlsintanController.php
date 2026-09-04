@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\AsalWakilPoktan;
 use App\Enums\JenisDaftarPilihan;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
 use App\Models\Alsintan;
 use App\Models\AlsintanDistribusi;
 use App\Support\DummyData;
+use App\Support\PenyajianAlsintan;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -255,74 +255,14 @@ class AlsintanController extends Controller
     /**
      * Larik ber-kunci PERSIS satu baris `DummyData::alsintan()` mapped.
      *
+     * Pemetaan dipindah ke `App\Support\PenyajianAlsintan` (Task 10.5) supaya
+     * halaman daftar/rincian dan Laporan Alsintan membaca satu sumber.
+     *
      * @return array<string, mixed>
      */
     private function baris(Alsintan $a): array
     {
-        $distribusi = $a->distribusi
-            ->sortBy('id_alsintan_distribusi')
-            ->map(fn (AlsintanDistribusi $d) => $this->barisDistribusi($d))
-            ->values();
-
-        $tersalur = (int) $distribusi->sum('jumlah');
-
-        $ringkasan = [];
-        foreach ($distribusi as $d) {
-            $ringkasan[$d['kondisi']] = ($ringkasan[$d['kondisi']] ?? 0) + $d['jumlah'];
-        }
-
-        return [
-            'id_alsintan' => $a->id_alsintan,
-            'jenis_alsintan' => $a->jenis_alsintan,
-            'nama_alat' => $a->nama_alat,
-            'jumlah_total' => (int) $a->jumlah_total,
-            'tahun_pengadaan' => $a->tahun_pengadaan === null ? null : (int) $a->tahun_pengadaan,
-            'sumber_dana' => $a->sumber_dana,
-            'keterangan' => $a->keterangan,
-            'distribusi' => $distribusi->all(),
-            'jumlah_tersalur' => $tersalur,
-            'jumlah_belum_tersalur' => max(0, (int) $a->jumlah_total - $tersalur),
-            'ringkasan_kondisi' => $ringkasan,
-            'poktan_penerima' => $distribusi->pluck('poktan')->filter()->unique()->values()->all(),
-            'foto' => $this->berkasNama($a, 'foto'),
-            'dokumen_pendukung' => $this->berkasNama($a, 'pendukung'),
-        ];
-    }
-
-    private function berkasNama(Alsintan $a, string $peran): ?string
-    {
-        return $a->berkas->firstWhere('pivot.peran', $peran)?->nama_file;
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function barisDistribusi(AlsintanDistribusi $d): array
-    {
-        $pt = $d->penandaTerima;
-
-        $penandaNama = null;
-        if ($pt !== null) {
-            $penandaNama = $pt->asal_wakil === AsalWakilPoktan::AnggotaKeluarga && $pt->anggotaKeluarga !== null
-                ? $pt->anggotaKeluarga->nama_lengkap
-                : $pt->transmigran?->nama_kepala_keluarga;
-        }
-
-        return [
-            'id_alsintan_distribusi' => $d->id_alsintan_distribusi,
-            'alsintan_id' => $d->alsintan_id,
-            'poktan_id' => $d->poktan_id,
-            'poktan' => $d->poktan?->nama,
-            'satuan_permukiman_id' => $d->poktan?->satuan_permukiman_id,
-            'satuan_permukiman' => $d->poktan?->satuanPermukiman?->nama,
-            'jumlah' => (int) $d->jumlah,
-            'kondisi' => $d->kondisi,
-            'penanda_terima_id' => $d->penanda_terima_id,
-            'penanda_terima' => $penandaNama,
-            'tanggal_serah' => $d->tanggal_serah?->toDateString(),
-            'foto' => $d->foto?->nama_file,
-            'keterangan' => $d->keterangan,
-        ];
+        return PenyajianAlsintan::baris($a);
     }
 
     /**

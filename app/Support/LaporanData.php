@@ -413,7 +413,7 @@ class LaporanData
 
         $baris = [];
 
-        foreach (DummyData::alsintan() as $a) {
+        foreach (PenyajianAlsintan::daftar() as $a) {
             foreach ($a['distribusi'] as $d) {
                 $pok = $poktan[$d['poktan_id']] ?? null;
 
