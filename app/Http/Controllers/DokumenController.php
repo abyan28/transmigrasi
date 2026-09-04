@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Support\PenyimpananDokumen;
+use App\Support\PetaModulBerkas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -11,8 +12,14 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  * Melayani pengunduhan dokumen dan foto yang tersimpan di disk privat.
  *
  * Berkas TIDAK boleh diakses langsung lewat URL publik, karena dokumen
- * kependudukan memuat data pribadi. Setiap permintaan wajib melewati
- * pemeriksaan hak akses lebih dulu (agents/rules.md bagian 14a poin 6).
+ * kependudukan memuat data pribadi. Setiap permintaan wajib melewati dua
+ * lapis pemeriksaan lebih dulu (agents/rules.md 14a poin 6):
+ *
+ * 1. **Kewenangan `lihat`** pada modul pemilik berkas (Task 3.3).
+ * 2. **Cakupan data** (Task 10.6): baris pemilik diambil lewat modelnya
+ *    sehingga global scope `CakupanDataSp` ikut berlaku -- operator Per SP
+ *    tidak dapat membuka berkas SP di luar penugasannya. Peta modul->model
+ *    ada di `App\Support\PetaModulBerkas`.
  */
 class DokumenController extends Controller
 {
@@ -44,13 +51,17 @@ class DokumenController extends Controller
 
         // Kewenangan `lihat` pada modul pemilik berkas (Task 3.3). Diperiksa di
         // sini, bukan lewat middleware `izin:`, sebab modulnya berupa parameter
-        // rute yang dinamis. Cakupan data (operator SP tak boleh membuka
-        // dokumen SP lain) menyusul Task 3.4.
+        // rute yang dinamis.
         abort_unless(
             $request->user()?->punyaAksi($modul, 'lihat') === true,
             403,
             'Anda tidak memiliki kewenangan membuka dokumen ini.',
         );
+
+        // Cakupan data (Task 10.6): baris pemilik diambil lewat modelnya
+        // sehingga scope `CakupanDataSp` ikut berlaku. Di luar cakupan -> 404,
+        // tak dapat dibedakan dari berkas yang memang tidak ada.
+        abort_unless(PetaModulBerkas::pemilikTerlihat($modul, $id), 404, 'Dokumen tidak ditemukan.');
 
         return Storage::disk(PenyimpananDokumen::DISK)->response($path);
     }

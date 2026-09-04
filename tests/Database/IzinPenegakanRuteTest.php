@@ -10,8 +10,15 @@
 
 use App\Models\Permission;
 use App\Models\Role;
+use App\Models\Transmigran;
 use App\Models\User;
+use App\Support\PenyimpananDokumen;
+use Database\Seeders\KawasanSeeder;
 use Database\Seeders\PermissionRoleSeeder;
+use Database\Seeders\SpSeeder;
+use Database\Seeders\TransmigranSeeder;
+use Database\Seeders\WilayahSeeder;
+use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
     $this->seed(PermissionRoleSeeder::class);
@@ -93,4 +100,35 @@ it('memeriksa kewenangan lihat modul pada unduhan dokumen privat', function () {
     // (juga 404 bila berkas tak ada; yang penting bukan 200.)
     expect($this->actingAs($tanpaRole)->get('/dokumen/transmigran/1/x.pdf')->status())
         ->toBeIn([403, 404]);
+});
+
+it('menahan unduhan dokumen di luar cakupan data operator Per SP (Task 10.6)', function () {
+    Storage::fake('local');
+
+    $this->seed(WilayahSeeder::class);
+    $this->seed(KawasanSeeder::class);
+    $this->seed(SpSeeder::class);
+    $this->seed(TransmigranSeeder::class);
+
+    // Transmigran 1 (DummyData) berada di SP 1.
+    $transmigran = Transmigran::withoutGlobalScopes()->findOrFail(1);
+    expect($transmigran->satuan_permukiman_id)->toBe(1);
+
+    $folder = PenyimpananDokumen::folder('transmigran', 1);
+    Storage::disk('local')->put($folder.'/KK.pdf', '%PDF-1.4 contoh');
+
+    $ditugaskanSp1 = User::factory()->create(['role_id' => 4]);
+    $ditugaskanSp1->satuanPermukiman()->attach(1);
+
+    $ditugaskanSp2 = User::factory()->create(['role_id' => 4]);
+    $ditugaskanSp2->satuanPermukiman()->attach(2);
+
+    $url = '/dokumen/transmigran/1/KK.pdf';
+
+    // Operator SP 1: berkas milik SP-nya -> boleh.
+    $this->actingAs($ditugaskanSp1)->get($url)->assertOk();
+
+    // Operator SP 2: berkas di luar cakupan -> 404 (bukan 403, tak dibedakan
+    // dari berkas yang memang tidak ada).
+    $this->actingAs($ditugaskanSp2)->get($url)->assertNotFound();
 });
