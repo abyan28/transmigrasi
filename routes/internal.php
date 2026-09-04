@@ -33,6 +33,7 @@ use App\Http\Controllers\PengaturanRoleController;
 use App\Http\Controllers\PenilaianKondisiController;
 use App\Http\Controllers\ProfilController;
 use App\Http\Controllers\SpController;
+use App\Http\Controllers\TransmigranController;
 use App\Http\Controllers\WilayahController;
 use App\Support\DummyData;
 use App\Support\LaporanData;
@@ -385,145 +386,13 @@ Route::post('/sp/fasilitas', [FasilitasSpController::class, 'simpan'])->name('fa
 | tanpa menyisakan tombol mati (ANTISLOP-ID R-26).
 |
 */
-Route::get('/transmigran', function () {
-    $semua = DummyData::transmigran();
+// Task 5.1: jalur BACA pindah ke controller + Eloquent. `data` transmigran dan
+// `anggotaKeluarga` kini dari basis data; rumah/lahan/berkas/riwayat suksesi/
+// data poktan pada rincian masih `DummyData` sampai Task 5.2/5.3/6.
+Route::get('/transmigran', [TransmigranController::class, 'index'])->name('transmigran.index');
 
-    // Penyaringan dan pencarian dibaca dari query string agar hasilnya
-    // bertahan setelah halaman dimuat ulang.
-    $cari = trim((string) request('cari', ''));
-    $filterSp = request('sp');
-    $filterTinggal = request('status_tinggal');
-
-    $baris = array_values(array_filter($semua, function ($t) use ($cari, $filterSp, $filterTinggal) {
-        if ($cari !== '') {
-            $cocok = str_contains(mb_strtolower($t['nama_kepala_keluarga']), mb_strtolower($cari))
-                || str_contains($t['nik'], $cari)
-                || str_contains($t['no_kk'], $cari);
-
-            if (! $cocok) {
-                return false;
-            }
-        }
-
-        if ($filterSp && (string) $t['satuan_permukiman_id'] !== (string) $filterSp) {
-            return false;
-        }
-
-        if ($filterTinggal && $t['status_tinggal'] !== $filterTinggal) {
-            return false;
-        }
-
-        return true;
-    }));
-
-    return view('pages.transmigran.index', [
-        'title' => 'Data Transmigran',
-        'semua' => $semua,
-        'baris' => $baris,
-        'cari' => $cari,
-        'filterSp' => $filterSp,
-        'filterTinggal' => $filterTinggal,
-        'adaFilter' => $cari !== '' || $filterSp || $filterTinggal,
-        'daftarSp' => DummyData::satuanPermukiman(),
-    ]);
-})->name('transmigran.index');
-
-Route::get('/transmigran/{id}', function (int $id) {
-    $data = collect(DummyData::transmigran())->firstWhere('id_transmigran', $id);
-
-    abort_if($data === null, 404);
-
-    $anggotaPoktan = DummyData::anggotaPoktan();
-
-    // Lahan dibaca lewat id, bukan mencocokkan nama: dua kepala keluarga
-    // dapat bernama sama, dan pencocokan nama akan menautkan bidang milik
-    // orang lain ke halaman ini tanpa ada yang menyadarinya.
-    $lahan = array_values(array_filter(
-        DummyData::lahan(),
-        fn ($l) => $l['transmigran_id'] === $data['id_transmigran']
-    ));
-
-    return view('pages.transmigran.detail', [
-        'title' => $data['nama_kepala_keluarga'],
-        'data' => $data,
-
-        // Dibaca lewat id sejak 2026-09-02, sejalan dengan lahan dan riwayat
-        // penghunian. Penyaringan menurut nama sebelumnya putus diam-diam
-        // begitu suksesi mengganti nama kepala keluarga (rules.md 6.5).
-        'rumah' => collect(DummyData::rumah())
-            ->firstWhere('transmigran_id', $data['id_transmigran']),
-
-        'lahan' => $lahan,
-        // Satu baris per KK (Putaran 15): total luas keluarga adalah jumlah
-        // kolom pekarangan dan usaha, bukan jumlah baris.
-        'totalLuas' => array_sum(array_map(
-            fn ($l) => (float) ($l['luas_pekarangan'] ?? 0) + (float) ($l['luas_usaha'] ?? 0),
-            $lahan
-        )),
-
-        // Dipisah per peran, sebab KTP, KK, dan SK penempatan adalah dokumen
-        // yang berbeda dan tidak boleh saling menimpa (rules.md 14a.8b).
-        'berkasKtp' => DummyData::berkasMilik('transmigran_berkas', 'transmigran_id', $data['id_transmigran'], 'ktp'),
-        'berkasKk' => DummyData::berkasMilik('transmigran_berkas', 'transmigran_id', $data['id_transmigran'], 'kk'),
-        'berkasSk' => DummyData::berkasMilik('transmigran_berkas', 'transmigran_id', $data['id_transmigran'], 'sk'),
-
-        // Seluruh berkas keluarga tanpa saringan peran, untuk panel Dokumen.
-        // Termasuk SHM, yang tidak punya isian unggah tersendiri di form.
-        'berkasKeluarga' => DummyData::berkasMilik('transmigran_berkas', 'transmigran_id', $data['id_transmigran']),
-
-        // Anggota keluarga selain kepala keluarga (Rombongan B, 2026-08-28).
-        // Dibaca lewat id, sejalan dengan lahan.
-        'anggotaKeluarga' => array_values(array_filter(
-            DummyData::anggotaKeluarga(),
-            fn ($a) => $a['transmigran_id'] === $data['id_transmigran']
-        )),
-
-        /*
-         * TAB HASIL PANEN DICABUT 2026-08-22.
-         *
-         * Panen kini dicatat per POKTAN, bukan per orang, sehingga tidak ada
-         * lagi cara yang sahih menyaringnya bagi satu keluarga. Digantikan
-         * tautan ke poktan tempat keluarga ini bernaung.
-         */
-        'poktanBernaung' => array_values(array_filter(
-            $anggotaPoktan,
-            fn ($a) => $a['transmigran_id'] === $data['id_transmigran']
-                && $a['status'] === 'Aktif'
-        )),
-
-        // Peta poktan ke SP-nya. Mencarinya di dalam perulangan berarti
-        // menyusuri seluruh daftar poktan untuk tiap baris.
-        'spPoktan' => collect(DummyData::poktan())
-            ->pluck('satuan_permukiman', 'id_poktan')
-            ->all(),
-
-        // Riwayat suksesi kepala keluarga. Satu baris transmigran adalah satu
-        // RUMAH TANGGA, sehingga pergantian kepalanya menyunting baris ini dan
-        // peristiwanya direkam terpisah (rules.md 6 poin 5).
-        'riwayatKk' => DummyData::riwayatKepalaKeluarga($data['id_transmigran']),
-
-        // Calon pengganti kepala keluarga: anggota keluarga yang ada. Dipilih
-        // dari sini pada modal suksesi, tidak diketik (Stage B3, 2026-08-28).
-        'calonPengganti' => DummyData::calonPenggantiKk($data['id_transmigran']),
-
-        // Jabatan ketua poktan TIDAK diwariskan. Bila keluarga ini menjabat
-        // ketua lewat jalur Kepala Keluarga, petugas wajib memutuskan nasib
-        // jabatannya saat suksesi (rules.md 6 poin 5e).
-        'poktanDiketuai' => DummyData::poktanDiketuaiKeluarga($data['id_transmigran']),
-
-        // Keanggotaan poktan justru MENGIKUTI, sebab melekat pada keluarga
-        // (rules.md 7a poin 3a). Petugas cukup diberi tahu, tidak diminta
-        // memutuskan. Hanya wakil berjalur Kepala Keluarga yang ikut berganti.
-        'keanggotaanIkut' => array_values(array_filter(
-            $anggotaPoktan,
-            fn ($a) => $a['transmigran_id'] === $data['id_transmigran']
-                && $a['asal_wakil'] === AsalWakilPoktan::KepalaKeluarga->value
-                && $a['status'] !== 'Sudah Keluar'
-        )),
-
-        'inisial' => DummyData::inisial($data['nama_kepala_keluarga']),
-    ]);
-})->where('id', '[0-9]+')->name('transmigran.detail');
+Route::get('/transmigran/{id}', [TransmigranController::class, 'detail'])
+    ->where('id', '[0-9]+')->name('transmigran.detail');
 
 Route::post('/transmigran', function () {
     // Tahap 5: validasi lewat ValidationRules, simpan, catat audit log.

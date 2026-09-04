@@ -1,7 +1,7 @@
 # tasklist.md
 ## Daftar Tugas — Sistem Informasi Digitalisasi Monitoring Pertanian dan Tata Kelola Data Kawasan Transmigrasi Kobalima Timur
 
-**Progress: 88%**
+**Progress: 89%**
 *(Tahap 0 selesai 8 task. **Tahap 1 SELESAI** 12 task. **TAHAP 2 SELESAI SELURUHNYA.** Gelombang 1 dan 2 tuntas, 32 halaman berdiri. **Delivery Gate kedua gelombang sudah dijalankan** dan laporannya lengkap (`delivery-gate-gelombang-1.md` dan `-2.md`). Dua hal ditunda beralasan, bukan lolos diam-diam: keadaan memuat dan galat menunggu backend Tahap 3, dan pemeriksaan 360px pada perangkat nyata menunggu manusia. Siap masuk checkpoint validasi bersama tim dan dinas, lalu Tahap 3.)*
 
 Acuan: `prd.md`, `rules.md`, `workflow.md`, `ui-spec.md`, `erd.md`, `data-dictionary.md`, `notes.md`.
@@ -1258,10 +1258,11 @@ menghapus sisa terakhir `DummyData::penggunaSaatIni()` -- dikerjakan berbarengan
 
 ## Tahap 5 — Backend Kependudukan
 
-- [ ] Task 5.1 - Peralihan transmigran + `anggota_keluarga` ke Eloquent `[Sedang]`
+- [✓] Task 5.1 - Peralihan transmigran + `anggota_keluarga` ke Eloquent `[Sedang]` ✅ SELESAI 2026-09-04
   * Migration & model `Transmigran`/`AnggotaKeluarga` **sudah ada** (Task 3.1 B5), `uuid` sebagai `getRouteKeyName()` sudah terpasang sejak commit pertamanya
   * `no_kk` UNIQUE, `nik` UNIQUE. **`jumlah_anggota_keluarga` BUKAN kolom** (dicabut Rombongan B) -- diturunkan: 1 + `COUNT(anggota_keluarga)`. `usia` juga diturunkan dari `tanggal_lahir`
   * `status_sertifikat` (enum `StatusSertifikat`) adalah kolom di sini, tetapi isiannya lewat form LAHAN (`rules.md` 7.6a)
+  * HASIL: `TransmigranController` (index + detail; private `daftar()`/`baris()`/`barisAnggota()` -> larik ber-kunci PERSIS `DummyData::transmigran()`/`anggotaKeluarga()`). `TransmigranSeeder` (transmigran `firstOrNew`+`uuid ??=` supaya uuid stabil; anggota `updateOrCreate`) didaftarkan di `DataMasterSeeder` + `DatabaseSeeder` setelah `BerkasSeeder`. 2 closure `routes/internal.php` -> controller (nama + `->where('id','[0-9]+')` tetap). **Lingkup minimal**: rute tulis + `rumah`/`lahan`/`berkas*`/`riwayatKk`/`calonPengganti`/data poktan pada rincian MASIH `DummyData` (pindah Task 5.2/5.3/6). `ViewServiceProvider` tak disentuh. `tests/Database/TransmigranTest.php` +8. Verifikasi: Feature 732, Database 303, pint bersih, banding-skema NOL SELISIH, tautan-statis 14
 - [ ] Task 5.2 - CRUD transmigran + unggah KTP/KK/SK terpisah `[Sulit]`
   * Bukan satu kolom `dokumen_pendukung` (dicabut Putaran 12). KTP, KK, SK penempatan adalah tiga peran berkas terpisah pada `transmigran_berkas`; SHM peran `shm` diunggah dari form lahan
 - [ ] Task 5.3 - CRUD rumah dan kondisi hunian + foto dan koordinat `[Sedang]`

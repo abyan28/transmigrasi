@@ -1,3 +1,79 @@
+# Tahap 5 - Backend Kependudukan (mulai 2026-09-04)
+
+Riset 2 agen Explore (Tahap-4 peralihan + modul transmigran) sudah dirangkum.
+Kerja per subtask, commit bersih tiap subtask. `main` pada `ec42345`.
+
+## Rencana keseluruhan Tahap 5
+
+- **5.1 Peralihan transmigran + anggota_keluarga ke Eloquent** `[Sedang]` -- ✅ SELESAI (commit di bawah)
+- **5.2 CRUD transmigran + unggah KTP/KK/SK terpisah** `[Sulit]` (termasuk suksesi
+  KK + catat-peristiwa anggota; pindahkan `riwayatKk`/`calonPengganti`/`berkas*`
+  detail ke Eloquent di sini)
+- **5.3 CRUD rumah + kondisi hunian + foto & koordinat** `[Sedang]` (peralihan
+  rumah, `daftarTransmigran`/`transmigranTanpaRumah` composer -> Eloquent)
+- **5.4 Riwayat penghunian rumah** `[Sedang]`
+- **5.5 Rekap kependudukan kawasan** `[Sedang]` (agregat kawasan ~1140 KK -
+  `DummyData::rekap*` masih sintetis; ganti GROUP BY nyata atau pertahankan)
+
+## Task 5.1 - rencana rinci
+
+Lingkup MINIMAL sesuai judul task: hanya jalur BACA `transmigran.index` +
+`transmigran.detail` pindah ke controller + Eloquent. Rute tulis TETAP closure
+(itu 5.2). `ViewServiceProvider` TIDAK disentuh (composer `pages.transmigran.form`
+`daftarSp` dst. tetap DummyData - sama seperti preseden Tahap 4
+`InfrastrukturController`).
+
+Yang jadi Eloquent di 5.1: `data` (transmigran) + `anggotaKeluarga`.
+Yang TETAP DummyData di 5.1 (pindah 5.2/5.3/6): `rumah`, `lahan`, `totalLuas`,
+`berkasKtp/Kk/Sk/Keluarga`, `poktanBernaung`, `spPoktan`, `riwayatKk`,
+`calonPengganti`, `poktanDiketuai`, `keanggotaanIkut`. Seeder membuat baris
+identik dgn DummyData -> tak ada selisih tampilan / uji.
+
+Berkas:
+1. `app/Http/Controllers/TransmigranController.php` baru - `index(Request)` +
+   `detail(int $id)`. Private `daftar()` (`Transmigran::query()->with('satuanPermukiman',
+   'anggotaKeluarga')->orderBy('id_transmigran')->get()->map(baris)`), `baris(Transmigran)`
+   -> larik BER-KUNCI PERSIS `DummyData::transmigran()` (enum -> `->value`,
+   `tanggal_lahir` -> `toDateString()`, `pendapatan_per_bulan`/`tahun_kedatangan`
+   -> int, +`satuan_permukiman` nama, +`jumlah_anggota_keluarga` = 1 + cacah
+   anggota Aktif). `barisAnggota(AnggotaKeluarga)` -> larik ber-kunci persis
+   `DummyData::anggotaKeluarga()` (18 kunci termasuk `status`/`tanggal_peristiwa`/
+   `keterangan_peristiwa`). Filter index di PHP (cari nama/nik/no_kk, sp,
+   status_tinggal) - sama persis closure. detail: `findOrFail`, `anggotaKeluarga`
+   `orderBy('id_anggota_keluarga')`; sisanya tetap `DummyData::*`.
+2. `database/seeders/TransmigranSeeder.php` baru - `foreach DummyData::transmigran()`
+   `firstOrNew(['id_transmigran'=>id])` + `uuid ??= Str::uuid()` + fill; lalu
+   `foreach DummyData::anggotaKeluarga()` `AnggotaKeluarga::updateOrCreate(
+   ['id_anggota_keluarga'=>id], [...])`. Daftarkan di `DataMasterSeeder` +
+   `DatabaseSeeder` SETELAH `SpSeeder` (FK `satuan_permukiman_id`) dan setelah
+   `WilayahSeeder` (FK `daerah_asal_kabupaten_id` -> kabupaten BPS id).
+3. `routes/internal.php` - `use App\Http\Controllers\TransmigranController;`
+   + ubah 2 closure `transmigran.index`/`transmigran.detail` jadi
+   `[TransmigranController::class, 'index'|'detail']`. `->where('id','[0-9]+')`
+   pada detail TETAP. Nama rute tetap -> `izin:`/`throttle:` tetap otomatis.
+   5 closure tulis TIDAK disentuh.
+4. `tests/Database/TransmigranTest.php` baru - pola `InfrastrukturTest`:
+   seed Wilayah+Kawasan+Sp+`TransmigranSeeder`; uji: (a) `Transmigran::count()===8`
+   + `AnggotaKeluarga::count()` cocok; (b) `GET transmigran.index` assertOk +
+   assertSee tiap `nama_kepala_keluarga`; (c) filter `?sp=2` -> PETRUS, bukan
+   YOHANES; (d) `GET transmigran.detail 1` assertSee anggota + `no_kk`;
+   (e) 404 utk id 99; (f) `jumlah_anggota_keluarga` turunan cocok dgn DummyData.
+5. Verifikasi: `pest --testsuite=Feature` (HalamanTest modul transmigran +
+   Rombongan B hijau) & `--testsuite=Database` hijau; `sim:banding-skema
+   --lengkap` NOL SELISIH; `pint --dirty` bersih; `sim:tautan-statis` 14.
+6. tasklist 5.1 `[✓]` + HASIL; Progress %.
+
+### HASIL Task 5.1 (2026-09-04)
+Selesai sesuai rencana minimal. Berkas: `TransmigranController` (baru),
+`TransmigranSeeder` (baru, didaftar `DataMasterSeeder`+`DatabaseSeeder`),
+`routes/internal.php` (2 closure -> controller + import),
+`tests/Database/TransmigranTest.php` (baru, 8 uji). Verifikasi: Feature **732**,
+Database **303** (+8), `pint --dirty` bersih, `sim:banding-skema --lengkap` NOL
+SELISIH, `sim:tautan-statis` **14**. Uji lama tak ada yang pecah (seeder
+membuat baris identik dengan `DummyData`). Belum di-push (push diblokir harness).
+
+---
+
 # Tahap 3 susulan: Task 3.14 + matikan pemicu deploy.yml + rapikan pint (2026-09-04)
 
 Lanjutan dari dua AI yang berhenti di tengah. Riset agen ke-2 diverifikasi
