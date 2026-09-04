@@ -1517,19 +1517,46 @@ menghapus sisa terakhir `DummyData::penggunaSaatIni()` -- dikerjakan berbarengan
 
 ## Tahap 9 — Dashboard dengan Data Nyata
 
-> **9.1-9.4 DITUNDA (keputusan pemilik 2026-09-04):** dashboard & rekap kependudukan
-> WAJIB berskala kawasan (~1140 KK, 3250 ha, 1847 ton/thn per `rules.md` 8g), tetapi
-> sistem hanya melacak 8 KK contoh -- menjumlahkan tabel transaksi menghasilkan angka
-> absurd dan dilarang. Butuh tabel `statistik_kawasan_tahunan` (input dinas) lebih
-> dulu; keputusannya "kerjakan yang lain (9.6, 10.5) dulu". Bagian yang MEMANG
-> terlacak (pengaduan, infrastruktur, penilaian SP, komoditas) tetap dari Eloquent
-> saat konversi kelak.
+> **9.1 SELESAI, 9.2-9.4 menyusul (keputusan pemilik 2026-09-04, `rules.md` 8g
+> DIBALIK):** ketakutan sesi sebelumnya (dashboard "wajib" berskala kawasan
+> ~1140 KK tetap, sistem cuma melacak 8 KK contoh -> perlu tabel
+> `statistik_kawasan_tahunan`) SALAH PREMIS -- ditantang pemilik proyek: `prd.md`
+> §7.8 justru minta grafik "tiap tahun", artinya dashboard SEHARUSNYA tumbuh
+> mengikuti data yang benar-benar tercatat, bukan angka kawasan tetap. Basis
+> data kecil sekarang itu jujur (pendataan sungguhan belum berjalan), bukan
+> alasan memalsukan skala. Lihat `rules.md` 8g untuk redaksi lengkap pembalikan.
 
-- [ ] Task 9.1 - Ganti data dummy dashboard dengan query nyata `[Sulit]` `[DITUNDA -- butuh tabel statistik kawasan]`
-  * **Lima agregat produksi wajib ikut diganti**, ditambahkan 2026-08-24 sebagai indikator 17: `realisasi_tanam_ha`, `hasil_panen_ha`, `puso_ha`, `belum_dipanen_ha`, `produktivitas_ton_ha`
-  * **IKUT: `/kependudukan/rekap`** (`KependudukanController`, Task 5.5 hanya peralihan struktural). Angka agregatnya masih `DummyData::rekap*` berskala kawasan; `perSp` butuh lahan (Tahap 6). Uji `HalamanTest` kependudukan mengunci angka sintetis -> perlu ditulis ulang saat konversi
-  * Kedua identitas pada `rules.md` 9.9 dan 9.11 wajib tetap berlaku setelah diganti kueri, dan sudah dijaga uji. Produktivitas **tertimbang** (9.8d), bukan rata-rata kolom
-  * Angka agregat sekarang berskala kawasan, **bukan** penjumlahan `penanaman()` yang hanya beberapa baris contoh (`rules.md` 9.8g)
+- [✓] Task 9.1 - Ganti data dummy dashboard dengan query nyata `[Sulit]` -- ✅ **SELESAI 2026-09-04**
+  * **HASIL:** `App\Support\RekapDashboard` (baru) mengumpulkan seluruh 17 indikator
+    dashboard dari Eloquent nyata: `ringkasan()`, `deret()`, `pendapatanSaatIni()`,
+    `perSp()`, `perTahun()`, `pekerjaanPerTahun()`, `penghuniPerTahun()`,
+    `daerahAsalPerTahun()`, `pendidikanPerTahun()` (zero-fill enum tertutup),
+    `sebaranPekerjaan()`, `rekapPenghuni()`, `sebaranKomoditas()`,
+    `statusInfrastruktur()`, `komoditasUtama()`. Panen/harga dipakai ulang dari
+    `App\Support\RekapPanen` (Task 7); pengaduan dari `App\Support\RekapPengaduan`
+    (Task 8.6) -- tidak ditulis ulang.
+  * **Dua celah nyata yang bukan sekadar "hitung dari Eloquent", disetujui pemilik:**
+    (1) **KK Keluar per tahun** -- kolom baru `transmigran.tahun_keluar` (YEAR
+    NULL), wajib terisi saat `status_tinggal` disunting ke Pindah Penduduk/Tidak
+    Aktif (form `x-show` bersyarat, validasi `required_if`, dipaksa `null` balik
+    saat kembali Aktif), dikosongkan otomatis di seed/ImporEngine/SkemaImpor juga.
+    (2) **Pendapatan "tiap tahun"** -- tidak ada riwayatnya (`pendapatan_per_bulan`
+    keadaan-sekarang, ditimpa tiap disunting); diganti kartu keadaan-sekarang
+    `pendapatanSaatIni()`, bukan dipaksa jadi tren yang datanya tak pernah ada.
+  * **Taksiran kumulatif** (bukan snapshot sungguhan): `deret()`'s jumlah KK/jiwa/
+    petani per tahun dihitung `WHERE tahun_kedatangan <= tahun AND (tahun_keluar
+    IS NULL OR tahun_keluar > tahun)` dari tabel keadaan-sekarang -- ditandai jelas
+    sebagai taksiran, bukan riwayat. Volume panen & harga per tahun (`RekapPanen`)
+    genuinely historis (baris bertanggal per transaksi), bukan taksiran.
+  * **IKUT: `/kependudukan/rekap`** (`KependudukanController`) -- sumber datanya
+    kini `RekapDashboard` juga; kolom "Pendapatan Rata-rata" per tahun dihapus dari
+    tabel (sama alasan kartu dashboard). `HalamanTest` ditulis ulang mengikuti
+    angka nyata dari `DataMasterSeeder`, bukan larik tetap.
+  * Kedua identitas pada `rules.md` 9.9 dan 9.11 tetap berlaku dan dijaga uji baru
+    `tests/Database/RekapDashboardTest.php` (MySQL nyata, termasuk render penuh
+    tanpa galat `ONLY_FULL_GROUP_BY`). Produktivitas tetap **tertimbang** (9.8d).
+  * **Kemenangan cepat yang dikerjakan bersamaan:** pengaduan-per-status
+    (`RekapPengaduan`) dan status infrastruktur disambung ke dashboard.
 - [ ] Task 9.2 - Filter wilayah dan periode terhubung ke seluruh visualisasi `[Sedang]`
 - [ ] Task 9.3 - Drill-down klik grafik menuju rincian per SP `[Sulit]`
 - [ ] Task 9.4 - Optimasi query dashboard (indeks, agregasi, eager loading) `[Sulit]`

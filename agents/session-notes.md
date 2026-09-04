@@ -1,3 +1,63 @@
+# Task 9.1 SELESAI - Dashboard & kependudukan dari data nyata, rules.md 8g dibalik (2026-09-04)
+
+**Keputusan pemilik proyek 2026-09-04:** sesi sebelumnya menunda Task 9.1
+dengan alasan `rules.md` 8g (dashboard "wajib" berskala kawasan tetap
+~1140 KK, sementara sistem hanya melacak 8 KK contoh). Pemilik menantang
+premis itu: `prd.md` §7.8 minta grafik "tiap tahun" -- dashboard SEHARUSNYA
+tumbuh mengikuti data sungguhan, bukan angka kawasan tetap. **`rules.md` 8g
+DIBALIK** -- lihat redaksi lengkap di `rules.md` 8g (ditandai `DIBALIK
+2026-09-04`).
+
+## Audit cakupan (17 indikator dashboard) -- 2 celah nyata ditemukan
+
+Diminta pemilik: "Coba cek apakah ada grafik/visual data yg gak tercover
+dari tabel eloquent yg sudah ada?" 15/17 langsung terhitung dari tabel yang
+sudah ada. Dua celah nyata (bukan sekadar "data belum banyak"), keduanya
+sudah diputuskan pemilik:
+
+- **KK Keluar per tahun** -- `status_tinggal` tak menyimpan kapan berubah.
+  **Solusi (pilihan pemilik):** kolom baru `transmigran.tahun_keluar` (YEAR
+  NULL), field bersyarat pada form (`x-show` muncul begitu Status Tinggal
+  disunting ke Pindah Penduduk/Tidak Aktif), `required_if` di controller +
+  ImporEngine, dipaksa `null` balik saat status disunting balik ke Aktif.
+- **Pendapatan "tiap tahun"** -- `pendapatan_per_bulan` cuma keadaan
+  sekarang tanpa riwayat (ditimpa tiap disunting). **Solusi (pilihan
+  pemilik, "Ganti jadi sebaran saat ini"):** kartu keadaan-sekarang
+  `RekapDashboard::pendapatanSaatIni()` menggantikan grafik tren tahunan.
+
+## `App\Support\RekapDashboard` (baru)
+
+Satu kelas mengumpulkan seluruh indikator dashboard + `/kependudukan/rekap`
+dari Eloquent: `ringkasan()`, `deret()`, `pendapatanSaatIni()`, `perSp()`,
+`perTahun()`, `pekerjaanPerTahun()`, `penghuniPerTahun()`,
+`daerahAsalPerTahun()`, `pendidikanPerTahun()` (zero-fill 8 kategori
+tertutup -- "tidak ada lulusan S3" adalah informasi, bukan ketiadaan data),
+`sebaranPekerjaan()`, `rekapPenghuni()`, `sebaranKomoditas()`,
+`statusInfrastruktur()`, `komoditasUtama()`. Panen/harga dipakai ulang dari
+`RekapPanen` (Task 7); pengaduan dari `RekapPengaduan` (Task 8.6) -- tidak
+ditulis ulang, "kemenangan cepat" yang disepakati dikerjakan bersamaan.
+
+**Taksiran kumulatif** (bukan snapshot sungguhan): karena `transmigran`
+adalah tabel keadaan-sekarang, jumlah KK/jiwa/petani per tahun pada
+`deret()` ditaksir `WHERE tahun_kedatangan <= tahun AND (tahun_keluar IS
+NULL OR tahun_keluar > tahun)` -- ditandai jelas sebagai taksiran di kode
+dan dokumentasi. Volume panen & harga per tahun genuinely historis (baris
+`hasil_panen.periode_panen`/`penanaman.periode_tanam` bertanggal per
+transaksi), bukan taksiran.
+
+Identitas `rules.md` 9.9 (`realisasi_tanam = hasil_panen + puso +
+belum_dipanen`) dan 9.11 tetap dijaga uji baru
+`tests/Database/RekapDashboardTest.php` (MySQL nyata, termasuk render penuh
+dashboard + 6 kelompok rekap kependudukan tanpa galat `ONLY_FULL_GROUP_BY`).
+
+## Verifikasi
+
+Feature 734 hijau, Database 444 hijau (termasuk 5 uji baru
+`RekapDashboardTest`), pint bersih, `sim:banding-skema --lengkap` NOL
+SELISIH (kolom `tahun_keluar` baru), `sim:tautan-statis` tetap 14.
+
+---
+
 # Task 10.6 + Task 10.4 (8/14) SELESAI - Berkas privat + mesin impor CSV (2026-09-04)
 
 **Keputusan pemilik proyek 2026-09-04:** Task 10.1-10.3 (export laporan
