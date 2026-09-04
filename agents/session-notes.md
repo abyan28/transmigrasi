@@ -1,3 +1,33 @@
+# Task 10.5 (5/7) SELESAI - Laporan dari Eloquent (2026-09-04)
+
+Lima laporan transaksi kini sepenuhnya ber-Eloquent (bukan DummyData):
+`transmigran`, `poktan`, `alsintan`, `saprotan`, `hasil-panen`.
+
+- Pola: tiap controller (Poktan/Alsintan/Saprotan/Penanaman/HasilPanen) sudah
+  punya metode privat `baris()` "larik ber-kunci PERSIS DummyData::x() mapped".
+  Dipindah ke `App\Support\Penyajian{Poktan,Alsintan,Saprotan,Panen}` sebagai
+  static, dipakai BERSAMA halaman daftar/rincian + LaporanData. Controller
+  `baris()` jadi delegasi tipis; `daftar()`/`index()` controller TETAP query
+  sendiri (list page ikut cakupan data), laporan pakai `Penyajian*::daftar()`
+  yang `withoutGlobalScopes()` (laporan = kawasan penuh).
+- PenyajianSaprotan punya `distribusi()` (daftar DATAR, kunci persis
+  `DummyData::saprotanDistribusi()`) selain `daftar()`/`baris()`.
+- `LaporanData`: petaSp (desa.kecamatan Eloquent), petaPoktan, petaPenanaman,
+  petaSaprotan(Distribusi), anggotaAktifPerPoktan, transmigran(), poktan(),
+  alsintan(), saprotan(), hasilPanen() -> Penyajian*. Helper baru
+  `luasTotalPoktan()` (RekapPoktan::kekuatan) ganti DummyData::rekapLahanPoktan.
+  `DummyData::keTon` -> `KonversiPanen::keTon`.
+- **TERBLOKIR:** `indikator-kawasan` + `monografi-sp` -- agregat kawasan
+  (`rules.md` 8g) + demografi contoh turunan tanpa tabel. Sama dengan Tahap
+  9.1-9.4; butuh `statistik_kawasan_tahunan`.
+- **Sisa kecil:** `filterLaporan()` opsi tahun/dimensi masih DummyData (konten
+  laporan sudah Eloquent).
+- Verifikasi: Feature 732 hijau; Database Poktan/Alsintan/Saprotan/HasilPanen/
+  Penanaman/RekapPanen 55 hijau; pint bersih. Commit aa5faa3 / 575a1d4 /
+  275fedb / 17ec2e8.
+
+--- arsip ---
+
 # Task 9.6 SELESAI - Backend CMS (2026-09-04)
 
 - Tabel `pengaturan` (kunci VARCHAR(100) PK, nilai TEXT NULL, tipe, timestamps) --

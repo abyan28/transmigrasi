@@ -1564,11 +1564,30 @@ menghapus sisa terakhir `DummyData::penggunaSaatIni()` -- dikerjakan berbarengan
 
 ## Tahap 10 - Laporan dan Export
 
-- [ ] Task 10.5 - Isi 7 laporan dari Eloquent `[Sulit]` (BARU 2026-09-03)
+- [✓] Task 10.5 - Isi 7 laporan dari Eloquent `[Sulit]` (BARU 2026-09-03) -- ✅ **5/7 SELESAI 2026-09-04**
   * **Celah yang ditemukan 2026-09-03:** Tahap 10 hanya membahas EXPORT, sedangkan mengisi datanya dari basis data tidak pernah punya task. `app/Support/LaporanData.php` masih sepenuhnya data contoh
   * Tujuh laporan pada `LaporanData::meta()`: `indikator-kawasan`, `monografi-sp`, `transmigran`, `poktan`, `alsintan`, `saprotan`, `hasil-panen`
   * Dikerjakan SETELAH Tahap 4-8, sebab tiap laporan membaca modul yang datanya baru nyata di tahap-tahap itu
   * Kop surat (`x-sim.kop-laporan`) membaca `LaporanData::instansi()` yang beralih ke CMS (Task 9.6)
+  * **HASIL (5 laporan transaksi ber-Eloquent penuh):** `transmigran` (Transmigran/
+    Rumah/Lahan), `poktan` (App\Support\PenyajianPoktan), `alsintan`
+    (PenyajianAlsintan), `saprotan` (PenyajianSaprotan), `hasil-panen`
+    (PenyajianPanen). Logika pemetaan "larik ber-kunci PERSIS DummyData::x()"
+    yang dahulu privat di tiap controller dipindah ke kelas `App\Support\Penyajian*`,
+    dipakai bersama halaman daftar/rincian DAN laporan. `luasTotalPoktan()` lewat
+    RekapPoktan menggantikan DummyData::rekapLahanPoktan; DummyData::keTon ->
+    KonversiPanen::keTon. Laporan = kawasan penuh (`withoutGlobalScopes`).
+  * **TERBLOKIR (2 laporan) -- keputusan pemilik 2026-09-04, sama dengan Tahap 9.1-9.4:**
+    `indikator-kawasan` (ringkasan dashboard + rekapPerSpTahun + indikatorKawasanTahun
+    = agregat kawasan `rules.md` 8g) dan `monografi-sp` (struktur umur, mutasi
+    penduduk, iklim per tahun = data contoh turunan yang tak ada tabelnya).
+    Bagian SP-level yang MEMANG terlacak pada monografi (lahan, sertifikat,
+    tanaman pangan, infrastruktur, fasilitas, alsintan per SP) menyusul saat
+    tabel `statistik_kawasan_tahunan` ada. Butuh keputusan yang sama dengan 9.1.
+  * **Sisa kecil:** `LaporanData::filterLaporan()` opsi tahun/dimensi masih dari
+    `DummyData::{alsintan,saprotan,hasilPanen}()` (daftar SP sengaja tetap master
+    `DummyData::satuanPermukiman()` -- dijaga uji "opsi SP dari data master").
+    Konten laporan sudah Eloquent; hanya isi dropdown filter yang belum ikut.
 - [ ] Task 10.6 - Unduh berkas & template impor `[Sedang]` (BARU 2026-09-03)
   * **Celah yang ditemukan 2026-09-03:** `/dokumen/{modul}/{id}/{namaBerkas}` sudah punya `DokumenController` tetapi masih melayani dari data contoh; `/template-impor/{entitas}` belum berisi
   * Berkas dilayani dari cakram **privat**, tidak pernah dari `public/` (`rules.md` 14a). Pemeriksaan izin + cakupan data dilakukan sebelum berkas dikirim
