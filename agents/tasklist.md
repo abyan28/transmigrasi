@@ -1,7 +1,7 @@
 # tasklist.md
 ## Daftar Tugas — Sistem Informasi Digitalisasi Monitoring Pertanian dan Tata Kelola Data Kawasan Transmigrasi Kobalima Timur
 
-**Progress: 91%**
+**Progress: 92%**
 *(Tahap 0 selesai 8 task. **Tahap 1 SELESAI** 12 task. **TAHAP 2 SELESAI SELURUHNYA.** Gelombang 1 dan 2 tuntas, 32 halaman berdiri. **Delivery Gate kedua gelombang sudah dijalankan** dan laporannya lengkap (`delivery-gate-gelombang-1.md` dan `-2.md`). Dua hal ditunda beralasan, bukan lolos diam-diam: keadaan memuat dan galat menunggu backend Tahap 3, dan pemeriksaan 360px pada perangkat nyata menunggu manusia. Siap masuk checkpoint validasi bersama tim dan dinas, lalu Tahap 3.)*
 
 Acuan: `prd.md`, `rules.md`, `workflow.md`, `ui-spec.md`, `erd.md`, `data-dictionary.md`, `notes.md`.
@@ -1298,7 +1298,15 @@ menghapus sisa terakhir `DummyData::penggunaSaatIni()` -- dikerjakan berbarengan
   * `tests/Database/RumahTest.php` +12; `AsetSpTest` +seed `RumahSeeder` (pivot).
     Verifikasi: Feature 732, Database 325, pint bersih, banding-skema NOL SELISIH,
     tautan-statis 14
-- [ ] Task 5.5 - Rekap kependudukan kawasan (KK masuk/keluar per tahun) `[Sedang]`
+- [✓] Task 5.5 - Rekap kependudukan kawasan (KK masuk/keluar per tahun) `[Sedang]` ✅ SELESAI 2026-09-04 (peralihan STRUKTURAL)
+  * HASIL: closure `susunRekapKependudukan` -> `KependudukanController@rekap` (satu
+    method, dua rute). **Angka AGREGAT tetap `DummyData::rekap*`** -- rekap ini
+    berskala KAWASAN (~1.140 KK, di-skala per tahun oleh `skalakanSebaranKependudukan()`),
+    bukan penjumlahan 8 baris data contoh, DAN `perSp` butuh luas_lahan (Tahap 6).
+    Penggantian ke kueri nyata = satu paket dengan **Task 9.1** (dashboard data
+    nyata): uji `HalamanTest` mengunci angka sintetis (mis. 968 KK pada 2020),
+    jadi mengubah sumbernya menuntut menulis ulang uji itu + data berskala sensus.
+  * Tak ada perubahan perilaku/tampilan; 5 uji `HalamanTest` kependudukan tetap hijau.
 
 ## Tahap 6 — Backend Lahan dan Kelembagaan
 
@@ -1367,6 +1375,7 @@ menghapus sisa terakhir `DummyData::penggunaSaatIni()` -- dikerjakan berbarengan
 
 - [ ] Task 9.1 - Ganti data dummy dashboard dengan query nyata `[Sulit]`
   * **Lima agregat produksi wajib ikut diganti**, ditambahkan 2026-08-24 sebagai indikator 17: `realisasi_tanam_ha`, `hasil_panen_ha`, `puso_ha`, `belum_dipanen_ha`, `produktivitas_ton_ha`
+  * **IKUT: `/kependudukan/rekap`** (`KependudukanController`, Task 5.5 hanya peralihan struktural). Angka agregatnya masih `DummyData::rekap*` berskala kawasan; `perSp` butuh lahan (Tahap 6). Uji `HalamanTest` kependudukan mengunci angka sintetis -> perlu ditulis ulang saat konversi
   * Kedua identitas pada `rules.md` 9.9 dan 9.11 wajib tetap berlaku setelah diganti kueri, dan sudah dijaga uji. Produktivitas **tertimbang** (9.8d), bukan rata-rata kolom
   * Angka agregat sekarang berskala kawasan, **bukan** penjumlahan `penanaman()` yang hanya beberapa baris contoh (`rules.md` 9.8g)
 - [ ] Task 9.2 - Filter wilayah dan periode terhubung ke seluruh visualisasi `[Sedang]`

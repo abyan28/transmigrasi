@@ -52,12 +52,18 @@ verifikasi -- schema-compare gagal sekali karena tabrakan dgn suite Database
 yang jalan bersamaan di `digitrans_test`, ULANGI SENDIRIAN).
 Belum di-push (push diblokir harness).
 
-### SISA Tahap 5
-- **5.5 Rekap kependudukan kawasan** `[Sedang]` -- agregat kawasan ~1140 KK dari
-  `DummyData::rekap*` (sintetis, di-skala per tahun). Rute `kependudukan.rekap`
-  + `kependudukan.rekap.{kelompok}` closures. Pilihan: GROUP BY nyata dari
-  transmigran+anggota (tapi data contoh cuma 8 KK -> angka rekap jadi remeh) ATAU
-  pertahankan `DummyData::rekap*` (agregat "seperti lapangan"). Riset dulu.
+### HASIL Task 5.5 (2026-09-04) -- peralihan STRUKTURAL saja
+Closure `susunRekapKependudukan` -> `KependudukanController@rekap`. Angka AGREGAT
+tetap `DummyData::rekap*`: rekap berskala KAWASAN (~1.140 KK, di-skala per tahun),
+bukan 8 baris contoh; `perSp` butuh luas_lahan (Tahap 6); uji `HalamanTest`
+mengunci angka sintetis (968 KK pada 2020). Konversi kueri nyata = paket Task 9.1
+(dicatat di tasklist Task 9.1). Nol perubahan perilaku.
+
+## TAHAP 5 SELESAI (2026-09-04)
+5.1 (`666eca3`), 5.2 (`7dc0ef6`), 5.3+5.4 (`037adbf`), 5.5 (commit berikutnya).
+Modul transmigran + anggota_keluarga + rumah + riwayat_penghunian +
+riwayat_kepala_keluarga = Eloquent. Rekap kependudukan = peralihan struktural
+(agregat kawasan menunggu Task 9.1). Belum di-push (push diblokir harness).
 - **5.5 Rekap kependudukan kawasan** `[Sedang]` (agregat kawasan ~1140 KK -
   `DummyData::rekap*` masih sintetis; ganti GROUP BY nyata atau pertahankan)
 

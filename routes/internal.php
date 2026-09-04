@@ -26,6 +26,7 @@ use App\Http\Controllers\FasilitasSpController;
 use App\Http\Controllers\InfrastrukturController;
 use App\Http\Controllers\InventarisSpController;
 use App\Http\Controllers\KawasanController;
+use App\Http\Controllers\KependudukanController;
 use App\Http\Controllers\MasterReferensiController;
 use App\Http\Controllers\MasterSatuanController;
 use App\Http\Controllers\PengaturanPenggunaController;
@@ -1055,60 +1056,9 @@ Route::delete('/pengaduan/{id}', function () {
 | dibungkus komponen x-sim.halaman-daftar agar tidak menyalin markup.
 |
 */
-/*
- * Rekap kependudukan, dipakai DUA rute seperti rekap panen dan rekap pengaduan.
- */
-$susunRekapKependudukan = function (?string $kelompokRute = null) {
-    $kelompok = $kelompokRute ?? request('kelompok', 'tahun');
-    $daftarTahun = DummyData::daftarTahunKependudukan();
-    $tahunTerakhir = end($daftarTahun);
-    $tahunDipilih = (int) request('tahun', $tahunTerakhir);
-
-    if (! in_array($tahunDipilih, $daftarTahun, true)) {
-        $tahunDipilih = $tahunTerakhir;
-    }
-
-    $perSp = DummyData::rekapPerSp($tahunDipilih);
-    $penghuni = DummyData::rekapPenghuni($tahunDipilih);
-    $pekerjaan = DummyData::sebaranPekerjaan($tahunDipilih);
-    // Berlabel, sebab `sebaranDaerahAsal()` berkunci id kabupaten sejak
-    // 2026-09-02. Pelabelan terpusat agar tidak tiap view melabeli sendiri.
-    $daerahAsal = DummyData::sebaranDaerahAsalBerlabel($tahunDipilih);
-    $pendidikan = DummyData::sebaranPendidikan($tahunDipilih);
-
-    return view('pages.kependudukan.rekap', [
-        'title' => 'Rekap Kependudukan',
-        'kelompok' => $kelompok,
-        'daftarTahun' => $daftarTahun,
-        'tahunPilihan' => $tahunDipilih,
-        'tahunTerakhir' => $tahunTerakhir,
-        'perTahun' => DummyData::rekapKependudukan(),
-        'perSp' => $perSp,
-        'penghuni' => $penghuni,
-        'pekerjaan' => $pekerjaan,
-        'daerahAsal' => $daerahAsal,
-        'pendidikan' => $pendidikan,
-        'ringkasan' => DummyData::ringkasanDashboard(),
-
-        /*
-         * Daftar ini WAJIB sejalan dengan batasan `where` pada rute
-         * `kependudukan.rekap.kelompok` dan larik pada DaftarTautanStatis.
-         * Ketiganya mengunci hal yang sama, dan mengubah salah satunya saja
-         * membuat halaman terbit membalas 404 tanpa penjaga apa pun
-         * (notes.md 1e.5).
-         */
-        'labelKelompok' => [
-            'tahun' => 'Tahun',
-            'sp' => 'Satuan Permukiman',
-            'status' => 'Status Tinggal',
-            'pekerjaan' => 'Pekerjaan',
-            'asal' => 'Daerah Asal',
-            'pendidikan' => 'Pendidikan',
-        ],
-    ]);
-};
-
-Route::get('/kependudukan/rekap', fn () => $susunRekapKependudukan())->name('kependudukan.rekap');
+// Task 5.5: closure -> KependudukanController. AGREGAT masih `DummyData::rekap*`
+// (berskala kawasan ~1.140 KK); kueri nyata satu paket dengan Task 9.1.
+Route::get('/kependudukan/rekap', [KependudukanController::class, 'rekap'])->name('kependudukan.rekap');
 
 /*
  * Tautan tetap pemilih kelompok rekap kependudukan.
@@ -1125,7 +1075,7 @@ Route::get('/kependudukan/rekap', fn () => $susunRekapKependudukan())->name('kep
  * dan larik pada DaftarTautanStatis. Mengubah salah satunya saja membuat
  * halaman terbit membalas 404 tanpa penjaga apa pun.
  */
-Route::get('/kependudukan/rekap/{kelompok}', fn (string $kelompok) => $susunRekapKependudukan($kelompok))
+Route::get('/kependudukan/rekap/{kelompok}', [KependudukanController::class, 'rekap'])
     ->where('kelompok', 'tahun|sp|status|pekerjaan|asal|pendidikan')->name('kependudukan.rekap.kelompok');
 
 Route::get('/poktan', function () {
