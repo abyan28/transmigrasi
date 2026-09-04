@@ -253,7 +253,9 @@ Indikator mutu data menjadi menyesatkan, terutama saat dilaporkan ke Kementerian
 
 ## 1b. Penyajian Statis di GitHub Pages (2026-08-17)
 
-Antarmuka Tahap 2 diterbitkan sebagai **berkas statis** ke GitHub Pages agar dapat ditinjau tim dan dinas tanpa biaya, tanpa kartu kredit, dan tanpa laptop pengembang harus menyala. Alamatnya `https://abyan28.github.io/transmigrasi/`, diperbarui otomatis setiap `git push` ke `main`.
+Antarmuka Tahap 2 diterbitkan sebagai **berkas statis** ke GitHub Pages agar dapat ditinjau tim dan dinas tanpa biaya, tanpa kartu kredit, dan tanpa laptop pengembang harus menyala. Alamatnya `https://abyan28.github.io/transmigrasi/`.
+
+> **2026-09-04:** pemicu otomatis `push` pada `deploy.yml` **dicabut** -- penerbitan hanya lewat `workflow_dispatch` manual, dan sejak Tahap 3 hanya 14 URL publik yang tergilas (halaman internal ber-`auth` disaring). Penghentian penuh + pindah hosting ber-PHP tetap **Task 11.3**; lihat 1b.7 poin 1.
 
 Pilihan ini masuk akal **justru karena Tahap 2 belum punya backend**: seluruh isi halaman berasal dari `app/Support/DummyData.php`, tidak ada satu pun kueri basis data, dan tidak ada autentikasi. Aplikasi hanya dijalankan sebentar di runner, digilas menjadi HTML, lalu HTML-nya yang disajikan.
 
@@ -261,7 +263,7 @@ Pilihan ini masuk akal **justru karena Tahap 2 belum punya backend**: seluruh is
 
 `.github/workflows/deploy.yml` menjalankan: pasang PHP 8.2 dan Node, `composer install`, `npm run build`, `php artisan serve`, lalu menggilas setiap alamat dari `php artisan sim:tautan-statis` menjadi `folder/index.html`. Alamat tetap bersih tanpa akhiran `.html`, sama persis dengan versi yang dilayani Laravel.
 
-Perintah `sim:tautan-statis` (`app/Console/Commands/DaftarTautanStatis.php`) membangkitkan daftar dari sumbernya langsung: rute GET tanpa parameter, ditambah halaman rincian yang dijabarkan dari `DummyData`. **Sengaja tidak ditulis tangan**, supaya penambahan data contoh tidak diam-diam meninggalkan halaman yang tidak ikut terbit. Hasil per 2026-08-17: **113 halaman, seluruhnya membalas 200.**
+Perintah `sim:tautan-statis` (`app/Console/Commands/DaftarTautanStatis.php`) membangkitkan daftar dari sumbernya langsung: rute GET tanpa parameter, ditambah halaman rincian yang dijabarkan dari `DummyData`. **Sengaja tidak ditulis tangan**, supaya penambahan data contoh tidak diam-diam meninggalkan halaman yang tidak ikut terbit. Sejak Task 3.2b rute ber-`auth` disaring: **14 URL publik** (per 2026-09-04), seluruhnya membalas 200.
 
 Dua alamat dikecualikan lewat konstanta `DIKECUALIKAN`: `uji-403` yang memang sengaja membalas 403, dan `up` yang merupakan pemeriksa kesehatan bawaan Laravel, bukan halaman.
 
@@ -347,13 +349,13 @@ Setelah ketiganya diperbaiki, jumlah halaman terbit naik dari 113 menjadi **122*
 
 Begitu Tahap 3 dan seterusnya berjalan, sistem memerlukan PHP dan basis data yang hidup, sehingga **GitHub Pages tidak lagi memadai**. Yang perlu diputuskan saat itu:
 
-1. **Autentikasi mematikan penggilasan.** Setelah Tahap 3 aktif, halaman yang butuh login akan membalas pengalihan ke `/login`, bukan 200, dan penerbitan gagal. ~~Pilihannya: batasi daftar gilas hanya ke halaman publik, atau hentikan penerbitan statis sama sekali.~~ **DIPUTUSKAN 2026-09-03: batasi ke halaman publik saja.** **DIKERJAKAN Task 3.2b (2026-09-03, commit `40e487a`):** `DaftarTautanStatis` menyaring rute ber-`auth` lewat `gatherMiddleware()` dan `rincianDariDataContoh()` dipangkas ke `/lacak-pengaduan/{nomor}`. `sim:tautan-statis` **224 → 14 URL** (`/login`, `/lupa-kata-sandi`, `/verifikasi-kode`, `/pengaduan-warga`, `/lacak-pengaduan` + 9 nomor). CATATAN: tak ada halaman landing publik terpisah -- `/` (`beranda`) kini terkunci `auth`. Bila dinas ingin landing publik, itu rute + view baru (belum dijadwalkan).
-2. **Pindah ke hosting ber-PHP.** `prd.md` A9 sudah menetapkan hosting dengan SSL dan cadangan terjadwal. Alur kerja ini dapat dihapus atau dialihkan menjadi penerbitan pratinjau saja.
+1. **Autentikasi mematikan penggilasan.** Setelah Tahap 3 aktif, halaman yang butuh login akan membalas pengalihan ke `/login`, bukan 200, dan penerbitan gagal. ~~Pilihannya: batasi daftar gilas hanya ke halaman publik, atau hentikan penerbitan statis sama sekali.~~ **DIPUTUSKAN 2026-09-03: batasi ke halaman publik saja.** **DIKERJAKAN Task 3.2b (2026-09-03, commit `40e487a`):** `DaftarTautanStatis` menyaring rute ber-`auth` lewat `gatherMiddleware()` dan `rincianDariDataContoh()` dipangkas ke `/lacak-pengaduan/{nomor}`. `sim:tautan-statis` **224 → 14 URL** (`/login`, `/lupa-kata-sandi`, `/verifikasi-kode`, `/pengaduan-warga`, `/lacak-pengaduan` + 9 nomor). CATATAN: tak ada halaman landing publik terpisah -- `/` (`beranda`) kini terkunci `auth`. Bila dinas ingin landing publik, itu rute + view baru (belum dijadwalkan). **2026-09-04:** pemicu otomatis `push` pada `deploy.yml` dicabut -- penerbitan hanya `workflow_dispatch` manual sampai penghentian penuh di Task 11.3.
+2. **Pindah ke hosting ber-PHP.** `prd.md` A9 sudah menetapkan hosting dengan SSL dan cadangan terjadwal. `deploy.yml` sekarang pratinjau manual saja; penghapusannya + pemindahan hosting adalah Task 11.3.
 3. **Yang tetap berguna** meski beralih hosting: penyeragaman `asset()`, `url()`, dan `route()` pada 1b.3, serta kepercayaan pada `X-Forwarded-*` di `bootstrap/app.php`. Keduanya justru **syarat** untuk hosting di belakang reverse proxy.
 
 ### 1b.8 Ketergantungan yang perlu diingat
 
-Pengaturan GitHub Pages harus disetel sekali secara manual: **Settings ? Pages ? Source: GitHub Actions**. Tanpa itu alur kerja berjalan tetapi hasilnya tidak terbit.
+Pengaturan GitHub Pages harus disetel sekali secara manual: **Settings → Pages → Source: GitHub Actions**. Tanpa itu alur kerja berjalan tetapi hasilnya tidak terbit.
 
 ---
 
@@ -3664,8 +3666,9 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
     ~~Pekerjaan konkretnya masuk Task 3.2~~ **DIKERJAKAN Task 3.2b (2026-09-03, commit
     `40e487a`):** `DaftarTautanStatis` menyaring `gatherMiddleware()`; `sim:tautan-statis`
     224 → 14 URL publik; `TautanStatisTest` crawl `auth()->logout()` (cermin `deploy.yml`).
-    Tak ada landing publik terpisah — `/` kini `auth`. `deploy.yml` tetap jalan sebagai
-    pratinjau halaman publik (auth + pengaduan). Ref `notes.md` 1b.7 poin 1.
+    Tak ada landing publik terpisah — `/` kini `auth`. **2026-09-04: pemicu otomatis
+    `push` pada `deploy.yml` dicabut** (`on: workflow_dispatch` saja) — pratinjau kini
+    manual. Penghentian penuh + pindah hosting = Task 11.3. Ref `notes.md` 1b.7 poin 1.
   * **A2 — Spesifikasi hosting belum dikonfirmasi; diblokir menunggu input dinas.**
     Yang WAJIB dipastikan sebelum Tahap 11 (idealnya sebelum Tahap 3 dimulai agar
     asumsi migration/queue/storage tidak salah):

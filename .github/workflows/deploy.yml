@@ -1,19 +1,18 @@
-# Menerbitkan antarmuka Tahap 2 sebagai berkas statis ke GitHub Pages.
+# Menerbitkan HALAMAN PUBLIK (masuk, pemulihan sandi, kanal pengaduan warga)
+# sebagai berkas statis ke GitHub Pages -- pratinjau untuk tim dan dinas.
 #
 # Aplikasi tetap berupa Laravel biasa. Alur ini menjalankannya sebentar di
-# runner, menggilas seluruh halaman menjadi HTML, lalu menerbitkan hasilnya.
-# GitHub Pages hanya menyajikan berkas statis, jadi tidak ada PHP yang berjalan
-# di sisi pengunjung.
+# runner, menggilas `php artisan sim:tautan-statis` (14 URL publik) menjadi
+# HTML, lalu menerbitkan hasilnya. Sejak Tahap 3, seluruh halaman internal
+# ber-`auth` -- tidak ikut digilas (`DaftarTautanStatis` menyaringnya).
 #
-# Batasannya dicatat pada agents/notes.md bagian 1b. Ringkasnya: seluruh tombol
-# simpan, ubah, dan hapus tidak berfungsi, sama seperti sebelum digilas, sebab
-# Tahap 2 memang belum memiliki backend.
+# PEMICU OTOMATIS `push` DICABUT 2026-09-04: penerbitan hanya lewat
+# `workflow_dispatch` manual. Penghentian penuh + pindah ke hosting ber-PHP =
+# Task 11.3 (`agents/tasklist.md`). Konteks: `agents/notes.md` bagian 1b.7.
 
 name: Terbitkan ke GitHub Pages
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 # Hanya satu penerbitan berjalan pada satu waktu. Penerbitan yang sedang
