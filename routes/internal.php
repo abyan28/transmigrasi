@@ -28,6 +28,7 @@ use App\Http\Controllers\InfrastrukturController;
 use App\Http\Controllers\InventarisSpController;
 use App\Http\Controllers\KawasanController;
 use App\Http\Controllers\KependudukanController;
+use App\Http\Controllers\KomoditasController;
 use App\Http\Controllers\LahanController;
 use App\Http\Controllers\MasterReferensiController;
 use App\Http\Controllers\MasterSatuanController;
@@ -1111,72 +1112,19 @@ Route::put('/saprotan/{id}', function (int $id) {
         ->with('sukses', 'Perubahan data saprotan tersimpan.');
 })->where('id', '[0-9]+')->name('saprotan.perbarui');
 
-Route::get('/komoditas', function () {
-    $semua = DummyData::komoditas();
+/*
+ * Data komoditas (Task 7.1: peralihan ke Eloquent). `tipe` = TEKS referensi;
+ * `slug` otomatis. Satuan baku mengunci satuan pencatatan panen berikutnya.
+ */
+Route::get('/komoditas', [KomoditasController::class, 'index'])->name('komoditas.index');
 
-    $cari = trim((string) request('cari', ''));
-    $filterTipe = request('tipe');
+Route::get('/komoditas/{id}', [KomoditasController::class, 'detail'])
+    ->where('id', '[0-9]+')->name('komoditas.detail');
 
-    $baris = array_values(array_filter($semua, function ($k) use ($cari, $filterTipe) {
-        if ($cari !== '' && ! str_contains(mb_strtolower($k['nama']), mb_strtolower($cari))) {
-            return false;
-        }
-        if ($filterTipe && $k['tipe'] !== $filterTipe) {
-            return false;
-        }
+Route::post('/komoditas', [KomoditasController::class, 'simpan'])->name('komoditas.simpan');
 
-        return true;
-    }));
-
-    return view('pages.komoditas.index', [
-        'title' => 'Data Komoditas',
-        'semua' => $semua,
-        'baris' => $baris,
-        'sebaran' => DummyData::sebaranKomoditas(),
-        'cari' => $cari,
-        'filterTipe' => $filterTipe,
-        'adaFilter' => $cari !== '' || $filterTipe,
-        'unggulan' => count(array_filter($semua, fn ($k) => $k['is_unggulan'])),
-        'opsiFilterTipe' => DummyData::opsiFilterReferensi(JenisReferensi::TipeKomoditas),
-    ]);
-})->name('komoditas.index');
-
-Route::get('/komoditas/{id}', function (int $id) {
-    $data = collect(DummyData::komoditas())->firstWhere('id_komoditas', $id);
-
-    abort_if($data === null, 404);
-
-    /*
-     * Riwayat penanaman komoditas ini, dicocokkan lewat `komoditas_id` dan
-     * bukan nama. Pencocokan teks putus begitu Admin membetulkan ejaan satu
-     * komoditas, dan putusnya tidak memerahkan apa pun: tabnya sekadar
-     * berubah menjadi kosong.
-     */
-    $riwayat = array_values(array_filter(
-        DummyData::penanaman(),
-        fn ($r) => $r['komoditas_id'] === $data['id_komoditas'],
-    ));
-
-    return view('pages.komoditas.detail', [
-        'title' => $data['nama'],
-        'data' => $data,
-        'riwayat' => $riwayat,
-    ]);
-})->where('id', '[0-9]+')->name('komoditas.detail');
-
-Route::post('/komoditas', function () {
-    // Tahap 7: validasi, simpan, catat audit log.
-    return redirect()->route('komoditas.index')
-        ->with('sukses', 'Data komoditas tersimpan.');
-})->name('komoditas.simpan');
-
-Route::put('/komoditas/{id}', function (int $id) {
-    // Tahap 7: perubahan satuan baku hanya berlaku bagi pencatatan panen
-    // berikutnya. Panen yang sudah tersimpan menyalin satuannya sendiri,
-    // sehingga angka lama tidak ikut berubah makna.
-    return redirect()->route('komoditas.detail', $id)
-        ->with('sukses', 'Perubahan data komoditas tersimpan.');
-})->where('id', '[0-9]+')->name('komoditas.perbarui');
+Route::put('/komoditas/{id}', [KomoditasController::class, 'perbarui'])
+    ->where('id', '[0-9]+')->name('komoditas.perbarui');
 
 Route::get('/penanaman', function () {
     $semua = DummyData::penanaman();

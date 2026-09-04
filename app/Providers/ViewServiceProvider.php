@@ -15,6 +15,7 @@ use App\Enums\StatusKeaktifanAnggota;
 use App\Enums\StatusPanen;
 use App\Enums\TingkatKesuburanTanah;
 use App\Models\AnggotaPoktan;
+use App\Models\Komoditas;
 use App\Models\Poktan;
 use App\Models\Transmigran;
 use App\Support\DataWilayah;
@@ -175,7 +176,19 @@ class ViewServiceProvider extends ServiceProvider
                     'satuan_permukiman_id' => $p->satuan_permukiman_id,
                 ])->all(),
             'daftarSatuan' => DummyData::satuan(),
-            'daftarKomoditas' => DummyData::komoditas(),
+
+            // Task 7.1: komoditas ber-Eloquent. Form saprotan/penanaman memakai
+            // id_komoditas, nama, dan nama satuan panen bakunya.
+            'daftarKomoditas' => Komoditas::query()
+                ->with('satuan')
+                ->orderBy('id_komoditas')
+                ->get()
+                ->map(fn ($k) => [
+                    'id_komoditas' => $k->id_komoditas,
+                    'nama' => $k->nama,
+                    'satuan' => $k->satuan?->nama,
+                    'satuan_id' => $k->satuan_id,
+                ])->all(),
             'daftarSp' => DummyData::satuanPermukiman(),
 
             // Task 5.1/5.2 -> transmigran ber-Eloquent; Task 5.3 -> rumah juga,
@@ -318,8 +331,10 @@ class ViewServiceProvider extends ServiceProvider
              * di dalam form, sehingga komoditas maupun satuan baru yang didata
              * Admin tidak pernah punya satuan maupun singkatan.
              */
-            'satuanKomoditas' => collect(DummyData::komoditas())
-                ->pluck('satuan', 'id_komoditas')
+            'satuanKomoditas' => Komoditas::query()
+                ->with('satuan')
+                ->get()
+                ->mapWithKeys(fn ($k) => [$k->id_komoditas => $k->satuan?->nama])
                 ->all(),
             'simbolSatuan' => collect(DummyData::satuan())
                 ->mapWithKeys(fn ($s) => [$s['nama'] => $s['simbol']])

@@ -1373,8 +1373,22 @@ menghapus sisa terakhir `DummyData::penggunaSaatIni()` -- dikerjakan berbarengan
 
 ## Tahap 7 — Backend Produksi Pertanian
 
-- [ ] Task 7.1 - Peralihan komoditas ke Eloquent `[Sedang]`
+- [✓] ✅ Task 7.1 - Peralihan komoditas ke Eloquent `[Sedang]` (Selesai)
   * Migration & model `Komoditas` + pivot `komoditas_poktan` **sudah ada** (Task 3.1 B3/B8); `getRouteKeyName()` = `slug` (Task 3.9). `komoditas.tipe` disimpan TEKS lewat `referensi`, bukan enum PHP
+  * **HASIL 2026-09-04:** `KomoditasController` (index/detail/simpan/perbarui —
+    hapus tetap stub untuk 7.2). `baris()` ber-kunci sama `DummyData::komoditas()`.
+    `tipe` divalidasi `ValidationRules::referensi(TipeKomoditas)`; `slug` otomatis;
+    `is_unggulan` dari `$request->boolean()`. `detail` riwayat penanaman masih
+    `DummyData::penanaman()` (Tahap 7 lanjutan).
+  * `KomoditasSeeder` baru — `satuan_id` diresolusi lewat NAMA satuan (id data
+    contoh tak dapat dipercaya di uji: rollback RefreshDatabase tak menyetel
+    ulang AUTO_INCREMENT). Di `DataMasterSeeder` + `DatabaseSeeder`.
+  * `ViewServiceProvider` arm `daftarKomoditas` + `satuanKomoditas` → Eloquent
+    (ikut menyuapi form saprotan/penanaman/panen). `sebaran` (agregat volume
+    kawasan) tetap `DummyData` — konversinya milik Tahap rekap.
+  * Rute komoditas → controller. `UppercaseInput::$kecualikan` +`tipe`.
+  * `tests/Database/KomoditasTest.php` +7. Verifikasi: Feature 732, Database 362,
+    pint bersih, banding-skema NOL SELISIH, tautan-statis 14.
 - [ ] Task 7.2 - CRUD komoditas + penanda unggulan + satuan baku per komoditas `[Sedang]`
   * Tampilan form dan halaman rincian sudah selesai pada Task 2.29 dan 2.30
 - [ ] Task 7.3 - CRUD penanaman `[Sedang]`

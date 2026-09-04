@@ -67,6 +67,7 @@ class UppercaseInput
         'kondisi',
         'status_hunian',
         'jenis_alsintan',
+        'tipe',
         'sumber_dana',
         'status_penyerahan',
         'jenis_inventaris',
