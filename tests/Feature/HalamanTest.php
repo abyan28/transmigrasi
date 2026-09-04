@@ -4922,7 +4922,7 @@ it('menyusun submenu Laporan dalam urutan yang disepakati, satu sumber nama', fu
     }
 });
 
-it('memberi tiap halaman laporan judul, pernyataan cakupan, dan unduh yang jujur', function (string $slug, string $judul) {
+it('memberi tiap halaman laporan judul, pernyataan cakupan, dan tombol unduh sungguhan', function (string $slug, string $judul) {
     $isi = $this->get('/laporan/'.$slug)->assertOk()->getContent();
 
     // Judul dokumen dipastikan lewat <title>, sebab nama tiap laporan juga
@@ -4931,8 +4931,17 @@ it('memberi tiap halaman laporan judul, pernyataan cakupan, dan unduh yang jujur
         ->toContain('<title>'.$judul.' |')
         ->toContain('Cakupan laporan')      // cakupan sebagai teks (poin 8)
         ->toContain('Dasar periode')
-        ->toContain('segera hadir')         // unduh jujur, bukan tombol berfungsi (R-26)
         ->toContain('Data contoh.');        // R-17 / R-38
+
+    // Task 10.1/10.2 (2026-09-05): tombol unduh SUNGGUHAN, bukan lagi
+    // placeholder "segera hadir" -- Excel lewat SheetJS sisi peramban
+    // (window.exportLaporan.keExcel), PDF lewat cetak peramban (hash
+    // cetak=1, lihat uji peramban tests/Browser/uji-export-laporan.mjs
+    // untuk perilaku sungguhannya).
+    expect($isi)
+        ->toContain('window.exportLaporan.keExcel($root,')
+        ->toContain('hashFilterCetak')
+        ->not->toContain('segera hadir');
 
     // Tidak ada tombol ekspor di halaman laporan.
     expect($isi)->not->toContain('data-ekspor');
@@ -4983,7 +4992,10 @@ it('mengisi tiap halaman laporan dengan tabel berdata, bukan penampung kosong', 
     expect(substr_count($isi, '<caption'))->toBe(substr_count($isi, '<table'));
 
     // Cakupan tetap dinyatakan sebagai teks (rules.md 12 poin 8).
-    expect($isi)->toContain('Cakupan laporan')->toContain('segera hadir');
+    expect($isi)->toContain('Cakupan laporan');
+
+    // Task 10.1/10.2: tombol unduh sungguhan, bukan lagi placeholder.
+    expect($isi)->not->toContain('segera hadir');
 })->with(['hasil-panen', 'monografi-sp', 'alsintan', 'saprotan', 'indikator-kawasan', 'poktan', 'transmigran']);
 
 it('memuat kolom kunci tiap laporan sesuai berkas rujukannya', function () {

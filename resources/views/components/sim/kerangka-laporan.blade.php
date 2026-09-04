@@ -216,20 +216,35 @@
     </article>
 
     @unless ($dokumen)
-        {{-- Unduh: jujur "segera hadir", bukan tombol yang tampak berfungsi (R-26) --}}
+        {{--
+            Unduh (Task 10.1/10.2, 2026-09-05): sepenuhnya sisi peramban,
+            tanpa paket Composer -- keputusan pemilik proyek membalik
+            penundaan sebelumnya (rules.md 12 poin 11). PDF memakai ulang
+            @media print yang sudah matang lewat dialog cetak peramban;
+            Excel membaca tabel yang SUDAH DIRENDER (dan sudah tersaring
+            filter Alpine) lewat SheetJS -- lihat resources/js/export-laporan.js.
+        --}}
         <div class="cetak-sembunyi mx-auto mt-6 flex {{ $lebarKertas }} flex-wrap gap-2">
-            @foreach (['PDF', 'Excel'] as $format)
-                <span
-                    title="Pembangkitan berkas {{ $format }} dikerjakan pada tahap berikutnya."
-                    class="inline-flex h-10 items-center gap-1.5 rounded-lg border border-gray-300 px-3 text-theme-sm font-medium text-gray-500 dark:border-gray-700 dark:text-gray-400">
-                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"
-                        aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                    </svg>
-                    Unduh {{ $format }}, segera hadir
-                </span>
-            @endforeach
+            <a :href="@js(route('laporan.dokumen', $slug)) + hashFilterCetak" target="_blank" rel="noopener"
+                class="inline-flex h-10 items-center gap-1.5 rounded-lg border border-gray-300 px-3 text-theme-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"
+                    aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                </svg>
+                Unduh PDF
+                <span class="sr-only">, membuka dokumen di tab baru lalu memicu dialog cetak peramban</span>
+            </a>
+            <button type="button"
+                @click="window.exportLaporan.keExcel($root, @js($slug))"
+                class="inline-flex h-10 items-center gap-1.5 rounded-lg border border-gray-300 px-3 text-theme-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"
+                    aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                </svg>
+                Unduh Excel
+            </button>
         </div>
     @endunless
 </div>

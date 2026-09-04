@@ -21,6 +21,12 @@ import kunciGulir from './kunci-gulir';
 // melayani query string, notes.md 1b.5)
 import filterLaporan from './filter-laporan';
 
+// Export Excel halaman laporan (Task 10.1). Pustaka xlsx TIDAK diimpor di
+// sini -- export-laporan.js memuatnya lewat import() dinamis hanya saat
+// tombol "Unduh Excel" diklik, supaya app.js tidak membengkak di setiap
+// halaman untuk fitur yang cuma dipakai di Laporan.
+import exportLaporan from './export-laporan';
+
 // Pemformat dan sanitasi nominal uang (Rupiah) dengan direktif Alpine x-uang
 import { pasangFormatUang, formatUang, bersihkanUang } from './format-uang';
 
@@ -33,6 +39,7 @@ window.flatpickr = flatpickr;
 
 // Diekspos ke window agar dapat dipanggil dari Blade tanpa modul tambahan
 window.grafikSim = grafik;
+window.exportLaporan = exportLaporan;
 
 /*
     Penguncian gulir halaman selama modal, laci, atau peta layar penuh terbuka.

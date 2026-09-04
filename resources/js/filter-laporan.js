@@ -60,13 +60,14 @@ export default function filterLaporan(konfig = {}) {
         },
 
         /**
-         * Menserialisasi filter yang sedang aktif ke fragmen hash, untuk
-         * dipasang pada `href` tombol "Generate Laporan". Kosong bila tak ada
-         * filter. Tahun tunggal hanya ditulis bila berbeda dari bawaannya.
+         * Parameter filter yang sedang aktif, dipakai `hashFilter` (tombol
+         * "Generate Laporan") dan `hashFilterCetak` (tombol "Unduh PDF",
+         * Task 10.2) -- SATU sumber supaya keduanya tak pernah berbeda
+         * saringan. Tahun tunggal hanya ditulis bila berbeda dari bawaannya.
          *
-         * @returns {string} '' atau '#sp=1&td=2019&...'
+         * @returns {URLSearchParams}
          */
-        get hashFilter() {
+        _paramFilter() {
             const p = new URLSearchParams();
 
             if (this.ukuranKertas && this.ukuranKertas !== 'a4') p.set('kertas', this.ukuranKertas);
@@ -88,9 +89,35 @@ export default function filterLaporan(konfig = {}) {
                 if (v !== '') p.set(k, v);
             });
 
-            const s = p.toString();
+            return p;
+        },
+
+        /**
+         * Menserialisasi filter yang sedang aktif ke fragmen hash, untuk
+         * dipasang pada `href` tombol "Generate Laporan". Kosong bila tak ada
+         * filter.
+         *
+         * @returns {string} '' atau '#sp=1&td=2019&...'
+         */
+        get hashFilter() {
+            const s = this._paramFilter().toString();
 
             return s ? '#' + s : '';
+        },
+
+        /**
+         * `hashFilter` ditambah `cetak=1`, untuk tombol "Unduh PDF" (Task
+         * 10.2) -- rute dokumen memicu `window.print()` sendiri begitu
+         * terbuka (lihat `dariHash()`). SELALU berisi (minimal `#cetak=1`),
+         * beda dari `hashFilter` yang boleh kosong.
+         *
+         * @returns {string} '#cetak=1' atau '#sp=1&cetak=1&...'
+         */
+        get hashFilterCetak() {
+            const p = this._paramFilter();
+            p.set('cetak', '1');
+
+            return '#' + p.toString();
         },
 
         /**
@@ -133,6 +160,22 @@ export default function filterLaporan(konfig = {}) {
             Object.keys(this.dimensi).forEach((k) => {
                 if (p.has(k)) this.dimensi[k] = p.get(k);
             });
+
+            /*
+                Task 10.2 (2026-09-05): tombol "Unduh PDF" membawa `cetak=1`
+                lewat hash yang SAMA dengan "Generate Laporan" (bukan query
+                string -- GitHub Pages, notes.md 1b.5), lalu rute dokumen
+                memicu cetak peramban sendiri begitu terbuka. `$nextTick`
+                menunggu Alpine selesai menerapkan `x-show` di atas dulu
+                (baris yang tersaring wajib sudah tersembunyi SEBELUM
+                dialog cetak terbuka -- itulah Task 10.3, tanpa kode
+                terpisah). Dialog cetak peramban ("Simpan sebagai PDF")
+                sudah cukup (keputusan pemilik 2026-09-05); bukan unduhan
+                sekali klik.
+            */
+            if (p.has('cetak')) {
+                this.$nextTick(() => window.print());
+            }
         },
 
         get adaFilter() {
