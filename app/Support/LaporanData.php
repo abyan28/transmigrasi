@@ -6,7 +6,12 @@ use App\Enums\KondisiRumah;
 use App\Enums\StatusAnggotaKeluarga;
 use App\Enums\StatusHunian;
 use App\Enums\StatusTinggal;
+use App\Models\Lahan;
+use App\Models\Rumah;
+use App\Models\SatuanPermukiman;
+use App\Models\Transmigran;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 /**
  * Penyusun data untuk halaman-halaman di menu "Laporan".
@@ -1189,11 +1194,100 @@ class LaporanData
      */
     public static function transmigran(): array
     {
+        // Task 10.5: dibaca dari Eloquent, bukan `DummyData`. Laporan bersifat
+        // kawasan penuh (lihat `meta()['cakupan']`), sehingga global scope
+        // cakupan data sengaja dilewati -- penyaringan per SP dikerjakan bilah
+        // filter di sisi peramban.
+        $namaSp = self::namaSpPerId();
+
+        $kkPerId = Transmigran::withoutGlobalScopes()
+            ->pluck('nama_kepala_keluarga', 'id_transmigran');
+
+        $sertifikatPerKk = Transmigran::withoutGlobalScopes()
+            ->pluck('status_sertifikat', 'id_transmigran')
+            ->map(fn ($s) => $s?->value);
+
+        $transmigran = Transmigran::withoutGlobalScopes()
+            ->withCount(['anggotaKeluarga as anggota_aktif_count' => fn ($q) => $q->where('status', StatusAnggotaKeluarga::Aktif->value)])
+            ->orderBy('id_transmigran')
+            ->get()
+            ->map(fn (Transmigran $t): array => [
+                'id_transmigran' => $t->id_transmigran,
+                'nik' => $t->nik,
+                'no_kk' => $t->no_kk,
+                'nama_kepala_keluarga' => $t->nama_kepala_keluarga,
+                'jenis_kelamin' => $t->jenis_kelamin?->value,
+                'agama' => $t->agama?->value,
+                'tempat_lahir' => $t->tempat_lahir,
+                'tanggal_lahir' => $t->tanggal_lahir?->toDateString(),
+                'pendidikan_terakhir' => $t->pendidikan_terakhir?->value,
+                'pekerjaan_kepala_keluarga' => $t->pekerjaan_kepala_keluarga,
+                'jumlah_anggota_keluarga' => 1 + (int) $t->anggota_aktif_count,
+                'pendapatan_per_bulan' => $t->pendapatan_per_bulan !== null ? (float) $t->pendapatan_per_bulan : null,
+                'daerah_asal_kabupaten_id' => $t->daerah_asal_kabupaten_id,
+                'tahun_kedatangan' => $t->tahun_kedatangan,
+                'status_tinggal' => $t->status_tinggal?->value,
+                'status_anggota_poktan' => $t->status_anggota_poktan?->value,
+                'status_sertifikat' => $t->status_sertifikat?->value,
+                'telepon' => $t->telepon,
+                'satuan_permukiman' => $namaSp[$t->satuan_permukiman_id] ?? '-',
+                'satuan_permukiman_id' => $t->satuan_permukiman_id,
+            ])
+            ->all();
+
+        $rumah = Rumah::withoutGlobalScopes()
+            ->orderBy('id_rumah')
+            ->get()
+            ->map(fn (Rumah $r): array => [
+                'id_rumah' => $r->id_rumah,
+                'no_rumah' => $r->no_rumah,
+                'satuan_permukiman' => $namaSp[$r->satuan_permukiman_id] ?? '-',
+                'satuan_permukiman_id' => $r->satuan_permukiman_id,
+                'transmigran_id' => $r->transmigran_id,
+                'penghuni' => $r->transmigran_id !== null ? ($kkPerId[$r->transmigran_id] ?? null) : null,
+                'kondisi' => $r->kondisi,
+                'status_hunian' => $r->status_hunian,
+                'alasan_tidak_dihuni' => $r->alasan_tidak_dihuni,
+                'tahun_pembangunan' => $r->tahun_pembangunan,
+                'luas_bangunan' => $r->luas_bangunan !== null ? (float) $r->luas_bangunan : null,
+                'lintang' => $r->lintang !== null ? (float) $r->lintang : null,
+                'bujur' => $r->bujur !== null ? (float) $r->bujur : null,
+            ])
+            ->all();
+
+        $lahan = Lahan::withoutGlobalScopes()
+            ->orderBy('id_lahan')
+            ->get()
+            ->map(fn (Lahan $l): array => [
+                'id_lahan' => $l->id_lahan,
+                'kode_lahan' => $l->kode_lahan,
+                'transmigran_id' => $l->transmigran_id,
+                'pemilik' => $kkPerId[$l->transmigran_id] ?? '-',
+                'satuan_permukiman' => $namaSp[$l->satuan_permukiman_id] ?? '-',
+                'satuan_permukiman_id' => $l->satuan_permukiman_id,
+                'luas_pekarangan' => $l->luas_pekarangan !== null ? (float) $l->luas_pekarangan : null,
+                'luas_usaha' => $l->luas_usaha !== null ? (float) $l->luas_usaha : null,
+                'luas_kering' => $l->luas_kering !== null ? (float) $l->luas_kering : null,
+                'luas_basah' => $l->luas_basah !== null ? (float) $l->luas_basah : null,
+                'status_sertifikat' => $sertifikatPerKk[$l->transmigran_id] ?? 'Belum Didata',
+            ])
+            ->all();
+
         return [
-            'transmigran' => DummyData::transmigran(),
-            'rumah' => DummyData::rumah(),
-            'lahan' => DummyData::lahan(),
+            'transmigran' => $transmigran,
+            'rumah' => $rumah,
+            'lahan' => $lahan,
         ];
+    }
+
+    /**
+     * Nama tiap SP menurut id, untuk kolom "Satuan Permukiman" pada laporan.
+     *
+     * @return Collection<int, string>
+     */
+    private static function namaSpPerId(): Collection
+    {
+        return SatuanPermukiman::withoutGlobalScopes()->pluck('nama', 'id_satuan_permukiman');
     }
 
     /**
