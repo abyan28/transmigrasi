@@ -16,7 +16,7 @@
     <x-sim.halaman-daftar judul="Infrastruktur SP"
         keterangan="Pendataan aset irigasi, air, jalan produksi, listrik, dan gudang."
         :remah="\App\Helpers\RemahHelper::untuk('/sp/infrastruktur')"
-        :jumlah="count($baris)" :kata-kunci="$cari" :aksi-url="route('infrastruktur.index')"
+        :jumlah="$baris->total()" :paginator="$baris" :kata-kunci="$cari" :aksi-url="route('infrastruktur.index')"
         placeholder-cari="Cari nama infrastruktur" judul-kosong="Belum ada data infrastruktur"
         pesan-kosong="Aset infrastruktur akan tampil di sini setelah didata.">
 
@@ -26,8 +26,8 @@
         </x-slot:aksi>
 
         <x-slot:ringkasan>
-            <x-sim.stat-card label="Aset Terdata" :nilai="count($semua)" />
-            <x-sim.stat-card label="Kondisi Baik" :nilai="count($semua) - $perluPerbaikan" />
+            <x-sim.stat-card label="Aset Terdata" :nilai="$totalAset" />
+            <x-sim.stat-card label="Kondisi Baik" :nilai="$kondisiBaik" />
             <x-sim.stat-card label="Perlu Perbaikan" :nilai="$perluPerbaikan" />
             <x-sim.stat-card label="Rusak Berat" :nilai="$rusakBerat"
                 keterangan="Perlu penanganan segera" />

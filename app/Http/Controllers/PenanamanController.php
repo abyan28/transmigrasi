@@ -11,13 +11,13 @@ use App\Models\Poktan;
 use App\Models\SaprotanDistribusi;
 use App\Support\DummyData;
 use App\Support\KonversiPanen;
+use App\Support\Paginasi;
 use App\Support\PenyajianPanen;
 use App\Support\RekapPoktan;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -38,53 +38,59 @@ class PenanamanController extends Controller
 
     public function index(Request $request): View
     {
-        $semua = $this->daftar();
-
         $cari = trim((string) $request->query('cari', ''));
         $filterSp = $request->query('sp');
         $filterKomoditas = $request->query('komoditas');
         $filterStatus = $request->query('status');
-        $tahunDari = $request->query('tahun_dari');
-        $tahunSampai = $request->query('tahun_sampai');
+        $tahunDari = $request->query('tahun_dari') !== null && $request->query('tahun_dari') !== ''
+            ? (int) $request->query('tahun_dari') : null;
+        $tahunSampai = $request->query('tahun_sampai') !== null && $request->query('tahun_sampai') !== ''
+            ? (int) $request->query('tahun_sampai') : null;
+        if ($tahunDari !== null && $tahunSampai !== null && $tahunDari > $tahunSampai) {
+            [$tahunDari, $tahunSampai] = [$tahunSampai, $tahunDari];
+        }
+        $perHalaman = Paginasi::perHalaman($request);
 
-        $tahunTanam = fn (array $r) => $r['periode_tanam']
-            ? Carbon::parse($r['periode_tanam'].'-01')->year
-            : null;
+        $query = Penanaman::query()
+            ->with(['poktan.satuanPermukiman', 'komoditas', 'hasilPanen', 'berkas'])
+            ->when($cari !== '', fn ($q) => $q->where(fn ($sub) => $sub
+                ->orWhereHas('poktan', fn ($p) => $p->where('nama', 'like', "%{$cari}%"))
+                ->orWhereHas('komoditas', fn ($k) => $k->where('nama', 'like', "%{$cari}%"))))
+            ->when($filterSp, fn ($q) => $q->whereHas('poktan', fn ($p) => $p->where('satuan_permukiman_id', $filterSp)))
+            ->when($filterKomoditas, fn ($q) => $q->whereHas('komoditas', fn ($k) => $k->where('nama', $filterKomoditas)))
+            // Status panen DITURUNKAN dari ada/tidaknya baris hasil_panen
+            // yang menaut (rules.md, lihat StatusPanen), bukan kolom -- jadi
+            // disaring lewat keberadaan relasinya, bukan ->where() biasa.
+            ->when($filterStatus === StatusPanen::BelumDipanen->value, fn ($q) => $q->whereDoesntHave('hasilPanen'))
+            ->when($filterStatus === StatusPanen::SelesaiDipanen->value, fn ($q) => $q->whereHas('hasilPanen'))
+            // periode_tanam CHAR(7) 'YYYY-MM' -- perbandingan string sejalan
+            // perbandingan kronologis untuk format ini.
+            ->when($tahunDari !== null, fn ($q) => $q->where('periode_tanam', '>=', sprintf('%04d-01', $tahunDari)))
+            ->when($tahunSampai !== null, fn ($q) => $q->where('periode_tanam', '<=', sprintf('%04d-12', $tahunSampai)));
 
+        // Jumlah luas TERSARING (bukan cuma halaman ini) -- lihat catatan
+        // yang sama pada LahanController.
+        $totalLuas = (float) (clone $query)->sum('realisasi_tanam');
+
+        $baris = $query->orderBy('id_penanaman')->paginate($perHalaman)->withQueryString();
+
+        // $statusPanen/$kekuatanPoktan hanya dipakai VIEW untuk baris yang
+        // TAMPIL (di dalam @foreach ($baris as $r)), jadi cukup dihitung dari
+        // model mentah HALAMAN INI -- diambil SEBELUM ->through() menukar
+        // isi koleksi menjadi larik tampilan.
         $statusPanen = [];
-        foreach ($semua as $r) {
-            $statusPanen[$r['id_penanaman']] = $r['_status'];
-        }
-
         $kekuatanPoktan = [];
-        foreach ($semua as $r) {
-            $kekuatanPoktan[$r['poktan_id']] ??= $r['_kekuatan'];
+        foreach ($baris->getCollection() as $p) {
+            $statusPanen[$p->id_penanaman] = $this->status($p);
+            $kekuatanPoktan[$p->poktan_id] ??= $p->poktan === null
+                ? ['jumlah_anggota' => 0, 'luas_kering' => 0.0, 'luas_basah' => 0.0, 'luas_total' => 0.0]
+                : RekapPoktan::kekuatan($p->poktan);
         }
 
-        $baris = array_values(array_filter($semua, function (array $r) use ($cari, $filterSp, $filterKomoditas, $filterStatus, $statusPanen) {
-            if ($cari !== ''
-                && ! str_contains(mb_strtolower((string) $r['poktan']), mb_strtolower($cari))
-                && ! str_contains(mb_strtolower((string) $r['komoditas']), mb_strtolower($cari))) {
-                return false;
-            }
-            if ($filterSp && (string) $r['satuan_permukiman_id'] !== (string) $filterSp) {
-                return false;
-            }
-            if ($filterKomoditas && $r['komoditas'] !== $filterKomoditas) {
-                return false;
-            }
-
-            return ! ($filterStatus && $statusPanen[$r['id_penanaman']]->value !== $filterStatus);
-        }));
-
-        $baris = DummyData::saringRentangTahun($baris, $tahunDari, $tahunSampai, $tahunTanam);
-
-        $daftarTahun = array_values(array_filter(array_unique(array_map($tahunTanam, $semua))));
-        rsort($daftarTahun);
+        $baris->through(fn (Penanaman $p) => $this->baris($p));
 
         return view('pages.penanaman.index', [
             'title' => 'Penanaman',
-            'semua' => $semua,
             'baris' => $baris,
             'cari' => $cari,
             'filterSp' => $filterSp,
@@ -95,13 +101,16 @@ class PenanamanController extends Controller
             'adaFilter' => $cari !== '' || $filterSp || $tahunDari || $tahunSampai || $filterKomoditas || $filterStatus,
             'statusPanen' => $statusPanen,
             'kekuatanPoktan' => $kekuatanPoktan,
-            'totalLuas' => array_sum(array_column($baris, 'realisasi_tanam')),
-            'totalBelumDipanen' => array_sum(array_map(
-                fn (array $r) => $statusPanen[$r['id_penanaman']] === StatusPanen::BelumDipanen ? (float) $r['realisasi_tanam'] : 0.0,
-                $semua,
-            )),
-            'daftarTahun' => $daftarTahun,
-            'daftarKomoditas' => array_values(array_unique(array_column($semua, 'komoditas'))),
+            'totalLuas' => $totalLuas,
+            // Kartu ringkasan kawasan-penuh, bukan hasil saringan/halaman ini.
+            'totalCatatan' => Penanaman::query()->count(),
+            'totalRealisasiTanam' => (float) Penanaman::query()->sum('realisasi_tanam'),
+            'totalBelumDipanen' => (float) Penanaman::query()->whereDoesntHave('hasilPanen')->sum('realisasi_tanam'),
+            'daftarTahun' => Penanaman::query()
+                ->selectRaw('DISTINCT SUBSTRING(periode_tanam, 1, 4) as tahun')
+                ->orderByDesc('tahun')->pluck('tahun')->map(fn ($t) => (int) $t)->all(),
+            'daftarKomoditas' => Penanaman::query()->join('komoditas', 'komoditas.id_komoditas', '=', 'penanaman.komoditas_id')
+                ->distinct()->orderBy('komoditas.nama')->pluck('komoditas.nama')->all(),
             'daftarSp' => DummyData::satuanPermukiman(),
         ]);
     }
@@ -208,30 +217,6 @@ class PenanamanController extends Controller
         return $p->relationLoaded('hasilPanen')
             ? ($p->hasilPanen === null ? StatusPanen::BelumDipanen : StatusPanen::SelesaiDipanen)
             : ($p->hasilPanen()->exists() ? StatusPanen::SelesaiDipanen : StatusPanen::BelumDipanen);
-    }
-
-    /**
-     * @return array<int, array<string, mixed>>
-     */
-    private function daftar(): array
-    {
-        $penanaman = Penanaman::query()
-            ->with(['poktan.satuanPermukiman', 'komoditas', 'hasilPanen', 'berkas'])
-            ->orderBy('id_penanaman')
-            ->get();
-
-        $kekuatan = [];
-
-        return $penanaman->map(function (Penanaman $p) use (&$kekuatan) {
-            $kekuatan[$p->poktan_id] ??= $p->poktan === null
-                ? ['jumlah_anggota' => 0, 'luas_kering' => 0.0, 'luas_basah' => 0.0, 'luas_total' => 0.0]
-                : RekapPoktan::kekuatan($p->poktan);
-
-            return $this->baris($p) + [
-                '_status' => $this->status($p),
-                '_kekuatan' => $kekuatan[$p->poktan_id],
-            ];
-        })->all();
     }
 
     /**

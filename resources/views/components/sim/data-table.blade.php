@@ -30,6 +30,16 @@
     'perHalaman' => 25,
 
     /*
+        Paginator Eloquent (Task -- Fase 1, 2026-09-05). Bila diisi, tautan
+        "sebelumnya/berikutnya/nomor halaman" dirender di kaki tabel dan
+        keterangan "Menampilkan X dari Y" memakai jumlah baris HALAMAN INI
+        ($paginator->count()), bukan tebakan min($jumlah, $perHalaman) yang
+        salah di halaman terakhir. `null` = perilaku lama (tanpa paginasi),
+        dipertahankan untuk pemanggil yang belum sempat diperbarui.
+    */
+    'paginator' => null,
+
+    /*
         Nama tabel bagi pembaca layar, dirender sebagai <caption> tersembunyi.
 
         Halaman yang memakai `x-sim.halaman-daftar` menerimanya otomatis dari
@@ -66,17 +76,16 @@
                 </button>
             @endisset
 
-            {{-- Jumlah baris per halaman, bawaan 25 sesuai rules.md 13.3.2 --}}
-            <label class="hidden items-center gap-2 text-theme-xs text-gray-500 sm:flex dark:text-gray-400">
-                Tampilkan
-                <select
-                    class="rounded-lg border border-gray-300 bg-transparent px-2 py-1.5 text-theme-xs text-gray-700 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300">
-                    @foreach ([10, 25, 50, 100] as $pilihan)
-                        <option value="{{ $pilihan }}" @selected($pilihan === $perHalaman)>{{ $pilihan }}</option>
-                    @endforeach
-                </select>
-                baris
-            </label>
+            {{--
+                Jumlah baris per halaman, bawaan 25 sesuai rules.md 13.3 poin 2.
+                SUNGGUHAN sejak Task -- Fase 1 (2026-09-05): sebelumnya <select>
+                ini tanpa `name` dan tanpa penanganan `onchange`, kontrol mati
+                (ANTISLOP R-26) -- memilih nilai tidak mengubah apa pun.
+                `onchange="this.form.submit()"` mengirim ulang SELURUH form GET
+                yang membungkusnya (pencarian + filter laci ikut terbawa),
+                pola yang sama seperti input pencarian di sebelahnya.
+            --}}
+            <x-sim.pilih-per-halaman :per-halaman="$perHalaman" />
         </div>
 
         <div class="flex items-center gap-2">
@@ -151,15 +160,21 @@
             @endisset
         </div>
 
-        {{-- Paginasi --}}
+        {{--
+            Paginasi. `$paginator` (LengthAwarePaginator, Fase 1) memberi
+            jumlah baris HALAMAN INI yang benar lewat `->count()` -- bawaan
+            lama `min($jumlah, $perHalaman)` selalu salah di halaman
+            terakhir (mis. 30 data, 25/halaman: halaman 2 seharusnya
+            menampilkan 5, bukan 25).
+        --}}
         <div class="flex flex-col gap-3 border-t border-gray-200 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-gray-800">
             <p class="text-theme-xs text-gray-500 dark:text-gray-400">
-                Menampilkan <span class="font-medium tabular-nums">{{ number_format(min($jumlah, $perHalaman), 0, ',', '.') }}</span>
+                Menampilkan <span class="font-medium tabular-nums">{{ number_format($paginator?->count() ?? min($jumlah, $perHalaman), 0, ',', '.') }}</span>
                 dari <span class="font-medium tabular-nums">{{ number_format($jumlah, 0, ',', '.') }}</span> data
             </p>
-            @isset($paginasi)
-                {{ $paginasi }}
-            @endisset
+            @if ($paginator?->hasPages())
+                <div>{{ $paginator->onEachSide(1)->links() }}</div>
+            @endif
         </div>
     @endif
 </div>

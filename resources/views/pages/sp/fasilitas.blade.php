@@ -16,7 +16,7 @@
     <x-sim.halaman-daftar judul="Fasilitas SP"
         keterangan="Bangunan dan sarana tetap milik satuan permukiman."
         :remah="\App\Helpers\RemahHelper::untuk('/sp/fasilitas')"
-        :jumlah="count($baris)" :kata-kunci="$cari" :aksi-url="route('sp.fasilitas')"
+        :jumlah="$baris->total()" :paginator="$baris" :kata-kunci="$cari" :aksi-url="route('sp.fasilitas')"
         placeholder-cari="Cari nama fasilitas" judul-kosong="Belum ada data fasilitas"
         pesan-kosong="Bangunan dan sarana milik satuan permukiman akan tampil di sini setelah didata.">
 
@@ -26,9 +26,9 @@
         </x-slot:aksi>
 
         <x-slot:ringkasan>
-            <x-sim.stat-card label="Jenis Fasilitas" :nilai="count($semua)" />
+            <x-sim.stat-card label="Jenis Fasilitas" :nilai="$jenisFasilitas" />
             <x-sim.stat-card label="Total Unit" :nilai="number_format($totalUnit, 0, ',', '.')" />
-            <x-sim.stat-card label="Kondisi Baik" :nilai="count($semua) - $rusak" />
+            <x-sim.stat-card label="Kondisi Baik" :nilai="$kondisiBaik" />
             <x-sim.stat-card label="Perlu Perbaikan" :nilai="$rusak"
                 keterangan="Rusak ringan atau rusak berat" />
         </x-slot:ringkasan>

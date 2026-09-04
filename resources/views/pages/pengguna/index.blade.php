@@ -103,7 +103,7 @@
     <x-sim.halaman-daftar judul="Manajemen Pengguna"
         keterangan="Akun petugas beserta role dan penugasannya."
         :remah="\App\Helpers\RemahHelper::untuk('/pengguna')"
-        :jumlah="count($baris)" :kata-kunci="$cari" :aksi-url="route('pengguna.index')"
+        :jumlah="$baris->total()" :paginator="$baris" :kata-kunci="$cari" :aksi-url="route('pengguna.index')"
         placeholder-cari="Cari nama atau username" judul-kosong="Belum ada pengguna"
         pesan-kosong="Akun petugas akan tampil di sini setelah dibuat admin.">
 
@@ -123,9 +123,9 @@
         </x-slot:aksi>
 
         <x-slot:ringkasan>
-            <x-sim.stat-card label="Total Akun" :nilai="count($semua)" />
+            <x-sim.stat-card label="Total Akun" :nilai="$totalAkun" />
             <x-sim.stat-card label="Akun Aktif" :nilai="$aktif" />
-            <x-sim.stat-card label="Akun Nonaktif" :nilai="count($semua) - $aktif"
+            <x-sim.stat-card label="Akun Nonaktif" :nilai="$totalAkun - $aktif"
                 keterangan="Dinonaktifkan, bukan dihapus" />
             <x-sim.stat-card label="Wajib Ganti Sandi" :nilai="$perluGanti"
                 keterangan="Pengguna yang wajib mengubah kata sandi" />

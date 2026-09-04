@@ -6,11 +6,13 @@ use App\Models\Desa;
 use App\Models\Kabupaten;
 use App\Models\Kecamatan;
 use App\Models\Provinsi;
+use App\Support\Paginasi;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 
@@ -59,9 +61,6 @@ class WilayahController extends Controller
         ],
     ];
 
-    /** Pilihan jumlah baris per halaman; nilai lain dikembalikan ke 25. */
-    private const PER_HALAMAN = [10, 25, 50, 100];
-
     public function index(Request $request): View
     {
         $baris = $this->semuaBaris();
@@ -96,17 +95,29 @@ class WilayahController extends Controller
         // "menampilkan sekian dari sekian" menyebut angka yang benar.
         $jumlah = $baris->count();
 
-        $perHalaman = (int) $request->query('per_halaman', 25);
-
-        if (! in_array($perHalaman, self::PER_HALAMAN, true)) {
-            $perHalaman = 25;
-        }
+        $perHalaman = Paginasi::perHalaman($request);
 
         $halaman = max(1, (int) $request->query('page', 1));
 
+        $barisHalaman = $baris->slice(($halaman - 1) * $perHalaman, $perHalaman)->values();
+
+        // Mekanisme pemotongan larik TIDAK berubah (sudah benar sejak semula:
+        // jumlah dihitung sebelum dipotong, `per_halaman` divalidasi ke
+        // pilihan sah). `LengthAwarePaginator` di sini murni untuk MERENDER
+        // tautan halaman lewat `x-sim.data-table` yang sama dipakai
+        // controller lain (Fase 1, 2026-09-05) -- bukan pengganti mekanismenya.
+        $paginator = new LengthAwarePaginator(
+            $barisHalaman,
+            $jumlah,
+            $perHalaman,
+            $halaman,
+            ['path' => $request->url(), 'query' => $request->query()],
+        );
+
         return view('pages.master.wilayah', [
             'title' => 'Data Master Wilayah',
-            'baris' => $baris->slice(($halaman - 1) * $perHalaman, $perHalaman)->values()->all(),
+            'baris' => $barisHalaman->all(),
+            'paginator' => $paginator,
             'jumlahBaris' => $jumlah,
             'perHalaman' => $perHalaman,
             'cacahTingkat' => $cacah,

@@ -7,6 +7,7 @@ use App\Http\Controllers\Concerns\MenyimpanBerkas;
 use App\Models\Lahan;
 use App\Models\Transmigran;
 use App\Support\DummyData;
+use App\Support\Paginasi;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -33,61 +34,47 @@ class LahanController extends Controller
 
     public function index(Request $request): View
     {
-        $semua = $this->daftar();
-
         $cari = trim((string) $request->query('cari', ''));
         $filterSp = $request->query('sp');
         $filterJenis = $request->query('peruntukan_lahan');
         $filterKategori = $request->query('kategori_lahan');
+        $perHalaman = Paginasi::perHalaman($request);
 
-        $baris = array_values(array_filter($semua, function (array $l) use ($cari, $filterSp, $filterJenis, $filterKategori) {
-            if ($cari !== '') {
-                $cocok = str_contains(mb_strtolower((string) $l['kode_lahan']), mb_strtolower($cari))
-                    || str_contains(mb_strtolower((string) $l['pemilik']), mb_strtolower($cari));
+        $query = Lahan::query()
+            ->with(['transmigran.berkas', 'satuanPermukiman'])
+            ->when($cari !== '', fn ($q) => $q->where(fn ($sub) => $sub
+                ->where('kode_lahan', 'like', "%{$cari}%")
+                ->orWhereHas('transmigran', fn ($t) => $t->where('nama_kepala_keluarga', 'like', "%{$cari}%"))))
+            ->when($filterSp, fn ($q) => $q->where('satuan_permukiman_id', $filterSp))
+            ->when($filterJenis === 'Lahan Pekarangan', fn ($q) => $q->whereNotNull('luas_pekarangan'))
+            ->when($filterJenis === 'Lahan Usaha', fn ($q) => $q->whereNotNull('luas_usaha'))
+            ->when($filterKategori === 'kering', fn ($q) => $q->where('luas_kering', '>', 0))
+            ->when($filterKategori === 'basah', fn ($q) => $q->where('luas_basah', '>', 0));
 
-                if (! $cocok) {
-                    return false;
-                }
-            }
+        // Jumlah luas TERSARING (bukan cuma halaman ini) -- dihitung dari
+        // klon query SEBELUM `->paginate()`, sebab rules.md 5.0b-1 poin 13
+        // menuntut agregat mengikuti hasil query yang sudah tersaring/
+        // ber-cakupan, dan paginasi hanya memotong TAMPILANNYA.
+        $totalLuasTampil = (float) (clone $query)->sum('luas_pekarangan')
+            + (float) (clone $query)->sum('luas_usaha');
 
-            if ($filterSp && (string) $l['satuan_permukiman_id'] !== (string) $filterSp) {
-                return false;
-            }
-
-            if ($filterJenis === 'Lahan Pekarangan' && $l['luas_pekarangan'] === null) {
-                return false;
-            }
-
-            if ($filterJenis === 'Lahan Usaha' && $l['luas_usaha'] === null) {
-                return false;
-            }
-
-            if ($filterKategori === 'kering' && (float) ($l['luas_kering'] ?? 0) <= 0) {
-                return false;
-            }
-
-            return ! ($filterKategori === 'basah' && (float) ($l['luas_basah'] ?? 0) <= 0);
-        }));
-
-        $jumlahKolom = fn (array $rows, string $kolom): float => array_sum(array_map(
-            static fn ($r): float => (float) ($r[$kolom] ?? 0),
-            $rows,
-        ));
+        $baris = $query->orderBy('id_lahan')->paginate($perHalaman)->withQueryString();
+        $baris->through(fn (Lahan $l) => $this->baris($l));
 
         return view('pages.lahan.index', [
             'title' => 'Data Lahan',
-            'semua' => $semua,
             'baris' => $baris,
             'cari' => $cari,
             'filterSp' => $filterSp,
             'filterJenis' => $filterJenis,
             'filterKategori' => $filterKategori,
             'adaFilter' => $cari !== '' || $filterSp || $filterJenis || $filterKategori,
-            'totalLuasTampil' => $jumlahKolom($baris, 'luas_pekarangan') + $jumlahKolom($baris, 'luas_usaha'),
-            'luasPekarangan' => $jumlahKolom($semua, 'luas_pekarangan'),
-            'luasUsaha' => $jumlahKolom($semua, 'luas_usaha'),
-            'jumlahBidang' => count(array_filter($semua, fn ($l) => $l['luas_pekarangan'] !== null))
-                + count(array_filter($semua, fn ($l) => $l['luas_usaha'] !== null)),
+            'totalLuasTampil' => $totalLuasTampil,
+            // Kartu ringkasan kawasan-penuh, bukan hasil saringan.
+            'luasPekarangan' => (float) Lahan::query()->sum('luas_pekarangan'),
+            'luasUsaha' => (float) Lahan::query()->sum('luas_usaha'),
+            'jumlahBidang' => Lahan::query()->whereNotNull('luas_pekarangan')->count()
+                + Lahan::query()->whereNotNull('luas_usaha')->count(),
             'daftarSp' => DummyData::satuanPermukiman(),
         ]);
     }
@@ -192,19 +179,6 @@ class LahanController extends Controller
         }
 
         return [$data, $statusSertifikat, $transmigranId];
-    }
-
-    /**
-     * @return array<int, array<string, mixed>>
-     */
-    private function daftar(): array
-    {
-        return Lahan::query()
-            ->with(['transmigran.berkas', 'satuanPermukiman'])
-            ->orderBy('id_lahan')
-            ->get()
-            ->map(fn (Lahan $l) => $this->baris($l))
-            ->all();
     }
 
     /**

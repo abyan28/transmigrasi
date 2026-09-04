@@ -25,17 +25,17 @@
     </x-sim.page-header>
 
     <div class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <x-sim.stat-card label="Total Rumah" :nilai="number_format(count($semua), 0, ',', '.')" satuan="unit" />
+        <x-sim.stat-card label="Total Rumah" :nilai="number_format($jumlahRumah, 0, ',', '.')" satuan="unit" />
         <x-sim.stat-card label="Rumah Terhuni" :nilai="number_format($jumlahDihuni, 0, ',', '.')"
-            :keterangan="'dari ' . count($semua) . ' unit terdata'" />
+            :keterangan="'dari ' . number_format($jumlahRumah, 0, ',', '.') . ' unit terdata'" />
         <x-sim.stat-card label="Rumah Kosong"
-            :nilai="number_format(count($semua) - $jumlahDihuni, 0, ',', '.')" />
+            :nilai="number_format($jumlahRumah - $jumlahDihuni, 0, ',', '.')" />
         <x-sim.stat-card label="Perlu Perbaikan" :nilai="number_format($jumlahRusak, 0, ',', '.')"
             keterangan="Rusak ringan atau rusak berat" />
     </div>
 
     <form method="GET" action="{{ route('rumah.index') }}">
-        <x-sim.data-table :jumlah="count($baris)" :kata-kunci="$cari"
+        <x-sim.data-table :jumlah="$baris->total()" :paginator="$baris" :kata-kunci="$cari"
             placeholder-cari="Cari nomor rumah atau penghuni" judul-kosong="Belum ada data rumah"
             pesan-kosong="Data rumah akan tampil di sini setelah ditambahkan.">
 

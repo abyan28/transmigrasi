@@ -7,6 +7,7 @@ use App\Models\HasilPanen;
 use App\Models\Penanaman;
 use App\Support\DummyData;
 use App\Support\KonversiPanen;
+use App\Support\Paginasi;
 use App\Support\PenyajianPanen;
 use App\Support\RekapPoktan;
 use App\Support\ValidationRules;
@@ -36,50 +37,59 @@ class HasilPanenController extends Controller
 
     public function index(Request $request): View
     {
-        $semua = $this->daftar();
-
         $cari = trim((string) $request->query('cari', ''));
         $filterSp = $request->query('sp');
         $filterKomoditas = $request->query('komoditas');
-        $tahunDari = $request->query('tahun_dari');
-        $tahunSampai = $request->query('tahun_sampai');
+        $tahunDari = $request->query('tahun_dari') !== null && $request->query('tahun_dari') !== ''
+            ? (int) $request->query('tahun_dari') : null;
+        $tahunSampai = $request->query('tahun_sampai') !== null && $request->query('tahun_sampai') !== ''
+            ? (int) $request->query('tahun_sampai') : null;
+        if ($tahunDari !== null && $tahunSampai !== null && $tahunDari > $tahunSampai) {
+            [$tahunDari, $tahunSampai] = [$tahunSampai, $tahunDari];
+        }
+        $perHalaman = Paginasi::perHalaman($request);
 
-        $tahunPanen = fn (array $p) => $p['periode_panen'] ? (int) substr($p['periode_panen'], 0, 4) : null;
+        $query = HasilPanen::query()
+            ->with(['satuan', 'penanaman.poktan.satuanPermukiman', 'penanaman.komoditas'])
+            ->when($cari !== '', fn ($q) => $q->where(fn ($sub) => $sub
+                ->orWhereHas('penanaman.poktan', fn ($p) => $p->where('nama', 'like', "%{$cari}%"))
+                ->orWhereHas('penanaman.komoditas', fn ($k) => $k->where('nama', 'like', "%{$cari}%"))))
+            ->when($filterSp, fn ($q) => $q->whereHas('penanaman.poktan', fn ($p) => $p->where('satuan_permukiman_id', $filterSp)))
+            ->when($filterKomoditas, fn ($q) => $q->whereHas('penanaman.komoditas', fn ($k) => $k->where('nama', $filterKomoditas)))
+            // periode_panen CHAR(7) 'YYYY-MM' -- perbandingan string sejalan
+            // perbandingan kronologis untuk format ini.
+            ->when($tahunDari !== null, fn ($q) => $q->where('periode_panen', '>=', sprintf('%04d-01', $tahunDari)))
+            ->when($tahunSampai !== null, fn ($q) => $q->where('periode_panen', '<=', sprintf('%04d-12', $tahunSampai)));
 
-        $baris = array_values(array_filter($semua, function (array $p) use ($cari, $filterSp, $filterKomoditas) {
-            if ($cari !== ''
-                && ! str_contains(mb_strtolower((string) $p['poktan']), mb_strtolower($cari))
-                && ! str_contains(mb_strtolower((string) $p['komoditas']), mb_strtolower($cari))) {
-                return false;
-            }
-            if ($filterSp && (string) $p['satuan_permukiman_id'] !== (string) $filterSp) {
-                return false;
-            }
+        // Setara ton TERSARING (bukan cuma halaman ini) -- konversi per baris
+        // (bukan agregat SQL) sebab faktornya milik satuan, bukan kolom
+        // numerik yang bisa dijumlah SQL langsung.
+        $totalTonTampil = (float) (clone $query)->get()
+            ->sum(fn (HasilPanen $h) => KonversiPanen::keTon((float) $h->produksi, $h->satuan?->nama));
 
-            return ! ($filterKomoditas && $p['komoditas'] !== $filterKomoditas);
-        }));
+        $baris = $query->orderBy('id_hasil_panen')->paginate($perHalaman)->withQueryString();
 
-        $baris = DummyData::saringRentangTahun($baris, $tahunDari, $tahunSampai, $tahunPanen);
-
+        // $setaraTon/$asalTanam hanya dipakai VIEW untuk baris yang TAMPIL,
+        // jadi cukup dihitung dari model mentah HALAMAN INI.
         $setaraTon = [];
         $asalTanam = [];
-        $kekuatanPoktan = [];
+        $luasPoktan = [];
+        foreach ($baris->getCollection() as $h) {
+            $setaraTon[$h->id_hasil_panen] = KonversiPanen::keTon((float) $h->produksi, $h->satuan?->nama);
 
-        foreach ($semua as $p) {
-            $setaraTon[$p['id_hasil_panen']] = KonversiPanen::keTon($p['produksi'], $p['satuan']);
-            $asalTanam[$p['id_hasil_panen']] = [
-                'volume_benih' => $p['_volume_benih'],
-                'luas_lahan' => $p['_luas_lahan'],
+            $poktan = $h->penanaman?->poktan;
+            $luasPoktan[$poktan?->id_poktan] ??= $poktan === null ? 0.0 : RekapPoktan::kekuatan($poktan)['luas_total'];
+
+            $asalTanam[$h->id_hasil_panen] = [
+                'volume_benih' => (float) ($h->penanaman?->volume_benih ?? 0),
+                'luas_lahan' => $luasPoktan[$poktan?->id_poktan],
             ];
-            $kekuatanPoktan[$p['poktan_id']] ??= ['luas_total' => $p['_luas_lahan']];
         }
 
-        $daftarTahun = array_values(array_filter(array_unique(array_map($tahunPanen, $semua))));
-        rsort($daftarTahun);
+        $baris->through(fn (HasilPanen $h) => $this->baris($h));
 
         return view('pages.panen.index', [
             'title' => 'Hasil Panen',
-            'semua' => $semua,
             'baris' => $baris,
             'cari' => $cari,
             'filterSp' => $filterSp,
@@ -87,13 +97,20 @@ class HasilPanenController extends Controller
             'filterTahunDari' => $tahunDari,
             'filterTahunSampai' => $tahunSampai,
             'adaFilter' => $cari !== '' || $filterSp || $filterKomoditas || $tahunDari || $tahunSampai,
-            'totalTonTampil' => array_sum(array_map(fn ($p) => $setaraTon[$p['id_hasil_panen']], $baris)),
-            'totalTonSemua' => array_sum($setaraTon),
+            'totalTonTampil' => $totalTonTampil,
             'setaraTon' => $setaraTon,
             'asalTanam' => $asalTanam,
-            'kekuatanPoktan' => $kekuatanPoktan,
-            'daftarKomoditas' => array_values(array_unique(array_column($semua, 'komoditas'))),
-            'daftarTahun' => $daftarTahun,
+            // Kartu ringkasan kawasan-penuh, bukan hasil saringan/halaman ini.
+            'totalCatatan' => HasilPanen::query()->count(),
+            'totalTonSemua' => (float) HasilPanen::query()->with('satuan')->get()
+                ->sum(fn (HasilPanen $h) => KonversiPanen::keTon((float) $h->produksi, $h->satuan?->nama)),
+            'daftarKomoditas' => HasilPanen::query()
+                ->join('penanaman', 'penanaman.id_penanaman', '=', 'hasil_panen.penanaman_id')
+                ->join('komoditas', 'komoditas.id_komoditas', '=', 'penanaman.komoditas_id')
+                ->distinct()->orderBy('komoditas.nama')->pluck('komoditas.nama')->all(),
+            'daftarTahun' => HasilPanen::query()
+                ->selectRaw('DISTINCT SUBSTRING(periode_panen, 1, 4) as tahun')
+                ->orderByDesc('tahun')->pluck('tahun')->map(fn ($t) => (int) $t)->all(),
             'daftarSp' => DummyData::satuanPermukiman(),
         ]);
     }
@@ -182,29 +199,6 @@ class HasilPanenController extends Controller
             'harga_jual' => $data['harga_jual'] ?? null,
             'keterangan' => $data['keterangan'] ?? null,
         ];
-    }
-
-    /**
-     * @return array<int, array<string, mixed>>
-     */
-    private function daftar(): array
-    {
-        $panen = HasilPanen::query()
-            ->with(['satuan', 'penanaman.poktan.satuanPermukiman', 'penanaman.komoditas'])
-            ->orderBy('id_hasil_panen')
-            ->get();
-
-        $luas = [];
-
-        return $panen->map(function (HasilPanen $h) use (&$luas) {
-            $poktan = $h->penanaman?->poktan;
-            $luas[$poktan?->id_poktan] ??= $poktan === null ? 0.0 : RekapPoktan::kekuatan($poktan)['luas_total'];
-
-            return $this->baris($h) + [
-                '_volume_benih' => (float) ($h->penanaman?->volume_benih ?? 0),
-                '_luas_lahan' => $luas[$poktan?->id_poktan],
-            ];
-        })->all();
     }
 
     /**

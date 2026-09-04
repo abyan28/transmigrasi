@@ -16,7 +16,7 @@
     <x-sim.halaman-daftar judul="Alsintan"
         keterangan="Alat dan mesin pertanian milik kelompok tani."
         :remah="\App\Helpers\RemahHelper::untuk('/alsintan')"
-        :jumlah="count($baris)" :kata-kunci="$cari" :aksi-url="route('alsintan.index')"
+        :jumlah="$baris->total()" :paginator="$baris" :kata-kunci="$cari" :aksi-url="route('alsintan.index')"
         placeholder-cari="Cari nama alat, jenis, atau poktan" judul-kosong="Belum ada data alsintan"
         pesan-kosong="Alat dan mesin pertanian akan tampil di sini setelah didata.">
 
@@ -26,7 +26,7 @@
         </x-slot:aksi>
 
         <x-slot:ringkasan>
-            <x-sim.stat-card label="Pengadaan" :nilai="count($semua)" />
+            <x-sim.stat-card label="Pengadaan" :nilai="$pengadaan" />
             <x-sim.stat-card label="Total Unit" :nilai="number_format($totalUnit, 0, ',', '.')" />
             <x-sim.stat-card label="Belum Tersalur" :nilai="number_format($belumTersalur, 0, ',', '.')"
                 keterangan="Unit di gudang UPT, belum dibagikan" />

@@ -43,7 +43,7 @@
     </x-sim.page-header>
 
     <div class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <x-sim.stat-card label="Total Pengaduan" :nilai="number_format(count($semua), 0, ',', '.')" satuan="laporan" />
+        <x-sim.stat-card label="Total Pengaduan" :nilai="number_format($total, 0, ',', '.')" satuan="laporan" />
         <x-sim.stat-card label="Belum Selesai" :nilai="number_format($belumSelesai, 0, ',', '.')"
             keterangan="Masih dalam penanganan" />
         <x-sim.stat-card label="Menunggu Diterima" :nilai="number_format($menungguDiterima, 0, ',', '.')"
@@ -53,7 +53,7 @@
     </div>
 
     <form method="GET" action="{{ route('pengaduan.index') }}">
-        <x-sim.data-table :jumlah="count($baris)" :kata-kunci="$cari"
+        <x-sim.data-table :jumlah="$baris->total()" :paginator="$baris" :kata-kunci="$cari"
             placeholder-cari="Cari nomor, perihal, atau pelapor" judul-kosong="Belum ada pengaduan"
             pesan-kosong="Laporan warga akan tampil di sini setelah masuk.">
 

@@ -5,10 +5,12 @@
  * Task 5.2 -- CRUD + unggah KTP/KK/SK + catat peristiwa + suksesi kepala keluarga.
  */
 
+use App\Enums\CakupanData;
 use App\Enums\HubunganAnggotaKeluarga;
 use App\Enums\StatusAnggotaKeluarga;
 use App\Models\AnggotaKeluarga;
 use App\Models\RiwayatKepalaKeluarga;
+use App\Models\Role;
 use App\Models\Transmigran;
 use App\Models\User;
 use App\Support\DummyData;
@@ -63,6 +65,34 @@ it('menyaring daftar transmigran menurut satuan permukiman', function () {
         ->assertOk()
         ->assertSee('PETRUS NAHAK')
         ->assertDontSee('YOHANES BERE');
+});
+
+it('memaginasi daftar transmigran sesuai cakupan data, bukan seluruh kawasan (rules.md 5.0b-1 poin 13)', function () {
+    // Sebelum Fase 1 (2026-09-05), index() mengambil SELURUH baris lalu
+    // menyaringnya di PHP -- penyaringan terjadi SETELAH data lengkap
+    // terbaca, bukan pada query builder sebelum ->paginate(). Uji ini
+    // membuktikan operator Per SP hanya melihat totalnya sendiri, bukan
+    // total kawasan yang kebetulan tersembunyi di baris lain.
+    $spSendiri = buatSp();
+    buatTransmigran($spSendiri);
+    buatTransmigran($spSendiri);
+
+    // Total kawasan (data contoh + dua baris di atas), dibaca SEBELUM
+    // berganti aktor -- `$petugas` di beforeEach bercakupan Semua.
+    $totalKawasan = Transmigran::count();
+    expect($totalKawasan)->toBeGreaterThan(2);
+
+    $role = Role::factory()->create(['cakupan_data' => CakupanData::PerSp->value]);
+    $operator = User::factory()->create(['role_id' => $role->id_role]);
+    $operator->semuaIzin = true;
+    $operator->satuanPermukiman()->attach($spSendiri->id_satuan_permukiman);
+
+    $this->actingAs($operator);
+
+    $baris = $this->get(route('transmigran.index'))->assertOk()->viewData('baris');
+
+    expect($baris->total())->toBe(2)
+        ->and($baris->lastPage())->toBe(1);
 });
 
 it('mencari transmigran memakai nomor KK', function () {

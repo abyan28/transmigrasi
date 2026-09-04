@@ -7,7 +7,7 @@ use App\Enums\CakupanData;
 use App\Models\AuditLog;
 use App\Models\Permission;
 use App\Models\Role;
-use App\Support\DummyData;
+use App\Support\Paginasi;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -24,19 +24,37 @@ use Illuminate\Validation\ValidationException;
  * role yang masih dipakai akun tak dapat dihapus (`rules.md` 5.0c).
  *
  * `simpan`/`perbarui`/`hapus` menulis ke tabel `role`/`role_permission` nyata.
- * Halaman `index()` MASIH membaca `DummyData` (peralihan tampilan ke Eloquent
- * = Tahap 4, sejalan seluruh modul lain); jadi perubahan yang tersimpan belum
- * langsung tampak di layar sampai peralihan itu. Uji memeriksa keadaan basis
- * data langsung, bukan lewat halaman.
+ * `index()` membaca Eloquent langsung juga (Fase 1, 2026-09-05) -- sebelumnya
+ * masih membaca `DummyData` walau tulisannya sudah nyata sejak Task 3.3,
+ * sehingga role baru tak pernah muncul pada daftarnya sendiri. Celah yang
+ * sama dengan `PengaturanPenggunaController`.
  */
 class PengaturanRoleController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
+        $perHalaman = Paginasi::perHalaman($request);
+
+        $role = Role::withCount(['permissions', 'users'])
+            ->orderBy('id_role')
+            ->paginate($perHalaman)
+            ->withQueryString();
+
+        $role->through(fn (Role $r) => [
+            'id_role' => $r->id_role,
+            'nama' => $r->nama,
+            'deskripsi' => $r->deskripsi,
+            'cakupan_data' => $r->cakupan_data->value,
+            'is_bawaan' => $r->is_bawaan,
+            'is_terkunci' => $r->is_terkunci,
+            'is_aktif' => $r->is_aktif,
+            'jumlah_izin' => $r->permissions_count,
+            'jumlah_pengguna' => $r->users_count,
+        ]);
+
         return view('pages.pengguna.role', [
             'title' => 'Role dan Hak Akses',
-            'role' => DummyData::role(),
-            'pengguna' => DummyData::pengguna(),
+            'role' => $role,
         ]);
     }
 

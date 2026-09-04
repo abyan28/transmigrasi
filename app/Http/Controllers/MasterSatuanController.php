@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Satuan;
+use App\Support\Paginasi;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -22,24 +23,27 @@ use Illuminate\Validation\Rule;
  */
 class MasterSatuanController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
+        $satuan = Satuan::query()
+            ->withCount('komoditas')
+            ->orderByDesc('faktor_ke_ton')
+            ->paginate(Paginasi::perHalaman($request))
+            ->withQueryString();
+
+        $satuan->through(fn (Satuan $s) => [
+            'id_satuan' => $s->id_satuan,
+            'nama' => $s->nama,
+            'simbol' => $s->simbol,
+            'faktor_ke_ton' => $s->faktor_ke_ton === null ? null : (float) $s->faktor_ke_ton,
+            // Dipakai tampilan untuk memberi tahu bahwa satuan ini
+            // masih terpakai, sehingga tombol hapusnya akan ditolak.
+            'dipakai_komoditas' => $s->komoditas_count,
+        ]);
+
         return view('pages.master.satuan', [
             'title' => 'Data Master Satuan',
-            'satuan' => Satuan::query()
-                ->withCount('komoditas')
-                ->orderByDesc('faktor_ke_ton')
-                ->get()
-                ->map(fn (Satuan $s) => [
-                    'id_satuan' => $s->id_satuan,
-                    'nama' => $s->nama,
-                    'simbol' => $s->simbol,
-                    'faktor_ke_ton' => $s->faktor_ke_ton === null ? null : (float) $s->faktor_ke_ton,
-                    // Dipakai tampilan untuk memberi tahu bahwa satuan ini
-                    // masih terpakai, sehingga tombol hapusnya akan ditolak.
-                    'dipakai_komoditas' => $s->komoditas_count,
-                ])
-                ->all(),
+            'satuan' => $satuan,
         ]);
     }
 

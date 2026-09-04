@@ -63,6 +63,12 @@
         @endif
     </div>
 
+    {{-- Tanpa `cari`/filter (daftar tetap ini biasanya pendek). --}}
+    <form method="GET" action="{{ route('daftar-pilihan.jenis', ['jenis' => $jenis->value]) }}"
+        class="mb-4 flex justify-end">
+        <x-sim.pilih-per-halaman :per-halaman="$baris->perPage()" />
+    </form>
+
     <div class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
         <x-sim.tabel-ringkas :judul="$jenis->label()"
             :kolom="match (true) {
@@ -148,6 +154,12 @@
             </p>
         @endif
     </div>
+
+    @if ($baris->hasPages())
+        <div class="mt-4">
+            {{ $baris->onEachSide(1)->links() }}
+        </div>
+    @endif
 
     @if ($bolehUbah)
         <x-sim.modal-form nama="formTambahDaftarPilihan" judul="Tambah Pilihan"

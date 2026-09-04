@@ -15,7 +15,7 @@
     <x-sim.halaman-daftar judul="Kelompok Tani"
         keterangan="Poktan di kawasan beserta ketua dan jumlah anggota transmigrannya."
         :remah="\App\Helpers\RemahHelper::untuk('/poktan')"
-        :jumlah="count($baris)" :kata-kunci="$cari" :aksi-url="route('poktan.index')"
+        :jumlah="$baris->total()" :paginator="$baris" :kata-kunci="$cari" :aksi-url="route('poktan.index')"
         placeholder-cari="Cari nama poktan atau ketua" judul-kosong="Belum ada kelompok tani"
         pesan-kosong="Kelompok tani akan tampil di sini setelah didata.">
 
@@ -25,9 +25,9 @@
         </x-slot:aksi>
 
         <x-slot:ringkasan>
-            <x-sim.stat-card label="Jumlah Poktan" :nilai="count($semua)" satuan="kelompok" />
+            <x-sim.stat-card label="Jumlah Poktan" :nilai="$totalPoktan" satuan="kelompok" />
             <x-sim.stat-card label="Total Anggota" :nilai="number_format($totalAnggota, 0, ',', '.')" satuan="orang" />
-            <x-sim.stat-card label="Anggota Terdata" :nilai="count($anggota)"
+            <x-sim.stat-card label="Anggota Terdata" :nilai="$anggotaTerdata"
                 keterangan="Tercatat rinci pada sistem" />
             <x-sim.stat-card label="Anggota Aktif" :nilai="$anggotaAktif"
                 keterangan="Berhak menerima penyaluran saprotan" />

@@ -20,6 +20,14 @@ use Illuminate\Validation\ValidationException;
  * Penilaian yang SUDAH tersimpan tidak dihitung ulang: `penilaian_sp.rincian`
  * menyalin bobot yang berlaku saat penilaian dibuat (`rules.md` 10c.6).
  * Perubahan di sini hanya berlaku pada penilaian berikutnya.
+ *
+ * SENGAJA TAK DIPAGINASI (Fase 1, 2026-09-05), berbeda dari 16+ controller
+ * daftar lain: `$perSumber` di bawah adalah tinjauan KEBIJAKAN terkelompok,
+ * bukan daftar yang bertambah lewat pemakaian sistem -- parameter dan status
+ * jumlahnya tetap menurut `rules.md` 10c, ditata Admin lewat perubahan kode
+ * (migrasi/seeder), bukan lewat "tambah baris" di halaman ini. Memaginasinya
+ * memotong kemampuan meninjau "apakah total bobot 100%?" sekali pandang,
+ * tanpa manfaat nyata sebab jumlah barisnya tidak pernah tumbuh sendiri.
  */
 class PenilaianKondisiController extends Controller
 {

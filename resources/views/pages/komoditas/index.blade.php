@@ -30,7 +30,7 @@
     <x-sim.halaman-daftar judul="Data Komoditas"
         keterangan="Komoditas kawasan beserta satuan panen bakunya."
         :remah="\App\Helpers\RemahHelper::untuk('/komoditas')"
-        :jumlah="count($baris)" :kata-kunci="$cari" :aksi-url="route('komoditas.index')"
+        :jumlah="$baris->total()" :paginator="$baris" :kata-kunci="$cari" :aksi-url="route('komoditas.index')"
         placeholder-cari="Cari nama komoditas" judul-kosong="Belum ada data komoditas"
         pesan-kosong="Komoditas kawasan akan tampil di sini setelah didata.">
 
@@ -40,7 +40,7 @@
         </x-slot:aksi>
 
         <x-slot:ringkasan>
-            <x-sim.stat-card label="Jenis Komoditas" :nilai="count($semua)" />
+            <x-sim.stat-card label="Jenis Komoditas" :nilai="$totalKomoditas" />
             {{--
                 Dua kartu berikut bersumber dari hal yang berbeda: jumlah
                 unggulan berasal dari penandaan petugas, sedangkan total panen
@@ -49,7 +49,7 @@
             --}}
             <x-sim.stat-card label="Komoditas Unggulan" :nilai="$unggulan"
                 keterangan="Ditandai menurut proposal atau kebijakan dinas" />
-            <x-sim.stat-card label="Satuan Dipakai" :nilai="count(array_unique(array_column($semua, 'satuan')))" />
+            <x-sim.stat-card label="Satuan Dipakai" :nilai="$satuanDipakai" />
             <x-sim.stat-card label="Total Panen Tercatat"
                 :nilai="number_format(array_sum($sebaran), 1, ',', '.')" satuan="ton"
                 keterangan="Agregat kawasan seluruh komoditas" />

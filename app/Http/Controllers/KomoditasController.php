@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\JenisDaftarPilihan;
 use App\Models\Komoditas;
 use App\Support\DummyData;
+use App\Support\Paginasi;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -27,28 +28,31 @@ class KomoditasController extends Controller
 {
     public function index(Request $request): View
     {
-        $semua = $this->daftar();
-
         $cari = trim((string) $request->query('cari', ''));
         $filterTipe = $request->query('tipe');
+        $perHalaman = Paginasi::perHalaman($request);
 
-        $baris = array_values(array_filter($semua, function (array $k) use ($cari, $filterTipe) {
-            if ($cari !== '' && ! str_contains(mb_strtolower($k['nama']), mb_strtolower($cari))) {
-                return false;
-            }
+        $baris = Komoditas::query()
+            ->with('satuan')
+            ->when($cari !== '', fn ($q) => $q->where('nama', 'like', "%{$cari}%"))
+            ->when($filterTipe, fn ($q) => $q->where('tipe', $filterTipe))
+            ->orderBy('id_komoditas')
+            ->paginate($perHalaman)
+            ->withQueryString();
 
-            return ! ($filterTipe && $k['tipe'] !== $filterTipe);
-        }));
+        $baris->through(fn (Komoditas $k) => $this->baris($k));
 
         return view('pages.komoditas.index', [
             'title' => 'Data Komoditas',
-            'semua' => $semua,
             'baris' => $baris,
             'sebaran' => DummyData::sebaranKomoditas(),
             'cari' => $cari,
             'filterTipe' => $filterTipe,
             'adaFilter' => $cari !== '' || $filterTipe,
-            'unggulan' => count(array_filter($semua, fn ($k) => $k['is_unggulan'])),
+            // Kartu ringkasan kawasan-penuh, bukan hasil saringan/halaman ini.
+            'totalKomoditas' => Komoditas::query()->count(),
+            'unggulan' => Komoditas::query()->where('is_unggulan', true)->count(),
+            'satuanDipakai' => Komoditas::query()->distinct('satuan_id')->count('satuan_id'),
             'opsiFilterTipe' => DummyData::opsiFilterDaftarPilihan(JenisDaftarPilihan::TipeKomoditas),
         ]);
     }
@@ -110,19 +114,6 @@ class KomoditasController extends Controller
         $komoditas->delete();
 
         return redirect()->route('komoditas.index')->with('sukses', 'Data komoditas dihapus.');
-    }
-
-    /**
-     * @return array<int, array<string, mixed>>
-     */
-    private function daftar(): array
-    {
-        return Komoditas::query()
-            ->with('satuan')
-            ->orderBy('id_komoditas')
-            ->get()
-            ->map(fn (Komoditas $k) => $this->baris($k))
-            ->all();
     }
 
     /**

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\JenisDaftarPilihan;
 use App\Models\DaftarPilihan;
+use App\Support\Paginasi;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -44,7 +45,7 @@ class MasterDaftarPilihanController extends Controller
         ]);
     }
 
-    public function jenis(string $jenis): View
+    public function jenis(string $jenis, Request $request): View
     {
         $pilihan = JenisDaftarPilihan::tryFrom($jenis);
 
@@ -56,19 +57,27 @@ class MasterDaftarPilihanController extends Controller
 
         // `bidang` di-eager-load supaya nama bidang tiap baris tidak dibaca
         // satu per satu di dalam perulangan tabel.
-        $baris = DaftarPilihan::query()
-            ->with('bidang')
-            ->where('jenis', $pilihan->value)
-            ->orderBy('urutan')
-            ->get();
+        $query = DaftarPilihan::query()->with('bidang')->where('jenis', $pilihan->value);
+
+        // Kawasan-penuh (jenis ini SELURUHNYA), bukan hasil halaman ini.
+        $jumlahNonaktif = (clone $query)->where('is_aktif', false)->count();
+
+        $baris = $query->orderBy('urutan')->paginate(Paginasi::perHalaman($request))->withQueryString();
+
+        // $nilaiBidang hanya dipakai VIEW untuk baris yang TAMPIL, jadi cukup
+        // dihitung dari model mentah HALAMAN INI -- diambil SEBELUM
+        // ->through() menukar isi koleksi menjadi larik tampilan.
+        $nilaiBidang = $baris->getCollection()->pluck('bidang')->filter()->unique('id_daftar_pilihan')
+            ->mapWithKeys(fn (DaftarPilihan $b) => [$b->id_daftar_pilihan => $b->nilai])->all();
+
+        $baris->through(fn (DaftarPilihan $r) => $this->baris($r));
 
         return view('pages.master.detail-daftar-pilihan', [
             'title' => $pilihan->label(),
             'jenis' => $pilihan,
-            'baris' => $baris->map(fn (DaftarPilihan $r) => $this->baris($r))->all(),
-            'jumlahNonaktif' => $baris->reject->is_aktif->count(),
-            'nilaiBidang' => $baris->pluck('bidang')->filter()->unique('id_daftar_pilihan')
-                ->mapWithKeys(fn (DaftarPilihan $b) => [$b->id_daftar_pilihan => $b->nilai])->all(),
+            'baris' => $baris,
+            'jumlahNonaktif' => $jumlahNonaktif,
+            'nilaiBidang' => $nilaiBidang,
         ]);
     }
 

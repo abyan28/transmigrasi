@@ -28,7 +28,7 @@
     <x-sim.halaman-daftar judul="Penanaman"
         keterangan="Catatan penanaman per kelompok tani, komoditas, dan waktu tanam."
         :remah="\App\Helpers\RemahHelper::untuk('/penanaman')"
-        :jumlah="count($baris)" :kata-kunci="$cari" :aksi-url="route('penanaman')"
+        :jumlah="$baris->total()" :paginator="$baris" :kata-kunci="$cari" :aksi-url="route('penanaman')"
         placeholder-cari="Cari kelompok tani atau komoditas" judul-kosong="Belum ada penanaman"
         pesan-kosong="Catatan penanaman akan tampil di sini setelah dicatat petugas.">
 
@@ -38,9 +38,9 @@
         </x-slot:aksi>
 
         <x-slot:ringkasan>
-            <x-sim.stat-card label="Catatan Penanaman" :nilai="count($semua)" />
+            <x-sim.stat-card label="Catatan Penanaman" :nilai="$totalCatatan" />
             <x-sim.stat-card label="Realisasi Tanam"
-                :nilai="number_format(array_sum(array_column($semua, 'realisasi_tanam')), 2, ',', '.')" satuan="ha" />
+                :nilai="number_format($totalRealisasiTanam, 2, ',', '.')" satuan="ha" />
             {{--
                 Menggantikan kartu "Tahun Tercatat" 2026-08-24. Cacah tahun
                 hanya menyatakan seberapa lama sistem dipakai, sedangkan sisa

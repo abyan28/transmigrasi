@@ -15,7 +15,7 @@
     <x-sim.halaman-daftar judul="Inventaris SP"
         keterangan="Barang bergerak milik satuan permukiman beserta status penyerahannya."
         :remah="\App\Helpers\RemahHelper::untuk('/sp/inventaris')"
-        :jumlah="count($baris)" :kata-kunci="$cari" :aksi-url="route('sp.inventaris')"
+        :jumlah="$baris->total()" :paginator="$baris" :kata-kunci="$cari" :aksi-url="route('sp.inventaris')"
         placeholder-cari="Cari nama barang" judul-kosong="Belum ada data inventaris"
         pesan-kosong="Barang milik satuan permukiman akan tampil di sini setelah didata.">
 
@@ -25,10 +25,10 @@
         </x-slot:aksi>
 
         <x-slot:ringkasan>
-            <x-sim.stat-card label="Jenis Barang" :nilai="count($semua)" />
+            <x-sim.stat-card label="Jenis Barang" :nilai="$jenisBarang" />
             <x-sim.stat-card label="Total Unit" :nilai="number_format($totalUnit, 0, ',', '.')" />
             <x-sim.stat-card label="Sudah Diserahkan" :nilai="$sudahDiserahkan"
-                :keterangan="'dari ' . count($semua) . ' jenis barang'" />
+                :keterangan="'dari ' . $jenisBarang . ' jenis barang'" />
             <x-sim.stat-card label="Perlu Perhatian" :nilai="$perluPerhatian"
                 keterangan="Kondisi rusak ringan atau berat" />
         </x-slot:ringkasan>

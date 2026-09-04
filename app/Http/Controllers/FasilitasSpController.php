@@ -7,6 +7,7 @@ use App\Enums\JenisFasilitas;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
 use App\Models\FasilitasSp;
 use App\Support\DummyData;
+use App\Support\Paginasi;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -30,33 +31,34 @@ class FasilitasSpController extends Controller
 
     public function index(Request $request): View
     {
-        $semua = $this->daftar();
-
         $cari = trim((string) $request->query('cari', ''));
         $filterSp = $request->query('sp');
         $filterKondisi = $request->query('kondisi');
+        $perHalaman = Paginasi::perHalaman($request);
 
-        $baris = array_values(array_filter($semua, function (array $b) use ($cari, $filterSp, $filterKondisi) {
-            if ($cari !== '' && ! str_contains(mb_strtolower($b['nama_fasilitas']), mb_strtolower($cari))) {
-                return false;
-            }
-            if ($filterSp && (string) $b['satuan_permukiman_id'] !== (string) $filterSp) {
-                return false;
-            }
+        $baris = FasilitasSp::query()
+            ->with(['satuanPermukiman', 'cakupan', 'berkas'])
+            ->when($cari !== '', fn ($q) => $q->where('nama_fasilitas', 'like', "%{$cari}%"))
+            ->when($filterSp, fn ($q) => $q->where('satuan_permukiman_id', $filterSp))
+            ->when($filterKondisi, fn ($q) => $q->where('kondisi', $filterKondisi))
+            ->orderBy('id_fasilitas_sp')
+            ->paginate($perHalaman)
+            ->withQueryString();
 
-            return ! ($filterKondisi && $b['kondisi'] !== $filterKondisi);
-        }));
+        $baris->through(fn (FasilitasSp $f) => $this->baris($f));
 
         return view('pages.sp.fasilitas', [
             'title' => 'Fasilitas SP',
-            'semua' => $semua,
             'baris' => $baris,
             'cari' => $cari,
             'filterSp' => $filterSp,
             'filterKondisi' => $filterKondisi,
             'adaFilter' => $cari !== '' || $filterSp || $filterKondisi,
-            'totalUnit' => array_sum(array_column($semua, 'jumlah')),
-            'rusak' => count(array_filter($semua, fn ($b) => $b['kondisi'] !== 'Baik')),
+            // Kartu ringkasan kawasan-penuh, bukan hasil saringan/halaman ini.
+            'jenisFasilitas' => FasilitasSp::query()->count(),
+            'totalUnit' => (int) FasilitasSp::query()->sum('jumlah'),
+            'kondisiBaik' => FasilitasSp::query()->where('kondisi', 'Baik')->count(),
+            'rusak' => FasilitasSp::query()->where('kondisi', '!=', 'Baik')->count(),
             'daftarSp' => DummyData::satuanPermukiman(),
             'opsiFilterKondisi' => DummyData::opsiFilterDaftarPilihan(JenisDaftarPilihan::Kondisi),
         ]);
@@ -123,19 +125,6 @@ class FasilitasSpController extends Controller
         $lain = array_map('intval', (array) $request->input('satuan_permukiman_ids_lain', []));
 
         return array_values(array_unique(array_merge([$pangkal], $lain)));
-    }
-
-    /**
-     * @return array<int, array<string, mixed>>
-     */
-    private function daftar(): array
-    {
-        return FasilitasSp::query()
-            ->with(['satuanPermukiman', 'cakupan', 'berkas'])
-            ->orderBy('id_fasilitas_sp')
-            ->get()
-            ->map(fn (FasilitasSp $f) => $this->baris($f))
-            ->all();
     }
 
     /**

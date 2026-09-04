@@ -6,6 +6,7 @@ use App\Enums\JenisDaftarPilihan;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
 use App\Models\InventarisSp;
 use App\Support\DummyData;
+use App\Support\Paginasi;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -30,34 +31,34 @@ class InventarisSpController extends Controller
 
     public function index(Request $request): View
     {
-        $semua = $this->daftar();
-
         $cari = trim((string) $request->query('cari', ''));
         $filterSp = $request->query('sp');
         $filterStatus = $request->query('status_penyerahan');
+        $perHalaman = Paginasi::perHalaman($request);
 
-        $baris = array_values(array_filter($semua, function (array $b) use ($cari, $filterSp, $filterStatus) {
-            if ($cari !== '' && ! str_contains(mb_strtolower($b['nama_barang']), mb_strtolower($cari))) {
-                return false;
-            }
-            if ($filterSp && (string) $b['satuan_permukiman_id'] !== (string) $filterSp) {
-                return false;
-            }
+        $baris = InventarisSp::query()
+            ->with(['satuanPermukiman', 'berkas'])
+            ->when($cari !== '', fn ($q) => $q->where('nama_barang', 'like', "%{$cari}%"))
+            ->when($filterSp, fn ($q) => $q->where('satuan_permukiman_id', $filterSp))
+            ->when($filterStatus, fn ($q) => $q->where('status_penyerahan', $filterStatus))
+            ->orderBy('id_inventaris_sp')
+            ->paginate($perHalaman)
+            ->withQueryString();
 
-            return ! ($filterStatus && $b['status_penyerahan'] !== $filterStatus);
-        }));
+        $baris->through(fn (InventarisSp $i) => $this->baris($i));
 
         return view('pages.sp.inventaris', [
             'title' => 'Inventaris SP',
-            'semua' => $semua,
             'baris' => $baris,
             'cari' => $cari,
             'filterSp' => $filterSp,
             'filterStatus' => $filterStatus,
             'adaFilter' => $cari !== '' || $filterSp || $filterStatus,
-            'totalUnit' => array_sum(array_column($semua, 'jumlah')),
-            'sudahDiserahkan' => count(array_filter($semua, fn ($b) => $b['status_penyerahan'] === 'Sudah Diserahkan')),
-            'perluPerhatian' => count(array_filter($semua, fn ($b) => $b['kondisi'] !== 'Baik')),
+            // Kartu ringkasan kawasan-penuh, bukan hasil saringan/halaman ini.
+            'jenisBarang' => InventarisSp::query()->count(),
+            'totalUnit' => (int) InventarisSp::query()->sum('jumlah'),
+            'sudahDiserahkan' => InventarisSp::query()->where('status_penyerahan', 'Sudah Diserahkan')->count(),
+            'perluPerhatian' => InventarisSp::query()->where('kondisi', '!=', 'Baik')->count(),
             'daftarSp' => DummyData::satuanPermukiman(),
             'opsiFilterStatusPenyerahan' => DummyData::opsiFilterDaftarPilihan(JenisDaftarPilihan::StatusPenyerahan),
         ]);
@@ -108,19 +109,6 @@ class InventarisSpController extends Controller
         $inventaris->delete();
 
         return redirect()->route('sp.inventaris')->with('sukses', 'Data inventaris dihapus.');
-    }
-
-    /**
-     * @return array<int, array<string, mixed>>
-     */
-    private function daftar(): array
-    {
-        return InventarisSp::query()
-            ->with(['satuanPermukiman', 'berkas'])
-            ->orderBy('id_inventaris_sp')
-            ->get()
-            ->map(fn (InventarisSp $i) => $this->baris($i))
-            ->all();
     }
 
     /**

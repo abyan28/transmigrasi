@@ -1710,6 +1710,76 @@ menghapus sisa terakhir `DummyData::penggunaSaatIni()` -- dikerjakan berbarengan
 - [ ] Task 11.7 - Pelatihan pengguna (operator dan masyarakat) `[Sedang]`
 - [ ] Task 11.8 - Laporan evaluasi implementasi dan BAST `[Sedang]`
 
+## Tahap 12 — Paginasi Nyata dan Notifikasi Header
+
+Diusulkan pemilik proyek lewat riset lima-fase (paginasi → layout surel/CMS →
+notifikasi → penanda urgensi → DemoSeeder) setelah Tahap 3-10 selesai. Fase 1
+dan Fase 3 dikerjakan lebih dulu sesuai permintaan; Fase 2/4/5 menyusul.
+
+- [✓] Task 12.1 - Paginasi nyata pada seluruh halaman daftar `[Sulit]` (Selesai 2026-09-05)
+  * **Pola:** `App\Support\Paginasi::perHalaman($request)` (validasi ke 10/25/50/100,
+    bawaan 25, `rules.md` 13.3 poin 2) + `->paginate()->withQueryString()` pada
+    query builder SEBELUM penyaring diterapkan (`rules.md` 5.0b-1 poin 13) --
+    menggantikan pola lama "ambil semua baris lewat `daftar()` privat, saring
+    dengan `array_filter` di PHP, serahkan larik utuh tak terpaginasi ke view".
+  * **16 controller dikonversi:** Transmigran, Pengaduan, Poktan, Rumah, Lahan,
+    Alsintan, Saprotan, Komoditas, Penanaman, HasilPanen, Infrastruktur,
+    InventarisSp, FasilitasSp, Sp, PengaturanPengguna, PengaturanRole.
+  * **4 controller "polos"** (data master/pengaturan, tanpa `cari`/filter) turut
+    dibungkus `->paginate()` demi keseragaman UI: MasterSatuan, dan bagian
+    `jenis()` MasterDaftarPilihan (bukan `index()`-nya -- lihat catatan di
+    bawah), Kawasan. `PenilaianKondisiController` SENGAJA DIKECUALIKAN: halaman
+    ini bukan daftar melainkan tinjauan kebijakan terkelompok (`$perSumber`,
+    parameter+ambang tetap yang jumlahnya tidak pernah bertambah oleh pemakaian
+    sistem) -- memotongnya jadi berhalaman merusak kemampuan meninjau "apakah
+    total bobot 100%" sekali pandang, tanpa manfaat nyata sebab baris barunya
+    tidak pernah bertambah sendiri.
+  * **`MasterDaftarPilihanController::index()` TIDAK dipaginasi**: halaman itu
+    kartu navigasi menurut `KelompokDaftarPilihan::cases()` (enum PHP tetap,
+    bukan hasil query) -- yang benar-benar berupa daftar baris database adalah
+    `jenis()` (halaman per jenis), dan itulah yang dipaginasi.
+  * **`WilayahController`**: mekanisme potong-larik manualnya SUDAH BENAR
+    (jumlah dihitung sebelum dipotong, `per_halaman` sudah tervalidasi) --
+    tidak diubah. Hanya dibungkus `LengthAwarePaginator` murni untuk merender
+    tautan halaman lewat `x-sim.data-table` yang sama dipakai controller lain.
+  * **Bug tertutup sekalian (§1.4 rencana):** `PengaturanPengguna`/`PengaturanRoleController::index()`
+    sebelumnya masih membaca `DummyData` walau `simpan/perbarui/hapus` sudah
+    menulis tabel `user`/`role` sungguhan sejak Task 3.3/3.5 -- akun/role baru
+    tidak pernah muncul di daftarnya sendiri. Celah jatuh di antara Task
+    3.5/Tahap 4 (Tahap 4 nyatanya tak pernah menyentuh modul Pengguna/Role).
+  * **Konsekuensi yang ikut ditemukan dan dibetulkan:** `ViewServiceProvider`'s
+    `daftarRole` (dropdown role pada form Tambah/Ubah Pengguna) dan `izinPerRole`
+    (matriks kewenangan pada modal Ubah Role) SAMA-SAMA masih `DummyData::role()/izinRole()`
+    -- role buatan Admin tak pernah bisa dipilihkan ke akun, dan modal
+    "Ubah Role"-nya selalu tampak nol kewenangan walau sudah tersimpan nyata
+    lewat `role->permissions()->sync()`. Diganti Eloquent nyata (`Role::with('permissions')`
+    dikelompokkan per `modul`). `daftarPengguna` (dipakai `pages.pengguna.detail`)
+    DIBIARKAN `DummyData`: diperiksa lewat kode, ternyata sudah tidak dipakai
+    markup mana pun (sisa komentar saja).
+  * **Bug SQL portabel ditemukan lewat konversi ini** (bukan disengaja dicari):
+    `PengaduanController` memakai `FIELD()` (fungsi MariaDB) untuk urutan
+    prioritas, dengan komentar lama "aman sebab tak ada uji Feature untuk
+    `/pengaduan`" -- ternyata SALAH, `tests/Feature/HalamanTest.php` memang
+    memuat belasan uji `/pengaduan`. Diganti `CASE WHEN ... END`, portabel
+    SQLite+MariaDB. Aturan baru dicatat `rules.md` 13.2 poin 9.
+  * **Uji baru:** `tests/Database/PengaturanPenggunaTest.php` (akun baru
+    langsung muncul di `index()`-nya sendiri, dicari lewat `cari` bukan
+    diasumsikan tampil di halaman pertama -- tabel `user` terisi lintas uji
+    lain dalam proses yang sama); `tests/Feature/HalamanTest.php` (dua uji role
+    ditulis ulang memakai `Role::factory()`/`Permission::factory()` sungguhan,
+    sebab keduanya sebelumnya diam-diam bergantung pada `DummyData::role()`
+    yang kini terputus dari halaman); `tests/Database/TransmigranTest.php`
+    (operator Per SP memaginasi hanya baris SP-nya sendiri, bukan total
+    kawasan -- pembuktian langsung `rules.md` 5.0b-1 poin 13).
+  * **Verifikasi:** `vendor/bin/pint --test` bersih seluruh proyek;
+    `php artisan sim:banding-skema --lengkap` tetap NOL SELISIH (tak ada
+    perubahan skema); suite Feature dan Database dijalankan penuh.
+- [ ] Task 12.2 - Notifikasi header (Fase 3) `[Sulit]`
+  * Tabel `notifikasi` baru + lima sumber pemicu (pengaduan baru, pengaduan
+    mendesak belum selesai, SP jadi Perlu Penanganan, infrastruktur Rusak
+    Berat, akun dibuat/sandi direset Admin). Rencana lengkap:
+    `C:\Users\v28mt\.claude\plans\logical-whistling-salamander.md`.
+
 ---
 
 ## Catatan Checkpoint

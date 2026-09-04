@@ -6,6 +6,7 @@ use App\Enums\JenisDaftarPilihan;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
 use App\Models\Infrastruktur;
 use App\Support\DummyData;
+use App\Support\Paginasi;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -26,30 +27,26 @@ class InfrastrukturController extends Controller
 
     public function index(Request $request): View
     {
-        $semua = $this->daftar();
-
         $cari = trim((string) $request->query('cari', ''));
         $filterSp = $request->query('sp');
         $filterJenis = $request->query('jenis');
         $filterKondisi = $request->query('kondisi');
+        $perHalaman = Paginasi::perHalaman($request);
 
-        $baris = array_values(array_filter($semua, function (array $i) use ($cari, $filterSp, $filterJenis, $filterKondisi) {
-            if ($cari !== '' && ! str_contains(mb_strtolower($i['nama']), mb_strtolower($cari))) {
-                return false;
-            }
-            if ($filterSp && (string) $i['satuan_permukiman_id'] !== (string) $filterSp) {
-                return false;
-            }
-            if ($filterJenis && $i['jenis'] !== $filterJenis) {
-                return false;
-            }
+        $baris = Infrastruktur::query()
+            ->with(['satuanPermukiman', 'cakupan', 'berkas'])
+            ->when($cari !== '', fn ($q) => $q->where('nama', 'like', "%{$cari}%"))
+            ->when($filterSp, fn ($q) => $q->where('satuan_permukiman_id', $filterSp))
+            ->when($filterJenis, fn ($q) => $q->where('jenis', $filterJenis))
+            ->when($filterKondisi, fn ($q) => $q->where('kondisi', $filterKondisi))
+            ->orderBy('id_infrastruktur')
+            ->paginate($perHalaman)
+            ->withQueryString();
 
-            return ! ($filterKondisi && $i['kondisi'] !== $filterKondisi);
-        }));
+        $baris->through(fn (Infrastruktur $i) => $this->baris($i));
 
         return view('pages.infrastruktur.index', [
             'title' => 'Infrastruktur SP',
-            'semua' => $semua,
             'baris' => $baris,
             // Rekap kondisi per jenis, dihitung atas SELURUH data bukan hasil
             // penyaringan: yang dijawabnya keadaan KAWASAN, bukan keadaan tampilan.
@@ -59,8 +56,11 @@ class InfrastrukturController extends Controller
             'filterJenis' => $filterJenis,
             'filterKondisi' => $filterKondisi,
             'adaFilter' => $cari !== '' || $filterSp || $filterJenis || $filterKondisi,
-            'rusakBerat' => count(array_filter($semua, fn ($i) => $i['kondisi'] === 'Rusak Berat')),
-            'perluPerbaikan' => count(array_filter($semua, fn ($i) => $i['kondisi'] !== 'Baik')),
+            // Kartu ringkasan kawasan-penuh, bukan hasil saringan/halaman ini.
+            'totalAset' => Infrastruktur::query()->count(),
+            'kondisiBaik' => Infrastruktur::query()->where('kondisi', 'Baik')->count(),
+            'rusakBerat' => Infrastruktur::query()->where('kondisi', 'Rusak Berat')->count(),
+            'perluPerbaikan' => Infrastruktur::query()->where('kondisi', '!=', 'Baik')->count(),
             'daftarSp' => DummyData::satuanPermukiman(),
             'opsiFilterJenis' => DummyData::opsiFilterDaftarPilihan(JenisDaftarPilihan::JenisInfrastruktur),
             'opsiFilterKondisi' => DummyData::opsiFilterDaftarPilihan(JenisDaftarPilihan::Kondisi),
@@ -128,19 +128,6 @@ class InfrastrukturController extends Controller
         $lain = array_map('intval', (array) $request->input('satuan_permukiman_ids_lain', []));
 
         return array_values(array_unique(array_merge([$pangkal], $lain)));
-    }
-
-    /**
-     * @return array<int, array<string, mixed>>
-     */
-    private function daftar(): array
-    {
-        return Infrastruktur::query()
-            ->with(['satuanPermukiman', 'cakupan', 'berkas'])
-            ->orderBy('id_infrastruktur')
-            ->get()
-            ->map(fn (Infrastruktur $i) => $this->baris($i))
-            ->all();
     }
 
     /**

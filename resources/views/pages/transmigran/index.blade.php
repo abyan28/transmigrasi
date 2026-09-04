@@ -36,22 +36,22 @@
 
     {{-- Ringkasan cepat, membantu operator menakar kelengkapan datanya --}}
     <div class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <x-sim.stat-card label="Total Kepala Keluarga" :nilai="number_format(count($semua), 0, ',', '.')"
+        <x-sim.stat-card label="Total Kepala Keluarga" :nilai="number_format($totalKk, 0, ',', '.')"
             satuan="KK" />
         <x-sim.stat-card label="Masih Tinggal di Kawasan"
-            :nilai="number_format(count(array_filter($semua, fn ($t) => $t['status_tinggal'] === 'Aktif')), 0, ',', '.')"
+            :nilai="number_format($totalAktif, 0, ',', '.')"
             satuan="KK" />
         <x-sim.stat-card label="Total Jiwa"
-            :nilai="number_format(array_sum(array_column($semua, 'jumlah_anggota_keluarga')), 0, ',', '.')"
+            :nilai="number_format($totalJiwa, 0, ',', '.')"
             keterangan="Seluruh anggota keluarga terdata" />
         <x-sim.stat-card label="Satuan Permukiman"
-            :nilai="number_format(count(array_unique(array_column($semua, 'satuan_permukiman_id'))), 0, ',', '.')"
+            :nilai="number_format($totalSp, 0, ',', '.')"
             keterangan="Tempat data tersebar" />
     </div>
 
     {{-- Pencarian dan filter dibungkus satu form agar keduanya terkirim bersama --}}
     <form method="GET" action="{{ route('transmigran.index') }}">
-        <x-sim.data-table :jumlah="count($baris)" :kata-kunci="$cari"
+        <x-sim.data-table :jumlah="$baris->total()" :paginator="$baris" :kata-kunci="$cari"
             placeholder-cari="Cari nama, NIK, atau nomor KK"
             judul-kosong="Belum ada data transmigran"
             pesan-kosong="Data kepala keluarga akan tampil di sini setelah ditambahkan.">

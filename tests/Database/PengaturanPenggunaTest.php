@@ -5,7 +5,8 @@
  *
  * `DatabaseTestCase` (MySQL/MariaDB nyata): pembuatan akun, reset sandi,
  * nonaktif/aktif, dan audit log semuanya menyentuh tabel `user`/`audit_log`.
- * Halaman `index()` masih baca DummyData -- uji memeriksa basis data langsung.
+ * `index()` kini membaca Eloquent langsung juga (Fase 1, 2026-09-05) --
+ * sebagian uji memeriksa basis data langsung, sebagian lewat halaman.
  */
 
 use App\Enums\AksiAuditLog;
@@ -63,6 +64,26 @@ it('membuat akun dengan kata sandi sementara yang di-hash dan wajib diganti', fu
         ->and($baru->username)->toMatch('/^[a-z0-9._]{3,50}$/')
         ->and($baru->password)->not->toBe('') // ada hash
         ->and(Hash::needsRehash($baru->password))->toBeFalse();
+});
+
+it('menampilkan akun yang baru dibuat pada daftarnya sendiri', function () {
+    // Sebelum Fase 1, index() masih membaca DummyData sedangkan simpan()
+    // sudah menulis tabel `user` sungguhan sejak Task 3.5 -- akun baru tidak
+    // pernah muncul di sini. Uji ini membuktikan celah itu tertutup.
+    aktingAdmin();
+    $role = roleSemua();
+
+    $this->post(route('pengguna.simpan'), [
+        'nama' => 'Beta Uji Tampil',
+        'email' => 'beta.uji.tampil@malakakab.go.id',
+        'role_id' => $role->id_role,
+    ])->assertRedirect(route('pengguna.index'));
+
+    // Dicari lewat `cari`, bukan diasumsikan tampil pada halaman pertama:
+    // uji Database lain di seluruh proses ini turut mengisi tabel `user`
+    // sungguhan, sehingga akun barunya dapat jatuh di halaman mana pun.
+    $this->get(route('pengguna.index', ['cari' => 'Beta Uji Tampil']))
+        ->assertOk()->assertSee('Beta Uji Tampil');
 });
 
 it('tidak pernah menyimpan kata sandi apa adanya', function () {

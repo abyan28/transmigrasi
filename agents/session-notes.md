@@ -4568,6 +4568,122 @@ Catatan hasil: `agents/notes.md` §1w & `## 6. Revisi`. Ringkasan: `agents/taskl
 - **A11y & Visual Hierarchy:** Memenuhi WCAG 2.1 AA (caption, th scope, tabular-nums).
 
 
+# Fase 1 — Paginasi Nyata (2026-09-05)
+
+Riset dua-sumber independen memastikan `data-table.blade.php` punya `<select>`
+"Tampilkan N baris" mati (tanpa `name`, tanpa `onchange` -- pelanggaran R-26)
+dan 22 dari 24 controller daftar tidak benar-benar memaginasi: pola lamanya
+mengambil SELURUH baris lewat `daftar()` privat, menyaringnya dengan
+`array_filter()`/`usort()` di PHP, lalu menyerahkan larik utuh tak terpotong
+ke view -- melanggar `rules.md` 5.0b-1 poin 13 ("penyaringan sebelum
+paginasi") sebab jumlah halaman yang dilihat operator `Per SP` ikut membocorkan
+berapa banyak baris SP lain yang tersembunyi.
+
+### 1. Fondasi bersama
+- **`App\Support\Paginasi::perHalaman($request, $bawaan = 25)`**: satu tempat
+  memvalidasi `?per_halaman=` ke `[10, 25, 50, 100]` (`rules.md` 13.3 poin 2),
+  jatuh diam-diam ke 25 bila tak sah. Menggantikan salinan privat yang
+  sebelumnya cuma ada di `WilayahController::PER_HALAMAN`.
+- **`x-sim.pilih-per-halaman`**: partial `<select name="per_halaman"
+  onchange="this.form.submit()">` diekstrak dari `data-table.blade.php` supaya
+  halaman yang TIDAK memakai komponen itu (`wilayah.blade.php`, sumber datanya
+  gabungan 4 model lewat potongan larik) tetap memakai kontrol yang identik.
+- **`data-table.blade.php`**: `<select>` mati diganti partial di atas; prop
+  `paginator` baru (LengthAwarePaginator, boleh `null` untuk pemanggil lama)
+  merender `->onEachSide(1)->links()` dan membetulkan "Menampilkan X dari Y"
+  yang sebelumnya `min($jumlah, $perHalaman)` -- salah di halaman terakhir
+  (mis. 30 data/25 per halaman, halaman 2 seharusnya menampilkan 5, bukan 25).
+
+### 2. Pola konversi (14 controller inti)
+Transmigran, Pengaduan, Poktan, Rumah, Lahan, Alsintan, Saprotan, Komoditas,
+Penanaman, HasilPanen, Infrastruktur, InventarisSp, FasilitasSp, Sp -- satu
+pola dipakai berulang: filter `->when()` pada query builder SEBELUM
+`->paginate($perHalaman)->withQueryString()`; `$baris->through(...)` memetakan
+baris (mempertahankan objek paginator, BUKAN `->map()` yang akan
+menghancurkannya); kartu ringkasan yang dulunya dari `$semua` diganti agregat
+Eloquent langsung (`::count()`, `::sum()`) -- `CakupanDataSp` tetap otomatis
+berlaku pada agregat ini persis seperti pada `$semua` dulu.
+
+Tiga kasus khusus:
+- **Pengaduan**: prioritas & status memakai `orderByRaw`. `FIELD()` (MariaDB)
+  ternyata TIDAK aman -- lihat bagian 4.
+- **Poktan**: nama ketua diturunkan dari tiga sumber; disaring lewat
+  `orWhere`/`orWhereHas` ketiganya sekaligus, bukan `array_filter` pasca-fetch.
+- **Sp**: filter kecamatan menembus dua tingkat (`whereHas('desa.kecamatan')`).
+
+Ditemukan pula "clone sebelum paginate" untuk kartu ringkasan yang perlu
+angka TERSARING-tapi-belum-terpotong (mis. total luas Lahan/Penanaman yang
+ikut mengikuti filter aktif, bukan angka kawasan penuh maupun angka satu
+halaman saja): `$total = (clone $query)->sum(...)` sebelum `$query->paginate()`.
+
+### 3. Empat controller "polos" + WilayahController
+`MasterSatuanController` dan `KawasanController` dibungkus `->paginate()`
+tanpa `->when()` apa pun (tak ada `cari`/filter untuk dipindah), demi
+keseragaman UI. `MasterDaftarPilihanController` DIBELAH: `index()`-nya adalah
+kartu navigasi menurut enum `KelompokDaftarPilihan` (bukan query, tak
+dipaginasi), sedangkan `jenis()` (daftar nilai SATU jenis) yang dipaginasi.
+`PenilaianKondisiController` DIKECUALIKAN SEPENUHNYA -- keputusan yang
+menyimpang dari rencana awal (lihat `tasklist.md` Task 12.1 untuk alasannya).
+`WilayahController` tidak diubah mekanismenya (potong-larik manual sudah
+benar), hanya dibungkus `LengthAwarePaginator` supaya `x-sim.data-table` yang
+sama dapat merender tautan halamannya.
+
+### 4. Bug yang tersingkap, bukan dicari
+- **`PengaduanController` + `FIELD()`**: komentar lama menjamin "aman sebab
+  tak ada uji Feature untuk `/pengaduan`, tests/Database saja". Klaim itu
+  sendiri sudah salah saat ditulis -- `tests/Feature/HalamanTest.php` memuat
+  belasan uji `/pengaduan`, dan `FIELD()` adalah fungsi MariaDB yang tak
+  dikenal SQLite (dipakai suite Feature). Baru pecah begitu §1.5 menjalankan
+  suite Feature penuh. Diganti `CASE prioritas WHEN ... END`, portabel di
+  kedua mesin. Dicatat `rules.md` 13.2 poin 9 baru.
+- **`ViewServiceProvider::daftarRole`/`izinPerRole`**: keduanya masih
+  `DummyData::role()/izinRole()` walau `PengaturanRoleController::simpan()`
+  sudah menulis `role`/`role_permission` sungguhan sejak Task 3.3. Efeknya
+  DUA bug diam-diam: (a) role buatan Admin tidak pernah muncul di dropdown
+  "Role" pada form Tambah/Ubah Akun, sehingga tak dapat ditugaskan ke siapa
+  pun; (b) modal "Ubah Role" untuk role mana pun di luar lima id contoh
+  selalu tampak nol kewenangan tercentang, walau tersimpan nyata. Diganti
+  `Role::with('permissions')->get()->mapWithKeys(...)` dikelompokkan per
+  `modul`. `daftarPengguna` (satu lagi var serupa) diperiksa dan dibiarkan:
+  ternyata sudah tak dipakai markup mana pun.
+- **`sp/index.blade.php`**: baris total (`array_sum(array_column($baris, ...))`)
+  memakai `$baris` yang kini `LengthAwarePaginator`, bukan larik -- meledak
+  `TypeError` begitu diuji nyata. Diganti kartu ringkasan kawasan-penuh yang
+  sudah disiapkan controllernya (`$totalLuas`/`$totalTerisi`/`$totalRencana`),
+  yang justru MEMULIHKAN makna aslinya (dulu memang dijumlah dari `$semua`,
+  bukan dari `$baris` hasil saring).
+
+### 5. Bug tertutup sekalian: Pengguna/Role tak pernah baca Eloquent
+`PengaturanPengguna`/`PengaturanRoleController::index()` sebelumnya masih
+membaca `DummyData::pengguna()/role()` walau `simpan/perbarui/hapus` sudah
+menulis tabel sungguhan sejak Task 3.5/3.3 -- akun atau role baru tak pernah
+muncul di daftarnya sendiri. Bukan "belum dipaginasi", melainkan belum
+tersambung ke data nyata sama sekali. Diputuskan bersama pemilik proyek untuk
+tetap dimasukkan Fase 1 (lihat plan `logical-whistling-salamander.md` §1.4).
+
+### 6. Uji baru
+- `tests/Database/PengaturanPenggunaTest.php`: akun baru langsung tampil di
+  `index()`-nya sendiri (dicari lewat `?cari=`, BUKAN diasumsikan tampil di
+  halaman pertama tanpa filter -- tabel `user` terisi lintas banyak uji lain
+  dalam proses yang sama, sehingga akun barunya bisa jatuh di halaman mana
+  pun bila diasumsikan begitu).
+- `tests/Feature/HalamanTest.php`: dua uji role (`'menyajikan role terkunci
+  sebagai hanya baca'`, `'menampilkan tombol hapus hanya pada role yang
+  memang dapat dihapus'`) ditulis ulang memakai `Role::factory()`/
+  `Permission::factory()` sungguhan -- keduanya sebelumnya diam-diam
+  bergantung pada `DummyData::role()` yang kini terputus dari halaman.
+- `tests/Database/TransmigranTest.php`: uji baru yang benar-benar membuktikan
+  bug tertutup -- operator `Per SP` dengan 2 dari lebih-dari-2 baris kawasan
+  memaginasi TEPAT `total() === 2` dan `lastPage() === 1`, bukan total
+  kawasan.
+
+### 7. Verifikasi
+`vendor/bin/pint --test` bersih di seluruh proyek. `php artisan
+sim:banding-skema --lengkap` tetap NOL SELISIH (Fase 1 murni backend/view,
+tanpa migrasi baru). Suite Feature dan Database dijalankan penuh setelah
+seluruh perbaikan di atas.
+
+
 
 
 

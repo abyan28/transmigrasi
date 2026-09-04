@@ -7,6 +7,7 @@ use App\Http\Controllers\Concerns\MenyimpanBerkas;
 use App\Models\Alsintan;
 use App\Models\AlsintanDistribusi;
 use App\Support\DummyData;
+use App\Support\Paginasi;
 use App\Support\PenyajianAlsintan;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
@@ -31,46 +32,46 @@ class AlsintanController extends Controller
 
     public function index(Request $request): View
     {
-        $semua = $this->daftar();
-
         $cari = trim((string) $request->query('cari', ''));
         $filterSp = $request->query('sp');
         $filterKondisi = $request->query('kondisi');
+        $perHalaman = Paginasi::perHalaman($request);
 
-        $baris = array_values(array_filter($semua, function (array $a) use ($cari, $filterSp, $filterKondisi) {
-            if ($cari !== '') {
-                $poktanTeks = mb_strtolower(implode(' ', $a['poktan_penerima']));
-                $cocok = str_contains(mb_strtolower($a['nama_alat']), mb_strtolower($cari))
-                    || str_contains(mb_strtolower($a['jenis_alsintan']), mb_strtolower($cari))
-                    || str_contains($poktanTeks, mb_strtolower($cari));
+        $baris = Alsintan::query()
+            ->with([
+                'berkas',
+                'distribusi.poktan.satuanPermukiman',
+                'distribusi.penandaTerima.transmigran',
+                'distribusi.penandaTerima.anggotaKeluarga',
+                'distribusi.foto',
+            ])
+            ->when($cari !== '', fn ($q) => $q->where(fn ($sub) => $sub
+                ->where('nama_alat', 'like', "%{$cari}%")
+                ->orWhere('jenis_alsintan', 'like', "%{$cari}%")
+                ->orWhereHas('distribusi.poktan', fn ($p) => $p->where('nama', 'like', "%{$cari}%"))))
+            ->when($filterSp, fn ($q) => $q->whereHas('distribusi.poktan', fn ($p) => $p->where('satuan_permukiman_id', $filterSp)))
+            ->when($filterKondisi, fn ($q) => $q->whereHas('distribusi', fn ($d) => $d->where('kondisi', $filterKondisi)))
+            ->orderBy('id_alsintan')
+            ->paginate($perHalaman)
+            ->withQueryString();
 
-                if (! $cocok) {
-                    return false;
-                }
-            }
-
-            if ($filterSp && ! in_array((int) $filterSp, array_column($a['distribusi'], 'satuan_permukiman_id'), true)) {
-                return false;
-            }
-
-            return ! ($filterKondisi && ! in_array($filterKondisi, array_column($a['distribusi'], 'kondisi'), true));
-        }));
+        $baris->through(fn (Alsintan $a) => $this->baris($a));
 
         return view('pages.alsintan.index', [
             'title' => 'Alsintan',
-            'semua' => $semua,
             'baris' => $baris,
             'cari' => $cari,
             'filterSp' => $filterSp,
             'filterKondisi' => $filterKondisi,
             'adaFilter' => $cari !== '' || $filterSp || $filterKondisi,
-            'totalUnit' => array_sum(array_column($semua, 'jumlah_total')),
-            'belumTersalur' => array_sum(array_column($semua, 'jumlah_belum_tersalur')),
-            'poktanPenerima' => count(array_unique(array_merge(
-                [], ...array_map(fn ($a) => array_column($a['distribusi'], 'poktan_id'), $semua),
-            ))),
-            'rusak' => count(array_filter($semua, fn ($a) => in_array('Rusak Ringan', array_column($a['distribusi'], 'kondisi'), true)
-                || in_array('Rusak Berat', array_column($a['distribusi'], 'kondisi'), true))),
+            // Kartu ringkasan kawasan-penuh, bukan hasil saringan/halaman ini.
+            'pengadaan' => Alsintan::query()->count(),
+            'totalUnit' => (int) Alsintan::query()->sum('jumlah_total'),
+            'belumTersalur' => Alsintan::query()->withSum('distribusi', 'jumlah')->get()
+                ->sum(fn (Alsintan $a) => $a->jumlah_total - (int) ($a->distribusi_sum_jumlah ?? 0)),
+            'poktanPenerima' => AlsintanDistribusi::query()->distinct('poktan_id')->count('poktan_id'),
+            'rusak' => Alsintan::query()->whereHas('distribusi',
+                fn ($q) => $q->whereIn('kondisi', ['Rusak Ringan', 'Rusak Berat']))->count(),
             'daftarSp' => DummyData::satuanPermukiman(),
             'opsiFilterKondisi' => DummyData::opsiFilterDaftarPilihan(JenisDaftarPilihan::Kondisi),
         ]);
@@ -231,25 +232,6 @@ class AlsintanController extends Controller
             'sumber_dana' => $data['sumber_dana'] ?? null,
             'keterangan' => $data['keterangan'] ?? null,
         ];
-    }
-
-    /**
-     * @return array<int, array<string, mixed>>
-     */
-    private function daftar(): array
-    {
-        return Alsintan::query()
-            ->with([
-                'berkas',
-                'distribusi.poktan.satuanPermukiman',
-                'distribusi.penandaTerima.transmigran',
-                'distribusi.penandaTerima.anggotaKeluarga',
-                'distribusi.foto',
-            ])
-            ->orderBy('id_alsintan')
-            ->get()
-            ->map(fn (Alsintan $a) => $this->baris($a))
-            ->all();
     }
 
     /**

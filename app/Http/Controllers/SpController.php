@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\SatuanPermukiman;
 use App\Support\DummyData;
+use App\Support\Paginasi;
 use App\Support\PenilaianKondisiSp;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 
 /**
@@ -39,70 +41,71 @@ class SpController extends Controller
 
     public function index(Request $request): View
     {
-        $semua = $this->daftar();
-
         $cari = trim((string) $request->query('cari', ''));
         $filterKecamatan = $request->query('kecamatan');
+        $perHalaman = Paginasi::perHalaman($request);
 
-        $baris = array_values(array_filter($semua, function (array $sp) use ($cari, $filterKecamatan) {
-            if ($cari !== '' && ! str_contains(mb_strtolower($sp['nama']), mb_strtolower($cari))
-                && ! str_contains(mb_strtolower((string) $sp['desa']), mb_strtolower($cari))) {
-                return false;
-            }
+        $baris = SatuanPermukiman::query()
+            ->with(['desa.kecamatan', 'kawasan'])
+            ->when($cari !== '', fn ($q) => $q->where(fn ($sub) => $sub
+                ->where('nama', 'like', "%{$cari}%")
+                ->orWhereHas('desa', fn ($d) => $d->where('nama', 'like', "%{$cari}%"))))
+            ->when($filterKecamatan, fn ($q) => $q->whereHas('desa.kecamatan', fn ($k) => $k->where('nama', $filterKecamatan)))
+            ->orderBy('kode_sp')
+            ->paginate($perHalaman)
+            ->withQueryString();
 
-            return ! ($filterKecamatan && $sp['kecamatan'] !== $filterKecamatan);
-        }));
+        // Turunan cacah transmigran; masih data contoh sampai Tahap 5 --
+        // dibaca terlepas dari halaman/saringan, sebab jumlah SP-nya sendiri
+        // (bukan turunannya) yang menentukan berapa baris tampil.
+        $terisi = collect(DummyData::rekapPerSp())->keyBy('satuan_permukiman_id');
+
+        $baris->through(fn (SatuanPermukiman $sp) => $this->baris($sp, $terisi));
 
         return view('pages.sp.index', [
             'title' => 'Satuan Permukiman',
-            'semua' => $semua,
             'baris' => $baris,
-            'rekap' => collect(DummyData::rekapPerSp())->keyBy('satuan_permukiman_id'),
+            'rekap' => $terisi,
             'kondisi' => collect(PenilaianKondisiSp::nilaiSeluruhSp())->keyBy('satuan_permukiman_id'),
             'cari' => $cari,
             'filterKecamatan' => $filterKecamatan,
             'adaFilter' => $cari !== '' || $filterKecamatan,
-            'daftarKecamatan' => array_values(array_unique(array_column($semua, 'kecamatan'))),
-            'totalLuas' => array_sum(array_column($semua, 'luas_lahan')),
-            'totalRencana' => array_sum(array_column($semua, 'jumlah_kk_rencana')),
-            'totalTerisi' => array_sum(array_column($semua, 'jumlah_kk_terisi')),
+            // Kartu ringkasan kawasan-penuh, bukan hasil saringan/halaman ini.
+            'jumlahSp' => SatuanPermukiman::query()->count(),
+            'daftarKecamatan' => SatuanPermukiman::query()
+                ->join('desa', 'desa.id_desa', '=', 'satuan_permukiman.desa_id')
+                ->join('kecamatan', 'kecamatan.id_kecamatan', '=', 'desa.kecamatan_id')
+                ->distinct()->orderBy('kecamatan.nama')->pluck('kecamatan.nama')->all(),
+            'totalLuas' => (float) SatuanPermukiman::query()->sum('luas_lahan'),
+            'totalRencana' => (int) SatuanPermukiman::query()->sum('jumlah_kk_rencana'),
+            'totalTerisi' => array_sum(array_column(DummyData::rekapPerSp(), 'jumlah_kk')),
         ]);
     }
 
     /**
-     * Enam SP beserta label wilayahnya, dibaca sekali dengan relasi
-     * ter-eager-load supaya nama desa dan kecamatan tidak dikueri per baris.
-     *
-     * @return array<int, array<string, mixed>>
+     * @return array<string, mixed>
      */
-    private function daftar(): array
+    private function baris(SatuanPermukiman $sp, Collection $terisi): array
     {
-        $terisi = collect(DummyData::rekapPerSp())->keyBy('satuan_permukiman_id');
-
-        return SatuanPermukiman::query()
-            ->with(['desa.kecamatan', 'kawasan'])
-            ->orderBy('kode_sp')
-            ->get()
-            ->map(fn (SatuanPermukiman $sp) => [
-                'id_satuan_permukiman' => $sp->id_satuan_permukiman,
-                'nama' => $sp->nama,
-                'kode_sp' => $sp->kode_sp,
-                'desa' => $sp->desa?->nama,
-                'kecamatan' => $sp->desa?->kecamatan?->nama,
-                'kawasan' => $sp->kawasan?->nama,
-                'tahun_penempatan' => $sp->tahun_penempatan,
-                'luas_lahan' => (float) $sp->luas_lahan,
-                'jumlah_kk_rencana' => $sp->jumlah_kk_rencana,
-                // Turunan cacah transmigran; masih data contoh sampai Tahap 5.
-                'jumlah_kk_terisi' => $terisi[$sp->id_satuan_permukiman]['jumlah_kk'] ?? 0,
-                'lintang' => $sp->lintang === null ? null : (float) $sp->lintang,
-                'bujur' => $sp->bujur === null ? null : (float) $sp->bujur,
-                'keterangan' => $sp->keterangan,
-                'berkas_id' => $sp->berkas_id,
-                'desa_id' => $sp->desa_id,
-                'kawasan_id' => $sp->kawasan_id,
-            ])
-            ->all();
+        return [
+            'id_satuan_permukiman' => $sp->id_satuan_permukiman,
+            'nama' => $sp->nama,
+            'kode_sp' => $sp->kode_sp,
+            'desa' => $sp->desa?->nama,
+            'kecamatan' => $sp->desa?->kecamatan?->nama,
+            'kawasan' => $sp->kawasan?->nama,
+            'tahun_penempatan' => $sp->tahun_penempatan,
+            'luas_lahan' => (float) $sp->luas_lahan,
+            'jumlah_kk_rencana' => $sp->jumlah_kk_rencana,
+            // Turunan cacah transmigran; masih data contoh sampai Tahap 5.
+            'jumlah_kk_terisi' => $terisi[$sp->id_satuan_permukiman]['jumlah_kk'] ?? 0,
+            'lintang' => $sp->lintang === null ? null : (float) $sp->lintang,
+            'bujur' => $sp->bujur === null ? null : (float) $sp->bujur,
+            'keterangan' => $sp->keterangan,
+            'berkas_id' => $sp->berkas_id,
+            'desa_id' => $sp->desa_id,
+            'kawasan_id' => $sp->kawasan_id,
+        ];
     }
 
     public function simpan(Request $request): RedirectResponse

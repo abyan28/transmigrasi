@@ -9,6 +9,7 @@ use App\Models\AuditLog;
 use App\Models\Role;
 use App\Models\User;
 use App\Support\DummyData;
+use App\Support\Paginasi;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -34,53 +35,60 @@ use Illuminate\Support\Str;
  * - Admin aktif terakhir tidak dapat dinonaktifkan (poin 16).
  * - Tiap penyetelan ulang / perubahan keadaan tercatat di audit log (poin 15).
  *
- * Seperti `PengaturanRoleController`, `index()` MASIH membaca `DummyData`
- * (peralihan tampilan ke Eloquent = Tahap 4). Tulisan menyentuh tabel `user`
- * nyata; uji memeriksa basis data langsung, bukan lewat halaman.
+ * `index()` membaca Eloquent langsung (Fase 1, 2026-09-05) -- sebelumnya
+ * masih membaca `DummyData` walau `simpan/perbarui/hapus` sudah menulis tabel
+ * `user` sungguhan sejak Task 3.5, sehingga akun baru tak pernah muncul pada
+ * daftarnya sendiri. Celah itu jatuh di antara Task 3.5 dan Tahap 4 (yang
+ * ternyata tak pernah menyentuh modul ini) dan baru tertutup di sini.
  */
 class PengaturanPenggunaController extends Controller
 {
     public function index(Request $request): View
     {
-        $semua = DummyData::pengguna();
-
         $cari = trim((string) $request->input('cari', ''));
         $filterRole = $request->input('role');
         $filterAktif = $request->input('aktif');
+        $perHalaman = Paginasi::perHalaman($request);
 
-        $baris = array_values(array_filter($semua, function ($u) use ($cari, $filterRole, $filterAktif) {
-            if ($cari !== '' && ! str_contains(mb_strtolower($u['nama']), mb_strtolower($cari))
-                && ! str_contains(mb_strtolower($u['username']), mb_strtolower($cari))) {
-                return false;
-            }
-            if ($filterRole && $u['role'] !== $filterRole) {
-                return false;
-            }
-            if ($filterAktif !== null && $filterAktif !== '' && (string) (int) $u['is_aktif'] !== $filterAktif) {
-                return false;
-            }
+        $baris = User::query()
+            ->with(['role', 'satuanPermukiman'])
+            ->when($cari !== '', fn ($q) => $q->where(fn ($sub) => $sub
+                ->where('nama', 'like', "%{$cari}%")
+                ->orWhere('username', 'like', "%{$cari}%")))
+            ->when($filterRole, fn ($q) => $q->whereHas('role', fn ($r) => $r->where('nama', $filterRole)))
+            ->when($filterAktif !== null && $filterAktif !== '', fn ($q) => $q->where('is_aktif', (bool) $filterAktif))
+            ->orderBy('nama')
+            ->paginate($perHalaman)
+            ->withQueryString();
 
-            return true;
-        }));
+        // $inisial hanya dipakai VIEW untuk baris yang TAMPIL, jadi cukup
+        // dihitung dari model mentah HALAMAN INI.
+        $inisial = [];
+        foreach ($baris->getCollection() as $u) {
+            $inisial[$u->id_user] = DummyData::inisial($u->nama);
+        }
+
+        $baris->through(fn (User $u) => $this->baris($u));
 
         return view('pages.pengguna.index', [
             'title' => 'Manajemen Pengguna',
-            'semua' => $semua,
             'baris' => $baris,
             'cari' => $cari,
             'filterRole' => $filterRole,
             'filterAktif' => $filterAktif,
             'adaFilter' => $cari !== '' || $filterRole || ($filterAktif !== null && $filterAktif !== ''),
-            'aktif' => count(array_filter($semua, fn ($u) => $u['is_aktif'])),
-            'perluGanti' => count(array_filter($semua, fn ($u) => $u['password_harus_diganti'])),
-            'daftarRole' => array_values(array_unique(array_column($semua, 'role'))),
-            'jumlahAdminAktif' => count(array_filter(
-                $semua,
-                fn ($u) => $u['role'] === 'Admin' && $u['is_aktif'],
-            )),
-            'inisial' => collect($semua)
-                ->mapWithKeys(fn ($u) => [$u['id_user'] => DummyData::inisial($u['nama'])])
-                ->all(),
+            // Kartu ringkasan kawasan-penuh, bukan hasil saringan/halaman ini.
+            'totalAkun' => User::query()->count(),
+            'aktif' => User::query()->where('is_aktif', true)->count(),
+            'perluGanti' => User::query()->where('password_harus_diganti', true)->count(),
+            // Hanya role yang benar-benar punya pemegang, sama seperti dahulu
+            // (turunan `$semua`, bukan seluruh isi tabel role).
+            'daftarRole' => Role::query()->whereHas('users')->orderBy('nama')->pluck('nama')->all(),
+            'jumlahAdminAktif' => User::query()
+                ->where('is_aktif', true)
+                ->whereHas('role', fn ($q) => $q->where('is_terkunci', true))
+                ->count(),
+            'inisial' => $inisial,
         ]);
     }
 
@@ -209,6 +217,30 @@ class PengaturanPenggunaController extends Controller
 
         return redirect()->route('pengguna.index')
             ->with('sukses', 'Akun diaktifkan kembali. Petugas dapat masuk memakai kredensial yang sama.');
+    }
+
+    /**
+     * Larik ber-kunci PERSIS bentuk lama `DummyData::pengguna()` supaya view
+     * tak perlu disentuh.
+     *
+     * @return array<string, mixed>
+     */
+    private function baris(User $u): array
+    {
+        return [
+            'id_user' => $u->id_user,
+            'nama' => $u->nama,
+            'username' => $u->username,
+            'email' => $u->email,
+            'role' => $u->role?->nama,
+            'role_id' => $u->role_id,
+            'jabatan' => $u->jabatan,
+            'telepon' => $u->telepon,
+            'is_aktif' => $u->is_aktif,
+            'password_harus_diganti' => $u->password_harus_diganti,
+            'last_login_at' => $u->last_login_at?->format('Y-m-d H:i:s'),
+            'satuan_permukiman' => $u->satuanPermukiman->pluck('nama')->all(),
+        ];
     }
 
     /**

@@ -17,6 +17,7 @@ use App\Models\Berkas;
 use App\Models\RiwayatKepalaKeluarga;
 use App\Models\Transmigran;
 use App\Support\DummyData;
+use App\Support\Paginasi;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
@@ -53,34 +54,40 @@ class TransmigranController extends Controller
 
     public function index(Request $request): View
     {
-        $semua = $this->daftar();
-
         $cari = trim((string) $request->query('cari', ''));
         $filterSp = $request->query('sp');
         $filterTinggal = $request->query('status_tinggal');
+        $perHalaman = Paginasi::perHalaman($request);
 
-        $baris = array_values(array_filter($semua, function (array $t) use ($cari, $filterSp, $filterTinggal) {
-            if ($cari !== '') {
-                $cocok = str_contains(mb_strtolower($t['nama_kepala_keluarga']), mb_strtolower($cari))
-                    || str_contains($t['nik'], $cari)
-                    || str_contains($t['no_kk'], $cari);
+        // Fase 1 (2026-09-05, rules.md 5.0b-1 poin 13): penyaringan WAJIB
+        // terjadi pada query builder SEBELUM paginasi -- menyaring larik
+        // penuh sesudah `get()` (cara lama) membuat jumlah halaman
+        // membocorkan banyaknya data SP lain yang tak berhak dilihat.
+        $baris = Transmigran::query()
+            ->with(['satuanPermukiman', 'anggotaKeluarga'])
+            ->when($cari !== '', fn ($q) => $q->where(fn ($sub) => $sub
+                ->where('nama_kepala_keluarga', 'like', "%{$cari}%")
+                ->orWhere('nik', 'like', "%{$cari}%")
+                ->orWhere('no_kk', 'like', "%{$cari}%")))
+            ->when($filterSp, fn ($q) => $q->where('satuan_permukiman_id', $filterSp))
+            ->when($filterTinggal, fn ($q) => $q->where('status_tinggal', $filterTinggal))
+            ->orderBy('id_transmigran')
+            ->paginate($perHalaman)
+            ->withQueryString();
 
-                if (! $cocok) {
-                    return false;
-                }
-            }
-
-            if ($filterSp && (string) $t['satuan_permukiman_id'] !== (string) $filterSp) {
-                return false;
-            }
-
-            return ! ($filterTinggal && $t['status_tinggal'] !== $filterTinggal);
-        }));
+        $baris->through(fn (Transmigran $t) => $this->baris($t));
 
         return view('pages.transmigran.index', [
             'title' => 'Data Transmigran',
-            'semua' => $semua,
             'baris' => $baris,
+            // Kartu ringkasan tetap kawasan-penuh (atau cakupan SP operator
+            // bila Per SP -- CakupanDataSp berlaku sama di sini seperti pada
+            // $baris di atas), BUKAN cuma halaman yang sedang tampil.
+            'totalKk' => Transmigran::query()->count(),
+            'totalAktif' => Transmigran::query()->where('status_tinggal', StatusTinggal::Aktif->value)->count(),
+            'totalJiwa' => Transmigran::query()->count()
+                + AnggotaKeluarga::query()->where('status', StatusAnggotaKeluarga::Aktif->value)->count(),
+            'totalSp' => Transmigran::query()->distinct('satuan_permukiman_id')->count('satuan_permukiman_id'),
             'cari' => $cari,
             'filterSp' => $filterSp,
             'filterTinggal' => $filterTinggal,
@@ -441,19 +448,6 @@ class TransmigranController extends Controller
     private function usia(?Carbon $tanggal): ?int
     {
         return $tanggal?->age;
-    }
-
-    /**
-     * @return array<int, array<string, mixed>>
-     */
-    private function daftar(): array
-    {
-        return Transmigran::query()
-            ->with(['satuanPermukiman', 'anggotaKeluarga'])
-            ->orderBy('id_transmigran')
-            ->get()
-            ->map(fn (Transmigran $t) => $this->baris($t))
-            ->all();
     }
 
     /**

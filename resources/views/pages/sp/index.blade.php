@@ -16,7 +16,7 @@
     <x-sim.halaman-daftar judul="Satuan Permukiman"
         keterangan="Enam satuan permukiman di Kawasan Transmigrasi Kobalima Timur."
         :remah="\App\Helpers\RemahHelper::untuk('/sp')"
-        :jumlah="count($baris)" :kata-kunci="$cari" :aksi-url="route('sp.index')"
+        :jumlah="$baris->total()" :paginator="$baris" :kata-kunci="$cari" :aksi-url="route('sp.index')"
         placeholder-cari="Cari nama SP atau desa" judul-kosong="Belum ada data satuan permukiman">
 
         <x-slot:aksi>
@@ -31,7 +31,7 @@
         </x-slot:aksi>
 
         <x-slot:ringkasan>
-            <x-sim.stat-card label="Jumlah SP" :nilai="count($semua)" satuan="SP" />
+            <x-sim.stat-card label="Jumlah SP" :nilai="$jumlahSp" satuan="SP" />
             <x-sim.stat-card label="Total Luas Lahan" :nilai="number_format($totalLuas, 2, ',', '.')" satuan="ha" />
             <x-sim.stat-card label="Daya Tampung" :nilai="number_format($totalRencana, 0, ',', '.')" satuan="KK" />
             <x-sim.stat-card label="Sudah Terisi" :nilai="number_format($totalTerisi, 0, ',', '.')" satuan="KK"
@@ -117,10 +117,10 @@
             <tr class="motif-baris-total">
                 <td colspan="4" class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">Total</td>
                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
-                    {{ number_format(array_sum(array_column($baris, 'luas_lahan')), 2, ',', '.') }}</td>
+                    {{ number_format($totalLuas, 2, ',', '.') }}</td>
                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
-                    {{ array_sum(array_column($baris, 'jumlah_kk_terisi')) }} /
-                    {{ array_sum(array_column($baris, 'jumlah_kk_rencana')) }}</td>
+                    {{ $totalTerisi }} /
+                    {{ $totalRencana }}</td>
                 {{-- Dua sel kosong: kolom Kondisi dan kolom Aksi tidak punya total --}}
                 <td></td>
                 <td></td>

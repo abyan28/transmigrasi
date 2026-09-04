@@ -19,6 +19,7 @@ use App\Models\AnggotaPoktan;
 use App\Models\Komoditas;
 use App\Models\Penanaman;
 use App\Models\Poktan;
+use App\Models\Role;
 use App\Models\SaprotanDistribusi;
 use App\Models\Satuan;
 use App\Models\Transmigran;
@@ -240,7 +241,18 @@ class ViewServiceProvider extends ServiceProvider
             'opsiJenisInfrastruktur' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::JenisInfrastruktur),
             'opsiJenisAlsintan' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::JenisAlsintan),
             'opsiTipeKomoditas' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::TipeKomoditas),
-            'daftarRole' => DummyData::role(),
+            // Fase 1, 2026-09-05: Eloquent nyata, bukan `DummyData` -- role
+            // buatan Admin sebelumnya tak pernah muncul di sini, sehingga
+            // akun baru tak dapat ditugaskan ke role selain kelima bawaan.
+            'daftarRole' => Role::query()->where('is_aktif', true)->orderBy('nama')->get()
+                ->map(fn (Role $r) => [
+                    'id_role' => $r->id_role,
+                    'nama' => $r->nama,
+                    'cakupan_data' => $r->cakupan_data->value,
+                ])->all(),
+            // Modal rincian akun (`pages.pengguna.detail`) tidak lagi
+            // memakainya pada markupnya -- dibiarkan DummyData, tak
+            // berdampak nyata.
             'daftarPengguna' => DummyData::pengguna(),
 
             /*
@@ -271,10 +283,21 @@ class ViewServiceProvider extends ServiceProvider
              * Memetakan seluruhnya lebih murah daripada memaksa tiga rute
              * mengoper izin role yang berbeda-beda: jumlah role tetap menurut
              * prd.md, dan daftarnya pendek.
+             *
+             * Fase 1, 2026-09-05: dibaca dari pivot `role_permission`
+             * sungguhan, bukan `DummyData::izinRole()`. Sebelumnya peta ini
+             * hanya mengenal kelima id role contoh -- role mana pun yang
+             * dibuat Admin (id di luar itu) selalu tampil TANPA satu pun
+             * kewenangan tercentang pada modal "Ubah Role", padahal
+             * `simpan()`/`perbarui()` sudah menyimpan kewenangannya lewat
+             * `role->permissions()->sync()` sejak Task 3.3.
              */
-            'izinPerRole' => collect(DummyData::role())
-                ->mapWithKeys(fn ($r) => [(int) $r['id_role'] => DummyData::izinRole((int) $r['id_role'])])
-                ->all(),
+            'izinPerRole' => Role::with('permissions')->get()
+                ->mapWithKeys(fn (Role $r) => [
+                    $r->id_role => $r->permissions->groupBy('modul')
+                        ->map(fn ($grup) => $grup->pluck('aksi')->map(fn ($a) => $a->value)->all())
+                        ->all(),
+                ])->all(),
 
             'anggotaPoktanPerPoktan' => AnggotaPoktan::query()
                 ->where('status', StatusKeaktifanAnggota::Aktif->value)

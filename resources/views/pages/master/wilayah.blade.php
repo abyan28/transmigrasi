@@ -55,7 +55,7 @@
         perombakan ini berubah menjadi kemunduran.
     --}}
     <form method="GET" action="{{ route('wilayah') }}">
-        <x-sim.data-table :jumlah="$jumlahBaris" :per-halaman="$perHalaman" :kata-kunci="$cari"
+        <x-sim.data-table :jumlah="$jumlahBaris" :per-halaman="$perHalaman" :paginator="$paginator" :kata-kunci="$cari"
             judul="Daftar wilayah administratif"
             placeholder-cari="Cari nama wilayah, induk, atau kode"
             judul-kosong="Wilayah tidak ditemukan"

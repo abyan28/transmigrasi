@@ -932,6 +932,7 @@ Pola berikut adalah **standar yang harus dibangun dan dipatuhi** sejak awal proy
 6. **Validasi terpusat dan DRY.** Aturan nama, nomor telepon, NIK, nomor KK, dan sejenisnya ditulis di `app/Support/ValidationRules.php`. Dilarang menulis ulang regex atau rule di tiap form.
 7. **Eager loading wajib.** Query yang dipakai di dalam loop view wajib memakai `with([...])` untuk mencegah N+1.
 8. **Verifikasi sebelum menyatakan selesai.** `php artisan test`, `npm run build`, dan `php artisan view:cache` harus hijau; lakukan smoke test di browser untuk setiap perubahan UI.
+9. **SQL mentah (`orderByRaw`, dsb.) wajib portabel SQLite DAN MariaDB.** `tests/Feature/*` berjalan di SQLite `:memory:`, `tests/Database/*` di MariaDB nyata -- keduanya dapat menyentuh rute yang sama. Fungsi khas satu mesin (mis. `FIELD()`, hanya ada di MariaDB) meloloskan `tests/Database` tetapi meruntuhkan `tests/Feature` begitu ada rute yang sama-sama diuji di kedua suite (ditemukan Fase 1, 2026-09-05: `PengaduanController` sempat memakai `FIELD()` dengan catatan "aman sebab tak ada uji Feature untuk `/pengaduan`" -- catatan itu sendiri sudah salah saat ditulis). `CASE WHEN ... THEN ... END` dipahami kedua mesin dan dipakai sebagai gantinya.
 
 #### 13.3 Aturan tampilan dan format
 1. Zona waktu aplikasi adalah **WITA (`Asia/Makassar`, UTC+8)** mengikuti lokasi Kabupaten Malaka, dan locale aplikasi adalah `id`.

@@ -51,7 +51,7 @@
     </x-sim.page-header>
 
     <div class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <x-sim.stat-card label="Catatan Panen" :nilai="number_format(count($semua), 0, ',', '.')" satuan="catatan" />
+        <x-sim.stat-card label="Catatan Panen" :nilai="number_format($totalCatatan, 0, ',', '.')" satuan="catatan" />
         <x-sim.stat-card label="Total Volume" :nilai="number_format($totalTonSemua, 3, ',', '.')" satuan="ton"
             keterangan="Hasil konversi seluruh komoditas" />
         <x-sim.stat-card label="Jenis Komoditas" :nilai="number_format(count($daftarKomoditas), 0, ',', '.')" />
@@ -59,7 +59,7 @@
     </div>
 
     <form method="GET" action="{{ route('panen.index') }}">
-        <x-sim.data-table :jumlah="count($baris)" :kata-kunci="$cari"
+        <x-sim.data-table :jumlah="$baris->total()" :paginator="$baris" :kata-kunci="$cari"
             placeholder-cari="Cari kelompok tani atau komoditas" judul-kosong="Belum ada catatan panen"
             pesan-kosong="Hasil panen akan tampil di sini setelah dicatat petugas.">
 

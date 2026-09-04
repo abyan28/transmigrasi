@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
 use App\Models\KawasanTransmigrasi;
 use App\Support\DummyData;
+use App\Support\Paginasi;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -30,41 +31,50 @@ class KawasanController extends Controller
 {
     use MenyimpanBerkas;
 
-    public function index(): View
+    public function index(Request $request): View
     {
         // `berkas` di-eager-load supaya daftar berkas tiap kawasan tidak
         // dibaca satu per satu di dalam perulangan kartu (N+1, notes.md 1g.5).
         $kawasan = KawasanTransmigrasi::query()->with(['berkas', 'kabupaten.provinsi'])
             ->withCount('satuanPermukiman')
-            ->orderBy('nama')->get();
+            ->orderBy('nama')
+            ->paginate(Paginasi::perHalaman($request))
+            ->withQueryString();
+
+        // $berkasKawasan hanya dipakai VIEW untuk kartu yang TAMPIL, jadi
+        // cukup dihitung dari model mentah HALAMAN INI -- diambil SEBELUM
+        // ->through() menukar isi koleksi menjadi larik tampilan.
+        $berkasKawasan = $kawasan->getCollection()->mapWithKeys(fn (KawasanTransmigrasi $k) => [
+            $k->id_kawasan_transmigrasi => $k->berkas->map(fn ($b) => [
+                'nama_file' => $b->nama_file,
+                'peran' => $b->pivot->peran,
+                'keterangan' => $b->keterangan,
+            ])->all(),
+        ])->all();
+
+        $kawasan->through(fn (KawasanTransmigrasi $k) => [
+            'id_kawasan_transmigrasi' => $k->id_kawasan_transmigrasi,
+            'nama' => $k->nama,
+            'kode_kawasan' => $k->kode_kawasan,
+            'tahun_penetapan' => $k->tahun_penetapan,
+            'nomor_sk' => $k->nomor_sk,
+            'luas_total' => (float) $k->luas_total,
+            'keterangan' => $k->keterangan,
+            'kabupaten_id' => $k->kabupaten_id,
+            // Label tampilan; kebenarannya tetap kabupaten_id. Dibaca
+            // lewat relasi yang sudah di-eager-load, bukan kueri per kartu.
+            'kabupaten' => $k->kabupaten?->nama,
+            'provinsi' => $k->kabupaten?->provinsi?->nama,
+            'jumlah_sp' => $k->satuan_permukiman_count,
+        ]);
 
         $daftarSp = DummyData::satuanPermukiman();
         $rekap = DummyData::rekapPerSp();
 
         return view('pages.sp.kawasan', [
             'title' => 'Kawasan Transmigrasi',
-            'kawasan' => $kawasan->map(fn (KawasanTransmigrasi $k) => [
-                'id_kawasan_transmigrasi' => $k->id_kawasan_transmigrasi,
-                'nama' => $k->nama,
-                'kode_kawasan' => $k->kode_kawasan,
-                'tahun_penetapan' => $k->tahun_penetapan,
-                'nomor_sk' => $k->nomor_sk,
-                'luas_total' => (float) $k->luas_total,
-                'keterangan' => $k->keterangan,
-                'kabupaten_id' => $k->kabupaten_id,
-                // Label tampilan; kebenarannya tetap kabupaten_id. Dibaca
-                // lewat relasi yang sudah di-eager-load, bukan kueri per kartu.
-                'kabupaten' => $k->kabupaten?->nama,
-                'provinsi' => $k->kabupaten?->provinsi?->nama,
-                'jumlah_sp' => $k->satuan_permukiman_count,
-            ])->all(),
-            'berkasKawasan' => $kawasan->mapWithKeys(fn (KawasanTransmigrasi $k) => [
-                $k->id_kawasan_transmigrasi => $k->berkas->map(fn ($b) => [
-                    'nama_file' => $b->nama_file,
-                    'peran' => $b->pivot->peran,
-                    'keterangan' => $b->keterangan,
-                ])->all(),
-            ])->all(),
+            'kawasan' => $kawasan,
+            'berkasKawasan' => $berkasKawasan,
             'daftarSp' => $daftarSp,
             'rekap' => $rekap,
             'totalKk' => array_sum(array_column($rekap, 'jumlah_kk')),

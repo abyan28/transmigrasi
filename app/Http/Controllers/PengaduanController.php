@@ -11,6 +11,7 @@ use App\Models\PenangananPengaduan;
 use App\Models\Pengaduan;
 use App\Support\DummyData;
 use App\Support\NomorPengaduan;
+use App\Support\Paginasi;
 use App\Support\RekapPengaduan;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
@@ -42,59 +43,44 @@ class PengaduanController extends Controller
 
     public function index(Request $request): View
     {
-        $semua = $this->daftar();
-
         $cari = trim((string) $request->query('cari', ''));
         $filterSp = $request->query('sp');
         $filterStatus = $request->query('status');
         $filterKategori = $request->query('kategori');
         $filterPrioritas = $request->query('prioritas');
         $filterBidang = $request->query('bidang');
+        $perHalaman = Paginasi::perHalaman($request);
 
-        $baris = array_values(array_filter($semua, function (array $p) use ($cari, $filterSp, $filterStatus, $filterKategori, $filterPrioritas, $filterBidang) {
-            if ($cari !== '') {
-                $cocok = str_contains(mb_strtolower($p['judul']), mb_strtolower($cari))
-                    || str_contains(mb_strtolower($p['nomor_pengaduan']), mb_strtolower($cari))
-                    || str_contains(mb_strtolower($p['nama_pelapor']), mb_strtolower($cari));
+        $baris = Pengaduan::query()
+            ->with(['satuanPermukiman', 'berkas'])
+            ->when($cari !== '', fn ($q) => $q->where(fn ($sub) => $sub
+                ->where('judul', 'like', "%{$cari}%")
+                ->orWhere('nomor_pengaduan', 'like', "%{$cari}%")
+                ->orWhere('nama_pelapor', 'like', "%{$cari}%")))
+            ->when($filterSp, fn ($q) => $q->where('satuan_permukiman_id', $filterSp))
+            ->when($filterStatus, fn ($q) => $q->where('status', $filterStatus))
+            ->when($filterKategori, fn ($q) => $q->where('kategori', $filterKategori))
+            ->when($filterPrioritas, fn ($q) => $q->where('prioritas', $filterPrioritas))
+            ->when($filterBidang === 'belum', fn ($q) => $q->whereNull('bidang'))
+            ->when($filterBidang && $filterBidang !== 'belum', fn ($q) => $q->where('bidang', $filterBidang))
+            // Belum selesai didahulukan, lalu menurut kemendesakan.
+            //
+            // SEBELUMNYA memakai FIELD(), fungsi MariaDB yang tak ada di
+            // SQLite (Fase 1, 2026-09-05 -- ternyata `tests/Feature/HalamanTest.php`
+            // memang memuat uji `/pengaduan` di SQLite, bukan cuma tests/Database
+            // seperti catatan lama di sini mengira). `CASE WHEN` portabel di
+            // kedua mesin, jadi dipakai untuk KEDUA pengurutan sekaligus.
+            ->orderByRaw('CASE WHEN status = ? THEN 1 ELSE 0 END', [StatusPengaduan::Selesai->value])
+            ->orderByRaw("CASE prioritas
+                WHEN 'Mendesak' THEN 1 WHEN 'Tinggi' THEN 2
+                WHEN 'Sedang' THEN 3 WHEN 'Rendah' THEN 4 ELSE 5 END")
+            ->paginate($perHalaman)
+            ->withQueryString();
 
-                if (! $cocok) {
-                    return false;
-                }
-            }
-
-            if ($filterSp && (string) $p['satuan_permukiman_id'] !== (string) $filterSp) {
-                return false;
-            }
-            if ($filterStatus && $p['status'] !== $filterStatus) {
-                return false;
-            }
-            if ($filterKategori && $p['kategori'] !== $filterKategori) {
-                return false;
-            }
-            if ($filterPrioritas && $p['prioritas'] !== $filterPrioritas) {
-                return false;
-            }
-            if ($filterBidang === 'belum' && ! empty($p['bidang'])) {
-                return false;
-            }
-
-            return ! ($filterBidang && $filterBidang !== 'belum' && ($p['bidang'] ?? null) !== $filterBidang);
-        }));
-
-        // Belum selesai didahulukan, lalu menurut kemendesakan.
-        $urutan = ['Mendesak' => 0, 'Tinggi' => 1, 'Sedang' => 2, 'Rendah' => 3];
-        usort($baris, function (array $a, array $b) use ($urutan) {
-            $selesaiA = $a['status'] === StatusPengaduan::Selesai->value ? 1 : 0;
-            $selesaiB = $b['status'] === StatusPengaduan::Selesai->value ? 1 : 0;
-
-            return $selesaiA !== $selesaiB
-                ? $selesaiA <=> $selesaiB
-                : ($urutan[$a['prioritas']] <=> $urutan[$b['prioritas']]);
-        });
+        $baris->through(fn (Pengaduan $p) => $this->baris($p));
 
         return view('pages.pengaduan.index', [
             'title' => 'Pengaduan',
-            'semua' => $semua,
             'baris' => $baris,
             'cari' => $cari,
             'filterSp' => $filterSp,
@@ -103,11 +89,15 @@ class PengaduanController extends Controller
             'filterPrioritas' => $filterPrioritas,
             'filterBidang' => $filterBidang,
             'adaFilter' => $cari !== '' || $filterSp || $filterStatus || $filterKategori || $filterPrioritas || $filterBidang,
-            'belumBerbidang' => count(array_filter($semua, fn ($p) => empty($p['bidang']))),
-            'belumSelesai' => count(array_filter($semua, fn ($p) => $p['status'] !== StatusPengaduan::Selesai->value)),
-            'menungguDiterima' => count(array_filter($semua, fn ($p) => $p['status'] === StatusPengaduan::MenungguDiterima->value)),
-            'mendesak' => count(array_filter($semua, fn ($p) => $p['prioritas'] === PrioritasPengaduan::Mendesak->value
-                && $p['status'] !== StatusPengaduan::Selesai->value)),
+            // Kartu ringkasan: agregat kawasan-penuh (atau cakupan operator),
+            // bukan halaman ini saja -- sama seperti $baris, CakupanDataSp
+            // berlaku otomatis pada tiap query di bawah.
+            'total' => Pengaduan::query()->count(),
+            'belumBerbidang' => Pengaduan::query()->whereNull('bidang')->count(),
+            'belumSelesai' => Pengaduan::query()->whereNot('status', StatusPengaduan::Selesai->value)->count(),
+            'menungguDiterima' => Pengaduan::query()->where('status', StatusPengaduan::MenungguDiterima->value)->count(),
+            'mendesak' => Pengaduan::query()->where('prioritas', PrioritasPengaduan::Mendesak->value)
+                ->whereNot('status', StatusPengaduan::Selesai->value)->count(),
             'daftarSp' => DummyData::satuanPermukiman(),
             'opsiFilterBidang' => DummyData::opsiFilterDaftarPilihan(JenisDaftarPilihan::BidangPengaduan),
             'opsiFilterKategori' => DummyData::opsiFilterDaftarPilihan(JenisDaftarPilihan::KategoriPengaduan),
@@ -257,19 +247,6 @@ class PengaduanController extends Controller
             'kelompok' => $kelompok,
             'rekap' => RekapPengaduan::rekap($kelompok),
         ]);
-    }
-
-    /**
-     * @return array<int, array<string, mixed>>
-     */
-    private function daftar(): array
-    {
-        return Pengaduan::query()
-            ->with(['satuanPermukiman', 'berkas'])
-            ->orderBy('id_pengaduan')
-            ->get()
-            ->map(fn (Pengaduan $p) => $this->baris($p))
-            ->all();
     }
 
     /**

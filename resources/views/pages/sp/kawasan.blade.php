@@ -28,6 +28,11 @@
         </x-slot:aksi>
     </x-sim.page-header>
 
+    {{-- Tanpa `cari`/filter (kawasan tak sebanyak itu). --}}
+    <form method="GET" action="{{ route('kawasan') }}" class="mb-4 flex justify-end">
+        <x-sim.pilih-per-halaman :per-halaman="$kawasan->perPage()" />
+    </form>
+
     @foreach ($kawasan as $k)
         <div class="mb-6 rounded-2xl border border-gray-200 bg-white p-5 sm:p-6 dark:border-gray-800 dark:bg-white/[0.03]">
             <div class="flex flex-wrap items-start justify-between gap-4">
@@ -108,6 +113,12 @@
             </div>
         </div>
     @endforeach
+
+    @if ($kawasan->hasPages())
+        <div class="mb-6">
+            {{ $kawasan->onEachSide(1)->links() }}
+        </div>
+    @endif
 
     {{-- Sebaran SP, memperlihatkan mengapa kawasan tidak dapat diwakili struktur administratif --}}
     <div class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">

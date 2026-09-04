@@ -13,6 +13,7 @@ use App\Models\Lahan;
 use App\Models\Poktan;
 use App\Models\SaprotanDistribusi;
 use App\Support\DummyData;
+use App\Support\Paginasi;
 use App\Support\PenyajianPoktan;
 use App\Support\RekapLahan;
 use App\Support\RekapPoktan;
@@ -41,32 +42,47 @@ class PoktanController extends Controller
 
     public function index(Request $request): View
     {
-        $semua = $this->daftar();
-        $anggota = $this->semuaAnggota();
-
         $cari = trim((string) $request->query('cari', ''));
         $filterSp = $request->query('sp');
+        $perHalaman = Paginasi::perHalaman($request);
 
-        $baris = array_values(array_filter($semua, function (array $p) use ($cari, $filterSp) {
-            if ($cari !== ''
-                && ! str_contains(mb_strtolower($p['nama']), mb_strtolower($cari))
-                && ! str_contains(mb_strtolower((string) $p['nama_ketua']), mb_strtolower($cari))) {
-                return false;
-            }
+        $baris = Poktan::query()
+            ->with(['satuanPermukiman', 'ketuaTransmigran', 'ketuaAnggotaKeluarga', 'berkas', 'anggota'])
+            // Nama ketua diturunkan dari TIGA sumber berbeda tergantung asal
+            // ketuanya (rules.md 7a.2a) -- tak bisa jadi satu kolom `->where()`
+            // tunggal. Menyaring hasil `->paginate()` di PHP akan mengulang
+            // pelanggaran rules.md 5.0b-1 poin 13 yang sedang diperbaiki, jadi
+            // ketiga sumber disatukan di query builder lewat orWhere/orWhereHas.
+            ->when($cari !== '', fn ($q) => $q->where(fn ($sub) => $sub
+                ->where('nama', 'like', "%{$cari}%")
+                ->orWhere('nama_ketua', 'like', "%{$cari}%")
+                ->orWhereHas('ketuaTransmigran', fn ($k) => $k->where('nama_kepala_keluarga', 'like', "%{$cari}%"))
+                ->orWhereHas('ketuaAnggotaKeluarga', fn ($k) => $k->where('nama_lengkap', 'like', "%{$cari}%"))))
+            ->when($filterSp, fn ($q) => $q->where('satuan_permukiman_id', $filterSp))
+            ->orderBy('id_poktan')
+            ->paginate($perHalaman)
+            ->withQueryString();
 
-            return ! ($filterSp && (string) $p['satuan_permukiman_id'] !== (string) $filterSp);
-        }));
+        $baris->through(fn (Poktan $p) => $this->baris($p));
 
         return view('pages.poktan.index', [
             'title' => 'Kelompok Tani',
-            'semua' => $semua,
-            'anggota' => $anggota,
             'baris' => $baris,
             'cari' => $cari,
             'filterSp' => $filterSp,
             'adaFilter' => $cari !== '' || $filterSp,
-            'totalAnggota' => array_sum(array_column($semua, 'jumlah_anggota')),
-            'anggotaAktif' => count(array_filter($anggota, fn ($a) => $a['status'] === StatusKeaktifanAnggota::Aktif->value)),
+            // Kartu ringkasan kawasan-penuh. `jumlah_anggota` per poktan
+            // DITURUNKAN lewat RekapPoktan::kekuatan() (anggota aktif + ketua
+            // bila belum terhitung, rules.md 7d.3) -- bukan cacah baris
+            // `anggota_poktan` mentah, jadi dijumlah lewat helper yang sama,
+            // bukan query agregat baru yang mengulang logikanya secara keliru.
+            // Poktan sekawasan jumlahnya kecil (puluhan), aman diambil penuh
+            // untuk satu angka kartu ini.
+            'totalPoktan' => Poktan::query()->count(),
+            'totalAnggota' => Poktan::query()->with('anggota')->get()
+                ->sum(fn (Poktan $p) => RekapPoktan::kekuatan($p)['jumlah_anggota']),
+            'anggotaTerdata' => AnggotaPoktan::query()->count(),
+            'anggotaAktif' => AnggotaPoktan::query()->where('status', StatusKeaktifanAnggota::Aktif->value)->count(),
             'daftarSp' => DummyData::satuanPermukiman(),
         ]);
     }
@@ -230,32 +246,6 @@ class PoktanController extends Controller
         }
 
         return [$data, $anggota, $disunting];
-    }
-
-    /**
-     * @return array<int, array<string, mixed>>
-     */
-    private function daftar(): array
-    {
-        return Poktan::query()
-            ->with(['satuanPermukiman', 'ketuaTransmigran', 'ketuaAnggotaKeluarga', 'berkas', 'anggota'])
-            ->orderBy('id_poktan')
-            ->get()
-            ->map(fn (Poktan $p) => $this->baris($p))
-            ->all();
-    }
-
-    /**
-     * @return array<int, array<string, mixed>>
-     */
-    private function semuaAnggota(): array
-    {
-        return AnggotaPoktan::query()
-            ->with(['transmigran', 'anggotaKeluarga', 'poktan'])
-            ->orderBy('id_anggota_poktan')
-            ->get()
-            ->map(fn (AnggotaPoktan $a) => $this->barisAnggota($a))
-            ->all();
     }
 
     /**

@@ -30,6 +30,8 @@ use App\Enums\TingkatKesuburanTanah;
 use App\Helpers\MenuHelper;
 use App\Helpers\RemahHelper;
 use App\Models\Pengaduan;
+use App\Models\Permission;
+use App\Models\Role;
 use App\Models\SatuanPermukiman;
 use App\Models\User;
 use App\Support\DummyData;
@@ -2650,21 +2652,24 @@ it('menyediakan seluruh modal manajemen pengguna', function () {
 
 it('menyembunyikan tombol nonaktifkan pada admin aktif terakhir', function () {
     // rules.md 14b poin 16. Merender tombol lalu menolaknya di server berarti
-    // memasang kontrol yang tidak berfungsi, yang dilarang R-26. Data contoh
-    // hanya memuat satu akun Admin aktif, sehingga akun itu wajib dilindungi.
-    $adminAktif = array_values(array_filter(
-        DummyData::pengguna(),
-        fn ($u) => $u['role'] === 'Admin' && $u['is_aktif'],
-    ));
-
-    expect($adminAktif)->toHaveCount(1);
+    // memasang kontrol yang tidak berfungsi, yang dilarang R-26.
+    //
+    // index() kini membaca Eloquent (Fase 1, 2026-09-05) -- Admin aktif
+    // terakhir dibuat sendiri di sini lewat role BER-`is_terkunci`, bukan
+    // diasumsikan dari `DummyData::pengguna()`. `PengaduanSeeder` memang ikut
+    // menanam kelima akun contoh (termasuk yang bernama role "Admin"), tetapi
+    // seluruhnya lewat role generik "Petugas" (`is_terkunci = false`) sekadar
+    // memenuhi FK `penanganan_pengaduan.user_id` -- tidak benar-benar
+    // menandakan Admin sungguhan sebagaimana dibaca `adminAktifTerakhir()`.
+    $roleAdmin = Role::factory()->terkunci()->create(['nama' => 'Admin']);
+    $admin = User::factory()->create(['role_id' => $roleAdmin->id_role]);
 
     $isi = $this->get(route('pengguna.index'))->getContent();
 
     // Yang dijaga adalah tidak adanya jalur penonaktifan, bukan penandanya.
     // Sejak 2026-08-17 label "Admin terakhir" per baris dihapus; alasannya
     // dinyatakan sekali lewat keterangan di bawah tabel.
-    expect($isi)->not->toContain('/pengguna/'.$adminAktif[0]['id_user'].'/nonaktifkan')
+    expect($isi)->not->toContain('/pengguna/'.$admin->id_user.'/nonaktifkan')
         ->and($isi)->toContain('tidak memiliki tombol nonaktifkan');
 });
 
@@ -2722,11 +2727,21 @@ it('menyajikan role terkunci sebagai hanya baca', function () {
     // rules.md 5.0a. Role Admin tidak dapat dikurangi izinnya, sehingga
     // matriksnya dirender tanpa kotak centang sama sekali, bukan dengan
     // kotak yang tampak dapat diklik lalu ditolak diam-diam.
-    $adminRole = collect(DummyData::role())->firstWhere('is_terkunci', true);
+    //
+    // Sejak Fase 1 (2026-09-05) `index()` membaca Eloquent, sehingga role dan
+    // kewenangannya disusun sendiri di sini -- bukan lagi dari `DummyData`,
+    // yang tak lagi tersambung ke halaman ini.
+    $izin = collect(['lihat', 'tambah', 'ubah', 'hapus'])
+        ->map(fn ($aksi) => Permission::factory()->create(['modul' => 'transmigran', 'aksi' => $aksi]));
+    $terkunci = Role::factory()->terkunci()->create();
+    $terkunci->permissions()->sync($izin->pluck('id_permission'));
 
-    expect($adminRole)->not->toBeNull();
+    // Role kedua, sekadar batas potongan berikutnya di bawah -- tanpa ini,
+    // potongan yang diambil "sampai akhir berkas" ikut menelan modal Tambah
+    // Role (yang memang punya checkbox aktif, sebab ia formulir role BARU).
+    Role::factory()->create();
 
-    $isi = $this->get(route('pengaturan.role'))->getContent();
+    $isi = $this->get(route('pengaturan.role'))->assertOk()->getContent();
 
     expect($isi)->toContain('Role ini terkunci dan hanya dapat dilihat');
 
@@ -2737,15 +2752,16 @@ it('menyajikan role terkunci sebagai hanya baca', function () {
     // pembungkus, sekali pada id judulnya. Memotong dari kemunculan pertama
     // menghasilkan potongan yang berhenti sebelum isi modal, sehingga uji
     // lulus tanpa memeriksa apa pun.
-    $awal = strpos($isi, 'id="judul-formRole'.$adminRole['id_role'].'"');
+    $awal = strpos($isi, 'id="judul-formRole'.$terkunci->id_role.'"');
     $berikutnya = strpos($isi, 'id="judul-formRole', $awal + 20);
     $potongan = substr($isi, $awal, $berikutnya === false ? null : $berikutnya - $awal);
 
     expect($potongan)->not->toContain('name="izin[');
 
-    // Jumlah tanda centang hanya-baca wajib sama dengan jumlah izin Admin,
-    // sehingga matriks benar-benar menampilkan data, bukan tabel kosong.
-    expect(substr_count($potongan, '&#10003;'))->toBe($adminRole['jumlah_izin']);
+    // Jumlah tanda centang hanya-baca wajib sama dengan jumlah izin
+    // sungguhan role ini, sehingga matriks benar-benar menampilkan data
+    // basis data, bukan tabel kosong.
+    expect(substr_count($potongan, '&#10003;'))->toBe($izin->count());
 });
 
 // Rute tulis `pengguna.*` kini controller nyata yang menyentuh tabel `user`
@@ -4160,6 +4176,10 @@ it('menyediakan jalur mengaktifkan kembali akun yang dinonaktifkan', function ()
     // akun yang sudah mati, padahal akun memang tidak pernah dihapus.
     $isi = $this->get(route('pengguna.index'))->assertOk()->getContent();
 
+    // `PengaduanSeeder` (dijalankan sekali per kelas lewat `DataMasterSeeder`)
+    // ikut menanam kelima akun `DummyData::pengguna()` sungguhan -- termasuk
+    // MARIA GORETI yang memang nonaktif di sana -- sekadar memenuhi FK
+    // `penanganan_pengaduan.user_id`. Kebetulan cocok dipakai di sini.
     $nonaktif = collect(DummyData::pengguna())->firstWhere('is_aktif', false);
 
     expect($nonaktif)->not->toBeNull()
@@ -4179,10 +4199,17 @@ it('tidak menawarkan pengaktifan pada akun yang sudah aktif', function () {
 
 it('tetap melindungi admin aktif terakhir dari penonaktifan', function () {
     // Penambahan tombol aktifkan tidak boleh melemahkan perlindungan yang
-    // sudah ada (rules.md 14b poin 16).
+    // sudah ada (rules.md 14b poin 16). Admin dibuat sendiri di sini --
+    // lihat catatan pada uji sebelumnya soal mengapa tak memakai akun
+    // `PengaduanSeeder`.
+    $admin = User::factory()->create([
+        'nama' => 'ADMIN UJI TERAKHIR',
+        'role_id' => Role::factory()->terkunci()->create(['nama' => 'Admin'])->id_role,
+    ]);
+
     $isi = $this->get(route('pengguna.index'))->getContent();
 
-    expect($isi)->not->toContain('Nonaktifkan akun SITI RAHMAWATI')
+    expect($isi)->not->toContain('Nonaktifkan akun '.$admin->nama)
         ->and($isi)->toContain('tidak memiliki tombol nonaktifkan');
 });
 
@@ -4251,19 +4278,23 @@ it('menampilkan tombol hapus hanya pada role yang memang dapat dihapus', functio
     // Role bawaan dan role yang masih dipakai akun tidak boleh dihapus
     // (rules.md 5.0c poin 8 dan 9). Merender tombol lalu menolaknya di server
     // berarti memasang kontrol mati.
+    //
+    // Sejak Fase 1 (2026-09-05) `index()` membaca Eloquent, sehingga ketiga
+    // keadaan disusun sendiri di sini, bukan lagi dari `DummyData`.
+    $bawaan = Role::factory()->bawaan()->create();
+    $dipakaiAkun = Role::factory()->create();
+    User::factory()->create(['role_id' => $dipakaiAkun->id_role]);
+    $bisaDihapus = Role::factory()->create();
+
     $isi = $this->get(route('pengaturan.role'))->assertOk()->getContent();
 
-    $dapatDihapus = collect(DummyData::role())
-        ->filter(fn ($r) => ! $r['is_bawaan'] && $r['jumlah_pengguna'] === 0);
+    // `url()` (dipakai templatenya) merender path LENGKAP beserta domain,
+    // bukan path relatif -- dibandingkan lewat helper yang sama, bukan
+    // ditulis ulang dengan tangan, supaya tak bergantung pada APP_URL.
+    expect($isi)->toContain("aksi: '".url('/pengaturan/role/'.$bisaDihapus->id_role)."'");
 
-    expect($dapatDihapus)->not->toBeEmpty();
-
-    foreach ($dapatDihapus as $role) {
-        expect($isi)->toContain('/pengaturan/role/'.$role['id_role']);
-    }
-
-    foreach (collect(DummyData::role())->where('is_bawaan', true) as $role) {
-        expect($isi)->not->toContain("aksi: '/pengaturan/role/".$role['id_role']."'");
+    foreach ([$bawaan, $dipakaiAkun] as $role) {
+        expect($isi)->not->toContain("aksi: '".url('/pengaturan/role/'.$role->id_role)."'");
     }
 });
 
@@ -5671,7 +5702,11 @@ it('menyaring daftar panen menurut rentang tahun', function () {
     $r2025 = $this->get('/panen?tahun_dari=2025&tahun_sampai=2025')->assertOk()->viewData('baris');
     $r2026 = $this->get('/panen?tahun_dari=2026&tahun_sampai=2026')->assertOk()->viewData('baris');
 
-    $tahun = fn ($rows) => collect($rows)
+    // `baris` kini paginator Eloquent (Fase 1) -- `->items()` mengambil larik
+    // baris halaman ini; `collect($rows)` langsung salah, sebab Paginator
+    // Arrayable menerjemahkan diri jadi larik metadata (current_page, dst),
+    // bukan larik barisnya.
+    $tahun = fn ($rows) => collect($rows->items())
         ->map(fn ($p) => (int) substr((string) $p['periode_panen'], 0, 4))
         ->unique()->sort()->values()->all();
 

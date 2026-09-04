@@ -7,6 +7,7 @@ use App\Enums\StatusHunian;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
 use App\Models\Rumah;
 use App\Support\DummyData;
+use App\Support\Paginasi;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -31,45 +32,37 @@ class RumahController extends Controller
 
     public function index(Request $request): View
     {
-        $semua = $this->daftar();
-
         $cari = trim((string) $request->query('cari', ''));
         $filterSp = $request->query('sp');
         $filterKondisi = $request->query('kondisi');
         $filterHunian = $request->query('status_hunian');
+        $perHalaman = Paginasi::perHalaman($request);
 
-        $baris = array_values(array_filter($semua, function (array $r) use ($cari, $filterSp, $filterKondisi, $filterHunian) {
-            if ($cari !== '') {
-                $cocok = str_contains(mb_strtolower((string) $r['no_rumah']), mb_strtolower($cari))
-                    || str_contains(mb_strtolower((string) ($r['penghuni'] ?? '')), mb_strtolower($cari));
+        $baris = Rumah::query()
+            ->with(['satuanPermukiman', 'penghuni'])
+            ->when($cari !== '', fn ($q) => $q->where(fn ($sub) => $sub
+                ->where('no_rumah', 'like', "%{$cari}%")
+                ->orWhereHas('penghuni', fn ($p) => $p->where('nama_kepala_keluarga', 'like', "%{$cari}%"))))
+            ->when($filterSp, fn ($q) => $q->where('satuan_permukiman_id', $filterSp))
+            ->when($filterKondisi, fn ($q) => $q->where('kondisi', $filterKondisi))
+            ->when($filterHunian, fn ($q) => $q->where('status_hunian', $filterHunian))
+            ->orderBy('id_rumah')
+            ->paginate($perHalaman)
+            ->withQueryString();
 
-                if (! $cocok) {
-                    return false;
-                }
-            }
-
-            if ($filterSp && (string) $r['satuan_permukiman_id'] !== (string) $filterSp) {
-                return false;
-            }
-
-            if ($filterKondisi && $r['kondisi'] !== $filterKondisi) {
-                return false;
-            }
-
-            return ! ($filterHunian && $r['status_hunian'] !== $filterHunian);
-        }));
+        $baris->through(fn (Rumah $r) => $this->baris($r));
 
         return view('pages.rumah.index', [
             'title' => 'Rumah dan Hunian',
-            'semua' => $semua,
             'baris' => $baris,
             'cari' => $cari,
             'filterSp' => $filterSp,
             'filterKondisi' => $filterKondisi,
             'filterHunian' => $filterHunian,
             'adaFilter' => $cari !== '' || $filterSp || $filterKondisi || $filterHunian,
-            'jumlahDihuni' => count(array_filter($semua, fn ($r) => $r['status_hunian'] === StatusHunian::Dihuni->value)),
-            'jumlahRusak' => count(array_filter($semua, fn ($r) => $r['kondisi'] !== 'Tidak Rusak')),
+            'jumlahRumah' => Rumah::query()->count(),
+            'jumlahDihuni' => Rumah::query()->where('status_hunian', StatusHunian::Dihuni->value)->count(),
+            'jumlahRusak' => Rumah::query()->whereNot('kondisi', 'Tidak Rusak')->count(),
             'daftarSp' => DummyData::satuanPermukiman(),
             'opsiFilterKondisiRumah' => DummyData::opsiFilterDaftarPilihan(JenisDaftarPilihan::KondisiRumah),
             'opsiFilterStatusHunian' => DummyData::opsiFilterDaftarPilihan(JenisDaftarPilihan::StatusHunian),
@@ -195,19 +188,6 @@ class RumahController extends Controller
         }
 
         return [$data, $alasanKeluar];
-    }
-
-    /**
-     * @return array<int, array<string, mixed>>
-     */
-    private function daftar(): array
-    {
-        return Rumah::query()
-            ->with(['satuanPermukiman', 'penghuni'])
-            ->orderBy('id_rumah')
-            ->get()
-            ->map(fn (Rumah $r) => $this->baris($r))
-            ->all();
     }
 
     /**

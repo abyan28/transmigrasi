@@ -14,7 +14,7 @@
 @extends('layouts.app')
 
 @section('content')
-    {{-- `$role` dan `$pengguna` datang dari rute `pengaturan.role`. --}}
+    {{-- `$role` datang dari rute `pengaturan.role`. --}}
 
     <x-sim.page-header judul="Role dan Hak Akses"
         keterangan="Susunan kewenangan yang dapat diberikan kepada akun petugas."
@@ -63,6 +63,15 @@
             </p>
         </div>
     </div>
+
+    {{--
+        Tanpa `cari`/filter apa pun (role tak sebanyak itu) -- form ini hanya
+        membawa selektor jumlah per halaman, agar pilihannya ikut terkirim
+        beserta nomor halaman yang sedang dibuka.
+    --}}
+    <form method="GET" action="{{ route('pengaturan.role') }}" class="mb-4 flex justify-end">
+        <x-sim.pilih-per-halaman :per-halaman="$role->perPage()" />
+    </form>
 
     <div class="space-y-4">
         @foreach ($role as $r)
@@ -163,6 +172,12 @@
             </x-sim.modal-form>
         @endforeach
     </div>
+
+    @if ($role->hasPages())
+        <div class="mt-6">
+            {{ $role->onEachSide(1)->links() }}
+        </div>
+    @endif
 
     {{-- Modal tambah role --}}
     <x-sim.modal-form nama="formTambahRole" judul="Tambah Role"

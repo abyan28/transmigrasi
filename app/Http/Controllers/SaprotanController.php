@@ -6,7 +6,9 @@ use App\Enums\JenisDaftarPilihan;
 use App\Enums\JenisSaprotan;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
 use App\Models\Saprotan;
+use App\Models\SaprotanDistribusi;
 use App\Support\DummyData;
+use App\Support\Paginasi;
 use App\Support\PenyajianSaprotan;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
@@ -34,46 +36,35 @@ class SaprotanController extends Controller
 
     public function index(Request $request): View
     {
-        $semua = $this->daftar();
-
         $cari = trim((string) $request->query('cari', ''));
         $filterSp = $request->query('sp');
         $filterJenis = $request->query('jenis');
+        $perHalaman = Paginasi::perHalaman($request);
 
-        $baris = array_values(array_filter($semua, function (array $s) use ($cari, $filterSp, $filterJenis) {
-            if ($cari !== '') {
-                $poktanTeks = mb_strtolower(implode(' ', $s['poktan_penerima']));
-                if (! str_contains(mb_strtolower($s['nama']), mb_strtolower($cari))
-                    && ! str_contains($poktanTeks, mb_strtolower($cari))) {
-                    return false;
-                }
-            }
+        $baris = Saprotan::query()
+            ->with(['satuan', 'komoditas', 'distribusi.poktan.satuanPermukiman', 'distribusi.penanaman'])
+            ->when($cari !== '', fn ($q) => $q->where(fn ($sub) => $sub
+                ->where('nama', 'like', "%{$cari}%")
+                ->orWhereHas('distribusi.poktan', fn ($p) => $p->where('nama', 'like', "%{$cari}%"))))
+            ->when($filterSp, fn ($q) => $q->whereHas('distribusi.poktan', fn ($p) => $p->where('satuan_permukiman_id', $filterSp)))
+            ->when($filterJenis, fn ($q) => $q->where('jenis', $filterJenis))
+            ->orderBy('id_saprotan')
+            ->paginate($perHalaman)
+            ->withQueryString();
 
-            if ($filterSp && ! in_array((int) $filterSp, array_column($s['distribusi'], 'satuan_permukiman_id'), true)) {
-                return false;
-            }
-
-            return ! ($filterJenis && $s['jenis'] !== $filterJenis);
-        }));
-
-        $belumTersalur = [];
-        foreach ($semua as $s) {
-            $belumTersalur[$s['id_saprotan']] = $s['jumlah_belum_tersalur'];
-        }
+        $baris->through(fn (Saprotan $s) => $this->baris($s));
 
         return view('pages.saprotan.index', [
             'title' => 'Saprotan',
-            'semua' => $semua,
             'baris' => $baris,
             'cari' => $cari,
             'filterSp' => $filterSp,
             'filterJenis' => $filterJenis,
             'adaFilter' => $cari !== '' || $filterSp || $filterJenis,
-            'jenisUnik' => array_values(array_unique(array_column($semua, 'jenis'))),
-            'poktanPenerima' => count(array_unique(array_merge(
-                [], ...array_map(fn ($s) => array_column($s['distribusi'], 'poktan_id'), $semua),
-            ))),
-            'belumTersalur' => $belumTersalur,
+            // Kartu ringkasan kawasan-penuh, bukan hasil saringan/halaman ini.
+            'pengadaan' => Saprotan::query()->count(),
+            'jenisUnik' => Saprotan::query()->distinct()->pluck('jenis')->all(),
+            'poktanPenerima' => SaprotanDistribusi::query()->distinct('poktan_id')->count('poktan_id'),
             'daftarSp' => DummyData::satuanPermukiman(),
         ]);
     }
@@ -202,22 +193,6 @@ class SaprotanController extends Controller
             'sumber_dana' => $data['sumber_dana'] ?? null,
             'keterangan' => $data['keterangan'] ?? null,
         ];
-    }
-
-    /**
-     * @return array<int, array<string, mixed>>
-     */
-    private function daftar(): array
-    {
-        return Saprotan::query()
-            ->with([
-                'satuan', 'komoditas',
-                'distribusi.poktan.satuanPermukiman', 'distribusi.penanaman',
-            ])
-            ->orderBy('id_saprotan')
-            ->get()
-            ->map(fn (Saprotan $s) => $this->baris($s))
-            ->all();
     }
 
     /**

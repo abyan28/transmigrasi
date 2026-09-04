@@ -1,4 +1,4 @@
-﻿{{--
+{{--
     Data master satuan beserta faktor konversi ke ton.
 
     Inilah tabel yang membuat rekap lintas komoditas menjadi sepadan: volume
@@ -35,6 +35,11 @@
             bukan 320,500.
         </p>
     </div>
+
+    {{-- Tanpa `cari`/filter (data master, jarang lebih dari satu halaman). --}}
+    <form method="GET" action="{{ route('master.satuan') }}" class="mb-4 flex justify-end">
+        <x-sim.pilih-per-halaman :per-halaman="$satuan->perPage()" />
+    </form>
 
     <div class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
         <div class="overflow-x-auto">
@@ -89,6 +94,12 @@
             </table>
         </div>
     </div>
+
+    @if ($satuan->hasPages())
+        <div class="mt-4">
+            {{ $satuan->onEachSide(1)->links() }}
+        </div>
+    @endif
 
     <p class="mt-4 rounded-lg bg-gray-50 p-3.5 text-theme-xs text-gray-600 dark:bg-white/[0.03] dark:text-gray-400">
         Satuan lokal seperti karung dan ikat tidak dimasukkan ke daftar ini karena beratnya

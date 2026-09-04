@@ -34,6 +34,7 @@
     'placeholderCari' => 'Cari data',
     'judulKosong' => 'Belum ada data',
     'pesanKosong' => null,
+    'paginator' => null, // Fase 1: diteruskan apa adanya ke x-sim.data-table
 ])
 
 <x-sim.page-header :judul="$judul" :keterangan="$keterangan" :remah="$remah">
@@ -58,7 +59,7 @@
     --}}
     <x-sim.data-table :judul="$judul" :jumlah="$jumlah" :kata-kunci="$kataKunci"
         :placeholder-cari="$placeholderCari" :judul-kosong="$judulKosong"
-        :pesan-kosong="$pesanKosong">
+        :pesan-kosong="$pesanKosong" :paginator="$paginator">
 
         @isset($filter)
             <x-slot:filter>{{ $filter }}</x-slot:filter>

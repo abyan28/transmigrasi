@@ -41,7 +41,7 @@
     </div>
 
     <form method="GET" action="{{ route('lahan.index') }}">
-        <x-sim.data-table :jumlah="count($baris)" :kata-kunci="$cari"
+        <x-sim.data-table :jumlah="$baris->total()" :paginator="$baris" :kata-kunci="$cari"
             placeholder-cari="Cari kode lahan atau pemilik" judul-kosong="Belum ada data lahan"
             pesan-kosong="Data lahan akan tampil di sini setelah ditambahkan.">
 

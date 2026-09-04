@@ -19,7 +19,7 @@
     <x-sim.halaman-daftar judul="Saprotan"
         keterangan="Pengadaan benih, pupuk, pestisida, dan mulsa, beserta pembagiannya ke kelompok tani."
         :remah="\App\Helpers\RemahHelper::untuk('/saprotan')"
-        :jumlah="count($baris)" :kata-kunci="$cari" :aksi-url="route('saprotan.index')"
+        :jumlah="$baris->total()" :paginator="$baris" :kata-kunci="$cari" :aksi-url="route('saprotan.index')"
         placeholder-cari="Cari nama saprotan atau poktan" judul-kosong="Belum ada pengadaan saprotan"
         pesan-kosong="Pengadaan sarana produksi akan tampil di sini setelah dicatat.">
 
@@ -29,7 +29,7 @@
         </x-slot:aksi>
 
         <x-slot:ringkasan>
-            <x-sim.stat-card label="Pengadaan" :nilai="count($semua)" />
+            <x-sim.stat-card label="Pengadaan" :nilai="$pengadaan" />
             <x-sim.stat-card label="Jenis Saprotan" :nilai="count($jenisUnik)" />
             <x-sim.stat-card label="Poktan Penerima" :nilai="$poktanPenerima"
                 keterangan="Kelompok yang menerima bagian" />
@@ -94,9 +94,9 @@
                 </td>
                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
                     {{ number_format($s['jumlah_total'], 0, ',', '.') }} {{ $s['satuan'] }}
-                    @if ($belumTersalur[$s['id_saprotan']] > 0)
+                    @if ($s['jumlah_belum_tersalur'] > 0)
                         <span class="block text-theme-xs text-yellow-700 dark:text-yellow-400">
-                            {{ rtrim(rtrim(number_format($belumTersalur[$s['id_saprotan']], 2, ',', '.'), '0'), ',') }} belum tersalur
+                            {{ rtrim(rtrim(number_format($s['jumlah_belum_tersalur'], 2, ',', '.'), '0'), ',') }} belum tersalur
                         </span>
                     @endif
                 </td>
