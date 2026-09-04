@@ -203,24 +203,42 @@ class LaporanData
     }
 
     /**
-     * SP menurut id, untuk melacak kecamatan dan desa satu poktan.
+     * SP menurut id: nama, desa, dan kecamatan (untuk kolom wilayah laporan).
      *
-     * @return array<int, array<string, mixed>>
+     * Task 10.5: dibaca dari Eloquent (`desa.kecamatan` ter-eager-load), bukan
+     * lagi `DummyData::satuanPermukiman()`.
+     *
+     * @return array<int, array{nama: string, desa: ?string, kecamatan: ?string}>
      */
     private static function petaSp(): array
     {
         static $peta = null;
 
-        return $peta ??= collect(DummyData::satuanPermukiman())
-            ->keyBy('id_satuan_permukiman')
+        if ($peta !== null) {
+            return $peta;
+        }
+
+        $peta = SatuanPermukiman::withoutGlobalScopes()
+            ->with('desa.kecamatan')
+            ->get()
+            ->mapWithKeys(fn (SatuanPermukiman $s): array => [
+                $s->id_satuan_permukiman => [
+                    'nama' => $s->nama,
+                    'desa' => $s->desa?->nama,
+                    'kecamatan' => $s->desa?->kecamatan?->nama,
+                ],
+            ])
             ->all();
+
+        return $peta;
     }
 
     /**
      * Poktan menurut id, dengan nama dan NIK ketua yang sudah diselesaikan.
      *
-     * Ketua yang berasal dari transmigran tidak menyimpan namanya pada baris
-     * poktan (rules.md 7a); namanya dibaca lewat `ketua_transmigran_id`.
+     * Task 10.5: baris poktan dibangun `App\Support\PenyajianPoktan` (Eloquent);
+     * di sini hanya ditambahi kecamatan/desa SP dan alias `*_ketua_terpakai`
+     * yang dipakai laporan panen/alsintan/saprotan.
      *
      * @return array<int, array<string, mixed>>
      */
@@ -232,29 +250,17 @@ class LaporanData
             return $peta;
         }
 
-        $transmigran = collect(DummyData::transmigran())->keyBy('id_transmigran');
-
+        $sp = self::petaSp();
         $peta = [];
 
-        foreach (DummyData::poktan() as $p) {
-            $namaKetua = $p['nama_ketua'] ?: '-';
-            $nikKetua = $p['nik_ketua'] ?: null;
-
-            if (! $p['nama_ketua'] && $p['ketua_transmigran_id']) {
-                $t = $transmigran->get($p['ketua_transmigran_id']);
-                if ($t) {
-                    $namaKetua = $t['nama_kepala_keluarga'];
-                    $nikKetua = $t['nik'];
-                }
-            }
-
-            $sp = self::petaSp()[$p['satuan_permukiman_id']] ?? null;
+        foreach (PenyajianPoktan::daftar() as $p) {
+            $wilayah = $sp[$p['satuan_permukiman_id']] ?? null;
 
             $peta[$p['id_poktan']] = $p + [
-                'nama_ketua_terpakai' => $namaKetua,
-                'nik_ketua_terpakai' => $nikKetua,
-                'kecamatan' => $sp['kecamatan'] ?? '-',
-                'desa' => $sp['desa'] ?? '-',
+                'nama_ketua_terpakai' => $p['nama_ketua'] ?: '-',
+                'nik_ketua_terpakai' => $p['nik_ketua'] ?: null,
+                'kecamatan' => $wilayah['kecamatan'] ?? '-',
+                'desa' => $wilayah['desa'] ?? '-',
             ];
         }
 
@@ -301,7 +307,7 @@ class LaporanData
 
         $peta = [];
 
-        foreach (DummyData::anggotaPoktan() as $a) {
+        foreach (PenyajianPoktan::daftarAnggota() as $a) {
             if ($a['status'] === 'Aktif') {
                 $peta[$a['poktan_id']] = ($peta[$a['poktan_id']] ?? 0) + 1;
             }
@@ -1146,7 +1152,7 @@ class LaporanData
     public static function poktan(): array
     {
         $anggotaPerPoktan = [];
-        foreach (DummyData::anggotaPoktan() as $a) {
+        foreach (PenyajianPoktan::daftarAnggota() as $a) {
             $anggotaPerPoktan[$a['poktan_id']][] = $a;
         }
 
