@@ -1,7 +1,7 @@
 # tasklist.md
 ## Daftar Tugas — Sistem Informasi Digitalisasi Monitoring Pertanian dan Tata Kelola Data Kawasan Transmigrasi Kobalima Timur
 
-**Progress: 95%**
+**Progress: 96%**
 *(Tahap 0 selesai 8 task. **Tahap 1 SELESAI** 12 task. **TAHAP 2 SELESAI SELURUHNYA.** Gelombang 1 dan 2 tuntas, 32 halaman berdiri. **Delivery Gate kedua gelombang sudah dijalankan** dan laporannya lengkap (`delivery-gate-gelombang-1.md` dan `-2.md`). Dua hal ditunda beralasan, bukan lolos diam-diam: keadaan memuat dan galat menunggu backend Tahap 3, dan pemeriksaan 360px pada perangkat nyata menunggu manusia. Siap masuk checkpoint validasi bersama tim dan dinas, lalu Tahap 3.)*
 
 Acuan: `prd.md`, `rules.md`, `workflow.md`, `ui-spec.md`, `erd.md`, `data-dictionary.md`, `notes.md`.
@@ -1347,8 +1347,27 @@ menghapus sisa terakhir `DummyData::penggunaSaatIni()` -- dikerjakan berbarengan
     setelah `BerkasSeeder`. Stub `Route::delete('/poktan/{id}')` ganda (baris ~1620)
     dicabut. `UppercaseInput::$kecualikan` +`asal_ketua`/`asal_wakil`/`jabatan`.
   * `tests/Database/PoktanTest.php` +12. Verifikasi: Feature 732, Database 346, pint bersih, banding-skema NOL SELISIH, tautan-statis 14.
-- [ ] Task 6.6 - CRUD alsintan (selalu milik poktan) `[Sedang]`
+- [✓] ✅ Task 6.6 - CRUD alsintan (selalu milik poktan) `[Sedang]` (Selesai)
   * Tampilan form dan halaman rincian sudah selesai pada Task 2.29 dan 2.30
+  * **HASIL 2026-09-04:** `AlsintanController` (index/detail/simpan/perbarui/hapus/
+    distribusiKondisi) — pola INDUK + DISTRIBUSI (Putaran 7). Baris `alsintan` =
+    BENDA; `alsintan_distribusi` = satu baris per poktan penerima (jumlah +
+    kondisi per unit + penanda tangan BA + tanggal serah). Invarian
+    `Σ distribusi.jumlah ≤ jumlah_total` ditegakkan closure rule pada `distribusi`.
+  * Distribusi disinkron per `poktan_id`: poktan yang dilepas kehilangan barisnya
+    (`whereNotIn`+delete). `distribusiKondisi()` memperbarui kondisi + foto satu
+    baris (rute `/alsintan/{id}/distribusi/{dist}/kondisi`). foto/dokumen induk ->
+    pivot `alsintan_berkas` (peran foto/pendukung); foto per-unit -> FK
+    `alsintan_distribusi.foto_berkas_id`.
+  * `AlsintanSeeder` baru (alsintan + alsintan_distribusi + pivot `alsintan_berkas`
+    self-seeded karena jalan SETELAH Poktan/Berkas), di `DataMasterSeeder` +
+    `DatabaseSeeder`. `ViewServiceProvider` arm `daftarPoktan` + `anggotaPerPoktan`
+    -> Eloquent (ikut menyuapi form saprotan/penanaman, render identik).
+    `PoktanController::alsintanPoktan()` (tab alsintan poktan) -> Eloquent.
+  * Stub `Route::delete('/alsintan/{id}')` ganda (~1628) dicabut; rute alsintan ->
+    controller. `UppercaseInput::$kecualikan` +`jenis_alsintan`.
+  * `tests/Database/AlsintanTest.php` +9. Verifikasi: Feature 732, Database 355,
+    pint bersih, banding-skema NOL SELISIH, tautan-statis 14.
 - [ ] Task 6.7 - CRUD saprotan + penyaluran ke anggota aktif `[Sedang]`
   * Tampilan form dan halaman rincian sudah selesai pada Task 2.29 dan 2.30
 

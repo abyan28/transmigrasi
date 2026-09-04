@@ -66,6 +66,7 @@ class UppercaseInput
         // seragam. Ditegakkan tests/Feature/UppercaseInputTest.php.
         'kondisi',
         'status_hunian',
+        'jenis_alsintan',
         'sumber_dana',
         'status_penyerahan',
         'jenis_inventaris',

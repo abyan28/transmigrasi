@@ -6,6 +6,7 @@ use App\Enums\AsalWakilPoktan;
 use App\Enums\JenisReferensi;
 use App\Enums\StatusKeaktifanAnggota;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
+use App\Models\AlsintanDistribusi;
 use App\Models\AnggotaPoktan;
 use App\Models\Lahan;
 use App\Models\Poktan;
@@ -97,8 +98,8 @@ class PoktanController extends Controller
             'title' => $poktan->nama,
             'data' => $data,
             'anggota' => $anggota,
-            // Alsintan & saprotan poktan masih data contoh (Task 6.6 / 6.7).
-            'alsintan' => $this->alsintanDummy($id),
+            // Saprotan poktan masih data contoh (Task 6.7).
+            'alsintan' => $this->alsintanPoktan($id),
             'saprotan' => array_values(array_filter(
                 DummyData::saprotanDistribusi(),
                 fn ($d) => $d['poktan_id'] === $id,
@@ -441,27 +442,28 @@ class PoktanController extends Controller
     }
 
     /**
+     * Distribusi alsintan yang diterima poktan ini (Task 6.6, ber-Eloquent).
+     *
      * @return array<int, array<string, mixed>>
      */
-    private function alsintanDummy(int $poktanId): array
+    private function alsintanPoktan(int $poktanId): array
     {
-        $hasil = [];
-
-        foreach (DummyData::alsintan() as $a) {
-            foreach ($a['distribusi'] as $d) {
-                if ($d['poktan_id'] === $poktanId) {
-                    $hasil[] = $d + [
-                        'jenis_alsintan' => $a['jenis_alsintan'],
-                        'nama_alat' => $a['nama_alat'],
-                        'tahun_pengadaan' => $a['tahun_pengadaan'],
-                        'sumber_dana' => $a['sumber_dana'],
-                        'id_alsintan' => $a['id_alsintan'],
-                    ];
-                }
-            }
-        }
-
-        return $hasil;
+        return AlsintanDistribusi::query()
+            ->with('alsintan')
+            ->where('poktan_id', $poktanId)
+            ->orderBy('id_alsintan_distribusi')
+            ->get()
+            ->map(fn (AlsintanDistribusi $d) => [
+                'id_alsintan' => $d->alsintan_id,
+                'id_alsintan_distribusi' => $d->id_alsintan_distribusi,
+                'jenis_alsintan' => $d->alsintan?->jenis_alsintan,
+                'nama_alat' => $d->alsintan?->nama_alat,
+                'tahun_pengadaan' => $d->alsintan?->tahun_pengadaan,
+                'sumber_dana' => $d->alsintan?->sumber_dana,
+                'jumlah' => (int) $d->jumlah,
+                'kondisi' => $d->kondisi,
+            ])
+            ->all();
     }
 
     /**

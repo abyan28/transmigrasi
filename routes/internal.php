@@ -14,12 +14,12 @@
 |
 */
 
-use App\Enums\AsalWakilPoktan;
 use App\Enums\JenisReferensi;
 use App\Enums\PrioritasPengaduan;
 use App\Enums\StatusKondisiSp;
 use App\Enums\StatusPanen;
 use App\Enums\StatusPengaduan;
+use App\Http\Controllers\AlsintanController;
 use App\Http\Controllers\AnggotaPoktanController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\DokumenController;
@@ -1000,113 +1000,31 @@ Route::post('/anggota-poktan', [AnggotaPoktanController::class, 'simpan'])->name
 Route::put('/anggota-poktan/{id}', [AnggotaPoktanController::class, 'perbarui'])
     ->where('id', '[0-9]+')->name('anggota-poktan.perbarui');
 
-
-
-
-
-
-
-
-
-
-
-
-
 /*
- * Daftar alsintan. Pengambilan dan penyaringan datanya dipindahkan ke sini
- * 2026-08-27; sebelumnya dikerjakan blok `@php` di dalam view.
- *
- * Alasannya bukan kerapian melainkan biaya Tahap 4: selama view mengambil
- * datanya sendiri, mengganti `DummyData` dengan Eloquent berarti menyunting
- * viewnya, dan setiap perulangan di dalamnya berubah menjadi N+1. Lihat
- * agents/notes.md butir tindak lanjut 12.
+ * Alsintan (Task 6.6): pola INDUK + DISTRIBUSI. Satu pengadaan dibagikan ke
+ * beberapa poktan lintas SP; kondisi diamati per baris distribusi. Sigma
+ * distribusi <= jumlah total ditegakkan controller.
  */
-Route::get('/alsintan', function () {
-    $semua = DummyData::alsintan();
+Route::get('/alsintan', [AlsintanController::class, 'index'])->name('alsintan.index');
 
-    $cari = trim((string) request('cari', ''));
-    $filterSp = request('sp');
-    $filterKondisi = request('kondisi');
+Route::get('/alsintan/{id}', [AlsintanController::class, 'detail'])
+    ->where('id', '[0-9]+')->name('alsintan.detail');
 
-    $baris = array_values(array_filter($semua, function ($a) use ($cari, $filterSp, $filterKondisi) {
-        $poktanTeks = mb_strtolower(implode(' ', $a['poktan_penerima']));
+Route::post('/alsintan', [AlsintanController::class, 'simpan'])->name('alsintan.simpan');
 
-        if ($cari !== '' && ! str_contains(mb_strtolower($a['nama_alat']), mb_strtolower($cari))
-            && ! str_contains(mb_strtolower($a['jenis_alsintan']), mb_strtolower($cari))
-            && ! str_contains($poktanTeks, mb_strtolower($cari))) {
-            return false;
-        }
-        // SP cocok bila ADA distribusi di SP itu (Putaran 7).
-        if ($filterSp && ! in_array((int) $filterSp, array_column($a['distribusi'], 'satuan_permukiman_id'), true)) {
-            return false;
-        }
-        // Kondisi cocok bila ADA distribusi berkondisi itu.
-        if ($filterKondisi && ! in_array($filterKondisi, array_column($a['distribusi'], 'kondisi'), true)) {
-            return false;
-        }
+Route::put('/alsintan/{id}', [AlsintanController::class, 'perbarui'])
+    ->where('id', '[0-9]+')->name('alsintan.perbarui');
 
-        return true;
-    }));
-
-    return view('pages.alsintan.index', [
-        'title' => 'Alsintan',
-        'semua' => $semua,
-        'baris' => $baris,
-        'cari' => $cari,
-        'filterSp' => $filterSp,
-        'filterKondisi' => $filterKondisi,
-        'adaFilter' => $cari !== '' || $filterSp || $filterKondisi,
-        'totalUnit' => array_sum(array_column($semua, 'jumlah_total')),
-        'belumTersalur' => array_sum(array_column($semua, 'jumlah_belum_tersalur')),
-
-        // Cacah poktan penerima di seluruh distribusi (Putaran 7).
-        'poktanPenerima' => count(array_unique(array_merge(
-            [], ...array_map(fn ($a) => array_column($a['distribusi'], 'poktan_id'), $semua)
-        ))),
-        'rusak' => count(array_filter($semua, fn ($a) => in_array('Rusak Ringan', array_column($a['distribusi'], 'kondisi'), true)
-            || in_array('Rusak Berat', array_column($a['distribusi'], 'kondisi'), true))),
-
-        // Dropdown penyaring, bukan dropdown form: memakai varian yang ikut
-        // memuat nilai nonaktif, sebab data lama masih memakainya.
-        'daftarSp' => DummyData::satuanPermukiman(),
-        'opsiFilterKondisi' => DummyData::opsiFilterReferensi(JenisReferensi::Kondisi),
-    ]);
-})->name('alsintan.index');
-
-Route::get('/alsintan/{id}', function (int $id) {
-    $data = collect(DummyData::alsintan())->firstWhere('id_alsintan', $id);
-
-    abort_if($data === null, 404);
-
-    return view('pages.alsintan.detail', [
-        'title' => $data['nama_alat'],
-        'data' => $data,
-        'opsiKondisi' => DummyData::opsiReferensi(JenisReferensi::Kondisi),
-    ]);
-})->where('id', '[0-9]+')->name('alsintan.detail');
-
-Route::post('/alsintan', function () {
-    // Tahap 6: validasi, simpan, catat audit log. Satu baris pengadaan
-    // (jenis, nama, jumlah total, tahun, sumber dana) beserta baris
-    // distribusi per poktan penerima; Sigma distribusi <= jumlah total.
-    return redirect()->route('alsintan.index')
-        ->with('sukses', 'Data alsintan tersimpan.');
-})->name('alsintan.simpan');
-
-Route::put('/alsintan/{id}', function (int $id) {
-    return redirect()->route('alsintan.detail', $id)
-        ->with('sukses', 'Perubahan data alsintan tersimpan.');
-})->where('id', '[0-9]+')->name('alsintan.perbarui');
+Route::delete('/alsintan/{id}', [AlsintanController::class, 'hapus'])
+    ->where('id', '[0-9]+')->name('alsintan.hapus');
 
 /*
  * Memperbarui kondisi satu baris distribusi alsintan (Putaran 7). Kondisi
  * melekat pada distribusi, bukan pengadaan, sebab diamati per unit di
  * lapangan dan berubah setelah barang dibagikan.
  */
-Route::post('/alsintan/{id}/distribusi/{dist}/kondisi', function (int $id) {
-    return redirect()->route('alsintan.detail', $id)
-        ->with('sukses', 'Kondisi alat diperbarui.');
-})->where(['id' => '[0-9]+', 'dist' => '[0-9]+'])->name('alsintan.distribusi.kondisi');
+Route::post('/alsintan/{id}/distribusi/{dist}/kondisi', [AlsintanController::class, 'distribusiKondisi'])
+    ->where(['id' => '[0-9]+', 'dist' => '[0-9]+'])->name('alsintan.distribusi.kondisi');
 
 Route::get('/saprotan', function () {
     $semua = DummyData::saprotan();
@@ -1624,10 +1542,6 @@ Route::put('/penanaman/{id}', function (int $id) {
 Route::delete('/penanaman/{id}', function (int $id) {
     return redirect()->route('penanaman')->with('sukses', 'Catatan penanaman dihapus.');
 })->where('id', '[0-9]+')->name('penanaman.hapus');
-
-Route::delete('/alsintan/{id}', function (int $id) {
-    return redirect()->route('alsintan.index')->with('sukses', 'Data alsintan dihapus.');
-})->where('id', '[0-9]+')->name('alsintan.hapus');
 
 Route::delete('/saprotan/{id}', function (int $id) {
     return redirect()->route('saprotan.index')->with('sukses', 'Data saprotan dihapus.');

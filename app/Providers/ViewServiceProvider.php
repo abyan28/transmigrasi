@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Enums\Agama;
+use App\Enums\AsalWakilPoktan;
 use App\Enums\BentukWilayah;
 use App\Enums\HubunganAnggotaKeluarga;
 use App\Enums\JenisKelamin;
@@ -14,6 +15,7 @@ use App\Enums\StatusKeaktifanAnggota;
 use App\Enums\StatusPanen;
 use App\Enums\TingkatKesuburanTanah;
 use App\Models\AnggotaPoktan;
+use App\Models\Poktan;
 use App\Models\Transmigran;
 use App\Support\DataWilayah;
 use App\Support\DummyData;
@@ -160,7 +162,18 @@ class ViewServiceProvider extends ServiceProvider
     private static function nilaiRujukan(string $kunci): mixed
     {
         return match ($kunci) {
-            'daftarPoktan' => DummyData::poktan(),
+            // Task 6.6: poktan ber-Eloquent. Form alsintan/saprotan/penanaman
+            // hanya memakai id_poktan, nama, dan nama SP-nya.
+            'daftarPoktan' => Poktan::query()
+                ->with('satuanPermukiman')
+                ->orderBy('id_poktan')
+                ->get()
+                ->map(fn ($p) => [
+                    'id_poktan' => $p->id_poktan,
+                    'nama' => $p->nama,
+                    'satuan_permukiman' => $p->satuanPermukiman?->nama,
+                    'satuan_permukiman_id' => $p->satuan_permukiman_id,
+                ])->all(),
             'daftarSatuan' => DummyData::satuan(),
             'daftarKomoditas' => DummyData::komoditas(),
             'daftarSp' => DummyData::satuanPermukiman(),
@@ -344,13 +357,21 @@ class ViewServiceProvider extends ServiceProvider
              * ke peladen. Anggota yang sudah keluar tidak ditawarkan sebagai
              * penanda tangan serah terima baru.
              */
-            'anggotaPerPoktan' => collect(DummyData::anggotaPoktan())
-                ->filter(fn ($a) => $a['status'] === 'Aktif')
-                ->groupBy(fn ($a) => (string) $a['poktan_id'])
+            // Task 6.6: anggota poktan ber-Eloquent. Nama wakil dibaca lewat
+            // relasi -- jalur Anggota Keluarga memakai nama anggota itu,
+            // selain itu nama kepala keluarganya.
+            'anggotaPerPoktan' => AnggotaPoktan::query()
+                ->where('status', StatusKeaktifanAnggota::Aktif->value)
+                ->with(['transmigran', 'anggotaKeluarga'])
+                ->orderBy('id_anggota_poktan')
+                ->get()
+                ->groupBy(fn ($a) => (string) $a->poktan_id)
                 ->map(fn ($grup) => $grup->map(fn ($a) => [
-                    'id' => (string) $a['id_anggota_poktan'],
-                    'nama' => $a['nama'],
-                    'jabatan' => $a['jabatan'],
+                    'id' => (string) $a->id_anggota_poktan,
+                    'nama' => $a->asal_wakil === AsalWakilPoktan::AnggotaKeluarga && $a->anggotaKeluarga !== null
+                        ? $a->anggotaKeluarga->nama_lengkap
+                        : ($a->transmigran?->nama_kepala_keluarga ?? '-'),
+                    'jabatan' => $a->jabatan,
                 ])->values()->all())
                 ->all(),
 

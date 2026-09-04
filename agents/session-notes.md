@@ -6,7 +6,12 @@
   `PoktanController` + `AnggotaPoktanController`, `PoktanSeeder`, `App\Support\RekapLahan`.
   Ketua 3 jalur, status lifecycle anggota, "satu KK Aktif di satu poktan".
   Feature 732, Database 346, semua hijau.
-- **6.6 (alsintan)** -- BERIKUTNYA. Riset di bawah.
+- **6.6 (alsintan)** -- ✅ SELESAI. `AlsintanController` (index/detail/simpan/
+  perbarui/hapus/distribusiKondisi), `AlsintanSeeder`, rute -> controller, stub
+  `alsintan.hapus` ganda dicabut, `ViewServiceProvider` `daftarPoktan` +
+  `anggotaPerPoktan` -> Eloquent, `UppercaseInput` +`jenis_alsintan`,
+  `PoktanController::alsintanPoktan()` -> Eloquent. `tests/Database/AlsintanTest.php`
+  +9. Feature 732, Database 355, pint bersih, NOL SELISIH, tautan-statis 14. Riset di bawah (untuk arsip).
 - **6.7 (saprotan)** -- SEBAGIAN TERBLOKIR: `saprotan.komoditas_id` (wajib bila
   `jenis=Benih`) menaut ke `komoditas` yang belum di-seed / belum Eloquent
   (Task 7.1). Opsi: (a) kerjakan setelah 7.1, atau (b) kerjakan jalur non-Benih
