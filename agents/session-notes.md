@@ -5,12 +5,11 @@ Kerja per subtask, commit bersih tiap subtask. `main` pada `ec42345`.
 
 ## Rencana keseluruhan Tahap 5
 
-- **5.1 Peralihan transmigran + anggota_keluarga ke Eloquent** `[Sedang]` -- ✅ SELESAI (commit di bawah)
-- **5.2 CRUD transmigran + unggah KTP/KK/SK terpisah** `[Sulit]` (termasuk suksesi
-  KK + catat-peristiwa anggota; pindahkan `riwayatKk`/`calonPengganti`/`berkas*`
-  detail ke Eloquent di sini)
-- **5.3 CRUD rumah + kondisi hunian + foto & koordinat** `[Sedang]` (peralihan
-  rumah, `daftarTransmigran`/`transmigranTanpaRumah` composer -> Eloquent)
+- **5.1 Peralihan transmigran + anggota_keluarga ke Eloquent** `[Sedang]` -- ✅ SELESAI
+- **5.2 CRUD transmigran + unggah KTP/KK/SK terpisah** `[Sulit]` -- ✅ SELESAI
+  (suksesi KK + catat-peristiwa + `riwayatKk`/`calonPengganti`/`berkas*` -> Eloquent)
+- **5.3 CRUD rumah + kondisi hunian + foto & koordinat** `[Sedang]` <- BERIKUTNYA
+  (peralihan rumah, `daftarTransmigran`/`transmigranTanpaRumah` composer -> Eloquent)
 - **5.4 Riwayat penghunian rumah** `[Sedang]`
 - **5.5 Rekap kependudukan kawasan** `[Sedang]` (agregat kawasan ~1140 KK -
   `DummyData::rekap*` masih sintetis; ganti GROUP BY nyata atau pertahankan)
@@ -62,6 +61,72 @@ Berkas:
    Rombongan B hijau) & `--testsuite=Database` hijau; `sim:banding-skema
    --lengkap` NOL SELISIH; `pint --dirty` bersih; `sim:tautan-statis` 14.
 6. tasklist 5.1 `[✓]` + HASIL; Progress %.
+
+## Task 5.2 - rencana rinci (CRUD transmigran + KTP/KK/SK + suksesi + peristiwa)
+
+`[Sulit]`. Satu commit. Rute tulis closure -> `TransmigranController`.
+
+Berkas & perubahan:
+1. `TransmigranController`:
+   - `simpan(Request)` -> `DB::transaction`: `Transmigran::create($this->validasi())`,
+     buat anggota dari `anggota_keluarga[]`, `lekatkanBerkas` ktp/kk/sk. Redirect
+     index + `sukses`.
+   - `perbarui(Request,int $id)` -> transaksi: `update`; bila `_anggota_disunting`
+     hadir (form tambah/ubah-detail, BUKAN ubah-baris index) -> sinkron anggota
+     id-based (baris ber-id -> update; tanpa id -> create; anggota Aktif yang
+     hilang dari kiriman -> soft delete). `lekatkanBerkas`. Redirect detail + `sukses`.
+   - `hapus(int $id)` -> `findOrFail` + `delete()` (soft). Redirect index + `sukses`.
+   - `catatPeristiwa(Request,int $id,int $anggota)` -> validasi `status` in
+     Meninggal/Pindah + tanggal + keterangan; `AnggotaKeluarga` milik KK & Aktif;
+     `update`. Redirect `detail?tab=keluarga` + `sukses`.
+   - `gantiKepalaKeluarga(Request,int $id)` -> transaksi: baca pengganti
+     (`pengganti_anggota_keluarga_id`, milik KK, Aktif); `RiwayatKepalaKeluarga::create`
+     (sisi lama dari transmigran kini, sisi baru dari pengganti + `no_kk_baru`
+     dari form + `alasan` + `hubungan_pengganti` dari pengganti); `transmigran->update`
+     (nama/nik/no_kk); `pengganti->delete()` (soft). `nasib_ketua_poktan` divalidasi
+     bila `DummyData::poktanDiketuaiKeluarga($id)` tak kosong; MUTASI POKTAN
+     ditangguhkan ke Task 6.4/6.5 (`// Task 6:` -- poktan masih DummyData).
+     Redirect `detail?tab=riwayat-kk` + `sukses`.
+   - `detail()`: `berkasKtp/Kk/Sk/Keluarga` -> `$t->berkas` (map pivot.peran),
+     `riwayatKk` -> `$t->riwayatKepalaKeluarga` (map, terbaru dulu),
+     `calonPengganti` -> `$this->calonPengganti($t)` (turunan, urut pasangan
+     lalu usia desc, kunci `id/nama/nik/hubungan/jenis_kelamin/usia`).
+   - `validasi(Request,?Transmigran)`: nik/noKk (`ignore` id saat ubah), nama
+     `regex` (nama_kepala_keluarga + anggota nama_lengkap), enum via `Rule::enum`,
+     `satuan_permukiman_id` exists, tahun, uang, telepon; `anggota_keluarga.*`
+     bersyarat (`pendidikan_terakhir` required unless Belum Sekolah; `pekerjaan`/
+     `pendapatan` required_if kegiatan Bekerja); ktp/kk/sk `array` + `.*` `dokumen()`.
+2. `form.blade.php`: repeater +hidden `anggota_keluarga[${i}][id]` (x-model `a.id`),
+   Alpine `anggota` map +`'id'`, `tambahAnggota` +`id:''`. +hidden
+   `<input name="_anggota_disunting" value="1">` di langkah 3 **hanya bila
+   `$awalan !== 'ubahBaris'`** (modal ubah-baris index tak memuat anggota).
+3. `UppercaseInput::$kecualikan` +: `jenis_kelamin`, `agama`, `pendidikan_terakhir`,
+   `status_tinggal`, `hubungan`, `hubungan_pengganti`, `kegiatan`, `status`,
+   `nasib_ketua_poktan` (semua divalidasi `Rule::enum`/`Rule::in` -> penjaga
+   `UppercaseInputTest` menuntutnya).
+4. Seeder: `BerkasSeeder::PIVOT_SIAP` += `transmigran_berkas`; `TransmigranSeeder`
+   DIPINDAH sebelum `BerkasSeeder` di `DataMasterSeeder`+`DatabaseSeeder` (FK
+   `transmigran_berkas.transmigran_id`); `TransmigranSeeder` + tanam
+   `riwayat_kepala_keluarga` dari `DummyData::riwayatKepalaKeluarga()`.
+5. `routes/internal.php`: 5 closure tulis -> controller (nama + `->where` tetap).
+6. Uji: `tests/Database/TransmigranTest.php` +CRUD/suksesi/peristiwa; update
+   `tests/Feature/HalamanTest.php` L399-410 (`catat-peristiwa` bare POST kini
+   `assertSessionHasErrors`) + L5788 (suksesi bare POST kini error, beri payload
+   sah utk asersi redirect). Cek `HalamanTest` L7546 (`/transmigran/2` 4 berkas)
+   tetap hijau lewat pivot tertanam.
+7. Verifikasi penuh + tasklist + session-notes.
+
+### HASIL Task 5.2 (2026-09-04)
+`TransmigranController` +5 aksi tulis (semua `DB::transaction`). Sinkron anggota
+id-based lewat hidden `[id]` + penanda `_anggota_disunting` (absen di modal
+ubah-per-baris). Suksesi rekam `riwayat_kepala_keluarga` + sunting transmigran
++ soft-delete pengganti; `nasib_ketua_poktan` divalidasi, mutasi poktan -> Task 6.
+`detail()` berkas/riwayatKk/calonPengganti -> Eloquent. `UppercaseInput` +9
+pemilih enum. `BerkasSeeder` +`transmigran_berkas`; `TransmigranSeeder` pindah
+sebelum `BerkasSeeder` + tanam `riwayat_kepala_keluarga`; `AsetSpTest` juga
+seed `TransmigranSeeder` (pivot). `uuid` transmigran dibangkitkan di `simpan()`.
+Verifikasi: Feature 732, Database 313, pint bersih, banding-skema NOL SELISIH,
+tautan-statis 14. Belum di-push.
 
 ### HASIL Task 5.1 (2026-09-04)
 Selesai sesuai rencana minimal. Berkas: `TransmigranController` (baru),

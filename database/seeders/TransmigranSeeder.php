@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\AnggotaKeluarga;
+use App\Models\RiwayatKepalaKeluarga;
 use App\Models\Transmigran;
 use App\Support\DummyData;
 use Illuminate\Database\Seeder;
@@ -22,6 +23,9 @@ use Illuminate\Support\Str;
  * `jumlah_anggota_keluarga` dan `usia` BUKAN kolom (diturunkan); tidak ditanam.
  * `status_sertifikat` ditanam apa adanya walau isiannya lewat form lahan
  * (`rules.md` 7.6a) -- kolomnya tetap milik `transmigran`.
+ *
+ * Sejak Task 5.2 juga menanam `riwayat_kepala_keluarga` (dua contoh suksesi)
+ * supaya tab Riwayat Kepala Keluarga pada halaman rincian punya isi.
  */
 class TransmigranSeeder extends Seeder
 {
@@ -74,6 +78,25 @@ class TransmigranSeeder extends Seeder
                     'status' => $a['status'],
                     'tanggal_peristiwa' => $a['tanggal_peristiwa'] ?? null,
                     'keterangan_peristiwa' => $a['keterangan_peristiwa'] ?? null,
+                ],
+            );
+        }
+
+        foreach (DummyData::riwayatKepalaKeluarga() as $r) {
+            RiwayatKepalaKeluarga::updateOrCreate(
+                ['id_riwayat_kepala_keluarga' => $r['id_riwayat_kepala_keluarga']],
+                [
+                    'transmigran_id' => $r['transmigran_id'],
+                    'nik_lama' => $r['nik_lama'],
+                    'nama_lama' => $r['nama_lama'],
+                    'nik_baru' => $r['nik_baru'],
+                    'nama_baru' => $r['nama_baru'],
+                    'no_kk_lama' => $r['no_kk_lama'],
+                    'no_kk_baru' => $r['no_kk_baru'],
+                    'tanggal_pergantian' => $r['tanggal_pergantian'],
+                    'alasan' => $r['alasan'],
+                    'hubungan_pengganti' => $r['hubungan_pengganti'],
+                    'keterangan' => $r['keterangan'] ?? null,
                 ],
             );
         }

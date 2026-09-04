@@ -405,8 +405,10 @@ it('menyediakan rute pencatatan peristiwa anggota keluarga', function () {
         'keterangan_peristiwa' => 'Pindah ke Atambua.',
     ])->assertRedirect('/transmigran/3?tab=keluarga');
 
-    $this->post('/transmigran/3/anggota/9/catat-peristiwa')
-        ->assertSessionHas('sukses');
+    // Sejak Task 5.2 rutenya sungguh menyimpan: peristiwa wajib disebut,
+    // sehingga kiriman kosong ditolak alih-alih memulangkan pesan sukses.
+    $this->post('/transmigran/3/anggota/10/catat-peristiwa')
+        ->assertSessionHasErrors('status');
 });
 
 it('menyunting hanya anggota keluarga aktif pada form multi-langkah', function () {
@@ -5785,8 +5787,15 @@ it('menyediakan suksesi sebagai tindakan tersendiri, bukan lewat form ubah', fun
     // Rutenya berdiri sendiri dan bermetode POST, bukan menumpang PUT perbarui.
     expect(Route::has('transmigran.ganti-kepala-keluarga'))->toBeTrue();
 
-    $this->post(route('transmigran.ganti-kepala-keluarga', 1))
-        ->assertRedirect(route('transmigran.detail', ['id' => 1, 'tab' => 'riwayat-kk']));
+    // Sejak Task 5.2 suksesi sungguh dijalankan; kiriman sah (pengganti dari
+    // anggota keluarga + nasib jabatan ketua) diarahkan ke tab riwayat.
+    $this->post(route('transmigran.ganti-kepala-keluarga', 1), [
+        'pengganti_anggota_keluarga_id' => 1,
+        'no_kk_baru' => '5321010102150001',
+        'tanggal_pergantian' => '2026-01-01',
+        'alasan' => 'Meninggal',
+        'nasib_ketua_poktan' => 'kosongkan',
+    ])->assertRedirect(route('transmigran.detail', ['id' => 1, 'tab' => 'riwayat-kk']));
 });
 
 it('memilih pengganti kepala keluarga dari daftar anggota keluarga', function () {
@@ -7981,6 +7990,7 @@ it('tidak menyisakan isian form yatim yang tak berpadanan di schema.sql', functi
         'peruntukan_lahan' => 'penyaring daftar lahan (punya bidang ini?), bukan isian form; kolomnya dicabut Putaran 15',
         'kategori_lahan' => 'penyaring komposisi lahan (punya bagian ini?), bukan kolom',
         'tab' => 'penanda tab aktif pada URL',
+        '_anggota_disunting' => 'penanda bahwa form memuat daftar anggota keluarga (Task 5.2); absen pada modal ubah per baris yang tak memuatnya, bukan kolom',
     ];
 
     $orphan = [];

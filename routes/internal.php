@@ -386,64 +386,39 @@ Route::post('/sp/fasilitas', [FasilitasSpController::class, 'simpan'])->name('fa
 | tanpa menyisakan tombol mati (ANTISLOP-ID R-26).
 |
 */
-// Task 5.1: jalur BACA pindah ke controller + Eloquent. `data` transmigran dan
-// `anggotaKeluarga` kini dari basis data; rumah/lahan/berkas/riwayat suksesi/
-// data poktan pada rincian masih `DummyData` sampai Task 5.2/5.3/6.
+// Task 5.1 (baca) + 5.2 (tulis): seluruhnya `TransmigranController` + Eloquent.
+// Yang masih `DummyData` pada rincian: rumah (Task 5.3), lahan + data poktan
+// (Task 6). Suksesi memvalidasi `nasib_ketua_poktan` tetapi penerapannya ke
+// tabel `poktan` menyusul di Task 6.
 Route::get('/transmigran', [TransmigranController::class, 'index'])->name('transmigran.index');
 
 Route::get('/transmigran/{id}', [TransmigranController::class, 'detail'])
     ->where('id', '[0-9]+')->name('transmigran.detail');
 
-Route::post('/transmigran', function () {
-    // Tahap 5: validasi lewat ValidationRules, simpan, catat audit log.
-    return redirect()->route('transmigran.index')
-        ->with('sukses', 'Data transmigran tersimpan.');
-})->name('transmigran.simpan');
+Route::post('/transmigran', [TransmigranController::class, 'simpan'])->name('transmigran.simpan');
 
-Route::put('/transmigran/{id}', function (int $id) {
-    return redirect()->route('transmigran.detail', $id)
-        ->with('sukses', 'Perubahan data transmigran tersimpan.');
-})->where('id', '[0-9]+')->name('transmigran.perbarui');
+Route::put('/transmigran/{id}', [TransmigranController::class, 'perbarui'])
+    ->where('id', '[0-9]+')->name('transmigran.perbarui');
 
 /*
- * Pergantian kepala keluarga.
- *
- * Rute TERSENDIRI, bukan bagian dari perbarui. Suksesi adalah tindakan yang
- * berbeda dari menyunting data, dan menyatukannya membuat setiap perbaikan
- * ejaan nama ikut tercatat sebagai pergantian kepala keluarga (rules.md 6.5b).
- *
- * Tahap 5, satu transaksi:
- *  1. baca pengganti dari `pengganti_anggota_keluarga_id`;
- *  2. sunting baris transmigran (nama, NIK, no_kk) dengan data pengganti;
- *  3. HAPUS baris `anggota_keluarga` pengganti (ia kini kepala keluarga);
- *  4. tambahkan baris `riwayat_kepala_keluarga` (kedua sisi identitas);
- *  5. terapkan pilihan nasib jabatan ketua poktan.
+ * Pergantian kepala keluarga -- tindakan TERSENDIRI, bukan bagian dari perbarui
+ * (rules.md 6.5b). Satu transaksi: rekam `riwayat_kepala_keluarga` (kedua sisi
+ * identitas), sunting baris `transmigran` dengan data pengganti, lalu hapus
+ * baris `anggota_keluarga` pengganti.
  */
-Route::post('/transmigran/{id}/ganti-kepala-keluarga', function (int $id) {
-    return redirect()->route('transmigran.detail', ['id' => $id, 'tab' => 'riwayat-kk'])
-        ->with('sukses', 'Pergantian kepala keluarga tercatat pada riwayat.');
-})->where('id', '[0-9]+')->name('transmigran.ganti-kepala-keluarga');
+Route::post('/transmigran/{id}/ganti-kepala-keluarga', [TransmigranController::class, 'gantiKepalaKeluarga'])
+    ->where('id', '[0-9]+')->name('transmigran.ganti-kepala-keluarga');
 
 /*
  * Mencatat peristiwa pada satu anggota keluarga SELAIN kepala keluarga
- * (Putaran 6): meninggal atau pindah. Barisnya tidak dihapus, hanya ditandai
- * `status` + `tanggal_peristiwa` + `keterangan_peristiwa`.
- *
- * Kepala keluarga TIDAK lewat sini; peristiwanya selalu lewat alur ganti
- * kepala keluarga di atas.
- *
- * Tahap 5: sunting satu baris `anggota_keluarga`, catat audit log.
+ * (rules.md 6.9c): meninggal atau pindah. Barisnya tidak dihapus, hanya
+ * ditandai. Kepala keluarga TIDAK lewat sini -- peristiwanya lewat suksesi.
  */
-Route::post('/transmigran/{id}/anggota/{anggota}/catat-peristiwa', function (int $id) {
-    return redirect()->route('transmigran.detail', ['id' => $id, 'tab' => 'keluarga'])
-        ->with('sukses', 'Peristiwa anggota keluarga tercatat.');
-})->where(['id' => '[0-9]+', 'anggota' => '[0-9]+'])->name('transmigran.anggota.catat-peristiwa');
+Route::post('/transmigran/{id}/anggota/{anggota}/catat-peristiwa', [TransmigranController::class, 'catatPeristiwa'])
+    ->where(['id' => '[0-9]+', 'anggota' => '[0-9]+'])->name('transmigran.anggota.catat-peristiwa');
 
-Route::delete('/transmigran/{id}', function () {
-    // Tahap 5: soft delete agar data tetap dapat dipulihkan.
-    return redirect()->route('transmigran.index')
-        ->with('sukses', 'Data transmigran dihapus.');
-})->where('id', '[0-9]+')->name('transmigran.hapus');
+Route::delete('/transmigran/{id}', [TransmigranController::class, 'hapus'])
+    ->where('id', '[0-9]+')->name('transmigran.hapus');
 
 /*
 |--------------------------------------------------------------------------

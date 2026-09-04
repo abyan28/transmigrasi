@@ -17,6 +17,7 @@ use Database\Seeders\InfrastrukturSeeder;
 use Database\Seeders\KawasanSeeder;
 use Database\Seeders\ReferensiSeeder;
 use Database\Seeders\SpSeeder;
+use Database\Seeders\TransmigranSeeder;
 use Database\Seeders\WilayahSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -33,8 +34,10 @@ beforeEach(function () {
     $this->seed(ReferensiSeeder::class);
     $this->seed(AsetSpSeeder::class);
     // `BerkasSeeder` menanam pivot SELURUH modul yang siap, termasuk
-    // infrastruktur -- induknya wajib ada lebih dulu atau FK-nya gagal.
+    // infrastruktur dan transmigran -- induknya wajib ada lebih dulu atau
+    // FK-nya gagal.
     $this->seed(InfrastrukturSeeder::class);
+    $this->seed(TransmigranSeeder::class);
     $this->seed(BerkasSeeder::class);
 });
 

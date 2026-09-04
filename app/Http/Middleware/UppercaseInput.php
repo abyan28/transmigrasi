@@ -78,6 +78,21 @@ class UppercaseInput
         'bentuk_wilayah',
         'tingkat_kesuburan_tanah',
 
+        // Nilai enum PHP pada form transmigran & anggota keluarga (Task 5.2):
+        // divalidasi `Rule::enum`/`Rule::in`, nilainya Title Case ("Laki-laki",
+        // "SMA/SMK", "Belum Sekolah") sehingga dikapitalkan pasti gagal validasi.
+        // `hubungan`/`kegiatan` hanya bersarang di `anggota_keluarga[i][...]` --
+        // regex penjaga tak menjangkaunya, tetapi middleware tetap perlu ini.
+        'jenis_kelamin',
+        'agama',
+        'pendidikan_terakhir',
+        'status_tinggal',
+        'hubungan',
+        'hubungan_pengganti',
+        'kegiatan',
+        'status',
+        'nasib_ketua_poktan',
+
         // Teks naratif, huruf kapital seluruhnya menyulitkan pembacaan
         'deskripsi',
         'deskripsi_pengaduan',

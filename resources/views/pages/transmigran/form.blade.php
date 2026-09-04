@@ -52,6 +52,7 @@
     x-data="{
         tanggalLahirKk: @js($data['tanggal_lahir'] ?? ''),
         anggota: @js(collect($anggotaKeluargaData)->map(fn ($a) => [
+            'id' => $a['id_anggota_keluarga'] ?? '',
             'hubungan' => $a['hubungan'] ?? '',
             'nama_lengkap' => $a['nama_lengkap'] ?? '',
             'nik' => $a['nik'] ?? '',
@@ -81,7 +82,7 @@
         get jumlahAnggotaKeluarga() { return 1 + this.anggota.length; },
         tambahAnggota() {
             this.anggota.push({
-                hubungan: '', nama_lengkap: '', nik: '', jenis_kelamin: '',
+                id: '', hubungan: '', nama_lengkap: '', nik: '', jenis_kelamin: '',
                 tempat_lahir: '', tanggal_lahir: '', agama: '', kegiatan: '',
                 pendidikan_terakhir: '', pekerjaan: '', pendapatan_per_bulan: '',
                 telepon: '', keterangan: '',
@@ -329,6 +330,15 @@
 
     {{-- Langkah 3: Anggota Keluarga --}}
     <div data-langkah="3" x-show="! bertahap || langkah === 3" x-cloak>
+    {{--
+        Penanda bahwa form ini benar-benar memuat daftar anggota keluarga.
+        Modal "Ubah" per baris pada halaman daftar meng-include form yang sama
+        tetapi TANPA data anggota, sehingga menyimpannya tidak boleh menghapus
+        anggota yang tak ikut terkirim. Penanda ini absen di sana.
+    --}}
+    @if ($awalan !== 'ubahBaris')
+        <input type="hidden" name="_anggota_disunting" value="1" />
+    @endif
     <section>
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -371,6 +381,10 @@
                         </svg>
                     </button>
                 </div>
+
+                {{-- Id baris anggota, agar penyuntingan mengubah baris yang sama
+                     alih-alih membuat baris baru lalu menghapus yang lama. --}}
+                <input type="hidden" :name="`anggota_keluarga[${i}][id]`" :value="a.id" />
 
                 <div class="mt-3 grid gap-4 sm:grid-cols-2">
                     <div>

@@ -31,7 +31,7 @@ class DatabaseSeeder extends Seeder
         $this->call(AsetSpSeeder::class);
         $this->call(InfrastrukturSeeder::class);
         $this->call(PenilaianKondisiSeeder::class);
-        $this->call(BerkasSeeder::class);
         $this->call(TransmigranSeeder::class);
+        $this->call(BerkasSeeder::class);
     }
 }
