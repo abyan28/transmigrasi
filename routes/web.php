@@ -1,11 +1,9 @@
 <?php
 
-use App\Enums\JenisDaftarPilihan;
 use App\Http\Controllers\Auth\GantiKataSandiController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PemulihanSandiController;
-use App\Support\DummyData;
-use Illuminate\Http\Request;
+use App\Http\Controllers\PengaduanPublikController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -78,27 +76,11 @@ Route::middleware('auth')->group(function () {
 | pengguna berjaringan lemah di lokus (poin 1d sampai 1g).
 |
 */
-Route::get('/pengaduan-warga', function () {
-    return view('pages.publik.pengaduan', [
-        'title' => 'Kirim Pengaduan',
-        'daftarSp' => DummyData::satuanPermukiman(),
-        'opsiKategoriPengaduan' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::KategoriPengaduan),
-    ]);
-})->name('pengaduan-warga');
+Route::get('/pengaduan-warga', [PengaduanPublikController::class, 'formWarga'])->name('pengaduan-warga');
 
-Route::middleware('throttle:kirim-pengaduan')->post('/pengaduan-warga', function (Request $permintaan) {
-    // Tahap 8: simpan pengaduan berstatus Menunggu Diterima, catat ip_pelapor,
-    // buat nomor pengaduan berbagian acak, lalu kirim nomornya ke surel pelapor
-    // bila diisi.
-    //
-    // Nomor contoh sengaja memakai salah satu yang BENAR-BENAR ADA pada data
-    // contoh. Sebelumnya dipakai PGD-2026-0006 yang tidak pernah ada, sehingga
-    // tombol "Lihat Perkembangan Laporan" selalu berujung pada keadaan nomor
-    // tidak ditemukan; kontrol semacam itu dilarang (R-26).
-    return back()
-        ->with('nomor_pengaduan', 'PGD-2026-0003-3NYVEN')
-        ->with('email_pelapor', $permintaan->input('email_pelapor'));
-})->name('pengaduan-warga.kirim');
+Route::middleware('throttle:kirim-pengaduan')
+    ->post('/pengaduan-warga', [PengaduanPublikController::class, 'kirim'])
+    ->name('pengaduan-warga.kirim');
 
 /*
  * Pelacakan pengaduan, dipakai DUA rute.
@@ -106,37 +88,11 @@ Route::middleware('throttle:kirim-pengaduan')->post('/pengaduan-warga', function
  * Nomor dapat datang dari dua arah: kueri `?nomor=` milik formulir, dan segmen
  * rute `/lacak-pengaduan/{nomor}` yang menjadi tautan tetap. Keduanya sah, dan
  * yang kedua membuat halaman ini tetap berfungsi pada build statis yang tidak
- * dapat melayani kueri.
+ * dapat melayani kueri (`notes.md` bagian 1b).
  */
-$susunLacakPengaduan = function (?string $nomorRute = null) {
-    $nomor = trim((string) ($nomorRute ?? request('nomor', '')));
-    $pengaduan = null;
-    $riwayat = [];
+Route::middleware('throttle:lacak-publik')->group(function () {
+    Route::get('/lacak-pengaduan', [PengaduanPublikController::class, 'lacak'])->name('lacak-pengaduan');
 
-    if ($nomor !== '') {
-        $pengaduan = collect(DummyData::pengaduan())
-            ->firstWhere('nomor_pengaduan', mb_strtoupper($nomor));
-
-        if ($pengaduan) {
-            $riwayat = DummyData::penangananPengaduan($pengaduan['nomor_pengaduan']);
-        }
-    }
-
-    return view('pages.publik.lacak', [
-        'title' => 'Lacak Pengaduan',
-        'nomor' => $nomor,
-        'pengaduan' => $pengaduan,
-        'riwayat' => $riwayat,
-    ]);
-};
-
-Route::middleware('throttle:lacak-publik')->group(function () use ($susunLacakPengaduan) {
-    Route::get('/lacak-pengaduan', fn () => $susunLacakPengaduan())->name('lacak-pengaduan');
-
-    // Tautan tetap per nomor pengaduan. Hasil pencarian menjadi dapat ditandai
-    // dan dibagikan, dan inilah yang membuat halaman lacak tetap bekerja pada
-    // build statis GitHub Pages, tempat kueri `?nomor=` tidak dapat dilayani.
-    // Lihat agents/notes.md bagian 1b.
-    Route::get('/lacak-pengaduan/{nomor}', fn (string $nomor) => $susunLacakPengaduan($nomor))
+    Route::get('/lacak-pengaduan/{nomor}', [PengaduanPublikController::class, 'lacak'])
         ->where('nomor', '[A-Za-z0-9\-]+')->name('lacak-pengaduan.nomor');
 });

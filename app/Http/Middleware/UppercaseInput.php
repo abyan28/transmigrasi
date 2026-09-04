@@ -72,6 +72,14 @@ class UppercaseInput
         'status_penyerahan',
         'jenis_inventaris',
 
+        // Pengaduan (Task 8.2): kategori/bidang/prioritas = nilai daftar pilihan
+        // Title Case ("Lahan Usaha", "Ketransmigrasian"); status_sesudah = enum
+        // StatusPengaduan ("Menunggu Diterima"). Dikapitalkan pasti gagal validasi.
+        'kategori',
+        'bidang',
+        'prioritas',
+        'status_sesudah',
+
         // Pemilih laten: kolom SP yang untuk sementara divalidasi sebagai
         // string bebas, tetapi enum-nya (PolaPermukiman / BentukWilayah /
         // TingkatKesuburanTanah) menunggu dipakai Tahap 5+. Ditambahkan lebih

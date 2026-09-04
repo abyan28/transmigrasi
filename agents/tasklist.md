@@ -1464,23 +1464,56 @@ menghapus sisa terakhir `DummyData::penggunaSaatIni()` -- dikerjakan berbarengan
 > **Wilayah & SP**, dan `infrastruktur_sp` ber-FK ke `satuan_permukiman` yang lahir di Tahap 4.
 > Tahap ini karena itu murni pengaduan; judulnya ikut disesuaikan.
 
-- [ ] Task 8.2 - Peralihan pengaduan + riwayat penanganan ke Eloquent `[Sedang]`
+- [✓] ✅ Task 8.2 - Peralihan pengaduan + riwayat penanganan ke Eloquent `[Sedang]` (Selesai)
   * Migration & model `Pengaduan`/`PenangananPengaduan` + pivot berkas **sudah ada** (Task 3.1 B9), `uuid` sebagai `getRouteKeyName()` sudah terpasang
-- [ ] Task 8.3 - Halaman pengaduan publik tanpa login `[Sulit]`
+  * **HASIL 2026-09-04:** `PengaduanController` (index/detail/simpan/perbarui/tangani/hapus/rekap).
+    `PengaduanSeeder` (pengaduan + penanganan + pivot bukti/tindak_lanjut; membuat
+    3 petugas + role minimal sebab `penanganan_pengaduan.user_id` NOT NULL dan
+    suite Feature tak menanam akun). Rute pengaduan + `pengaduan.perbarui` PUT baru
+    → controller. `AuditLogObserver` sudah mengamati kedua model.
+- [✓] ✅ Task 8.3 - Halaman pengaduan publik tanpa login `[Sulit]` (Selesai)
   * Form pengaduan warga di `/pengaduan-warga`, tata letak terpisah tanpa sidebar
   * Pembatasan 3 pengiriman per jam per alamat IP, tanpa CAPTCHA
   * Nomor pengaduan ditampilkan besar setelah berhasil kirim
   * Kolom **surel opsional**: bila diisi, nomor pengaduan dikirim juga ke sana sebagai salinan. Tidak diwajibkan, sebab jaringan lokus tidak selalu memadai dan sebagian warga tidak memiliki surel
   * Halaman lacak `/lacak-pengaduan` memakai nomor tiket, hanya menampilkan status dan riwayat penanganan
-- [ ] Task 8.3b - Form pencatatan pengaduan oleh petugas `[Sedang]`
+  * **HASIL 2026-09-04:** `PengaduanPublikController` (formWarga/kirim/lacak).
+    `kirim` menyimpan status Menunggu Diterima, `ip_pelapor` = `request()->ip()`,
+    `sumber_laporan` Publik, `user_id` NULL, bidang awal dari `petaBidangKategori`.
+    Throttle `kirim-pengaduan` (3/jam) & `lacak-publik` (10/mnt) sudah di
+    `AppServiceProvider` + `config/sim.php`. Pengiriman surel = TODO layanan email
+    (banner "belum aktif" sudah di view). `lacak` menerima nomor case-insensitive,
+    hanya status/tanggal/catatan (`withoutGlobalScopes` + tanpa data pribadi).
+- [✓] ✅ Task 8.3b - Form pencatatan pengaduan oleh petugas `[Sedang]` (Selesai)
   * Petugas mencatatkan laporan lisan warga; `sumber_laporan` bernilai Petugas
-- [ ] Task 8.4 - Alur status penanganan Menunggu Diterima → Diterima → Diproses → Selesai `[Sulit]`
-- [ ] Task 8.5 - Routing pengaduan ke dinas sesuai bidang + penanda prioritas `[Sedang]`
-- [ ] Task 8.6 - Rekap pengaduan per kategori, status, dan desa/SP `[Sedang]`
-- [ ] Task 8.7 - Nomor pengaduan publik dengan bagian acak `[Mudah]`
+  * **HASIL:** `PengaduanController::simpan` — `sumber_laporan` = Petugas,
+    `user_id` = petugas yang masuk, nomor dibuat sistem, prioritas dari form.
+- [✓] ✅ Task 8.4 - Alur status penanganan Menunggu Diterima → Diterima → Diproses → Selesai `[Sulit]` (Selesai)
+  * **HASIL:** `PengaduanController::tangani` — `StatusPengaduan::bolehPindahKe()`
+    ditegakkan peladen (tolak lompatan/mundur); tiap perpindahan menyimpan baris
+    `penanganan_pengaduan` (petugas, tanggal, catatan) + dokumen tindak lanjut
+    lewat pivot; memperbarui `pengaduan.status`.
+- [✓] ✅ Task 8.5 - Routing pengaduan ke dinas sesuai bidang + penanda prioritas `[Sedang]` (Selesai)
+  * **HASIL:** bidang awal dari kategori (data `daftar_pilihan.bidang_id`, bukan
+    `match`); **WAJIB terisi sebelum status → Diproses** (10b.7b, ditegakkan
+    `tangani`); dapat ditimpa petugas kapan pun. Penyaringan ke dinas oleh global
+    scope `CakupanDataSp` (sudah menangani `pengaduan.bidang` utk role Per Bidang).
+    Prioritas oleh petugas saja (form + perbarui); lencana Mendesak sudah di view.
+- [✓] ✅ Task 8.6 - Rekap pengaduan per kategori, status, dan desa/SP `[Sedang]` (Selesai)
+  * **HASIL:** `App\Support\RekapPengaduan::rekap($kelompok)` ber-Eloquent
+    (kategori/status/sp/prioritas/bidang → jumlah/selesai/belum_selesai/mendesak,
+    terbanyak dulu). Rute `pengaduan.rekap` + `pengaduan.rekap.kelompok` → controller.
+- [✓] ✅ Task 8.7 - Nomor pengaduan publik dengan bagian acak `[Mudah]` (Selesai)
   * Format `PGD-2026-0001-K7F2M9`, enam karakter terakhir acak
   * **Halaman lacak dapat dibuka tanpa login**, sehingga nomor berurutan dapat ditebak satu per satu untuk memanen judul dan catatan penanganan warga lain
   * Inilah permukaan serangan yang nyata, berbeda dari id petugas yang sudah terlindung login
+  * **HASIL:** `App\Support\NomorPengaduan::buat()` — `PGD-{TAHUN}-{URUT:4}-{ACAK:6}`.
+    URUT per tahun (dipertahankan utk penyebutan, `rules.md` 4c); ACAK 6 karakter
+    huruf besar+angka tanpa 0/O/1/I, diulang bila tabrakan UNIQUE. `::urai()` utk
+    halaman lacak. Awalan/pola URUT kelak dari CMS (Task 9.6); bagian acak tetap
+    di luar kendali itu (`rules.md` 4a).
+  * `tests/Database/PengaduanTest.php` +12, `PengaduanPublikTest.php` +7. Uji
+    `HalamanTest` "mengarahkan tombol lacak" disesuaikan (nomor kini dibuat sistem).
 
 ## Tahap 9 — Dashboard dengan Data Nyata
 

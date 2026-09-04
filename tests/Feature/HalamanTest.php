@@ -29,6 +29,8 @@ use App\Enums\SumberDana;
 use App\Enums\TingkatKesuburanTanah;
 use App\Helpers\MenuHelper;
 use App\Helpers\RemahHelper;
+use App\Models\Pengaduan;
+use App\Models\SatuanPermukiman;
 use App\Models\User;
 use App\Support\DummyData;
 use App\Support\LaporanData;
@@ -4261,17 +4263,24 @@ it('menyediakan penyalinan nomor pengaduan bagi warga', function () {
 });
 
 it('mengarahkan tombol lacak ke nomor yang benar-benar ada', function () {
-    // Sebelumnya rute kirim membalas PGD-2026-0006 yang tidak pernah ada pada
-    // data contoh, sehingga tombol "Lihat Perkembangan Laporan" selalu berujung
-    // pada keadaan nomor tidak ditemukan. Kontrol semacam itu dilarang (R-26).
-    $nomorTersedia = collect(DummyData::pengaduan())->pluck('nomor_pengaduan')->all();
+    // Task 8.3/8.7: nomor DIBUAT sistem saat pengiriman, lalu tombol "Lihat
+    // Perkembangan Laporan" wajib menuju laporan yang benar-benar ada -- bukan
+    // ke keadaan nomor tidak ditemukan (R-26).
+    $this->post(route('pengaduan-warga.kirim'), [
+        'nama_pelapor' => 'WARGA UJI',
+        'kontak_pelapor' => '081200000000',
+        'satuan_permukiman_id' => SatuanPermukiman::value('id_satuan_permukiman'),
+        'kategori' => 'Infrastruktur',
+        'tanggal_pengaduan' => '2026-08-20',
+        'judul' => 'Jalan produksi berlubang',
+        'deskripsi' => 'Uji alur kirim pengaduan warga.',
+    ])->assertSessionHas('nomor_pengaduan');
 
-    $balasan = $this->post(route('pengaduan-warga.kirim'), []);
     $nomor = session('nomor_pengaduan');
 
-    expect($nomor)->toBeIn($nomorTersedia);
+    expect($nomor)->toStartWith('PGD-')
+        ->and(Pengaduan::where('nomor_pengaduan', $nomor)->exists())->toBeTrue();
 
-    // Dan nomor itu memang menghasilkan halaman lacak yang berisi.
     $this->get(route('lacak-pengaduan', ['nomor' => $nomor]))
         ->assertOk()
         ->assertDontSee('tidak ditemukan');

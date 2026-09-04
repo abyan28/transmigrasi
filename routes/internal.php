@@ -15,7 +15,6 @@
 */
 
 use App\Enums\JenisDaftarPilihan;
-use App\Enums\PrioritasPengaduan;
 use App\Enums\StatusKondisiSp;
 use App\Enums\StatusPengaduan;
 use App\Http\Controllers\AlsintanController;
@@ -33,6 +32,7 @@ use App\Http\Controllers\LahanController;
 use App\Http\Controllers\MasterDaftarPilihanController;
 use App\Http\Controllers\MasterSatuanController;
 use App\Http\Controllers\PenanamanController;
+use App\Http\Controllers\PengaduanController;
 use App\Http\Controllers\PengaturanPenggunaController;
 use App\Http\Controllers\PengaturanRoleController;
 use App\Http\Controllers\PenilaianKondisiController;
@@ -697,160 +697,34 @@ Route::delete('/panen/{id}', [HasilPanenController::class, 'hapus'])
 | Rute rekap didaftarkan sebelum rute berparameter.
 |
 */
-Route::get('/pengaduan', function () {
-    $semua = DummyData::pengaduan();
-
-    $cari = trim((string) request('cari', ''));
-    $filterSp = request('sp');
-    $filterStatus = request('status');
-    $filterKategori = request('kategori');
-    $filterPrioritas = request('prioritas');
-
-    /*
-     * Filter bidang paling berguna bagi Admin dan Dinas Transmigrasi, sebab
-     * keduanya bercakupan Semua sehingga daftarnya memuat laporan kedua dinas
-     * sekaligus (rules.md 5.0b). Nilai khusus 'belum' menyaring laporan yang
-     * bidangnya belum ditetapkan, dan itulah antrean kerja penyaringan awal.
-     */
-    $filterBidang = request('bidang');
-
-    $baris = array_values(array_filter($semua, function ($p) use ($cari, $filterSp, $filterStatus, $filterKategori, $filterPrioritas, $filterBidang) {
-        if ($cari !== '') {
-            $cocok = str_contains(mb_strtolower($p['judul']), mb_strtolower($cari))
-                || str_contains(mb_strtolower($p['nomor_pengaduan']), mb_strtolower($cari))
-                || str_contains(mb_strtolower($p['nama_pelapor']), mb_strtolower($cari));
-
-            if (! $cocok) {
-                return false;
-            }
-        }
-
-        if ($filterSp && (string) $p['satuan_permukiman_id'] !== (string) $filterSp) {
-            return false;
-        }
-
-        if ($filterStatus && $p['status'] !== $filterStatus) {
-            return false;
-        }
-
-        if ($filterKategori && $p['kategori'] !== $filterKategori) {
-            return false;
-        }
-
-        if ($filterPrioritas && $p['prioritas'] !== $filterPrioritas) {
-            return false;
-        }
-
-        if ($filterBidang === 'belum' && ! empty($p['bidang'])) {
-            return false;
-        }
-
-        if ($filterBidang && $filterBidang !== 'belum' && ($p['bidang'] ?? null) !== $filterBidang) {
-            return false;
-        }
-
-        return true;
-    }));
-
-    // Yang belum selesai didahulukan, lalu diurutkan menurut kemendesakan.
-    $urutanPrioritas = ['Mendesak' => 0, 'Tinggi' => 1, 'Sedang' => 2, 'Rendah' => 3];
-    usort($baris, function ($a, $b) use ($urutanPrioritas) {
-        $selesaiA = $a['status'] === StatusPengaduan::Selesai->value ? 1 : 0;
-        $selesaiB = $b['status'] === StatusPengaduan::Selesai->value ? 1 : 0;
-
-        if ($selesaiA !== $selesaiB) {
-            return $selesaiA <=> $selesaiB;
-        }
-
-        return $urutanPrioritas[$a['prioritas']] <=> $urutanPrioritas[$b['prioritas']];
-    });
-
-    return view('pages.pengaduan.index', [
-        'title' => 'Pengaduan',
-        'semua' => $semua,
-        'baris' => $baris,
-        'cari' => $cari,
-        'filterSp' => $filterSp,
-        'filterStatus' => $filterStatus,
-        'filterKategori' => $filterKategori,
-        'filterPrioritas' => $filterPrioritas,
-        'filterBidang' => $filterBidang,
-        'adaFilter' => $cari !== '' || $filterSp || $filterStatus || $filterKategori || $filterPrioritas || $filterBidang,
-
-        // Antrean penyaringan awal, ditampilkan agar laporan tanpa bidang tidak
-        // menumpuk diam-diam menunggu dinas yang tidak pernah tahu.
-        'belumBerbidang' => count(array_filter($semua, fn ($p) => empty($p['bidang']))),
-
-        'belumSelesai' => count(array_filter($semua, fn ($p) => $p['status'] !== StatusPengaduan::Selesai->value)),
-        'menungguDiterima' => count(array_filter($semua, fn ($p) => $p['status'] === StatusPengaduan::MenungguDiterima->value)),
-        'mendesak' => count(array_filter($semua, fn ($p) => $p['prioritas'] === PrioritasPengaduan::Mendesak->value
-            && $p['status'] !== StatusPengaduan::Selesai->value)),
-
-        'daftarSp' => DummyData::satuanPermukiman(),
-        'opsiFilterBidang' => DummyData::opsiFilterDaftarPilihan(JenisDaftarPilihan::BidangPengaduan),
-        'opsiFilterKategori' => DummyData::opsiFilterDaftarPilihan(JenisDaftarPilihan::KategoriPengaduan),
-        'opsiFilterPrioritas' => DummyData::opsiFilterDaftarPilihan(JenisDaftarPilihan::PrioritasPengaduan),
-    ]);
-})->name('pengaduan.index');
-
 /*
- * Rekap pengaduan, dipakai dua rute seperti rekap panen: pemilih ber-`?kelompok=`
- * dan tautan tetap per segmen.
+ * Pengaduan warga -- sisi internal petugas (Task 8.2-8.6). Alur status berurutan
+ * ditegakkan `PengaduanController::tangani`; penyaringan ke dinas oleh global
+ * scope `CakupanDataSp`.
  */
-$susunRekapPengaduan = function (?string $kelompokRute = null) {
-    $kelompok = $kelompokRute ?? request('kelompok', 'kategori');
+Route::get('/pengaduan', [PengaduanController::class, 'index'])->name('pengaduan.index');
 
-    return view('pages.pengaduan.rekap', [
-        'title' => 'Rekap Pengaduan',
-        'kelompok' => $kelompok,
-        'rekap' => DummyData::rekapPengaduan($kelompok),
-    ]);
-};
+Route::get('/pengaduan/rekap', [PengaduanController::class, 'rekap'])->name('pengaduan.rekap');
 
-Route::get('/pengaduan/rekap', fn () => $susunRekapPengaduan())->name('pengaduan.rekap');
-
-/*
- * Tautan tetap pemilih kelompok rekap.
- *
- * Pemilihnya semula hanya memakai '?kelompok=', dan kueri tidak dapat
- * dilayani berkas statis di GitHub Pages. Polanya menyalin '/panen/rekap/
- * {kelompok}' yang sudah lebih dulu memakai cara ini.
- *
- * Daftar nilai pada `where` WAJIB dijaga sejalan dengan $labelKelompok pada
- * viewnya; keduanya menyatakan hal yang sama di dua tempat.
- */
-Route::get('/pengaduan/rekap/{kelompok}', fn (string $kelompok) => $susunRekapPengaduan($kelompok))
+// Tautan tetap pemilih kelompok rekap (pola /panen/rekap/{kelompok}). WAJIB
+// sebelum /pengaduan/{id} agar tidak tertangkap sebagai id, dan daftar `where`
+// wajib sejalan dengan $labelKelompok pada viewnya.
+Route::get('/pengaduan/rekap/{kelompok}', [PengaduanController::class, 'rekap'])
     ->where('kelompok', 'kategori|status|sp|prioritas|bidang')->name('pengaduan.rekap.kelompok');
 
-Route::get('/pengaduan/{id}', function (int $id) {
-    $data = collect(DummyData::pengaduan())->firstWhere('id_pengaduan', $id);
+Route::get('/pengaduan/{id}', [PengaduanController::class, 'detail'])
+    ->where('id', '[0-9]+')->name('pengaduan.detail');
 
-    abort_if($data === null, 404);
+Route::post('/pengaduan', [PengaduanController::class, 'simpan'])->name('pengaduan.simpan');
 
-    return view('pages.pengaduan.detail', [
-        'title' => $data['nomor_pengaduan'],
-        'data' => $data,
-        'riwayat' => DummyData::penangananPengaduan($data['nomor_pengaduan']),
-        'opsiBidang' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::BidangPengaduan),
-    ]);
-})->where('id', '[0-9]+')->name('pengaduan.detail');
+Route::put('/pengaduan/{id}', [PengaduanController::class, 'perbarui'])
+    ->where('id', '[0-9]+')->name('pengaduan.perbarui');
 
-Route::post('/pengaduan', function () {
-    // Dicatat petugas atas laporan lisan warga; sumber_laporan bernilai Petugas.
-    return redirect()->route('pengaduan.index')
-        ->with('sukses', 'Pengaduan tercatat dan menunggu diterima petugas.');
-})->name('pengaduan.simpan');
+Route::post('/pengaduan/{id}/tangani', [PengaduanController::class, 'tangani'])
+    ->where('id', '[0-9]+')->name('pengaduan.tangani');
 
-Route::post('/pengaduan/{id}/tangani', function (int $id) {
-    // Tahap 8: periksa ulang StatusPengaduan::bolehPindahKe() sebelum menyimpan,
-    // lalu tambahkan baris penanganan_pengaduan dan perbarui status pengaduan.
-    return redirect()->route('pengaduan.detail', ['id' => $id, 'tab' => 'riwayat'])
-        ->with('sukses', 'Penanganan tercatat dan status pengaduan diperbarui.');
-})->where('id', '[0-9]+')->name('pengaduan.tangani');
-
-Route::delete('/pengaduan/{id}', function () {
-    return redirect()->route('pengaduan.index')->with('sukses', 'Pengaduan dihapus.');
-})->where('id', '[0-9]+')->name('pengaduan.hapus');
+Route::delete('/pengaduan/{id}', [PengaduanController::class, 'hapus'])
+    ->where('id', '[0-9]+')->name('pengaduan.hapus');
 
 /*
 |--------------------------------------------------------------------------
