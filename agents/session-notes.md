@@ -1,11 +1,51 @@
 # Tahap 6 - Backend Lahan & Kelembagaan (mulai 2026-09-04)
 
 ## STATUS
-- **6.1 + 6.2 + 6.3 (lahan)** -- ✅ SELESAI (commit `2931e6c`). `LahanController`,
-  `LahanSeeder`, `luas_usaha` diturunkan kering+basah, SHM/status_sertifikat ke
-  `transmigran`. Feature 732, Database 334, semua hijau.
-- **6.4 + 6.5 (poktan + anggota_poktan)** -- BERIKUTNYA. Riset di bawah.
-- **6.6 (alsintan)**, **6.7 (saprotan)** -- belum diriset.
+- **6.1 + 6.2 + 6.3 (lahan)** -- ✅ SELESAI (commit `2931e6c`).
+- **6.4 + 6.5 (poktan + anggota_poktan)** -- ✅ SELESAI (commit `be647c0`).
+  `PoktanController` + `AnggotaPoktanController`, `PoktanSeeder`, `App\Support\RekapLahan`.
+  Ketua 3 jalur, status lifecycle anggota, "satu KK Aktif di satu poktan".
+  Feature 732, Database 346, semua hijau.
+- **6.6 (alsintan)** -- BERIKUTNYA. Riset di bawah.
+- **6.7 (saprotan)** -- SEBAGIAN TERBLOKIR: `saprotan.komoditas_id` (wajib bila
+  `jenis=Benih`) menaut ke `komoditas` yang belum di-seed / belum Eloquent
+  (Task 7.1). Opsi: (a) kerjakan setelah 7.1, atau (b) kerjakan jalur non-Benih
+  penuh + `komoditas_id` divalidasi `Rule::exists` yang otomatis menolak Benih
+  sampai komoditas ada. Rekomendasi: gabung dengan Task 7.1 atau kerjakan
+  keduanya (7.1 dulu) dalam satu sesi.
+
+## Riset Task 6.6 (alsintan) -- pola INDUK + DISTRIBUSI (mirip Infrastruktur+cakupan)
+
+Model `Alsintan` (SoftDeletes, TANPA cakupan scope -- induk = deskripsi benda,
+tidak disaring) + `AlsintanDistribusi` (TANPA SoftDeletes -- tabel distribusi;
+`DisaringLewatInduk`? cek). Belum ada `AlsintanSeeder`.
+
+### Struktur
+- `alsintan` (induk/pengadaan): `jenis_alsintan` (REF `JenisAlsintan`), `nama_alat`,
+  `jumlah_total` (INT), `tahun_pengadaan` (YEAR), `sumber_dana` (REF), `keterangan`.
+  Kolom kepemilikan/transmigran_id/poktan_id/kondisi DICABUT dari induk.
+- `alsintan_distribusi` (1 baris per poktan penerima): `alsintan_id`, `poktan_id`,
+  `jumlah` (INT), `kondisi` (REF `Kondisi`), `penanda_terima_id` (-> `anggota_poktan`,
+  nullable), `tanggal_serah` (nullable), `foto_berkas_id` (FK berkas tunggal, nullable),
+  `keterangan`. **Invarian app: SUM(distribusi.jumlah) <= alsintan.jumlah_total**.
+  `satuan_permukiman_id`/`satuan_permukiman` MENGIKUTI poktan (turunan, tak disimpan).
+
+### Rute (`routes/internal.php` ~1130-1210): `alsintan.index` (closure), `alsintan.detail`,
+`alsintan.simpan`, `alsintan.perbarui`?, `alsintan.hapus`? -- CEK. `PetaIzinRute` ~L110.
+`DummyData::alsintan()` (5 induk) + `DummyData::alsintanDistribusi()` (7 baris).
+Detail/index blade + `alsintan.form` (langkah? repeater distribusi per poktan).
+`ViewServiceProvider` `pages.alsintan.form` = `['daftarPoktan', 'opsiJenisAlsintan',
+'opsiKondisi', 'opsiSumberDana', 'anggotaPerPoktan']` -- `daftarPoktan` +
+`anggotaPerPoktan` -> Eloquent (poktan kini Eloquent!). `anggotaPerPoktan`
+(VSP ~L337) = anggota Aktif per poktan untuk pilih penanda terima.
+HalamanTest alsintan: cari section "Modul alsintan" + Putaran 7 (induk+distribusi).
+Pola controller: `InfrastrukturController` (induk + `cakupan()->sync()`), tapi di
+sini `alsintan_distribusi` adalah repeater baris penuh (jumlah/kondisi/penanda/tgl),
+lebih dekat ke `TransmigranController::sinkronAnggota` (id-based + `_disunting`).
+Foto per distribusi = `foto_berkas_id` FK tunggal (pola `PoktanController::lampirkanSk`).
+
+### `daftarPoktan`/`anggotaPerPoktan` composer -> Eloquent (poktan sudah Eloquent).
+`daftarPoktan` dipakai juga `pages.saprotan.form`, `pages.penanaman.form` (Tahap 7).
 
 ## Riset Task 6.4 + 6.5 (poktan / anggota_poktan) -- `[Sulit]` sebenarnya
 
