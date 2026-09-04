@@ -10,12 +10,15 @@ use App\Enums\JenisReferensi;
 use App\Enums\KegiatanAnggota;
 use App\Enums\PendidikanTerakhir;
 use App\Enums\PolaPermukiman;
+use App\Enums\StatusKeaktifanAnggota;
 use App\Enums\StatusPanen;
 use App\Enums\TingkatKesuburanTanah;
+use App\Models\AnggotaPoktan;
 use App\Models\Transmigran;
 use App\Support\DataWilayah;
 use App\Support\DummyData;
 use App\Support\PetaPenggunaTampilan;
+use App\Support\RekapLahan;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -232,18 +235,17 @@ class ViewServiceProvider extends ServiceProvider
                 ->mapWithKeys(fn ($r) => [(int) $r['id_role'] => DummyData::izinRole((int) $r['id_role'])])
                 ->all(),
 
-            'anggotaPoktanPerPoktan' => collect(DummyData::poktan())
-                ->mapWithKeys(fn ($p) => [
-                    (int) $p['id_poktan'] => collect(DummyData::anggotaPoktan((int) $p['id_poktan']))
-                        ->filter(fn ($a) => ($a['status'] ?? 'Aktif') === 'Aktif')
-                        ->map(fn ($a) => [
-                            'transmigran_id' => $a['transmigran_id'] ?? '',
-                            'jabatan' => $a['jabatan'] ?? 'Anggota',
-                            'keterangan' => $a['keterangan'] ?? '',
-                        ])
-                        ->values()
-                        ->all(),
-                ])
+            'anggotaPoktanPerPoktan' => AnggotaPoktan::query()
+                ->where('status', StatusKeaktifanAnggota::Aktif->value)
+                ->orderBy('id_anggota_poktan')
+                ->get()
+                ->groupBy('poktan_id')
+                ->map(fn ($grup) => $grup->map(fn ($a) => [
+                    'transmigran_id' => $a->transmigran_id,
+                    'jabatan' => $a->jabatan,
+                    'keterangan' => $a->keterangan ?? '',
+                ])->values()->all())
+                ->mapWithKeys(fn ($v, $k) => [(int) $k => $v])
                 ->all(),
 
             'opsiStatusPenyerahan' => DummyData::opsiReferensi(JenisReferensi::StatusPenyerahan),
@@ -408,10 +410,12 @@ class ViewServiceProvider extends ServiceProvider
         $kontak = [];
         $lahan = [];
 
-        foreach (DummyData::transmigran() as $t) {
-            $kunci = (string) $t['id_transmigran'];
-            $kontak[$kunci] = $t['telepon'] ?? '';
-            $lahan[$kunci] = DummyData::rekapLahanKeluarga($t['id_transmigran']);
+        // Task 6: transmigran + lahan ber-Eloquent. Satu keluarga tepat satu
+        // baris lahan, jadi `with('lahan')` cukup tanpa agregat.
+        foreach (Transmigran::query()->with('lahan')->get() as $t) {
+            $kunci = (string) $t->id_transmigran;
+            $kontak[$kunci] = $t->telepon ?? '';
+            $lahan[$kunci] = RekapLahan::keluarga($t->lahan);
         }
 
         return $peta = ['kontak' => $kontak, 'lahan' => $lahan];

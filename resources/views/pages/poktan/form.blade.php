@@ -343,6 +343,14 @@
 
     {{-- Langkah 3: Anggota Kelompok Tani --}}
     <div data-langkah="3" x-show="! bertahap || langkah === 3" x-cloak>
+        {{--
+            Penanda bahwa form ini benar-benar memuat daftar anggota. Modal
+            "Ubah" per baris di halaman daftar meng-include form yang sama
+            tanpa data anggota, sehingga menyimpannya tidak menambah anggota.
+        --}}
+        @if ($awalan !== 'ubahBaris')
+            <input type="hidden" name="_anggota_disunting" value="1" />
+        @endif
         <section>
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>

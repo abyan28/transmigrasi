@@ -20,6 +20,7 @@ use App\Enums\PrioritasPengaduan;
 use App\Enums\StatusKondisiSp;
 use App\Enums\StatusPanen;
 use App\Enums\StatusPengaduan;
+use App\Http\Controllers\AnggotaPoktanController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\DokumenController;
 use App\Http\Controllers\FasilitasSpController;
@@ -33,6 +34,7 @@ use App\Http\Controllers\MasterSatuanController;
 use App\Http\Controllers\PengaturanPenggunaController;
 use App\Http\Controllers\PengaturanRoleController;
 use App\Http\Controllers\PenilaianKondisiController;
+use App\Http\Controllers\PoktanController;
 use App\Http\Controllers\ProfilController;
 use App\Http\Controllers\RumahController;
 use App\Http\Controllers\SpController;
@@ -973,154 +975,43 @@ Route::get('/kependudukan/rekap', [KependudukanController::class, 'rekap'])->nam
 Route::get('/kependudukan/rekap/{kelompok}', [KependudukanController::class, 'rekap'])
     ->where('kelompok', 'tahun|sp|status|pekerjaan|asal|pendidikan')->name('kependudukan.rekap.kelompok');
 
-Route::get('/poktan', function () {
-    $semua = DummyData::poktan();
-    $anggota = DummyData::anggotaPoktan();
+// Task 6.4 + 6.5: PoktanController + AnggotaPoktanController + Eloquent.
+// Ketua 3 jalur; jumlah_anggota & luas lahan kelompok diturunkan. Alsintan &
+// saprotan pada rincian masih DummyData (Task 6.6 / 6.7).
+Route::get('/poktan', [PoktanController::class, 'index'])->name('poktan.index');
 
-    $cari = trim((string) request('cari', ''));
-    $filterSp = request('sp');
+Route::get('/poktan/{id}', [PoktanController::class, 'detail'])
+    ->where('id', '[0-9]+')->name('poktan.detail');
 
-    $baris = array_values(array_filter($semua, function ($p) use ($cari, $filterSp) {
-        if ($cari !== '' && ! str_contains(mb_strtolower($p['nama']), mb_strtolower($cari))
-            && ! str_contains(mb_strtolower($p['nama_ketua']), mb_strtolower($cari))) {
-            return false;
-        }
-        if ($filterSp && (string) $p['satuan_permukiman_id'] !== (string) $filterSp) {
-            return false;
-        }
+Route::post('/poktan', [PoktanController::class, 'simpan'])->name('poktan.simpan');
 
-        return true;
-    }));
+Route::put('/poktan/{id}', [PoktanController::class, 'perbarui'])
+    ->where('id', '[0-9]+')->name('poktan.perbarui');
 
-    return view('pages.poktan.index', [
-        'title' => 'Kelompok Tani',
-        'semua' => $semua,
-        'anggota' => $anggota,
-        'baris' => $baris,
-        'cari' => $cari,
-        'filterSp' => $filterSp,
-        'adaFilter' => $cari !== '' || $filterSp,
-        'totalAnggota' => array_sum(array_column($semua, 'jumlah_anggota')),
-        'anggotaAktif' => count(array_filter($anggota, fn ($a) => $a['status'] === 'Aktif')),
-        'daftarSp' => DummyData::satuanPermukiman(),
-    ]);
-})->name('poktan.index');
+Route::delete('/poktan/{id}', [PoktanController::class, 'hapus'])
+    ->where('id', '[0-9]+')->name('poktan.hapus');
 
-Route::get('/poktan/{id}', function (int $id) {
-    $data = collect(DummyData::poktan())->firstWhere('id_poktan', $id);
+// Anggota poktan ditandai Sudah Keluar, tidak pernah dihapus (rules.md 5.1
+// catatan 7) -- tak ada rute hapus. `perbarui` = satu-satunya jalur ubah
+// status keaktifan + tanggal keluar; pindah kelompok = tandai keluar lalu
+// baris baru di kelompok tujuan.
+Route::post('/anggota-poktan', [AnggotaPoktanController::class, 'simpan'])->name('anggota-poktan.simpan');
 
-    abort_if($data === null, 404);
+Route::put('/anggota-poktan/{id}', [AnggotaPoktanController::class, 'perbarui'])
+    ->where('id', '[0-9]+')->name('anggota-poktan.perbarui');
 
-    $anggota = DummyData::anggotaPoktan($data['id_poktan']);
 
-    // Identitas ketua bercabang tiga jalur, dipusatkan pada satu helper agar
-    // tidak diulang di setiap tempat yang menampilkannya.
-    $ketua = DummyData::identitasWakil($data, 'ketua');
 
-    /*
-     * Nama kepala keluarga setiap wakil, dikumpulkan sekali di sini.
-     *
-     * Bentuk lamanya memanggil `cariTransmigran()` DI DALAM perulangan
-     * anggota, yakni satu penelusuran seluruh data transmigran untuk setiap
-     * wakil yang bukan kepala keluarga. Hanya wakil semacam itu yang
-     * membutuhkannya, sehingga petanya pun hanya memuat mereka.
-     */
-    $namaKkWakil = [];
-    foreach ($anggota as $a) {
-        if ($a['asal_wakil'] !== AsalWakilPoktan::KepalaKeluarga->value) {
-            $kk = DummyData::cariTransmigran($a['transmigran_id']);
-            $namaKkWakil[$a['transmigran_id']] = $kk['nama_kepala_keluarga'] ?? '-';
-        }
-    }
 
-    return view('pages.poktan.detail', [
-        'title' => $data['nama'],
-        'data' => $data,
-        'anggota' => $anggota,
-        // Alsintan yang bagiannya diterima poktan ini (Putaran 7): satu baris
-        // per distribusi, membawa konteks pengadaannya.
-        'alsintan' => (function () use ($data) {
-            $hasil = [];
-            foreach (DummyData::alsintan() as $a) {
-                foreach ($a['distribusi'] as $d) {
-                    if ($d['poktan_id'] === $data['id_poktan']) {
-                        $hasil[] = $d + [
-                            'jenis_alsintan' => $a['jenis_alsintan'],
-                            'nama_alat' => $a['nama_alat'],
-                            'tahun_pengadaan' => $a['tahun_pengadaan'],
-                            'sumber_dana' => $a['sumber_dana'],
-                            'id_alsintan' => $a['id_alsintan'],
-                        ];
-                    }
-                }
-            }
 
-            return $hasil;
-        })(),
-        // Saprotan yang bagiannya diterima poktan ini (Putaran 7): satu baris
-        // per distribusi, membawa konteks pengadaannya.
-        'saprotan' => array_values(array_filter(
-            DummyData::saprotanDistribusi(),
-            fn ($d) => $d['poktan_id'] === $data['id_poktan'],
-        )),
-        'aktif' => count(array_filter($anggota, fn ($a) => $a['status'] === 'Aktif')),
-        'ketua' => $ketua,
-        'keluargaKetua' => DummyData::cariTransmigran($data['ketua_transmigran_id']),
-        'namaKkWakil' => $namaKkWakil,
 
-        // Luas lahan ketua diturunkan dari bidang milik keluarganya, kecuali
-        // bagi ketua non-transmigran yang lahannya tidak terdata sehingga
-        // diketik.
-        'lahanKetua' => $ketua['asal']->dariKeluargaTransmigran()
-            ? DummyData::rekapLahanKeluarga($data['ketua_transmigran_id'])
-            : ['kering' => $data['luas_kering_ketua'] ?? 0, 'basah' => $data['luas_basah_ketua'] ?? 0],
 
-        // Luas lahan kelompok dijumlahkan dari seluruh anggotanya. Kolom
-        // `luas_lahan_kelompok` sudah dicabut sebab nilainya basi begitu luas
-        // dibetulkan di modul lahan (erd.md 7.3).
-        'luasKelompokKering' => array_sum(array_column($anggota, 'luas_kering')),
-        'luasKelompokBasah' => array_sum(array_column($anggota, 'luas_basah')),
-    ]);
-})->where('id', '[0-9]+')->name('poktan.detail');
 
-Route::post('/poktan', function () {
-    // Tahap 6: ketua dipilih dari transmigran, sehingga ketua_transmigran_id
-    // menjadi foreign key, bukan teks bebas.
-    return redirect()->route('poktan.index')
-        ->with('sukses', 'Data kelompok tani tersimpan.');
-})->name('poktan.simpan');
 
-Route::put('/poktan/{id}', function (int $id) {
-    return redirect()->route('poktan.detail', $id)
-        ->with('sukses', 'Perubahan profil kelompok tani tersimpan.');
-})->where('id', '[0-9]+')->name('poktan.perbarui');
 
-Route::post('/anggota-poktan', function () {
-    // Tahap 6: anggota yang berhenti DITANDAI Sudah Keluar, tidak pernah
-    // dihapus, agar catatan penyaluran saprotan tetap memiliki penerima
-    // yang jelas (rules.md 5.1 catatan 7).
-    //
-    // Tahap 6 juga wajib menolak transmigran yang masih berstatus Aktif pada
-    // poktan lain, sebab satu transmigran hanya boleh aktif di satu kelompok
-    // (rules.md 6.4). UNIQUE (poktan_id, transmigran_id) tidak menangkap ini,
-    // karena poktannya memang berbeda.
-    return redirect()->back()
-        ->with('sukses', 'Data anggota kelompok tani tersimpan.');
-})->name('anggota-poktan.simpan');
 
-Route::put('/anggota-poktan/{id}', function (string $id) {
-    // Satu-satunya jalur mengubah status keaktifan dan mengisi tanggal
-    // keluar. Sebelum rute ini ada, keduanya hanya dapat diisi saat anggota
-    // pertama kali ditambahkan, padahal justru keduanya yang berubah
-    // belakangan (rules.md 7a.4).
-    //
-    // Anggota yang pindah kelompok ditandai Sudah Keluar di sini, lalu
-    // didaftarkan sebagai baris baru pada kelompok tujuannya. Memindahkan
-    // poktan_id pada baris yang sama akan menghapus jejak keanggotaan di
-    // kelompok lama seolah tidak pernah ada.
-    return redirect()->back()
-        ->with('sukses', 'Perubahan data anggota tersimpan.');
-})->where('id', '[0-9]+')->name('anggota-poktan.perbarui');
+
+
 /*
  * Daftar alsintan. Pengambilan dan penyaringan datanya dipindahkan ke sini
  * 2026-08-27; sebelumnya dikerjakan blok `@php` di dalam view.
@@ -1725,10 +1616,6 @@ Route::put('/master/satuan/{id}', [MasterSatuanController::class, 'perbarui'])
 
 Route::delete('/master/satuan/{id}', [MasterSatuanController::class, 'hapus'])
     ->where('id', '[0-9]+')->name('satuan.hapus');
-
-Route::delete('/poktan/{id}', function (int $id) {
-    return redirect()->route('poktan.index')->with('sukses', 'Kelompok tani dihapus.');
-})->where('id', '[0-9]+')->name('poktan.hapus');
 
 Route::put('/penanaman/{id}', function (int $id) {
     return redirect()->route('penanaman')->with('sukses', 'Perubahan catatan penanaman tersimpan.');

@@ -34,5 +34,6 @@ class DataMasterSeeder extends Seeder
         $this->call(RumahSeeder::class);
         $this->call(LahanSeeder::class);
         $this->call(BerkasSeeder::class);
+        $this->call(PoktanSeeder::class);
     }
 }
