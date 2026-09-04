@@ -14,6 +14,7 @@ use App\Models\Poktan;
 use App\Models\SaprotanDistribusi;
 use App\Support\DummyData;
 use App\Support\RekapLahan;
+use App\Support\RekapPoktan;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -391,42 +392,14 @@ class PoktanController extends Controller
     }
 
     /**
-     * Cacah anggota aktif + luas lahan kelompok, seluruhnya diturunkan.
-     * Ketua ikut dihitung sekali bila belum terdaftar sebagai anggota aktif.
+     * Cacah anggota aktif + luas lahan kelompok, seluruhnya diturunkan
+     * (`App\Support\RekapPoktan`, dipakai bersama modul penanaman/panen).
      *
      * @return array{jumlah_anggota: int, luas_kering: float, luas_basah: float, luas_total: float}
      */
     private function kekuatanPoktan(Poktan $p): array
     {
-        $aktif = $p->anggota->filter(fn (AnggotaPoktan $a) => $a->status === StatusKeaktifanAnggota::Aktif);
-
-        $kering = 0.0;
-        $basah = 0.0;
-
-        foreach ($aktif as $a) {
-            $lahan = $this->rekapLahanKeluarga($a->transmigran_id);
-            $kering += $lahan['kering'];
-            $basah += $lahan['basah'];
-        }
-
-        $ketuaTerhitung = $p->ketua_transmigran_id !== null
-            && $aktif->contains('transmigran_id', $p->ketua_transmigran_id);
-
-        if (! $ketuaTerhitung) {
-            $lahanKetua = $p->asal_ketua->dariKeluargaTransmigran()
-                ? $this->rekapLahanKeluarga($p->ketua_transmigran_id)
-                : ['kering' => (float) ($p->luas_kering_ketua ?? 0), 'basah' => (float) ($p->luas_basah_ketua ?? 0)];
-
-            $kering += $lahanKetua['kering'];
-            $basah += $lahanKetua['basah'];
-        }
-
-        return [
-            'jumlah_anggota' => $aktif->count() + ($ketuaTerhitung ? 0 : 1),
-            'luas_kering' => round($kering, 2),
-            'luas_basah' => round($basah, 2),
-            'luas_total' => round($kering + $basah, 2),
-        ];
+        return RekapPoktan::kekuatan($p);
     }
 
     /**

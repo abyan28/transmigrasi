@@ -39,5 +39,7 @@ class DatabaseSeeder extends Seeder
         $this->call(AlsintanSeeder::class);
         $this->call(KomoditasSeeder::class);
         $this->call(SaprotanSeeder::class);
+        $this->call(PenanamanSeeder::class);
+        $this->call(HasilPanenSeeder::class);
     }
 }

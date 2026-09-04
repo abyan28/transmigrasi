@@ -8,6 +8,7 @@ use App\Enums\BentukWilayah;
 use App\Enums\HubunganAnggotaKeluarga;
 use App\Enums\JenisKelamin;
 use App\Enums\JenisReferensi;
+use App\Enums\JenisSaprotan;
 use App\Enums\KegiatanAnggota;
 use App\Enums\PendidikanTerakhir;
 use App\Enums\PolaPermukiman;
@@ -16,13 +17,16 @@ use App\Enums\StatusPanen;
 use App\Enums\TingkatKesuburanTanah;
 use App\Models\AnggotaPoktan;
 use App\Models\Komoditas;
+use App\Models\Penanaman;
 use App\Models\Poktan;
+use App\Models\SaprotanDistribusi;
 use App\Models\Satuan;
 use App\Models\Transmigran;
 use App\Support\DataWilayah;
 use App\Support\DummyData;
 use App\Support\PetaPenggunaTampilan;
 use App\Support\RekapLahan;
+use App\Support\RekapPoktan;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -359,16 +363,18 @@ class ViewServiceProvider extends ServiceProvider
              * berubah begitu poktan dipilih, tanpa permintaan tambahan ke
              * peladen.
              */
-            'petaPoktan' => collect(DummyData::poktan())
+            'petaPoktan' => Poktan::query()
+                ->with(['satuanPermukiman', 'anggota'])
+                ->get()
                 ->mapWithKeys(function ($p) {
-                    $rekap = DummyData::rekapLahanPoktan($p['id_poktan']);
+                    $rekap = RekapPoktan::kekuatan($p);
 
-                    return [(string) $p['id_poktan'] => [
-                        'sp_id' => (string) $p['satuan_permukiman_id'],
-                        'sp_nama' => $p['satuan_permukiman'],
+                    return [(string) $p->id_poktan => [
+                        'sp_id' => (string) $p->satuan_permukiman_id,
+                        'sp_nama' => $p->satuanPermukiman?->nama,
                         'anggota' => $rekap['jumlah_anggota'],
                         'luas' => $rekap['luas_total'],
-                        'tersedia' => DummyData::lahanTersedia($p['id_poktan']),
+                        'tersedia' => RekapPoktan::lahanTersedia($p),
                     ]];
                 })
                 ->all(),
@@ -478,28 +484,32 @@ class ViewServiceProvider extends ServiceProvider
      */
     private static function petaBenih(): array
     {
-        /*
-         * Simbol satuan dibaca dari data master, bukan disingkat sendiri.
-         * Menyingkatnya lewat `substr` atau daftar tulis tangan berarti satuan
-         * baru yang didata Admin tidak akan pernah punya singkatan.
-         */
-        $simbol = collect(DummyData::satuan())->mapWithKeys(fn ($s) => [$s['nama'] => $s['simbol']])->all();
+        // Task 7.3: saprotan_distribusi ber-Eloquent. Hanya baris berjenis
+        // Benih yang sisanya masih ada (dihitung lewat penanaman ber-Eloquent).
+        return SaprotanDistribusi::query()
+            ->whereHas('saprotan', fn ($q) => $q->where('jenis', JenisSaprotan::Benih->value))
+            ->with(['saprotan.satuan', 'penanaman'])
+            ->orderBy('id_saprotan_distribusi')
+            ->get()
+            ->map(function ($d) {
+                $sisa = $d->sisaBenih();
+                $satuan = $d->saprotan?->satuan;
 
-        return collect(DummyData::benihTersedia())
-            ->map(fn ($b) => [
-                // Sejak Putaran 7 id yang dibawa adalah id_saprotan_distribusi:
-                // penanaman menunjuk jatah SATU poktan, bukan pengadaan.
-                'id' => (string) $b['id_saprotan_distribusi'],
-                'poktan_id' => (string) $b['poktan_id'],
-                'komoditas_id' => (string) $b['komoditas_id'],
-                'label' => $b['label_benih'],
-                'sisa' => $b['sisa_benih'],
-                'satuan' => $b['satuan'],
-
-                // Dipakai sebagai sufiks isian, yang ruangnya sempit: nama
-                // penuh "Kilogram" menabrak tombol naik-turun bawaan number.
-                'simbol' => $simbol[$b['satuan']] ?? $b['satuan'],
-            ])
+                return [
+                    'id' => (string) $d->id_saprotan_distribusi,
+                    'poktan_id' => (string) $d->poktan_id,
+                    'komoditas_id' => (string) $d->saprotan?->komoditas_id,
+                    'label' => $d->saprotan?->nama.' - sisa '
+                        .rtrim(rtrim(number_format($sisa, 3, ',', '.'), '0'), ',').' '.($satuan?->nama ?? ''),
+                    'sisa' => $sisa,
+                    'satuan' => $satuan?->nama,
+                    'simbol' => $satuan?->simbol ?? $satuan?->nama,
+                    '_sisa' => $sisa,
+                ];
+            })
+            ->filter(fn ($b) => $b['_sisa'] > 0)
+            ->map(fn ($b) => collect($b)->except('_sisa')->all())
+            ->values()
             ->all();
     }
 
@@ -524,40 +534,45 @@ class ViewServiceProvider extends ServiceProvider
             return $hasil;
         }
 
-        $satuanKomoditas = collect(DummyData::komoditas())->pluck('satuan', 'id_komoditas')->all();
-        $simbolSatuan = collect(DummyData::satuan())->mapWithKeys(fn ($s) => [$s['nama'] => $s['simbol']])->all();
-
+        $rekap = [];
         $hasil = [];
 
-        foreach (DummyData::penanaman() as $r) {
-            $rekap = DummyData::rekapLahanPoktan($r['poktan_id']);
-            $bulan = Carbon::parse($r['periode_tanam'].'-01');
-            $satuan = $satuanKomoditas[$r['komoditas_id']] ?? '';
+        // Task 7.3/7.4: penanaman + hasil panen ber-Eloquent.
+        $penanaman = Penanaman::query()
+            ->with(['poktan.satuanPermukiman', 'poktan.anggota', 'komoditas.satuan', 'hasilPanen'])
+            ->orderBy('id_penanaman')
+            ->get();
 
-            /*
-             * Bulan tanam menggantikan label musim yang dicabut 2026-08-22. Ia
-             * yang membedakan dua penanaman komoditas yang sama oleh kelompok
-             * yang sama; tanpa itu keduanya tampil sebagai pilihan yang
-             * bunyinya identik.
-             */
-            $label = $r['komoditas'].' - '.$r['poktan'].' - '.$bulan->translatedFormat('M Y');
+        foreach ($penanaman as $r) {
+            $poktan = $r->poktan;
+            $rekap[$r->poktan_id] ??= $poktan === null
+                ? ['jumlah_anggota' => 0, 'luas_total' => 0.0]
+                : RekapPoktan::kekuatan($poktan);
+
+            $bulan = Carbon::parse($r->periode_tanam.'-01');
+            $satuan = $r->komoditas?->satuan;
+            $label = $r->komoditas?->nama.' - '.$poktan?->nama.' - '.$bulan->translatedFormat('M Y');
 
             $hasil[] = [
-                'id' => (string) $r['id_penanaman'],
-                'belum_dipanen' => DummyData::statusPanen($r['id_penanaman']) === StatusPanen::BelumDipanen,
-                'baris' => $r + ['label_tanam' => $label],
+                'id' => (string) $r->id_penanaman,
+                'belum_dipanen' => $r->hasilPanen === null,
+                'baris' => [
+                    'id_penanaman' => $r->id_penanaman,
+                    'label_tanam' => $label,
+                    'satuan_permukiman' => $poktan?->satuanPermukiman?->nama,
+                ],
                 'peta' => [
-                    'poktan' => $r['poktan'],
-                    'poktan_id' => (string) $r['poktan_id'],
-                    'anggota' => $rekap['jumlah_anggota'],
-                    'luas_lahan' => $rekap['luas_total'],
-                    'volume_benih' => $r['volume_benih'],
-                    'realisasi_tanam' => (float) $r['realisasi_tanam'],
-                    'komoditas' => $r['komoditas'],
-                    'satuan' => $satuan,
-                    'simbol' => $simbolSatuan[$satuan] ?? '',
+                    'poktan' => $poktan?->nama,
+                    'poktan_id' => (string) $r->poktan_id,
+                    'anggota' => $rekap[$r->poktan_id]['jumlah_anggota'],
+                    'luas_lahan' => $rekap[$r->poktan_id]['luas_total'],
+                    'volume_benih' => (float) $r->volume_benih,
+                    'realisasi_tanam' => (float) $r->realisasi_tanam,
+                    'komoditas' => $r->komoditas?->nama,
+                    'satuan' => $satuan?->nama,
+                    'simbol' => $satuan?->simbol ?? '',
                     'bulan_tanam' => $bulan->translatedFormat('F Y'),
-                    'sp' => $r['satuan_permukiman'],
+                    'sp' => $poktan?->satuanPermukiman?->nama,
                 ],
             ];
         }

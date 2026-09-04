@@ -1,7 +1,7 @@
 # tasklist.md
 ## Daftar Tugas — Sistem Informasi Digitalisasi Monitoring Pertanian dan Tata Kelola Data Kawasan Transmigrasi Kobalima Timur
 
-**Progress: 97%**
+**Progress: 98%**
 *(Tahap 0 selesai 8 task. **Tahap 1 SELESAI** 12 task. **TAHAP 2 SELESAI SELURUHNYA.** Gelombang 1 dan 2 tuntas, 32 halaman berdiri. **Delivery Gate kedua gelombang sudah dijalankan** dan laporannya lengkap (`delivery-gate-gelombang-1.md` dan `-2.md`). Dua hal ditunda beralasan, bukan lolos diam-diam: keadaan memuat dan galat menunggu backend Tahap 3, dan pemeriksaan 360px pada perangkat nyata menunggu manusia. Siap masuk checkpoint validasi bersama tim dan dinas, lalu Tahap 3.)*
 
 Acuan: `prd.md`, `rules.md`, `workflow.md`, `ui-spec.md`, `erd.md`, `data-dictionary.md`, `notes.md`.
@@ -1411,15 +1411,34 @@ menghapus sisa terakhir `DummyData::penggunaSaatIni()` -- dikerjakan berbarengan
     pint bersih, banding-skema NOL SELISIH, tautan-statis 14.
 - [ ] Task 7.2 - CRUD komoditas + penanda unggulan + satuan baku per komoditas `[Sedang]`
   * Tampilan form dan halaman rincian sudah selesai pada Task 2.29 dan 2.30
-- [ ] Task 7.3 - CRUD penanaman `[Sedang]`
+- [✓] ✅ Task 7.3 - CRUD penanaman `[Sedang]` (Selesai)
   * Tampilan kedua form sudah selesai pada Task 2.30
-- [ ] Task 7.4 - CRUD hasil panen (produksi, produktivitas, puso, harga) `[Sulit]`
+  * **HASIL 2026-09-04:** `PenanamanController` (index/detail/simpan/perbarui/hapus).
+    `App\Support\RekapPoktan` baru (kekuatan + lahanTersedia) — dipakai bersama
+    Poktan/Penanaman/Panen + composer `petaPoktan`/`penanamanUntukPanen`.
+    Validasi lanjutan: benih wajib jatah poktan & komoditas yang tepat; volume
+    ≤ sisa jatah (`SaprotanDistribusi::sisaBenih()` baru, kecuali baris disunting);
+    realisasi_tanam ≤ lahan tersedia (baris sendiri dikembalikan saat menyunting).
+    hapus ditolak bila sudah punya panen. `PenanamanSeeder` + pivot
+    `penanaman_berkas`. Composer `petaBenih`/`petaPoktan`/`penanamanUntukPanen` →
+    Eloquent. `tests/Database/PenanamanTest.php` +9.
+- [✓] ✅ Task 7.4 - CRUD hasil panen (produksi, produktivitas, puso, harga) `[Sulit]` (Selesai)
   * Satuan mengikuti komoditas terpilih; `DECIMAL(12,3)`; kolom keterangan satuan lokal
   * **Status panen tidak ikut jadi kolom.** Ia diturunkan lewat `StatusPanen` beserta `statusPanen()`, dua nilai saja (`rules.md` 9.10)
   * **Validasi wajib: `realisasi_panen` + `puso` tepat sama dengan `penanaman.realisasi_tanam`**, dan satu penanaman hanya boleh punya satu baris panen (`rules.md` 9.9). Tampilannya sudah menegakkan ini sejak 2026-08-24; peladen wajib menegakkannya juga, sebab penjagaan di sisi peramban dapat dilewati
   * **Gagal total sah:** `realisasi_panen` 0 dengan `puso` menutup seluruh luas. Pada keadaan itu `produktivitas` tidak diwajibkan (`rules.md` 9.9b)
-- [ ] Task 7.5 - Helper konversi volume panen ke ton `[Sedang]`
+  * **HASIL 2026-09-04:** `HasilPanenController` (index/detail/simpan/perbarui/hapus).
+    `satuan_id` disalin dari `penanaman.komoditas.satuan_id` (submit diabaikan).
+    `produksi = realisasi_panen × produktivitas` DIHITUNG ULANG peladen. Identitas
+    `realisasi_panen + puso = realisasi_tanam` (toleransi 0,001). Satu penanaman
+    satu panen (soft-delete aware). Gagal total → produktivitas 0. `HasilPanenSeeder`
+    + pivot `hasil_panen_berkas`. `tests/Database/HasilPanenTest.php` +10.
+- [✓] ✅ Task 7.5 - Helper konversi volume panen ke ton `[Sedang]` (Selesai)
   * Dipakai seluruh rekap dan dashboard agar agregasi lintas komoditas konsisten
+  * **HASIL 2026-09-04:** `App\Support\KonversiPanen::keTon($volume, Satuan|string|int|null)`
+    membaca `satuan.faktor_ke_ton` (Eloquent). Satuan non-berat (NULL) → faktor 0
+    (menjumlahkannya sebagai tonase adalah kekeliruan). Dipakai `HasilPanenController`
+    + `PenanamanController`; `DummyData::keTon` tetap untuk dashboard sampai Tahap rekap.
 - [ ] Task 7.6 - Rekap panen per wilayah, poktan, komoditas, dan periode `[Sedang]`
   * Tampilannya sudah dirombak 2026-08-24: basis **penanaman** bukan hasil panen, terikat satu **tahun panen**
   * Saat backend masuk, `DummyData::rekapPanen()` diganti kueri agregat. Aturannya pada `rules.md` 9.8a-8i; yang paling mudah keliru adalah produktivitas tertimbang (8d) dan pembulatan (8e)

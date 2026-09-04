@@ -17,13 +17,13 @@
 use App\Enums\JenisReferensi;
 use App\Enums\PrioritasPengaduan;
 use App\Enums\StatusKondisiSp;
-use App\Enums\StatusPanen;
 use App\Enums\StatusPengaduan;
 use App\Http\Controllers\AlsintanController;
 use App\Http\Controllers\AnggotaPoktanController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\DokumenController;
 use App\Http\Controllers\FasilitasSpController;
+use App\Http\Controllers\HasilPanenController;
 use App\Http\Controllers\InfrastrukturController;
 use App\Http\Controllers\InventarisSpController;
 use App\Http\Controllers\KawasanController;
@@ -32,6 +32,7 @@ use App\Http\Controllers\KomoditasController;
 use App\Http\Controllers\LahanController;
 use App\Http\Controllers\MasterReferensiController;
 use App\Http\Controllers\MasterSatuanController;
+use App\Http\Controllers\PenanamanController;
 use App\Http\Controllers\PengaturanPenggunaController;
 use App\Http\Controllers\PengaturanRoleController;
 use App\Http\Controllers\PenilaianKondisiController;
@@ -45,7 +46,6 @@ use App\Http\Controllers\WilayahController;
 use App\Support\DummyData;
 use App\Support\LaporanData;
 use App\Support\PenilaianKondisiSp;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 
@@ -494,104 +494,7 @@ Route::post('/lahan/{id}/dokumen', fn (int $id) => redirect()
 | tertangkap sebagai id (Laravel mencocokkan rute menurut urutan pendaftaran).
 |
 */
-Route::get('/panen', function () {
-    $semua = DummyData::hasilPanen();
-
-    $cari = trim((string) request('cari', ''));
-    $filterSp = request('sp');
-    $filterKomoditas = request('komoditas');
-
-    // Penyaring tahun tunggal diganti rentang dari-sampai 2026-08-28
-    // (rules.md 12 poin 12). Halaman daftar transaksi ini aman untuk rentang
-    // sebab tiap baris berdiri sendiri; rekap panen TIDAK, lihat 9 poin 8b.
-    $filterTahunDari = request('tahun_dari');
-    $filterTahunSampai = request('tahun_sampai');
-
-    // Tahun panen diturunkan dari tanggalnya, menggantikan penyaringan per
-    // musim tanam yang dicabut 2026-08-22 bersama fiturnya.
-    $tahunPanen = fn ($p) => $p['periode_panen']
-        ? (int) substr($p['periode_panen'], 0, 4)
-        : null;
-
-    $baris = array_values(array_filter($semua, function ($p) use ($cari, $filterSp, $filterKomoditas) {
-        if ($cari !== '') {
-            $cocok = str_contains(mb_strtolower($p['poktan']), mb_strtolower($cari))
-                || str_contains(mb_strtolower($p['komoditas']), mb_strtolower($cari));
-
-            if (! $cocok) {
-                return false;
-            }
-        }
-
-        if ($filterSp && (string) $p['satuan_permukiman_id'] !== (string) $filterSp) {
-            return false;
-        }
-
-        if ($filterKomoditas && $p['komoditas'] !== $filterKomoditas) {
-            return false;
-        }
-
-        return true;
-    }));
-
-    $baris = DummyData::saringRentangTahun($baris, $filterTahunDari, $filterTahunSampai, $tahunPanen);
-
-    /*
-     * Volume benih dan luas lahan dibaca LEWAT PENANAMAN, sebab keduanya milik
-     * penanaman dan poktan, bukan milik catatan panen.
-     *
-     * Disusun sekali di sini alih-alih dicari ulang pada tiap baris: pencarian
-     * penanaman beserta perhitungan lahan poktannya menyusuri seluruh
-     * keanggotaan, dan mengulanginya per baris membuat halaman menghitung hal
-     * yang sama berkali-kali.
-     */
-    $petaPenanaman = collect(DummyData::penanaman())->keyBy('id_penanaman');
-    $kekuatanPoktan = [];
-    $asalTanam = [];
-
-    // Setara ton per baris, dahulu dihitung ulang di dalam perulangan tabel.
-    $setaraTon = [];
-
-    foreach ($semua as $p) {
-        $tanam = $petaPenanaman[$p['penanaman_id']] ?? null;
-
-        $kekuatanPoktan[$p['poktan_id']] ??= DummyData::rekapLahanPoktan($p['poktan_id']);
-
-        $asalTanam[$p['id_hasil_panen']] = [
-            'volume_benih' => (float) ($tanam['volume_benih'] ?? 0),
-            'luas_lahan' => $kekuatanPoktan[$p['poktan_id']]['luas_total'],
-        ];
-
-        $setaraTon[$p['id_hasil_panen']] = DummyData::keTon($p['produksi'], $p['satuan']);
-    }
-
-    $daftarTahun = array_values(array_filter(array_unique(array_map($tahunPanen, $semua))));
-    rsort($daftarTahun);
-
-    return view('pages.panen.index', [
-        'title' => 'Hasil Panen',
-        'semua' => $semua,
-        'baris' => $baris,
-        'cari' => $cari,
-        'filterSp' => $filterSp,
-        'filterKomoditas' => $filterKomoditas,
-        'filterTahunDari' => $filterTahunDari,
-        'filterTahunSampai' => $filterTahunSampai,
-        'adaFilter' => $cari !== '' || $filterSp || $filterKomoditas || $filterTahunDari || $filterTahunSampai,
-
-        // Total dihitung setelah konversi ke ton, bukan menjumlahkan volume
-        // mentah.
-        'totalTonTampil' => array_sum(array_map(fn ($p) => $setaraTon[$p['id_hasil_panen']], $baris)),
-        'totalTonSemua' => array_sum($setaraTon),
-
-        'setaraTon' => $setaraTon,
-        'asalTanam' => $asalTanam,
-        'kekuatanPoktan' => $kekuatanPoktan,
-        'daftarKomoditas' => array_values(array_unique(array_column($semua, 'komoditas'))),
-        'daftarTahun' => $daftarTahun,
-        'daftarSp' => DummyData::satuanPermukiman(),
-    ]);
-})->name('panen.index');
+Route::get('/panen', [HasilPanenController::class, 'index'])->name('panen.index');
 
 /*
  * Penyusun rekap panen, dipakai DUA rute: tautan tetap per tab dan alamat lama
@@ -746,34 +649,16 @@ Route::get('/panen/rekap', fn () => $susunRekapPanen())->name('panen.rekap');
 Route::get('/panen/rekap/{kelompok}', fn (string $kelompok) => $susunRekapPanen($kelompok))
     ->where('kelompok', 'sp|komoditas|poktan')->name('panen.rekap.kelompok');
 
-Route::get('/panen/{id}', function (int $id) {
-    $data = collect(DummyData::hasilPanen())->firstWhere('id_hasil_panen', $id);
+Route::get('/panen/{id}', [HasilPanenController::class, 'detail'])
+    ->where('id', '[0-9]+')->name('panen.detail');
 
-    abort_if($data === null, 404);
+Route::post('/panen', [HasilPanenController::class, 'simpan'])->name('panen.simpan');
 
-    return view('pages.panen.detail', [
-        'title' => 'Panen '.$data['komoditas'],
-        'data' => $data,
-        'setaraTon' => DummyData::keTon($data['produksi'], $data['satuan']),
+Route::put('/panen/{id}', [HasilPanenController::class, 'perbarui'])
+    ->where('id', '[0-9]+')->name('panen.perbarui');
 
-        // Penanaman asal panen ini, dibaca lewat relasi. Menyediakan tautan
-        // balik ke penanaman asalnya.
-        'tanam' => collect(DummyData::penanaman())->firstWhere('id_penanaman', $data['penanaman_id']),
-    ]);
-})->where('id', '[0-9]+')->name('panen.detail');
-
-Route::post('/panen', function () {
-    return redirect()->route('panen.index')
-        ->with('sukses', 'Hasil panen tersimpan.');
-})->name('panen.simpan');
-
-Route::put('/panen/{id}', function (int $id) {
-    return redirect()->route('panen.detail', $id)->with('sukses', 'Perubahan catatan panen tersimpan.');
-})->where('id', '[0-9]+')->name('panen.perbarui');
-
-Route::delete('/panen/{id}', function () {
-    return redirect()->route('panen.index')->with('sukses', 'Catatan panen dihapus.');
-})->where('id', '[0-9]+')->name('panen.hapus');
+Route::delete('/panen/{id}', [HasilPanenController::class, 'hapus'])
+    ->where('id', '[0-9]+')->name('panen.hapus');
 
 /*
 |--------------------------------------------------------------------------
@@ -1052,183 +937,12 @@ Route::post('/komoditas', [KomoditasController::class, 'simpan'])->name('komodit
 Route::put('/komoditas/{id}', [KomoditasController::class, 'perbarui'])
     ->where('id', '[0-9]+')->name('komoditas.perbarui');
 
-Route::get('/penanaman', function () {
-    $semua = DummyData::penanaman();
+Route::get('/penanaman', [PenanamanController::class, 'index'])->name('penanaman');
 
-    $cari = trim((string) request('cari', ''));
-    $filterSp = request('sp');
-    $filterKomoditas = request('komoditas');
-    $filterStatus = request('status');
+Route::get('/penanaman/{id}', [PenanamanController::class, 'detail'])
+    ->where('id', '[0-9]+')->name('penanaman.detail');
 
-    // Penyaring tahun tunggal diganti rentang dari-sampai 2026-08-28
-    // (rules.md 12 poin 12). Daftar transaksi ini aman untuk rentang; rekap
-    // agregat tidak (9 poin 8b).
-    $filterTahunDari = request('tahun_dari');
-    $filterTahunSampai = request('tahun_sampai');
-
-    // Tahun tanam diturunkan dari tanggalnya, bukan disimpan terpisah.
-    // Menyimpannya sebagai kolom sendiri membuat nilainya dapat berbeda dari
-    // tanggal yang menjadi sumbernya.
-    $tahunTanam = fn ($r) => $r['periode_tanam']
-        ? Carbon::parse($r['periode_tanam'].'-01')->year
-        : null;
-
-    // Status panen DITURUNKAN dari sisa luas, tidak disimpan sebagai kolom
-    // (agents/rules.md bagian 7d poin 11). Disusun sekali di sini agar
-    // penyaring, kolom tabel, dan kartu ringkasan membaca sumber yang sama.
-    $statusPanen = [];
-    foreach ($semua as $r) {
-        $statusPanen[$r['id_penanaman']] = DummyData::statusPanen($r['id_penanaman']);
-    }
-
-    /*
-     * Kekuatan tiap poktan: cacah anggota aktif dan luas lahannya.
-     *
-     * DIHITUNG, tidak disimpan (rules.md 7d.3). Disusun sekali per poktan di
-     * sini, bukan dipanggil ulang pada tiap baris - satu poktan dapat memiliki
-     * banyak penanaman, dan perhitungannya menyusuri seluruh keanggotaan
-     * beserta lahannya.
-     */
-    $kekuatanPoktan = [];
-    foreach ($semua as $r) {
-        $kekuatanPoktan[$r['poktan_id']] ??= DummyData::rekapLahanPoktan($r['poktan_id']);
-    }
-
-    $baris = array_values(array_filter($semua, function ($r) use ($cari, $filterSp, $filterKomoditas, $filterStatus, $statusPanen) {
-        if ($cari !== '' && ! str_contains(mb_strtolower($r['poktan']), mb_strtolower($cari))
-            && ! str_contains(mb_strtolower($r['komoditas']), mb_strtolower($cari))) {
-            return false;
-        }
-        if ($filterSp && (string) $r['satuan_permukiman_id'] !== (string) $filterSp) {
-            return false;
-        }
-        if ($filterKomoditas && $r['komoditas'] !== $filterKomoditas) {
-            return false;
-        }
-        if ($filterStatus && $statusPanen[$r['id_penanaman']]->value !== $filterStatus) {
-            return false;
-        }
-
-        return true;
-    }));
-
-    $baris = DummyData::saringRentangTahun($baris, $filterTahunDari, $filterTahunSampai, $tahunTanam);
-
-    $daftarTahun = array_values(array_filter(array_unique(array_map($tahunTanam, $semua))));
-    rsort($daftarTahun);
-
-    return view('pages.penanaman.index', [
-        'title' => 'Penanaman',
-        'semua' => $semua,
-        'baris' => $baris,
-        'cari' => $cari,
-        'filterSp' => $filterSp,
-        'filterTahunDari' => $filterTahunDari,
-        'filterTahunSampai' => $filterTahunSampai,
-        'filterKomoditas' => $filterKomoditas,
-        'filterStatus' => $filterStatus,
-        'adaFilter' => $cari !== '' || $filterSp || $filterTahunDari || $filterTahunSampai || $filterKomoditas || $filterStatus,
-        'statusPanen' => $statusPanen,
-        'kekuatanPoktan' => $kekuatanPoktan,
-        'totalLuas' => array_sum(array_column($baris, 'realisasi_tanam')),
-
-        /*
-         * Luas yang masih berdiri tanaman, yaitu seluruh penanaman yang belum
-         * dipanen sama sekali.
-         *
-         * DISEDERHANAKAN 2026-08-24: sebelumnya menjumlahkan sisa parsial tiap
-         * penanaman. Sisa parsial kini tidak lagi mungkin ada, sebab satu panen
-         * selalu menutup seluruh luas yang ditanam.
-         */
-        'totalBelumDipanen' => array_sum(array_map(
-            fn ($r) => $statusPanen[$r['id_penanaman']] === StatusPanen::BelumDipanen
-                ? (float) $r['realisasi_tanam']
-                : 0.0,
-            $semua
-        )),
-
-        'daftarTahun' => $daftarTahun,
-        'daftarKomoditas' => array_values(array_unique(array_column($semua, 'komoditas'))),
-        'daftarSp' => DummyData::satuanPermukiman(),
-    ]);
-})->name('penanaman');
-
-/*
- * Halaman rincian penanaman.
- *
- * Ditambahkan 2026-08-20 agar modul ini memiliki tab Catatan Log seperti modul
- * lain. Sebelumnya hanya ada halaman daftar, sehingga perubahan datanya tidak
- * dapat ditelusuri dari tempat datanya sendiri.
- *
- * Rute rincian didaftarkan SETELAH rute daftarnya, mengikuti catatan lama pada
- * berkas ini bahwa alamat beruas dua dapat tertangkap sebagai id.
- *
- * Alamatnya `/penanaman`, DAHULU `/riwayat-tanam` (diubah 2026-08-22). Tidak
- * disediakan pengalihan dari alamat lama: Tahap 2 belum pernah terbit sebagai
- * sistem yang dipakai, sehingga tidak ada tautan lama yang perlu dijaga.
- *
- * Rute musim tanam DIHAPUS pada tanggal yang sama bersama fiturnya.
- */
-Route::get('/penanaman/{id}', function (int $id) {
-    $data = collect(DummyData::penanaman())->firstWhere('id_penanaman', $id);
-
-    abort_if($data === null, 404);
-
-    /*
-     * Panen dari penanaman ini, dibaca lewat relasi `penanaman_id`.
-     *
-     * Sebelumnya dicocokkan lewat pasangan komoditas dan petani, sebab hasil
-     * panen belum menyimpan tautannya. Pencocokan teks semacam itu menyatukan
-     * dua penanaman berbeda yang kebetulan sama komoditas dan penggarapnya,
-     * sehingga volumenya terhitung dua kali.
-     */
-    $panen = array_values(array_filter(
-        DummyData::hasilPanen(),
-        fn ($p) => ($p['penanaman_id'] ?? null) === $data['id_penanaman'],
-    ));
-
-    return view('pages.penanaman.detail', [
-        'title' => $data['komoditas'].' - '.$data['poktan'],
-        'data' => $data,
-        'panen' => $panen,
-
-        /*
-         * DIPERBAIKI 2026-08-24: sebelumnya menjumlahkan kunci `volume` yang
-         * sudah dihapus pada perombakan 2026-08-22, sehingga baris "Total
-         * volume" SELALU 0,00.
-         *
-         * Dijumlahkan setelah konversi ke ton, bukan angka mentah: satu
-         * penanaman memang satu komoditas, tetapi menuliskannya begini membuat
-         * halaman ini tidak menjadi pengecualian dari rules.md 8a.5.
-         */
-        'produksiTon' => array_sum(array_map(
-            fn ($p) => DummyData::keTon($p['produksi'], $p['satuan']),
-            $panen
-        )),
-
-        'luasDipanen' => array_sum(array_column($panen, 'realisasi_panen')),
-        'luasPuso' => array_sum(array_map(fn ($p) => (float) ($p['puso'] ?? 0), $panen)),
-
-        // Tiga angka turunan, seluruhnya dihitung bukan disimpan, sehingga
-        // selalu mengikuti keanggotaan dan lahan terbaru.
-        'status' => DummyData::statusPanen($data['id_penanaman']),
-        'belumDitanam' => DummyData::lahanTersedia($data['poktan_id']),
-        'rekapPoktan' => DummyData::rekapLahanPoktan($data['poktan_id']),
-
-        // Benih dibaca lewat baris distribusi (jatah poktan ini), lalu
-        // konteks pengadaannya (Putaran 7).
-        'benih' => $data['saprotan_distribusi_id']
-            ? collect(DummyData::saprotanDistribusi())->firstWhere('id_saprotan_distribusi', $data['saprotan_distribusi_id'])
-            : null,
-    ]);
-})->where('id', '[0-9]+')->name('penanaman.detail');
-
-Route::post('/penanaman', function () {
-    // Tahap 7: lahan_id wajib, sebab lokasi produksi hasil panen dibaca
-    // lewat rantai penanaman ke lahan ke satuan permukiman.
-    return redirect()->route('penanaman')
-        ->with('sukses', 'Catatan penanaman tersimpan.');
-})->name('penanaman.simpan');
+Route::post('/penanaman', [PenanamanController::class, 'simpan'])->name('penanaman.simpan');
 
 Route::get('/sp/infrastruktur', [InfrastrukturController::class, 'index'])->name('infrastruktur.index');
 
@@ -1409,13 +1123,11 @@ Route::put('/master/satuan/{id}', [MasterSatuanController::class, 'perbarui'])
 Route::delete('/master/satuan/{id}', [MasterSatuanController::class, 'hapus'])
     ->where('id', '[0-9]+')->name('satuan.hapus');
 
-Route::put('/penanaman/{id}', function (int $id) {
-    return redirect()->route('penanaman')->with('sukses', 'Perubahan catatan penanaman tersimpan.');
-})->where('id', '[0-9]+')->name('penanaman.perbarui');
+Route::put('/penanaman/{id}', [PenanamanController::class, 'perbarui'])
+    ->where('id', '[0-9]+')->name('penanaman.perbarui');
 
-Route::delete('/penanaman/{id}', function (int $id) {
-    return redirect()->route('penanaman')->with('sukses', 'Catatan penanaman dihapus.');
-})->where('id', '[0-9]+')->name('penanaman.hapus');
+Route::delete('/penanaman/{id}', [PenanamanController::class, 'hapus'])
+    ->where('id', '[0-9]+')->name('penanaman.hapus');
 
 Route::delete('/saprotan/{id}', [SaprotanController::class, 'hapus'])
     ->where('id', '[0-9]+')->name('saprotan.hapus');

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\JenisSaprotan;
 use App\Models\Concerns\DisaringLewatInduk;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -48,5 +49,26 @@ class SaprotanDistribusi extends Model
     public function penanaman(): HasMany
     {
         return $this->hasMany(Penanaman::class, 'saprotan_distribusi_id', 'id_saprotan_distribusi');
+    }
+
+    /**
+     * Sisa benih pada baris distribusi ini: jatah poktan dikurangi pemakaian
+     * penanaman yang menunjuk baris ini (`rules.md` §7c poin 8). TIDAK disimpan;
+     * mengoreksi diri sendiri saat baris penanaman disunting. Hanya berlaku
+     * bila induknya `jenis = Benih`.
+     *
+     * @param  int|null  $kecualiPenanamanId  Abaikan satu penanaman (saat menyunting)
+     */
+    public function sisaBenih(?int $kecualiPenanamanId = null): float
+    {
+        if ($this->saprotan?->jenis !== JenisSaprotan::Benih) {
+            return 0.0;
+        }
+
+        $terpakai = (float) $this->penanaman()
+            ->when($kecualiPenanamanId !== null, fn ($q) => $q->whereKeyNot($kecualiPenanamanId))
+            ->sum('volume_benih');
+
+        return max(0.0, round((float) $this->jumlah - $terpakai, 3));
     }
 }
