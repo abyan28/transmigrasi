@@ -46,28 +46,52 @@ use App\Http\Controllers\SpController;
 use App\Http\Controllers\TemplateImporController;
 use App\Http\Controllers\TransmigranController;
 use App\Http\Controllers\WilayahController;
+use App\Models\Pengaduan;
+use App\Models\SatuanPermukiman;
 use App\Support\DummyData;
 use App\Support\KontenSistem;
 use App\Support\LaporanData;
 use App\Support\PenilaianKondisiSp;
+use App\Support\RekapDashboard;
 use App\Support\RekapPanen;
+use App\Support\RekapPengaduan;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 
 // Dashboard monitoring kawasan, 15 indikator dengan data contoh.
 // Penggantian ke query nyata dikerjakan pada Tahap 9.
 Route::get('/', function () {
-    $ringkasan = DummyData::ringkasanDashboard();
-    $deret = DummyData::deretTahunan();
-    $rekapSp = DummyData::rekapPerSp();
+    // Task 9.1 (rules.md 8g dibalik 2026-09-04): angka dari Eloquent, bukan
+    // larik tetap DummyData. Lihat App\Support\RekapDashboard.
+    $ringkasan = RekapDashboard::ringkasan();
+    $deret = RekapDashboard::deret();
+    $rekapSp = RekapDashboard::perSp();
 
     $penilaianSp = PenilaianKondisiSp::nilaiSeluruhSp();
-    $statusInfra = DummyData::statusInfrastruktur();
-    $sebaranPekerjaan = DummyData::sebaranPekerjaan();
-    $rekapStatusPengaduan = DummyData::rekapPengaduan('status');
-    $sebaranKomoditas = DummyData::sebaranKomoditas();
-    $rekapPenghuni = DummyData::rekapPenghuni();
-    $pengaduan = DummyData::pengaduan();
+    $statusInfra = RekapDashboard::statusInfrastruktur();
+    $sebaranPekerjaan = RekapDashboard::sebaranPekerjaan();
+    $rekapStatusPengaduan = RekapPengaduan::rekap('status');
+    $sebaranKomoditas = RekapDashboard::sebaranKomoditas();
+    $rekapPenghuni = RekapDashboard::rekapPenghuni();
+    $pendapatanSaatIni = RekapDashboard::pendapatanSaatIni();
+
+    // Isu prioritas: pengaduan yang belum selesai, diurutkan dari yang paling
+    // mendesak. Larik ber-kunci PERSIS bekas `DummyData::pengaduan()`, sebab
+    // penyaringan/pengurutan di bawah + tampilannya di Blade masih memakai
+    // bentuk larik lama.
+    $pengaduan = Pengaduan::query()
+        ->with('satuanPermukiman')
+        ->get()
+        ->map(fn (Pengaduan $p): array => [
+            'id_pengaduan' => $p->id_pengaduan,
+            'nomor_pengaduan' => $p->nomor_pengaduan,
+            'judul' => $p->judul,
+            'kategori' => $p->kategori,
+            'satuan_permukiman' => $p->satuanPermukiman?->nama,
+            'prioritas' => $p->prioritas,
+            'status' => $p->status->value,
+        ])
+        ->all();
 
     /*
      * Tahun terakhir yang terdata, dipakai melabeli kartu volume panen.
@@ -77,11 +101,8 @@ Route::get('/', function () {
      * berjalan menjanjikan hal yang belum tentu benar begitu tahun berganti
      * sementara datanya belum masuk.
      */
-    $tahunTerakhir = end($deret['tahun']);
-    reset($deret['tahun']);
+    $tahunTerakhir = RekapDashboard::tahunTerakhir();
 
-    // Isu prioritas: pengaduan yang belum selesai, diurutkan dari yang paling
-    // mendesak.
     $urutanPrioritas = ['Mendesak' => 0, 'Tinggi' => 1, 'Sedang' => 2, 'Rendah' => 3];
     $isuPrioritas = array_filter($pengaduan, fn ($p) => $p['status'] !== 'Selesai');
     usort($isuPrioritas, fn ($a, $b) => $urutanPrioritas[$a['prioritas']] <=> $urutanPrioritas[$b['prioritas']]);
@@ -108,10 +129,11 @@ Route::get('/', function () {
         'rekapStatusPengaduan' => $rekapStatusPengaduan,
         'sebaranKomoditas' => $sebaranKomoditas,
         'rekapPenghuni' => $rekapPenghuni,
-        'daftarSp' => DummyData::satuanPermukiman(),
+        'daftarSp' => SatuanPermukiman::orderBy('nama')->get(),
         'pengaduan' => $pengaduan,
+        'pendapatanSaatIni' => $pendapatanSaatIni,
 
-        'persenHuni' => round($ringkasan['rumah_terhuni'] / $ringkasan['rumah_total'] * 100),
+        'persenHuni' => $ringkasan['rumah_total'] > 0 ? round($ringkasan['rumah_terhuni'] / $ringkasan['rumah_total'] * 100) : 0,
         'tahunTerakhir' => $tahunTerakhir,
 
         /*
@@ -124,22 +146,24 @@ Route::get('/', function () {
          * koma sebagai pemisah desimal. Satu angka bertitik di antara puluhan
          * angka berkoma terbaca sebagai kekeliruan cetak.
          */
-        'persenTanam' => number_format($ringkasan['realisasi_tanam_ha'] / $ringkasan['luas_lahan_total'] * 100, 1, ',', '.'),
-        'persenPuso' => number_format($ringkasan['puso_ha'] / $ringkasan['realisasi_tanam_ha'] * 100, 1, ',', '.'),
+        // Data mentah masih dapat 0 selagi pendataan baru dimulai (data
+        // contoh) -- dijaga di sini, bukan cuma pada kartu pilar yang sudah
+        // menjaganya sendiri.
+        'persenTanam' => $ringkasan['luas_lahan_total'] > 0
+            ? number_format($ringkasan['realisasi_tanam_ha'] / $ringkasan['luas_lahan_total'] * 100, 1, ',', '.') : '0',
+        'persenPuso' => $ringkasan['realisasi_tanam_ha'] > 0
+            ? number_format($ringkasan['puso_ha'] / $ringkasan['realisasi_tanam_ha'] * 100, 1, ',', '.') : '0',
 
         /*
-         * Komoditas dengan volume terbesar, dipakai kartu komoditas utama.
-         *
-         * Dipilih berdasarkan NILAI, bukan urutan larik. `array_key_first()`
-         * sempat dipakai dan kebetulan benar hanya karena `sebaranKomoditas()`
-         * ditulis terurut; begitu urutannya berubah, kartu ini akan menampilkan
-         * komoditas yang keliru tanpa ada yang menyadarinya.
+         * Komoditas dengan volume terbesar tahun terakhir, dipakai kartu
+         * komoditas utama. NULL bila belum ada panen tercatat sama sekali --
+         * pendataan baru dimulai (data contoh), bukan galat.
          *
          * "Utama" berbeda dari "unggulan": yang ini dihitung dari volume dan
          * berubah mengikuti musim, sedangkan unggulan ditetapkan menurut
          * proposal atau kebijakan dinas (`rules.md` 8.1) dan ditandai petugas.
          */
-        'komoditasUtama' => array_search(max($sebaranKomoditas), $sebaranKomoditas, true),
+        'komoditasUtama' => RekapDashboard::komoditasUtama(),
 
         'isuPrioritas' => $isuPrioritas,
 
@@ -152,7 +176,6 @@ Route::get('/', function () {
             'jiwa' => $deret['jumlah_jiwa'],
             'kk' => $deret['jumlah_kk'],
             'petani' => $deret['jumlah_petani'],
-            'pendapatan' => $deret['pendapatan_rata_rata'],
             'kkMasuk' => $deret['kk_masuk'],
             'kkKeluar' => $deret['kk_keluar'],
             'volumePanen' => $deret['volume_panen'],

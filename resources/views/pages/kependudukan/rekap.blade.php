@@ -306,7 +306,6 @@
                             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Petani</th>
                             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">KK Masuk</th>
                             <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">KK Keluar</th>
-                            <th scope="col" class="px-5 py-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Pendapatan Rata-rata</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
@@ -324,8 +323,6 @@
                                     +{{ number_format($b['kk_masuk'], 0, ',', '.') }}</td>
                                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
                                     {{ $b['kk_keluar'] > 0 ? '-' . number_format($b['kk_keluar'], 0, ',', '.') : '0' }}</td>
-                                <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
-                                    Rp {{ number_format($b['pendapatan_rata_rata'], 0, ',', '.') }}</td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -342,7 +339,6 @@
                                 {{ number_format(array_sum(array_column($perTahun, 'kk_masuk')), 0, ',', '.') }}</td>
                             <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
                                 {{ number_format(array_sum(array_column($perTahun, 'kk_keluar')), 0, ',', '.') }}</td>
-                            <td></td>
                         </tr>
                     </tfoot>
                 </table>

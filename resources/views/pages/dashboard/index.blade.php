@@ -177,7 +177,7 @@
                         {{ number_format($ringkasan['jumlah_petani'], 0, ',', '.') }} <span class="text-theme-xs font-normal text-gray-500 dark:text-gray-400">orang</span>
                     </p>
                     <p class="mt-2 text-theme-xs text-gray-500 dark:text-gray-400">
-                        <span class="font-medium text-gray-700 dark:text-gray-300">{{ round($ringkasan['jumlah_petani'] / $ringkasan['jumlah_kk'] * 100) }}%</span> dari total KK
+                        <span class="font-medium text-gray-700 dark:text-gray-300">{{ $ringkasan['jumlah_kk'] > 0 ? round($ringkasan['jumlah_petani'] / $ringkasan['jumlah_kk'] * 100) : 0 }}%</span> dari total KK
                     </p>
                 </a>
             </div>
@@ -312,13 +312,21 @@
                             <span class="flex h-4 w-4 items-center justify-center rounded-full bg-sand-200 text-sand-700 dark:bg-sand-800 dark:text-sand-300">★</span>
                             <span>Komoditas Utama</span>
                         </span>
-                        <span class="rounded-md bg-sand-100 px-1.5 py-0.5 text-[11px] font-bold text-sand-800 dark:bg-sand-900/50 dark:text-sand-300">
-                            {{ $komoditasUtama }}
-                        </span>
+                        @if ($komoditasUtama)
+                            <span class="rounded-md bg-sand-100 px-1.5 py-0.5 text-[11px] font-bold text-sand-800 dark:bg-sand-900/50 dark:text-sand-300">
+                                {{ $komoditasUtama }}
+                            </span>
+                        @endif
                     </div>
-                    <p class="mt-1 text-right text-[11px] text-gray-600 dark:text-gray-400">
-                        <span class="font-semibold text-gray-800 dark:text-white/90">{{ number_format($sebaranKomoditas[$komoditasUtama], 1, ',', '.') }} ton dipanen</span> ({{ $persenKomoditasUtama }}% kontribusi)
-                    </p>
+                    @if ($komoditasUtama)
+                        <p class="mt-1 text-right text-[11px] text-gray-600 dark:text-gray-400">
+                            <span class="font-semibold text-gray-800 dark:text-white/90">{{ number_format($sebaranKomoditas[$komoditasUtama], 1, ',', '.') }} ton dipanen</span> ({{ $persenKomoditasUtama }}% kontribusi)
+                        </p>
+                    @else
+                        <p class="mt-1 text-right text-[11px] text-gray-500 dark:text-gray-400">
+                            Belum ada panen tercatat tahun ini
+                        </p>
+                    @endif
                 </a>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -558,29 +566,40 @@
             </x-slot:tabel>
         </x-sim.chart-card>
 
-        <x-sim.chart-card class="xl:col-span-2" id="grafikPendapatan" judul="Pendapatan Keluarga per Bulan"
-            keterangan="Rata-rata pendapatan kepala keluarga tiap tahun." tinggi="300">
-            <x-slot:tabel>
-                <table class="w-full text-left text-theme-xs">
-                    <caption class="sr-only">Pendapatan keluarga per bulan tiap tahun</caption>
-                    <thead class="border-b border-gray-200 dark:border-gray-800">
-                        <tr>
-                            <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Tahun</th>
-                            <th scope="col" class="px-3 py-2 font-medium text-gray-500 dark:text-gray-400">Pendapatan</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
-                        @foreach ($deret['tahun'] as $i => $tahun)
-                            <tr>
-                                <td class="px-3 py-2 tabular-nums text-gray-800 dark:text-white/90">{{ $tahun }}</td>
-                                <td class="px-3 py-2 tabular-nums text-gray-600 dark:text-gray-400">
-                                    Rp {{ number_format($deret['pendapatan_rata_rata'][$i], 0, ',', '.') }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </x-slot:tabel>
-        </x-sim.chart-card>
+        {{--
+            Bukan grafik tren: `pendapatan_per_bulan` adalah kolom KEADAAN
+            SEKARANG pada tabel transmigran (ditimpa tiap disunting), tanpa
+            riwayat tersimpan -- beda dari panen/harga yang punya baris
+            bertanggal per transaksi. Menyajikannya sebagai deret 11 tahun
+            akan mengarang angka lampau yang tidak pernah tercatat.
+            Keputusan pemilik proyek 2026-09-04: tampilkan keadaan sekarang.
+        --}}
+        <div class="xl:col-span-2 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
+            <h3 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">
+                Pendapatan Keluarga Saat Ini
+            </h3>
+            <p class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                Rata-rata pendapatan kepala keluarga aktif, keadaan sekarang -- bukan tren
+                tahunan, sebab riwayat pendapatan lampau tidak tersimpan.
+            </p>
+
+            @if ($pendapatanSaatIni['jumlah_kk'] > 0)
+                <p class="mt-4 flex items-baseline gap-1.5">
+                    <span class="text-title-sm font-bold tabular-nums text-gray-800 dark:text-white/90">
+                        Rp {{ number_format($pendapatanSaatIni['rata_rata'], 0, ',', '.') }}
+                    </span>
+                    <span class="text-theme-sm font-medium text-gray-500 dark:text-gray-400">per bulan</span>
+                </p>
+                <p class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                    Dihitung dari {{ number_format($pendapatanSaatIni['jumlah_kk'], 0, ',', '.') }} KK aktif yang
+                    tercatat pendapatannya.
+                </p>
+            @else
+                <p class="mt-4 text-theme-sm text-gray-500 dark:text-gray-400">
+                    Belum ada data pendapatan tercatat.
+                </p>
+            @endif
+        </div>
 
         <x-sim.chart-card id="grafikHarga" judul="Harga Jual Rata-rata"
             keterangan="Rupiah per ton, seluruh komoditas." tinggi="320">
@@ -984,28 +1003,7 @@
                 tooltip: { y: { formatter: (v) => angka(v, 1) + ' ton' } },
             });
 
-            // 7. Tren Pendapatan Keluarga (Smooth Area Chart)
-            buatGrafik('grafikPendapatan', {
-                chart: { type: 'area', height: 300 },
-                series: [{ name: 'Pendapatan', data: data.pendapatan }],
-                colors: ['#163B54'],
-                fill: {
-                    type: 'gradient',
-                    gradient: {
-                        shadeIntensity: 1,
-                        opacityFrom: 0.4,
-                        opacityTo: 0.05,
-                        stops: [0, 90, 100],
-                    },
-                },
-                stroke: { curve: 'smooth', width: 2.5 },
-                markers: { size: 0, hover: { size: 5 } },
-                xaxis: { categories: data.tahun },
-                yaxis: { labels: { formatter: (v) => angkaSingkat(v) } },
-                tooltip: { y: { formatter: (v) => rupiah(v) + ' per bulan' } },
-            });
-
-            // 8. Harga Jual Rata-rata
+            // 7. Harga Jual Rata-rata
             buatGrafik('grafikHarga', {
                 chart: { type: 'line', height: 320 },
                 series: [{ name: 'Harga Rata-rata', data: data.harga }],
@@ -1017,7 +1015,7 @@
                 tooltip: { y: { formatter: (v) => rupiah(v) + ' per ton' } },
             });
 
-            // 9. Status Infrastruktur SP (Stacked Bar)
+            // 8. Status Infrastruktur SP (Stacked Bar)
             buatGrafik('grafikInfrastruktur', {
                 chart: { type: 'bar', height: 320, stacked: true },
                 series: [
@@ -1032,7 +1030,7 @@
                 tooltip: { y: { formatter: (v) => angka(v, 0) + ' aset' } },
             });
 
-            // 10. Pengaduan per Status (Palet Semantik Selaras Status Badge)
+            // 9. Pengaduan per Status (Palet Semantik Selaras Status Badge)
             buatGrafik('grafikStatusPengaduan', {
                 chart: { type: 'donut', height: 320 },
                 series: data.statusPengaduanNilai,
@@ -1057,7 +1055,7 @@
                 tooltip: { y: { formatter: (v) => angka(v, 0) + ' pengaduan' } },
             });
 
-            // 11. Perbandingan Antar SP (Dual Y-Axis: KK Navy kiri, Ton Gold kanan)
+            // 10. Perbandingan Antar SP (Dual Y-Axis: KK Navy kiri, Ton Gold kanan)
             buatGrafik('grafikPerSp', {
                 chart: {
                     type: 'bar',

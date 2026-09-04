@@ -34,6 +34,7 @@ use App\Models\SatuanPermukiman;
 use App\Models\User;
 use App\Support\DummyData;
 use App\Support\LaporanData;
+use App\Support\RekapDashboard;
 use App\Support\SkemaImpor;
 use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
 use Illuminate\Support\Carbon;
@@ -52,16 +53,32 @@ it('merender dashboard beserta seluruh wadah grafiknya', function () {
 
     $respons->assertOk();
 
-    // Sebelas wadah grafik memuat 17 indikator; sebagian indikator disajikan
-    // sebagai kartu statistik dan tabel, sesuai pemetaan ui-spec.md bagian 9.
+    // Sembilan wadah grafik pada daftar ini (grafikPerSp diuji tersendiri)
+    // memuat 17 indikator; sebagian indikator disajikan sebagai kartu
+    // statistik dan tabel, sesuai pemetaan ui-spec.md bagian 9.
+    // "Pendapatan Keluarga" TIDAK lagi grafik sejak Task 9.1 (2026-09-04):
+    // pendapatan_per_bulan keadaan sekarang tanpa riwayat, diganti kartu
+    // statistik `pendapatanSaatIni` (lihat uji tersendiri di bawah).
     foreach ([
-        'grafikPenduduk', 'grafikKomoditas', 'grafikPendapatan', 'grafikMutasiKk',
+        'grafikPenduduk', 'grafikKomoditas', 'grafikMutasiKk',
         'grafikPenghuni', 'grafikPekerjaan', 'grafikPanen', 'grafikHarga',
         'grafikInfrastruktur', 'grafikStatusPengaduan',
     ] as $idGrafik) {
         $respons->assertSee('id="'.$idGrafik.'"', false);
         $respons->assertSee("buatGrafik('".$idGrafik."'", false);
     }
+});
+
+it('menampilkan kartu pendapatan keluarga saat ini, bukan grafik tren tahunan', function () {
+    // pendapatan_per_bulan adalah kolom keadaan-sekarang pada transmigran,
+    // ditimpa tiap disunting, tanpa riwayat -- beda dari panen/harga yang
+    // punya baris bertanggal per transaksi. Task 9.1 (2026-09-04, rules.md
+    // 8g dibalik) mengganti kartu ini dari deret 11 tahun menjadi keadaan
+    // sekarang saja.
+    $isi = $this->get(route('beranda'))->assertOk()->getContent();
+
+    expect($isi)->toContain('Pendapatan Keluarga Saat Ini')
+        ->and($isi)->not->toContain('id="grafikPendapatan"');
 });
 
 it('menyediakan tabel data alternatif untuk setiap grafik', function () {
@@ -83,7 +100,7 @@ it('menampilkan penanda data contoh pada dashboard', function () {
 });
 
 it('menampilkan angka ringkasan dalam format Indonesia', function () {
-    $ringkasan = DummyData::ringkasanDashboard();
+    $ringkasan = RekapDashboard::ringkasan();
 
     // Titik sebagai pemisah ribuan (agents/rules.md bagian 13.3 poin 3).
     $this->get(route('beranda'))
@@ -1035,13 +1052,16 @@ it('menyediakan tautan tetap bagi tiap tab rekap kependudukan', function () {
 it('merender keenam tab rekap kependudukan beserta isinya', function () {
     // Yang diperiksa BARISNYA terender, bukan sekadar halaman membalas 200:
     // tab yang tabelnya kosong tetap membalas 200 dan tampak sehat.
-    // Daerah asal memakai varian BERLABEL, sebab `sebaranDaerahAsal()`
-    // berkunci id kabupaten sejak 2026-09-02 sedangkan yang dirender
-    // halaman adalah namanya. Totalnya sama, hanya kuncinya yang berbeda.
+    //
+    // Sejak Task 9.1 (2026-09-04, rules.md 8g dibalik) angkanya dari
+    // App\Support\RekapDashboard (Eloquent), bukan larik tetap DummyData --
+    // dibandingkan terhadap tahun yang sama dipakai rute (tahun terakhir
+    // yang tercatat, bawaan tanpa parameter `tahun`).
+    $tahun = (int) date('Y');
     $harapan = [
-        'asal' => DummyData::sebaranDaerahAsalBerlabel(),
-        'pendidikan' => DummyData::sebaranPendidikan(),
-        'pekerjaan' => DummyData::sebaranPekerjaan(),
+        'asal' => RekapDashboard::daerahAsalPerTahun($tahun),
+        'pendidikan' => RekapDashboard::pendidikanPerTahun($tahun),
+        'pekerjaan' => RekapDashboard::pekerjaanPerTahun($tahun),
     ];
 
     foreach ($harapan as $kelompok => $peta) {
@@ -1060,17 +1080,21 @@ it('merender keenam tab rekap kependudukan beserta isinya', function () {
 });
 
 it('menyaring rekap kependudukan per tahun dengan total yang selalu konsisten', function () {
-    $tahunUji = 2020;
-    $deret = DummyData::deretTahunan();
-    $idx = array_search($tahunUji, $deret['tahun'], true);
-    $targetKk = $deret['jumlah_kk'][$idx]; // 968
+    // Tahun terakhir yang benar-benar tercatat (bukan angka tetap 2020):
+    // sejak Task 9.1 (2026-09-04) angkanya taksiran kumulatif dari
+    // App\Support\RekapDashboard, bukan larik tetap DummyData.
+    $tahunUji = (int) date('Y');
+    $targetKk = array_sum(array_column(RekapDashboard::perSp($tahunUji), 'jumlah_kk'));
 
-    // Periksa konsistensi seluruh helper data pada tahun 2020
-    expect(array_sum(array_column(DummyData::rekapPerSp($tahunUji), 'jumlah_kk')))->toBe($targetKk)
-        ->and(array_sum(DummyData::rekapPenghuni($tahunUji)))->toBe($targetKk)
-        ->and(array_sum(DummyData::sebaranPekerjaan($tahunUji)))->toBe($targetKk)
-        ->and(array_sum(DummyData::sebaranDaerahAsal($tahunUji)))->toBe($targetKk)
-        ->and(array_sum(DummyData::sebaranPendidikan($tahunUji)))->toBe($targetKk);
+    // Periksa konsistensi seluruh helper data pada tahun itu. `pekerjaan`
+    // dan `status_tinggal` (penghuni) WAJIB kolom `NOT NULL`, sehingga
+    // totalnya selalu persis sama dengan jumlah KK; `daerah_asal` dan
+    // `pendidikan` nullable, sehingga hanya diperiksa TIDAK MELEBIHI (bisa
+    // kurang bila ada baris yang belum terdata pada kolom itu).
+    expect(array_sum(RekapDashboard::penghuniPerTahun($tahunUji)))->toBe($targetKk)
+        ->and(array_sum(RekapDashboard::pekerjaanPerTahun($tahunUji)))->toBe($targetKk)
+        ->and(array_sum(RekapDashboard::daerahAsalPerTahun($tahunUji)))->toBeLessThanOrEqual($targetKk)
+        ->and(array_sum(RekapDashboard::pendidikanPerTahun($tahunUji)))->toBeLessThanOrEqual($targetKk);
 
     // Periksa rendering view dengan filter tahun
     $tab = ['sp', 'status', 'pekerjaan', 'asal', 'pendidikan'];
@@ -3935,9 +3959,13 @@ it('mengumpulkan grafik pertanian dalam satu bagian yang sama', function () {
     $akhir = strpos($isi, 'Infrastruktur dan Layanan');
     $bagian = substr($isi, $awal, $akhir - $awal);
 
-    foreach (['grafikPanen', 'grafikKomoditas', 'grafikHarga', 'grafikPendapatan'] as $id) {
+    foreach (['grafikPanen', 'grafikKomoditas', 'grafikHarga'] as $id) {
         expect($bagian)->toContain('id="'.$id.'"');
     }
+
+    // Kartu pendapatan bukan lagi grafik (Task 9.1, 2026-09-04) tetapi tetap
+    // pada bagian yang sama.
+    expect($bagian)->toContain('Pendapatan Keluarga Saat Ini');
 });
 
 it('menjaga hierarki tajuk dashboard tidak melompat', function () {
@@ -7015,37 +7043,23 @@ it('memilih komoditas utama dashboard menurut nilai, bukan urutan larik', functi
         sebaranKomoditas() ditulis terurut. Begitu urutannya berubah, kartu ini
         menampilkan komoditas yang keliru tanpa ada yang menyadarinya.
 
-        Diperiksa pada HALAMAN TERENDER, bukan pada berkas sumbernya.
-
-        Sampai 2026-08-27 uji ini membaca `dashboard/index.blade.php` dan
-        mencari string `max($sebaranKomoditas)`, yakni mengunci berkas MANA
-        yang menghitungnya. Ketika perhitungannya pindah dari view ke rute,
-        uji memerah padahal kartunya menampilkan komoditas yang sama persis.
-        Lihat notes.md 1g.5.
+        Sejak Task 9.1 (2026-09-04, rules.md 8g dibalik) perhitungannya pindah
+        ke App\Support\RekapDashboard::komoditasUtama() dari Eloquent, bukan
+        larik tetap DummyData -- pemeriksaan sumber-teks lama (mencari string
+        `max($sebaranKomoditas)`) tidak lagi berlaku sebab tak ada satu baris
+        kode pun yang menuliskannya persis begitu. Diganti pemeriksaan
+        PERILAKU: hasilnya harus SAMA dengan nilai maksimum yang dihitung
+        ulang di sini secara independen, apa pun urutan penyusunan larik
+        `sebaranKomoditas()` di baliknya.
     */
-    $sebaran = DummyData::sebaranKomoditas();
+    $sebaran = RekapDashboard::sebaranKomoditas();
+
+    if ($sebaran === []) {
+        $this->markTestSkipped('Belum ada panen tercatat pada data contoh saat ini.');
+    }
+
     $terbesar = array_search(max($sebaran), $sebaran, true);
-
-    /*
-        Pemeriksaan sumber DIPERTAHANKAN, dan alasannya penting.
-
-        Data contoh saat ini tersusun menurun, sehingga `array_key_first()` dan
-        `max()` menghasilkan jawaban yang sama persis. Justru itu sebabnya
-        kekeliruan aslinya tidak terlihat, dan itu pula sebabnya halaman
-        terender TIDAK dapat membedakan keduanya. Di sini bentuk kodenyalah
-        yang menjadi satu-satunya pembeda.
-
-        Yang diperbaiki hanya CAKUPANNYA: sampai 2026-08-27 uji ini hanya
-        membaca `dashboard/index.blade.php`, sehingga memerah begitu
-        perhitungannya pindah ke rute padahal kartunya tidak berubah. Kini
-        disisir dari seluruh tempat yang mungkin memuatnya.
-    */
-    $sumber = file_get_contents(base_path('routes/web.php'))
-        .file_get_contents(base_path('routes/internal.php'))
-        .file_get_contents(resource_path('views/pages/dashboard/index.blade.php'));
-
-    expect($sumber)->toContain('max($sebaranKomoditas)')
-        ->and($sumber)->not->toContain('array_key_first($sebaranKomoditas)');
+    expect(RekapDashboard::komoditasUtama())->toBe($terbesar);
 
     // Lalu hasilnya, dibaca dari kartu yang benar-benar dirender.
     $isi = $this->get(route('beranda'))->assertOk()->getContent();
@@ -7142,7 +7156,7 @@ it('menampilkan keempat indikator produksi kawasan pada dashboard', function () 
     // terwakili sama sekali: dashboard hanya menyebut volume panen, sehingga
     // pembaca tahu berapa ton dihasilkan tetapi tidak tahu dari berapa
     // hektare, berapa yang gagal, dan berapa yang masih menunggu.
-    $r = DummyData::ringkasanDashboard();
+    $r = RekapDashboard::ringkasan();
     $isi = $this->get(route('beranda'))->assertOk()->getContent();
 
     expect($isi)->toContain('Realisasi Tanam')
@@ -7160,11 +7174,22 @@ it('menampilkan keempat indikator produksi kawasan pada dashboard', function () 
 it('memakai koma sebagai pemisah desimal pada porsi produksi', function () {
     // `round()` menghasilkan "19.5" bertitik, sedangkan seluruh angka lain di
     // halaman ini memakai koma. Satu angka bertitik di antara puluhan angka
-    // berkoma terbaca sebagai kekeliruan cetak.
+    // berkoma terbaca sebagai kekeliruan cetak. Dihitung ulang dari
+    // App\Support\RekapDashboard, bukan angka tetap -- sejak Task 9.1
+    // (2026-09-04) angkanya nyata dan berubah seiring data.
+    $r = RekapDashboard::ringkasan();
+
+    if ($r['luas_lahan_total'] <= 0) {
+        $this->markTestSkipped('Belum ada data lahan pada data contoh saat ini.');
+    }
+
     $isi = $this->get(route('beranda'))->assertOk()->getContent();
 
-    expect($isi)->toContain('19,5% dari')
-        ->and($isi)->not->toContain('19.5% dari');
+    $persenBerkoma = number_format($r['realisasi_tanam_ha'] / $r['luas_lahan_total'] * 100, 1, ',', '.');
+    $persenBertitik = number_format($r['realisasi_tanam_ha'] / $r['luas_lahan_total'] * 100, 1, '.', ',');
+
+    expect($isi)->toContain($persenBerkoma.'% dari')
+        ->and($isi)->not->toContain($persenBertitik.'% dari');
 });
 
 it('menyebut tahun pada kartu volume panen, bukan mengatakan tahun ini', function () {

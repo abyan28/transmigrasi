@@ -2,22 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Support\DummyData;
+use App\Models\Transmigran;
+use App\Support\RekapDashboard;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
 /**
- * Rekap kependudukan kawasan (Task 5.5).
+ * Rekap kependudukan kawasan (Task 5.5, data nyata sejak Task 9.1 2026-09-04).
  *
- * PERALIHAN STRUKTURAL SAJA: closure `susunRekapKependudukan` dipindah ke sini,
- * tetapi angka AGREGAT masih dari `DummyData::rekap*`. Rekap ini berskala
- * KAWASAN (~1.140 KK, di-skala per tahun oleh `skalakanSebaranKependudukan()`),
- * bukan penjumlahan delapan baris data contoh. Penggantian ke kueri nyata
- * adalah satu paket dengan Task 9.1 (dashboard data nyata) -- keduanya
- * menunggu data berskala sensus DAN modul lahan/panen (`perSp`).
- *
- * Uji `HalamanTest` mengunci angka sintetis ini (mis. 968 KK pada 2020),
- * sehingga mengubah sumbernya menuntut menulis ulang uji itu lebih dulu.
+ * Angka dari `App\Support\RekapDashboard`, TAKSIRAN kumulatif dari
+ * `transmigran.tahun_kedatangan`/`tahun_keluar` -- bukan potret riwayat
+ * sungguhan (`transmigran` tabel keadaan-sekarang). Lihat docblock
+ * `RekapDashboard::hadirPadaTahun()`. `pendapatan_rata_rata` per tahun
+ * DICABUT dari tabel deret: kolom itu tak dapat direkonstruksi per tahun.
  */
 class KependudukanController extends Controller
 {
@@ -25,7 +22,7 @@ class KependudukanController extends Controller
     {
         $kelompok ??= (string) $request->query('kelompok', 'tahun');
 
-        $daftarTahun = DummyData::daftarTahunKependudukan();
+        $daftarTahun = range((int) (Transmigran::min('tahun_kedatangan') ?? date('Y')), (int) date('Y'));
         $tahunTerakhir = end($daftarTahun);
         $tahunDipilih = (int) $request->query('tahun', $tahunTerakhir);
 
@@ -39,14 +36,13 @@ class KependudukanController extends Controller
             'daftarTahun' => $daftarTahun,
             'tahunPilihan' => $tahunDipilih,
             'tahunTerakhir' => $tahunTerakhir,
-            'perTahun' => DummyData::rekapKependudukan(),
-            'perSp' => DummyData::rekapPerSp($tahunDipilih),
-            'penghuni' => DummyData::rekapPenghuni($tahunDipilih),
-            'pekerjaan' => DummyData::sebaranPekerjaan($tahunDipilih),
-            // Berlabel: `sebaranDaerahAsal()` berkunci id kabupaten sejak 2026-09-02.
-            'daerahAsal' => DummyData::sebaranDaerahAsalBerlabel($tahunDipilih),
-            'pendidikan' => DummyData::sebaranPendidikan($tahunDipilih),
-            'ringkasan' => DummyData::ringkasanDashboard(),
+            'perTahun' => RekapDashboard::perTahun(),
+            'perSp' => RekapDashboard::perSp($tahunDipilih),
+            'penghuni' => RekapDashboard::penghuniPerTahun($tahunDipilih),
+            'pekerjaan' => RekapDashboard::pekerjaanPerTahun($tahunDipilih),
+            'daerahAsal' => RekapDashboard::daerahAsalPerTahun($tahunDipilih),
+            'pendidikan' => RekapDashboard::pendidikanPerTahun($tahunDipilih),
+            'ringkasan' => RekapDashboard::ringkasan(),
 
             // WAJIB sejalan dengan `where` rute `kependudukan.rekap.kelompok`
             // dan larik `DaftarTautanStatis`. Mengubah salah satunya saja
