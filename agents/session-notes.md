@@ -1,9 +1,64 @@
+# Tahap 3 susulan: Task 3.14 + matikan pemicu deploy.yml + rapikan pint (2026-09-04)
+
+Lanjutan dari dua AI yang berhenti di tengah. Riset agen ke-2 diverifikasi
+akurat terhadap HEAD (`main` tak bergerak; `revisi-fitur-dasar` basi).
+Verifikasi akhir: pest Feature **732** + Database **295** PASS, `pint --test`
+**hijau repo-wide** (26 berkas utang lama dibereskan), `sim:banding-skema
+--lengkap` NOL SELISIH, `sim:tautan-statis` **14**. Sudah di-push (`main`
+sinkron dengan origin).
+
+## Task 3.14 -- Username saat masuk pertama (commit `143d1ed`)
+
+- `User::AWALAN_USERNAME_SEMENTARA` (`'petugas.'`), `User::buatUsernameSementara()`
+  (loop keunikan dipindah dari `PengaturanPenggunaController`),
+  `User::perluBuatUsername()` (null / berawalan sementara).
+- `GantiKataSandiController::tampil()` kirim `perluUsername`; `simpan()`
+  validasi + simpan `username` HANYA bila `$perlu`; audit `ResetKataSandi`
+  `data_baru['jalur']` = `Masuk pertama` / `Ganti wajib`.
+- `GantiKataSandiController::cekUsername()` -> `{tersedia: bool}`, SELALU 200.
+  Rute `ganti-kata-sandi.cek-username` di `routes/web.php` grup `auth`
+  (bukan internal -- `pastikan.ganti.sandi` akan memantulkannya). PERTAMA
+  kalinya repo punya endpoint JSON + `fetch`.
+- View: kolom username bersyarat + Alpine `x-data` inline (`@input.debounce.
+  500ms`, `fetch(@js(route(...)) + '?username=')`), heading varian
+  "Lengkapi Akun Anda". Tanpa em dash. Tombol `:disabled` saat status buruk.
+- `AdminAwalSeeder`: `env('SIM_ADMIN_USERNAME') ?: User::buatUsernameSementara()`
+  -- Admin awal ikut membuat username sendiri bila env kosong. `.env.example`
+  `SIM_ADMIN_USERNAME=` (dikosongkan). `AdminAwalSeederTest` `beforeEach`
+  membersihkan env itu + assert `perluBuatUsername()` true.
+- +8 uji `tests/Database/AutentikasiTest`. Docblock usang
+  `GantiKataSandiController:22-24` & `PastikanGantiKataSandi:18-19` diperbarui.
+- **Tidak pecah:** 3 uji lama ganti-sandi (`User::factory()` -> username asli
+  -> jalur lama); `HalamanTest:207` (hanya assert `name="password"`);
+  `pengguna.index` guard `not->toContain('name="username"')` (form Admin tak
+  disentuh).
+
+## Matikan pemicu otomatis deploy.yml (commit `eae1eba`)
+
+`on: push` dicabut, sisakan `workflow_dispatch`. Sejak Task 3.2b hanya 14 URL
+publik tergilas. `notes.md` 1b / 1b.1 (angka "113" -> 14) / 1b.7 poin 1&2 /
+1b.8 (mojibake `?` -> `→`) / A1, `tasklist.md` deploy decision + Task 11.3.
+`rules.md:854/859` & `ui-spec.md:929/947` (filter hash-fragment) **TIDAK
+disentuh**: `workflow_dispatch` masih bisa terbit manual, kendala "query
+string tak dilayani" masih berlaku. `TautanStatisTest` tak berubah.
+
+## Rapikan utang pint (commit `b9f5045`)
+
+26 berkas dari era commit rename DIGITRANS `961948d` (+`8ceedc3`/`4a08e68`):
+`single_blank_line_at_eof` (19 `app/Enums/*`), `concat_space` (`PenyimpananDokumen`,
+`BerkasBlade`), `fully_qualified_strict_types` (`bootstrap/providers`,
+`config/auth`, `config/database`), `new_with_parentheses`/`ordered_imports`
+(`FondasiTest`), `no_unused_imports` (`FormatNominalUangTest`). Semua aman;
+`FondasiTest`+`FormatNominalUangTest` tetap hijau (25 uji).
+
+---
+
 # Tahap 3 susulan: penjaga UppercaseInput + Task 3.12 + 3.13 SELESAI (2026-09-04)
 
 Lanjutan dari AI sebelumnya yang berhenti di tengah (galat sintaks
 `tests/Feature/UppercaseInputTest.php`). Verifikasi akhir: pest Feature
 **732** + Database **288** PASS, `sim:banding-skema --lengkap` NOL SELISIH,
-`sim:tautan-statis` 14, pint bersih (berkas lingkup ini). **Belum di-push.**
+`sim:tautan-statis` 14, pint bersih (berkas lingkup ini). Sudah di-push.
 
 ## 0. Mojibake (commit `<lihat git log>`)
 Perbaikan encoding 4 berkas `agents/*.md` oleh AI sebelumnya (sudah selesai,

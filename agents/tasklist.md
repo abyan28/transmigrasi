@@ -1,7 +1,7 @@
 # tasklist.md
 ## Daftar Tugas — Sistem Informasi Digitalisasi Monitoring Pertanian dan Tata Kelola Data Kawasan Transmigrasi Kobalima Timur
 
-**Progress: 87%**
+**Progress: 88%**
 *(Tahap 0 selesai 8 task. **Tahap 1 SELESAI** 12 task. **TAHAP 2 SELESAI SELURUHNYA.** Gelombang 1 dan 2 tuntas, 32 halaman berdiri. **Delivery Gate kedua gelombang sudah dijalankan** dan laporannya lengkap (`delivery-gate-gelombang-1.md` dan `-2.md`). Dua hal ditunda beralasan, bukan lolos diam-diam: keadaan memuat dan galat menunggu backend Tahap 3, dan pemeriksaan 360px pada perangkat nyata menunggu manusia. Siap masuk checkpoint validasi bersama tim dan dinas, lalu Tahap 3.)*
 
 Acuan: `prd.md`, `rules.md`, `workflow.md`, `ui-spec.md`, `erd.md`, `data-dictionary.md`, `notes.md`.
@@ -1248,11 +1248,13 @@ menghapus sisa terakhir `DummyData::penggunaSaatIni()` -- dikerjakan berbarengan
   * 8 uji `tests/Database/ProfilTest.php`; `HalamanTest` "merender profil" ditulis ulang memakai `User` persisted; 2 uji `DummyDataTest` yang menguji `penggunaSaatIni()` dihapus
   * **DITUNDA:** utang pint lama 26 berkas (EOF newline + `concat_space`, dari commit rename DIGITRANS `961948d` dan lebih lama) -- di luar lingkup, dibersihkan terpisah
 
-- [ ] Task 3.14 - Username saat masuk pertama `[Sedang]` (BARU 2026-09-04)
-  * **Celah tak bertuan:** `rules.md` 14b poin 5 & 5a -- username dibuat petugas sendiri saat masuk pertama, bareng ganti kata sandi wajib. Dilempar Task 3.2b -> 3.5, lalu 3.5 ditutup `[✓]` sambil menundanya lagi. `GantiKataSandiController` hanya memproses `password`; view tak punya kolom username; sampai diisi akun memakai username SEMENTARA `petugas.xxxxxxxx`
-  * `GantiKataSandiController` menampilkan + memproses kolom username **bersyarat** (`User::perluBuatUsername()` -- masih pola sementara / null). Endpoint JSON `ganti-kata-sandi.cek-username` untuk pemeriksaan ketersediaan saat diketik (poin 5a); pertama kali repo punya endpoint JSON + `fetch` (Alpine `x-data` inline, URL dari Blade)
-  * Helper temp-username dipindah ke `User::buatUsernameSementara()` -- dipakai bersama `PengaturanPenggunaController` + `AdminAwalSeeder` (Admin awal ikut membuat username sendiri bila `SIM_ADMIN_USERNAME` kosong)
+- [✓] ✅ Task 3.14 - Username saat masuk pertama `[Sedang]` -- **SELESAI 2026-09-04**
+  * **Celah tak bertuan:** `rules.md` 14b poin 5 & 5a -- username dibuat petugas sendiri saat masuk pertama, bareng ganti kata sandi wajib. Dilempar Task 3.2b -> 3.5, lalu 3.5 ditutup `[✓]` sambil menundanya lagi
+  * `GantiKataSandiController` menampilkan + memproses kolom username **bersyarat** (`User::perluBuatUsername()` -- masih pola sementara / null). Akun ber-username asli (reset sandi biasa) tak dimintai. Audit `ResetKataSandi` jalur `Masuk pertama`
+  * Endpoint JSON `ganti-kata-sandi.cek-username` untuk pemeriksaan ketersediaan saat diketik (poin 5a) -- **pertama kali** repo punya endpoint JSON + `fetch` (Alpine `x-data` inline, URL dari `@js(route())`). SELALU 200 (penjaga sapu-rute GET)
+  * Helper temp-username dipindah ke `User::buatUsernameSementara()` + `User::AWALAN_USERNAME_SEMENTARA` -- dipakai `PengaturanPenggunaController` + `AdminAwalSeeder` (Admin awal ikut membuat username sendiri bila `SIM_ADMIN_USERNAME` kosong)
   * Rute di `routes/web.php` grup `auth` (BUKAN internal -- `pastikan.ganti.sandi` akan memantulkan pengguna wajib-ganti yang memakainya)
+  * +8 uji `tests/Database/AutentikasiTest`; +1 assert `AdminAwalSeederTest`. Docblock usang `GantiKataSandiController` / `PastikanGantiKataSandi` diperbarui
 
 ## Tahap 5 — Backend Kependudukan
 
