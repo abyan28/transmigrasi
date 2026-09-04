@@ -64,14 +64,18 @@
                             </td>
                             <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ $s['simbol'] }}</td>
                             <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
-                                {{ rtrim(rtrim(number_format($s['faktor_ke_ton'], 3, ',', '.'), '0'), ',') }}
+                                {{ $s['faktor_ke_ton'] === null ? '-' : rtrim(rtrim(number_format($s['faktor_ke_ton'], 3, ',', '.'), '0'), ',') }}
                             </td>
                             <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
                                 {{ $s['dipakai_komoditas'] }} komoditas
                             </td>
                             <td class="px-5 py-3 text-theme-xs tabular-nums text-gray-500 dark:text-gray-400">
-                                100 {{ $s['simbol'] }} =
-                                {{ rtrim(rtrim(number_format(100 * $s['faktor_ke_ton'], 3, ',', '.'), '0'), ',') }} ton
+                                @if ($s['faktor_ke_ton'] === null)
+                                    <span class="text-gray-400 dark:text-white/30">satuan non-berat</span>
+                                @else
+                                    100 {{ $s['simbol'] }} =
+                                    {{ rtrim(rtrim(number_format(100 * $s['faktor_ke_ton'], 3, ',', '.'), '0'), ',') }} ton
+                                @endif
                             </td>
                             <td class="px-5 py-3">
                                 <x-sim.aksi-baris modal-ubah="formUbahSatuanBaris"
@@ -110,5 +114,5 @@
     {{-- Impor massal, lihat komponennya untuk alur tiga langkah --}}
     <x-sim.modal-impor nama="imporSatuan" judul="Impor Data Master Satuan"
         entitas="satuan"
-        :kolom-wajib="['nama', 'simbol', 'faktor_ke_ton']" />
+        :kolom-wajib="['nama', 'simbol']" />
 @endsection

@@ -6,8 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * Satuan berat + faktor konversi ke ton (Ton/Kuintal/Kilogram). Referensi
- * murni: tanpa soft delete, dilindungi RESTRICT dari sisi `komoditas`.
+ * Satuan jumlah + faktor konversi ke ton. Satuan berat (Ton/Kuintal/Kilogram)
+ * ber-`faktor_ke_ton`; satuan non-berat (Liter, Rol untuk saprotan) ber-NULL.
+ * Referensi murni: tanpa soft delete, dilindungi RESTRICT dari sisi `komoditas`.
  */
 class Satuan extends Model
 {

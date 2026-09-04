@@ -38,5 +38,6 @@ class DatabaseSeeder extends Seeder
         $this->call(PoktanSeeder::class);
         $this->call(AlsintanSeeder::class);
         $this->call(KomoditasSeeder::class);
+        $this->call(SaprotanSeeder::class);
     }
 }

@@ -486,16 +486,16 @@ dengan `ON DELETE SET NULL` sebab menghapus berkas tidak boleh menghapus barisny
 
 ### 5.1 `satuan`
 
-Satuan berat beserta faktor konversi ke ton (`rules.md` §8a).
+Satuan jumlah beserta faktor konversi ke ton (`rules.md` §8a).
 
 | Kolom | Tipe | Null | Kunci | Keterangan |
 |---|---|---|---|---|
 | `id_satuan` | `BIGINT UNSIGNED AUTO_INCREMENT` | TIDAK | PK | |
-| `nama` | `VARCHAR(50)` | TIDAK | UQ | Ton, Kuintal, Kilogram |
-| `simbol` | `VARCHAR(10)` | TIDAK | | t, kw, kg |
-| `faktor_ke_ton` | `DECIMAL(10,6)` | TIDAK | | Ton = 1; Kuintal = 0,1; Kilogram = 0,001 |
+| `nama` | `VARCHAR(50)` | TIDAK | UQ | Ton, Kuintal, Kilogram, Liter, Rol |
+| `simbol` | `VARCHAR(10)` | TIDAK | | t, kw, kg, L, rol |
+| `faktor_ke_ton` | `DECIMAL(10,6)` | YA | | Ton = 1; Kuintal = 0,1; Kilogram = 0,001. **NULL** untuk satuan non-berat (Liter, Rol) yang tidak dikonversi ke ton dan tidak pernah masuk rekap panen. |
 
-**Catatan:** satuan lokal seperti karung dan ikat **tidak** dimasukkan ke tabel ini karena beratnya tidak baku. Kolom `hasil_panen.keterangan_satuan_lokal` yang dahulu menampungnya **dicabut 2026-08-22**; padanan satuan setempat kini ditulis pada kolom `keterangan` biasa bila memang perlu dicatat.
+**Catatan:** satuan berat lokal seperti karung dan ikat **tidak** dimasukkan karena beratnya tidak baku. Satuan **non-berat** (Liter untuk saprotan cair, Rol untuk mulsa) ditambahkan Task 6.7 dengan `faktor_ke_ton` NULL: dipakai saprotan tetapi tidak pernah dijumlahkan sebagai tonase. Kolom `hasil_panen.keterangan_satuan_lokal` yang dahulu menampung satuan setempat **dicabut 2026-08-22**; padanannya kini ditulis pada kolom `keterangan` biasa bila perlu.
 
 ### 5.2 `komoditas`
 

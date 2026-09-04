@@ -10,11 +10,12 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 /**
- * Data master satuan berat beserta faktor konversinya ke ton (Task 4.5).
+ * Data master satuan jumlah beserta faktor konversinya ke ton (Task 4.5 / 6.7).
  *
- * `faktor_ke_ton` adalah PENGALI seluruh rekap panen, sehingga nilainya wajib
- * lebih besar dari nol -- faktor nol membuat volume panen lenyap dari rekap
- * tanpa memerahkan apa pun.
+ * `faktor_ke_ton` adalah PENGALI seluruh rekap panen: bila diisi, nilainya
+ * wajib lebih besar dari nol -- faktor nol membuat volume panen lenyap dari
+ * rekap tanpa memerahkan apa pun. Boleh KOSONG untuk satuan non-berat (Liter,
+ * Rol pada saprotan) yang tidak pernah dikonversi ke ton.
  *
  * Mengubah faktor TIDAK menyentuh panen yang sudah tersimpan: tiap baris
  * `hasil_panen` menyalin `satuan_id`-nya sendiri (Task 3.1 B8).
@@ -33,7 +34,7 @@ class MasterSatuanController extends Controller
                     'id_satuan' => $s->id_satuan,
                     'nama' => $s->nama,
                     'simbol' => $s->simbol,
-                    'faktor_ke_ton' => (float) $s->faktor_ke_ton,
+                    'faktor_ke_ton' => $s->faktor_ke_ton === null ? null : (float) $s->faktor_ke_ton,
                     // Dipakai tampilan untuk memberi tahu bahwa satuan ini
                     // masih terpakai, sehingga tombol hapusnya akan ditolak.
                     'dipakai_komoditas' => $s->komoditas_count,
@@ -89,14 +90,14 @@ class MasterSatuanController extends Controller
                 Rule::unique('satuan', 'nama')->ignore($satuan?->id_satuan, 'id_satuan'),
             ],
             'simbol' => ['required', 'string', 'max:10'],
-            // `gt:0`, bukan sekadar `numeric`: faktor nol atau negatif
-            // membuat volume panen lenyap atau berbalik tanda pada rekap.
-            'faktor_ke_ton' => ['required', 'numeric', 'gt:0', 'max:1000000'],
+            // Boleh kosong (satuan non-berat). Bila diisi: `gt:0`, bukan sekadar
+            // `numeric` -- faktor nol atau negatif membuat volume panen lenyap
+            // atau berbalik tanda pada rekap.
+            'faktor_ke_ton' => ['nullable', 'numeric', 'gt:0', 'max:1000000'],
         ], [
             'nama.required' => 'Nama satuan wajib diisi.',
             'nama.unique' => 'Nama satuan ini sudah terdaftar.',
             'simbol.required' => 'Simbol satuan wajib diisi.',
-            'faktor_ke_ton.required' => 'Faktor konversi ke ton wajib diisi.',
             'faktor_ke_ton.gt' => 'Faktor konversi wajib lebih besar dari nol.',
         ] + ValidationRules::pesan());
     }

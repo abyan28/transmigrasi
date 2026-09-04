@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Enums\AsalWakilPoktan;
 use App\Enums\JenisReferensi;
+use App\Enums\JenisSaprotan;
 use App\Enums\StatusKeaktifanAnggota;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
 use App\Models\AlsintanDistribusi;
 use App\Models\AnggotaPoktan;
 use App\Models\Lahan;
 use App\Models\Poktan;
+use App\Models\SaprotanDistribusi;
 use App\Support\DummyData;
 use App\Support\RekapLahan;
 use App\Support\ValidationRules;
@@ -98,12 +100,8 @@ class PoktanController extends Controller
             'title' => $poktan->nama,
             'data' => $data,
             'anggota' => $anggota,
-            // Saprotan poktan masih data contoh (Task 6.7).
             'alsintan' => $this->alsintanPoktan($id),
-            'saprotan' => array_values(array_filter(
-                DummyData::saprotanDistribusi(),
-                fn ($d) => $d['poktan_id'] === $id,
-            )),
+            'saprotan' => $this->saprotanPoktan($id),
             'aktif' => count(array_filter($anggota, fn ($a) => $a['status'] === StatusKeaktifanAnggota::Aktif->value)),
             'ketua' => $ketua,
             'keluargaKetua' => $poktan->ketuaTransmigran === null ? null : [
@@ -463,6 +461,38 @@ class PoktanController extends Controller
                 'jumlah' => (int) $d->jumlah,
                 'kondisi' => $d->kondisi,
             ])
+            ->all();
+    }
+
+    /**
+     * Distribusi saprotan yang diterima poktan ini (Task 6.7, ber-Eloquent).
+     * Sisa benih diturunkan per baris (jatah - pemakaian penanaman baris itu).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function saprotanPoktan(int $poktanId): array
+    {
+        return SaprotanDistribusi::query()
+            ->with(['saprotan.satuan', 'penanaman'])
+            ->where('poktan_id', $poktanId)
+            ->orderBy('id_saprotan_distribusi')
+            ->get()
+            ->map(function (SaprotanDistribusi $d) {
+                $benih = $d->saprotan?->jenis === JenisSaprotan::Benih;
+                $jumlah = (float) $d->jumlah;
+
+                return [
+                    'saprotan_id' => $d->saprotan_id,
+                    'jenis' => $d->saprotan?->jenis?->value,
+                    'nama' => $d->saprotan?->nama,
+                    'jumlah' => $jumlah,
+                    'satuan' => $d->saprotan?->satuan?->nama,
+                    'tahun_pengadaan' => $d->saprotan?->tahun_pengadaan,
+                    'sisa_benih' => $benih
+                        ? max(0.0, round($jumlah - (float) $d->penanaman->sum('volume_benih'), 3))
+                        : null,
+                ];
+            })
             ->all();
     }
 

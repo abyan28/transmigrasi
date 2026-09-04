@@ -1,7 +1,7 @@
 # tasklist.md
 ## Daftar Tugas — Sistem Informasi Digitalisasi Monitoring Pertanian dan Tata Kelola Data Kawasan Transmigrasi Kobalima Timur
 
-**Progress: 96%**
+**Progress: 97%**
 *(Tahap 0 selesai 8 task. **Tahap 1 SELESAI** 12 task. **TAHAP 2 SELESAI SELURUHNYA.** Gelombang 1 dan 2 tuntas, 32 halaman berdiri. **Delivery Gate kedua gelombang sudah dijalankan** dan laporannya lengkap (`delivery-gate-gelombang-1.md` dan `-2.md`). Dua hal ditunda beralasan, bukan lolos diam-diam: keadaan memuat dan galat menunggu backend Tahap 3, dan pemeriksaan 360px pada perangkat nyata menunggu manusia. Siap masuk checkpoint validasi bersama tim dan dinas, lalu Tahap 3.)*
 
 Acuan: `prd.md`, `rules.md`, `workflow.md`, `ui-spec.md`, `erd.md`, `data-dictionary.md`, `notes.md`.
@@ -1368,8 +1368,28 @@ menghapus sisa terakhir `DummyData::penggunaSaatIni()` -- dikerjakan berbarengan
     controller. `UppercaseInput::$kecualikan` +`jenis_alsintan`.
   * `tests/Database/AlsintanTest.php` +9. Verifikasi: Feature 732, Database 355,
     pint bersih, banding-skema NOL SELISIH, tautan-statis 14.
-- [ ] Task 6.7 - CRUD saprotan + penyaluran ke anggota aktif `[Sedang]`
+- [✓] ✅ Task 6.7 - CRUD saprotan + penyaluran ke poktan `[Sedang]` (Selesai)
   * Tampilan form dan halaman rincian sudah selesai pada Task 2.29 dan 2.30
+  * **HASIL 2026-09-04:** `SaprotanController` (index/detail/simpan/perbarui/hapus)
+    — pola INDUK + DISTRIBUSI. `komoditas_id` & `varietas` wajib HANYA bila
+    `jenis = Benih` (`Rule::requiredIf`), dinolkan untuk jenis lain. Invarian
+    `Σ distribusi.jumlah ≤ jumlah_total` (closure rule). Sisa benih diturunkan
+    per baris distribusi (`jumlah` − Σ `penanaman.volume_benih`; penanaman masih
+    kosong → sisa = jumlah). foto → FK `foto_berkas_id`; berita acara → FK
+    `berkas_id`.
+  * **Opsi A (keputusan pemilik 2026-09-04): Liter & Rol jadi satuan master,
+    `satuan.faktor_ke_ton` DIJADIKAN NULLABLE.** schema.sql + migration
+    `create_satuan_table` (DECIMAL NULL); `SatuanSeeder` +Liter +Rol (faktor
+    NULL); `DummyData::satuan()` +2; `MasterSatuanController` validasi
+    `required`→`nullable` + docblock; `form-satuan.blade` drop `*`/`required`;
+    `satuan.blade` guard NULL; `data-dictionary.md` §5.1 Null YA + catatan.
+    `MasterSatuanTest` 3→5 (+1 uji satuan non-berat).
+  * `SaprotanSeeder` baru (satuan_id & komoditas_id via NAMA), di
+    `DataMasterSeeder` + `DatabaseSeeder`. `ViewServiceProvider` `daftarSatuan`
+    → Eloquent. `PoktanController::saprotanPoktan()` (tab saprotan) → Eloquent.
+    Rute saprotan → controller.
+  * `tests/Database/SaprotanTest.php` +10. Verifikasi: Feature 732, Database 373,
+    pint bersih, banding-skema NOL SELISIH, tautan-statis 14.
 
 ## Tahap 7 — Backend Produksi Pertanian
 

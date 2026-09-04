@@ -3601,6 +3601,10 @@ class DummyData
             ['id_satuan' => 1, 'nama' => 'Ton', 'simbol' => 't', 'faktor_ke_ton' => 1.0, 'dipakai_komoditas' => 2],
             ['id_satuan' => 2, 'nama' => 'Kuintal', 'simbol' => 'kw', 'faktor_ke_ton' => 0.1, 'dipakai_komoditas' => 2],
             ['id_satuan' => 3, 'nama' => 'Kilogram', 'simbol' => 'kg', 'faktor_ke_ton' => 0.001, 'dipakai_komoditas' => 1],
+            // Satuan non-berat untuk saprotan cair / gulungan (Task 6.7).
+            // `faktor_ke_ton` NULL: tak dikonversi ke ton, tak masuk rekap panen.
+            ['id_satuan' => 4, 'nama' => 'Liter', 'simbol' => 'L', 'faktor_ke_ton' => null, 'dipakai_komoditas' => 0],
+            ['id_satuan' => 5, 'nama' => 'Rol', 'simbol' => 'rol', 'faktor_ke_ton' => null, 'dipakai_komoditas' => 0],
         ];
     }
 

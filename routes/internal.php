@@ -38,6 +38,7 @@ use App\Http\Controllers\PenilaianKondisiController;
 use App\Http\Controllers\PoktanController;
 use App\Http\Controllers\ProfilController;
 use App\Http\Controllers\RumahController;
+use App\Http\Controllers\SaprotanController;
 use App\Http\Controllers\SpController;
 use App\Http\Controllers\TransmigranController;
 use App\Http\Controllers\WilayahController;
@@ -977,8 +978,8 @@ Route::get('/kependudukan/rekap/{kelompok}', [KependudukanController::class, 're
     ->where('kelompok', 'tahun|sp|status|pekerjaan|asal|pendidikan')->name('kependudukan.rekap.kelompok');
 
 // Task 6.4 + 6.5: PoktanController + AnggotaPoktanController + Eloquent.
-// Ketua 3 jalur; jumlah_anggota & luas lahan kelompok diturunkan. Alsintan &
-// saprotan pada rincian masih DummyData (Task 6.6 / 6.7).
+// Ketua 3 jalur; jumlah_anggota & luas lahan kelompok diturunkan. Tab alsintan
+// pada rincian poktan sudah Eloquent (Task 6.6); saprotan menyusul Task 6.7.
 Route::get('/poktan', [PoktanController::class, 'index'])->name('poktan.index');
 
 Route::get('/poktan/{id}', [PoktanController::class, 'detail'])
@@ -1027,90 +1028,15 @@ Route::delete('/alsintan/{id}', [AlsintanController::class, 'hapus'])
 Route::post('/alsintan/{id}/distribusi/{dist}/kondisi', [AlsintanController::class, 'distribusiKondisi'])
     ->where(['id' => '[0-9]+', 'dist' => '[0-9]+'])->name('alsintan.distribusi.kondisi');
 
-Route::get('/saprotan', function () {
-    $semua = DummyData::saprotan();
+Route::get('/saprotan', [SaprotanController::class, 'index'])->name('saprotan.index');
 
-    $cari = trim((string) request('cari', ''));
-    $filterSp = request('sp');
-    $filterJenis = request('jenis');
+Route::get('/saprotan/{id}', [SaprotanController::class, 'detail'])
+    ->where('id', '[0-9]+')->name('saprotan.detail');
 
-    $baris = array_values(array_filter($semua, function ($s) use ($cari, $filterSp, $filterJenis) {
-        $poktanTeks = mb_strtolower(implode(' ', $s['poktan_penerima']));
+Route::post('/saprotan', [SaprotanController::class, 'simpan'])->name('saprotan.simpan');
 
-        if ($cari !== '' && ! str_contains(mb_strtolower($s['nama']), mb_strtolower($cari))
-            && ! str_contains($poktanTeks, mb_strtolower($cari))) {
-            return false;
-        }
-        // SP cocok bila ADA distribusi di SP itu (Putaran 7).
-        if ($filterSp && ! in_array((int) $filterSp, array_column($s['distribusi'], 'satuan_permukiman_id'), true)) {
-            return false;
-        }
-        if ($filterJenis && $s['jenis'] !== $filterJenis) {
-            return false;
-        }
-
-        return true;
-    }));
-
-    /*
-     * Sisa benih dihitung sekali di sini, bukan sekali per baris di dalam
-     * perulangan view. Bentuk lamanya adalah N+1 yang sesungguhnya: satu
-     * penelusuran seluruh catatan penanaman untuk SETIAP baris benih yang
-     * tampil. Selama sumbernya array hal itu hanya lambat; begitu Tahap 7
-     * menggantinya dengan kueri, ia menjadi satu kueri per baris.
-     *
-     * Hanya benih yang dihitung, sebab hanya benih yang dikurangi pemakaian
-     * penanaman. Menghitungnya untuk pupuk berarti menjanjikan angka yang
-     * tidak pernah dimaksudkan.
-     */
-    // Sisa PENGADAAN yang belum tersalurkan (barang di gudang UPT), per baris.
-    $belumTersalur = [];
-    foreach ($baris as $s) {
-        $belumTersalur[$s['id_saprotan']] = $s['jumlah_belum_tersalur'];
-    }
-
-    return view('pages.saprotan.index', [
-        'title' => 'Saprotan',
-        'semua' => $semua,
-        'baris' => $baris,
-        'cari' => $cari,
-        'filterSp' => $filterSp,
-        'filterJenis' => $filterJenis,
-        'adaFilter' => $cari !== '' || $filterSp || $filterJenis,
-        'jenisUnik' => array_values(array_unique(array_column($semua, 'jenis'))),
-
-        // Banyaknya poktan penerima di seluruh distribusi (Putaran 7).
-        'poktanPenerima' => count(array_unique(array_merge(
-            [], ...array_map(fn ($s) => array_column($s['distribusi'], 'poktan_id'), $semua)
-        ))),
-        'belumTersalur' => $belumTersalur,
-        'daftarSp' => DummyData::satuanPermukiman(),
-    ]);
-})->name('saprotan.index');
-
-Route::get('/saprotan/{id}', function (int $id) {
-    $data = collect(DummyData::saprotan())->firstWhere('id_saprotan', $id);
-
-    abort_if($data === null, 404);
-
-    return view('pages.saprotan.detail', [
-        'title' => $data['nama'],
-        'data' => $data,
-    ]);
-})->where('id', '[0-9]+')->name('saprotan.detail');
-
-Route::post('/saprotan', function () {
-    // Tahap 6: validasi, simpan, catat audit log. Satu baris pengadaan
-    // beserta baris distribusi per poktan penerima; sisa benih dihitung
-    // per baris distribusi, tidak disimpan (rules.md §7c poin 8).
-    return redirect()->route('saprotan.index')
-        ->with('sukses', 'Data saprotan tersimpan.');
-})->name('saprotan.simpan');
-
-Route::put('/saprotan/{id}', function (int $id) {
-    return redirect()->route('saprotan.detail', $id)
-        ->with('sukses', 'Perubahan data saprotan tersimpan.');
-})->where('id', '[0-9]+')->name('saprotan.perbarui');
+Route::put('/saprotan/{id}', [SaprotanController::class, 'perbarui'])
+    ->where('id', '[0-9]+')->name('saprotan.perbarui');
 
 /*
  * Data komoditas (Task 7.1: peralihan ke Eloquent). `tipe` = TEKS referensi;
@@ -1491,9 +1417,8 @@ Route::delete('/penanaman/{id}', function (int $id) {
     return redirect()->route('penanaman')->with('sukses', 'Catatan penanaman dihapus.');
 })->where('id', '[0-9]+')->name('penanaman.hapus');
 
-Route::delete('/saprotan/{id}', function (int $id) {
-    return redirect()->route('saprotan.index')->with('sukses', 'Data saprotan dihapus.');
-})->where('id', '[0-9]+')->name('saprotan.hapus');
+Route::delete('/saprotan/{id}', [SaprotanController::class, 'hapus'])
+    ->where('id', '[0-9]+')->name('saprotan.hapus');
 
 Route::delete('/komoditas/{id}', function (int $id) {
     // Tahap 7: tolak bila masih dipakai penanaman atau hasil panen.

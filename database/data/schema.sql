@@ -465,9 +465,9 @@ CREATE TABLE `fasilitas_sp_cakupan` (
 -- Satuan berat + faktor konversi ke ton. Referensi: tanpa soft delete.
 CREATE TABLE `satuan` (
   `id_satuan`     BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,   -- kamus data menyebut INTEGER UNSIGNED; diseragamkan BIGINT UNSIGNED
-  `nama`          VARCHAR(50) NOT NULL,                        -- Ton, Kuintal, Kilogram
-  `simbol`        VARCHAR(10) NOT NULL,                        -- t, kw, kg
-  `faktor_ke_ton` DECIMAL(10,6) NOT NULL,                      -- 1 / 0.1 / 0.001
+  `nama`          VARCHAR(50) NOT NULL,                        -- Ton, Kuintal, Kilogram, Liter, Rol
+  `simbol`        VARCHAR(10) NOT NULL,                        -- t, kw, kg, L, rol
+  `faktor_ke_ton` DECIMAL(10,6) NULL,                          -- 1 / 0.1 / 0.001; NULL = satuan non-berat (Liter, Rol), tak dikonversi ke ton
   `created_at`    TIMESTAMP NULL DEFAULT NULL,
   `updated_at`    TIMESTAMP NULL DEFAULT NULL,
   PRIMARY KEY (`id_satuan`),

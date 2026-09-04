@@ -7,8 +7,9 @@ use Illuminate\Support\Facades\Schema;
 /**
  * Terjemahan `database/data/schema.sql` -- DOMAIN 4, tabel `satuan`.
  *
- * Satuan berat + faktor konversi ke ton (Ton/Kuintal/Kilogram). Referensi
- * murni: tanpa soft delete. Ditarik maju sebelum `komoditas` (topological sort).
+ * Satuan jumlah + faktor konversi ke ton. Satuan berat (Ton/Kuintal/Kilogram)
+ * ber-`faktor_ke_ton`; satuan non-berat (Liter, Rol untuk saprotan) ber-NULL.
+ * Referensi murni: tanpa soft delete. Ditarik maju sebelum `komoditas`.
  */
 return new class extends Migration
 {
@@ -18,7 +19,7 @@ return new class extends Migration
             $table->id('id_satuan');
             $table->string('nama', 50);
             $table->string('simbol', 10);
-            $table->decimal('faktor_ke_ton', 10, 6);
+            $table->decimal('faktor_ke_ton', 10, 6)->nullable();
             $table->timestamps();
 
             $table->unique('nama', 'uq_satuan_nama');

@@ -17,6 +17,7 @@ use App\Enums\TingkatKesuburanTanah;
 use App\Models\AnggotaPoktan;
 use App\Models\Komoditas;
 use App\Models\Poktan;
+use App\Models\Satuan;
 use App\Models\Transmigran;
 use App\Support\DataWilayah;
 use App\Support\DummyData;
@@ -175,7 +176,17 @@ class ViewServiceProvider extends ServiceProvider
                     'satuan_permukiman' => $p->satuanPermukiman?->nama,
                     'satuan_permukiman_id' => $p->satuan_permukiman_id,
                 ])->all(),
-            'daftarSatuan' => DummyData::satuan(),
+            // Task 6.7: satuan ber-Eloquent. Form komoditas/saprotan memakai
+            // id_satuan, nama, simbol, dan faktor_ke_ton (NULL untuk non-berat).
+            'daftarSatuan' => Satuan::query()
+                ->orderBy('id_satuan')
+                ->get()
+                ->map(fn ($s) => [
+                    'id_satuan' => $s->id_satuan,
+                    'nama' => $s->nama,
+                    'simbol' => $s->simbol,
+                    'faktor_ke_ton' => $s->faktor_ke_ton === null ? null : (float) $s->faktor_ke_ton,
+                ])->all(),
 
             // Task 7.1: komoditas ber-Eloquent. Form saprotan/penanaman memakai
             // id_komoditas, nama, dan nama satuan panen bakunya.

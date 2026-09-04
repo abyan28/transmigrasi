@@ -17,6 +17,15 @@
   `KomoditasSeeder` (satuan_id via NAMA), `ViewServiceProvider` `daftarKomoditas`
   + `satuanKomoditas` -> Eloquent, `UppercaseInput` +`tipe`.
   Feature 732, Database 362, semua hijau.
+- **6.7 (saprotan)** -- ✅ SELESAI. Opsi A dipilih pemilik: Liter/Rol jadi satuan
+  master, `satuan.faktor_ke_ton` DINULLABLE-kan (schema + migration + dictionary
+  §5.1 + MasterSatuanController/form + MasterSatuanTest 3→5). `SaprotanController`
+  (induk+distribusi, komoditas/varietas wajib bila Benih, Σ≤total, sisa benih
+  turunan), `SaprotanSeeder`, `daftarSatuan`→Eloquent, `PoktanController::
+  saprotanPoktan()`→Eloquent, rute→controller. `SaprotanTest` +10.
+  Feature 732, Database 373, pint bersih, NOL SELISIH, tautan-statis 14.
+
+--- catatan blokir asli (arsip) ---
 - **6.7 (saprotan)** -- ⚠️ TERBLOKIR KEPUTUSAN PEMILIK, bukan lagi 7.1.
   `saprotanPengadaan()` baris 3 (`INSEKTISIDA CAIR`, `satuan` = **'Liter'**,
   `satuan_id` 4) dan baris 5 (`MULSA PLASTIK HITAM PERAK`, `satuan` = **'Rol'**,

@@ -21,17 +21,30 @@ beforeEach(function () {
     $this->seed(SatuanSeeder::class);
 });
 
-it('menanam tiga satuan awal beserta faktor konversinya', function () {
-    expect(Satuan::count())->toBe(3)
+it('menanam lima satuan beserta faktor konversinya', function () {
+    expect(Satuan::count())->toBe(5)
         ->and((float) Satuan::where('nama', 'Ton')->first()->faktor_ke_ton)->toBe(1.0)
         ->and((float) Satuan::where('nama', 'Kuintal')->first()->faktor_ke_ton)->toBe(0.1)
-        ->and((float) Satuan::where('nama', 'Kilogram')->first()->faktor_ke_ton)->toBe(0.001);
+        ->and((float) Satuan::where('nama', 'Kilogram')->first()->faktor_ke_ton)->toBe(0.001)
+        // Satuan non-berat (Task 6.7): faktor_ke_ton NULL, tak dikonversi ke ton.
+        ->and(Satuan::where('nama', 'Liter')->first()->faktor_ke_ton)->toBeNull()
+        ->and(Satuan::where('nama', 'Rol')->first()->faktor_ke_ton)->toBeNull();
 });
 
 it('idempoten: dijalankan ulang tidak menggandakan satuan', function () {
     $this->seed(SatuanSeeder::class);
 
-    expect(Satuan::count())->toBe(3);
+    expect(Satuan::count())->toBe(5);
+});
+
+it('menyimpan satuan non-berat tanpa faktor konversi', function () {
+    $this->post(route('satuan.simpan'), [
+        'nama' => 'KARUNG',
+        'simbol' => 'krg',
+        'faktor_ke_ton' => '',
+    ])->assertRedirect(route('master.satuan'));
+
+    expect(Satuan::where('nama', 'KARUNG')->first()->faktor_ke_ton)->toBeNull();
 });
 
 it('menyimpan satuan baru', function () {
@@ -63,7 +76,7 @@ it('menolak nama satuan yang sudah terdaftar', function () {
         'faktor_ke_ton' => '1',
     ])->assertSessionHasErrors('nama');
 
-    expect(Satuan::count())->toBe(3);
+    expect(Satuan::count())->toBe(5);
 });
 
 it('mengubah faktor konversi tanpa menyentuh nama satuan lain', function () {
@@ -78,7 +91,7 @@ it('mengubah faktor konversi tanpa menyentuh nama satuan lain', function () {
     // UppercaseInput mengapitalkan isian teks (rules.md 13.2) -- simbol ikut,
     // dan itu memang perilaku yang dikehendaki.
     expect($ton->fresh()->simbol)->toBe('TON')
-        ->and(Satuan::count())->toBe(3);
+        ->and(Satuan::count())->toBe(5);
 });
 
 it('menghapus satuan yang belum dipakai komoditas', function () {
@@ -87,7 +100,7 @@ it('menghapus satuan yang belum dipakai komoditas', function () {
     $this->delete(route('satuan.hapus', $kg->id_satuan))
         ->assertRedirect(route('master.satuan'));
 
-    expect(Satuan::count())->toBe(2);
+    expect(Satuan::count())->toBe(4);
 });
 
 it('menolak menghapus satuan yang masih dipakai komoditas', function () {

@@ -37,11 +37,12 @@
         </div>
 
         <div class="sm:col-span-2">
-            <label for="{{ $awalan }}_faktor_ke_ton" class="{{ $kelasLabel }}">Faktor Konversi ke Ton<span class="text-error-500">*</span></label>
-            <input type="number" id="{{ $awalan }}_faktor_ke_ton" name="faktor_ke_ton" required x-model="faktor"
+            <label for="{{ $awalan }}_faktor_ke_ton" class="{{ $kelasLabel }}">Faktor Konversi ke Ton</label>
+            <input type="number" id="{{ $awalan }}_faktor_ke_ton" name="faktor_ke_ton" x-model="faktor"
                 min="0" step="0.000001" placeholder="0.1" class="{{ $kelasKontrol }} tabular-nums" />
             <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
                 Berapa ton nilai satu satuan ini. Ton bernilai 1, kuintal 0,1, kilogram 0,001.
+                Kosongkan untuk satuan non-berat (mis. liter, rol) yang tidak masuk rekap panen.
             </p>
         </div>
     </div>
