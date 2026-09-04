@@ -56,6 +56,36 @@ Feature 734 hijau, Database 444 hijau (termasuk 5 uji baru
 `RekapDashboardTest`), pint bersih, `sim:banding-skema --lengkap` NOL
 SELISIH (kolom `tahun_keluar` baru), `sim:tautan-statis` tetap 14.
 
+## Lanjutan -- lepas blokir 2 laporan Task 10.5 (indikator-kawasan, monografi-sp)
+
+Task 10.5 (2026-09-03/04) sebelumnya menyisakan 2 dari 7 laporan TERBLOKIR
+dengan alasan yang sama (`rules.md` 8g lama). Begitu 8g dibalik, keduanya
+langsung lepas blokir tanpa keputusan baru:
+
+- `LaporanData::indikatorKawasan()`: `RekapDashboard::ringkasan()`/`perSp()`
+  menggantikan `DummyData::ringkasanDashboard()`/`rekapPerSp()`; tambah
+  `RekapDashboard::ringkasanTahun()` (baru) menggantikan
+  `DummyData::indikatorKawasanTahun()`; `Poktan/Alsintan/Saprotan::count()`
+  menggantikan `count(DummyData::poktan())` dsb.
+- `LaporanData::monografiSp()` bagian "Keadaan Penduduk Sekarang"
+  (`keadaanPendudukTahun()`) dan ikhtisar per-SP per-tahun sekarang
+  `RekapDashboard`. Tambah `RekapDashboard::kkJiwaSpTahun()` (baru): KK/jiwa
+  taksiran kumulatif (sama pola `hadirPadaTahun()`), laki/perempuan dari
+  `jenis_kelamin` SUNGGUHAN (kepala keluarga + anggota keluarga aktif) --
+  BUKAN struktur umur (berbasis usia, tetap dikarang, tak ada tabelnya).
+  Struktur umur, usia sekolah, dan mutasi penduduk kumulatif TETAP data
+  contoh turunan -- di luar lingkup, dicatat sebagai susulan tersendiri.
+- `RekapDashboard::ringkasanTahun()` membedakan tegas: jumlah_kk/jiwa/petani/
+  harga_rata_rata dan lima agregat produksi genuinely per tahun (baris
+  bertanggal); rumah_total/rumah_terhuni/luas_lahan_total/pengaduan_terbuka
+  keadaan sekarang SAMA untuk seluruh tahun (tabel tanpa riwayat, sama
+  alasan `pendapatanSaatIni()`) -- didokumentasikan di kode, bukan
+  disembunyikan sebagai tren palsu.
+
+Task 10.5 kini genap 7/7. Verifikasi: Feature 734 hijau, Database 451 hijau
+(+2 uji `RekapDashboardTest` -- render kedua laporan di MySQL nyata +
+identitas kk perSp = ringkasan), pint bersih.
+
 ---
 
 # Task 10.6 + Task 10.4 (8/14) SELESAI - Berkas privat + mesin impor CSV (2026-09-04)

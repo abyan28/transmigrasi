@@ -1604,13 +1604,21 @@ menghapus sisa terakhir `DummyData::penggunaSaatIni()` -- dikerjakan berbarengan
     dipakai bersama halaman daftar/rincian DAN laporan. `luasTotalPoktan()` lewat
     RekapPoktan menggantikan DummyData::rekapLahanPoktan; DummyData::keTon ->
     KonversiPanen::keTon. Laporan = kawasan penuh (`withoutGlobalScopes`).
-  * **TERBLOKIR (2 laporan) -- keputusan pemilik 2026-09-04, sama dengan Tahap 9.1-9.4:**
-    `indikator-kawasan` (ringkasan dashboard + rekapPerSpTahun + indikatorKawasanTahun
-    = agregat kawasan `rules.md` 8g) dan `monografi-sp` (struktur umur, mutasi
-    penduduk, iklim per tahun = data contoh turunan yang tak ada tabelnya).
-    Bagian SP-level yang MEMANG terlacak pada monografi (lahan, sertifikat,
-    tanaman pangan, infrastruktur, fasilitas, alsintan per SP) menyusul saat
-    tabel `statistik_kawasan_tahunan` ada. Butuh keputusan yang sama dengan 9.1.
+  * **2 laporan sisanya LEPAS BLOKIR 2026-09-04** (Task 9.1 lanjutan, `rules.md`
+    8g dibalik): `indikator-kawasan` sepenuhnya `RekapDashboard::ringkasan/
+    perSp/ringkasanTahun` (baru) + `Poktan/Alsintan/Saprotan::count()` nyata.
+    `monografi-sp` bagian "Keadaan Penduduk Sekarang" (`keadaanPendudukTahun`,
+    kk/jiwa taksiran kumulatif + laki/perempuan dari `jenis_kelamin`
+    SUNGGUHAN) dan ikhtisar per-SP per-tahun ikut `RekapDashboard`. **TETAP
+    dikarang deterministik** (tak ada tabelnya, di luar lingkup): struktur
+    umur, usia sekolah, mutasi penduduk, iklim per tahun -- kemungkinan
+    struktur umur/mutasi bisa dihitung dari `AnggotaKeluarga.tanggal_lahir`/
+    `.status` kelak, susulan tersendiri, TIDAK dikerjakan giliran ini.
+    `RekapDashboard::ringkasanTahun()`: jumlah_kk/jiwa/petani/harga & lima
+    agregat produksi genuinely per tahun; rumah_total/rumah_terhuni/
+    luas_lahan_total/pengaduan_terbuka keadaan sekarang (tabel tanpa riwayat,
+    sama alasan `pendapatanSaatIni()`), BUKAN angka tahun itu -- didokumentasikan
+    jelas, bukan disembunyikan.
   * **Sisa kecil:** `LaporanData::filterLaporan()` opsi tahun/dimensi masih dari
     `DummyData::{alsintan,saprotan,hasilPanen}()` (daftar SP sengaja tetap master
     `DummyData::satuanPermukiman()` -- dijaga uji "opsi SP dari data master").
