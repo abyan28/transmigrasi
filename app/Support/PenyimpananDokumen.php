@@ -187,7 +187,7 @@ class PenyimpananDokumen
      */
     public static function folder(string $modul, int $idPemilik): string
     {
-        return Str::slug($modul) . '/' . $idPemilik;
+        return Str::slug($modul).'/'.$idPemilik;
     }
 
     /**
@@ -212,10 +212,10 @@ class PenyimpananDokumen
         $dokumen = str_replace(' ', '', ucwords($namaDokumen));
 
         if ($namaPemilik === '') {
-            return $dokumen . '.' . $ekstensi;
+            return $dokumen.'.'.$ekstensi;
         }
 
-        return $dokumen . '_' . Str::slug($namaPemilik) . '.' . $ekstensi;
+        return $dokumen.'_'.Str::slug($namaPemilik).'.'.$ekstensi;
     }
 
     /**
@@ -255,7 +255,7 @@ class PenyimpananDokumen
         }
 
         throw new InvalidArgumentException(
-            'Jenis berkas tidak diterima. Yang diterima: ' . implode(', ', $diterima) . '.'
+            'Jenis berkas tidak diterima. Yang diterima: '.implode(', ', $diterima).'.'
         );
     }
 }

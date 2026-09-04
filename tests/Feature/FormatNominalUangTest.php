@@ -1,7 +1,5 @@
 <?php
 
-use App\Support\DummyData;
-
 describe('Format Nominal Uang', function () {
     it('menerapkan direktif x-uang pada seluruh field nominal uang', function () {
         // 1. Form Transmigran: Pendapatan Kepala Keluarga & Anggota Keluarga

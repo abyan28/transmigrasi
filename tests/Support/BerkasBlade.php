@@ -49,7 +49,7 @@ class BerkasBlade
      */
     public static function namaPendek(string $path): string
     {
-        $akar = str_replace('\\', '/', resource_path('views')) . '/';
+        $akar = str_replace('\\', '/', resource_path('views')).'/';
 
         return str_replace($akar, '', str_replace('\\', '/', $path));
     }
@@ -93,8 +93,8 @@ class BerkasBlade
         // Hanya tag berstruktur. Tag void seperti <input> dan <img> tidak
         // pernah punya penutup sehingga tidak relevan di sini.
         $tag = 'div|header|footer|form|section|nav|main|aside|article|figure|'
-            . 'table|thead|tbody|tfoot|tr|td|th|ul|ol|li|dl|dt|dd|'
-            . 'button|label|select|textarea|fieldset';
+            .'table|thead|tbody|tfoot|tr|td|th|ul|ol|li|dl|dt|dd|'
+            .'button|label|select|textarea|fieldset';
 
         preg_match_all("/<(\/?)($tag)\b[^>]*?(\/?)>/is", $isi, $cocok, PREG_SET_ORDER);
 

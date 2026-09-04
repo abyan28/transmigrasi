@@ -36,5 +36,4 @@ enum PrioritasPengaduan: string
             self::Mendesak => 'error',
         };
     }
-
 }

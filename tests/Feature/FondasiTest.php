@@ -11,6 +11,7 @@ use App\Support\PenyimpananDokumen;
 use App\Support\ValidationRules;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 /*
@@ -137,7 +138,7 @@ function jalankanMiddleware(array $data): array
     $request = Request::create('/uji', 'POST', $data);
     $hasil = [];
 
-    (new UppercaseInput())->handle($request, function (Request $r) use (&$hasil) {
+    (new UppercaseInput)->handle($request, function (Request $r) use (&$hasil) {
         $hasil = $r->all();
 
         return response('');
@@ -213,7 +214,7 @@ it('melewatkan permintaan GET tanpa perubahan', function () {
     $request = Request::create('/uji?nama=yohanes', 'GET');
     $hasil = [];
 
-    (new UppercaseInput())->handle($request, function (Request $r) use (&$hasil) {
+    (new UppercaseInput)->handle($request, function (Request $r) use (&$hasil) {
         $hasil = $r->all();
 
         return response('');
@@ -254,7 +255,7 @@ it('memakai disk privat dan batas 5 MB', function () {
 });
 
 it('menyimpan berkas ke disk privat lalu menghapusnya', function () {
-    Illuminate\Support\Facades\Storage::fake('local');
+    Storage::fake('local');
 
     $berkas = UploadedFile::fake()->create('kk.pdf', 100, 'application/pdf');
 
@@ -269,7 +270,7 @@ it('menyimpan berkas ke disk privat lalu menghapusnya', function () {
 });
 
 it('menghapus berkas lama saat diganti', function () {
-    Illuminate\Support\Facades\Storage::fake('local');
+    Storage::fake('local');
 
     $lama = UploadedFile::fake()->create('lama.pdf', 100, 'application/pdf');
     $pathLama = PenyimpananDokumen::simpan($lama, 'transmigran', 5, 'KartuKeluarga', 'Maria Bere');
@@ -283,7 +284,7 @@ it('menghapus berkas lama saat diganti', function () {
 });
 
 it('menganggap path kosong sebagai tidak ada berkas', function () {
-    Illuminate\Support\Facades\Storage::fake('local');
+    Storage::fake('local');
 
     expect(PenyimpananDokumen::ada(null))->toBeFalse()
         ->and(PenyimpananDokumen::ada(''))->toBeFalse()
