@@ -1,7 +1,7 @@
 # tasklist.md
 ## Daftar Tugas — Sistem Informasi Digitalisasi Monitoring Pertanian dan Tata Kelola Data Kawasan Transmigrasi Kobalima Timur
 
-**Progress: 92%**
+**Progress: 93%**
 *(Tahap 0 selesai 8 task. **Tahap 1 SELESAI** 12 task. **TAHAP 2 SELESAI SELURUHNYA.** Gelombang 1 dan 2 tuntas, 32 halaman berdiri. **Delivery Gate kedua gelombang sudah dijalankan** dan laporannya lengkap (`delivery-gate-gelombang-1.md` dan `-2.md`). Dua hal ditunda beralasan, bukan lolos diam-diam: keadaan memuat dan galat menunggu backend Tahap 3, dan pemeriksaan 360px pada perangkat nyata menunggu manusia. Siap masuk checkpoint validasi bersama tim dan dinas, lalu Tahap 3.)*
 
 Acuan: `prd.md`, `rules.md`, `workflow.md`, `ui-spec.md`, `erd.md`, `data-dictionary.md`, `notes.md`.
@@ -1310,14 +1310,23 @@ menghapus sisa terakhir `DummyData::penggunaSaatIni()` -- dikerjakan berbarengan
 
 ## Tahap 6 — Backend Lahan dan Kelembagaan
 
-- [ ] Task 6.1 - Peralihan lahan ke Eloquent (SATU BARIS PER KK) `[Sedang]`
-  * Migration & model `Lahan` **sudah ada** (Task 3.1 B7), `uuid` sebagai `getRouteKeyName()` sudah terpasang
-  * **Relasi one-to-ONE** (Putaran 15): `UNIQUE (transmigran_id)`. Pekarangan & lahan usaha adalah KOLOM (`luas_pekarangan`/`luas_usaha`/`luas_kering`/`luas_basah` + dua pasang koordinat), bukan dua baris. `kategori_lahan`, `peruntukan_lahan`, `pola_tanam`, `peralatan_pertanian`, `kendala` sudah **dicabut** -- jangan hidupkan
-- [ ] Task 6.2 - CRUD lahan + isian SHM & status sertifikat `[Sedang]`
-  * Tampilan form sudah selesai (multistep, langkah 3). **SHM diunggah dari form lahan** ke `transmigran_berkas` peran `shm`; `status_sertifikat` menulis kolom `transmigran.status_sertifikat` (`rules.md` 7.6a). **HPL bukan di sini** — melekat pada `kawasan_transmigrasi`, diunggah dari form kawasan (Tahap 4)
-  * Alur Tambah hanya untuk KK yang belum punya baris lahan (UNIQUE); KK yang sudah ada → alur Ubah
-- [ ] Task 6.3 - Pencatatan dua pasang koordinat + komposisi luas usaha `[Sedang]`
-  * `lintang_pekarangan`/`bujur_pekarangan` dan `lintang_usaha`/`bujur_usaha` terpisah. Invarian aplikasi: `luas_kering + luas_basah = luas_usaha`. `NULL` pada `luas_pekarangan` = belum menerima, bukan nol
+- [✓] Task 6.1 - Peralihan lahan ke Eloquent (SATU BARIS PER KK) `[Sedang]` ✅ SELESAI 2026-09-04
+- [✓] Task 6.2 - CRUD lahan + isian SHM & status sertifikat `[Sedang]` ✅ SELESAI 2026-09-04
+- [✓] Task 6.3 - Pencatatan dua pasang koordinat + komposisi luas usaha `[Sedang]` ✅ SELESAI 2026-09-04
+  * HASIL (6.1+6.2+6.3, satu commit): `LahanController` (index/detail/simpan/perbarui/hapus).
+    `luas_usaha` DITURUNKAN dari `luas_kering + luas_basah` (nilai form diabaikan);
+    keduanya null -> `luas_usaha` null (belum menerima). `Rule::unique('lahan','transmigran_id')`
+    + `kode_lahan` unique. `simpan`/`perbarui` transaksi: tulis kolom `lahan` +
+    `transmigran.status_sertifikat` + SHM ke `transmigran_berkas` peran `shm`
+    (unggahan baru mengganti yang lama). `poktan_id` NULL (poktan belum Eloquent).
+  * `detail()`: `pemilik`/`status_sertifikat`/`shm` dari Eloquent (`transmigran.berkas`).
+    `hpl` tetap `DummyData::berkasSatu` (kawasan). Rute lama `lahan.dokumen.simpan`
+    dibiarkan jadi stub (tak ada UI menunjuknya).
+  * `LahanSeeder` baru (4 baris, `uuid` stabil), didaftar antara Rumah & Berkas.
+  * `UppercaseInput::$kecualikan` +`status_sertifikat`. `ViewServiceProvider`
+    `transmigranTanpaLahan` -> Eloquent (`whereDoesntHave('lahan')`).
+  * `tests/Database/LahanTest.php` +9. Verifikasi: Feature 732, Database 334,
+    pint bersih, banding-skema NOL SELISIH, tautan-statis 14
 - [ ] Task 6.4 - CRUD profil poktan dan data ketua `[Sedang]`
   * Tampilan form sudah selesai pada Task 2.30
 - [ ] Task 6.5 - CRUD daftar anggota poktan + status keaktifan `[Sedang]`

@@ -93,6 +93,7 @@ class UppercaseInput
         'kegiatan',
         'status',
         'nasib_ketua_poktan',
+        'status_sertifikat',
 
         // Teks naratif, huruf kapital seluruhnya menyulitkan pembacaan
         'deskripsi',

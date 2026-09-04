@@ -27,6 +27,7 @@ use App\Http\Controllers\InfrastrukturController;
 use App\Http\Controllers\InventarisSpController;
 use App\Http\Controllers\KawasanController;
 use App\Http\Controllers\KependudukanController;
+use App\Http\Controllers\LahanController;
 use App\Http\Controllers\MasterReferensiController;
 use App\Http\Controllers\MasterSatuanController;
 use App\Http\Controllers\PengaturanPenggunaController;
@@ -457,134 +458,28 @@ Route::delete('/rumah/{id}', [RumahController::class, 'hapus'])
 | memiliki lebih dari satu dokumen (data-dictionary.md bagian 7.2).
 |
 */
-Route::get('/lahan', function () {
-    $semua = DummyData::lahan();
+// Task 6.1-6.3: seluruhnya `LahanController` + Eloquent. SHM + status_sertifikat
+// ditulis ke sisi KELUARGA (`transmigran`); `luas_usaha` diturunkan kering+basah.
+Route::get('/lahan', [LahanController::class, 'index'])->name('lahan.index');
 
-    $cari = trim((string) request('cari', ''));
-    $filterSp = request('sp');
-    $filterJenis = request('peruntukan_lahan');
-    $filterKategori = request('kategori_lahan');
+Route::get('/lahan/{id}', [LahanController::class, 'detail'])
+    ->where('id', '[0-9]+')->name('lahan.detail');
 
-    $baris = array_values(array_filter($semua, function ($l) use ($cari, $filterSp, $filterJenis, $filterKategori) {
-        if ($cari !== '') {
-            $cocok = str_contains(mb_strtolower((string) $l['kode_lahan']), mb_strtolower($cari))
-                || str_contains(mb_strtolower($l['pemilik']), mb_strtolower($cari));
+Route::post('/lahan', [LahanController::class, 'simpan'])->name('lahan.simpan');
 
-            if (! $cocok) {
-                return false;
-            }
-        }
+Route::put('/lahan/{id}', [LahanController::class, 'perbarui'])
+    ->where('id', '[0-9]+')->name('lahan.perbarui');
 
-        if ($filterSp && (string) $l['satuan_permukiman_id'] !== (string) $filterSp) {
-            return false;
-        }
+Route::delete('/lahan/{id}', [LahanController::class, 'hapus'])
+    ->where('id', '[0-9]+')->name('lahan.hapus');
 
-        // Penyaring peruntukan kini menanyakan "punya bidang ini?", bukan
-        // "barisnya berperuntukan ini". Sejak satu keluarga tepat satu baris,
-        // kedua bidang berada pada baris yang sama.
-        if ($filterJenis === 'Lahan Pekarangan' && $l['luas_pekarangan'] === null) {
-            return false;
-        }
-
-        if ($filterJenis === 'Lahan Usaha' && $l['luas_usaha'] === null) {
-            return false;
-        }
-
-        // Kering dan basah adalah KOMPOSISI, bukan kategori bidang, sehingga
-        // penyaringnya menanyakan "punya bagian basah?" bukan "seluruhnya
-        // basah?". Bidang campuran 1,25 ha kering + 0,75 ha basah wajib
-        // muncul pada kedua penyaring, dan itu memang maksudnya
-        // (agents/rules.md 7.5c).
-        if ($filterKategori === 'kering' && (float) ($l['luas_kering'] ?? 0) <= 0) {
-            return false;
-        }
-
-        if ($filterKategori === 'basah' && (float) ($l['luas_basah'] ?? 0) <= 0) {
-            return false;
-        }
-
-        return true;
-    }));
-
-    /*
-        MENJUMLAH KOLOM, BUKAN BARIS (Putaran 15).
-
-        Sebelumnya luas per peruntukan dihitung dengan menyaring baris menurut
-        `peruntukan_lahan` lalu menjumlahkan kolom `luas`. Sejak kedua bidang
-        berada pada satu baris, yang dijumlahkan adalah kolomnya masing-masing.
-
-        Keluarga yang belum menerima salah satu bidang bernilai null dan ikut
-        terhitung nol lewat penjumlahan biasa, tanpa perlu percabangan.
-    */
-    $jumlahKolom = fn (array $rows, string $kolom): float => array_sum(array_map(
-        static fn ($r): float => (float) ($r[$kolom] ?? 0),
-        $rows
-    ));
-
-    return view('pages.lahan.index', [
-        'title' => 'Data Lahan',
-        'semua' => $semua,
-        'baris' => $baris,
-        'cari' => $cari,
-        'filterSp' => $filterSp,
-        'filterJenis' => $filterJenis,
-        'filterKategori' => $filterKategori,
-        'adaFilter' => $cari !== '' || $filterSp || $filterJenis || $filterKategori,
-
-        // Total luas satu baris adalah pekarangan ditambah usahanya.
-        'totalLuasTampil' => $jumlahKolom($baris, 'luas_pekarangan') + $jumlahKolom($baris, 'luas_usaha'),
-
-        'luasPekarangan' => $jumlahKolom($semua, 'luas_pekarangan'),
-        'luasUsaha' => $jumlahKolom($semua, 'luas_usaha'),
-
-        // Cacah bidang, bukan cacah baris: satu baris dapat memuat dua bidang.
-        'jumlahBidang' => count(array_filter($semua, fn ($l) => $l['luas_pekarangan'] !== null))
-            + count(array_filter($semua, fn ($l) => $l['luas_usaha'] !== null)),
-
-        'daftarSp' => DummyData::satuanPermukiman(),
-    ]);
-})->name('lahan.index');
-
-Route::get('/lahan/{id}', function (int $id) {
-    $data = collect(DummyData::lahan())->firstWhere('id_lahan', $id);
-
-    abort_if($data === null, 404);
-
-    return view('pages.lahan.detail', [
-        'title' => 'Lahan '.$data['kode_lahan'],
-        'data' => $data,
-
-        // Dibaca lewat id, bukan mencocokkan nama. Dua kepala keluarga dapat
-        // bernama sama, dan pencocokan nama akan menautkan bidang ini ke
-        // profil orang yang keliru tanpa ada yang menyadarinya.
-        'pemilik' => collect(DummyData::transmigran())
-            ->firstWhere('id_transmigran', $data['transmigran_id']),
-
-        // Legalitas dibaca dari tempatnya yang benar (Putaran 12): SHM melekat
-        // pada keluarga sebab meliputi seluruh bidangnya, HPL melekat pada
-        // kawasan sebab ia alas hak milik instansi (rules.md 7.4a).
-        'shm' => DummyData::berkasSatu('transmigran_berkas', 'transmigran_id', $data['transmigran_id'], 'shm'),
-        'hpl' => DummyData::berkasSatu('kawasan_transmigrasi_berkas', 'kawasan_transmigrasi_id', 1, 'hpl'),
-    ]);
-})->where('id', '[0-9]+')->name('lahan.detail');
-
-Route::post('/lahan', function () {
-    return redirect()->route('lahan.index')
-        ->with('sukses', 'Data lahan tersimpan.');
-})->name('lahan.simpan');
-
-Route::put('/lahan/{id}', function (int $id) {
-    return redirect()->route('lahan.detail', $id)->with('sukses', 'Perubahan data lahan tersimpan.');
-})->where('id', '[0-9]+')->name('lahan.perbarui');
-
-Route::delete('/lahan/{id}', function () {
-    return redirect()->route('lahan.index')->with('sukses', 'Data lahan dihapus.');
-})->where('id', '[0-9]+')->name('lahan.hapus');
-
-Route::post('/lahan/{id}/dokumen', function (int $id) {
-    return redirect()->route('lahan.detail', ['id' => $id, 'tab' => 'dokumen'])
-        ->with('sukses', 'Dokumen lahan tersimpan.');
-})->where('id', '[0-9]+')->name('lahan.dokumen.simpan');
+// Rute lama unggah dokumen per-bidang: tak ada UI yang menunjuknya sejak SHM
+// pindah ke form lahan (Putaran 15). Dibiarkan menjawab agar tautan tersebar
+// tak mati; dicabut penuh saat pembersihan rute mati.
+Route::post('/lahan/{id}/dokumen', fn (int $id) => redirect()
+    ->route('lahan.detail', ['id' => $id, 'tab' => 'dokumen'])
+    ->with('sukses', 'Dokumen lahan tersimpan.'))
+    ->where('id', '[0-9]+')->name('lahan.dokumen.simpan');
 
 /*
 |--------------------------------------------------------------------------

@@ -32,6 +32,7 @@ class DataMasterSeeder extends Seeder
         // ke induknya. RumahSeeder setelah TransmigranSeeder (FK transmigran_id).
         $this->call(TransmigranSeeder::class);
         $this->call(RumahSeeder::class);
+        $this->call(LahanSeeder::class);
         $this->call(BerkasSeeder::class);
     }
 }

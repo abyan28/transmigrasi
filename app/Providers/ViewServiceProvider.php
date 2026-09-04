@@ -169,7 +169,7 @@ class ViewServiceProvider extends ServiceProvider
             // masih DummyData) -- bentuknya dijaga sama seperti `DummyData::transmigran()`.
             'daftarTransmigran' => self::daftarTransmigran(),
             'transmigranTanpaRumah' => self::daftarTransmigran(fn ($q) => $q->whereDoesntHave('rumah')),
-            'transmigranTanpaLahan' => DummyData::transmigranTanpaLahan(),
+            'transmigranTanpaLahan' => self::daftarTransmigran(fn ($q) => $q->whereDoesntHave('lahan')),
             'sebaran' => DummyData::sebaranKomoditas(),
 
             // Hanya nama pekerjaannya yang dipakai, sebagai saran `<datalist>`.
