@@ -9,8 +9,39 @@ Kerja per subtask, commit bersih tiap subtask. `main` pada `ec42345`.
 - **5.2 CRUD transmigran + unggah KTP/KK/SK terpisah** `[Sulit]` -- ✅ SELESAI
   (suksesi KK + catat-peristiwa + `riwayatKk`/`calonPengganti`/`berkas*` -> Eloquent)
 - **5.3 CRUD rumah + kondisi hunian + foto & koordinat** `[Sedang]` <- BERIKUTNYA
-  (peralihan rumah, `daftarTransmigran`/`transmigranTanpaRumah` composer -> Eloquent)
 - **5.4 Riwayat penghunian rumah** `[Sedang]`
+  * CATATAN: 5.3 & 5.4 SALING TERKAIT -- kerjakan bersama. `rumah.detail.blade`
+    menurunkan "penghuni sekarang" dari `$riwayat` (baris `tanggal_keluar` null),
+    BUKAN dari `rumah.transmigran_id`. Jadi `perbarui` yang mengganti
+    `transmigran_id` WAJIB menutup baris riwayat lama + membuka yang baru
+    (rules.md 6a.9). Form rumah TAK punya isian tanggal masuk/keluar/alasan --
+    5.4 mungkin menambah alur "catat kepindahan" tersendiri, atau `perbarui`
+    memakai tanggal hari ini. Perlu riset: apakah ada rute baru utk 5.4.
+  * `ViewServiceProvider` `pages.rumah.form` composer: `daftarTransmigran` +
+    `transmigranTanpaRumah` -> Eloquent. HATI-HATI: `daftarTransmigran` juga
+    dipakai `pages.poktan.form` & `pages.lahan.form` (Tahap 6, masih DummyData)
+    -- mengubah arm `nilaiRujukan('daftarTransmigran')` merembet ke sana
+    (aman bila seeder = DummyData, tapi cek).
+  * `RumahSeeder` belum ada. `rumah_berkas` sudah punya data contoh (foto,
+    berkas 35/36 utk rumah 1) -- tambah ke `BerkasSeeder::PIVOT_SIAP` &
+    urutkan RumahSeeder sebelum BerkasSeeder.
+  * `kondisi`/`status_hunian` = nilai REFERENSI (`ValidationRules::referensi(
+    JenisReferensi::KondisiRumah/StatusHunian)`), bukan enum PHP. `kondisi`
+    sudah di `UppercaseInput::$kecualikan`; `status_hunian` BELUM -> tambah.
+  * Uji rumah: `HalamanTest` L527-577 (index/detail baca), L537 (`transmigranTanpaRumah`
+    lewat form), L7558 (`/rumah/1` 2 foto), L8358 (section penghunian sebelum bangunan),
+    L4461 (`rumah/form` wajib), L4488 (`'rumah'=>['kode_rumah']` -- form tak boleh
+    punya `name="kode_rumah"`).
+
+## STATUS SESI 2026-09-04
+
+Selesai + commit bersih: **Task 5.1** (`666eca3`) + **Task 5.2** (`7dc0ef6`).
+Verifikasi akhir keduanya: Feature **732**, Database **313**, `pint --test`
+bersih, `sim:banding-skema --lengkap` NOL SELISIH, `sim:tautan-statis` **14**.
+Berhenti di sini (checkpoint bersih) sebelum 5.3 -- 5.3+5.4 unit besar yang
+menyentuh `ViewServiceProvider` (merembet ke form poktan/lahan Tahap 6) +
+semantik transaksi `riwayat_penghunian`; lebih aman dengan konteks segar.
+Belum di-push (push diblokir harness).
 - **5.5 Rekap kependudukan kawasan** `[Sedang]` (agregat kawasan ~1140 KK -
   `DummyData::rekap*` masih sintetis; ganti GROUP BY nyata atau pertahankan)
 
