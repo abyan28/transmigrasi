@@ -159,7 +159,7 @@
                 const r = await fetch(@js(route('impor.unggah', $entitas)), {
                     method: 'POST',
                     headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content ?? '',
                         'Accept': 'application/json',
                     },
                     body: data,
