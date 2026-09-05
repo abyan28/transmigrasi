@@ -252,7 +252,7 @@
             sehingga flex-1 menghitung ruang yang benar-benar tersisa setelah
             margin diperhitungkan.
         --}}
-        <div class="min-w-0 flex-1 transition-all duration-300 ease-in-out"
+        <div class="min-w-0 flex-1 flex flex-col min-h-screen transition-all duration-300 ease-in-out"
             :class="{
                 'xl:ml-[290px]': $store.sidebar.isExpanded || $store.sidebar.isHovered,
                 'xl:ml-[90px]': !$store.sidebar.isExpanded && !$store.sidebar.isHovered,
@@ -261,7 +261,7 @@
             <!-- app header start -->
             @include('layouts.app-header')
             <!-- app header end -->
-            <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
+            <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6 flex-1 w-full">
                 {{--
                     Penanda data contoh. Wajib tampil selama aplikasi belum
                     tersambung ke data nyata, agar angka di layar tidak

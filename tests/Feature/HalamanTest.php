@@ -79,7 +79,7 @@ it('menampilkan kartu pendapatan keluarga saat ini, bukan grafik tren tahunan', 
     // sekarang saja.
     $isi = $this->get(route('beranda'))->assertOk()->getContent();
 
-    expect($isi)->toContain('Pendapatan Keluarga Saat Ini')
+    expect($isi)->toMatch('/Pendapatan\s+Keluarga(<br\s*\/?>|\s+)Saat\s+Ini/i')
         ->and($isi)->not->toContain('id="grafikPendapatan"');
 });
 
@@ -174,6 +174,35 @@ it('mengecualikan grafik Perbandingan Antar SP dari filter SP dashboard', functi
     foreach (RekapDashboard::perSp() as $baris) {
         $respons->assertSee($baris['satuan_permukiman']);
     }
+});
+
+it('membatasi isu prioritas per sp pada dashboard maksimal 5 baris pada tampilan awal', function () {
+    $isi = $this->get(route('beranda'))->assertOk()->getContent();
+
+    expect($isi)->toContain('Isu Prioritas per SP')
+        ->and($isi)->toContain('Lihat Semua Pengaduan');
+
+    // Menghitung baris nomor pengaduan di tabel desktop isu prioritas (PGD-)
+    preg_match_all('/<td[^>]*>\s*(PGD-[\w-]+)\s*<\/td>/', $isi, $nomorPengaduan);
+    expect(count($nomorPengaduan[1]))->toBeLessThanOrEqual(5);
+});
+
+it('merender harga jual rata-rata dan pendapatan keluarga saat ini', function () {
+    $isi = $this->get(route('beranda'))->assertOk()->getContent();
+
+    expect($isi)->toContain('id="grafikHarga"')
+        ->and($isi)->toMatch('/Pendapatan\s+Keluarga(<br\s*\/?>|\s+)Saat\s+Ini/i')
+        ->and($isi)->toContain("buatGrafik('grafikHarga'");
+});
+
+it('merender halaman notifikasi dengan kerangka sticky footer flexbox', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)->get(route('notifikasi.index'))
+        ->assertOk()
+        ->assertSee('Notifikasi')
+        ->assertSee('mt-auto', false)
+        ->assertSee('flex flex-col min-h-screen', false);
 });
 
 /*
@@ -1994,9 +2023,11 @@ it('menandai pengaduan berprioritas mendesak yang belum selesai', function () {
 
     $this->get(route('pengaduan.index'))
         ->assertSee('motion-safe:animate-ping', false)
-        ->assertSee('Memerlukan perhatian segera');
+        ->assertSee('Memerlukan perhatian segera')
+        ->assertSee('Perlu disaring petugas');
 
     Pengaduan::where('prioritas', 'Mendesak')->update(['status' => 'Selesai']);
+    Pengaduan::where('status', 'Menunggu Diterima')->update(['status' => 'Selesai']);
     $this->get(route('pengaduan.index'))->assertDontSee('motion-safe:animate-ping', false);
 });
 
@@ -4054,7 +4085,7 @@ it('mengumpulkan grafik pertanian dalam satu bagian yang sama', function () {
 
     // Kartu pendapatan bukan lagi grafik (Task 9.1, 2026-09-04) tetapi tetap
     // pada bagian yang sama.
-    expect($bagian)->toContain('Pendapatan Keluarga Saat Ini');
+    expect($bagian)->toMatch('/Pendapatan\s+Keluarga(<br\s*\/?>|\s+)Saat\s+Ini/i');
 });
 
 it('menjaga hierarki tajuk dashboard tidak melompat', function () {
@@ -4104,6 +4135,20 @@ it('menyediakan tombol impor pada modul berdata banyak', function (string $url, 
     // 2026-08-22 bersama fiturnya, bukan karena aturannya berubah.
     ['/penanaman', 'imporPenanaman'],
 ]);
+
+it('menjaga kode modal impor tetap berada di dalam atribut x-data', function () {
+    $isi = $this->get(route('transmigran.index'))->assertOk()->getContent();
+
+    $cocok = preg_match(
+        '/<div x-data="([^"]+)"\s+x-on:buka-modal\.window="if \(\$event\.detail === \'imporTransmigran\'\) buka\(\)"/s',
+        $isi,
+        $atribut,
+    );
+
+    expect($cocok)->toBe(1)
+        ->and($atribut[1])->toContain('Berkas gagal diproses. Coba lagi.')
+        ->and($atribut[1])->toContain('document.querySelector(\'meta[name=csrf-token]\')');
+});
 
 it('tidak menyediakan impor pada modul yang tidak boleh diisi massal', function (string $url) {
     // Pengecualian ini disengaja dan punya alasan masing-masing:

@@ -582,43 +582,8 @@
             </x-slot:tabel>
         </x-sim.chart-card>
 
-        {{--
-            Bukan grafik tren: `pendapatan_per_bulan` adalah kolom KEADAAN
-            SEKARANG pada tabel transmigran (ditimpa tiap disunting), tanpa
-            riwayat tersimpan -- beda dari panen/harga yang punya baris
-            bertanggal per transaksi. Menyajikannya sebagai deret 11 tahun
-            akan mengarang angka lampau yang tidak pernah tercatat.
-            Keputusan pemilik proyek 2026-09-04: tampilkan keadaan sekarang.
-        --}}
-        <div class="xl:col-span-2 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
-            <h3 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">
-                Pendapatan Keluarga Saat Ini
-            </h3>
-            <p class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
-                Rata-rata pendapatan kepala keluarga aktif, keadaan sekarang -- bukan tren
-                tahunan, sebab riwayat pendapatan lampau tidak tersimpan.
-            </p>
-
-            @if ($pendapatanSaatIni['jumlah_kk'] > 0)
-                <p class="mt-4 flex items-baseline gap-1.5">
-                    <span class="text-title-sm font-bold tabular-nums text-gray-800 dark:text-white/90">
-                        Rp {{ number_format($pendapatanSaatIni['rata_rata'], 0, ',', '.') }}
-                    </span>
-                    <span class="text-theme-sm font-medium text-gray-500 dark:text-gray-400">per bulan</span>
-                </p>
-                <p class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
-                    Dihitung dari {{ number_format($pendapatanSaatIni['jumlah_kk'], 0, ',', '.') }} KK aktif yang
-                    tercatat pendapatannya.
-                </p>
-            @else
-                <p class="mt-4 text-theme-sm text-gray-500 dark:text-gray-400">
-                    Belum ada data pendapatan tercatat.
-                </p>
-            @endif
-        </div>
-
-        <x-sim.chart-card id="grafikHarga" judul="Harga Jual Rata-rata"
-            keterangan="Rupiah per ton, seluruh komoditas." tinggi="320">
+        <x-sim.chart-card class="xl:col-span-2" id="grafikHarga" judul="Harga Jual Rata-rata"
+            keterangan="Rupiah per ton, seluruh komoditas per tahun." tinggi="320">
             <x-slot:tabel>
                 <table class="w-full text-left text-theme-xs">
                     <caption class="sr-only">Harga jual rata-rata per tahun</caption>
@@ -640,6 +605,64 @@
                 </table>
             </x-slot:tabel>
         </x-sim.chart-card>
+
+        {{--
+            Bukan grafik tren: `pendapatan_per_bulan` adalah kolom KEADAAN
+            SEKARANG pada tabel transmigran (ditimpa tiap disunting), tanpa
+            riwayat tersimpan -- beda dari panen/harga yang punya baris
+            bertanggal per transaksi. Menyajikannya sebagai deret 11 tahun
+            akan mengarang angka lampau yang tidak pernah tercatat.
+            Keputusan pemilik proyek 2026-09-04: tampilkan keadaan sekarang.
+        --}}
+        <div class="rounded-2xl border border-gray-200 bg-white p-5 flex flex-col justify-between dark:border-gray-800 dark:bg-white/[0.03]">
+            <div>
+                <div class="flex items-center justify-between gap-2 border-b border-gray-100 pb-3 dark:border-gray-800/80">
+                    <div class="flex items-center gap-2">
+                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-600 dark:bg-teal-500/15 dark:text-teal-400">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </span>
+                        <h3 class="text-theme-xs font-semibold uppercase tracking-wider leading-tight text-gray-500 dark:text-gray-400">
+                            Pendapatan Keluarga<br>Saat Ini
+                        </h3>
+                    </div>
+                    <span class="inline-flex shrink-0 items-center justify-center rounded-md bg-gray-100 px-1.5 py-0.5 text-center text-[10px] font-medium text-gray-600 whitespace-nowrap dark:bg-white/5 dark:text-gray-400">
+                        Keadaan Sekarang
+                    </span>
+                </div>
+
+                <div class="mt-4">
+                    <p class="text-theme-xs text-gray-500 dark:text-gray-400">Rata-rata Pendapatan KK Aktif</p>
+                    @if ($pendapatanSaatIni['jumlah_kk'] > 0)
+                        <p class="mt-1 flex items-baseline gap-1.5">
+                            <span class="text-title-sm font-bold tabular-nums text-gray-800 dark:text-white/90">
+                                Rp {{ number_format($pendapatanSaatIni['rata_rata'], 0, ',', '.') }}
+                            </span>
+                            <span class="text-theme-sm font-medium text-gray-500 dark:text-gray-400">/ bulan</span>
+                        </p>
+                        <p class="mt-1 text-theme-xs text-gray-600 dark:text-gray-400">
+                            Dihitung dari <span class="font-medium text-gray-700 dark:text-gray-300">{{ number_format($pendapatanSaatIni['jumlah_kk'], 0, ',', '.') }}</span> KK aktif yang tercatat.
+                        </p>
+                    @else
+                        <p class="mt-2 text-theme-sm text-gray-500 dark:text-gray-400">
+                            Belum ada data pendapatan tercatat.
+                        </p>
+                    @endif
+                </div>
+            </div>
+
+            <div class="mt-5 border-t border-gray-100 pt-4 dark:border-gray-800/80">
+                <a href="{{ url('/transmigran') }}" class="group flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50/60 p-2.5 transition hover:border-brand-200 hover:bg-brand-50/20 dark:border-gray-800 dark:bg-white/[0.02] dark:hover:border-brand-800/60">
+                    <span class="text-theme-xs font-medium text-gray-600 group-hover:text-brand-600 dark:text-gray-400 dark:group-hover:text-brand-400">
+                        Data transmigran &rarr;
+                    </span>
+                    <span class="text-[11px] text-gray-400 dark:text-gray-500">
+                        Keadaan sekarang
+                    </span>
+                </a>
+            </div>
+        </div>
     </div>
 
     {{-- ============================================================
@@ -803,11 +826,18 @@
 
     {{-- Kontainer Isu Prioritas Pengaduan --}}
     <div class="mb-8 rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+        @php
+            $isuDitampilkan = array_slice($isuPrioritas, 0, 5);
+        @endphp
         <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 p-5 dark:border-gray-800">
             <div>
                 <h3 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">Isu Prioritas per SP</h3>
                 <p class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
-                    {{ count($isuPrioritas) }} pengaduan menunggu ditindaklanjuti, diurutkan dari yang paling mendesak.
+                    @if (count($isuPrioritas) > 5)
+                        Menampilkan 5 dari {{ count($isuPrioritas) }} pengaduan menunggu ditindaklanjuti, diurutkan dari yang paling mendesak.
+                    @else
+                        {{ count($isuPrioritas) }} pengaduan menunggu ditindaklanjuti, diurutkan dari yang paling mendesak.
+                    @endif
                 </p>
             </div>
             <a href="{{ route('pengaduan.index') }}"
@@ -833,7 +863,7 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
-                        @foreach ($isuPrioritas as $isu)
+                        @foreach ($isuDitampilkan as $isu)
                             <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
                                     {{ $isu['nomor_pengaduan'] }}
@@ -864,7 +894,7 @@
             </div>
 
             <div class="divide-y divide-gray-200 md:hidden dark:divide-gray-800">
-                @foreach ($isuPrioritas as $isu)
+                @foreach ($isuDitampilkan as $isu)
                     <div class="p-4">
                         <a href="{{ route('pengaduan.detail', $isu['id_pengaduan']) }}"
                             class="rounded text-theme-sm font-medium text-gray-800 hover:text-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-white/90 dark:hover:text-brand-400">
@@ -1025,7 +1055,7 @@
                 series: [{ name: 'Harga Rata-rata', data: data.harga }],
                 colors: ['#C09546'],
                 stroke: { curve: 'smooth', width: 2.5 },
-                markers: { size: 0, hover: { size: 5 } },
+                markers: { size: 3.5, strokeWidth: 0, hover: { size: 6 } },
                 xaxis: { categories: data.tahun },
                 yaxis: { labels: { formatter: (v) => angkaSingkat(v) } },
                 tooltip: { y: { formatter: (v) => rupiah(v) + ' per ton' } },

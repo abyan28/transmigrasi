@@ -47,7 +47,7 @@
         <x-sim.stat-card label="Belum Selesai" :nilai="number_format($belumSelesai, 0, ',', '.')"
             keterangan="Masih dalam penanganan" />
         <x-sim.stat-card label="Menunggu Diterima" :nilai="number_format($menungguDiterima, 0, ',', '.')"
-            keterangan="Perlu disaring petugas" />
+            keterangan="Perlu disaring petugas" :perhatian="$menungguDiterima > 0" />
         <x-sim.stat-card label="Berprioritas Mendesak" :nilai="number_format($mendesak, 0, ',', '.')"
             keterangan="Perlu segera ditindaklanjuti" :mendesak="$mendesak > 0" />
     </div>
