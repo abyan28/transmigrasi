@@ -100,8 +100,7 @@
                                 secara langsung kepada pengguna dan tidak melalui pihak lain.
                             </p>
                             <p class="mt-2 text-theme-xs text-yellow-800 dark:text-yellow-200">
-                                <span class="font-medium">Pengiriman email belum aktif.</span>
-                                Sampai backend selesai, penyerahan langsung adalah satu-satunya cara yang bekerja.
+                                Kegagalan pengiriman email tidak membatalkan penyetelan sandi; nilai sementara tetap tampil satu kali setelah disimpan.
                             </p>
                         </div>
 

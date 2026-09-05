@@ -1,38 +1,24 @@
-{{--
-    Surel kata sandi sementara akun petugas. Teks polos, tanpa tautan lacak.
---}}
-<p>Halo {{ $nama }},</p>
+@extends('emails.layout', ['judul' => $akunBaru ? 'Akun Petugas Baru' : 'Kata Sandi Disetel Ulang'])
 
-@if ($akunBaru)
-    <p>
-        Akun Anda pada DIGITRANS Kobalima Timur, Kabupaten Malaka, telah dibuat
-        oleh admin. Berikut kredensial masuk sementara Anda:
+@section('content')
+    <p style="margin:0 0 16px;">{{ App\Support\KontenSistem::teks('surel.sapaan') }} {{ $nama }},</p>
+    <p style="margin:0 0 16px;">
+        @if ($akunBaru)
+            Akun Anda pada {{ App\Support\KontenSistem::namaAplikasi() }} telah dibuat oleh Admin.
+        @else
+            Kata sandi akun {{ App\Support\KontenSistem::namaAplikasi() }} Anda telah disetel ulang oleh Admin.
+        @endif
     </p>
-@else
-    <p>
-        Kata sandi akun DIGITRANS Kobalima Timur Anda telah disetel ulang oleh admin.
-        Berikut kata sandi sementara Anda:
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0;border:1px solid #e4e7ec;border-radius:8px;background:#f9fafb;">
+        <tr><td style="padding:10px 14px;color:#667085;">Email</td><td style="padding:10px 14px;font-weight:700;">{{ $email }}</td></tr>
+        <tr><td style="padding:10px 14px;color:#667085;">Kata sandi sementara</td><td style="padding:10px 14px;font-family:monospace;font-size:16px;font-weight:700;">{{ $sandiSementara }}</td></tr>
+    </table>
+    <p style="margin:0 0 22px;">
+        Saat masuk pertama kali, Anda akan diminta membuat kata sandi baru
+        @if ($akunBaru) beserta username @endif. Kata sandi sementara hanya berlaku untuk sekali masuk.
     </p>
-@endif
-
-<p style="margin: 16px 0; line-height: 1.8;">
-    <strong>Email:</strong> {{ $email }}<br>
-    <strong>Kata sandi sementara:</strong>
-    <span style="font-family: monospace; font-size: 16px;">{{ $sandiSementara }}</span>
-</p>
-
-<p>
-    Saat masuk pertama kali, Anda akan diminta membuat kata sandi baru
-    @if ($akunBaru) beserta username @endif sebelum dapat memakai sistem.
-    Kata sandi sementara di atas hanya berlaku untuk sekali masuk.
-</p>
-
-<p>
-    Bila memungkinkan, admin juga menyerahkan kata sandi ini secara langsung.
-    Surel ini adalah salinan cadangan.
-</p>
-
-<p>
-    Salam,<br>
-    Tim DIGITRANS Kobalima Timur
-</p>
+    <p style="margin:0;">
+        {{ App\Support\KontenSistem::teks('surel.penutup') }}<br>
+        <strong>{{ App\Support\KontenSistem::teks('surel.nama_pengirim') }}</strong>
+    </p>
+@endsection

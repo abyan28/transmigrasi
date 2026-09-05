@@ -9,6 +9,8 @@
  * dashboard; FAQ tampil di /panduan; narasi tampil di /tentang.
  */
 
+use App\Mail\KodePemulihanSandiMail;
+use App\Mail\KredensialAkunMail;
 use App\Models\Pengaturan;
 use App\Models\User;
 use App\Support\KontenSistem;
@@ -39,7 +41,7 @@ it('memakai nilai bawaan sebelum dinas mengisinya', function () {
         ->and(KontenSistem::awalanNomorPengaduan())->toBe('PGD');
 });
 
-it('merender halaman CMS dengan kelima tab', function () {
+it('merender halaman CMS dengan keenam tab', function () {
     $this->get(route('cms'))
         ->assertOk()
         ->assertSee('Pengelolaan Konten')
@@ -47,6 +49,7 @@ it('merender halaman CMS dengan kelima tab', function () {
         ->assertSee('name="kop_kementerian"', false)
         ->assertSee('name="latar_belakang"', false)
         ->assertSee('name="awalan_nomor"', false)
+        ->assertSee('name="tab" value="surel"', false)
         ->assertSee('name="tab" value="pengumuman"', false);
 });
 
@@ -115,6 +118,31 @@ it('mengubah awalan nomor pengaduan yang dipakai NomorPengaduan', function () {
 it('menolak awalan nomor yang mengandung angka', function () {
     $this->put(route('cms.simpan'), ['tab' => 'portal', 'awalan_nomor' => 'PGD1'])
         ->assertSessionHasErrors('awalan_nomor');
+});
+
+it('menyimpan bahasa surel sistem', function () {
+    $this->put(route('cms.simpan'), [
+        'tab' => 'surel',
+        'sapaan' => 'Yth. Bapak/Ibu',
+        'penutup' => 'Hormat kami,',
+        'nama_pengirim' => 'UPT Kobalima Timur',
+        'catatan_kaki' => 'Pesan otomatis.',
+    ])->assertRedirect();
+
+    expect(KontenSistem::teks('surel.sapaan'))->toBe('Yth. Bapak/Ibu')
+        ->and(KontenSistem::teks('surel.nama_pengirim'))->toBe('UPT Kobalima Timur');
+});
+
+it('merender surel formal dengan identitas CMS', function () {
+    Pengaturan::create(['kunci' => 'surel.nama_pengirim', 'nilai' => 'UPT UJI', 'tipe' => 'teks']);
+
+    expect((new KodePemulihanSandiMail('123456'))->render())
+        ->toContain('Kementerian Transmigrasi')
+        ->toContain('123456')
+        ->toContain('UPT UJI')
+        ->and((new KredensialAkunMail('Nara', 'nara@example.test', 'Rahasia123'))->render())
+        ->toContain('nara@example.test')
+        ->toContain('Rahasia123');
 });
 
 it('menampilkan banner pengumuman aktif pada dashboard', function () {

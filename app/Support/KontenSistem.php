@@ -68,6 +68,12 @@ class KontenSistem
         'pengumuman.judul' => '',
         'pengumuman.tipe' => 'info',
         'pengumuman.isi' => '',
+
+        // Tab 6 -- Surel Sistem
+        'surel.sapaan' => 'Yth.',
+        'surel.penutup' => 'Hormat kami,',
+        'surel.nama_pengirim' => 'Tim DIGITRANS Kobalima Timur',
+        'surel.catatan_kaki' => 'Pesan ini dikirim otomatis oleh sistem. Mohon tidak membalas surel ini.',
     ];
 
     /** Kunci ber-tipe boolean (disimpan '1'/'0'). */

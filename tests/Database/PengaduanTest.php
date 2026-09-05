@@ -9,6 +9,7 @@
  * ber-bagian acak; halaman lacak tanpa data pribadi.
  */
 
+use App\Mail\PengaduanMail;
 use App\Models\PenangananPengaduan;
 use App\Models\Pengaduan;
 use App\Models\SatuanPermukiman;
@@ -20,10 +21,12 @@ use Database\Seeders\KawasanSeeder;
 use Database\Seeders\PengaduanSeeder;
 use Database\Seeders\SpSeeder;
 use Database\Seeders\WilayahSeeder;
+use Illuminate\Support\Facades\Mail;
 
 require_once __DIR__.'/DatabaseHelpers.php';
 
 beforeEach(function () {
+    Mail::fake();
     $petugas = User::factory()->create();
     $petugas->semuaIzin = true;
     $this->actingAs($petugas);
@@ -101,6 +104,8 @@ it('memperbarui data pengaduan tanpa menyentuh statusnya', function () {
 
 it('memajukan status penanganan satu langkah dan mencatat riwayatnya', function () {
     // Pengaduan 3: Menunggu Diterima -> Diterima.
+    Pengaduan::find(3)->update(['email_pelapor' => 'pelapor@example.test']);
+
     $this->post(route('pengaduan.tangani', 3), [
         'status_sesudah' => 'Diterima',
         'tanggal_penanganan' => '2026-08-20',
@@ -112,6 +117,8 @@ it('memajukan status penanganan satu langkah dan mencatat riwayatnya', function 
         ->and($p->penanganan)->toHaveCount(1)
         ->and($p->penanganan->first()->status_sebelum->value)->toBe('Menunggu Diterima')
         ->and($p->penanganan->first()->user_id)->not->toBeNull();
+
+    Mail::assertSent(PengaduanMail::class, fn ($mail) => $mail->hasTo('pelapor@example.test') && ! $mail->baru);
 });
 
 it('menolak lompatan status yang melewati satu tahap', function () {

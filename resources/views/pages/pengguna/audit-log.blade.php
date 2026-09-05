@@ -30,7 +30,7 @@
     <x-sim.halaman-daftar judul="Audit Log"
         keterangan="Jejak perubahan data penting beserta pelaku dan waktunya."
         :remah="\App\Helpers\RemahHelper::untuk('/audit-log')"
-        :jumlah="$baris->total()" :kata-kunci="$cari" :aksi-url="route('audit-log')"
+        :jumlah="$baris->total()" :paginator="$baris" :kata-kunci="$cari" :aksi-url="route('audit-log')"
         placeholder-cari="Cari keterangan atau nama tabel" judul-kosong="Belum ada catatan audit"
         pesan-kosong="Perubahan data akan tercatat di sini secara otomatis.">
 
@@ -127,13 +127,6 @@
             @endforeach
         </x-slot:kartu>
 
-        <x-slot:setelahTabel>
-            @if ($baris->hasPages())
-                <div class="border-t border-gray-200 px-5 py-4 dark:border-gray-800">
-                    {{ $baris->onEachSide(1)->links() }}
-                </div>
-            @endif
-        </x-slot:setelahTabel>
     </x-sim.halaman-daftar>
 
     <p class="mt-4 rounded-lg bg-gray-50 p-3.5 text-theme-xs text-gray-600 dark:bg-white/[0.03] dark:text-gray-400">

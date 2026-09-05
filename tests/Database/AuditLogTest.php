@@ -108,7 +108,7 @@ it('menyaring menurut rentang tahun peristiwa', function () {
         ->assertSeeText('PERISTIWA LAMA');
 });
 
-it('memaginasi setelah 25 baris', function () {
+it('memaginasi sesuai pilihan dan mempertahankannya pada tautan halaman', function () {
     petugasAuditLog();
 
     for ($i = 1; $i <= 30; $i++) {
@@ -118,12 +118,19 @@ it('memaginasi setelah 25 baris', function () {
         ]);
     }
 
-    $h1 = $this->get(route('audit-log'))->assertOk();
-    expect($h1->viewData('baris')->count())->toBe(25)
+    $h1 = $this->get(route('audit-log', ['per_halaman' => 10]))->assertOk()
+        ->assertSee('<option value="10" selected>10</option>', false)
+        ->assertSee('per_halaman=10', false);
+
+    expect($h1->viewData('baris')->count())->toBe(10)
+        ->and($h1->viewData('baris')->perPage())->toBe(10)
         ->and($h1->viewData('baris')->total())->toBe(30);
 
-    $this->get(route('audit-log', ['page' => 2]))->assertOk()
-        ->assertViewHas('baris', fn ($b) => $b->count() === 5);
+    $this->get(route('audit-log', ['per_halaman' => 10, 'page' => 2]))->assertOk()
+        ->assertViewHas('baris', fn ($b) => $b->count() === 10 && $b->currentPage() === 2);
+
+    $this->get(route('audit-log', ['per_halaman' => 999]))->assertOk()
+        ->assertViewHas('baris', fn ($b) => $b->perPage() === 25);
 });
 
 it('menolak akses role tanpa kewenangan audit_log', function () {

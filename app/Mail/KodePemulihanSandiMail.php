@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Support\KontenSistem;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
@@ -31,7 +32,7 @@ class KodePemulihanSandiMail extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: 'Kode Pemulihan Kata Sandi DIGITRANS - Digitalisasi Transmigrasi');
+        return new Envelope(subject: 'Kode Pemulihan Kata Sandi '.KontenSistem::namaAplikasi());
     }
 
     public function content(): Content

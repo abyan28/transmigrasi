@@ -87,17 +87,17 @@
                 Lihat Perkembangan Laporan
             </a>
 
-            {{--
-                Spanduk kejujuran. Surel disebut pada isian sebagai "nomor
-                dikirim juga ke surel Anda", padahal pengirimannya menunggu
-                backend. Tanpa keterangan ini warga dapat menunggu surel yang
-                tidak akan pernah datang, lalu kehilangan nomornya.
-            --}}
             @if (session('email_pelapor'))
-                <p class="mt-5 rounded-lg border border-yellow-300 bg-yellow-50 p-3 text-theme-xs text-yellow-800 dark:border-yellow-500/30 dark:bg-yellow-500/10 dark:text-yellow-200">
-                    <span class="font-medium">Pengiriman email belum aktif.</span>
-                    Nomor ini belum dikirim ke {{ session('email_pelapor') }}. Sampai layanan email
-                    berjalan, catat nomornya dari layar ini.
+                <p @class([
+                    'mt-5 rounded-lg border p-3 text-theme-xs',
+                    'border-green-200 bg-green-50 text-green-800 dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-200' => session('email_terkirim'),
+                    'border-yellow-300 bg-yellow-50 text-yellow-800 dark:border-yellow-500/30 dark:bg-yellow-500/10 dark:text-yellow-200' => ! session('email_terkirim'),
+                ])>
+                    @if (session('email_terkirim'))
+                        Salinan nomor pengaduan telah dikirim ke {{ session('email_pelapor') }}.
+                    @else
+                        Pengiriman email belum berhasil. Catat nomor pengaduan dari layar ini.
+                    @endif
                 </p>
             @endif
         </div>

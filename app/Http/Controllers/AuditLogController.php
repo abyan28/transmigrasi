@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\AksiAuditLog;
 use App\Models\AuditLog;
 use App\Models\User;
+use App\Support\Paginasi;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -24,8 +25,6 @@ use Illuminate\Support\Str;
  */
 class AuditLogController extends Controller
 {
-    private const PER_HALAMAN = 25;
-
     public function index(Request $request): View
     {
         $cari = trim((string) $request->query('cari', ''));
@@ -48,7 +47,7 @@ class AuditLogController extends Controller
             ->when($tahunSampai !== null, fn ($q) => $q->whereYear('created_at', '<=', $tahunSampai))
             ->latest('created_at')
             ->latest('id_audit_log')
-            ->paginate(self::PER_HALAMAN)
+            ->paginate(Paginasi::perHalaman($request))
             ->withQueryString();
 
         $baris->through(fn (AuditLog $a) => $this->petakan($a));

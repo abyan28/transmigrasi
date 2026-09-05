@@ -10,9 +10,11 @@ use App\Http\Controllers\Concerns\MenyimpanBerkas;
 use App\Models\PenangananPengaduan;
 use App\Models\Pengaduan;
 use App\Support\DummyData;
+use App\Support\LayananNotifikasi;
 use App\Support\NomorPengaduan;
 use App\Support\Paginasi;
 use App\Support\RekapPengaduan;
+use App\Support\SurelPengaduan;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -133,7 +135,7 @@ class PengaduanController extends Controller
         // tetap kosong sampai ditinjau.
         $data['bidang'] = ($data['bidang'] ?? null) ?: (DummyData::petaBidangKategori()[$data['kategori']] ?? null) ?: null;
 
-        DB::transaction(function () use ($request, $data) {
+        $pengaduan = DB::transaction(function () use ($request, $data) {
             $pengaduan = Pengaduan::create($this->kolom($data) + [
                 'uuid' => (string) Str::uuid(),
                 'user_id' => Auth::id(),
@@ -145,7 +147,11 @@ class PengaduanController extends Controller
             if ($request->hasFile('bukti')) {
                 $this->lekatkanBerkas($pengaduan, (array) $request->file('bukti'), 'pengaduan', 'bukti');
             }
+
+            return $pengaduan;
         });
+
+        LayananNotifikasi::pengaduanBaru($pengaduan);
 
         return redirect()->route('pengaduan.index')->with('sukses', 'Pengaduan tercatat dan menunggu diterima petugas.');
     }
@@ -162,6 +168,8 @@ class PengaduanController extends Controller
                 $this->lekatkanBerkas($pengaduan, (array) $request->file('bukti'), 'pengaduan', 'bukti');
             }
         });
+
+        LayananNotifikasi::pengaduanMendesak($pengaduan->fresh());
 
         return redirect()->route('pengaduan.detail', $id)->with('sukses', 'Perubahan data pengaduan tersimpan.');
     }
@@ -222,6 +230,10 @@ class PengaduanController extends Controller
             ])->save();
         });
 
+        $pengaduan = $pengaduan->fresh();
+        LayananNotifikasi::pengaduanMendesak($pengaduan);
+        SurelPengaduan::kirim($pengaduan);
+
         return redirect()->route('pengaduan.detail', ['id' => $id, 'tab' => 'riwayat'])
             ->with('sukses', 'Penanganan tercatat dan status pengaduan diperbarui.');
     }
@@ -231,6 +243,7 @@ class PengaduanController extends Controller
         $pengaduan = Pengaduan::findOrFail($id);
         $pengaduan->berkas()->detach();
         $pengaduan->delete();
+        LayananNotifikasi::hapusPengaduan($pengaduan);
 
         return redirect()->route('pengaduan.index')->with('sukses', 'Pengaduan dihapus.');
     }

@@ -28,6 +28,7 @@
     'pesanKosong' => null,
     'placeholderCari' => 'Cari data',
     'perHalaman' => 25,
+    'tampilkanKontrol' => true,
 
     /*
         Paginator Eloquent (Task -- Fase 1, 2026-09-05). Bila diisi, tautan
@@ -53,6 +54,7 @@
     {{ $attributes->merge(['class' => 'rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]']) }}>
 
     {{-- Baris pencarian dan pemicu filter --}}
+    @if ($tampilkanKontrol)
     <div class="flex flex-col gap-3 border-b border-gray-200 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-gray-800">
         <div class="flex items-center gap-2">
             @isset($filter)
@@ -85,7 +87,9 @@
                 yang membungkusnya (pencarian + filter laci ikut terbawa),
                 pola yang sama seperti input pencarian di sebelahnya.
             --}}
-            <x-sim.pilih-per-halaman :per-halaman="$perHalaman" />
+            @if ($paginator)
+                <x-sim.pilih-per-halaman :per-halaman="$paginator->perPage()" />
+            @endif
         </div>
 
         <div class="flex items-center gap-2">
@@ -105,14 +109,17 @@
             @endisset
         </div>
     </div>
+    @endif
 
     {{-- Laci filter, tersembunyi sampai dibuka --}}
+    @if ($tampilkanKontrol)
     @isset($filter)
         <div id="laci-filter" x-show="filterTerbuka" x-collapse x-cloak
             class="border-b border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-white/[0.02]">
             {{ $filter }}
         </div>
     @endisset
+    @endif
 
     @if ($jumlah === 0)
         {{-- Keadaan kosong wajib, membedakan data belum ada dan pencarian nihil --}}

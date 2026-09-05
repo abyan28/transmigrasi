@@ -1991,6 +1991,13 @@ it('mengisi bidang penanganan dari kategori sebagai nilai awal', function () {
 it('menandai pengaduan berprioritas mendesak yang belum selesai', function () {
     $this->get(route('pengaduan.detail', 4))
         ->assertSee('Pengaduan berprioritas mendesak');
+
+    $this->get(route('pengaduan.index'))
+        ->assertSee('motion-safe:animate-ping', false)
+        ->assertSee('Memerlukan perhatian segera');
+
+    Pengaduan::where('prioritas', 'Mendesak')->update(['status' => 'Selesai']);
+    $this->get(route('pengaduan.index'))->assertDontSee('motion-safe:animate-ping', false);
 });
 
 it('merender rekap pengaduan pada seluruh dasar pengelompokan', function () {
@@ -2213,6 +2220,13 @@ it('menyediakan kelima pola keadaan pada galeri komponen', function () {
         ->assertSee('Buka Halaman 403');             // tanpa izin
 });
 
+it('tidak merender kontrol tabel mati pada galeri komponen', function () {
+    $isi = $this->get(route('galeri-komponen'))->assertOk()->getContent();
+
+    expect($isi)->not->toContain('name="per_halaman"')
+        ->and($isi)->not->toContain('name="cari"');
+});
+
 it('memakai skeleton untuk keadaan memuat, bukan spinner layar penuh', function () {
     // Spinner menutupi seluruh halaman sehingga pengguna kehilangan konteks;
     // skeleton memberi tahu bentuk konten yang sedang datang.
@@ -2382,6 +2396,7 @@ it('membungkus setiap tabel agar tidak meluber di layar sempit', function () {
         // Tabel wajib berada dalam wadah bergulir, atau disertai tata letak
         // kartu untuk layar sempit lewat slot kartu.
         if (str_contains($isi, '<table')
+            && ! str_contains($isi, '<table role="presentation"')
             && ! str_contains($isi, 'overflow-x-auto')
             && ! str_contains($isi, 'slot:kartu')) {
             $pelanggaran[] = BerkasBlade::namaPendek($path);
@@ -4253,24 +4268,16 @@ it('membuatkan kata sandi sementara alih-alih meminta admin mengetiknya', functi
         ->and($isi)->toContain('Kata sandi sementara dibuatkan sistem');
 });
 
-it('menyatakan terus terang bahwa pengiriman email belum aktif', function () {
-    // Tampilannya sudah lengkap, tetapi pengirimannya menunggu backend. Tanpa
-    // keterangan ini admin dapat mengira petugas sudah menerima emailnya, lalu
-    // tidak menyerahkan kata sandi secara langsung.
-    //
-    // Spanduk kredensial hanya muncul SETELAH akun dibuat, sehingga sesinya
-    // perlu diisi lebih dulu. Membuka halaman biasa tidak akan pernah
-    // menampilkannya, dan uji yang tidak menyadarinya akan lulus tanpa
-    // benar-benar memeriksa apa pun.
+it('menjelaskan hasil pengiriman email kredensial tanpa menghilangkan jalur langsung', function () {
     $isi = $this->withSession(['kredensial_baru' => [
         'nama' => 'PETUGAS UJI',
         'email' => 'petugas.uji@malakakab.go.id',
         'password' => 'Tmg-7K4pQ2',
+        'email_terkirim' => true,
     ]])->get(route('pengguna.index'))->assertOk()->getContent();
 
-    expect($isi)->toContain('belum aktif')
-        // Sekaligus menjaga istilahnya, sebab teks ini termasuk yang dilihat
-        // pengguna (ui-spec.md 10.1).
+    expect($isi)->toContain('Salinan kredensial telah dikirim')
+        ->and($isi)->toContain('serahkan kata sandi secara langsung')
         ->and(mb_strtolower($isi))->not->toContain('surel');
 });
 
@@ -8388,6 +8395,10 @@ it('memberi nama pada setiap tabel', function () {
 
         foreach ($cocok[0] as $tabel) {
             [$tag, $posisi] = $tabel;
+
+            if (str_contains($tag, 'role="presentation"')) {
+                continue;
+            }
 
             // Sesudah tag pembuka, isi berarti pertama wajib <caption>.
             $sesudah = ltrim(substr($isi, $posisi + strlen($tag), 200));

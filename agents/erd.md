@@ -49,21 +49,21 @@ Pola ini dipilih agar kode mudah dibaca (`transmigran_id` langsung terbaca menun
 
 ## 2. Daftar Tabel
 
-**Sumber kebenaran: `database/data/schema.sql`** (61 `CREATE TABLE`: **55 tabel bisnis** +
+**Sumber kebenaran: `database/data/schema.sql`** (63 `CREATE TABLE`: **57 tabel bisnis** +
 6 tabel infrastruktur Laravel `sessions`/`cache`/`cache_locks`/`jobs`/`job_batches`/`failed_jobs`).
-Skema itu sudah diverifikasi impor ke MariaDB 10.4 (Putaran 12: 61 tabel, 94 FK). Tabel di
+Skema itu sudah diverifikasi impor ke MariaDB 10.4 (63 tabel, 99 FK). Tabel di
 bawah dikelompokkan 9 domain; bila berbeda dari `schema.sql`, `schema.sql` yang benar.
 
 Riwayat pertumbuhan dari "37 tabel" revisi awal: Rombongan B `anggota_keluarga`; Rombongan C
 `rute_aksesibilitas_sp`; Putaran 7 memecah alsintan/saprotan jadi induk + `*_distribusi` +
 `infrastruktur_sp` + `fasilitas_sp_cakupan`; `daftar_pilihan` menjadi tabel; `status_kondisi_sp`
-(2026-09-01); Putaran 12 menambah registry `berkas` + 12 pivot `*_berkas` dan **mencabut**
+(2026-09-01); Tahap 12 menambah `notifikasi`; Putaran 12 menambah registry `berkas` + 12 pivot `*_berkas` dan **mencabut**
 `dokumen_lahan` + `dokumen_lahan_bidang` (yang sempat ada sejak Putaran 7). Putaran 15
 menyatukan `lahan` menjadi satu baris per KK tanpa mengubah jumlah tabel.
 
 | # | Domain | Tabel |
 |---|---|---|
-| 1 | Pengguna & Sistem | `role`, `permission`, `role_permission`, `user`, `kode_pemulihan_sandi`, `audit_log` |
+| 1 | Pengguna & Sistem | `role`, `permission`, `role_permission`, `user`, `kode_pemulihan_sandi`, `audit_log`, `notifikasi` |
 | 2 | Master Wilayah & SP | `provinsi`, `kabupaten`, `kecamatan`, `desa`, `kawasan_transmigrasi`, `satuan_permukiman`, `user_satuan_permukiman`, `rute_aksesibilitas_sp` |
 | 3 | Aset SP | `inventaris_sp`, `fasilitas_sp`, `fasilitas_sp_cakupan` |
 | 4 | Master Daftar Pilihan & Penilaian | `satuan`, `komoditas`, `daftar_pilihan`, `parameter_penilaian_sp`, `status_kondisi_sp`, `penilaian_sp` |

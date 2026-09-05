@@ -1710,16 +1710,16 @@ menghapus sisa terakhir `DummyData::penggunaSaatIni()` -- dikerjakan berbarengan
 - [ ] Task 11.7 - Pelatihan pengguna (operator dan masyarakat) `[Sedang]`
 - [ ] Task 11.8 - Laporan evaluasi implementasi dan BAST `[Sedang]`
 
-## Tahap 12 — Paginasi Nyata dan Notifikasi Header
+## Tahap 12 — Perbaikan Operasional dan Data Demo
 
 Diusulkan pemilik proyek lewat riset lima-fase (paginasi → layout surel/CMS →
-notifikasi → penanda urgensi → DemoSeeder) setelah Tahap 3-10 selesai. Fase 1
-dan Fase 3 dikerjakan lebih dulu sesuai permintaan; Fase 2/4/5 menyusul.
+notifikasi → penanda urgensi → DemoSeeder) setelah Tahap 3-10 selesai. Seluruh
+fase selesai 2026-09-05; rincian hasil ada pada `session-notes.md`.
 
 - [✓] Task 12.1 - Paginasi nyata pada seluruh halaman daftar `[Sulit]` (Selesai 2026-09-05)
   * **Pola:** `App\Support\Paginasi::perHalaman($request)` (validasi ke 10/25/50/100,
-    bawaan 25, `rules.md` 13.3 poin 2) + `->paginate()->withQueryString()` pada
-    query builder SEBELUM penyaring diterapkan (`rules.md` 5.0b-1 poin 13) --
+    bawaan 25, `rules.md` 13.3 poin 2) + penyaring pada query builder SEBELUM
+    `->paginate()->withQueryString()` (`rules.md` 5.0b-1 poin 13) --
     menggantikan pola lama "ambil semua baris lewat `daftar()` privat, saring
     dengan `array_filter` di PHP, serahkan larik utuh tak terpaginasi ke view".
   * **16 controller dikonversi:** Transmigran, Pengaduan, Poktan, Rumah, Lahan,
@@ -1774,17 +1774,26 @@ dan Fase 3 dikerjakan lebih dulu sesuai permintaan; Fase 2/4/5 menyusul.
   * **Verifikasi:** `vendor/bin/pint --test` bersih seluruh proyek;
     `php artisan sim:banding-skema --lengkap` tetap NOL SELISIH (tak ada
     perubahan skema); suite Feature dan Database dijalankan penuh.
-- [ ] Task 12.2 - Notifikasi header (Fase 3) `[Sulit]`
-  * Tabel `notifikasi` baru + lima sumber pemicu (pengaduan baru, pengaduan
-    mendesak belum selesai, SP jadi Perlu Penanganan, infrastruktur Rusak
-    Berat, akun dibuat/sandi direset Admin). Rencana lengkap:
-    `C:\Users\v28mt\.claude\plans\logical-whistling-salamander.md`.
+- [✓] Task 12.1b - Penutupan celah UI paginasi `[Mudah]` -- **SELESAI 2026-09-05**
+  * Dropdown memakai `$paginator->perPage()`, Audit Log menerima 10/25/50/100, dan galeri komponen tidak lagi merender kontrol mati.
+- [✓] Task 12.2 - Notifikasi header (Fase 3) `[Sulit]` -- **SELESAI 2026-09-05**
+  * Tabel `notifikasi` + lima sumber: pengaduan baru, pengaduan mendesak, SP Perlu Penanganan, infrastruktur Rusak Berat, dan aktivitas akun Admin.
+  * Penerima disaring izin/cakupan; deduplikasi per penerima; halaman dan dropdown hanya membaca baris `user_id` akun sendiri.
+  * Mesin `PenilaianKondisiSp` beralih dari `DummyData` ke daftar pilihan, parameter, ambang, infrastruktur, fasilitas, dan cakupan SP nyata.
+- [✓] Task 12.3 - Layout surel formal + CMS `[Sedang]` -- **SELESAI 2026-09-05**
+  * Layout HTML ringan bersama, tab CMS Surel, kode pemulihan, kredensial akun, nomor pengaduan, serta pembaruan status.
+- [✓] Task 12.4 - Penanda urgensi pengaduan `[Mudah]` -- **SELESAI 2026-09-05**
+  * Kartu Mendesak memakai aksen gold dan `motion-safe:animate-ping` hanya saat jumlahnya lebih dari nol.
+- [✓] Task 12.5 - DemoSeeder terpisah `[Sedang]` -- **SELESAI 2026-09-05**
+  * 90 KK sebagai induk; data kecil lama tetap subset identik dan suite uji tetap memakai `DataMasterSeeder`.
+  * Hasil DB demo: 270 anggota keluarga, 90 rumah, 85 lahan, 30 poktan, 35 alsintan, 40 saprotan, 60 penanaman, 50 panen, 60 pengaduan, 30 inventaris, 30 fasilitas, dan notifikasi contoh.
+  * Jalankan eksplisit: `php artisan migrate:fresh --seed --seeder=DemoSeeder --force`.
 
 ---
 
 ## Catatan Checkpoint
 
-**Checkpoint terakhir:** 2026-08-11 — Tahap 0 selesai (8 task) dan Tahap 1 sebagian (Task 1.1, 1.2, 1.2b, 1.3, 1.4, 1.4b). Delapan dokumen acuan sudah selaras, dan **fondasi proyek Laravel sudah berdiri di root proyek**.
+**Checkpoint terakhir:** 2026-09-05 — Tahap 12 selesai (Task 12.1-12.5). Paginasi nyata, notifikasi internal, surel formal berbasis CMS, penanda urgensi, dan DemoSeeder sudah terverifikasi.
 
 **Struktur folder:**
 

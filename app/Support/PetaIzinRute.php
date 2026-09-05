@@ -186,8 +186,9 @@ class PetaIzinRute
             // Ganti kata sandi wajib: tiap pengguna berhak (dan diwajibkan)
             // menggantinya, lepas dari role -- ber-`auth` di routes/web.php.
             'ganti-kata-sandi', 'ganti-kata-sandi.simpan',
-            // Profil sendiri: tiap pengguna berhak menyunting kontak & sandinya.
+            // Profil dan notifikasi sendiri selalu terikat ke user yang masuk.
             'profil', 'profil.simpan', 'profil.kata-sandi', 'profil.kata-sandi.simpan',
+            'notifikasi.index', 'notifikasi.baca', 'notifikasi.baca-semua',
             // Halaman informasi umum.
             'tentang', 'panduan',
             // Dev-only, dijadwalkan dihapus sebelum penyerahan.

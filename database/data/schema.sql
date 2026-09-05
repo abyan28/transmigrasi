@@ -1555,6 +1555,38 @@ CREATE TABLE `pengaturan` (
   PRIMARY KEY (`kunci`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 11.2 notifikasi ----------------------
+-- Satu baris per penerima dan kejadian. Subjek memakai FK eksplisit supaya
+-- integritas dan cakupan data tetap ditegakkan database, bukan pointer polymorphic.
+CREATE TABLE `notifikasi` (
+  `id_notifikasi`        BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `user_id`              BIGINT UNSIGNED NOT NULL,
+  `jenis`                ENUM('Pengaduan Baru','Pengaduan Mendesak','SP Perlu Penanganan','Infrastruktur Rusak Berat','Akun Pengguna') NOT NULL,
+  `pengaduan_id`         BIGINT UNSIGNED NULL,
+  `satuan_permukiman_id` BIGINT UNSIGNED NULL,
+  `infrastruktur_id`     BIGINT UNSIGNED NULL,
+  `subjek_user_id`       BIGINT UNSIGNED NULL,
+  `pesan`                VARCHAR(255) NOT NULL,
+  `dibaca_at`            TIMESTAMP NULL DEFAULT NULL,
+  `created_at`           TIMESTAMP NULL DEFAULT NULL,
+  `updated_at`           TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (`id_notifikasi`),
+  KEY `idx_notifikasi_user_dibaca` (`user_id`,`dibaca_at`),
+  KEY `idx_notifikasi_jenis_pengaduan` (`jenis`,`pengaduan_id`),
+  KEY `idx_notifikasi_jenis_sp` (`jenis`,`satuan_permukiman_id`),
+  KEY `idx_notifikasi_jenis_infrastruktur` (`jenis`,`infrastruktur_id`),
+  CONSTRAINT `fk_notifikasi_user`
+    FOREIGN KEY (`user_id`) REFERENCES `user` (`id_user`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_notifikasi_pengaduan`
+    FOREIGN KEY (`pengaduan_id`) REFERENCES `pengaduan` (`id_pengaduan`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_notifikasi_sp`
+    FOREIGN KEY (`satuan_permukiman_id`) REFERENCES `satuan_permukiman` (`id_satuan_permukiman`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_notifikasi_infrastruktur`
+    FOREIGN KEY (`infrastruktur_id`) REFERENCES `infrastruktur` (`id_infrastruktur`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_notifikasi_subjek_user`
+    FOREIGN KEY (`subjek_user_id`) REFERENCES `user` (`id_user`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 -- #############################################################################
 -- TABEL INFRASTRUKTUR FRAMEWORK LARAVEL
@@ -1632,5 +1664,5 @@ CREATE TABLE `failed_jobs` (
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- =============================================================================
--- SELESAI. 44 tabel bisnis + 6 tabel framework Laravel = 50 tabel.
+-- SELESAI. 57 tabel bisnis + 6 tabel framework Laravel = 63 tabel.
 -- =============================================================================

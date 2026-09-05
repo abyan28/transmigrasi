@@ -6,6 +6,7 @@ use App\Enums\JenisDaftarPilihan;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
 use App\Models\Infrastruktur;
 use App\Support\DummyData;
+use App\Support\LayananNotifikasi;
 use App\Support\Paginasi;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
@@ -88,31 +89,44 @@ class InfrastrukturController extends Controller
         $data = $this->validasi($request);
         $infra = Infrastruktur::create($data);
 
-        $infra->cakupan()->sync($this->cakupan($request, $data['satuan_permukiman_id']));
+        $cakupan = $this->cakupan($request, $data['satuan_permukiman_id']);
+        $infra->cakupan()->sync($cakupan);
         $this->lekatkanBerkas($infra, (array) $request->file('foto', []), 'infrastruktur', 'foto');
+
+        LayananNotifikasi::infrastrukturRusakBerat($infra);
+        LayananNotifikasi::hitungUlangSp($cakupan);
 
         return redirect()->route('infrastruktur.index')->with('sukses', 'Data infrastruktur SP tersimpan.');
     }
 
     public function perbarui(Request $request, int $id): RedirectResponse
     {
-        $infra = Infrastruktur::findOrFail($id);
+        $infra = Infrastruktur::with('cakupan')->findOrFail($id);
+        $cakupanLama = $infra->cakupan->pluck('id_satuan_permukiman')->all();
         $data = $this->validasi($request, $infra);
         $infra->update($data);
 
-        $infra->cakupan()->sync($this->cakupan($request, $data['satuan_permukiman_id']));
+        $cakupan = $this->cakupan($request, $data['satuan_permukiman_id']);
+        $infra->cakupan()->sync($cakupan);
         $this->lekatkanBerkas($infra, (array) $request->file('foto', []), 'infrastruktur', 'foto');
+
+        LayananNotifikasi::infrastrukturRusakBerat($infra);
+        LayananNotifikasi::hitungUlangSp([...$cakupanLama, ...$cakupan]);
 
         return redirect()->route('infrastruktur.index')->with('sukses', 'Perubahan data infrastruktur tersimpan.');
     }
 
     public function hapus(int $id): RedirectResponse
     {
-        $infra = Infrastruktur::findOrFail($id);
+        $infra = Infrastruktur::with('cakupan')->findOrFail($id);
+        $cakupan = $infra->cakupan->pluck('id_satuan_permukiman')->all();
 
         $infra->berkas()->detach();
         $infra->cakupan()->detach();
         $infra->delete();
+
+        LayananNotifikasi::hapusInfrastruktur($infra);
+        LayananNotifikasi::hitungUlangSp($cakupan);
 
         return redirect()->route('infrastruktur.index')->with('sukses', 'Data infrastruktur dihapus.');
     }

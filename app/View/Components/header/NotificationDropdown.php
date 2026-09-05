@@ -8,19 +8,14 @@ use Illuminate\View\Component;
 
 class NotificationDropdown extends Component
 {
-    /**
-     * Create a new component instance.
-     */
-    public function __construct()
-    {
-        //
-    }
-
-    /**
-     * Get the view / contents that represent the component.
-     */
     public function render(): View|Closure|string
     {
-        return view('components.header.notification-dropdown');
+        $pengguna = auth()->user();
+        $notifikasi = $pengguna?->notifikasi()->latest('created_at')->limit(8)->get() ?? collect();
+
+        return view('components.header.notification-dropdown', [
+            'notifikasi' => $notifikasi,
+            'belumDibaca' => $pengguna?->notifikasi()->whereNull('dibaca_at')->count() ?? 0,
+        ]);
     }
 }

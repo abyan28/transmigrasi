@@ -1,3 +1,17 @@
+# Tahap 12 SELESAI — Paginasi, Notifikasi, Surel, Urgensi, DemoSeeder (2026-09-05)
+
+- Task 12.1b menutup tiga celah Fase 1: dropdown membaca `paginator->perPage()`, Audit Log memakai pilihan 10/25/50/100, dan galeri komponen tidak lagi merender kontrol tabel mati.
+- Mesin `PenilaianKondisiSp` kini membaca `daftar_pilihan`, `parameter_penilaian_sp`, `status_kondisi_sp`, infrastruktur/fasilitas serta pivot cakupan nyata; bukan `DummyData`.
+- Tabel `notifikasi` menyimpan satu baris per penerima/kejadian. Lima sumber aktif: pengaduan baru, pengaduan mendesak, SP Perlu Penanganan, infrastruktur Rusak Berat, dan aktivitas akun Admin. Aksi baca dibatasi `user_id`.
+- Header memakai jumlah belum dibaca nyata, dropdown delapan terbaru, halaman `/notifikasi`, baca satu, dan baca semua.
+- Layout surel formal bersama membaca identitas CMS. Tab keenam CMS mengatur sapaan, penutup, nama pengirim, dan catatan kaki. Kode pemulihan, kredensial akun, nomor pengaduan, dan perubahan status memakai layout ini.
+- Kartu Mendesak memakai aksen gold + `motion-safe:animate-ping` hanya jika ada laporan mendesak belum selesai.
+- `DemoSeeder` terpisah menghasilkan 90 KK, 270 anggota, 90 rumah, 85 lahan, 30 poktan, 35 alsintan, 40 saprotan, 60 penanaman, 50 panen, 60 pengaduan, serta 30 inventaris/fasilitas. Dataset kecil uji tetap menjadi subset identik.
+- Verifikasi: Feature 739 PASS (7.324 asersi), Database 467 PASS (1.858 asersi), Pint bersih, `sim:banding-skema --lengkap` NOL SELISIH, `sim:tautan-statis` 14, Vite build sukses.
+- DB lokal `digitrans` sudah `migrate:fresh --seed --seeder=DemoSeeder --force` dan siap diperiksa lewat phpMyAdmin.
+
+---
+
 # Task 10.1-10.3 SELESAI - Export Excel & PDF sisi peramban (2026-09-05)
 
 Sisa Tahap 10 yang tertunda (Task 10.1-10.3) didiskusikan lebih dulu atas

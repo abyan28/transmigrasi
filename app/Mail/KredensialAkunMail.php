@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Support\KontenSistem;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
@@ -39,8 +40,8 @@ class KredensialAkunMail extends Mailable
         // bersama ratusan pesan lain, sehingga akronim saja tidak cukup
         // dikenali penerima yang baru pertama kali menerimanya.
         return new Envelope(subject: $this->akunBaru
-            ? 'Akun DIGITRANS - Digitalisasi Transmigrasi Anda telah dibuat'
-            : 'Kata sandi DIGITRANS - Digitalisasi Transmigrasi Anda telah disetel ulang');
+            ? 'Akun '.KontenSistem::namaAplikasi().' Anda telah dibuat'
+            : 'Kata sandi '.KontenSistem::namaAplikasi().' Anda telah disetel ulang');
     }
 
     public function content(): Content

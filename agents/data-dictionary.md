@@ -1,7 +1,7 @@
 # data-dictionary.md
 ## Kamus Data — Sistem Informasi Digitalisasi Monitoring Pertanian dan Tata Kelola Data Kawasan Transmigrasi Kobalima Timur
 
-Dokumen ini merinci setiap kolom pada 33 tabel yang dirancang di `erd.md`. Dipakai sebagai acuan saat membuat form frontend (nama field, label, dan aturan validasi) maupun saat menulis migration Laravel.
+Dokumen ini merinci setiap kolom pada 57 tabel bisnis yang dirancang di `erd.md`. Dipakai sebagai acuan saat membuat form frontend (nama field, label, dan aturan validasi) maupun saat menulis migration Laravel.
 
 **Cara membaca kolom "Null":** `TIDAK` berarti wajib diisi, `YA` berarti boleh kosong.
 
@@ -12,7 +12,7 @@ Dokumen ini merinci setiap kolom pada 33 tabel yang dirancang di `erd.md`. Dipak
 ## Daftar Isi
 
 1. [Aturan Umum](#1-aturan-umum)
-2. [Domain Pengguna dan Sistem](#2-domain-pengguna-dan-sistem) &mdash; termasuk `kode_pemulihan_sandi` (2.3)
+2. [Domain Pengguna dan Sistem](#2-domain-pengguna-dan-sistem) &mdash; termasuk `kode_pemulihan_sandi` (2.3) dan `notifikasi` (2.4)
 3. [Domain Master Wilayah](#3-domain-master-wilayah)
 4. [Domain Aset SP](#4-domain-aset-sp)
 5. [Domain Master Daftar Pilihan](#5-domain-master-daftar-pilihan)
@@ -226,6 +226,24 @@ Menggantikan tabel bawaan `password_reset_tokens`, yang strukturnya dirancang un
 - Baris tidak dihapus setelah dipakai, melainkan ditandai lewat `dipakai_pada`, agar percobaan pemakaian ulang tetap terlacak.
 - Tabel ini **tidak menyimpan alamat surel tujuan**. Alamat dibaca dari `user` saat pengiriman, sehingga perubahan surel tidak meninggalkan salinan usang di sini.
 - Permintaan kode **tidak pernah dibalas berbeda** antara akun yang ada dan tidak ada (`rules.md` 14b poin 9), sehingga tabel ini juga tidak boleh dipakai sebagai sumber pesan galat yang membedakan keduanya.
+
+### 2.4 `notifikasi`
+
+Pemberitahuan internal petugas. Satu kejadian menghasilkan satu baris per penerima agar status dibaca tidak saling memengaruhi.
+
+| Kolom | Tipe | Null | Kunci | Keterangan |
+|---|---|---|---|---|
+| `id_notifikasi` | `BIGINT UNSIGNED AUTO_INCREMENT` | TIDAK | PK | |
+| `user_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | Penerima |
+| `jenis` | `ENUM` | TIDAK | IDX | Pengaduan Baru, Pengaduan Mendesak, SP Perlu Penanganan, Infrastruktur Rusak Berat, Akun Pengguna |
+| `pengaduan_id` | `BIGINT UNSIGNED` | YA | FK, IDX | Subjek pengaduan |
+| `satuan_permukiman_id` | `BIGINT UNSIGNED` | YA | FK, IDX | Subjek SP/cakupan |
+| `infrastruktur_id` | `BIGINT UNSIGNED` | YA | FK, IDX | Subjek infrastruktur |
+| `subjek_user_id` | `BIGINT UNSIGNED` | YA | FK | Akun yang dibicarakan, berbeda dari penerima |
+| `pesan` | `VARCHAR(255)` | TIDAK | | Ringkasan aman ditampilkan |
+| `dibaca_at` | `TIMESTAMP` | YA | IDX | `NULL` berarti belum dibaca |
+
+Notifikasi memakai FK eksplisit, bukan pointer polymorphic. Penerima ditentukan dari izin dan cakupan data saat kejadian terjadi; setiap aksi baca selalu dibatasi `user_id` akun yang masuk.
 
 ---
 
@@ -1518,7 +1536,7 @@ Menyatakan daftar mana saja yang dikelola Admin lewat data master daftar pilihan
 
 Setiap nilai di sini **wajib punya kolom yang membacanya**. Menambah satu nilai karena itu selalu berpasangan dengan menyunting kolom pada kamus data; tanpa itu, daftar yang dikelolanya tidak pernah tampil di mana pun.
 
-Pemeriksaan "apakah jenis ini berskor" dan "apakah urutannya bermakna" **dilarang** membandingkan nilai teks; pakai `JenisReferensi::berskor()` dan `berjenjang()`.
+Pemeriksaan "apakah jenis ini berskor" dan "apakah urutannya bermakna" **dilarang** membandingkan nilai teks; pakai `JenisDaftarPilihan::berskor()` dan `berjenjang()`.
 
 ### 11.36 Alasan pergantian kepala keluarga
 
@@ -1589,6 +1607,12 @@ Enum `App\Enums\StatusAnggotaKeluarga`. Dipakai `anggota_keluarga.status` (Putar
 - `StatusAnggotaKeluarga` hanya untuk anggota **non-kepala**, yang tidak membawa rumah/lahan/poktan sehingga barisnya aman ditandai per orang.
 
 Metode turunan Monografi: `DummyData::strukturUmurSp($id)` (14 kelompok umur × L/P, Σ = `jiwaPerSp($id)`), `DummyData::mutasiPendudukSp($id)` (mutasi kumulatif sejak `tahun_penempatan`, tanpa perkawinan), `DummyData::jiwaPerSp()` (porsi KK × `ringkasanDashboard()['jumlah_jiwa']`). Semuanya angka contoh turunan deterministik.
+
+### 11.45 Jenis notifikasi
+
+`Pengaduan Baru` · `Pengaduan Mendesak` · `SP Perlu Penanganan` · `Infrastruktur Rusak Berat` · `Akun Pengguna`
+
+Dipakai `notifikasi.jenis`. Satu kejadian ditulis sekali per penerima; status dibaca karena itu tidak pernah berpindah antar-akun.
 
 ---
 

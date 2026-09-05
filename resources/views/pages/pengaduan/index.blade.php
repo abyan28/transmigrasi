@@ -49,7 +49,7 @@
         <x-sim.stat-card label="Menunggu Diterima" :nilai="number_format($menungguDiterima, 0, ',', '.')"
             keterangan="Perlu disaring petugas" />
         <x-sim.stat-card label="Berprioritas Mendesak" :nilai="number_format($mendesak, 0, ',', '.')"
-            keterangan="Perlu segera ditindaklanjuti" />
+            keterangan="Perlu segera ditindaklanjuti" :mendesak="$mendesak > 0" />
     </div>
 
     <form method="GET" action="{{ route('pengaduan.index') }}">

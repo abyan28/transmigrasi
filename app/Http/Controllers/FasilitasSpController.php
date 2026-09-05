@@ -7,6 +7,7 @@ use App\Enums\JenisFasilitas;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
 use App\Models\FasilitasSp;
 use App\Support\DummyData;
+use App\Support\LayananNotifikasi;
 use App\Support\Paginasi;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
@@ -85,31 +86,41 @@ class FasilitasSpController extends Controller
         $data = $this->validasi($request);
         $fasilitas = FasilitasSp::create($data);
 
-        $fasilitas->cakupan()->sync($this->cakupan($request, $data['satuan_permukiman_id']));
+        $cakupan = $this->cakupan($request, $data['satuan_permukiman_id']);
+        $fasilitas->cakupan()->sync($cakupan);
         $this->lekatkanBerkas($fasilitas, (array) $request->file('foto', []), 'fasilitas_sp', 'foto');
+
+        LayananNotifikasi::hitungUlangSp($cakupan);
 
         return redirect()->route('sp.fasilitas')->with('sukses', 'Data fasilitas SP tersimpan.');
     }
 
     public function perbarui(Request $request, int $id): RedirectResponse
     {
-        $fasilitas = FasilitasSp::findOrFail($id);
+        $fasilitas = FasilitasSp::with('cakupan')->findOrFail($id);
+        $cakupanLama = $fasilitas->cakupan->pluck('id_satuan_permukiman')->all();
         $data = $this->validasi($request, $fasilitas);
         $fasilitas->update($data);
 
-        $fasilitas->cakupan()->sync($this->cakupan($request, $data['satuan_permukiman_id']));
+        $cakupan = $this->cakupan($request, $data['satuan_permukiman_id']);
+        $fasilitas->cakupan()->sync($cakupan);
         $this->lekatkanBerkas($fasilitas, (array) $request->file('foto', []), 'fasilitas_sp', 'foto');
+
+        LayananNotifikasi::hitungUlangSp([...$cakupanLama, ...$cakupan]);
 
         return redirect()->route('sp.fasilitas')->with('sukses', 'Perubahan data fasilitas tersimpan.');
     }
 
     public function hapus(int $id): RedirectResponse
     {
-        $fasilitas = FasilitasSp::findOrFail($id);
+        $fasilitas = FasilitasSp::with('cakupan')->findOrFail($id);
+        $cakupan = $fasilitas->cakupan->pluck('id_satuan_permukiman')->all();
 
         $fasilitas->berkas()->detach();
         $fasilitas->cakupan()->detach();
         $fasilitas->delete();
+
+        LayananNotifikasi::hitungUlangSp($cakupan);
 
         return redirect()->route('sp.fasilitas')->with('sukses', 'Data fasilitas dihapus.');
     }

@@ -1049,6 +1049,23 @@ Pola berikut adalah **standar yang harus dibangun dan dipatuhi** sejak awal proy
 6. Rute yang secara wajar menembakkan banyak permintaan sekaligus, misalnya export massal dan unggah template luring, **wajib dikecualikan** dari batas halaman biasa dan diberi batasnya sendiri. Menaikkan batas untuk seluruh pengguna demi satu fitur adalah penyelesaian yang keliru.
 7. Sistem tidak memakai CAPTCHA, sesuai §10b poin 1g.
 
+### 14d. Aturan Notifikasi Internal
+1. Notifikasi disimpan **satu baris per penerima dan kejadian** agar status dibaca tidak berpindah antar-akun.
+2. Penerima wajib memiliki izin lihat modul terkait dan memenuhi cakupan data role pada saat kejadian dibuat.
+3. Lima sumber notifikasi: pengaduan baru, pengaduan mendesak belum selesai, SP berubah menjadi Perlu Penanganan, infrastruktur Rusak Berat, serta akun dibuat/reset oleh Admin.
+4. Deduplikasi notifikasi wajib memasukkan `user_id`; satu penerima yang belum membaca tidak boleh menghalangi penerima lain.
+5. Membuka dropdown tidak menandai notifikasi dibaca. Baris ditandai dibaca saat dipilih, atau lewat tindakan "Tandai semua dibaca".
+6. Aksi baca wajib membatasi kueri ke `user_id` pengguna yang sedang masuk; id notifikasi tidak boleh membuka milik akun lain.
+7. Pembentukan notifikasi dilakukan setelah transaksi bisnis dan sinkronisasi pivot berhasil.
+8. Notifikasi adalah pemberitahuan ringkas, bukan pengganti audit log maupun surel kepada warga.
+
+### 14e. Aturan Surel Sistem
+1. Seluruh surel memakai layout resmi bersama yang membaca identitas instansi dari CMS; isi dinamis penting seperti kode verifikasi, nomor pengaduan, status, dan masa berlaku tetap dikuasai kode.
+2. CMS hanya boleh mengubah sapaan, penutup, nama pengirim, dan catatan kaki agar kesalahan redaksional tidak dapat menghapus informasi keamanan.
+3. Surel harus ringan: CSS inline, tanpa font eksternal dan tanpa pelacak. Nomor/kode tetap terlihat sebagai teks bila gambar tidak dimuat.
+4. Pengaduan dengan alamat email menerima nomor saat dikirim dan pembaruan pada setiap perubahan status. Surel tidak pernah menjadi satu-satunya cara memperoleh nomor atau perkembangan.
+5. Kegagalan SMTP dicatat ke log tetapi tidak membatalkan transaksi bisnis. Antarmuka wajib mengatakan apakah salinan email berhasil dikirim.
+
 ### 15. Aturan Backup dan Pemeliharaan
 1. Backup data harus dilakukan secara terjadwal.
 2. File foto/dokumen harus ikut dipertimbangkan dalam strategi backup.

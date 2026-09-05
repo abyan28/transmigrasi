@@ -406,6 +406,8 @@ class ImporEngine
 
         $infra = Infrastruktur::create($v->validated());
         $infra->cakupan()->sync([$spId]);
+        LayananNotifikasi::infrastrukturRusakBerat($infra);
+        LayananNotifikasi::hitungUlangSp([$spId]);
 
         return null;
     }
@@ -506,6 +508,7 @@ class ImporEngine
 
         $fasilitas = FasilitasSp::create($v->validated());
         $fasilitas->cakupan()->sync([$spId]);
+        LayananNotifikasi::hitungUlangSp([$spId]);
 
         return null;
     }

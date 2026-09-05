@@ -3,7 +3,7 @@
 {{--
     Pengelolaan Konten Sistem (CMS) -- Task 9.6.
 
-    Lima tab, tiap tab satu <form> yang menyimpan lewat `cms.simpan` (PUT)
+    Enam tab, tiap tab satu <form> yang menyimpan lewat `cms.simpan` (PUT)
     dengan penanda `tab`. Nilai awal dari `App\Support\KontenSistem` (bawaan =
     teks mockup lama), sehingga tampilan tidak berubah sebelum disunting.
 
@@ -42,6 +42,7 @@
                     'laporan' => 'Kop & Dokumen Laporan',
                     'informasi' => 'Konten Profil & FAQ',
                     'portal' => 'Portal Pengaduan Warga',
+                    'surel' => 'Surel Sistem',
                     'pengumuman' => 'Pengumuman Dinas',
                 ] as $kunci => $label)
                     <button type="button" role="tab" @click="setTab('{{ $kunci }}')"
@@ -410,7 +411,49 @@
             </div>
 
             {{-- ================================================================= --}}
-            {{-- TAB 5: PENGUMUMAN DINAS --}}
+            {{-- TAB 5: SUREL SISTEM --}}
+            {{-- ================================================================= --}}
+            <div x-show="tab === 'surel'" x-cloak role="tabpanel" class="p-5 sm:p-6">
+                <form method="POST" action="{{ route('cms.simpan') }}" class="max-w-3xl space-y-6">
+                    @csrf
+                    @method('PUT')
+                    <input type="hidden" name="tab" value="surel" />
+
+                    <section>
+                        <h3 class="{{ $kelasBagian }}">Bahasa Surel Resmi</h3>
+                        <p class="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
+                            Dipakai pada seluruh surel sistem. Kode verifikasi, nomor pengaduan, status, dan peringatan keamanan tetap dikelola sistem agar tidak terhapus.
+                        </p>
+                        <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <label for="cms_surel_sapaan" class="{{ $kelasLabel }}">Sapaan<span class="text-error-500">*</span></label>
+                                <input type="text" id="cms_surel_sapaan" name="sapaan" required maxlength="100"
+                                    value="{{ old('sapaan', $konten['surel.sapaan']) }}" class="{{ $kelasKontrol }}" />
+                            </div>
+                            <div>
+                                <label for="cms_surel_penutup" class="{{ $kelasLabel }}">Penutup<span class="text-error-500">*</span></label>
+                                <input type="text" id="cms_surel_penutup" name="penutup" required maxlength="100"
+                                    value="{{ old('penutup', $konten['surel.penutup']) }}" class="{{ $kelasKontrol }}" />
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label for="cms_surel_pengirim" class="{{ $kelasLabel }}">Nama Pengirim<span class="text-error-500">*</span></label>
+                                <input type="text" id="cms_surel_pengirim" name="nama_pengirim" required maxlength="255"
+                                    value="{{ old('nama_pengirim', $konten['surel.nama_pengirim']) }}" class="{{ $kelasKontrol }}" />
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label for="cms_surel_catatan" class="{{ $kelasLabel }}">Catatan Kaki</label>
+                                <textarea id="cms_surel_catatan" name="catatan_kaki" rows="3" maxlength="500"
+                                    class="{{ $kelasArea }}">{{ old('catatan_kaki', $konten['surel.catatan_kaki']) }}</textarea>
+                            </div>
+                        </div>
+                    </section>
+
+                    <button type="submit" class="{{ $simpanBtn }}">Simpan Pengaturan Surel</button>
+                </form>
+            </div>
+
+            {{-- ================================================================= --}}
+            {{-- TAB 6: PENGUMUMAN DINAS --}}
             {{-- ================================================================= --}}
             <div x-show="tab === 'pengumuman'" x-cloak role="tabpanel" class="p-5 sm:p-6">
                 <div class="grid gap-8 lg:grid-cols-12"

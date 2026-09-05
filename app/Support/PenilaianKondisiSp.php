@@ -2,8 +2,14 @@
 
 namespace App\Support;
 
+use App\Enums\JenisDaftarPilihan;
 use App\Enums\StatusKondisiSp;
 use App\Enums\TingkatKebutuhan;
+use App\Models\DaftarPilihan;
+use App\Models\FasilitasSp;
+use App\Models\Infrastruktur;
+use App\Models\ParameterPenilaianSp;
+use App\Models\SatuanPermukiman;
 
 /**
  * Penghitung status kondisi satuan permukiman.
@@ -50,7 +56,13 @@ class PenilaianKondisiSp
      */
     public static function nilaiKondisi(): array
     {
-        return DummyData::skorKondisi();
+        return DaftarPilihan::query()
+            ->where('jenis', JenisDaftarPilihan::Kondisi->value)
+            ->where('is_aktif', true)
+            ->whereNotNull('nilai_skor')
+            ->pluck('nilai_skor', 'nilai')
+            ->map(fn ($nilai) => (float) $nilai)
+            ->all();
     }
 
     /** Nilai untuk parameter yang asetnya tidak ditemukan sama sekali. */
@@ -78,21 +90,38 @@ class PenilaianKondisiSp
      */
     public static function parameter(): array
     {
-        return DummyData::parameterDinilai();
+        return ParameterPenilaianSp::query()
+            ->with('daftarPilihan')
+            ->where('is_dinilai', true)
+            ->orderBy('urutan')
+            ->get()
+            ->map(fn (ParameterPenilaianSp $parameter): array => [
+                'id_parameter_penilaian_sp' => $parameter->id_parameter_penilaian_sp,
+                'kode' => $parameter->kode,
+                'nama' => $parameter->nama,
+                'tingkat' => TingkatKebutuhan::from($parameter->tingkat),
+                'bobot' => $parameter->bobot,
+                'sumber' => $parameter->sumber,
+                'daftar_pilihan_id' => $parameter->daftar_pilihan_id,
+                'nilai_jenis' => $parameter->daftarPilihan?->nilai,
+                'is_dinilai' => $parameter->is_dinilai,
+                'urutan' => $parameter->urutan,
+            ])
+            ->all();
     }
 
     /**
      * Menilai satu satuan permukiman.
      *
      * @param  int  $satuanPermukimanId  Id SP yang dinilai
-     * @param  array<int, array<string, mixed>>|null  $infrastruktur  Aset infrastruktur; null berarti dibaca dari data contoh
-     * @param  array<int, array<string, mixed>>|null  $fasilitas  Fasilitas SP; null berarti dibaca dari data contoh
+     * @param  array<int, array<string, mixed>>|null  $infrastruktur  Aset infrastruktur; null berarti dibaca dari database
+     * @param  array<int, array<string, mixed>>|null  $fasilitas  Fasilitas SP; null berarti dibaca dari database
      * @return array<string, mixed> Hasil penilaian beserta rinciannya
      */
     public static function nilai(int $satuanPermukimanId, ?array $infrastruktur = null, ?array $fasilitas = null): array
     {
-        $infrastruktur ??= DummyData::infrastruktur();
-        $fasilitas ??= DummyData::fasilitasSp();
+        $infrastruktur ??= self::infrastruktur();
+        $fasilitas ??= self::fasilitas();
 
         // Aset yang MELAYANI SP yang sedang dinilai, bukan hanya yang berpangkal
         // di sana (Putaran 7). Satu irigasi atau kios yang melayani beberapa SP
@@ -125,7 +154,7 @@ class PenilaianKondisiSp
             // nol. Menilainya nol berarti seluruh SP mendadak dianggap tidak
             // punya air hanya karena satu baris daftar pilihan hilang, dan pada
             // parameter primer itu langsung menjatuhkan status setiap SP.
-            $jenisRujukan = DummyData::daftarPilihanNilai($par['daftar_pilihan_id']);
+            $jenisRujukan = $par['nilai_jenis'];
 
             if ($jenisRujukan === null) {
                 continue;
@@ -163,6 +192,37 @@ class PenilaianKondisiSp
             'rincian' => $rincian,
             'tanggal_penilaian' => date('Y-m-d'),
         ];
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private static function infrastruktur(): array
+    {
+        return Infrastruktur::withoutGlobalScopes()->with('cakupan')->get()
+            ->map(fn (Infrastruktur $aset): array => [
+                'jenis' => $aset->jenis,
+                'kondisi' => $aset->kondisi,
+                'satuan_permukiman_id' => $aset->satuan_permukiman_id,
+                'satuan_permukiman_ids' => $aset->cakupan->pluck('id_satuan_permukiman')->all()
+                    ?: [$aset->satuan_permukiman_id],
+            ])->all();
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private static function fasilitas(): array
+    {
+        return FasilitasSp::withoutGlobalScopes()->with('cakupan')->get()
+            ->map(fn (FasilitasSp $aset): array => [
+                'jenis_fasilitas' => $aset->jenis_fasilitas->value,
+                'kondisi' => $aset->kondisi,
+                'rincian_kondisi' => $aset->rincian_kondisi,
+                'satuan_permukiman_id' => $aset->satuan_permukiman_id,
+                'satuan_permukiman_ids' => $aset->cakupan->pluck('id_satuan_permukiman')->all()
+                    ?: [$aset->satuan_permukiman_id],
+            ])->all();
     }
 
     /**
@@ -222,9 +282,9 @@ class PenilaianKondisiSp
     {
         $hasil = [];
 
-        foreach (DummyData::satuanPermukiman() as $sp) {
-            $penilaian = self::nilai($sp['id_satuan_permukiman']);
-            $penilaian['satuan_permukiman'] = $sp['nama'];
+        foreach (SatuanPermukiman::query()->orderBy('kode_sp')->get() as $sp) {
+            $penilaian = self::nilai($sp->id_satuan_permukiman);
+            $penilaian['satuan_permukiman'] = $sp->nama;
             $hasil[] = $penilaian;
         }
 

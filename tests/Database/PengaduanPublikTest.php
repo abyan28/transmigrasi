@@ -8,6 +8,7 @@
  * kurang; halaman lacak hanya status/tanggal/catatan, tak pernah data pribadi.
  */
 
+use App\Mail\PengaduanMail;
 use App\Models\Pengaduan;
 use App\Models\SatuanPermukiman;
 use Database\Seeders\DaftarPilihanSeeder;
@@ -15,10 +16,12 @@ use Database\Seeders\KawasanSeeder;
 use Database\Seeders\PengaduanSeeder;
 use Database\Seeders\SpSeeder;
 use Database\Seeders\WilayahSeeder;
+use Illuminate\Support\Facades\Mail;
 
 require_once __DIR__.'/DatabaseHelpers.php';
 
 beforeEach(function () {
+    Mail::fake();
     // TANPA actingAs: kanal publik.
     $this->seed(WilayahSeeder::class);
     $this->seed(KawasanSeeder::class);
@@ -48,6 +51,8 @@ it('menerima pengaduan warga tanpa login dan mencatat IP serta bidang awal', fun
         ->and($baru->ip_pelapor)->not->toBeNull()
         ->and($baru->bidang)->toBe('Pertanian')
         ->and($baru->prioritas)->toBe('Sedang');
+
+    Mail::assertSent(PengaduanMail::class, fn ($mail) => $mail->baru);
 });
 
 it('membiarkan bidang kosong untuk kategori netral', function () {

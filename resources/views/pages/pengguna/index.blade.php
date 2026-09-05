@@ -86,16 +86,16 @@
                 </div>
             </dl>
 
-            {{--
-                Spanduk kejujuran. Tampilannya sudah lengkap, tetapi pengiriman
-                surel menunggu backend. Tanpa keterangan ini Admin dapat mengira
-                petugas sudah menerima surelnya, lalu tidak menyerahkan kata
-                sandi secara langsung.
-            --}}
-            <p class="mt-4 rounded-lg border border-yellow-300 bg-yellow-50 p-3 text-theme-xs text-yellow-800 dark:border-yellow-500/30 dark:bg-yellow-500/10 dark:text-yellow-200">
-                <span class="font-medium">Pengiriman email belum aktif.</span>
-                Kredensial di atas belum benar-benar terkirim ke petugas. Sampai backend selesai,
-                serahkan kata sandi ini secara langsung.
+            <p @class([
+                'mt-4 rounded-lg border p-3 text-theme-xs',
+                'border-green-200 bg-green-50 text-green-800 dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-200' => $kredensial['email_terkirim'] ?? false,
+                'border-yellow-300 bg-yellow-50 text-yellow-800 dark:border-yellow-500/30 dark:bg-yellow-500/10 dark:text-yellow-200' => ! ($kredensial['email_terkirim'] ?? false),
+            ])>
+                @if ($kredensial['email_terkirim'] ?? false)
+                    Salinan kredensial telah dikirim ke email petugas. Tetap serahkan kata sandi secara langsung bila memungkinkan.
+                @else
+                    Pengiriman email belum berhasil. Serahkan kata sandi sementara secara langsung.
+                @endif
             </p>
         </div>
     @endif

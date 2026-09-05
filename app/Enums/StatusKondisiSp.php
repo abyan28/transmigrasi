@@ -4,7 +4,7 @@ namespace App\Enums;
 
 use App\Enums\Concerns\PunyaLabel;
 use App\Enums\Concerns\PunyaWarnaBadge;
-use App\Support\DummyData;
+use App\Models\StatusKondisiSp as StatusKondisiSpModel;
 
 /**
  * Status kesiapan layanan dasar sebuah satuan permukiman.
@@ -42,7 +42,7 @@ enum StatusKondisiSp: string
      */
     public function keterangan(): string
     {
-        return DummyData::statusKondisiSpDari($this->value)['keterangan']
+        return StatusKondisiSpModel::where('kode', $this->value)->value('keterangan')
             ?? $this->bawaanKeterangan();
     }
 
@@ -76,7 +76,7 @@ enum StatusKondisiSp: string
      */
     public function label(): string
     {
-        return DummyData::statusKondisiSpDari($this->value)['nama'] ?? $this->value;
+        return StatusKondisiSpModel::where('kode', $this->value)->value('nama') ?? $this->value;
     }
 
     /**
@@ -106,13 +106,11 @@ enum StatusKondisiSp: string
         // Dibaca menurun dari yang tertinggi, dan urutan itu dijamin kolom
         // `urutan`. Status terendah berambang 0 sehingga selalu tercapai; tanpa
         // itu ada skor yang tidak mendapat status sama sekali.
-        $ambang = DummyData::statusKondisiSp();
-
-        usort($ambang, fn ($a, $b) => $b['ambang_bawah'] <=> $a['ambang_bawah']);
+        $ambang = StatusKondisiSpModel::query()->orderByDesc('ambang_bawah')->get();
 
         foreach ($ambang as $baris) {
-            if ($skor >= $baris['ambang_bawah']) {
-                return self::from($baris['kode']);
+            if ($skor >= (float) $baris->ambang_bawah) {
+                return self::from($baris->kode);
             }
         }
 

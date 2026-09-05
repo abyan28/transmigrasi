@@ -17,6 +17,8 @@ use App\Enums\JenisDaftarPilihan;
 use App\Enums\StatusKondisiSp;
 use App\Enums\TingkatKebutuhan;
 use App\Helpers\MenuHelper;
+use App\Models\ParameterPenilaianSp;
+use App\Models\StatusKondisiSp as StatusKondisiSpModel;
 use App\Support\DummyData;
 use App\Support\PenilaianKondisiSp;
 use Illuminate\Support\Facades\Route;
@@ -83,12 +85,12 @@ it('membaca bobot dari data, bukan dari konstanta di dalam kode', function () {
     // nilainya tetap terbaca dari TingkatKebutuhan::bobotBawaan().
     $berkas = file_get_contents(app_path('Support/PenilaianKondisiSp.php'));
 
-    expect($berkas)->toContain('DummyData::parameterDinilai()');
+    expect($berkas)->toContain('ParameterPenilaianSp::query()');
     expect($berkas)->not->toContain("'bobot' => \$p->bobotBawaan()");
 
     // Hanya parameter yang dicentang yang menambah pembagi skor.
     expect(PenilaianKondisiSp::parameter())
-        ->toHaveCount(count(DummyData::parameterDinilai()));
+        ->toHaveCount(ParameterPenilaianSp::where('is_dinilai', true)->count());
 
     $totalBobot = array_sum(array_column(PenilaianKondisiSp::parameter(), 'bobot'));
 
@@ -98,7 +100,7 @@ it('membaca bobot dari data, bukan dari konstanta di dalam kode', function () {
 it('membaca ambang predikat dari data, bukan dari angka di dalam kode', function () {
     $berkas = file_get_contents(app_path('Enums/StatusKondisiSp.php'));
 
-    expect($berkas)->toContain('DummyData::statusKondisiSp()');
+    expect($berkas)->toContain('StatusKondisiSpModel::query()');
     expect($berkas)->not->toContain('$skor >= 80');
     expect($berkas)->not->toContain('$skor >= 55');
 
@@ -115,16 +117,16 @@ it('membaca ambang predikat dari data, bukan dari angka di dalam kode', function
 it('membaca wording status dari data agar dinas dapat memakai istilahnya sendiri', function () {
     // Nilai enum tetap menjadi kunci di dalam sistem, sedangkan yang tampil di
     // layar dibaca dari data.
-    foreach (DummyData::statusKondisiSp() as $baris) {
-        $status = StatusKondisiSp::from($baris['kode']);
+    foreach (StatusKondisiSpModel::all() as $baris) {
+        $status = StatusKondisiSp::from($baris->kode);
 
-        expect($status->label())->toBe($baris['nama']);
-        expect($status->keterangan())->toBe($baris['keterangan']);
+        expect($status->label())->toBe($baris->nama);
+        expect($status->keterangan())->toBe($baris->keterangan);
     }
 
     $berkas = file_get_contents(app_path('Enums/StatusKondisiSp.php'));
 
-    expect($berkas)->toContain('DummyData::statusKondisiSpDari');
+    expect($berkas)->toContain('StatusKondisiSpModel::where');
 });
 
 it('menjaga status tetap tiga dan tanpa rute tambah maupun hapus', function () {

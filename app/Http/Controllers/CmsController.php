@@ -12,7 +12,7 @@ use Illuminate\Validation\Rule;
 /**
  * Pengelolaan Konten Sistem / CMS (Task 9.6).
  *
- * Lima tab pada satu halaman; tiap tab formnya sendiri dan menyimpan lewat
+ * Enam tab pada satu halaman; tiap tab formnya sendiri dan menyimpan lewat
  * aksi yang sama dengan penanda `tab`. Seluruh nilai lewat `App\Support\
  * KontenSistem` -- bawaan (teks mockup Task 2.31) berlaku sampai dinas
  * menyuntingnya, sehingga tampilan tidak berubah sebelum disentuh.
@@ -40,6 +40,7 @@ class CmsController extends Controller
             'informasi' => $this->simpanInformasi($request),
             'portal' => $this->simpanPortal($request),
             'pengumuman' => $this->simpanPengumuman($request),
+            'surel' => $this->simpanSurel($request),
             default => $this->simpanIdentitas($request),
         };
 
@@ -170,6 +171,23 @@ class CmsController extends Controller
     /**
      * @return array<string, mixed>
      */
+    private function simpanSurel(Request $request): array
+    {
+        $v = $request->validate([
+            'sapaan' => ['required', 'string', 'max:100'],
+            'penutup' => ['required', 'string', 'max:100'],
+            'nama_pengirim' => ['required', 'string', 'max:255'],
+            'catatan_kaki' => ['nullable', 'string', 'max:500'],
+        ], ValidationRules::pesan());
+
+        return [
+            'surel.sapaan' => $v['sapaan'],
+            'surel.penutup' => $v['penutup'],
+            'surel.nama_pengirim' => $v['nama_pengirim'],
+            'surel.catatan_kaki' => $v['catatan_kaki'] ?? '',
+        ];
+    }
+
     private function simpanPengumuman(Request $request): array
     {
         $aktif = $request->boolean('aktif');

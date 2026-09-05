@@ -10,7 +10,9 @@ use App\Http\Controllers\Concerns\MenyimpanBerkas;
 use App\Models\Pengaduan;
 use App\Support\DummyData;
 use App\Support\KontenSistem;
+use App\Support\LayananNotifikasi;
 use App\Support\NomorPengaduan;
+use App\Support\SurelPengaduan;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -102,11 +104,13 @@ class PengaduanPublikController extends Controller
             return $pengaduan;
         });
 
-        // Pengiriman surel menunggu layanan email (Task 11.x); nomor selalu
-        // tampil besar di layar, jadi surel hanyalah salinan (10b.1c-1).
+        LayananNotifikasi::pengaduanBaru($pengaduan);
+        $emailTerkirim = SurelPengaduan::kirim($pengaduan, baru: true);
+
         return back()
             ->with('nomor_pengaduan', $pengaduan->nomor_pengaduan)
-            ->with('email_pelapor', $data['email_pelapor'] ?? null);
+            ->with('email_pelapor', $data['email_pelapor'] ?? null)
+            ->with('email_terkirim', $emailTerkirim);
     }
 
     public function lacak(?string $nomorRute = null): View

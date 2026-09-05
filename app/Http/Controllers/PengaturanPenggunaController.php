@@ -9,6 +9,7 @@ use App\Models\AuditLog;
 use App\Models\Role;
 use App\Models\User;
 use App\Support\DummyData;
+use App\Support\LayananNotifikasi;
 use App\Support\Paginasi;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
@@ -123,7 +124,8 @@ class PengaturanPenggunaController extends Controller
             'role' => $role->nama,
         ]);
 
-        $this->kirimKredensial($pengguna, $sandiSementara, akunBaru: true);
+        $emailTerkirim = $this->kirimKredensial($pengguna, $sandiSementara, akunBaru: true);
+        LayananNotifikasi::akun($pengguna, 'Akun baru dibuat untuk '.$pengguna->nama.'.', $request->user()?->id_user);
 
         return redirect()->route('pengguna.index')
             ->with('sukses', 'Akun petugas tersimpan. Serahkan kata sandi sementara secara langsung.')
@@ -131,6 +133,7 @@ class PengaturanPenggunaController extends Controller
                 'nama' => $pengguna->nama,
                 'email' => $pengguna->email,
                 'password' => $sandiSementara,
+                'email_terkirim' => $emailTerkirim,
             ]);
     }
 
@@ -178,7 +181,8 @@ class PengaturanPenggunaController extends Controller
         // `rules.md` 14b poin 15: catat pelaku, sasaran, waktu, dan JALUR.
         $this->catat($request, $pengguna, AksiAuditLog::ResetKataSandi, ['jalur' => 'Admin']);
 
-        $this->kirimKredensial($pengguna, $sandiSementara, akunBaru: false);
+        $emailTerkirim = $this->kirimKredensial($pengguna, $sandiSementara, akunBaru: false);
+        LayananNotifikasi::akun($pengguna, 'Kata sandi '.$pengguna->nama.' disetel ulang Admin.', $request->user()?->id_user);
 
         return redirect()->route('pengguna.index')
             ->with('sukses', 'Kata sandi sementara dibuat. Serahkan langsung kepada petugas yang bersangkutan.')
@@ -186,6 +190,7 @@ class PengaturanPenggunaController extends Controller
                 'nama' => $pengguna->nama,
                 'email' => $pengguna->email,
                 'password' => $sandiSementara,
+                'email_terkirim' => $emailTerkirim,
             ]);
     }
 
@@ -312,14 +317,18 @@ class PengaturanPenggunaController extends Controller
      * langsung (`rules.md` 14b poin 3a). Gangguan SMTP tidak boleh menggagalkan
      * pembuatan akun -- Admin masih memegang nilai yang tampil di layar.
      */
-    private function kirimKredensial(User $pengguna, string $sandiSementara, bool $akunBaru): void
+    private function kirimKredensial(User $pengguna, string $sandiSementara, bool $akunBaru): bool
     {
         try {
             Mail::to($pengguna->email)->send(
                 new KredensialAkunMail($pengguna->nama, $pengguna->email, $sandiSementara, $akunBaru)
             );
+
+            return true;
         } catch (\Throwable $e) {
             Log::error('Gagal mengirim kredensial akun ke surel: '.$e->getMessage());
+
+            return false;
         }
     }
 

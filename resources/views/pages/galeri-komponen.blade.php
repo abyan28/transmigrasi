@@ -66,7 +66,7 @@
         <section>
             <h2 class="mb-3 text-lg font-semibold text-gray-800 dark:text-white/90">Tabel Data</h2>
             {{-- `$transmigran` datang dari rute `galeri-komponen`. --}}
-            <x-sim.data-table :jumlah="count($transmigran)" placeholder-cari="Cari nama atau NIK"
+            <x-sim.data-table :jumlah="count($transmigran)" :tampilkan-kontrol="false"
                 judul-kosong="Belum ada data transmigran">
                 <x-slot:filter>
                     <div class="grid gap-4 sm:grid-cols-3">

@@ -33,6 +33,7 @@ use App\Http\Controllers\KomoditasController;
 use App\Http\Controllers\LahanController;
 use App\Http\Controllers\MasterDaftarPilihanController;
 use App\Http\Controllers\MasterSatuanController;
+use App\Http\Controllers\NotifikasiController;
 use App\Http\Controllers\PenanamanController;
 use App\Http\Controllers\PengaduanController;
 use App\Http\Controllers\PengaturanPenggunaController;
@@ -777,6 +778,11 @@ Route::delete('/panen/{id}', [HasilPanenController::class, 'hapus'])
  * ditegakkan `PengaduanController::tangani`; penyaringan ke dinas oleh global
  * scope `CakupanDataSp`.
  */
+Route::get('/notifikasi', [NotifikasiController::class, 'index'])->name('notifikasi.index');
+Route::put('/notifikasi/baca-semua', [NotifikasiController::class, 'bacaSemua'])->name('notifikasi.baca-semua');
+Route::put('/notifikasi/{id}/baca', [NotifikasiController::class, 'baca'])
+    ->where('id', '[0-9]+')->name('notifikasi.baca');
+
 Route::get('/pengaduan', [PengaduanController::class, 'index'])->name('pengaduan.index');
 
 Route::get('/pengaduan/rekap', [PengaduanController::class, 'rekap'])->name('pengaduan.rekap');
