@@ -3,8 +3,10 @@
 use App\Enums\AksiPermission;
 use App\Enums\CakupanData;
 use App\Enums\JenisNotifikasi;
+use App\Models\Infrastruktur;
 use App\Models\Notifikasi;
 use App\Models\Pengaduan;
+use App\Models\PenilaianSp;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\SatuanPermukiman;
@@ -100,6 +102,132 @@ it('mendeduplikasi notifikasi per penerima bukan secara global', function () {
 
     expect(Notifikasi::where('jenis', JenisNotifikasi::PengaduanBaru)->count())->toBe(2)
         ->and(Notifikasi::pluck('user_id')->all())->toEqualCanonicalizing([$a->id_user, $b->id_user]);
+});
+
+it('mengirim notifikasi pengaduan mendesak selama belum selesai', function () {
+    $sp = SatuanPermukiman::first();
+    $penerima = penggunaNotifikasi('pengaduan.lihat');
+    $pengaduan = Pengaduan::create([
+        'uuid' => (string) Str::uuid(), 'nama_pelapor' => 'WARGA UJI',
+        'kontak_pelapor' => '081200000010', 'sumber_laporan' => 'Publik',
+        'satuan_permukiman_id' => $sp->id_satuan_permukiman,
+        'nomor_pengaduan' => 'PGD-UJI-010', 'tanggal_pengaduan' => today(),
+        'kategori' => 'Bencana', 'bidang' => 'Ketransmigrasian', 'judul' => 'TANGGUL JEBOL',
+        'deskripsi' => 'Tanggul jebol.', 'status' => 'Menunggu Diterima', 'prioritas' => 'Mendesak',
+    ]);
+
+    LayananNotifikasi::pengaduanMendesak($pengaduan);
+
+    expect(Notifikasi::where('jenis', JenisNotifikasi::PengaduanMendesak)
+        ->where('user_id', $penerima->id_user)->exists())->toBeTrue();
+});
+
+it('tidak mengirim notifikasi mendesak untuk pengaduan yang sudah selesai', function () {
+    $sp = SatuanPermukiman::first();
+    penggunaNotifikasi('pengaduan.lihat');
+    $pengaduan = Pengaduan::create([
+        'uuid' => (string) Str::uuid(), 'nama_pelapor' => 'WARGA UJI',
+        'kontak_pelapor' => '081200000011', 'sumber_laporan' => 'Publik',
+        'satuan_permukiman_id' => $sp->id_satuan_permukiman,
+        'nomor_pengaduan' => 'PGD-UJI-011', 'tanggal_pengaduan' => today(),
+        'kategori' => 'Bencana', 'bidang' => 'Ketransmigrasian', 'judul' => 'SUDAH BERES',
+        'deskripsi' => 'Sudah ditangani.', 'status' => 'Selesai', 'prioritas' => 'Mendesak',
+    ]);
+
+    LayananNotifikasi::pengaduanMendesak($pengaduan);
+
+    expect(Notifikasi::where('jenis', JenisNotifikasi::PengaduanMendesak)->exists())->toBeFalse();
+});
+
+it('menutup notifikasi mendesak begitu pengaduan selesai lalu mengirim baru saat mendesak kembali', function () {
+    $sp = SatuanPermukiman::first();
+    $penerima = penggunaNotifikasi('pengaduan.lihat');
+    $pengaduan = Pengaduan::create([
+        'uuid' => (string) Str::uuid(), 'nama_pelapor' => 'WARGA UJI',
+        'kontak_pelapor' => '081200000012', 'sumber_laporan' => 'Publik',
+        'satuan_permukiman_id' => $sp->id_satuan_permukiman,
+        'nomor_pengaduan' => 'PGD-UJI-012', 'tanggal_pengaduan' => today(),
+        'kategori' => 'Bencana', 'bidang' => 'Ketransmigrasian', 'judul' => 'LONGSOR',
+        'deskripsi' => 'Longsor menutup jalan.', 'status' => 'Menunggu Diterima', 'prioritas' => 'Mendesak',
+    ]);
+
+    LayananNotifikasi::pengaduanMendesak($pengaduan);
+    expect(Notifikasi::where('jenis', JenisNotifikasi::PengaduanMendesak)
+        ->where('user_id', $penerima->id_user)->whereNull('dibaca_at')->count())->toBe(1);
+
+    // Diedit ulang tanpa perubahan berarti (masih Mendesak, belum selesai):
+    // tidak boleh menggandakan baris.
+    LayananNotifikasi::pengaduanMendesak($pengaduan);
+    expect(Notifikasi::where('jenis', JenisNotifikasi::PengaduanMendesak)
+        ->where('user_id', $penerima->id_user)->count())->toBe(1);
+
+    // Selesai: notifikasi yang belum dibaca ditutup (bukan dihapus).
+    $pengaduan->update(['status' => 'Selesai']);
+    LayananNotifikasi::pengaduanMendesak($pengaduan->fresh());
+    expect(Notifikasi::where('jenis', JenisNotifikasi::PengaduanMendesak)
+        ->where('user_id', $penerima->id_user)->whereNull('dibaca_at')->count())->toBe(0);
+
+    // Relaps: kembali mendesak & belum selesai -> notifikasi baru muncul.
+    $pengaduan->update(['status' => 'Menunggu Diterima']);
+    LayananNotifikasi::pengaduanMendesak($pengaduan->fresh());
+    expect(Notifikasi::where('jenis', JenisNotifikasi::PengaduanMendesak)
+        ->where('user_id', $penerima->id_user)->whereNull('dibaca_at')->count())->toBe(1);
+});
+
+it('tidak mengirim notifikasi pengaduan lintas SP kepada petugas Per SP', function () {
+    $spA = SatuanPermukiman::first();
+    $spB = SatuanPermukiman::skip(1)->first();
+    $operatorA = penggunaNotifikasi('pengaduan.lihat', CakupanData::PerSp);
+    $operatorA->satuanPermukiman()->attach($spA);
+
+    $pengaduan = Pengaduan::create([
+        'uuid' => (string) Str::uuid(), 'nama_pelapor' => 'WARGA UJI',
+        'kontak_pelapor' => '081200000013', 'sumber_laporan' => 'Publik',
+        'satuan_permukiman_id' => $spB->id_satuan_permukiman,
+        'nomor_pengaduan' => 'PGD-UJI-013', 'tanggal_pengaduan' => today(),
+        'kategori' => 'Rumah', 'bidang' => 'Ketransmigrasian', 'judul' => 'DI SP LAIN',
+        'deskripsi' => 'Kejadian di SP lain.', 'status' => 'Menunggu Diterima', 'prioritas' => 'Sedang',
+    ]);
+
+    LayananNotifikasi::pengaduanBaru($pengaduan);
+
+    expect(Notifikasi::where('user_id', $operatorA->id_user)->exists())->toBeFalse();
+});
+
+it('tidak menggandakan riwayat penilaian_sp saat status hasil hitung tidak berubah', function () {
+    $sp = SatuanPermukiman::first();
+
+    LayananNotifikasi::hitungUlangSp([$sp->id_satuan_permukiman]);
+    $setelahPertama = PenilaianSp::where('satuan_permukiman_id', $sp->id_satuan_permukiman)->count();
+    expect($setelahPertama)->toBe(1);
+
+    // Dipanggil ulang tanpa aset SP berubah sama sekali -> status hasil
+    // hitung tetap sama, sehingga TIDAK ada baris riwayat baru.
+    LayananNotifikasi::hitungUlangSp([$sp->id_satuan_permukiman]);
+    expect(PenilaianSp::where('satuan_permukiman_id', $sp->id_satuan_permukiman)->count())
+        ->toBe($setelahPertama);
+});
+
+it('memberi tahu petugas Per SP di SP yang dilayani, bukan hanya SP pangkal, saat infrastruktur rusak berat', function () {
+    $spPangkal = SatuanPermukiman::first();
+    $spDilayani = SatuanPermukiman::skip(1)->first();
+    $operatorDilayani = penggunaNotifikasi('infrastruktur.lihat', CakupanData::PerSp);
+    $operatorDilayani->satuanPermukiman()->attach($spDilayani);
+    $operatorLain = penggunaNotifikasi('infrastruktur.lihat', CakupanData::PerSp);
+    $operatorLain->satuanPermukiman()->attach(SatuanPermukiman::skip(2)->first());
+
+    $infra = Infrastruktur::create([
+        'satuan_permukiman_id' => $spPangkal->id_satuan_permukiman,
+        'nama' => 'IRIGASI LINTAS SP', 'jenis' => 'Irigasi', 'kondisi' => 'Rusak Berat',
+    ]);
+    $infra->cakupan()->sync([$spPangkal->id_satuan_permukiman, $spDilayani->id_satuan_permukiman]);
+
+    LayananNotifikasi::infrastrukturRusakBerat($infra);
+
+    expect(Notifikasi::where('jenis', JenisNotifikasi::InfrastrukturRusakBerat)
+        ->where('user_id', $operatorDilayani->id_user)->exists())->toBeTrue()
+        ->and(Notifikasi::where('jenis', JenisNotifikasi::InfrastrukturRusakBerat)
+            ->where('user_id', $operatorLain->id_user)->exists())->toBeFalse();
 });
 
 it('membuat notifikasi infrastruktur rusak berat dan kondisi SP setelah cakupan tersimpan', function () {

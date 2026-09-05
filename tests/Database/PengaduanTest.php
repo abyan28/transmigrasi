@@ -118,7 +118,7 @@ it('memajukan status penanganan satu langkah dan mencatat riwayatnya', function 
         ->and($p->penanganan->first()->status_sebelum->value)->toBe('Menunggu Diterima')
         ->and($p->penanganan->first()->user_id)->not->toBeNull();
 
-    Mail::assertSent(PengaduanMail::class, fn ($mail) => $mail->hasTo('pelapor@example.test') && ! $mail->baru);
+    Mail::assertQueued(PengaduanMail::class, fn ($mail) => $mail->hasTo('pelapor@example.test') && ! $mail->baru);
 });
 
 it('menolak lompatan status yang melewati satu tahap', function () {

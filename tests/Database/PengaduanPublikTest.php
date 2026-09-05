@@ -52,7 +52,7 @@ it('menerima pengaduan warga tanpa login dan mencatat IP serta bidang awal', fun
         ->and($baru->bidang)->toBe('Pertanian')
         ->and($baru->prioritas)->toBe('Sedang');
 
-    Mail::assertSent(PengaduanMail::class, fn ($mail) => $mail->baru);
+    Mail::assertQueued(PengaduanMail::class, fn ($mail) => $mail->baru);
 });
 
 it('membiarkan bidang kosong untuk kategori netral', function () {

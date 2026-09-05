@@ -75,12 +75,25 @@ class LayananNotifikasi
             return;
         }
 
+        // Satu aset dapat melayani BEBERAPA SP lewat pivot `cakupan`, bukan
+        // hanya SP pangkal tempatnya berdiri (`rules.md`, dokblok controller).
+        // Penerima karena itu diambil dari UNION penerima seluruh SP yang
+        // dilayani -- bukan cuma pangkalnya -- supaya petugas Per SP di SP
+        // yang DILAYANI (bukan pangkal) turut menerima peringatan.
+        // `cakupan()` (relasi, bukan properti) dipakai supaya kueri selalu
+        // segar, tak peduli apakah pemanggil sebelumnya sudah meng-eager-load
+        // relasi ini SEBELUM `sync()` pivot terbaru dijalankan.
+        $spIds = $infrastruktur->cakupan()->pluck('id_satuan_permukiman')->all()
+            ?: [$infrastruktur->satuan_permukiman_id];
+
+        $penerima = collect($spIds)
+            ->flatMap(fn ($spId) => PenerimaNotifikasi::untuk('infrastruktur.lihat', $spId))
+            ->unique('id_user')
+            ->values();
+
         Notifikasi::kirim(
             JenisNotifikasi::InfrastrukturRusakBerat,
-            PenerimaNotifikasi::untuk(
-                'infrastruktur.lihat',
-                $infrastruktur->satuan_permukiman_id,
-            ),
+            $penerima,
             $subjek + ['satuan_permukiman_id' => $infrastruktur->satuan_permukiman_id],
             'Infrastruktur rusak berat: '.$infrastruktur->nama.'.',
         );

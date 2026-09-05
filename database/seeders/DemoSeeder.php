@@ -2,9 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Enums\JenisNotifikasi;
-use App\Models\Notifikasi;
-use App\Models\User;
+use App\Models\Pengaduan;
+use App\Support\LayananNotifikasi;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -29,7 +28,6 @@ class DemoSeeder extends Seeder
             $this->produksi();
             $this->pengaduan();
             $this->asetSp();
-            $this->notifikasi();
         });
     }
 
@@ -144,6 +142,13 @@ class DemoSeeder extends Seeder
                 'slug' => 'poktan-demo-'.$i, 'nama' => 'POKTAN DEMO '.str_pad((string) $i, 2, '0', STR_PAD_LEFT),
                 'asal_ketua' => 'Bukan Transmigran', 'nama_ketua' => 'KETUA DEMO '.$i,
                 'nik_ketua' => sprintf('5366%012d', $i), 'tahun_berdiri' => 2010 + ($i % 14),
+                // Lahan ketua diisi LANGSUNG (asal_ketua = Bukan Transmigran,
+                // sehingga RekapPoktan::kekuatan() membaca luas kelompok dari
+                // kolom ini, bukan lahan anggota) -- tanpa ini seluruh poktan
+                // demo berluas 0 ha, dan penanaman apa pun di atasnya akan
+                // ditolak "melebihi lahan yang belum ditanami" begitu formulir
+                // sungguhannya dibuka dan disimpan ulang.
+                'luas_kering_ketua' => 3.0 + ($i % 3), 'luas_basah_ketua' => 2.0 + ($i % 2),
                 'created_at' => now(), 'updated_at' => now(),
             ]);
         }
@@ -161,14 +166,20 @@ class DemoSeeder extends Seeder
                 'created_at' => now(), 'updated_at' => now(),
             ]);
         }
-        $saprotan = DB::table('saprotan')->first();
-        while ($saprotan && DB::table('saprotan')->count() < 40) {
+        // Dicontoh dari SELURUH saprotan ber-jenis Benih yang ada (bukan cuma
+        // baris pertama): `produksi()` menanam memakai benih ini, dan
+        // menyamakan komoditasnya pada 40 baris membuat seluruh penanaman
+        // demo seragam satu komoditas saja.
+        $templateBenih = DB::table('saprotan')->where('jenis', 'Benih')->get();
+        while ($templateBenih->isNotEmpty() && DB::table('saprotan')->count() < 40) {
             $i = DB::table('saprotan')->count() + 1;
+            $template = $templateBenih[($i - 1) % $templateBenih->count()];
             DB::table('saprotan')->insert([
-                'satuan_id' => $saprotan->satuan_id, 'komoditas_id' => $saprotan->komoditas_id,
-                'jenis' => $saprotan->jenis, 'nama' => 'SAPROTAN DEMO '.$i,
+                'satuan_id' => $template->satuan_id, 'komoditas_id' => $template->komoditas_id,
+                'jenis' => $template->jenis, 'varietas' => $template->varietas,
+                'nama' => 'SAPROTAN DEMO '.$i,
                 'jumlah_total' => 100 + $i * 5, 'tahun_pengadaan' => 2020 + ($i % 6),
-                'sumber_dana' => $saprotan->sumber_dana,
+                'sumber_dana' => $template->sumber_dana,
                 'created_at' => now(), 'updated_at' => now(),
             ]);
         }
@@ -176,19 +187,38 @@ class DemoSeeder extends Seeder
 
     private function produksi(): void
     {
-        $poktan = DB::table('poktan')->pluck('id_poktan')->all();
+        $poktanIds = DB::table('poktan')->orderBy('id_poktan')->pluck('id_poktan')->all();
+        $saprotanBenih = DB::table('saprotan')->where('jenis', 'Benih')->get();
         $komoditas = DB::table('komoditas')->get()->keyBy('id_komoditas');
-        $distribusi = DB::table('saprotan_distribusi')->pluck('id_saprotan_distribusi')->all();
-        if ($poktan === [] || $komoditas->isEmpty() || $distribusi === []) {
+        if ($poktanIds === [] || $saprotanBenih->isEmpty() || $komoditas->isEmpty()) {
             return;
         }
         while (DB::table('penanaman')->count() < 60) {
             $i = DB::table('penanaman')->count() + 1;
+            $poktanId = $poktanIds[($i - 1) % count($poktanIds)];
+            $saprotan = $saprotanBenih[($i - 1) % $saprotanBenih->count()];
+
+            // Distribusi BARU khusus baris ini, bukan dipinjam dari baris
+            // demo/contoh lain: menjamin poktan/komoditas/benih tetap sepadan
+            // (`PenanamanController::validasiLanjutan`) dan tidak pernah
+            // berbagi jatah dengan penanaman lain, sehingga menyunting lalu
+            // menyimpan ulang salah satu baris tidak pernah melebihi sisa
+            // benih atau lahan kelompok yang belum ditanami.
+            $jumlahBenih = 10.0;
+            $distribusiId = DB::table('saprotan_distribusi')->insertGetId([
+                'saprotan_id' => $saprotan->id_saprotan, 'poktan_id' => $poktanId,
+                'jumlah' => $jumlahBenih, 'tanggal_serah' => now()->subDays($i)->toDateString(),
+                'created_at' => now(), 'updated_at' => now(),
+            ]);
+
             DB::table('penanaman')->insert([
-                'poktan_id' => $poktan[$i % count($poktan)],
-                'komoditas_id' => $komoditas->keys()[$i % $komoditas->count()],
-                'saprotan_distribusi_id' => $distribusi[$i % count($distribusi)],
-                'volume_benih' => 25 + ($i % 10), 'realisasi_tanam' => 1 + ($i % 4) * .5,
+                'poktan_id' => $poktanId,
+                'komoditas_id' => $saprotan->komoditas_id,
+                'saprotan_distribusi_id' => $distribusiId,
+                'volume_benih' => $jumlahBenih * .8,
+                // 1,0-2,0 ha; dua baris per poktan (60 penanaman / 30 poktan)
+                // tetap di bawah luas ketua (5-8 ha) yang diisi `poktan()`.
+                'realisasi_tanam' => 1 + ($i % 3) * .5,
                 'periode_tanam' => (2022 + ($i % 4)).'-'.str_pad((string) (($i % 12) + 1), 2, '0', STR_PAD_LEFT),
                 'created_at' => now(), 'updated_at' => now(),
             ]);
@@ -219,7 +249,7 @@ class DemoSeeder extends Seeder
             $i = DB::table('pengaduan')->count() + 1;
             $status = ['Menunggu Diterima', 'Diterima', 'Diproses', 'Selesai'][$i % 4];
             $prioritas = ['Rendah', 'Sedang', 'Tinggi', 'Mendesak'][($i + 1) % 4];
-            DB::table('pengaduan')->insert([
+            $id = DB::table('pengaduan')->insertGetId([
                 'uuid' => (string) Str::uuid(), 'nama_pelapor' => 'WARGA DEMO '.$i,
                 'kontak_pelapor' => '0821'.str_pad((string) $i, 8, '0', STR_PAD_LEFT),
                 'sumber_laporan' => 'Publik', 'ip_pelapor' => '10.20.1.'.(($i % 200) + 1),
@@ -232,7 +262,13 @@ class DemoSeeder extends Seeder
                 'deskripsi' => 'Data demonstrasi untuk pengujian alur pengaduan.',
                 'status' => $status, 'prioritas' => $prioritas,
                 'created_at' => now(), 'updated_at' => now(),
-            ]);
+            ], 'id_pengaduan');
+
+            // Lewat mesin notifikasi sungguhan (bukan `DB::table()->insert()`
+            // yang dulunya diam-diam melewatinya): data demo ikut mengisi
+            // dropdown notifikasi & riwayat `penilaian_sp` secara nyata,
+            // bukan cuma tabel `pengaduan`-nya saja.
+            LayananNotifikasi::pengaduanBaru(Pengaduan::findOrFail($id));
         }
     }
 
@@ -240,35 +276,26 @@ class DemoSeeder extends Seeder
     {
         foreach (['inventaris_sp' => 30, 'fasilitas_sp' => 30] as $tabel => $target) {
             $contoh = DB::table($tabel)->first();
+            $spTerdampak = [];
             while ($contoh && DB::table($tabel)->count() < $target) {
                 $data = (array) $contoh;
                 unset($data[$tabel === 'inventaris_sp' ? 'id_inventaris_sp' : 'id_fasilitas_sp'], $data['deleted_at']);
                 $i = DB::table($tabel)->count() + 1;
                 $data['satuan_permukiman_id'] = $this->spIds[$i % count($this->spIds)];
+                $spTerdampak[] = $data['satuan_permukiman_id'];
                 $data[$tabel === 'inventaris_sp' ? 'nama_barang' : 'nama_fasilitas'] = strtoupper($tabel).' DEMO '.$i;
                 $data['created_at'] = now();
                 $data['updated_at'] = now();
                 DB::table($tabel)->insert($data);
             }
-        }
-    }
 
-    private function notifikasi(): void
-    {
-        $users = User::where('is_aktif', true)->limit(3)->get();
-        $pengaduan = DB::table('pengaduan')->orderByDesc('id_pengaduan')->first();
-        if (! $pengaduan) {
-            return;
-        }
-        foreach ($users as $user) {
-            Notifikasi::firstOrCreate([
-                'user_id' => $user->id_user,
-                'jenis' => JenisNotifikasi::PengaduanBaru->value,
-                'pengaduan_id' => $pengaduan->id_pengaduan,
-            ], [
-                'satuan_permukiman_id' => $pengaduan->satuan_permukiman_id,
-                'pesan' => 'Pengaduan demo baru memerlukan peninjauan.',
-            ]);
+            // Hanya `fasilitas_sp` yang ikut dihitung `PenilaianKondisiSp`
+            // (`inventaris_sp` tak pernah dirujuk parameter penilaian mana
+            // pun) -- menghitung ulang di sini membuat riwayat `penilaian_sp`
+            // demo ikut nyata, bukan cuma tabelnya saja yang terisi.
+            if ($tabel === 'fasilitas_sp' && $spTerdampak !== []) {
+                LayananNotifikasi::hitungUlangSp($spTerdampak);
+            }
         }
     }
 }

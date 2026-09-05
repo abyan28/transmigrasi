@@ -227,7 +227,7 @@ it('mengirim kata sandi sementara ke surel petugas saat akun dibuat', function (
         'role_id' => $role->id_role,
     ]);
 
-    Mail::assertSent(KredensialAkunMail::class, fn ($m) => $m->hasTo('nara@malakakab.go.id') && $m->akunBaru === true);
+    Mail::assertQueued(KredensialAkunMail::class, fn ($m) => $m->hasTo('nara@malakakab.go.id') && $m->akunBaru === true);
 });
 
 it('mengirim kata sandi sementara ke surel saat disetel ulang', function () {
@@ -237,7 +237,7 @@ it('mengirim kata sandi sementara ke surel saat disetel ulang', function () {
 
     $this->post(route('pengguna.setel-sandi', $target->id_user));
 
-    Mail::assertSent(KredensialAkunMail::class, fn ($m) => $m->hasTo('target@malakakab.go.id') && $m->akunBaru === false);
+    Mail::assertQueued(KredensialAkunMail::class, fn ($m) => $m->hasTo('target@malakakab.go.id') && $m->akunBaru === false);
 });
 
 it('mencatat audit Tambah saat akun dibuat', function () {

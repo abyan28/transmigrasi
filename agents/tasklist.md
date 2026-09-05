@@ -1704,6 +1704,7 @@ menghapus sisa terakhir `DummyData::penggunaSaatIni()` -- dikerjakan berbarengan
 - [ ] Task 11.3 - Deployment ke hosting + domain, SSL, storage, backup terjadwal `[Sulit]`
   * **Prasyarat:** hentikan penerbitan statis GitHub Pages sepenuhnya + pindah hosting. **Sebagian sudah 2026-09-04:** pemicu otomatis `push` `deploy.yml` dicabut (kini `workflow_dispatch` manual). Sisa: hapus/arsipkan `deploy.yml`, `DaftarTautanStatis`, `TautanStatisTest`; nilai kembali pembenaran filter hash-fragment (`rules.md:854/859`, `ui-spec.md:929/947`). Rinciannya `notes.md` 1b.7
   * Penyeragaman `asset()`/`url()`/`route()` (1b.3) dan kepercayaan `X-Forwarded-*` di `bootstrap/app.php` **tetap diperlukan**, sebab keduanya syarat hosting di belakang reverse proxy
+  * **Pekerja antrean WAJIB berjalan** (audit Tahap 12, 2026-09-05): `KredensialAkunMail`/`KodePemulihanSandiMail`/`PengaduanMail` kini `ShouldQueue` (`QUEUE_CONNECTION=database`, tabel `jobs` sudah ada) -- tanpa `php artisan queue:work` (disupervisi, mis. Supervisor/systemd) berjalan permanen di server, surel-surel itu tertahan diam di tabel `jobs` dan TIDAK PERNAH terkirim, bukan sekadar lambat. Wajib masuk skrip deployment/serah terima.
 - [ ] Task 11.4 - Simulasi input data awal per desa/SP prioritas `[Sedang]`
 - [ ] Task 11.5 - Beta testing bersama dinas dan pengguna lapangan `[Sedang]`
 - [ ] Task 11.6 - Penyusunan SOP, buku panduan, dan video panduan `[Sedang]`
@@ -1784,16 +1785,25 @@ fase selesai 2026-09-05; rincian hasil ada pada `session-notes.md`.
   * Layout HTML ringan bersama, tab CMS Surel, kode pemulihan, kredensial akun, nomor pengaduan, serta pembaruan status.
 - [✓] Task 12.4 - Penanda urgensi pengaduan `[Mudah]` -- **SELESAI 2026-09-05**
   * Kartu Mendesak memakai aksen gold dan `motion-safe:animate-ping` hanya saat jumlahnya lebih dari nol.
-- [✓] Task 12.5 - DemoSeeder terpisah `[Sedang]` -- **SELESAI 2026-09-05**
+- [✓] Task 12.5 - DemoSeeder terpisah `[Sedang]` -- **SELESAI 2026-09-05**, diperbaiki lagi lewat Task 12.6
   * 90 KK sebagai induk; data kecil lama tetap subset identik dan suite uji tetap memakai `DataMasterSeeder`.
-  * Hasil DB demo: 270 anggota keluarga, 90 rumah, 85 lahan, 30 poktan, 35 alsintan, 40 saprotan, 60 penanaman, 50 panen, 60 pengaduan, 30 inventaris, 30 fasilitas, dan notifikasi contoh.
+  * Hasil DB demo: 270 anggota keluarga, 90 rumah, 85 lahan, 30 poktan, 35 alsintan, 40+ saprotan, 60 penanaman, 50 panen, 60 pengaduan, 30 inventaris, 30 fasilitas.
   * Jalankan eksplisit: `php artisan migrate:fresh --seed --seeder=DemoSeeder --force`.
+- [✓] Task 12.6 - Perbaikan hasil audit Task 12.1b-12.5 `[Sedang]` -- **SELESAI 2026-09-05**
+  * Audit menyeluruh (agen lain) menemukan sejumlah MAJOR/MINOR pada notifikasi, DemoSeeder, dan surel -- seluruhnya diperbaiki di putaran ini, bukan sekadar dicatat.
+  * **`LayananNotifikasi::infrastrukturRusakBerat()`** dulu hanya memberi tahu SP PANGKAL aset, padahal satu infrastruktur bisa melayani beberapa SP lewat pivot `cakupan` -- petugas Per SP di SP yang DILAYANI (bukan pangkalnya) tak pernah menerima peringatan. Diperbaiki: penerima kini gabungan (union) penerima seluruh SP di `cakupan`, dibaca lewat `cakupan()` (relasi, bukan properti ter-cache) supaya selalu segar walau pemanggil sudah meng-eager-load sebelum `sync()` pivot terbaru.
+  * **`DemoSeeder::produksi()`** dulu memasangkan `poktan_id`/`komoditas_id`/`saprotan_distribusi_id` dari TIGA SIKLUS INDEPENDEN tanpa dicocokkan, dan `poktan()` membuat 30 poktan demo TANPA lahan sama sekali -- mayoritas dari 60 baris `penanaman` demo akan ditolak `PenanamanController::validasiLanjutan()` begitu disunting lalu disimpan ulang lewat formulir sungguhan (jatah benih bukan milik poktan, komoditas tak cocok, atau lahan kelompok terlampaui). Diperbaiki: setiap baris `penanaman` demo kini membuat `saprotan_distribusi` BARU khusus dirinya sendiri (poktan+komoditas+benih otomatis sepadan, jatah tak pernah dibagi baris lain); `poktan()` mengisi `luas_kering_ketua`/`luas_basah_ketua` langsung (`asal_ketua = Bukan Transmigran`) supaya `RekapPoktan::kekuatan()` tak lagi menghitung 0 ha untuk seluruh poktan demo; `asetPertanian()` mencontoh SEMUA saprotan ber-jenis Benih (bukan cuma baris pertama) supaya komoditas penanaman demo beragam. Dibuktikan uji baru: menyunting salah satu baris `penanaman` demo TERAKHIR tanpa perubahan apa pun dan menyimpannya wajib diterima (`tests/Database/DemoSeederTest.php`).
+  * **`DemoSeeder::pengaduan()`/`asetSp()`** dulu menulis lewat `DB::table()->insert()` mentah, melewati mesin notifikasi/hitung-ulang `penilaian_sp` sama sekali -- dropdown notifikasi & riwayat kondisi SP untuk data demo kosong. Diperbaiki: keduanya kini lewat `LayananNotifikasi::pengaduanBaru()`/`hitungUlangSp()` sungguhan; metode `notifikasi()` (patch manual 3 baris palsu) DIHAPUS sebab sudah tergantikan notifikasi nyata.
+  * **Trigger Pengaduan Mendesak** (satu dari lima sumber notifikasi) sebelumnya nol pengujian. Ditambahkan 3 uji baru (`tests/Database/NotifikasiTest.php`): terkirim selama belum selesai, tak terkirim untuk yang sudah selesai, dan siklus penuh tertutup-lalu-relaps-terkirim-lagi tanpa duplikat. Ditambah 2 uji baru: isolasi lintas-SP (operator Per SP di SP A tak menerima kejadian SP B) dan anti-banjir riwayat `penilaian_sp` (dipanggil ulang tanpa perubahan status -> tak ada baris baru).
+  * **Surel (`KredensialAkunMail`/`KodePemulihanSandiMail`/`PengaduanMail`)** dulu `Mail::to(...)->send(...)` sinkron tanpa `ShouldQueue` dan tanpa timeout -- SMTP lambat/tak terjangkau dapat menahan permintaan HTTP, termasuk kanal pengaduan publik tanpa login. Diperbaiki: ketiganya `implements ShouldQueue`, seluruh titik panggil beralih ke `->queue()`. `KredensialAkunMail`/`KodePemulihanSandiMail` SEKALIAN `implements ShouldBeEncrypted` sebab payload antreannya membawa kata sandi sementara/kode pemulihan MENTAH -- tanpa itu keduanya tersimpan terbaca di tabel `jobs` sampai diproses pekerja, bertentangan `rules.md` 14b poin 14. Teks "kredensial telah dikirim" pada `pengguna/index.blade.php`/`publik/pengaduan.blade.php` diubah jadi "sedang diantre untuk dikirim" supaya tidak mengklaim pengiriman yang sebenarnya baru terjadwal.
+  * **Prasyarat operasional baru:** pekerja antrean (`php artisan queue:work`, disupervisi) WAJIB berjalan permanen di server -- dicatat Task 11.3, sebab tanpa itu ketiga surel di atas tertahan diam di tabel `jobs` dan tak pernah terkirim.
+  * Verifikasi: `vendor/bin/pint --test` bersih, suite Database & Feature penuh hijau (dijalankan berulang setelah setiap perbaikan).
 
 ---
 
 ## Catatan Checkpoint
 
-**Checkpoint terakhir:** 2026-09-05 — Tahap 12 selesai (Task 12.1-12.5). Paginasi nyata, notifikasi internal, surel formal berbasis CMS, penanda urgensi, dan DemoSeeder sudah terverifikasi.
+**Checkpoint terakhir:** 2026-09-05 — Tahap 12 selesai (Task 12.1-12.6). Paginasi nyata, notifikasi internal, surel formal berbasis CMS, penanda urgensi, dan DemoSeeder sudah terverifikasi; audit menyeluruh atas Task 12.1b-12.5 (agen lain) menemukan dan Task 12.6 menutup: cakupan multi-SP notifikasi infrastruktur, invarian bisnis data demo produksi pertanian, notifikasi yang terlewat pada data demo, uji trigger Pengaduan Mendesak yang kosong, dan surel yang belum diantre.
 
 **Struktur folder:**
 

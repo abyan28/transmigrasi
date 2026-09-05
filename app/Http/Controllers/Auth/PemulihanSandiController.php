@@ -98,11 +98,16 @@ class PemulihanSandiController extends Controller
         ]);
 
         try {
-            Mail::to($pengguna->email)->send(new KodePemulihanSandiMail($kode, self::MENIT_BERLAKU));
+            // Diantre (bukan `->send()` langsung): permintaan HTTP tidak boleh
+            // menunggu SMTP, apalagi di jalur ini yang dapat dipicu tamu tanpa
+            // sesi masuk. `KodePemulihanSandiMail` ber-`ShouldBeEncrypted`
+            // sebab payload antrean membawa kode pemulihan mentah.
+            Mail::to($pengguna->email)->queue(new KodePemulihanSandiMail($kode, self::MENIT_BERLAKU));
         } catch (\Throwable $e) {
-            // Gangguan SMTP tidak boleh jadi 500 yang membocorkan keberadaan
-            // akun. Petugas dapat minta kode ulang atau menempuh jalur Admin.
-            Log::error('Gagal mengirim kode pemulihan sandi: '.$e->getMessage());
+            // Gangguan penulisan antrean tidak boleh jadi 500 yang membocorkan
+            // keberadaan akun. Petugas dapat minta kode ulang atau menempuh
+            // jalur Admin.
+            Log::error('Gagal mengantre kode pemulihan sandi: '.$e->getMessage());
         }
 
         $request->session()->put('pemulihan_user_id', $pengguna->id_user);

@@ -314,19 +314,22 @@ class PengaturanPenggunaController extends Controller
 
     /**
      * Kirim kata sandi sementara ke surel petugas sebagai SALINAN penyerahan
-     * langsung (`rules.md` 14b poin 3a). Gangguan SMTP tidak boleh menggagalkan
-     * pembuatan akun -- Admin masih memegang nilai yang tampil di layar.
+     * langsung (`rules.md` 14b poin 3a). Diantre (bukan `->send()` langsung)
+     * supaya gangguan SMTP tidak menahan permintaan HTTP -- Admin masih
+     * memegang nilai yang tampil di layar sembari surelnya menyusul.
+     * `KredensialAkunMail` ber-`ShouldBeEncrypted` sebab payload antrean
+     * membawa kata sandi sementara mentah.
      */
     private function kirimKredensial(User $pengguna, string $sandiSementara, bool $akunBaru): bool
     {
         try {
-            Mail::to($pengguna->email)->send(
+            Mail::to($pengguna->email)->queue(
                 new KredensialAkunMail($pengguna->nama, $pengguna->email, $sandiSementara, $akunBaru)
             );
 
             return true;
         } catch (\Throwable $e) {
-            Log::error('Gagal mengirim kredensial akun ke surel: '.$e->getMessage());
+            Log::error('Gagal mengantre kredensial akun ke surel: '.$e->getMessage());
 
             return false;
         }

@@ -92,9 +92,9 @@
                 'border-yellow-300 bg-yellow-50 text-yellow-800 dark:border-yellow-500/30 dark:bg-yellow-500/10 dark:text-yellow-200' => ! ($kredensial['email_terkirim'] ?? false),
             ])>
                 @if ($kredensial['email_terkirim'] ?? false)
-                    Salinan kredensial telah dikirim ke email petugas. Tetap serahkan kata sandi secara langsung bila memungkinkan.
+                    Salinan kredensial sedang diantre untuk dikirim ke email petugas. Tetap serahkan kata sandi secara langsung bila memungkinkan.
                 @else
-                    Pengiriman email belum berhasil. Serahkan kata sandi sementara secara langsung.
+                    Pengiriman email belum berhasil diantre. Serahkan kata sandi sementara secara langsung.
                 @endif
             </p>
         </div>

@@ -4,6 +4,8 @@ namespace App\Mail;
 
 use App\Support\KontenSistem;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeEncrypted;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
@@ -16,8 +18,14 @@ use Illuminate\Queue\SerializesModels;
  * Admin. Keduanya menghasilkan kata sandi SEMENTARA yang wajib diganti saat
  * masuk pertama. Surel adalah SALINAN, bukan pengganti penyerahan langsung --
  * jaringan lokus tidak selalu memadai.
+ *
+ * `ShouldQueue`: dikirim lewat `->queue()`, bukan `->send()` langsung, supaya
+ * gangguan SMTP tidak menahan permintaan HTTP pembuatan akun. `ShouldBeEncrypted`:
+ * payload antrean membawa `$sandiSementara` MENTAH (bukan hash) -- tanpa ini
+ * kata sandi sementara akan tersimpan terbaca di tabel `jobs` sampai pekerja
+ * antrean memprosesnya, bertentangan dengan `rules.md` 14b poin 14.
  */
-class KredensialAkunMail extends Mailable
+class KredensialAkunMail extends Mailable implements ShouldBeEncrypted, ShouldQueue
 {
     use Queueable, SerializesModels;
 

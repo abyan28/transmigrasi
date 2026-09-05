@@ -17,11 +17,13 @@ class SurelPengaduan
         }
 
         try {
-            Mail::to($pengaduan->email_pelapor)->send(new PengaduanMail($pengaduan, $baru));
+            // Diantre (bukan `->send()` langsung): kanal pengaduan publik
+            // tanpa login tidak boleh menunggu SMTP yang lambat/tak terjangkau.
+            Mail::to($pengaduan->email_pelapor)->queue(new PengaduanMail($pengaduan, $baru));
 
             return true;
         } catch (Throwable $e) {
-            Log::error('Surel pengaduan gagal dikirim.', [
+            Log::error('Surel pengaduan gagal diantre.', [
                 'pengaduan_id' => $pengaduan->id_pengaduan,
                 'message' => $e->getMessage(),
             ]);

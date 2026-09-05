@@ -4276,7 +4276,7 @@ it('menjelaskan hasil pengiriman email kredensial tanpa menghilangkan jalur lang
         'email_terkirim' => true,
     ]])->get(route('pengguna.index'))->assertOk()->getContent();
 
-    expect($isi)->toContain('Salinan kredensial telah dikirim')
+    expect($isi)->toContain('Salinan kredensial sedang diantre untuk dikirim')
         ->and($isi)->toContain('serahkan kata sandi secara langsung')
         ->and(mb_strtolower($isi))->not->toContain('surel');
 });

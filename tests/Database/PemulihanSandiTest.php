@@ -26,7 +26,7 @@ function mintaKode(User $user): string
         ->assertRedirect(route('verifikasi-kode'));
 
     $kode = null;
-    Mail::assertSent(KodePemulihanSandiMail::class, function ($mail) use (&$kode, $user) {
+    Mail::assertQueued(KodePemulihanSandiMail::class, function ($mail) use (&$kode, $user) {
         $kode = $mail->kode;
 
         return $mail->hasTo($user->email);
@@ -174,7 +174,7 @@ it('tidak menerbitkan kode untuk akun nonaktif', function () {
         ->assertRedirect(route('verifikasi-kode'));
 
     expect(KodePemulihanSandi::where('user_id', $user->id_user)->count())->toBe(0);
-    Mail::assertNothingSent();
+    Mail::assertNothingOutgoing();
 });
 
 it('menolak atur ulang tanpa sesi permintaan', function () {

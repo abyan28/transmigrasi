@@ -94,9 +94,9 @@
                     'border-yellow-300 bg-yellow-50 text-yellow-800 dark:border-yellow-500/30 dark:bg-yellow-500/10 dark:text-yellow-200' => ! session('email_terkirim'),
                 ])>
                     @if (session('email_terkirim'))
-                        Salinan nomor pengaduan telah dikirim ke {{ session('email_pelapor') }}.
+                        Salinan nomor pengaduan sedang diantre untuk dikirim ke {{ session('email_pelapor') }}.
                     @else
-                        Pengiriman email belum berhasil. Catat nomor pengaduan dari layar ini.
+                        Pengiriman email belum berhasil diantre. Catat nomor pengaduan dari layar ini.
                     @endif
                 </p>
             @endif

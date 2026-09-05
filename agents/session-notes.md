@@ -4698,6 +4698,113 @@ tanpa migrasi baru). Suite Feature dan Database dijalankan penuh setelah
 seluruh perbaikan di atas.
 
 
+# Task 12.6 — Audit Task 12.1b-12.5 dan Perbaikannya (2026-09-05)
+
+Fase 2-5 (Task 12.1b-12.5) dikerjakan agen AI lain sepanjang sesi terpisah.
+Diminta pemilik proyek untuk mengaudit hasilnya. Audit dijalankan lewat 3
+sub-agen paralel (mesin notifikasi, surel/CMS/urgensi/paginasi, DemoSeeder)
+plus verifikasi mekanis langsung (`pint`, `sim:banding-skema`, suite penuh).
+Tak satu pun temuan berstatus BLOCKER, tetapi beberapa MAJOR nyata ditemukan
+dan seluruhnya diperbaiki di putaran ini (bukan sekadar dicatat).
+
+### 1. Cakupan multi-SP notifikasi infrastruktur
+`LayananNotifikasi::infrastrukturRusakBerat()` hanya memberi tahu SP PANGKAL
+aset, padahal infrastruktur dapat melayani beberapa SP lewat pivot `cakupan`
+(`infrastruktur_sp`). Petugas Per SP yang ditugaskan ke SP yang DILAYANI
+(bukan pangkalnya) tak pernah menerima peringatan. Diperbaiki: penerima kini
+UNION penerima seluruh SP di `cakupan`, dibaca lewat pemanggilan relasi
+`cakupan()` (bukan properti ter-cache `->cakupan`) supaya kueri selalu segar
+walau `InfrastrukturController::perbarui()` sudah meng-eager-load relasi ini
+SEBELUM `sync()` pivot terbaru dijalankan. Dibuktikan uji baru di
+`NotifikasiTest.php`: operator Per SP di SP yang dilayani (bukan pangkal)
+menerima notifikasi; operator Per SP di SP yang sama sekali tak terkait tidak.
+
+### 2. Invarian bisnis data demo produksi pertanian
+`DemoSeeder::produksi()` memasangkan `poktan_id`/`komoditas_id`/
+`saprotan_distribusi_id` dari TIGA SIKLUS INDEPENDEN tanpa saling
+dicocokkan, dan `poktan()` membuat 30 poktan demo TANPA lahan sama sekali
+(`luas_kering_ketua`/`luas_basah_ketua` kosong). Akibatnya mayoritas dari 60
+baris `penanaman` demo akan ditolak `PenanamanController::validasiLanjutan()`
+begitu disunting lalu disimpan ulang lewat formulir sungguhan -- benih bukan
+jatah poktan yang dipilih, komoditas tak cocok, atau lahan kelompok yang
+belum ditanami terlampaui.
+
+Diperbaiki:
+- `poktan()` mengisi `luas_kering_ketua`/`luas_basah_ketua` langsung (SP
+  demo memakai `asal_ketua = 'Bukan Transmigran'`, sehingga
+  `RekapPoktan::kekuatan()` membaca luas kelompok dari kedua kolom ini,
+  bukan dari lahan anggota) -- tanpa ini seluruh poktan demo berluas 0 ha.
+- `asetPertanian()` mencontoh SEMUA saprotan ber-jenis Benih yang ada
+  (bukan cuma baris pertama), supaya komoditas penanaman demo beragam,
+  bukan seragam satu komoditas.
+- `produksi()` kini membuat SATU baris `saprotan_distribusi` BARU khusus
+  untuk setiap baris `penanaman` demo (bukan meminjam dari kumpulan kecil
+  yang sudah ada) -- menjamin poktan/komoditas/benihnya otomatis sepadan
+  dan jatahnya tak pernah dibagi dengan penanaman demo lain.
+
+Dibuktikan uji baru di `DemoSeederTest.php`: baris `penanaman` demo
+TERAKHIR (dijamin hasil `produksi()`, bukan data contoh tetap) disunting
+lewat rute sungguhan TANPA perubahan apa pun dan wajib diterima
+(`assertSessionHasNoErrors()` + redirect ke halaman rincian).
+
+### 3. Notifikasi yang terlewat pada data demo
+`DemoSeeder::pengaduan()`/`asetSp()` menulis lewat `DB::table()->insert()`
+mentah, melewati mesin notifikasi/hitung-ulang `penilaian_sp` sama sekali --
+dropdown notifikasi dan riwayat kondisi SP untuk data demo kosong walau
+tabelnya terisi. Diperbaiki: keduanya kini memanggil
+`LayananNotifikasi::pengaduanBaru()`/`hitungUlangSp()` sungguhan setelah
+tiap baris ditulis. Metode `notifikasi()` lama (patch manual 3 baris notifikasi
+palsu) DIHAPUS, sudah tergantikan notifikasi nyata yang jauh lebih banyak.
+
+### 4. Uji trigger Pengaduan Mendesak yang kosong
+Dari lima sumber notifikasi, trigger "Pengaduan Mendesak" (prioritas Mendesak
++ belum selesai) sebelumnya nol pengujian meski logikanya sendiri benar.
+Ditambahkan ke `NotifikasiTest.php`: terkirim selama belum selesai, tak
+terkirim untuk yang sudah selesai, siklus penuh tertutup-lalu-relaps-terkirim
+lagi tanpa duplikat, isolasi lintas-SP (operator Per SP di SP A tak
+menerima kejadian SP B), dan anti-banjir riwayat `penilaian_sp` (dipanggil
+ulang tanpa perubahan status -> tak ada baris baru).
+
+### 5. Surel diantre, bukan sinkron
+`KredensialAkunMail`/`KodePemulihanSandiMail`/`PengaduanMail` sebelumnya
+`Mail::to(...)->send(...)` sinkron tanpa `ShouldQueue` dan tanpa timeout
+eksplisit -- SMTP yang lambat/tak terjangkau dapat menahan permintaan HTTP,
+termasuk kanal pengaduan publik TANPA LOGIN. Diperbaiki: ketiganya
+`implements ShouldQueue`; seluruh titik panggil (`PemulihanSandiController`,
+`PengaturanPenggunaController::kirimKredensial()`, `SurelPengaduan::kirim()`)
+beralih dari `->send()` ke `->queue()`.
+
+`KredensialAkunMail` dan `KodePemulihanSandiMail` SEKALIAN
+`implements ShouldBeEncrypted` -- payload antreannya membawa kata sandi
+sementara/kode pemulihan MENTAH, dan tanpa enkripsi keduanya akan tersimpan
+TERBACA di tabel `jobs` sampai pekerja antrean memprosesnya, bertentangan
+`rules.md` 14b poin 14 ("Admin tak pernah dapat membaca ulang kata sandi").
+`PengaduanMail` (konten pengaduan publik, bukan rahasia) cukup `ShouldQueue`
+polos.
+
+Teks "kredensial telah dikirim" pada `pengguna/index.blade.php` dan
+"nomor pengaduan telah dikirim" pada `publik/pengaduan.blade.php` diubah
+menjadi "sedang diantre untuk dikirim" -- menghindari klaim pengiriman yang
+sebenarnya baru terjadwal, bukan tuntas. Uji Mail yang tadinya
+`Mail::assertSent(...)` diubah ke `Mail::assertQueued(...)`
+(4 berkas uji: `PengaduanTest`, `PengaduanPublikTest`,
+`PengaturanPenggunaTest`, `PemulihanSandiTest`); satu `Mail::assertNothingSent()`
+diubah ke `assertNothingOutgoing()` supaya tetap memeriksa jalur antrean juga.
+
+**Prasyarat operasional baru, dicatat Task 11.3:** pekerja antrean
+(`php artisan queue:work`, disupervisi Supervisor/systemd) WAJIB berjalan
+permanen di server produksi. `QUEUE_CONNECTION=database` sudah dikonfigurasi
+dan tabel `jobs` sudah ada di skema -- tanpa pekerja berjalan, ketiga surel
+di atas tertahan diam di tabel itu dan TIDAK PERNAH terkirim (bukan sekadar
+lambat).
+
+### Verifikasi
+`vendor/bin/pint --test` bersih di seluruh proyek. Suite Database dan
+Feature dijalankan berulang setelah tiap perbaikan, seluruhnya hijau.
+`php artisan sim:banding-skema --lengkap` tidak dijalankan ulang di putaran
+ini sebab tidak ada perubahan skema (murni logika + seeder + Mailable).
+
+
 
 
 
