@@ -822,7 +822,7 @@ Empat kategori terakhir sengaja dibiarkan kosong sebab pokok masalahnya dapat ja
    - jumlah transmigran, disajikan sebagai grafik per tahun,
    - jumlah KK, disajikan sebagai grafik per tahun,
    - jumlah petani, disajikan sebagai grafik per tahun,
-   - jumlah pendapatan keluarga, disajikan sebagai grafik per tahun,
+   - jumlah pendapatan keluarga saat ini, disajikan sebagai kartu KPI snapshot per KK aktif (bukan deret waktu tahunan fiktif, keputusan pemilik proyek 2026-09-04 / 2026-09-05),
    - visualisasi KK masuk dan keluar per tahun,
    - jumlah rumah yang terhuni,
    - visualisasi pekerjaan kepala keluarga dalam bentuk histogram,
@@ -831,7 +831,7 @@ Empat kategori terakhir sengaja dibiarkan kosong sebab pokok masalahnya dapat ja
    - total volume panen per tahun, dinyatakan dalam ton hasil konversi lintas komoditas,
    - harga rata-rata,
    - status infrastruktur,
-   - isu prioritas per desa/SP yang bersumber dari fitur Pengaduan,
+   - isu prioritas per desa/SP yang bersumber dari fitur Pengaduan (dibatasi maksimal 5 laporan pada tampilan awal dashboard dengan tautan ke halaman pengaduan lengkap),
    - rekap data penghuni kawasan.
 3. Dashboard harus mudah dibaca oleh pengguna nonteknis.
 4. Informasi penting harus dapat difilter berdasarkan wilayah (kawasan/kecamatan/desa/SP) atau periode.
@@ -944,6 +944,8 @@ Pola berikut adalah **standar yang harus dibangun dan dipatuhi** sejak awal proy
 7. Pesan galat dan validasi wajib berbahasa Indonesia yang mudah dipahami operator lapangan, bukan istilah teknis.
 8. Palet warna, tipografi, komponen bersama, struktur menu, dan inventaris halaman mengikuti `ui-spec.md`.
 9. Kombinasi warna wajib memenuhi rasio kontras WCAG AA sesuai tabel pada `ui-spec.md` §3.2.
+10. Tata letak seluruh halaman menggunakan kerangka flexbox vertikal dengan tinggi minimal layar (`min-h-screen flex flex-col` pada kontainer utama dan `mt-auto` pada komponen footer) agar footer selalu menempel wajar di bawah pada halaman berkonten sedikit tanpa menetapkan tinggi tetap (*hardcoded fixed height*).
+11. Animasi penanda status/urgensi (seperti titik denyut pada kartu indikator pengaduan) wajib dibungkus `motion-safe:animate-ping` agar mematuhi preferensi sistem pengguna (*prefers-reduced-motion*), berdimensi tetap dengan `shrink-0` (*zero layout shift*), serta hanya berdenyut bila nilai metrik `> 0`.
 
 ### 14. Aturan Keamanan
 1. Sistem wajib menggunakan HTTPS.
@@ -1129,6 +1131,8 @@ Sebelum menyatakan pekerjaan antarmuka selesai, **wajib** menjalankan Delivery G
 6. Setiap model wajib mendeklarasikan `$primaryKey`, `$fillable`, dan `$casts` secara eksplisit; dilarang mengandalkan asumsi bawaan Eloquent.
 7. Nilai enum diakses lewat PHP Enum di `app/Enums/`, tidak ditulis sebagai teks berkode keras di controller maupun view.
 8. Komponen antarmuka mengutamakan komponen TailAdmin yang sudah tersedia; komponen khusus domain dibangun sebagai pembungkus, bukan tulisan ulang dari nol.
+8a. Kode JavaScript inline di dalam atribut HTML (`x-data`, `x-bind`, `x-on`) **dilarang memuat tanda kutip yang sama dengan pembungkus atribut tanpa encoding**. Selector CSS di dalam `x-data="..."` memakai nilai atribut tanpa kutip bila sah (`meta[name=csrf-token]`) atau dipindahkan ke modul JavaScript. Satu kutip ganda mentah dapat menutup atribut dan membuat sisa kode tampil sebagai teks pada setiap pemakai komponen.
+8b. Setiap komponen dengan `x-data` inline yang memuat fungsi panjang wajib memiliki uji HTML terender yang membuktikan atribut tetap utuh sampai atribut berikutnya; memeriksa keberadaan potongan JavaScript saja tidak cukup karena kode yang bocor tetap ditemukan sebagai teks halaman.
 
 #### 19a. Batas kesaksian data contoh
 

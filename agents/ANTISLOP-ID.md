@@ -231,6 +231,7 @@ Setiap elemen interaktif harus memiliki perilaku nyata, atau dihapus:
 
 **DILARANG**: tombol dan link yang tidak melakukan apa pun
 **DILARANG**: item nav yang mengarah ke section yang tidak ada (lihat R-24)
+**DILARANG**: atribut interaktif (`x-data`, `x-on`, `x-bind`) terputus oleh tanda kutip mentah sehingga handler bocor menjadi teks atau tidak pernah dijalankan
 
 Jika sebuah elemen benar-benar belum punya destination, hapus elemen tersebut daripada mengirim kontrol mati. Placeholder hanya diperbolehkan dengan komentar `// TODO` yang jelas di kode DAN label yang terlihat oleh user (mis. "Coming soon"). Lihat "Pola Fungsional" di bawah.
 

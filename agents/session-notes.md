@@ -1,3 +1,43 @@
+# Audit dan Penyempurnaan Frontend — Sticky Footer, Dashboard, & Kartu Indikator Pengaduan (2026-09-05, commit `f008764`)
+
+Audit dan perbaikan lapisan antarmuka pengguna (UI/UX, tata letak, ritme vertikal, visualisasi data, animasi, dan aksesibilitas) tanpa mengubah skema basis data, model, endpoint, atau logika otorisasi:
+
+1. **Sticky Footer Bersama (`resources/views/layouts/app.blade.php` & `components/sim/footer.blade.php`):**
+   - Masalah: Footer terangkat ke posisi ~300px pada halaman dengan konten sedikit (seperti `/notifikasi`), menyisakan ruang kosong besar di bawahnya.
+   - Perbaikan: Pembungkus kolom utama diberi `flex flex-col min-h-screen`, area konten `@yield('content')` diberi `flex-1 w-full`, dan komponen footer diberi `mt-auto`. Footer menempel wajar di bawah (*sticky footer*) pada halaman pendek tanpa *hardcoded fixed height*, konsisten di desktop maupun mobile.
+
+2. **Visualisasi Data Bagian 3 Dashboard (`resources/views/pages/dashboard/index.blade.php`):**
+   - Menukar alokasi kolom: *Harga Jual Rata-rata* (deret waktu 11 tahun) yang sebelumnya terdesak di 1 kolom diperluas menjadi 2 kolom (`xl:col-span-2`) berpasangan dengan Volume Panen, dilengkapi *smooth curve* dan penanda titik data (`markers: { size: 3.5, strokeWidth: 0, hover: { size: 6 } }`).
+   - *Pendapatan Keluarga Saat Ini* ditata menjadi kartu KPI 1 kolom (`xl:col-span-1`) yang jujur terhadap data (snapshot keadaan sekarang per KK aktif, bukan deret waktu fiktif).
+   - Pemecahan judul 2 baris: `Pendapatan Keluarga<br>Saat Ini` dengan kelas `leading-tight` agar tidak mendesak badge status di sampingnya.
+   - Penyempurnaan badge *Keadaan Sekarang*: ukuran diperkecil (`text-[10px] px-1.5 py-0.5`), diberi `inline-flex shrink-0 items-center justify-center text-center whitespace-nowrap` agar selalu presisi di tengah secara simetris, dan diselaraskan secara vertikal di sumbu tengah (Opsi A: `items-center`).
+
+3. **Pembatasan Isu Prioritas per SP (`resources/views/pages/dashboard/index.blade.php`):**
+   - Menampilkan maksimal 5 pengaduan teratas pada tampilan awal dashboard (`array_slice($isuPrioritas, 0, 5)`) baik pada tabel desktop maupun daftar kartu mobile.
+   - Teks keterangan otomatis menyesuaikan (*"Menampilkan 5 dari X pengaduan..."*), dan tombol tautan *"Lihat Semua Pengaduan"* tetap mengarah ke modul pengaduan lengkap.
+
+4. **Aksen Urgensi & Animasi Kartu Indikator (`resources/views/components/sim/stat-card.blade.php` & `pages/pengaduan/index.blade.php`):**
+   - Kartu *Berprioritas Mendesak*: border merah + ring halus (`border-error-500 ring-1 ring-error-500/30`), indikator denyut ping merah `h-2.5 w-2.5` (`bg-error-500` / `#f04438`), label aksesibilitas `"Memerlukan perhatian segera"`.
+   - Kartu *Menunggu Diterima*: border amber halus (`border-amber-300/80 dark:border-amber-500/30`), indikator denyut ping amber `h-2 w-2` (`bg-warning-500` / `#f79009`), label aksesibilitas `"Perlu disaring petugas"`. Warna amber dipilih secara sadar sebagai pembeda status antrean administratif tanpa membingungkan pengguna dengan warna merah darurat.
+   - Konsistensi animasi: seluruh denyut dibungkus `motion-safe:animate-ping`, dimensi tetap dan `shrink-0` (*zero layout shift*), dan hanya aktif jika nilai metrik `> 0`.
+
+5. **Uji Otomatis & Regresi (`tests/Feature/HalamanTest.php`):**
+   - Penambahan uji pembatasan 5 isu prioritas, perenderan harga & pendapatan, dan sticky footer notifikasi.
+   - Sinkronisasi asersi regex judul 2 baris kartu pendapatan (`toMatch('/Pendapatan\s+Keluarga(<br\s*\/?>|\s+)Saat\s+Ini/i')`).
+   - Verifikasi: `KontrasTest` (6 passed, WCAG AA), `NotifikasiTest` (13 passed), `HalamanTest` (539 passed), `npm run build` sukses (6.36s).
+
+---
+
+# Task 12.7 SELESAI — Kebocoran JavaScript Modal Impor (2026-09-05)
+
+Gejala: hampir semua halaman berfitur impor menampilkan potongan fungsi Alpine mulai dari `null); if (! r.ok) ... ukuran(byte) ...` sebagai teks biasa.
+
+Akar masalah tunggal berada di `resources/views/components/sim/modal-impor.blade.php`: seluruh objek JavaScript ditulis di dalam atribut `x-data="..."`, tetapi selector `document.querySelector('meta[name="csrf-token"]')` memuat tanda kutip ganda mentah. Peramban menganggap tanda kutip sebelum `csrf-token` sebagai penutup atribut; sisa fungsi `proses()` dan `ukuran()` keluar dari atribut lalu tampil sebagai teks. Karena komponen dipakai 15 halaman, satu cacat pusat menjalar ke semuanya.
+
+Perbaikan: selector diganti ke bentuk CSS ekuivalen tanpa kutip nilai atribut, `meta[name=csrf-token]`. Tidak ada logika impor yang berubah. Uji regresi baru merender `/transmigran`, menangkap atribut `x-data` lengkap sampai `x-on:buka-modal`, dan menuntut pesan galat serta selector CSRF tetap berada di dalam atribut. Verifikasi: uji terfokus 16 PASS (64 asersi), Pint bersih, `view:cache` dan `view:clear` berhasil.
+
+---
+
 # Tahap 12 SELESAI — Paginasi, Notifikasi, Surel, Urgensi, DemoSeeder (2026-09-05)
 
 - Task 12.1b menutup tiga celah Fase 1: dropdown membaca `paginator->perPage()`, Audit Log memakai pilihan 10/25/50/100, dan galeri komponen tidak lagi merender kontrol tabel mati.

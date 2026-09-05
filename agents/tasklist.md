@@ -1798,12 +1798,22 @@ fase selesai 2026-09-05; rincian hasil ada pada `session-notes.md`.
   * **Surel (`KredensialAkunMail`/`KodePemulihanSandiMail`/`PengaduanMail`)** dulu `Mail::to(...)->send(...)` sinkron tanpa `ShouldQueue` dan tanpa timeout -- SMTP lambat/tak terjangkau dapat menahan permintaan HTTP, termasuk kanal pengaduan publik tanpa login. Diperbaiki: ketiganya `implements ShouldQueue`, seluruh titik panggil beralih ke `->queue()`. `KredensialAkunMail`/`KodePemulihanSandiMail` SEKALIAN `implements ShouldBeEncrypted` sebab payload antreannya membawa kata sandi sementara/kode pemulihan MENTAH -- tanpa itu keduanya tersimpan terbaca di tabel `jobs` sampai diproses pekerja, bertentangan `rules.md` 14b poin 14. Teks "kredensial telah dikirim" pada `pengguna/index.blade.php`/`publik/pengaduan.blade.php` diubah jadi "sedang diantre untuk dikirim" supaya tidak mengklaim pengiriman yang sebenarnya baru terjadwal.
   * **Prasyarat operasional baru:** pekerja antrean (`php artisan queue:work`, disupervisi) WAJIB berjalan permanen di server -- dicatat Task 11.3, sebab tanpa itu ketiga surel di atas tertahan diam di tabel `jobs` dan tak pernah terkirim.
   * Verifikasi: `vendor/bin/pint --test` bersih, suite Database & Feature penuh hijau (dijalankan berulang setelah setiap perbaikan).
+- [✓] Task 12.7 - Perbaikan kebocoran kode JavaScript modal impor `[Mudah]` -- **SELESAI 2026-09-05**
+  * Selector CSRF `meta[name="csrf-token"]` berada di dalam atribut HTML `x-data="..."`; tanda kutip gandanya menutup atribut lebih awal sehingga sisa fungsi `proses()`/`ukuran()` tampil sebagai teks pada 15 halaman berfitur impor.
+  * Diganti menjadi selector CSS ekuivalen `meta[name=csrf-token]`, sehingga seluruh objek Alpine kembali berada di dalam atribut `x-data` dan modal impor dapat dijalankan.
+  * Uji regresi `HalamanTest` menangkap seluruh nilai atribut `x-data` dan memastikan pesan galat serta selector CSRF tetap berada di dalamnya. Pint bersih dan seluruh Blade berhasil dikompilasi.
+- [✓] Task 12.8 - Audit dan penyempurnaan frontend (sticky footer, tata letak dashboard, dan aksen kartu pengaduan) `[Sedang]` -- **SELESAI 2026-09-05 (commit `f008764`)**
+  * **Sticky footer:** Kerangka `flex flex-col min-h-screen` pada kontainer utama dan `mt-auto` pada footer di `layouts/app.blade.php` dan `components/sim/footer.blade.php`, mengatasi footer terangkat di halaman ber-konten pendek tanpa fixed height.
+  * **Dashboard Bagian 3:** Menukar alokasi grid; Grafik Harga Jual 11 tahun diperluas ke 2 kolom (`xl:col-span-2`) dengan penanda titik data (markers: 3.5); Pendapatan Keluarga Saat Ini dikonversi ke kartu KPI 1 kolom (`xl:col-span-1`) dengan judul 2 baris (`Pendapatan Keluarga<br>Saat Ini`), badge "Keadaan Sekarang" kompak dan presisi di tengah, serta penyelarasan vertikal rata tengah (Opsi A).
+  * **Batas Isu Prioritas per SP:** Dibatasi maksimal 5 baris pada tampilan awal dashboard lewat `array_slice()`, tombol "Lihat Semua Pengaduan" dipertahankan.
+  * **Aksen Kartu Pengaduan:** Tambahan prop `:mendesak` (merah `#f04438` + ring) dan `:perhatian` (amber `#f79009` + dot kecil) pada `x-sim.stat-card`, animasi `motion-safe:animate-ping`, `shrink-0` tanpa pergeseran layout.
+  * **Verifikasi:** KontrasTest 6 passed (WCAG AA), NotifikasiTest 13 passed, HalamanTest 539 passed (4.603 asersi), Vite build 6.36s.
 
 ---
 
 ## Catatan Checkpoint
 
-**Checkpoint terakhir:** 2026-09-05 — Tahap 12 selesai (Task 12.1-12.6). Paginasi nyata, notifikasi internal, surel formal berbasis CMS, penanda urgensi, dan DemoSeeder sudah terverifikasi; audit menyeluruh atas Task 12.1b-12.5 (agen lain) menemukan dan Task 12.6 menutup: cakupan multi-SP notifikasi infrastruktur, invarian bisnis data demo produksi pertanian, notifikasi yang terlewat pada data demo, uji trigger Pengaduan Mendesak yang kosong, dan surel yang belum diantre.
+**Checkpoint terakhir:** 2026-09-05 — Tahap 12 selesai (Task 12.1-12.8). Paginasi nyata, notifikasi internal, surel formal berbasis CMS, penanda urgensi, DemoSeeder, perbaikan modal impor, serta audit & penyempurnaan frontend (sticky footer, visualisasi dashboard, dan kartu indikator pengaduan) sudah terverifikasi penuh.
 
 **Struktur folder:**
 

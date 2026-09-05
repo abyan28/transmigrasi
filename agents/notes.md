@@ -1984,6 +1984,39 @@ Seluruh sembilan tahap SELESAI (F2 tidak lagi tertunda).
 
 ---
 
+## 1x. Kebocoran JavaScript dari Atribut `x-data` Modal Impor (2026-09-05)
+
+**Gejala:** potongan fungsi Alpine (`null); if (! r.ok) ... ukuran(byte) ...`) tampil sebagai teks di hampir seluruh halaman daftar.
+
+**Akar:** `x-sim.modal-impor` dipakai 15 halaman. Objek Alpine ditulis dalam atribut `x-data="..."`, sedangkan selector CSRF di dalamnya memakai `meta[name="csrf-token"]`. Tanda kutip ganda sebelum `csrf-token` menutup atribut HTML lebih awal; kode setelahnya bukan lagi nilai `x-data` dan dirender peramban sebagai teks.
+
+**Perbaikan:** selector diganti ke bentuk CSS ekuivalen `meta[name=csrf-token]`. Perubahan satu baris pada komponen bersama memperbaiki seluruh 15 pemakai.
+
+**Mengapa uji lama lolos:** uji hanya mencari nama modal dan potongan teks impor. Kode yang bocor tetap ada di HTML sehingga pencarian substring tetap hijau. Uji baru menangkap satu nilai atribut `x-data` lengkap sampai atribut `x-on:buka-modal`, lalu memastikan bagian akhir fungsi dan selector CSRF masih berada di dalam tangkapan.
+
+> Aturan: JavaScript inline di atribut HTML tidak boleh membawa delimiter atribut mentah. Untuk fungsi panjang, uji struktur atribut terender—bukan hanya keberadaan isi fungsi.
+
+---
+
+## 1y. Audit dan Penyempurnaan Frontend — Sticky Footer, Dashboard, & Urgensi Pengaduan (2026-09-05)
+
+**1. Sticky Footer Global pada Konten Pendek:**
+- **Gejala:** Pada halaman dengan konten sedikit (seperti `/notifikasi` saat hanya ada 1–2 pemberitahuan), footer terangkat ke posisi ~300px dari atas dan menyisakan ruang kosong besar di bawahnya.
+- **Akar:** Pembungkus area kerja admin di sebelah sidebar belum memiliki kerangka kolom flexbox vertikal dengan tinggi minimal layar (`min-h-screen flex flex-col`), dan pembungkus isi `@yield('content')` belum diberi `flex-1 w-full`.
+- **Perbaikan:** Menambahkan kerangka flexbox vertikal pada `resources/views/layouts/app.blade.php` dan `mt-auto` pada `resources/views/components/sim/footer.blade.php`. Footer otomatis menempel rapi di dasar *viewport* saat konten pendek, tanpa *hardcoded fixed height*, dan terdorong normal saat konten panjang.
+
+**2. Penataan Visualisasi Bagian 3 Dashboard:**
+- **Tukar Grid:** *Harga Jual Rata-rata* (deret waktu 11 tahun) yang sebelumnya terhimpit di 1 kolom diperluas menjadi 2 kolom (`xl:col-span-2`) berpasangan dengan Volume Panen, dilengkapi *smooth curve* dan penanda titik data (`markers: { size: 3.5 }`).
+- **Kartu KPI Pendapatan:** *Pendapatan Keluarga Saat Ini* ditata sebagai kartu KPI 1 kolom (`xl:col-span-1`) yang jujur terhadap data snapshot saat ini (menghindari deret waktu fiktif). Judul dipecah 2 baris (`Pendapatan Keluarga<br>Saat Ini` dengan `leading-tight`), badge *Keadaan Sekarang* diperkecil dan diposisikan presisi di tengah (`justify-center text-center whitespace-nowrap shrink-0`), dan perataan vertikal baris header diselaraskan rata tengah (`items-center`).
+- **Batas 5 Isu Prioritas:** Tampilan awal isu prioritas pengaduan di dashboard dibatasi maksimal 5 laporan teratas (`array_slice()`) dengan penyesuaian teks keterangan dan tautan ke halaman pengaduan lengkap.
+
+**3. Aksen Urgensi & Animasi Kartu Indikator:**
+- Kartu *Berprioritas Mendesak*: border merah + ring halus (`border-error-500 ring-1`), titik denyut ping merah `h-2.5 w-2.5` (`bg-error-500` / `#f04438`), label aksesibilitas `"Memerlukan perhatian segera"`.
+- Kartu *Menunggu Diterima*: border amber halus (`border-amber-300/80`), titik denyut ping amber `h-2 w-2` (`bg-warning-500` / `#f79009`), label aksesibilitas `"Perlu disaring petugas"`. Warna amber dipilih untuk menandakan antrean administratif tanpa membingungkan petugas dengan warna merah darurat.
+- Seluruh denyut dibungkus `motion-safe:animate-ping` dengan properti `shrink-0` dan dimensi tetap (*zero layout shift*).
+
+---
+
 ## 2. Catatan Dokumen Proposal
 
 Lembar pengesahan pada `docs/Revisi_Proposal_Budi_TEP ITS 2026_Kobalima_Timur_Upload_10_6_2026_a.pdf` masih memuat judul dan pengusul dari proposal lain:

@@ -602,6 +602,8 @@ Menjawab PRD §8.1: sinyal di lokus tidak selalu stabil, sehingga petugas mengun
 5. Kolom wajib ditampilkan pada langkah pertama, agar petugas mengetahui isian yang diperlukan sebelum berangkat ke lapangan.
 6. **Fitur berikut tidak diberi impor:** Pengaduan (datang satu per satu dari kanal publik, nomornya wajib memuat bagian acak), Pengguna (kata sandi awal diserahkan langsung kepada orangnya, `rules.md` §14b poin 3), serta Role, Kawasan, dan SP yang jumlah barisnya ditetapkan dokumen acuan, bukan dihitung dari data contoh.
 7. Selama penyimpanannya belum tersambung, modal **wajib memuat spanduk** yang menyatakan fitur belum aktif, sebab tampilannya sudah terlihat berfungsi penuh.
+8. Objek Alpine modal impor berada utuh di satu atribut `x-data`. Selector CSRF memakai `meta[name=csrf-token]`; tanda kutip ganda pada nilai selector dilarang karena atributnya sendiri dibungkus tanda kutip ganda dan akan terputus lebih awal.
+9. Uji komponen wajib menangkap atribut `x-data` dari tag pembuka sampai `x-on:buka-modal`, bukan hanya mencari potongan fungsi. JavaScript yang sudah bocor dari atribut masih muncul di HTML dan akan membuat uji berbasis `assertSee()` palsu-hijau.
 
 ### 5.1c Tab Catatan Log pada halaman rincian
 
@@ -839,7 +841,12 @@ Modal floating untuk form isian (`rules.md` §13.2 poin 3).
 - `buka()` mereset ke langkah 1. Dipakai form transmigran (Identitas / Penempatan / Anggota Keluarga / Berkas). State langkah per modal, sebab halaman `/transmigran` memuat dua salinan form sekaligus.
 
 ### 6.3 `<x-stat-card>`
-Kartu indikator dashboard: label, angka besar, ikon, tren, dan tautan drill-down opsional.
+Kartu indikator dashboard & modul: label, angka besar (`tabular-nums`), satuan, keterangan, ikon, tren (naik/turun), dan tautan drill-down opsional.
+
+1. **Aksen & Animasi Urgensi (ditetapkan 2026-09-05):**
+   - **`mendesak` (`:mendesak="bool"` / `urgensi="mendesak"`):** Diberi border merah dan ring halus (`border-error-500 ring-1 ring-error-500/30 dark:border-error-500/80 dark:ring-error-500/20`), disertai titik denyut ping merah berukuran `h-2.5 w-2.5` (`bg-error-500` / `#f04438`) dengan `aria-label="Memerlukan perhatian segera"`. Digunakan untuk pengaduan dengan status/prioritas mendesak yang belum selesai.
+   - **`perhatian` (`:perhatian="bool"` / `urgensi="perhatian"`):** Diberi border amber halus (`border-amber-300/80 dark:border-amber-500/30`), disertai titik denyut ping amber berukuran kompak `h-2 w-2` (`bg-warning-500` / `#f79009`) dengan `aria-label="Perlu disaring petugas"`. Digunakan untuk pengaduan dengan status *Menunggu Diterima* (tahap penapisan administratif) agar tidak memicu alarm darurat palsu.
+   - **Aksesibilitas & Ketahanan Layout:** Titik animasi denyut dibungkus `motion-safe:animate-ping` agar mematuhi preferensi sistem pengguna (*prefers-reduced-motion*), berdimensi tetap dengan `shrink-0` (*zero layout shift*), serta hanya aktif bila nilai metrik `> 0`.
 
 ### 6.4 `<x-file-upload>`
 - Batas **5 MB**, tipe: gambar dan PDF (`rules.md` §14a)
@@ -972,6 +979,15 @@ Tiap sub-tabel dirender oleh partial `pages/laporan/isi/_tabel-dok.blade.php` da
 
 **"Catat Peristiwa" anggota keluarga.** Tab "Anggota Keluarga" di `transmigran/detail` kini punya kolom **Status** (`<x-sim.status-badge :status="StatusAnggotaKeluarga::from(...)">`); baris non-Aktif diberi `opacity-60` + sub-baris tanggal/keterangan peristiwa. Tombol **"Catat Peristiwa"** per baris Aktif membuka modal `formPeristiwaAnggota` (`pola-aksi` dengan `:id` = `anggota_keluarga_id`; nama anggota ditangkap slot `x-data` dari event `buka-modal-baris`): pilih Meninggal/Pindah + tanggal + keterangan. **Kepala keluarga tidak punya tombol ini** — peristiwanya lewat "Ganti Kepala Keluarga" yang sudah ada. Form multi-langkah transmigran: repeater hanya anggota Aktif, non-Aktif ditampilkan read-only. Lihat `rules.md` §9c (dibalik sebagian) dan `data-dictionary.md` §6.1a / §11.44.
 
+### 6.13 `<x-sim.footer>` & Tata Letak Sticky Footer (2026-09-05)
+
+- Komponen footer bersama (`components/sim/footer.blade.php`) dirancang ramping (*slim bar* 1 baris) agar tidak membebani ruang kerja petugas internal, menyajikan hak cipta resmi kementerian & pemkab, status versi prototipe, serta atribusi lisensi template TailAdmin (MIT).
+- **Arsitektur Sticky Footer Flexbox (`layouts/app.blade.php`):**
+  - Pembungkus utama halaman di samping sidebar diberi kerangka vertikal penuh: `min-w-0 flex-1 flex flex-col min-h-screen`.
+  - Pembungkus isi `@yield('content')` menggunakan `flex-1 w-full` untuk mengisi ruang yang tersisa.
+  - Komponen footer diberi kelas `mt-auto`.
+  - Pola ini memastikan footer selalu menempel secara alami pada dasar *viewport* saat sebuah halaman memiliki konten sedikit (seperti `/notifikasi` atau halaman berkeadaan kosong) tanpa menetapkan tinggi tetap (*hardcoded height*), dan terdorong ke bawah secara normal saat konten bertambah panjang, konsisten pada mode desktop maupun mobile.
+
 ---
 
 ## 7. Pola State
@@ -1054,6 +1070,11 @@ Indikator PRD §7.8 dipetakan ke jenis visualisasi:
 11. **Tiap baris grid wajib genap.** Lebar kartu disetel agar tidak menyisakan kolom menganggur di ujung baris; kartu yang berdiri sendiri diletakkan selebar halaman, di luar grid.
 12. **Interaksi grafik non-blocking (Scrolling Halaman > Interaksi Chart).** Seluruh grafik ApexCharts dikonfigurasi agar tidak pernah menangkap gesture vertikal halaman saat pengguna melakukan scrolling cepat (`chart.zoom.enabled: false`, `chart.selection.enabled: false`, `tooltip.followCursor: false`, `touch-action: pan-y !important;` pada canvas dan SVG). Pada desktop kursor mouse memunculkan tooltip instan, pada mobile sentuhan singkat (tap) mengunci tooltip tanpa mengorbankan navigasi swipe vertikal.
 13. **Struktur Ringkasan Kawasan 3 Pilar Domain.** 12 indikator utama dikelompokkan ke dalam 3 pilar tematik visual: (1) *Kependudukan & Hunian* (Navy), (2) *Lahan & Siklus Tanam* (Teal), dan (3) *Produksi & Nilai Pasar* (Gold/Sand), dilengkapi bar visual keterhunian dan siklus tanam (Realisasi Tanam, Puso, Realisasi Panen). Sumbu Y pada grafik per SP (`#grafikPerSp`) memisahkan skala Jiwa di kiri dan Luas Lahan ha di kanan (Dual Y-Axis).
+14. **Visualisasi Harga Jual vs Pendapatan Keluarga & Isu Prioritas (ditetapkan 2026-09-05):**
+    - **Harga Jual Rata-rata**: Deret waktu 11 tahun ditempatkan pada `xl:col-span-2` berpasangan dengan Volume Panen, dengan kurva halus dan penanda titik data (`markers: { size: 3.5, strokeWidth: 0, hover: { size: 6 } }`) agar titik harga tahunan terbaca jelas.
+    - **Pendapatan Keluarga Saat Ini**: Alokasi 1 kolom (`xl:col-span-1`), diformat sebagai kartu KPI snapshot per KK aktif (bukan grafik tren tahunan fiktif), judul dipecah 2 baris (`Pendapatan Keluarga<br>Saat Ini` dengan `leading-tight`), badge *Keadaan Sekarang* berukuran kompak presisi di tengah (`justify-center text-center whitespace-nowrap shrink-0`), dan perataan vertikal rata tengah (*vertical center*).
+    - **Isu Prioritas per SP**: Dibatasi maksimal 5 baris pada tampilan awal dashboard baik pada tabel desktop maupun kartu mobile (`array_slice`), subjudul dinamis, dan tautan tombol *"Lihat Semua Pengaduan"* tetap tersedia.
+
 
 **Indikator 17, produksi pertanian kawasan** (ditambahkan 2026-08-24). Empat kartu statistik pada bagian Ringkasan Kawasan: Realisasi Tanam, Hasil Panen, Puso, dan Produktivitas Rata-rata.
 
