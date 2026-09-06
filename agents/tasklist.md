@@ -1673,7 +1673,7 @@ menghapus sisa terakhir `DummyData::penggunaSaatIni()` -- dikerjakan berbarengan
   * Kewenangan impor menuntut `lihat+tambah`; target SP tiap baris diperiksa lewat cakupan tulis. Hasil galat disanitasi dan dibatasi agar respons tetap terkendali.
   * **8 entitas mandiri aktif:** satuan, wilayah, komoditas, transmigran, infrastruktur, inventaris-sp, fasilitas-sp, alsintan.
   * UI memakai istilah jujur “Impor” dan “Hasil impor”; tidak ada preview atau hasil palsu. Enam entitas berantai tetap dinonaktifkan beserta penjelasan.
-  * Verifikasi: uji CSV/XLSX paritas, struktur template, formula/makro/ZIP/header, teks NIK/KK, transaksi per baris, cakupan SP, dan izin dinamis lulus sebagai bagian Database 571 PASS.
+  * Verifikasi: uji CSV/XLSX paritas, struktur template, formula/makro/ZIP/header (formula CSV ditambah pada audit 2026-09-06), teks NIK/KK, transaksi per baris, cakupan SP, dan izin dinamis lulus sebagai bagian suite Database.
 - [ ] Task 10.4b - Aktifkan impor enam entitas berantai (`rumah`, `lahan`, `poktan`, `saprotan`, `penanaman`, `hasil-panen`) `[Sulit]`
   * Gunakan mesin XLSX/CSV yang sama; jangan membuat parser kedua.
   * Wajib memetakan relasi secara tidak ambigu dan menjalankan seluruh invariant server yang sudah berlaku pada form manual: rumah/lahan mengikuti KK dan SP, ketua poktan tiga jalur, saprotan benih wajib komoditas+varietas, penanaman memakai distribusi benih poktan, dan panen menutup satu penanaman tepat sekali.

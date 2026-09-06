@@ -64,6 +64,16 @@ it('queues encrypted verification and account notice mail', function () {
         ->and($notice->render())->toContain('Akun berubah.');
 });
 
+it('renders system mail in Indonesian without the word surel', function () {
+    $token = str_repeat('a', 64);
+
+    $verification = (new PendingEmailChangeMail('Nama', 'baru@example.test', $token))->render();
+    $notice = (new AccountChangeNoticeMail('Nama', 'Akun berubah.'))->render();
+
+    expect(mb_strtolower($verification))->not->toContain('surel')
+        ->and(mb_strtolower($notice))->not->toContain('surel');
+});
+
 it('keeps a permanent account email and password pending until POST while GET is non-consuming', function () {
     $user = User::factory()->create([
         'email' => 'old@malakakab.go.id',
@@ -311,4 +321,54 @@ it('saves admin non-email fields immediately and leaves changed email pending', 
 
     Mail::assertQueued(PendingEmailChangeMail::class, fn ($mail) => $mail->hasTo('admin-target-new@malakakab.go.id'));
     Mail::assertQueued(AccountChangeNoticeMail::class, fn ($mail) => $mail->hasTo('admin-target-old@malakakab.go.id'));
+});
+
+it('rejects confirmation with the generic message when the target email was taken meanwhile', function () {
+    $user = User::factory()->create(['email' => 'race-old@malakakab.go.id', 'password_harus_diganti' => false]);
+    $token = issueEmailChange($user, 'race-target@malakakab.go.id');
+
+    // Orang lain keburu memakai alamat itu antara permintaan dan konfirmasi.
+    User::factory()->create(['email' => 'race-target@malakakab.go.id']);
+
+    $this->actingAs($user);
+    $this->post(route('email-change.confirm', $token))
+        ->assertSessionHasErrors(['token' => 'Tautan verifikasi tidak valid atau sudah kedaluwarsa.']);
+
+    expect($user->refresh()->email)->toBe('race-old@malakakab.go.id')
+        ->and(PendingEmailChange::where('user_id', $user->id_user)->value('used_at'))->toBeNull();
+});
+
+it('does not log out a different signed-in user who opens the confirmation link', function () {
+    $owner = User::factory()->create(['email' => 'owner-old@malakakab.go.id', 'password_harus_diganti' => false]);
+    $token = issueEmailChange($owner, 'owner-new@malakakab.go.id');
+
+    $other = User::factory()->create();
+    $this->actingAs($other);
+
+    $this->post(route('email-change.confirm', $token))->assertRedirect(route('login'));
+
+    // Email pemilik tetap berubah; sesi pengguna LAIN tidak ikut dicabut.
+    expect($owner->refresh()->email)->toBe('owner-new@malakakab.go.id');
+    $this->assertAuthenticatedAs($other);
+});
+
+it('rotates the temporary credential at request even when the email change is later abandoned', function () {
+    $user = User::factory()->create([
+        'email' => 'abandon-old@malakakab.go.id',
+        'password' => 'Temporary123',
+        'password_harus_diganti' => true,
+    ]);
+    $oldHash = $user->password;
+
+    app(PendingEmailChangeService::class)->request($user, 'abandon-typo@malakakab.go.id');
+    PendingEmailChange::where('user_id', $user->id_user)->update(['expires_at' => now()->subMinute()]);
+
+    $user->refresh();
+    // Tepi tajam terdokumentasi: kredensial sementara lama mati seketika dan
+    // tidak dipulihkan bila permintaan ditinggalkan. Akun tetap berflag
+    // wajib-ganti sehingga Admin menyetel ulang lewat jalurnya sendiri.
+    expect(Hash::check('Temporary123', $user->password))->toBeFalse()
+        ->and($user->password)->not->toBe($oldHash)
+        ->and($user->password_harus_diganti)->toBeTrue()
+        ->and(PendingEmailChange::where('user_id', $user->id_user)->valid()->exists())->toBeFalse();
 });

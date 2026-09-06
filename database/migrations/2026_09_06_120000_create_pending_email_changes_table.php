@@ -4,6 +4,12 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * Maksimum satu permintaan ubah-email HIDUP per pengguna, lewat kolom turunan
+ * `pending_user_id` (NULL bila sudah dipakai/dibatalkan) + UNIQUE di atasnya.
+ * Butuh generated column + indeks di atasnya: MariaDB >= 10.2 / SQLite >= 3.31
+ * (suite Feature).
+ */
 return new class extends Migration
 {
     public function up(): void

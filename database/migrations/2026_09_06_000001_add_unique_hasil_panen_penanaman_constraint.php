@@ -4,6 +4,12 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * UNIQUE polos atas `penanaman_id`. Digantikan oleh `2026_09_06_130000`
+ * (kolom turunan ber-gate `deleted_at`) supaya panen boleh dicatat ulang
+ * setelah catatan lama di-soft delete. Migrasi ini dipertahankan apa adanya
+ * untuk basis data yang sudah menjalankannya.
+ */
 return new class extends Migration
 {
     public function up(): void

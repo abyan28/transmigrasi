@@ -132,7 +132,12 @@ it('mengunci pilihan SP saat rumah dihuni tanpa menghilangkan nilai kiriman', fu
     $isi = $this->get(route('rumah.index'))->assertOk()->getContent();
 
     expect($isi)->toContain(':disabled="statusHunian === \'Dihuni\' && penghuniId !== \'\'"')
-        ->and($isi)->toContain('type="hidden" name="satuan_permukiman_id"');
+        ->and($isi)->toContain('type="hidden" name="satuan_permukiman_id"')
+        // Ekspresi `:disabled` di atas mati bila `penghuniId` tak dideklarasikan
+        // di x-data form -- Alpine hanya mencatat warning dan selectnya tetap
+        // dapat diubah. Deklarasi + pembaruannya di `gantiPenghuni` wajib ada.
+        ->and($isi)->toContain('penghuniId:')
+        ->and($isi)->toContain("this.penghuniId = id ? String(id) : ''");
 });
 
 it('menurunkan SP rumah dari penghuni dan mengabaikan SP palsu', function () {
@@ -184,6 +189,13 @@ it('membatasi penulisan rumah dan penghuni ke SP petugas', function () {
         'kondisi' => 'Tidak Rusak',
         'status_hunian' => 'Dihuni',
     ])->assertNotFound();
+
+    // Hapus lintas-SP juga ditolak (bukan hanya tambah/ubah).
+    $rumahLuar = Rumah::withoutGlobalScopes()
+        ->where('satuan_permukiman_id', '!=', $kkDiizinkan->satuan_permukiman_id)
+        ->firstOrFail();
+    $this->delete(route('rumah.hapus', $rumahLuar->id_rumah))->assertNotFound();
+    expect(Rumah::withoutGlobalScopes()->whereKey($rumahLuar->id_rumah)->whereNull('deleted_at')->exists())->toBeTrue();
 });
 
 it('menolak penghuni yang sudah dihapus halus', function () {

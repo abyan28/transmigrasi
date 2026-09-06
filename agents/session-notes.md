@@ -1,3 +1,43 @@
+# Audit Putaran 16 + Perbaikan MINOR-nya (2026-09-06)
+
+Sesi berikutnya mengaudit commit `c5ec5e4` (Putaran 16 / "Gelombang 7"): 3 sub-agen
+Explore read-only + pembacaan langsung skema/migrasi. **Hasil: 0 BLOCKER, 0 MAYOR**,
+ketujuh butir klaim akurat & teruji. 12 temuan MINOR. Laporan penuh di
+`C:\Users\v28mt\.claude\plans\logical-whistling-salamander.md` Lampiran A.
+
+Perbaikan yang dikerjakan (persetujuan pemilik proyek "silahkan kerjakan semua"):
+
+1. **`/sp` daftar + `/sp/{id}` rincian disaring cakupan `Per SP`** (`SpController`
+   `->terlihatOlehPengguna()` + gerbang 404 di `detail()`). Docblock `SatuanPermukiman`
+   yang keliru diperbaiki — model ini SENGAJA tak ber-global-scope (`/kawasan`
+   kawasan-lebar); saring lewat local scope. `SpRuntimeTest` disesuaikan + 1 uji baru.
+2. **`hasil_panen` unik ber-gate `deleted_at`** — migration TERPISAH `2026_09_06_130000`
+   (bukan menyunting `_000001` yang sudah tercatat): kolom turunan `penanaman_aktif_id`
+   + `uq_hasil_panen_penanaman_aktif`, pola sama `anggota_poktan`. Panen boleh dicatat
+   ulang setelah soft delete. `HasilPanenController::validasi()` & `Penanaman::hasilPanen()`
+   tak lagi `withTrashed()`. `schema.sql` + `HasilPanenTest` + `Domain8ProduksiTest`.
+3. **Penjaga hapus lintas-SP eksplisit** di `Rumah/Lahan/Transmigran::hapus` + 3 uji.
+   `Alsintan/Saprotan::hapus` tetap 403 (didokumentasikan: pengadaan terlihat semua role).
+4. **Celah uji ditutup:** throttle POST `email-change.confirm`, TOCTOU email direbut,
+   actor≠confirmed user tak ter-logout, permintaan email terbengkalai, formula CSV,
+   email HTML anti-"surel".
+5. **Doc/kode-mati:** `memakaiDataContoh()` di-inline (DRY, bukan dihapus); komentar
+   rute usang; `ui-spec.md` §10.1 pemetaan modul→menu/halaman/bagian/fitur; komentar
+   portabilitas SQLite ≥ 3.31 di 3 migration; BOM `notes.md` dicabut.
+6. **Migration idempoten `2026_09_06_140000`** — selaraskan FK komposit `lahan` +
+   `uq_transmigran_id_sp` bagi DB yang bermigrasi sebelum Putaran 16. No-op pada fresh.
+
+**Sengaja TIDAK dikerjakan:** rename migration `_000000` kembar (re-run pada DB
+non-fresh — risiko > manfaat kerapian); memo `nilaiRujukan()` (risiko data rujukan
+basi di proses uji); sembunyikan nama kolom di Catatan Log (identifier, bukan nilai;
+konsisten `/audit-log`). **Kelompok E terbuka:** bila ada DB dev/staging yang
+bermigrasi sebelum 2026-09-03, migration `_140000` menutup drift — atau `migrate:fresh`.
+
+Verifikasi: pint bersih, `sim:banding-skema --lengkap` **NOL SELISIH**,
+Feature **764 PASS / 7.587**, Database **583 PASS / 2.632**. Belum di-commit.
+
+---
+
 # Rencana Revisi Putaran 16 — Data Nyata, Integritas, Email, XLSX, dan Istilah (2026-09-05)
 
 Urutan ini disepakati bersama pemilik proyek dan wajib dikerjakan berurutan agar fitur baru tidak berdiri di atas data atau relasi yang masih salah:

@@ -301,6 +301,13 @@ it('membatasi pembuatan transmigran ke SP petugas', function () {
     $this->put(route('transmigran.perbarui', $kk->id_transmigran), dataTransmigranBaru([
         'satuan_permukiman_id' => $spLain->id_satuan_permukiman,
     ]))->assertNotFound();
+
+    // Hapus transmigran di SP yang tidak ditugaskan juga ditolak.
+    $kkLuar = Transmigran::withoutGlobalScopes()
+        ->where('satuan_permukiman_id', '!=', $spDiizinkan->id_satuan_permukiman)
+        ->firstOrFail();
+    $this->delete(route('transmigran.hapus', $kkLuar->id_transmigran))->assertNotFound();
+    expect(Transmigran::withoutGlobalScopes()->whereKey($kkLuar->id_transmigran)->whereNull('deleted_at')->exists())->toBeTrue();
 });
 
 it('menolak SP yang sudah dihapus halus', function () {

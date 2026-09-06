@@ -46,8 +46,10 @@
 <div class="space-y-6"
     x-data="{
         statusHunian: @js($data['status_hunian'] ?? 'Dihuni'),
+        penghuniId: @js((string) old('transmigran_id', $data['transmigran_id'] ?? '')),
         petaSpTransmigran: @js(collect($daftarTransmigran)->pluck('satuan_permukiman_id', 'id_transmigran')->all()),
         gantiPenghuni(id) {
+            this.penghuniId = id ? String(id) : '';
             const spId = this.petaSpTransmigran ? this.petaSpTransmigran[id] : null;
             if (spId) {
                 const sel = this.$el.querySelector('[name=&quot;satuan_permukiman_id&quot;]');

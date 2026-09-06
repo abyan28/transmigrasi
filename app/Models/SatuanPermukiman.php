@@ -21,9 +21,16 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * disimpan -- dibaca lewat desa.
  *
  * SELURUH data operasional menaut ke sini, tidak pernah langsung ke desa/kawasan
- * (`rules.md` 7.0). Global scope cakupan data `Per SP` menempel pada model ini
- * (Task 3.4). Relasi ke transmigran/rumah/poktan/lahan/infrastruktur/pengaduan
- * ditambahkan pada batch masing-masing.
+ * (`rules.md` 7.0).
+ *
+ * Model ini SENGAJA TIDAK ber-global-scope cakupan data: halaman `/kawasan`
+ * (sebaran) memang kawasan-lebar, dan seluruh SP tetap terlihat di sana bagi
+ * setiap petugas. Penyaringan `Per SP` diterapkan opt-in lewat local scope
+ * `scopeTerlihatOlehPengguna()` -- dipakai pada daftar `/sp`, rincian
+ * `/sp/{id}`, dan seluruh dropdown pilih-SP (`opsiTerlihat()`). Data
+ * per-warga (transmigran/rumah/lahan/poktan/panen/pengaduan/inventaris)
+ * disaring oleh global scope `CakupanDataSp` yang menempel pada model ANAK,
+ * bukan di sini.
  *
  * Pengenal publik URL: `slug`.
  */

@@ -400,6 +400,19 @@ it('menolak entitas yang belum aktif (enam entitas berantai)', function () {
         ->assertNotFound();
 });
 
+it('menolak sel berformula pada berkas CSV, bukan hanya XLSX', function (string $selJahat) {
+    $csv = "nama,simbol,faktor_ke_ton\n\"{$selJahat}\",krg,\n";
+
+    $this->post(route('impor.unggah', 'satuan'), ['berkas' => berkasCsvImpor($csv)])
+        ->assertStatus(422)
+        ->assertJsonPath('pesan', fn (string $nilai): bool => str_contains($nilai, 'Formula tidak diizinkan'));
+})->with([
+    'sama dengan' => '=SUM(A1:A2)',
+    'plus' => '+1+1',
+    'minus non-numerik' => '-2+3+cmd',
+    'at' => '@SUM(1)',
+]);
+
 it('menolak pengguna tanpa kewenangan lihat atau tambah pada entitas terkait', function (array $aksi) {
     $role = Role::factory()->create();
     foreach ($aksi as $namaAksi) {

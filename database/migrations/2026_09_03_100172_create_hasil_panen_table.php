@@ -7,8 +7,8 @@ use Illuminate\Support\Facades\Schema;
 /**
  * Terjemahan `database/data/schema.sql` -- DOMAIN 8, tabel `hasil_panen`.
  *
- * Satu penanaman -> paling banyak satu baris panen, termasuk setelah soft delete;
- * constraint ditambahkan migrasi lanjutan. `satuan_id` DISALIN dari komoditas saat
+ * Satu penanaman -> paling banyak satu baris panen HIDUP; constraint ditambahkan
+ * migrasi lanjutan (`2026_09_06_130000`, ber-gate `deleted_at`). `satuan_id` DISALIN dari komoditas saat
  * simpan (snapshot). `poktan_id`
  * DICABUT (turunan dari penanaman). `produksi` disimpan apa adanya, tanpa
  * konversi. `uuid` = pengenal publik. Soft delete aktif.

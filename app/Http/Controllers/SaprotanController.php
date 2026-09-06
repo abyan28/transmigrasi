@@ -148,6 +148,10 @@ class SaprotanController extends Controller
     {
         DB::transaction(function () use ($id) {
             $saprotan = Saprotan::whereKey($id)->lockForUpdate()->firstOrFail();
+            // 403, BUKAN 404: pengadaan saprotan terlihat semua role (tak
+            // ber-cakupan). Yang dilarang adalah menghapus induk yang masih
+            // menyuplai distribusi ke SP di luar cakupan aktor -- sumber daya
+            // ADA dan terlihat, tindakannya yang ditolak.
             abort_if($this->distribusiDiLuarCakupan($this->distribusiLengkap($saprotan, true))->isNotEmpty(), 403);
             $saprotan->delete();
         });

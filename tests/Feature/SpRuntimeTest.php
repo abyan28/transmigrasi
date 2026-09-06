@@ -89,8 +89,6 @@ it('merender rincian dan sebaran SP dari data tersimpan termasuk SP baru', funct
 it('menghormati cakupan data pada rincian dan hitungan SP', function () {
     $spTerlihat = SatuanPermukiman::findOrFail(1);
     $spTertutup = SatuanPermukiman::findOrFail(2);
-    $namaTertutup = Transmigran::where('satuan_permukiman_id', $spTertutup->id_satuan_permukiman)
-        ->firstOrFail()->nama_kepala_keluarga;
     $jumlahTerlihat = Transmigran::where('satuan_permukiman_id', $spTerlihat->id_satuan_permukiman)
         ->where('status_tinggal', 'Aktif')
         ->count();
@@ -100,22 +98,46 @@ it('menghormati cakupan data pada rincian dan hitungan SP', function () {
     $pengguna->satuanPermukiman()->attach($spTerlihat->id_satuan_permukiman);
     $this->actingAs($pengguna);
 
+    $rencanaTerlihat = (int) SatuanPermukiman::whereKey($spTerlihat->id_satuan_permukiman)->value('jumlah_kk_rencana');
+
+    // Daftar /sp disaring: hanya SP yang ditugaskan yang tampil, dan seluruh
+    // ringkasan (Daya Tampung, Sudah Terisi) dihitung dari SP itu saja.
     $daftar = $this->get(route('sp.index'))
         ->assertOk()
-        ->assertSee($jumlahTerlihat.' / 250')
-        ->assertSee('Sudah Terisi');
-    expect($daftar->viewData('totalTerisi'))->toBe($jumlahTerlihat);
+        ->assertSee($jumlahTerlihat.' / '.$rencanaTerlihat)
+        ->assertSee('Sudah Terisi')
+        ->assertDontSee($spTertutup->nama);
+    expect($daftar->viewData('totalTerisi'))->toBe($jumlahTerlihat)
+        ->and($daftar->viewData('totalRencana'))->toBe($rencanaTerlihat)
+        ->and($daftar->viewData('jumlahSp'))->toBe(1);
 
-    $rincian = $this->get(route('sp.detail', $spTertutup->id_satuan_permukiman))
-        ->assertOk()
-        ->assertDontSee($namaTertutup);
-    expect($rincian->viewData('transmigran'))->toBe([])
-        ->and($rincian->viewData('rekap')['jumlah_kk'])->toBe(0);
+    // Rincian SP di luar cakupan: 404, bukan halaman kosong. Blok Keadaan
+    // Wilayah (koordinat, iklim, tanah, Monografi) tidak boleh bocor.
+    $this->get(route('sp.detail', $spTertutup->id_satuan_permukiman))
+        ->assertNotFound();
 
+    // /kawasan sengaja kawasan-lebar: seluruh SP tetap tampak, tetapi KK-nya 0.
     $kawasan = $this->get(route('kawasan'))
         ->assertOk()
         ->assertSee($spTertutup->nama)
         ->assertSee('0 KK');
     expect(collect($kawasan->viewData('daftarSp'))->firstWhere('id_satuan_permukiman', $spTertutup->id_satuan_permukiman)['jumlah_kk'])
         ->toBe(0);
+});
+
+it('membuka rincian SP yang ditugaskan bagi akun Per SP tanpa terhalang', function () {
+    $spTerlihat = SatuanPermukiman::findOrFail(1);
+    $namaTerlihat = Transmigran::where('satuan_permukiman_id', $spTerlihat->id_satuan_permukiman)
+        ->firstOrFail()->nama_kepala_keluarga;
+    $role = Role::factory()->create(['cakupan_data' => CakupanData::PerSp->value]);
+    $pengguna = User::factory()->create(['role_id' => $role->id_role]);
+    $pengguna->semuaIzin = true;
+    $pengguna->satuanPermukiman()->attach($spTerlihat->id_satuan_permukiman);
+    $this->actingAs($pengguna);
+
+    $rincian = $this->get(route('sp.detail', $spTerlihat->id_satuan_permukiman))
+        ->assertOk()
+        ->assertSee($spTerlihat->nama)
+        ->assertSee($namaTerlihat);
+    expect($rincian->viewData('transmigran'))->not->toBe([]);
 });

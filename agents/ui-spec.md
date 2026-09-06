@@ -1125,7 +1125,10 @@ Lahir dari perombakan menu Pertanian. Sebelumnya dashboard hanya menyebut **volu
 |---|---|---|
 | **email** | surel | seluruh teks yang dilihat pengguna |
 | **Total** | Total kawasan | baris total pada tabel agregat |
-| **fitur** | modul | penyebutan bagian sistem pada teks |
+| **menu** | modul | penyebutan butir navigasi ("lewat menu Transmigran") |
+| **halaman** | modul | tempat data disunting ("di halaman Data Lahan") |
+| **bagian** | modul | kelompok panduan ("bagian terkait" pada /panduan) |
+| **fitur** | modul | kewenangan / bagian sistem pada teks izin |
 | **kewenangan** | izin | daftar tindakan yang boleh dilakukan role |
 
 **Ketentuan:**
@@ -1135,7 +1138,7 @@ Lahir dari perombakan menu Pertanian. Sebelumnya dashboard hanya menyebut **volu
 3. **Baris total cukup ditulis "Total"** tanpa keterangan cakupan. Judul halaman dan filter yang sedang aktif sudah menyatakan cakupannya, sehingga "Total kawasan" mengulang informasi yang ada di atasnya.
 4. Baris total yang menjelaskan **apa** yang dijumlahkan tetap menuliskannya, contoh "Total luas lahan" atau "Total volume yang ditampilkan". Yang dihapus hanyalah penanda cakupan.
 5. Uji dilarang mengunci kalimat penuh sebagai penanda keberadaan elemen. Pakai penanda struktural seperti kelas `motif-baris-total`, agar penyuntingan wording tidak memerahkan uji padahal tidak ada yang rusak.
-6. **"modul" diganti "fitur"** sebab yang pertama adalah istilah pengembang, sedangkan petugas dinas mengenali sistem ini lewat menu dan fiturnya.
+6. **"modul" diganti menurut konteks**, bukan replace-all, sebab "modul" adalah istilah pengembang: `menu` untuk butir navigasi, `halaman` untuk tempat data disunting, `bagian` untuk kelompok panduan, dan `fitur` untuk kewenangan. Petugas dinas mengenali sistem lewat menu, halaman, dan fiturnya.
 7. **"izin" diganti "kewenangan"**, bukan "hak akses". Menu induknya sendiri bernama Role dan Hak Akses, sehingga memakai istilah itu untuk salah satu isinya membuat pembaca mengira keduanya hal yang sama. Sistem ini memisahkan **kewenangan** (boleh melakukan apa) dari **cakupan data** (boleh melihat data siapa).
 8. **Nama di dalam kode tidak wajib mengikuti aturan ini.** Tabel `permission`, kolom `permission.modul`, dan parameter rute `{modul}` mengikuti konvensi Laravel serta menyentuh skema dan URL. Istilah peramban seperti "izin lokasi" pada Geolocation API juga tetap, sebab menggantinya membuat pesan tidak cocok dengan dialog yang dilihat pengguna.
 

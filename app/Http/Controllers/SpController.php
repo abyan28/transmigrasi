@@ -72,6 +72,7 @@ class SpController extends Controller
             ->pluck('jumlah', 'satuan_permukiman_id');
 
         $baris = SatuanPermukiman::query()
+            ->terlihatOlehPengguna()
             ->with(['desa.kecamatan', 'kawasan', 'berkas'])
             ->when($cari !== '', fn ($q) => $q->where(fn ($sub) => $sub
                 ->where('nama', 'like', "%{$cari}%")
@@ -90,13 +91,14 @@ class SpController extends Controller
             'cari' => $cari,
             'filterKecamatan' => $filterKecamatan,
             'adaFilter' => $cari !== '' || $filterKecamatan,
-            'jumlahSp' => SatuanPermukiman::query()->count(),
+            'jumlahSp' => SatuanPermukiman::query()->terlihatOlehPengguna()->count(),
             'daftarKecamatan' => SatuanPermukiman::query()
+                ->terlihatOlehPengguna()
                 ->join('desa', 'desa.id_desa', '=', 'satuan_permukiman.desa_id')
                 ->join('kecamatan', 'kecamatan.id_kecamatan', '=', 'desa.kecamatan_id')
                 ->distinct()->orderBy('kecamatan.nama')->pluck('kecamatan.nama')->all(),
-            'totalLuas' => (float) SatuanPermukiman::query()->sum('luas_lahan'),
-            'totalRencana' => (int) SatuanPermukiman::query()->sum('jumlah_kk_rencana'),
+            'totalLuas' => (float) SatuanPermukiman::query()->terlihatOlehPengguna()->sum('luas_lahan'),
+            'totalRencana' => (int) SatuanPermukiman::query()->terlihatOlehPengguna()->sum('jumlah_kk_rencana'),
             'totalTerisi' => (int) $terisi->sum(),
         ]);
     }
@@ -104,6 +106,7 @@ class SpController extends Controller
     public function detail(int $sp): View
     {
         $model = SatuanPermukiman::query()
+            ->terlihatOlehPengguna()
             ->with(['desa.kecamatan', 'kawasan', 'berkas'])
             ->findOrFail($sp);
         $id = (int) $model->id_satuan_permukiman;

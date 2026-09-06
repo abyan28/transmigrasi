@@ -169,7 +169,9 @@ class RumahController extends Controller
 
     public function hapus(int $id): RedirectResponse
     {
-        Rumah::findOrFail($id)->delete();
+        $rumah = Rumah::findOrFail($id);
+        CakupanDataSp::pastikanDapatDitulis($rumah);
+        $rumah->delete();
 
         return redirect()->route('rumah.index')->with('sukses', 'Data rumah dihapus.');
     }

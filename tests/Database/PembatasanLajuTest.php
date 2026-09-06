@@ -98,6 +98,18 @@ it('membatasi verifikasi email publik secara terpisah', function () {
         ->assertSee('percobaan verifikasi', false);
 });
 
+it('membatasi POST konfirmasi email pada limiter yang sama dengan GET', function () {
+    config(['sim.batas_laju.verifikasi_email' => 3]);
+
+    // GET + POST berbagi satu ember per-IP.
+    $this->get(route('email-change.show', str_repeat('b', 64)))->assertOk();
+    $this->post(route('email-change.confirm', str_repeat('b', 64)))->assertStatus(302);
+    $this->post(route('email-change.confirm', str_repeat('b', 64)))->assertStatus(302);
+
+    $this->post(route('email-change.confirm', str_repeat('b', 64)))
+        ->assertStatus(429);
+});
+
 it('membatasi pengiriman pengaduan publik 3 per jam per IP', function () {
     config(['sim.batas_laju.kirim_pengaduan' => 3]);
 

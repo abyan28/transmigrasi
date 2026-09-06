@@ -165,6 +165,10 @@ class AlsintanController extends Controller
     {
         DB::transaction(function () use ($id) {
             $alsintan = Alsintan::whereKey($id)->lockForUpdate()->firstOrFail();
+            // 403, BUKAN 404: pengadaan alsintan terlihat semua role (tak
+            // ber-cakupan). Yang dilarang adalah menghapus induk yang masih
+            // menyuplai distribusi ke SP di luar cakupan aktor -- sumber daya
+            // ADA dan terlihat, tindakannya yang ditolak.
             abort_if($this->distribusiDiLuarCakupan($this->distribusiLengkap($alsintan, true))->isNotEmpty(), 403);
             $alsintan->berkas()->detach();
             $alsintan->delete();

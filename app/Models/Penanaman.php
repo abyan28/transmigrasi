@@ -58,11 +58,12 @@ class Penanaman extends Model
     }
 
     /**
-     * Hasil panen dari penanaman ini (paling banyak satu).
+     * Hasil panen HIDUP dari penanaman ini (paling banyak satu). Catatan yang
+     * di-soft delete tidak lagi menutup penanaman -- panen boleh dicatat ulang.
      */
     public function hasilPanen(): HasOne
     {
-        return $this->hasOne(HasilPanen::class, 'penanaman_id', 'id_penanaman')->withTrashed();
+        return $this->hasOne(HasilPanen::class, 'penanaman_id', 'id_penanaman');
     }
 
     /**

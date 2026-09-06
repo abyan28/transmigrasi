@@ -1415,7 +1415,10 @@ CREATE TABLE `penanaman` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 8.3 hasil_panen ----------
--- Satu penanaman -> paling banyak satu baris panen, termasuk setelah soft delete.
+-- Satu penanaman -> paling banyak satu baris panen HIDUP. Baris yang di-soft
+-- delete TIDAK menahan slot (kolom turunan penanaman_aktif_id ber-gate
+-- deleted_at, pola sama anggota_poktan.transmigran_aktif_id): panen boleh
+-- dicatat ulang setelah catatan lama dihapus halus.
 -- Identitas (aplikasi): realisasi_panen + puso = penanaman.realisasi_tanam;
 --                       produksi = realisasi_panen x produktivitas.
 -- satuan_id DISALIN dari komoditas saat simpan (snapshot). poktan_id DICABUT
@@ -1435,9 +1438,11 @@ CREATE TABLE `hasil_panen` (
   `created_at`        TIMESTAMP NULL DEFAULT NULL,
   `updated_at`        TIMESTAMP NULL DEFAULT NULL,
   `deleted_at`        TIMESTAMP NULL DEFAULT NULL,
+  `penanaman_aktif_id` BIGINT UNSIGNED GENERATED ALWAYS AS (CASE WHEN `deleted_at` IS NULL THEN `penanaman_id` END) VIRTUAL,
   PRIMARY KEY (`id_hasil_panen`),
   UNIQUE KEY `uq_hasil_panen_uuid` (`uuid`),
-  UNIQUE KEY `uq_hasil_panen_penanaman` (`penanaman_id`),
+  UNIQUE KEY `uq_hasil_panen_penanaman_aktif` (`penanaman_aktif_id`),
+  KEY `idx_hasil_panen_penanaman` (`penanaman_id`),
   KEY `idx_hasil_panen_periode` (`periode_panen`),
   KEY `idx_hasil_panen_satuan` (`satuan_id`),
   CONSTRAINT `fk_hasil_panen_penanaman`

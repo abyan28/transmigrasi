@@ -180,7 +180,8 @@ class HasilPanenController extends Controller
     private function lemparGalatPanenGanda(UniqueConstraintViolationException $exception): never
     {
         if (str_contains($exception->getMessage(), 'uq_hasil_panen_penanaman')
-            || str_contains($exception->getMessage(), 'hasil_panen.penanaman_id')) {
+            || str_contains($exception->getMessage(), 'hasil_panen.penanaman_id')
+            || str_contains($exception->getMessage(), 'penanaman_aktif_id')) {
             throw ValidationException::withMessages(['penanaman_id' => 'Penanaman ini sudah memiliki catatan panen.']);
         }
 
@@ -258,7 +259,10 @@ class HasilPanenController extends Controller
         CakupanDataSp::pastikanDapatDitulis($penanaman);
         $galat = [];
 
-        $lain = HasilPanen::withTrashed()->where('penanaman_id', $penanaman->id_penanaman)
+        // Hanya catatan panen HIDUP yang menutup penanaman. Baris yang di-soft
+        // delete membebaskan slot (constraint uq_hasil_panen_penanaman_aktif),
+        // sehingga panen boleh dicatat ulang setelah catatan lama dihapus.
+        $lain = HasilPanen::where('penanaman_id', $penanaman->id_penanaman)
             ->when($panen !== null, fn ($q) => $q->whereKeyNot($panen->id_hasil_panen))
             ->exists();
 

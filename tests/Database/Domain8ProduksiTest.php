@@ -107,7 +107,7 @@ it('mengikat hasil panen ke penanaman dan menyalin satuan sebagai snapshot', fun
         ->and($panen->produksi)->toBe('27.900');
 });
 
-it('menolak panen ganda langsung di database termasuk setelah soft delete', function () {
+it('menolak dua panen hidup di database tetapi mengizinkan pencatatan ulang setelah soft delete', function () {
     $tanam = buatPenanaman();
     $baris = [
         'penanaman_id' => $tanam->id_penanaman,
@@ -120,13 +120,17 @@ it('menolak panen ganda langsung di database termasuk setelah soft delete', func
     ];
     $panen = HasilPanen::create(['uuid' => (string) Str::uuid()] + $baris);
 
+    // Dua baris HIDUP untuk satu penanaman: ditolak constraint.
     expect(fn () => HasilPanen::create(['uuid' => (string) Str::uuid()] + $baris))
         ->toThrow(QueryException::class);
 
     $panen->delete();
 
-    expect(fn () => HasilPanen::create(['uuid' => (string) Str::uuid()] + $baris))
-        ->toThrow(QueryException::class);
+    // Baris lama soft-deleted -> kolom turunan NULL -> slot bebas.
+    $baru = HasilPanen::create(['uuid' => (string) Str::uuid()] + $baris);
+    expect($baru->exists)->toBeTrue()
+        ->and(HasilPanen::where('penanaman_id', $tanam->id_penanaman)->count())->toBe(1)
+        ->and(HasilPanen::withTrashed()->where('penanaman_id', $tanam->id_penanaman)->count())->toBe(2);
 });
 
 it('menyapu hasil panen saat penanaman dihapus permanen (CASCADE), menahan satuan (RESTRICT)', function () {

@@ -228,7 +228,9 @@ class TransmigranController extends Controller
 
     public function hapus(int $id): RedirectResponse
     {
-        Transmigran::findOrFail($id)->delete();
+        $transmigran = Transmigran::findOrFail($id);
+        CakupanDataSp::pastikanDapatDitulis($transmigran);
+        $transmigran->delete();
 
         return redirect()->route('transmigran.index')->with('sukses', 'Data transmigran dihapus.');
     }

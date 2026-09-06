@@ -460,9 +460,8 @@ Route::post('/sp/fasilitas', [FasilitasSpController::class, 'simpan'])->name('fa
 |
 */
 // Task 5.1 (baca) + 5.2 (tulis): seluruhnya `TransmigranController` + Eloquent.
-// Yang masih `DummyData` pada rincian: rumah (Task 5.3), lahan + data poktan
-// (Task 6). Suksesi memvalidasi `nasib_ketua_poktan` tetapi penerapannya ke
-// tabel `poktan` menyusul di Task 6.
+// Rincian transmigran (rumah, lahan, data poktan) kini juga Eloquent penuh
+// sejak Putaran 16 -- tidak ada lagi `DummyData` di jalur runtime.
 Route::get('/transmigran', [TransmigranController::class, 'index'])->name('transmigran.index');
 
 Route::get('/transmigran/{id}', [TransmigranController::class, 'detail'])
@@ -785,8 +784,8 @@ Route::delete('/pengaduan/{id}', [PengaduanController::class, 'hapus'])
 | dibungkus komponen x-sim.halaman-daftar agar tidak menyalin markup.
 |
 */
-// Task 5.5: closure -> KependudukanController. AGREGAT masih `DummyData::rekap*`
-// (berskala kawasan ~1.140 KK); kueri nyata satu paket dengan Task 9.1.
+// Task 5.5: closure -> KependudukanController. Sejak Task 9.1 / Putaran 16
+// agregat dihitung dari Eloquent (RekapDashboard), bukan lagi `DummyData::rekap*`.
 Route::get('/kependudukan/rekap', [KependudukanController::class, 'rekap'])->name('kependudukan.rekap');
 
 /*
@@ -909,9 +908,9 @@ Route::post('/sp/infrastruktur', [InfrastrukturController::class, 'simpan'])->na
 Route::put('/sp/infrastruktur/{id}', [InfrastrukturController::class, 'perbarui'])
     ->where('id', '[0-9]+')->name('infrastruktur.perbarui');
 
-// Manajemen pengguna oleh Admin (Task 3.5, `rules.md` 14b). `index()` masih
-// baca DummyData (peralihan tampilan -> Tahap 4); tulisan menyentuh tabel
-// `user` nyata -- diuji di tests/Database/PengaturanPenggunaTest.
+// Manajemen pengguna oleh Admin (Task 3.5, `rules.md` 14b). `index()` membaca
+// tabel `user` lewat Eloquent sejak Fase 1 (2026-09-05); tulisan menyentuh
+// tabel `user` nyata -- diuji di tests/Database/PengaturanPenggunaTest.
 Route::get('/pengguna', [PengaturanPenggunaController::class, 'index'])->name('pengguna.index');
 Route::post('/pengguna', [PengaturanPenggunaController::class, 'simpan'])->name('pengguna.simpan');
 Route::put('/pengguna/{id}', [PengaturanPenggunaController::class, 'perbarui'])
@@ -923,8 +922,8 @@ Route::post('/pengguna/{id}/nonaktifkan', [PengaturanPenggunaController::class, 
 Route::post('/pengguna/{id}/aktifkan', [PengaturanPenggunaController::class, 'aktifkan'])
     ->where('id', '[0-9]+')->name('pengguna.aktifkan');
 
-// Pengelolaan role & kewenangan (Task 3.3). `index` masih baca DummyData
-// (tampilan -> Eloquent = Tahap 4); tulis ke tabel `role`/`role_permission`.
+// Pengelolaan role & kewenangan (Task 3.3). `index` membaca Eloquent sejak
+// Fase 1 (2026-09-05); tulis ke tabel `role`/`role_permission`.
 Route::get('/pengaturan/role', [PengaturanRoleController::class, 'index'])->name('pengaturan.role');
 Route::post('/pengaturan/role', [PengaturanRoleController::class, 'simpan'])->name('role.simpan');
 Route::put('/pengaturan/role/{id}', [PengaturanRoleController::class, 'perbarui'])
@@ -1112,13 +1111,14 @@ Route::get('/template-impor/{entitas}/xlsx', [TemplateImporController::class, 'u
 
 /*
 |--------------------------------------------------------------------------
-| Impor data massal (Task 10.4, 1/2)
+| Impor data massal (Task 10.4)
 |--------------------------------------------------------------------------
 |
-| Menerima berkas CSV terisi dari langkah 2 modal impor. Delapan entitas
-| berdiri sendiri sudah aktif (App\Support\ImporEngine::entitasAktif());
+| Menerima berkas XLSX (utama) atau CSV (fallback) dari langkah 2 modal
+| impor; keduanya masuk jalur normalisasi/validasi yang sama. Delapan
+| entitas berdiri sendiri sudah aktif (App\Support\ImporEngine::entitasAktif());
 | entitas lain membalas 404 -- modalnya tetap menampilkan spanduk "Fitur
-| belum aktif" sampai jalur enam entitas berantai selesai.
+| belum aktif" sampai jalur enam entitas berantai selesai (Task 10.4b).
 */
 Route::post('/impor/{entitas}', [ImporController::class, 'unggah'])
     ->where('entitas', '[a-z\-]+')->name('impor.unggah');

@@ -151,12 +151,27 @@ it('mewajibkan produktivitas saat bukan gagal total', function () {
     ])->assertSessionHasErrors('produktivitas');
 });
 
-it('menghapus catatan panen secara halus tetapi riwayat tetap menutup penanaman', function () {
+it('membolehkan pencatatan panen ulang setelah catatan lama dihapus halus', function () {
     $id = HasilPanen::where('penanaman_id', 5)->value('id_hasil_panen');
+    $lama = HasilPanen::find($id);
 
     $this->delete(route('panen.hapus', $id))->assertRedirect(route('panen.index'));
 
+    // Baris lama hanya di-soft delete, dan penanaman tidak lagi tertutup olehnya.
     expect(HasilPanen::find($id))->toBeNull()
-        ->and(Penanaman::findOrFail(5)->hasilPanen)->not->toBeNull()
-        ->and(Penanaman::findOrFail(5)->hasilPanen->trashed())->toBeTrue();
+        ->and(HasilPanen::withTrashed()->find($id)->trashed())->toBeTrue()
+        ->and(Penanaman::findOrFail(5)->hasilPanen)->toBeNull();
+
+    // Panen yang benar kini dapat dicatat lewat antarmuka.
+    $this->post(route('panen.simpan'), [
+        'penanaman_id' => 5,
+        'periode_panen' => $lama->periode_panen,
+        'realisasi_panen' => (string) $lama->realisasi_panen,
+        'puso' => (string) ($lama->puso ?? '0.00'),
+        'produktivitas' => (string) $lama->produktivitas,
+    ])->assertSessionHasNoErrors()->assertRedirect(route('panen.index'));
+
+    expect(HasilPanen::where('penanaman_id', 5)->count())->toBe(1)
+        ->and(HasilPanen::withTrashed()->where('penanaman_id', 5)->count())->toBe(2)
+        ->and(Penanaman::findOrFail(5)->hasilPanen->trashed())->toBeFalse();
 });

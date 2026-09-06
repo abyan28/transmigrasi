@@ -138,7 +138,9 @@ class LahanController extends Controller
 
     public function hapus(int $id): RedirectResponse
     {
-        Lahan::findOrFail($id)->delete();
+        $lahan = Lahan::findOrFail($id);
+        CakupanDataSp::pastikanDapatDitulis($lahan);
+        $lahan->delete();
 
         return redirect()->route('lahan.index')->with('sukses', 'Data lahan dihapus.');
     }

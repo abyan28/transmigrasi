@@ -121,7 +121,7 @@ class ViewServiceProvider extends ServiceProvider
     private function suplaiBerkasBersama(): void
     {
         View::composer(['layouts.app', 'layouts.dokumen'], function ($tampilan): void {
-            $tampilan->with('memakaiDataContoh', app()->environment(['local', 'testing', 'demo']));
+            $tampilan->with('memakaiDataContoh', self::memakaiDataContoh());
         });
 
         // Menu pengguna di header, disisipkan `layouts.app` pada setiap halaman.
@@ -434,6 +434,10 @@ class ViewServiceProvider extends ServiceProvider
         };
     }
 
+    /**
+     * Lingkungan tempat penanda "Data contoh" ditampilkan. Satu sumber
+     * kebenaran untuk komposer view dan calon pemakai lain.
+     */
     private static function memakaiDataContoh(): bool
     {
         return app()->environment(['local', 'testing', 'demo']);
@@ -683,6 +687,10 @@ class ViewServiceProvider extends ServiceProvider
             AksiAuditLog::Tambah => 'Menambah baris baru.',
             AksiAuditLog::Hapus => 'Menghapus baris.',
             AksiAuditLog::Pulihkan => 'Memulihkan baris yang terhapus.',
+            // Nama kolom yang berubah (nama, telepon, ...) sengaja ditampilkan:
+            // ini identifier field, bukan nilai data, dan operator perlu tahu
+            // APA yang berubah. Konsisten dengan halaman /audit-log
+            // (`AuditLogController`) yang bahkan menampilkan nilai lama/baru.
             AksiAuditLog::Ubah => ($jumlah = count(array_keys(($audit->data_baru ?? []) + ($audit->data_lama ?? [])))) === 0
                 ? 'Menyunting baris.'
                 : 'Mengubah '.$jumlah.' kolom: '.implode(', ', array_keys(($audit->data_baru ?? []) + ($audit->data_lama ?? []))).'.',

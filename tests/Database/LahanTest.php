@@ -153,6 +153,13 @@ it('membatasi penulisan lahan dan pemilik ke SP petugas', function () {
         'transmigran_id' => $kkLain->id_transmigran,
         'status_sertifikat' => 'Belum',
     ])->assertNotFound();
+
+    // Hapus lintas-SP juga ditolak.
+    $lahanLuar = Lahan::withoutGlobalScopes()
+        ->where('satuan_permukiman_id', '!=', $kkDiizinkan->satuan_permukiman_id)
+        ->firstOrFail();
+    $this->delete(route('lahan.hapus', $lahanLuar->id_lahan))->assertNotFound();
+    expect(Lahan::withoutGlobalScopes()->whereKey($lahanLuar->id_lahan)->whereNull('deleted_at')->exists())->toBeTrue();
 });
 
 it('menolak pemilik lahan yang sudah dihapus halus', function () {
