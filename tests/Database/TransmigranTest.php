@@ -50,6 +50,25 @@ it('menanam seluruh transmigran dan anggota keluarga dari data contoh', function
         ->and($yohanes->satuanPermukiman->nama)->toBe('SP Kapitan Meo');
 });
 
+it('menurunkan status anggota poktan dari keanggotaan aktif', function () {
+    $aktif = Transmigran::findOrFail(1);
+    $keluar = Transmigran::findOrFail(5);
+    $tanpa = Transmigran::findOrFail(4);
+
+    $this->get(route('transmigran.detail', $aktif->id_transmigran))
+        ->assertOk()
+        ->assertSee('Anggota kelompok tani')
+        ->assertSee('Ya');
+
+    $this->get(route('transmigran.detail', $keluar->id_transmigran))
+        ->assertOk()
+        ->assertSee('Tidak');
+
+    expect($aktif->fresh()->status_anggota_poktan)->toBe('Ya')
+        ->and($keluar->fresh()->status_anggota_poktan)->toBe('Tidak')
+        ->and($tanpa->fresh()->status_anggota_poktan)->toBe('Tidak');
+});
+
 it('mempertahankan uuid saat ditanam ulang', function () {
     $sebelum = Transmigran::orderBy('id_transmigran')->pluck('uuid', 'id_transmigran');
 
@@ -328,6 +347,7 @@ it('menolak perpindahan SP selama keluarga punya rumah, lahan, atau keanggotaan 
         'rumah' => Rumah::create([
             'uuid' => (string) Str::uuid(),
             'satuan_permukiman_id' => $spLama->id_satuan_permukiman,
+            'no_rumah' => 'R-TANGGUNGAN',
             'transmigran_id' => $kk->id_transmigran,
             'kondisi' => 'Tidak Rusak',
             'status_hunian' => 'Dihuni',
@@ -336,6 +356,7 @@ it('menolak perpindahan SP selama keluarga punya rumah, lahan, atau keanggotaan 
             'uuid' => (string) Str::uuid(),
             'satuan_permukiman_id' => $spLama->id_satuan_permukiman,
             'transmigran_id' => $kk->id_transmigran,
+            'kode_lahan' => 'LH-TANGGUNGAN',
         ]),
         'poktan' => AnggotaPoktan::create([
             'poktan_id' => buatPoktan($spLama)->id_poktan,

@@ -47,6 +47,7 @@
     x-data="{
         statusHunian: @js($data['status_hunian'] ?? 'Dihuni'),
         penghuniId: @js((string) old('transmigran_id', $data['transmigran_id'] ?? '')),
+        penghuniAwalId: @js((string) ($data['transmigran_id'] ?? '')),
         petaSpTransmigran: @js(collect($daftarTransmigran)->pluck('satuan_permukiman_id', 'id_transmigran')->all()),
         gantiPenghuni(id) {
             this.penghuniId = id ? String(id) : '';
@@ -102,6 +103,19 @@
                     @change="gantiPenghuni($event.target.value)" />
             </div>
 
+            <div x-show="statusHunian === 'Dihuni'" x-cloak>
+                <label for="{{ $awalan }}_tahun_mulai_menghuni" class="{{ $kelasLabel }}">
+                    Tahun Mulai Menghuni<span class="text-error-500">*</span>
+                </label>
+                <input type="number" id="{{ $awalan }}_tahun_mulai_menghuni" name="tahun_mulai_menghuni"
+                    value="{{ old('tahun_mulai_menghuni') }}" min="1900" max="{{ date('Y') }}"
+                    :required="statusHunian === 'Dihuni' && penghuniId !== penghuniAwalId"
+                    class="{{ $kelasKontrol }} tabular-nums" />
+                <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                    Isi tahun yang diingat; tidak perlu tanggal lengkap.
+                </p>
+            </div>
+
             <div class="sm:col-span-2">
                 <x-sim.wilayah-picker
                     :daftar-kawasan="[['id' => 1, 'nama' => 'Kobalima Timur']]"
@@ -129,6 +143,18 @@
                 tampil bila rumah ini memang sedang berpenghuni.
             --}}
             @if (! empty($data['transmigran_id']))
+                <div>
+                    <label for="{{ $awalan }}_tahun_selesai_menghuni" class="{{ $kelasLabel }}">
+                        Tahun Selesai Menghuni
+                    </label>
+                    <input type="number" id="{{ $awalan }}_tahun_selesai_menghuni" name="tahun_selesai_menghuni"
+                        value="{{ old('tahun_selesai_menghuni') }}" min="1900" max="{{ date('Y') }}"
+                        :required="penghuniId !== penghuniAwalId"
+                        class="{{ $kelasKontrol }} tabular-nums" />
+                    <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                        Wajib bila penghuni diganti atau rumah dikosongkan.
+                    </p>
+                </div>
                 <div class="sm:col-span-2">
                     <label for="{{ $awalan }}_alasan_keluar" class="{{ $kelasLabel }}">
                         Alasan Penghuni Sebelumnya Keluar

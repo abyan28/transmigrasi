@@ -81,7 +81,6 @@ if (! function_exists('buatTransmigran')) {
             'pekerjaan_kepala_keluarga' => 'Petani',
             'tahun_kedatangan' => 2015,
             'status_tinggal' => 'Aktif',
-            'status_anggota_poktan' => 'Ya',
         ], $atribut));
     }
 }

@@ -22,16 +22,10 @@ class PenyajianAlsintan
     public static function daftar(): array
     {
         return Alsintan::query()
-            ->withoutGlobalScopes()
             ->with([
                 'berkas',
-                // Laporan = kawasan penuh: distribusi tidak ikut disaring cakupan.
-                'distribusi' => fn ($q) => $q->withoutGlobalScopes()->with([
-                    'poktan' => fn ($q) => $q->withoutGlobalScopes()->with('satuanPermukiman'),
-                    'penandaTerima.transmigran',
-                    'penandaTerima.anggotaKeluarga',
-                    'foto',
-                ]),
+                'distribusi.poktan.satuanPermukiman', 'distribusi.penandaTerima.transmigran',
+                'distribusi.penandaTerima.anggotaKeluarga', 'distribusi.foto',
             ])
             ->orderBy('id_alsintan')
             ->get()

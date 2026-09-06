@@ -11,6 +11,7 @@ use App\Models\Saprotan;
 use App\Models\SaprotanDistribusi;
 use App\Models\SatuanPermukiman;
 use App\Models\Scopes\CakupanDataSp;
+use App\Support\OperasiSaprotan;
 use App\Support\Paginasi;
 use App\Support\PenyajianSaprotan;
 use App\Support\ValidationRules;
@@ -94,11 +95,12 @@ class SaprotanController extends Controller
         $this->pastikanPoktanDapatDitulis((array) $request->input('poktan_id', []));
 
         DB::transaction(function () use ($request, $data, $distribusi) {
-            $saprotan = Saprotan::create($this->kolomInduk($data));
-
-            foreach ($distribusi as $poktanId => $baris) {
-                $saprotan->distribusi()->create($baris + ['poktan_id' => $poktanId]);
-            }
+            $barisDistribusi = array_map(
+                fn (array $baris, int $poktanId): array => $baris + ['poktan_id' => $poktanId],
+                array_values($distribusi),
+                array_map('intval', array_keys($distribusi)),
+            );
+            $saprotan = OperasiSaprotan::buat($this->kolomInduk($data), $barisDistribusi);
 
             $this->lampirkanBerkas($request, $saprotan);
         });
@@ -208,6 +210,7 @@ class SaprotanController extends Controller
         $benih = $data['jenis'] === JenisSaprotan::Benih->value;
 
         return [
+            'kode_saprotan' => $data['kode_saprotan'],
             'jenis' => $data['jenis'],
             'nama' => $data['nama'],
             'komoditas_id' => $benih ? $data['komoditas_id'] : null,
@@ -336,6 +339,10 @@ class SaprotanController extends Controller
     {
         $benih = fn () => $request->input('jenis') === JenisSaprotan::Benih->value;
         $data = $request->validate([
+            'kode_saprotan' => [
+                Rule::requiredIf($saprotan === null), 'nullable', 'string', 'max:50',
+                Rule::unique('saprotan', 'kode_saprotan')->ignore($saprotan?->id_saprotan, 'id_saprotan'),
+            ],
             'jenis' => ['required', Rule::enum(JenisSaprotan::class)],
             'nama' => ['required', 'string', 'max:255'],
             'komoditas_id' => [
@@ -359,6 +366,8 @@ class SaprotanController extends Controller
             'dokumen_pendukung' => ValidationRules::dokumen(),
         ], [
             'jenis.required' => 'Jenis saprotan wajib dipilih.',
+            'kode_saprotan.required' => 'Kode saprotan wajib diisi.',
+            'kode_saprotan.unique' => 'Kode saprotan ini sudah dipakai.',
             'nama.required' => 'Nama sarana wajib diisi.',
             'komoditas_id.required' => 'Komoditas wajib dipilih untuk jenis Benih.',
             'varietas.required' => 'Varietas wajib diisi untuk jenis Benih.',
@@ -366,6 +375,10 @@ class SaprotanController extends Controller
             'satuan_id.required' => 'Satuan wajib dipilih.',
             'tahun_pengadaan.required' => 'Tahun anggaran pengadaan wajib diisi.',
         ] + ValidationRules::pesan());
+
+        if ($saprotan !== null) {
+            $data['kode_saprotan'] = $saprotan->kode_saprotan;
+        }
 
         $baru = $saprotan === null || $gantiDistribusi ? $this->distribusiTerpilih($request, $data) : [];
         $dipertahankan = $saprotan === null

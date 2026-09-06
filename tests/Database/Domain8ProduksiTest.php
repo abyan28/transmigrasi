@@ -34,6 +34,7 @@ function buatPenanaman(array $atribut = []): Penanaman
         'slug' => 'jagung-'.Str::lower(Str::random(6)), 'tipe' => 'Pangan',
     ]);
     $saprotan = Saprotan::create([
+        'kode_saprotan' => 'SAP-'.Str::upper(Str::random(8)),
         'satuan_id' => $satuan->id_satuan, 'komoditas_id' => $komoditas->id_komoditas,
         'jenis' => 'Benih', 'nama' => 'Benih Jagung', 'jumlah_total' => '100.000',
         'tahun_pengadaan' => 2026,
@@ -43,6 +44,7 @@ function buatPenanaman(array $atribut = []): Penanaman
     ]);
 
     return Penanaman::create(array_merge([
+        'kode_penanaman' => 'TAN-'.Str::upper(Str::random(8)),
         'poktan_id' => $poktan->id_poktan,
         'komoditas_id' => $komoditas->id_komoditas,
         'saprotan_distribusi_id' => $distribusi->id_saprotan_distribusi,
@@ -107,7 +109,7 @@ it('mengikat hasil panen ke penanaman dan menyalin satuan sebagai snapshot', fun
         ->and($panen->produksi)->toBe('27.900');
 });
 
-it('menolak dua panen hidup di database tetapi mengizinkan pencatatan ulang setelah soft delete', function () {
+it('menolak dua panen aktif di database tetapi mengizinkan pengganti setelah pembatalan', function () {
     $tanam = buatPenanaman();
     $baris = [
         'penanaman_id' => $tanam->id_penanaman,
@@ -120,17 +122,15 @@ it('menolak dua panen hidup di database tetapi mengizinkan pencatatan ulang sete
     ];
     $panen = HasilPanen::create(['uuid' => (string) Str::uuid()] + $baris);
 
-    // Dua baris HIDUP untuk satu penanaman: ditolak constraint.
     expect(fn () => HasilPanen::create(['uuid' => (string) Str::uuid()] + $baris))
         ->toThrow(QueryException::class);
 
-    $panen->delete();
+    $panen->update(['status' => 'Dibatalkan']);
 
-    // Baris lama soft-deleted -> kolom turunan NULL -> slot bebas.
     $baru = HasilPanen::create(['uuid' => (string) Str::uuid()] + $baris);
     expect($baru->exists)->toBeTrue()
-        ->and(HasilPanen::where('penanaman_id', $tanam->id_penanaman)->count())->toBe(1)
-        ->and(HasilPanen::withTrashed()->where('penanaman_id', $tanam->id_penanaman)->count())->toBe(2);
+        ->and(HasilPanen::where('penanaman_id', $tanam->id_penanaman)->count())->toBe(2)
+        ->and(HasilPanen::where('penanaman_id', $tanam->id_penanaman)->where('status', 'Aktif')->count())->toBe(1);
 });
 
 it('menyapu hasil panen saat penanaman dihapus permanen (CASCADE), menahan satuan (RESTRICT)', function () {

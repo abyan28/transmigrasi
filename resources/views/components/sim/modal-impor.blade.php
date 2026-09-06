@@ -18,12 +18,8 @@
     sedangkan berkas berisi ratusan baris tidak mungkin diperiksa manual.
     Karena itu kegagalan selalu disertai nomor baris dan alasannya.
 
-    Delapan entitas berdiri sendiri sudah TERSAMBUNG BACKEND sungguhan
-    (Task 10.4, 1/2): satuan, wilayah, komoditas, transmigran, infrastruktur,
-    inventaris-sp, fasilitas-sp, alsintan (`App\Support\ImporEngine::
-    entitasAktif()`). Enam entitas berantai (rumah, lahan, poktan, saprotan,
-    penanaman, hasil-panen) menyusul -- spanduk "Fitur belum aktif" TETAP
-    tampil dan tombol pengiriman dinonaktifkan untuk entitas itu saja.
+    Aktivasi backend dibaca langsung dari `ImporEngine::entitasAktif()` agar
+    modal tidak menjanjikan penyimpanan sebelum handler tersedia.
 
     Pemakaian:
         <x-sim.modal-impor nama="imporTransmigran" judul="Impor Data Transmigran"
@@ -35,11 +31,12 @@
     'judul',
     'entitas',
     'keterangan' => null,
-    'kolomWajib' => [],
 ])
 
 @php
     $aktif = \App\Support\ImporEngine::aktif($entitas);
+    $petunjuk = \App\Support\SkemaImpor::petunjuk($entitas);
+    $kolomWajib = $petunjuk['wajib'];
 @endphp
 
 <div x-data="{
@@ -52,6 +49,7 @@
         aktif: @js($aktif),
         diproses: 0,
         disimpan: 0,
+        dilewati: 0,
         jumlahGagal: 0,
         gagalBaris: [],
         galatDibatasi: false,
@@ -65,6 +63,7 @@
             this.galat = '';
             this.diproses = 0;
             this.disimpan = 0;
+            this.dilewati = 0;
             this.jumlahGagal = 0;
             this.gagalBaris = [];
             this.galatDibatasi = false;
@@ -162,7 +161,8 @@
                 }
 
                 this.diproses = hasil.diproses ?? 0;
-                this.disimpan = hasil.disimpan ?? 0;
+                this.disimpan = hasil.dibuat ?? hasil.disimpan ?? 0;
+                this.dilewati = hasil.dilewati ?? 0;
                 this.jumlahGagal = hasil.jumlah_gagal ?? 0;
                 this.gagalBaris = hasil.gagal ?? [];
                 this.galatDibatasi = hasil.galat_dibatasi ?? false;
@@ -280,6 +280,9 @@
                             Template dapat diisi tanpa sambungan internet. CSV kosong tetap
                             tersedia sebagai format alternatif.
                         </p>
+                        <p class="mt-2 text-theme-xs text-gray-500 dark:text-gray-400">
+                            {{ $petunjuk['urutan'] ? 'Urutan impor '.$petunjuk['urutan'].' dari 6. ' : '' }}{{ $petunjuk['prasyarat'] }}
+                        </p>
 
                         @if (! empty($kolomWajib))
                             <div class="mt-4 rounded-xl border border-gray-200 p-4 dark:border-gray-800">
@@ -366,7 +369,7 @@
 
                     {{-- ---------------------------------------- Langkah 3 --}}
                     <div x-show="langkah === 3" x-cloak>
-                        <div class="grid gap-4 sm:grid-cols-3">
+                        <div class="grid gap-4 sm:grid-cols-4">
                             <div class="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
                                 <p class="text-theme-xs text-gray-500 dark:text-gray-400">Baris diproses</p>
                                 <p class="mt-1 text-title-sm font-bold tabular-nums text-gray-800 dark:text-white/90" x-text="diproses"></p>
@@ -374,6 +377,10 @@
                             <div class="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
                                 <p class="text-theme-xs text-gray-500 dark:text-gray-400">Baris tersimpan</p>
                                 <p class="mt-1 text-title-sm font-bold tabular-nums text-success-600 dark:text-success-400" x-text="disimpan"></p>
+                            </div>
+                            <div class="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
+                                <p class="text-theme-xs text-gray-500 dark:text-gray-400">Baris dilewati</p>
+                                <p class="mt-1 text-title-sm font-bold tabular-nums text-gray-600 dark:text-gray-300" x-text="dilewati"></p>
                             </div>
                             <div class="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
                                 <p class="text-theme-xs text-gray-500 dark:text-gray-400">Baris gagal</p>

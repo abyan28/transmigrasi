@@ -77,12 +77,23 @@ it('membalas 404 untuk saprotan yang tidak ada', function () {
     $this->get('/saprotan/99999')->assertNotFound();
 });
 
+it('mewajibkan kode saprotan pada pengadaan baru', function () {
+    $this->post(route('saprotan.simpan'), [
+        'jenis' => 'Pupuk',
+        'nama' => 'PUPUK TANPA KODE',
+        'jumlah_total' => '10',
+        'satuan_id' => Satuan::where('nama', 'Kilogram')->value('id_satuan'),
+        'tahun_pengadaan' => 2025,
+    ])->assertSessionHasErrors('kode_saprotan');
+});
+
 it('menyimpan pengadaan benih dengan komoditas dan varietas', function () {
     $poktan = Poktan::orderBy('id_poktan')->take(2)->pluck('id_poktan');
     $satuan = Satuan::where('nama', 'Kilogram')->value('id_satuan');
     $komoditas = Komoditas::where('nama', 'JAGUNG')->value('id_komoditas');
 
     $this->post(route('saprotan.simpan'), [
+        'kode_saprotan' => 'SAP-UJI-001',
         'jenis' => 'Benih',
         'nama' => 'BENIH JAGUNG UJI',
         'komoditas_id' => $komoditas,
@@ -107,6 +118,7 @@ it('mewajibkan komoditas dan varietas untuk jenis Benih', function () {
     $satuan = Satuan::where('nama', 'Kilogram')->value('id_satuan');
 
     $this->post(route('saprotan.simpan'), [
+        'kode_saprotan' => 'SAP-UJI-002',
         'jenis' => 'Benih',
         'nama' => 'BENIH TANPA KOMODITAS',
         'jumlah_total' => '50',
@@ -120,6 +132,7 @@ it('tidak menyimpan komoditas untuk jenis non-Benih', function () {
     $komoditas = Komoditas::where('nama', 'JAGUNG')->value('id_komoditas');
 
     $this->post(route('saprotan.simpan'), [
+        'kode_saprotan' => 'SAP-UJI-003',
         'jenis' => 'Pestisida',
         'nama' => 'HERBISIDA UJI',
         'komoditas_id' => $komoditas,
@@ -139,6 +152,7 @@ it('menolak distribusi yang melebihi jumlah total', function () {
     $satuan = Satuan::where('nama', 'Kilogram')->value('id_satuan');
 
     $this->post(route('saprotan.simpan'), [
+        'kode_saprotan' => 'SAP-UJI-004',
         'jenis' => 'Pupuk',
         'nama' => 'PUPUK KELEBIHAN',
         'jumlah_total' => '100',

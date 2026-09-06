@@ -23,7 +23,7 @@ return new class extends Migration
             $table->unsignedBigInteger('transmigran_id');
             $table->unsignedBigInteger('satuan_permukiman_id');
             $table->unsignedBigInteger('poktan_id')->nullable();
-            $table->string('kode_lahan', 50)->nullable();
+            $table->string('kode_lahan', 50);
             $table->decimal('luas_pekarangan', 12, 2)->nullable();
             $table->decimal('lintang_pekarangan', 10, 7)->nullable();
             $table->decimal('bujur_pekarangan', 10, 7)->nullable();

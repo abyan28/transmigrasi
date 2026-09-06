@@ -53,7 +53,6 @@ class DemoSeeder extends Seeder
                 'tahun_kedatangan' => 2000 + ($i % 20),
                 'status_tinggal' => $i % 15 === 0 ? 'Pindah Penduduk' : 'Aktif',
                 'tahun_keluar' => $i % 15 === 0 ? 2024 + ($i % 2) : null,
-                'status_anggota_poktan' => $i % 5 ? 'Ya' : 'Tidak',
                 'status_sertifikat' => ['Sudah', 'Belum', 'Belum Didata'][$i % 3],
                 'telepon' => '0813'.str_pad((string) $i, 8, '0', STR_PAD_LEFT),
                 'created_at' => now(), 'updated_at' => now(),
@@ -91,7 +90,7 @@ class DemoSeeder extends Seeder
             if (++$urutan > 88) {
                 break;
             }
-            DB::table('rumah')->insert([
+            $rumahId = DB::table('rumah')->insertGetId([
                 'uuid' => (string) Str::uuid(),
                 'satuan_permukiman_id' => $keluargaBaru->satuan_permukiman_id,
                 'transmigran_id' => $keluargaBaru->id_transmigran,
@@ -100,6 +99,16 @@ class DemoSeeder extends Seeder
                 'status_hunian' => 'Dihuni',
                 'tahun_pembangunan' => 2000 + ($urutan % 20),
                 'luas_bangunan' => 36 + ($urutan % 4) * 9,
+                'created_at' => now(), 'updated_at' => now(),
+            ], 'id_rumah');
+
+            DB::table('riwayat_penghunian')->insert([
+                'rumah_id' => $rumahId,
+                'transmigran_id' => $keluargaBaru->id_transmigran,
+                'tahun_mulai_menghuni' => max(
+                    (int) $keluargaBaru->tahun_kedatangan,
+                    2000 + ($urutan % 20),
+                ),
                 'created_at' => now(), 'updated_at' => now(),
             ]);
         }
@@ -177,6 +186,7 @@ class DemoSeeder extends Seeder
             $i = DB::table('saprotan')->count() + 1;
             $template = $templateBenih[($i - 1) % $templateBenih->count()];
             DB::table('saprotan')->insert([
+                'kode_saprotan' => 'SAP-DEMO-'.str_pad((string) $i, 3, '0', STR_PAD_LEFT),
                 'satuan_id' => $template->satuan_id, 'komoditas_id' => $template->komoditas_id,
                 'jenis' => $template->jenis, 'varietas' => $template->varietas,
                 'nama' => 'SAPROTAN DEMO '.$i,
@@ -214,6 +224,7 @@ class DemoSeeder extends Seeder
             ]);
 
             DB::table('penanaman')->insert([
+                'kode_penanaman' => 'TAN-DEMO-'.str_pad((string) $i, 3, '0', STR_PAD_LEFT),
                 'poktan_id' => $poktanId,
                 'komoditas_id' => $saprotan->komoditas_id,
                 'saprotan_distribusi_id' => $distribusiId,

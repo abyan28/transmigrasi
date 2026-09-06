@@ -239,7 +239,7 @@ class RekapDashboard
             ->selectRaw('satuan_permukiman_id, count(*) as jumlah')
             ->groupBy('satuan_permukiman_id')->pluck('jumlah', 'satuan_permukiman_id');
 
-        return SatuanPermukiman::orderBy('nama')->get()->map(fn (SatuanPermukiman $sp): array => [
+        return SatuanPermukiman::query()->terlihatOlehPengguna()->orderBy('nama')->get()->map(fn (SatuanPermukiman $sp): array => [
             'satuan_permukiman_id' => $sp->id_satuan_permukiman,
             'satuan_permukiman' => $sp->nama,
             'jumlah_kk' => (int) ($kkPerSp[$sp->id_satuan_permukiman] ?? 0),
@@ -599,6 +599,7 @@ class RekapDashboard
         // `RekapPanen::rekap()` (basis penanaman) juga menyaring lewat rute
         // yang sama (rules.md 8g: satu jalur perhitungan, tak saling membantah).
         $query = HasilPanen::query()
+            ->where('status', 'Aktif')
             ->whereNotNull('harga_jual')
             ->where('periode_panen', 'like', $tahun.'-%');
 

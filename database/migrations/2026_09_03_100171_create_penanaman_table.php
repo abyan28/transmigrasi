@@ -18,6 +18,7 @@ return new class extends Migration
     {
         Schema::create('penanaman', function (Blueprint $table) {
             $table->id('id_penanaman');
+            $table->string('kode_penanaman', 50);
             $table->unsignedBigInteger('poktan_id');
             $table->unsignedBigInteger('komoditas_id');
             $table->unsignedBigInteger('saprotan_distribusi_id');
@@ -28,6 +29,7 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
+            $table->unique('kode_penanaman', 'uq_penanaman_kode');
             $table->index('poktan_id', 'idx_penanaman_poktan');
             $table->index('komoditas_id', 'idx_penanaman_komoditas');
             $table->index('periode_tanam', 'idx_penanaman_periode');

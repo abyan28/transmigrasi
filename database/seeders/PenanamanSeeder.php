@@ -24,6 +24,7 @@ class PenanamanSeeder extends Seeder
             Penanaman::withTrashed()->updateOrCreate(
                 ['id_penanaman' => $p['id_penanaman']],
                 [
+                    'kode_penanaman' => sprintf('TAN-%s-%03d', substr($p['periode_tanam'], 0, 4), $p['id_penanaman']),
                     'poktan_id' => $p['poktan_id'],
                     'komoditas_id' => $p['komoditas_id'],
                     'saprotan_distribusi_id' => $p['saprotan_distribusi_id'],

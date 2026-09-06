@@ -24,6 +24,7 @@ function buatLahan(Transmigran $kk, array $atribut = []): Lahan
         'uuid' => (string) Str::uuid(),
         'transmigran_id' => $kk->id_transmigran,
         'satuan_permukiman_id' => $kk->satuan_permukiman_id,
+        'kode_lahan' => 'LH-'.Str::upper(Str::random(8)),
     ], $atribut));
 }
 

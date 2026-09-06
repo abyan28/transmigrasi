@@ -8,13 +8,13 @@ use App\Models\Lahan;
 use App\Models\SatuanPermukiman;
 use App\Models\Scopes\CakupanDataSp;
 use App\Models\Transmigran;
+use App\Support\OperasiLahan;
 use App\Support\Paginasi;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 /**
@@ -104,14 +104,10 @@ class LahanController extends Controller
     public function simpan(Request $request): RedirectResponse
     {
         $data = $this->validasi($request);
-        $pemilik = $this->pemilikDapatDitulis((int) $data['transmigran_id']);
-        [$lahanData, $statusSertifikat, $transmigranId] = $this->pisahkan($data);
-        $this->tetapkanSp($lahanData, $pemilik);
 
-        DB::transaction(function () use ($request, $lahanData, $statusSertifikat, $transmigranId) {
-            $lahan = Lahan::create($lahanData + ['uuid' => (string) Str::uuid()]);
-
-            $this->simpanLegalitas($request, (int) $transmigranId, $statusSertifikat);
+        DB::transaction(function () use ($request, $data) {
+            $lahan = OperasiLahan::buat($data);
+            $this->simpanLegalitas($request, (int) $lahan->transmigran_id, $data['status_sertifikat']);
         });
 
         return redirect()->route('lahan.index')->with('sukses', 'Data lahan tersimpan.');
@@ -296,13 +292,13 @@ class LahanController extends Controller
             ],
             'satuan_permukiman_id' => ['nullable', 'integer', Rule::exists('satuan_permukiman', 'id_satuan_permukiman')->whereNull('deleted_at')],
             'kode_lahan' => [
-                'nullable', 'string', 'max:50',
+                'required', 'string', 'max:50',
                 Rule::unique('lahan', 'kode_lahan')->ignore($lahan?->id_lahan, 'id_lahan'),
             ],
             'tujuan_pemanfaatan' => ['nullable', 'string', 'max:2000'],
             'keterangan' => ['nullable', 'string', 'max:1000'],
 
-            'luas_pekarangan' => ValidationRules::luas(wajib: false),
+            'luas_pekarangan' => ['required_without_all:luas_kering,luas_basah', ...ValidationRules::luas(wajib: false)],
             'lintang_pekarangan' => ValidationRules::lintang(),
             'bujur_pekarangan' => ValidationRules::bujur(),
             'luas_kering' => ['nullable', 'numeric', 'min:0', 'decimal:0,2', 'max:9999999999'],
@@ -316,8 +312,10 @@ class LahanController extends Controller
         ], [
             'transmigran_id.required' => 'Pemilik lahan wajib dipilih.',
             'transmigran_id.unique' => 'Keluarga ini sudah punya baris lahan. Gunakan tombol Ubah pada daftar.',
+            'kode_lahan.required' => 'Kode lahan wajib diisi.',
             'satuan_permukiman_id.required' => 'Satuan permukiman wajib dipilih.',
             'kode_lahan.unique' => 'Kode lahan ini sudah dipakai.',
+            'luas_pekarangan.required_without_all' => 'Isi luas pekarangan atau luas lahan usaha.',
             'status_sertifikat.required' => 'Status sertifikat wajib dipilih.',
         ] + ValidationRules::pesan());
     }

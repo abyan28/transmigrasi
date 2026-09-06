@@ -124,6 +124,5 @@
 
     {{-- Impor massal, lihat komponennya untuk alur tiga langkah --}}
     <x-sim.modal-impor nama="imporSatuan" judul="Impor Data Master Satuan"
-        entitas="satuan"
-        :kolom-wajib="['nama', 'simbol']" />
+        entitas="satuan" />
 @endsection

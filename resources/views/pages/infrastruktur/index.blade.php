@@ -184,6 +184,5 @@
 
     {{-- Impor massal, lihat komponennya untuk alur tiga langkah --}}
     <x-sim.modal-impor nama="imporInfrastruktur" judul="Impor Aset Infrastruktur"
-        entitas="infrastruktur"
-        :kolom-wajib="['satuan_permukiman', 'jenis', 'nama_aset', 'kondisi']" />
+        entitas="infrastruktur" />
 @endsection

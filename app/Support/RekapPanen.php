@@ -62,7 +62,7 @@ class RekapPanen
     {
         $tahun = [(int) date('Y')];
 
-        foreach (HasilPanen::query()->pluck('periode_panen') as $periode) {
+        foreach (HasilPanen::query()->where('status', 'Aktif')->pluck('periode_panen') as $periode) {
             $tahun[] = (int) substr((string) $periode, 0, 4);
         }
 

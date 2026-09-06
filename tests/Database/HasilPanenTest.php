@@ -151,18 +151,22 @@ it('mewajibkan produktivitas saat bukan gagal total', function () {
     ])->assertSessionHasErrors('produktivitas');
 });
 
-it('membolehkan pencatatan panen ulang setelah catatan lama dihapus halus', function () {
+it('membatalkan panen dengan jejak audit lalu membolehkan pengganti aktif', function () {
     $id = HasilPanen::where('penanaman_id', 5)->value('id_hasil_panen');
-    $lama = HasilPanen::find($id);
+    $lama = HasilPanen::findOrFail($id);
 
-    $this->delete(route('panen.hapus', $id))->assertRedirect(route('panen.index'));
+    $this->delete(route('panen.hapus', $id), [
+        'alasan' => 'Angka timbang salah dicatat.',
+    ])->assertRedirect(route('panen.index'));
 
-    // Baris lama hanya di-soft delete, dan penanaman tidak lagi tertutup olehnya.
-    expect(HasilPanen::find($id))->toBeNull()
-        ->and(HasilPanen::withTrashed()->find($id)->trashed())->toBeTrue()
-        ->and(Penanaman::findOrFail(5)->hasilPanen)->toBeNull();
+    $lama->refresh();
+    expect($lama->status)->toBe('Dibatalkan')
+        ->and($lama->dibatalkan_pada)->not->toBeNull()
+        ->and($lama->dibatalkan_oleh)->not->toBeNull()
+        ->and($lama->alasan_pembatalan)->toBe('Angka timbang salah dicatat.')
+        ->and(Penanaman::findOrFail(5)->hasilPanen)->toBeNull()
+        ->and(Penanaman::findOrFail(5)->riwayatHasilPanen)->toHaveCount(1);
 
-    // Panen yang benar kini dapat dicatat lewat antarmuka.
     $this->post(route('panen.simpan'), [
         'penanaman_id' => 5,
         'periode_panen' => $lama->periode_panen,
@@ -171,7 +175,36 @@ it('membolehkan pencatatan panen ulang setelah catatan lama dihapus halus', func
         'produktivitas' => (string) $lama->produktivitas,
     ])->assertSessionHasNoErrors()->assertRedirect(route('panen.index'));
 
-    expect(HasilPanen::where('penanaman_id', 5)->count())->toBe(1)
-        ->and(HasilPanen::withTrashed()->where('penanaman_id', 5)->count())->toBe(2)
-        ->and(Penanaman::findOrFail(5)->hasilPanen->trashed())->toBeFalse();
+    expect(HasilPanen::where('penanaman_id', 5)->count())->toBe(2)
+        ->and(HasilPanen::where('penanaman_id', 5)->where('status', 'Aktif')->count())->toBe(1);
+});
+
+it('mewajibkan alasan saat membatalkan panen', function () {
+    $panen = HasilPanen::firstOrFail();
+
+    $this->delete(route('panen.hapus', $panen->id_hasil_panen))
+        ->assertSessionHasErrors('alasan');
+
+    expect($panen->fresh()->status)->toBe('Aktif');
+});
+
+it('menampilkan panen batal sebagai riwayat tetapi mengeluarkannya dari daftar aktif', function () {
+    $panen = HasilPanen::where('penanaman_id', 5)->firstOrFail();
+
+    $this->delete(route('panen.hapus', $panen->id_hasil_panen), [
+        'alasan' => 'Duplikasi hasil timbang.',
+    ])->assertRedirect(route('panen.index'));
+
+    $this->get(route('panen.index'))
+        ->assertOk()
+        ->assertDontSee('Duplikasi hasil timbang.');
+
+    $this->get(route('panen.detail', $panen->id_hasil_panen))
+        ->assertOk()
+        ->assertSee('Dibatalkan')
+        ->assertSee('Duplikasi hasil timbang.');
+
+    $this->get(route('penanaman.detail', $panen->penanaman_id))
+        ->assertOk()
+        ->assertSee('Dibatalkan');
 });

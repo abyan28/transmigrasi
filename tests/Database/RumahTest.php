@@ -89,13 +89,14 @@ it('menyimpan rumah baru dan membuka riwayat penghunian', function () {
         'no_rumah' => 'Z-99',
         'kondisi' => 'Tidak Rusak',
         'status_hunian' => 'Dihuni',
+        'tahun_mulai_menghuni' => 2020,
     ])->assertRedirect(route('rumah.index'));
 
     $rumah = Rumah::where('no_rumah', 'Z-99')->first();
 
     expect($rumah)->not->toBeNull()
         ->and($rumah->transmigran_id)->toBe($kk->id_transmigran)
-        ->and($rumah->riwayatPenghunian()->whereNull('tanggal_keluar')->count())->toBe(1);
+        ->and($rumah->riwayatPenghunian()->whereNull('tahun_selesai_menghuni')->count())->toBe(1);
 });
 
 it('menolak penghuni yang sudah menempati rumah lain', function () {
@@ -128,6 +129,41 @@ it('mewajibkan penghuni saat status rumah dihuni', function () {
     ])->assertSessionHasErrors('transmigran_id');
 });
 
+it('mewajibkan dan menyimpan tahun mulai menghuni untuk rumah yang dihuni', function () {
+    $kk = Transmigran::whereDoesntHave('rumah')->firstOrFail();
+
+    $data = [
+        'satuan_permukiman_id' => $kk->satuan_permukiman_id,
+        'transmigran_id' => $kk->id_transmigran,
+        'no_rumah' => 'Z-TAHUN',
+        'kondisi' => 'Tidak Rusak',
+        'status_hunian' => 'Dihuni',
+    ];
+
+    $this->post(route('rumah.simpan'), $data)
+        ->assertSessionHasErrors('tahun_mulai_menghuni');
+
+    $this->post(route('rumah.simpan'), $data + ['tahun_mulai_menghuni' => 2020])
+        ->assertRedirect(route('rumah.index'));
+
+    $rumah = Rumah::where('no_rumah', 'Z-TAHUN')->firstOrFail();
+    expect($rumah->riwayatPenghunian()->value('tahun_mulai_menghuni'))->toBe(2020);
+});
+
+it('mewajibkan tahun selesai dan tahun mulai baru saat penghuni diganti', function () {
+    $rumah = Rumah::where('no_rumah', 'A-01')->firstOrFail();
+    $penggantiId = Transmigran::whereDoesntHave('rumah')->value('id_transmigran');
+
+    $this->put(route('rumah.perbarui', $rumah->id_rumah), [
+        'satuan_permukiman_id' => $rumah->satuan_permukiman_id,
+        'transmigran_id' => $penggantiId,
+        'no_rumah' => $rumah->no_rumah,
+        'kondisi' => 'Tidak Rusak',
+        'status_hunian' => 'Dihuni',
+        'alasan_keluar' => 'Pindah ke luar kawasan.',
+    ])->assertSessionHasErrors(['tahun_selesai_menghuni', 'tahun_mulai_menghuni']);
+});
+
 it('mengunci pilihan SP saat rumah dihuni tanpa menghilangkan nilai kiriman', function () {
     $isi = $this->get(route('rumah.index'))->assertOk()->getContent();
 
@@ -151,6 +187,7 @@ it('menurunkan SP rumah dari penghuni dan mengabaikan SP palsu', function () {
         'no_rumah' => 'Z-FORGE',
         'kondisi' => 'Tidak Rusak',
         'status_hunian' => 'Dihuni',
+        'tahun_mulai_menghuni' => 2020,
     ])->assertRedirect(route('rumah.index'));
 
     expect(Rumah::where('no_rumah', 'Z-FORGE')->value('satuan_permukiman_id'))
@@ -173,6 +210,7 @@ it('membatasi penulisan rumah dan penghuni ke SP petugas', function () {
         'transmigran_id' => $kkLain->id_transmigran,
         'kondisi' => 'Tidak Rusak',
         'status_hunian' => 'Dihuni',
+        'tahun_mulai_menghuni' => 2020,
     ])->assertNotFound();
 
     $this->post(route('rumah.simpan'), [
@@ -181,6 +219,7 @@ it('membatasi penulisan rumah dan penghuni ke SP petugas', function () {
         'no_rumah' => 'Z-SCOPED',
         'kondisi' => 'Tidak Rusak',
         'status_hunian' => 'Dihuni',
+        'tahun_mulai_menghuni' => 2020,
     ])->assertRedirect(route('rumah.index'));
 
     $rumah = Rumah::where('no_rumah', 'Z-SCOPED')->firstOrFail();
@@ -188,6 +227,8 @@ it('membatasi penulisan rumah dan penghuni ke SP petugas', function () {
         'transmigran_id' => $kkLain->id_transmigran,
         'kondisi' => 'Tidak Rusak',
         'status_hunian' => 'Dihuni',
+        'tahun_mulai_menghuni' => 2021,
+        'tahun_selesai_menghuni' => 2020,
     ])->assertNotFound();
 
     // Hapus lintas-SP juga ditolak (bukan hanya tambah/ubah).
@@ -222,6 +263,8 @@ it('mencatat pergantian penghuni sebagai riwayat baru tanpa menimpa yang lama', 
         'kondisi' => 'Tidak Rusak',
         'status_hunian' => 'Dihuni',
         'alasan_keluar' => 'Pindah ke luar kawasan.',
+        'tahun_mulai_menghuni' => 2025,
+        'tahun_selesai_menghuni' => 2025,
     ])->assertRedirect(route('rumah.detail', $rumah->id_rumah));
 
     $rumah->refresh();
@@ -231,12 +274,12 @@ it('mencatat pergantian penghuni sebagai riwayat baru tanpa menimpa yang lama', 
     $riwayatLama = RiwayatPenghunian::where('rumah_id', $rumah->id_rumah)
         ->where('transmigran_id', $lama)->first();
     expect($riwayatLama)->not->toBeNull()
-        ->and($riwayatLama->tanggal_keluar)->not->toBeNull()
+        ->and($riwayatLama->tahun_selesai_menghuni)->toBe(2025)
         ->and($riwayatLama->alasan_keluar)->toBe('Pindah ke luar kawasan.');
 
     // Baris baru terbuka untuk pengganti.
     expect(RiwayatPenghunian::where('rumah_id', $rumah->id_rumah)
-        ->where('transmigran_id', $penggantiId)->whereNull('tanggal_keluar')->count())->toBe(1);
+        ->where('transmigran_id', $penggantiId)->whereNull('tahun_selesai_menghuni')->count())->toBe(1);
 });
 
 it('mengosongkan rumah menutup riwayat tanpa membuka baris baru', function () {
@@ -251,12 +294,13 @@ it('mengosongkan rumah menutup riwayat tanpa membuka baris baru', function () {
         'status_hunian' => 'Tidak Dihuni',
         'alasan_tidak_dihuni' => 'Keluarga pindah, menunggu penempatan baru.',
         'alasan_keluar' => 'Keluarga pindah ke SP lain.',
+        'tahun_selesai_menghuni' => 2025,
     ])->assertRedirect(route('rumah.detail', $rumah->id_rumah));
 
     $rumah->refresh();
     expect($rumah->transmigran_id)->toBeNull()
         ->and(RiwayatPenghunian::where('rumah_id', $rumah->id_rumah)->count())->toBe($sebelum)
-        ->and(RiwayatPenghunian::where('rumah_id', $rumah->id_rumah)->whereNull('tanggal_keluar')->count())->toBe(0);
+        ->and(RiwayatPenghunian::where('rumah_id', $rumah->id_rumah)->whereNull('tahun_selesai_menghuni')->count())->toBe(0);
 });
 
 it('menghapus rumah secara halus', function () {

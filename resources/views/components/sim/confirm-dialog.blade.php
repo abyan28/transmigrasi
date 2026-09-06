@@ -24,6 +24,7 @@
     'ragam' => 'bahaya',
     'perluAlasan' => false,
     'labelAlasan' => 'Alasan',
+    'namaAlasan' => 'alasan',
 ])
 
 @php
@@ -121,7 +122,7 @@
                                         class="mb-1.5 block text-theme-xs font-medium text-gray-700 dark:text-gray-400">
                                         {{ $labelAlasan }}<span class="text-error-500">*</span>
                                     </label>
-                                    <textarea id="alasan-{{ $nama }}" name="alasan" rows="3" required
+                                    <textarea id="alasan-{{ $nama }}" name="{{ $namaAlasan }}" rows="3" required
                                         placeholder="Tuliskan bagian mana yang perlu diperbaiki"
                                         class="w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90"></textarea>
                                 </div>

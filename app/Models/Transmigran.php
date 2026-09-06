@@ -5,7 +5,6 @@ namespace App\Models;
 use App\Enums\Agama;
 use App\Enums\JenisKelamin;
 use App\Enums\PendidikanTerakhir;
-use App\Enums\StatusAnggotaPoktan;
 use App\Enums\StatusSertifikat;
 use App\Enums\StatusTinggal;
 use App\Models\Scopes\CakupanDataSp;
@@ -19,8 +18,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Satu baris = satu kepala keluarga / KK. `usia` & `jumlah_anggota_keluarga`
- * TIDAK disimpan (diturunkan). `status_anggota_poktan` = penanda cepat
- * (kebenaran ada di `anggota_poktan`). `status_sertifikat` (SHM) melekat di KK,
+ * TIDAK disimpan (diturunkan). Status keanggotaan Poktan diturunkan dari
+ * `anggota_poktan` Aktif. `status_sertifikat` (SHM) melekat di KK,
  * bukan per bidang lahan (`rules.md` 7.6).
  *
  * Pengenal publik URL: `uuid` -- data pribadi tak boleh terekspos lewat id urut.
@@ -38,7 +37,7 @@ class Transmigran extends Model
         'uuid', 'satuan_permukiman_id', 'nik', 'no_kk', 'nama_kepala_keluarga',
         'jenis_kelamin', 'agama', 'tempat_lahir', 'tanggal_lahir', 'pendidikan_terakhir',
         'pekerjaan_kepala_keluarga', 'pendapatan_per_bulan', 'daerah_asal_kabupaten_id',
-        'tahun_kedatangan', 'status_tinggal', 'tahun_keluar', 'status_anggota_poktan', 'status_sertifikat',
+        'tahun_kedatangan', 'status_tinggal', 'tahun_keluar', 'status_sertifikat',
         'telepon', 'keterangan',
     ];
 
@@ -51,7 +50,6 @@ class Transmigran extends Model
             'tanggal_lahir' => 'date',
             'pendapatan_per_bulan' => 'decimal:2',
             'status_tinggal' => StatusTinggal::class,
-            'status_anggota_poktan' => StatusAnggotaPoktan::class,
             'status_sertifikat' => StatusSertifikat::class,
         ];
     }
@@ -103,6 +101,15 @@ class Transmigran extends Model
     public function keanggotaanPoktan(): HasMany
     {
         return $this->hasMany(AnggotaPoktan::class, 'transmigran_id', 'id_transmigran');
+    }
+
+    public function getStatusAnggotaPoktanAttribute(): string
+    {
+        $aktif = array_key_exists('keanggotaan_poktan_aktif_exists', $this->attributes)
+            ? (bool) $this->attributes['keanggotaan_poktan_aktif_exists']
+            : $this->keanggotaanPoktan()->where('status', 'Aktif')->exists();
+
+        return $aktif ? 'Ya' : 'Tidak';
     }
 
     public function poktanDiketuai(): HasMany

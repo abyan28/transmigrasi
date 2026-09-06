@@ -245,6 +245,5 @@
 
     {{-- Impor massal, lihat komponennya untuk alur tiga langkah --}}
     <x-sim.modal-impor nama="imporRumah" judul="Impor Data Rumah"
-        entitas="rumah"
-        :kolom-wajib="['kode_rumah', 'satuan_permukiman', 'alamat', 'kondisi']" />
+        entitas="rumah" />
 @endsection

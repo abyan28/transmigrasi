@@ -164,6 +164,5 @@
 
     {{-- Impor massal, lihat komponennya untuk alur tiga langkah --}}
     <x-sim.modal-impor nama="imporKomoditas" judul="Impor Data Komoditas"
-        entitas="komoditas"
-        :kolom-wajib="['nama_komoditas', 'jenis', 'satuan_baku']" />
+        entitas="komoditas" />
 @endsection

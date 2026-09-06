@@ -285,7 +285,7 @@ Dashboard dan halaman daftar mengandalkan filter wilayah dan periode, sehingga i
 | `kawasan_transmigrasi` | `kabupaten_id` | Daftar kawasan per kabupaten |
 | `transmigran` | `satuan_permukiman_id`, `nik`, `tahun_kedatangan`, `pekerjaan_kepala_keluarga` | Filter per SP, pencarian NIK, grafik per tahun, histogram pekerjaan |
 | `rumah` | `satuan_permukiman_id`, `status_hunian`, `kondisi` | Rekap rumah terhuni per SP |
-| `riwayat_penghunian` | `rumah_id`, `transmigran_id`, `tanggal_masuk`, `tanggal_keluar` | Grafik KK masuk dan keluar per tahun |
+| `riwayat_penghunian` | `rumah_id`, `transmigran_id`, `tahun_mulai_menghuni`, `tahun_selesai_menghuni` | Riwayat keluarga mulai dan selesai menghuni rumah |
 | `lahan` | `transmigran_id` (UNIQUE), `satuan_permukiman_id` | Rekap luas lahan per SP; satu baris per KK (Putaran 15) |
 | `penanaman` | `poktan_id`, `komoditas_id`, `periode_tanam`, `saprotan_id` | Rekap tanam per periode dan komoditas; `saprotan_id` dipakai menghitung sisa benih |
 | `hasil_panen` | `penanaman_id`, `poktan_id`, `periode_panen` | Grafik produksi per tahun dan rekap per poktan |
@@ -376,7 +376,7 @@ Peristiwanya direkam pada `riwayat_kepala_keluarga`, sebab `audit_log` tidak dap
 **Sejak Stage B3 (2026-08-28)** pengganti **dipilih dari daftar `anggota_keluarga`** keluarga itu, tidak diketik (`erd.md` §7.4 sudah dibalik). Datanya menimpa baris `transmigran`, barisnya sebagai anggota keluarga dihapus, dan `riwayat_kepala_keluarga` menyimpan kedua sisi identitas secara denormalisasi (tanpa FK ke `anggota_keluarga` yang akan menggantung).
 
 ### 7.5 Riwayat penghunian
-Pergantian penghuni tidak menimpa data lama. Alurnya: baris `riwayat_penghunian` lama diisi `tanggal_keluar` dan `alasan_keluar`, `rumah.transmigran_id` diperbarui, lalu baris riwayat baru dibuat (`rules.md` §6a.9).
+Pergantian penghuni tidak menimpa data lama. Alurnya: baris `riwayat_penghunian` lama diisi `tahun_selesai_menghuni` dan `alasan_keluar`, `rumah.transmigran_id` diperbarui, lalu baris riwayat baru dibuat dengan `tahun_mulai_menghuni` (`rules.md` §6a.9). Presisi tahun dipilih karena pengguna lapangan tidak selalu mengingat tanggal lengkap.
 
 
 ---

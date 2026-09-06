@@ -50,7 +50,6 @@ class TransmigranSeeder extends Seeder
                 'tahun_kedatangan' => $t['tahun_kedatangan'],
                 'status_tinggal' => $t['status_tinggal'],
                 'tahun_keluar' => $t['tahun_keluar'] ?? null,
-                'status_anggota_poktan' => $t['status_anggota_poktan'],
                 'status_sertifikat' => $t['status_sertifikat'],
                 'telepon' => $t['telepon'] ?? null,
                 'keterangan' => $t['keterangan'] ?? null,

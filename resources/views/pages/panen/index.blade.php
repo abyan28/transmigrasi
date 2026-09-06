@@ -237,7 +237,7 @@
                             </a>
 
                             @if ($bolehUbah)
-                                {{-- Ubah sejajar dengan Hapus, sebab menghapus lebih berisiko daripada menyunting --}}
+                                {{-- Ubah sejajar dengan Batalkan; riwayat pembatalan tetap disimpan. --}}
                                 <button type="button"
                                     @click.prevent="$dispatch('buka-modal-baris', {
                                         nama: 'formUbahPanenBaris',
@@ -259,7 +259,7 @@
                                         nama: 'hapusPanen',
                                         aksi: '{{ route('panen.hapus', $p['id_hasil_panen']) }}'
                                     })"
-                                    aria-label="Hapus catatan panen {{ $p['komoditas'] }}"
+                                    aria-label="Batalkan catatan panen {{ $p['komoditas'] }}"
                                     class="rounded-lg p-2 text-gray-500 transition hover:bg-red-50 hover:text-red-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-gray-400 dark:hover:bg-red-500/10">
                                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"
                                         stroke-width="1.5" aria-hidden="true">
@@ -337,9 +337,10 @@
     @endif
 
     @if ($bolehHapus)
-        <x-sim.confirm-dialog nama="hapusPanen" judul="Hapus catatan panen ini?"
-            pesan="Catatan yang dihapus tidak lagi dihitung pada rekap dan dashboard."
-            label-setuju="Hapus Catatan Panen" />
+        <x-sim.confirm-dialog nama="hapusPanen" judul="Batalkan catatan panen ini?"
+            pesan="Catatan tetap tersimpan sebagai riwayat dan tidak lagi dihitung pada rekap maupun dashboard."
+            label-setuju="Batalkan Catatan Panen" :perlu-alasan="true"
+            label-alasan="Alasan pembatalan" />
     @endif
 
     @if ($bolehUbah)
@@ -353,6 +354,5 @@
 
     {{-- Impor massal, lihat komponennya untuk alur tiga langkah --}}
     <x-sim.modal-impor nama="imporPanen" judul="Impor Hasil Panen"
-        entitas="hasil-panen"
-        :kolom-wajib="['periode_panen', 'komoditas', 'kelompok_tani', 'produksi', 'satuan']" />
+        entitas="hasil-panen" />
 @endsection

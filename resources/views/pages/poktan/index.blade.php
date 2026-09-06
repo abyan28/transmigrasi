@@ -125,6 +125,5 @@
 
     {{-- Impor massal, lihat komponennya untuk alur tiga langkah --}}
     <x-sim.modal-impor nama="imporPoktan" judul="Impor Kelompok Tani"
-        entitas="poktan"
-        :kolom-wajib="['nama_poktan', 'satuan_permukiman', 'tanggal_berdiri', 'nik_ketua']" />
+        entitas="poktan" />
 @endsection

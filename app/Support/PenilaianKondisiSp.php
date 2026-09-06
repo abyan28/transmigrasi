@@ -282,7 +282,7 @@ class PenilaianKondisiSp
     {
         $hasil = [];
 
-        foreach (SatuanPermukiman::query()->orderBy('kode_sp')->get() as $sp) {
+        foreach (SatuanPermukiman::query()->terlihatOlehPengguna()->orderBy('kode_sp')->get() as $sp) {
             $penilaian = self::nilai($sp->id_satuan_permukiman);
             $penilaian['satuan_permukiman'] = $sp->nama;
             $hasil[] = $penilaian;

@@ -23,13 +23,9 @@ class PenyajianSaprotan
     public static function daftar(): array
     {
         return Saprotan::query()
-            ->withoutGlobalScopes()
             ->with([
                 'satuan', 'komoditas', 'foto', 'berkas',
-                'distribusi' => fn ($q) => $q->withoutGlobalScopes()->with([
-                    'poktan' => fn ($q) => $q->withoutGlobalScopes()->with('satuanPermukiman'),
-                    'penanaman' => fn ($q) => $q->withoutGlobalScopes(),
-                ]),
+                'distribusi.poktan.satuanPermukiman', 'distribusi.penanaman',
             ])
             ->orderBy('id_saprotan')
             ->get()
@@ -69,6 +65,7 @@ class PenyajianSaprotan
 
         return [
             'id_saprotan' => $s->id_saprotan,
+            'kode_saprotan' => $s->kode_saprotan,
             'jenis' => $s->jenis?->value,
             'nama' => $s->nama,
             'komoditas_id' => $s->komoditas_id,

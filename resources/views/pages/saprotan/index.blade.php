@@ -140,6 +140,5 @@
 
     {{-- Impor massal, lihat komponennya untuk alur tiga langkah --}}
     <x-sim.modal-impor nama="imporSaprotan" judul="Impor Data Saprotan"
-        entitas="saprotan"
-        :kolom-wajib="['jenis_saprotan', 'nama', 'jumlah_total', 'satuan', 'tahun_pengadaan']" />
+        entitas="saprotan" />
 @endsection

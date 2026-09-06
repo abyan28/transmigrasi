@@ -429,7 +429,6 @@ class DummyData
                 'daerah_asal_kabupaten_id' => 5301,
                 'tahun_kedatangan' => 2016,
                 'status_tinggal' => StatusTinggal::Aktif->value,
-                'status_anggota_poktan' => 'Ya',
                 'status_sertifikat' => 'Sudah',
                 'telepon' => '081234567801',
                 'satuan_permukiman' => 'SP Kapitan Meo',
@@ -450,7 +449,6 @@ class DummyData
                 'daerah_asal_kabupaten_id' => 5304,
                 'tahun_kedatangan' => 2016,
                 'status_tinggal' => StatusTinggal::Aktif->value,
-                'status_anggota_poktan' => 'Ya',
                 'status_sertifikat' => 'Sudah',
                 'telepon' => '081234567802',
                 'satuan_permukiman' => 'SP Kapitan Meo',
@@ -471,7 +469,6 @@ class DummyData
                 'daerah_asal_kabupaten_id' => 5302,
                 'tahun_kedatangan' => 2016,
                 'status_tinggal' => StatusTinggal::Aktif->value,
-                'status_anggota_poktan' => 'Tidak',
                 'status_sertifikat' => 'Belum',
                 'telepon' => '081234567803',
                 'satuan_permukiman' => 'SP Tniumanu',
@@ -492,7 +489,6 @@ class DummyData
                 'daerah_asal_kabupaten_id' => 5321,
                 'tahun_kedatangan' => 2017,
                 'status_tinggal' => StatusTinggal::Aktif->value,
-                'status_anggota_poktan' => 'Tidak',
                 'status_sertifikat' => 'Belum Didata',
                 'telepon' => '081234567804',
                 'satuan_permukiman' => 'SP Harekakae',
@@ -516,7 +512,6 @@ class DummyData
                 // Sejalan riwayat penghunian rumah A-03 (lihat DummyData::rumah()):
                 // pindah 2025-09-30. Sumber dashboard "KK Keluar per tahun".
                 'tahun_keluar' => 2025,
-                'status_anggota_poktan' => 'Ya',
                 'status_sertifikat' => 'Belum',
                 'telepon' => '081234567805',
                 'satuan_permukiman' => 'SP Weoe / Uluk Lubuk',
@@ -537,7 +532,6 @@ class DummyData
                 'daerah_asal_kabupaten_id' => 5301,
                 'tahun_kedatangan' => 2018,
                 'status_tinggal' => StatusTinggal::Aktif->value,
-                'status_anggota_poktan' => 'Tidak',
                 'status_sertifikat' => 'Belum Didata',
                 'telepon' => '081234567806',
                 'satuan_permukiman' => 'SP Tualaran',
@@ -558,7 +552,6 @@ class DummyData
                 'daerah_asal_kabupaten_id' => 5303,
                 'tahun_kedatangan' => 2018,
                 'status_tinggal' => StatusTinggal::Aktif->value,
-                'status_anggota_poktan' => 'Ya',
                 'status_sertifikat' => 'Sudah',
                 'telepon' => '081234567807',
                 'satuan_permukiman' => 'SP Weain',
@@ -579,7 +572,6 @@ class DummyData
                 'daerah_asal_kabupaten_id' => 5321,
                 'tahun_kedatangan' => 2019,
                 'status_tinggal' => StatusTinggal::Aktif->value,
-                'status_anggota_poktan' => 'Ya',
                 'status_sertifikat' => 'Belum',
                 'telepon' => '081234567808',
                 'satuan_permukiman' => 'SP Kapitan Meo',
@@ -599,10 +591,18 @@ class DummyData
             $cacahAnggota[$anggota['transmigran_id']] = ($cacahAnggota[$anggota['transmigran_id']] ?? 0) + 1;
         }
 
+        $anggotaPoktanAktif = [];
+        foreach (self::anggotaPoktan(enrich: false) as $anggota) {
+            if ($anggota['status'] === 'Aktif') {
+                $anggotaPoktanAktif[$anggota['transmigran_id']] = true;
+            }
+        }
+
         return array_map(
-            fn ($t) => $t + [
+            fn ($t) => array_replace($t, [
+                'status_anggota_poktan' => isset($anggotaPoktanAktif[$t['id_transmigran']]) ? 'Ya' : 'Tidak',
                 'jumlah_anggota_keluarga' => 1 + ($cacahAnggota[$t['id_transmigran']] ?? 0),
-            ],
+            ]),
             $data,
         );
     }
@@ -1401,7 +1401,7 @@ class DummyData
      *
      * Pergantian penghuni dicatat sebagai baris baru, tidak pernah menimpa
      * data penghuni sebelumnya (agents/rules.md bagian 6a poin 9). Baris
-     * dengan `tanggal_keluar` bernilai null berarti masih menghuni.
+     * dengan `tahun_selesai_menghuni` bernilai null berarti masih menghuni.
      *
      * @param  int|null  $rumahId  Menyaring riwayat satu rumah; null berarti seluruhnya
      * @return array<int, array<string, mixed>> Riwayat penghunian
@@ -1415,8 +1415,8 @@ class DummyData
                 'no_rumah' => 'A-01',
                 'transmigran' => 'YOHANES BERE',
                 'transmigran_id' => 1,
-                'tanggal_masuk' => '2016-07-12',
-                'tanggal_keluar' => null,
+                'tahun_mulai_menghuni' => 2016,
+                'tahun_selesai_menghuni' => null,
                 'alasan_keluar' => null,
                 'keterangan' => 'Penempatan awal rombongan pertama.',
             ],
@@ -1426,8 +1426,8 @@ class DummyData
                 'no_rumah' => 'A-02',
                 'transmigran' => 'MARIA DA COSTA',
                 'transmigran_id' => 2,
-                'tanggal_masuk' => '2016-07-12',
-                'tanggal_keluar' => null,
+                'tahun_mulai_menghuni' => 2016,
+                'tahun_selesai_menghuni' => null,
                 'alasan_keluar' => null,
                 'keterangan' => 'Penempatan awal rombongan pertama.',
             ],
@@ -1437,8 +1437,8 @@ class DummyData
                 'no_rumah' => 'A-03',
                 'transmigran' => 'DOMINGGUS TAEK',
                 'transmigran_id' => 5,
-                'tanggal_masuk' => '2017-03-04',
-                'tanggal_keluar' => '2025-09-30',
+                'tahun_mulai_menghuni' => 2017,
+                'tahun_selesai_menghuni' => 2025,
                 'alasan_keluar' => 'Pindah mengikuti keluarga ke SP Weoe.',
                 'keterangan' => 'Rumah dikosongkan setelah kepergian, menunggu perbaikan atap.',
             ],
@@ -1448,8 +1448,8 @@ class DummyData
                 'no_rumah' => 'B-01',
                 'transmigran' => 'PETRUS NAHAK',
                 'transmigran_id' => 3,
-                'tanggal_masuk' => '2016-08-20',
-                'tanggal_keluar' => null,
+                'tahun_mulai_menghuni' => 2016,
+                'tahun_selesai_menghuni' => null,
                 'alasan_keluar' => null,
                 'keterangan' => null,
             ],
@@ -1459,8 +1459,8 @@ class DummyData
                 'no_rumah' => 'C-01',
                 'transmigran' => 'ANGELA SERAN',
                 'transmigran_id' => 4,
-                'tanggal_masuk' => '2017-05-15',
-                'tanggal_keluar' => null,
+                'tahun_mulai_menghuni' => 2017,
+                'tahun_selesai_menghuni' => null,
                 'alasan_keluar' => null,
                 'keterangan' => null,
             ],
@@ -3825,7 +3825,7 @@ class DummyData
      * @param  int|null  $poktanId  Menyaring anggota satu poktan; null berarti seluruhnya
      * @return array<int, array<string, mixed>> Data anggota
      */
-    public static function anggotaPoktan(?int $poktanId = null): array
+    public static function anggotaPoktan(?int $poktanId = null, bool $enrich = true): array
     {
         $kk = AsalWakilPoktan::KepalaKeluarga->value;
         $anggotaKeluarga = AsalWakilPoktan::AnggotaKeluarga->value;
@@ -3844,6 +3844,12 @@ class DummyData
             ['id_anggota_poktan' => 6, 'poktan_id' => 4, 'poktan' => 'POKTAN HARAPAN BARU', 'transmigran_id' => 7, 'asal_wakil' => $kk, 'nama_wakil' => null, 'nik_wakil' => null, 'telepon_wakil' => null, 'hubungan_dengan_kk' => null, 'jabatan' => 'Anggota', 'tanggal_masuk' => '2019-01-10', 'tanggal_keluar' => null, 'status' => 'Aktif', 'alasan_keluar' => null, 'keterangan' => null],
             ['id_anggota_poktan' => 7, 'poktan_id' => 4, 'poktan' => 'POKTAN HARAPAN BARU', 'transmigran_id' => 6, 'asal_wakil' => $kk, 'nama_wakil' => null, 'nik_wakil' => null, 'telepon_wakil' => null, 'hubungan_dengan_kk' => null, 'jabatan' => 'Bendahara', 'tanggal_masuk' => '2019-01-10', 'tanggal_keluar' => null, 'status' => 'Tidak Aktif', 'alasan_keluar' => null, 'keterangan' => null],
         ];
+
+        if (! $enrich) {
+            return $poktanId === null
+                ? $data
+                : array_values(array_filter($data, fn ($baris) => $baris['poktan_id'] === $poktanId));
+        }
 
         // Nama, NIK, telepon, dan rekap lahan disiapkan di sini agar view tidak
         // mengulang percabangan tiga jalur di setiap tempat yang menampilkannya.

@@ -21,7 +21,7 @@ return new class extends Migration
             $table->char('uuid', 36);
             $table->unsignedBigInteger('satuan_permukiman_id');
             $table->unsignedBigInteger('transmigran_id')->nullable();
-            $table->string('no_rumah', 50)->nullable();
+            $table->string('no_rumah', 50);
             $table->string('kondisi', 20);
             $table->string('status_hunian', 20);
             $table->text('alasan_tidak_dihuni')->nullable();
@@ -35,6 +35,8 @@ return new class extends Migration
 
             $table->unique('uuid', 'uq_rumah_uuid');
             $table->unique('transmigran_id', 'uq_rumah_transmigran');
+            $table->unique(['satuan_permukiman_id', 'no_rumah'], 'uq_rumah_sp_nomor');
+            $table->index(['transmigran_id', 'satuan_permukiman_id'], 'idx_rumah_transmigran_sp');
             $table->index('satuan_permukiman_id', 'idx_rumah_sp');
             $table->index('status_hunian', 'idx_rumah_status_hunian');
             $table->index('kondisi', 'idx_rumah_kondisi');

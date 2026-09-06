@@ -73,6 +73,7 @@ class TransmigranController extends Controller
         // membocorkan banyaknya data SP lain yang tak berhak dilihat.
         $baris = Transmigran::query()
             ->with(['satuanPermukiman', 'anggotaKeluarga'])
+            ->withExists(['keanggotaanPoktan as keanggotaan_poktan_aktif_exists' => fn ($q) => $q->where('status', StatusKeaktifanAnggota::Aktif->value)])
             ->when($cari !== '', fn ($q) => $q->where(fn ($sub) => $sub
                 ->where('nama_kepala_keluarga', 'like', "%{$cari}%")
                 ->orWhere('nik', 'like', "%{$cari}%")
@@ -591,7 +592,7 @@ class TransmigranController extends Controller
             'tahun_kedatangan' => (int) $t->tahun_kedatangan,
             'status_tinggal' => $t->status_tinggal->value,
             'tahun_keluar' => $t->tahun_keluar === null ? null : (int) $t->tahun_keluar,
-            'status_anggota_poktan' => $t->status_anggota_poktan->value,
+            'status_anggota_poktan' => $t->status_anggota_poktan,
             'status_sertifikat' => $t->status_sertifikat->value,
             'telepon' => $t->telepon,
             'keterangan' => $t->keterangan,

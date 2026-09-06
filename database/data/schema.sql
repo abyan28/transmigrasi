@@ -923,7 +923,7 @@ CREATE TABLE `penanganan_pengaduan_berkas` (
 
 -- 5.1 transmigran ---------------------------------------
 -- Satu baris = satu kepala keluarga / KK. usia & jumlah_anggota_keluarga TIDAK
--- disimpan (diturunkan). status_anggota_poktan = penanda cepat (kebenaran di anggota_poktan).
+-- disimpan (diturunkan). Status anggota Poktan diturunkan dari anggota_poktan Aktif.
 -- daerah_asal_kabupaten_id (2026-09-02): semula VARCHAR(255) teks bebas tanpa indeks,
 -- padahal menjadi salah satu dari enam dasar rekap kependudukan (rules.md 10a.4a).
 -- Teks bebas memecah satu kabupaten menjadi beberapa baris rekap karena beda ejaan,
@@ -954,7 +954,6 @@ CREATE TABLE `transmigran` (
   -- SEBELUM kolom ini ada tetap tak terlacak -- itu keterbatasan yang disadari,
   -- bukan cacat.
   `tahun_keluar`               YEAR NULL,
-  `status_anggota_poktan`      ENUM('Ya','Tidak') NOT NULL,
   -- Sertifikat (SHM) meliputi SELURUH lahan satu KK, pekarangan maupun usaha,
   -- sehingga statusnya melekat di sini dan bukan pada tiap bidang.
   -- 'Belum Didata' memisahkan keluarga yang dipastikan belum bersertifikat dari
@@ -1033,7 +1032,7 @@ CREATE TABLE `rumah` (
   `uuid`                 CHAR(36) NOT NULL,
   `satuan_permukiman_id` BIGINT UNSIGNED NOT NULL,
   `transmigran_id`       BIGINT UNSIGNED NULL,
-  `no_rumah`             VARCHAR(50) NULL,
+  `no_rumah`             VARCHAR(50) NOT NULL,
   `kondisi`              VARCHAR(20) NOT NULL,        -- REF(jenis=kondisi_rumah): Tidak Rusak / Rusak Ringan / Rusak Berat
   `status_hunian`        VARCHAR(20) NOT NULL,        -- REF(jenis=status_hunian): Dihuni / Tidak Dihuni
   `alasan_tidak_dihuni`  TEXT NULL,                   -- wajib bila status_hunian = Tidak Dihuni
@@ -1048,6 +1047,8 @@ CREATE TABLE `rumah` (
   PRIMARY KEY (`id_rumah`),
   UNIQUE KEY `uq_rumah_uuid` (`uuid`),
   UNIQUE KEY `uq_rumah_transmigran` (`transmigran_id`),
+  UNIQUE KEY `uq_rumah_sp_nomor` (`satuan_permukiman_id`,`no_rumah`),
+  KEY `idx_rumah_transmigran_sp` (`transmigran_id`,`satuan_permukiman_id`),
   KEY `idx_rumah_sp` (`satuan_permukiman_id`),
   KEY `idx_rumah_status_hunian` (`status_hunian`),
   KEY `idx_rumah_kondisi` (`kondisi`),
@@ -1057,14 +1058,38 @@ CREATE TABLE `rumah` (
     FOREIGN KEY (`transmigran_id`) REFERENCES `transmigran` (`id_transmigran`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TRIGGER `trg_rumah_sp_penghuni_insert` BEFORE INSERT ON `rumah`
+FOR EACH ROW
+BEGIN
+  IF NEW.`transmigran_id` IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM `transmigran`
+    WHERE `id_transmigran` = NEW.`transmigran_id`
+      AND `satuan_permukiman_id` = NEW.`satuan_permukiman_id`
+  ) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'SP rumah harus sama dengan SP penghuni';
+  END IF;
+END;
+
+CREATE TRIGGER `trg_rumah_sp_penghuni_update` BEFORE UPDATE ON `rumah`
+FOR EACH ROW
+BEGIN
+  IF NEW.`transmigran_id` IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM `transmigran`
+    WHERE `id_transmigran` = NEW.`transmigran_id`
+      AND `satuan_permukiman_id` = NEW.`satuan_permukiman_id`
+  ) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'SP rumah harus sama dengan SP penghuni';
+  END IF;
+END;
+
 -- 5.4 riwayat_penghunian --------------------
 -- Jejak pergantian penghuni; append-only. Tabel riwayat: tanpa soft delete.
 CREATE TABLE `riwayat_penghunian` (
   `id_riwayat_penghunian` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `rumah_id`              BIGINT UNSIGNED NOT NULL,
   `transmigran_id`        BIGINT UNSIGNED NOT NULL,
-  `tanggal_masuk`         DATE NOT NULL,
-  `tanggal_keluar`        DATE NULL,                  -- NULL = masih menghuni
+  `tahun_mulai_menghuni`  SMALLINT UNSIGNED NOT NULL,
+  `tahun_selesai_menghuni` SMALLINT UNSIGNED NULL,    -- NULL = masih menghuni
   `alasan_keluar`         TEXT NULL,
   `keterangan`            TEXT NULL,
   `created_at`            TIMESTAMP NULL DEFAULT NULL,
@@ -1072,8 +1097,8 @@ CREATE TABLE `riwayat_penghunian` (
   PRIMARY KEY (`id_riwayat_penghunian`),
   KEY `idx_riwayat_penghunian_rumah` (`rumah_id`),
   KEY `idx_riwayat_penghunian_transmigran` (`transmigran_id`),
-  KEY `idx_riwayat_penghunian_masuk` (`tanggal_masuk`),
-  KEY `idx_riwayat_penghunian_keluar` (`tanggal_keluar`),
+  KEY `idx_riwayat_penghunian_mulai` (`tahun_mulai_menghuni`),
+  KEY `idx_riwayat_penghunian_selesai` (`tahun_selesai_menghuni`),
   CONSTRAINT `fk_riwayat_penghunian_rumah`
     FOREIGN KEY (`rumah_id`) REFERENCES `rumah` (`id_rumah`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_riwayat_penghunian_transmigran`
@@ -1252,6 +1277,7 @@ CREATE TABLE `alsintan_distribusi` (
 -- transmigran_id DICABUT (penerima selalu poktan).
 CREATE TABLE `saprotan` (
   `id_saprotan`      BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `kode_saprotan`    VARCHAR(50) NOT NULL,
   `satuan_id`        BIGINT UNSIGNED NOT NULL,          -- satuan jumlah
   `komoditas_id`     BIGINT UNSIGNED NULL,              -- wajib bila jenis = Benih
   `jenis`            ENUM('Benih','Pupuk','Pestisida','Mulsa','Lainnya') NOT NULL,
@@ -1268,6 +1294,7 @@ CREATE TABLE `saprotan` (
   `updated_at`       TIMESTAMP NULL DEFAULT NULL,
   `deleted_at`       TIMESTAMP NULL DEFAULT NULL,
   PRIMARY KEY (`id_saprotan`),
+  UNIQUE KEY `uq_saprotan_kode` (`kode_saprotan`),
   KEY `idx_saprotan_satuan` (`satuan_id`),
   KEY `idx_saprotan_komoditas` (`komoditas_id`),
   KEY `idx_saprotan_jenis` (`jenis`),
@@ -1322,7 +1349,7 @@ CREATE TABLE `lahan` (
   `transmigran_id`       BIGINT UNSIGNED NOT NULL,
   `satuan_permukiman_id` BIGINT UNSIGNED NOT NULL,
   `poktan_id`            BIGINT UNSIGNED NULL,           -- poktan pengelola bila ada
-  `kode_lahan`           VARCHAR(50) NULL,
+  `kode_lahan`           VARCHAR(50) NOT NULL,
   -- SATU BARIS = SATU KELUARGA (2026-09-02, Putaran 15). Sebelumnya satu baris
   -- adalah satu BIDANG ber-`peruntukan_lahan`, sehingga keluarga dengan
   -- pekarangan dan lahan usaha menempati dua baris. Disatukan sebab jumlahnya
@@ -1391,6 +1418,7 @@ CREATE TABLE `komoditas_poktan` (
 -- Constraint UNIQUE (poktan_id, komoditas_id, periode_tanam) DICABUT 2026-09-01.
 CREATE TABLE `penanaman` (
   `id_penanaman`            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `kode_penanaman`          VARCHAR(50) NOT NULL,
   `poktan_id`               BIGINT UNSIGNED NOT NULL,
   `komoditas_id`            BIGINT UNSIGNED NOT NULL,
   `saprotan_distribusi_id`  BIGINT UNSIGNED NOT NULL,   -- jatah distribusi benih yang dipakai
@@ -1402,6 +1430,7 @@ CREATE TABLE `penanaman` (
   `updated_at`              TIMESTAMP NULL DEFAULT NULL,
   `deleted_at`              TIMESTAMP NULL DEFAULT NULL,
   PRIMARY KEY (`id_penanaman`),
+  UNIQUE KEY `uq_penanaman_kode` (`kode_penanaman`),
   KEY `idx_penanaman_poktan` (`poktan_id`),
   KEY `idx_penanaman_komoditas` (`komoditas_id`),
   KEY `idx_penanaman_periode` (`periode_tanam`),
@@ -1435,20 +1464,27 @@ CREATE TABLE `hasil_panen` (
   `produksi`          DECIMAL(12,3) NOT NULL,            -- disimpan apa adanya, tanpa konversi
   `harga_jual`        DECIMAL(15,2) NULL,                -- rupiah per satuan baku
   `keterangan`        TEXT NULL,
+  `status`            ENUM('Aktif','Dibatalkan') NOT NULL DEFAULT 'Aktif',
+  `dibatalkan_pada`   TIMESTAMP NULL DEFAULT NULL,
+  `dibatalkan_oleh`   BIGINT UNSIGNED NULL,
+  `alasan_pembatalan` TEXT NULL,
   `created_at`        TIMESTAMP NULL DEFAULT NULL,
   `updated_at`        TIMESTAMP NULL DEFAULT NULL,
   `deleted_at`        TIMESTAMP NULL DEFAULT NULL,
-  `penanaman_aktif_id` BIGINT UNSIGNED GENERATED ALWAYS AS (CASE WHEN `deleted_at` IS NULL THEN `penanaman_id` END) VIRTUAL,
+  `penanaman_aktif_id` BIGINT UNSIGNED GENERATED ALWAYS AS (CASE WHEN `status` = 'Aktif' AND `deleted_at` IS NULL THEN `penanaman_id` END) VIRTUAL,
   PRIMARY KEY (`id_hasil_panen`),
   UNIQUE KEY `uq_hasil_panen_uuid` (`uuid`),
   UNIQUE KEY `uq_hasil_panen_penanaman_aktif` (`penanaman_aktif_id`),
   KEY `idx_hasil_panen_penanaman` (`penanaman_id`),
   KEY `idx_hasil_panen_periode` (`periode_panen`),
   KEY `idx_hasil_panen_satuan` (`satuan_id`),
+  KEY `idx_hasil_panen_pembatal` (`dibatalkan_oleh`),
   CONSTRAINT `fk_hasil_panen_penanaman`
     FOREIGN KEY (`penanaman_id`) REFERENCES `penanaman` (`id_penanaman`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_hasil_panen_satuan`
-    FOREIGN KEY (`satuan_id`) REFERENCES `satuan` (`id_satuan`) ON DELETE RESTRICT ON UPDATE CASCADE
+    FOREIGN KEY (`satuan_id`) REFERENCES `satuan` (`id_satuan`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `fk_hasil_panen_pembatal`
+    FOREIGN KEY (`dibatalkan_oleh`) REFERENCES `user` (`id_user`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 

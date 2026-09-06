@@ -31,7 +31,6 @@ class PenyajianPoktan
     public static function daftar(): array
     {
         return Poktan::query()
-            ->withoutGlobalScopes()
             ->with(['satuanPermukiman', 'ketuaTransmigran', 'ketuaAnggotaKeluarga', 'berkas', 'anggota'])
             ->orderBy('id_poktan')
             ->get()
@@ -47,7 +46,6 @@ class PenyajianPoktan
     public static function daftarAnggota(?int $poktanId = null): array
     {
         return AnggotaPoktan::query()
-            ->withoutGlobalScopes()
             ->with(['transmigran', 'anggotaKeluarga', 'poktan'])
             ->when($poktanId !== null, fn ($q) => $q->where('poktan_id', $poktanId))
             ->orderBy('id_anggota_poktan')
@@ -96,7 +94,7 @@ class PenyajianPoktan
     {
         $identitas = self::identitasWakilAnggota($a);
         $lahan = RekapLahan::keluarga(
-            $a->transmigran_id === null ? null : Lahan::withoutGlobalScopes()->where('transmigran_id', $a->transmigran_id)->first(),
+            $a->transmigran_id === null ? null : Lahan::query()->where('transmigran_id', $a->transmigran_id)->first(),
         );
 
         return [

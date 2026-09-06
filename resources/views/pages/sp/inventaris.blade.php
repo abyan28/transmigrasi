@@ -142,6 +142,5 @@
 
     {{-- Impor massal, lihat komponennya untuk alur tiga langkah --}}
     <x-sim.modal-impor nama="imporInventaris" judul="Impor Inventaris SP"
-        entitas="inventaris-sp"
-        :kolom-wajib="['satuan_permukiman', 'nama_barang', 'jumlah', 'satuan', 'kondisi']" />
+        entitas="inventaris-sp" />
 @endsection

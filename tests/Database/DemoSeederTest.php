@@ -53,6 +53,8 @@ it('menanam data demo besar tanpa mengubah baris contoh awal', function () {
     expect(DB::table('transmigran')->count())->toBe(90)
         ->and(DB::table('anggota_keluarga')->count())->toBe(270)
         ->and(DB::table('rumah')->count())->toBe(90)
+        ->and(DB::table('riwayat_penghunian')->whereNull('tahun_selesai_menghuni')->count())
+        ->toBe(DB::table('rumah')->whereNotNull('transmigran_id')->count())
         ->and(DB::table('lahan')->count())->toBe(85)
         ->and(DB::table('poktan')->count())->toBe(30)
         ->and(DB::table('alsintan')->count())->toBe(35)

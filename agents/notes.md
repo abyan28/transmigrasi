@@ -1,6 +1,16 @@
 # notes.md
 ## Catatan Teknis dan Temuan
 
+- [DONE 2026-09-06] **Task 10.4b — Fondasi Rumah: riwayat hunian dipresisikan menjadi tahun.** `riwayat_penghunian` kini menyimpan `tahun_mulai_menghuni` dan `tahun_selesai_menghuni`; tanggal lama dimigrasikan dengan mengambil tahunnya tanpa membuat tanggal baru palsu. Form tambah/ubah Rumah, detail riwayat, model, seeder contoh/demo, schema SQL, kamus data, ERD, aturan, dan tes telah diselaraskan. Verifikasi serial: RumahTest + Domain5KependudukanTest + DemoSeederTest **33 PASS / 169 assertions**, `sim:banding-skema --lengkap` NOL SELISIH, Blade cache dan Pint lulus.
+
+- [DONE 2026-09-06] **Task 10.4b — Fondasi identitas stabil dan integritas impor.** `no_rumah` wajib+unik per SP; trigger DB menjaga SP Rumah sama dengan penghuni sambil mempertahankan `ON DELETE SET NULL`. `kode_lahan`, `kode_saprotan`, dan `kode_penanaman` wajib+unik serta dikunci setelah pembuatan; Lahan wajib memiliki minimal satu bidang. Seeder, form, penyajian, migration fresh/upgrade, schema SQL, dan tes telah diselaraskan. Verifikasi serial: **128 PASS / 536 assertions**, `sim:banding-skema --lengkap` NOL SELISIH, Pint **357 file**, dan build Vite lulus.
+
+- [DONE 2026-09-06] **Task 10.4b — Hasil Panen memakai Batalkan + Ganti.** Aksi lama tidak lagi soft-delete atau melepas berkas: status menjadi `Dibatalkan` dengan alasan, petugas, dan waktu; catatan tetap terlihat pada rincian/audit, keluar dari daftar dan seluruh jalur rekap aktif, lalu slot panen aktif dibuka untuk pengganti. Gate DB sekarang berbasis `status = Aktif`; UUID tetap saat ubah. Verifikasi serial: **52 PASS / 548 assertions**, Pint **358 file**, dan Blade cache lulus.
+
+- [DONE 2026-09-06] **Task 10.4b — Sumber kebenaran ganda keanggotaan Poktan dicabut.** Kolom `transmigran.status_anggota_poktan` dan enum khususnya dihapus; nilai Ya/Tidak kini accessor turunan dari `anggota_poktan` berstatus Aktif. Daftar memakai `withExists` agar tanpa N+1; laporan, form/detail, seeder, helper uji, dan DummyData membaca makna yang sama. Verifikasi serial: **47 PASS / 212 assertions**, SpRuntime **3 PASS / 39 assertions**, DummyData **75 PASS / 1608 assertions**, Pint **358 file**, dan skema NOL SELISIH.
+
+- [DONE 2026-09-06] **Task 10.4b — Enam impor berantai aktif end-to-end.** Rumah, Lahan, Poktan+anggota, Saprotan+distribusi, Penanaman, dan Hasil Panen memakai parser CSV/XLSX bersama, identitas stabil, transaksi per baris/kelompok, idempotensi dibuat-dilewati-gagal, cakupan SP, dan operasi domain yang juga dipakai form. Template memakai petunjuk/kolom wajib dari `SkemaImpor` serta izin lihat+tambah dinamis; laporan dokumen memakai izin slug dan penyaji menghormati cakupan pengguna/panen Aktif. Verifikasi akhir: Feature **766 PASS / 7.592 assertions**, Database **604 PASS / 2.742 assertions**, Pint **364 file**, Blade cache, schema NOL SELISIH, build Vite, dan `git diff --check` lulus.
+
 Dokumen ini berisi catatan temuan, keputusan, dan hal yang perlu ditindaklanjuti selama penyusunan dokumen dan pengembangan sistem.
 
 > **Status per 2026-08-11:** seluruh koreksi pada bagian 1 sudah **diterapkan** pada skema final di `erd.md` dan `data-dictionary.md`. Bagian 1 dipertahankan sebagai jejak alasan perubahan. Temuan yang muncul belakangan dicatat pada bagian 1a.
@@ -3764,7 +3774,7 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
   * Template XLSX punya sheet Data kosong, petunjuk/contoh terpisah, Referensi tersembunyi, format teks untuk NIK/KK/telepon, format tanggal, dan dropdown pilihan. Template CSV alternatif tidak lagi memuat baris contoh yang dapat tersimpan sebagai data.
   * Tiap baris impor atomik tetapi berkas tetap partial-success: baris sah disimpan, baris gagal dibatalkan dan dilaporkan. Rincian galat dibatasi agar respons tidak meledak. Izin impor menuntut `lihat+tambah`, dan cakupan SP diperiksa pada setiap baris.
   * UI tidak lagi berpura-pura melakukan preview atau menampilkan hasil palsu. Tombol dan status menyatakan "Impor"/"Hasil impor" sesuai perilaku nyata.
-  * **Utang eksplisit:** 8 entitas mandiri aktif; enam entitas berantai (`rumah`, `lahan`, `poktan`, `saprotan`, `penanaman`, `hasil-panen`) tetap dinonaktifkan jujur sampai pencarian relasi dan validasi bersyaratnya diimplementasikan. XLS lama sengaja tidak didukung.
+  * **Ditutup 2026-09-06:** enam entitas berantai (`rumah`, `lahan`, `poktan`, `saprotan`, `penanaman`, `hasil-panen`) aktif dengan pencarian relasi, validasi bersyarat, transaksi, dan idempotensi. XLS lama tetap sengaja tidak didukung.
 
 - [done 2026-09-06] **Verifikasi akhir Putaran 16.**
   * Feature: **763 PASS / 7.583 assertions**. Database MariaDB: **574 PASS / 2.588 assertions**.

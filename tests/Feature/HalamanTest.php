@@ -4205,13 +4205,14 @@ it('memandu impor lewat tiga langkah beserta kolom wajibnya', function () {
         ->and($isi)->toContain('nama_lengkap');
 });
 
-it('menonaktifkan impor entitas berantai tanpa hasil palsu', function () {
-    $isi = $this->get('/poktan')->assertSee('Fitur belum aktif.')->getContent();
+it('mengaktifkan impor entitas berantai tanpa hasil palsu', function () {
+    $isi = $this->get('/poktan')->assertDontSee('Fitur belum aktif.')->getContent();
 
     expect($isi)->toContain("aktif ? 'Saya Sudah Punya Berkasnya' : 'Impor Belum Aktif'")
         ->toContain(':disabled="!aktif || !berkas || memproses"')
         ->not->toContain('this.disimpan = 18')
-        ->not->toContain('Data serupa sudah terdaftar sebelumnya');
+        ->not->toContain('Data serupa sudah terdaftar sebelumnya')
+        ->toContain('Urutan impor 3 dari 6');
 });
 
 it('menampilkan format impor dan tindakan simpan yang sebenarnya', function () {
@@ -5355,6 +5356,19 @@ it('menyajikan tiap laporan pada rute dokumen polos yang isinya sama', function 
             ->toBe(substr_count($berbingkai, $penanda), "jumlah {$penanda} berbeda pada {$slug}");
     }
 })->with(['hasil-panen', 'monografi-sp', 'alsintan', 'saprotan', 'indikator-kawasan', 'poktan', 'transmigran']);
+
+it('memakai izin laporan tujuan pada rute dokumen polos', function () {
+    $role = Role::factory()->create();
+    $izin = Permission::factory()->create([
+        'nama' => 'transmigran.lihat', 'modul' => 'transmigran', 'aksi' => 'lihat',
+    ]);
+    $role->permissions()->attach($izin);
+    $pengguna = User::factory()->create(['role_id' => $role->id_role]);
+    $this->actingAs($pengguna);
+
+    $this->get(route('laporan.dokumen', 'transmigran'))->assertOk();
+    $this->get(route('laporan.dokumen', 'poktan'))->assertForbidden();
+});
 
 it('menurunkan orientasi kertas dari jumlah kolom yang sebenarnya', function (string $slug) {
     // Jumlah kolom pada meta() adalah angka yang ditulis tangan; di sini ia

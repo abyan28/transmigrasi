@@ -21,15 +21,15 @@ class RiwayatPenghunian extends Model
     protected $primaryKey = 'id_riwayat_penghunian';
 
     protected $fillable = [
-        'rumah_id', 'transmigran_id', 'tanggal_masuk', 'tanggal_keluar',
+        'rumah_id', 'transmigran_id', 'tahun_mulai_menghuni', 'tahun_selesai_menghuni',
         'alasan_keluar', 'keterangan',
     ];
 
     protected function casts(): array
     {
         return [
-            'tanggal_masuk' => 'date',
-            'tanggal_keluar' => 'date',
+            'tahun_mulai_menghuni' => 'integer',
+            'tahun_selesai_menghuni' => 'integer',
         ];
     }
 

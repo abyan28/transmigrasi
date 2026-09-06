@@ -131,7 +131,7 @@ class LaporanData
     public static function meta(?string $slug = null): array
     {
         $jumlahSp = Schema::hasTable('satuan_permukiman')
-            ? SatuanPermukiman::withoutGlobalScopes()->count()
+            ? SatuanPermukiman::query()->terlihatOlehPengguna()->count()
             : 0;
 
         $semua = [
@@ -219,13 +219,7 @@ class LaporanData
      */
     private static function petaSp(): array
     {
-        static $peta = null;
-
-        if ($peta !== null) {
-            return $peta;
-        }
-
-        $peta = SatuanPermukiman::withoutGlobalScopes()
+        return SatuanPermukiman::query()->terlihatOlehPengguna()
             ->with('desa.kecamatan')
             ->get()
             ->mapWithKeys(fn (SatuanPermukiman $s): array => [
@@ -236,8 +230,6 @@ class LaporanData
                 ],
             ])
             ->all();
-
-        return $peta;
     }
 
     private static function kawasan(): array
@@ -271,11 +263,11 @@ class LaporanData
     {
         $kkPerSp = collect(RekapDashboard::perSp())->pluck('jumlah_kk', 'satuan_permukiman_id');
 
-        return SatuanPermukiman::withoutGlobalScopes()
+        return SatuanPermukiman::query()->terlihatOlehPengguna()
             ->with([
                 'desa.kecamatan.kabupaten.provinsi',
                 'kawasan.kabupaten.provinsi',
-                'ruteAksesibilitas' => fn ($q) => $q->withoutGlobalScopes()->orderBy('id_rute_aksesibilitas_sp'),
+                'ruteAksesibilitas' => fn ($q) => $q->orderBy('id_rute_aksesibilitas_sp'),
             ])
             ->orderBy('id_satuan_permukiman')
             ->get()
@@ -314,12 +306,6 @@ class LaporanData
      */
     private static function petaPoktan(): array
     {
-        static $peta = null;
-
-        if ($peta !== null) {
-            return $peta;
-        }
-
         $sp = self::petaSp();
         $peta = [];
 
@@ -340,25 +326,19 @@ class LaporanData
     /** @return array<int, array<string, mixed>> */
     private static function petaPenanaman(): array
     {
-        static $peta = null;
-
-        return $peta ??= collect(PenyajianPanen::penanaman())->keyBy('id_penanaman')->all();
+        return collect(PenyajianPanen::penanaman())->keyBy('id_penanaman')->all();
     }
 
     /** @return array<int, array<string, mixed>> */
     private static function petaSaprotan(): array
     {
-        static $peta = null;
-
-        return $peta ??= collect(PenyajianSaprotan::daftar())->keyBy('id_saprotan')->all();
+        return collect(PenyajianSaprotan::daftar())->keyBy('id_saprotan')->all();
     }
 
     /** @return array<int, array<string, mixed>> */
     private static function petaSaprotanDistribusi(): array
     {
-        static $peta = null;
-
-        return $peta ??= collect(PenyajianSaprotan::distribusi())->keyBy('id_saprotan_distribusi')->all();
+        return collect(PenyajianSaprotan::distribusi())->keyBy('id_saprotan_distribusi')->all();
     }
 
     /**
@@ -369,9 +349,7 @@ class LaporanData
      */
     private static function luasTotalPoktan(): array
     {
-        static $peta = null;
-
-        return $peta ??= Poktan::withoutGlobalScopes()
+        return Poktan::query()
             ->with('anggota')
             ->get()
             ->mapWithKeys(fn (Poktan $p): array => [
@@ -730,12 +708,12 @@ class LaporanData
     public static function keadaanPendudukTahun(int $id, int $tahun): array
     {
         $akhirTahun = Carbon::create($tahun, 12, 31)->endOfDay();
-        $kepala = Transmigran::withoutGlobalScopes()
+        $kepala = Transmigran::query()
             ->where('satuan_permukiman_id', $id)
             ->where('tahun_kedatangan', '<=', $tahun)
             ->where(fn ($q) => $q->whereNull('tahun_keluar')->orWhere('tahun_keluar', '>', $tahun))
             ->get(['id_transmigran', 'jenis_kelamin']);
-        $anggota = AnggotaKeluarga::withoutGlobalScopes()
+        $anggota = AnggotaKeluarga::query()
             ->whereIn('transmigran_id', $kepala->pluck('id_transmigran'))
             ->whereDate('tanggal_lahir', '<=', $akhirTahun)
             ->where(fn ($q) => $q
@@ -771,7 +749,7 @@ class LaporanData
         $id = $s['id_satuan_permukiman'];
         $nama = $s['nama'];
         $akhirTahun = Carbon::create($tahun, 12, 31)->endOfDay();
-        $transmigranSp = Transmigran::withoutGlobalScopes()
+        $transmigranSp = Transmigran::query()
             ->with('daerahAsal')
             ->where('satuan_permukiman_id', $id)
             ->orderBy('id_transmigran')
@@ -787,7 +765,7 @@ class LaporanData
                 'status_sertifikat' => $t->status_sertifikat?->value,
             ])->all();
         $idTransmigran = array_column($transmigranSp, 'id_transmigran');
-        $anggotaSp = AnggotaKeluarga::withoutGlobalScopes()
+        $anggotaSp = AnggotaKeluarga::query()
             ->whereIn('transmigran_id', $idTransmigran)
             ->orderBy('id_anggota_keluarga')
             ->get()
@@ -931,7 +909,7 @@ class LaporanData
         $laki = count(array_filter($keluarKeluarga, fn (array $t): bool => $t['jenis_kelamin'] === JenisKelamin::LakiLaki->value));
         $perempuan = count(array_filter($keluarKeluarga, fn (array $t): bool => $t['jenis_kelamin'] === JenisKelamin::Perempuan->value));
         $mutasi[] = ['Meninggalkan lokasi (keluarga)', $laki, $perempuan, count($keluarKeluarga)];
-        $riwayatMeninggal = $transmigranSp === [] ? collect() : RiwayatKepalaKeluarga::withoutGlobalScopes()
+        $riwayatMeninggal = $transmigranSp === [] ? collect() : RiwayatKepalaKeluarga::query()
             ->whereIn('transmigran_id', $idTransmigran)
             ->where('alasan', AlasanPergantianKK::Meninggal->value)
             ->whereDate('tanggal_pergantian', '<=', $akhirTahun)
@@ -977,7 +955,7 @@ class LaporanData
         ];
 
         // --- Sosial Ekonomi ----------------------------------------------
-        $lahanSp = Lahan::withoutGlobalScopes()
+        $lahanSp = Lahan::query()
             ->where('satuan_permukiman_id', $id)
             ->get(['luas_pekarangan', 'luas_usaha'])
             ->map(fn (Lahan $l): array => [
@@ -1067,7 +1045,7 @@ class LaporanData
 
         // Infrastruktur yang MELAYANI SP ini, termasuk aset bersama yang
         // berpangkal di SP lain (Putaran 7).
-        $barisInfra = Infrastruktur::withoutGlobalScopes()
+        $barisInfra = Infrastruktur::query()
             ->whereHas('cakupan', fn ($q) => $q->where('satuan_permukiman.id_satuan_permukiman', $id))
             ->orderBy('id_infrastruktur')
             ->get()
@@ -1106,7 +1084,7 @@ class LaporanData
         // --- Sosial Budaya ---------------------------------------------
         // Fasilitas yang MELAYANI SP ini, termasuk yang berpangkal di SP lain
         // (Putaran 7): SMP Satu Atap, puskesmas pembantu, pasar desa.
-        $fasilitasSp = FasilitasSp::withoutGlobalScopes()
+        $fasilitasSp = FasilitasSp::query()
             ->whereHas('cakupan', fn ($q) => $q->where('satuan_permukiman.id_satuan_permukiman', $id))
             ->orderBy('id_fasilitas_sp')
             ->get()
@@ -1144,7 +1122,7 @@ class LaporanData
                 }
             }
         }
-        $inventarisSp = InventarisSp::withoutGlobalScopes()
+        $inventarisSp = InventarisSp::query()
             ->where('satuan_permukiman_id', $id)
             ->orderBy('id_inventaris_sp')
             ->get()
@@ -1205,7 +1183,7 @@ class LaporanData
         $rekap = collect(RekapDashboard::perSp())->keyBy('satuan_permukiman_id');
         $kawasan = self::kawasan();
         $daftarTahunLaporan = RekapDashboard::daftarTahunLaporan();
-        $poktanPerSp = Poktan::withoutGlobalScopes()
+        $poktanPerSp = Poktan::query()
             ->selectRaw('satuan_permukiman_id, count(*) as jumlah')
             ->groupBy('satuan_permukiman_id')
             ->pluck('jumlah', 'satuan_permukiman_id');
@@ -1415,20 +1393,18 @@ class LaporanData
      */
     public static function transmigran(): array
     {
-        // Laporan bersifat kawasan penuh (lihat `meta()['cakupan']`), sehingga global scope
-        // cakupan data sengaja dilewati -- penyaringan per SP dikerjakan bilah
-        // filter di sisi peramban.
         $namaSp = self::namaSpPerId();
 
-        $kkPerId = Transmigran::withoutGlobalScopes()
+        $kkPerId = Transmigran::query()
             ->pluck('nama_kepala_keluarga', 'id_transmigran');
 
-        $sertifikatPerKk = Transmigran::withoutGlobalScopes()
+        $sertifikatPerKk = Transmigran::query()
             ->pluck('status_sertifikat', 'id_transmigran')
             ->map(fn ($s) => $s?->value);
 
-        $transmigran = Transmigran::withoutGlobalScopes()
+        $transmigran = Transmigran::query()
             ->withCount(['anggotaKeluarga as anggota_aktif_count' => fn ($q) => $q->where('status', StatusAnggotaKeluarga::Aktif->value)])
+            ->withExists(['keanggotaanPoktan as keanggotaan_poktan_aktif_exists' => fn ($q) => $q->where('status', 'Aktif')])
             ->orderBy('id_transmigran')
             ->get()
             ->map(fn (Transmigran $t): array => [
@@ -1447,7 +1423,7 @@ class LaporanData
                 'daerah_asal_kabupaten_id' => $t->daerah_asal_kabupaten_id,
                 'tahun_kedatangan' => $t->tahun_kedatangan,
                 'status_tinggal' => $t->status_tinggal?->value,
-                'status_anggota_poktan' => $t->status_anggota_poktan?->value,
+                'status_anggota_poktan' => $t->status_anggota_poktan,
                 'status_sertifikat' => $t->status_sertifikat?->value,
                 'telepon' => $t->telepon,
                 'satuan_permukiman' => $namaSp[$t->satuan_permukiman_id] ?? '-',
@@ -1455,7 +1431,7 @@ class LaporanData
             ])
             ->all();
 
-        $rumah = Rumah::withoutGlobalScopes()
+        $rumah = Rumah::query()
             ->orderBy('id_rumah')
             ->get()
             ->map(fn (Rumah $r): array => [
@@ -1475,7 +1451,7 @@ class LaporanData
             ])
             ->all();
 
-        $lahan = Lahan::withoutGlobalScopes()
+        $lahan = Lahan::query()
             ->orderBy('id_lahan')
             ->get()
             ->map(fn (Lahan $l): array => [
@@ -1507,7 +1483,7 @@ class LaporanData
      */
     private static function namaSpPerId(): Collection
     {
-        return SatuanPermukiman::withoutGlobalScopes()->pluck('nama', 'id_satuan_permukiman');
+        return SatuanPermukiman::query()->terlihatOlehPengguna()->pluck('nama', 'id_satuan_permukiman');
     }
 
     /**
@@ -1548,7 +1524,7 @@ class LaporanData
      */
     public static function filterLaporan(string $slug): array
     {
-        $daftarSp = SatuanPermukiman::withoutGlobalScopes()
+        $daftarSp = SatuanPermukiman::query()->terlihatOlehPengguna()
             ->orderBy('nama')
             ->get(['id_satuan_permukiman', 'nama'])
             ->map(fn (SatuanPermukiman $s): array => ['id' => $s->id_satuan_permukiman, 'nama' => $s->nama])

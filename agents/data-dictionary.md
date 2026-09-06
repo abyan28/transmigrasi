@@ -672,7 +672,6 @@ Data inti sistem, satu baris per **kepala keluarga**.
 | `daerah_asal_kabupaten_id` | `BIGINT UNSIGNED` | YA | FK `kabupaten` | Kabupaten/kota asal. **Diubah 2026-09-02** dari `VARCHAR(255)` teks bebas: ia salah satu dari enam dasar rekap kependudukan (`rules.md` 10a.4a), dan teks bebas memecah satu kabupaten menjadi beberapa baris rekap karena beda ejaan tanpa memerahkan apa pun. Nama kabupaten tidak unik nasional, sehingga isian menampilkan nama provinsi sebagai pembeda |
 | `tahun_kedatangan` | `YEAR` | TIDAK | IDX | Dasar grafik jumlah transmigran per tahun |
 | `status_tinggal` | `ENUM` | TIDAK | IDX | Lihat §11.8 |
-| `status_anggota_poktan` | `ENUM` | TIDAK | | Ya, Tidak |
 | `status_sertifikat` | `ENUM` | TIDAK | | Status sertifikat lahan keluarga: `Sudah`, `Belum`, `Belum Didata` (enum `StatusSertifikat`). **Ditambahkan 2026-09-02; isian di form Data Lahan sejak 2026-09-03** (bukan form transmigran - `rules.md` 7.6a). SHM meliputi SELURUH lahan satu KK sehingga statusnya melekat di sini, bukan pada tiap bidang. `Belum Didata` memisahkan keluarga yang dipastikan belum bersertifikat dari yang belum pernah ditanyakan; tanpa itu laporan ke dinas mencampur keduanya (`rules.md` 7.6c) |
 | `telepon` | `VARCHAR(20)` | YA | | |
 | ~~`dokumen_pendukung`~~ | | | | **DIPINDAH 2026-09-02** ke registry `berkas` lewat pivot atau FK langsung (`rules.md` 14a.8) |
@@ -681,7 +680,7 @@ Data inti sistem, satu baris per **kepala keluarga**.
 **Catatan:**
 - `pekerjaan_kepala_keluarga` sengaja berupa `VARCHAR` bukan `ENUM`, karena ragam pekerjaan di lapangan sulit dibatasi di muka. Konsistensi dijaga lewat daftar saran pada antarmuka.
 - `tahun_kedatangan` wajib diisi karena menjadi sumbu grafik dashboard PRD §7.8.
-- `status_anggota_poktan` disimpan sebagai penanda cepat; kebenarannya tetap mengacu ke `anggota_poktan`.
+- Status anggota Poktan tidak disimpan pada `transmigran`; nilai Ya/Tidak pada tampilan diturunkan dari keberadaan `anggota_poktan` berstatus Aktif.
 - **`jumlah_anggota_keluarga` dicabut sebagai kolom 2026-08-28 (Rombongan B).** Dahulu disimpan justru karena sistem tidak mendata anggota keluarga satu per satu (`erd.md` §7.4). Setelah tabel `anggota_keluarga` ada, menyimpannya membuat nilainya dapat berselisih dengan daftar anggota yang sebenarnya, kekeliruan yang sama dengan `poktan.jumlah_anggota`. Kini dihitung: 1 (kepala keluarga) + `COUNT(anggota_keluarga WHERE transmigran_id = ...)`. Seluruh pembaca lama tetap membacanya lewat nama yang sama, sebab `DummyData::transmigran()` menyisipkannya kembali sebagai turunan.
 - **`usia` tidak pernah menjadi kolom.** Dihitung dari `tanggal_lahir` dan bertambah sendiri tiap tahun. Menyimpannya berarti nilai yang basi tepat satu tahun setelah dicatat.
 - **`agama`** ditambahkan bersama pendataan anggota keluarga; berlaku pula bagi tiap baris `anggota_keluarga`.
@@ -747,8 +746,8 @@ Jejak pergantian penghuni. Tidak pernah ditimpa, hanya bertambah (`rules.md` §6
 | `id_riwayat_penghunian` | `BIGINT UNSIGNED AUTO_INCREMENT` | TIDAK | PK | |
 | `rumah_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | |
 | `transmigran_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | |
-| `tanggal_masuk` | `DATE` | TIDAK | IDX | Sumber grafik KK masuk per tahun |
-| `tanggal_keluar` | `DATE` | YA | IDX | `NULL` berarti masih menghuni; sumber grafik KK keluar |
+| `tahun_mulai_menghuni` | `SMALLINT UNSIGNED` | TIDAK | IDX | Tahun keluarga mulai menghuni rumah; tidak memalsukan tanggal lengkap yang tidak diketahui |
+| `tahun_selesai_menghuni` | `SMALLINT UNSIGNED` | YA | IDX | `NULL` berarti masih menghuni |
 | `alasan_keluar` | `TEXT` | YA | | Pindah, kembali ke daerah asal, meninggal |
 | `keterangan` | `TEXT` | YA | | |
 
@@ -1642,7 +1641,7 @@ Aturan berikut ditulis satu kali di `app/Support/ValidationRules.php` dan dipaka
 |---|---|---|
 | 1 | `alasan_tidak_dihuni` wajib bila `status_hunian` = Tidak Dihuni | `rumah` |
 | 2 | `tanggal_keluar` wajib bila `status` = Sudah Keluar | `anggota_poktan` |
-| 3 | `tanggal_keluar` tidak boleh mendahului `tanggal_masuk` | `anggota_poktan`, `riwayat_penghunian` |
+| 3 | Tanggal/tahun selesai tidak boleh mendahului tanggal/tahun mulai | `anggota_poktan`, `riwayat_penghunian` |
 | 4 | Σ `alsintan_distribusi.jumlah` ≤ `alsintan.jumlah_total`; tiap distribusi berpoktan (Putaran 7) | `alsintan`, `alsintan_distribusi` |
 | 5 | Σ `saprotan_distribusi.jumlah` ≤ `saprotan.jumlah_total`; tiap distribusi berpoktan (Putaran 7) | `saprotan`, `saprotan_distribusi` |
 | 6 | `luas_kering` dan `luas_basah` wajib bila peruntukannya lahan usaha, dan jumlah keduanya sama dengan `luas` | `lahan` |

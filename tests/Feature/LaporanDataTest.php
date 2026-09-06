@@ -1,10 +1,13 @@
 <?php
 
+use App\Enums\CakupanData;
 use App\Enums\JenisKelamin;
 use App\Enums\StatusAnggotaKeluarga;
 use App\Models\AnggotaKeluarga;
+use App\Models\Role;
 use App\Models\SatuanPermukiman;
 use App\Models\Transmigran;
+use App\Models\User;
 use App\Support\LaporanData;
 use App\Support\RekapDashboard;
 use Illuminate\Support\Carbon;
@@ -48,4 +51,20 @@ it('derives monograph age tables from recorded people', function () {
     expect($monografi['kependudukan']['strukturUmur']['total'][3])->toBe($orang->count())
         ->and(array_sum(array_column($monografi['kependudukan']['usiaSekolah']['baris'], 3)))->toBe($usiaSekolah)
         ->and($monografi['kependudukan']['mutasi']['catatan'])->toContain('tidak dapat diturunkan');
+});
+
+it('membatasi laporan transmigran dan opsi SP pada cakupan pengguna', function () {
+    $sp = SatuanPermukiman::query()->orderBy('id_satuan_permukiman')->get();
+    $role = Role::factory()->create(['cakupan_data' => CakupanData::PerSp->value]);
+    $pengguna = User::factory()->create(['role_id' => $role->id_role]);
+    $pengguna->semuaIzin = true;
+    $pengguna->satuanPermukiman()->attach($sp[0]->id_satuan_permukiman);
+    $this->actingAs($pengguna);
+
+    $laporan = LaporanData::transmigran();
+    $filter = LaporanData::filterLaporan('transmigran');
+
+    expect(array_values(array_unique(array_column($laporan['transmigran'], 'satuan_permukiman_id'))))
+        ->toBe([$sp[0]->id_satuan_permukiman])
+        ->and(array_column($filter['sp'], 'id'))->toBe([$sp[0]->id_satuan_permukiman]);
 });

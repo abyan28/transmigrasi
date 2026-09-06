@@ -131,6 +131,7 @@ class SpController extends Controller
             ->orderBy('id_poktan')
             ->get();
         $panen = HasilPanen::query()
+            ->where('status', 'Aktif')
             ->with(['satuan', 'penanaman.poktan.satuanPermukiman', 'penanaman.komoditas', 'berkas'])
             ->whereHas('penanaman.poktan', fn ($q) => $q->where('satuan_permukiman_id', $id))
             ->orderByDesc('periode_panen')

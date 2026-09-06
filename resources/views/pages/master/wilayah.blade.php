@@ -159,6 +159,5 @@
 
     {{-- Impor massal, lihat komponennya untuk alur tiga langkah --}}
     <x-sim.modal-impor nama="imporWilayah" judul="Impor Wilayah Administratif"
-        entitas="wilayah"
-        :kolom-wajib="['tingkat', 'nama', 'induk']" />
+        entitas="wilayah" />
 @endsection

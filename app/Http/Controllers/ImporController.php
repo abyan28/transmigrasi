@@ -8,12 +8,10 @@ use Illuminate\Http\Request;
 use Throwable;
 
 /**
- * Menerima unggahan XLSX/CSV dan memprosesnya langsung (Task 10.4, 1/2).
+ * Menerima unggahan XLSX/CSV dan memprosesnya langsung.
  *
  * Satu rute melayani seluruh entitas yang sudah aktif (`ImporEngine::
- * entitasAktif()`); entitas yang belum dikerjakan (enam entitas berantai)
- * membalas 404 -- modalnya di halaman itu tetap menampilkan spanduk
- * "Fitur belum aktif" (Task 10.6/10.4 sebelumnya).
+ * entitasAktif()`); entitas tanpa handler membalas 404.
  *
  * Kewenangan `{modul}.tambah` diperiksa DI SINI, bukan lewat middleware
  * `izin:` otomatis (`bootstrap/app.php`), sebab modulnya berupa parameter
@@ -33,6 +31,10 @@ class ImporController extends Controller
             403,
             'Anda tidak memiliki kewenangan membuka atau menambah data ini.',
         );
+
+        if ($entitas === 'poktan') {
+            abort_unless($request->user()?->punyaAksi('anggota_poktan', 'tambah') === true, 403);
+        }
 
         $request->validate([
             'berkas' => ['required', 'file', 'max:5120'],

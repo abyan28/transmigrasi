@@ -16,6 +16,7 @@ return new class extends Migration
     {
         Schema::create('saprotan', function (Blueprint $table) {
             $table->id('id_saprotan');
+            $table->string('kode_saprotan', 50);
             $table->unsignedBigInteger('satuan_id');
             $table->unsignedBigInteger('komoditas_id')->nullable();
             $table->enum('jenis', ['Benih', 'Pupuk', 'Pestisida', 'Mulsa', 'Lainnya']);
@@ -31,6 +32,7 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
+            $table->unique('kode_saprotan', 'uq_saprotan_kode');
             $table->index('satuan_id', 'idx_saprotan_satuan');
             $table->index('komoditas_id', 'idx_saprotan_komoditas');
             $table->index('jenis', 'idx_saprotan_jenis');

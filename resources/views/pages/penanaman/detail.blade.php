@@ -129,6 +129,10 @@
 
                 <div x-show="tab === 'rincian'" role="tabpanel" class="p-5 sm:p-6">
                     <dl class="space-y-4">
+                        <div>
+                            <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Kode penanaman</dt>
+                            <dd class="mt-0.5 text-theme-sm text-gray-800 dark:text-white/90">{{ $data['kode_penanaman'] }}</dd>
+                        </div>
                         {{-- Label "Tanggal tanam" diganti 2026-08-24: kolomnya
                              CHAR(7) berisi bulan, dan halaman daftar sudah
                              memakai istilah "Periode Tanam". --}}
@@ -225,7 +229,7 @@
                             sel kini sejajar, dan satuannya ikut dicetak agar
                             ketidakcocokan semacam itu terlihat mata.
                         --}}
-                        <x-sim.tabel-ringkas judul="Hasil panen dari penanaman ini" :kolom="['Periode Panen', 'Realisasi Panen (ha)', 'Puso (ha)', 'Produksi', 'Harga Jual']">
+                        <x-sim.tabel-ringkas judul="Hasil panen dari penanaman ini" :kolom="['Periode Panen', 'Status', 'Realisasi Panen (ha)', 'Puso (ha)', 'Produksi', 'Harga Jual']">
                             @foreach ($panen as $p)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                                     <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">
@@ -233,6 +237,9 @@
                                             class="rounded text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">
                                             {{ \Illuminate\Support\Carbon::parse($p['periode_panen'] . '-01')->translatedFormat('F Y') }}
                                         </a>
+                                    </td>
+                                    <td class="px-5 py-3 text-theme-sm">
+                                        <x-sim.status-badge :teks="$p['status']" :warna="$p['status'] === 'Aktif' ? 'success' : 'error'" />
                                     </td>
                                     <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
                                         {{ number_format($p['realisasi_panen'], 2, ',', '.') }}
@@ -251,6 +258,7 @@
 
                             <tr class="motif-baris-total">
                                 <td class="px-5 py-3 text-theme-sm text-gray-700 dark:text-gray-300">Total</td>
+                                <td></td>
                                 <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
                                     {{ number_format($luasDipanen, 2, ',', '.') }}
                                 </td>

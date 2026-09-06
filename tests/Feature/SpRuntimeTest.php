@@ -67,7 +67,6 @@ it('merender rincian dan sebaran SP dari data tersimpan termasuk SP baru', funct
         'pekerjaan_kepala_keluarga' => 'PETANI',
         'tahun_kedatangan' => 2026,
         'status_tinggal' => 'Aktif',
-        'status_anggota_poktan' => 'Tidak',
     ]);
 
     $this->get(route('sp.index'))

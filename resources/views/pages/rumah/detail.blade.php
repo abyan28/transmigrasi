@@ -12,9 +12,9 @@
     @php
         // `$riwayat` datang dari rute `rumah.detail`.
 
-        // Penghuni sekarang dibaca dari riwayat yang belum punya tanggal keluar,
+        // Penghuni sekarang dibaca dari riwayat yang belum punya tahun selesai,
         // bukan dari kolom penghuni, agar keduanya selalu sepadan.
-        $penghuniSekarang = collect($riwayat)->firstWhere('tanggal_keluar', null);
+        $penghuniSekarang = collect($riwayat)->firstWhere('tahun_selesai_menghuni', null);
 
         $bolehUbah = true;
     @endphp
@@ -176,7 +176,7 @@
                         <div class="p-5 sm:p-6">
                             <ol class="relative space-y-6 border-l border-gray-200 pl-6 dark:border-gray-700">
                                 @foreach ($riwayat as $jejak)
-                                    @php $masihMenghuni = $jejak['tanggal_keluar'] === null; @endphp
+                                    @php $masihMenghuni = $jejak['tahun_selesai_menghuni'] === null; @endphp
                                     <li class="relative">
                                         {{-- Titik penanda; hijau berarti masih menghuni --}}
                                         <span
@@ -193,11 +193,9 @@
                                         </div>
 
                                         <p class="mt-1 text-theme-xs tabular-nums text-gray-500 dark:text-gray-400">
-                                            Masuk
-                                            {{ \Illuminate\Support\Carbon::parse($jejak['tanggal_masuk'])->translatedFormat('d F Y') }}
+                                            Mulai menghuni tahun {{ $jejak['tahun_mulai_menghuni'] }}
                                             @if (! $masihMenghuni)
-                                                , keluar
-                                                {{ \Illuminate\Support\Carbon::parse($jejak['tanggal_keluar'])->translatedFormat('d F Y') }}
+                                                , selesai menghuni tahun {{ $jejak['tahun_selesai_menghuni'] }}
                                             @endif
                                         </p>
 

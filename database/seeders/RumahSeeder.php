@@ -47,8 +47,8 @@ class RumahSeeder extends Seeder
                 [
                     'rumah_id' => $p['rumah_id'],
                     'transmigran_id' => $p['transmigran_id'],
-                    'tanggal_masuk' => $p['tanggal_masuk'],
-                    'tanggal_keluar' => $p['tanggal_keluar'] ?? null,
+                    'tahun_mulai_menghuni' => $p['tahun_mulai_menghuni'],
+                    'tahun_selesai_menghuni' => $p['tahun_selesai_menghuni'] ?? null,
                     'alasan_keluar' => $p['alasan_keluar'] ?? null,
                     'keterangan' => $p['keterangan'] ?? null,
                 ],

@@ -96,8 +96,8 @@
             </div>
 
             <div>
-                <label for="{{ $awalan }}_kode_lahan" class="{{ $kelasLabel }}">Kode Lahan</label>
-                <input type="text" id="{{ $awalan }}_kode_lahan" name="kode_lahan"
+                <label for="{{ $awalan }}_kode_lahan" class="{{ $kelasLabel }}">Kode Lahan<span class="text-error-500">*</span></label>
+                <input type="text" id="{{ $awalan }}_kode_lahan" name="kode_lahan" required
                     value="{{ old('kode_lahan', $data['kode_lahan'] ?? '') }}" maxlength="50"
                     placeholder="Contoh: LH-025" class="{{ $kelasKontrol }}" />
             </div>

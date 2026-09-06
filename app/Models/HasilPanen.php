@@ -9,8 +9,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
- * Hasil panen satu penanaman (paling banyak satu baris seumur hidup, termasuk
- * setelah soft delete). `satuan_id` DISALIN dari komoditas saat simpan (snapshot -- tetap benar bila
+ * Hasil panen satu penanaman (paling banyak satu baris berstatus Aktif).
+ * Catatan salah dibatalkan dan tetap menjadi riwayat. `satuan_id` DISALIN dari
+ * komoditas saat simpan (snapshot -- tetap benar bila
  * satuan baku komoditas kelak diubah). `produksi` disimpan apa adanya, tanpa
  * konversi. Identitas (aplikasi): `realisasi_panen` + `puso` = `penanaman.realisasi_tanam`;
  * `produksi` = `realisasi_panen` x `produktivitas`.
@@ -30,7 +31,8 @@ class HasilPanen extends Model
 
     protected $fillable = [
         'uuid', 'penanaman_id', 'satuan_id', 'periode_panen', 'realisasi_panen',
-        'puso', 'produktivitas', 'produksi', 'harga_jual', 'keterangan',
+        'puso', 'produktivitas', 'produksi', 'harga_jual', 'keterangan', 'status',
+        'dibatalkan_pada', 'dibatalkan_oleh', 'alasan_pembatalan',
     ];
 
     protected function casts(): array
@@ -41,6 +43,7 @@ class HasilPanen extends Model
             'produktivitas' => 'decimal:3',
             'produksi' => 'decimal:3',
             'harga_jual' => 'decimal:2',
+            'dibatalkan_pada' => 'datetime',
         ];
     }
 
@@ -60,6 +63,11 @@ class HasilPanen extends Model
     public function satuan(): BelongsTo
     {
         return $this->belongsTo(Satuan::class, 'satuan_id', 'id_satuan');
+    }
+
+    public function pembatal(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'dibatalkan_oleh', 'id_user');
     }
 
     /**

@@ -1671,13 +1671,16 @@ menghapus sisa terakhir `DummyData::penggunaSaatIni()` -- dikerjakan berbarengan
   * Template XLSX berisi sheet Data kosong, petunjuk/contoh terpisah, Referensi tersembunyi, dropdown pilihan, serta format teks bagi NIK/KK/telepon. CSV alternatif tidak memuat baris contoh yang dapat terimpor.
   * Parser menolak `.xls`/makro/formula/tautan eksternal/workbook rusak/sheet data tambahan/header asing-ganda-hilang/sel ekstrem/lebih dari 1.000 baris. Tiap baris disimpan dalam transaksi tersendiri; baris gagal digulung balik tanpa membatalkan baris sah.
   * Kewenangan impor menuntut `lihat+tambah`; target SP tiap baris diperiksa lewat cakupan tulis. Hasil galat disanitasi dan dibatasi agar respons tetap terkendali.
-  * **8 entitas mandiri aktif:** satuan, wilayah, komoditas, transmigran, infrastruktur, inventaris-sp, fasilitas-sp, alsintan.
-  * UI memakai istilah jujur “Impor” dan “Hasil impor”; tidak ada preview atau hasil palsu. Enam entitas berantai tetap dinonaktifkan beserta penjelasan.
+  * **14 entitas aktif:** delapan entitas mandiri ditambah rumah, lahan, poktan, saprotan, penanaman, dan hasil-panen.
+  * UI memakai istilah jujur “Impor” dan “Hasil impor”; tidak ada preview atau hasil palsu.
   * Verifikasi: uji CSV/XLSX paritas, struktur template, formula/makro/ZIP/header (formula CSV ditambah pada audit 2026-09-06), teks NIK/KK, transaksi per baris, cakupan SP, dan izin dinamis lulus sebagai bagian suite Database.
-- [ ] Task 10.4b - Aktifkan impor enam entitas berantai (`rumah`, `lahan`, `poktan`, `saprotan`, `penanaman`, `hasil-panen`) `[Sulit]`
-  * Gunakan mesin XLSX/CSV yang sama; jangan membuat parser kedua.
-  * Wajib memetakan relasi secara tidak ambigu dan menjalankan seluruh invariant server yang sudah berlaku pada form manual: rumah/lahan mengikuti KK dan SP, ketua poktan tiga jalur, saprotan benih wajib komoditas+varietas, penanaman memakai distribusi benih poktan, dan panen menutup satu penanaman tepat sekali.
-  * Tetap partial-success per berkas dan atomik per baris; tambah uji paritas CSV/XLSX bagi keenam entitas sebelum tombol diaktifkan.
+- [✓] Task 10.4b - Aktifkan impor enam entitas berantai (`rumah`, `lahan`, `poktan`, `saprotan`, `penanaman`, `hasil-panen`) `[Sulit]`
+  * [✓] Fondasi Rumah: riwayat hunian memakai `tahun_mulai_menghuni` / `tahun_selesai_menghuni` end-to-end; form, migration upgrade, data demo, skema, dan dokumen selaras (2026-09-06). Verifikasi: Rumah+Domain5+DemoSeeder 33 PASS/169 assertions, schema NOL SELISIH, Blade cache dan Pint lulus.
+  * [✓] Fondasi identitas stabil: nomor Rumah wajib+unik per SP dan SP penghuni dijaga DB; kode Lahan/Saprotan/Penanaman wajib+unik; minimal satu bidang Lahan wajib. Verifikasi: 128 PASS/536 assertions, schema NOL SELISIH, Pint 357 file, build lulus (2026-09-06).
+  * [✓] Koreksi Hasil Panen memakai Batalkan + Ganti: alasan, petugas, waktu, riwayat, dan gate satu panen aktif tersimpan; panen batal keluar dari daftar/rekap aktif. Verifikasi: 52 PASS/548 assertions, Pint 358 file, Blade cache lulus (2026-09-06).
+  * [✓] Status anggota Poktan diturunkan langsung dari `anggota_poktan` Aktif; kolom/enum duplikat dicabut, daftar memakai `withExists`, laporan dan data contoh mengikuti sumber yang sama. Verifikasi: 125 PASS/1859 assertions dan schema NOL SELISIH (2026-09-06).
+  * [✓] Enam handler impor aktif pada parser CSV/XLSX yang sama: operasi lintas tabel dipusatkan, replay identik dilewati, konflik ditolak, Poktan/Saprotan atomik per kelompok, dan hasil melaporkan dibuat/dilewati/gagal. Petunjuk serta kolom wajib berasal dari `SkemaImpor`; unduhan template dan dokumen laporan memakai izin dinamis; penyaji laporan mematuhi cakupan SP dan panen Aktif (2026-09-06).
+  * Verifikasi akhir: Feature 766 PASS/7.592 assertions; Database 604 PASS/2.742 assertions; Pint 364 file; Blade cache, schema NOL SELISIH, build Vite, dan `git diff --check` lulus (2026-09-06).
 
 ## Tahap 11 — Pengujian, Deployment, dan Serah Terima
 

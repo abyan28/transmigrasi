@@ -172,7 +172,6 @@ class PetaIzinRute
             'laporan.alsintan' => 'alsintan,lihat',
             'laporan.saprotan' => 'saprotan,lihat',
             'laporan.hasil-panen' => 'hasil_panen,lihat',
-            'laporan.dokumen' => 'dashboard,lihat',
         ];
     }
 
@@ -198,6 +197,8 @@ class PetaIzinRute
             // data nyata. Tautannya hanya muncul di halaman modul yang sudah
             // menuntut `{modul}.lihat` untuk dibuka.
             'template-impor', 'template-impor.xlsx',
+            // Izin laporan dipilih dinamis dari LaporanData::meta($slug).
+            'laporan.dokumen',
             // Pemeriksaan `{modul}.lihat` dinamis di dalam DokumenController.
             'dokumen.tampilkan',
             // Pemeriksaan `{modul}.tambah` dinamis di dalam ImporController

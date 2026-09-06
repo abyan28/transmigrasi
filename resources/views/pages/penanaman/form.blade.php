@@ -155,6 +155,19 @@
             </p>
         </div>
 
+        <div>
+            <label for="{{ $awalan }}_kode_penanaman" class="{{ $kelasLabel }}">
+                Kode Penanaman<span class="text-error-500">*</span>
+            </label>
+            <input type="text" id="{{ $awalan }}_kode_penanaman" name="kode_penanaman" required
+                value="{{ old('kode_penanaman', $data['kode_penanaman'] ?? '') }}" maxlength="50"
+                placeholder="Contoh: TAN-2026-001" class="{{ $kelasKontrol }}"
+                @disabled(($awalan ?? 'tambah') === 'ubah') />
+            @if (($awalan ?? 'tambah') === 'ubah')
+                <input type="hidden" name="kode_penanaman" value="{{ $data['kode_penanaman'] ?? '' }}" />
+            @endif
+        </div>
+
         {{-- Langkah 2: komoditas, penyaring benih --}}
         <div>
             <label for="{{ $awalan }}_komoditas_id" class="{{ $kelasLabel }}">

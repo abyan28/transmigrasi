@@ -470,7 +470,7 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **-*
 6. Pembatasan tersebut wajib dijaga dengan **UNIQUE constraint pada database**, bukan sekadar validasi form, agar tidak bisa ditembus lewat proses impor atau akses langsung.
 7. Kolom penghuni pada rumah bersifat nullable; nilai kosong berarti rumah tidak berpenghuni.
 8. Saat menautkan KK ke rumah, sistem hanya menampilkan pilihan rumah yang masih kosong.
-9. Pergantian penghuni dicatat sebagai **riwayat penghunian** (tanggal masuk, tanggal keluar, alasan), tidak menimpa data penghuni sebelumnya.
+9. Pergantian penghuni dicatat sebagai **riwayat penghunian** (tahun mulai menghuni, tahun selesai menghuni, alasan), tidak menimpa data penghuni sebelumnya. Tahun dipakai secara jujur; sistem tidak membuat tanggal 1 Januari palsu ketika tanggal lengkap tidak diketahui.
 10. Sistem harus menyimpan catatan hunian dan foto rumah.
 11. Jumlah rumah terhuni harus dapat direkap per desa/SP untuk kebutuhan dashboard.
 12. **Hirarki Form Rumah: Penghunian menentukan Satuan Permukiman** (2026-08-31). Bagian Penghunian ditempatkan di Section 1 sebelum Spesifikasi Bangunan. Saat status `Dihuni`, memilih KK Penghuni otomatis mengisi dan memilih Satuan Permukiman sesuai SP transmigran. Saat status `Tidak Dihuni`, isian KK dinonaktifkan (`disabled`) dan pemilihan SP dilakukan secara manual untuk mendata lokasi rumah kosong.
@@ -527,7 +527,7 @@ Keterangan: **L** = lihat / **T** = tambah / **U** = ubah / **H** = hapus / **-*
 5. Poktan dapat ditautkan ke lahan, komoditas, alsintan, dan saprotan.
 6. Poktan dapat dilampiri dokumen pendukung.
 7. Rekap jumlah poktan dan anggotanya harus tersedia per desa/SP.
-8. **Keanggotaan poktan ditetapkan dari sisi poktan, bukan dari form transmigran.** Kolom `status_anggota_poktan` pada transmigran adalah **penanda turunan** yang dihitung dari keanggotaan berstatus Aktif, bukan isian mandiri. Menyediakannya sebagai isian membuat dua sumber kebenaran yang tidak pernah tersinkron.
+8. **Keanggotaan poktan ditetapkan dari sisi poktan, bukan dari form transmigran.** Status Ya/Tidak pada tampilan dihitung dari keanggotaan berstatus Aktif; tidak ada kolom status salinan pada `transmigran`.
 
 ### 7b. Aturan Fitur Alsintan
 1. **Alsintan selalu milik kelompok tani.** Kepemilikan pribadi dicabut 2026-08-22: seluruh menu Pertanian mencatat kelompok, bukan individu. Alat yang dibeli dari iuran anggota tetap tercatat atas nama kelompok, dengan sumber dana Swadaya.

@@ -66,6 +66,16 @@ it('membalas 404 untuk lahan yang tidak ada', function () {
     $this->get('/lahan/99999')->assertNotFound();
 });
 
+it('mewajibkan kode lahan dan minimal satu bidang', function () {
+    $kk = Transmigran::whereDoesntHave('lahan')->firstOrFail();
+
+    $this->post(route('lahan.simpan'), [
+        'transmigran_id' => $kk->id_transmigran,
+        'satuan_permukiman_id' => $kk->satuan_permukiman_id,
+        'status_sertifikat' => 'Belum',
+    ])->assertSessionHasErrors(['kode_lahan', 'luas_pekarangan']);
+});
+
 it('menyimpan lahan baru dan menurunkan luas usaha dari kering + basah', function () {
     $kk = Transmigran::whereDoesntHave('lahan')->first();
 
@@ -117,6 +127,7 @@ it('menurunkan SP lahan dari pemilik dan mengabaikan SP palsu', function () {
         'transmigran_id' => $kk->id_transmigran,
         'satuan_permukiman_id' => $spPalsu,
         'kode_lahan' => 'LH-FORGE',
+        'luas_pekarangan' => '0.25',
         'status_sertifikat' => 'Belum',
     ])->assertRedirect(route('lahan.index'));
 
@@ -138,6 +149,8 @@ it('membatasi penulisan lahan dan pemilik ke SP petugas', function () {
     $this->post(route('lahan.simpan'), [
         'transmigran_id' => $kkLain->id_transmigran,
         'satuan_permukiman_id' => $kkDiizinkan->satuan_permukiman_id,
+        'kode_lahan' => 'LH-DILARANG',
+        'luas_pekarangan' => '0.25',
         'status_sertifikat' => 'Belum',
     ])->assertNotFound();
 
@@ -145,12 +158,15 @@ it('membatasi penulisan lahan dan pemilik ke SP petugas', function () {
         'transmigran_id' => $kkDiizinkan->id_transmigran,
         'satuan_permukiman_id' => $kkDiizinkan->satuan_permukiman_id,
         'kode_lahan' => 'LH-SCOPED',
+        'luas_pekarangan' => '0.25',
         'status_sertifikat' => 'Belum',
     ])->assertRedirect(route('lahan.index'));
 
     $lahan = Lahan::where('kode_lahan', 'LH-SCOPED')->firstOrFail();
     $this->put(route('lahan.perbarui', $lahan->id_lahan), [
         'transmigran_id' => $kkLain->id_transmigran,
+        'kode_lahan' => $lahan->kode_lahan,
+        'luas_pekarangan' => $lahan->luas_pekarangan,
         'status_sertifikat' => 'Belum',
     ])->assertNotFound();
 

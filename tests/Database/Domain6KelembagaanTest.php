@@ -129,6 +129,7 @@ it('menautkan saprotan benih ke komoditas + satuan, distribusi ke poktan', funct
         'slug' => 'jagung-'.Str::lower(Str::random(6)), 'tipe' => 'Pangan',
     ]);
     $saprotan = Saprotan::create([
+        'kode_saprotan' => 'SAP-UNIT-001',
         'satuan_id' => $satuan->id_satuan, 'komoditas_id' => $komoditas->id_komoditas,
         'jenis' => JenisSaprotan::Benih->value, 'nama' => 'Benih Jagung Hibrida',
         'jumlah_total' => '150.000', 'varietas' => 'NK212', 'jadwal_tanam' => '2026-11',

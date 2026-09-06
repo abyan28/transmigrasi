@@ -29,6 +29,7 @@ class SaprotanSeeder extends Seeder
         foreach (DummyData::saprotan() as $s) {
             $saprotan = Saprotan::withTrashed()->firstOrNew(['id_saprotan' => $s['id_saprotan']]);
             $saprotan->fill([
+                'kode_saprotan' => sprintf('SAP-%d-%03d', $s['tahun_pengadaan'], $s['id_saprotan']),
                 'satuan_id' => $satuanPerNama[$s['satuan']] ?? $s['satuan_id'],
                 'komoditas_id' => $s['komoditas'] === null ? null : ($komoditasPerNama[$s['komoditas']] ?? null),
                 'jenis' => $s['jenis'],

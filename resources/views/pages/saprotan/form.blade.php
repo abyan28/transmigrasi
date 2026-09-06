@@ -104,6 +104,16 @@
         <h3 class="{{ $kelasBagian }}">Identitas Sarana</h3>
         <div class="mt-3 grid gap-4 sm:grid-cols-2">
             <div>
+                <label for="{{ $awalan }}_kode_saprotan" class="{{ $kelasLabel }}">Kode Pengadaan<span class="text-error-500">*</span></label>
+                <input type="text" id="{{ $awalan }}_kode_saprotan" name="kode_saprotan" required
+                    value="{{ old('kode_saprotan', $data['kode_saprotan'] ?? '') }}" maxlength="50"
+                    placeholder="Contoh: SAP-2026-001" class="{{ $kelasKontrol }}"
+                    @disabled($awalan === 'ubah') />
+                @if ($awalan === 'ubah')
+                    <input type="hidden" name="kode_saprotan" value="{{ $data['kode_saprotan'] ?? '' }}" />
+                @endif
+            </div>
+            <div>
                 <label for="{{ $awalan }}_jenis" class="{{ $kelasLabel }}">Jenis Saprotan<span class="text-error-500">*</span></label>
                 <select id="{{ $awalan }}_jenis" name="jenis" required x-model="jenis" class="{{ $kelasKontrol }}">
                     <option value="">Pilih jenis</option>

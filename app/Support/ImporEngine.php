@@ -3,20 +3,32 @@
 namespace App\Support;
 
 use App\Enums\Agama;
+use App\Enums\AsalWakilPoktan;
 use App\Enums\JenisDaftarPilihan;
 use App\Enums\JenisFasilitas;
 use App\Enums\JenisKelamin;
+use App\Enums\JenisSaprotan;
 use App\Enums\PendidikanTerakhir;
+use App\Enums\StatusKeaktifanAnggota;
+use App\Enums\StatusSertifikat;
 use App\Enums\StatusTinggal;
 use App\Models\Alsintan;
+use App\Models\AnggotaKeluarga;
 use App\Models\Desa;
 use App\Models\FasilitasSp;
+use App\Models\HasilPanen;
 use App\Models\Infrastruktur;
 use App\Models\InventarisSp;
 use App\Models\Kabupaten;
 use App\Models\Kecamatan;
 use App\Models\Komoditas;
+use App\Models\Lahan;
+use App\Models\Penanaman;
+use App\Models\Poktan;
 use App\Models\Provinsi;
+use App\Models\Rumah;
+use App\Models\Saprotan;
+use App\Models\SaprotanDistribusi;
 use App\Models\Satuan;
 use App\Models\SatuanPermukiman;
 use App\Models\Scopes\CakupanDataSp;
@@ -26,6 +38,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Reader\Xlsx;
@@ -35,7 +48,7 @@ use Throwable;
 use ZipArchive;
 
 /**
- * Mesin impor XLSX/CSV luring (Task 10.4, 1/2 -- 8 entitas berdiri sendiri).
+ * Mesin impor XLSX/CSV luring untuk entitas mandiri dan berantai.
  *
  * Dua tahap dikerjakan dalam SATU permintaan (tidak ada langkah pratinjau
  * terpisah): tiap baris divalidasi, baris sah langsung tersimpan, baris
@@ -49,12 +62,8 @@ use ZipArchive;
  * aturan bisnisnya sendiri -- sama seperti tiap `*Controller::validasi()`
  * berdiri sendiri walau semuanya memakai `Illuminate\Support\Facades\Validator`.
  *
- * DELAPAN entitas berdiri sendiri (tak menaut ke entitas lain yang mungkin
- * belum ada di baris yang sama): satuan, wilayah, komoditas, transmigran,
- * infrastruktur, inventaris-sp, fasilitas-sp, alsintan. Enam entitas berantai
- * (rumah, lahan, poktan, saprotan, penanaman, hasil-panen) BELUM dikerjakan --
- * modal impornya tetap menampilkan spanduk "Fitur belum aktif" (Task 10.4 2/2,
- * menyusul).
+ * Poktan dan Saprotan diproses per kelompok identitas agar induk beserta
+ * seluruh anaknya atomik. Entitas lain diproses atomik per baris.
  *
  * Kolom relasi diisi petugas dengan NAMA (bukan id) dan dicari ke basis data
  * yang SUDAH ADA di sini -- BUKAN ke baris lain dalam berkas yang sama.
@@ -102,6 +111,12 @@ class ImporEngine
         'inventaris-sp' => 'inventaris_sp',
         'fasilitas-sp' => 'fasilitas_sp',
         'alsintan' => 'alsintan',
+        'rumah' => 'rumah',
+        'lahan' => 'lahan',
+        'poktan' => 'poktan',
+        'saprotan' => 'saprotan',
+        'penanaman' => 'penanaman',
+        'hasil-panen' => 'hasil_panen',
     ];
 
     private const MAKS_BARIS_DATA = 1000;
@@ -115,7 +130,7 @@ class ImporEngine
     private const MAKS_RASIO_ZIP = 200;
 
     /**
-     * @return array{diproses: int, disimpan: int, jumlah_gagal: int, gagal: list<array{baris: int, pesan: string}>, galat_dibatasi: bool}
+     * @return array{diproses: int, dibuat: int, dilewati: int, jumlah_gagal: int, gagal: list<array{baris: int|string, pesan: string}>, galat_dibatasi: bool}
      */
     public static function proses(string $entitas, string $pathBerkas, string $format): array
     {
@@ -128,7 +143,12 @@ class ImporEngine
             : self::bacaCsv($pathBerkas);
         [$judul, $barisData] = self::validasiDanPetakan($entitas, $barisBerkas);
 
-        $disimpan = 0;
+        if (in_array($entitas, ['poktan', 'saprotan'], true)) {
+            return self::prosesKelompok($entitas, $judul, $barisData);
+        }
+
+        $dibuat = 0;
+        $dilewati = 0;
         $jumlahGagal = 0;
         $gagal = [];
 
@@ -140,7 +160,7 @@ class ImporEngine
                     $baris[$kolomTanggal] = self::normalisasiTanggal($baris[$kolomTanggal] ?? null, $nomorBaris, $kolomTanggal);
                 }
 
-                $pesan = DB::transaction(fn (): ?string => match ($entitas) {
+                $hasil = DB::transaction(fn (): array|string|null => match ($entitas) {
                     'satuan' => self::barisSatuan($baris),
                     'wilayah' => self::barisWilayah($baris),
                     'komoditas' => self::barisKomoditas($baris),
@@ -149,30 +169,101 @@ class ImporEngine
                     'inventaris-sp' => self::barisInventarisSp($baris),
                     'fasilitas-sp' => self::barisFasilitasSp($baris),
                     'alsintan' => self::barisAlsintan($baris),
+                    'rumah' => self::barisRumah($baris),
+                    'lahan' => self::barisLahan($baris),
+                    'poktan' => self::barisPoktan($baris),
+                    'saprotan' => self::barisSaprotan($baris),
+                    'penanaman' => self::barisPenanaman($baris),
+                    'hasil-panen' => self::barisHasilPanen($baris),
                 });
+            } catch (ValidationException $e) {
+                $hasil = $e->validator->errors()->first();
             } catch (Throwable $e) {
                 report($e);
-                $pesan = 'Baris gagal disimpan. Periksa data dan cakupan SP Anda.';
+                $hasil = 'Baris gagal disimpan. Periksa data dan cakupan SP Anda.';
             }
 
-            if ($pesan === null) {
-                $disimpan++;
+            if ($hasil === null || $hasil === ['status' => 'dibuat']) {
+                $dibuat++;
+
+                continue;
+            }
+
+            if ($hasil === ['status' => 'dilewati']) {
+                $dilewati++;
 
                 continue;
             }
 
             $jumlahGagal++;
             if (count($gagal) < self::MAKS_GALAT_RINCI) {
-                $gagal[] = ['baris' => $nomorBaris, 'pesan' => $pesan];
+                $gagal[] = ['baris' => $nomorBaris, 'pesan' => is_string($hasil) ? $hasil : 'Baris gagal disimpan.'];
             }
         }
 
         return [
             'diproses' => count($barisData),
-            'disimpan' => $disimpan,
+            'dibuat' => $dibuat,
+            'dilewati' => $dilewati,
             'jumlah_gagal' => $jumlahGagal,
             'gagal' => $gagal,
             'galat_dibatasi' => $jumlahGagal > count($gagal),
+        ];
+    }
+
+    /**
+     * @param  array<string, int>  $judul
+     * @param  list<array{0:int,1:list<mixed>}>  $barisData
+     */
+    private static function prosesKelompok(string $entitas, array $judul, array $barisData): array
+    {
+        $kunci = $entitas === 'poktan' ? 'nama_poktan' : 'kode_saprotan';
+        $kelompok = [];
+
+        foreach ($barisData as [$nomor, $sel]) {
+            $baris = self::petakan($sel, $judul);
+            foreach (SkemaImpor::kolomTanggal($entitas) as $kolomTanggal) {
+                $baris[$kolomTanggal] = self::normalisasiTanggal($baris[$kolomTanggal] ?? null, $nomor, $kolomTanggal);
+            }
+            $kelompok[trim((string) ($baris[$kunci] ?? ''))][] = [$nomor, $baris];
+        }
+
+        $dibuat = $dilewati = $jumlahGagal = $jumlahKelompokGagal = 0;
+        $gagal = [];
+
+        foreach ($kelompok as $barisKelompok) {
+            $nomor = array_column($barisKelompok, 0);
+            try {
+                $hasil = DB::transaction(fn (): array|string => $entitas === 'poktan'
+                    ? self::kelompokPoktan($barisKelompok)
+                    : self::kelompokSaprotan($barisKelompok));
+            } catch (ValidationException $e) {
+                $hasil = $e->validator->errors()->first();
+            } catch (Throwable $e) {
+                report($e);
+                $hasil = 'Kelompok gagal disimpan. Periksa data dan cakupan SP Anda.';
+            }
+
+            if ($hasil === ['status' => 'dibuat']) {
+                $dibuat += count($barisKelompok);
+            } elseif ($hasil === ['status' => 'dilewati']) {
+                $dilewati += count($barisKelompok);
+            } else {
+                $jumlahGagal += count($barisKelompok);
+                $jumlahKelompokGagal++;
+                if (count($gagal) < self::MAKS_GALAT_RINCI) {
+                    $gagal[] = [
+                        'baris' => count($nomor) === 1 ? $nomor[0] : min($nomor).'-'.max($nomor),
+                        'pesan' => is_string($hasil) ? $hasil : 'Kelompok gagal disimpan.',
+                    ];
+                }
+            }
+        }
+
+        return [
+            'diproses' => count($barisData), 'dibuat' => $dibuat, 'dilewati' => $dilewati,
+            'jumlah_gagal' => $jumlahGagal, 'gagal' => $gagal,
+            'galat_dibatasi' => $jumlahKelompokGagal > count($gagal),
         ];
     }
 
@@ -811,6 +902,455 @@ class ImporEngine
         Alsintan::create($v->validated());
 
         return null;
+    }
+
+    private static function kelompokPoktan(array $barisKelompok): array|string
+    {
+        $pertama = $barisKelompok[0][1];
+        $profilKolom = array_slice(array_column(SkemaImpor::kolom('poktan'), 'kolom'), 0, 12);
+        foreach ($barisKelompok as [, $baris]) {
+            if (array_intersect_key($baris, array_flip($profilKolom)) != array_intersect_key($pertama, array_flip($profilKolom))) {
+                return 'Profil Poktan yang diulang harus identik pada seluruh baris anggota.';
+            }
+        }
+
+        $spId = self::wajibSp($pertama);
+        if (is_string($spId)) {
+            return $spId;
+        }
+        $asal = self::teks($pertama, 'asal_ketua');
+        $ketuaId = null;
+        $ketuaAnggotaId = null;
+        if ($asal !== AsalWakilPoktan::BukanTransmigran->value) {
+            $nikKetua = self::teks($pertama, 'nik_ketua');
+            $ketuaId = $nikKetua === null ? null : self::cariIdTunggal(Transmigran::class, 'nik', $nikKetua);
+            if (is_string($ketuaId)) {
+                return $ketuaId;
+            }
+            if ($asal === AsalWakilPoktan::AnggotaKeluarga->value) {
+                $ketuaAnggotaId = AnggotaKeluarga::query()->where('transmigran_id', $ketuaId)
+                    ->where('nik', self::teks($pertama, 'nik_ketua'))->value('id_anggota_keluarga');
+                if ($ketuaAnggotaId === null) {
+                    return 'NIK ketua anggota keluarga tidak ditemukan pada keluarga yang dipilih.';
+                }
+            }
+        }
+
+        $profil = [
+            'satuan_permukiman_id' => $spId, 'nama' => self::teks($pertama, 'nama_poktan'),
+            'tahun_berdiri' => self::angka($pertama, 'tahun_berdiri'), 'asal_ketua' => $asal,
+            'ketua_transmigran_id' => $ketuaId, 'ketua_anggota_keluarga_id' => $ketuaAnggotaId,
+            'nama_ketua' => $asal === AsalWakilPoktan::BukanTransmigran->value ? self::teks($pertama, 'nama_ketua') : null,
+            'nik_ketua' => $asal === AsalWakilPoktan::BukanTransmigran->value ? self::teks($pertama, 'nik_ketua') : null,
+            'telepon_ketua' => self::teks($pertama, 'telepon_ketua'), 'email_ketua' => self::teks($pertama, 'email_ketua'),
+            'alamat_ketua' => self::teks($pertama, 'alamat_ketua'),
+            'luas_kering_ketua' => self::angka($pertama, 'luas_kering_ketua'),
+            'luas_basah_ketua' => self::angka($pertama, 'luas_basah_ketua'), 'keterangan' => self::teks($pertama, 'keterangan'),
+        ];
+        $validator = Validator::make($profil, [
+            'satuan_permukiman_id' => ['required', 'integer'], 'nama' => ['required', 'string', 'max:255'],
+            'tahun_berdiri' => ['nullable', 'integer', 'min:1950', 'max:'.date('Y')],
+            'asal_ketua' => ['required', Rule::enum(AsalWakilPoktan::class)],
+            'ketua_transmigran_id' => ['nullable', 'integer', Rule::requiredIf($asal !== AsalWakilPoktan::BukanTransmigran->value)],
+            'nama_ketua' => ['nullable', 'string', 'max:255', Rule::requiredIf($asal === AsalWakilPoktan::BukanTransmigran->value)],
+            'nik_ketua' => ['nullable', 'digits:16', Rule::requiredIf($asal === AsalWakilPoktan::BukanTransmigran->value)],
+            'telepon_ketua' => ['nullable', 'string', 'max:20'], 'email_ketua' => ['nullable', 'email:rfc', 'max:255'],
+            'alamat_ketua' => ['nullable', 'string', 'max:255'], 'luas_kering_ketua' => ValidationRules::luas(wajib: false),
+            'luas_basah_ketua' => ValidationRules::luas(wajib: false), 'keterangan' => ['nullable', 'string', 'max:1000'],
+        ], self::PESAN_UMUM);
+        if ($validator->fails()) {
+            return $validator->errors()->first();
+        }
+
+        $anggota = [];
+        foreach ($barisKelompok as [, $baris]) {
+            $nik = self::teks($baris, 'nik_anggota');
+            if ($nik === null) {
+                continue;
+            }
+            $transmigranId = self::cariIdTunggal(Transmigran::class, 'nik', $nik);
+            if (is_string($transmigranId)) {
+                return $transmigranId;
+            }
+            $asalWakil = self::teks($baris, 'asal_wakil') ?? AsalWakilPoktan::KepalaKeluarga->value;
+            $wakilId = null;
+            if ($asalWakil === AsalWakilPoktan::AnggotaKeluarga->value) {
+                $wakilId = AnggotaKeluarga::query()->where('transmigran_id', $transmigranId)
+                    ->where('nik', self::teks($baris, 'nik_wakil'))->value('id_anggota_keluarga');
+                if ($wakilId === null) {
+                    return 'NIK wakil tidak ditemukan pada keluarga anggota.';
+                }
+            }
+            $anggota[] = [
+                'transmigran_id' => $transmigranId, 'asal_wakil' => $asalWakil,
+                'anggota_keluarga_id' => $wakilId, 'jabatan' => self::teks($baris, 'jabatan_anggota') ?? 'Anggota',
+                'tanggal_masuk' => self::teks($baris, 'tanggal_masuk'),
+                'status' => self::teks($baris, 'status_anggota') ?? StatusKeaktifanAnggota::Aktif->value,
+                'tanggal_keluar' => self::teks($baris, 'tanggal_keluar'), 'alasan_keluar' => self::teks($baris, 'alasan_keluar'),
+                'keterangan' => self::teks($baris, 'keterangan_anggota'),
+            ];
+        }
+
+        foreach ($anggota as $baris) {
+            $v = Validator::make($baris, [
+                'transmigran_id' => ['required', 'integer'],
+                'asal_wakil' => ['required', Rule::in(AsalWakilPoktan::nilaiAnggota())],
+                'anggota_keluarga_id' => ['nullable', 'integer', Rule::requiredIf($baris['asal_wakil'] === AsalWakilPoktan::AnggotaKeluarga->value)],
+                'jabatan' => ValidationRules::daftarPilihan(JenisDaftarPilihan::JabatanAnggotaPoktan, wajib: true),
+                'tanggal_masuk' => ['required', 'date', 'before_or_equal:today'],
+                'status' => ['required', Rule::enum(StatusKeaktifanAnggota::class)],
+                'tanggal_keluar' => ['nullable', 'date', 'after_or_equal:tanggal_masuk', Rule::requiredIf($baris['status'] === StatusKeaktifanAnggota::SudahKeluar->value)],
+                'alasan_keluar' => ['nullable', 'string', 'max:255'],
+                'keterangan' => ['nullable', 'string', 'max:255'],
+            ], self::PESAN_UMUM);
+            if ($v->fails()) {
+                return $v->errors()->first();
+            }
+        }
+
+        $existing = Poktan::withoutGlobalScopes()->where('nama', $profil['nama'])->first();
+        if ($existing !== null) {
+            $profilSama = array_intersect_key($existing->getRawOriginal(), $profil) == $profil;
+            $kunciAnggota = array_flip(array_keys($anggota[0] ?? []));
+            $anggotaSama = $existing->anggota()->withoutGlobalScopes()->orderBy('id_anggota_poktan')->get()
+                ->map(fn ($baris) => array_intersect_key($baris->getRawOriginal(), $kunciAnggota))->all() == $anggota;
+
+            return $profilSama && $anggotaSama ? ['status' => 'dilewati'] : 'Nama Poktan sudah ada dengan isi berbeda.';
+        }
+
+        OperasiPoktan::buat($validator->validated(), $anggota);
+
+        return ['status' => 'dibuat'];
+    }
+
+    private static function kelompokSaprotan(array $barisKelompok): array|string
+    {
+        $pertama = $barisKelompok[0][1];
+        $profilKolom = array_slice(array_column(SkemaImpor::kolom('saprotan'), 'kolom'), 0, 11);
+        foreach ($barisKelompok as [, $baris]) {
+            if (array_intersect_key($baris, array_flip($profilKolom)) != array_intersect_key($pertama, array_flip($profilKolom))) {
+                return 'Profil pengadaan Saprotan yang diulang harus identik pada seluruh baris distribusi.';
+            }
+        }
+
+        $satuanId = self::cariIdTunggal(Satuan::class, 'nama', (string) self::teks($pertama, 'satuan'));
+        if (is_string($satuanId)) {
+            return $satuanId;
+        }
+        $komoditasId = null;
+        if (($nama = self::teks($pertama, 'komoditas')) !== null) {
+            $komoditasId = self::cariIdTunggal(Komoditas::class, 'nama', $nama);
+            if (is_string($komoditasId)) {
+                return $komoditasId;
+            }
+        }
+
+        $profil = [
+            'kode_saprotan' => self::teks($pertama, 'kode_saprotan'),
+            'jenis' => self::teks($pertama, 'jenis_saprotan'), 'nama' => self::teks($pertama, 'nama'),
+            'jumlah_total' => self::angka($pertama, 'jumlah_total'), 'satuan_id' => $satuanId,
+            'tahun_pengadaan' => self::angka($pertama, 'tahun_pengadaan'), 'komoditas_id' => $komoditasId,
+            'varietas' => self::teks($pertama, 'varietas'), 'jadwal_tanam' => self::teks($pertama, 'jadwal_tanam'),
+            'sumber_dana' => self::teks($pertama, 'sumber_dana'), 'keterangan' => self::teks($pertama, 'keterangan'),
+        ];
+        $benih = $profil['jenis'] === JenisSaprotan::Benih->value;
+        $validator = Validator::make($profil, [
+            'kode_saprotan' => ['required', 'string', 'max:50'], 'jenis' => ['required', Rule::enum(JenisSaprotan::class)],
+            'nama' => ['required', 'string', 'max:255'], 'jumlah_total' => ['required', 'numeric', 'gt:0', 'max:99999999'],
+            'satuan_id' => ['required', 'integer'], 'tahun_pengadaan' => ValidationRules::tahun(wajib: true),
+            'komoditas_id' => ['nullable', 'integer', Rule::requiredIf($benih)],
+            'varietas' => ['nullable', 'string', 'max:120', Rule::requiredIf($benih)],
+            'jadwal_tanam' => ['nullable', 'date_format:Y-m'],
+            'sumber_dana' => ValidationRules::daftarPilihan(JenisDaftarPilihan::SumberDana),
+            'keterangan' => ['nullable', 'string', 'max:1000'],
+        ], self::PESAN_UMUM);
+        if ($validator->fails()) {
+            return $validator->errors()->first();
+        }
+
+        $distribusi = [];
+        foreach ($barisKelompok as [, $baris]) {
+            $slug = self::teks($baris, 'poktan_slug');
+            if ($slug === null) {
+                continue;
+            }
+            $poktanId = self::cariIdTunggal(Poktan::class, 'slug', $slug);
+            if (is_string($poktanId)) {
+                return $poktanId;
+            }
+            CakupanDataSp::pastikanDapatDitulis(Poktan::findOrFail($poktanId));
+            if (isset($distribusi[$poktanId])) {
+                return 'Satu Poktan hanya boleh memiliki satu baris distribusi untuk kode Saprotan yang sama.';
+            }
+            $jumlah = self::angka($baris, 'jumlah_distribusi');
+            if (! is_numeric($jumlah) || (float) $jumlah <= 0) {
+                return 'Jumlah distribusi wajib lebih besar dari nol.';
+            }
+            $tanggalSerah = self::teks($baris, 'tanggal_serah');
+            $v = Validator::make(['tanggal_serah' => $tanggalSerah], [
+                'tanggal_serah' => ['nullable', 'date', 'before_or_equal:today'],
+            ], self::PESAN_UMUM);
+            if ($v->fails()) {
+                return $v->errors()->first();
+            }
+            $distribusi[$poktanId] = [
+                'poktan_id' => $poktanId, 'jumlah' => $jumlah,
+                'tanggal_serah' => $tanggalSerah,
+            ];
+        }
+        $distribusi = array_values($distribusi);
+
+        $existing = Saprotan::with('distribusi')->where('kode_saprotan', $profil['kode_saprotan'])->first();
+        if ($existing !== null) {
+            $profilSama = array_intersect_key($existing->getRawOriginal(), $profil) == $profil;
+            $kunci = array_flip(array_keys($distribusi[0] ?? []));
+            $distribusiSama = $existing->distribusi->sortBy('id_saprotan_distribusi')->values()
+                ->map(fn ($baris) => array_intersect_key($baris->getRawOriginal(), $kunci))->all() == $distribusi;
+
+            return $profilSama && $distribusiSama ? ['status' => 'dilewati'] : 'Kode Saprotan sudah ada dengan isi berbeda.';
+        }
+
+        OperasiSaprotan::buat($validator->validated(), $distribusi);
+
+        return ['status' => 'dibuat'];
+    }
+
+    /** @return array{status: string}|string */
+    private static function barisPenanaman(array $baris): array|string
+    {
+        $kode = self::teks($baris, 'kode_penanaman');
+        $slug = self::teks($baris, 'poktan_slug');
+        $kodeSaprotan = self::teks($baris, 'kode_saprotan');
+        $poktanId = $slug === null ? null : self::cariIdTunggal(Poktan::class, 'slug', $slug);
+        if (is_string($poktanId)) {
+            return $poktanId;
+        }
+        $saprotanId = $kodeSaprotan === null ? null : self::cariIdTunggal(Saprotan::class, 'kode_saprotan', $kodeSaprotan);
+        if (is_string($saprotanId)) {
+            return $saprotanId;
+        }
+        $distribusi = SaprotanDistribusi::query()->where('saprotan_id', $saprotanId)->where('poktan_id', $poktanId)->first();
+        if ($distribusi === null) {
+            return 'Kode Saprotan belum didistribusikan ke Poktan ini.';
+        }
+
+        $data = [
+            'kode_penanaman' => $kode, 'volume_benih' => self::angka($baris, 'volume_benih'),
+            'realisasi_tanam' => self::angka($baris, 'realisasi_tanam_ha'),
+            'periode_tanam' => self::teks($baris, 'periode_tanam'), 'keterangan' => self::teks($baris, 'keterangan'),
+        ];
+        $validator = Validator::make($data, [
+            'kode_penanaman' => ['required', 'string', 'max:50'],
+            'volume_benih' => ['required', 'numeric', 'gt:0', 'max:99999999'],
+            'realisasi_tanam' => ['required', 'numeric', 'gt:0', 'max:99999999'],
+            'periode_tanam' => ['required', 'date_format:Y-m', 'before_or_equal:'.now()->format('Y-m')],
+            'keterangan' => ['nullable', 'string', 'max:255'],
+        ], self::PESAN_UMUM);
+        if ($validator->fails()) {
+            return $validator->errors()->first();
+        }
+
+        $existing = Penanaman::withoutGlobalScopes()->where('kode_penanaman', $kode)->first();
+        $diharapkan = [
+            'kode_penanaman' => $kode, 'poktan_id' => $poktanId, 'komoditas_id' => $distribusi->saprotan->komoditas_id,
+            'saprotan_distribusi_id' => $distribusi->id_saprotan_distribusi, 'volume_benih' => $data['volume_benih'],
+            'realisasi_tanam' => $data['realisasi_tanam'], 'periode_tanam' => $data['periode_tanam'], 'keterangan' => $data['keterangan'],
+        ];
+        if ($existing !== null) {
+            return array_intersect_key($existing->getRawOriginal(), $diharapkan) == $diharapkan
+                ? ['status' => 'dilewati'] : 'Kode Penanaman sudah ada dengan isi berbeda.';
+        }
+
+        $distribusi = OperasiPenanaman::distribusiTerkunci($distribusi->id_saprotan_distribusi);
+        OperasiPenanaman::buat($validator->validated(), $distribusi);
+
+        return ['status' => 'dibuat'];
+    }
+
+    /** @return array{status: string}|string */
+    private static function barisHasilPanen(array $baris): array|string
+    {
+        $kode = self::teks($baris, 'kode_penanaman');
+        $penanamanId = $kode === null ? null : self::cariIdTunggal(Penanaman::class, 'kode_penanaman', $kode);
+        if (is_string($penanamanId)) {
+            return $penanamanId;
+        }
+        $penanaman = Penanaman::query()->with('komoditas')->lockForUpdate()->findOrFail($penanamanId);
+        $data = [
+            'periode_panen' => self::teks($baris, 'periode_panen'),
+            'realisasi_panen' => self::angka($baris, 'realisasi_panen_ha'), 'puso' => self::angka($baris, 'puso_ha'),
+            'produktivitas' => self::angka($baris, 'produktivitas'), 'harga_jual' => self::angka($baris, 'harga_jual'),
+            'keterangan' => self::teks($baris, 'keterangan'),
+        ];
+        $validator = Validator::make($data, [
+            'periode_panen' => ['required', 'date_format:Y-m', 'before_or_equal:'.now()->format('Y-m')],
+            'realisasi_panen' => ['required', 'numeric', 'min:0', 'max:99999999'],
+            'puso' => ['required', 'numeric', 'min:0', 'max:99999999'],
+            'produktivitas' => ['nullable', 'numeric', 'min:0', 'max:99999999'],
+            'harga_jual' => ['nullable', 'numeric', 'min:0', 'max:9999999999999'],
+            'keterangan' => ['nullable', 'string', 'max:1000'],
+        ], self::PESAN_UMUM);
+        if ($validator->fails()) {
+            return $validator->errors()->first();
+        }
+
+        $aktif = HasilPanen::withoutGlobalScopes()->where('penanaman_id', $penanamanId)->where('status', 'Aktif')->first();
+        $produktivitas = (float) ($data['produktivitas'] ?? 0);
+        $diharapkan = [
+            'penanaman_id' => $penanamanId, 'satuan_id' => $penanaman->komoditas->satuan_id,
+            'periode_panen' => $data['periode_panen'], 'realisasi_panen' => $data['realisasi_panen'],
+            'puso' => $data['puso'], 'produktivitas' => $produktivitas,
+            'produksi' => round((float) $data['realisasi_panen'] * $produktivitas, 3),
+            'harga_jual' => $data['harga_jual'], 'keterangan' => $data['keterangan'],
+        ];
+        if ($aktif !== null) {
+            return array_intersect_key($aktif->getRawOriginal(), $diharapkan) == $diharapkan
+                ? ['status' => 'dilewati'] : 'Penanaman sudah memiliki hasil panen aktif dengan isi berbeda.';
+        }
+
+        OperasiHasilPanen::buat($validator->validated(), $penanaman);
+
+        return ['status' => 'dibuat'];
+    }
+
+    /** @return array{status: string}|string */
+    private static function barisRumah(array $b): array|string
+    {
+        $spId = self::wajibSp($b);
+        if (is_string($spId)) {
+            return $spId;
+        }
+
+        $penghuniId = null;
+        if (($nik = self::teks($b, 'nik_penghuni')) !== null) {
+            $penghuniId = self::cariIdTunggal(Transmigran::class, 'nik', $nik);
+            if (is_string($penghuniId)) {
+                return $penghuniId;
+            }
+        }
+
+        $data = [
+            'satuan_permukiman_id' => $spId,
+            'transmigran_id' => $penghuniId,
+            'no_rumah' => self::teks($b, 'no_rumah'),
+            'tahun_mulai_menghuni' => self::angka($b, 'tahun_mulai_menghuni'),
+            'kondisi' => self::teks($b, 'kondisi'),
+            'status_hunian' => self::teks($b, 'status_hunian'),
+            'alasan_tidak_dihuni' => self::teks($b, 'alasan_tidak_dihuni'),
+            'tahun_pembangunan' => self::angka($b, 'tahun_pembangunan'),
+            'luas_bangunan' => self::angka($b, 'luas_bangunan'),
+            'lintang' => self::angka($b, 'lintang'),
+            'bujur' => self::angka($b, 'bujur'),
+            'catatan_hunian' => self::teks($b, 'catatan_hunian'),
+        ];
+
+        if ($data['status_hunian'] === 'Tidak Dihuni') {
+            $data['transmigran_id'] = null;
+        }
+
+        $validator = Validator::make($data, [
+            'satuan_permukiman_id' => ['required', 'integer'],
+            'transmigran_id' => ['nullable', 'integer', 'required_if:status_hunian,Dihuni', Rule::unique('rumah', 'transmigran_id')],
+            'no_rumah' => ['required', 'string', 'max:50'],
+            'tahun_mulai_menghuni' => ['nullable', 'integer', 'min:1900', 'max:'.date('Y'), 'required_if:status_hunian,Dihuni'],
+            'kondisi' => ValidationRules::daftarPilihan(JenisDaftarPilihan::KondisiRumah, wajib: true),
+            'status_hunian' => ValidationRules::daftarPilihan(JenisDaftarPilihan::StatusHunian, wajib: true),
+            'alasan_tidak_dihuni' => ['nullable', 'string', 'max:2000', 'required_if:status_hunian,Tidak Dihuni'],
+            'tahun_pembangunan' => ValidationRules::tahun(),
+            'luas_bangunan' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
+            'lintang' => ['required_with:bujur', ...ValidationRules::lintang()],
+            'bujur' => ['required_with:lintang', ...ValidationRules::bujur()],
+            'catatan_hunian' => ['nullable', 'string', 'max:2000'],
+        ], self::PESAN_UMUM);
+
+        $existing = Rumah::withoutGlobalScopes()->where([
+            'satuan_permukiman_id' => $spId,
+            'no_rumah' => $data['no_rumah'],
+        ])->first();
+        if ($existing !== null) {
+            $diharapkan = array_diff_key($data, ['tahun_mulai_menghuni' => true]);
+            $sama = $existing->only(array_keys($diharapkan)) == $diharapkan;
+            $riwayatSama = $penghuniId === null || $existing->riwayatPenghunian()
+                ->where('transmigran_id', $penghuniId)
+                ->where('tahun_mulai_menghuni', $data['tahun_mulai_menghuni'])->exists();
+
+            return $sama && $riwayatSama ? ['status' => 'dilewati'] : 'Nomor rumah sudah ada dengan isi berbeda.';
+        }
+        if ($validator->fails()) {
+            return $validator->errors()->first();
+        }
+        if ($penghuniId !== null && Transmigran::findOrFail($penghuniId)->satuan_permukiman_id !== $spId) {
+            return 'SP rumah wajib sama dengan SP keluarga penghuni.';
+        }
+
+        OperasiRumah::buat($validator->validated());
+
+        return ['status' => 'dibuat'];
+    }
+
+    /** @return array{status: string}|string */
+    private static function barisLahan(array $b): array|string
+    {
+        $spId = self::wajibSp($b);
+        if (is_string($spId)) {
+            return $spId;
+        }
+        $nik = self::teks($b, 'nik_pemilik');
+        $pemilikId = $nik === null ? null : self::cariIdTunggal(Transmigran::class, 'nik', $nik);
+        if (is_string($pemilikId)) {
+            return $pemilikId;
+        }
+
+        $data = [
+            'kode_lahan' => self::teks($b, 'kode_lahan'),
+            'transmigran_id' => $pemilikId,
+            'satuan_permukiman_id' => $spId,
+            'luas_pekarangan' => self::angka($b, 'luas_pekarangan'),
+            'lintang_pekarangan' => self::angka($b, 'lintang_pekarangan'),
+            'bujur_pekarangan' => self::angka($b, 'bujur_pekarangan'),
+            'luas_kering' => self::angka($b, 'luas_kering'),
+            'luas_basah' => self::angka($b, 'luas_basah'),
+            'lintang_usaha' => self::angka($b, 'lintang_usaha'),
+            'bujur_usaha' => self::angka($b, 'bujur_usaha'),
+            'tujuan_pemanfaatan' => self::teks($b, 'tujuan_pemanfaatan'),
+            'status_sertifikat' => self::teks($b, 'status_sertifikat'),
+            'keterangan' => self::teks($b, 'keterangan'),
+        ];
+        $validator = Validator::make($data, [
+            'kode_lahan' => ['required', 'string', 'max:50'],
+            'transmigran_id' => ['required', 'integer', Rule::unique('lahan', 'transmigran_id')],
+            'satuan_permukiman_id' => ['required', 'integer'],
+            'luas_pekarangan' => ['required_without_all:luas_kering,luas_basah', ...ValidationRules::luas()],
+            'lintang_pekarangan' => ['required_with:bujur_pekarangan', ...ValidationRules::lintang()],
+            'bujur_pekarangan' => ['required_with:lintang_pekarangan', ...ValidationRules::bujur()],
+            'luas_kering' => ValidationRules::luas(wajib: false), 'luas_basah' => ValidationRules::luas(wajib: false),
+            'lintang_usaha' => ['required_with:bujur_usaha', ...ValidationRules::lintang()],
+            'bujur_usaha' => ['required_with:lintang_usaha', ...ValidationRules::bujur()],
+            'tujuan_pemanfaatan' => ['nullable', 'string', 'max:2000'],
+            'status_sertifikat' => ['required', Rule::enum(StatusSertifikat::class)],
+            'keterangan' => ['nullable', 'string', 'max:1000'],
+        ], self::PESAN_UMUM);
+
+        $existing = Lahan::withoutGlobalScopes()->where('kode_lahan', $data['kode_lahan'])->first();
+        if ($existing !== null) {
+            $diharapkan = array_diff_key($data, ['status_sertifikat' => true]);
+            $diharapkan['luas_usaha'] = ($data['luas_kering'] === null && $data['luas_basah'] === null)
+                ? null : (float) ($data['luas_kering'] ?? 0) + (float) ($data['luas_basah'] ?? 0);
+            $sama = $existing->only(array_keys($diharapkan)) == $diharapkan
+                && $existing->transmigran?->status_sertifikat?->value === $data['status_sertifikat'];
+
+            return $sama ? ['status' => 'dilewati'] : 'Kode lahan sudah ada dengan isi berbeda.';
+        }
+        if ($validator->fails()) {
+            return $validator->errors()->first();
+        }
+        if (Transmigran::findOrFail($pemilikId)->satuan_permukiman_id !== $spId) {
+            return 'SP lahan wajib sama dengan SP keluarga pemilik.';
+        }
+
+        OperasiLahan::buat($validator->validated());
+
+        return ['status' => 'dibuat'];
     }
 
     // ------------------------------------------------------------------

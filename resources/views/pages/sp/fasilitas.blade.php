@@ -145,6 +145,5 @@
 
     {{-- Impor massal, lihat komponennya untuk alur tiga langkah --}}
     <x-sim.modal-impor nama="imporFasilitas" judul="Impor Fasilitas SP"
-        entitas="fasilitas-sp"
-        :kolom-wajib="['satuan_permukiman', 'jenis_fasilitas', 'nama', 'kondisi']" />
+        entitas="fasilitas-sp" />
 @endsection

@@ -10,19 +10,31 @@
 use App\Models\Alsintan;
 use App\Models\Desa;
 use App\Models\FasilitasSp;
+use App\Models\HasilPanen;
 use App\Models\Infrastruktur;
 use App\Models\InventarisSp;
 use App\Models\Komoditas;
+use App\Models\Lahan;
+use App\Models\Penanaman;
 use App\Models\Permission;
+use App\Models\Poktan;
 use App\Models\Role;
+use App\Models\Rumah;
+use App\Models\Saprotan;
 use App\Models\Satuan;
 use App\Models\Transmigran;
 use App\Models\User;
 use App\Support\SkemaImpor;
 use Database\Seeders\DaftarPilihanSeeder;
 use Database\Seeders\KawasanSeeder;
+use Database\Seeders\KomoditasSeeder;
+use Database\Seeders\LahanSeeder;
+use Database\Seeders\PenanamanSeeder;
+use Database\Seeders\PoktanSeeder;
+use Database\Seeders\SaprotanSeeder;
 use Database\Seeders\SatuanSeeder;
 use Database\Seeders\SpSeeder;
+use Database\Seeders\TransmigranSeeder;
 use Database\Seeders\WilayahSeeder;
 use Illuminate\Http\UploadedFile;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -90,7 +102,7 @@ it('mengimpor baris satuan yang sah dan menolak nama yang sudah dipakai', functi
 
     $r = $this->post(route('impor.unggah', 'satuan'), ['berkas' => berkasCsvImpor($csv)])->assertOk();
 
-    expect($r->json('disimpan'))->toBe(1)
+    expect($r->json('dibuat'))->toBe(1)
         ->and($r->json('gagal'))->toHaveCount(1)
         ->and($r->json('gagal.0.baris'))->toBe(3) // baris judul = 1, "Karung" = 2, "Ton" = 3
         ->and(Satuan::where('nama', 'Karung')->exists())->toBeTrue();
@@ -102,7 +114,7 @@ it('mengimpor baris wilayah (desa baru di bawah kecamatan yang sudah ada)', func
     $r = $this->post(route('impor.unggah', 'wilayah'), ['berkas' => berkasCsvImpor($csv)])->assertOk();
 
     expect($r->json())->toBe([
-        'diproses' => 1, 'disimpan' => 1, 'jumlah_gagal' => 0,
+        'diproses' => 1, 'dibuat' => 1, 'dilewati' => 0, 'jumlah_gagal' => 0,
         'gagal' => [], 'galat_dibatasi' => false,
     ]);
     expect(Desa::where('nama', 'Desa Uji Impor')->exists())->toBeTrue();
@@ -113,7 +125,7 @@ it('menolak baris wilayah yang induknya tidak ditemukan', function () {
 
     $r = $this->post(route('impor.unggah', 'wilayah'), ['berkas' => berkasCsvImpor($csv)])->assertOk();
 
-    expect($r->json('disimpan'))->toBe(0)
+    expect($r->json('dibuat'))->toBe(0)
         ->and($r->json('gagal.0.pesan'))->toContain('tidak ditemukan');
 });
 
@@ -123,7 +135,7 @@ it('mengimpor baris komoditas dengan satuan baku dicari lewat nama', function ()
     $r = $this->post(route('impor.unggah', 'komoditas'), ['berkas' => berkasCsvImpor($csv)])->assertOk();
 
     expect($r->json())->toBe([
-        'diproses' => 1, 'disimpan' => 1, 'jumlah_gagal' => 0,
+        'diproses' => 1, 'dibuat' => 1, 'dilewati' => 0, 'jumlah_gagal' => 0,
         'gagal' => [], 'galat_dibatasi' => false,
     ]);
     $k = Komoditas::where('nama', 'SORGUM')->first();
@@ -146,7 +158,7 @@ it('mengimpor baris transmigran dengan SP dan kabupaten asal dicari lewat nama',
     $r = $this->post(route('impor.unggah', 'transmigran'), ['berkas' => berkasCsvImpor($csv)])->assertOk();
 
     expect($r->json())->toBe([
-        'diproses' => 1, 'disimpan' => 1, 'jumlah_gagal' => 0,
+        'diproses' => 1, 'dibuat' => 1, 'dilewati' => 0, 'jumlah_gagal' => 0,
         'gagal' => [], 'galat_dibatasi' => false,
     ]);
     $t = Transmigran::where('nik', '5321019999999901')->first();
@@ -171,7 +183,7 @@ it('melewati baris transmigran yang SP-nya tidak ditemukan, sisanya tetap tersim
 
     $r = $this->post(route('impor.unggah', 'transmigran'), ['berkas' => berkasCsvImpor($csv)])->assertOk();
 
-    expect($r->json('disimpan'))->toBe(1)
+    expect($r->json('dibuat'))->toBe(1)
         ->and($r->json('gagal'))->toHaveCount(1)
         ->and($r->json('gagal.0.baris'))->toBe(2);
     expect(Transmigran::where('nik', '5321019999999903')->exists())->toBeTrue();
@@ -195,7 +207,7 @@ it('mewajibkan tahun_keluar pada impor transmigran begitu status_tinggal bukan A
 
     $r = $this->post(route('impor.unggah', 'transmigran'), ['berkas' => berkasCsvImpor($csv)])->assertOk();
 
-    expect($r->json('disimpan'))->toBe(1)
+    expect($r->json('dibuat'))->toBe(1)
         ->and($r->json('gagal'))->toHaveCount(1)
         ->and($r->json('gagal.0.pesan'))->toContain('tahun_keluar');
 
@@ -211,7 +223,7 @@ it('mengimpor baris infrastruktur dan menautkan cakupan ke SP-nya sendiri', func
     $r = $this->post(route('impor.unggah', 'infrastruktur'), ['berkas' => berkasCsvImpor($csv)])->assertOk();
 
     expect($r->json())->toBe([
-        'diproses' => 1, 'disimpan' => 1, 'jumlah_gagal' => 0,
+        'diproses' => 1, 'dibuat' => 1, 'dilewati' => 0, 'jumlah_gagal' => 0,
         'gagal' => [], 'galat_dibatasi' => false,
     ]);
     $infra = Infrastruktur::where('nama', 'Jembatan Uji')->first();
@@ -226,7 +238,7 @@ it('mengimpor baris inventaris-sp', function () {
     $r = $this->post(route('impor.unggah', 'inventaris-sp'), ['berkas' => berkasCsvImpor($csv)])->assertOk();
 
     expect($r->json())->toBe([
-        'diproses' => 1, 'disimpan' => 1, 'jumlah_gagal' => 0,
+        'diproses' => 1, 'dibuat' => 1, 'dilewati' => 0, 'jumlah_gagal' => 0,
         'gagal' => [], 'galat_dibatasi' => false,
     ]);
     expect(InventarisSp::where('nama_barang', 'Meja Kantor Uji')->exists())->toBeTrue();
@@ -239,7 +251,7 @@ it('mengimpor baris fasilitas-sp', function () {
     $r = $this->post(route('impor.unggah', 'fasilitas-sp'), ['berkas' => berkasCsvImpor($csv)])->assertOk();
 
     expect($r->json())->toBe([
-        'diproses' => 1, 'disimpan' => 1, 'jumlah_gagal' => 0,
+        'diproses' => 1, 'dibuat' => 1, 'dilewati' => 0, 'jumlah_gagal' => 0,
         'gagal' => [], 'galat_dibatasi' => false,
     ]);
     $fas = FasilitasSp::where('nama_fasilitas', 'Posyandu Uji')->first();
@@ -254,12 +266,201 @@ it('mengimpor baris alsintan tanpa distribusi (belum tersalurkan)', function () 
     $r = $this->post(route('impor.unggah', 'alsintan'), ['berkas' => berkasCsvImpor($csv)])->assertOk();
 
     expect($r->json())->toBe([
-        'diproses' => 1, 'disimpan' => 1, 'jumlah_gagal' => 0,
+        'diproses' => 1, 'dibuat' => 1, 'dilewati' => 0, 'jumlah_gagal' => 0,
         'gagal' => [], 'galat_dibatasi' => false,
     ]);
     $a = Alsintan::where('nama_alat', 'Traktor Uji')->first();
     expect($a)->not->toBeNull()
         ->and($a->distribusi)->toBeEmpty();
+});
+
+it('mengimpor rumah secara idempoten dan membuat riwayat hunian', function () {
+    $this->seed(TransmigranSeeder::class);
+    $csv = csvEntitasImpor('rumah', [[
+        'no_rumah' => 'IMP-01', 'satuan_permukiman' => 'SP Kapitan Meo',
+        'nik_penghuni' => '5321011505800001', 'tahun_mulai_menghuni' => 2020,
+        'kondisi' => 'Tidak Rusak', 'status_hunian' => 'Dihuni',
+        'tahun_pembangunan' => 2019, 'luas_bangunan' => 36,
+    ]]);
+
+    $this->post(route('impor.unggah', 'rumah'), ['berkas' => berkasCsvImpor($csv)])
+        ->assertOk()->assertJsonPath('dibuat', 1);
+    $this->post(route('impor.unggah', 'rumah'), ['berkas' => berkasCsvImpor($csv)])
+        ->assertOk()->assertJsonPath('dilewati', 1)->assertJsonPath('jumlah_gagal', 0);
+
+    $rumah = Rumah::where('no_rumah', 'IMP-01')->firstOrFail();
+    expect($rumah->riwayatPenghunian)->toHaveCount(1)
+        ->and((int) $rumah->riwayatPenghunian->first()->tahun_mulai_menghuni)->toBe(2020);
+});
+
+it('mengimpor lahan secara idempoten dan menurunkan sp serta luas usaha', function () {
+    $this->seed(TransmigranSeeder::class);
+    $csv = csvEntitasImpor('lahan', [[
+        'kode_lahan' => 'IMP-LH-01', 'nik_pemilik' => '5321011505800001',
+        'satuan_permukiman' => 'SP Kapitan Meo', 'luas_pekarangan' => 0.25,
+        'luas_kering' => 1.25, 'luas_basah' => 0.25,
+        'tujuan_pemanfaatan' => 'JAGUNG', 'status_sertifikat' => 'Sudah',
+    ]]);
+
+    $this->post(route('impor.unggah', 'lahan'), ['berkas' => berkasCsvImpor($csv)])
+        ->assertOk()->assertJsonPath('dibuat', 1);
+    $this->post(route('impor.unggah', 'lahan'), ['berkas' => berkasCsvImpor($csv)])
+        ->assertOk()->assertJsonPath('dilewati', 1)->assertJsonPath('jumlah_gagal', 0);
+
+    $lahan = Lahan::where('kode_lahan', 'IMP-LH-01')->firstOrFail();
+    expect((float) $lahan->luas_usaha)->toBe(1.5)
+        ->and($lahan->satuan_permukiman_id)->toBe(1);
+});
+
+it('mengimpor satu kelompok poktan beserta anggota secara atomik dan idempoten', function () {
+    $this->seed(TransmigranSeeder::class);
+    $profil = [
+        'nama_poktan' => 'POKTAN IMPOR', 'satuan_permukiman' => 'SP Kapitan Meo',
+        'tahun_berdiri' => 2020, 'asal_ketua' => 'Kepala Keluarga',
+        'nik_ketua' => '5321011505800001',
+    ];
+    $csv = csvEntitasImpor('poktan', [
+        $profil + ['nik_anggota' => '5321011505800001', 'jabatan_anggota' => 'Anggota', 'tanggal_masuk' => '2020-01-10', 'status_anggota' => 'Aktif'],
+        $profil + ['nik_anggota' => '5321012203850002', 'jabatan_anggota' => 'Anggota', 'tanggal_masuk' => '2020-01-10', 'status_anggota' => 'Aktif'],
+    ]);
+
+    $respons = $this->post(route('impor.unggah', 'poktan'), ['berkas' => berkasCsvImpor($csv)])->assertOk();
+    $respons->assertJsonPath('jumlah_gagal', 0)->assertJsonPath('dibuat', 2);
+    $this->post(route('impor.unggah', 'poktan'), ['berkas' => berkasCsvImpor($csv)])
+        ->assertOk()->assertJsonPath('dilewati', 2)->assertJsonPath('jumlah_gagal', 0);
+
+    expect(Poktan::where('nama', 'POKTAN IMPOR')->firstOrFail()->anggota)->toHaveCount(2);
+});
+
+it('menggulung seluruh kelompok poktan bila satu anggota tidak sah', function () {
+    $this->seed(TransmigranSeeder::class);
+    $profil = [
+        'nama_poktan' => 'POKTAN GAGAL ATOMIK', 'satuan_permukiman' => 'SP Kapitan Meo',
+        'asal_ketua' => 'Kepala Keluarga', 'nik_ketua' => '5321011505800001',
+    ];
+    $csv = csvEntitasImpor('poktan', [
+        $profil + ['nik_anggota' => '5321011505800001', 'jabatan_anggota' => 'Anggota', 'tanggal_masuk' => '2020-01-10', 'status_anggota' => 'Aktif'],
+        $profil + ['nik_anggota' => '0000000000000000', 'jabatan_anggota' => 'Anggota', 'tanggal_masuk' => '2020-01-10', 'status_anggota' => 'Aktif'],
+    ]);
+
+    $this->post(route('impor.unggah', 'poktan'), ['berkas' => berkasCsvImpor($csv)])
+        ->assertOk()->assertJsonPath('dibuat', 0)->assertJsonPath('jumlah_gagal', 2);
+
+    expect(Poktan::where('nama', 'POKTAN GAGAL ATOMIK')->exists())->toBeFalse();
+});
+
+it('mengimpor satu pengadaan saprotan beserta distribusi secara atomik dan idempoten', function () {
+    $this->seed(TransmigranSeeder::class);
+    $this->seed(PoktanSeeder::class);
+    $this->seed(KomoditasSeeder::class);
+    $slug = Poktan::findOrFail(1)->slug;
+    $profil = [
+        'kode_saprotan' => 'SAP-IMP-01', 'jenis_saprotan' => 'Benih', 'nama' => 'BENIH IMPOR',
+        'jumlah_total' => 100, 'satuan' => 'Kilogram', 'tahun_pengadaan' => 2026,
+        'komoditas' => 'JAGUNG', 'varietas' => 'BISI UJI',
+    ];
+    $csv = csvEntitasImpor('saprotan', [
+        $profil + ['poktan_slug' => $slug, 'jumlah_distribusi' => 60, 'tanggal_serah' => '2026-01-10'],
+    ]);
+
+    $this->post(route('impor.unggah', 'saprotan'), ['berkas' => berkasCsvImpor($csv)])
+        ->assertOk()->assertJsonPath('dibuat', 1)->assertJsonPath('jumlah_gagal', 0);
+    $this->post(route('impor.unggah', 'saprotan'), ['berkas' => berkasCsvImpor($csv)])
+        ->assertOk()->assertJsonPath('dilewati', 1)->assertJsonPath('jumlah_gagal', 0);
+
+    expect(Saprotan::where('kode_saprotan', 'SAP-IMP-01')->firstOrFail()->distribusi)->toHaveCount(1);
+});
+
+it('mengimpor penanaman dari kode stabil secara idempoten', function () {
+    $this->seed(TransmigranSeeder::class);
+    $this->seed(LahanSeeder::class);
+    $this->seed(PoktanSeeder::class);
+    $this->seed(KomoditasSeeder::class);
+    $this->seed(SaprotanSeeder::class);
+    $saprotan = Saprotan::where('jenis', 'Benih')->whereHas('distribusi')->firstOrFail();
+    $distribusi = $saprotan->distribusi->first();
+    $csv = csvEntitasImpor('penanaman', [[
+        'kode_penanaman' => 'TAN-IMP-01', 'poktan_slug' => $distribusi->poktan->slug,
+        'kode_saprotan' => $saprotan->kode_saprotan, 'periode_tanam' => '2026-01',
+        'volume_benih' => 1, 'realisasi_tanam_ha' => 0.1,
+    ]]);
+
+    $this->post(route('impor.unggah', 'penanaman'), ['berkas' => berkasCsvImpor($csv)])
+        ->assertOk()->assertJsonPath('dibuat', 1)->assertJsonPath('jumlah_gagal', 0);
+    $this->post(route('impor.unggah', 'penanaman'), ['berkas' => berkasCsvImpor($csv)])
+        ->assertOk()->assertJsonPath('dilewati', 1)->assertJsonPath('jumlah_gagal', 0);
+
+    expect(Penanaman::where('kode_penanaman', 'TAN-IMP-01')->count())->toBe(1);
+});
+
+it('mengimpor hasil panen aktif dari kode penanaman secara idempoten', function () {
+    $this->seed(TransmigranSeeder::class);
+    $this->seed(LahanSeeder::class);
+    $this->seed(PoktanSeeder::class);
+    $this->seed(KomoditasSeeder::class);
+    $this->seed(SaprotanSeeder::class);
+    $this->seed(PenanamanSeeder::class);
+    $penanaman = Penanaman::firstOrFail();
+    $luas = (float) $penanaman->realisasi_tanam;
+    $csv = csvEntitasImpor('hasil-panen', [[
+        'kode_penanaman' => $penanaman->kode_penanaman, 'periode_panen' => '2026-06',
+        'realisasi_panen_ha' => $luas, 'puso_ha' => 0, 'produktivitas' => 5,
+    ]]);
+
+    $this->post(route('impor.unggah', 'hasil-panen'), ['berkas' => berkasCsvImpor($csv)])
+        ->assertOk()->assertJsonPath('dibuat', 1)->assertJsonPath('jumlah_gagal', 0);
+    $this->post(route('impor.unggah', 'hasil-panen'), ['berkas' => berkasCsvImpor($csv)])
+        ->assertOk()->assertJsonPath('dilewati', 1)->assertJsonPath('jumlah_gagal', 0);
+
+    $panen = HasilPanen::where('penanaman_id', $penanaman->id_penanaman)->firstOrFail();
+    expect((float) $panen->produksi)->toBe(round($luas * 5, 3));
+});
+
+it('menjaga paritas xlsx untuk enam entitas berantai', function () {
+    $this->seed(TransmigranSeeder::class);
+    $this->seed(KomoditasSeeder::class);
+
+    $kirim = function (string $entitas, array $data): void {
+        $kolom = array_column(SkemaImpor::kolom($entitas), 'kolom');
+        $nilai = array_map(fn (string $nama) => $data[$nama] ?? '', $kolom);
+        $respons = $this->post(route('impor.unggah', $entitas), ['berkas' => berkasXlsxImpor([$kolom, $nilai])])->assertOk();
+        if ($respons->json('jumlah_gagal') !== 0) {
+            throw new RuntimeException($entitas.': '.json_encode($respons->json(), JSON_PRETTY_PRINT));
+        }
+        $respons->assertJsonPath('dibuat', 1);
+    };
+
+    $kirim('rumah', [
+        'no_rumah' => 'XLSX-01', 'satuan_permukiman' => 'SP Kapitan Meo',
+        'kondisi' => 'Tidak Rusak', 'status_hunian' => 'Tidak Dihuni',
+        'alasan_tidak_dihuni' => 'Belum ditempati',
+    ]);
+    $kirim('lahan', [
+        'kode_lahan' => 'XLSX-LH-01', 'nik_pemilik' => '5321011505800001',
+        'satuan_permukiman' => 'SP Kapitan Meo', 'luas_pekarangan' => 0.25,
+        'status_sertifikat' => 'Sudah',
+    ]);
+    $kirim('poktan', [
+        'nama_poktan' => 'POKTAN XLSX RANTAI', 'satuan_permukiman' => 'SP Kapitan Meo',
+        'asal_ketua' => 'Bukan Transmigran', 'nik_ketua' => '5321019999999999',
+        'nama_ketua' => 'KETUA XLSX', 'luas_kering_ketua' => 2,
+    ]);
+    $poktan = Poktan::where('nama', 'POKTAN XLSX RANTAI')->firstOrFail();
+    $kirim('saprotan', [
+        'kode_saprotan' => 'SAP-XLSX-RANTAI', 'jenis_saprotan' => 'Benih', 'nama' => 'BENIH XLSX',
+        'jumlah_total' => 50, 'satuan' => 'Kilogram', 'tahun_pengadaan' => 2026,
+        'komoditas' => 'JAGUNG', 'varietas' => 'XLSX', 'poktan_slug' => $poktan->slug,
+        'jumlah_distribusi' => 20,
+    ]);
+    $kirim('penanaman', [
+        'kode_penanaman' => 'TAN-XLSX-RANTAI', 'poktan_slug' => $poktan->slug,
+        'kode_saprotan' => 'SAP-XLSX-RANTAI', 'periode_tanam' => '2026-01',
+        'volume_benih' => 2, 'realisasi_tanam_ha' => 1,
+    ]);
+    $kirim('hasil-panen', [
+        'kode_penanaman' => 'TAN-XLSX-RANTAI', 'periode_panen' => '2026-06',
+        'realisasi_panen_ha' => 0.9, 'puso_ha' => 0.1, 'produktivitas' => 4,
+    ]);
 });
 
 it('mengabaikan baris petunjuk # dan baris kosong pada berkas template', function () {
@@ -272,7 +473,7 @@ it('mengabaikan baris petunjuk # dan baris kosong pada berkas template', functio
     $r = $this->post(route('impor.unggah', 'satuan'), ['berkas' => berkasCsvImpor($csv)])->assertOk();
 
     expect($r->json())->toBe([
-        'diproses' => 1, 'disimpan' => 1, 'jumlah_gagal' => 0,
+        'diproses' => 1, 'dibuat' => 1, 'dilewati' => 0, 'jumlah_gagal' => 0,
         'gagal' => [], 'galat_dibatasi' => false,
     ]);
 });
@@ -283,7 +484,7 @@ it('menjaga paritas xlsx dengan csv untuk delapan entitas aktif', function (stri
 
     $this->post(route('impor.unggah', $entitas), [
         'berkas' => berkasXlsxImpor([$kolom, $nilai]),
-    ])->assertOk()->assertJsonPath('disimpan', 1)->assertJsonPath('jumlah_gagal', 0);
+    ])->assertOk()->assertJsonPath('dibuat', 1)->assertJsonPath('jumlah_gagal', 0);
 })->with([
     'satuan' => ['satuan', ['nama' => 'Pikul', 'simbol' => 'pkl', 'faktor_ke_ton' => 0.1]],
     'wilayah' => ['wilayah', ['tingkat' => 'desa', 'nama' => 'Desa XLSX', 'induk' => 'Laen Manen']],
@@ -369,7 +570,7 @@ it('menolak judul duplikat hilang asing dan berkas tanpa data', function (string
 it('menerima urutan judul fleksibel dan menolak boolean yang tidak dikenal', function () {
     $this->post(route('impor.unggah', 'satuan'), [
         'berkas' => berkasCsvImpor("simbol,faktor_ke_ton,nama\nkrg,,Karung Fleksibel\n"),
-    ])->assertOk()->assertJsonPath('disimpan', 1);
+    ])->assertOk()->assertJsonPath('dibuat', 1);
 
     $this->post(route('impor.unggah', 'komoditas'), [
         'berkas' => berkasCsvImpor("nama_komoditas,jenis,satuan_baku,unggulan,deskripsi\nKACANG UJI,Palawija,Kilogram,mungkin,\n"),
@@ -395,8 +596,8 @@ it('menolak lebih dari 1000 baris data', function () {
         ->assertJsonPath('pesan', fn (string $nilai): bool => str_contains($nilai, '1000'));
 });
 
-it('menolak entitas yang belum aktif (enam entitas berantai)', function () {
-    $this->post(route('impor.unggah', 'rumah'), ['berkas' => berkasCsvImpor("a\nb\n")])
+it('menolak entitas yang tidak dikenal', function () {
+    $this->post(route('impor.unggah', 'tidak-ada'), ['berkas' => berkasCsvImpor("a\nb\n")])
         ->assertNotFound();
 });
 
@@ -435,6 +636,42 @@ it('menolak pengguna tanpa kewenangan lihat atau tambah pada entitas terkait', f
     'hanya tambah' => [['tambah']],
 ]);
 
+it('mewajibkan izin tambah anggota untuk impor poktan', function () {
+    $role = Role::factory()->create();
+    foreach (['lihat', 'tambah'] as $aksi) {
+        $role->permissions()->attach(Permission::factory()->create([
+            'nama' => 'poktan.'.$aksi, 'modul' => 'poktan', 'aksi' => $aksi,
+        ]));
+    }
+    $pengguna = User::factory()->create(['role_id' => $role->id_role]);
+    $csv = csvEntitasImpor('poktan', [[
+        'nama_poktan' => 'POKTAN TANPA IZIN ANGGOTA', 'satuan_permukiman' => 'SP Kapitan Meo',
+        'asal_ketua' => 'Bukan Transmigran', 'nik_ketua' => '5321019999999999', 'nama_ketua' => 'KETUA UJI',
+    ]]);
+
+    $this->actingAs($pengguna)
+        ->post(route('impor.unggah', 'poktan'), ['berkas' => berkasCsvImpor($csv)])
+        ->assertForbidden();
+    expect(Poktan::where('nama', 'POKTAN TANPA IZIN ANGGOTA')->exists())->toBeFalse();
+});
+
+it('melindungi unduhan template dengan izin lihat dan tambah', function (array $aksi) {
+    $role = Role::factory()->create();
+    foreach ($aksi as $namaAksi) {
+        $role->permissions()->attach(Permission::factory()->create([
+            'nama' => 'satuan.'.$namaAksi, 'modul' => 'satuan', 'aksi' => $namaAksi,
+        ]));
+    }
+    $pengguna = User::factory()->create(['role_id' => $role->id_role]);
+
+    $this->actingAs($pengguna)->get(route('template-impor', 'satuan'))->assertForbidden();
+    $this->actingAs($pengguna)->get(route('template-impor.xlsx', 'satuan'))->assertForbidden();
+})->with([
+    'tanpa keduanya' => [[]],
+    'hanya lihat' => [['lihat']],
+    'hanya tambah' => [['tambah']],
+]);
+
 it('menormalisasi tanggal yang dideklarasikan skema pada csv dan xlsx', function (string $tanggal, string $format) {
     $nik = $format === 'csv' ? '5321019999999601' : '5321019999999602';
     $kk = $format === 'csv' ? '5321010102159601' : '5321010102159602';
@@ -449,7 +686,7 @@ it('menormalisasi tanggal yang dideklarasikan skema pada csv dan xlsx', function
         : berkasXlsxImpor([$kolom, array_map(fn (string $nama) => $data[$nama] ?? '', $kolom)]);
 
     $this->post(route('impor.unggah', 'transmigran'), ['berkas' => $berkas])
-        ->assertOk()->assertJsonPath('disimpan', 1);
+        ->assertOk()->assertJsonPath('dibuat', 1);
 
     expect(Transmigran::where('nik', $nik)->firstOrFail()->tanggal_lahir->format('Y-m-d'))->toBe('1985-01-02');
 })->with([
@@ -471,7 +708,7 @@ it('menjaga nik kk dan telepon sebagai teks termasuk nol awal pada xlsx', functi
 
     $this->post(route('impor.unggah', 'transmigran'), [
         'berkas' => berkasXlsxImpor([$kolom, $data]),
-    ])->assertOk()->assertJsonPath('disimpan', 1);
+    ])->assertOk()->assertJsonPath('dibuat', 1);
 
     $transmigran = Transmigran::where('nik', '0321019999999901')->firstOrFail();
     expect($transmigran->no_kk)->toBe('0021010102159901')
@@ -506,7 +743,7 @@ it('menegakkan cakupan sp bagi aktor yang ditugaskan dan tidak ditugaskan', func
     ]);
 
     $this->post(route('impor.unggah', 'transmigran'), ['berkas' => berkasCsvImpor($csv)])
-        ->assertOk()->assertJsonPath('disimpan', 1)->assertJsonPath('jumlah_gagal', 1);
+        ->assertOk()->assertJsonPath('dibuat', 1)->assertJsonPath('jumlah_gagal', 1);
 
     expect(Transmigran::withoutGlobalScopes()->where('nik', '5321019999999801')->exists())->toBeTrue()
         ->and(Transmigran::withoutGlobalScopes()->where('nik', '5321019999999802')->exists())->toBeFalse();
@@ -524,7 +761,7 @@ it('menggulung baris gagal tetapi melanjutkan baris berikutnya', function () {
         ."SP Kapitan Meo,Aset Lanjut,Jalan Penghubung,Baik,2020,APBN,,,,\n";
 
     $this->post(route('impor.unggah', 'infrastruktur'), ['berkas' => berkasCsvImpor($csv)])
-        ->assertOk()->assertJsonPath('disimpan', 1)->assertJsonPath('jumlah_gagal', 1);
+        ->assertOk()->assertJsonPath('dibuat', 1)->assertJsonPath('jumlah_gagal', 1);
 
     expect(Infrastruktur::where('nama', 'Aset Gagal')->exists())->toBeFalse()
         ->and(Infrastruktur::where('nama', 'Aset Lanjut')->exists())->toBeTrue();

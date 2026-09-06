@@ -226,6 +226,5 @@
 
     {{-- Impor massal, lihat komponennya untuk alur tiga langkah --}}
     <x-sim.modal-impor nama="imporPenanaman" judul="Impor Penanaman"
-        entitas="penanaman"
-            :kolom-wajib="['kelompok_tani', 'komoditas', 'periode_tanam', 'realisasi_tanam_ha']" />
+        entitas="penanaman" />
 @endsection

@@ -10,13 +10,13 @@ use App\Models\Rumah;
 use App\Models\SatuanPermukiman;
 use App\Models\Scopes\CakupanDataSp;
 use App\Models\Transmigran;
+use App\Support\OperasiRumah;
 use App\Support\Paginasi;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 /**
@@ -24,9 +24,9 @@ use Illuminate\Validation\Rule;
  *
  * Relasi rumah <-> KK satu-ke-satu, ditegakkan `UNIQUE (rumah.transmigran_id)`
  * di basis data (`rules.md` 6a.6). Pergantian penghuni TIDAK menimpa data lama:
- * baris `riwayat_penghunian` yang terbuka ditutup (`tanggal_keluar`) dan baris
+ * baris `riwayat_penghunian` yang terbuka ditutup (`tahun_selesai_menghuni`) dan baris
  * baru dibuka (`rules.md` 6a.9). Penghuni sekarang dibaca halaman rincian dari
- * riwayat yang belum punya `tanggal_keluar`, bukan dari kolom -- keduanya
+ * riwayat yang belum punya `tahun_selesai_menghuni`, bukan dari kolom -- keduanya
  * dijaga sepadan di sini.
  */
 class RumahController extends Controller
@@ -87,8 +87,8 @@ class RumahController extends Controller
                     'id_riwayat_penghunian' => $r->id_riwayat_penghunian,
                     'transmigran_id' => $r->transmigran_id,
                     'transmigran' => $r->transmigran?->nama_kepala_keluarga,
-                    'tanggal_masuk' => $r->tanggal_masuk?->toDateString(),
-                    'tanggal_keluar' => $r->tanggal_keluar?->toDateString(),
+                    'tahun_mulai_menghuni' => $r->tahun_mulai_menghuni,
+                    'tahun_selesai_menghuni' => $r->tahun_selesai_menghuni,
                     'alasan_keluar' => $r->alasan_keluar,
                     'keterangan' => $r->keterangan,
                 ])
@@ -106,20 +106,9 @@ class RumahController extends Controller
     {
         // Rumah baru belum punya penghuni sebelumnya, jadi `alasan_keluar` tak dipakai.
         $data = $this->validasi($request);
-        $this->pastikanPenghuniDapatDitulis($data['transmigran_id'] ?? null);
-        [$data] = $this->pisahkan($data);
-        $this->tetapkanSp($data);
 
         DB::transaction(function () use ($request, $data) {
-            $rumah = Rumah::create($data + ['uuid' => (string) Str::uuid()]);
-
-            if ($rumah->transmigran_id !== null) {
-                $rumah->riwayatPenghunian()->create([
-                    'transmigran_id' => $rumah->transmigran_id,
-                    'tanggal_masuk' => now()->toDateString(),
-                ]);
-            }
-
+            $rumah = OperasiRumah::buat($data);
             $this->lampirkanBerkas($request, $rumah);
         });
 
@@ -133,30 +122,30 @@ class RumahController extends Controller
 
         $data = $this->validasi($request, $rumah);
         $this->pastikanPenghuniDapatDitulis($data['transmigran_id'] ?? null);
-        [$data, $alasanKeluar] = $this->pisahkan($data);
+        [$data, $alasanKeluar, $tahunMulai, $tahunSelesai] = $this->pisahkan($data);
         $this->tetapkanSp($data);
 
         $lama = $rumah->transmigran_id;
         $baru = $data['transmigran_id'] ?? null;
 
-        DB::transaction(function () use ($request, $rumah, $data, $lama, $baru, $alasanKeluar) {
+        DB::transaction(function () use ($request, $rumah, $data, $lama, $baru, $alasanKeluar, $tahunMulai, $tahunSelesai) {
             $rumah->update($data);
 
             if ((int) $baru !== (int) $lama) {
                 // Baris terbuka ditutup satu per satu (bukan mass-update) agar
                 // AuditLogObserver menangkap perubahannya.
                 $rumah->riwayatPenghunian()
-                    ->whereNull('tanggal_keluar')
+                    ->whereNull('tahun_selesai_menghuni')
                     ->get()
                     ->each(fn ($jejak) => $jejak->update([
-                        'tanggal_keluar' => now()->toDateString(),
+                        'tahun_selesai_menghuni' => $tahunSelesai,
                         'alasan_keluar' => $alasanKeluar,
                     ]));
 
                 if ($baru !== null) {
                     $rumah->riwayatPenghunian()->create([
                         'transmigran_id' => $baru,
-                        'tanggal_masuk' => now()->toDateString(),
+                        'tahun_mulai_menghuni' => $tahunMulai,
                     ]);
                 }
             }
@@ -212,19 +201,27 @@ class RumahController extends Controller
      * kolom `rumah`. Rumah tak berpenghuni tak boleh punya `transmigran_id`.
      *
      * @param  array<string, mixed>  $data
-     * @return array{0: array<string, mixed>, 1: string|null}
+     * @return array{0: array<string, mixed>, 1: string|null, 2: int|null, 3: int|null}
      */
     private function pisahkan(array $data): array
     {
         $alasanKeluar = $data['alasan_keluar'] ?? null;
+        $tahunMulai = isset($data['tahun_mulai_menghuni']) ? (int) $data['tahun_mulai_menghuni'] : null;
+        $tahunSelesai = isset($data['tahun_selesai_menghuni']) ? (int) $data['tahun_selesai_menghuni'] : null;
 
-        unset($data['alasan_keluar'], $data['foto_rumah'], $data['dokumen_pendukung']);
+        unset(
+            $data['alasan_keluar'],
+            $data['tahun_mulai_menghuni'],
+            $data['tahun_selesai_menghuni'],
+            $data['foto_rumah'],
+            $data['dokumen_pendukung'],
+        );
 
         if (($data['status_hunian'] ?? null) === StatusHunian::TidakDihuni->value) {
             $data['transmigran_id'] = null;
         }
 
-        return [$data, $alasanKeluar];
+        return [$data, $alasanKeluar, $tahunMulai, $tahunSelesai];
     }
 
     private function tetapkanSp(array &$data): void
@@ -279,6 +276,12 @@ class RumahController extends Controller
      */
     private function validasi(Request $request, ?Rumah $rumah = null): array
     {
+        $penghuniBerubah = $rumah !== null
+            && (int) $request->input('transmigran_id') !== (int) $rumah->transmigran_id;
+        $tahunMulaiLama = $rumah?->riwayatPenghunian()
+            ->whereNull('tahun_selesai_menghuni')
+            ->value('tahun_mulai_menghuni');
+
         return $request->validate([
             'satuan_permukiman_id' => [
                 Rule::requiredIf(fn () => blank($request->input('transmigran_id'))),
@@ -296,6 +299,33 @@ class RumahController extends Controller
             'alasan_tidak_dihuni' => ['nullable', 'string', 'max:2000', 'required_if:status_hunian,Tidak Dihuni'],
             'catatan_hunian' => ['nullable', 'string', 'max:2000'],
             'alasan_keluar' => ['nullable', 'string', 'max:2000'],
+            'tahun_mulai_menghuni' => [
+                Rule::requiredIf(fn () => $request->input('status_hunian') === StatusHunian::Dihuni->value
+                    && ($rumah === null || $penghuniBerubah)),
+                ...ValidationRules::tahun(),
+                function (string $attribute, mixed $value, \Closure $fail) use ($request): void {
+                    if ($value !== null
+                        && $request->filled('tahun_selesai_menghuni')
+                        && (int) $value < (int) $request->input('tahun_selesai_menghuni')) {
+                        $fail('Tahun mulai menghuni tidak boleh sebelum tahun penghuni sebelumnya selesai.');
+                    }
+
+                    if ($value !== null
+                        && $request->filled('tahun_pembangunan')
+                        && (int) $value < (int) $request->input('tahun_pembangunan')) {
+                        $fail('Tahun mulai menghuni tidak boleh sebelum tahun pembangunan rumah.');
+                    }
+                },
+            ],
+            'tahun_selesai_menghuni' => [
+                Rule::requiredIf(fn () => $penghuniBerubah),
+                ...ValidationRules::tahun(),
+                function (string $attribute, mixed $value, \Closure $fail) use ($tahunMulaiLama): void {
+                    if ($value !== null && $tahunMulaiLama !== null && (int) $value < (int) $tahunMulaiLama) {
+                        $fail('Tahun selesai menghuni tidak boleh sebelum tahun mulai menghuni.');
+                    }
+                },
+            ],
             'tahun_pembangunan' => ValidationRules::tahun(),
             'luas_bangunan' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
             'lintang' => ValidationRules::lintang(),
@@ -310,6 +340,8 @@ class RumahController extends Controller
             'alasan_tidak_dihuni.required_if' => 'Alasan wajib diisi bila rumah tidak dihuni.',
             'transmigran_id.required' => 'Kepala keluarga penghuni wajib dipilih bila rumah dihuni.',
             'transmigran_id.unique' => 'Keluarga ini sudah menempati rumah lain.',
+            'tahun_mulai_menghuni.required' => 'Tahun mulai menghuni wajib diisi.',
+            'tahun_selesai_menghuni.required' => 'Tahun selesai menghuni wajib diisi saat penghuni diganti atau dikosongkan.',
         ] + ValidationRules::pesan());
     }
 }

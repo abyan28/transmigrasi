@@ -73,12 +73,26 @@ it('membalas 404 untuk penanaman yang tidak ada', function () {
     $this->get('/penanaman/99999')->assertNotFound();
 });
 
+it('mewajibkan kode penanaman pada catatan baru', function () {
+    $dist = SaprotanDistribusi::findOrFail(2);
+
+    $this->post(route('penanaman.simpan'), [
+        'poktan_id' => $dist->poktan_id,
+        'komoditas_id' => $dist->saprotan->komoditas_id,
+        'saprotan_distribusi_id' => $dist->id_saprotan_distribusi,
+        'volume_benih' => '10',
+        'realisasi_tanam' => '0.50',
+        'periode_tanam' => '2026-03',
+    ])->assertSessionHasErrors('kode_penanaman');
+});
+
 it('menyimpan penanaman baru dengan benih yang stoknya cukup', function () {
     $dist = SaprotanDistribusi::find(2);
     $poktan = $dist->poktan_id;
     $komoditas = $dist->saprotan->komoditas_id;
 
     $this->post(route('penanaman.simpan'), [
+        'kode_penanaman' => 'TAN-UJI-001',
         'poktan_id' => $poktan,
         'komoditas_id' => $komoditas,
         'saprotan_distribusi_id' => 2,
@@ -98,6 +112,7 @@ it('mengunci distribusi dan poktan saat memeriksa stok dan lahan', function () {
     $dist = SaprotanDistribusi::findOrFail(2);
 
     $this->post(route('penanaman.simpan'), [
+        'kode_penanaman' => 'TAN-UJI-002',
         'poktan_id' => $dist->poktan_id,
         'komoditas_id' => $dist->saprotan->komoditas_id,
         'saprotan_distribusi_id' => $dist->id_saprotan_distribusi,
@@ -116,6 +131,7 @@ it('menolak id poktan dan komoditas palsu alih-alih mempercayai request', functi
     $komoditasLain = Komoditas::where('id_komoditas', '!=', $dist->saprotan->komoditas_id)->value('id_komoditas');
 
     $this->post(route('penanaman.simpan'), [
+        'kode_penanaman' => 'TAN-UJI-003',
         'poktan_id' => $poktanLain,
         'komoditas_id' => $komoditasLain,
         'saprotan_distribusi_id' => $dist->id_saprotan_distribusi,
@@ -132,6 +148,7 @@ it('menolak distribusi nonbenih dan induk saprotan terhapus', function () {
     $nonBenih = SaprotanDistribusi::whereHas('saprotan', fn ($q) => $q->where('jenis', '!=', 'Benih'))->firstOrFail();
 
     $kirim = fn (SaprotanDistribusi $dist) => $this->post(route('penanaman.simpan'), [
+        'kode_penanaman' => 'TAN-UJI-004',
         'poktan_id' => $dist->poktan_id,
         'komoditas_id' => $dist->saprotan?->komoditas_id ?? Komoditas::value('id_komoditas'),
         'saprotan_distribusi_id' => $dist->id_saprotan_distribusi,
@@ -158,6 +175,7 @@ it('menutup akses distribusi dari SP di luar cakupan', function () {
     $this->actingAs($petugas);
 
     $this->post(route('penanaman.simpan'), [
+        'kode_penanaman' => 'TAN-UJI-005',
         'poktan_id' => $dist->poktan_id,
         'komoditas_id' => $dist->saprotan->komoditas_id,
         'saprotan_distribusi_id' => $dist->id_saprotan_distribusi,
@@ -171,6 +189,7 @@ it('menolak volume benih melebihi sisa jatah', function () {
     $dist = SaprotanDistribusi::find(2); // 100 kg, belum terpakai
 
     $this->post(route('penanaman.simpan'), [
+        'kode_penanaman' => 'TAN-UJI-006',
         'poktan_id' => $dist->poktan_id,
         'komoditas_id' => $dist->saprotan->komoditas_id,
         'saprotan_distribusi_id' => 2,
@@ -186,6 +205,7 @@ it('menolak realisasi tanam melebihi lahan kelompok yang belum ditanami', functi
     $tersedia = RekapPoktan::lahanTersedia($poktan);
 
     $this->post(route('penanaman.simpan'), [
+        'kode_penanaman' => 'TAN-UJI-007',
         'poktan_id' => $poktan->id_poktan,
         'komoditas_id' => $dist->saprotan->komoditas_id,
         'saprotan_distribusi_id' => 2,

@@ -35,6 +35,13 @@ it('membuat kelima tabel + dua pivot batch ini', function () {
     ] as $tabel) {
         expect(Schema::hasTable($tabel))->toBeTrue("tabel {$tabel} tidak dibuat");
     }
+
+    expect(Schema::hasColumns('riwayat_penghunian', [
+        'tahun_mulai_menghuni',
+        'tahun_selesai_menghuni',
+    ]))->toBeTrue()
+        ->and(Schema::hasColumn('riwayat_penghunian', 'tanggal_masuk'))->toBeFalse()
+        ->and(Schema::hasColumn('riwayat_penghunian', 'tanggal_keluar'))->toBeFalse();
 });
 
 it('memakai PK tunggal, uuid route key untuk transmigran & rumah', function () {
@@ -83,6 +90,7 @@ it('mengikat rumah ke KK satu-ke-satu (UNIQUE transmigran_id)', function () {
     $kk = buatTransmigran($sp);
     $rumah = Rumah::create([
         'uuid' => (string) Str::uuid(), 'satuan_permukiman_id' => $sp->id_satuan_permukiman,
+        'no_rumah' => 'R-UJI-1',
         'transmigran_id' => $kk->id_transmigran, 'kondisi' => 'Tidak Rusak', 'status_hunian' => 'Dihuni',
     ]);
 
@@ -92,7 +100,23 @@ it('mengikat rumah ke KK satu-ke-satu (UNIQUE transmigran_id)', function () {
     // rumah kedua untuk KK yang sama ditolak.
     expect(fn () => Rumah::create([
         'uuid' => (string) Str::uuid(), 'satuan_permukiman_id' => $sp->id_satuan_permukiman,
+        'no_rumah' => 'R-UJI-2',
         'transmigran_id' => $kk->id_transmigran, 'kondisi' => 'Rusak Ringan', 'status_hunian' => 'Dihuni',
+    ]))->toThrow(QueryException::class);
+});
+
+it('menolak rumah dengan penghuni dan SP yang berbeda pada level database', function () {
+    $spRumah = buatSp();
+    $spPenghuni = buatSp();
+    $kk = buatTransmigran($spPenghuni);
+
+    expect(fn () => Rumah::create([
+        'uuid' => (string) Str::uuid(),
+        'satuan_permukiman_id' => $spRumah->id_satuan_permukiman,
+        'no_rumah' => 'R-UJI-3',
+        'transmigran_id' => $kk->id_transmigran,
+        'kondisi' => 'Tidak Rusak',
+        'status_hunian' => 'Dihuni',
     ]))->toThrow(QueryException::class);
 });
 
@@ -101,6 +125,7 @@ it('mengosongkan rumah saat KK dihapus (SET NULL), bukan menghapus rumah', funct
     $kk = buatTransmigran($sp);
     $rumah = Rumah::create([
         'uuid' => (string) Str::uuid(), 'satuan_permukiman_id' => $sp->id_satuan_permukiman,
+        'no_rumah' => 'R-UJI-4',
         'transmigran_id' => $kk->id_transmigran, 'kondisi' => 'Tidak Rusak', 'status_hunian' => 'Dihuni',
     ]);
 
@@ -127,11 +152,12 @@ it('menahan KK dengan riwayat penghunian / suksesi dari penghapusan (RESTRICT)',
     $kk = buatTransmigran($sp);
     $rumah = Rumah::create([
         'uuid' => (string) Str::uuid(), 'satuan_permukiman_id' => $sp->id_satuan_permukiman,
+        'no_rumah' => 'R-UJI-5',
         'kondisi' => 'Tidak Rusak', 'status_hunian' => 'Dihuni',
     ]);
     RiwayatPenghunian::create([
         'rumah_id' => $rumah->id_rumah, 'transmigran_id' => $kk->id_transmigran,
-        'tanggal_masuk' => '2015-06-01',
+        'tahun_mulai_menghuni' => 2015,
     ]);
 
     expect(fn () => $kk->forceDelete())->toThrow(QueryException::class);

@@ -271,6 +271,5 @@
 
     {{-- Impor massal, lihat komponennya untuk alur tiga langkah --}}
     <x-sim.modal-impor nama="imporTransmigran" judul="Impor Data Transmigran"
-        entitas="transmigran"
-        :kolom-wajib="['nik', 'nama_lengkap', 'no_kk', 'jenis_kelamin', 'satuan_permukiman']" />
+        entitas="transmigran" />
 @endsection

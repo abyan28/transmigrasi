@@ -37,6 +37,10 @@ class HasilPanenSeeder extends Seeder
                 'produksi' => $h['produksi'],
                 'harga_jual' => $h['harga_jual'] ?? null,
                 'keterangan' => $h['keterangan'] ?? null,
+                'status' => 'Aktif',
+                'dibatalkan_pada' => null,
+                'dibatalkan_oleh' => null,
+                'alasan_pembatalan' => null,
             ]);
             $panen->uuid ??= (string) Str::uuid();
             $panen->save();

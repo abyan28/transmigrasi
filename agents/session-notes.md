@@ -1,5 +1,9 @@
 # Audit Putaran 16 + Perbaikan MINOR-nya (2026-09-06)
 
+## Task 10.4b sedang dikerjakan (2026-09-06)
+
+Fondasi Rumah tahap pertama selesai: presisi riwayat hunian diubah dari tanggal menjadi tahun secara end-to-end. Berikutnya: identitas stabil dan constraint Rumah/Lahan/Saprotan/Penanaman. Suite Database wajib dijalankan serial karena seluruh proses memakai `digitrans_test` dan `migrate:fresh` yang sama.
+
 Sesi berikutnya mengaudit commit `c5ec5e4` (Putaran 16 / "Gelombang 7"): 3 sub-agen
 Explore read-only + pembacaan langsung skema/migrasi. **Hasil: 0 BLOCKER, 0 MAYOR**,
 ketujuh butir klaim akurat & teruji. 12 temuan MINOR. Laporan penuh di
@@ -418,11 +422,9 @@ tidak menambah paket Composer sebelum hosting jelas. Urutan disepakati:
 - 8 aktif: satuan, wilayah (4 tingkat), komoditas, transmigran,
   infrastruktur, inventaris-sp, fasilitas-sp, alsintan. `ImporController`
   POST `/impor/{entitas}` JSON, kewenangan `{modul}.tambah` dinamis.
-- `modal-impor.blade.php`: fetch POST FormData+CSRF utk 8 entitas; 6 entitas
-  berantai (rumah/lahan/poktan/saprotan/penanaman/hasil-panen) TETAP
-  spanduk "Fitur belum aktif" + contoh statis -- menyusul sesi lain, mesin
-  yang sama tinggal ditambah `barisX()`-nya (lebih banyak resolusi
-  lintas-entitas + aturan bersyarat per entitas).
+- `modal-impor.blade.php`: fetch POST FormData+CSRF untuk 14 entitas. Enam
+  entitas berantai (rumah/lahan/poktan/saprotan/penanaman/hasil-panen) aktif
+  melalui parser yang sama, dengan transaksi per baris atau kelompok.
 - **Celah pra-ada ditemukan (dicatat, TIDAK diperbaiki -- di luar lingkup):**
   `InventarisSpController::validasi()` `jenis_inventaris` nullable padahal
   kolom skema NOT NULL tanpa default. Form manual lolos karena `<select>`

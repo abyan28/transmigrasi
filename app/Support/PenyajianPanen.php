@@ -22,11 +22,7 @@ class PenyajianPanen
     public static function penanaman(): array
     {
         return Penanaman::query()
-            ->withoutGlobalScopes()
-            ->with([
-                'poktan' => fn ($q) => $q->withoutGlobalScopes()->with('satuanPermukiman'),
-                'komoditas', 'berkas',
-            ])
+            ->with(['poktan.satuanPermukiman', 'komoditas', 'berkas'])
             ->orderBy('id_penanaman')
             ->get()
             ->map(fn (Penanaman $p): array => self::barisPenanaman($p))
@@ -50,6 +46,7 @@ class PenyajianPanen
     {
         return [
             'id_penanaman' => $p->id_penanaman,
+            'kode_penanaman' => $p->kode_penanaman,
             'poktan_id' => $p->poktan_id,
             'poktan' => $p->poktan?->nama,
             'komoditas_id' => $p->komoditas_id,
@@ -72,13 +69,10 @@ class PenyajianPanen
     public static function hasilPanen(): array
     {
         return HasilPanen::query()
-            ->withoutGlobalScopes()
+            ->where('status', 'Aktif')
             ->with([
-                'satuan', 'berkas',
-                'penanaman' => fn ($q) => $q->withoutGlobalScopes()->with([
-                    'poktan' => fn ($q) => $q->withoutGlobalScopes()->with('satuanPermukiman'),
-                    'komoditas',
-                ]),
+                'satuan', 'berkas', 'pembatal',
+                'penanaman.poktan.satuanPermukiman', 'penanaman.komoditas',
             ])
             ->orderBy('id_hasil_panen')
             ->get()
@@ -110,6 +104,10 @@ class PenyajianPanen
             'produksi' => (float) $h->produksi,
             'harga_jual' => $h->harga_jual === null ? null : (float) $h->harga_jual,
             'keterangan' => $h->keterangan,
+            'status' => $h->status,
+            'dibatalkan_pada' => $h->dibatalkan_pada,
+            'dibatalkan_oleh' => $h->pembatal?->nama,
+            'alasan_pembatalan' => $h->alasan_pembatalan,
             'dokumen_pendukung' => $h->berkas->first()?->nama_file,
         ];
     }

@@ -132,6 +132,5 @@
 
     {{-- Impor massal, lihat komponennya untuk alur tiga langkah --}}
     <x-sim.modal-impor nama="imporAlsintan" judul="Impor Data Alsintan"
-        entitas="alsintan"
-        :kolom-wajib="['jenis_alsintan', 'nama_alat', 'jumlah_total', 'tahun_pengadaan']" />
+        entitas="alsintan" />
 @endsection

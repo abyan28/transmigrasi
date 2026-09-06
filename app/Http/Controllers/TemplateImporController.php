@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\JenisDaftarPilihan;
 use App\Models\DaftarPilihan;
+use App\Support\ImporEngine;
 use App\Support\SkemaImpor;
 use Illuminate\Http\Request;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
@@ -21,6 +22,7 @@ class TemplateImporController extends Controller
     public function unduh(Request $request, string $entitas): StreamedResponse
     {
         abort_unless(SkemaImpor::ada($entitas), 404);
+        $this->pastikanBerwenang($request, $entitas);
 
         $format = strtolower((string) $request->query('format', 'csv'));
         abort_unless(in_array($format, ['xlsx', 'csv'], true), 404);
@@ -30,9 +32,10 @@ class TemplateImporController extends Controller
             : $this->csv($entitas);
     }
 
-    public function unduhXlsx(string $entitas): StreamedResponse
+    public function unduhXlsx(Request $request, string $entitas): StreamedResponse
     {
         abort_unless(SkemaImpor::ada($entitas), 404);
+        $this->pastikanBerwenang($request, $entitas);
 
         return $this->xlsx($entitas);
     }
@@ -90,8 +93,11 @@ class TemplateImporController extends Controller
             $data->setDataValidation("{$huruf}2:{$huruf}1001", $validasi);
         }
 
+        $info = SkemaImpor::petunjuk($entitas);
         $petunjuk->fromArray([
             ['TEMPLATE IMPOR '.mb_strtoupper(SkemaImpor::judul($entitas))],
+            [$info['urutan'] ? 'Urutan impor '.$info['urutan'].' dari 6.' : ''],
+            [$info['prasyarat']],
             ['Isi data hanya pada sheet Data mulai baris 2.'],
             ['Jangan mengubah nama kolom. Urutan kolom boleh diubah.'],
             ['Maksimal 1000 baris data. Formula tidak diizinkan.'],
@@ -102,13 +108,13 @@ class TemplateImporController extends Controller
         foreach ($kolom as $indeks => $definisi) {
             $opsi = $this->nilaiBaku($definisi, $opsiDaftarPilihan);
             $keterangan = $definisi['keterangan'].($opsi === [] ? '' : '. Nilai: '.implode(' | ', $opsi));
-            $petunjuk->fromArray([[$definisi['kolom'], $definisi['wajib'] ? 'Ya' : 'Tidak', $keterangan]], null, 'A'.($indeks + 8));
+            $petunjuk->fromArray([[$definisi['kolom'], $definisi['wajib'] ? 'Ya' : 'Tidak', $keterangan]], null, 'A'.($indeks + 10));
         }
         $petunjuk->getColumnDimension('A')->setWidth(28);
         $petunjuk->getColumnDimension('B')->setWidth(10);
         $petunjuk->getColumnDimension('C')->setWidth(90);
         $petunjuk->getStyle('A1')->getFont()->setBold(true);
-        $petunjuk->getStyle('A7:C7')->getFont()->setBold(true);
+        $petunjuk->getStyle('A9:C9')->getFont()->setBold(true);
 
         $contoh->fromArray([$judul], null, 'A1');
         foreach ($kolom as $indeks => $definisi) {
@@ -182,5 +188,16 @@ class TemplateImporController extends Controller
         }
 
         return $hasil;
+    }
+
+    private function pastikanBerwenang(Request $request, string $entitas): void
+    {
+        $modul = ImporEngine::modul($entitas);
+        abort_unless($modul !== null
+            && $request->user()?->punyaAksi($modul, 'lihat') === true
+            && $request->user()?->punyaAksi($modul, 'tambah') === true, 403);
+        if ($entitas === 'poktan') {
+            abort_unless($request->user()?->punyaAksi('anggota_poktan', 'tambah') === true, 403);
+        }
     }
 }

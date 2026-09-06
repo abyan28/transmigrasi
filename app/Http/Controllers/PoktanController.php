@@ -16,6 +16,7 @@ use App\Models\SaprotanDistribusi;
 use App\Models\SatuanPermukiman;
 use App\Models\Scopes\CakupanDataSp;
 use App\Models\Transmigran;
+use App\Support\OperasiPoktan;
 use App\Support\Paginasi;
 use App\Support\PenyajianPoktan;
 use App\Support\RekapLahan;
@@ -140,14 +141,8 @@ class PoktanController extends Controller
     {
         [$data, $anggota, $disunting] = $this->pisahkan($this->validasi($request));
 
-        $this->pastikanIntegritas($data, $disunting ? $anggota : []);
-
         DB::transaction(function () use ($request, $data, $anggota, $disunting) {
-            $poktan = Poktan::create($data);
-
-            if ($disunting) {
-                $this->tambahAnggotaBaru($poktan, $anggota);
-            }
+            $poktan = OperasiPoktan::buat($data, $disunting ? $anggota : []);
 
             $this->lampirkanSk($request, $poktan);
         });

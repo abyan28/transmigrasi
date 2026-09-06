@@ -16,7 +16,7 @@
         // dan pada keadaan itu produktivitas memang nol.
         $gagalTotal = (float) $data['realisasi_panen'] === 0.0 && (float) ($data['puso'] ?? 0) > 0;
 
-        $bolehUbah = true;
+        $bolehUbah = $data['status'] === 'Aktif';
     @endphp
 
     <x-sim.page-header :judul="'Panen ' . $data['komoditas']"
@@ -62,7 +62,9 @@
                     panen ini belum lengkap".
                 --}}
                 <div class="mt-4">
-                    @if ($gagalTotal)
+                    @if ($data['status'] === 'Dibatalkan')
+                        <x-sim.status-badge teks="Dibatalkan" warna="error" />
+                    @elseif ($gagalTotal)
                         <x-sim.status-badge teks="Gagal Total" warna="error" />
                         <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
                             Seluruh {{ number_format($data['puso'], 2, ',', '.') }} ha puso, tidak ada yang dipanen
@@ -221,6 +223,15 @@
                                 {{ $data['keterangan'] ?? 'Tidak ada catatan tambahan.' }}
                             </dd>
                         </div>
+                        @if ($data['status'] === 'Dibatalkan')
+                            <div class="sm:col-span-2 rounded-lg border border-error-200 bg-error-50 p-4 dark:border-error-500/30 dark:bg-error-500/10">
+                                <dt class="text-theme-xs font-medium text-error-700 dark:text-error-300">Pembatalan</dt>
+                                <dd class="mt-1 text-theme-sm text-error-700 dark:text-error-300">{{ $data['alasan_pembatalan'] }}</dd>
+                                <p class="mt-1 text-theme-xs text-error-600 dark:text-error-400">
+                                    {{ $data['dibatalkan_oleh'] ?? 'Petugas' }} · {{ optional($data['dibatalkan_pada'])->translatedFormat('d F Y H:i') }}
+                                </p>
+                            </div>
+                        @endif
                         {{--
                             Isian unggahan sudah ada di form sejak 2026-08-22,
                             tetapi kolomnya tidak pernah ada di data dan

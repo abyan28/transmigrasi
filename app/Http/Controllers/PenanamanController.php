@@ -12,6 +12,7 @@ use App\Models\SaprotanDistribusi;
 use App\Models\SatuanPermukiman;
 use App\Models\Scopes\CakupanDataSp;
 use App\Support\KonversiPanen;
+use App\Support\OperasiPenanaman;
 use App\Support\Paginasi;
 use App\Support\PenyajianPanen;
 use App\Support\RekapPanen;
@@ -21,6 +22,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -121,9 +123,13 @@ class PenanamanController extends Controller
         $penanaman = Penanaman::with([
             'poktan.satuanPermukiman', 'komoditas.satuan', 'berkas',
             'saprotanDistribusi.saprotan.satuan', 'hasilPanen.satuan',
+            'riwayatHasilPanen.satuan', 'riwayatHasilPanen.pembatal',
         ])->findOrFail($id);
 
-        $panen = $penanaman->hasilPanen === null ? [] : [$this->barisPanen($penanaman->hasilPanen)];
+        $panen = $penanaman->riwayatHasilPanen
+            ->map(fn (HasilPanen $hasil): array => $this->barisPanen($hasil))
+            ->all();
+        $panenAktif = array_filter($panen, fn (array $hasil): bool => $hasil['status'] === 'Aktif');
         $benihBaris = $penanaman->saprotanDistribusi;
 
         return view('pages.penanaman.detail', [
@@ -132,10 +138,10 @@ class PenanamanController extends Controller
             'panen' => $panen,
             'produksiTon' => array_sum(array_map(
                 fn (array $p) => KonversiPanen::keTon($p['produksi'], $p['satuan']),
-                $panen,
+                $panenAktif,
             )),
-            'luasDipanen' => array_sum(array_column($panen, 'realisasi_panen')),
-            'luasPuso' => array_sum(array_map(fn (array $p) => (float) ($p['puso'] ?? 0), $panen)),
+            'luasDipanen' => array_sum(array_column($panenAktif, 'realisasi_panen')),
+            'luasPuso' => array_sum(array_map(fn (array $p) => (float) ($p['puso'] ?? 0), $panenAktif)),
             'status' => RekapPanen::status($penanaman),
             'belumDitanam' => $penanaman->poktan === null ? 0.0 : RekapPoktan::lahanTersedia($penanaman->poktan),
             'rekapPoktan' => $penanaman->poktan === null
@@ -152,10 +158,10 @@ class PenanamanController extends Controller
     public function simpan(Request $request): RedirectResponse
     {
         DB::transaction(function () use ($request) {
-            $distribusi = $this->distribusiTerkunci($request);
+            $id = (int) $request->validate(['saprotan_distribusi_id' => ['required', 'integer']])['saprotan_distribusi_id'];
+            $distribusi = OperasiPenanaman::distribusiTerkunci($id);
             $data = $this->validasi($request, $distribusi);
-            $this->pastikanStokCukup($data, $distribusi);
-            $penanaman = Penanaman::create($this->kolom($data, $distribusi));
+            $penanaman = OperasiPenanaman::buat($data, $distribusi);
             $this->lampirkanBerkas($request, $penanaman);
         });
 
@@ -213,6 +219,7 @@ class PenanamanController extends Controller
     private function kolom(array $data, SaprotanDistribusi $distribusi): array
     {
         return [
+            'kode_penanaman' => $data['kode_penanaman'],
             'poktan_id' => $distribusi->poktan_id,
             'komoditas_id' => $distribusi->saprotan->komoditas_id,
             'saprotan_distribusi_id' => $distribusi->id_saprotan_distribusi,
@@ -254,6 +261,9 @@ class PenanamanController extends Controller
             'produktivitas' => $b['produktivitas'],
             'produksi' => $b['produksi'],
             'harga_jual' => $b['harga_jual'],
+            'status' => $b['status'],
+            'dibatalkan_pada' => $b['dibatalkan_pada'],
+            'alasan_pembatalan' => $b['alasan_pembatalan'],
             'satuan' => $b['satuan'],
         ];
     }
@@ -264,6 +274,11 @@ class PenanamanController extends Controller
     private function validasi(Request $request, SaprotanDistribusi $distribusi, ?Penanaman $penanaman = null): array
     {
         $data = $request->validate([
+            'kode_penanaman' => [
+                Rule::requiredIf($penanaman === null), 'nullable', 'string', 'max:50',
+                Rule::unique('penanaman', 'kode_penanaman')
+                    ->ignore($penanaman?->id_penanaman, 'id_penanaman'),
+            ],
             'poktan_id' => ['required', 'integer'],
             'komoditas_id' => ['required', 'integer'],
             'saprotan_distribusi_id' => ['required', 'integer'],
@@ -274,12 +289,18 @@ class PenanamanController extends Controller
             'dokumen_pendukung' => ValidationRules::dokumen(),
         ], [
             'poktan_id.required' => 'Kelompok tani wajib dipilih.',
+            'kode_penanaman.required' => 'Kode penanaman wajib diisi.',
+            'kode_penanaman.unique' => 'Kode penanaman ini sudah dipakai.',
             'komoditas_id.required' => 'Komoditas wajib dipilih.',
             'saprotan_distribusi_id.required' => 'Benih yang dipakai wajib dipilih.',
             'volume_benih.required' => 'Volume benih wajib diisi.',
             'realisasi_tanam.required' => 'Realisasi tanam wajib diisi.',
             'periode_tanam.required' => 'Periode tanam wajib diisi.',
         ] + ValidationRules::pesan());
+
+        if ($penanaman !== null) {
+            $data['kode_penanaman'] = $penanaman->kode_penanaman;
+        }
 
         $galat = [];
 

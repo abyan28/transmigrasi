@@ -985,8 +985,12 @@ foreach ($judulLaporan as $slug => $judul) {
 // rute berparameter, dibatasi `where` pada slug yang sah -- pola yang sama
 // dengan /panen/rekap/{kelompok}.
 Route::get('/laporan/{slug}/dokumen', function (string $slug) use ($judulLaporan, $dataLaporan) {
+    $meta = LaporanData::meta($slug);
+    abort_if($meta === [], 404);
+    abort_unless(request()->user()?->punyaIzin($meta['izin']) === true, 403);
+
     return view('pages.laporan.dokumen', [
-        'title' => $judulLaporan[$slug],
+        'title' => $meta['judul'],
         'slug' => $slug,
         'isiLaporan' => $dataLaporan($slug),
     ]);

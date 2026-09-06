@@ -54,6 +54,26 @@ class SkemaImpor
         return self::PETA[$entitas]['judul'] ?? ucfirst(str_replace('-', ' ', $entitas));
     }
 
+    /** @return array{urutan: int|null, prasyarat: string, wajib: list<string>} */
+    public static function petunjuk(string $entitas): array
+    {
+        $urutan = ['rumah' => 1, 'lahan' => 2, 'poktan' => 3, 'saprotan' => 4, 'penanaman' => 5, 'hasil-panen' => 6];
+        $prasyarat = [
+            'rumah' => 'Data SP dan keluarga penghuni harus sudah tersedia.',
+            'lahan' => 'Data SP dan keluarga pemilik harus sudah tersedia.',
+            'poktan' => 'Data SP, keluarga ketua, dan keluarga anggota harus sudah tersedia.',
+            'saprotan' => 'Data satuan, komoditas, dan Poktan penerima harus sudah tersedia.',
+            'penanaman' => 'Distribusi benih ke Poktan harus sudah tersedia.',
+            'hasil-panen' => 'Penanaman berkode harus sudah tersedia dan belum memiliki panen aktif.',
+        ];
+
+        return [
+            'urutan' => $urutan[$entitas] ?? null,
+            'prasyarat' => $prasyarat[$entitas] ?? 'Data master yang dirujuk harus sudah tersedia.',
+            'wajib' => array_column(array_filter(self::kolom($entitas), fn (array $kolom): bool => $kolom['wajib']), 'kolom'),
+        ];
+    }
+
     /**
      * @return list<array{kolom: string, wajib: bool, contoh: string, keterangan: string, opsi: list<string>|null}>
      */
@@ -150,10 +170,12 @@ class SkemaImpor
         ],
         'rumah' => [
             'judul' => 'Data Rumah',
+            'teks' => ['no_rumah', 'nik_penghuni'],
             'kolom' => [
-                ['kode_rumah', true, 'A-01', 'Nomor/kode rumah, unik per SP'],
+                ['no_rumah', true, 'A-01', 'Nomor rumah, unik per SP'],
                 ['satuan_permukiman', true, 'SP Kapitan Meo', 'Nama SP'],
                 ['nik_penghuni', false, '5321011505800001', 'NIK KK penghuni; kosongkan bila rumah tidak dihuni'],
+                ['tahun_mulai_menghuni', false, '2016', 'Wajib bila rumah dihuni; tahun (YYYY)'],
                 ['kondisi', true, 'Tidak Rusak', 'Nilai baku kondisi rumah', ['dp']],
                 ['status_hunian', true, 'Dihuni', 'Nilai baku status hunian', ['dp']],
                 ['alasan_tidak_dihuni', false, '', 'Wajib bila status hunian = Tidak Dihuni'],
@@ -167,28 +189,33 @@ class SkemaImpor
         ],
         'lahan' => [
             'judul' => 'Data Lahan',
+            'teks' => ['kode_lahan', 'nik_pemilik'],
             'kolom' => [
                 ['kode_lahan', true, 'LH-001', 'Kode bidang lahan, unik'],
                 ['nik_pemilik', true, '5321011505800001', 'NIK kepala keluarga pemilik'],
                 ['satuan_permukiman', true, 'SP Kapitan Meo', 'Nama SP'],
                 ['luas_pekarangan', false, '0.25', 'Hektare; kosongkan bila belum menerima'],
-                ['luas_usaha', false, '1.50', 'Hektare; kosongkan bila belum menerima'],
+                ['lintang_pekarangan', false, '-9.5137', 'Desimal derajat'],
+                ['bujur_pekarangan', false, '124.9151', 'Desimal derajat'],
                 ['luas_kering', false, '1.50', 'Hektare (bagian dari luas usaha)'],
                 ['luas_basah', false, '0', 'Hektare (bagian dari luas usaha)'],
-                ['status_sertifikat', true, 'Sudah', 'Nilai baku', ['enum:status_sertifikat']],
                 ['lintang_usaha', false, '-9.5138', 'Desimal derajat'],
                 ['bujur_usaha', false, '124.9152', 'Desimal derajat'],
+                ['tujuan_pemanfaatan', false, 'JAGUNG', self::T],
+                ['status_sertifikat', true, 'Sudah', 'Nilai baku', ['enum:status_sertifikat']],
                 ['keterangan', false, '', self::T],
             ],
         ],
         'poktan' => [
             'judul' => 'Kelompok Tani',
+            'tanggal' => ['tanggal_masuk', 'tanggal_keluar'],
+            'teks' => ['nik_ketua', 'nik_anggota', 'nik_wakil', 'telepon_ketua'],
             'kolom' => [
-                ['nama_poktan', true, 'POKTAN MEKAR JAYA', 'Nama kelompok, unik'],
+                ['nama_poktan', true, 'POKTAN MEKAR JAYA', 'Nama kelompok, unik; ulangi sama pada seluruh baris anggota'],
                 ['satuan_permukiman', true, 'SP Kapitan Meo', 'Nama SP'],
                 ['tahun_berdiri', false, '2016', 'Tahun (YYYY)'],
                 ['asal_ketua', true, 'Kepala Keluarga', 'Nilai baku', ['enum:asal_ketua']],
-                ['nik_ketua', false, '5321011505800001', 'Wajib bila asal ketua = Kepala Keluarga / Anggota Keluarga'],
+                ['nik_ketua', false, '5321011505800001', 'NIK ketua; wajib untuk ketua dari keluarga transmigran'],
                 ['nama_ketua', false, 'YOSEPH KLAU', 'Wajib bila asal ketua = Bukan Transmigran'],
                 ['telepon_ketua', false, '081234567801', self::T],
                 ['email_ketua', false, '', self::T],
@@ -196,7 +223,17 @@ class SkemaImpor
                 ['luas_kering_ketua', false, '', 'Hektare; hanya bila asal ketua = Bukan Transmigran'],
                 ['luas_basah_ketua', false, '', 'Hektare; hanya bila asal ketua = Bukan Transmigran'],
                 ['keterangan', false, '', self::T],
+                ['nik_anggota', false, '5321011505800002', 'NIK kepala keluarga anggota; kosongkan untuk Poktan tanpa anggota'],
+                ['asal_wakil', false, 'Kepala Keluarga', 'Siapa yang mewakili keluarga', ['Kepala Keluarga', 'Anggota Keluarga']],
+                ['nik_wakil', false, '', 'NIK anggota keluarga yang mewakili'],
+                ['jabatan_anggota', false, 'Anggota', 'Jabatan anggota', ['dp']],
+                ['tanggal_masuk', false, '2020-01-10', 'Wajib bila nik_anggota diisi; YYYY-MM-DD'],
+                ['status_anggota', false, 'Aktif', 'Status keanggotaan', ['Aktif', 'Tidak Aktif', 'Sudah Keluar']],
+                ['tanggal_keluar', false, '', 'Wajib bila status Sudah Keluar; YYYY-MM-DD'],
+                ['alasan_keluar', false, '', self::T],
+                ['keterangan_anggota', false, '', self::T],
             ],
+            'daftarPilihan' => ['jabatan_anggota' => 'JabatanAnggotaPoktan'],
         ],
         'alsintan' => [
             'judul' => 'Data Alsintan',
@@ -212,17 +249,23 @@ class SkemaImpor
         ],
         'saprotan' => [
             'judul' => 'Data Saprotan',
+            'tanggal' => ['tanggal_serah'],
+            'teks' => ['kode_saprotan', 'poktan_slug'],
             'kolom' => [
+                ['kode_saprotan', true, 'SAP-2026-001', 'Kode pengadaan unik; ulangi sama pada seluruh baris penerima'],
                 ['jenis_saprotan', true, 'Benih', 'Nilai baku jenis saprotan', ['enum:jenis_saprotan']],
                 ['nama', true, 'BENIH JAGUNG HIBRIDA', self::T],
                 ['jumlah_total', true, '250', 'Angka'],
-                ['satuan', true, 'Kilogram', 'Nama satuan (harus terdaftar di Data Master Satuan)'],
+                ['satuan', true, 'Kilogram', 'Nama satuan terdaftar'],
                 ['tahun_pengadaan', true, '2025', 'Tahun anggaran (YYYY)'],
-                ['komoditas', false, 'JAGUNG', 'Wajib bila jenis = Benih; nama komoditas terdaftar'],
+                ['komoditas', false, 'JAGUNG', 'Wajib bila jenis = Benih'],
                 ['varietas', false, 'Hibrida Bisi-18', 'Wajib bila jenis = Benih'],
                 ['jadwal_tanam', false, '2026-02', 'Rencana, format YYYY-MM'],
                 ['sumber_dana', false, 'APBD Provinsi', 'Nilai baku', ['dp']],
                 ['keterangan', false, '', self::T],
+                ['poktan_slug', false, 'poktan-mekar-jaya', 'Slug Poktan penerima; kosongkan bila belum disalurkan'],
+                ['jumlah_distribusi', false, '100', 'Wajib bila poktan_slug diisi'],
+                ['tanggal_serah', false, '2026-01-10', 'Tanggal serah YYYY-MM-DD'],
             ],
             'daftarPilihan' => ['sumber_dana' => 'SumberDana'],
         ],
@@ -238,10 +281,11 @@ class SkemaImpor
         ],
         'penanaman' => [
             'judul' => 'Penanaman',
+            'teks' => ['kode_penanaman', 'poktan_slug', 'kode_saprotan'],
             'kolom' => [
-                ['kelompok_tani', true, 'POKTAN MEKAR JAYA', 'Nama poktan terdaftar'],
-                ['komoditas', true, 'JAGUNG', 'Nama komoditas terdaftar'],
-                ['nama_benih', true, 'BENIH JAGUNG HIBRIDA', 'Nama pengadaan benih yang jatahnya dipakai'],
+                ['kode_penanaman', true, 'TAN-2026-001', 'Kode penanaman unik'],
+                ['poktan_slug', true, 'poktan-mekar-jaya', 'Slug Poktan terdaftar'],
+                ['kode_saprotan', true, 'SAP-2026-001', 'Kode benih yang didistribusikan ke Poktan'],
                 ['periode_tanam', true, '2026-02', 'Format YYYY-MM'],
                 ['volume_benih', true, '150', 'Sesuai satuan benihnya'],
                 ['realisasi_tanam_ha', true, '10.5', 'Hektare'],
@@ -250,15 +294,13 @@ class SkemaImpor
         ],
         'hasil-panen' => [
             'judul' => 'Hasil Panen',
+            'teks' => ['kode_penanaman'],
             'kolom' => [
-                ['kelompok_tani', true, 'POKTAN MEKAR JAYA', 'Nama poktan terdaftar'],
-                ['komoditas', true, 'JAGUNG', 'Nama komoditas terdaftar'],
-                ['periode_tanam', true, '2026-02', 'Penanaman yang dipanen (YYYY-MM)'],
+                ['kode_penanaman', true, 'TAN-2026-001', 'Kode penanaman yang dipanen'],
                 ['periode_panen', true, '2026-06', 'Format YYYY-MM'],
                 ['realisasi_panen_ha', true, '9', 'Hektare dipanen'],
-                ['puso_ha', true, '0.5', 'Hektare gagal panen (isi 0 bila tidak ada)'],
-                ['produktivitas', false, '5.2', 'Sesuai satuan baku komoditas per hektare'],
-                ['produksi', true, '46.8', 'Total produksi sesuai satuan baku komoditas'],
+                ['puso_ha', true, '1.5', 'Hektare gagal panen; isi 0 bila tidak ada'],
+                ['produktivitas', false, '5.2', 'Wajib kecuali gagal total'],
                 ['harga_jual', false, '', 'Rupiah per satuan; opsional'],
                 ['keterangan', false, '', self::T],
             ],

@@ -23,7 +23,7 @@ class Saprotan extends Model
     protected $primaryKey = 'id_saprotan';
 
     protected $fillable = [
-        'satuan_id', 'komoditas_id', 'jenis', 'nama', 'jumlah_total', 'varietas',
+        'kode_saprotan', 'satuan_id', 'komoditas_id', 'jenis', 'nama', 'jumlah_total', 'varietas',
         'jadwal_tanam', 'tahun_pengadaan', 'sumber_dana', 'foto_berkas_id',
         'berkas_id', 'keterangan',
     ];

@@ -6,6 +6,7 @@ use App\Models\Concerns\DisaringLewatInduk;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -27,7 +28,7 @@ class Penanaman extends Model
     protected $primaryKey = 'id_penanaman';
 
     protected $fillable = [
-        'poktan_id', 'komoditas_id', 'saprotan_distribusi_id', 'volume_benih',
+        'kode_penanaman', 'poktan_id', 'komoditas_id', 'saprotan_distribusi_id', 'volume_benih',
         'realisasi_tanam', 'periode_tanam', 'keterangan',
     ];
 
@@ -58,12 +59,18 @@ class Penanaman extends Model
     }
 
     /**
-     * Hasil panen HIDUP dari penanaman ini (paling banyak satu). Catatan yang
-     * di-soft delete tidak lagi menutup penanaman -- panen boleh dicatat ulang.
+     * Hasil panen aktif dari penanaman ini (paling banyak satu).
      */
     public function hasilPanen(): HasOne
     {
-        return $this->hasOne(HasilPanen::class, 'penanaman_id', 'id_penanaman');
+        return $this->hasOne(HasilPanen::class, 'penanaman_id', 'id_penanaman')
+            ->where('status', 'Aktif');
+    }
+
+    public function riwayatHasilPanen(): HasMany
+    {
+        return $this->hasMany(HasilPanen::class, 'penanaman_id', 'id_penanaman')
+            ->orderBy('id_hasil_panen');
     }
 
     /**

@@ -306,6 +306,5 @@
 
     {{-- Impor massal, lihat komponennya untuk alur tiga langkah --}}
     <x-sim.modal-impor nama="imporLahan" judul="Impor Data Lahan"
-        entitas="lahan"
-        :kolom-wajib="['kode_lahan', 'satuan_permukiman', 'luas_pekarangan', 'luas_usaha']" />
+        entitas="lahan" />
 @endsection

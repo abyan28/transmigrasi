@@ -42,6 +42,10 @@
 
                 <dl class="mt-4 space-y-3 text-theme-sm">
                     <div class="flex justify-between gap-3">
+                        <dt class="text-gray-500 dark:text-gray-400">Kode pengadaan</dt>
+                        <dd class="text-right font-medium text-gray-800 dark:text-white/90">{{ $data['kode_saprotan'] }}</dd>
+                    </div>
+                    <div class="flex justify-between gap-3">
                         <dt class="text-gray-500 dark:text-gray-400">Jenis</dt>
                         <dd class="text-right font-medium text-gray-800 dark:text-white/90">{{ $data['jenis'] }}</dd>
                     </div>
