@@ -199,7 +199,7 @@ class PenilaianKondisiSp
      */
     private static function infrastruktur(): array
     {
-        return Infrastruktur::withoutGlobalScopes()->with('cakupan')->get()
+        return Infrastruktur::query()->with('cakupan')->get()
             ->map(fn (Infrastruktur $aset): array => [
                 'jenis' => $aset->jenis,
                 'kondisi' => $aset->kondisi,
@@ -214,7 +214,7 @@ class PenilaianKondisiSp
      */
     private static function fasilitas(): array
     {
-        return FasilitasSp::withoutGlobalScopes()->with('cakupan')->get()
+        return FasilitasSp::query()->with('cakupan')->get()
             ->map(fn (FasilitasSp $aset): array => [
                 'jenis_fasilitas' => $aset->jenis_fasilitas->value,
                 'kondisi' => $aset->kondisi,

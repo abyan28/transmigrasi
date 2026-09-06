@@ -164,11 +164,11 @@
                     </div>
 
                     {{--
-                        Surel bersifat OPSIONAL dan sengaja diletakkan setelah nomor HP.
-                        Sistem tidak boleh bergantung pada surel: jaringan di lokus tidak
+                        Email bersifat OPSIONAL dan sengaja diletakkan setelah nomor HP.
+                        Sistem tidak boleh bergantung pada email: jaringan di lokus tidak
                         selalu memadai, dan sebagian warga tidak memilikinya. Nomor
                         pengaduan tetap ditampilkan besar di layar setelah kirim, sehingga
-                        surel hanyalah salinan, bukan satu-satunya cara menerima nomor.
+                        email hanyalah salinan, bukan satu-satunya cara menerima nomor.
                     --}}
                     <div class="sm:col-span-2">
                         <label for="email_pelapor"

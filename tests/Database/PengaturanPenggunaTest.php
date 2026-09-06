@@ -78,12 +78,16 @@ it('menampilkan akun yang baru dibuat pada daftarnya sendiri', function () {
         'email' => 'beta.uji.tampil@malakakab.go.id',
         'role_id' => $role->id_role,
     ])->assertRedirect(route('pengguna.index'));
+    $baru = User::where('email', 'beta.uji.tampil@malakakab.go.id')->firstOrFail();
 
     // Dicari lewat `cari`, bukan diasumsikan tampil pada halaman pertama:
     // uji Database lain di seluruh proses ini turut mengisi tabel `user`
     // sungguhan, sehingga akun barunya dapat jatuh di halaman mana pun.
-    $this->get(route('pengguna.index', ['cari' => 'Beta Uji Tampil']))
-        ->assertOk()->assertSee('Beta Uji Tampil');
+    $respons = $this->get(route('pengguna.index', ['cari' => 'Beta Uji Tampil']))
+        ->assertOk()
+        ->assertSee('Beta Uji Tampil');
+
+    expect($respons->viewData('inisial')[$baru->id_user])->toBe('BU');
 });
 
 it('tidak pernah menyimpan kata sandi apa adanya', function () {

@@ -8,8 +8,10 @@
  * dilepas kehilangan barisnya; satuan non-berat (Liter/Rol) dapat dipakai.
  */
 
+use App\Enums\CakupanData;
 use App\Models\Komoditas;
 use App\Models\Poktan;
+use App\Models\Role;
 use App\Models\Saprotan;
 use App\Models\SaprotanDistribusi;
 use App\Models\Satuan;
@@ -19,12 +21,15 @@ use Database\Seeders\DaftarPilihanSeeder;
 use Database\Seeders\KawasanSeeder;
 use Database\Seeders\KomoditasSeeder;
 use Database\Seeders\LahanSeeder;
+use Database\Seeders\PenanamanSeeder;
 use Database\Seeders\PoktanSeeder;
 use Database\Seeders\SaprotanSeeder;
 use Database\Seeders\SatuanSeeder;
 use Database\Seeders\SpSeeder;
 use Database\Seeders\TransmigranSeeder;
 use Database\Seeders\WilayahSeeder;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\DB;
 
 require_once __DIR__.'/DatabaseHelpers.php';
 
@@ -158,6 +163,7 @@ it('melepas baris distribusi untuk poktan yang tidak lagi menerima', function ()
         'jumlah_total' => (string) $benih->jumlah_total,
         'satuan_id' => $benih->satuan_id,
         'tahun_pengadaan' => $benih->tahun_pengadaan,
+        'ganti_distribusi' => '1',
         'poktan_id' => [$tetap],
         'distribusi' => [$tetap => ['jumlah' => '150']],
     ])->assertRedirect(route('saprotan.detail', $benih->id_saprotan));
@@ -165,6 +171,155 @@ it('melepas baris distribusi untuk poktan yang tidak lagi menerima', function ()
     $benih->refresh()->load('distribusi');
     expect($benih->distribusi)->toHaveCount(1)
         ->and($benih->distribusi->first()->poktan_id)->toBe($tetap);
+});
+
+it('mempertahankan distribusi bila pembaruan tidak membawa penanda penggantian', function () {
+    $benih = Saprotan::where('nama', 'BENIH JAGUNG HIBRIDA')->first();
+    $sebelum = $benih->distribusi()->orderBy('poktan_id')->pluck('jumlah', 'poktan_id')->all();
+
+    $this->put(route('saprotan.perbarui', $benih->id_saprotan), [
+        'jenis' => $benih->jenis->value,
+        'nama' => 'BENIH AMAN QUICK EDIT',
+        'komoditas_id' => $benih->komoditas_id,
+        'varietas' => $benih->varietas,
+        'jumlah_total' => $benih->jumlah_total,
+        'satuan_id' => $benih->satuan_id,
+        'jadwal_tanam' => $benih->jadwal_tanam,
+        'tahun_pengadaan' => $benih->tahun_pengadaan,
+        'sumber_dana' => $benih->sumber_dana,
+        'keterangan' => $benih->keterangan,
+    ])->assertRedirect(route('saprotan.detail', $benih->id_saprotan));
+
+    expect($benih->refresh()->nama)->toBe('BENIH AMAN QUICK EDIT')
+        ->and($benih->distribusi()->orderBy('poktan_id')->pluck('jumlah', 'poktan_id')->all())->toBe($sebelum);
+});
+
+it('menjaga distribusi lintas cakupan dari aktor Per SP', function () {
+    $saprotan = Saprotan::find(1);
+    $saprotan->update(['jumlah_total' => 300]);
+    SaprotanDistribusi::create(['saprotan_id' => 1, 'poktan_id' => 3, 'jumlah' => 50]);
+    $role = Role::factory()->create(['cakupan_data' => CakupanData::PerSp->value]);
+    $operator = User::factory()->create(['role_id' => $role->id_role]);
+    $operator->satuanPermukiman()->attach(1);
+    $operator->semuaIzin = true;
+    $this->actingAs($operator);
+
+    $induk = [
+        'jenis' => $saprotan->jenis->value,
+        'nama' => $saprotan->nama,
+        'komoditas_id' => $saprotan->komoditas_id,
+        'varietas' => $saprotan->varietas,
+        'jumlah_total' => $saprotan->jumlah_total,
+        'satuan_id' => $saprotan->satuan_id,
+        'jadwal_tanam' => $saprotan->jadwal_tanam,
+        'tahun_pengadaan' => $saprotan->tahun_pengadaan,
+        'sumber_dana' => $saprotan->sumber_dana,
+        'keterangan' => $saprotan->keterangan,
+    ];
+
+    $this->put(route('saprotan.perbarui', $saprotan->id_saprotan), $induk + [
+        'ganti_distribusi' => '1',
+        'poktan_id' => [3],
+        'distribusi' => [3 => ['jumlah' => 10]],
+    ])->assertNotFound();
+
+    $this->put(route('saprotan.perbarui', $saprotan->id_saprotan), $induk + [
+        'ganti_distribusi' => '1',
+        'poktan_id' => [1],
+        'distribusi' => [1 => ['jumlah' => 260]],
+    ])->assertSessionHasErrors('distribusi');
+
+    $this->put(route('saprotan.perbarui', $saprotan->id_saprotan), $induk + [
+        'ganti_distribusi' => '1',
+        'poktan_id' => [1],
+        'distribusi' => [1 => ['jumlah' => 140]],
+    ])->assertRedirect(route('saprotan.detail', $saprotan->id_saprotan));
+
+    expect(SaprotanDistribusi::withoutGlobalScopes()->where('saprotan_id', $saprotan->id_saprotan)->count())->toBe(2)
+        ->and((float) SaprotanDistribusi::withoutGlobalScopes()->where('saprotan_id', $saprotan->id_saprotan)->where('poktan_id', 3)->value('jumlah'))->toBe(50.0);
+});
+
+it('melarang aktor Per SP mengubah metadata atau menghapus induk bersama', function () {
+    $saprotan = Saprotan::find(1);
+    $role = Role::factory()->create(['cakupan_data' => CakupanData::PerSp->value]);
+    $operator = User::factory()->create(['role_id' => $role->id_role]);
+    $operator->satuanPermukiman()->attach(2);
+    $operator->semuaIzin = true;
+    $this->actingAs($operator);
+
+    $this->put(route('saprotan.perbarui', $saprotan->id_saprotan), [
+        'jenis' => $saprotan->jenis->value,
+        'nama' => 'UBAH INDUK BERSAMA',
+        'komoditas_id' => $saprotan->komoditas_id,
+        'varietas' => $saprotan->varietas,
+        'jumlah_total' => $saprotan->jumlah_total,
+        'satuan_id' => $saprotan->satuan_id,
+        'jadwal_tanam' => $saprotan->jadwal_tanam,
+        'tahun_pengadaan' => $saprotan->tahun_pengadaan,
+        'sumber_dana' => $saprotan->sumber_dana,
+        'keterangan' => $saprotan->keterangan,
+    ])->assertForbidden();
+
+    $this->delete(route('saprotan.hapus', $saprotan->id_saprotan))->assertForbidden();
+    expect($saprotan->fresh())->not->toBeNull();
+});
+
+it('menolak perubahan saprotan yang membuat pemakaian benih tidak sah', function () {
+    $this->seed(PenanamanSeeder::class);
+    $saprotan = Saprotan::find(1);
+    $poktan = $saprotan->distribusi()->first()->poktan_id;
+
+    $induk = [
+        'jenis' => 'Pupuk',
+        'nama' => $saprotan->nama,
+        'jumlah_total' => $saprotan->jumlah_total,
+        'satuan_id' => $saprotan->satuan_id,
+        'jadwal_tanam' => $saprotan->jadwal_tanam,
+        'tahun_pengadaan' => $saprotan->tahun_pengadaan,
+        'sumber_dana' => $saprotan->sumber_dana,
+        'keterangan' => $saprotan->keterangan,
+    ];
+
+    $this->put(route('saprotan.perbarui', $saprotan->id_saprotan), $induk)->assertSessionHasErrors('jenis');
+
+    $this->put(route('saprotan.perbarui', $saprotan->id_saprotan), [
+        ...$induk,
+        'jenis' => 'Benih',
+        'komoditas_id' => Komoditas::where('id_komoditas', '!=', $saprotan->komoditas_id)->value('id_komoditas'),
+        'varietas' => $saprotan->varietas,
+    ])->assertSessionHasErrors('jenis');
+
+    $this->put(route('saprotan.perbarui', $saprotan->id_saprotan), [
+        ...$induk,
+        'jenis' => 'Benih',
+        'komoditas_id' => $saprotan->komoditas_id,
+        'varietas' => $saprotan->varietas,
+        'satuan_id' => Satuan::where('id_satuan', '!=', $saprotan->satuan_id)->value('id_satuan'),
+    ])->assertSessionHasErrors('jenis');
+
+    expect($saprotan->fresh()->jenis->value)->toBe('Benih');
+
+    $this->put(route('saprotan.perbarui', $saprotan->id_saprotan), [
+        ...$induk,
+        'jenis' => 'Benih',
+        'komoditas_id' => $saprotan->komoditas_id,
+        'varietas' => $saprotan->varietas,
+        'ganti_distribusi' => '1',
+        'poktan_id' => [$poktan],
+        'distribusi' => [$poktan => ['jumlah' => '50']],
+    ])->assertSessionHasErrors("distribusi.{$poktan}.jumlah");
+
+    expect((float) $saprotan->distribusi()->where('poktan_id', $poktan)->value('jumlah'))->toBe(150.0);
+});
+
+it('menegakkan satu distribusi saprotan per poktan di basis data', function () {
+    $baris = SaprotanDistribusi::first();
+
+    expect(fn () => DB::table('saprotan_distribusi')->insert([
+        'saprotan_id' => $baris->saprotan_id,
+        'poktan_id' => $baris->poktan_id,
+        'jumlah' => 1,
+    ]))->toThrow(QueryException::class);
 });
 
 it('menghapus pengadaan saprotan secara halus', function () {

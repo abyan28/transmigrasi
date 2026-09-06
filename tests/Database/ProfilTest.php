@@ -10,6 +10,7 @@
 use App\Enums\AksiAuditLog;
 use App\Enums\CakupanData;
 use App\Models\AuditLog;
+use App\Models\PendingEmailChange;
 use App\Models\Role;
 use App\Models\User;
 use Database\Seeders\PermissionRoleSeeder;
@@ -25,22 +26,25 @@ function petugasProfil(array $atribut = []): User
     return $petugas;
 }
 
-it('memutakhirkan email dan telepon serta mencatat audit Ubah', function () {
+it('menyimpan telepon segera dan menunda email sampai verifikasi', function () {
     $petugas = petugasProfil(['email' => 'lama@malakakab.go.id', 'telepon' => '081200000001']);
 
     $this->put(route('profil.simpan'), [
         'email' => 'baru@malakakab.go.id',
         'telepon' => '081234567890',
+        'current_password' => 'password',
     ])->assertRedirect()->assertSessionHas('sukses');
 
     $petugas->refresh();
-    expect($petugas->email)->toBe('baru@malakakab.go.id')
-        ->and($petugas->telepon)->toBe('081234567890');
+    expect($petugas->email)->toBe('lama@malakakab.go.id')
+        ->and($petugas->telepon)->toBe('081234567890')
+        ->and(PendingEmailChange::where('user_id', $petugas->id_user)->value('new_email'))
+        ->toBe('baru@malakakab.go.id');
 
     $audit = AuditLog::where('nama_tabel', 'user')->where('record_id', $petugas->id_user)
         ->where('aksi', AksiAuditLog::Ubah->value)->firstOrFail();
     expect($audit->user_id)->toBe($petugas->id_user)
-        ->and($audit->data_baru['sesudah']['email'])->toBe('baru@malakakab.go.id');
+        ->and($audit->data_baru['email_baru_menunggu_verifikasi'])->toBe('baru@malakakab.go.id');
 });
 
 it('menolak email yang sudah dipakai akun lain', function () {

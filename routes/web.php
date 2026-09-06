@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\GantiKataSandiController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PemulihanSandiController;
+use App\Http\Controllers\Auth\PendingEmailChangeController;
 use App\Http\Controllers\PengaduanPublikController;
 use Illuminate\Support\Facades\Route;
 
@@ -46,6 +47,13 @@ Route::middleware('guest')->group(function () {
 
 // Keluar boleh dari keadaan apa pun (termasuk saat wajib ganti kata sandi).
 Route::post('/logout', [LoginController::class, 'keluar'])->name('logout');
+
+Route::middleware('throttle:verifikasi-email')->group(function () {
+    Route::get('/verifikasi-email-baru/{token}', [PendingEmailChangeController::class, 'show'])
+        ->name('email-change.show');
+    Route::post('/verifikasi-email-baru/{token}', [PendingEmailChangeController::class, 'confirm'])
+        ->name('email-change.confirm');
+});
 
 /*
  * Halaman wajib ganti kata sandi. Butuh login, TETAPI dikecualikan dari

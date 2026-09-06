@@ -120,11 +120,15 @@ class BandingSkema extends Command
             $hasil[$r['TABLE_NAME']]['indeks'][$r['INDEX_NAME']] = ($r['NON_UNIQUE'] ? 'idx' : 'uniq').':'.$r['COLS'];
         }
 
-        $fk = $pdo->prepare('SELECT k.TABLE_NAME, k.CONSTRAINT_NAME, k.COLUMN_NAME, k.REFERENCED_TABLE_NAME, k.REFERENCED_COLUMN_NAME,
+        $fk = $pdo->prepare('SELECT k.TABLE_NAME, k.CONSTRAINT_NAME,
+                GROUP_CONCAT(k.COLUMN_NAME ORDER BY k.ORDINAL_POSITION) COLUMN_NAME,
+                k.REFERENCED_TABLE_NAME,
+                GROUP_CONCAT(k.REFERENCED_COLUMN_NAME ORDER BY k.ORDINAL_POSITION) REFERENCED_COLUMN_NAME,
                 r.DELETE_RULE, r.UPDATE_RULE
             FROM KEY_COLUMN_USAGE k
             JOIN REFERENTIAL_CONSTRAINTS r ON r.CONSTRAINT_SCHEMA = k.TABLE_SCHEMA AND r.CONSTRAINT_NAME = k.CONSTRAINT_NAME
             WHERE k.TABLE_SCHEMA = ? AND k.REFERENCED_TABLE_NAME IS NOT NULL
+            GROUP BY k.TABLE_NAME, k.CONSTRAINT_NAME, k.REFERENCED_TABLE_NAME, r.DELETE_RULE, r.UPDATE_RULE
             ORDER BY k.TABLE_NAME, k.CONSTRAINT_NAME');
         $fk->execute([$db]);
         foreach ($fk->fetchAll(\PDO::FETCH_ASSOC) as $r) {

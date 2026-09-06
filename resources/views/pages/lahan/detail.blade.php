@@ -311,7 +311,7 @@
                                 </div>
                                 <div class="shrink-0 text-right">
                                     @if ($hpl)
-                                        <x-sim.tautan-dokumen modul="kawasan" :id="1" :berkas="$hpl['nama_file']" />
+                                        <x-sim.tautan-dokumen modul="kawasan" :id="$kawasanId" :berkas="$hpl['nama_file']" />
                                     @else
                                         <span class="text-theme-xs text-gray-500 dark:text-gray-400">Belum diunggah</span>
                                     @endif

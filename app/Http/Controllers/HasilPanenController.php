@@ -5,18 +5,20 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
 use App\Models\HasilPanen;
 use App\Models\Penanaman;
-use App\Support\DummyData;
+use App\Models\SatuanPermukiman;
+use App\Models\Scopes\CakupanDataSp;
 use App\Support\KonversiPanen;
 use App\Support\Paginasi;
 use App\Support\PenyajianPanen;
+use App\Support\RekapPanen;
 use App\Support\RekapPoktan;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -64,8 +66,7 @@ class HasilPanenController extends Controller
         // Setara ton TERSARING (bukan cuma halaman ini) -- konversi per baris
         // (bukan agregat SQL) sebab faktornya milik satuan, bukan kolom
         // numerik yang bisa dijumlah SQL langsung.
-        $totalTonTampil = (float) (clone $query)->get()
-            ->sum(fn (HasilPanen $h) => KonversiPanen::keTon((float) $h->produksi, $h->satuan?->nama));
+        $totalTonTampil = RekapPanen::totalProduksiTon(clone $query);
 
         $baris = $query->orderBy('id_hasil_panen')->paginate($perHalaman)->withQueryString();
 
@@ -102,8 +103,7 @@ class HasilPanenController extends Controller
             'asalTanam' => $asalTanam,
             // Kartu ringkasan kawasan-penuh, bukan hasil saringan/halaman ini.
             'totalCatatan' => HasilPanen::query()->count(),
-            'totalTonSemua' => (float) HasilPanen::query()->with('satuan')->get()
-                ->sum(fn (HasilPanen $h) => KonversiPanen::keTon((float) $h->produksi, $h->satuan?->nama)),
+            'totalTonSemua' => RekapPanen::totalProduksiTon(HasilPanen::query()),
             'daftarKomoditas' => HasilPanen::query()
                 ->join('penanaman', 'penanaman.id_penanaman', '=', 'hasil_panen.penanaman_id')
                 ->join('komoditas', 'komoditas.id_komoditas', '=', 'penanaman.komoditas_id')
@@ -111,7 +111,7 @@ class HasilPanenController extends Controller
             'daftarTahun' => HasilPanen::query()
                 ->selectRaw('DISTINCT SUBSTRING(periode_panen, 1, 4) as tahun')
                 ->orderByDesc('tahun')->pluck('tahun')->map(fn ($t) => (int) $t)->all(),
-            'daftarSp' => DummyData::satuanPermukiman(),
+            'daftarSp' => SatuanPermukiman::opsiTerlihat(),
         ]);
     }
 
@@ -136,12 +136,15 @@ class HasilPanenController extends Controller
 
     public function simpan(Request $request): RedirectResponse
     {
-        [$data, $penanaman] = $this->validasi($request);
-
-        DB::transaction(function () use ($request, $data, $penanaman) {
-            $panen = HasilPanen::create($this->kolom($data, $penanaman));
-            $this->lampirkanBerkas($request, $panen);
-        });
+        try {
+            DB::transaction(function () use ($request) {
+                [$data, $penanaman] = $this->validasi($request);
+                $panen = HasilPanen::create($this->kolom($data, $penanaman));
+                $this->lampirkanBerkas($request, $panen);
+            });
+        } catch (UniqueConstraintViolationException $exception) {
+            $this->lemparGalatPanenGanda($exception);
+        }
 
         return redirect()->route('panen.index')->with('sukses', 'Hasil panen tersimpan.');
     }
@@ -149,12 +152,17 @@ class HasilPanenController extends Controller
     public function perbarui(Request $request, int $id): RedirectResponse
     {
         $panen = HasilPanen::findOrFail($id);
-        [$data, $penanaman] = $this->validasi($request, $panen);
+        CakupanDataSp::pastikanDapatDitulis($panen);
 
-        DB::transaction(function () use ($request, $panen, $data, $penanaman) {
-            $panen->update($this->kolom($data, $penanaman));
-            $this->lampirkanBerkas($request, $panen);
-        });
+        try {
+            DB::transaction(function () use ($request, $panen) {
+                [$data, $penanaman] = $this->validasi($request, $panen);
+                $panen->update($this->kolom($data, $penanaman));
+                $this->lampirkanBerkas($request, $panen);
+            });
+        } catch (UniqueConstraintViolationException $exception) {
+            $this->lemparGalatPanenGanda($exception);
+        }
 
         return redirect()->route('panen.detail', $id)->with('sukses', 'Perubahan catatan panen tersimpan.');
     }
@@ -162,10 +170,21 @@ class HasilPanenController extends Controller
     public function hapus(int $id): RedirectResponse
     {
         $panen = HasilPanen::findOrFail($id);
+        CakupanDataSp::pastikanDapatDitulis($panen);
         $panen->berkas()->detach();
         $panen->delete();
 
         return redirect()->route('panen.index')->with('sukses', 'Catatan panen dihapus.');
+    }
+
+    private function lemparGalatPanenGanda(UniqueConstraintViolationException $exception): never
+    {
+        if (str_contains($exception->getMessage(), 'uq_hasil_panen_penanaman')
+            || str_contains($exception->getMessage(), 'hasil_panen.penanaman_id')) {
+            throw ValidationException::withMessages(['penanaman_id' => 'Penanaman ini sudah memiliki catatan panen.']);
+        }
+
+        throw $exception;
     }
 
     private function lampirkanBerkas(Request $request, HasilPanen $panen): void
@@ -202,7 +221,7 @@ class HasilPanenController extends Controller
     }
 
     /**
-     * Larik ber-kunci PERSIS satu baris `DummyData::hasilPanen()`.
+     * Larik ber-kunci persis bentuk tampilan satu baris hasil panen.
      *
      * Pemetaan dipindah ke `App\Support\PenyajianPanen` (Task 10.5) supaya
      * halaman daftar/rincian dan Laporan Hasil Panen membaca satu sumber.
@@ -220,7 +239,7 @@ class HasilPanenController extends Controller
     private function validasi(Request $request, ?HasilPanen $panen = null): array
     {
         $data = $request->validate([
-            'penanaman_id' => ['required', 'integer', Rule::exists('penanaman', 'id_penanaman')],
+            'penanaman_id' => ['required', 'integer'],
             'periode_panen' => ['required', 'date_format:Y-m', 'before_or_equal:'.now()->format('Y-m')],
             'realisasi_panen' => ['required', 'numeric', 'min:0', 'max:99999999', 'decimal:0,2'],
             'puso' => ['required', 'numeric', 'min:0', 'max:99999999', 'decimal:0,2'],
@@ -235,11 +254,11 @@ class HasilPanenController extends Controller
             'puso.required' => 'Puso wajib diisi (isi 0 bila tidak ada yang gagal).',
         ] + ValidationRules::pesan());
 
-        $penanaman = Penanaman::with('komoditas')->find($data['penanaman_id']);
+        $penanaman = Penanaman::query()->with('komoditas')->lockForUpdate()->findOrFail($data['penanaman_id']);
+        CakupanDataSp::pastikanDapatDitulis($penanaman);
         $galat = [];
 
-        // Satu penanaman -> satu panen (kecuali baris yang sedang disunting).
-        $lain = HasilPanen::where('penanaman_id', $data['penanaman_id'])
+        $lain = HasilPanen::withTrashed()->where('penanaman_id', $penanaman->id_penanaman)
             ->when($panen !== null, fn ($q) => $q->whereKeyNot($panen->id_hasil_panen))
             ->exists();
 
@@ -247,20 +266,22 @@ class HasilPanenController extends Controller
             $galat['penanaman_id'] = 'Penanaman ini sudah memiliki catatan panen.';
         }
 
-        if ($penanaman !== null) {
-            $luasTanam = (float) $penanaman->realisasi_tanam;
-            $jumlah = round((float) $data['realisasi_panen'] + (float) $data['puso'], 2);
+        if ($data['periode_panen'] < $penanaman->periode_tanam) {
+            $galat['periode_panen'] = 'Periode panen tidak boleh mendahului periode tanam.';
+        }
 
-            if (abs($jumlah - $luasTanam) > 0.001) {
-                $galat['puso'] = 'Realisasi panen + puso ('.rtrim(rtrim(number_format($jumlah, 2, ',', '.'), '0'), ',')
-                    .' ha) wajib sama dengan realisasi tanam ('.rtrim(rtrim(number_format($luasTanam, 2, ',', '.'), '0'), ',').' ha).';
-            }
+        $luasTanam = (float) $penanaman->realisasi_tanam;
+        $jumlah = round((float) $data['realisasi_panen'] + (float) $data['puso'], 2);
 
-            $gagalTotal = (float) $data['realisasi_panen'] === 0.0 && (float) $data['puso'] > 0;
+        if (abs($jumlah - $luasTanam) > 0.001) {
+            $galat['puso'] = 'Realisasi panen + puso ('.rtrim(rtrim(number_format($jumlah, 2, ',', '.'), '0'), ',')
+                .' ha) wajib sama dengan realisasi tanam ('.rtrim(rtrim(number_format($luasTanam, 2, ',', '.'), '0'), ',').' ha).';
+        }
 
-            if (! $gagalTotal && (($data['produktivitas'] ?? null) === null || (float) $data['produktivitas'] <= 0)) {
-                $galat['produktivitas'] = 'Produktivitas wajib diisi kecuali seluruh hamparan gagal panen.';
-            }
+        $gagalTotal = (float) $data['realisasi_panen'] === 0.0 && (float) $data['puso'] > 0;
+
+        if (! $gagalTotal && (($data['produktivitas'] ?? null) === null || (float) $data['produktivitas'] <= 0)) {
+            $galat['produktivitas'] = 'Produktivitas wajib diisi kecuali seluruh hamparan gagal panen.';
         }
 
         if ($galat !== []) {

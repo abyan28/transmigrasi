@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\AksiAuditLog;
 use App\Models\AuditLog;
 use App\Models\User;
-use App\Support\DummyData;
+use App\Support\PendingEmailChangeService;
 use App\Support\PetaPenggunaTampilan;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
@@ -33,31 +33,51 @@ class ProfilController extends Controller
         return view('pages.profil.index', [
             'title' => 'Profil Saya',
             'pengguna' => PetaPenggunaTampilan::untuk($request->user()),
-            'inisialPengguna' => DummyData::inisial($request->user()?->nama ?? 'Pengguna'),
+            'inisialPengguna' => Str::initials(Str::words($request->user()?->nama ?? 'Pengguna', 2, ''), true),
         ]);
     }
 
-    public function simpan(Request $request): RedirectResponse
+    public function simpan(Request $request, PendingEmailChangeService $emailChanges): RedirectResponse
     {
         /** @var User $pengguna */
         $pengguna = $request->user();
-
-        $data = $request->validate([
+        $emailBerubah = strcasecmp((string) $request->input('email'), $pengguna->email) !== 0;
+        $aturan = [
             'email' => ValidationRules::email(abaikanId: $pengguna->id_user),
             'telepon' => ValidationRules::telepon(),
-        ], ValidationRules::pesan(), ValidationRules::label());
+        ];
+
+        if ($emailBerubah) {
+            $aturan['current_password'] = ['required', 'current_password'];
+        }
+
+        $data = $request->validate($aturan, ValidationRules::pesan() + [
+            'current_password.required' => 'Kata sandi saat ini wajib diisi untuk mengganti email.',
+            'current_password.current_password' => 'Kata sandi saat ini tidak cocok.',
+        ], ValidationRules::label());
 
         $lama = $pengguna->only(['email', 'telepon']);
-        $pengguna->forceFill(['email' => $data['email'], 'telepon' => $data['telepon'] ?? null])->save();
+        $pengguna->forceFill(['telepon' => $data['telepon'] ?? null])->save();
+        $sesudah = $pengguna->only(['email', 'telepon']);
 
-        // `user` tidak diobservasi otomatis (AuditLogObserver::MODEL) -- dicatat
-        // manual seperti suntingan Admin di PengaturanPenggunaController.
         $this->catat($request, AksiAuditLog::Ubah, [
             'sebelum' => $lama,
-            'sesudah' => $pengguna->only(['email', 'telepon']),
+            'sesudah' => $sesudah,
+            'email_baru_menunggu_verifikasi' => $emailBerubah ? $data['email'] : null,
         ]);
 
-        return back()->with('sukses', 'Data kontak Anda tersimpan.');
+        if ($emailBerubah) {
+            $emailChanges->request($pengguna, $data['email']);
+        } elseif ($lama !== $sesudah) {
+            $emailChanges->sendAccountChangeNotice($pengguna, 'Nomor telepon akun Anda telah diperbarui.');
+        }
+
+        return back()->with(
+            'sukses',
+            $emailBerubah
+                ? 'Nomor telepon tersimpan. Email login tetap memakai alamat lama sampai email baru diverifikasi.'
+                : 'Data kontak Anda tersimpan.',
+        );
     }
 
     public function tampilKataSandi(): View

@@ -42,7 +42,7 @@
                     'laporan' => 'Kop & Dokumen Laporan',
                     'informasi' => 'Konten Profil & FAQ',
                     'portal' => 'Portal Pengaduan Warga',
-                    'surel' => 'Surel Sistem',
+                    'surel' => 'Email Sistem',
                     'pengumuman' => 'Pengumuman Dinas',
                 ] as $kunci => $label)
                     <button type="button" role="tab" @click="setTab('{{ $kunci }}')"
@@ -313,7 +313,7 @@
                             <div>
                                 <h3 class="{{ $kelasBagian }}">Tanya Jawab / FAQ</h3>
                                 <p class="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
-                                    Tampil pada modul <a href="{{ route('panduan') }}" target="_blank" class="text-brand-600 hover:underline">/panduan</a>.
+                                    Tampil pada halaman <a href="{{ route('panduan') }}" target="_blank" class="text-brand-600 hover:underline">/panduan</a>.
                                     Baris kosong diabaikan saat menyimpan.
                                 </p>
                             </div>
@@ -420,9 +420,9 @@
                     <input type="hidden" name="tab" value="surel" />
 
                     <section>
-                        <h3 class="{{ $kelasBagian }}">Bahasa Surel Resmi</h3>
+                        <h3 class="{{ $kelasBagian }}">Bahasa Email Resmi</h3>
                         <p class="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
-                            Dipakai pada seluruh surel sistem. Kode verifikasi, nomor pengaduan, status, dan peringatan keamanan tetap dikelola sistem agar tidak terhapus.
+                            Dipakai pada seluruh email sistem. Kode verifikasi, nomor pengaduan, status, dan peringatan keamanan tetap dikelola sistem agar tidak terhapus.
                         </p>
                         <div class="mt-4 grid gap-4 sm:grid-cols-2">
                             <div>
@@ -448,7 +448,7 @@
                         </div>
                     </section>
 
-                    <button type="submit" class="{{ $simpanBtn }}">Simpan Pengaturan Surel</button>
+                    <button type="submit" class="{{ $simpanBtn }}">Simpan Pengaturan Email</button>
                 </form>
             </div>
 

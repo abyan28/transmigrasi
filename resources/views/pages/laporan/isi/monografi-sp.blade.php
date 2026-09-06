@@ -9,14 +9,13 @@
     struktur umur, usia sekolah, mutasi penduduk), Sosial Ekonomi (lahan,
     sertifikat, tanaman pangan, infrastruktur), dan Sosial Budaya (pendidikan,
     kesehatan, agama, olahraga, keamanan, alsintan, inventaris, fasilitas umum).
-    Bagian yang belum berdata ditandai kosong; struktur umur dan mutasi adalah
-    angka contoh turunan.
+    Bagian yang belum berdata ditandai kosong; struktur umur dan mutasi hanya
+    memuat orang serta peristiwa yang benar-benar tercatat.
 --}}
 @php
     $isDokumen = request()->routeIs('laporan.dokumen');
     $angka = fn ($n, $desimal = 2) => \App\Support\LaporanData::angka($n, $desimal);
     $isi = fn ($v) => $v !== null && trim((string) $v) !== '' ? $v : 'belum dicatat';
-    $tahunAkhir = \App\Support\LaporanData::tahunDokumenBawaan();
 @endphp
 
 @unless ($isDokumen)
@@ -120,7 +119,7 @@
 
             @unless ($m['ada_isi'])
                 <p class="mt-4 rounded-lg bg-gray-50 px-4 py-6 text-center text-theme-sm text-gray-500 dark:bg-white/[0.03] dark:text-gray-400">
-                    Keadaan wilayah SP ini belum dicatat pada modul Satuan Permukiman.
+                    Keadaan wilayah SP ini belum dicatat pada halaman Satuan Permukiman.
                 </p>
             @endunless
 

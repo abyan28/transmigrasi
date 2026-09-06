@@ -22,8 +22,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 
-it('membuat ketujuh tabel Domain 1', function () {
-    foreach (['role', 'permission', 'role_permission', 'user', 'kode_pemulihan_sandi', 'audit_log', 'notifikasi'] as $tabel) {
+it('membuat tabel Domain 1', function () {
+    foreach (['role', 'permission', 'role_permission', 'user', 'kode_pemulihan_sandi', 'pending_email_changes', 'audit_log', 'notifikasi'] as $tabel) {
         expect(Schema::hasTable($tabel))->toBeTrue("tabel {$tabel} tidak dibuat");
     }
 

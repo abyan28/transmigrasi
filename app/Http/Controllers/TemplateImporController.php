@@ -5,85 +5,144 @@ namespace App\Http\Controllers;
 use App\Enums\JenisDaftarPilihan;
 use App\Models\DaftarPilihan;
 use App\Support\SkemaImpor;
+use Illuminate\Http\Request;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
+use PhpOffice\PhpSpreadsheet\Cell\DataValidation;
+use PhpOffice\PhpSpreadsheet\NamedRange;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
-/**
- * Membangkitkan berkas template impor luring (Task 10.6).
- *
- * Satu rute melayani seluruh entitas; yang membedakan hanya susunan kolomnya,
- * dan itu dibaca dari `App\Support\SkemaImpor` -- satu sumber, sehingga
- * template dan (kelak) pembaca unggahannya tidak dapat berbeda diam-diam
- * (`rules.md` 12.13).
- *
- * Formatnya CSV: dibuka Excel maupun aplikasi lembar kerja apa pun, dapat
- * diisi tanpa sambungan, dan diunggah kembali. Baris berawalan `#` adalah
- * petunjuk dan daftar nilai baku -- pembaca impor melewatinya, baris data
- * pertama adalah baris judul kolom.
- */
 class TemplateImporController extends Controller
 {
-    public function unduh(string $entitas): StreamedResponse
+    public function unduh(Request $request, string $entitas): StreamedResponse
     {
         abort_unless(SkemaImpor::ada($entitas), 404);
 
+        $format = strtolower((string) $request->query('format', 'csv'));
+        abort_unless(in_array($format, ['xlsx', 'csv'], true), 404);
+
+        return $format === 'xlsx'
+            ? $this->xlsx($entitas)
+            : $this->csv($entitas);
+    }
+
+    public function unduhXlsx(string $entitas): StreamedResponse
+    {
+        abort_unless(SkemaImpor::ada($entitas), 404);
+
+        return $this->xlsx($entitas);
+    }
+
+    private function xlsx(string $entitas): StreamedResponse
+    {
         $kolom = SkemaImpor::kolom($entitas);
         $opsiDaftarPilihan = $this->opsiDaftarPilihan($entitas);
+        $buku = new Spreadsheet;
+        $data = $buku->getActiveSheet()->setTitle('Data');
+        $petunjuk = $buku->createSheet()->setTitle('Petunjuk');
+        $contoh = $buku->createSheet()->setTitle('Contoh');
+        $referensi = $buku->createSheet()->setTitle('Referensi');
+        $judul = array_column($kolom, 'kolom');
+        $kolomTerakhir = Coordinate::stringFromColumnIndex(count($judul));
 
-        $namaBerkas = 'template-impor-'.$entitas.'.csv';
+        $data->fromArray([$judul], null, 'A1');
+        $data->freezePane('A2');
+        $data->setAutoFilter("A1:{$kolomTerakhir}1");
+        $data->getStyle("A1:{$kolomTerakhir}1")->getFont()->setBold(true);
 
-        return response()->streamDownload(function () use ($entitas, $kolom, $opsiDaftarPilihan) {
-            $keluar = fopen('php://output', 'wb');
+        foreach ($kolom as $indeks => $definisi) {
+            $huruf = Coordinate::stringFromColumnIndex($indeks + 1);
+            $data->getColumnDimension($huruf)->setWidth(min(40, max(14, mb_strlen($definisi['kolom']) + 2)));
 
-            // BOM UTF-8 supaya Excel membaca aksara Indonesia dengan benar.
-            fwrite($keluar, "\xEF\xBB\xBF");
-
-            // `escape: ''` mematikan perilaku escape non-standar PHP (usang sejak
-            // 8.4) supaya keluarannya CSV RFC-4180 murni.
-            $tulisBaris = static fn (array $sel) => fputcsv($keluar, $sel, ',', '"', '');
-
-            $tulisKomentar = static function (string $teks) use ($tulisBaris): void {
-                $tulisBaris(['# '.$teks]);
-            };
-
-            $tulisKomentar('TEMPLATE IMPOR '.mb_strtoupper(SkemaImpor::judul($entitas)));
-            $tulisKomentar('Isi mulai baris di bawah judul kolom. Jangan mengubah nama atau urutan kolom.');
-            $tulisKomentar('Baris contoh boleh dihapus atau ditimpa. Baris berawalan # diabaikan saat impor.');
-            $tulisKomentar('Kolom bertanda (wajib) tidak boleh kosong.');
-            $tulisKomentar('');
-
-            foreach ($kolom as $k) {
-                $tanda = $k['wajib'] ? ' (wajib)' : '';
-                $baris = $k['kolom'].$tanda.' -- '.$k['keterangan'];
-
-                $daftarNilai = $this->nilaiBaku($k, $opsiDaftarPilihan);
-                if ($daftarNilai !== []) {
-                    $baris .= '. Nilai baku: '.implode(' | ', $daftarNilai);
-                }
-
-                $tulisKomentar($baris);
+            if (in_array($definisi['kolom'], SkemaImpor::kolomTeks($entitas), true)) {
+                $data->getStyle("{$huruf}2:{$huruf}1001")->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_TEXT);
             }
-            $tulisKomentar('');
+            if (in_array($definisi['kolom'], SkemaImpor::kolomTanggal($entitas), true)) {
+                $data->getStyle("{$huruf}2:{$huruf}1001")->getNumberFormat()->setFormatCode('yyyy-mm-dd');
+            }
 
-            // Baris judul kolom -- inilah yang dibaca pembaca impor.
-            $tulisBaris(array_column($kolom, 'kolom'));
+            $opsi = $this->nilaiBaku($definisi, $opsiDaftarPilihan);
+            if ($opsi === []) {
+                continue;
+            }
 
-            // Dua baris contoh: satu terisi lengkap, satu hanya kolom wajib.
-            $tulisBaris(array_column($kolom, 'contoh'));
-            $tulisBaris(array_map(
-                fn (array $k): string => $k['wajib'] ? $k['contoh'] : '',
-                $kolom,
-            ));
+            $kolomReferensi = Coordinate::stringFromColumnIndex($indeks + 1);
+            $referensi->setCellValueExplicit("{$kolomReferensi}1", $definisi['kolom'], DataType::TYPE_STRING);
+            foreach ($opsi as $baris => $nilai) {
+                $referensi->setCellValueExplicit("{$kolomReferensi}".($baris + 2), $nilai, DataType::TYPE_STRING);
+            }
 
+            $namaRentang = 'opsi_'.($indeks + 1);
+            $buku->addNamedRange(new NamedRange($namaRentang, $referensi, "\${$kolomReferensi}\$2:\${$kolomReferensi}\$".(count($opsi) + 1)));
+            $validasi = (new DataValidation)
+                ->setType(DataValidation::TYPE_LIST)
+                ->setErrorStyle(DataValidation::STYLE_STOP)
+                ->setAllowBlank(! $definisi['wajib'])
+                ->setShowDropDown(true)
+                ->setShowErrorMessage(true)
+                ->setErrorTitle('Nilai tidak sah')
+                ->setError('Pilih nilai dari daftar.')
+                ->setFormula1($namaRentang);
+            $data->setDataValidation("{$huruf}2:{$huruf}1001", $validasi);
+        }
+
+        $petunjuk->fromArray([
+            ['TEMPLATE IMPOR '.mb_strtoupper(SkemaImpor::judul($entitas))],
+            ['Isi data hanya pada sheet Data mulai baris 2.'],
+            ['Jangan mengubah nama kolom. Urutan kolom boleh diubah.'],
+            ['Maksimal 1000 baris data. Formula tidak diizinkan.'],
+            ['Sheet Contoh hanya petunjuk dan tidak ikut diimpor.'],
+            [],
+            ['Kolom', 'Wajib', 'Keterangan'],
+        ], null, 'A1');
+        foreach ($kolom as $indeks => $definisi) {
+            $opsi = $this->nilaiBaku($definisi, $opsiDaftarPilihan);
+            $keterangan = $definisi['keterangan'].($opsi === [] ? '' : '. Nilai: '.implode(' | ', $opsi));
+            $petunjuk->fromArray([[$definisi['kolom'], $definisi['wajib'] ? 'Ya' : 'Tidak', $keterangan]], null, 'A'.($indeks + 8));
+        }
+        $petunjuk->getColumnDimension('A')->setWidth(28);
+        $petunjuk->getColumnDimension('B')->setWidth(10);
+        $petunjuk->getColumnDimension('C')->setWidth(90);
+        $petunjuk->getStyle('A1')->getFont()->setBold(true);
+        $petunjuk->getStyle('A7:C7')->getFont()->setBold(true);
+
+        $contoh->fromArray([$judul], null, 'A1');
+        foreach ($kolom as $indeks => $definisi) {
+            $huruf = Coordinate::stringFromColumnIndex($indeks + 1);
+            $contoh->setCellValueExplicit("{$huruf}2", $definisi['contoh'], DataType::TYPE_STRING);
+            $contoh->getColumnDimension($huruf)->setWidth(min(40, max(14, mb_strlen($definisi['kolom']) + 2)));
+        }
+        $contoh->getStyle("A1:{$kolomTerakhir}1")->getFont()->setBold(true);
+        $referensi->setSheetState(Worksheet::SHEETSTATE_HIDDEN);
+        $buku->setActiveSheetIndexByName('Data');
+
+        return response()->streamDownload(function () use ($buku): void {
+            (new Xlsx($buku))->save('php://output');
+            $buku->disconnectWorksheets();
+        }, 'template-impor-'.$entitas.'.xlsx', [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
+    private function csv(string $entitas): StreamedResponse
+    {
+        $judul = array_column(SkemaImpor::kolom($entitas), 'kolom');
+
+        return response()->streamDownload(function () use ($judul): void {
+            $keluar = fopen('php://output', 'wb');
+            fwrite($keluar, "\xEF\xBB\xBF");
+            fputcsv($keluar, $judul, ',', '"', '');
             fclose($keluar);
-        }, $namaBerkas, [
+        }, 'template-impor-'.$entitas.'.csv', [
             'Content-Type' => 'text/csv; charset=UTF-8',
         ]);
     }
 
     /**
-     * Nilai baku satu kolom, dari enum (`SkemaImpor::opsiEnum`) atau daftar
-     * pilihan (sudah dimuat di `$opsiDaftarPilihan`).
-     *
      * @param  array{kolom: string, opsi: list<string>|null}  $kolom
      * @param  array<string, list<string>>  $opsiDaftarPilihan
      * @return list<string>
@@ -95,11 +154,9 @@ class TemplateImporController extends Controller
         if ($opsi === null) {
             return [];
         }
-
         if ($opsi === ['dp']) {
             return $opsiDaftarPilihan[$kolom['kolom']] ?? [];
         }
-
         if (count($opsi) === 1 && str_starts_with($opsi[0], 'enum:')) {
             return SkemaImpor::opsiEnum(substr($opsi[0], 5));
         }
@@ -108,8 +165,6 @@ class TemplateImporController extends Controller
     }
 
     /**
-     * Nilai daftar pilihan aktif untuk tiap kolom bertanda `dp` pada entitas ini.
-     *
      * @return array<string, list<string>>
      */
     private function opsiDaftarPilihan(string $entitas): array
@@ -117,9 +172,7 @@ class TemplateImporController extends Controller
         $hasil = [];
 
         foreach (SkemaImpor::kolomDaftarPilihan($entitas) as $kolom => $namaCase) {
-            /** @var JenisDaftarPilihan $jenis */
             $jenis = constant(JenisDaftarPilihan::class.'::'.$namaCase);
-
             $hasil[$kolom] = DaftarPilihan::query()
                 ->where('jenis', $jenis->value)
                 ->where('is_aktif', true)

@@ -8,9 +8,9 @@ use App\Mail\KredensialAkunMail;
 use App\Models\AuditLog;
 use App\Models\Role;
 use App\Models\User;
-use App\Support\DummyData;
 use App\Support\LayananNotifikasi;
 use App\Support\Paginasi;
+use App\Support\PendingEmailChangeService;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -66,7 +66,7 @@ class PengaturanPenggunaController extends Controller
         // dihitung dari model mentah HALAMAN INI.
         $inisial = [];
         foreach ($baris->getCollection() as $u) {
-            $inisial[$u->id_user] = DummyData::inisial($u->nama);
+            $inisial[$u->id_user] = Str::initials(Str::words($u->nama, 2, ''), true);
         }
 
         $baris->through(fn (User $u) => $this->baris($u));
@@ -137,35 +137,48 @@ class PengaturanPenggunaController extends Controller
             ]);
     }
 
-    public function perbarui(Request $request, int $id): RedirectResponse
-    {
+    public function perbarui(
+        Request $request,
+        int $id,
+        PendingEmailChangeService $emailChanges,
+    ): RedirectResponse {
         $pengguna = User::findOrFail($id);
         $data = $this->validasi($request, $pengguna);
         $role = Role::findOrFail($data['role_id']);
         $spIds = $this->validasiPenugasanSp($request, $role);
-
+        $emailBerubah = strcasecmp($data['email'], $pengguna->email) !== 0;
         $lama = $pengguna->only(['nama', 'email', 'role_id', 'telepon', 'jabatan']);
 
         $pengguna->forceFill([
             'role_id' => $role->id_role,
             'nama' => $data['nama'],
-            'email' => $data['email'],
             'telepon' => $data['telepon'] ?? null,
             'jabatan' => $data['jabatan'] ?? null,
         ])->save();
 
-        // Penugasan SP hanya bermakna bagi role `Per SP`; role lain -> lepas
-        // seluruhnya agar tidak ada penugasan menggantung bila role diturunkan.
         $pengguna->satuanPermukiman()->sync(
             $role->cakupan_data === CakupanData::PerSp ? $spIds : []
         );
 
+        $sesudah = $pengguna->only(['nama', 'email', 'role_id', 'telepon', 'jabatan']);
         $this->catat($request, $pengguna, AksiAuditLog::Ubah, [
             'sebelum' => $lama,
-            'sesudah' => $pengguna->only(['nama', 'email', 'role_id', 'telepon', 'jabatan']),
+            'sesudah' => $sesudah,
+            'email_baru_menunggu_verifikasi' => $emailBerubah ? $data['email'] : null,
         ]);
 
-        return redirect()->route('pengguna.index')->with('sukses', 'Perubahan data akun tersimpan.');
+        if ($emailBerubah) {
+            $emailChanges->request($pengguna, $data['email']);
+        } else {
+            $emailChanges->sendAccountChangeNotice($pengguna, 'Data akun Anda telah diperbarui oleh Admin.');
+        }
+
+        return redirect()->route('pengguna.index')->with(
+            'sukses',
+            $emailBerubah
+                ? 'Data akun tersimpan. Email login tetap memakai alamat lama sampai email baru diverifikasi.'
+                : 'Perubahan data akun tersimpan.',
+        );
     }
 
     public function setelSandi(Request $request, int $id): RedirectResponse
@@ -329,7 +342,7 @@ class PengaturanPenggunaController extends Controller
 
             return true;
         } catch (\Throwable $e) {
-            Log::error('Gagal mengantre kredensial akun ke surel: '.$e->getMessage());
+            Log::error('Gagal mengantre kredensial akun ke email: '.$e->getMessage());
 
             return false;
         }

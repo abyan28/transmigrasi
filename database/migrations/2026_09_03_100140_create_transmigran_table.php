@@ -47,6 +47,7 @@ return new class extends Migration
             $table->unique('uuid', 'uq_transmigran_uuid');
             $table->unique('nik', 'uq_transmigran_nik');
             $table->unique('no_kk', 'uq_transmigran_no_kk');
+            $table->unique(['id_transmigran', 'satuan_permukiman_id'], 'uq_transmigran_id_sp');
             $table->index('satuan_permukiman_id', 'idx_transmigran_sp');
             $table->index('nama_kepala_keluarga', 'idx_transmigran_nama');
             $table->index('tahun_kedatangan', 'idx_transmigran_tahun_kedatangan');

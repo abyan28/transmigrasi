@@ -23,7 +23,7 @@ class SurelPengaduan
 
             return true;
         } catch (Throwable $e) {
-            Log::error('Surel pengaduan gagal diantre.', [
+            Log::error('Email pengaduan gagal diantre.', [
                 'pengaduan_id' => $pengaduan->id_pengaduan,
                 'message' => $e->getMessage(),
             ]);

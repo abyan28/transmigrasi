@@ -100,6 +100,16 @@ class Transmigran extends Model
         return $this->hasOne(Lahan::class, 'transmigran_id', 'id_transmigran');
     }
 
+    public function keanggotaanPoktan(): HasMany
+    {
+        return $this->hasMany(AnggotaPoktan::class, 'transmigran_id', 'id_transmigran');
+    }
+
+    public function poktanDiketuai(): HasMany
+    {
+        return $this->hasMany(Poktan::class, 'ketua_transmigran_id', 'id_transmigran');
+    }
+
     public function riwayatKepalaKeluarga(): HasMany
     {
         return $this->hasMany(RiwayatKepalaKeluarga::class, 'transmigran_id', 'id_transmigran');

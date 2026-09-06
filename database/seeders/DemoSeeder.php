@@ -16,6 +16,8 @@ class DemoSeeder extends Seeder
     public function run(): void
     {
         $this->call(DatabaseSeeder::class);
+        $this->call(DataMasterSeeder::class);
+
         $this->spIds = DB::table('satuan_permukiman')->orderBy('id_satuan_permukiman')->pluck('id_satuan_permukiman')->all();
 
         Model::withoutEvents(function (): void {

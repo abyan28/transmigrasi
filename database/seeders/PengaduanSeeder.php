@@ -11,17 +11,16 @@ use App\Models\User;
 use App\Support\DummyData;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 /**
  * Pengaduan + riwayat penanganan + pivot berkas (Task 8.2).
  *
  * `id_pengaduan` / `nomor_pengaduan` dipaksa sama seperti data contoh (uji
- * HalamanTest menyebut id 1-9 langsung). Petugas penangan (NARA WIJAYA dsb.)
- * dibuat minimal di sini -- `penanganan_pengaduan.user_id` NOT NULL, sedangkan
- * suite Feature tidak menanam akun. `pengaduan.user_id` dibiarkan NULL: data
- * contoh tidak membedakan pencatatnya, dan kolomnya memang nullable.
+ * HalamanTest menyebut id 1-9 langsung). Petugas penangan dibuat dengan sandi
+ * acak dan role non-Admin untuk memenuhi `penanganan_pengaduan.user_id` yang
+ * NOT NULL. `pengaduan.user_id` dibiarkan NULL: data contoh tidak membedakan
+ * pencatatnya, dan kolomnya memang nullable.
  *
  * FK SP -> `SpSeeder`; berkas -> `BerkasSeeder` (pivot ditanam di sini sebab
  * BerkasSeeder berjalan lebih dulu).
@@ -43,28 +42,34 @@ class PengaduanSeeder extends Seeder
 
     public function run(): void
     {
-        $roleId = Role::query()->value('id_role')
-            ?? Role::create([
-                'nama' => 'Petugas',
+        $roleId = Role::where('nama', 'Dinas Transmigrasi')->where('is_terkunci', false)->value('id_role');
+
+        if ($roleId === null) {
+            $role = Role::withTrashed()->firstOrNew(['nama' => 'Petugas']);
+            $role->forceFill([
                 'deskripsi' => 'Peran minimal untuk penautan riwayat penanganan (data contoh).',
                 'cakupan_data' => 'Semua',
                 'is_bawaan' => false,
                 'is_terkunci' => false,
                 'is_aktif' => true,
-            ])->id_role;
+                'deleted_at' => null,
+            ])->save();
+            $roleId = $role->id_role;
+        }
 
         $petugasId = [];
         foreach (DummyData::pengguna() as $u) {
-            $petugasId[$u['nama']] = User::firstOrCreate(
-                ['nama' => $u['nama']],
-                [
-                    'role_id' => $roleId,
-                    'username' => $u['username'],
-                    'email' => $u['email'],
-                    'password' => Hash::make('password'),
-                    'is_aktif' => $u['is_aktif'] ?? true,
-                ],
-            )->id_user;
+            $petugas = User::withTrashed()->firstOrNew(['username' => $u['username']]);
+            $petugas->forceFill([
+                'nama' => $u['nama'],
+                'role_id' => $roleId,
+                'email' => $u['email'],
+                'password' => Str::password(32),
+                'password_harus_diganti' => true,
+                'is_aktif' => $u['is_aktif'] ?? true,
+                'deleted_at' => null,
+            ])->save();
+            $petugasId[$u['nama']] = $petugas->id_user;
         }
 
         $spId = SatuanPermukiman::pluck('id_satuan_permukiman', 'nama');

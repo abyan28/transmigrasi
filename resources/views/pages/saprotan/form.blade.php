@@ -41,6 +41,10 @@
     $poktanAwal = array_keys($distribusiAwal);
 @endphp
 
+@if ($awalan === 'ubah')
+    <input type="hidden" name="ganti_distribusi" value="1" />
+@endif
+
 <div class="space-y-6"
     x-data="{
         poktanTerpilih: @js($poktanAwal),

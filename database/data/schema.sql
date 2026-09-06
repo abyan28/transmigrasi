@@ -15,7 +15,7 @@
 -- Berkas refs/20260809_T10_22_39.349Z.sql adalah struktur lama 22 tabel dengan
 -- arah FK terbalik: REFERENSI HISTORIS SAJA, bukan skema ini.
 --
--- Isi: 44 tabel bisnis + 6 tabel infrastruktur framework Laravel = 50 tabel.
+-- Isi: 45 tabel bisnis + 6 tabel infrastruktur framework Laravel = 51 tabel.
 --
 -- Konvensi:
 --   - Nama tabel  : Bahasa Indonesia, lowercase, snake_case, tunggal.
@@ -148,6 +148,26 @@ CREATE TABLE `kode_pemulihan_sandi` (
   KEY `idx_kode_pemulihan_kedaluwarsa` (`kedaluwarsa_pada`),
   KEY `idx_kode_pemulihan_created` (`created_at`),
   CONSTRAINT `fk_kode_pemulihan_user`
+    FOREIGN KEY (`user_id`) REFERENCES `user` (`id_user`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `pending_email_changes` (
+  `id_pending_email_change` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `user_id`                 BIGINT UNSIGNED NOT NULL,
+  `new_email`               VARCHAR(255) NOT NULL,
+  `token_hash`              CHAR(64) NOT NULL,
+  `expires_at`              TIMESTAMP NOT NULL,
+  `used_at`                 TIMESTAMP NULL DEFAULT NULL,
+  `cancelled_at`            TIMESTAMP NULL DEFAULT NULL,
+  `created_at`              TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `pending_user_id`         BIGINT UNSIGNED GENERATED ALWAYS AS (CASE WHEN `used_at` IS NULL AND `cancelled_at` IS NULL THEN `user_id` END) VIRTUAL,
+  PRIMARY KEY (`id_pending_email_change`),
+  UNIQUE KEY `uq_pending_email_changes_token_hash` (`token_hash`),
+  UNIQUE KEY `uq_pending_email_changes_pending_user` (`pending_user_id`),
+  KEY `idx_pending_email_changes_user` (`user_id`),
+  KEY `idx_pending_email_changes_new_email` (`new_email`),
+  KEY `idx_pending_email_changes_expires` (`expires_at`),
+  CONSTRAINT `fk_pending_email_changes_user`
     FOREIGN KEY (`user_id`) REFERENCES `user` (`id_user`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -950,6 +970,7 @@ CREATE TABLE `transmigran` (
   UNIQUE KEY `uq_transmigran_uuid` (`uuid`),
   UNIQUE KEY `uq_transmigran_nik` (`nik`),
   UNIQUE KEY `uq_transmigran_no_kk` (`no_kk`),
+  UNIQUE KEY `uq_transmigran_id_sp` (`id_transmigran`,`satuan_permukiman_id`),
   KEY `idx_transmigran_sp` (`satuan_permukiman_id`),
   KEY `idx_transmigran_nama` (`nama_kepala_keluarga`),
   KEY `idx_transmigran_tahun_kedatangan` (`tahun_kedatangan`),
@@ -1139,7 +1160,9 @@ CREATE TABLE `poktan` (
 -- transmigran_id menunjuk KELUARGA yang diwakili. asal_wakil enum memuat 3 nilai
 -- (agar 1 tipe dipakai bersama poktan.asal_ketua); nilai 'Bukan Transmigran' tidak
 -- berlaku di sini (ditegakkan aplikasi). Anggota berhenti ditandai 'Sudah Keluar',
--- tidak dihapus. Kolom nama_wakil/nik_wakil/hubungan_dengan_kk DICABUT.
+-- tidak dihapus. transmigran_aktif_id adalah kunci turunan untuk menegakkan satu
+-- keanggotaan aktif per keluarga tanpa melarang baris riwayat. Kolom
+-- nama_wakil/nik_wakil/hubungan_dengan_kk DICABUT.
 CREATE TABLE `anggota_poktan` (
   `id_anggota_poktan`   BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `poktan_id`           BIGINT UNSIGNED NOT NULL,
@@ -1156,8 +1179,10 @@ CREATE TABLE `anggota_poktan` (
   `created_at`          TIMESTAMP NULL DEFAULT NULL,
   `updated_at`          TIMESTAMP NULL DEFAULT NULL,
   `deleted_at`          TIMESTAMP NULL DEFAULT NULL,
+  `transmigran_aktif_id` BIGINT UNSIGNED GENERATED ALWAYS AS (CASE WHEN `status` = 'Aktif' AND `deleted_at` IS NULL THEN `transmigran_id` END) VIRTUAL,
   PRIMARY KEY (`id_anggota_poktan`),
-  UNIQUE KEY `uq_anggota_poktan_poktan_transmigran` (`poktan_id`,`transmigran_id`),
+  UNIQUE KEY `uq_anggota_poktan_transmigran_aktif` (`transmigran_aktif_id`),
+  KEY `idx_anggota_poktan_poktan` (`poktan_id`),
   KEY `idx_anggota_poktan_transmigran` (`transmigran_id`),
   KEY `idx_anggota_poktan_status` (`status`),
   KEY `idx_anggota_poktan_anggota_keluarga` (`anggota_keluarga_id`),
@@ -1206,6 +1231,7 @@ CREATE TABLE `alsintan_distribusi` (
   `created_at`             TIMESTAMP NULL DEFAULT NULL,
   `updated_at`             TIMESTAMP NULL DEFAULT NULL,
   PRIMARY KEY (`id_alsintan_distribusi`),
+  UNIQUE KEY `uq_alsintan_distribusi_alsintan_poktan` (`alsintan_id`,`poktan_id`),
   KEY `idx_alsintan_distribusi_alsintan` (`alsintan_id`),
   KEY `idx_alsintan_distribusi_poktan` (`poktan_id`),
   KEY `idx_alsintan_distribusi_penanda` (`penanda_terima_id`),
@@ -1271,6 +1297,7 @@ CREATE TABLE `saprotan_distribusi` (
   `created_at`             TIMESTAMP NULL DEFAULT NULL,
   `updated_at`             TIMESTAMP NULL DEFAULT NULL,
   PRIMARY KEY (`id_saprotan_distribusi`),
+  UNIQUE KEY `uq_saprotan_distribusi_saprotan_poktan` (`saprotan_id`,`poktan_id`),
   KEY `idx_saprotan_distribusi_saprotan` (`saprotan_id`),
   KEY `idx_saprotan_distribusi_poktan` (`poktan_id`),
   CONSTRAINT `fk_saprotan_distribusi_saprotan`
@@ -1326,10 +1353,11 @@ CREATE TABLE `lahan` (
   -- peruntukan_lahan) yang dahulu mengizinkan dua baris per keluarga.
   -- Indeks idx_lahan_transmigran ikut dicabut: UNIQUE sudah menjadi indeks.
   UNIQUE KEY `uq_lahan_transmigran` (`transmigran_id`),
+  KEY `idx_lahan_transmigran_sp` (`transmigran_id`,`satuan_permukiman_id`),
   KEY `idx_lahan_sp` (`satuan_permukiman_id`),
   KEY `idx_lahan_poktan` (`poktan_id`),
-  CONSTRAINT `fk_lahan_transmigran`
-    FOREIGN KEY (`transmigran_id`) REFERENCES `transmigran` (`id_transmigran`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_lahan_transmigran_sp`
+    FOREIGN KEY (`transmigran_id`,`satuan_permukiman_id`) REFERENCES `transmigran` (`id_transmigran`,`satuan_permukiman_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_lahan_sp`
     FOREIGN KEY (`satuan_permukiman_id`) REFERENCES `satuan_permukiman` (`id_satuan_permukiman`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_lahan_poktan`
@@ -1387,7 +1415,7 @@ CREATE TABLE `penanaman` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 8.3 hasil_panen ----------
--- Satu penanaman -> paling banyak satu baris panen (ditegakkan aplikasi).
+-- Satu penanaman -> paling banyak satu baris panen, termasuk setelah soft delete.
 -- Identitas (aplikasi): realisasi_panen + puso = penanaman.realisasi_tanam;
 --                       produksi = realisasi_panen x produktivitas.
 -- satuan_id DISALIN dari komoditas saat simpan (snapshot). poktan_id DICABUT
@@ -1409,7 +1437,7 @@ CREATE TABLE `hasil_panen` (
   `deleted_at`        TIMESTAMP NULL DEFAULT NULL,
   PRIMARY KEY (`id_hasil_panen`),
   UNIQUE KEY `uq_hasil_panen_uuid` (`uuid`),
-  KEY `idx_hasil_panen_penanaman` (`penanaman_id`),
+  UNIQUE KEY `uq_hasil_panen_penanaman` (`penanaman_id`),
   KEY `idx_hasil_panen_periode` (`periode_panen`),
   KEY `idx_hasil_panen_satuan` (`satuan_id`),
   CONSTRAINT `fk_hasil_panen_penanaman`

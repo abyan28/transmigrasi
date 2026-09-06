@@ -8,11 +8,14 @@ use App\Enums\JenisSaprotan;
 use App\Enums\StatusKeaktifanAnggota;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
 use App\Models\AlsintanDistribusi;
+use App\Models\AnggotaKeluarga;
 use App\Models\AnggotaPoktan;
 use App\Models\Lahan;
 use App\Models\Poktan;
 use App\Models\SaprotanDistribusi;
-use App\Support\DummyData;
+use App\Models\SatuanPermukiman;
+use App\Models\Scopes\CakupanDataSp;
+use App\Models\Transmigran;
 use App\Support\Paginasi;
 use App\Support\PenyajianPoktan;
 use App\Support\RekapLahan;
@@ -23,6 +26,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Modul Kelompok Tani (Task 6.4).
@@ -83,7 +87,7 @@ class PoktanController extends Controller
                 ->sum(fn (Poktan $p) => RekapPoktan::kekuatan($p)['jumlah_anggota']),
             'anggotaTerdata' => AnggotaPoktan::query()->count(),
             'anggotaAktif' => AnggotaPoktan::query()->where('status', StatusKeaktifanAnggota::Aktif->value)->count(),
-            'daftarSp' => DummyData::satuanPermukiman(),
+            'daftarSp' => $this->daftarSp(),
         ]);
     }
 
@@ -136,6 +140,8 @@ class PoktanController extends Controller
     {
         [$data, $anggota, $disunting] = $this->pisahkan($this->validasi($request));
 
+        $this->pastikanIntegritas($data, $disunting ? $anggota : []);
+
         DB::transaction(function () use ($request, $data, $anggota, $disunting) {
             $poktan = Poktan::create($data);
 
@@ -153,7 +159,10 @@ class PoktanController extends Controller
     {
         $poktan = Poktan::findOrFail($id);
 
+        CakupanDataSp::pastikanDapatDitulis($poktan);
         [$data, $anggota, $disunting] = $this->pisahkan($this->validasi($request, $poktan));
+
+        $this->pastikanIntegritas($data, $disunting ? $anggota : [], $poktan);
 
         DB::transaction(function () use ($request, $poktan, $data, $anggota, $disunting) {
             $poktan->update($data);
@@ -170,7 +179,10 @@ class PoktanController extends Controller
 
     public function hapus(int $id): RedirectResponse
     {
-        Poktan::findOrFail($id)->delete();
+        $poktan = Poktan::findOrFail($id);
+
+        CakupanDataSp::pastikanDapatDitulis($poktan);
+        $poktan->delete();
 
         return redirect()->route('poktan.index')->with('sukses', 'Data kelompok tani dihapus.');
     }
@@ -188,6 +200,70 @@ class PoktanController extends Controller
     }
 
     /**
+     * @return array<int, array{id_satuan_permukiman: int, nama: string}>
+     */
+    private function daftarSp(): array
+    {
+        return SatuanPermukiman::query()
+            ->terlihatOlehPengguna()
+            ->orderBy('id_satuan_permukiman')
+            ->get(['id_satuan_permukiman', 'nama'])
+            ->toArray();
+    }
+
+    private function pastikanIntegritas(array $data, array $anggota, ?Poktan $poktan = null): void
+    {
+        $spId = (int) $data['satuan_permukiman_id'];
+
+        CakupanDataSp::pastikanDapatDitulis($spId);
+
+        if ($poktan !== null && $poktan->satuan_permukiman_id !== $spId
+            && ($poktan->anggota()->withTrashed()->exists()
+                || $poktan->alsintanDistribusi()->exists()
+                || $poktan->saprotanDistribusi()->exists()
+                || $poktan->penanaman()->withTrashed()->exists())) {
+            throw ValidationException::withMessages([
+                'satuan_permukiman_id' => 'Satuan permukiman tidak dapat diubah karena kelompok tani sudah memiliki anggota, distribusi, atau riwayat tanam.',
+            ]);
+        }
+
+        $asal = AsalWakilPoktan::from($data['asal_ketua']);
+        if ($asal->dariKeluargaTransmigran()) {
+            $ketuaId = (int) $data['ketua_transmigran_id'];
+            $ketua = Transmigran::find($ketuaId);
+
+            if ($ketua === null || $ketua->satuan_permukiman_id !== $spId) {
+                throw ValidationException::withMessages([
+                    'ketua_transmigran_id' => 'Keluarga ketua harus berasal dari satuan permukiman kelompok tani.',
+                ]);
+            }
+
+            if ($asal === AsalWakilPoktan::AnggotaKeluarga) {
+                $orang = AnggotaKeluarga::find((int) $data['ketua_anggota_keluarga_id']);
+
+                if ($orang === null || $orang->transmigran_id !== $ketuaId) {
+                    throw ValidationException::withMessages([
+                        'ketua_anggota_keluarga_id' => 'Anggota keluarga yang dipilih bukan bagian dari keluarga ketua.',
+                    ]);
+                }
+            }
+        }
+
+        $sudah = $poktan?->anggota()
+            ->where('status', StatusKeaktifanAnggota::Aktif->value)
+            ->pluck('transmigran_id')->all() ?? [];
+        foreach ($anggota as $i => $row) {
+            if (! in_array((int) $row['transmigran_id'], $sudah, true)) {
+                AnggotaPoktan::pastikanSah($spId, $row + [
+                    'asal_wakil' => AsalWakilPoktan::KepalaKeluarga->value,
+                    'status' => StatusKeaktifanAnggota::Aktif->value,
+                ], awalanGalat: "anggota.{$i}.");
+                $sudah[] = (int) $row['transmigran_id'];
+            }
+        }
+    }
+
+    /**
      * Menambah anggota BARU dari langkah 3 form. Baris yang sudah menjadi
      * anggota poktan ini dilewati; manajemen status lewat AnggotaPoktanController.
      *
@@ -195,7 +271,9 @@ class PoktanController extends Controller
      */
     private function tambahAnggotaBaru(Poktan $poktan, array $rows): void
     {
-        $sudah = $poktan->anggota()->pluck('transmigran_id')->all();
+        $sudah = $poktan->anggota()
+            ->where('status', StatusKeaktifanAnggota::Aktif->value)
+            ->pluck('transmigran_id')->all();
 
         foreach ($rows as $row) {
             $transmigranId = (int) ($row['transmigran_id'] ?? 0);

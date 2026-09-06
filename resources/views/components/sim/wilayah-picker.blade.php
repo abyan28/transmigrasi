@@ -28,6 +28,7 @@
     'spTerpilih' => null,
     'desaTerpilih' => null,
     'wajib' => true,
+    'spTerkunci' => null,
 ])
 
 @php
@@ -134,12 +135,17 @@
                 Satuan Permukiman{!! $wajib ? '<span class="text-error-500">*</span>' : '' !!}
             </label>
             <select id="satuan_permukiman_id" name="satuan_permukiman_id" x-model="sp"
+                @if ($spTerkunci) :disabled="{!! $spTerkunci !!}" @endif
                 class="{{ $kelasKontrol }}" @if ($wajib) required @endif>
                 <option value="">Pilih satuan permukiman</option>
                 <template x-for="item in spTersaring" :key="item.id">
                     <option :value="item.id" x-text="item.nama"></option>
                 </template>
             </select>
+            @if ($spTerkunci)
+                <input type="hidden" name="satuan_permukiman_id" :value="sp"
+                    :disabled="! ({!! $spTerkunci !!})" disabled />
+            @endif
             <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
                 Kecamatan dan desa mengikuti satuan permukiman yang dipilih.
             </p>

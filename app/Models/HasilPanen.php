@@ -9,8 +9,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
- * Hasil panen satu penanaman (paling banyak satu baris per penanaman).
- * `satuan_id` DISALIN dari komoditas saat simpan (snapshot -- tetap benar bila
+ * Hasil panen satu penanaman (paling banyak satu baris seumur hidup, termasuk
+ * setelah soft delete). `satuan_id` DISALIN dari komoditas saat simpan (snapshot -- tetap benar bila
  * satuan baku komoditas kelak diubah). `produksi` disimpan apa adanya, tanpa
  * konversi. Identitas (aplikasi): `realisasi_panen` + `puso` = `penanaman.realisasi_tanam`;
  * `produksi` = `realisasi_panen` x `produktivitas`.

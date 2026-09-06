@@ -4,13 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Enums\JenisDaftarPilihan;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
+use App\Models\DaftarPilihan;
 use App\Models\InventarisSp;
-use App\Support\DummyData;
+use App\Models\SatuanPermukiman;
+use App\Models\Scopes\CakupanDataSp;
 use App\Support\Paginasi;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 /**
@@ -59,8 +62,8 @@ class InventarisSpController extends Controller
             'totalUnit' => (int) InventarisSp::query()->sum('jumlah'),
             'sudahDiserahkan' => InventarisSp::query()->where('status_penyerahan', 'Sudah Diserahkan')->count(),
             'perluPerhatian' => InventarisSp::query()->where('kondisi', '!=', 'Baik')->count(),
-            'daftarSp' => DummyData::satuanPermukiman(),
-            'opsiFilterStatusPenyerahan' => DummyData::opsiFilterDaftarPilihan(JenisDaftarPilihan::StatusPenyerahan),
+            'daftarSp' => SatuanPermukiman::opsiTerlihat(),
+            'opsiFilterStatusPenyerahan' => DaftarPilihan::opsi(JenisDaftarPilihan::StatusPenyerahan, false),
         ]);
     }
 
@@ -81,10 +84,13 @@ class InventarisSpController extends Controller
 
     public function simpan(Request $request): RedirectResponse
     {
-        $inventaris = InventarisSp::create($this->validasi($request));
+        $data = $this->validasi($request);
 
-        $this->lekatkanBerkas($inventaris, (array) $request->file('foto', []), 'inventaris_sp', 'foto');
-        $this->lekatkanBerkas($inventaris, (array) $request->file('dokumen_pendukung', []), 'inventaris_sp', 'pendukung');
+        DB::transaction(function () use ($request, $data) {
+            $inventaris = InventarisSp::create($data);
+            $this->lekatkanBerkas($inventaris, (array) $request->file('foto', []), 'inventaris_sp', 'foto');
+            $this->lekatkanBerkas($inventaris, (array) $request->file('dokumen_pendukung', []), 'inventaris_sp', 'pendukung');
+        });
 
         return redirect()->route('sp.inventaris')->with('sukses', 'Data inventaris SP tersimpan.');
     }
@@ -92,10 +98,14 @@ class InventarisSpController extends Controller
     public function perbarui(Request $request, int $id): RedirectResponse
     {
         $inventaris = InventarisSp::findOrFail($id);
-        $inventaris->update($this->validasi($request, $inventaris));
+        CakupanDataSp::pastikanDapatDitulis($inventaris);
+        $data = $this->validasi($request, $inventaris);
 
-        $this->lekatkanBerkas($inventaris, (array) $request->file('foto', []), 'inventaris_sp', 'foto');
-        $this->lekatkanBerkas($inventaris, (array) $request->file('dokumen_pendukung', []), 'inventaris_sp', 'pendukung');
+        DB::transaction(function () use ($request, $inventaris, $data) {
+            $inventaris->update($data);
+            $this->lekatkanBerkas($inventaris, (array) $request->file('foto', []), 'inventaris_sp', 'foto');
+            $this->lekatkanBerkas($inventaris, (array) $request->file('dokumen_pendukung', []), 'inventaris_sp', 'pendukung');
+        });
 
         return redirect()->route('sp.inventaris')->with('sukses', 'Perubahan data inventaris tersimpan.');
     }
@@ -103,18 +113,17 @@ class InventarisSpController extends Controller
     public function hapus(int $id): RedirectResponse
     {
         $inventaris = InventarisSp::findOrFail($id);
+        CakupanDataSp::pastikanDapatDitulis($inventaris);
 
-        // Pivot dilepas; registry `berkas` tetap sebab melayani banyak modul.
-        $inventaris->berkas()->detach();
-        $inventaris->delete();
+        DB::transaction(function () use ($inventaris) {
+            $inventaris->berkas()->detach();
+            $inventaris->delete();
+        });
 
         return redirect()->route('sp.inventaris')->with('sukses', 'Data inventaris dihapus.');
     }
 
     /**
-     * Nama kuncinya wajib sama dengan `DummyData::inventarisSp()` supaya view
-     * tidak perlu disentuh.
-     *
      * @return array<string, mixed>
      */
     private function baris(InventarisSp $i): array
@@ -171,6 +180,7 @@ class InventarisSpController extends Controller
         ] + ValidationRules::pesan());
 
         unset($data['foto'], $data['dokumen_pendukung']);
+        CakupanDataSp::pastikanDapatDitulis((int) $data['satuan_permukiman_id']);
 
         return $data;
     }

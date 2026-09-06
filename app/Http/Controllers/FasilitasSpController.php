@@ -2,17 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\CakupanData;
 use App\Enums\JenisDaftarPilihan;
 use App\Enums\JenisFasilitas;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
+use App\Models\DaftarPilihan;
 use App\Models\FasilitasSp;
-use App\Support\DummyData;
+use App\Models\SatuanPermukiman;
+use App\Models\Scopes\CakupanDataSp;
 use App\Support\LayananNotifikasi;
 use App\Support\Paginasi;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 /**
@@ -60,8 +64,8 @@ class FasilitasSpController extends Controller
             'totalUnit' => (int) FasilitasSp::query()->sum('jumlah'),
             'kondisiBaik' => FasilitasSp::query()->where('kondisi', 'Baik')->count(),
             'rusak' => FasilitasSp::query()->where('kondisi', '!=', 'Baik')->count(),
-            'daftarSp' => DummyData::satuanPermukiman(),
-            'opsiFilterKondisi' => DummyData::opsiFilterDaftarPilihan(JenisDaftarPilihan::Kondisi),
+            'daftarSp' => SatuanPermukiman::opsiTerlihat(),
+            'opsiFilterKondisi' => DaftarPilihan::opsi(JenisDaftarPilihan::Kondisi, false),
         ]);
     }
 
@@ -72,7 +76,7 @@ class FasilitasSpController extends Controller
         return view('pages.sp.detail-fasilitas', [
             'title' => $fasilitas->nama_fasilitas,
             'data' => $this->baris($fasilitas),
-            'daftarSp' => DummyData::satuanPermukiman(),
+            'daftarSp' => SatuanPermukiman::opsiTerlihat(),
             // Foto jamak sejak Putaran 14; satu bangunan punya beberapa sisi.
             'berkasFoto' => $fasilitas->berkas
                 ->filter(fn ($b) => $b->pivot->peran === 'foto')
@@ -84,11 +88,13 @@ class FasilitasSpController extends Controller
     public function simpan(Request $request): RedirectResponse
     {
         $data = $this->validasi($request);
-        $fasilitas = FasilitasSp::create($data);
-
         $cakupan = $this->cakupan($request, $data['satuan_permukiman_id']);
-        $fasilitas->cakupan()->sync($cakupan);
-        $this->lekatkanBerkas($fasilitas, (array) $request->file('foto', []), 'fasilitas_sp', 'foto');
+
+        DB::transaction(function () use ($request, $data, $cakupan) {
+            $fasilitas = FasilitasSp::create($data);
+            $fasilitas->cakupan()->sync($cakupan);
+            $this->lekatkanBerkas($fasilitas, (array) $request->file('foto', []), 'fasilitas_sp', 'foto');
+        });
 
         LayananNotifikasi::hitungUlangSp($cakupan);
 
@@ -98,13 +104,25 @@ class FasilitasSpController extends Controller
     public function perbarui(Request $request, int $id): RedirectResponse
     {
         $fasilitas = FasilitasSp::with('cakupan')->findOrFail($id);
+        CakupanDataSp::pastikanDapatDitulis($fasilitas);
         $cakupanLama = $fasilitas->cakupan->pluck('id_satuan_permukiman')->all();
         $data = $this->validasi($request, $fasilitas);
-        $fasilitas->update($data);
+        $cakupanDisunting = $request->boolean('_cakupan_disunting');
+        $cakupan = $cakupanDisunting
+            ? array_values(array_unique([
+                ...$this->cakupanTakTerlihat($cakupanLama),
+                ...$this->cakupan($request, $data['satuan_permukiman_id']),
+            ]))
+            : array_values(array_unique([...$cakupanLama, $data['satuan_permukiman_id']]));
 
-        $cakupan = $this->cakupan($request, $data['satuan_permukiman_id']);
-        $fasilitas->cakupan()->sync($cakupan);
-        $this->lekatkanBerkas($fasilitas, (array) $request->file('foto', []), 'fasilitas_sp', 'foto');
+        DB::transaction(function () use ($request, $fasilitas, $data, $cakupan, $cakupanDisunting) {
+            $fasilitas->update($data);
+
+            $cakupanDisunting
+                ? $fasilitas->cakupan()->sync($cakupan)
+                : $fasilitas->cakupan()->syncWithoutDetaching([$data['satuan_permukiman_id']]);
+            $this->lekatkanBerkas($fasilitas, (array) $request->file('foto', []), 'fasilitas_sp', 'foto');
+        });
 
         LayananNotifikasi::hitungUlangSp([...$cakupanLama, ...$cakupan]);
 
@@ -114,11 +132,14 @@ class FasilitasSpController extends Controller
     public function hapus(int $id): RedirectResponse
     {
         $fasilitas = FasilitasSp::with('cakupan')->findOrFail($id);
+        CakupanDataSp::pastikanDapatDitulis($fasilitas);
         $cakupan = $fasilitas->cakupan->pluck('id_satuan_permukiman')->all();
 
-        $fasilitas->berkas()->detach();
-        $fasilitas->cakupan()->detach();
-        $fasilitas->delete();
+        DB::transaction(function () use ($fasilitas) {
+            $fasilitas->berkas()->detach();
+            $fasilitas->cakupan()->detach();
+            $fasilitas->delete();
+        });
 
         LayananNotifikasi::hitungUlangSp($cakupan);
 
@@ -133,9 +154,21 @@ class FasilitasSpController extends Controller
      */
     private function cakupan(Request $request, int $pangkal): array
     {
-        $lain = array_map('intval', (array) $request->input('satuan_permukiman_ids_lain', []));
+        return array_values(array_unique([
+            $pangkal,
+            ...array_map('intval', (array) $request->input('satuan_permukiman_ids_lain', [])),
+        ]));
+    }
 
-        return array_values(array_unique(array_merge([$pangkal], $lain)));
+    private function cakupanTakTerlihat(array $cakupan): array
+    {
+        $pengguna = CakupanDataSp::penggunaWajibDisaring();
+
+        if ($pengguna?->role?->cakupan_data !== CakupanData::PerSp) {
+            return [];
+        }
+
+        return array_values(array_diff($cakupan, CakupanDataSp::spDitugaskan($pengguna)));
     }
 
     /**
@@ -185,6 +218,7 @@ class FasilitasSpController extends Controller
             'keterangan' => ['nullable', 'string', 'max:500'],
             'satuan_permukiman_ids_lain' => ['nullable', 'array'],
             'satuan_permukiman_ids_lain.*' => ['integer', Rule::exists('satuan_permukiman', 'id_satuan_permukiman')],
+            '_cakupan_disunting' => ['nullable', 'boolean'],
             'foto' => ['nullable', 'array'],
             'foto.*' => ValidationRules::foto(),
         ], [
@@ -195,7 +229,12 @@ class FasilitasSpController extends Controller
             'status_penyerahan.required' => 'Status penyerahan wajib dipilih.',
         ] + ValidationRules::pesan());
 
-        unset($data['foto'], $data['satuan_permukiman_ids_lain']);
+        unset($data['foto'], $data['satuan_permukiman_ids_lain'], $data['_cakupan_disunting']);
+        CakupanDataSp::pastikanDapatDitulis((int) $data['satuan_permukiman_id']);
+
+        foreach ((array) $request->input('satuan_permukiman_ids_lain', []) as $sp) {
+            CakupanDataSp::pastikanDapatDitulis((int) $sp);
+        }
 
         return $data;
     }

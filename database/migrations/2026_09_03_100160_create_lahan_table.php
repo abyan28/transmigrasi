@@ -40,11 +40,12 @@ return new class extends Migration
             $table->unique('uuid', 'uq_lahan_uuid');
             $table->unique('kode_lahan', 'uq_lahan_kode');
             $table->unique('transmigran_id', 'uq_lahan_transmigran');
+            $table->index(['transmigran_id', 'satuan_permukiman_id'], 'idx_lahan_transmigran_sp');
             $table->index('satuan_permukiman_id', 'idx_lahan_sp');
             $table->index('poktan_id', 'idx_lahan_poktan');
 
-            $table->foreign('transmigran_id', 'fk_lahan_transmigran')
-                ->references('id_transmigran')->on('transmigran')
+            $table->foreign(['transmigran_id', 'satuan_permukiman_id'], 'fk_lahan_transmigran_sp')
+                ->references(['id_transmigran', 'satuan_permukiman_id'])->on('transmigran')
                 ->onDelete('cascade')->onUpdate('cascade');
             $table->foreign('satuan_permukiman_id', 'fk_lahan_sp')
                 ->references('id_satuan_permukiman')->on('satuan_permukiman')

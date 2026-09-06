@@ -63,7 +63,7 @@
 
                         {{--
                             Jalur Admin diperkenalkan di sini, sebelum pengguna
-                            menunggu surel yang mungkin tidak kunjung tiba.
+                            menunggu email yang mungkin tidak kunjung tiba.
                         --}}
                         <div class="mt-5 rounded-lg bg-gray-50 p-4 dark:bg-white/[0.03]">
                             <p class="text-sm text-gray-600 dark:text-gray-400">

@@ -1,4 +1,4 @@
-# notes.md
+﻿# notes.md
 ## Catatan Teknis dan Temuan
 
 Dokumen ini berisi catatan temuan, keputusan, dan hal yang perlu ditindaklanjuti selama penyusunan dokumen dan pengembangan sistem.
@@ -2425,6 +2425,8 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
 - buat cache/cookies/pwa untuk atasi sinyal ketika kirim data tapi sinyal jelek/putus. dikerjakan setelah backend selesai.
 
 ## 6. Revisi
+
+### Gelombang 1
 - [done 2026-09-02] **Utang Putaran 12 dibereskan, lahan menjadi satu baris per keluarga, dan penjaga isian yatim (Putaran 15).**
   * **Pemicu: pemilik proyek menemukan dua hal yang terlewat, dan keduanya benar.** Pertama, form lahan TIDAK berubah meski Putaran 12 mencabut `dokumen_lahan`. Kedua, ada keputusan Putaran 12 yang tidak pernah dikerjakan dan hilang karena tidak tercatat.
   * **Rencana saya sendiri keliru dua kali, dan keduanya sebab yang sama: ditulis dari ingatan, bukan dari dokumen.**
@@ -2656,6 +2658,7 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
 
 ------------------------------------------------------------------------------------------------------------------------------------
 
+### Gelombang 2
 - [done] Ketika klik data master wilayah, kenapa url-nya langsung menuju ke tab kecamatan?
   * **Tidak ada alasannya.** `hashTabs('kecamatan')` ditulis tanpa pertimbangan, dan keliru pada dua hal sekaligus: pembacaannya melompati dua tingkat pertama sehingga susunan hierarki yang baru saja dijelaskan di kepala halaman tidak terlihat, dan pengunjung yang mengklik menu langsung mendapat alamat `?tab=kecamatan` seolah ia pernah memilihnya sendiri. Diubah menjadi `provinsi`.
   * **Satu cacat kecil ikut terlihat begitu bawaannya diperbaiki.** Panel provinsi satu-satunya yang tanpa `x-cloak`, sementara bawaannya kecamatan � sehingga panel provinsi justru **berkedip terlihat** lalu tergantikan. Keduanya kini sejalan: panel bawaan sengaja tanpa `x-cloak` agar halaman tidak kosong sesaat, tiga lainnya memakainya.
@@ -2892,6 +2895,7 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
 ------------------------------------------------------------------------------------------------------------------------------------
 
 
+### Gelombang 3
 - [done] Di form Inventaris SP, tambahkan opsi kondisi "Hilang" pada dropdown kondisi. Tambahkan juga di data master-nya.
   * Ditambahkan pada enum `Kondisi`, data master referensi, dan kamus data 11.5. Berlaku serentak untuk inventaris, fasilitas, alsintan, dan infrastruktur, sebab keempatnya membaca enum yang sama.
   * **Skornya 0,0, dan angka itu bukan pilihan bebas.** `PenilaianKondisiSp` membandingkan **tepat** terhadap konstanta `NILAI_TIDAK_ADA` untuk menegakkan aturan primer nol. Bila "Hilang" diberi angka yang sekadar kecil, misalnya 0,1, satu-satunya sumur bor yang hilang **tidak akan** menjatuhkan status SP dan kehilangan itu lolos sebagai "Berkembang". Dengan 0,0 keduanya setara: aset yang lenyap tidak melayani siapa pun, persis seperti aset yang tidak pernah ada.
@@ -3235,6 +3239,7 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
 ------------------------------------------------------------------------------------------------------------------------------------
 
 
+### Gelombang 4
 
 - [done] tambahkan di rules.md, sebelum eksekusi, tulis lengkap plan pengerjaan yg akan dikerjakan di session-notes.md
   * **Selesai 2026-08-27.** `rules.md` §20b baru berisi dua poin: rencana lengkap wajib ditulis ke `session-notes.md` sebelum kode disentuh, dan rencana itu boleh ditimpa tiap sesi sedangkan yang permanen tetap `notes.md` dan `tasklist.md`. Lahir dari sesi yang terhenti di tengah audit tanpa jejak rencana (1g.8). Lihat bagian 1m.6.
@@ -3269,6 +3274,7 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
 
 
 
+### Gelombang 5
 
 - [done] bisa gak ya ketika klik new tab laporan itu sudah tidak ada filter lagi dan tidak ada header cakupan laporan dll gitu? Jadi data yg terbuka pada new tab itu data yg sudah ter-filter. Dan mungkin diksinya bukan 'Buka di tab Baru', melainkan 'Generate Laporan'. Dan halamannya berupa laporan berbentuk dokumen gitu (referensi 'Contoh Format Laporan' di folder refs). Lalu untuk filter di sub menu laporan rekap indikator kawasan dan laporan monografi kenapa tidak ada tahunnya?
   * **Selesai 2026-08-29 (Putaran 5).** Tombol "Buka di tab baru" → **"Generate Laporan"** (gaya primer). Rute dokumen `/laporan/{slug}/dokumen` kini dokumen resmi berkop: `x-sim.kop-laporan` dua lambang (Kementerian + Malaka, flex tanpa `<table>`), blok judul, "TAHUN ...", kalimat cakupan; **tanpa bilah filter, tanpa blok "Cakupan laporan"**. Filter dibawa lewat **fragmen hash** (`#sp=..`), bukan query string (mati di GitHub Pages). Rekap Indikator Kawasan + Monografi SP dapat **pemilih tahun tunggal** (bukan rentang — laporan snapshot): `DummyData::indikatorKawasanTahun()` / `rekapPerSpTahun()` / `iklimSpTahun()`, jendela 5 tahun. Lihat bagian 1u.
@@ -3329,6 +3335,8 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
 
 ------------------------------------------------------------------------------------------------------------------------------------
 
+
+### Gelombang 6
 
 - [done] pada halaman dashboard di bagian Ringkasan Kawasan itu kan ada 12 kotak gitu di mana kalau orang lihat itu pasti bingung dan gak bisa membedakan. Bagaimana kalau kamu coba buat visualisasinya, namun tidak keluar jauh dari tema palet warna sistem.
   * **Selesai 2026-08-31.** 12 kartu KPI identik tanpa hierarki visual dirombak menjadi **3 Pilar Visualisasi Domain** yang terstruktur, komunikatif, dan tetap setia pada palet resmi Kementerian (`navy-500` #163B54, `teal-500` #33809C, `gold-500` #C09546, `sand-500` #DFB87E, serta skala netral):
@@ -3715,3 +3723,50 @@ Poin 1 dan 2 sudah selesai pada 2026-08-11.
     6. Apakah di belakang reverse proxy (mempengaruhi `TrustProxies`).
     Sampai keenamnya terjawab, Tahap 3 boleh berjalan di lingkungan lokal (XAMPP)
     tanpa risiko, tetapi Task 3.10 (rate limit) & Task 11.3 (deployment) menahan diri.
+
+
+------------------------------------------------------------------------------------------------------------------------------------
+
+
+### Gelombang 7
+
+- [done 2026-09-06] **Rincian SP dan Sebaran Kawasan kini membaca basis data yang sama dengan halaman operasional.**
+  * Akar selisih Kapitan Meo terkonfirmasi: `/sp/{id}` masih membaca 3 KK/3 rumah dari `DummyData`, `/transmigran` sudah membaca 16 KK dari database, sedangkan kartu SP memakai angka sintetis ketiga. Bukan paginasi maupun relasi yang salah; satu halaman mencampur tiga sumber kebenaran.
+  * Seluruh rincian SP dipindahkan ke `SpController::detail()`: warga, rumah, lahan, poktan, panen, pengaduan, infrastruktur/fasilitas lintas cakupan, inventaris, rute, ringkasan, dan grafik. SP baru kini dapat langsung dibuka tanpa menambah larik dummy.
+  * `/sp` menghitung KK terisi dari transmigran Aktif; `/kawasan` menghitung Sebaran SP, total KK, dan kecamatan dari relasi Eloquent. Kapitan Meo pada DemoSeeder kini konsisten: **16 KK**, **18 rumah**, **16 dihuni**; dua rumah kosong memang sah.
+  * Audit lanjut menemukan form SP mengirim banyak field Monografi/rute tetapi controller hanya menyimpan sebagian. Seluruh field Keadaan Wilayah, rute aksesibilitas, dan dokumen SP kini divalidasi dan disimpan transaksional; quick edit yang tidak memuat rute tidak menghapusnya.
+
+- [done 2026-09-06] **`DummyData` dikeluarkan dari jalur runtime data bisnis.**
+  * Sumber form bersama, pilihan SP, daftar pilihan Admin, wilayah, kategori-ke-bidang pengaduan, Catatan Log, rincian operasional, laporan, Monografi, dan Rekap Indikator kini membaca Eloquent/helper produksi. Catatan Log merangkai ringkasan dari `audit_log.data_lama/data_baru`, bukan riwayat karangan.
+  * Default `php artisan migrate --seed` kini hanya menanam bootstrap/referensi; data bisnis contoh dan akun petugas contoh hanya lewat `DemoSeeder`. Akun fixture tidak memakai sandi yang diketahui dan tidak memperoleh role Admin secara kebetulan.
+  * `DummyData` tetap dipertahankan untuk fixture demo/uji dan katalog izin sistem yang memang konfigurasi, bukan sumber data produksi. Penanda "Data contoh" kini mengikuti lingkungan demo/local/testing, tidak permanen pada produksi.
+
+- [done 2026-09-06] **Perubahan email memakai verifikasi tertunda lewat tautan sekali pakai.**
+  * Keputusan diskusi: ini BUKAN alur lupa kata sandi. Lupa sandi tetap memakai kode enam digit; perubahan email memakai tautan sekali pakai berlaku **60 menit**.
+  * Email baru disimpan di `pending_email_changes` dan belum menjadi alamat login/pemulihan sampai pengguna membuka halaman konfirmasi lalu mengirim POST. GET tidak menghabiskan token agar pemindai email tidak mengesahkannya tanpa tindakan pengguna. Token mentah tidak disimpan; database hanya menyimpan SHA-256.
+  * Permintaan ulang membatalkan token lama. Email lama menerima pemberitahuan keamanan. Kode pemulihan lama, sesi database, dan remember token dicabut saat perubahan disahkan.
+  * Bila sandi masih sementara, kredensial lama diputar seketika dan halaman konfirmasi mewajibkan username/sandi permanen. Bila sandi sudah permanen, hash sandi tidak berubah. Perubahan email profil sendiri wajib mengisi sandi saat ini. Perubahan data akun selain email berlaku langsung dan tetap mengirim pemberitahuan.
+
+- [done 2026-09-06] **Konsistensi relasi dan cakupan tulis ditegakkan di server, bukan hanya autofill layar.**
+  * Rumah Dihuni dan Lahan menurunkan SP dari KK terpilih; SP tampil terkunci dan request palsu tidak dapat memindahkannya. Rumah kosong tetap boleh memilih SP manual. Perpindahan SP sebuah KK ditolak selama masih punya rumah, lahan, atau keanggotaan poktan aktif.
+  * Penjaga bersama `CakupanDataSp::pastikanDapatDitulis()` diterapkan pada jalur tambah/ubah/hapus/import. Akun Per SP tidak dapat menulis atau memindahkan data ke SP yang tidak ditugaskan; target tidak berhak membalas 404.
+  * Audit menemukan dan menutup kasus serupa: ketua/anggota poktan lintas keluarga/SP, anggota aktif ganda, perpindahan keanggotaan lewat hidden id, penanda terima alsintan dari poktan lain, distribusi benih/penanaman palsu, panen sebelum periode tanam, panen kedua, kombinasi desa-kawasan beda kabupaten, dan `pengaduan.perbarui` tanpa middleware izin.
+  * Quick edit Alsintan, Saprotan, Fasilitas, dan Infrastruktur tidak lagi menghapus distribusi/cakupan yang tidak ikut terkirim. Perubahan induk+pivot dibungkus transaksi; distribusi tersembunyi milik SP lain dipertahankan.
+  * Constraint baru menjaga satu distribusi per pengadaan+poktan, satu keanggotaan aktif per keluarga, satu hasil panen per penanaman, serta pasangan lahan-pemilik-SP. Migration dan `schema.sql` terverifikasi **NOL SELISIH**.
+
+- [done 2026-09-06] **Istilah antarmuka dirapikan secara kontekstual, bukan replace-all.**
+  * Seluruh teks yang dilihat pengguna memakai **email**, termasuk CMS, email sistem, portal warga, profil, dan bantuan akun. Kunci CMS `surel.*` sengaja dipertahankan sebagai kontrak penyimpanan lama; yang berubah adalah label dan nilai tampilnya.
+  * Kata `modul` pada teks layar diganti menurut makna: `menu` untuk navigasi, `halaman` untuk tempat data disunting, `bagian` untuk kelompok panduan, dan `fitur` untuk kewenangan. Identifier teknis seperti `permission.modul`, parameter rute `{modul}`, nama kelas, JavaScript module, dan catatan historis tidak diubah karena bukan teks pengguna.
+  * Penjaga HTML terender memastikan istilah `surel` tidak kembali muncul pada halaman utama dan dokumen/email yang diuji.
+
+- [done 2026-09-06] **XLSX menjadi format impor utama; CSV tetap fallback tanpa konversi perantara.**
+  * Ditambahkan `phpoffice/phpspreadsheet` 5.9. Workbook dibaca langsung di backend lalu masuk ke jalur normalisasi/validasi yang sama dengan CSV. `.xls`, `.xlsm`, `.xlsb`, `.txt`, formula, tautan eksternal, makro, workbook rusak, header ganda/asing/hilang, sheet data tambahan, sel ekstrem, dan lebih dari 1.000 baris ditolak.
+  * Template XLSX punya sheet Data kosong, petunjuk/contoh terpisah, Referensi tersembunyi, format teks untuk NIK/KK/telepon, format tanggal, dan dropdown pilihan. Template CSV alternatif tidak lagi memuat baris contoh yang dapat tersimpan sebagai data.
+  * Tiap baris impor atomik tetapi berkas tetap partial-success: baris sah disimpan, baris gagal dibatalkan dan dilaporkan. Rincian galat dibatasi agar respons tidak meledak. Izin impor menuntut `lihat+tambah`, dan cakupan SP diperiksa pada setiap baris.
+  * UI tidak lagi berpura-pura melakukan preview atau menampilkan hasil palsu. Tombol dan status menyatakan "Impor"/"Hasil impor" sesuai perilaku nyata.
+  * **Utang eksplisit:** 8 entitas mandiri aktif; enam entitas berantai (`rumah`, `lahan`, `poktan`, `saprotan`, `penanaman`, `hasil-panen`) tetap dinonaktifkan jujur sampai pencarian relasi dan validasi bersyaratnya diimplementasikan. XLS lama sengaja tidak didukung.
+
+- [done 2026-09-06] **Verifikasi akhir Putaran 16.**
+  * Feature: **763 PASS / 7.583 assertions**. Database MariaDB: **574 PASS / 2.588 assertions**.
+  * Pint bersih; `sim:banding-skema --lengkap` **NOL SELISIH**; `sim:tautan-statis` menghasilkan seluruh URL publik dari database; `npm run build` sukses.
+  * `composer validate --strict`, `composer audit`, dan `npm audit` lulus tanpa advisory. `league/commonmark` diperbarui 2.9.1 → 2.10.0; dependensi npm rentan diperbarui tanpa kenaikan major aplikasi.

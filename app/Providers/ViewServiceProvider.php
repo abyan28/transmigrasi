@@ -3,8 +3,10 @@
 namespace App\Providers;
 
 use App\Enums\Agama;
+use App\Enums\AksiAuditLog;
 use App\Enums\AsalWakilPoktan;
 use App\Enums\BentukWilayah;
+use App\Enums\CakupanData;
 use App\Enums\HubunganAnggotaKeluarga;
 use App\Enums\JenisDaftarPilihan;
 use App\Enums\JenisKelamin;
@@ -12,20 +14,30 @@ use App\Enums\JenisSaprotan;
 use App\Enums\KegiatanAnggota;
 use App\Enums\PendidikanTerakhir;
 use App\Enums\PolaPermukiman;
+use App\Enums\StatusAnggotaKeluarga;
 use App\Enums\StatusKeaktifanAnggota;
-use App\Enums\StatusPanen;
 use App\Enums\TingkatKesuburanTanah;
+use App\Models\AnggotaKeluarga;
 use App\Models\AnggotaPoktan;
+use App\Models\AuditLog;
+use App\Models\DaftarPilihan;
+use App\Models\Desa;
+use App\Models\Kabupaten;
+use App\Models\KawasanTransmigrasi;
+use App\Models\Kecamatan;
 use App\Models\Komoditas;
 use App\Models\Penanaman;
 use App\Models\Poktan;
+use App\Models\Provinsi;
 use App\Models\Role;
 use App\Models\SaprotanDistribusi;
 use App\Models\Satuan;
+use App\Models\SatuanPermukiman;
+use App\Models\Scopes\CakupanDataSp;
 use App\Models\Transmigran;
-use App\Support\DataWilayah;
 use App\Support\DummyData;
 use App\Support\PetaPenggunaTampilan;
+use App\Support\RekapDashboard;
 use App\Support\RekapLahan;
 use App\Support\RekapPoktan;
 use Illuminate\Database\Eloquent\Builder;
@@ -84,7 +96,7 @@ class ViewServiceProvider extends ServiceProvider
 
         // Modal rincian akun, disisipkan halaman daftar. Berperilaku seperti
         // berkas form: satu berkas melayani seluruh baris secara bergantian.
-        'pages.pengguna.detail' => ['daftarPengguna', 'riwayatAkun'],
+        'pages.pengguna.detail' => ['riwayatAkun'],
 
         'pages.pengguna.form-role' => ['kelompokIzin', 'izinPerRole'],
         'pages.master.form-wilayah' => ['wilayah'],
@@ -108,20 +120,19 @@ class ViewServiceProvider extends ServiceProvider
      */
     private function suplaiBerkasBersama(): void
     {
-        // Penanda data contoh, wajib tampil selama aplikasi belum tersambung
-        // ke data nyata (ANTISLOP-ID R-17 dan R-38). Saat Tahap 4 masuk, nilai
-        // ini berpindah menjadi pengaturan, bukan tetapan pada penyedia data.
         View::composer(['layouts.app', 'layouts.dokumen'], function ($tampilan): void {
-            $tampilan->with('memakaiDataContoh', DummyData::MEMAKAI_DATA_CONTOH);
+            $tampilan->with('memakaiDataContoh', app()->environment(['local', 'testing', 'demo']));
         });
 
         // Menu pengguna di header, disisipkan `layouts.app` pada setiap halaman.
         // Task 3.13: dari pengguna sungguhan yang masuk, bukan `DummyData`.
         View::composer('components.header.user-dropdown', function ($tampilan): void {
             $pengguna = PetaPenggunaTampilan::untuk(Auth::user());
+            $bagianNama = preg_split('/\s+/', trim($pengguna['nama'])) ?: [];
+            $inisial = array_map(fn ($kata) => mb_substr($kata, 0, 1), array_slice($bagianNama, 0, 2));
 
             $tampilan->with('pengguna', $pengguna)
-                ->with('inisialPengguna', DummyData::inisial($pengguna['nama']));
+                ->with('inisialPengguna', mb_strtoupper(implode('', $inisial)));
         });
 
         /*
@@ -136,7 +147,7 @@ class ViewServiceProvider extends ServiceProvider
         View::composer('components.sim.catatan-log', function ($tampilan): void {
             $data = $tampilan->getData();
 
-            $tampilan->with('riwayat', DummyData::riwayatData(
+            $tampilan->with('riwayat', self::riwayatAudit(
                 $data['namaTabel'],
                 (int) $data['recordId'],
             ));
@@ -205,17 +216,16 @@ class ViewServiceProvider extends ServiceProvider
                     'satuan' => $k->satuan?->nama,
                     'satuan_id' => $k->satuan_id,
                 ])->all(),
-            'daftarSp' => DummyData::satuanPermukiman(),
+            'daftarSp' => self::daftarSp(),
 
             // Task 5.1/5.2 -> transmigran ber-Eloquent; Task 5.3 -> rumah juga,
             // sehingga `transmigranTanpaRumah` wajib membaca tabel `rumah` nyata
             // agar rumah yang baru didata langsung menyingkirkan KK-nya dari
-            // daftar. `daftarTransmigran` dipakai juga form poktan/lahan (Tahap 6,
-            // masih DummyData) -- bentuknya dijaga sama seperti `DummyData::transmigran()`.
+            // daftar. Bentuk `daftarTransmigran` dijaga sama seperti sumber lama.
             'daftarTransmigran' => self::daftarTransmigran(),
             'transmigranTanpaRumah' => self::daftarTransmigran(fn ($q) => $q->whereDoesntHave('rumah')),
             'transmigranTanpaLahan' => self::daftarTransmigran(fn ($q) => $q->whereDoesntHave('lahan')),
-            'sebaran' => DummyData::sebaranKomoditas(),
+            'sebaran' => RekapDashboard::sebaranKomoditas(),
 
             // Hanya nama pekerjaannya yang dipakai, sebagai saran `<datalist>`.
             // Cacahnya tidak ikut, sebab isian ini bebas diketik.
@@ -224,7 +234,7 @@ class ViewServiceProvider extends ServiceProvider
             // di bawah: himpunannya terbuka dan berekor panjang, sehingga
             // mengunci ke data master akan menghalangi petugas ketika menemui
             // pekerjaan yang belum terdaftar.
-            'saranPekerjaan' => array_keys(DummyData::sebaranPekerjaan()),
+            'saranPekerjaan' => array_keys(RekapDashboard::sebaranPekerjaan()),
 
             // Daerah asal justru himpunan TERTUTUP, sehingga dipilih dari data
             // master beserta nama provinsinya sebagai pembeda nama kembar.
@@ -233,14 +243,14 @@ class ViewServiceProvider extends ServiceProvider
             // sudah dipakai form kawasan dengan bentuk yang berbeda
             // (`id_kabupaten`, terbatas wilayah lokus). Dua daftar berbeda
             // berbagi satu nama akan saling menimpa diam-diam.
-            'opsiDaerahAsal' => DataWilayah::opsiKabupaten(),
+            'opsiDaerahAsal' => self::opsiKabupaten(),
 
-            'opsiKondisi' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::Kondisi),
-            'opsiKondisiRumah' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::KondisiRumah),
-            'opsiStatusHunian' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::StatusHunian),
-            'opsiJenisInfrastruktur' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::JenisInfrastruktur),
-            'opsiJenisAlsintan' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::JenisAlsintan),
-            'opsiTipeKomoditas' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::TipeKomoditas),
+            'opsiKondisi' => self::opsiDaftarPilihan(JenisDaftarPilihan::Kondisi),
+            'opsiKondisiRumah' => self::opsiDaftarPilihan(JenisDaftarPilihan::KondisiRumah),
+            'opsiStatusHunian' => self::opsiDaftarPilihan(JenisDaftarPilihan::StatusHunian),
+            'opsiJenisInfrastruktur' => self::opsiDaftarPilihan(JenisDaftarPilihan::JenisInfrastruktur),
+            'opsiJenisAlsintan' => self::opsiDaftarPilihan(JenisDaftarPilihan::JenisAlsintan),
+            'opsiTipeKomoditas' => self::opsiDaftarPilihan(JenisDaftarPilihan::TipeKomoditas),
             // Fase 1, 2026-09-05: Eloquent nyata, bukan `DummyData` -- role
             // buatan Admin sebelumnya tak pernah muncul di sini, sehingga
             // akun baru tak dapat ditugaskan ke role selain kelima bawaan.
@@ -250,11 +260,6 @@ class ViewServiceProvider extends ServiceProvider
                     'nama' => $r->nama,
                     'cakupan_data' => $r->cakupan_data->value,
                 ])->all(),
-            // Modal rincian akun (`pages.pengguna.detail`) tidak lagi
-            // memakainya pada markupnya -- dibiarkan DummyData, tak
-            // berdampak nyata.
-            'daftarPengguna' => DummyData::pengguna(),
-
             /*
              * Riwayat tindakan pada akun.
              *
@@ -263,17 +268,14 @@ class ViewServiceProvider extends ServiceProvider
              * dipanggil. Penyaringan per akun karena itu dilakukan di sisi
              * klien memakai `record_id`, bukan di sini.
              */
-            'riwayatAkun' => array_values(array_filter(
-                DummyData::auditLog(),
-                fn ($baris) => $baris['nama_tabel'] === 'user',
-            )),
+            'riwayatAkun' => self::riwayatAudit('user'),
 
-            'wilayah' => DummyData::wilayah(),
+            'wilayah' => self::wilayah(),
             'kelompokIzin' => DummyData::daftarIzin(),
 
             // Termasuk yang NONAKTIF, sebab form daftar pilihan menampilkan bidang
             // penanganan yang sudah tercatat pada baris lama.
-            'daftarBidang' => DummyData::daftarPilihan(JenisDaftarPilihan::BidangPengaduan, true),
+            'daftarBidang' => self::daftarPilihan(JenisDaftarPilihan::BidangPengaduan),
 
             /*
              * Izin milik setiap role, dipetakan menurut id.
@@ -312,33 +314,33 @@ class ViewServiceProvider extends ServiceProvider
                 ->mapWithKeys(fn ($v, $k) => [(int) $k => $v])
                 ->all(),
 
-            'opsiStatusPenyerahan' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::StatusPenyerahan),
-            'opsiJenisFasilitas' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::JenisFasilitas),
-            'opsiJenisInventaris' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::JenisInventaris),
-            'daftarKawasan' => DummyData::kawasan(),
-            'daftarProvinsi' => DummyData::wilayah()['provinsi'],
-            'daftarKabupaten' => DummyData::wilayah()['kabupaten'],
+            'opsiStatusPenyerahan' => self::opsiDaftarPilihan(JenisDaftarPilihan::StatusPenyerahan),
+            'opsiJenisFasilitas' => self::opsiDaftarPilihan(JenisDaftarPilihan::JenisFasilitas),
+            'opsiJenisInventaris' => self::opsiDaftarPilihan(JenisDaftarPilihan::JenisInventaris),
+            'daftarKawasan' => self::daftarKawasan(),
+            'daftarProvinsi' => self::daftarProvinsi(),
+            'daftarKabupaten' => self::daftarKabupaten(),
 
             // Desa membawa `kabupaten_id` turunan, dibaca lewat kecamatannya.
             // Dipakai form SP untuk menyaring desa menurut kabupaten kawasan
             // terpilih. Diturunkan di sini, bukan di view, sebab view dilarang
             // mengambil datanya sendiri.
-            'daftarDesa' => DummyData::desaBerkabupaten(),
+            'daftarDesa' => self::daftarDesa(),
 
             // Peta id kawasan ke id kabupatennya, dibaca Alpine pada form SP.
-            'petaKawasanKabupaten' => array_column(
-                DummyData::kawasan(), 'kabupaten_id', 'id_kawasan_transmigrasi'
-            ),
-            'opsiKategoriPengaduan' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::KategoriPengaduan),
-            'opsiBidang' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::BidangPengaduan),
-            'opsiPrioritasPengaduan' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::PrioritasPengaduan),
+            'petaKawasanKabupaten' => KawasanTransmigrasi::query()
+                ->pluck('kabupaten_id', 'id_kawasan_transmigrasi')
+                ->all(),
+            'opsiKategoriPengaduan' => self::opsiDaftarPilihan(JenisDaftarPilihan::KategoriPengaduan),
+            'opsiBidang' => self::opsiDaftarPilihan(JenisDaftarPilihan::BidangPengaduan),
+            'opsiPrioritasPengaduan' => self::opsiDaftarPilihan(JenisDaftarPilihan::PrioritasPengaduan),
 
             // Peta kategori ke bidang, dibaca Alpine agar bidang terisi seketika
             // saat kategori dipilih. Kategori netral bernilai string kosong, dan
             // nilainya SELALU dapat ditimpa petugas (rules.md 5.0b).
-            'petaBidang' => DummyData::petaBidangKategori(),
-            'opsiSumberDana' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::SumberDana),
-            'opsiJabatanAnggota' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::JabatanAnggotaPoktan),
+            'petaBidang' => self::petaBidangKategori(),
+            'opsiSumberDana' => self::opsiDaftarPilihan(JenisDaftarPilihan::SumberDana),
+            'opsiJabatanAnggota' => self::opsiDaftarPilihan(JenisDaftarPilihan::JabatanAnggotaPoktan),
 
             // Enum langsung, bukan lewat data master: keenamnya baku dari
             // Dukcapil dan tidak di-CRUD dinas (keputusan pemilik proyek
@@ -358,7 +360,7 @@ class ViewServiceProvider extends ServiceProvider
             // Anggota keluarga dikelompokkan per keluarga, agar pilihan wakil
             // maupun ketua poktan menyempit begitu keluarganya dipilih
             // (Stage B2, 2026-08-28).
-            'anggotaKeluargaPerKeluarga' => DummyData::anggotaKeluargaPerKeluarga(),
+            'anggotaKeluargaPerKeluarga' => self::anggotaKeluargaPerKeluarga(),
 
             'kontakTransmigran' => self::petaKeluarga()['kontak'],
             'lahanTransmigran' => self::petaKeluarga()['lahan'],
@@ -374,9 +376,7 @@ class ViewServiceProvider extends ServiceProvider
                 ->get()
                 ->mapWithKeys(fn ($k) => [$k->id_komoditas => $k->satuan?->nama])
                 ->all(),
-            'simbolSatuan' => collect(DummyData::satuan())
-                ->mapWithKeys(fn ($s) => [$s['nama'] => $s['simbol']])
-                ->all(),
+            'simbolSatuan' => Satuan::query()->orderBy('id_satuan')->pluck('simbol', 'nama')->all(),
 
             'penanamanUntukPanen' => self::penanamanUntukPanen(),
 
@@ -431,6 +431,262 @@ class ViewServiceProvider extends ServiceProvider
                 ->all(),
 
             default => throw new \InvalidArgumentException("Kunci rujukan tidak dikenal: {$kunci}"),
+        };
+    }
+
+    private static function memakaiDataContoh(): bool
+    {
+        return app()->environment(['local', 'testing', 'demo']);
+    }
+
+    private static function daftarSp(): array
+    {
+        $kueri = SatuanPermukiman::query()
+            ->with(['desa.kecamatan', 'kawasan'])
+            ->withCount(['transmigran as jumlah_kk_terisi'])
+            ->orderBy('id_satuan_permukiman');
+        $pengguna = CakupanDataSp::penggunaWajibDisaring();
+
+        if ($pengguna?->role?->cakupan_data === CakupanData::PerSp) {
+            $kueri->whereIn('id_satuan_permukiman', CakupanDataSp::spDitugaskan($pengguna));
+        }
+
+        return $kueri->get()->map(fn (SatuanPermukiman $sp) => [
+            'id_satuan_permukiman' => $sp->id_satuan_permukiman,
+            'nama' => $sp->nama,
+            'kode_sp' => $sp->kode_sp,
+            'desa' => $sp->desa?->nama,
+            'kecamatan' => $sp->desa?->kecamatan?->nama,
+            'kawasan' => $sp->kawasan?->nama,
+            'kawasan_id' => $sp->kawasan_id,
+            'tahun_penempatan' => $sp->tahun_penempatan,
+            'luas_lahan' => $sp->luas_lahan === null ? null : (float) $sp->luas_lahan,
+            'jumlah_kk_rencana' => $sp->jumlah_kk_rencana,
+            'jumlah_kk_terisi' => $sp->jumlah_kk_terisi,
+            'lintang' => $sp->lintang === null ? null : (float) $sp->lintang,
+            'bujur' => $sp->bujur === null ? null : (float) $sp->bujur,
+            'keterangan' => $sp->keterangan,
+            'berkas_id' => $sp->berkas_id,
+        ])->all();
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private static function opsiDaftarPilihan(JenisDaftarPilihan $jenis, bool $hanyaAktif = true): array
+    {
+        return DaftarPilihan::query()
+            ->where('jenis', $jenis->value)
+            ->when($hanyaAktif, fn ($q) => $q->where('is_aktif', true))
+            ->orderBy('urutan')
+            ->orderBy('id_daftar_pilihan')
+            ->pluck('nilai', 'nilai')
+            ->all();
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private static function daftarPilihan(JenisDaftarPilihan $jenis, bool $hanyaAktif = false): array
+    {
+        return DaftarPilihan::query()
+            ->where('jenis', $jenis->value)
+            ->when($hanyaAktif, fn ($q) => $q->where('is_aktif', true))
+            ->orderBy('urutan')
+            ->orderBy('id_daftar_pilihan')
+            ->get()
+            ->map(fn (DaftarPilihan $pilihan) => [
+                'id_daftar_pilihan' => $pilihan->id_daftar_pilihan,
+                'jenis' => $pilihan->jenis->value,
+                'jenis_label' => $pilihan->jenis->label(),
+                'nilai' => $pilihan->nilai,
+                'urutan' => $pilihan->urutan,
+                'nilai_skor' => $pilihan->nilai_skor === null ? null : (float) $pilihan->nilai_skor,
+                'bidang_id' => $pilihan->bidang_id,
+                'is_aktif' => $pilihan->is_aktif,
+            ])->all();
+    }
+
+    /**
+     * @return array<string, array<int, array<string, mixed>>>
+     */
+    private static function wilayah(): array
+    {
+        return [
+            'provinsi' => self::daftarProvinsi(),
+            'kabupaten' => self::daftarKabupaten(),
+            'kecamatan' => Kecamatan::query()->with('kabupaten')->withCount('desa')->orderBy('id_kecamatan')->get()->map(fn (Kecamatan $kecamatan) => [
+                'id_kecamatan' => $kecamatan->id_kecamatan,
+                'kabupaten_id' => $kecamatan->kabupaten_id,
+                'kabupaten' => $kecamatan->kabupaten?->nama,
+                'nama' => $kecamatan->nama,
+                'jumlah_desa' => $kecamatan->desa_count,
+            ])->all(),
+            'desa' => Desa::query()->with('kecamatan')->withCount('satuanPermukiman')->orderBy('id_desa')->get()->map(fn (Desa $desa) => [
+                'id_desa' => $desa->id_desa,
+                'kecamatan_id' => $desa->kecamatan_id,
+                'kecamatan' => $desa->kecamatan?->nama,
+                'nama' => $desa->nama,
+                'jumlah_sp' => $desa->satuan_permukiman_count,
+            ])->all(),
+        ];
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private static function daftarProvinsi(): array
+    {
+        return Provinsi::query()->orderBy('id_provinsi')->get()->map(fn (Provinsi $provinsi) => [
+            'id_provinsi' => $provinsi->id_provinsi,
+            'nama' => $provinsi->nama,
+            'kode' => $provinsi->kode,
+        ])->all();
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private static function daftarKabupaten(): array
+    {
+        return Kabupaten::query()->with('provinsi')->orderBy('id_kabupaten')->get()->map(fn (Kabupaten $kabupaten) => [
+            'id_kabupaten' => $kabupaten->id_kabupaten,
+            'provinsi_id' => $kabupaten->provinsi_id,
+            'provinsi' => $kabupaten->provinsi?->nama ?? '',
+            'nama' => $kabupaten->nama,
+            'kode' => $kabupaten->kode,
+        ])->all();
+    }
+
+    /**
+     * @return array<int, array{id: int, nama: string, provinsi: string}>
+     */
+    private static function opsiKabupaten(): array
+    {
+        return Kabupaten::query()
+            ->with('provinsi')
+            ->orderBy('nama')
+            ->get()
+            ->map(fn (Kabupaten $kabupaten) => [
+                'id' => $kabupaten->id_kabupaten,
+                'nama' => $kabupaten->nama,
+                'provinsi' => $kabupaten->provinsi?->nama ?? '',
+            ])->all();
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private static function daftarDesa(): array
+    {
+        return Desa::query()
+            ->with('kecamatan')
+            ->withCount('satuanPermukiman')
+            ->orderBy('id_desa')
+            ->get()
+            ->map(fn (Desa $desa) => [
+                'id_desa' => $desa->id_desa,
+                'kecamatan_id' => $desa->kecamatan_id,
+                'kecamatan' => $desa->kecamatan?->nama,
+                'nama' => $desa->nama,
+                'jumlah_sp' => $desa->satuan_permukiman_count,
+                'kabupaten_id' => $desa->kecamatan?->kabupaten_id,
+            ])->all();
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private static function daftarKawasan(): array
+    {
+        return KawasanTransmigrasi::query()
+            ->with('kabupaten.provinsi')
+            ->withCount('satuanPermukiman')
+            ->orderBy('id_kawasan_transmigrasi')
+            ->get()
+            ->map(fn (KawasanTransmigrasi $kawasan) => [
+                'id_kawasan_transmigrasi' => $kawasan->id_kawasan_transmigrasi,
+                'nama' => $kawasan->nama,
+                'kabupaten_id' => $kawasan->kabupaten_id,
+                'kabupaten' => $kawasan->kabupaten?->nama,
+                'provinsi' => $kawasan->kabupaten?->provinsi?->nama,
+                'kode_kawasan' => $kawasan->kode_kawasan,
+                'tahun_penetapan' => $kawasan->tahun_penetapan,
+                'nomor_sk' => $kawasan->nomor_sk,
+                'luas_total' => $kawasan->luas_total === null ? null : (float) $kawasan->luas_total,
+                'jumlah_sp' => $kawasan->satuan_permukiman_count,
+                'keterangan' => $kawasan->keterangan,
+            ])->all();
+    }
+
+    /**
+     * @return array<int, array<int, array{id: int, nama: string, hubungan: string, nik: string|null}>>
+     */
+    private static function anggotaKeluargaPerKeluarga(): array
+    {
+        return AnggotaKeluarga::query()
+            ->where('status', StatusAnggotaKeluarga::Aktif->value)
+            ->orderBy('id_anggota_keluarga')
+            ->get()
+            ->groupBy('transmigran_id')
+            ->map(fn ($anggota) => $anggota->map(fn (AnggotaKeluarga $orang) => [
+                'id' => $orang->id_anggota_keluarga,
+                'nama' => $orang->nama_lengkap,
+                'hubungan' => $orang->hubungan->value,
+                'nik' => $orang->nik,
+            ])->values()->all())
+            ->mapWithKeys(fn ($anggota, $keluargaId) => [(int) $keluargaId => $anggota])
+            ->all();
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private static function petaBidangKategori(): array
+    {
+        return DaftarPilihan::query()
+            ->where('jenis', JenisDaftarPilihan::KategoriPengaduan->value)
+            ->with('bidang')
+            ->orderBy('urutan')
+            ->get()
+            ->mapWithKeys(fn (DaftarPilihan $kategori) => [$kategori->nilai => $kategori->bidang?->nilai ?? ''])
+            ->all();
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private static function riwayatAudit(string $namaTabel, ?int $recordId = null): array
+    {
+        return AuditLog::query()
+            ->with('pelaku')
+            ->where('nama_tabel', $namaTabel)
+            ->when($recordId !== null, fn ($q) => $q->where('record_id', $recordId))
+            ->latest('created_at')
+            ->latest('id_audit_log')
+            ->get()
+            ->map(fn (AuditLog $audit) => [
+                'id_audit_log' => $audit->id_audit_log,
+                'waktu' => $audit->created_at?->format('Y-m-d H:i:s'),
+                'pengguna' => $audit->pelaku?->nama ?? 'Sistem',
+                'aksi' => $audit->aksi->value,
+                'nama_tabel' => $audit->nama_tabel,
+                'record_id' => $audit->record_id,
+                'ringkasan' => self::ringkasanAudit($audit),
+                'ip_address' => $audit->ip_address,
+            ])->all();
+    }
+
+    private static function ringkasanAudit(AuditLog $audit): string
+    {
+        return match ($audit->aksi) {
+            AksiAuditLog::Tambah => 'Menambah baris baru.',
+            AksiAuditLog::Hapus => 'Menghapus baris.',
+            AksiAuditLog::Pulihkan => 'Memulihkan baris yang terhapus.',
+            AksiAuditLog::Ubah => ($jumlah = count(array_keys(($audit->data_baru ?? []) + ($audit->data_lama ?? [])))) === 0
+                ? 'Menyunting baris.'
+                : 'Mengubah '.$jumlah.' kolom: '.implode(', ', array_keys(($audit->data_baru ?? []) + ($audit->data_lama ?? []))).'.',
+            default => $audit->aksi->value.'.',
         };
     }
 

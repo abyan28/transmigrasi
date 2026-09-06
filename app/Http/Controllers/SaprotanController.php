@@ -2,20 +2,25 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\CakupanData;
 use App\Enums\JenisDaftarPilihan;
 use App\Enums\JenisSaprotan;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
+use App\Models\Poktan;
 use App\Models\Saprotan;
 use App\Models\SaprotanDistribusi;
-use App\Support\DummyData;
+use App\Models\SatuanPermukiman;
+use App\Models\Scopes\CakupanDataSp;
 use App\Support\Paginasi;
 use App\Support\PenyajianSaprotan;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Saprotan (Task 6.7) -- pola INDUK + DISTRIBUSI (Putaran 7).
@@ -65,7 +70,7 @@ class SaprotanController extends Controller
             'pengadaan' => Saprotan::query()->count(),
             'jenisUnik' => Saprotan::query()->distinct()->pluck('jenis')->all(),
             'poktanPenerima' => SaprotanDistribusi::query()->distinct('poktan_id')->count('poktan_id'),
-            'daftarSp' => DummyData::satuanPermukiman(),
+            'daftarSp' => SatuanPermukiman::opsiTerlihat(),
         ]);
     }
 
@@ -86,6 +91,7 @@ class SaprotanController extends Controller
     {
         $data = $this->validasi($request);
         $distribusi = $this->distribusiTerpilih($request, $data);
+        $this->pastikanPoktanDapatDitulis((array) $request->input('poktan_id', []));
 
         DB::transaction(function () use ($request, $data, $distribusi) {
             $saprotan = Saprotan::create($this->kolomInduk($data));
@@ -102,22 +108,34 @@ class SaprotanController extends Controller
 
     public function perbarui(Request $request, int $id): RedirectResponse
     {
-        $saprotan = Saprotan::findOrFail($id);
+        DB::transaction(function () use ($request, $id) {
+            $saprotan = Saprotan::whereKey($id)->lockForUpdate()->firstOrFail();
+            $lama = $this->distribusiLengkap($saprotan, true);
+            $gantiDistribusi = $request->boolean('ganti_distribusi');
+            $data = $this->validasi($request, $saprotan, $lama, $gantiDistribusi);
+            $distribusi = $gantiDistribusi ? $this->distribusiTerpilih($request, $data) : [];
 
-        $data = $this->validasi($request, $saprotan);
-        $distribusi = $this->distribusiTerpilih($request, $data);
-
-        DB::transaction(function () use ($request, $saprotan, $data, $distribusi) {
+            $this->pastikanPoktanDapatDitulis((array) $request->input('poktan_id', []));
+            $this->pastikanMetadataDapatDiubah($request, $saprotan, $data, $lama);
+            $this->pastikanPemakaianTetapSah($saprotan, $data, $distribusi, $lama, $gantiDistribusi);
             $saprotan->update($this->kolomInduk($data));
 
-            $idBaru = array_map('intval', array_keys($distribusi));
+            if ($gantiDistribusi) {
+                $idBaru = array_map('intval', array_keys($distribusi));
+                $hapus = $saprotan->distribusi()->withoutGlobalScopes();
+                $spIds = $this->spDitugaskan();
 
-            $saprotan->distribusi()
-                ->when($idBaru !== [], fn ($q) => $q->whereNotIn('poktan_id', $idBaru))
-                ->delete();
+                if ($spIds !== null) {
+                    $hapus->whereHas('poktan', fn ($q) => $q
+                        ->withoutGlobalScope(CakupanDataSp::class)
+                        ->whereIn('satuan_permukiman_id', $spIds));
+                }
 
-            foreach ($distribusi as $poktanId => $baris) {
-                $saprotan->distribusi()->updateOrCreate(['poktan_id' => $poktanId], $baris);
+                $hapus->when($idBaru !== [], fn ($q) => $q->whereNotIn('poktan_id', $idBaru))->delete();
+
+                foreach ($distribusi as $poktanId => $baris) {
+                    $saprotan->distribusi()->withoutGlobalScopes()->updateOrCreate(['poktan_id' => $poktanId], $baris);
+                }
             }
 
             $this->lampirkanBerkas($request, $saprotan);
@@ -128,7 +146,11 @@ class SaprotanController extends Controller
 
     public function hapus(int $id): RedirectResponse
     {
-        Saprotan::findOrFail($id)->delete();
+        DB::transaction(function () use ($id) {
+            $saprotan = Saprotan::whereKey($id)->lockForUpdate()->firstOrFail();
+            abort_if($this->distribusiDiLuarCakupan($this->distribusiLengkap($saprotan, true))->isNotEmpty(), 403);
+            $saprotan->delete();
+        });
 
         return redirect()->route('saprotan.index')->with('sukses', 'Data saprotan dihapus.');
     }
@@ -196,7 +218,7 @@ class SaprotanController extends Controller
     }
 
     /**
-     * Larik ber-kunci PERSIS satu baris `DummyData::saprotan()` mapped.
+     * Larik ber-kunci persis bentuk tampilan satu baris saprotan.
      *
      * Pemetaan dipindah ke `App\Support\PenyajianSaprotan` (Task 10.5) supaya
      * halaman daftar/rincian dan Laporan Saprotan membaca satu sumber.
@@ -208,14 +230,108 @@ class SaprotanController extends Controller
         return PenyajianSaprotan::baris($s);
     }
 
+    private function distribusiLengkap(Saprotan $saprotan, bool $kunci = false): Collection
+    {
+        return $saprotan->distribusi()->withoutGlobalScopes()
+            ->with(['poktan' => fn ($q) => $q->withoutGlobalScope(CakupanDataSp::class)])
+            ->when($kunci, fn ($q) => $q->lockForUpdate())
+            ->get();
+    }
+
+    private function spDitugaskan(): ?array
+    {
+        $pengguna = CakupanDataSp::penggunaWajibDisaring();
+
+        return $pengguna?->role?->cakupan_data === CakupanData::PerSp
+            ? CakupanDataSp::spDitugaskan($pengguna)
+            : null;
+    }
+
+    private function distribusiDiLuarCakupan(Collection $distribusi): Collection
+    {
+        $spIds = $this->spDitugaskan();
+
+        return $spIds === null
+            ? $distribusi->take(0)
+            : $distribusi->reject(fn ($baris) => in_array((int) $baris->poktan?->satuan_permukiman_id, $spIds, true));
+    }
+
+    private function pastikanPoktanDapatDitulis(array $poktanIds): void
+    {
+        $poktanIds = array_values(array_unique(array_map('intval', $poktanIds)));
+
+        abort_unless(
+            $poktanIds === [] || Poktan::query()->whereKey($poktanIds)->count() === count($poktanIds),
+            404,
+        );
+    }
+
+    private function pastikanMetadataDapatDiubah(Request $request, Saprotan $saprotan, array $data, Collection $lama): void
+    {
+        if ($this->distribusiDiLuarCakupan($lama)->isEmpty()) {
+            return;
+        }
+
+        $baru = $this->kolomInduk($data);
+        $salinan = clone $saprotan;
+        $salinan->forceFill([
+            'nama' => mb_strtoupper(trim((string) $salinan->nama)),
+            'varietas' => $salinan->varietas === null ? null : mb_strtoupper(trim((string) $salinan->varietas)),
+        ]);
+        $salinan->syncOriginal();
+        $salinan->fill($baru);
+
+        abort_if($salinan->isDirty(array_keys($baru)) || $request->hasFile('foto') || $request->hasFile('dokumen_pendukung'), 403);
+    }
+
+    private function pastikanPemakaianTetapSah(Saprotan $saprotan, array $data, array $baru, Collection $lama, bool $gantiDistribusi): void
+    {
+        $terpakai = DB::table('penanaman')
+            ->whereNull('deleted_at')
+            ->whereIn('saprotan_distribusi_id', $lama->pluck('id_saprotan_distribusi'))
+            ->selectRaw('saprotan_distribusi_id, SUM(volume_benih) AS total')
+            ->groupBy('saprotan_distribusi_id')
+            ->pluck('total', 'saprotan_distribusi_id');
+
+        if ($terpakai->isEmpty()) {
+            return;
+        }
+
+        if ($data['jenis'] !== JenisSaprotan::Benih->value
+            || (int) $data['komoditas_id'] !== (int) $saprotan->komoditas_id
+            || (int) $data['satuan_id'] !== (int) $saprotan->satuan_id) {
+            throw ValidationException::withMessages([
+                'jenis' => 'Saprotan yang sudah dipakai penanaman harus tetap berupa benih dengan komoditas dan satuan yang sama.',
+            ]);
+        }
+
+        if (! $gantiDistribusi) {
+            return;
+        }
+
+        $dipertahankan = $this->distribusiDiLuarCakupan($lama)->keyBy('id_saprotan_distribusi');
+
+        foreach ($lama as $baris) {
+            $jumlahTerpakai = (float) ($terpakai[$baris->id_saprotan_distribusi] ?? 0);
+            $jumlahBaru = $dipertahankan->has($baris->id_saprotan_distribusi)
+                ? (float) $baris->jumlah
+                : (float) ($baru[$baris->poktan_id]['jumlah'] ?? 0);
+
+            if ($jumlahTerpakai > 0 && round($jumlahBaru - $jumlahTerpakai, 3) < 0) {
+                throw ValidationException::withMessages([
+                    "distribusi.{$baris->poktan_id}.jumlah" => 'Jumlah distribusi tidak boleh lebih kecil dari volume benih yang sudah dipakai ('.$jumlahTerpakai.').',
+                ]);
+            }
+        }
+    }
+
     /**
      * @return array<string, mixed>
      */
-    private function validasi(Request $request, ?Saprotan $saprotan = null): array
+    private function validasi(Request $request, ?Saprotan $saprotan = null, ?Collection $lama = null, bool $gantiDistribusi = true): array
     {
         $benih = fn () => $request->input('jenis') === JenisSaprotan::Benih->value;
-
-        return $request->validate([
+        $data = $request->validate([
             'jenis' => ['required', Rule::enum(JenisSaprotan::class)],
             'nama' => ['required', 'string', 'max:255'],
             'komoditas_id' => [
@@ -229,27 +345,12 @@ class SaprotanController extends Controller
             'tahun_pengadaan' => ValidationRules::tahun(wajib: true),
             'sumber_dana' => ValidationRules::daftarPilihan(JenisDaftarPilihan::SumberDana),
             'keterangan' => ['nullable', 'string', 'max:1000'],
-
+            'ganti_distribusi' => ['sometimes', 'accepted'],
             'poktan_id' => ['nullable', 'array'],
-            'poktan_id.*' => ['integer', Rule::exists('poktan', 'id_poktan')],
-
-            // Invarian Putaran 7: Sigma distribusi <= jumlah total.
-            'distribusi' => ['nullable', 'array', function (string $atribut, mixed $nilai, callable $gagal) use ($request) {
-                $total = (float) $request->input('jumlah_total', 0);
-                $terpilih = array_map('intval', (array) $request->input('poktan_id', []));
-
-                $tersalur = 0.0;
-                foreach ($terpilih as $poktanId) {
-                    $tersalur += (float) ($nilai[$poktanId]['jumlah'] ?? 0);
-                }
-
-                if (round($tersalur - $total, 3) > 0) {
-                    $gagal('Jumlah seluruh distribusi ('.$tersalur.') melebihi jumlah total ('.$total.').');
-                }
-            }],
+            'poktan_id.*' => ['integer', 'distinct', Rule::exists('poktan', 'id_poktan')],
+            'distribusi' => ['nullable', 'array'],
             'distribusi.*.jumlah' => ['required', 'numeric', 'min:0', 'max:99999999', 'decimal:0,3'],
             'distribusi.*.tanggal_serah' => ['nullable', 'date', 'before_or_equal:today'],
-
             'foto' => ValidationRules::foto(),
             'dokumen_pendukung' => ValidationRules::dokumen(),
         ], [
@@ -261,5 +362,19 @@ class SaprotanController extends Controller
             'satuan_id.required' => 'Satuan wajib dipilih.',
             'tahun_pengadaan.required' => 'Tahun anggaran pengadaan wajib diisi.',
         ] + ValidationRules::pesan());
+
+        $baru = $saprotan === null || $gantiDistribusi ? $this->distribusiTerpilih($request, $data) : [];
+        $dipertahankan = $saprotan === null
+            ? collect()
+            : ($gantiDistribusi ? $this->distribusiDiLuarCakupan($lama) : $lama);
+        $tersalur = (float) $dipertahankan->sum('jumlah') + array_sum(array_column($baru, 'jumlah'));
+
+        if (round($tersalur - (float) $data['jumlah_total'], 3) > 0) {
+            throw ValidationException::withMessages([
+                'distribusi' => 'Jumlah seluruh distribusi ('.$tersalur.') melebihi jumlah total ('.$data['jumlah_total'].').',
+            ]);
+        }
+
+        return $data;
     }
 }

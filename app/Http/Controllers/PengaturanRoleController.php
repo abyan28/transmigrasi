@@ -146,7 +146,7 @@ class PengaturanRoleController extends Controller
 
             if ($lain !== [] && ! in_array('lihat', (array) $aksiList, true)) {
                 throw ValidationException::withMessages([
-                    'izin' => "Modul '{$modul}': kewenangan lain menuntut 'lihat' lebih dulu.",
+                    'izin' => "Fitur '{$modul}': kewenangan lain menuntut 'lihat' lebih dulu.",
                 ]);
             }
         }

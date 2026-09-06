@@ -66,6 +66,7 @@ class SaprotanDistribusi extends Model
         }
 
         $terpakai = (float) $this->penanaman()
+            ->withoutGlobalScope('cakupanViaInduk')
             ->when($kecualiPenanamanId !== null, fn ($q) => $q->whereKeyNot($kecualiPenanamanId))
             ->sum('volume_benih');
 

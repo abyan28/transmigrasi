@@ -2,26 +2,31 @@
 
 namespace App\Support;
 
-use App\Enums\KondisiRumah;
+use App\Enums\AlasanPergantianKK;
+use App\Enums\JenisKelamin;
 use App\Enums\StatusAnggotaKeluarga;
-use App\Enums\StatusHunian;
-use App\Enums\StatusTinggal;
 use App\Models\Alsintan;
+use App\Models\AnggotaKeluarga;
+use App\Models\FasilitasSp;
+use App\Models\Infrastruktur;
+use App\Models\InventarisSp;
+use App\Models\KawasanTransmigrasi;
 use App\Models\Lahan;
 use App\Models\Poktan;
+use App\Models\RiwayatKepalaKeluarga;
 use App\Models\Rumah;
 use App\Models\Saprotan;
 use App\Models\SatuanPermukiman;
 use App\Models\Transmigran;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Penyusun data untuk halaman-halaman di menu "Laporan".
  *
- * Ditambahkan 2026-08-28 (Tahap 2c). View halaman laporan DILARANG memanggil
- * `DummyData` langsung (penjaga Ide C); seluruhnya lewat kelas ini, sehingga
- * ada satu tempat untuk memeriksa bentuk datanya dan menjaganya lewat uji.
+ * View halaman laporan membaca data melalui kelas ini agar bentuk keluaran
+ * tetap seragam dan sumber Eloquent-nya dapat dijaga lewat uji.
  *
  * Lima laporan mengikuti berkas rujukan di `refs/` (Laporan Hasil Panen dari
  * "Lap. Akhir Panen Jagung Polri MT. I 2025", Alsintan dan Saprotan dari dua
@@ -69,7 +74,7 @@ class LaporanData
      *
      * Dua lambang (keputusan pemilik proyek): logo Kementerian Transmigrasi
      * di kiri, lambang Kabupaten Malaka di kanan. Kabupaten dan provinsi dari
-     * `DummyData::kawasan()`. Telepon dan email adalah CONTOH yang mengikuti
+     * Telepon dan email adalah CONTOH yang mengikuti
      * `refs/contoh format laporan.docx`, bukan kontak resmi -- spanduk
      * "Data contoh" seluruh aplikasi sudah menyanggahnya.
      *
@@ -93,8 +98,8 @@ class LaporanData
     }
 
     /**
-     * Tahun rujukan dokumen laporan, yaitu tahun TERAKHIR deret data
-     * (`DummyData::deretTahunan()`), bukan `date('Y')`.
+     * Tahun rujukan dokumen laporan, yaitu tahun terakhir data panen
+     * (`RekapDashboard::tahunTerakhir()`), bukan `date('Y')`.
      *
      * Ikut pola dashboard (`pages/dashboard/index.blade.php`): yang dapat
      * dijamin benar adalah "angka ini milik tahun terakhir yang terdata";
@@ -102,9 +107,7 @@ class LaporanData
      */
     public static function tahunDokumenBawaan(): int
     {
-        $tahun = DummyData::deretTahunan()['tahun'] ?? [];
-
-        return $tahun === [] ? (int) date('Y') : (int) end($tahun);
+        return RekapDashboard::tahunTerakhir();
     }
 
     /**
@@ -127,7 +130,9 @@ class LaporanData
      */
     public static function meta(?string $slug = null): array
     {
-        $jumlahSp = DummyData::kawasan()[0]['jumlah_sp'] ?? count(DummyData::satuanPermukiman());
+        $jumlahSp = Schema::hasTable('satuan_permukiman')
+            ? SatuanPermukiman::withoutGlobalScopes()->count()
+            : 0;
 
         $semua = [
             'indikator-kawasan' => [
@@ -147,7 +152,7 @@ class LaporanData
                 'dasarPeriode' => 'Potret keadaan terkini tiap SP pada tahun berjalan, bukan rekap lintas tahun.',
                 'sumberLabel' => 'Data Satuan Permukiman',
                 'sumberRute' => 'sp.index',
-                'catatan' => 'Tiap SP memuat Pendahuluan, Keadaan Wilayah, Kependudukan, Sosial Ekonomi, dan Sosial Budaya. Bagian yang belum berdata ditandai kosong; struktur umur dan mutasi penduduk adalah angka contoh turunan.',
+                'catatan' => 'Tiap SP memuat Pendahuluan, Keadaan Wilayah, Kependudukan, Sosial Ekonomi, dan Sosial Budaya. Bagian yang belum berdata ditandai kosong; struktur umur dan mutasi hanya dihitung dari orang dan peristiwa yang tercatat.',
                 'kolom' => 13,
             ],
             'transmigran' => [
@@ -208,8 +213,7 @@ class LaporanData
     /**
      * SP menurut id: nama, desa, dan kecamatan (untuk kolom wilayah laporan).
      *
-     * Task 10.5: dibaca dari Eloquent (`desa.kecamatan` ter-eager-load), bukan
-     * lagi `DummyData::satuanPermukiman()`.
+     * Dibaca dari Eloquent dengan relasi `desa.kecamatan` ter-eager-load.
      *
      * @return array<int, array{nama: string, desa: ?string, kecamatan: ?string}>
      */
@@ -234,6 +238,69 @@ class LaporanData
             ->all();
 
         return $peta;
+    }
+
+    private static function kawasan(): array
+    {
+        $kawasan = KawasanTransmigrasi::query()
+            ->with('kabupaten.provinsi')
+            ->withCount('satuanPermukiman')
+            ->orderBy('id_kawasan_transmigrasi')
+            ->first();
+
+        if ($kawasan === null) {
+            return [];
+        }
+
+        return [
+            'id_kawasan_transmigrasi' => $kawasan->id_kawasan_transmigrasi,
+            'nama' => $kawasan->nama,
+            'kabupaten_id' => $kawasan->kabupaten_id,
+            'kabupaten' => $kawasan->kabupaten?->nama,
+            'provinsi' => $kawasan->kabupaten?->provinsi?->nama,
+            'kode_kawasan' => $kawasan->kode_kawasan,
+            'tahun_penetapan' => $kawasan->tahun_penetapan,
+            'nomor_sk' => $kawasan->nomor_sk,
+            'luas_total' => $kawasan->luas_total === null ? null : (float) $kawasan->luas_total,
+            'jumlah_sp' => (int) $kawasan->satuan_permukiman_count,
+            'keterangan' => $kawasan->keterangan,
+        ];
+    }
+
+    private static function daftarSp(): array
+    {
+        $kkPerSp = collect(RekapDashboard::perSp())->pluck('jumlah_kk', 'satuan_permukiman_id');
+
+        return SatuanPermukiman::withoutGlobalScopes()
+            ->with([
+                'desa.kecamatan.kabupaten.provinsi',
+                'kawasan.kabupaten.provinsi',
+                'ruteAksesibilitas' => fn ($q) => $q->withoutGlobalScopes()->orderBy('id_rute_aksesibilitas_sp'),
+            ])
+            ->orderBy('id_satuan_permukiman')
+            ->get()
+            ->map(function (SatuanPermukiman $sp) use ($kkPerSp): array {
+                $kabupaten = $sp->kawasan?->kabupaten ?? $sp->desa?->kecamatan?->kabupaten;
+
+                return $sp->getAttributes() + [
+                    'desa' => $sp->desa?->nama,
+                    'kecamatan' => $sp->desa?->kecamatan?->nama,
+                    'kabupaten' => $kabupaten?->nama,
+                    'provinsi' => $kabupaten?->provinsi?->nama,
+                    'kawasan' => $sp->kawasan?->nama,
+                    'jumlah_kk_terisi' => (int) ($kkPerSp[$sp->id_satuan_permukiman] ?? 0),
+                    'rute' => $sp->ruteAksesibilitas->map(fn ($r): array => [
+                        'rute' => $r->rute,
+                        'jarak_km' => $r->jarak_km === null ? null : (float) $r->jarak_km,
+                        'sarana_angkutan' => $r->sarana_angkutan,
+                        'kondisi_jalan' => $r->kondisi_jalan,
+                        'waktu_tempuh' => $r->waktu_tempuh,
+                        'ongkos_rp' => $r->ongkos_rp === null ? null : (float) $r->ongkos_rp,
+                        'keterangan' => $r->keterangan,
+                    ])->all(),
+                ];
+            })
+            ->all();
     }
 
     /**
@@ -296,7 +363,7 @@ class LaporanData
 
     /**
      * Luas lahan kelompok (kering + basah) per poktan, diturunkan lewat
-     * `App\Support\RekapPoktan` -- pengganti `DummyData::rekapLahanPoktan()`.
+     * `App\Support\RekapPoktan`.
      *
      * @return array<int, float>
      */
@@ -344,7 +411,7 @@ class LaporanData
      * Mengikuti kolom "Lap. Akhir Panen Jagung Polri MT. I 2025": satu baris
      * per catatan panen, dikelompokkan per SP dengan subtotal, lalu total
      * kawasan. Belum Dipanen dihitung: realisasi tanam - realisasi panen -
-     * puso. Produksi diseragamkan ke ton lewat `DummyData::keTon()`.
+     * puso. Produksi diseragamkan ke ton lewat `KonversiPanen::keTon()`.
      *
      * @return array{kelompok: array<int, mixed>, total: array<string, float>}
      */
@@ -565,17 +632,13 @@ class LaporanData
      * "belum dicatat". Format angka disamakan dengan blok Keadaan Wilayah di
      * halaman dashboard SP.
      *
-     * Bila `$tahun` diisi (Putaran 5), dua belas field iklim digantikan nilai
-     * tahun itu lewat `DummyData::iklimSpTahun()`; sisanya (geografi) tetap.
+     * Data iklim adalah nilai keadaan wilayah yang tercatat pada SP. Sistem
+     * belum menyimpan seri historis iklim, sehingga nilainya tidak diperkirakan.
      *
      * @return array<string, array<string, ?string>>
      */
-    private static function bab2(array $s, ?int $tahun = null): array
+    private static function bab2(array $s): array
     {
-        if ($tahun !== null && isset($s['id_satuan_permukiman'])) {
-            $s = array_merge($s, DummyData::iklimSpTahun($s['id_satuan_permukiman'], $tahun));
-        }
-
         $km = fn (string $k) => ($s[$k] ?? null) !== null ? self::angka($s[$k], 1).' km' : null;
         $rata = fn (string $k, string $satuan) => ($s[$k] ?? null) !== null
             ? ', rata-rata '.self::angka($s[$k], 1).' '.$satuan : '';
@@ -666,18 +729,39 @@ class LaporanData
      */
     public static function keadaanPendudukTahun(int $id, int $tahun): array
     {
-        return RekapDashboard::kkJiwaSpTahun($id, $tahun);
+        $akhirTahun = Carbon::create($tahun, 12, 31)->endOfDay();
+        $kepala = Transmigran::withoutGlobalScopes()
+            ->where('satuan_permukiman_id', $id)
+            ->where('tahun_kedatangan', '<=', $tahun)
+            ->where(fn ($q) => $q->whereNull('tahun_keluar')->orWhere('tahun_keluar', '>', $tahun))
+            ->get(['id_transmigran', 'jenis_kelamin']);
+        $anggota = AnggotaKeluarga::withoutGlobalScopes()
+            ->whereIn('transmigran_id', $kepala->pluck('id_transmigran'))
+            ->whereDate('tanggal_lahir', '<=', $akhirTahun)
+            ->where(fn ($q) => $q
+                ->where('status', StatusAnggotaKeluarga::Aktif->value)
+                ->orWhereDate('tanggal_peristiwa', '>', $akhirTahun))
+            ->get(['jenis_kelamin']);
+        $laki = $kepala->where('jenis_kelamin', JenisKelamin::LakiLaki)->count()
+            + $anggota->where('jenis_kelamin', JenisKelamin::LakiLaki)->count();
+        $perempuan = $kepala->where('jenis_kelamin', JenisKelamin::Perempuan)->count()
+            + $anggota->where('jenis_kelamin', JenisKelamin::Perempuan)->count();
+
+        return [
+            'kk' => $kepala->count(),
+            'jiwa' => $kepala->count() + $anggota->count(),
+            'laki' => $laki,
+            'perempuan' => $perempuan,
+        ];
     }
 
     /**
      * Bagian perluasan Monografi satu SP: Pendahuluan, Kependudukan, Sosial
      * Ekonomi, Sosial Budaya (Putaran 6).
      *
-     * Seluruhnya disaring per SP dari tabel yang sudah ada, kecuali struktur
-     * umur dan mutasi penduduk yang dikarang deterministik (DummyData). Bagian
-     * yang belum berdata pada satu SP dikembalikan sebagai tabel kosong; view
-     * menandainya "belum ada data". Tahun hanya memengaruhi "Keadaan Penduduk
-     * Sekarang"; sisanya tidak bersumbu tahun pada data contoh.
+     * Seluruhnya disaring per SP dari tabel yang sudah ada. Struktur umur dan
+     * usia sekolah dihitung dari tanggal lahir; mutasi hanya memuat peristiwa
+     * yang benar-benar tercatat. Bagian tanpa dukungan data dikembalikan kosong.
      *
      * @param  array<string, mixed>  $s  Baris satuanPermukiman (sudah memuat keadaan wilayah)
      * @return array<string, mixed>
@@ -686,35 +770,69 @@ class LaporanData
     {
         $id = $s['id_satuan_permukiman'];
         $nama = $s['nama'];
-        $rp = fn ($n) => $n !== null ? 'Rp '.number_format((float) $n, 0, ',', '.') : '-';
-
-        $transmigranSp = array_values(array_filter(
-            DummyData::transmigran(),
-            fn ($t) => $t['satuan_permukiman_id'] === $id,
-        ));
+        $akhirTahun = Carbon::create($tahun, 12, 31)->endOfDay();
+        $transmigranSp = Transmigran::withoutGlobalScopes()
+            ->with('daerahAsal')
+            ->where('satuan_permukiman_id', $id)
+            ->orderBy('id_transmigran')
+            ->get()
+            ->map(fn (Transmigran $t): array => [
+                'id_transmigran' => $t->id_transmigran,
+                'daerah_asal' => $t->daerahAsal?->nama ?? 'Tidak dicatat',
+                'tahun_kedatangan' => (int) $t->tahun_kedatangan,
+                'tahun_keluar' => $t->tahun_keluar === null ? null : (int) $t->tahun_keluar,
+                'jenis_kelamin' => $t->jenis_kelamin?->value,
+                'tanggal_lahir' => $t->tanggal_lahir,
+                'agama' => $t->agama?->value,
+                'status_sertifikat' => $t->status_sertifikat?->value,
+            ])->all();
         $idTransmigran = array_column($transmigranSp, 'id_transmigran');
-        $anggotaSp = array_values(array_filter(
-            DummyData::anggotaKeluarga(),
-            fn ($a) => in_array($a['transmigran_id'], $idTransmigran, true)
-                && $a['status'] === StatusAnggotaKeluarga::Aktif->value,
+        $anggotaSp = AnggotaKeluarga::withoutGlobalScopes()
+            ->whereIn('transmigran_id', $idTransmigran)
+            ->orderBy('id_anggota_keluarga')
+            ->get()
+            ->map(fn (AnggotaKeluarga $a): array => [
+                'transmigran_id' => $a->transmigran_id,
+                'jenis_kelamin' => $a->jenis_kelamin?->value,
+                'tanggal_lahir' => $a->tanggal_lahir,
+                'agama' => $a->agama?->value,
+                'status' => $a->status?->value,
+                'tanggal_peristiwa' => $a->tanggal_peristiwa,
+            ])->all();
+        $transmigranPadaTahun = array_values(array_filter(
+            $transmigranSp,
+            fn (array $t): bool => $t['tahun_kedatangan'] <= $tahun
+                && ($t['tahun_keluar'] === null || $t['tahun_keluar'] > $tahun),
+        ));
+        $idPadaTahun = array_column($transmigranPadaTahun, 'id_transmigran');
+        $anggotaPadaTahun = array_values(array_filter(
+            $anggotaSp,
+            fn (array $a): bool => in_array($a['transmigran_id'], $idPadaTahun, true)
+                && $a['tanggal_lahir']?->lte($akhirTahun)
+                && ($a['status'] === StatusAnggotaKeluarga::Aktif->value
+                    || $a['tanggal_peristiwa']?->gt($akhirTahun)),
         ));
 
         // --- Pendahuluan -----------------------------------------------------
         $sekarang = self::keadaanPendudukTahun($id, $tahun);
+        $kkPenempatanAwal = count(array_filter(
+            $transmigranSp,
+            fn (array $t): bool => $t['tahun_kedatangan'] === (int) $s['tahun_penempatan'],
+        ));
         $pendahuluan = [
             'kalimat' => sprintf(
                 'Satuan Permukiman %s (%s) berada di Desa %s, Kecamatan %s, Kabupaten %s, Provinsi %s. '
                 .'Penempatan transmigran dimulai tahun %d sebanyak %s KK. '
                 .'Luas wilayah %s ha dengan dasar pencadangan %s.',
                 $nama, $s['kode_sp'], $s['desa'], $s['kecamatan'],
-                DummyData::kawasan()[0]['kabupaten'] ?? '-', DummyData::kawasan()[0]['provinsi'] ?? '-',
-                $s['tahun_penempatan'], self::angka($s['jumlah_kk_terisi'], 0),
+                $s['kabupaten'] ?? '-', $s['provinsi'] ?? '-',
+                $s['tahun_penempatan'], self::angka($kkPenempatanAwal, 0),
                 self::angka($s['luas_lahan']),
                 $s['nomor_sk_pencadangan'] ?? 'belum dicatat',
             ),
             'ringkas' => [
                 'Tahun penempatan' => (string) $s['tahun_penempatan'],
-                'KK penempatan awal' => self::angka($s['jumlah_kk_terisi'], 0).' KK',
+                'KK penempatan awal' => self::angka($kkPenempatanAwal, 0).' KK',
                 'KK sekarang' => self::angka($sekarang['kk'], 0).' KK',
                 'Jiwa sekarang' => self::angka($sekarang['jiwa'], 0).' jiwa',
                 'Luas wilayah' => self::angka($s['luas_lahan']).' ha',
@@ -725,43 +843,111 @@ class LaporanData
         // --- Kependudukan --------------------------------------------------
         $penempatan = [];
         $grup = [];
-        foreach ($transmigranSp as $t) {
-            // Nama dibaca dari data master sejak daerah asal menjadi FK
-            // (2026-09-02). "Tidak dicatat" dipertahankan untuk baris yang
-            // memang belum terisi, dan itu berbeda dari id yang tidak dikenal.
-            $asal = DataWilayah::namaKabupaten($t['daerah_asal_kabupaten_id'] ?? null) ?? 'Tidak dicatat';
-
-            $kunci = $asal.'|'.$t['tahun_kedatangan'];
-            $grup[$kunci] ??= ['asal' => $asal, 'tahun' => $t['tahun_kedatangan'], 'kk' => 0, 'l' => 0, 'p' => 0];
+        foreach (array_filter($transmigranSp, fn (array $t): bool => $t['tahun_kedatangan'] <= $tahun) as $t) {
+            $kunci = $t['daerah_asal'].'|'.$t['tahun_kedatangan'];
+            $grup[$kunci] ??= ['asal' => $t['daerah_asal'], 'tahun' => $t['tahun_kedatangan'], 'kk' => 0, 'l' => 0, 'p' => 0];
             $grup[$kunci]['kk']++;
-            $grup[$kunci][$t['jenis_kelamin'] === 'Perempuan' ? 'p' : 'l']++;
+            if ($t['jenis_kelamin'] === JenisKelamin::LakiLaki->value) {
+                $grup[$kunci]['l']++;
+            } elseif ($t['jenis_kelamin'] === JenisKelamin::Perempuan->value) {
+                $grup[$kunci]['p']++;
+            }
         }
         foreach ($grup as $g) {
-            $penempatan[] = [$g['asal'], $g['tahun'], $g['kk'], $g['l'], $g['p'], $g['l'] + $g['p']];
+            $penempatan[] = [$g['asal'], $g['tahun'], $g['kk'], $g['l'], $g['p'], $g['kk']];
         }
 
-        $struktur = DummyData::strukturUmurSp($id);
-        $barisUmur = array_map(fn ($b) => [$b['kelompok'], $b['laki'], $b['perempuan'], $b['jumlah']], $struktur);
-        $totUmur = ['Jumlah', array_sum(array_column($struktur, 'laki')), array_sum(array_column($struktur, 'perempuan')), array_sum(array_column($struktur, 'jumlah'))];
-
-        // Usia sekolah: TK 4-6, SD 7-12, SLTP 13-15, SLTA 16-19. Dipetakan dari
-        // kelompok lima tahunan secara proporsional sederhana.
-        $u = fn (int $i) => $struktur[$i] ?? ['laki' => 0, 'perempuan' => 0];
-        $sekolah = [
-            ['TK (4 sampai 6 tahun)', (int) round($u(0)['laki'] * 0.4 + $u(1)['laki'] * 0.2), (int) round($u(0)['perempuan'] * 0.4 + $u(1)['perempuan'] * 0.2)],
-            ['SD (7 sampai 12 tahun)', (int) round($u(1)['laki'] * 0.6 + $u(2)['laki'] * 0.6), (int) round($u(1)['perempuan'] * 0.6 + $u(2)['perempuan'] * 0.6)],
-            ['SLTP (13 sampai 15 tahun)', (int) round($u(2)['laki'] * 0.4 + $u(3)['laki'] * 0.2), (int) round($u(2)['perempuan'] * 0.4 + $u(3)['perempuan'] * 0.2)],
-            ['SLTA (16 sampai 19 tahun)', (int) round($u(3)['laki'] * 0.8), (int) round($u(3)['perempuan'] * 0.8)],
+        $orangPadaTahun = array_merge($transmigranPadaTahun, $anggotaPadaTahun);
+        $orangBerusia = array_values(array_filter(
+            $orangPadaTahun,
+            fn (array $orang): bool => $orang['tanggal_lahir'] !== null
+                && in_array($orang['jenis_kelamin'], [JenisKelamin::LakiLaki->value, JenisKelamin::Perempuan->value], true),
+        ));
+        $kelompokUmur = [
+            [0, 4], [5, 9], [10, 14], [15, 19], [20, 24], [25, 29], [30, 34],
+            [35, 39], [40, 44], [45, 49], [50, 54], [55, 59], [60, 64], [65, null],
         ];
-        $sekolah = array_map(fn ($r) => [$r[0], $r[1], $r[2], $r[1] + $r[2]], $sekolah);
+        $struktur = [];
+        foreach ($kelompokUmur as [$min, $maks]) {
+            $laki = 0;
+            $perempuan = 0;
+            foreach ($orangPadaTahun as $orang) {
+                if ($orang['tanggal_lahir'] === null) {
+                    continue;
+                }
+                $usia = (int) $orang['tanggal_lahir']->diffInYears($akhirTahun);
+                if ($usia < $min || ($maks !== null && $usia > $maks)) {
+                    continue;
+                }
+                $orang['jenis_kelamin'] === JenisKelamin::Perempuan->value ? $perempuan++ : $laki++;
+            }
+            $struktur[] = [
+                'kelompok' => $maks === null ? $min.'+' : $min.' sampai '.$maks,
+                'laki' => $laki,
+                'perempuan' => $perempuan,
+                'jumlah' => $laki + $perempuan,
+            ];
+        }
+        $barisUmur = $orangBerusia === [] ? [] : array_map(fn ($b) => [$b['kelompok'], $b['laki'], $b['perempuan'], $b['jumlah']], $struktur);
+        $totUmur = $barisUmur === [] ? null : ['Jumlah', array_sum(array_column($struktur, 'laki')), array_sum(array_column($struktur, 'perempuan')), array_sum(array_column($struktur, 'jumlah'))];
 
-        $mutasi = DummyData::mutasiPendudukSp($id);
-        $barisMutasi = array_map(fn ($b) => [$b['jenis'], $b['laki'], $b['perempuan'], $b['jumlah']], $mutasi['baris']);
+        $sekolah = [];
+        if ($orangBerusia !== []) {
+            foreach ([
+                ['TK (4 sampai 6 tahun)', 4, 6],
+                ['SD (7 sampai 12 tahun)', 7, 12],
+                ['SLTP (13 sampai 15 tahun)', 13, 15],
+                ['SLTA (16 sampai 19 tahun)', 16, 19],
+            ] as [$label, $min, $maks]) {
+                $laki = 0;
+                $perempuan = 0;
+                foreach ($orangBerusia as $orang) {
+                    $usia = (int) $orang['tanggal_lahir']->diffInYears($akhirTahun);
+                    if ($usia < $min || $usia > $maks) {
+                        continue;
+                    }
+                    $orang['jenis_kelamin'] === JenisKelamin::Perempuan->value ? $perempuan++ : $laki++;
+                }
+                $sekolah[] = [$label, $laki, $perempuan, $laki + $perempuan];
+            }
+        }
+
+        $mutasi = [];
+        $pendatang = array_filter(
+            $transmigranSp,
+            fn (array $t): bool => $t['tahun_kedatangan'] > (int) $s['tahun_penempatan']
+                && $t['tahun_kedatangan'] <= $tahun,
+        );
+        $laki = count(array_filter($pendatang, fn (array $t): bool => $t['jenis_kelamin'] === JenisKelamin::LakiLaki->value));
+        $perempuan = count(array_filter($pendatang, fn (array $t): bool => $t['jenis_kelamin'] === JenisKelamin::Perempuan->value));
+        $mutasi[] = ['Transmigran datang setelah penempatan awal (keluarga)', $laki, $perempuan, count($pendatang)];
+        foreach (['Kematian' => StatusAnggotaKeluarga::Meninggal->value, 'Pindah keluar keluarga' => StatusAnggotaKeluarga::Pindah->value] as $jenis => $status) {
+            $orang = array_filter($anggotaSp, fn (array $a): bool => $a['status'] === $status && $a['tanggal_peristiwa']?->lte($akhirTahun));
+            $laki = count(array_filter($orang, fn (array $a): bool => $a['jenis_kelamin'] === JenisKelamin::LakiLaki->value));
+            $perempuan = count(array_filter($orang, fn (array $a): bool => $a['jenis_kelamin'] === JenisKelamin::Perempuan->value));
+            $mutasi[] = [$jenis, $laki, $perempuan, count($orang)];
+        }
+        $keluarKeluarga = array_filter($transmigranSp, fn (array $t): bool => $t['tahun_keluar'] !== null && $t['tahun_keluar'] <= $tahun);
+        $laki = count(array_filter($keluarKeluarga, fn (array $t): bool => $t['jenis_kelamin'] === JenisKelamin::LakiLaki->value));
+        $perempuan = count(array_filter($keluarKeluarga, fn (array $t): bool => $t['jenis_kelamin'] === JenisKelamin::Perempuan->value));
+        $mutasi[] = ['Meninggalkan lokasi (keluarga)', $laki, $perempuan, count($keluarKeluarga)];
+        $riwayatMeninggal = $transmigranSp === [] ? collect() : RiwayatKepalaKeluarga::withoutGlobalScopes()
+            ->whereIn('transmigran_id', $idTransmigran)
+            ->where('alasan', AlasanPergantianKK::Meninggal->value)
+            ->whereDate('tanggal_pergantian', '<=', $akhirTahun)
+            ->get(['nik_lama']);
+        if ($riwayatMeninggal->isNotEmpty()) {
+            $laki = 0;
+            $perempuan = 0;
+            foreach ($riwayatMeninggal as $riwayat) {
+                ((int) substr((string) $riwayat->nik_lama, 6, 2)) > 40 ? $perempuan++ : $laki++;
+            }
+            $mutasi[] = ['Kematian kepala keluarga', $laki, $perempuan, $laki + $perempuan];
+        }
+        $barisMutasi = array_values(array_filter($mutasi, fn (array $baris): bool => $baris[3] > 0));
 
         $kependudukan = [
-            'catatan' => 'Rincian disaring dari data yang tercatat sistem. Struktur umur, usia sekolah, dan '
-                .'mutasi penduduk adalah angka contoh turunan, bukan pendataan per orang. SP yang belum '
-                .'berdata ditandai kosong.',
+            'catatan' => 'Rincian dihitung dari kepala keluarga, anggota keluarga, tanggal lahir, status, dan peristiwa yang tercatat. Peristiwa yang tidak direkam tidak diperkirakan.',
             'penempatan' => self::tabelDok(
                 'Penempatan transmigran menurut daerah asal',
                 ['Daerah Asal', 'Tahun', 'KK', 'Laki-laki', 'Perempuan', 'Jumlah'],
@@ -785,13 +971,20 @@ class LaporanData
                 'Mutasi penduduk kumulatif sejak penempatan',
                 ['Jenis Mutasi', 'Laki-laki', 'Perempuan', 'Jumlah'],
                 $barisMutasi,
-                ['Pertambahan bersih', '', '', $mutasi['bersih']],
-                'Kumulatif sejak tahun penempatan, bukan angka tahunan. Tanpa mutasi perkawinan.',
+                null,
+                'Hanya kedatangan keluarga serta peristiwa berstatus/tanggal atau bertahun keluar; kelahiran tidak dapat diturunkan dari data saat ini, sehingga pertambahan bersih tidak tersedia.',
             ),
         ];
 
         // --- Sosial Ekonomi ----------------------------------------------
-        $lahanSp = array_values(array_filter(DummyData::lahan(), fn ($l) => $l['satuan_permukiman_id'] === $id));
+        $lahanSp = Lahan::withoutGlobalScopes()
+            ->where('satuan_permukiman_id', $id)
+            ->get(['luas_pekarangan', 'luas_usaha'])
+            ->map(fn (Lahan $l): array => [
+                'luas_pekarangan' => $l->luas_pekarangan === null ? null : (float) $l->luas_pekarangan,
+                'luas_usaha' => $l->luas_usaha === null ? null : (float) $l->luas_usaha,
+            ])
+            ->all();
 
         /*
             MENJUMLAH KOLOM, BUKAN BARIS (diubah Putaran 15).
@@ -841,19 +1034,14 @@ class LaporanData
         // sehingga menghitungnya per bidang melipatgandakan satu sertifikat yang
         // sama. Belum Didata sengaja tampil terpisah: ia bukan elum punya,
         // melainkan belum pernah ditanyakan petugas.
-        $idTransSp = array_column(array_values(array_filter(
-            DummyData::transmigran(),
-            fn ($x) => $x['satuan_permukiman_id'] === $id
-        )), 'status_sertifikat');
-
-        $sertGrup = array_count_values($idTransSp);
+        $sertGrup = array_count_values(array_column($transmigranSp, 'status_sertifikat'));
         $barisDok = [];
         foreach (['Sudah', 'Belum', 'Belum Didata'] as $s) {
             $barisDok[] = [$s, $sertGrup[$s] ?? 0];
         }
 
         $panenGrup = [];
-        foreach (DummyData::penanaman() as $t) {
+        foreach (PenyajianPanen::penanaman() as $t) {
             if ($t['satuan_permukiman_id'] !== $id) {
                 continue;
             }
@@ -861,30 +1049,32 @@ class LaporanData
             $panenGrup[$k] ??= ['tanam' => 0.0, 'panen' => 0.0, 'puso' => 0.0, 'produksi' => 0.0];
             $panenGrup[$k]['tanam'] += (float) $t['realisasi_tanam'];
         }
-        foreach (DummyData::hasilPanen() as $h) {
-            if (($h['satuan_permukiman_id'] ?? null) !== $id) {
+        foreach (PenyajianPanen::hasilPanen() as $h) {
+            if ($h['satuan_permukiman_id'] !== $id) {
                 continue;
             }
             $k = $h['komoditas'];
             $panenGrup[$k] ??= ['tanam' => 0.0, 'panen' => 0.0, 'puso' => 0.0, 'produksi' => 0.0];
-            $panenGrup[$k]['panen'] += (float) ($h['realisasi_panen'] ?? $h['luas_panen'] ?? 0);
-            $panenGrup[$k]['puso'] += (float) ($h['luas_puso'] ?? $h['puso'] ?? 0);
-            $panenGrup[$k]['produksi'] += (float) ($h['produksi_ton'] ?? $h['produksi'] ?? 0);
+            $panenGrup[$k]['panen'] += (float) $h['realisasi_panen'];
+            $panenGrup[$k]['puso'] += (float) $h['puso'];
+            $panenGrup[$k]['produksi'] += KonversiPanen::keTon((float) $h['produksi'], $h['satuan']);
         }
         $barisTanam = [];
         foreach ($panenGrup as $kom => $v) {
             $barisTanam[] = [$kom, self::angka($v['tanam']), self::angka($v['panen']), self::angka($v['puso']), self::angka($v['produksi'])];
         }
+        $barisTanam = array_values(array_filter($barisTanam, fn (array $baris): bool => array_sum(array_map('floatval', array_slice($baris, 1))) > 0));
 
         // Infrastruktur yang MELAYANI SP ini, termasuk aset bersama yang
         // berpangkal di SP lain (Putaran 7).
-        $infraSp = array_values(array_filter(
-            DummyData::infrastruktur(),
-            fn ($x) => in_array($id, $x['satuan_permukiman_ids'] ?? [$x['satuan_permukiman_id']], true),
-        ));
-        $barisInfra = array_map(fn ($x) => [
-            $x['jenis'], $x['nama'], $x['kondisi'], $x['kapasitas'] ?? '-', $x['tahun_perolehan'] ?? '-',
-        ], $infraSp);
+        $barisInfra = Infrastruktur::withoutGlobalScopes()
+            ->whereHas('cakupan', fn ($q) => $q->where('satuan_permukiman.id_satuan_permukiman', $id))
+            ->orderBy('id_infrastruktur')
+            ->get()
+            ->map(fn (Infrastruktur $x): array => [
+                $x->jenis, $x->nama, $x->kondisi, $x->kapasitas ?? '-', $x->tahun_perolehan ?? '-',
+            ])
+            ->all();
 
         $sosialEkonomi = [
             'lahan' => self::tabelDok(
@@ -916,17 +1106,25 @@ class LaporanData
         // --- Sosial Budaya ---------------------------------------------
         // Fasilitas yang MELAYANI SP ini, termasuk yang berpangkal di SP lain
         // (Putaran 7): SMP Satu Atap, puskesmas pembantu, pasar desa.
-        $fasilitasSp = array_values(array_filter(
-            DummyData::fasilitasSp(),
-            fn ($x) => in_array($id, $x['satuan_permukiman_ids'] ?? [$x['satuan_permukiman_id']], true),
-        ));
+        $fasilitasSp = FasilitasSp::withoutGlobalScopes()
+            ->whereHas('cakupan', fn ($q) => $q->where('satuan_permukiman.id_satuan_permukiman', $id))
+            ->orderBy('id_fasilitas_sp')
+            ->get()
+            ->map(fn (FasilitasSp $x): array => [
+                'jenis_fasilitas' => $x->jenis_fasilitas?->value,
+                'nama_fasilitas' => $x->nama_fasilitas,
+                'jumlah' => (int) $x->jumlah,
+                'kondisi' => $x->kondisi,
+                'tahun_perolehan' => $x->tahun_perolehan,
+            ])
+            ->all();
         $fasilitasJenis = function (array $jenis) use ($fasilitasSp) {
             return array_map(fn ($x) => [$x['nama_fasilitas'], $x['jumlah'], $x['kondisi'], $x['tahun_perolehan']],
                 array_values(array_filter($fasilitasSp, fn ($x) => in_array($x['jenis_fasilitas'], $jenis, true))));
         };
 
         $agamaGrup = [];
-        foreach (array_merge($transmigranSp, $anggotaSp) as $orang) {
+        foreach ($orangPadaTahun as $orang) {
             $ag = $orang['agama'] ?? 'Tidak dicatat';
             $agamaGrup[$ag] ??= ['l' => 0, 'p' => 0];
             $agamaGrup[$ag][($orang['jenis_kelamin'] ?? 'Laki-laki') === 'Perempuan' ? 'p' : 'l']++;
@@ -939,14 +1137,25 @@ class LaporanData
         // Alsintan disaring lewat baris distribusi: satu SP dilayani bila ada
         // poktan di SP itu yang menerima bagian dari pengadaan (Putaran 7).
         $alsintanSp = [];
-        foreach (DummyData::alsintan() as $a) {
+        foreach (PenyajianAlsintan::daftar() as $a) {
             foreach ($a['distribusi'] as $d) {
                 if ($d['satuan_permukiman_id'] === $id) {
                     $alsintanSp[] = [$a['jenis_alsintan'], $a['nama_alat'], $d['jumlah'], $a['tahun_pengadaan'], $d['poktan']];
                 }
             }
         }
-        $inventarisSp = array_values(array_filter(DummyData::inventarisSp(), fn ($x) => $x['satuan_permukiman_id'] === $id));
+        $inventarisSp = InventarisSp::withoutGlobalScopes()
+            ->where('satuan_permukiman_id', $id)
+            ->orderBy('id_inventaris_sp')
+            ->get()
+            ->map(fn (InventarisSp $x): array => [
+                'nama_barang' => $x->nama_barang,
+                'jumlah' => (int) $x->jumlah,
+                'satuan_barang' => $x->satuan_barang,
+                'kondisi' => $x->kondisi,
+                'tahun_perolehan' => $x->tahun_perolehan,
+            ])
+            ->all();
 
         $sosialBudaya = [
             'pendidikan' => self::tabelDok('Sarana pendidikan', ['Nama', 'Jumlah', 'Kondisi', 'Tahun'],
@@ -991,29 +1200,18 @@ class LaporanData
      */
     public static function monografiSp(): array
     {
-        static $memo = null;
-        if ($memo !== null) {
-            return $memo;
-        }
-
-        // Task 9.1 lanjutan (2026-09-04, `rules.md` 8g dibalik): ikhtisar
-        // kk_terisi/rumah_terhuni/produksi_ton/pengaduan_terbuka dari
-        // `RekapDashboard`, bukan larik tetap `DummyData::rekapPerSp()`/
-        // `rekapPerSpTahun()` -- keduanya kini kunci `satuan_permukiman_id`
-        // yang SAMA jadi tinggal ditukar sumbernya. `daftarTahunLaporan()`
-        // menggantikan `tahunLaporan()` sekalian, agar tahunnya sejalan
-        // dengan `indikatorKawasan()`.
+        // Ikhtisar kk_terisi/rumah_terhuni/produksi_ton/pengaduan_terbuka dan
+        // daftar tahunnya mengikuti RekapDashboard agar sama dengan dashboard.
         $rekap = collect(RekapDashboard::perSp())->keyBy('satuan_permukiman_id');
-        $kawasan = DummyData::kawasan()[0] ?? ['kabupaten' => '-', 'provinsi' => '-'];
+        $kawasan = self::kawasan();
         $daftarTahunLaporan = RekapDashboard::daftarTahunLaporan();
-
-        $poktanPerSp = [];
-        foreach (DummyData::poktan() as $p) {
-            $poktanPerSp[$p['satuan_permukiman_id']] = ($poktanPerSp[$p['satuan_permukiman_id']] ?? 0) + 1;
-        }
+        $poktanPerSp = Poktan::withoutGlobalScopes()
+            ->selectRaw('satuan_permukiman_id, count(*) as jumlah')
+            ->groupBy('satuan_permukiman_id')
+            ->pluck('jumlah', 'satuan_permukiman_id');
 
         $lahanTergarap = [];
-        foreach (DummyData::penanaman() as $t) {
+        foreach (PenyajianPanen::penanaman() as $t) {
             $lahanTergarap[$t['satuan_permukiman_id']] = ($lahanTergarap[$t['satuan_permukiman_id']] ?? 0)
                 + (float) $t['realisasi_tanam'];
         }
@@ -1030,7 +1228,7 @@ class LaporanData
         $iklimTahun = [];
         $kependudukanTahun = [];
 
-        foreach (DummyData::satuanPermukiman() as $s) {
+        foreach (self::daftarSp() as $s) {
             $id = $s['id_satuan_permukiman'];
             $r = $rekap->get($id);
 
@@ -1068,21 +1266,15 @@ class LaporanData
             $kelompok = self::bab2($s);
             $adaIsi = collect($kelompok)->flatten()->contains(fn ($v) => $v !== null && trim((string) $v) !== '');
 
-            // Kalimat kelompok "Iklim" untuk tiap tahun laporan.
             $iklimTahun[$id] = [];
+            $iklimTercatat = self::bab2($s)['Iklim'];
             foreach ($daftarTahunLaporan as $tahun) {
-                $iklimTahun[$id][$tahun] = self::bab2($s, $tahun)['Iklim'];
+                $iklimTahun[$id][$tahun] = $tahun === self::tahunDokumenBawaan()
+                    ? $iklimTercatat
+                    : array_fill_keys(array_keys($iklimTercatat), null);
             }
 
-            $rute = array_map(fn ($x) => [
-                'rute' => $x['rute'],
-                'jarak_km' => $x['jarak_km'],
-                'sarana_angkutan' => $x['sarana_angkutan'] ?? '-',
-                'kondisi_jalan' => $x['kondisi_jalan'] ?? '-',
-                'waktu_tempuh' => $x['waktu_tempuh'] ?? '-',
-                'ongkos_rp' => $x['ongkos_rp'],
-                'keterangan' => $x['keterangan'] ?? null,
-            ], DummyData::ruteAksesibilitasSp($id));
+            $rute = $s['rute'];
 
             // Keadaan penduduk "sekarang" untuk tiap tahun laporan, agar
             // pemilih tahun mengubah angka KK dan jiwa di sisi peramban.
@@ -1112,7 +1304,7 @@ class LaporanData
             ];
         }
 
-        return $memo = [
+        return [
             'baris' => $baris,
             'monografi' => $monografi,
             'iklimTahun' => $iklimTahun,
@@ -1129,10 +1321,8 @@ class LaporanData
      * berjalan, beda dari Laporan Hasil Panen yang memakai tahun pengadaan
      * bantuan (rules.md 9 poin 16; basis tahun dipisah menurut tujuan).
      *
-     * Task 9.1 lanjutan (2026-09-04, `rules.md` 8g dibalik): seluruhnya dari
-     * `App\Support\RekapDashboard` (Eloquent), bukan `DummyData::ringkasanDashboard()`
-     * / `rekapPerSp()` / `indikatorKawasanTahun()` (larik tetap berskala
-     * kawasan lama). `perSp` TETAP tahun terakhir (`RekapDashboard::perSp()`
+     * Seluruh angka dinamis berasal dari `App\Support\RekapDashboard`
+     * (Eloquent). `perSp` TETAP tahun terakhir (`RekapDashboard::perSp()`
      * tanpa argumen) supaya penjaga "jumlah enam SP = angka kawasan" tak
      * berubah. `perSpTahun` dan `ringkasanTahun` melayani pemilih tahun
      * tunggal di sisi peramban -- lihat `RekapDashboard::ringkasanTahun()`
@@ -1156,7 +1346,7 @@ class LaporanData
         }
 
         return [
-            'kawasan' => DummyData::kawasan()[0] ?? [],
+            'kawasan' => self::kawasan(),
             'ringkasan' => RekapDashboard::ringkasan() + $kelembagaan,
             'perSp' => RekapDashboard::perSp(),
             'perSpTahun' => $perSpTahun,
@@ -1225,8 +1415,7 @@ class LaporanData
      */
     public static function transmigran(): array
     {
-        // Task 10.5: dibaca dari Eloquent, bukan `DummyData`. Laporan bersifat
-        // kawasan penuh (lihat `meta()['cakupan']`), sehingga global scope
+        // Laporan bersifat kawasan penuh (lihat `meta()['cakupan']`), sehingga global scope
         // cakupan data sengaja dilewati -- penyaringan per SP dikerjakan bilah
         // filter di sisi peramban.
         $namaSp = self::namaSpPerId();
@@ -1359,129 +1548,34 @@ class LaporanData
      */
     public static function filterLaporan(string $slug): array
     {
-        $daftarSp = array_map(
-            fn (array $s): array => ['id' => $s['id_satuan_permukiman'], 'nama' => $s['nama']],
-            DummyData::satuanPermukiman()
-        );
-
+        $daftarSp = SatuanPermukiman::withoutGlobalScopes()
+            ->orderBy('nama')
+            ->get(['id_satuan_permukiman', 'nama'])
+            ->map(fn (SatuanPermukiman $s): array => ['id' => $s->id_satuan_permukiman, 'nama' => $s->nama])
+            ->all();
         $cakupanBawaan = self::meta($slug)['cakupan'] ?? '';
 
         return match ($slug) {
-            'transmigran' => [
-                'sp' => $daftarSp,
-                'tahun' => true,
-                'labelTahun' => 'Tahun Kedatangan',
-                'daftarTahun' => self::tahunUnik(array_column(DummyData::transmigran(), 'tahun_kedatangan')),
-                'dimensi' => [
-                    [
-                        'kunci' => 'status',
-                        'label' => 'Status Tinggal',
-                        'opsi' => array_map(fn (StatusTinggal $c): string => $c->value, StatusTinggal::cases()),
-                    ],
-                    [
-                        'kunci' => 'statusHunian',
-                        'label' => 'Status Hunian',
-                        'opsi' => array_map(fn (StatusHunian $c): string => $c->value, StatusHunian::cases()),
-                    ],
-                    [
-                        'kunci' => 'kondisi',
-                        'label' => 'Kondisi Rumah',
-                        'opsi' => array_map(fn (KondisiRumah $c): string => $c->value, KondisiRumah::cases()),
-                    ],
-                    [
-                        'kunci' => 'peruntukan',
-                        'label' => 'Peruntukan Lahan',
-                        // Kedua bidang kini kolom pada satu baris, bukan nilai enum.
-                        'opsi' => ['Lahan Pekarangan', 'Lahan Usaha'],
-                    ],
-                ],
-                'cakupanBawaan' => $cakupanBawaan,
-            ],
+            'transmigran' => self::filterTransmigran($daftarSp, $cakupanBawaan),
             'poktan' => [
                 'sp' => $daftarSp,
                 'tahun' => false,
                 'dimensi' => [],
                 'cakupanBawaan' => $cakupanBawaan,
             ],
-            'alsintan' => [
-                'sp' => $daftarSp,
-                'tahun' => true,
-                'labelTahun' => 'Tahun Pengadaan',
-                'daftarTahun' => self::tahunUnik(array_column(DummyData::alsintan(), 'tahun_pengadaan')),
-                'dimensi' => [
-                    [
-                        'kunci' => 'jenis',
-                        'label' => 'Jenis Alat',
-                        'opsi' => collect(DummyData::alsintan())->pluck('jenis_alsintan')
-                            ->filter()->unique()->sort()->values()->all(),
-                    ],
-                ],
-                'cakupanBawaan' => $cakupanBawaan,
-            ],
-            'saprotan' => [
-                'sp' => $daftarSp,
-                'tahun' => true,
-                'labelTahun' => 'Tahun Pengadaan',
-                'daftarTahun' => self::tahunUnik(array_column(DummyData::saprotan(), 'tahun_pengadaan')),
-                'dimensi' => [
-                    [
-                        'kunci' => 'komoditas',
-                        'label' => 'Komoditas Benih',
-                        'opsi' => collect(DummyData::saprotan())->where('jenis', 'Benih')
-                            ->pluck('komoditas')->filter()->unique()->sort()->values()->all(),
-                    ],
-                    [
-                        'kunci' => 'jenis',
-                        'label' => 'Jenis Sarana (non-benih)',
-                        'opsi' => collect(DummyData::saprotan())->where('jenis', '!=', 'Benih')
-                            ->pluck('jenis')->filter()->unique()->sort()->values()->all(),
-                    ],
-                ],
-                'cakupanBawaan' => $cakupanBawaan,
-            ],
-            'hasil-panen' => [
-                'sp' => $daftarSp,
-                'tahun' => true,
-                // rules.md 16a: sumbu laporan panen adalah tahun anggaran
-                // bantuan (tahun pengadaan benih), BUKAN tahun panen.
-                'labelTahun' => 'Tahun Anggaran',
-                'labelTahunDokumen' => 'Tahun Anggaran',
-                'daftarTahun' => self::tahunUnik(
-                    collect(self::hasilPanen()['kelompok'])
-                        ->flatMap(fn (array $g): array => array_column($g['baris'], 'tahun_pengadaan'))
-                        ->all()
-                ),
-                'dimensi' => [
-                    [
-                        'kunci' => 'komoditas',
-                        'label' => 'Komoditas',
-                        'opsi' => collect(DummyData::hasilPanen())->pluck('komoditas')
-                            ->filter()->unique()->sort()->values()->all(),
-                    ],
-                    [
-                        'kunci' => 'sumber_dana',
-                        'label' => 'Sumber Dana',
-                        'opsi' => collect(self::hasilPanen()['kelompok'])
-                            ->flatMap(fn (array $g): array => array_column($g['baris'], 'sumber_dana'))
-                            ->filter()->unique()->sort()->values()->all(),
-                    ],
-                ],
-                'cakupanBawaan' => $cakupanBawaan,
-            ],
+            'alsintan' => self::filterAlsintan($daftarSp, $cakupanBawaan),
+            'saprotan' => self::filterSaprotan($daftarSp, $cakupanBawaan),
+            'hasil-panen' => self::filterHasilPanen($daftarSp, $cakupanBawaan),
             'monografi-sp' => [
                 'sp' => $daftarSp,
                 'tahun' => false,
                 'tahunTunggal' => true,
                 'labelTahun' => 'Tahun',
-                'daftarTahun' => DummyData::tahunLaporan(),
+                'daftarTahun' => RekapDashboard::daftarTahunLaporan(),
                 'tahunBawaan' => self::tahunDokumenBawaan(),
                 'dimensi' => [],
                 'cakupanBawaan' => $cakupanBawaan,
-                // Kalimat Bab II "Iklim" per tahun, dirakit di PHP (aman
-                // terhadap penjaga format angka). [spId][tahun][label] => teks.
                 'iklimTahun' => self::monografiSp()['iklimTahun'],
-                // Keadaan Penduduk Sekarang per tahun (Putaran 6).
-                // [spId][tahun] => {kk, jiwa, laki, perempuan}.
                 'kependudukanTahun' => self::monografiSp()['kependudukanTahun'],
             ],
             'indikator-kawasan' => [
@@ -1489,14 +1583,104 @@ class LaporanData
                 'tahun' => false,
                 'tahunTunggal' => true,
                 'labelTahun' => 'Tahun',
-                'daftarTahun' => DummyData::tahunLaporan(),
+                'daftarTahun' => RekapDashboard::daftarTahunLaporan(),
                 'tahunBawaan' => self::tahunDokumenBawaan(),
                 'dimensi' => [],
                 'cakupanBawaan' => $cakupanBawaan,
-                'ringkasanTahun' => DummyData::indikatorKawasanTahun(),
+                'ringkasanTahun' => RekapDashboard::ringkasanTahun(),
             ],
             default => [],
         };
+    }
+
+    private static function filterTransmigran(array $daftarSp, string $cakupan): array
+    {
+        $data = self::transmigran();
+        $opsi = fn (array $baris, string $kolom): array => collect($baris)->pluck($kolom)->filter()->unique()->sort()->values()->all();
+        $peruntukan = [];
+        if (collect($data['lahan'])->contains(fn (array $l): bool => $l['luas_pekarangan'] !== null)) {
+            $peruntukan[] = 'Lahan Pekarangan';
+        }
+        if (collect($data['lahan'])->contains(fn (array $l): bool => $l['luas_usaha'] !== null)) {
+            $peruntukan[] = 'Lahan Usaha';
+        }
+
+        return [
+            'sp' => $daftarSp,
+            'tahun' => true,
+            'labelTahun' => 'Tahun Kedatangan',
+            'daftarTahun' => self::tahunUnik(array_column($data['transmigran'], 'tahun_kedatangan')),
+            'dimensi' => [
+                ['kunci' => 'status', 'label' => 'Status Tinggal', 'opsi' => $opsi($data['transmigran'], 'status_tinggal')],
+                ['kunci' => 'statusHunian', 'label' => 'Status Hunian', 'opsi' => $opsi($data['rumah'], 'status_hunian')],
+                ['kunci' => 'kondisi', 'label' => 'Kondisi Rumah', 'opsi' => $opsi($data['rumah'], 'kondisi')],
+                ['kunci' => 'peruntukan', 'label' => 'Peruntukan Lahan', 'opsi' => $peruntukan],
+            ],
+            'cakupanBawaan' => $cakupan,
+        ];
+    }
+
+    private static function filterAlsintan(array $daftarSp, string $cakupan): array
+    {
+        $baris = collect(self::alsintan()['kelompok'])->flatMap(fn (array $g): array => $g['baris']);
+
+        return [
+            'sp' => $daftarSp,
+            'tahun' => true,
+            'labelTahun' => 'Tahun Pengadaan',
+            'daftarTahun' => self::tahunUnik($baris->pluck('tahun_pengadaan')),
+            'dimensi' => [[
+                'kunci' => 'jenis',
+                'label' => 'Jenis Alat',
+                'opsi' => $baris->pluck('jenis_alat')->filter()->unique()->sort()->values()->all(),
+            ]],
+            'cakupanBawaan' => $cakupan,
+        ];
+    }
+
+    private static function filterSaprotan(array $daftarSp, string $cakupan): array
+    {
+        $data = self::saprotan();
+        $benih = collect($data['benih']);
+        $nonBenih = collect($data['nonBenih']);
+
+        return [
+            'sp' => $daftarSp,
+            'tahun' => true,
+            'labelTahun' => 'Tahun Pengadaan',
+            'daftarTahun' => self::tahunUnik($benih->pluck('tahun_pengadaan')->merge($nonBenih->pluck('tahun_pengadaan'))),
+            'dimensi' => [
+                [
+                    'kunci' => 'komoditas',
+                    'label' => 'Komoditas Benih',
+                    'opsi' => $benih->pluck('komoditas')->filter()->unique()->sort()->values()->all(),
+                ],
+                [
+                    'kunci' => 'jenis',
+                    'label' => 'Jenis Sarana (non-benih)',
+                    'opsi' => $nonBenih->pluck('jenis')->filter()->unique()->sort()->values()->all(),
+                ],
+            ],
+            'cakupanBawaan' => $cakupan,
+        ];
+    }
+
+    private static function filterHasilPanen(array $daftarSp, string $cakupan): array
+    {
+        $baris = collect(self::hasilPanen()['kelompok'])->flatMap(fn (array $g): array => $g['baris']);
+
+        return [
+            'sp' => $daftarSp,
+            'tahun' => true,
+            'labelTahun' => 'Tahun Anggaran',
+            'labelTahunDokumen' => 'Tahun Anggaran',
+            'daftarTahun' => self::tahunUnik($baris->pluck('tahun_pengadaan')),
+            'dimensi' => [
+                ['kunci' => 'komoditas', 'label' => 'Komoditas', 'opsi' => $baris->pluck('komoditas')->filter()->unique()->sort()->values()->all()],
+                ['kunci' => 'sumber_dana', 'label' => 'Sumber Dana', 'opsi' => $baris->pluck('sumber_dana')->filter()->unique()->sort()->values()->all()],
+            ],
+            'cakupanBawaan' => $cakupan,
+        ];
     }
 
     /**

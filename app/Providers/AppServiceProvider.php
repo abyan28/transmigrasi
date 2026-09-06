@@ -74,6 +74,11 @@ class AppServiceProvider extends ServiceProvider
                 ->response($this->tanggapanBatas('Terlalu banyak pencarian dari jaringan ini. Silakan coba lagi satu menit lagi.'))
             : Limit::none());
 
+        RateLimiter::for('verifikasi-email', fn (Request $r) => config('sim.batas_laju.aktif')
+            ? Limit::perMinute((int) config('sim.batas_laju.verifikasi_email'))->by($r->ip())
+                ->response($this->tanggapanBatas('Terlalu banyak percobaan verifikasi. Silakan coba lagi satu menit lagi.'))
+            : Limit::none());
+
         RateLimiter::for('kirim-pengaduan', fn (Request $r) => config('sim.batas_laju.aktif')
             ? Limit::perHour((int) config('sim.batas_laju.kirim_pengaduan'))->by($r->ip())
                 ->response($this->tanggapanBatas('Anda sudah mengirim beberapa pengaduan. Silakan coba lagi satu jam lagi.'))

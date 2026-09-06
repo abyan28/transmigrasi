@@ -33,6 +33,7 @@ return [
 
         // kanal publik, per alamat IP
         'lacak_publik' => (int) env('SIM_BATAS_LACAK_PUBLIK', 10),   // per menit
+        'verifikasi_email' => (int) env('SIM_BATAS_VERIFIKASI_EMAIL', 10), // per menit
         'kirim_pengaduan' => (int) env('SIM_BATAS_KIRIM_PENGADUAN', 3), // per jam
     ],
 

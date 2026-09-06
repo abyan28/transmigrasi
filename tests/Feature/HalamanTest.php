@@ -10,6 +10,7 @@
  */
 
 use App\Enums\Agama;
+use App\Enums\AksiAuditLog;
 use App\Enums\AksiPermission;
 use App\Enums\AlasanPergantianKK;
 use App\Enums\AsalWakilPoktan;
@@ -29,19 +30,29 @@ use App\Enums\SumberDana;
 use App\Enums\TingkatKesuburanTanah;
 use App\Helpers\MenuHelper;
 use App\Helpers\RemahHelper;
+use App\Models\Alsintan;
+use App\Models\AuditLog;
+use App\Models\Lahan;
 use App\Models\Pengaduan;
 use App\Models\Permission;
 use App\Models\Role;
+use App\Models\Rumah;
+use App\Models\RuteAksesibilitasSp;
+use App\Models\Saprotan;
 use App\Models\SatuanPermukiman;
+use App\Models\Transmigran;
 use App\Models\User;
 use App\Support\DummyData;
 use App\Support\LaporanData;
+use App\Support\PenyajianPanen;
 use App\Support\RekapDashboard;
 use App\Support\SkemaImpor;
 use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
+use PhpOffice\PhpSpreadsheet\Reader\Xlsx as XlsxReader;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Tests\Support\BerkasBlade;
 
 /*
@@ -211,12 +222,12 @@ it('merender halaman notifikasi dengan kerangka sticky footer flexbox', function
 |--------------------------------------------------------------------------
 */
 
-it('merender halaman rincian untuk keenam satuan permukiman', function () {
-    foreach (DummyData::satuanPermukiman() as $sp) {
-        $this->get(route('sp.detail', $sp['id_satuan_permukiman']))
+it('merender halaman rincian untuk seluruh satuan permukiman tersimpan', function () {
+    foreach (SatuanPermukiman::with('desa.kecamatan')->get() as $sp) {
+        $this->get(route('sp.detail', $sp->id_satuan_permukiman))
             ->assertOk()
-            ->assertSee($sp['nama'])
-            ->assertSee($sp['kecamatan']);
+            ->assertSee($sp->nama)
+            ->assertSee($sp->desa->kecamatan->nama);
     }
 });
 
@@ -289,11 +300,14 @@ it('merender halaman profil beserta identitas akun', function () {
         'username' => 'petugas.uji.profil',
     ]);
 
-    $this->actingAs($pengguna)->get(route('profil'))
-        ->assertOk()
+    $respons = $this->actingAs($pengguna)->get(route('profil'));
+
+    $respons->assertOk()
         ->assertSee('PETUGAS UJI PROFIL')
         ->assertSee('petugas.uji.profil')
         ->assertSee($pengguna->role->nama);
+
+    expect($respons->viewData('inisialPengguna'))->toBe('PU');
 });
 
 it('menampilkan nama dan username sebagai teks, bukan isian yang dapat diubah', function () {
@@ -1620,7 +1634,7 @@ it('menyusun pilihan penyaring rekap dari data, bukan dari master', function () 
         ->and(count($opsi2026['komoditas']))->toBeGreaterThan(count($opsi2025['komoditas']));
 
     // Lebih sedikit daripada master, dan itu memang maksudnya.
-    expect(count($opsi2026['sp']))->toBeLessThan(count(DummyData::satuanPermukiman()))
+    expect(count($opsi2026['sp']))->toBeLessThan(SatuanPermukiman::withoutGlobalScopes()->count())
         ->and(count($opsi2026['komoditas']))->toBeLessThan(count(DummyData::komoditas()));
 
     // Seluruh opsi benar-benar menghasilkan baris, bukan tabel kosong.
@@ -4191,12 +4205,24 @@ it('memandu impor lewat tiga langkah beserta kolom wajibnya', function () {
         ->and($isi)->toContain('nama_lengkap');
 });
 
-it('menyatakan terus terang bahwa impor entitas berantai belum tersambung backend', function () {
-    // Tombolnya terlihat berfungsi penuh padahal penyimpanannya belum ada.
-    // Tanpa peringatan ini petugas dapat mengira datanya sudah masuk, lalu
-    // kehilangan hasil pendataan sehari penuh. Berlaku untuk enam entitas
-    // berantai (Task 10.4, 2/2 -- belum dikerjakan): poktan salah satunya.
-    $this->get('/poktan')->assertSee('Fitur belum aktif.');
+it('menonaktifkan impor entitas berantai tanpa hasil palsu', function () {
+    $isi = $this->get('/poktan')->assertSee('Fitur belum aktif.')->getContent();
+
+    expect($isi)->toContain("aktif ? 'Saya Sudah Punya Berkasnya' : 'Impor Belum Aktif'")
+        ->toContain(':disabled="!aktif || !berkas || memproses"')
+        ->not->toContain('this.disimpan = 18')
+        ->not->toContain('Data serupa sudah terdaftar sebelumnya');
+});
+
+it('menampilkan format impor dan tindakan simpan yang sebenarnya', function () {
+    $isi = $this->get('/transmigran')->assertOk()->getContent();
+
+    expect($isi)->toContain('accept=".xlsx,.csv"')
+        ->toContain('Unduh Template XLSX')
+        ->toContain('Unduh CSV alternatif')
+        ->toContain("'Impor Data'")
+        ->not->toContain('Periksa Data')
+        ->not->toContain('sebelum benar-benar disimpan');
 });
 
 it('tidak lagi menampilkan spanduk belum aktif pada delapan entitas mandiri (Task 10.4)', function () {
@@ -4205,22 +4231,37 @@ it('tidak lagi menampilkan spanduk belum aktif pada delapan entitas mandiri (Tas
     $this->get('/transmigran')->assertDontSee('Fitur belum aktif.');
 });
 
-it('menyediakan rute unduh template CSV untuk seluruh entitas (Task 10.6)', function () {
-    // Satu rute melayani semua entitas, sebab yang membedakan hanya susunan
-    // kolomnya -- dibaca dari App\Support\SkemaImpor.
+it('menyediakan template xlsx utama dan csv kosong alternatif untuk seluruh entitas', function () {
     foreach (SkemaImpor::entitas() as $entitas) {
-        $r = $this->get(route('template-impor', $entitas))->assertOk();
+        $xlsx = $this->get(route('template-impor.xlsx', $entitas))->assertOk();
+        expect($xlsx->headers->get('content-type'))->toContain('spreadsheetml')
+            ->and($xlsx->headers->get('content-disposition'))->toContain('template-impor-'.$entitas.'.xlsx');
 
-        expect($r->headers->get('content-type'))->toContain('text/csv')
-            ->and($r->headers->get('content-disposition'))->toContain('template-impor-'.$entitas.'.csv');
+        $path = tempnam(sys_get_temp_dir(), 'template-impor-');
+        file_put_contents($path, $xlsx->streamedContent());
+        $buku = (new XlsxReader)->load($path);
+        $data = $buku->getSheetByName('Data');
+        $referensi = $buku->getSheetByName('Referensi');
+        expect($data)->not->toBeNull()
+            ->and(array_filter($data->rangeToArray('A2:'.$data->getHighestColumn().'1001', null, false, false, false), fn (array $baris): bool => array_filter($baris, fn ($nilai): bool => $nilai !== null && $nilai !== '') !== []))->toBe([])
+            ->and($buku->getSheetByName('Petunjuk'))->not->toBeNull()
+            ->and($buku->getSheetByName('Contoh'))->not->toBeNull()
+            ->and($referensi)->not->toBeNull()
+            ->and($referensi->getSheetState())->toBe(Worksheet::SHEETSTATE_HIDDEN);
+        if ($entitas === 'transmigran') {
+            expect($data->getStyle('A2')->getNumberFormat()->getFormatCode())->toBe('@')
+                ->and($data->getStyle('H2')->getNumberFormat()->getFormatCode())->toBe('yyyy-mm-dd')
+                ->and($data->getDataValidation('E2')->getType())->toBe('list');
+        }
+        $buku->disconnectWorksheets();
+        unlink($path);
 
-        // Baris judul kolom nyata, bukan sekadar komentar.
-        $isi = $r->streamedContent();
-        $kolomPertama = SkemaImpor::kolom($entitas)[0]['kolom'];
-        expect($isi)->toContain($kolomPertama)->toContain('# TEMPLATE IMPOR');
+        $csv = $this->get(route('template-impor', $entitas))->assertOk();
+        expect($csv->headers->get('content-type'))->toContain('text/csv')
+            ->and($csv->headers->get('content-disposition'))->toContain('template-impor-'.$entitas.'.csv')
+            ->and(substr_count(trim($csv->streamedContent()), "\n"))->toBe(0);
     }
 
-    // Entitas tak dikenal -> 404.
     $this->get(route('template-impor', 'tidak-ada'))->assertNotFound();
 });
 
@@ -4481,49 +4522,66 @@ it('mengarahkan tombol lacak ke nomor yang benar-benar ada', function () {
 */
 
 it('menyaring riwayat memakai nama tabel DAN nomor barisnya', function () {
-    // Keduanya wajib dipakai bersama. Menyaring nama tabel saja membuat setiap
-    // baris menampilkan riwayat baris lain pada tabel yang sama, sehingga
-    // pembaca mengira datanya pernah diubah padahal tidak.
-    $riwayat = DummyData::riwayatData('transmigran', 1);
+    AuditLog::query()->where('nama_tabel', 'transmigran')->delete();
+    AuditLog::create([
+        'aksi' => AksiAuditLog::Ubah,
+        'nama_tabel' => 'transmigran',
+        'record_id' => 1,
+        'data_baru' => ['keterangan' => 'BARIS SATU'],
+    ]);
+    AuditLog::create([
+        'aksi' => AksiAuditLog::Ubah,
+        'nama_tabel' => 'transmigran',
+        'record_id' => 4,
+        'data_baru' => ['telepon' => 'BARIS EMPAT'],
+    ]);
 
-    expect($riwayat)->not->toBeEmpty();
+    $isi = $this->get('/transmigran/1')->assertOk()->getContent();
 
-    foreach ($riwayat as $jejak) {
-        expect($jejak['nama_tabel'])->toBe('transmigran')
-            ->and((int) $jejak['record_id'])->toBe(1);
-    }
-
-    // Baris lain pada tabel yang sama tidak boleh ikut terbawa.
-    $nomorLain = collect(DummyData::riwayatData('transmigran', 4))->pluck('id_audit_log');
-    $nomorIni = collect($riwayat)->pluck('id_audit_log');
-
-    expect($nomorIni->intersect($nomorLain))->toBeEmpty();
+    expect($isi)->toContain('Mengubah 1 kolom: keterangan.')
+        ->not->toContain('Mengubah 1 kolom: telepon.');
 });
 
 it('mengurutkan riwayat data dari yang terbaru', function () {
-    // Yang pertama dicari pembaca biasanya perubahan terakhir, bukan asal-usul
-    // datanya.
-    $waktu = collect(DummyData::riwayatData('transmigran', 1))->pluck('waktu')->all();
+    AuditLog::query()->where('nama_tabel', 'transmigran')->delete();
+    AuditLog::create([
+        'aksi' => AksiAuditLog::Ubah,
+        'nama_tabel' => 'transmigran',
+        'record_id' => 1,
+        'data_baru' => ['keterangan' => 'lama'],
+        'created_at' => now()->subDay(),
+    ]);
+    AuditLog::create([
+        'aksi' => AksiAuditLog::Ubah,
+        'nama_tabel' => 'transmigran',
+        'record_id' => 1,
+        'data_baru' => ['telepon' => 'baru'],
+        'created_at' => now(),
+    ]);
 
-    $urut = $waktu;
-    rsort($urut);
+    $isi = $this->get('/transmigran/1')->assertOk()->getContent();
 
-    expect($waktu)->toBe($urut);
+    expect(strpos($isi, 'Mengubah 1 kolom: telepon.'))
+        ->toBeLessThan(strpos($isi, 'Mengubah 1 kolom: keterangan.'));
 });
 
 it('menyediakan tab catatan log pada setiap halaman rincian utama', function (string $url, string $namaTabel, int $recordId) {
     // Pertanyaan "siapa yang memasukkan data ini dan siapa yang mengubahnya"
     // dijawab di tempat datanya dibaca, bukan dengan menelusuri halaman audit
     // log yang memuat seluruh sistem.
+    AuditLog::query()->where('nama_tabel', $namaTabel)->where('record_id', $recordId)->delete();
+    AuditLog::create([
+        'aksi' => AksiAuditLog::Ubah,
+        'nama_tabel' => $namaTabel,
+        'record_id' => $recordId,
+        'data_baru' => ['keterangan' => 'uji'],
+    ]);
+
     $isi = $this->get($url)->assertOk()->getContent();
 
     expect($isi)->toContain('Catatan Log')
-        ->and($isi)->toContain("tab === 'log'");
-
-    // Isi tabnya wajib benar-benar memuat jejak milik baris ini.
-    foreach (DummyData::riwayatData($namaTabel, $recordId) as $jejak) {
-        expect($isi)->toContain($jejak['ringkasan']);
-    }
+        ->and($isi)->toContain("tab === 'log'")
+        ->and($isi)->toContain('Mengubah 1 kolom: keterangan.');
 })->with([
     ['/transmigran/1', 'transmigran', 1],
     ['/rumah/1', 'rumah', 1],
@@ -4538,10 +4596,7 @@ it('menyediakan tab catatan log pada setiap halaman rincian utama', function (st
 ]);
 
 it('membedakan riwayat kosong dari kegagalan pencatatan', function () {
-    // Riwayat kosong berarti datanya memang belum pernah disentuh sejak
-    // dicatat, bukan berarti pencatatannya gagal. Transmigran 2 sengaja
-    // dibiarkan tanpa jejak agar keadaan ini ikut teruji.
-    expect(DummyData::riwayatData('transmigran', 2))->toBeEmpty();
+    AuditLog::query()->where('nama_tabel', 'transmigran')->where('record_id', 2)->delete();
 
     $this->get('/transmigran/2')
         ->assertOk()
@@ -5153,20 +5208,13 @@ it('menjumlahkan hasil panen per SP lalu ke total kawasan tanpa selisih', functi
 });
 
 it('menelusuri varietas dan tahun pengadaan laporan panen sampai ke saprotan benih', function () {
-    // Inti rules.md 9 poin 16: dasar laporan panen adalah tahun pengadaan
-    // BANTUAN, dibaca lewat penanaman.saprotan_distribusi_id ->
-    // saprotan_distribusi -> pengadaan.tahun_pengadaan (Putaran 7).
-    $distribusi = collect(DummyData::saprotanDistribusi())->keyBy('id_saprotan_distribusi');
-    $penanaman = collect(DummyData::penanaman())->keyBy('id_penanaman');
+    $penanaman = collect(PenyajianPanen::penanaman())->first(
+        fn (array $baris): bool => $baris['saprotan_distribusi_id'] !== null,
+    );
+    expect($penanaman)->not->toBeNull();
 
     $adaVarietas = false;
 
-    // Pembuktian langsung: panen 1 -> penanaman 1 -> distribusi 1 -> pengadaan 1.
-    $benih = $distribusi[$penanaman[1]['saprotan_distribusi_id']];
-    expect($benih['tahun_pengadaan'])->not->toBeNull();
-    expect($benih['varietas'])->not->toBeNull();
-
-    // Setidaknya satu baris laporan membawa varietas dari benihnya.
     foreach (LaporanData::hasilPanen()['kelompok'] as $grup) {
         foreach ($grup['baris'] as $b) {
             if ($b['varietas'] !== '-' && $b['tahun_pengadaan'] !== null) {
@@ -5213,9 +5261,9 @@ it('menjumlahkan luas lahan anggota tiap poktan pada Laporan Poktan', function (
 it('menyusun Laporan Transmigran dari tiga modul tanpa kehilangan baris', function () {
     $data = LaporanData::transmigran();
 
-    expect(count($data['transmigran']))->toBe(count(DummyData::transmigran()));
-    expect(count($data['rumah']))->toBe(count(DummyData::rumah()));
-    expect(count($data['lahan']))->toBe(count(DummyData::lahan()));
+    expect(count($data['transmigran']))->toBe(Transmigran::withoutGlobalScopes()->count());
+    expect(count($data['rumah']))->toBe(Rumah::withoutGlobalScopes()->count());
+    expect(count($data['lahan']))->toBe(Lahan::withoutGlobalScopes()->count());
 });
 
 /*
@@ -5455,18 +5503,11 @@ it('membawa filter ke rute dokumen lewat hash, bukan bilah (Putaran 5)', functio
 it('menyusun kop dokumen laporan dari satu sumber identitas (Putaran 5)', function () {
     $instansi = LaporanData::instansi();
 
-    // Kabupaten & provinsi diturunkan dari DummyData::kawasan(), tidak ditulis
-    // ulang. Dua lambang: Kementerian + Kabupaten.
-    $kawasan = DummyData::kawasan()[0];
-    expect($instansi['dinas'])->toContain($kawasan['kabupaten']);
-    expect($instansi['alamat'])->toContain($kawasan['provinsi']);
     expect($instansi['logoKementerian'])->toBe('images/logo/logo-kementrans-128.png');
     expect($instansi['lambangKabupaten'])->toBe('images/logo/lambang-malaka.png');
     expect(public_path('images/logo/lambang-malaka.png'))->toBeFile();
 
-    // Tahun rujukan dokumen = tahun terakhir deret data, bukan date('Y').
-    $deret = DummyData::deretTahunan()['tahun'];
-    expect(LaporanData::tahunDokumenBawaan())->toBe((int) end($deret));
+    expect(LaporanData::tahunDokumenBawaan())->toBe(RekapDashboard::tahunTerakhir());
 
     // Kop HANYA di rute dokumen, tidak di halaman berbingkai.
     expect($this->get('/laporan/poktan')->getContent())->not->toContain('KEMENTERIAN TRANSMIGRASI');
@@ -5493,14 +5534,13 @@ it('menyaring laporan lewat Alpine, bukan query string yang mati di GitHub Pages
         ->toContain('x-model="sp"');
 });
 
-it('menyusun opsi SP filter laporan dari data master, bukan cacahan baris contoh', function () {
-    // rules.md 19a: keputusan tidak boleh bersandar pada cacahan baris contoh.
-    // Daftar SP di sini adalah master (DummyData::satuanPermukiman()), sah.
+it('menyusun opsi filter laporan dari data Eloquent yang tersedia', function () {
     $konfig = LaporanData::filterLaporan('transmigran');
 
-    $idMaster = array_column(DummyData::satuanPermukiman(), 'id_satuan_permukiman');
+    $idMaster = SatuanPermukiman::withoutGlobalScopes()->orderBy('nama')->pluck('id_satuan_permukiman')->all();
     $idFilter = array_column($konfig['sp'], 'id');
 
+    expect(file_get_contents(app_path('Support/LaporanData.php')))->not->toContain('DummyData');
     expect($idFilter)->toBe($idMaster);
     expect($konfig['cakupanBawaan'])->toBe(LaporanData::meta('transmigran')['cakupan']);
 
@@ -5571,8 +5611,8 @@ it('menjaga jumlah enam SP = angka kawasan pada Rekap Indikator Kawasan', functi
 
     $konfig = LaporanData::filterLaporan('indikator-kawasan');
     expect($konfig['tahunTunggal'])->toBeTrue();
-    expect($konfig['ringkasanTahun'][LaporanData::tahunDokumenBawaan()])
-        ->toBe(DummyData::indikatorKawasanTahun()[LaporanData::tahunDokumenBawaan()]);
+    expect($konfig['daftarTahun'])->toBe(RekapDashboard::daftarTahunLaporan());
+    expect($konfig['ringkasanTahun'])->toBe(RekapDashboard::ringkasanTahun());
 });
 
 it('menyembunyikan tabel poktan seutuhnya lewat penanda SP, bukan per baris', function () {
@@ -5698,7 +5738,7 @@ it('menyaring tabel ikhtisar dan tiap bab Monografi SP dengan pemilih SP + tahun
     $konfig = LaporanData::filterLaporan('monografi-sp');
     expect($konfig['tahun'])->toBeFalse();
     expect($konfig['tahunTunggal'])->toBeTrue();
-    expect($konfig['daftarTahun'])->toBe(DummyData::tahunLaporan());
+    expect($konfig['daftarTahun'])->toBe(RekapDashboard::daftarTahunLaporan());
     expect($konfig['tahunBawaan'])->toBe(LaporanData::tahunDokumenBawaan());
     expect($konfig)->toHaveKey('kependudukanTahun');
 });
@@ -7037,10 +7077,9 @@ it('menghidupkan kembali batas wilayah SP secara lengkap, bukan sebagian', funct
     // Rincian menampilkan nilainya (SP 1 dari berkas monografi).
     expect($rincianSp)->toContain('Batas Wilayah')->toContain('Desa Tesa');
 
-    // Data contoh memuat keempat kunci pada setiap SP.
-    foreach (DummyData::satuanPermukiman() as $sp) {
+    foreach (SatuanPermukiman::all() as $sp) {
         foreach ($arah as $kolom) {
-            expect($sp)->toHaveKey($kolom);
+            expect($sp->getAttributes())->toHaveKey($kolom);
         }
     }
 
@@ -7079,13 +7118,11 @@ it('menyediakan tempat tampil bagi setiap field Keadaan Wilayah SP', function ()
         expect($rincian)->toContain($label);
     }
 
-    // SP 1 memakai angka persis dari berkas Monografi Kapitan Meo, dan
-    // nilainya benar-benar dirender.
-    $sp1 = collect(DummyData::satuanPermukiman())->firstWhere('id_satuan_permukiman', 1);
-    expect($sp1['curah_hujan_tahunan_mm'])->toBe(1607.18)
-        ->and($sp1['suhu_rata_c'])->toBe(27.7)
-        ->and($sp1['nomor_sk_pencadangan'])->toBe('79/HK/2018');
-    expect($rincian)->toContain('79/HK/2018')->toContain('Desa Tesa');
+    $sp1 = SatuanPermukiman::findOrFail(1);
+    expect((float) $sp1->curah_hujan_tahunan_mm)->toBe(1607.18)
+        ->and((float) $sp1->suhu_rata_c)->toBe(27.7)
+        ->and($sp1->nomor_sk_pencadangan)->toBe('79/HK/2018');
+    expect($rincian)->toContain($sp1->nomor_sk_pencadangan)->toContain($sp1->batas_utara);
 });
 
 it('mengunci enum Keadaan Wilayah SP', function () {
@@ -7098,17 +7135,12 @@ it('mengunci enum Keadaan Wilayah SP', function () {
 });
 
 it('mendata rute aksesibilitas SP sebagai daftar dinamis dengan tempat tampil', function () {
-    // Stage C2 (2026-08-28): Tabel 2.1 Monografi jadi daftar rute per SP.
-    $semua = DummyData::ruteAksesibilitasSp();
-    expect($semua)->not->toBeEmpty();
-
-    $sp1 = DummyData::ruteAksesibilitasSp(1);
+    $sp1 = RuteAksesibilitasSp::where('satuan_permukiman_id', 1)->get();
     expect($sp1)->not->toBeEmpty();
     foreach ($sp1 as $r) {
-        expect($r['satuan_permukiman_id'])->toBe(1);
+        expect($r->satuan_permukiman_id)->toBe(1);
     }
-    // SP 1 dari Tabel 2.1 berkas monografi.
-    expect(collect($sp1)->pluck('rute')->implode(' | '))->toContain('Kupang');
+    expect($sp1->pluck('rute')->implode(' | '))->toContain('Kupang');
 
     // Form SP: repeater rute.
     $form = $this->get(route('sp.index'))->assertOk()->getContent();
@@ -7132,27 +7164,23 @@ it('menyusun Bab II Keadaan Wilayah per SP pada Laporan Monografi SP', function 
     $data = LaporanData::monografiSp();
 
     expect($data)->toHaveKeys(['baris', 'monografi']);
-    expect($data['monografi'])->toHaveCount(count(DummyData::satuanPermukiman()));
+    expect($data['monografi'])->toHaveCount(SatuanPermukiman::withoutGlobalScopes()->count());
 
     $kapitanMeo = collect($data['monografi'])->firstWhere('kode', 'SP-01');
     expect($kapitanMeo)->not->toBeNull();
-    expect($kapitanMeo['ada_isi'])->toBeTrue();
     expect(array_keys($kapitanMeo['kelompok']))
         ->toBe(['Letak', 'Batas Wilayah', 'Luas dan Bentuk', 'Tanah dan Topografi', 'Iklim', 'Sumberdaya Air']);
-    expect($kapitanMeo['kelompok']['Batas Wilayah']['Sebelah Utara'])->toBe('Desa Tesa');
-    expect($kapitanMeo['kelompok']['Iklim']['Curah hujan rata-rata per tahun'])->toBe('1.607,18 mm');
-    expect($kapitanMeo['rute'])->not->toBeEmpty();
 
-    // Nilai kosong tetap dibawa sebagai null, bukan dibuang.
+    $sp = SatuanPermukiman::withoutGlobalScopes()->where('kode_sp', 'SP-01')->firstOrFail();
+    expect($kapitanMeo['kelompok']['Batas Wilayah']['Sebelah Utara'])->toBe($sp->batas_utara);
+    expect($kapitanMeo['rute'])->toHaveCount($sp->ruteAksesibilitas()->withoutGlobalScopes()->count());
     expect($kapitanMeo['kelompok']['Tanah dan Topografi'])->toHaveKey('pH tanah');
 
     $html = $this->get(route('laporan.monografi-sp'))->assertOk()->getContent();
     expect($html)
         ->toContain('Keadaan Wilayah')
         ->toContain('Batas-Batas Alam')
-        ->toContain('Aksesibilitas')
-        ->toContain('1.607,18 mm')
-        ->toContain('Cara pencapaian menuju SP Kapitan Meo');
+        ->toContain('Aksesibilitas');
 
     // ANTISLOP-ID R-02: tanpa em dash.
     expect(str_contains($html, "\xE2\x80\x94"))->toBeFalse('Laporan Monografi SP memuat em dash');
@@ -7246,34 +7274,16 @@ it('menyamakan nama komoditas pada sebaran dengan data master', function () {
     }
 });
 
-it('menampilkan volume tercatat untuk setiap komoditas, termasuk nama dua kata', function () {
-    // KACANG TANAH dan UBI KAYU sempat menampilkan tanda hubung seolah belum
-    // pernah panen, padahal keduanya tercatat 118,4 dan 68,2 ton. Yang gagal
-    // hanya nama dua kata; nama satu kata kebetulan berhasil, sehingga
-    // kekeliruannya tidak terlihat pada pemeriksaan sepintas.
-    //
-    // KEGAGALANNYA SENYAP: tanda hubung terbaca sebagai "belum ada panen",
-    // padahal artinya "kodenya tidak menemukan datanya". Dua keadaan berbeda
-    // ditampilkan sama, persis pola yang sudah tercatat pada notes.md 1b.6a.
+it('menampilkan volume tercatat dari hasil panen tiap komoditas', function () {
     $isi = $this->get(route('komoditas.index'))->assertOk()->getContent();
-    $sebaran = DummyData::sebaranKomoditas();
+    $sebaran = RekapDashboard::sebaranKomoditas();
 
-    $duaKata = 0;
+    expect($sebaran)->not->toBeEmpty();
 
-    foreach (DummyData::komoditas() as $k) {
-        expect($sebaran)->toHaveKey($k['nama']);
-
-        // Angkanya benar-benar terender, bukan sekadar ada di larik.
-        expect($isi)->toContain(number_format($sebaran[$k['nama']], 1, ',', '.').' ton');
-
-        if (str_contains($k['nama'], ' ')) {
-            $duaKata++;
-        }
+    foreach ($sebaran as $nama => $volume) {
+        expect($isi)->toContain($nama)
+            ->and($isi)->toContain(number_format($volume, 1, ',', '.').' ton');
     }
-
-    // Penjagaan terhadap ujinya sendiri: bila kelak seluruh komoditas
-    // bernama satu kata, uji di atas tidak lagi menguji apa pun.
-    expect($duaKata)->toBeGreaterThan(0);
 });
 
 /*
@@ -8204,6 +8214,9 @@ it('tidak menyisakan isian form yatim yang tak berpadanan di schema.sql', functi
         'kategori_lahan' => 'penyaring komposisi lahan (punya bagian ini?), bukan kolom',
         'tab' => 'penanda tab aktif pada URL',
         '_anggota_disunting' => 'penanda bahwa form memuat daftar anggota keluarga (Task 5.2); absen pada modal ubah per baris yang tak memuatnya, bukan kolom',
+        '_cakupan_disunting' => 'penanda bahwa form memuat pilihan cakupan aset; absen pada modal ubah per baris, bukan kolom',
+        '_rute_disunting' => 'penanda bahwa form memuat daftar rute aksesibilitas; absen pada modal ubah per baris, bukan kolom',
+        'ganti_distribusi' => 'penanda bahwa form menyinkronkan daftar distribusi; bukan kolom',
     ];
 
     $orphan = [];

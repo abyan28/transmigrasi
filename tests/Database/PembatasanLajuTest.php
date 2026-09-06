@@ -88,6 +88,16 @@ it('membatasi pelacakan pengaduan publik per alamat IP', function () {
         ->assertSee('coba lagi', false);
 });
 
+it('membatasi verifikasi email publik secara terpisah', function () {
+    config(['sim.batas_laju.verifikasi_email' => 2]);
+
+    $this->get(route('email-change.show', str_repeat('a', 64)))->assertOk();
+    $this->get(route('email-change.show', str_repeat('a', 64)))->assertOk();
+    $this->get(route('email-change.show', str_repeat('a', 64)))
+        ->assertStatus(429)
+        ->assertSee('percobaan verifikasi', false);
+});
+
 it('membatasi pengiriman pengaduan publik 3 per jam per IP', function () {
     config(['sim.batas_laju.kirim_pengaduan' => 3]);
 

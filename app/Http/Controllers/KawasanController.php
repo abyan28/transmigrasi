@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\StatusTinggal;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
 use App\Models\KawasanTransmigrasi;
-use App\Support\DummyData;
+use App\Models\SatuanPermukiman;
 use App\Support\Paginasi;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
@@ -68,17 +69,28 @@ class KawasanController extends Controller
             'jumlah_sp' => $k->satuan_permukiman_count,
         ]);
 
-        $daftarSp = DummyData::satuanPermukiman();
-        $rekap = DummyData::rekapPerSp();
+        $daftarSp = SatuanPermukiman::query()
+            ->with('desa.kecamatan')
+            ->withCount(['transmigran as jumlah_kk' => fn ($q) => $q->where('status_tinggal', StatusTinggal::Aktif->value)])
+            ->orderBy('kode_sp')
+            ->get()
+            ->map(fn (SatuanPermukiman $sp): array => [
+                'id_satuan_permukiman' => $sp->id_satuan_permukiman,
+                'nama' => $sp->nama,
+                'desa' => $sp->desa?->nama,
+                'kecamatan' => $sp->desa?->kecamatan?->nama,
+                'jumlah_kk' => $sp->jumlah_kk,
+            ])
+            ->all();
 
         return view('pages.sp.kawasan', [
             'title' => 'Kawasan Transmigrasi',
             'kawasan' => $kawasan,
             'berkasKawasan' => $berkasKawasan,
             'daftarSp' => $daftarSp,
-            'rekap' => $rekap,
-            'totalKk' => array_sum(array_column($rekap, 'jumlah_kk')),
-            'kecamatan' => array_unique(array_column($daftarSp, 'kecamatan')),
+            'totalKk' => array_sum(array_column($daftarSp, 'jumlah_kk')),
+            'jumlahSpSebaran' => count($daftarSp),
+            'jumlahKecamatan' => count(array_unique(array_filter(array_column($daftarSp, 'kecamatan')))),
         ]);
     }
 

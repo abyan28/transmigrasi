@@ -107,6 +107,28 @@ it('mengikat hasil panen ke penanaman dan menyalin satuan sebagai snapshot', fun
         ->and($panen->produksi)->toBe('27.900');
 });
 
+it('menolak panen ganda langsung di database termasuk setelah soft delete', function () {
+    $tanam = buatPenanaman();
+    $baris = [
+        'penanaman_id' => $tanam->id_penanaman,
+        'satuan_id' => $tanam->komoditas->satuan_id,
+        'periode_panen' => '2027-03',
+        'realisasi_panen' => '5.00',
+        'puso' => '0.00',
+        'produktivitas' => '6.000',
+        'produksi' => '30.000',
+    ];
+    $panen = HasilPanen::create(['uuid' => (string) Str::uuid()] + $baris);
+
+    expect(fn () => HasilPanen::create(['uuid' => (string) Str::uuid()] + $baris))
+        ->toThrow(QueryException::class);
+
+    $panen->delete();
+
+    expect(fn () => HasilPanen::create(['uuid' => (string) Str::uuid()] + $baris))
+        ->toThrow(QueryException::class);
+});
+
 it('menyapu hasil panen saat penanaman dihapus permanen (CASCADE), menahan satuan (RESTRICT)', function () {
     $tanam = buatPenanaman();
     $satuan = $tanam->komoditas->satuan;

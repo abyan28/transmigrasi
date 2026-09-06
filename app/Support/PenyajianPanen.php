@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\HasilPanen;
+use App\Models\Komoditas;
 use App\Models\Penanaman;
 
 /**
@@ -29,6 +30,16 @@ class PenyajianPanen
             ->orderBy('id_penanaman')
             ->get()
             ->map(fn (Penanaman $p): array => self::barisPenanaman($p))
+            ->all();
+    }
+
+    public static function penanamanKomoditas(Komoditas $komoditas): array
+    {
+        return $komoditas->penanaman()
+            ->with(['poktan.satuanPermukiman', 'komoditas', 'berkas'])
+            ->orderBy('id_penanaman')
+            ->get()
+            ->map(fn (Penanaman $penanaman): array => self::barisPenanaman($penanaman))
             ->all();
     }
 

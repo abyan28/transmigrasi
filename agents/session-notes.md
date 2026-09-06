@@ -1,3 +1,29 @@
+# Rencana Revisi Putaran 16 — Data Nyata, Integritas, Email, XLSX, dan Istilah (2026-09-05)
+
+Urutan ini disepakati bersama pemilik proyek dan wajib dikerjakan berurutan agar fitur baru tidak berdiri di atas data atau relasi yang masih salah:
+
+1. **Hilangkan sumber data simulasi dari runtime produksi.** Audit setiap pemakaian `DummyData` dan nilai bisnis hard-coded pada route, controller, provider, laporan, dashboard, rincian, filter, serta Catatan Log. Mulai dari `/sp/{id}`, `/sp`, dan `/kawasan`, lalu sumber bersama dan laporan. `DummyData` tetap boleh hidup sebagai fixture uji/demo dan konfigurasi sistem yang memang bukan data bisnis.
+2. **Tegakkan konsistensi relasi dan cakupan pada server.** Nilai turunan seperti SP rumah/lahan tidak dipercaya dari request; ia diturunkan dari induknya. Tambahkan penjaga tulis akun `Per SP`, validasi rantai induk lintas-SP, perlindungan koleksi relasi pada quick-edit, pemetaan izin rute lengkap, transaksi, serta constraint basis data yang layak.
+3. **Perubahan email memakai verifikasi tertunda.** Email baru belum menjadi alamat login/pemulihan sebelum tautan sekali pakai diverifikasi. Tautan berlaku 60 menit, sekali pakai, dapat dikirim ulang, dan pengiriman ulang membatalkan tautan lama. Bila sandi masih sementara, verifikasi sekaligus meminta sandi permanen; bila sandi sudah permanen, hanya mengesahkan email. Email lama menerima pemberitahuan keamanan; alur lupa sandi tetap memakai kode 6 digit.
+4. **Perkuat impor lalu tambahkan XLSX.** Bereskan perbedaan UI/server, contoh template yang dapat ikut terimpor, preview palsu, validasi header/cakupan, dan atomisitas per baris. XLSX menjadi format utama, CSV tetap fallback, `.xls` tidak didukung dulu, dan workbook dibaca langsung di backend tanpa konversi CSV. Gunakan satu jalur normalisasi/validasi bersama.
+5. **Rapikan istilah UI secara kontekstual.** `surel` pada antarmuka menjadi `email`. `modul` tidak diganti global: pilih `menu`, `halaman`, `bagian`, `fitur`, atau `domain` menurut konteks. Identifier teknis/persisten dan catatan historis tidak diubah tanpa manfaat pengguna.
+6. **Verifikasi setiap tahap.** Tambahkan uji yang gagal terhadap penyebab lama, jalankan uji terfokus setelah tiap tahap, lalu di akhir jalankan seluruh Pest Feature/Database, Pint, pembanding skema, daftar tautan statis, dan build Vite. Catat hasil serta sisa yang benar-benar diblokir lingkungan.
+
+Batas pengerjaan: perubahan `agents/notes.md` yang sudah ada adalah masukan pemilik proyek dan tidak boleh ditimpa; tidak ada commit/push tanpa permintaan eksplisit.
+
+## Hasil
+
+Seluruh urutan selesai 2026-09-06:
+
+- Runtime SP/Kawasan, sumber pilihan bersama, Catatan Log, rincian operasional, dan laporan beralih ke Eloquent. Kapitan Meo konsisten 16 KK, 18 rumah, 16 dihuni pada DemoSeeder. Default seeder hanya bootstrap/referensi; data contoh hanya lewat DemoSeeder.
+- Penjaga cakupan tulis bersama, validasi relasi lintas induk, transaksi parent+pivot, dan constraint baru menutup request lintas-SP, quick-edit yang menghapus relasi, keanggotaan aktif ganda, distribusi ganda, dan panen ganda.
+- Perubahan email memakai `pending_email_changes`, token SHA-256 60 menit, GET non-consuming + POST konfirmasi, pemberitahuan email lama, pencabutan kode pemulihan/sesi/remember token, serta pembuatan sandi permanen untuk akun yang masih sementara.
+- Impor XLSX langsung memakai PhpSpreadsheet 5.9 dengan CSV fallback, satu jalur validasi, batas 1.000 baris, perlindungan formula/makro/ZIP/header, atomisitas per baris, dan template berformat. Enam entitas berantai tetap dinonaktifkan jujur dan dicatat pada tasklist.
+- Istilah antarmuka memakai email serta pengganti `modul` yang kontekstual; identifier teknis dan catatan historis dipertahankan.
+- Verifikasi akhir: Feature 763/7.583, Database 574/2.588, Pint bersih, schema nol selisih, tautan statis berhasil, Composer valid, audit Composer/npm nol advisory, Vite build berhasil.
+
+---
+
 # Audit dan Penyempurnaan Frontend — Sticky Footer, Dashboard, & Kartu Indikator Pengaduan (2026-09-05, commit `f008764`)
 
 Audit dan perbaikan lapisan antarmuka pengguna (UI/UX, tata letak, ritme vertikal, visualisasi data, animasi, dan aksesibilitas) tanpa mengubah skema basis data, model, endpoint, atau logika otorisasi:

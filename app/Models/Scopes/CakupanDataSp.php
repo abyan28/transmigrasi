@@ -4,6 +4,7 @@ namespace App\Models\Scopes;
 
 use App\Enums\BidangPengaduan;
 use App\Enums\CakupanData;
+use App\Models\SatuanPermukiman;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -91,6 +92,26 @@ class CakupanDataSp implements Scope
     public static function spDitugaskan(User $pengguna): array
     {
         return $pengguna->satuanPermukiman->pluck('id_satuan_permukiman')->all();
+    }
+
+    public static function pastikanDapatDitulis(int|Model $target): void
+    {
+        $pengguna = self::penggunaWajibDisaring();
+
+        if ($pengguna === null) {
+            return;
+        }
+
+        if ($target instanceof Model && ! $target instanceof SatuanPermukiman) {
+            abort_unless($target->newQuery()->whereKey($target->getKey())->exists(), 404);
+
+            return;
+        }
+
+        if ($pengguna->role->cakupan_data === CakupanData::PerSp) {
+            $spId = $target instanceof SatuanPermukiman ? $target->getKey() : $target;
+            abort_unless(in_array($spId, self::spDitugaskan($pengguna), true), 404);
+        }
     }
 
     /**

@@ -5,8 +5,9 @@ namespace App\Http\Controllers;
 use App\Enums\StatusSertifikat;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
 use App\Models\Lahan;
+use App\Models\SatuanPermukiman;
+use App\Models\Scopes\CakupanDataSp;
 use App\Models\Transmigran;
-use App\Support\DummyData;
 use App\Support\Paginasi;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
@@ -75,13 +76,13 @@ class LahanController extends Controller
             'luasUsaha' => (float) Lahan::query()->sum('luas_usaha'),
             'jumlahBidang' => Lahan::query()->whereNotNull('luas_pekarangan')->count()
                 + Lahan::query()->whereNotNull('luas_usaha')->count(),
-            'daftarSp' => DummyData::satuanPermukiman(),
+            'daftarSp' => $this->daftarSp(),
         ]);
     }
 
     public function detail(int $id): View
     {
-        $lahan = Lahan::with(['transmigran.berkas', 'satuanPermukiman'])->findOrFail($id);
+        $lahan = Lahan::with(['transmigran.berkas', 'satuanPermukiman.kawasan.berkas'])->findOrFail($id);
 
         $data = $this->baris($lahan);
         $pemilik = $lahan->transmigran;
@@ -95,13 +96,17 @@ class LahanController extends Controller
                 'status_sertifikat' => $pemilik->status_sertifikat->value,
             ],
             'shm' => $data['shm_meta'],
-            'hpl' => DummyData::berkasSatu('kawasan_transmigrasi_berkas', 'kawasan_transmigrasi_id', 1, 'hpl'),
+            'hpl' => $this->berkasKawasan($lahan, 'hpl'),
+            'kawasanId' => $lahan->satuanPermukiman?->kawasan_id,
         ]);
     }
 
     public function simpan(Request $request): RedirectResponse
     {
-        [$lahanData, $statusSertifikat, $transmigranId] = $this->pisahkan($this->validasi($request));
+        $data = $this->validasi($request);
+        $pemilik = $this->pemilikDapatDitulis((int) $data['transmigran_id']);
+        [$lahanData, $statusSertifikat, $transmigranId] = $this->pisahkan($data);
+        $this->tetapkanSp($lahanData, $pemilik);
 
         DB::transaction(function () use ($request, $lahanData, $statusSertifikat, $transmigranId) {
             $lahan = Lahan::create($lahanData + ['uuid' => (string) Str::uuid()]);
@@ -115,8 +120,12 @@ class LahanController extends Controller
     public function perbarui(Request $request, int $id): RedirectResponse
     {
         $lahan = Lahan::findOrFail($id);
+        CakupanDataSp::pastikanDapatDitulis($lahan);
 
-        [$lahanData, $statusSertifikat, $transmigranId] = $this->pisahkan($this->validasi($request, $lahan));
+        $data = $this->validasi($request, $lahan);
+        $pemilik = $this->pemilikDapatDitulis((int) $data['transmigran_id']);
+        [$lahanData, $statusSertifikat, $transmigranId] = $this->pisahkan($data);
+        $this->tetapkanSp($lahanData, $pemilik);
 
         DB::transaction(function () use ($request, $lahan, $lahanData, $statusSertifikat, $transmigranId) {
             $lahan->update($lahanData);
@@ -132,6 +141,61 @@ class LahanController extends Controller
         Lahan::findOrFail($id)->delete();
 
         return redirect()->route('lahan.index')->with('sukses', 'Data lahan dihapus.');
+    }
+
+    /**
+     * @return array<int, array{id_satuan_permukiman: int, nama: string}>
+     */
+    private function daftarSp(): array
+    {
+        return SatuanPermukiman::query()
+            ->terlihatOlehPengguna()
+            ->orderBy('id_satuan_permukiman')
+            ->get(['id_satuan_permukiman', 'nama'])
+            ->toArray();
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function berkasKawasan(Lahan $lahan, string $peran): ?array
+    {
+        $berkas = $lahan->satuanPermukiman?->kawasan?->berkas
+            ->filter(fn ($b) => $b->pivot->peran === $peran)
+            ->sortBy(fn ($b) => $b->pivot->urutan)
+            ->first();
+
+        return $berkas === null ? null : [
+            'id_berkas' => $berkas->id_berkas,
+            'uuid' => $berkas->uuid,
+            'jenis_berkas_id' => $berkas->jenis_berkas_id,
+            'nama_file' => $berkas->nama_file,
+            'nama_asli' => $berkas->nama_asli,
+            'path' => $berkas->path,
+            'mime' => $berkas->mime,
+            'ekstensi' => $berkas->ekstensi,
+            'ukuran' => $berkas->ukuran,
+            'disk' => $berkas->disk,
+            'keterangan' => $berkas->keterangan,
+            'user_id' => $berkas->user_id,
+            'peran' => $berkas->pivot->peran,
+            'urutan' => $berkas->pivot->urutan,
+        ];
+    }
+
+    private function pemilikDapatDitulis(int $transmigranId): Transmigran
+    {
+        $pemilik = Transmigran::withoutGlobalScope(CakupanDataSp::class)->findOrFail($transmigranId);
+        CakupanDataSp::pastikanDapatDitulis($pemilik);
+
+        return $pemilik;
+    }
+
+    private function tetapkanSp(array &$data, Transmigran $pemilik): void
+    {
+        $sp = SatuanPermukiman::findOrFail($pemilik->satuan_permukiman_id);
+        CakupanDataSp::pastikanDapatDitulis($sp);
+        $data['satuan_permukiman_id'] = $sp->id_satuan_permukiman;
     }
 
     /**
@@ -225,10 +289,10 @@ class LahanController extends Controller
         return $request->validate([
             'transmigran_id' => [
                 'required', 'integer',
-                Rule::exists('transmigran', 'id_transmigran'),
+                Rule::exists('transmigran', 'id_transmigran')->whereNull('deleted_at'),
                 Rule::unique('lahan', 'transmigran_id')->ignore($lahan?->id_lahan, 'id_lahan'),
             ],
-            'satuan_permukiman_id' => ['required', 'integer', Rule::exists('satuan_permukiman', 'id_satuan_permukiman')],
+            'satuan_permukiman_id' => ['nullable', 'integer', Rule::exists('satuan_permukiman', 'id_satuan_permukiman')->whereNull('deleted_at')],
             'kode_lahan' => [
                 'nullable', 'string', 'max:50',
                 Rule::unique('lahan', 'kode_lahan')->ignore($lahan?->id_lahan, 'id_lahan'),

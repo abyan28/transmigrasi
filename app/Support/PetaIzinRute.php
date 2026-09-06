@@ -144,6 +144,7 @@ class PetaIzinRute
             'pengaduan.rekap' => 'pengaduan,lihat',
             'pengaduan.rekap.kelompok' => 'pengaduan,lihat',
             'pengaduan.simpan' => 'pengaduan,tambah',
+            'pengaduan.perbarui' => 'pengaduan,ubah',
             'pengaduan.hapus' => 'pengaduan,hapus',
             'pengaduan.tangani' => 'penanganan_pengaduan,tambah',
 
@@ -196,7 +197,7 @@ class PetaIzinRute
             // Template impor: hanya susunan kolom kosong + baris contoh, tanpa
             // data nyata. Tautannya hanya muncul di halaman modul yang sudah
             // menuntut `{modul}.lihat` untuk dibuka.
-            'template-impor',
+            'template-impor', 'template-impor.xlsx',
             // Pemeriksaan `{modul}.lihat` dinamis di dalam DokumenController.
             'dokumen.tampilkan',
             // Pemeriksaan `{modul}.tambah` dinamis di dalam ImporController

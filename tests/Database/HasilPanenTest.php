@@ -8,8 +8,10 @@
  * (produktivitas tak wajib); produksi dihitung ulang di peladen.
  */
 
+use App\Enums\CakupanData;
 use App\Models\HasilPanen;
 use App\Models\Penanaman;
+use App\Models\Role;
 use App\Models\User;
 use App\Support\DummyData;
 use Database\Seeders\DaftarPilihanSeeder;
@@ -101,6 +103,32 @@ it('menolak panen kedua untuk penanaman yang sudah dipanen', function () {
     ])->assertSessionHasErrors('penanaman_id');
 });
 
+it('menolak periode panen sebelum periode tanam', function () {
+    $this->post(route('panen.simpan'), [
+        'penanaman_id' => 6,
+        'periode_panen' => '2026-05',
+        'realisasi_panen' => '1.00',
+        'puso' => '0.00',
+        'produktivitas' => '3.000',
+    ])->assertSessionHasErrors('periode_panen');
+});
+
+it('menutup akses penanaman di luar cakupan', function () {
+    $role = Role::factory()->create(['cakupan_data' => CakupanData::PerSp]);
+    $petugas = User::factory()->create(['role_id' => $role->id_role]);
+    $petugas->semuaIzin = true;
+    $petugas->satuanPermukiman()->attach(1);
+    $this->actingAs($petugas);
+
+    $this->post(route('panen.simpan'), [
+        'penanaman_id' => 4,
+        'periode_panen' => '2026-01',
+        'realisasi_panen' => '0.30',
+        'puso' => '0.00',
+        'produktivitas' => '3.000',
+    ])->assertNotFound();
+});
+
 it('menerima gagal total tanpa produktivitas', function () {
     $this->post(route('panen.simpan'), [
         'penanaman_id' => 6,
@@ -123,11 +151,12 @@ it('mewajibkan produktivitas saat bukan gagal total', function () {
     ])->assertSessionHasErrors('produktivitas');
 });
 
-it('menghapus catatan panen secara halus lalu penanaman dapat dihapus', function () {
+it('menghapus catatan panen secara halus tetapi riwayat tetap menutup penanaman', function () {
     $id = HasilPanen::where('penanaman_id', 5)->value('id_hasil_panen');
 
     $this->delete(route('panen.hapus', $id))->assertRedirect(route('panen.index'));
 
     expect(HasilPanen::find($id))->toBeNull()
-        ->and(Penanaman::find(5))->not->toBeNull();
+        ->and(Penanaman::findOrFail(5)->hasilPanen)->not->toBeNull()
+        ->and(Penanaman::findOrFail(5)->hasilPanen->trashed())->toBeTrue();
 });

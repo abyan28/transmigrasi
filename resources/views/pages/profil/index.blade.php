@@ -150,7 +150,24 @@
                                 <input type="email" id="email" name="email" value="{{ old('email', $pengguna['email']) }}"
                                     autocomplete="email" required
                                     class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90" />
+                                <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                                    Email baru menjadi email login setelah tautan verifikasi dikonfirmasi.
+                                </p>
                                 @error('email')
+                                    <p class="mt-1.5 text-theme-xs text-error-500">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div>
+                                <label for="current_password"
+                                    class="mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400">
+                                    Kata Sandi Saat Ini
+                                </label>
+                                <input type="password" id="current_password" name="current_password"
+                                    autocomplete="current-password"
+                                    class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90" />
+                                <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">Wajib hanya bila email diubah.</p>
+                                @error('current_password')
                                     <p class="mt-1.5 text-theme-xs text-error-500">{{ $message }}</p>
                                 @enderror
                             </div>
@@ -257,7 +274,7 @@
                     </dl>
 
                     <p class="mt-6 rounded-lg bg-gray-50 p-3.5 text-theme-xs text-gray-600 dark:bg-white/[0.03] dark:text-gray-400">
-                        Rincian izin per modul diatur admin pada menu Role dan Hak Akses.
+                        Rincian izin per fitur diatur admin pada menu Role dan Hak Akses.
                         Bila Anda memerlukan akses tambahan, sampaikan kepada admin.
                     </p>
                 </div>

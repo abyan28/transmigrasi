@@ -12,7 +12,7 @@
     <p style="margin:0 0 16px;">
         Kode ini berlaku {{ $menitBerlaku }} menit dan hanya dapat dipakai satu kali.
     </p>
-    <p style="margin:0 0 22px;"><strong>Bila Anda tidak meminta pemulihan ini</strong>, abaikan surel ini; kata sandi Anda tidak berubah.</p>
+    <p style="margin:0 0 22px;"><strong>Bila Anda tidak meminta pemulihan ini</strong>, abaikan email ini; kata sandi Anda tidak berubah.</p>
     <p style="margin:0;">
         {{ App\Support\KontenSistem::teks('surel.penutup') }}<br>
         <strong>{{ App\Support\KontenSistem::teks('surel.nama_pengirim') }}</strong>

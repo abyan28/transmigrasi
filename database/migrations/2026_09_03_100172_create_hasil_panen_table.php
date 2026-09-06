@@ -7,8 +7,9 @@ use Illuminate\Support\Facades\Schema;
 /**
  * Terjemahan `database/data/schema.sql` -- DOMAIN 8, tabel `hasil_panen`.
  *
- * Satu penanaman -> paling banyak satu baris panen (ditegakkan aplikasi).
- * `satuan_id` DISALIN dari komoditas saat simpan (snapshot). `poktan_id`
+ * Satu penanaman -> paling banyak satu baris panen, termasuk setelah soft delete;
+ * constraint ditambahkan migrasi lanjutan. `satuan_id` DISALIN dari komoditas saat
+ * simpan (snapshot). `poktan_id`
  * DICABUT (turunan dari penanaman). `produksi` disimpan apa adanya, tanpa
  * konversi. `uuid` = pengenal publik. Soft delete aktif.
  */

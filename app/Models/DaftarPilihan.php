@@ -32,6 +32,17 @@ class DaftarPilihan extends Model
         ];
     }
 
+    public static function opsi(JenisDaftarPilihan $jenis, bool $hanyaAktif = true): array
+    {
+        return self::query()
+            ->where('jenis', $jenis->value)
+            ->when($hanyaAktif, fn ($query) => $query->where('is_aktif', true))
+            ->orderBy('urutan')
+            ->orderBy('id_daftar_pilihan')
+            ->pluck('nilai', 'nilai')
+            ->all();
+    }
+
     /**
      * Bidang penanganan (jenis `bidang_pengaduan`) yang menaungi baris
      * `kategori_pengaduan` ini. NULL untuk jenis lain.

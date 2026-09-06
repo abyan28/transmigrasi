@@ -2,10 +2,50 @@
 
 use App\Models\Notifikasi;
 use App\Models\PenilaianSp;
+use App\Models\Role;
 use App\Models\User;
 use App\Support\DummyData;
+use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\DemoSeeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+
+it('membatasi seeder bawaan pada data bootstrap dan referensi', function () {
+    $this->seed(DatabaseSeeder::class);
+
+    expect(DB::table('permission')->count())->toBeGreaterThan(0)
+        ->and(DB::table('role')->count())->toBeGreaterThan(0)
+        ->and(DB::table('user')->count())->toBe(1)
+        ->and(DB::table('provinsi')->count())->toBeGreaterThan(0)
+        ->and(DB::table('kabupaten')->count())->toBeGreaterThan(0)
+        ->and(DB::table('kecamatan')->count())->toBeGreaterThan(0)
+        ->and(DB::table('desa')->count())->toBeGreaterThan(0)
+        ->and(DB::table('satuan')->count())->toBeGreaterThan(0)
+        ->and(DB::table('daftar_pilihan')->count())->toBeGreaterThan(0)
+        ->and(DB::table('parameter_penilaian_sp')->count())->toBeGreaterThan(0)
+        ->and(DB::table('status_kondisi_sp')->count())->toBeGreaterThan(0);
+
+    foreach ([
+        'kawasan_transmigrasi',
+        'satuan_permukiman',
+        'inventaris_sp',
+        'fasilitas_sp',
+        'infrastruktur',
+        'transmigran',
+        'rumah',
+        'lahan',
+        'berkas',
+        'poktan',
+        'alsintan',
+        'komoditas',
+        'saprotan',
+        'penanaman',
+        'hasil_panen',
+        'pengaduan',
+    ] as $tabel) {
+        expect(DB::table($tabel)->count())->toBe(0);
+    }
+});
 
 it('menanam data demo besar tanpa mengubah baris contoh awal', function () {
     $this->seed(DemoSeeder::class);
@@ -31,6 +71,14 @@ it('menanam data demo besar tanpa mengubah baris contoh awal', function () {
     // mentah, sehingga sama sekali tak tersentuh mesin notifikasi.
     expect(Notifikasi::count())->toBeGreaterThan(0)
         ->and(PenilaianSp::withoutGlobalScopes()->count())->toBeGreaterThan(0);
+
+    $roleAdmin = Role::where('is_terkunci', true)->firstOrFail();
+    $penggunaDemo = User::whereIn('username', collect(DummyData::pengguna())->pluck('username'))->get();
+
+    expect($penggunaDemo)->toHaveCount(count(DummyData::pengguna()))
+        ->and($penggunaDemo->every(fn (User $pengguna) => ! Hash::check('password', $pengguna->password)))->toBeTrue()
+        ->and($penggunaDemo->every(fn (User $pengguna) => $pengguna->role_id !== $roleAdmin->id_role))->toBeTrue()
+        ->and($penggunaDemo->every(fn (User $pengguna) => $pengguna->password_harus_diganti))->toBeTrue();
 
     $user = User::where('is_aktif', true)->first();
     $user->semuaIzin = true;

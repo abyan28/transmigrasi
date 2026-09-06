@@ -369,21 +369,21 @@ Singkatan **T** (Transmigran) dan **KP** (Ketua Poktan) tidak lagi dipakai. Sesu
 
 **Tidak ada halaman pendaftaran mandiri.** Akun hanya dibuat Admin lewat Manajemen Pengguna (`rules.md` §5.1). Berkas `signup.blade.php` bawaan template sudah dihapus.
 
-**Dua jalur pemulihan kata sandi.** Sejak 2026-08-12 tersedia kode verifikasi lewat surel **beserta** penyetelan ulang oleh Admin. Jalur Admin tidak boleh dihapus, sebab itulah satu-satunya yang bekerja di lokus bersinyal lemah (`rules.md` §14b poin 11).
+**Dua jalur pemulihan kata sandi.** Sejak 2026-08-12 tersedia kode verifikasi lewat email **beserta** penyetelan ulang oleh Admin. Jalur Admin tidak boleh dihapus, sebab itulah satu-satunya yang bekerja di lokus bersinyal lemah (`rules.md` §14b poin 11).
 
 **Satu kolom isian untuk dua kredensial.** Halaman masuk menyediakan satu kolom berlabel "Email atau Username". Seluruh pengguna sistem adalah petugas; warga tidak memiliki akun.
 
 **Halaman wajib ganti kata sandi** muncul otomatis ketika `user.password_harus_diganti` bernilai `TRUE`, baik setelah Admin menyetel ulang maupun saat petugas pertama kali masuk. Selama belum diselesaikan, pengguna tidak dapat mengakses halaman lain.
 
-**Pembuatan akun (2026-08-14).** Admin mengisi surel yang **wajib**, sedangkan username dan kata sandi tidak diketiknya:
+**Pembuatan akun (2026-08-14).** Admin mengisi email yang **wajib**, sedangkan username dan kata sandi tidak diketiknya:
 
 | Isian | Siapa yang menentukan | Kapan |
 |---|---|---|
-| Surel | Admin | saat akun dibuat, wajib |
-| Kata sandi sementara | dibangkitkan sistem | tampil sekali di layar, dikirim juga ke surel |
+| Email | Admin | saat akun dibuat, wajib |
+| Kata sandi sementara | dibangkitkan sistem | tampil sekali di layar, dikirim juga ke email |
 | Username | petugas sendiri | saat pertama kali masuk |
 
-Kata sandi sementara **tampil di layar sekaligus dikirim lewat surel**. Keduanya diperlukan: surel menolong petugas berjaringan memadai, tampilan layar menolong petugas di lokus yang sedang berdiri di depan Admin.
+Kata sandi sementara **tampil di layar sekaligus dikirim lewat email**. Keduanya diperlukan: email menolong petugas berjaringan memadai, tampilan layar menolong petugas di lokus yang sedang berdiri di depan Admin.
 
 **Tidak ada kendali aktif/nonaktif pada formulir akun.** Akun baru selalu langsung aktif; penonaktifan dan pengaktifan kembali dilakukan lewat tombol ikon pada halaman daftar, agar seluruh perubahan keadaan akun melewati satu jalur yang sama dan tercatat rapi pada audit log.
 

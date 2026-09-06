@@ -10,14 +10,22 @@ use App\Enums\JenisKelamin;
 use App\Enums\KegiatanAnggota;
 use App\Enums\PendidikanTerakhir;
 use App\Enums\StatusAnggotaKeluarga;
+use App\Enums\StatusKeaktifanAnggota;
+use App\Enums\StatusSertifikat;
 use App\Enums\StatusTinggal;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
 use App\Models\AnggotaKeluarga;
+use App\Models\AnggotaPoktan;
 use App\Models\Berkas;
+use App\Models\Lahan;
+use App\Models\Poktan;
 use App\Models\RiwayatKepalaKeluarga;
+use App\Models\Rumah;
+use App\Models\SatuanPermukiman;
+use App\Models\Scopes\CakupanDataSp;
 use App\Models\Transmigran;
-use App\Support\DummyData;
 use App\Support\Paginasi;
+use App\Support\PenyajianPoktan;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
@@ -27,6 +35,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Modul transmigran (Task 5.1 + 5.2).
@@ -36,10 +45,9 @@ use Illuminate\Validation\Rule;
  * SK sebagai tiga peran berkas terpisah, pencatatan peristiwa anggota, dan
  * suksesi kepala keluarga.
  *
- * Yang MASIH `DummyData` pada halaman rincian: rumah (Task 5.3), lahan (Task 6),
- * dan seluruh data poktan (Task 6). Karena poktan belum ber-Eloquent, mutasi
- * jabatan ketua saat suksesi (`nasib_ketua_poktan`) hanya DIVALIDASI di sini;
- * penerapannya menyusul di Task 6.
+ * Rumah, lahan, keanggotaan poktan, dan jabatan ketua dibaca dari relasi
+ * Eloquent. Suksesi menerapkan keputusan jabatan ketua dalam transaksi yang
+ * sama dengan perubahan kepala keluarga.
  */
 class TransmigranController extends Controller
 {
@@ -92,39 +100,37 @@ class TransmigranController extends Controller
             'filterSp' => $filterSp,
             'filterTinggal' => $filterTinggal,
             'adaFilter' => $cari !== '' || $filterSp || $filterTinggal,
-            'daftarSp' => DummyData::satuanPermukiman(),
+            'daftarSp' => $this->daftarSp(),
         ]);
     }
 
     public function detail(int $id): View
     {
-        $transmigran = Transmigran::with(['satuanPermukiman', 'anggotaKeluarga', 'riwayatKepalaKeluarga', 'berkas'])
-            ->findOrFail($id);
+        $transmigran = Transmigran::with([
+            'satuanPermukiman', 'anggotaKeluarga', 'riwayatKepalaKeluarga', 'berkas',
+            'rumah.satuanPermukiman', 'rumah.berkas', 'lahan.satuanPermukiman', 'lahan.transmigran.berkas',
+            'keanggotaanPoktan.poktan.satuanPermukiman', 'keanggotaanPoktan.anggotaKeluarga',
+        ])->findOrFail($id);
 
         $data = $this->baris($transmigran);
-
-        $anggotaPoktan = DummyData::anggotaPoktan();
-
-        // Lahan dan rumah masih data contoh (Task 6 / Task 5.3).
-        $lahan = array_values(array_filter(
-            DummyData::lahan(),
-            fn ($l) => $l['transmigran_id'] === $id,
-        ));
-
+        $rumah = $transmigran->rumah === null ? null : $this->barisRumah($transmigran->rumah);
+        $lahan = $transmigran->lahan === null ? [] : [$this->barisLahan($transmigran->lahan)];
+        $anggotaPoktan = $transmigran->keanggotaanPoktan
+            ->sortBy('id_anggota_poktan')
+            ->map(fn (AnggotaPoktan $a) => PenyajianPoktan::barisAnggota($a))
+            ->values()
+            ->all();
         $berkas = $transmigran->berkas->sortBy(fn ($b) => $b->pivot->urutan)->values();
 
         return view('pages.transmigran.detail', [
             'title' => $data['nama_kepala_keluarga'],
             'data' => $data,
-
-            'rumah' => collect(DummyData::rumah())->firstWhere('transmigran_id', $id),
-
+            'rumah' => $rumah,
             'lahan' => $lahan,
             'totalLuas' => array_sum(array_map(
                 fn ($l) => (float) ($l['luas_pekarangan'] ?? 0) + (float) ($l['luas_usaha'] ?? 0),
                 $lahan,
             )),
-
             'berkasKtp' => $this->berkasPeran($berkas, 'ktp'),
             'berkasKk' => $this->berkasPeran($berkas, 'kk'),
             'berkasSk' => $this->berkasPeran($berkas, 'sk'),
@@ -134,43 +140,35 @@ class TransmigranController extends Controller
                 'peran' => $b->pivot->peran,
                 'ukuran' => $b->ukuran,
             ])->all(),
-
             'anggotaKeluarga' => $transmigran->anggotaKeluarga
                 ->sortBy('id_anggota_keluarga')
                 ->map(fn (AnggotaKeluarga $a) => $this->barisAnggota($a))
                 ->values()
                 ->all(),
-
-            'poktanBernaung' => array_values(array_filter(
-                $anggotaPoktan,
-                fn ($a) => $a['transmigran_id'] === $id && $a['status'] === 'Aktif',
-            )),
-
-            'spPoktan' => collect(DummyData::poktan())->pluck('satuan_permukiman', 'id_poktan')->all(),
-
+            'poktanBernaung' => $anggotaPoktan,
+            'spPoktan' => $transmigran->keanggotaanPoktan
+                ->mapWithKeys(fn (AnggotaPoktan $a) => [$a->poktan_id => $a->poktan?->satuanPermukiman?->nama])
+                ->all(),
             'riwayatKk' => $transmigran->riwayatKepalaKeluarga
                 ->sortByDesc('tanggal_pergantian')
                 ->map(fn (RiwayatKepalaKeluarga $r) => $this->barisRiwayatKk($r))
                 ->values()
                 ->all(),
-
             'calonPengganti' => $this->calonPengganti($transmigran),
-            'poktanDiketuai' => DummyData::poktanDiketuaiKeluarga($id),
-
+            'poktanDiketuai' => $this->poktanDiketuai($id)->map(fn (Poktan $p) => PenyajianPoktan::baris($p))->all(),
             'keanggotaanIkut' => array_values(array_filter(
                 $anggotaPoktan,
-                fn ($a) => $a['transmigran_id'] === $id
-                    && $a['asal_wakil'] === AsalWakilPoktan::KepalaKeluarga->value
-                    && $a['status'] !== 'Sudah Keluar',
+                fn ($a) => $a['asal_wakil'] === AsalWakilPoktan::KepalaKeluarga->value
+                    && $a['status'] !== StatusKeaktifanAnggota::SudahKeluar->value,
             )),
-
-            'inisial' => DummyData::inisial($data['nama_kepala_keluarga']),
+            'inisial' => $this->inisial($data['nama_kepala_keluarga']),
         ]);
     }
 
     public function simpan(Request $request): RedirectResponse
     {
         $data = $this->validasi($request);
+        $this->pastikanSpDapatDitulis((int) $data['satuan_permukiman_id']);
         $anggota = $data['anggota_keluarga'] ?? [];
         unset($data['anggota_keluarga'], $data['ktp'], $data['kk'], $data['sk'], $data['_anggota_disunting']);
 
@@ -189,8 +187,23 @@ class TransmigranController extends Controller
     public function perbarui(Request $request, int $id): RedirectResponse
     {
         $transmigran = Transmigran::findOrFail($id);
+        CakupanDataSp::pastikanDapatDitulis($transmigran);
 
         $data = $this->validasi($request, $transmigran);
+        $this->pastikanSpDapatDitulis((int) $data['satuan_permukiman_id']);
+
+        if ((int) $data['satuan_permukiman_id'] !== (int) $transmigran->satuan_permukiman_id
+            && ($transmigran->rumah()->withoutGlobalScope(CakupanDataSp::class)->exists()
+                || $transmigran->lahan()->withoutGlobalScope(CakupanDataSp::class)->exists()
+                || $transmigran->keanggotaanPoktan()
+                    ->withoutGlobalScope('cakupanViaInduk')
+                    ->where('status', StatusKeaktifanAnggota::Aktif->value)
+                    ->exists())) {
+            throw ValidationException::withMessages([
+                'satuan_permukiman_id' => 'Satuan permukiman tidak dapat diubah selama keluarga masih memiliki rumah, lahan, atau keanggotaan kelompok tani aktif.',
+            ]);
+        }
+
         $anggota = $data['anggota_keluarga'] ?? [];
         $anggotaDisunting = ($data['_anggota_disunting'] ?? null) == '1';
         unset($data['anggota_keluarga'], $data['ktp'], $data['kk'], $data['sk'], $data['_anggota_disunting']);
@@ -265,8 +278,8 @@ class TransmigranController extends Controller
     public function gantiKepalaKeluarga(Request $request, int $id): RedirectResponse
     {
         $transmigran = Transmigran::with('anggotaKeluarga')->findOrFail($id);
-
-        $mengetuaiPoktan = DummyData::poktanDiketuaiKeluarga($id) !== [];
+        $poktanDiketuai = $this->poktanDiketuai($id);
+        $mengetuaiPoktan = $poktanDiketuai->isNotEmpty();
 
         $data = $request->validate([
             'pengganti_anggota_keluarga_id' => ['required', 'integer'],
@@ -299,7 +312,7 @@ class TransmigranController extends Controller
             ]);
         }
 
-        DB::transaction(function () use ($transmigran, $pengganti, $data) {
+        DB::transaction(function () use ($transmigran, $pengganti, $data, $poktanDiketuai) {
             RiwayatKepalaKeluarga::create([
                 'transmigran_id' => $transmigran->id_transmigran,
                 'nik_lama' => $transmigran->nik,
@@ -332,14 +345,113 @@ class TransmigranController extends Controller
 
             $pengganti->delete();
 
-            // Task 6: penerapan `nasib_ketua_poktan` (kosongkan / teruskan) ke
-            // tabel `poktan` menyusul saat modul poktan beralih ke Eloquent.
-            // Keanggotaan poktan yang melekat pada keluarga otomatis ikut sebab
-            // tautannya `transmigran_id`, bukan identitas orang.
+            if (($data['nasib_ketua_poktan'] ?? null) === 'kosongkan') {
+                $poktanDiketuai->each(fn (Poktan $poktan) => $poktan->update([
+                    'ketua_transmigran_id' => null,
+                    'ketua_anggota_keluarga_id' => null,
+                ]));
+            }
+
         });
 
         return redirect()->route('transmigran.detail', ['id' => $id, 'tab' => 'riwayat-kk'])
             ->with('sukses', 'Pergantian kepala keluarga tercatat pada riwayat.');
+    }
+
+    private function pastikanSpDapatDitulis(int $spId): void
+    {
+        $sp = SatuanPermukiman::findOrFail($spId);
+        CakupanDataSp::pastikanDapatDitulis($sp);
+    }
+
+    /**
+     * @return array<int, array{id_satuan_permukiman: int, nama: string}>
+     */
+    private function daftarSp(): array
+    {
+        return SatuanPermukiman::query()
+            ->terlihatOlehPengguna()
+            ->orderBy('id_satuan_permukiman')
+            ->get(['id_satuan_permukiman', 'nama'])
+            ->toArray();
+    }
+
+    /**
+     * @return Collection<int, Poktan>
+     */
+    private function poktanDiketuai(int $transmigranId): Collection
+    {
+        return Poktan::query()
+            ->with(['satuanPermukiman', 'ketuaTransmigran', 'ketuaAnggotaKeluarga', 'berkas', 'anggota'])
+            ->where('asal_ketua', AsalWakilPoktan::KepalaKeluarga->value)
+            ->where('ketua_transmigran_id', $transmigranId)
+            ->orderBy('id_poktan')
+            ->get();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function barisRumah(Rumah $rumah): array
+    {
+        return [
+            'id_rumah' => $rumah->id_rumah,
+            'no_rumah' => $rumah->no_rumah,
+            'satuan_permukiman' => $rumah->satuanPermukiman?->nama,
+            'satuan_permukiman_id' => $rumah->satuan_permukiman_id,
+            'transmigran_id' => $rumah->transmigran_id,
+            'penghuni' => $rumah->penghuni?->nama_kepala_keluarga,
+            'kondisi' => $rumah->kondisi,
+            'status_hunian' => $rumah->status_hunian,
+            'alasan_tidak_dihuni' => $rumah->alasan_tidak_dihuni,
+            'catatan_hunian' => $rumah->catatan_hunian,
+            'tahun_pembangunan' => $rumah->tahun_pembangunan === null ? null : (int) $rumah->tahun_pembangunan,
+            'luas_bangunan' => $rumah->luas_bangunan === null ? null : (float) $rumah->luas_bangunan,
+            'lintang' => $rumah->lintang === null ? null : (float) $rumah->lintang,
+            'bujur' => $rumah->bujur === null ? null : (float) $rumah->bujur,
+            'dokumen_pendukung' => $rumah->berkas->firstWhere('pivot.peran', 'pendukung')?->nama_file,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function barisLahan(Lahan $lahan): array
+    {
+        $shm = $lahan->transmigran?->berkas->firstWhere('pivot.peran', 'shm');
+        $shmMeta = $shm === null ? null : ['nama_file' => $shm->nama_file];
+
+        return [
+            'id_lahan' => $lahan->id_lahan,
+            'kode_lahan' => $lahan->kode_lahan,
+            'transmigran_id' => $lahan->transmigran_id,
+            'pemilik' => $lahan->transmigran?->nama_kepala_keluarga,
+            'satuan_permukiman' => $lahan->satuanPermukiman?->nama,
+            'satuan_permukiman_id' => $lahan->satuan_permukiman_id,
+            'luas_pekarangan' => $lahan->luas_pekarangan === null ? null : (float) $lahan->luas_pekarangan,
+            'lintang_pekarangan' => $lahan->lintang_pekarangan === null ? null : (float) $lahan->lintang_pekarangan,
+            'bujur_pekarangan' => $lahan->bujur_pekarangan === null ? null : (float) $lahan->bujur_pekarangan,
+            'luas_usaha' => $lahan->luas_usaha === null ? null : (float) $lahan->luas_usaha,
+            'luas_kering' => $lahan->luas_kering === null ? null : (float) $lahan->luas_kering,
+            'luas_basah' => $lahan->luas_basah === null ? null : (float) $lahan->luas_basah,
+            'lintang_usaha' => $lahan->lintang_usaha === null ? null : (float) $lahan->lintang_usaha,
+            'bujur_usaha' => $lahan->bujur_usaha === null ? null : (float) $lahan->bujur_usaha,
+            'tujuan_pemanfaatan' => $lahan->tujuan_pemanfaatan,
+            'keterangan' => $lahan->keterangan,
+            'status_sertifikat' => $lahan->transmigran?->status_sertifikat->value ?? StatusSertifikat::BelumDidata->value,
+            'shm' => $shmMeta['nama_file'] ?? null,
+            'shm_meta' => $shmMeta,
+        ];
+    }
+
+    private function inisial(string $nama): string
+    {
+        $bagian = preg_split('/\s+/', trim($nama)) ?: [];
+
+        return mb_strtoupper(implode('', array_map(
+            fn ($kata) => mb_substr($kata, 0, 1),
+            array_slice($bagian, 0, 2),
+        )));
     }
 
     /**
@@ -555,7 +667,7 @@ class TransmigranController extends Controller
             'pendidikan_terakhir' => ['nullable', Rule::enum(PendidikanTerakhir::class)],
             'pekerjaan_kepala_keluarga' => ['required', 'string', 'max:100'],
             'pendapatan_per_bulan' => ValidationRules::uang(),
-            'satuan_permukiman_id' => ['required', 'integer', Rule::exists('satuan_permukiman', 'id_satuan_permukiman')],
+            'satuan_permukiman_id' => ['required', 'integer', Rule::exists('satuan_permukiman', 'id_satuan_permukiman')->whereNull('deleted_at')],
             'tahun_kedatangan' => ValidationRules::tahun(wajib: true),
             'daerah_asal_kabupaten_id' => ['nullable', 'integer', Rule::exists('kabupaten', 'id_kabupaten')],
             'status_tinggal' => ['required', Rule::enum(StatusTinggal::class)],

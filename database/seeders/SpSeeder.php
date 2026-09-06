@@ -2,10 +2,14 @@
 
 namespace Database\Seeders;
 
+use App\Models\Berkas;
 use App\Models\Desa;
+use App\Models\KawasanTransmigrasi;
+use App\Models\RuteAksesibilitasSp;
 use App\Models\SatuanPermukiman;
 use App\Support\DummyData;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Enam satuan permukiman lokus (Task 4.2).
@@ -25,32 +29,48 @@ class SpSeeder extends Seeder
 {
     public function run(): void
     {
-        $desa = Desa::pluck('id_desa', 'nama');
+        DB::transaction(function () {
+            $desa = Desa::pluck('id_desa', 'nama');
+            $kawasan = KawasanTransmigrasi::pluck('id_kawasan_transmigrasi', 'nama');
+            $berkas = collect(DummyData::berkas())->keyBy('id_berkas');
 
-        foreach (DummyData::satuanPermukiman() as $sp) {
-            $desaId = $desa[$sp['desa']] ?? null;
+            foreach (DummyData::satuanPermukiman() as $sp) {
+                $desaId = $desa[$sp['desa']] ?? null;
+                $kawasanId = $kawasan[$sp['kawasan']] ?? null;
 
-            if ($desaId === null) {
-                $this->command?->warn('Desa '.$sp['desa'].' belum ada -- SP '.$sp['nama'].' dilewati.');
+                if ($desaId === null || $kawasanId === null) {
+                    $this->command?->warn('Wilayah untuk SP '.$sp['nama'].' belum ada -- dilewati.');
 
-                continue;
+                    continue;
+                }
+
+                if (! empty($sp['berkas_id']) && $berkas->has($sp['berkas_id'])) {
+                    $dokumen = $berkas[$sp['berkas_id']];
+                    Berkas::updateOrCreate(
+                        ['id_berkas' => $dokumen['id_berkas']],
+                        collect($dokumen)->except(['id_berkas', 'user_id'])->all() + ['user_id' => null],
+                    );
+                }
+
+                SatuanPermukiman::updateOrCreate(
+                    ['id_satuan_permukiman' => $sp['id_satuan_permukiman']],
+                    collect($sp)
+                        ->only((new SatuanPermukiman)->getFillable())
+                        ->merge([
+                            'kawasan_id' => $kawasanId,
+                            'desa_id' => $desaId,
+                            'berkas_id' => $sp['berkas_id'] ?? null,
+                        ])
+                        ->all(),
+                );
             }
 
-            SatuanPermukiman::updateOrCreate(
-                ['id_satuan_permukiman' => $sp['id_satuan_permukiman']],
-                [
-                    'kawasan_id' => 1,
-                    'desa_id' => $desaId,
-                    'nama' => $sp['nama'],
-                    'kode_sp' => $sp['kode_sp'],
-                    'tahun_penempatan' => $sp['tahun_penempatan'],
-                    'luas_lahan' => $sp['luas_lahan'],
-                    'jumlah_kk_rencana' => $sp['jumlah_kk_rencana'],
-                    'lintang' => $sp['lintang'],
-                    'bujur' => $sp['bujur'],
-                    'keterangan' => $sp['keterangan'],
-                ],
-            );
-        }
+            foreach (DummyData::ruteAksesibilitasSp() as $rute) {
+                RuteAksesibilitasSp::updateOrCreate(
+                    ['id_rute_aksesibilitas_sp' => $rute['id_rute_aksesibilitas_sp']],
+                    collect($rute)->except('id_rute_aksesibilitas_sp')->all(),
+                );
+            }
+        });
     }
 }

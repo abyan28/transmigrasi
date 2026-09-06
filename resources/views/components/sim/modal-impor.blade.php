@@ -11,7 +11,7 @@
 
         1. Unduh template   - petugas tahu persis kolom apa yang harus diisi
         2. Unggah berkas    - diperiksa tipe dan ukurannya di sisi klien
-        3. Pratinjau hasil  - berapa baris masuk, berapa gagal, apa sebabnya
+        3. Hasil impor      - berapa baris masuk, berapa gagal, apa sebabnya
 
     Langkah ketiga adalah yang terpenting dan justru paling sering diabaikan.
     Impor yang hanya berkata "gagal" memaksa petugas menebak-nebak barisnya,
@@ -23,8 +23,7 @@
     inventaris-sp, fasilitas-sp, alsintan (`App\Support\ImporEngine::
     entitasAktif()`). Enam entitas berantai (rumah, lahan, poktan, saprotan,
     penanaman, hasil-panen) menyusul -- spanduk "Fitur belum aktif" TETAP
-    tampil untuk entitas itu saja, dan langkah 2-3 memakai contoh statis
-    seperti sebelumnya, supaya petugas tidak mengira datanya sudah masuk.
+    tampil dan tombol pengiriman dinonaktifkan untuk entitas itu saja.
 
     Pemakaian:
         <x-sim.modal-impor nama="imporTransmigran" judul="Impor Data Transmigran"
@@ -40,11 +39,7 @@
 ])
 
 @php
-    // Satu sumber dengan App\Support\ImporEngine::entitasAktif() -- diketik
-    // ulang di sini (bukan dipanggil PHP-nya) supaya nilainya bisa langsung
-    // ditulis ke JSON JS tanpa bolak-balik permintaan.
-    $entitasAktif = ['satuan', 'wilayah', 'komoditas', 'transmigran', 'infrastruktur', 'inventaris-sp', 'fasilitas-sp', 'alsintan'];
-    $aktif = in_array($entitas, $entitasAktif, true);
+    $aktif = \App\Support\ImporEngine::aktif($entitas);
 @endphp
 
 <div x-data="{
@@ -55,8 +50,11 @@
         galat: '',
         memproses: false,
         aktif: @js($aktif),
+        diproses: 0,
         disimpan: 0,
+        jumlahGagal: 0,
         gagalBaris: [],
+        galatDibatasi: false,
         maksByte: {{ 5 * 1024 * 1024 }},
 
         buka() {
@@ -65,8 +63,11 @@
             this.berkas = null;
             this.berkasAsli = null;
             this.galat = '';
+            this.diproses = 0;
             this.disimpan = 0;
+            this.jumlahGagal = 0;
             this.gagalBaris = [];
+            this.galatDibatasi = false;
             window.kunciGulir?.kunci();
 
             this.$nextTick(() => {
@@ -105,8 +106,8 @@
             }
 
             const namaKecil = f.name.toLowerCase();
-            if (! namaKecil.endsWith('.xlsx') && ! namaKecil.endsWith('.xls') && ! namaKecil.endsWith('.csv')) {
-                this.galat = 'Berkas harus berformat Excel (.xlsx atau .xls) atau CSV. Unduh templatenya lebih dulu bila belum punya.';
+            if (! namaKecil.endsWith('.xlsx') && ! namaKecil.endsWith('.csv')) {
+                this.galat = 'Berkas harus berformat XLSX (.xlsx) atau CSV (.csv). Unduh templatenya lebih dulu bila belum punya.';
                 peristiwa.target.value = '';
                 this.berkas = null;
                 this.berkasAsli = null;
@@ -133,19 +134,7 @@
             }
 
             if (! this.aktif) {
-                // Entitas belum tersambung backend -- contoh statis, sama
-                // seperti sebelum Task 10.4.
-                this.memproses = true;
-                setTimeout(() => {
-                    this.memproses = false;
-                    this.disimpan = 18;
-                    this.gagalBaris = [
-                        { baris: 4, pesan: 'Kolom wajib masih kosong' },
-                        { baris: 9, pesan: 'Data serupa sudah terdaftar sebelumnya' },
-                        { baris: 15, pesan: 'Format tanggal tidak dikenali, gunakan format 31/12/2026' },
-                    ];
-                    this.langkah = 3;
-                }, 700);
+                this.galat = 'Impor untuk entitas ini belum aktif.';
                 return;
             }
 
@@ -172,8 +161,11 @@
                     return;
                 }
 
+                this.diproses = hasil.diproses ?? 0;
                 this.disimpan = hasil.disimpan ?? 0;
+                this.jumlahGagal = hasil.jumlah_gagal ?? 0;
                 this.gagalBaris = hasil.gagal ?? [];
+                this.galatDibatasi = hasil.galat_dibatasi ?? false;
                 this.langkah = 3;
             } catch (e) {
                 this.galat = 'Tidak dapat menghubungi server. Periksa sambungan lalu coba lagi.';
@@ -241,7 +233,7 @@
                         layar dan pengguna yang sulit membedakan warna.
                     --}}
                     <ol class="mt-4 flex items-center gap-2 text-theme-xs">
-                        @foreach (['Unduh template', 'Unggah berkas', 'Hasil'] as $i => $namaLangkah)
+                        @foreach (['Unduh template', 'Unggah berkas', 'Hasil impor'] as $i => $namaLangkah)
                             <li class="flex items-center gap-2">
                                 <span class="flex h-6 w-6 items-center justify-center rounded-full font-medium"
                                     :class="langkah >= {{ $i + 1 }}
@@ -284,12 +276,9 @@
                     {{-- ---------------------------------------- Langkah 1 --}}
                     <div x-show="langkah === 1">
                         <p class="text-theme-sm text-gray-600 dark:text-gray-400">
-                            Unduh berkas template lebih dulu (format CSV, terbuka di Excel
-                            maupun aplikasi lembar kerja lain), lalu isi datanya. Template
-                            dapat diisi tanpa sambungan internet, sehingga pendataan tetap
-                            berjalan di lokasi yang sinyalnya lemah. Baris berawalan
-                            <span class="font-mono">#</span> berisi petunjuk dan diabaikan
-                            saat impor.
+                            Unduh template XLSX utama, lalu isi sheet Data mulai baris kedua.
+                            Template dapat diisi tanpa sambungan internet. CSV kosong tetap
+                            tersedia sebagai format alternatif.
                         </p>
 
                         @if (! empty($kolomWajib))
@@ -305,28 +294,31 @@
                                     @endforeach
                                 </ul>
                                 <p class="mt-3 text-theme-xs text-gray-500 dark:text-gray-400">
-                                    Jangan mengubah nama maupun urutan kolom pada template, sebab
-                                    pembacaannya bergantung pada judul kolom tersebut.
+                                    Jangan mengubah nama kolom. Urutan kolom boleh disesuaikan.
                                 </p>
                             </div>
                         @endif
 
-                        <a href="{{ route('template-impor', $entitas) }}"
+                        <a href="{{ route('template-impor.xlsx', $entitas) }}"
                             class="mt-4 inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-theme-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
                             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"
                                 stroke-width="1.5" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round"
                                     d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
                             </svg>
-                            Unduh Template CSV
+                            Unduh Template XLSX
+                        </a>
+                        <a href="{{ route('template-impor', ['entitas' => $entitas, 'format' => 'csv']) }}"
+                            class="mt-4 ml-2 inline-flex items-center rounded-lg px-3 py-2.5 text-theme-sm font-medium text-brand-600 hover:bg-brand-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-brand-400 dark:hover:bg-brand-500/10">
+                            Unduh CSV alternatif
                         </a>
                     </div>
 
                     {{-- ---------------------------------------- Langkah 2 --}}
                     <div x-show="langkah === 2" x-cloak>
                         <p class="text-theme-sm text-gray-600 dark:text-gray-400">
-                            Pilih berkas template yang sudah diisi. Data akan diperiksa lebih
-                            dulu dan ditampilkan hasilnya sebelum benar-benar disimpan.
+                            Pilih berkas template yang sudah diisi. Setiap baris sah langsung
+                            disimpan dan hasil impor ditampilkan setelah proses selesai.
                         </p>
 
                         <label x-show="!berkas"
@@ -340,9 +332,9 @@
                                 Pilih berkas hasil isian
                             </span>
                             <span class="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
-                                Excel atau CSV, maksimal 5 MB
+                                XLSX atau CSV, maksimal 5 MB
                             </span>
-                            <input x-ref="masukan" type="file" accept=".xlsx,.xls,.csv" @change="pilih"
+                            <input x-ref="masukan" type="file" accept=".xlsx,.csv" @change="pilih"
                                 class="sr-only" />
                         </label>
 
@@ -374,16 +366,18 @@
 
                     {{-- ---------------------------------------- Langkah 3 --}}
                     <div x-show="langkah === 3" x-cloak>
-                        <div class="grid gap-4 sm:grid-cols-2">
+                        <div class="grid gap-4 sm:grid-cols-3">
                             <div class="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
-                                <p class="text-theme-xs text-gray-500 dark:text-gray-400" x-text="aktif ? 'Baris tersimpan' : 'Baris siap disimpan'"></p>
-                                <p class="mt-1 text-title-sm font-bold tabular-nums text-success-600 dark:text-success-400"
-                                    x-text="disimpan">
-                                </p>
+                                <p class="text-theme-xs text-gray-500 dark:text-gray-400">Baris diproses</p>
+                                <p class="mt-1 text-title-sm font-bold tabular-nums text-gray-800 dark:text-white/90" x-text="diproses"></p>
                             </div>
                             <div class="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
-                                <p class="text-theme-xs text-gray-500 dark:text-gray-400">Baris bermasalah</p>
-                                <p class="mt-1 text-title-sm font-bold tabular-nums text-error-500" x-text="gagalBaris.length"></p>
+                                <p class="text-theme-xs text-gray-500 dark:text-gray-400">Baris tersimpan</p>
+                                <p class="mt-1 text-title-sm font-bold tabular-nums text-success-600 dark:text-success-400" x-text="disimpan"></p>
+                            </div>
+                            <div class="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
+                                <p class="text-theme-xs text-gray-500 dark:text-gray-400">Baris gagal</p>
+                                <p class="mt-1 text-title-sm font-bold tabular-nums text-error-500" x-text="jumlahGagal"></p>
                             </div>
                         </div>
 
@@ -422,8 +416,11 @@
                                 </table>
                             </div>
                             <p class="mt-2 text-theme-xs text-gray-500 dark:text-gray-400">
-                                Baris bermasalah dilewati, sisanya tetap disimpan. Perbaiki baris
-                                di atas pada berkas Anda, lalu unggah ulang berkas tersebut.
+                                Baris bermasalah dilewati, sisanya tetap disimpan. Perbaiki hanya
+                                baris gagal sebelum mengimpor ulang agar data tidak terduplikasi.
+                            </p>
+                            <p x-show="galatDibatasi" class="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
+                                Rincian dibatasi pada 100 kegagalan pertama.
                             </p>
                         </div>
                     </div>
@@ -436,18 +433,18 @@
                         <span x-text="langkah === 1 ? 'Batal' : 'Kembali'"></span>
                     </button>
 
-                    <button x-show="langkah === 1" type="button" @click="langkah = 2"
-                        class="rounded-lg bg-brand-500 px-4 py-2.5 text-theme-sm font-medium text-white hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
-                        Saya Sudah Punya Berkasnya
+                    <button x-show="langkah === 1" type="button" @click="langkah = 2" :disabled="!aktif"
+                        class="rounded-lg bg-brand-500 px-4 py-2.5 text-theme-sm font-medium text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
+                        <span x-text="aktif ? 'Saya Sudah Punya Berkasnya' : 'Impor Belum Aktif'"></span>
                     </button>
 
                     <button x-show="langkah === 2" x-cloak type="button" @click="proses()"
-                        :disabled="!berkas || memproses"
+                        :disabled="!aktif || !berkas || memproses"
                         class="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-theme-sm font-medium text-white hover:bg-brand-600 disabled:opacity-60 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
                         <span x-show="memproses" x-cloak
                             class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
                             aria-hidden="true"></span>
-                        <span x-text="memproses ? 'Memeriksa berkas...' : 'Periksa Data'"></span>
+                        <span x-text="memproses ? 'Mengimpor data...' : 'Impor Data'"></span>
                     </button>
 
                     <button x-show="langkah === 3" x-cloak type="button" @click="tutup()"

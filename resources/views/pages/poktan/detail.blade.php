@@ -69,7 +69,7 @@
                     {{--
                         Luas lahan ketua. Dua jalur pertama membacanya dari bidang milik
                         keluarga; ketua non-transmigran memakai nilai yang diketik, sebab
-                        lahannya memang tidak terdata pada modul Lahan.
+                        lahannya memang tidak terdata pada halaman Data Lahan.
                     --}}
                     <div class="flex justify-between gap-3">
                         <dt class="text-gray-500 dark:text-gray-400">Lahan usaha ketua</dt>
@@ -269,7 +269,7 @@
                             {{--
                                 Luas lahan kelompok dijumlahkan dari anggotanya, bukan disimpan
                                 sebagai kolom. Kolom `luas_lahan_kelompok` dicabut 2026-08-20
-                                sebab nilainya basi begitu luas dibetulkan di modul Lahan.
+                                sebab nilainya basi begitu luas dibetulkan di halaman Data Lahan.
                             --}}
                             <tr class="motif-baris-total">
                                 <td colspan="4" class="px-5 py-3 text-theme-sm text-gray-700 dark:text-gray-300">

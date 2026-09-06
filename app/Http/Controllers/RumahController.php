@@ -5,8 +5,11 @@ namespace App\Http\Controllers;
 use App\Enums\JenisDaftarPilihan;
 use App\Enums\StatusHunian;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
+use App\Models\DaftarPilihan;
 use App\Models\Rumah;
-use App\Support\DummyData;
+use App\Models\SatuanPermukiman;
+use App\Models\Scopes\CakupanDataSp;
+use App\Models\Transmigran;
 use App\Support\Paginasi;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
@@ -63,9 +66,9 @@ class RumahController extends Controller
             'jumlahRumah' => Rumah::query()->count(),
             'jumlahDihuni' => Rumah::query()->where('status_hunian', StatusHunian::Dihuni->value)->count(),
             'jumlahRusak' => Rumah::query()->whereNot('kondisi', 'Tidak Rusak')->count(),
-            'daftarSp' => DummyData::satuanPermukiman(),
-            'opsiFilterKondisiRumah' => DummyData::opsiFilterDaftarPilihan(JenisDaftarPilihan::KondisiRumah),
-            'opsiFilterStatusHunian' => DummyData::opsiFilterDaftarPilihan(JenisDaftarPilihan::StatusHunian),
+            'daftarSp' => $this->daftarSp(),
+            'opsiFilterKondisiRumah' => $this->opsiFilter(JenisDaftarPilihan::KondisiRumah),
+            'opsiFilterStatusHunian' => $this->opsiFilter(JenisDaftarPilihan::StatusHunian),
         ]);
     }
 
@@ -102,7 +105,10 @@ class RumahController extends Controller
     public function simpan(Request $request): RedirectResponse
     {
         // Rumah baru belum punya penghuni sebelumnya, jadi `alasan_keluar` tak dipakai.
-        [$data] = $this->pisahkan($this->validasi($request));
+        $data = $this->validasi($request);
+        $this->pastikanPenghuniDapatDitulis($data['transmigran_id'] ?? null);
+        [$data] = $this->pisahkan($data);
+        $this->tetapkanSp($data);
 
         DB::transaction(function () use ($request, $data) {
             $rumah = Rumah::create($data + ['uuid' => (string) Str::uuid()]);
@@ -123,8 +129,12 @@ class RumahController extends Controller
     public function perbarui(Request $request, int $id): RedirectResponse
     {
         $rumah = Rumah::findOrFail($id);
+        CakupanDataSp::pastikanDapatDitulis($rumah);
 
-        [$data, $alasanKeluar] = $this->pisahkan($this->validasi($request, $rumah));
+        $data = $this->validasi($request, $rumah);
+        $this->pastikanPenghuniDapatDitulis($data['transmigran_id'] ?? null);
+        [$data, $alasanKeluar] = $this->pisahkan($data);
+        $this->tetapkanSp($data);
 
         $lama = $rumah->transmigran_id;
         $baru = $data['transmigran_id'] ?? null;
@@ -171,6 +181,31 @@ class RumahController extends Controller
     }
 
     /**
+     * @return array<int, array{id_satuan_permukiman: int, nama: string}>
+     */
+    private function daftarSp(): array
+    {
+        return SatuanPermukiman::query()
+            ->terlihatOlehPengguna()
+            ->orderBy('id_satuan_permukiman')
+            ->get(['id_satuan_permukiman', 'nama'])
+            ->toArray();
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function opsiFilter(JenisDaftarPilihan $jenis): array
+    {
+        return DaftarPilihan::query()
+            ->where('jenis', $jenis->value)
+            ->orderBy('urutan')
+            ->orderBy('id_daftar_pilihan')
+            ->pluck('nilai', 'nilai')
+            ->all();
+    }
+
+    /**
      * Memisahkan `alasan_keluar` (untuk baris riwayat) dan isian berkas dari
      * kolom `rumah`. Rumah tak berpenghuni tak boleh punya `transmigran_id`.
      *
@@ -188,6 +223,26 @@ class RumahController extends Controller
         }
 
         return [$data, $alasanKeluar];
+    }
+
+    private function tetapkanSp(array &$data): void
+    {
+        if (($data['transmigran_id'] ?? null) !== null) {
+            $data['satuan_permukiman_id'] = Transmigran::findOrFail((int) $data['transmigran_id'])
+                ->satuan_permukiman_id;
+        }
+
+        $sp = SatuanPermukiman::findOrFail((int) $data['satuan_permukiman_id']);
+        CakupanDataSp::pastikanDapatDitulis($sp);
+    }
+
+    private function pastikanPenghuniDapatDitulis(mixed $transmigranId): void
+    {
+        if ($transmigranId !== null) {
+            $penghuni = Transmigran::withoutGlobalScope(CakupanDataSp::class)
+                ->findOrFail((int) $transmigranId);
+            CakupanDataSp::pastikanDapatDitulis($penghuni);
+        }
     }
 
     /**
@@ -223,10 +278,14 @@ class RumahController extends Controller
     private function validasi(Request $request, ?Rumah $rumah = null): array
     {
         return $request->validate([
-            'satuan_permukiman_id' => ['required', 'integer', Rule::exists('satuan_permukiman', 'id_satuan_permukiman')],
+            'satuan_permukiman_id' => [
+                Rule::requiredIf(fn () => blank($request->input('transmigran_id'))),
+                'nullable', 'integer', Rule::exists('satuan_permukiman', 'id_satuan_permukiman')->whereNull('deleted_at'),
+            ],
             'transmigran_id' => [
+                Rule::requiredIf(fn () => $request->input('status_hunian') === StatusHunian::Dihuni->value),
                 'nullable', 'integer',
-                Rule::exists('transmigran', 'id_transmigran'),
+                Rule::exists('transmigran', 'id_transmigran')->whereNull('deleted_at'),
                 Rule::unique('rumah', 'transmigran_id')->ignore($rumah?->id_rumah, 'id_rumah'),
             ],
             'no_rumah' => ['nullable', 'string', 'max:50'],
@@ -247,6 +306,7 @@ class RumahController extends Controller
             'kondisi.required' => 'Kondisi rumah wajib dipilih.',
             'status_hunian.required' => 'Status hunian wajib dipilih.',
             'alasan_tidak_dihuni.required_if' => 'Alasan wajib diisi bila rumah tidak dihuni.',
+            'transmigran_id.required' => 'Kepala keluarga penghuni wajib dipilih bila rumah dihuni.',
             'transmigran_id.unique' => 'Keluarga ini sudah menempati rumah lain.',
         ] + ValidationRules::pesan());
     }

@@ -18,7 +18,6 @@
     $persen = fn ($a, $b) => $b > 0 ? number_format($a / $b * 100, 1, ',', '.') . '%' : '-';
 
     $r = $ringkasan;
-    $tahunAkhir = \App\Support\LaporanData::tahunDokumenBawaan();
 
     // Tiap baris: [label, ungkapan x-text (null = statis), nilai bawaan Blade].
     $blok = [
@@ -50,6 +49,10 @@
         ],
     ];
 @endphp
+
+<p class="rounded-lg border border-gray-200 bg-gray-50 p-3 text-theme-xs text-gray-500 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400">
+    Angka kependudukan tahun lampau merupakan taksiran berbasis tahun kedatangan, tahun keluar, dan data orang yang tercatat. Angka keadaan-sekarang tidak diperkirakan mundur ke tahun tersebut.
+</p>
 
 <section class="rounded-2xl border border-gray-200 bg-gray-50 p-5 dark:border-gray-800 dark:bg-white/[0.03]">
     <h2 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">Identitas Kawasan</h2>

@@ -22,6 +22,7 @@ use App\Models\Scopes\CakupanDataSp;
 use App\Models\Transmigran;
 use App\Models\User;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 require_once __DIR__.'/DatabaseHelpers.php';
 
@@ -103,6 +104,44 @@ it('role Per SP tanpa penugasan melihat NOL baris, bukan seluruhnya', function (
         ->and(Poktan::count())->toBe(0);
 });
 
+it('menjaga penulisan SP dan model operasional sesuai cakupan aktor', function () {
+    $spA = buatSp();
+    $spB = buatSp();
+    $milikA = buatTransmigran($spA);
+    $milikB = buatTransmigran($spB);
+    $pengguna = penggunaCakupan(CakupanData::PerSp, [$spA]);
+
+    $this->actingAs($pengguna);
+
+    CakupanDataSp::pastikanDapatDitulis($spA->id_satuan_permukiman);
+    CakupanDataSp::pastikanDapatDitulis($milikA);
+
+    expect(fn () => CakupanDataSp::pastikanDapatDitulis($spB->id_satuan_permukiman))
+        ->toThrow(NotFoundHttpException::class)
+        ->and(fn () => CakupanDataSp::pastikanDapatDitulis($milikB))
+        ->toThrow(NotFoundHttpException::class);
+
+    $this->actingAs(penggunaCakupan(CakupanData::PerSp));
+
+    expect(fn () => CakupanDataSp::pastikanDapatDitulis($spA->id_satuan_permukiman))
+        ->toThrow(NotFoundHttpException::class);
+});
+
+it('melewatkan penjaga penulisan untuk cakupan penuh dan konteks tanpa pengguna', function () {
+    $sp = buatSp();
+    $target = buatTransmigran($sp);
+
+    CakupanDataSp::pastikanDapatDitulis($sp->id_satuan_permukiman);
+    CakupanDataSp::pastikanDapatDitulis($target);
+
+    $this->actingAs(penggunaCakupan(CakupanData::Semua));
+
+    CakupanDataSp::pastikanDapatDitulis($sp->id_satuan_permukiman);
+    CakupanDataSp::pastikanDapatDitulis($target);
+
+    expect(true)->toBeTrue();
+});
+
 it('menyaring model turunan lewat induknya (anggota keluarga ikut transmigran)', function () {
     $spA = buatSp();
     $spB = buatSp();
@@ -163,7 +202,7 @@ it('menghitung agregat/paginasi setelah penyaringan', function () {
 it('role Per Bidang (Dinas Pertanian) hanya melihat pengaduan bidang Pertanian', function () {
     $sp = buatSp();
     $pertanian = buatPengaduanBidang($sp, 'Pertanian');
-    buatPengaduanBidang($sp, 'Ketransmigrasian');
+    $ketransmigrasian = buatPengaduanBidang($sp, 'Ketransmigrasian');
     buatPengaduanBidang($sp, null);
 
     $this->actingAs(penggunaCakupan(CakupanData::PerBidang));
@@ -171,6 +210,11 @@ it('role Per Bidang (Dinas Pertanian) hanya melihat pengaduan bidang Pertanian',
     $terlihat = Pengaduan::get();
     expect($terlihat)->toHaveCount(1)
         ->and($terlihat->first()->id_pengaduan)->toBe($pertanian->id_pengaduan);
+
+    CakupanDataSp::pastikanDapatDitulis($pertanian);
+
+    expect(fn () => CakupanDataSp::pastikanDapatDitulis($ketransmigrasian))
+        ->toThrow(NotFoundHttpException::class);
 });
 
 it('role Per Bidang berjangkauan penuh pada model non-pengaduan', function () {

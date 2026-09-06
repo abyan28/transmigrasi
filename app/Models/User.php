@@ -92,6 +92,11 @@ class User extends Authenticatable
         return $this->hasMany(Notifikasi::class, 'user_id', 'id_user');
     }
 
+    public function pendingEmailChanges(): HasMany
+    {
+        return $this->hasMany(PendingEmailChange::class, 'user_id', 'id_user');
+    }
+
     /**
      * SP yang ditugaskan ke pengguna ini. Hanya bermakna bagi role bercakupan
      * `Per SP`; akun `Per SP` tanpa penugasan melihat NOL baris (`rules.md`

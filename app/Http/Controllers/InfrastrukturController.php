@@ -2,16 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\CakupanData;
 use App\Enums\JenisDaftarPilihan;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
+use App\Models\DaftarPilihan;
 use App\Models\Infrastruktur;
-use App\Support\DummyData;
+use App\Models\SatuanPermukiman;
+use App\Models\Scopes\CakupanDataSp;
 use App\Support\LayananNotifikasi;
 use App\Support\Paginasi;
+use App\Support\RekapDashboard;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 /**
@@ -51,7 +56,7 @@ class InfrastrukturController extends Controller
             'baris' => $baris,
             // Rekap kondisi per jenis, dihitung atas SELURUH data bukan hasil
             // penyaringan: yang dijawabnya keadaan KAWASAN, bukan keadaan tampilan.
-            'statusJenis' => DummyData::statusInfrastruktur(),
+            'statusJenis' => RekapDashboard::statusInfrastruktur(),
             'cari' => $cari,
             'filterSp' => $filterSp,
             'filterJenis' => $filterJenis,
@@ -62,9 +67,9 @@ class InfrastrukturController extends Controller
             'kondisiBaik' => Infrastruktur::query()->where('kondisi', 'Baik')->count(),
             'rusakBerat' => Infrastruktur::query()->where('kondisi', 'Rusak Berat')->count(),
             'perluPerbaikan' => Infrastruktur::query()->where('kondisi', '!=', 'Baik')->count(),
-            'daftarSp' => DummyData::satuanPermukiman(),
-            'opsiFilterJenis' => DummyData::opsiFilterDaftarPilihan(JenisDaftarPilihan::JenisInfrastruktur),
-            'opsiFilterKondisi' => DummyData::opsiFilterDaftarPilihan(JenisDaftarPilihan::Kondisi),
+            'daftarSp' => SatuanPermukiman::opsiTerlihat(),
+            'opsiFilterJenis' => DaftarPilihan::opsi(JenisDaftarPilihan::JenisInfrastruktur, false),
+            'opsiFilterKondisi' => DaftarPilihan::opsi(JenisDaftarPilihan::Kondisi, false),
         ]);
     }
 
@@ -75,7 +80,7 @@ class InfrastrukturController extends Controller
         return view('pages.infrastruktur.detail', [
             'title' => $infra->nama,
             'data' => $this->baris($infra),
-            'daftarSp' => DummyData::satuanPermukiman(),
+            'daftarSp' => SatuanPermukiman::opsiTerlihat(),
             // Satu aset dapat punya beberapa titik kerusakan, sehingga fotonya jamak.
             'berkasFoto' => $infra->berkas
                 ->filter(fn ($b) => $b->pivot->peran === 'foto')
@@ -87,11 +92,15 @@ class InfrastrukturController extends Controller
     public function simpan(Request $request): RedirectResponse
     {
         $data = $this->validasi($request);
-        $infra = Infrastruktur::create($data);
-
         $cakupan = $this->cakupan($request, $data['satuan_permukiman_id']);
-        $infra->cakupan()->sync($cakupan);
-        $this->lekatkanBerkas($infra, (array) $request->file('foto', []), 'infrastruktur', 'foto');
+
+        $infra = DB::transaction(function () use ($request, $data, $cakupan) {
+            $infra = Infrastruktur::create($data);
+            $infra->cakupan()->sync($cakupan);
+            $this->lekatkanBerkas($infra, (array) $request->file('foto', []), 'infrastruktur', 'foto');
+
+            return $infra;
+        });
 
         LayananNotifikasi::infrastrukturRusakBerat($infra);
         LayananNotifikasi::hitungUlangSp($cakupan);
@@ -102,13 +111,25 @@ class InfrastrukturController extends Controller
     public function perbarui(Request $request, int $id): RedirectResponse
     {
         $infra = Infrastruktur::with('cakupan')->findOrFail($id);
+        CakupanDataSp::pastikanDapatDitulis($infra);
         $cakupanLama = $infra->cakupan->pluck('id_satuan_permukiman')->all();
         $data = $this->validasi($request, $infra);
-        $infra->update($data);
+        $cakupanDisunting = $request->boolean('_cakupan_disunting');
+        $cakupan = $cakupanDisunting
+            ? array_values(array_unique([
+                ...$this->cakupanTakTerlihat($cakupanLama),
+                ...$this->cakupan($request, $data['satuan_permukiman_id']),
+            ]))
+            : array_values(array_unique([...$cakupanLama, $data['satuan_permukiman_id']]));
 
-        $cakupan = $this->cakupan($request, $data['satuan_permukiman_id']);
-        $infra->cakupan()->sync($cakupan);
-        $this->lekatkanBerkas($infra, (array) $request->file('foto', []), 'infrastruktur', 'foto');
+        DB::transaction(function () use ($request, $infra, $data, $cakupan, $cakupanDisunting) {
+            $infra->update($data);
+
+            $cakupanDisunting
+                ? $infra->cakupan()->sync($cakupan)
+                : $infra->cakupan()->syncWithoutDetaching([$data['satuan_permukiman_id']]);
+            $this->lekatkanBerkas($infra, (array) $request->file('foto', []), 'infrastruktur', 'foto');
+        });
 
         LayananNotifikasi::infrastrukturRusakBerat($infra);
         LayananNotifikasi::hitungUlangSp([...$cakupanLama, ...$cakupan]);
@@ -119,11 +140,14 @@ class InfrastrukturController extends Controller
     public function hapus(int $id): RedirectResponse
     {
         $infra = Infrastruktur::with('cakupan')->findOrFail($id);
+        CakupanDataSp::pastikanDapatDitulis($infra);
         $cakupan = $infra->cakupan->pluck('id_satuan_permukiman')->all();
 
-        $infra->berkas()->detach();
-        $infra->cakupan()->detach();
-        $infra->delete();
+        DB::transaction(function () use ($infra) {
+            $infra->berkas()->detach();
+            $infra->cakupan()->detach();
+            $infra->delete();
+        });
 
         LayananNotifikasi::hapusInfrastruktur($infra);
         LayananNotifikasi::hitungUlangSp($cakupan);
@@ -139,9 +163,21 @@ class InfrastrukturController extends Controller
      */
     private function cakupan(Request $request, int $pangkal): array
     {
-        $lain = array_map('intval', (array) $request->input('satuan_permukiman_ids_lain', []));
+        return array_values(array_unique([
+            $pangkal,
+            ...array_map('intval', (array) $request->input('satuan_permukiman_ids_lain', [])),
+        ]));
+    }
 
-        return array_values(array_unique(array_merge([$pangkal], $lain)));
+    private function cakupanTakTerlihat(array $cakupan): array
+    {
+        $pengguna = CakupanDataSp::penggunaWajibDisaring();
+
+        if ($pengguna?->role?->cakupan_data !== CakupanData::PerSp) {
+            return [];
+        }
+
+        return array_values(array_diff($cakupan, CakupanDataSp::spDitugaskan($pengguna)));
     }
 
     /**
@@ -186,6 +222,7 @@ class InfrastrukturController extends Controller
             'keterangan' => ['nullable', 'string', 'max:500'],
             'satuan_permukiman_ids_lain' => ['nullable', 'array'],
             'satuan_permukiman_ids_lain.*' => ['integer', Rule::exists('satuan_permukiman', 'id_satuan_permukiman')],
+            '_cakupan_disunting' => ['nullable', 'boolean'],
             'foto' => ['nullable', 'array'],
             'foto.*' => ValidationRules::foto(),
         ], [
@@ -195,7 +232,12 @@ class InfrastrukturController extends Controller
             'kondisi.required' => 'Kondisi wajib dipilih.',
         ] + ValidationRules::pesan());
 
-        unset($data['foto'], $data['satuan_permukiman_ids_lain']);
+        unset($data['foto'], $data['satuan_permukiman_ids_lain'], $data['_cakupan_disunting']);
+        CakupanDataSp::pastikanDapatDitulis((int) $data['satuan_permukiman_id']);
+
+        foreach ((array) $request->input('satuan_permukiman_ids_lain', []) as $sp) {
+            CakupanDataSp::pastikanDapatDitulis((int) $sp);
+        }
 
         return $data;
     }

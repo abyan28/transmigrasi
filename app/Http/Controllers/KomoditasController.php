@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Enums\JenisDaftarPilihan;
+use App\Models\DaftarPilihan;
 use App\Models\Komoditas;
-use App\Support\DummyData;
 use App\Support\Paginasi;
+use App\Support\PenyajianPanen;
+use App\Support\RekapDashboard;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -20,9 +22,6 @@ use Illuminate\Validation\Rule;
  * (`BerslugOtomatis`). Satuan panen baku (`satuan_id`) mengunci satuan setiap
  * pencatatan panen komoditas ini; perubahannya hanya berlaku bagi panen
  * berikutnya (panen lama menyalin satuannya sendiri).
- *
- * Sebaran volume panen kawasan masih agregat sintetis (`DummyData`), sejalan
- * dengan rekap kependudukan -- konversinya milik Tahap rekap, bukan di sini.
  */
 class KomoditasController extends Controller
 {
@@ -45,7 +44,7 @@ class KomoditasController extends Controller
         return view('pages.komoditas.index', [
             'title' => 'Data Komoditas',
             'baris' => $baris,
-            'sebaran' => DummyData::sebaranKomoditas(),
+            'sebaran' => RekapDashboard::sebaranKomoditas(),
             'cari' => $cari,
             'filterTipe' => $filterTipe,
             'adaFilter' => $cari !== '' || $filterTipe,
@@ -53,7 +52,7 @@ class KomoditasController extends Controller
             'totalKomoditas' => Komoditas::query()->count(),
             'unggulan' => Komoditas::query()->where('is_unggulan', true)->count(),
             'satuanDipakai' => Komoditas::query()->distinct('satuan_id')->count('satuan_id'),
-            'opsiFilterTipe' => DummyData::opsiFilterDaftarPilihan(JenisDaftarPilihan::TipeKomoditas),
+            'opsiFilterTipe' => DaftarPilihan::opsi(JenisDaftarPilihan::TipeKomoditas, false),
         ]);
     }
 
@@ -61,11 +60,7 @@ class KomoditasController extends Controller
     {
         $komoditas = Komoditas::with('satuan')->findOrFail($id);
 
-        // Penanaman masih data contoh (Tahap 7 lanjutan); dicocokkan lewat id.
-        $riwayat = array_values(array_filter(
-            DummyData::penanaman(),
-            fn ($r) => $r['komoditas_id'] === $komoditas->id_komoditas,
-        ));
+        $riwayat = PenyajianPanen::penanamanKomoditas($komoditas);
 
         return view('pages.komoditas.detail', [
             'title' => $komoditas->nama,
@@ -117,7 +112,7 @@ class KomoditasController extends Controller
     }
 
     /**
-     * Larik ber-kunci PERSIS satu baris `DummyData::komoditas()`.
+     * Larik ber-kunci persis bentuk tampilan satu baris komoditas.
      *
      * @return array<string, mixed>
      */

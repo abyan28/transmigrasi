@@ -1666,36 +1666,18 @@ menghapus sisa terakhir `DummyData::penggunaSaatIni()` -- dikerjakan berbarengan
   * Terpenuhi *by construction* dari 10.1/10.2: `table_to_sheet(tabel, {display:true})` melewati baris yang disembunyikan `x-show` filter Alpine; rute dokumen PDF menerapkan filter dari hash SEBELUM `window.print()` dipanggil (`$nextTick`). Diverifikasi eksplisit (bukan diasumsikan) lewat uji peramban di bawah.
   * `tests/Browser/uji-export-laporan.mjs` (baru, Edge headless + CDP, pola sama `uji-filter-laporan.mjs`): 17 pemeriksaan -- unduhan .xlsx sungguhan dibaca ulang & dicocokkan dengan baris tampak (bukan seluruh baris), banyak tabel -> banyak lembar tanpa nama kembar, `window.print()` sungguhan terpicu otomatis pada `#...&cetak=1`, baris tersaring tetap tersembunyi pada dokumen yang "dicetak".
   * **Dua celah lingkungan ditemukan saat menulis uji ini** (dicatat, bukan bagian Task 10 tapi memengaruhi uji peramban ke depan): (1) Edge headless TANPA `--user-data-dir` memuat profil ASLI pengguna, sehingga `Browser.setDownloadBehavior` diam-diam kalah oleh pengaturan unduhan profil itu dan berkas mendarat di folder Unduhan sungguhan -- uji peramban yang mengunduh berkas WAJIB `--user-data-dir` terisolasi; (2) build ESM `xlsx.mjs` tidak mendeteksi `fs` Node secara otomatis, `XLSX.readFile()` SELALU melempar "Cannot access file" di Node terlepas dari keadaan berkas -- baca lewat `XLSX.read(fs.readFileSync(path))`.
-- [✓] Task 10.4 - Template isian luring yang dapat diunduh dan diunggah kembali `[Sulit]` -- ✅ **8/14 entitas SELESAI 2026-09-04**
-  * **HASIL:** `App\Support\ImporEngine` -- mesin generik, satu metode `barisX()`
-    per entitas: petakan baris CSV -> cari relasi lewat NAMA (bukan id) ke basis
-    data yang SUDAH ADA -> `Illuminate\Support\Facades\Validator` dgn aturan
-    setara `*Controller::validasi()` -> simpan bila sah. Baris bermasalah
-    dilewati + dicatat nomor barisnya, sisanya tetap tersimpan (SATU permintaan,
-    tanpa langkah pratinjau terpisah) -- sesuai janji modal impor sejak awal.
-  * **8 entitas mandiri aktif** (`ImporEngine::entitasAktif()`): satuan, wilayah
-    (4 tingkat + resolusi induk), komoditas, transmigran, infrastruktur,
-    inventaris-sp, fasilitas-sp, alsintan. `ImporController::unggah` (POST
-    `/impor/{entitas}`, JSON) -- kewenangan `{modul}.tambah` diperiksa dinamis
-    (pola sama `DokumenController`), berkas selain .csv ditolak 422 pesan jujur.
-  * `resources/views/components/sim/modal-impor.blade.php` disambungkan
-    sungguhan (fetch POST FormData + CSRF) utk 8 entitas itu; spanduk "Fitur
-    belum aktif" TETAP tampil utk 6 entitas berantai (rumah, lahan, poktan,
-    saprotan, penanaman, hasil-panen) -- langkah 2/3-nya masih contoh statis.
-  * **Celah pra-ada ditemukan (di luar lingkup, dicatat saja):**
-    `InventarisSpController::validasi()` menandai `jenis_inventaris` nullable
-    padahal kolom skema NOT NULL tanpa default -- form manual mengandalkan
-    `<select>` yang selalu terisi. Jalur impor diwajibkan agar galatnya rapi,
-    bukan SQL mentah; form manualnya sendiri tidak disentuh (bukan bagian
-    Task 10.4).
-  * **Sisa (Task 10.4, 2/2, menyusul):** 6 entitas berantai. Butuh pencarian
-    lintas-entitas lebih banyak per baris + aturan bersyarat per entitas (ketua
-    poktan 3 jalur, benih wajib komoditas+varietas, dst) -- mesinnya SAMA,
-    tinggal menulis `barisX()` untuk keenamnya.
-  * `tests/Database/ImporTest.php` +14 (satu per entitas + baris campur
-    sah/gagal + berkas non-CSV + entitas belum aktif + tanpa kewenangan).
-    `HalamanTest` +2 (spanduk hanya utk entitas berantai). Feature 733,
-    Database 441, pint bersih, banding-skema NOL SELISIH.
+- [✓] Task 10.4 - Template isian luring yang dapat diunduh dan diunggah kembali `[Sulit]` -- ✅ **FORMAT XLSX/CSV + 8 ENTITAS SELESAI 2026-09-06**
+  * XLSX menjadi format utama memakai `phpoffice/phpspreadsheet` 5.9; CSV tetap fallback. Keduanya dibaca langsung menjadi baris normalisasi yang sama, tanpa konversi XLSX ke CSV.
+  * Template XLSX berisi sheet Data kosong, petunjuk/contoh terpisah, Referensi tersembunyi, dropdown pilihan, serta format teks bagi NIK/KK/telepon. CSV alternatif tidak memuat baris contoh yang dapat terimpor.
+  * Parser menolak `.xls`/makro/formula/tautan eksternal/workbook rusak/sheet data tambahan/header asing-ganda-hilang/sel ekstrem/lebih dari 1.000 baris. Tiap baris disimpan dalam transaksi tersendiri; baris gagal digulung balik tanpa membatalkan baris sah.
+  * Kewenangan impor menuntut `lihat+tambah`; target SP tiap baris diperiksa lewat cakupan tulis. Hasil galat disanitasi dan dibatasi agar respons tetap terkendali.
+  * **8 entitas mandiri aktif:** satuan, wilayah, komoditas, transmigran, infrastruktur, inventaris-sp, fasilitas-sp, alsintan.
+  * UI memakai istilah jujur “Impor” dan “Hasil impor”; tidak ada preview atau hasil palsu. Enam entitas berantai tetap dinonaktifkan beserta penjelasan.
+  * Verifikasi: uji CSV/XLSX paritas, struktur template, formula/makro/ZIP/header, teks NIK/KK, transaksi per baris, cakupan SP, dan izin dinamis lulus sebagai bagian Database 571 PASS.
+- [ ] Task 10.4b - Aktifkan impor enam entitas berantai (`rumah`, `lahan`, `poktan`, `saprotan`, `penanaman`, `hasil-panen`) `[Sulit]`
+  * Gunakan mesin XLSX/CSV yang sama; jangan membuat parser kedua.
+  * Wajib memetakan relasi secara tidak ambigu dan menjalankan seluruh invariant server yang sudah berlaku pada form manual: rumah/lahan mengikuti KK dan SP, ketua poktan tiga jalur, saprotan benih wajib komoditas+varietas, penanaman memakai distribusi benih poktan, dan panen menutup satu penanaman tepat sekali.
+  * Tetap partial-success per berkas dan atomik per baris; tambah uji paritas CSV/XLSX bagi keenam entitas sebelum tombol diaktifkan.
 
 ## Tahap 11 — Pengujian, Deployment, dan Serah Terima
 

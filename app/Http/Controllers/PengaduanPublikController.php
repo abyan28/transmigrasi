@@ -2,13 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\BidangPengaduan;
 use App\Enums\JenisDaftarPilihan;
 use App\Enums\PrioritasPengaduan;
 use App\Enums\StatusPengaduan;
 use App\Enums\SumberLaporan;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
+use App\Models\DaftarPilihan;
 use App\Models\Pengaduan;
-use App\Support\DummyData;
+use App\Models\SatuanPermukiman;
 use App\Support\KontenSistem;
 use App\Support\LayananNotifikasi;
 use App\Support\NomorPengaduan;
@@ -43,8 +45,16 @@ class PengaduanPublikController extends Controller
     {
         return view('pages.publik.pengaduan', [
             'title' => 'Kirim Pengaduan',
-            'daftarSp' => DummyData::satuanPermukiman(),
-            'opsiKategoriPengaduan' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::KategoriPengaduan),
+            'daftarSp' => SatuanPermukiman::query()
+                ->with('desa')
+                ->orderBy('nama')
+                ->get()
+                ->map(fn (SatuanPermukiman $sp) => [
+                    'id_satuan_permukiman' => $sp->id_satuan_permukiman,
+                    'nama' => $sp->nama,
+                    'desa' => $sp->desa?->nama,
+                ])->all(),
+            'opsiKategoriPengaduan' => DaftarPilihan::opsi(JenisDaftarPilihan::KategoriPengaduan),
             'portal' => KontenSistem::portal(),
         ]);
     }
@@ -73,7 +83,7 @@ class PengaduanPublikController extends Controller
             'deskripsi.required' => 'Ceritakan dulu masalahnya.',
         ] + ValidationRules::pesan());
 
-        $bidangAwal = DummyData::petaBidangKategori()[$data['kategori']] ?? '';
+        $bidangAwal = BidangPengaduan::dariKategori($data['kategori'])?->value;
 
         $pengaduan = DB::transaction(function () use ($request, $data, $bidangAwal) {
             $pengaduan = Pengaduan::create([

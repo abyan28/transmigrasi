@@ -43,8 +43,10 @@
     x-data="{
         kering: @js($data['luas_kering'] ?? ''),
         basah: @js($data['luas_basah'] ?? ''),
+        pemilikId: @js((string) old('transmigran_id', $data['transmigran_id'] ?? '')),
         petaSpTransmigran: @js(collect($daftarTransmigran)->pluck('satuan_permukiman_id', 'id_transmigran')->all()),
         gantiPemilik(id) {
+            this.pemilikId = id;
             const spId = this.petaSpTransmigran ? this.petaSpTransmigran[id] : null;
             if (spId) {
                 const sel = this.$el.querySelector('[name=&quot;satuan_permukiman_id&quot;]');
@@ -89,7 +91,8 @@
                     :daftar-sp="collect($daftarSp)
                         ->map(fn ($s) => ['id' => $s['id_satuan_permukiman'], 'nama' => $s['nama'], 'kawasan_id' => 1])
                         ->all()"
-                    :sp-terpilih="old('satuan_permukiman_id', $data['satuan_permukiman_id'] ?? null)" />
+                    :sp-terpilih="old('satuan_permukiman_id', $data['satuan_permukiman_id'] ?? null)"
+                    :sp-terkunci="'pemilikId !== \'\''" />
             </div>
 
             <div>

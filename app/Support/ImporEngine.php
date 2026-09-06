@@ -19,13 +19,23 @@ use App\Models\Komoditas;
 use App\Models\Provinsi;
 use App\Models\Satuan;
 use App\Models\SatuanPermukiman;
+use App\Models\Scopes\CakupanDataSp;
 use App\Models\Transmigran;
+use DateTimeImmutable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use InvalidArgumentException;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Reader\Xlsx;
+use PhpOffice\PhpSpreadsheet\Shared\Date;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use Throwable;
+use ZipArchive;
 
 /**
- * Mesin impor CSV luring (Task 10.4, 1/2 -- 8 entitas berdiri sendiri).
+ * Mesin impor XLSX/CSV luring (Task 10.4, 1/2 -- 8 entitas berdiri sendiri).
  *
  * Dua tahap dikerjakan dalam SATU permintaan (tidak ada langkah pratinjau
  * terpisah): tiap baris divalidasi, baris sah langsung tersimpan, baris
@@ -94,67 +104,321 @@ class ImporEngine
         'alsintan' => 'alsintan',
     ];
 
+    private const MAKS_BARIS_DATA = 1000;
+
+    private const MAKS_GALAT_RINCI = 100;
+
+    private const MAKS_ENTRI_ZIP = 500;
+
+    private const MAKS_UKURAN_ZIP_TERBUKA = 50 * 1024 * 1024;
+
+    private const MAKS_RASIO_ZIP = 200;
+
     /**
-     * Memproses satu berkas CSV yang sudah tersimpan sementara di disk.
-     *
-     * @return array{disimpan: int, gagal: list<array{baris: int, pesan: string}>}
+     * @return array{diproses: int, disimpan: int, jumlah_gagal: int, gagal: list<array{baris: int, pesan: string}>, galat_dibatasi: bool}
      */
-    public static function proses(string $entitas, string $pathBerkas): array
+    public static function proses(string $entitas, string $pathBerkas, string $format): array
     {
-        $keluar = fopen($pathBerkas, 'rb');
-        abort_unless($keluar !== false, 422, 'Berkas tidak dapat dibaca.');
+        if (! self::aktif($entitas) || ! in_array($format, ['csv', 'xlsx'], true)) {
+            throw new InvalidArgumentException('Entitas atau format impor tidak didukung.');
+        }
+
+        $barisBerkas = $format === 'xlsx'
+            ? self::bacaXlsx($entitas, $pathBerkas)
+            : self::bacaCsv($pathBerkas);
+        [$judul, $barisData] = self::validasiDanPetakan($entitas, $barisBerkas);
 
         $disimpan = 0;
+        $jumlahGagal = 0;
         $gagal = [];
-        $posisiKolom = null;
-        $nomorBaris = 0;
 
-        // `escape: ''` mematikan perilaku escape non-standar PHP (usang sejak
-        // 8.4), sejalan dengan penulis template (`TemplateImporController`).
-        while (($sel = fgetcsv($keluar, 0, ',', '"', '')) !== false) {
-            $nomorBaris++;
+        foreach ($barisData as [$nomorBaris, $sel]) {
+            $baris = self::petakan($sel, $judul);
 
-            // BOM UTF-8 pada sel pertama baris pertama (ditulis TemplateImporController).
-            if ($nomorBaris === 1 && isset($sel[0])) {
-                $sel[0] = self::lucutiBom($sel[0]);
+            try {
+                foreach (SkemaImpor::kolomTanggal($entitas) as $kolomTanggal) {
+                    $baris[$kolomTanggal] = self::normalisasiTanggal($baris[$kolomTanggal] ?? null, $nomorBaris, $kolomTanggal);
+                }
+
+                $pesan = DB::transaction(fn (): ?string => match ($entitas) {
+                    'satuan' => self::barisSatuan($baris),
+                    'wilayah' => self::barisWilayah($baris),
+                    'komoditas' => self::barisKomoditas($baris),
+                    'transmigran' => self::barisTransmigran($baris),
+                    'infrastruktur' => self::barisInfrastruktur($baris),
+                    'inventaris-sp' => self::barisInventarisSp($baris),
+                    'fasilitas-sp' => self::barisFasilitasSp($baris),
+                    'alsintan' => self::barisAlsintan($baris),
+                });
+            } catch (Throwable $e) {
+                report($e);
+                $pesan = 'Baris gagal disimpan. Periksa data dan cakupan SP Anda.';
             }
-
-            // Baris petunjuk (#...) dan baris kosong dilewati, tak dihitung.
-            if (self::barisKosong($sel) || str_starts_with(trim((string) ($sel[0] ?? '')), '#')) {
-                continue;
-            }
-
-            // Baris data pertama yang bukan komentar = judul kolom.
-            if ($posisiKolom === null) {
-                $posisiKolom = array_flip(array_map(fn ($k) => trim((string) $k), $sel));
-
-                continue;
-            }
-
-            $baris = self::petakan($sel, $posisiKolom);
-
-            $pesan = match ($entitas) {
-                'satuan' => self::barisSatuan($baris),
-                'wilayah' => self::barisWilayah($baris),
-                'komoditas' => self::barisKomoditas($baris),
-                'transmigran' => self::barisTransmigran($baris),
-                'infrastruktur' => self::barisInfrastruktur($baris),
-                'inventaris-sp' => self::barisInventarisSp($baris),
-                'fasilitas-sp' => self::barisFasilitasSp($baris),
-                'alsintan' => self::barisAlsintan($baris),
-                default => 'Entitas tidak dikenal.',
-            };
 
             if ($pesan === null) {
                 $disimpan++;
-            } else {
+
+                continue;
+            }
+
+            $jumlahGagal++;
+            if (count($gagal) < self::MAKS_GALAT_RINCI) {
                 $gagal[] = ['baris' => $nomorBaris, 'pesan' => $pesan];
             }
         }
 
-        fclose($keluar);
+        return [
+            'diproses' => count($barisData),
+            'disimpan' => $disimpan,
+            'jumlah_gagal' => $jumlahGagal,
+            'gagal' => $gagal,
+            'galat_dibatasi' => $jumlahGagal > count($gagal),
+        ];
+    }
 
-        return ['disimpan' => $disimpan, 'gagal' => $gagal];
+    /**
+     * @return list<array{0:int,1:list<mixed>}>
+     */
+    private static function bacaCsv(string $pathBerkas): array
+    {
+        $berkas = fopen($pathBerkas, 'rb');
+        if ($berkas === false) {
+            throw new InvalidArgumentException('Berkas tidak dapat dibaca.');
+        }
+
+        $hasil = [];
+        $nomor = 0;
+
+        try {
+            while (($sel = fgetcsv($berkas, 0, ',', '"', '')) !== false) {
+                $nomor++;
+                if ($nomor === 1 && isset($sel[0])) {
+                    $sel[0] = self::lucutiBom((string) $sel[0]);
+                }
+                if (self::barisKosong($sel) || str_starts_with(trim((string) ($sel[0] ?? '')), '#')) {
+                    continue;
+                }
+                foreach ($sel as $nilai) {
+                    self::tolakFormulaCsv($nilai);
+                }
+                $hasil[] = [$nomor, $sel];
+            }
+        } finally {
+            fclose($berkas);
+        }
+
+        return $hasil;
+    }
+
+    /**
+     * @return list<array{0:int,1:list<mixed>}>
+     */
+    private static function bacaXlsx(string $entitas, string $pathBerkas): array
+    {
+        self::periksaZipXlsx($pathBerkas);
+
+        try {
+            $pembaca = new Xlsx;
+            $pembaca->setReadDataOnly(false);
+            $pembaca->setReadEmptyCells(false);
+            $info = $pembaca->listWorksheetInfo($pathBerkas);
+        } catch (Throwable) {
+            throw new InvalidArgumentException('Berkas XLSX rusak atau bukan XLSX yang sah.');
+        }
+
+        $data = array_values(array_filter($info, fn (array $lembar): bool => $lembar['worksheetName'] === 'Data'));
+        if (count($data) !== 1 || ($data[0]['sheetState'] ?? Worksheet::SHEETSTATE_VISIBLE) !== Worksheet::SHEETSTATE_VISIBLE) {
+            throw new InvalidArgumentException('XLSX harus memiliki tepat satu sheet Data yang terlihat.');
+        }
+
+        foreach ($info as $lembar) {
+            $nama = $lembar['worksheetName'];
+            $status = $lembar['sheetState'] ?? Worksheet::SHEETSTATE_VISIBLE;
+            $aman = $nama === 'Data'
+                || (in_array($nama, ['Petunjuk', 'Contoh'], true) && $status === Worksheet::SHEETSTATE_VISIBLE)
+                || ($nama === 'Referensi' && in_array($status, [Worksheet::SHEETSTATE_HIDDEN, Worksheet::SHEETSTATE_VERYHIDDEN], true));
+            if (! $aman) {
+                throw new InvalidArgumentException('XLSX hanya boleh memuat sheet Data, Petunjuk/Contoh, dan Referensi tersembunyi.');
+            }
+        }
+
+        $maksKolom = count(SkemaImpor::kolom($entitas));
+        if ($data[0]['totalRows'] > self::MAKS_BARIS_DATA + 1 || $data[0]['totalColumns'] > $maksKolom) {
+            throw new InvalidArgumentException('XLSX melampaui batas 1000 baris data atau jumlah kolom skema.');
+        }
+
+        try {
+            $pembaca->setLoadSheetsOnly('Data');
+            $buku = $pembaca->load($pathBerkas);
+            $lembar = $buku->getSheetByName('Data');
+            if ($lembar === null) {
+                throw new InvalidArgumentException('Sheet Data tidak ditemukan.');
+            }
+
+            $hasil = [];
+            for ($nomor = 1; $nomor <= $lembar->getHighestDataRow(); $nomor++) {
+                $sel = [];
+                $kolomTerakhir = Coordinate::columnIndexFromString($lembar->getHighestDataColumn($nomor));
+                for ($kolom = 1; $kolom <= $kolomTerakhir; $kolom++) {
+                    $cell = $lembar->getCell([$kolom, $nomor]);
+                    if ($cell->isFormula()) {
+                        throw new InvalidArgumentException("Formula tidak diizinkan pada sheet Data (baris {$nomor}).");
+                    }
+                    $sel[] = $cell->getValue();
+                }
+                if (! self::barisKosong($sel)) {
+                    $hasil[] = [$nomor, $sel];
+                }
+            }
+            $buku->disconnectWorksheets();
+
+            return $hasil;
+        } catch (InvalidArgumentException $e) {
+            throw $e;
+        } catch (Throwable) {
+            throw new InvalidArgumentException('Berkas XLSX rusak atau tidak dapat dibaca.');
+        }
+    }
+
+    private static function periksaZipXlsx(string $pathBerkas): void
+    {
+        $zip = new ZipArchive;
+        $hasilBuka = $zip->open($pathBerkas);
+        if ($hasilBuka !== true) {
+            throw new InvalidArgumentException('Berkas XLSX rusak atau jumlah entri ZIP melampaui batas.');
+        }
+        if ($zip->numFiles < 1 || $zip->numFiles > self::MAKS_ENTRI_ZIP) {
+            $zip->close();
+            throw new InvalidArgumentException('Berkas XLSX rusak atau jumlah entri ZIP melampaui batas.');
+        }
+
+        $ukuranTerbuka = 0;
+        $ukuranPadat = 0;
+
+        try {
+            for ($i = 0; $i < $zip->numFiles; $i++) {
+                $stat = $zip->statIndex($i);
+                if ($stat === false) {
+                    throw new InvalidArgumentException('Struktur ZIP XLSX tidak sah.');
+                }
+
+                $nama = str_replace('\\', '/', strtolower($stat['name']));
+                $ukuran = (int) $stat['size'];
+                $padat = (int) $stat['comp_size'];
+                $ukuranTerbuka += $ukuran;
+                $ukuranPadat += $padat;
+
+                if (str_contains($nama, 'vbaproject.bin')
+                    || str_starts_with($nama, 'xl/externallinks/')
+                    || str_starts_with($nama, 'xl/embeddings/')
+                    || ($padat > 0 && $ukuran / $padat > self::MAKS_RASIO_ZIP)) {
+                    throw new InvalidArgumentException('XLSX mengandung makro, tautan eksternal, objek tertanam, atau rasio kompresi tidak aman.');
+                }
+
+                if (str_ends_with($nama, '.xml') || str_ends_with($nama, '.rels')) {
+                    $isi = $zip->getFromIndex($i);
+                    if (is_string($isi) && preg_match('/TargetMode\s*=\s*["\']External["\']/i', $isi) === 1) {
+                        throw new InvalidArgumentException('Tautan eksternal tidak diizinkan dalam XLSX.');
+                    }
+                    if (is_string($isi) && preg_match('/macroEnabled|vnd\.ms-office\.vbaProject/i', $isi) === 1) {
+                        throw new InvalidArgumentException('Makro tidak diizinkan dalam XLSX.');
+                    }
+                }
+            }
+
+            if ($ukuranTerbuka > self::MAKS_UKURAN_ZIP_TERBUKA
+                || ($ukuranPadat > 0 && $ukuranTerbuka / $ukuranPadat > self::MAKS_RASIO_ZIP)) {
+                throw new InvalidArgumentException('Ukuran XLSX setelah diekstrak melampaui batas aman.');
+            }
+        } finally {
+            $zip->close();
+        }
+    }
+
+    /**
+     * @param  list<array{0:int,1:list<mixed>}>  $barisBerkas
+     * @return array{0:array<string,int>,1:list<array{0:int,1:list<mixed>}>}
+     */
+    private static function validasiDanPetakan(string $entitas, array $barisBerkas): array
+    {
+        if ($barisBerkas === []) {
+            throw new InvalidArgumentException('Berkas kosong atau tidak memiliki baris judul.');
+        }
+
+        [$nomorJudul, $judulMentah] = array_shift($barisBerkas);
+        $judul = array_map(fn ($nilai): string => trim((string) $nilai), $judulMentah);
+        if (isset($judul[0])) {
+            $judul[0] = self::lucutiBom($judul[0]);
+        }
+
+        if (count($judul) !== count(array_unique($judul))) {
+            throw new InvalidArgumentException("Judul kolom duplikat ditemukan pada baris {$nomorJudul}.");
+        }
+
+        $diharapkan = array_column(SkemaImpor::kolom($entitas), 'kolom');
+        $hilang = array_values(array_diff($diharapkan, $judul));
+        $asing = array_values(array_diff($judul, $diharapkan));
+        if (count($judul) !== count($diharapkan) || $hilang !== [] || $asing !== []) {
+            $bagian = [];
+            if ($hilang !== []) {
+                $bagian[] = 'hilang: '.implode(', ', $hilang);
+            }
+            if ($asing !== []) {
+                $bagian[] = 'tidak dikenal: '.implode(', ', $asing);
+            }
+            throw new InvalidArgumentException('Judul kolom tidak sesuai skema'.($bagian === [] ? '.' : ' ('.implode('; ', $bagian).').'));
+        }
+
+        if ($barisBerkas === []) {
+            throw new InvalidArgumentException('Berkas hanya berisi judul kolom; tambahkan minimal satu baris data.');
+        }
+        if (count($barisBerkas) > self::MAKS_BARIS_DATA) {
+            throw new InvalidArgumentException('Maksimal 1000 baris data per berkas.');
+        }
+
+        foreach ($barisBerkas as $pasangan) {
+            if (count($pasangan[1]) > count($diharapkan)) {
+                throw new InvalidArgumentException("Baris {$pasangan[0]} memiliki kolom melebihi skema.");
+            }
+        }
+
+        return [array_flip($judul), $barisBerkas];
+    }
+
+    private static function normalisasiTanggal(mixed $nilai, int $baris, string $kolom): mixed
+    {
+        if ($nilai === null || trim((string) $nilai) === '') {
+            return null;
+        }
+
+        if (is_int($nilai) || is_float($nilai)) {
+            try {
+                return Date::excelToDateTimeObject($nilai)->format('Y-m-d');
+            } catch (Throwable) {
+                return (string) $nilai;
+            }
+        }
+
+        $teks = trim((string) $nilai);
+        foreach (['!Y-m-d', '!d/m/Y', '!d-m-Y'] as $format) {
+            $tanggal = DateTimeImmutable::createFromFormat($format, $teks);
+            if ($tanggal !== false && $tanggal->format(substr($format, 1)) === $teks) {
+                return $tanggal->format('Y-m-d');
+            }
+        }
+
+        return $teks;
+    }
+
+    private static function tolakFormulaCsv(mixed $nilai): void
+    {
+        $teks = ltrim((string) $nilai);
+        if ($teks === '' || is_numeric($teks) || preg_match('/^\+62\d+$/', $teks) === 1) {
+            return;
+        }
+        if (in_array($teks[0], ['=', '+', '-', '@'], true)) {
+            throw new InvalidArgumentException('Formula tidak diizinkan dalam berkas CSV.');
+        }
     }
 
     // ------------------------------------------------------------------
@@ -282,6 +546,9 @@ class ImporEngine
         $spId = $namaSp === null ? null : self::cariIdTunggal(SatuanPermukiman::class, 'nama', $namaSp);
         if (is_string($spId)) {
             return $spId;
+        }
+        if ($spId !== null) {
+            CakupanDataSp::pastikanDapatDitulis($spId);
         }
 
         $namaKabupaten = self::teks($b, 'daerah_asal_kabupaten');
@@ -584,7 +851,12 @@ class ImporEngine
             return 'Kolom satuan_permukiman wajib diisi.';
         }
 
-        return self::cariIdTunggal(SatuanPermukiman::class, 'nama', $nama);
+        $spId = self::cariIdTunggal(SatuanPermukiman::class, 'nama', $nama);
+        if (is_int($spId)) {
+            CakupanDataSp::pastikanDapatDitulis($spId);
+        }
+
+        return $spId;
     }
 
     /**
@@ -642,11 +914,16 @@ class ImporEngine
         return str_contains($nilai, '.') ? (float) $nilai : (int) $nilai;
     }
 
-    private static function boolean(array $b, string $kolom): bool
+    private static function boolean(array $b, string $kolom): bool|string|null
     {
         $nilai = Str::lower(self::teks($b, $kolom) ?? '');
 
-        return in_array($nilai, ['ya', 'true', '1', 'yes'], true);
+        return match ($nilai) {
+            '' => null,
+            'ya', 'true', '1', 'yes' => true,
+            'tidak', 'false', '0', 'no' => false,
+            default => $nilai,
+        };
     }
 
     private static function barisKosong(array $sel): bool

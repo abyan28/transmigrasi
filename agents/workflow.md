@@ -141,10 +141,10 @@ Workflow operasional adalah alur saat data dikumpulkan, divalidasi, ditampilkan,
 
 Tersedia dua jalur. Keduanya berakhir sama: kata sandi sementara yang wajib diganti saat masuk.
 
-**Jalur A, kode verifikasi lewat surel dinas.** Dipakai bila petugas punya surel aktif dan jaringan memadai.
+**Jalur A, kode verifikasi lewat email dinas.** Dipakai bila petugas punya email aktif dan jaringan memadai.
 
 1. Pengguna membuka halaman lupa kata sandi dari tautan pada halaman masuk, lalu memasukkan email atau username.
-2. Sistem mengirim **kode enam digit** ke surel dinas terdaftar. Halaman berikutnya menampilkan pesan yang sama persis, baik akun ditemukan maupun tidak, agar halaman ini tidak dapat dipakai memeriksa siapa yang memiliki akun.
+2. Sistem mengirim **kode enam digit** ke email dinas terdaftar. Halaman berikutnya menampilkan pesan yang sama persis, baik akun ditemukan maupun tidak, agar halaman ini tidak dapat dipakai memeriksa siapa yang memiliki akun.
 3. Pengguna mengetik kode tersebut beserta kata sandi barunya. Kode berlaku 15 menit, sekali pakai, dan hangus setelah 5 kali salah.
 4. Bila kode telanjur kedaluwarsa, halaman menawarkan permintaan kode baru sekaligus mengingatkan jalur Admin.
 
@@ -153,7 +153,7 @@ Tersedia dua jalur. Keduanya berakhir sama: kata sandi sementara yang wajib diga
 5. Pengguna menghubungi Admin desa atau SP.
 6. Admin membuka Manajemen Pengguna, mencari akun bersangkutan, lalu memilih tindakan setel ulang kata sandi.
 7. Sistem menyimpan kata sandi sementara dan menandai `password_harus_diganti = TRUE`.
-8. Admin menyerahkan kata sandi sementara kepada pengguna **secara langsung**, bukan lewat surel maupun pesan singkat.
+8. Admin menyerahkan kata sandi sementara kepada pengguna **secara langsung**, bukan lewat email maupun pesan singkat.
 
 **Keduanya:**
 

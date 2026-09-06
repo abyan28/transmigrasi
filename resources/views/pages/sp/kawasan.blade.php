@@ -75,7 +75,7 @@
                 <div>
                     <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Satuan permukiman</dt>
                     <dd class="mt-0.5 text-theme-sm tabular-nums text-gray-800 dark:text-white/90">
-                        {{ $k['jumlah_sp'] }} SP di {{ count($kecamatan) }} kecamatan</dd>
+                        {{ $k['jumlah_sp'] }} SP</dd>
                 </div>
                 {{--
                     Berkas kawasan, ditambahkan 2026-08-25 lalu dijamakkan
@@ -125,20 +125,20 @@
         <div class="border-b border-gray-200 p-5 dark:border-gray-800">
             <h2 class="text-theme-sm font-semibold text-gray-800 dark:text-white/90">Sebaran Satuan Permukiman</h2>
             <p class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
-                Enam SP tersebar di empat kecamatan berbeda. Sebaran inilah alasan kawasan
+                {{ $jumlahSpSebaran }} SP tersebar di {{ $jumlahKecamatan }} kecamatan berbeda. Sebaran inilah alasan kawasan
                 dicatat terpisah dari hierarki administratif.
             </p>
         </div>
 
         <x-sim.tabel-ringkas judul="Satuan permukiman dalam kawasan ini" :kolom="['Satuan Permukiman', 'Desa', 'Kecamatan', 'Kepala Keluarga', 'Rincian']">
-            @foreach ($daftarSp as $i => $sp)
+            @foreach ($daftarSp as $sp)
                 <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                     <td class="px-5 py-3 text-theme-sm font-medium text-gray-800 dark:text-white/90">
                         {{ $sp['nama'] }}</td>
                     <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ $sp['desa'] }}</td>
                     <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ $sp['kecamatan'] }}</td>
                     <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">
-                        {{ number_format($rekap[$i]['jumlah_kk'], 0, ',', '.') }} KK</td>
+                        {{ number_format($sp['jumlah_kk'], 0, ',', '.') }} KK</td>
                     <td class="px-5 py-3">
                         <a href="{{ route('sp.detail', $sp['id_satuan_permukiman']) }}"
                             class="rounded text-theme-sm font-medium text-teal-700 hover:underline focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-teal-300">

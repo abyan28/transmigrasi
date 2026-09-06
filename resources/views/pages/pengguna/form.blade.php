@@ -111,8 +111,12 @@
                     placeholder="nama@malakakab.go.id" class="{{ $kelasKontrol }}"
                     aria-describedby="{{ $awalan }}_email_bantuan" />
                 <p id="{{ $awalan }}_email_bantuan" class="{{ $kelasBantuan }}">
-                    Wajib diisi. Dipakai petugas untuk login pertama kali, menerima kata sandi
-                    sementara, dan meminta kode verifikasi untuk pemulihan kata sandi.
+                    @if ($mode === 'tambah')
+                        Wajib diisi. Dipakai petugas untuk login pertama kali, menerima kata sandi
+                        sementara, dan meminta kode verifikasi untuk pemulihan kata sandi.
+                    @else
+                        Email baru menunggu verifikasi pemiliknya. Email login saat ini tidak langsung berubah.
+                    @endif
                 </p>
             </div>
 

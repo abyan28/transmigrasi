@@ -48,16 +48,21 @@
         statusHunian: @js($data['status_hunian'] ?? 'Dihuni'),
         petaSpTransmigran: @js(collect($daftarTransmigran)->pluck('satuan_permukiman_id', 'id_transmigran')->all()),
         gantiPenghuni(id) {
-            if (this.statusHunian === 'Dihuni' && id) {
-                const spId = this.petaSpTransmigran ? this.petaSpTransmigran[id] : null;
-                if (spId) {
-                    const sel = this.$el.querySelector('[name=&quot;satuan_permukiman_id&quot;]');
-                    if (sel) {
-                        sel.value = spId;
-                        sel.dispatchEvent(new Event('input', { bubbles: true }));
-                        sel.dispatchEvent(new Event('change', { bubbles: true }));
-                    }
+            const spId = this.petaSpTransmigran ? this.petaSpTransmigran[id] : null;
+            if (spId) {
+                const sel = this.$el.querySelector('[name=&quot;satuan_permukiman_id&quot;]');
+                if (sel) {
+                    sel.value = spId;
+                    sel.dispatchEvent(new Event('input', { bubbles: true }));
+                    sel.dispatchEvent(new Event('change', { bubbles: true }));
                 }
+            }
+        },
+        gantiStatus() {
+            if (this.statusHunian === 'Tidak Dihuni') {
+                const input = this.$el.querySelector('[name=&quot;transmigran_id&quot;]');
+                input.value = '';
+                input.dispatchEvent(new Event('change', { bubbles: true }));
             }
         },
     }"
@@ -71,8 +76,8 @@
                 <label for="{{ $awalan }}_status_hunian" class="{{ $kelasLabel }}">
                     Status Hunian<span class="text-error-500">*</span>
                 </label>
-                <select id="{{ $awalan }}_status_hunian" name="status_hunian" x-model="statusHunian" required
-                    class="{{ $kelasKontrol }}">
+                <select id="{{ $awalan }}_status_hunian" name="status_hunian" x-model="statusHunian"
+                    @change="gantiStatus()" required class="{{ $kelasKontrol }}">
                     @foreach ($opsiStatusHunian as $nilai => $label)
                         <option value="{{ $nilai }}">{{ $label }}</option>
                     @endforeach
@@ -90,6 +95,7 @@
                     :terpilih="old('transmigran_id', $data['transmigran_id'] ?? null)"
                     placeholder="Belum ada penghuni"
                     keterangan="Hanya keluarga yang belum menempati rumah lain yang dapat dipilih."
+                    :required="'statusHunian === \'Dihuni\''"
                     :disabled="'statusHunian === \'Tidak Dihuni\''"
                     @change="gantiPenghuni($event.target.value)" />
             </div>
@@ -100,7 +106,8 @@
                     :daftar-sp="collect($daftarSp)
                         ->map(fn ($s) => ['id' => $s['id_satuan_permukiman'], 'nama' => $s['nama'], 'kawasan_id' => 1])
                         ->all()"
-                    :sp-terpilih="old('satuan_permukiman_id', $data['satuan_permukiman_id'] ?? null)" />
+                    :sp-terpilih="old('satuan_permukiman_id', $data['satuan_permukiman_id'] ?? null)"
+                    :sp-terkunci="'statusHunian === \'Dihuni\' && penghuniId !== \'\''" />
             </div>
 
             {{-- Alasan wajib diisi saat rumah tidak dihuni --}}

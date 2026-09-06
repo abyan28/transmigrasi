@@ -62,7 +62,7 @@ class Penanaman extends Model
      */
     public function hasilPanen(): HasOne
     {
-        return $this->hasOne(HasilPanen::class, 'penanaman_id', 'id_penanaman');
+        return $this->hasOne(HasilPanen::class, 'penanaman_id', 'id_penanaman')->withTrashed();
     }
 
     /**

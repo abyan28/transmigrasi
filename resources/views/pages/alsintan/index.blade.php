@@ -99,8 +99,6 @@
                 <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ $a['sumber_dana'] ?? '-' }}</td>
                 <td class="px-5 py-3">
                     <x-sim.aksi-baris :rincian-url="route('alsintan.detail', $a['id_alsintan'])"
-                        modal-ubah="formUbahAlsintanBaris"
-                        :data-baris="['id' => $a['id_alsintan'], 'id_alsintan' => $a['id_alsintan'], 'jenis_alsintan' => $a['jenis_alsintan'], 'nama_alat' => $a['nama_alat'], 'jumlah_total' => $a['jumlah_total'], 'tahun_pengadaan' => $a['tahun_pengadaan'], 'sumber_dana' => $a['sumber_dana'], 'keterangan' => $a['keterangan']]"
                         :hapus-url="'/alsintan/' . $a['id_alsintan']"
                         konfirmasi-hapus="hapusAlsintan" :label="$a['nama_alat']" />
                 </td>
@@ -127,13 +125,6 @@
         keterangan="Alat baru tercatat pada inventaris kawasan."
         :aksi="route('alsintan.simpan')" ukuran="lg" label-simpan="Simpan Data">
         @include('pages.alsintan.form', ['awalan' => 'tambah'])
-    </x-sim.modal-form>
-
-    <x-sim.modal-form nama="formUbahAlsintanBaris" judul="Ubah Data Alsintan"
-        keterangan="Satuan permukiman mengikuti kelompok tani yang dipilih."
-        pola-aksi="/alsintan/:id" metode="PUT" ukuran="lg"
-        label-simpan="Simpan Perubahan">
-        @include('pages.alsintan.form', ['awalan' => 'ubahBaris'])
     </x-sim.modal-form>
 
     <x-sim.confirm-dialog nama="hapusAlsintan" judul="Hapus data ini?"

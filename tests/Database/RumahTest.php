@@ -8,7 +8,9 @@
  * menimpa (rules.md 6a.5/6a.6/6a.9).
  */
 
+use App\Enums\CakupanData;
 use App\Models\RiwayatPenghunian;
+use App\Models\Role;
 use App\Models\Rumah;
 use App\Models\Transmigran;
 use App\Models\User;
@@ -116,6 +118,84 @@ it('mewajibkan alasan saat rumah tidak dihuni', function () {
         'kondisi' => 'Rusak Berat',
         'status_hunian' => 'Tidak Dihuni',
     ])->assertSessionHasErrors('alasan_tidak_dihuni');
+});
+
+it('mewajibkan penghuni saat status rumah dihuni', function () {
+    $this->post(route('rumah.simpan'), [
+        'satuan_permukiman_id' => Transmigran::value('satuan_permukiman_id'),
+        'kondisi' => 'Tidak Rusak',
+        'status_hunian' => 'Dihuni',
+    ])->assertSessionHasErrors('transmigran_id');
+});
+
+it('mengunci pilihan SP saat rumah dihuni tanpa menghilangkan nilai kiriman', function () {
+    $isi = $this->get(route('rumah.index'))->assertOk()->getContent();
+
+    expect($isi)->toContain(':disabled="statusHunian === \'Dihuni\' && penghuniId !== \'\'"')
+        ->and($isi)->toContain('type="hidden" name="satuan_permukiman_id"');
+});
+
+it('menurunkan SP rumah dari penghuni dan mengabaikan SP palsu', function () {
+    $kk = Transmigran::whereDoesntHave('rumah')->first();
+    $spPalsu = Transmigran::where('satuan_permukiman_id', '!=', $kk->satuan_permukiman_id)
+        ->value('satuan_permukiman_id');
+
+    $this->post(route('rumah.simpan'), [
+        'satuan_permukiman_id' => $spPalsu,
+        'transmigran_id' => $kk->id_transmigran,
+        'no_rumah' => 'Z-FORGE',
+        'kondisi' => 'Tidak Rusak',
+        'status_hunian' => 'Dihuni',
+    ])->assertRedirect(route('rumah.index'));
+
+    expect(Rumah::where('no_rumah', 'Z-FORGE')->value('satuan_permukiman_id'))
+        ->toBe($kk->satuan_permukiman_id);
+});
+
+it('membatasi penulisan rumah dan penghuni ke SP petugas', function () {
+    $kkDiizinkan = Transmigran::whereDoesntHave('rumah')->first();
+    $kkLain = Transmigran::whereDoesntHave('rumah')
+        ->where('satuan_permukiman_id', '!=', $kkDiizinkan->satuan_permukiman_id)
+        ->first();
+    $role = Role::factory()->create(['cakupan_data' => CakupanData::PerSp->value]);
+    $operator = User::factory()->create(['role_id' => $role->id_role]);
+    $operator->semuaIzin = true;
+    $operator->satuanPermukiman()->attach($kkDiizinkan->satuan_permukiman_id);
+    $this->actingAs($operator);
+
+    $this->post(route('rumah.simpan'), [
+        'satuan_permukiman_id' => $kkDiizinkan->satuan_permukiman_id,
+        'transmigran_id' => $kkLain->id_transmigran,
+        'kondisi' => 'Tidak Rusak',
+        'status_hunian' => 'Dihuni',
+    ])->assertNotFound();
+
+    $this->post(route('rumah.simpan'), [
+        'satuan_permukiman_id' => $kkDiizinkan->satuan_permukiman_id,
+        'transmigran_id' => $kkDiizinkan->id_transmigran,
+        'no_rumah' => 'Z-SCOPED',
+        'kondisi' => 'Tidak Rusak',
+        'status_hunian' => 'Dihuni',
+    ])->assertRedirect(route('rumah.index'));
+
+    $rumah = Rumah::where('no_rumah', 'Z-SCOPED')->firstOrFail();
+    $this->put(route('rumah.perbarui', $rumah->id_rumah), [
+        'transmigran_id' => $kkLain->id_transmigran,
+        'kondisi' => 'Tidak Rusak',
+        'status_hunian' => 'Dihuni',
+    ])->assertNotFound();
+});
+
+it('menolak penghuni yang sudah dihapus halus', function () {
+    $kk = Transmigran::whereDoesntHave('rumah')->first();
+    $kk->delete();
+
+    $this->post(route('rumah.simpan'), [
+        'satuan_permukiman_id' => $kk->satuan_permukiman_id,
+        'transmigran_id' => $kk->id_transmigran,
+        'kondisi' => 'Tidak Rusak',
+        'status_hunian' => 'Dihuni',
+    ])->assertSessionHasErrors('transmigran_id');
 });
 
 it('mencatat pergantian penghuni sebagai riwayat baru tanpa menimpa yang lama', function () {

@@ -69,9 +69,12 @@
                 sebagai tidak memiliki fasilitas itu.
             --}}
             <div class="sm:col-span-2">
+                @if ($awalan !== 'ubahBaris')
+                    <input type="hidden" name="_cakupan_disunting" value="1" />
+                @endif
                 <x-sim.pilih-cari-banyak nama="satuan_permukiman_ids_lain" label="SP Lain yang Dilayani"
                     :awalan="$awalan" :opsi="$daftarSp" kunci="id_satuan_permukiman" teks="nama"
-                    :terpilih="collect($data['satuan_permukiman_ids'] ?? [])->reject(fn ($x) => (string) $x === (string) ($data['satuan_permukiman_id'] ?? ''))->values()->all()"
+                    :terpilih="collect($data['satuan_permukiman_ids'] ?? [])->intersect(collect($daftarSp)->pluck('id_satuan_permukiman'))->reject(fn ($x) => (string) $x === (string) ($data['satuan_permukiman_id'] ?? ''))->values()->all()"
                     placeholder="Kosongkan bila fasilitas ini hanya melayani SP lokasinya"
                     keterangan="SP lokasi di atas otomatis termasuk. Isi hanya SP tambahan." />
             </div>

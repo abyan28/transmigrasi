@@ -313,8 +313,9 @@ it('menyimpan bidang penanganan bawaan sebagai data, bukan match di dalam kode',
     // UnhandledMatchError begitu ada yang memilihnya, dan form pengaduan mati.
     $berkas = file_get_contents(app_path('Enums/BidangPengaduan.php'));
 
-    expect($berkas)->not->toContain('KategoriPengaduan::Rumah,');
-    expect($berkas)->toContain('DummyData::petaBidangKategori()');
+    expect($berkas)->not->toContain('KategoriPengaduan::Rumah,')
+        ->not->toContain('DummyData::')
+        ->toContain('DaftarPilihan::query()');
 
     // Kategori baru yang ditambahkan Admin tidak boleh meruntuhkan apa pun.
     expect(BidangPengaduan::dariKategori('Kategori Yang Belum Ada'))->toBeNull();

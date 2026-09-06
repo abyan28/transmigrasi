@@ -341,7 +341,7 @@
 
     {{-- Modal ubah akun, satu untuk seluruh baris --}}
     <x-sim.modal-form nama="formUbahPenggunaBaris" judul="Ubah Akun Petugas"
-        keterangan="Kata sandi tidak dapat disunting di sini; gunakan Setel Ulang Kata Sandi."
+        keterangan="Email baru menunggu verifikasi dan tidak langsung mengganti email login. Kata sandi tidak dapat disunting di sini."
         pola-aksi="/pengguna/:id" metode="PUT" ukuran="xl" label-simpan="Simpan Perubahan">
         @include('pages.pengguna.form', ['awalan' => 'ubahBaris', 'mode' => 'ubah'])
     </x-sim.modal-form>

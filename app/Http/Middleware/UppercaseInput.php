@@ -31,6 +31,7 @@ class UppercaseInput
         'password',
         'password_confirmation',
         'password_lama',
+        'current_password',
         'password_baru',
         'password_baru_konfirmasi',
         'kata_sandi',

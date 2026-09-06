@@ -14,7 +14,7 @@
     --}}
 
     <x-sim.halaman-daftar judul="Satuan Permukiman"
-        keterangan="Enam satuan permukiman di Kawasan Transmigrasi Kobalima Timur."
+        :keterangan="$jumlahSp . ' satuan permukiman terdata.'"
         :remah="\App\Helpers\RemahHelper::untuk('/sp')"
         :jumlah="$baris->total()" :paginator="$baris" :kata-kunci="$cari" :aksi-url="route('sp.index')"
         placeholder-cari="Cari nama SP atau desa" judul-kosong="Belum ada data satuan permukiman">
@@ -35,7 +35,7 @@
             <x-sim.stat-card label="Total Luas Lahan" :nilai="number_format($totalLuas, 2, ',', '.')" satuan="ha" />
             <x-sim.stat-card label="Daya Tampung" :nilai="number_format($totalRencana, 0, ',', '.')" satuan="KK" />
             <x-sim.stat-card label="Sudah Terisi" :nilai="number_format($totalTerisi, 0, ',', '.')" satuan="KK"
-                :keterangan="round($totalTerisi / $totalRencana * 100) . '% dari daya tampung'" />
+                :keterangan="($totalRencana > 0 ? round($totalTerisi / $totalRencana * 100) : 0) . '% dari daya tampung'" />
         </x-slot:ringkasan>
 
         <x-slot:filter>
@@ -67,7 +67,7 @@
         </x-slot:kepala>
 
         @foreach ($baris as $sp)
-            @php $persen = round($sp['jumlah_kk_terisi'] / $sp['jumlah_kk_rencana'] * 100); @endphp
+            @php $persen = $sp['jumlah_kk_rencana'] > 0 ? round($sp['jumlah_kk_terisi'] / $sp['jumlah_kk_rencana'] * 100) : 0; @endphp
             <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
                 <td class="px-5 py-3">
                     <a href="{{ route('sp.detail', $sp['id_satuan_permukiman']) }}"

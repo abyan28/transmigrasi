@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use App\Enums\BentukWilayah;
+use App\Enums\CakupanData;
 use App\Enums\PolaPermukiman;
 use App\Enums\TingkatKesuburanTanah;
 use App\Models\Concerns\BerslugOtomatis;
+use App\Models\Scopes\CakupanDataSp;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -67,6 +70,28 @@ class SatuanPermukiman extends Model
     public function getRouteKeyName(): string
     {
         return 'slug';
+    }
+
+    public function scopeTerlihatOlehPengguna(Builder $query): Builder
+    {
+        $pengguna = CakupanDataSp::penggunaWajibDisaring();
+
+        return $pengguna?->role?->cakupan_data === CakupanData::PerSp
+            ? $query->whereIn('id_satuan_permukiman', CakupanDataSp::spDitugaskan($pengguna))
+            : $query;
+    }
+
+    public static function opsiTerlihat(): array
+    {
+        return self::query()
+            ->terlihatOlehPengguna()
+            ->orderBy('id_satuan_permukiman')
+            ->get(['id_satuan_permukiman', 'nama'])
+            ->map(fn (self $sp): array => [
+                'id_satuan_permukiman' => $sp->id_satuan_permukiman,
+                'nama' => $sp->nama,
+            ])
+            ->all();
     }
 
     public function kawasan(): BelongsTo

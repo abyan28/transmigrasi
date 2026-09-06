@@ -64,9 +64,10 @@ it('merangkai poktan -> anggota -> KELUARGA yang diwakili lewat kunci eksplisit'
         ->and($sp->poktan->pluck('id_poktan'))->toContain($poktan->id_poktan);
 });
 
-it('mewajibkan satu KELUARGA hanya sekali per poktan (UNIQUE komposit)', function () {
+it('mewajibkan satu KELUARGA hanya aktif pada satu poktan di database', function () {
     $sp = buatSp();
     $poktan = buatPoktan($sp);
+    $poktanLain = buatPoktan($sp);
     $kk = buatTransmigran($sp);
     $baris = [
         'poktan_id' => $poktan->id_poktan, 'transmigran_id' => $kk->id_transmigran,
@@ -75,7 +76,8 @@ it('mewajibkan satu KELUARGA hanya sekali per poktan (UNIQUE komposit)', functio
     ];
     AnggotaPoktan::create($baris);
 
-    expect(fn () => AnggotaPoktan::create($baris))->toThrow(QueryException::class);
+    expect(fn () => AnggotaPoktan::create(array_merge($baris, ['poktan_id' => $poktanLain->id_poktan])))
+        ->toThrow(QueryException::class);
 });
 
 it('menghapus keanggotaan saat poktan dihapus permanen (CASCADE) tapi menahan KELUARGA-nya (RESTRICT)', function () {

@@ -152,7 +152,7 @@
             </select>
             <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
                 <span x-show="keluargaId !== '' && daftarAnggotaKeluarga.length === 0" x-cloak>
-                    Keluarga ini belum memiliki anggota keluarga terdata. Tambahkan lebih dulu lewat modul Transmigran.
+                    Keluarga ini belum memiliki anggota keluarga terdata. Tambahkan lebih dulu lewat menu Transmigran.
                 </span>
                 <span x-show="daftarAnggotaKeluarga.length > 0">
                     Daftar diambil dari anggota keluarga yang sudah dicatat pada data transmigran.
@@ -173,7 +173,7 @@
 
         {{--
             Luas lahan sebagai BACAAN, bukan isian. Menyimpannya akan basi
-            begitu petugas membetulkan luas di modul lahan, dan tidak boleh
+            begitu petugas membetulkan luas di halaman Data Lahan, dan tidak boleh
             berubah hanya karena wakilnya berganti.
         --}}
         <div class="sm:col-span-2">
@@ -210,7 +210,7 @@
                 </template>
             </div>
             <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
-                Dijumlahkan dari bidang milik keluarga tersebut. Perbaikannya dilakukan di modul Lahan.
+                Dijumlahkan dari bidang milik keluarga tersebut. Perbaikannya dilakukan di halaman Data Lahan.
             </p>
         </div>
 

@@ -47,6 +47,14 @@ it('mengikat lahan ke KK satu-baris-per-keluarga (UNIQUE transmigran_id)', funct
     expect(fn () => buatLahan($kk))->toThrow(QueryException::class);
 });
 
+it('menolak SP lahan yang tidak sama dengan SP keluarga pada basis data', function () {
+    $kk = buatTransmigran();
+    $spLain = buatSp();
+
+    expect(fn () => buatLahan($kk, ['satuan_permukiman_id' => $spLain->id_satuan_permukiman]))
+        ->toThrow(QueryException::class);
+});
+
 it('menyimpan dua pasang koordinat terpisah untuk pekarangan dan lahan usaha', function () {
     $kk = buatTransmigran();
     $lahan = buatLahan($kk, [

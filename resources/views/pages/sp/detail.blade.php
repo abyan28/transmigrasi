@@ -103,7 +103,8 @@
 
                 <h3 class="mt-6 text-theme-sm font-semibold text-gray-800 dark:text-white/90">Titik Koordinat</h3>
                 <p class="mt-2 text-theme-xs tabular-nums text-gray-700 dark:text-gray-300">
-                    {{ number_format($sp['lintang'], 6, '.', '') }}, {{ number_format($sp['bujur'], 6, '.', '') }}
+                    {{ $sp['lintang'] === null ? '-' : number_format($sp['lintang'], 6, '.', '') }},
+                    {{ $sp['bujur'] === null ? '-' : number_format($sp['bujur'], 6, '.', '') }}
                 </p>
                 <x-sim.tautan-peta class="mt-1.5" :lintang="$sp['lintang']" :bujur="$sp['bujur']"
                     :label="$sp['nama']" />
@@ -497,7 +498,11 @@
                                             {{ $baris['jenis_fasilitas'] }}
                                         </td>
                                         <td class="px-5 py-3">
-                                            <x-sim.status-badge :status="\App\Enums\Kondisi::from($baris['kondisi'])" />
+                                            @if ($baris['kondisi'])
+                                                <x-sim.status-badge :status="\App\Enums\Kondisi::from($baris['kondisi'])" />
+                                            @else
+                                                -
+                                            @endif
                                         </td>
                                     </tr>
                                 @endforeach
@@ -533,7 +538,11 @@
                                             {{ $baris['jumlah'] }} unit
                                         </td>
                                         <td class="px-5 py-3">
-                                            <x-sim.status-badge :status="\App\Enums\Kondisi::from($baris['kondisi'])" />
+                                            @if ($baris['kondisi'])
+                                                <x-sim.status-badge :status="\App\Enums\Kondisi::from($baris['kondisi'])" />
+                                            @else
+                                                -
+                                            @endif
                                         </td>
                                         <td class="px-5 py-3">
                                             <x-sim.status-badge :status="\App\Enums\StatusPenyerahan::from($baris['status_penyerahan'])" />
@@ -748,6 +757,7 @@
         @include('pages.sp.form', [
             'awalan' => 'ubah',
             'data' => $sp,
+            'ruteAksesibilitasData' => $ruteAksesibilitas,
         ])
     </x-sim.modal-form>
 

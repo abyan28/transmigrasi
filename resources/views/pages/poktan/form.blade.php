@@ -204,7 +204,7 @@
                     </select>
                     <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
                         <span x-show="ketuaId !== '' && daftarAnggotaKeluarga.length === 0" x-cloak>
-                            Keluarga ini belum memiliki anggota keluarga terdata. Tambahkan lebih dulu lewat modul Transmigran.
+                            Keluarga ini belum memiliki anggota keluarga terdata. Tambahkan lebih dulu lewat menu Transmigran.
                         </span>
                         <span x-show="daftarAnggotaKeluarga.length > 0">
                             Daftar diambil dari anggota keluarga yang sudah dicatat pada data transmigran.

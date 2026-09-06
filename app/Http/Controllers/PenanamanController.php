@@ -7,19 +7,20 @@ use App\Enums\StatusPanen;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
 use App\Models\HasilPanen;
 use App\Models\Penanaman;
-use App\Models\Poktan;
+use App\Models\Saprotan;
 use App\Models\SaprotanDistribusi;
-use App\Support\DummyData;
+use App\Models\SatuanPermukiman;
+use App\Models\Scopes\CakupanDataSp;
 use App\Support\KonversiPanen;
 use App\Support\Paginasi;
 use App\Support\PenyajianPanen;
+use App\Support\RekapPanen;
 use App\Support\RekapPoktan;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -81,7 +82,7 @@ class PenanamanController extends Controller
         $statusPanen = [];
         $kekuatanPoktan = [];
         foreach ($baris->getCollection() as $p) {
-            $statusPanen[$p->id_penanaman] = $this->status($p);
+            $statusPanen[$p->id_penanaman] = RekapPanen::status($p);
             $kekuatanPoktan[$p->poktan_id] ??= $p->poktan === null
                 ? ['jumlah_anggota' => 0, 'luas_kering' => 0.0, 'luas_basah' => 0.0, 'luas_total' => 0.0]
                 : RekapPoktan::kekuatan($p->poktan);
@@ -111,7 +112,7 @@ class PenanamanController extends Controller
                 ->orderByDesc('tahun')->pluck('tahun')->map(fn ($t) => (int) $t)->all(),
             'daftarKomoditas' => Penanaman::query()->join('komoditas', 'komoditas.id_komoditas', '=', 'penanaman.komoditas_id')
                 ->distinct()->orderBy('komoditas.nama')->pluck('komoditas.nama')->all(),
-            'daftarSp' => DummyData::satuanPermukiman(),
+            'daftarSp' => SatuanPermukiman::opsiTerlihat(),
         ]);
     }
 
@@ -135,7 +136,7 @@ class PenanamanController extends Controller
             )),
             'luasDipanen' => array_sum(array_column($panen, 'realisasi_panen')),
             'luasPuso' => array_sum(array_map(fn (array $p) => (float) ($p['puso'] ?? 0), $panen)),
-            'status' => $this->status($penanaman),
+            'status' => RekapPanen::status($penanaman),
             'belumDitanam' => $penanaman->poktan === null ? 0.0 : RekapPoktan::lahanTersedia($penanaman->poktan),
             'rekapPoktan' => $penanaman->poktan === null
                 ? ['jumlah_anggota' => 0, 'luas_total' => 0.0]
@@ -150,10 +151,11 @@ class PenanamanController extends Controller
 
     public function simpan(Request $request): RedirectResponse
     {
-        $data = $this->validasi($request);
-
-        DB::transaction(function () use ($request, $data) {
-            $penanaman = Penanaman::create($this->kolom($data));
+        DB::transaction(function () use ($request) {
+            $distribusi = $this->distribusiTerkunci($request);
+            $data = $this->validasi($request, $distribusi);
+            $this->pastikanStokCukup($data, $distribusi);
+            $penanaman = Penanaman::create($this->kolom($data, $distribusi));
             $this->lampirkanBerkas($request, $penanaman);
         });
 
@@ -162,11 +164,13 @@ class PenanamanController extends Controller
 
     public function perbarui(Request $request, int $id): RedirectResponse
     {
-        $penanaman = Penanaman::findOrFail($id);
-        $data = $this->validasi($request, $penanaman);
-
-        DB::transaction(function () use ($request, $penanaman, $data) {
-            $penanaman->update($this->kolom($data));
+        DB::transaction(function () use ($request, $id) {
+            $distribusi = $this->distribusiTerkunci($request);
+            $penanaman = Penanaman::query()->lockForUpdate()->findOrFail($id);
+            CakupanDataSp::pastikanDapatDitulis($penanaman);
+            $data = $this->validasi($request, $distribusi, $penanaman);
+            $this->pastikanStokCukup($data, $distribusi, $penanaman);
+            $penanaman->update($this->kolom($data, $distribusi));
             $this->lampirkanBerkas($request, $penanaman);
         });
 
@@ -175,16 +179,23 @@ class PenanamanController extends Controller
 
     public function hapus(int $id): RedirectResponse
     {
-        $penanaman = Penanaman::findOrFail($id);
+        $dihapus = DB::transaction(function () use ($id) {
+            $penanaman = Penanaman::query()->lockForUpdate()->findOrFail($id);
+            CakupanDataSp::pastikanDapatDitulis($penanaman);
 
-        if ($penanaman->hasilPanen()->exists()) {
-            return back()->with('galat', 'Penanaman ini sudah memiliki catatan panen sehingga tidak dapat dihapus. Hapus catatan panennya lebih dulu.');
-        }
+            if ($penanaman->hasilPanen()->exists()) {
+                return false;
+            }
 
-        $penanaman->berkas()->detach();
-        $penanaman->delete();
+            $penanaman->berkas()->detach();
+            $penanaman->delete();
 
-        return redirect()->route('penanaman')->with('sukses', 'Catatan penanaman dihapus.');
+            return true;
+        });
+
+        return $dihapus
+            ? redirect()->route('penanaman')->with('sukses', 'Catatan penanaman dihapus.')
+            : back()->with('galat', 'Penanaman ini sudah memiliki catatan panen sehingga tidak dapat dihapus. Hapus catatan panennya lebih dulu.');
     }
 
     private function lampirkanBerkas(Request $request, Penanaman $penanaman): void
@@ -199,12 +210,12 @@ class PenanamanController extends Controller
      * @param  array<string, mixed>  $data
      * @return array<string, mixed>
      */
-    private function kolom(array $data): array
+    private function kolom(array $data, SaprotanDistribusi $distribusi): array
     {
         return [
-            'poktan_id' => $data['poktan_id'],
-            'komoditas_id' => $data['komoditas_id'],
-            'saprotan_distribusi_id' => $data['saprotan_distribusi_id'],
+            'poktan_id' => $distribusi->poktan_id,
+            'komoditas_id' => $distribusi->saprotan->komoditas_id,
+            'saprotan_distribusi_id' => $distribusi->id_saprotan_distribusi,
             'volume_benih' => $data['volume_benih'],
             'realisasi_tanam' => $data['realisasi_tanam'],
             'periode_tanam' => $data['periode_tanam'],
@@ -212,15 +223,8 @@ class PenanamanController extends Controller
         ];
     }
 
-    private function status(Penanaman $p): StatusPanen
-    {
-        return $p->relationLoaded('hasilPanen')
-            ? ($p->hasilPanen === null ? StatusPanen::BelumDipanen : StatusPanen::SelesaiDipanen)
-            : ($p->hasilPanen()->exists() ? StatusPanen::SelesaiDipanen : StatusPanen::BelumDipanen);
-    }
-
     /**
-     * Larik ber-kunci PERSIS satu baris `DummyData::penanaman()`.
+     * Larik ber-kunci persis bentuk tampilan satu baris penanaman.
      *
      * Pemetaan dipindah ke `App\Support\PenyajianPanen` (Task 10.5) supaya
      * halaman daftar/rincian dan Laporan Hasil Panen membaca satu sumber.
@@ -257,15 +261,12 @@ class PenanamanController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function validasi(Request $request, ?Penanaman $penanaman = null): array
+    private function validasi(Request $request, SaprotanDistribusi $distribusi, ?Penanaman $penanaman = null): array
     {
         $data = $request->validate([
-            'poktan_id' => ['required', 'integer', Rule::exists('poktan', 'id_poktan')],
-            'komoditas_id' => ['required', 'integer', Rule::exists('komoditas', 'id_komoditas')],
-            'saprotan_distribusi_id' => [
-                'required', 'integer',
-                Rule::exists('saprotan_distribusi', 'id_saprotan_distribusi'),
-            ],
+            'poktan_id' => ['required', 'integer'],
+            'komoditas_id' => ['required', 'integer'],
+            'saprotan_distribusi_id' => ['required', 'integer'],
             'volume_benih' => ['required', 'numeric', 'gt:0', 'max:99999999', 'decimal:0,3'],
             'realisasi_tanam' => ['required', 'numeric', 'gt:0', 'max:99999999', 'decimal:0,2'],
             'periode_tanam' => ['required', 'date_format:Y-m', 'before_or_equal:'.now()->format('Y-m')],
@@ -280,58 +281,75 @@ class PenanamanController extends Controller
             'periode_tanam.required' => 'Periode tanam wajib diisi.',
         ] + ValidationRules::pesan());
 
-        $this->validasiLanjutan($request, $data, $penanaman);
-
-        return $data;
-    }
-
-    /**
-     * Aturan yang menuntut baris lain: benih milik poktan & komoditas yang
-     * tepat, volume tak melebihi sisa jatah, luas tak melebihi lahan tersedia.
-     *
-     * @param  array<string, mixed>  $data
-     */
-    private function validasiLanjutan(Request $request, array $data, ?Penanaman $penanaman): void
-    {
-        $distribusi = SaprotanDistribusi::with('saprotan')->find($data['saprotan_distribusi_id']);
-
         $galat = [];
 
-        if ($distribusi !== null) {
-            if ($distribusi->saprotan?->jenis !== JenisSaprotan::Benih) {
-                $galat['saprotan_distribusi_id'] = 'Penyaluran yang dipilih bukan benih.';
-            } elseif ((int) $distribusi->poktan_id !== (int) $data['poktan_id']) {
-                $galat['saprotan_distribusi_id'] = 'Benih itu bukan jatah kelompok tani yang dipilih.';
-            } elseif ((int) $distribusi->saprotan?->komoditas_id !== (int) $data['komoditas_id']) {
-                $galat['saprotan_distribusi_id'] = 'Benih itu untuk komoditas yang berbeda.';
-            } else {
-                $sisa = $distribusi->sisaBenih($penanaman?->id_penanaman);
-
-                if (round((float) $data['volume_benih'] - $sisa, 3) > 0) {
-                    $galat['volume_benih'] = 'Melebihi sisa jatah benih kelompok ini, yaitu '
-                        .rtrim(rtrim(number_format($sisa, 3, ',', '.'), '0'), ',').' '.($distribusi->saprotan?->satuan?->nama ?? '').'.';
-                }
-            }
+        if ($distribusi->saprotan->jenis !== JenisSaprotan::Benih) {
+            $galat['saprotan_distribusi_id'] = 'Penyaluran yang dipilih bukan benih.';
+        } elseif (! $distribusi->saprotan->komoditas()->exists()) {
+            $galat['saprotan_distribusi_id'] = 'Komoditas benih tidak tersedia.';
         }
 
-        $poktan = Poktan::find($data['poktan_id']);
+        if ((int) $data['poktan_id'] !== (int) $distribusi->poktan_id) {
+            $galat['poktan_id'] = 'Benih itu bukan jatah kelompok tani yang dipilih.';
+        }
 
-        if ($poktan !== null) {
-            $tersedia = RekapPoktan::lahanTersedia($poktan);
+        if ((int) $data['komoditas_id'] !== (int) $distribusi->saprotan->komoditas_id) {
+            $galat['komoditas_id'] = 'Benih itu untuk komoditas yang berbeda.';
+        }
 
-            // Saat menyunting, luas penanaman ini sendiri kembali dihitung tersedia.
-            if ($penanaman !== null && ! $penanaman->hasilPanen()->exists() && (int) $penanaman->poktan_id === (int) $poktan->id_poktan) {
-                $tersedia = round($tersedia + (float) $penanaman->realisasi_tanam, 2);
-            }
+        $poktan = $distribusi->poktan;
+        $tersedia = RekapPoktan::lahanTersedia($poktan);
 
-            if (round((float) $data['realisasi_tanam'] - $tersedia, 2) > 0) {
-                $galat['realisasi_tanam'] = 'Melebihi lahan kelompok yang belum ditanami, yaitu '
-                    .rtrim(rtrim(number_format($tersedia, 2, ',', '.'), '0'), ',').' ha.';
-            }
+        if ($penanaman !== null && ! $penanaman->hasilPanen()->exists() && (int) $penanaman->poktan_id === (int) $poktan->id_poktan) {
+            $tersedia = round($tersedia + (float) $penanaman->realisasi_tanam, 2);
+        }
+
+        if (round((float) $data['realisasi_tanam'] - $tersedia, 2) > 0) {
+            $galat['realisasi_tanam'] = 'Melebihi lahan kelompok yang belum ditanami, yaitu '
+                .rtrim(rtrim(number_format($tersedia, 2, ',', '.'), '0'), ',').' ha.';
         }
 
         if ($galat !== []) {
             throw ValidationException::withMessages($galat);
+        }
+
+        return $data;
+    }
+
+    private function distribusiTerkunci(Request $request): SaprotanDistribusi
+    {
+        $id = $request->validate([
+            'saprotan_distribusi_id' => ['required', 'integer'],
+        ], [
+            'saprotan_distribusi_id.required' => 'Benih yang dipakai wajib dipilih.',
+        ])['saprotan_distribusi_id'];
+
+        $distribusi = SaprotanDistribusi::query()
+            ->whereHas('poktan')
+            ->whereHas('saprotan')
+            ->findOrFail($id);
+        CakupanDataSp::pastikanDapatDitulis($distribusi);
+
+        $saprotan = Saprotan::query()->with('satuan')->lockForUpdate()->findOrFail($distribusi->saprotan_id);
+        $distribusi = SaprotanDistribusi::query()->lockForUpdate()->findOrFail($id);
+        $distribusi->setRelation('saprotan', $saprotan);
+        $distribusi->setRelation('poktan', $distribusi->poktan()->lockForUpdate()->firstOrFail());
+
+        return $distribusi;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function pastikanStokCukup(array $data, SaprotanDistribusi $distribusi, ?Penanaman $penanaman = null): void
+    {
+        $sisa = $distribusi->sisaBenih($penanaman?->id_penanaman);
+
+        if (round((float) $data['volume_benih'] - $sisa, 3) > 0) {
+            throw ValidationException::withMessages([
+                'volume_benih' => 'Melebihi sisa jatah benih kelompok ini, yaitu '
+                    .rtrim(rtrim(number_format($sisa, 3, ',', '.'), '0'), ',').' '.($distribusi->saprotan->satuan?->nama ?? '').'.',
+            ]);
         }
     }
 }

@@ -96,7 +96,7 @@
 
                     <div class="mt-5 rounded-xl border border-yellow-200 bg-yellow-50 p-3 dark:border-yellow-500/30 dark:bg-yellow-500/10">
                         <p class="text-[11px] text-yellow-800 dark:text-yellow-200">
-                            <strong>Tip Navigasi:</strong> Klik judul bab di atas untuk melompat langsung ke penjelasan modul terkait.
+                            <strong>Tip Navigasi:</strong> Klik judul bab di atas untuk melompat langsung ke bagian terkait.
                         </p>
                     </div>
                 </nav>
@@ -271,7 +271,7 @@
                     </div>
 
                     <div class="mt-4 space-y-3 text-theme-sm text-gray-600 dark:text-gray-400">
-                        <p>Modul Pertanian menghubungkan kelembagaan tani dengan produktivitas lahan tapak transmigrasi:</p>
+                        <p>Bagian Pertanian menghubungkan kelembagaan tani dengan produktivitas lahan tapak transmigrasi:</p>
                         <div class="grid gap-3 sm:grid-cols-2 text-theme-xs">
                             <div class="rounded-xl border border-gray-200 p-3 dark:border-gray-800">
                                 <span class="font-semibold text-gray-800 dark:text-white/90">Kelompok Tani (Poktan):</span>

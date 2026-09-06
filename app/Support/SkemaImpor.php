@@ -102,6 +102,22 @@ class SkemaImpor
         return self::PETA[$entitas]['daftarPilihan'] ?? [];
     }
 
+    /**
+     * @return list<string>
+     */
+    public static function kolomTanggal(string $entitas): array
+    {
+        return self::PETA[$entitas]['tanggal'] ?? [];
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function kolomTeks(string $entitas): array
+    {
+        return self::PETA[$entitas]['teks'] ?? [];
+    }
+
     private const T = 'teks bebas';
 
     /**
@@ -110,6 +126,8 @@ class SkemaImpor
     private const PETA = [
         'transmigran' => [
             'judul' => 'Data Transmigran',
+            'tanggal' => ['tanggal_lahir'],
+            'teks' => ['nik', 'no_kk', 'telepon'],
             'kolom' => [
                 ['nik', true, '5321011505800001', 'NIK 16 digit, unik'],
                 ['nama_lengkap', true, 'YOHANES BERE', 'Nama kepala keluarga'],
@@ -214,7 +232,7 @@ class SkemaImpor
                 ['nama_komoditas', true, 'JAGUNG', 'Nama komoditas, unik'],
                 ['jenis', true, 'Pangan', 'Nilai baku tipe komoditas', ['enum:tipe_komoditas']],
                 ['satuan_baku', true, 'Ton', 'Nama satuan panen baku (harus terdaftar)'],
-                ['unggulan', false, 'tidak', 'ya / tidak'],
+                ['unggulan', false, 'tidak', 'ya / tidak', ['ya', 'tidak']],
                 ['deskripsi', false, '', self::T],
             ],
         ],

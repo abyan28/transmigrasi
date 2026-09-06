@@ -2,8 +2,10 @@
 
 namespace App\Support;
 
+use App\Enums\StatusPanen;
 use App\Models\HasilPanen;
 use App\Models\Penanaman;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 /**
@@ -23,6 +25,21 @@ use Illuminate\Support\Collection;
  */
 class RekapPanen
 {
+    public static function status(Penanaman $penanaman): StatusPanen
+    {
+        $penanaman->loadMissing('hasilPanen');
+
+        return $penanaman->hasilPanen === null
+            ? StatusPanen::BelumDipanen
+            : StatusPanen::SelesaiDipanen;
+    }
+
+    public static function totalProduksiTon(Builder $query): float
+    {
+        return (float) $query->with('satuan')->get()
+            ->sum(fn (HasilPanen $panen) => KonversiPanen::keTon((float) $panen->produksi, $panen->satuan?->nama));
+    }
+
     /**
      * Tahun rekap satu penanaman: tahun panennya bila sudah dipanen, selain
      * itu tahun berjalan.

@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\BidangPengaduan;
 use App\Enums\JenisDaftarPilihan;
 use App\Enums\PrioritasPengaduan;
 use App\Enums\StatusPengaduan;
 use App\Enums\SumberLaporan;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
+use App\Models\DaftarPilihan;
 use App\Models\PenangananPengaduan;
 use App\Models\Pengaduan;
-use App\Support\DummyData;
+use App\Models\SatuanPermukiman;
+use App\Models\Scopes\CakupanDataSp;
 use App\Support\LayananNotifikasi;
 use App\Support\NomorPengaduan;
 use App\Support\Paginasi;
@@ -34,8 +37,8 @@ use Illuminate\Validation\ValidationException;
  * menyimpan baris `penanganan_pengaduan` berisi petugas, tanggal, catatan,
  * dan dokumen tindak lanjut (10b.5).
  *
- * Bidang diturunkan dari kategori sebagai nilai AWAL (`DummyData::petaBidangKategori`,
- * data pada `daftar_pilihan.bidang_id` -- bukan `match`), selalu dapat ditimpa
+ * Bidang diturunkan dari kategori sebagai nilai AWAL (data pada
+ * `daftar_pilihan.bidang_id`, bukan `match`), selalu dapat ditimpa
  * petugas (10b.7c), dan WAJIB terisi sebelum status maju ke Diproses (10b.7b).
  * Penyaringan ke dinas ditangani global scope `CakupanDataSp`.
  */
@@ -100,10 +103,10 @@ class PengaduanController extends Controller
             'menungguDiterima' => Pengaduan::query()->where('status', StatusPengaduan::MenungguDiterima->value)->count(),
             'mendesak' => Pengaduan::query()->where('prioritas', PrioritasPengaduan::Mendesak->value)
                 ->whereNot('status', StatusPengaduan::Selesai->value)->count(),
-            'daftarSp' => DummyData::satuanPermukiman(),
-            'opsiFilterBidang' => DummyData::opsiFilterDaftarPilihan(JenisDaftarPilihan::BidangPengaduan),
-            'opsiFilterKategori' => DummyData::opsiFilterDaftarPilihan(JenisDaftarPilihan::KategoriPengaduan),
-            'opsiFilterPrioritas' => DummyData::opsiFilterDaftarPilihan(JenisDaftarPilihan::PrioritasPengaduan),
+            'daftarSp' => SatuanPermukiman::opsiTerlihat(),
+            'opsiFilterBidang' => DaftarPilihan::opsi(JenisDaftarPilihan::BidangPengaduan, false),
+            'opsiFilterKategori' => DaftarPilihan::opsi(JenisDaftarPilihan::KategoriPengaduan, false),
+            'opsiFilterPrioritas' => DaftarPilihan::opsi(JenisDaftarPilihan::PrioritasPengaduan, false),
         ]);
     }
 
@@ -122,7 +125,7 @@ class PengaduanController extends Controller
                 ->map(fn ($j) => $this->barisPenanganan($j))
                 ->values()
                 ->all(),
-            'opsiBidang' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::BidangPengaduan),
+            'opsiBidang' => DaftarPilihan::opsi(JenisDaftarPilihan::BidangPengaduan),
         ]);
     }
 
@@ -133,7 +136,7 @@ class PengaduanController extends Controller
         // Bidang terisi dari kategori sebagai NILAI AWAL bila petugas tak
         // menetapkannya sendiri (`rules.md` 10b.7a). Empat kategori netral
         // tetap kosong sampai ditinjau.
-        $data['bidang'] = ($data['bidang'] ?? null) ?: (DummyData::petaBidangKategori()[$data['kategori']] ?? null) ?: null;
+        $data['bidang'] = ($data['bidang'] ?? null) ?: BidangPengaduan::dariKategori($data['kategori'])?->value;
 
         $pengaduan = DB::transaction(function () use ($request, $data) {
             $pengaduan = Pengaduan::create($this->kolom($data) + [
@@ -159,6 +162,7 @@ class PengaduanController extends Controller
     public function perbarui(Request $request, int $id): RedirectResponse
     {
         $pengaduan = Pengaduan::findOrFail($id);
+        CakupanDataSp::pastikanDapatDitulis($pengaduan);
         $data = $this->validasi($request);
 
         DB::transaction(function () use ($request, $pengaduan, $data) {
@@ -180,6 +184,7 @@ class PengaduanController extends Controller
     public function tangani(Request $request, int $id): RedirectResponse
     {
         $pengaduan = Pengaduan::findOrFail($id);
+        CakupanDataSp::pastikanDapatDitulis($pengaduan);
 
         $data = $request->validate([
             'status_sesudah' => ['required', Rule::enum(StatusPengaduan::class)],
@@ -241,6 +246,7 @@ class PengaduanController extends Controller
     public function hapus(int $id): RedirectResponse
     {
         $pengaduan = Pengaduan::findOrFail($id);
+        CakupanDataSp::pastikanDapatDitulis($pengaduan);
         $pengaduan->berkas()->detach();
         $pengaduan->delete();
         LayananNotifikasi::hapusPengaduan($pengaduan);
@@ -263,8 +269,6 @@ class PengaduanController extends Controller
     }
 
     /**
-     * Larik ber-kunci PERSIS satu baris `DummyData::pengaduan()`.
-     *
      * @return array<string, mixed>
      */
     private function baris(Pengaduan $p): array
@@ -333,7 +337,7 @@ class PengaduanController extends Controller
      */
     private function validasi(Request $request): array
     {
-        return $request->validate([
+        $data = $request->validate([
             'nama_pelapor' => ['required', 'string', 'max:255'],
             'kontak_pelapor' => ['required', 'string', 'max:20'],
             'satuan_permukiman_id' => ['required', 'integer', Rule::exists('satuan_permukiman', 'id_satuan_permukiman')],
@@ -356,5 +360,9 @@ class PengaduanController extends Controller
             'judul.required' => 'Perihal pengaduan wajib diisi.',
             'deskripsi.required' => 'Uraian masalah wajib diisi.',
         ] + ValidationRules::pesan());
+
+        CakupanDataSp::pastikanDapatDitulis((int) $data['satuan_permukiman_id']);
+
+        return $data;
     }
 }

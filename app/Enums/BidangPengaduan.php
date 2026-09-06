@@ -3,7 +3,7 @@
 namespace App\Enums;
 
 use App\Enums\Concerns\PunyaLabel;
-use App\Support\DummyData;
+use App\Models\DaftarPilihan;
 
 /**
  * Bidang yang menentukan dinas mana yang menangani sebuah pengaduan.
@@ -48,9 +48,13 @@ enum BidangPengaduan: string
      */
     public static function dariKategori(string $kategori): ?self
     {
-        $bidang = DummyData::petaBidangKategori()[$kategori] ?? '';
+        $bidang = DaftarPilihan::query()
+            ->where('jenis', JenisDaftarPilihan::KategoriPengaduan->value)
+            ->where('nilai', $kategori)
+            ->with('bidang')
+            ->first()?->bidang?->nilai;
 
-        return $bidang === '' ? null : self::tryFrom($bidang);
+        return $bidang === null ? null : self::tryFrom($bidang);
     }
 
     /**
@@ -74,6 +78,13 @@ enum BidangPengaduan: string
      */
     public static function petaDariKategori(): array
     {
-        return DummyData::petaBidangKategori();
+        return DaftarPilihan::query()
+            ->where('jenis', JenisDaftarPilihan::KategoriPengaduan->value)
+            ->with('bidang')
+            ->orderBy('urutan')
+            ->orderBy('id_daftar_pilihan')
+            ->get()
+            ->mapWithKeys(fn (DaftarPilihan $kategori) => [$kategori->nilai => $kategori->bidang?->nilai ?? ''])
+            ->all();
     }
 }

@@ -9,17 +9,23 @@ use App\Enums\CakupanData;
 use App\Enums\HubunganAnggotaKeluarga;
 use App\Enums\StatusAnggotaKeluarga;
 use App\Models\AnggotaKeluarga;
+use App\Models\AnggotaPoktan;
+use App\Models\Lahan;
 use App\Models\RiwayatKepalaKeluarga;
 use App\Models\Role;
+use App\Models\Rumah;
+use App\Models\SatuanPermukiman;
 use App\Models\Transmigran;
 use App\Models\User;
 use App\Support\DummyData;
 use Database\Seeders\KawasanSeeder;
+use Database\Seeders\PoktanSeeder;
 use Database\Seeders\SpSeeder;
 use Database\Seeders\TransmigranSeeder;
 use Database\Seeders\WilayahSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 require_once __DIR__.'/DatabaseHelpers.php';
 
@@ -31,6 +37,7 @@ beforeEach(function () {
     $this->seed(KawasanSeeder::class);
     $this->seed(SpSeeder::class);
     $this->seed(TransmigranSeeder::class);
+    $this->seed(PoktanSeeder::class);
 });
 
 it('menanam seluruh transmigran dan anggota keluarga dari data contoh', function () {
@@ -272,6 +279,78 @@ it('tidak menyentuh anggota keluarga saat penanda sunting tidak ada', function (
     expect($petrus->fresh()->pekerjaan_kepala_keluarga)->toBe('NELAYAN')
         ->and($petrus->fresh()->anggotaKeluarga()->count())->toBe($sebelum);
 });
+
+it('membatasi pembuatan transmigran ke SP petugas', function () {
+    $spDiizinkan = SatuanPermukiman::findOrFail(1);
+    $spLain = SatuanPermukiman::findOrFail(2);
+    $role = Role::factory()->create(['cakupan_data' => CakupanData::PerSp->value]);
+    $operator = User::factory()->create(['role_id' => $role->id_role]);
+    $operator->semuaIzin = true;
+    $operator->satuanPermukiman()->attach($spDiizinkan->id_satuan_permukiman);
+    $this->actingAs($operator);
+
+    $this->post(route('transmigran.simpan'), dataTransmigranBaru([
+        'satuan_permukiman_id' => $spLain->id_satuan_permukiman,
+    ]))->assertNotFound();
+
+    $this->post(route('transmigran.simpan'), dataTransmigranBaru([
+        'satuan_permukiman_id' => $spDiizinkan->id_satuan_permukiman,
+    ]))->assertRedirect(route('transmigran.index'));
+
+    $kk = Transmigran::where('nik', '5321010101900777')->firstOrFail();
+    $this->put(route('transmigran.perbarui', $kk->id_transmigran), dataTransmigranBaru([
+        'satuan_permukiman_id' => $spLain->id_satuan_permukiman,
+    ]))->assertNotFound();
+});
+
+it('menolak SP yang sudah dihapus halus', function () {
+    $sp = SatuanPermukiman::findOrFail(1);
+    $sp->delete();
+
+    $this->post(route('transmigran.simpan'), dataTransmigranBaru([
+        'satuan_permukiman_id' => $sp->id_satuan_permukiman,
+    ]))->assertSessionHasErrors('satuan_permukiman_id');
+});
+
+it('menolak perpindahan SP selama keluarga punya rumah, lahan, atau keanggotaan poktan aktif', function (string $tanggungan) {
+    $spLama = SatuanPermukiman::findOrFail(1);
+    $spBaru = SatuanPermukiman::findOrFail(2);
+    $kk = buatTransmigran($spLama, ['nama_kepala_keluarga' => 'MATEUS BERE']);
+
+    match ($tanggungan) {
+        'rumah' => Rumah::create([
+            'uuid' => (string) Str::uuid(),
+            'satuan_permukiman_id' => $spLama->id_satuan_permukiman,
+            'transmigran_id' => $kk->id_transmigran,
+            'kondisi' => 'Tidak Rusak',
+            'status_hunian' => 'Dihuni',
+        ]),
+        'lahan' => Lahan::create([
+            'uuid' => (string) Str::uuid(),
+            'satuan_permukiman_id' => $spLama->id_satuan_permukiman,
+            'transmigran_id' => $kk->id_transmigran,
+        ]),
+        'poktan' => AnggotaPoktan::create([
+            'poktan_id' => buatPoktan($spLama)->id_poktan,
+            'transmigran_id' => $kk->id_transmigran,
+            'jabatan' => 'Anggota',
+            'tanggal_masuk' => '2026-01-01',
+            'status' => 'Aktif',
+        ]),
+    };
+
+    $this->put(route('transmigran.perbarui', $kk->id_transmigran), dataTransmigranBaru([
+        'nama_kepala_keluarga' => $kk->nama_kepala_keluarga,
+        'nik' => $kk->nik,
+        'no_kk' => $kk->no_kk,
+        'pekerjaan_kepala_keluarga' => $kk->pekerjaan_kepala_keluarga,
+        'satuan_permukiman_id' => $spBaru->id_satuan_permukiman,
+        'tahun_kedatangan' => $kk->tahun_kedatangan,
+        'status_tinggal' => $kk->status_tinggal->value,
+    ]))->assertSessionHasErrors('satuan_permukiman_id');
+
+    expect($kk->fresh()->satuan_permukiman_id)->toBe($spLama->id_satuan_permukiman);
+})->with(['rumah', 'lahan', 'poktan']);
 
 it('menghapus transmigran secara halus', function () {
     $id = Transmigran::where('nama_kepala_keluarga', 'YULITA HOAR')->value('id_transmigran');

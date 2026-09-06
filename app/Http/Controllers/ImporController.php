@@ -5,9 +5,10 @@ namespace App\Http\Controllers;
 use App\Support\ImporEngine;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Throwable;
 
 /**
- * Menerima unggahan berkas CSV terisi dan memprosesnya (Task 10.4, 1/2).
+ * Menerima unggahan XLSX/CSV dan memprosesnya langsung (Task 10.4, 1/2).
  *
  * Satu rute melayani seluruh entitas yang sudah aktif (`ImporEngine::
  * entitasAktif()`); entitas yang belum dikerjakan (enam entitas berantai)
@@ -26,9 +27,11 @@ class ImporController extends Controller
 
         $modul = ImporEngine::modul($entitas);
         abort_unless(
-            $modul !== null && $request->user()?->punyaAksi($modul, 'tambah') === true,
+            $modul !== null
+                && $request->user()?->punyaAksi($modul, 'lihat') === true
+                && $request->user()?->punyaAksi($modul, 'tambah') === true,
             403,
-            'Anda tidak memiliki kewenangan menambah data ini.',
+            'Anda tidak memiliki kewenangan membuka atau menambah data ini.',
         );
 
         $request->validate([
@@ -41,14 +44,24 @@ class ImporController extends Controller
         $berkas = $request->file('berkas');
         $ekstensi = strtolower((string) ($berkas->getClientOriginalExtension() ?: $berkas->extension()));
 
-        if (! in_array($ekstensi, ['csv', 'txt'], true)) {
+        if (! in_array($ekstensi, ['xlsx', 'csv'], true)) {
             return response()->json([
-                'pesan' => 'Hanya berkas CSV yang didukung saat ini. Simpan Excel sebagai CSV (UTF-8) lalu unggah ulang.',
+                'pesan' => 'Berkas harus berformat XLSX (.xlsx) atau CSV (.csv).',
             ], 422);
         }
 
-        $hasil = ImporEngine::proses($entitas, $berkas->getRealPath());
+        try {
+            return response()->json(ImporEngine::proses($entitas, $berkas->getRealPath(), $ekstensi));
+        } catch (Throwable $e) {
+            if (! $e instanceof \InvalidArgumentException) {
+                report($e);
+            }
 
-        return response()->json($hasil);
+            return response()->json([
+                'pesan' => $e instanceof \InvalidArgumentException
+                    ? $e->getMessage()
+                    : 'Berkas gagal diproses. Pastikan format dan isinya benar.',
+            ], 422);
+        }
     }
 }

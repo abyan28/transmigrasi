@@ -118,14 +118,14 @@ Akun untuk masuk ke sistem. Menggantikan tabel `users` bawaan Laravel; model waj
 
 **Seluruh pengguna sistem adalah petugas.** Warga transmigran tidak memiliki akun. Data mereka diinput dan dikelola petugas, sedangkan pengaduan diajukan lewat kanal publik tanpa login (§10.2).
 
-**Dua kredensial login.** Sistem menerima **email atau username** pada satu kolom isian yang sama. Username disediakan karena sebagian petugas lebih terbiasa mengetik nama pengguna singkat daripada alamat surel panjang.
+**Dua kredensial login.** Sistem menerima **email atau username** pada satu kolom isian yang sama. Username disediakan karena sebagian petugas lebih terbiasa mengetik nama pengguna singkat daripada alamat email panjang.
 
 **Cakupan data tidak disimpan di sini,** melainkan pada `role.cakupan_data`. Untuk role bercakupan `Per SP`, daftar SP yang ditugaskan disimpan pada tabel `user_satuan_permukiman` (§2.6).
 
 **Catatan:**
 - Penonaktifan akun memakai `is_aktif = FALSE`, bukan penghapusan, agar jejak audit tetap utuh.
 - Tidak ada pendaftaran mandiri. Akun hanya dibuat Admin (`rules.md` §5).
-- Pemulihan kata sandi dilakukan Admin, bukan lewat tautan surel. Rincian pada `rules.md` §14b.
+- Pemulihan kata sandi dilakukan Admin, bukan lewat tautan email. Rincian pada `rules.md` §14b.
 
 ### 2.1a `role`
 
@@ -208,7 +208,7 @@ Riwayat perubahan data penting (`rules.md` §14.5).
 
 Kode verifikasi pemulihan kata sandi mandiri (`rules.md` 14b poin 7 sampai 10).
 
-Menggantikan tabel bawaan `password_reset_tokens`, yang strukturnya dirancang untuk token panjang pada tautan sekali klik. Sistem ini mengirim **kode enam digit yang diketik**, agar tetap dapat dipakai ketika surel dan peramban berada di perangkat berbeda, atau ketika jaringan lokus gagal memuat tautan panjang.
+Menggantikan tabel bawaan `password_reset_tokens`, yang strukturnya dirancang untuk token panjang pada tautan sekali klik. Sistem ini mengirim **kode enam digit yang diketik**, agar tetap dapat dipakai ketika email dan peramban berada di perangkat berbeda, atau ketika jaringan lokus gagal memuat tautan panjang.
 
 | Kolom | Tipe | Null | Kunci | Keterangan |
 |---|---|---|---|---|
@@ -224,7 +224,7 @@ Menggantikan tabel bawaan `password_reset_tokens`, yang strukturnya dirancang un
 - Kode disimpan sebagai **sidik**, sama seperti kata sandi. Alasannya berlaku meski kode hanya hidup 15 menit.
 - Kode lama milik satu akun **wajib dibatalkan** ketika kode baru diminta, agar tidak ada dua kode sah beredar bersamaan.
 - Baris tidak dihapus setelah dipakai, melainkan ditandai lewat `dipakai_pada`, agar percobaan pemakaian ulang tetap terlacak.
-- Tabel ini **tidak menyimpan alamat surel tujuan**. Alamat dibaca dari `user` saat pengiriman, sehingga perubahan surel tidak meninggalkan salinan usang di sini.
+- Tabel ini **tidak menyimpan alamat email tujuan**. Alamat dibaca dari `user` saat pengiriman, sehingga perubahan email tidak meninggalkan salinan usang di sini.
 - Permintaan kode **tidak pernah dibalas berbeda** antara akun yang ada dan tidak ada (`rules.md` 14b poin 9), sehingga tabel ini juga tidak boleh dipakai sebagai sumber pesan galat yang membedakan keduanya.
 
 ### 2.4 `notifikasi`

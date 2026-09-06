@@ -5,8 +5,8 @@ kawasan transmigrasi Kobalima Timur, Kabupaten Malaka, Nusa Tenggara Timur.
 
 Nama sistem dipakai dalam tiga bentuk, menurut jarak pembaca dari layar: **DIGITRANS** pada
 antarmuka sehari-hari (judul tab, header, sidebar, footer), **DIGITRANS &ndash; Digitalisasi
-Transmigrasi** pada titik temu pertama (halaman masuk, CMS, subjek surel), dan **DIGITRANS
-Kobalima Timur** pada yang keluar dari sistem (badan surel, footer publik).
+Transmigrasi** pada titik temu pertama (halaman masuk, CMS, subjek email), dan **DIGITRANS
+Kobalima Timur** pada yang keluar dari sistem (badan email, footer publik).
 
 Data transmigran, rumah, lahan, komoditas, hasil panen, alsintan, saprotan, infrastruktur,
 kelembagaan poktan, dan pengaduan kawasan dikumpulkan dalam satu platform, lalu dipakai untuk
@@ -92,12 +92,18 @@ copy .env.example .env
 php artisan key:generate
 ```
 
-Sesuaikan basis data pada `.env`, lalu buat dan migrasikan:
+Sesuaikan basis data pada `.env`, lalu buat dan migrasikan. Seeder bawaan hanya memuat data bootstrap dan referensi:
 
 ```bash
 mysql -u root -e "CREATE DATABASE digitrans;"
 php artisan migrate --seed
 npm run build
+```
+
+Untuk pengembangan atau pengujian yang memerlukan data demo lengkap:
+
+```bash
+php artisan db:seed --class=DemoSeeder
 ```
 
 ## Menjalankan

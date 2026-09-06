@@ -9,7 +9,9 @@
  * KELUARGA, bukan bidang (rules.md 7.5/7.6/7.8/7.9).
  */
 
+use App\Enums\CakupanData;
 use App\Models\Lahan;
+use App\Models\Role;
 use App\Models\Transmigran;
 use App\Models\User;
 use App\Support\DummyData;
@@ -95,6 +97,71 @@ it('menolak KK yang sudah punya baris lahan', function () {
         'satuan_permukiman_id' => $sp,
         'luas_kering' => '1.0',
         'luas_basah' => '0',
+        'status_sertifikat' => 'Belum',
+    ])->assertSessionHasErrors('transmigran_id');
+});
+
+it('mengunci pilihan SP lahan tanpa menghilangkan nilai kiriman', function () {
+    $isi = $this->get(route('lahan.index'))->assertOk()->getContent();
+
+    expect($isi)->toContain(':disabled="pemilikId !== \'\'"')
+        ->and($isi)->toContain('type="hidden" name="satuan_permukiman_id"');
+});
+
+it('menurunkan SP lahan dari pemilik dan mengabaikan SP palsu', function () {
+    $kk = Transmigran::whereDoesntHave('lahan')->first();
+    $spPalsu = Transmigran::where('satuan_permukiman_id', '!=', $kk->satuan_permukiman_id)
+        ->value('satuan_permukiman_id');
+
+    $this->post(route('lahan.simpan'), [
+        'transmigran_id' => $kk->id_transmigran,
+        'satuan_permukiman_id' => $spPalsu,
+        'kode_lahan' => 'LH-FORGE',
+        'status_sertifikat' => 'Belum',
+    ])->assertRedirect(route('lahan.index'));
+
+    expect(Lahan::where('kode_lahan', 'LH-FORGE')->value('satuan_permukiman_id'))
+        ->toBe($kk->satuan_permukiman_id);
+});
+
+it('membatasi penulisan lahan dan pemilik ke SP petugas', function () {
+    $kkDiizinkan = Transmigran::whereDoesntHave('lahan')->first();
+    $kkLain = Transmigran::whereDoesntHave('lahan')
+        ->where('satuan_permukiman_id', '!=', $kkDiizinkan->satuan_permukiman_id)
+        ->first();
+    $role = Role::factory()->create(['cakupan_data' => CakupanData::PerSp->value]);
+    $operator = User::factory()->create(['role_id' => $role->id_role]);
+    $operator->semuaIzin = true;
+    $operator->satuanPermukiman()->attach($kkDiizinkan->satuan_permukiman_id);
+    $this->actingAs($operator);
+
+    $this->post(route('lahan.simpan'), [
+        'transmigran_id' => $kkLain->id_transmigran,
+        'satuan_permukiman_id' => $kkDiizinkan->satuan_permukiman_id,
+        'status_sertifikat' => 'Belum',
+    ])->assertNotFound();
+
+    $this->post(route('lahan.simpan'), [
+        'transmigran_id' => $kkDiizinkan->id_transmigran,
+        'satuan_permukiman_id' => $kkDiizinkan->satuan_permukiman_id,
+        'kode_lahan' => 'LH-SCOPED',
+        'status_sertifikat' => 'Belum',
+    ])->assertRedirect(route('lahan.index'));
+
+    $lahan = Lahan::where('kode_lahan', 'LH-SCOPED')->firstOrFail();
+    $this->put(route('lahan.perbarui', $lahan->id_lahan), [
+        'transmigran_id' => $kkLain->id_transmigran,
+        'status_sertifikat' => 'Belum',
+    ])->assertNotFound();
+});
+
+it('menolak pemilik lahan yang sudah dihapus halus', function () {
+    $kk = Transmigran::whereDoesntHave('lahan')->first();
+    $kk->delete();
+
+    $this->post(route('lahan.simpan'), [
+        'transmigran_id' => $kk->id_transmigran,
+        'satuan_permukiman_id' => $kk->satuan_permukiman_id,
         'status_sertifikat' => 'Belum',
     ])->assertSessionHasErrors('transmigran_id');
 });

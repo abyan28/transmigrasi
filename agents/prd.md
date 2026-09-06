@@ -125,7 +125,7 @@ Sistem ini dirancang untuk menyelesaikan masalah utama berikut:
 - **Role bersifat dinamis.** Admin dapat membuat role baru, memilih kewenangan per fitur, dan menetapkan cakupan datanya lewat antarmuka, tanpa perlu mengubah kode program.
 - **Tidak ada pendaftaran mandiri.** Sistem tidak menyediakan halaman daftar akun; seluruh akun dibuat oleh Admin. Ini mencegah pihak tak berwenang membuat akun ke sistem data kependudukan.
 - **Kredensial berupa email atau username.** Seluruh pengguna adalah petugas, sehingga tidak ada kredensial berbasis NIK.
-- **Pemulihan kata sandi tersedia lewat dua jalur.** Petugas dapat meminta kode verifikasi enam digit ke surel dinasnya, atau menghubungi Admin untuk disetel ulang secara langsung. Jalur Admin dipertahankan karena jaringan di lokus tidak selalu memungkinkan penerimaan surel tepat waktu, sehingga sistem tidak pernah bergantung pada satu-satunya cara. Kode dikirim sebagai angka yang diketik, bukan tautan yang diklik, agar tetap dapat dipakai ketika surel hanya dapat dibuka di perangkat lain.
+- **Pemulihan kata sandi tersedia lewat dua jalur.** Petugas dapat meminta kode verifikasi enam digit ke email dinasnya, atau menghubungi Admin untuk disetel ulang secara langsung. Jalur Admin dipertahankan karena jaringan di lokus tidak selalu memungkinkan penerimaan email tepat waktu, sehingga sistem tidak pernah bergantung pada satu-satunya cara. Kode dikirim sebagai angka yang diketik, bukan tautan yang diklik, agar tetap dapat dipakai ketika email hanya dapat dibuka di perangkat lain.
 - Setiap tindakan Admin terhadap akun orang lain, termasuk menyetel ulang kata sandi, wajib tercatat pada audit log.
 
 ### 7.2 Data wilayah transmigrasi

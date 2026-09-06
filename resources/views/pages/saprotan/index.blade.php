@@ -105,8 +105,6 @@
                 <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ $s['sumber_dana'] ?? '-' }}</td>
                 <td class="px-5 py-3">
                     <x-sim.aksi-baris :rincian-url="route('saprotan.detail', $s['id_saprotan'])"
-                        modal-ubah="formUbahSaprotanBaris"
-                        :data-baris="['id' => $s['id_saprotan'], 'id_saprotan' => $s['id_saprotan'], 'jenis' => $s['jenis'], 'nama' => $s['nama'], 'komoditas_id' => $s['komoditas_id'], 'varietas' => $s['varietas'], 'jadwal_tanam' => $s['jadwal_tanam'], 'jumlah_total' => $s['jumlah_total'], 'satuan_id' => $s['satuan_id'], 'tahun_pengadaan' => $s['tahun_pengadaan'], 'sumber_dana' => $s['sumber_dana'], 'keterangan' => $s['keterangan']]"
                         :hapus-url="'/saprotan/' . $s['id_saprotan']"
                         konfirmasi-hapus="hapusSaprotan" :label="$s['nama']" />
                 </td>
@@ -135,13 +133,6 @@
         keterangan="Satu pengadaan beserta pembagiannya ke satu atau beberapa kelompok tani."
         :aksi="route('saprotan.simpan')" ukuran="lg" label-simpan="Simpan Data">
         @include('pages.saprotan.form', ['awalan' => 'tambah'])
-    </x-sim.modal-form>
-
-    <x-sim.modal-form nama="formUbahSaprotanBaris" judul="Ubah Data Saprotan"
-        keterangan="Satuan permukiman mengikuti kelompok tani penerima."
-        pola-aksi="/saprotan/:id" metode="PUT" ukuran="lg"
-        label-simpan="Simpan Perubahan">
-        @include('pages.saprotan.form', ['awalan' => 'ubahBaris'])
     </x-sim.modal-form>
 
     <x-sim.confirm-dialog nama="hapusSaprotan" judul="Hapus data ini?"

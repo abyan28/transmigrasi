@@ -770,7 +770,7 @@ Parameter dikelompokkan menurut satu pertanyaan: **tanpa ini, apakah tempat ters
 1a. Petugas juga dapat mencatatkan pengaduan atas nama warga yang melapor lisan. Sumber laporan dibedakan lewat kolom `sumber_laporan` bernilai `Publik` atau `Petugas`.
 1b. Setelah mengirim, warga menerima **nomor pengaduan** yang dipakai untuk melacak perkembangan laporannya pada halaman lacak publik.
 1c. Halaman lacak hanya menampilkan status, tanggal, dan catatan penanganan. Data pribadi pelapor tidak pernah ditampilkan.
-1c-1. Warga **boleh mencantumkan alamat surel**, tetapi tidak diwajibkan. Bila diisi, nomor pengaduan dikirim juga ke sana sebagai salinan. Nomor tetap ditampilkan besar di layar setelah pengiriman berhasil, sehingga surel tidak pernah menjadi satu-satunya cara menerimanya. Kolom ini dibuat opsional karena jaringan di lokus tidak selalu memadai dan sebagian warga tidak memiliki surel; mewajibkannya akan menutup kanal yang justru paling perlu terbuka.
+1c-1. Warga **boleh mencantumkan alamat email**, tetapi tidak diwajibkan. Bila diisi, nomor pengaduan dikirim juga ke sana sebagai salinan. Nomor tetap ditampilkan besar di layar setelah pengiriman berhasil, sehingga email tidak pernah menjadi satu-satunya cara menerimanya. Kolom ini dibuat opsional karena jaringan di lokus tidak selalu memadai dan sebagian warga tidak memiliki email; mewajibkannya akan menutup kanal yang justru paling perlu terbuka.
 
 #### Pengamanan kanal publik
 1d. Pengiriman dibatasi **3 pengaduan per jam untuk setiap alamat IP**.
@@ -986,38 +986,38 @@ Pola berikut adalah **standar yang harus dibangun dan dipatuhi** sejak awal proy
 
 #### Pembuatan akun
 
-> **Perubahan 2026-08-14.** Sebelumnya Admin mengisi username sekaligus mengetik kata sandi awal, dan surel bersifat opsional. Susunan itu membebani Admin dengan mengarang username orang lain, sedangkan kata sandi karangan manusia cenderung berpola dan dipakai ulang untuk banyak akun. Poin 3 sampai 5 di bawah menggantikannya.
+> **Perubahan 2026-08-14.** Sebelumnya Admin mengisi username sekaligus mengetik kata sandi awal, dan email bersifat opsional. Susunan itu membebani Admin dengan mengarang username orang lain, sedangkan kata sandi karangan manusia cenderung berpola dan dipakai ulang untuk banyak akun. Poin 3 sampai 5 di bawah menggantikannya.
 
 1. **Tidak ada pendaftaran mandiri.** Sistem tidak menyediakan halaman daftar akun. Seluruh akun dibuat oleh Admin lewat menu Manajemen Pengguna.
 2. Setiap akun wajib diberi satu role. Bila role tersebut bercakupan `Per SP`, akun wajib pula diberi minimal satu penugasan SP.
 3. **Kata sandi awal dibangkitkan sistem**, bukan diketik Admin, lalu ditandai `password_harus_diganti = TRUE`. Nilainya ditampilkan **satu kali** di layar setelah akun tersimpan dan tidak pernah dapat dibaca ulang.
-3a. Kata sandi tersebut **dikirim juga ke surel** petugas, tetapi penyerahan langsung tetap dianjurkan. Jaringan di lokus tidak selalu memadai, sehingga surel adalah salinan, bukan pengganti.
+3a. Kata sandi tersebut **dikirim juga ke email** petugas, tetapi penyerahan langsung tetap dianjurkan. Jaringan di lokus tidak selalu memadai, sehingga email adalah salinan, bukan pengganti.
 3b. Akun baru **selalu langsung aktif**. Tidak ada pilihan menonaktifkan pada formulir; penonaktifan dan pengaktifan kembali dilakukan lewat tombol pada halaman daftar agar seluruh perubahan keadaan akun tercatat lewat satu jalur yang sama.
 
 #### Kredensial masuk
 4. Sistem menerima **email atau username** pada satu kolom isian yang sama. Keduanya unik antar-akun.
-4a. **Surel wajib diisi Admin** saat akun dibuat, sebab itulah satu-satunya kredensial yang dimiliki petugas ketika pertama kali masuk.
+4a. **Email wajib diisi Admin** saat akun dibuat, sebab itulah satu-satunya kredensial yang dimiliki petugas ketika pertama kali masuk.
 5. **Username dibuat sendiri oleh petugas** pada saat masuk pertama kali, bersamaan dengan penggantian kata sandi sementara. Admin tidak mengarangkannya, sebab petugaslah yang akan mengetiknya setiap hari.
 5a. Username hanya boleh memuat huruf kecil, angka, titik, dan garis bawah, dengan panjang 3 sampai 50 karakter. Ketersediaannya diperiksa saat diketik, sebelum formulir dikirim.
 6. Seluruh pengguna sistem adalah petugas, sehingga tidak ada kredensial berbasis NIK. Warga tidak memiliki akun.
 
 #### Pemulihan kata sandi
 
-> **Perubahan 2026-08-12.** Sebelumnya sistem sama sekali tidak menyediakan pemulihan mandiri. Alasannya waktu itu: tidak semua transmigran memiliki alamat surel. Alasan tersebut **gugur** setelah ditetapkan bahwa warga tidak memiliki akun sama sekali (§5.0 poin 5), sehingga seluruh pemegang akun adalah petugas bersurel dinas. Jalur mandiri kini ditambahkan **sebagai pelengkap**, bukan pengganti. Alasan kedua, yaitu jaringan lokus yang tidak selalu memadai, masih berlaku dan itulah sebabnya jalur Admin dipertahankan.
+> **Perubahan 2026-08-12.** Sebelumnya sistem sama sekali tidak menyediakan pemulihan mandiri. Alasannya waktu itu: tidak semua transmigran memiliki alamat email. Alasan tersebut **gugur** setelah ditetapkan bahwa warga tidak memiliki akun sama sekali (§5.0 poin 5), sehingga seluruh pemegang akun adalah petugas beremail dinas. Jalur mandiri kini ditambahkan **sebagai pelengkap**, bukan pengganti. Alasan kedua, yaitu jaringan lokus yang tidak selalu memadai, masih berlaku dan itulah sebabnya jalur Admin dipertahankan.
 
 **Dua jalur pemulihan, keduanya sah:**
 
 | Jalur | Dipakai ketika |
 |---|---|
-| **Kode verifikasi lewat surel** | Petugas memiliki surel dinas aktif dan jaringan memadai |
-| **Setel ulang oleh Admin** | Surel tidak diterima, akun tanpa surel aktif, atau petugas berada di lokus bersinyal lemah |
+| **Kode verifikasi lewat email** | Petugas memiliki email dinas aktif dan jaringan memadai |
+| **Setel ulang oleh Admin** | Email tidak diterima, akun tanpa email aktif, atau petugas berada di lokus bersinyal lemah |
 
-7. Sistem mengirim **kode verifikasi enam digit**, bukan tautan yang dapat diklik. Kode dapat dibaca dari layar lain lalu diketik, sehingga tetap dapat dipakai ketika surel hanya dapat dibuka di perangkat berbeda atau ketika peramban gagal memuat tautan panjang di jaringan lemah.
+7. Sistem mengirim **kode verifikasi enam digit**, bukan tautan yang dapat diklik. Kode dapat dibaca dari layar lain lalu diketik, sehingga tetap dapat dipakai ketika email hanya dapat dibuka di perangkat berbeda atau ketika peramban gagal memuat tautan panjang di jaringan lemah.
 8. Kode berlaku **15 menit**, sekali pakai, dan hangus begitu kode baru diminta. Kode lama wajib dibatalkan agar tidak ada dua kode sah beredar bersamaan.
 9. Halaman permintaan kode **tidak pernah menyatakan apakah alamat terdaftar**. Pesan yang ditampilkan selalu sama, sebab pesan yang membedakan keduanya mengubah halaman ini menjadi alat memeriksa siapa saja yang memiliki akun.
 10. Permintaan kode dibatasi **3 kali per jam per akun** dan percobaan pemasukan kode dibatasi **5 kali per kode** (§14c). Setelah itu kode hangus dan petugas wajib meminta yang baru.
-11. Jalur Admin pada poin 12 sampai 15 **tetap berlaku penuh** dan tidak boleh dihapus. Jalur inilah satu-satunya yang bekerja tanpa sambungan surel.
-12. Pengguna yang lupa kata sandi dapat menghubungi Admin. Admin menyetel ulang lewat Manajemen Pengguna, lalu menyerahkan kata sandi sementara **secara langsung**. Sejak 2026-08-14 kata sandi tersebut dikirim juga ke surel pengguna, tetapi penyerahan langsung tetap wajib dilakukan: jalur Admin justru disediakan untuk petugas di lokus bersinyal lemah, yang belum tentu dapat membuka surelnya saat itu juga.
+11. Jalur Admin pada poin 12 sampai 15 **tetap berlaku penuh** dan tidak boleh dihapus. Jalur inilah satu-satunya yang bekerja tanpa sambungan email.
+12. Pengguna yang lupa kata sandi dapat menghubungi Admin. Admin menyetel ulang lewat Manajemen Pengguna, lalu menyerahkan kata sandi sementara **secara langsung**. Sejak 2026-08-14 kata sandi tersebut dikirim juga ke email pengguna, tetapi penyerahan langsung tetap wajib dilakukan: jalur Admin justru disediakan untuk petugas di lokus bersinyal lemah, yang belum tentu dapat membuka emailnya saat itu juga.
 13. **Penyetelan ulang oleh Admin** (dan perintah artisan darurat) menghasilkan kata sandi **sementara**, sehingga `password_harus_diganti` bernilai `TRUE`: pengguna diarahkan ke halaman ganti kata sandi saat masuk berikutnya dan **tidak dapat mengakses halaman lain** sebelum menggantinya. **Pemulihan lewat kode verifikasi TIDAK menyetel `password_harus_diganti`** (diubah 2026-09-03): pada jalur itu pengguna sudah mengetik sendiri kata sandi finalnya di halaman verifikasi, sehingga memaksanya mengganti lagi hanya menyuruh mengetik dua kali. Alasan kolom ini sejak awal adalah mencegah kata sandi sementara buatan Admin dipakai terus-menerus (`notes.md` 2026-08-11), dan jalur kode verifikasi tidak pernah membuat kata sandi sementara.
 14. Admin **tidak dapat melihat** kata sandi pengguna mana pun, karena hanya hash yang tersimpan. Admin hanya dapat menimpanya dengan nilai baru.
 15. Setiap penyetelan ulang wajib tercatat pada audit log dengan aksi `Reset Kata Sandi`, memuat petugas pelaku, akun sasaran, waktu kejadian, dan **jalur yang dipakai**. Pemulihan mandiri tercatat atas nama pemilik akun itu sendiri.
@@ -1059,13 +1059,13 @@ Pola berikut adalah **standar yang harus dibangun dan dipatuhi** sejak awal proy
 5. Membuka dropdown tidak menandai notifikasi dibaca. Baris ditandai dibaca saat dipilih, atau lewat tindakan "Tandai semua dibaca".
 6. Aksi baca wajib membatasi kueri ke `user_id` pengguna yang sedang masuk; id notifikasi tidak boleh membuka milik akun lain.
 7. Pembentukan notifikasi dilakukan setelah transaksi bisnis dan sinkronisasi pivot berhasil.
-8. Notifikasi adalah pemberitahuan ringkas, bukan pengganti audit log maupun surel kepada warga.
+8. Notifikasi adalah pemberitahuan ringkas, bukan pengganti audit log maupun email kepada warga.
 
-### 14e. Aturan Surel Sistem
-1. Seluruh surel memakai layout resmi bersama yang membaca identitas instansi dari CMS; isi dinamis penting seperti kode verifikasi, nomor pengaduan, status, dan masa berlaku tetap dikuasai kode.
+### 14e. Aturan Email Sistem
+1. Seluruh email memakai layout resmi bersama yang membaca identitas instansi dari CMS; isi dinamis penting seperti kode verifikasi, nomor pengaduan, status, dan masa berlaku tetap dikuasai kode.
 2. CMS hanya boleh mengubah sapaan, penutup, nama pengirim, dan catatan kaki agar kesalahan redaksional tidak dapat menghapus informasi keamanan.
-3. Surel harus ringan: CSS inline, tanpa font eksternal dan tanpa pelacak. Nomor/kode tetap terlihat sebagai teks bila gambar tidak dimuat.
-4. Pengaduan dengan alamat email menerima nomor saat dikirim dan pembaruan pada setiap perubahan status. Surel tidak pernah menjadi satu-satunya cara memperoleh nomor atau perkembangan.
+3. Email harus ringan: CSS inline, tanpa font eksternal dan tanpa pelacak. Nomor/kode tetap terlihat sebagai teks bila gambar tidak dimuat.
+4. Pengaduan dengan alamat email menerima nomor saat dikirim dan pembaruan pada setiap perubahan status. Email tidak pernah menjadi satu-satunya cara memperoleh nomor atau perkembangan.
 5. Kegagalan SMTP dicatat ke log tetapi tidak membatalkan transaksi bisnis. Antarmuka wajib mengatakan apakah salinan email berhasil dikirim.
 
 ### 15. Aturan Backup dan Pemeliharaan

@@ -134,7 +134,7 @@
                         ditampilkan di sini, petugas tidak punya jalur balasan
                         tertulis ketika nomor telepon tidak dapat dihubungi.
 
-                        Istilahnya "Email", bukan "Surel" (ui-spec.md 10.1).
+                        Istilah antarmuka mengikuti ui-spec.md 10.1.
                     --}}
                     <div class="flex justify-between gap-3">
                         <dt class="text-gray-500 dark:text-gray-400">Email</dt>

@@ -47,9 +47,10 @@ use App\Http\Controllers\SpController;
 use App\Http\Controllers\TemplateImporController;
 use App\Http\Controllers\TransmigranController;
 use App\Http\Controllers\WilayahController;
+use App\Models\DaftarPilihan;
 use App\Models\Pengaduan;
 use App\Models\SatuanPermukiman;
-use App\Support\DummyData;
+use App\Models\Transmigran;
 use App\Support\KontenSistem;
 use App\Support\LaporanData;
 use App\Support\PenilaianKondisiSp;
@@ -158,7 +159,7 @@ Route::get('/', function () {
         // supaya kartu ringkasan status tidak membantah tabel di bawahnya
         // saat filter SP aktif (Task 9.2).
         'penilaianSp' => $penilaianSp,
-        'rekapKondisi' => collect(\App\Enums\StatusKondisiSp::cases())
+        'rekapKondisi' => collect(StatusKondisiSp::cases())
             ->mapWithKeys(fn ($s) => [$s->value => 0])
             ->merge(collect($penilaianSp)->countBy(fn ($p) => $p['status']->value))
             ->all(),
@@ -256,49 +257,8 @@ Route::get('/', function () {
     ]);
 })->name('beranda');
 
-// Rincian satu satuan permukiman (RESTful baku).
-// SP yang tidak dikenal membalas 404 agar alamat karangan tidak menghasilkan
-// halaman kosong yang membingungkan.
-Route::get('/sp/{sp}', function (int $sp) {
-    $data = DummyData::cariSp($sp);
-
-    abort_if($data === null, 404);
-
-    $rekap = DummyData::rekapSp($data['id_satuan_permukiman']);
-    $deretSp = DummyData::deretTahunanSp($data['id_satuan_permukiman']);
-
-    return view('pages.sp.detail', [
-        'title' => $data['nama'],
-        'sp' => $data,
-        'rekap' => $rekap,
-        'deretSp' => $deretSp,
-        'penilaian' => PenilaianKondisiSp::nilai($data['id_satuan_permukiman']),
-
-        'transmigran' => DummyData::saringPerSp(DummyData::transmigran(), $data['nama']),
-        'rumah' => DummyData::saringPerSp(DummyData::rumah(), $data['nama']),
-        'lahan' => DummyData::saringPerSp(DummyData::lahan(), $data['nama']),
-        'poktan' => DummyData::saringPerSp(DummyData::poktan(), $data['nama']),
-        'panen' => DummyData::saringPerSp(DummyData::hasilPanen(), $data['nama']),
-        'pengaduan' => DummyData::saringPerSp(DummyData::pengaduan(), $data['nama']),
-        'infrastruktur' => DummyData::saringPerSp(DummyData::infrastruktur(), $data['nama']),
-        'fasilitas' => DummyData::saringPerSp(DummyData::fasilitasSp(), $data['nama']),
-        'inventaris' => DummyData::saringPerSp(DummyData::inventarisSp(), $data['nama']),
-
-        // Rute pencapaian menuju SP ini (Tabel 2.1 Monografi, Stage C2).
-        'ruteAksesibilitas' => DummyData::ruteAksesibilitasSp($data['id_satuan_permukiman']),
-
-        'persenHuni' => $data['jumlah_kk_terisi'] > 0
-            ? round($rekap['rumah_terhuni'] / $data['jumlah_kk_terisi'] * 100)
-            : 0,
-        'persenIsi' => round($data['jumlah_kk_terisi'] / $data['jumlah_kk_rencana'] * 100),
-
-        'dataGrafik' => [
-            'tahun' => $deretSp['tahun'],
-            'kk' => $deretSp['jumlah_kk'],
-            'panen' => $deretSp['volume_panen'],
-        ],
-    ]);
-})->where('sp', '[0-9]+')->name('sp.detail');
+Route::get('/sp/{sp}', [SpController::class, 'detail'])
+    ->where('sp', '[0-9]+')->name('sp.detail');
 
 // Redirect 301 untuk kompatibilitas alamat lama /dashboard/sp/{sp}
 Route::get('/dashboard/sp/{sp}', function (int $sp) {
@@ -323,27 +283,36 @@ Route::get('/panduan', function () {
     return view('pages.panduan.index', ['title' => 'Panduan Penggunaan']);
 })->name('panduan');
 
-// Galeri komponen bersama, halaman internal untuk pengembangan.
-// Dihapus sebelum penyerahan akhir.
-Route::get('/galeri-komponen', function () {
-    // Halaman peninjauan komponen, dijadwalkan dihapus bersama `uji-403`.
-    // Tetap disisir ide C agar penjaga "view tidak mengambil datanya sendiri"
-    // tidak perlu memuat pengecualian yang lalu terlupa dicabut.
-    return view('pages.galeri-komponen', [
-        'title' => 'Galeri Komponen',
-        'ringkasan' => DummyData::ringkasanDashboard(),
-        'transmigran' => DummyData::transmigran(),
-        'daftarSp' => DummyData::satuanPermukiman(),
-        'opsiPrioritasPengaduan' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::PrioritasPengaduan),
-        'opsiKondisiRumah' => DummyData::opsiDaftarPilihan(JenisDaftarPilihan::KondisiRumah),
-    ]);
-})->name('galeri-komponen');
+if (app()->environment(['local', 'testing'])) {
+    Route::get('/galeri-komponen', function () {
+        $opsi = fn (JenisDaftarPilihan $jenis) => DaftarPilihan::query()
+            ->where('jenis', $jenis->value)
+            ->where('is_aktif', true)
+            ->orderBy('urutan')
+            ->pluck('nilai', 'nilai')
+            ->all();
 
-// Pemicu halaman 403 untuk peninjauan tampilan. RBAC yang memicunya secara
-// alami baru aktif pada Tahap 3. Dihapus bersama galeri komponen.
-Route::get('/uji-403', function () {
-    abort(403);
-})->name('uji-403');
+        return view('pages.galeri-komponen', [
+            'title' => 'Galeri Komponen',
+            'ringkasan' => RekapDashboard::ringkasan(),
+            'transmigran' => Transmigran::query()->with('satuanPermukiman')->limit(10)->get()->map(fn ($t) => [
+                'nama_kepala_keluarga' => $t->nama_kepala_keluarga,
+                'nik' => $t->nik,
+                'satuan_permukiman' => $t->satuanPermukiman?->nama,
+            ])->all(),
+            'daftarSp' => SatuanPermukiman::query()->orderBy('nama')->get()->map(fn ($sp) => [
+                'id_satuan_permukiman' => $sp->id_satuan_permukiman,
+                'nama' => $sp->nama,
+            ])->all(),
+            'opsiPrioritasPengaduan' => $opsi(JenisDaftarPilihan::PrioritasPengaduan),
+            'opsiKondisiRumah' => $opsi(JenisDaftarPilihan::KondisiRumah),
+        ]);
+    })->name('galeri-komponen');
+
+    Route::get('/uji-403', function () {
+        abort(403);
+    })->name('uji-403');
+}
 /*
 |--------------------------------------------------------------------------
 | Data Master Wilayah, SP, dan Aset
@@ -1138,6 +1107,8 @@ Route::delete('/pengguna/{id}', function (int $id) {
 */
 Route::get('/template-impor/{entitas}', [TemplateImporController::class, 'unduh'])
     ->where('entitas', '[a-z\-]+')->name('template-impor');
+Route::get('/template-impor/{entitas}/xlsx', [TemplateImporController::class, 'unduhXlsx'])
+    ->where('entitas', '[a-z\-]+')->name('template-impor.xlsx');
 
 /*
 |--------------------------------------------------------------------------

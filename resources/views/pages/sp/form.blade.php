@@ -17,6 +17,7 @@
 @php
     $awalan = $awalan ?? 'tambah';
     $data = $data ?? [];
+    $ruteAksesibilitasData = old('rute_aksesibilitas', $ruteAksesibilitasData ?? []);
 
     $kelasKontrol = 'h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30';
     $kelasLabel = 'mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400';
@@ -119,7 +120,7 @@
                     <option value="">Pilih kawasan</option>
                     @foreach ($daftarKawasan as $k)
                         <option value="{{ $k['id_kawasan_transmigrasi'] }}"
-                            @selected(old('kawasan', $data['kawasan'] ?? '') === $k['nama'])>
+                            @selected((string) old('kawasan_id', $data['kawasan_id'] ?? '') === (string) $k['id_kawasan_transmigrasi'])>
                             {{ $k['nama'] }}
                         </option>
                     @endforeach
@@ -134,7 +135,7 @@
                         <option value="{{ $d['id_desa'] }}"
                             data-kabupaten="{{ $d['kabupaten_id'] ?? '' }}"
                             x-show="! kabupatenKawasan || kabupatenKawasan === {{ (int) ($d['kabupaten_id'] ?? 0) }}"
-                            @selected(old('desa', $data['desa'] ?? '') === $d['nama'])>
+                            @selected((string) old('desa_id', $data['desa_id'] ?? '') === (string) $d['id_desa'])>
                             {{ $d['nama'] }} &mdash; Kec. {{ $d['kecamatan'] }}
                         </option>
                     @endforeach
@@ -394,9 +395,10 @@
         Bagian 4b: Rute Aksesibilitas (Tabel 2.1 Monografi), daftar dinamis.
         Ditambahkan 2026-08-28 (Rombongan C, Stage C2).
     --}}
+    @if ($awalan !== 'ubahBaris')
     <section class="border-t border-gray-200 pt-5 dark:border-gray-800"
         x-data="{
-            rute: @js(collect($ruteAksesibilitasData ?? [])->map(fn ($r) => [
+            rute: @js(collect($ruteAksesibilitasData)->map(fn ($r) => [
                 'rute' => $r['rute'] ?? '',
                 'jarak_km' => $r['jarak_km'] ?? '',
                 'sarana_angkutan' => $r['sarana_angkutan'] ?? '',
@@ -411,6 +413,7 @@
             },
             hapusRute(i) { this.rute.splice(i, 1); },
         }">
+        <input type="hidden" name="_rute_disunting" value="1" />
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
                 <h3 class="{{ $kelasBagian }}">Rute Aksesibilitas</h3>
@@ -500,6 +503,7 @@
             </fieldset>
         </template>
     </section>
+    @endif
 
     <section>
         <h3 class="{{ $kelasBagian }}">Dokumen Pendukung & Catatan</h3>

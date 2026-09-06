@@ -13,6 +13,7 @@ use App\Models\Role;
 use App\Models\Transmigran;
 use App\Models\User;
 use App\Support\PenyimpananDokumen;
+use App\Support\PetaIzinRute;
 use Database\Seeders\KawasanSeeder;
 use Database\Seeders\PermissionRoleSeeder;
 use Database\Seeders\SpSeeder;
@@ -22,6 +23,22 @@ use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
     $this->seed(PermissionRoleSeeder::class);
+});
+
+it('memetakan atau mengecualikan setiap rute tulis internal bernama', function () {
+    $peta = PetaIzinRute::peta();
+    $dikecualikan = PetaIzinRute::dikecualikan();
+
+    $tanpaPenjagaan = collect(app('router')->getRoutes()->getRoutes())
+        ->filter(fn ($rute) => $rute->getName() !== null
+            && array_intersect($rute->methods(), ['POST', 'PUT', 'PATCH', 'DELETE']) !== []
+            && in_array('auth', $rute->middleware(), true))
+        ->map(fn ($rute) => $rute->getName())
+        ->reject(fn (string $nama) => isset($peta[$nama]) || in_array($nama, $dikecualikan, true))
+        ->values()
+        ->all();
+
+    expect($tanpaPenjagaan)->toBe([]);
 });
 
 it('meloloskan Admin ke seluruh modul sistem', function () {
