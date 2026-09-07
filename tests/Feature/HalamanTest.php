@@ -6044,6 +6044,42 @@ it('memilih kabupaten kawasan lewat dua tingkat', function () {
         ->and($sumber)->toContain('gantiProvinsi()');
 });
 
+it('merender panel dokumen kawasan dan tabel sebaran sp secara rapi', function () {
+    $isi = $this->get(route('kawasan'))->assertOk()->getContent();
+
+    expect($isi)->toContain('Dokumen &amp; Alas Hak Kawasan')
+        ->and($isi)->toContain('Sebaran Satuan Permukiman');
+});
+
+it('merender empty state sebaran sp pada halaman kawasan saat belum ada data sp', function () {
+    $item = [
+        'id_kawasan_transmigrasi' => 1,
+        'nama' => 'KOBALIMA TIMUR',
+        'kode_kawasan' => 'KWS-KBT',
+        'tahun_penetapan' => 2015,
+        'nomor_sk' => 'SK.123/2015',
+        'luas_total' => 3250.0,
+        'keterangan' => null,
+        'kabupaten_id' => 1,
+        'kabupaten' => 'Malaka',
+        'provinsi' => 'Nusa Tenggara Timur',
+        'jumlah_sp' => 0,
+    ];
+    $kawasan = new \Illuminate\Pagination\LengthAwarePaginator([$item], 1, 10);
+    $html = view('pages.sp.kawasan', [
+        'title' => 'Kawasan Transmigrasi',
+        'kawasan' => $kawasan,
+        'berkasKawasan' => [],
+        'daftarSp' => [],
+        'totalKk' => 0,
+        'jumlahSpSebaran' => 0,
+        'jumlahKecamatan' => 0,
+    ])->render();
+
+    expect($html)->toContain('Belum ada Satuan Permukiman')
+        ->and($html)->toContain('Buka Manajemen SP');
+});
+
 it('menyediakan provinsi induk bagi setiap kabupaten', function () {
     // Penyaringan bertingkat hanya mungkin bila setiap kabupaten menyatakan
     // provinsinya. Tanpa kunci ini daftar tersaring akan selalu kosong, dan

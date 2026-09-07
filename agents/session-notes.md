@@ -1,3 +1,12 @@
+# Audit dan Penyempurnaan Frontend — Halaman Kawasan Transmigrasi (2026-09-07)
+
+Audit dan perbaikan antarmuka pada halaman `/kawasan` (`resources/views/pages/sp/kawasan.blade.php`):
+1. **Perapian Berkas Dokumen Kawasan:** Mengeluarkan berkas dokumen dari `<dl>` metrik data. Metrik ditata dalam 4 kolom simetris (`sm:grid-cols-4`). Berkas dokumen (SK, HPL, Peta) ditempatkan pada panel khusus "Dokumen & Alas Hak Kawasan" berwujud kartu lampiran (*attachment cardlets*) lengkap dengan ikon dokumen, badge peran semantik (`Alas Hak (HPL)`, `SK Penetapan`, `Peta Kawasan`), tautan tab baru, dan *empty state* mikro jika belum ada berkas diunggah.
+2. **Sebaran Satuan Permukiman & Empty State Cerdas:** Tabel Sebaran SP diberi penanganan kondisional. Saat ada data SP, tabel disajikan rapi beserta total KK dan mempertahankan teks sebaran untuk integritas sistem (`SpRuntimeTest`). Saat sistem baru dipasang / kosongan (0 SP), tabel gundul dan baris `Total 0 KK` digantikan dengan *Empty State* edukatif ramah pengguna disertai tombol aksi `Buka Manajemen SP →` (`/sp`).
+3. **Verifikasi:** `SpRuntimeTest` (3 passed, 39 assertions), `KontrasTest` (6 passed, WCAG AA), `HalamanTest` (uji render panel dokumen dan empty state sebaran SP lulus), `npm run build` sukses (5.61s).
+
+---
+
 # Audit Putaran 16 + Perbaikan MINOR-nya (2026-09-06)
 
 ## Task 10.4b sedang dikerjakan (2026-09-06)
