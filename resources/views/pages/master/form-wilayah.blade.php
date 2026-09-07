@@ -9,10 +9,10 @@
     memiliki induk sama sekali. Menampilkan pilihan induk untuk provinsi akan
     menyiratkan hierarki yang tidak ada.
 
-    TINGKAT BAWAAN MENGIKUTI TAB YANG SEDANG DIBUKA, bukan nilai tetap.
-    Sebelumnya selalu `desa`, sehingga petugas yang membuka tab Kecamatan lalu
+    TINGKAT BAWAAN MENGIKUTI FILTER YANG SEDANG DIBUKA, bukan nilai tetap.
+    Sebelumnya selalu `desa`, sehingga petugas yang membuka Kecamatan lalu
     menekan Tambah mendapat form bertingkat Desa dan harus menggantinya setiap
-    kali. Tab yang sedang dibuka adalah pernyataan paling jelas tentang apa
+    kali. Filter yang sedang dibuka adalah pernyataan paling jelas tentang apa
     yang hendak ditambahkan.
 
     Nama kolom mengikuti agents/data-dictionary.md bagian 3.1 sampai 3.4.
@@ -29,10 +29,10 @@
     $tingkatSah = ['provinsi', 'kabupaten', 'kecamatan', 'desa'];
 
     // Urutan pembacaan: isian yang gagal tersimpan, data yang sedang diubah,
-    // lalu tab yang sedang dibuka. Nilai tab disaring terhadap daftar yang sah
+    // lalu tingkat yang sedang dibuka. Nilainya disaring terhadap daftar yang sah
     // agar alamat yang dikarang tidak menghasilkan tingkat yang tidak ada.
-    $tingkatTab = request('tab');
-    $tingkatAwal = old('tingkat', $data['tingkat'] ?? (in_array($tingkatTab, $tingkatSah, true) ? $tingkatTab : 'provinsi'));
+    $tingkatAktif = request('tingkat');
+    $tingkatAwal = old('tingkat', $data['tingkat'] ?? (in_array($tingkatAktif, $tingkatSah, true) ? $tingkatAktif : 'provinsi'));
 @endphp
 
 <div class="space-y-6" x-data="{ tingkat: @js($tingkatAwal) }">

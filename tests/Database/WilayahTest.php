@@ -67,7 +67,7 @@ it('menyimpan kecamatan baru lewat form', function () {
         'tingkat' => 'kecamatan',
         'nama' => 'KOBALIMA',
         'kabupaten_id' => 5321,
-    ])->assertRedirect(route('wilayah'));
+    ])->assertRedirect(route('wilayah', ['tingkat' => 'kecamatan']));
 
     expect(Kecamatan::where('nama', 'KOBALIMA')->first()?->kabupaten_id)->toBe(5321);
 });
@@ -86,7 +86,7 @@ it('membedakan kecamatan dan desa ber-id sama lewat tingkat di alamat', function
     $this->put(route('wilayah.perbarui', ['tingkat' => 'desa', 'id' => 1]), [
         'nama' => 'KAPITAN MEO BARU',
         'kecamatan_id' => 1,
-    ])->assertRedirect(route('wilayah'));
+    ])->assertRedirect(route('wilayah', ['tingkat' => 'desa']));
 
     // Desa berubah, kecamatan ber-id sama TIDAK ikut tersentuh.
     expect(Desa::find(1)?->nama)->toBe('KAPITAN MEO BARU')
@@ -111,7 +111,7 @@ it('menghapus desa yang tidak menaungi SP mana pun', function () {
     $this->seed(WilayahSeeder::class);
 
     $this->delete(route('wilayah.hapus', ['tingkat' => 'desa', 'id' => 6]))
-        ->assertRedirect(route('wilayah'));
+        ->assertRedirect(route('wilayah', ['tingkat' => 'desa']));
 
     expect(Desa::find(6))->toBeNull()
         ->and(Desa::count())->toBe(5);

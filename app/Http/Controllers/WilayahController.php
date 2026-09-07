@@ -36,27 +36,27 @@ class WilayahController extends Controller
      * Ditulis sekali di sini, bukan diulang pada tiap metode: menambah
      * tingkat baru cukup menyentuh satu tempat.
      *
-     * @var array<string, array{kelas: class-string<Model>, kunci: string, induk: ?string, relasiInduk: ?string, tabelInduk: ?string, kunciInduk: ?string, turunan: array<string, string>}>
+     * @var array<string, array{kelas: class-string<Model>, kunci: string, induk: ?string, tabelInduk: ?string, kunciInduk: ?string, turunan: array<string, string>}>
      */
     private const TINGKAT = [
         'provinsi' => [
             'kelas' => Provinsi::class, 'kunci' => 'id_provinsi',
-            'induk' => null, 'relasiInduk' => null, 'tabelInduk' => null, 'kunciInduk' => null,
+            'induk' => null, 'tabelInduk' => null, 'kunciInduk' => null,
             'turunan' => ['kabupaten' => 'kabupaten/kota'],
         ],
         'kabupaten' => [
             'kelas' => Kabupaten::class, 'kunci' => 'id_kabupaten',
-            'induk' => 'provinsi_id', 'relasiInduk' => 'provinsi', 'tabelInduk' => 'provinsi', 'kunciInduk' => 'id_provinsi',
+            'induk' => 'provinsi_id', 'tabelInduk' => 'provinsi', 'kunciInduk' => 'id_provinsi',
             'turunan' => ['kecamatan' => 'kecamatan', 'kawasanTransmigrasi' => 'kawasan transmigrasi'],
         ],
         'kecamatan' => [
             'kelas' => Kecamatan::class, 'kunci' => 'id_kecamatan',
-            'induk' => 'kabupaten_id', 'relasiInduk' => 'kabupaten', 'tabelInduk' => 'kabupaten', 'kunciInduk' => 'id_kabupaten',
+            'induk' => 'kabupaten_id', 'tabelInduk' => 'kabupaten', 'kunciInduk' => 'id_kabupaten',
             'turunan' => ['desa' => 'desa'],
         ],
         'desa' => [
             'kelas' => Desa::class, 'kunci' => 'id_desa',
-            'induk' => 'kecamatan_id', 'relasiInduk' => 'kecamatan', 'tabelInduk' => 'kecamatan', 'kunciInduk' => 'id_kecamatan',
+            'induk' => 'kecamatan_id', 'tabelInduk' => 'kecamatan', 'kunciInduk' => 'id_kecamatan',
             'turunan' => ['satuanPermukiman' => 'satuan permukiman'],
         ],
     ];
@@ -70,25 +70,22 @@ class WilayahController extends Controller
             $cacah[$t] ??= 0;
         }
 
-        $filterTingkat = (string) $request->query('tingkat', '');
+        $filterTingkat = (string) $request->query('tingkat', 'provinsi');
         $cari = trim((string) $request->query('cari', ''));
 
         if (! array_key_exists($filterTingkat, self::TINGKAT)) {
-            $filterTingkat = '';
+            $filterTingkat = 'provinsi';
         }
 
-        if ($filterTingkat !== '') {
-            $baris = $baris->where('tingkat', $filterTingkat);
-        }
+        $baris = $baris->where('tingkat', $filterTingkat);
 
-        // Dicocokkan pada nama MAUPUN induk dan kode: petugas kerap mengingat
-        // kabupatennya ketika nama kecamatannya sendiri sudah kabur.
+        // Dicocokkan pada nama, kode, dan seluruh leluhur yang ditampilkan.
         if ($cari !== '') {
             $kunci = mb_strtolower($cari);
 
-            $baris = $baris->filter(fn (array $b) => str_contains(mb_strtolower($b['nama']), $kunci)
-                || str_contains(mb_strtolower((string) $b['induk']), $kunci)
-                || str_contains(mb_strtolower((string) $b['kode']), $kunci));
+            $baris = $baris->filter(fn (array $b) => collect([
+                $b['nama'], $b['kode'], $b['provinsi'], $b['kabupaten'], $b['kecamatan'], $b['desa'],
+            ])->filter()->contains(fn ($nilai) => str_contains(mb_strtolower((string) $nilai), $kunci)));
         }
 
         // Jumlah dihitung SEBELUM pemotongan halaman, supaya keterangan
@@ -123,7 +120,7 @@ class WilayahController extends Controller
             'cacahTingkat' => $cacah,
             'filterTingkat' => $filterTingkat,
             'cari' => $cari,
-            'adaFilter' => $filterTingkat !== '' || $cari !== '',
+            'adaFilter' => $filterTingkat !== 'provinsi' || $cari !== '',
         ]);
     }
 
@@ -140,7 +137,8 @@ class WilayahController extends Controller
 
         $peta['kelas']::create($atribut);
 
-        return redirect()->route('wilayah')->with('sukses', 'Data wilayah tersimpan.');
+        return redirect()->route('wilayah', ['tingkat' => $data['tingkat']])
+            ->with('sukses', 'Data wilayah tersimpan.');
     }
 
     /**
@@ -166,7 +164,8 @@ class WilayahController extends Controller
 
         $model->update($atribut);
 
-        return redirect()->route('wilayah')->with('sukses', 'Perubahan data wilayah tersimpan.');
+        return redirect()->route('wilayah', ['tingkat' => $tingkat])
+            ->with('sukses', 'Perubahan data wilayah tersimpan.');
     }
 
     /**
@@ -189,7 +188,8 @@ class WilayahController extends Controller
 
         $model->delete();
 
-        return redirect()->route('wilayah')->with('sukses', 'Data wilayah dihapus.');
+        return redirect()->route('wilayah', ['tingkat' => $tingkat])
+            ->with('sukses', 'Data wilayah dihapus.');
     }
 
     /**
@@ -247,10 +247,10 @@ class WilayahController extends Controller
     }
 
     /**
-     * Keempat tingkat disatukan menjadi SATU daftar rata (2026-09-02),
-     * dengan tingkat sebagai kolom sekaligus penyaring.
+     * Keempat tingkat disatukan menjadi satu daftar rata untuk dihitung dan
+     * disaring, dengan seluruh leluhur tersedia sebagai kolom tersendiri.
      *
-     * Nama induk diambil lewat eager loading, bukan kueri per baris: daftar
+     * Seluruh leluhur diambil lewat eager loading, bukan kueri per baris: daftar
      * ini memuat 500+ kabupaten sehingga membacanya satu per satu menghasilkan
      * ratusan kueri untuk satu halaman.
      *
@@ -263,14 +263,36 @@ class WilayahController extends Controller
         foreach (self::TINGKAT as $tingkat => $peta) {
             $kueri = $peta['kelas']::query()->orderBy('nama');
 
-            if ($peta['relasiInduk'] !== null) {
-                $kueri->with($peta['relasiInduk']);
+            $relasi = match ($tingkat) {
+                'kabupaten' => 'provinsi',
+                'kecamatan' => 'kabupaten.provinsi',
+                'desa' => 'kecamatan.kabupaten.provinsi',
+                default => null,
+            };
+
+            if ($relasi !== null) {
+                $kueri->with($relasi);
             }
 
             foreach ($kueri->get() as $baris) {
-                $induk = $peta['relasiInduk'] === null
-                    ? null
-                    : $baris->{$peta['relasiInduk']}?->nama;
+                $jalur = match ($tingkat) {
+                    'provinsi' => ['provinsi' => $baris->nama],
+                    'kabupaten' => [
+                        'provinsi' => $baris->provinsi?->nama,
+                        'kabupaten' => $baris->nama,
+                    ],
+                    'kecamatan' => [
+                        'provinsi' => $baris->kabupaten?->provinsi?->nama,
+                        'kabupaten' => $baris->kabupaten?->nama,
+                        'kecamatan' => $baris->nama,
+                    ],
+                    'desa' => [
+                        'provinsi' => $baris->kecamatan?->kabupaten?->provinsi?->nama,
+                        'kabupaten' => $baris->kecamatan?->kabupaten?->nama,
+                        'kecamatan' => $baris->kecamatan?->nama,
+                        'desa' => $baris->nama,
+                    ],
+                };
 
                 // `asli` dipakai modal Ubah untuk mengisi ulang formnya,
                 // sehingga nama kuncinya wajib sama dengan atribut `name=`
@@ -289,10 +311,9 @@ class WilayahController extends Controller
                     'id' => $baris->getKey(),
                     'tingkat' => $tingkat,
                     'nama' => $baris->nama,
-                    'induk' => $induk,
                     'kode' => $baris->kode,
                     'asli' => $asli,
-                ]);
+                ] + $jalur + array_fill_keys(array_diff(array_keys(self::TINGKAT), array_keys($jalur)), null));
             }
         }
 

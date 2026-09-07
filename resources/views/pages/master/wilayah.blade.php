@@ -5,8 +5,8 @@
     cabang administratif provinsi, kabupaten, kecamatan, desa; dan cabang
     program berupa kawasan transmigrasi. Keduanya bertemu di SP.
 
-    Keempat tingkat cabang administratif disajikan dalam SATU tabel, dengan
-    tingkat sebagai kolom sekaligus penyaring.
+    Keempat tingkat cabang administratif disajikan dalam SATU tabel. Tingkat
+    dipilih lewat filter dan tabel menampilkan seluruh leluhurnya.
 
     Sebelum 2026-09-02 halaman ini memakai empat tab, dan itu tidak lagi
     memadai. Sejak provinsi dan kabupaten dibaca dari data rujukan nasional,
@@ -21,7 +21,14 @@
 @extends('layouts.app')
 
 @section('content')
-    {{-- `$wilayah` datang dari rute `wilayah`. --}}
+    @php
+        $kolomWilayah = match ($filterTingkat) {
+            'desa' => ['desa' => 'Desa', 'kecamatan' => 'Kecamatan', 'kabupaten' => 'Kabupaten/Kota', 'provinsi' => 'Provinsi'],
+            'kecamatan' => ['kecamatan' => 'Kecamatan', 'kabupaten' => 'Kabupaten/Kota', 'provinsi' => 'Provinsi'],
+            'kabupaten' => ['kabupaten' => 'Kabupaten/Kota', 'provinsi' => 'Provinsi'],
+            default => ['provinsi' => 'Provinsi'],
+        };
+    @endphp
 
     <x-sim.page-header judul="Data Master Wilayah"
         keterangan="Wilayah administratif tempat kawasan transmigrasi berada."
@@ -47,7 +54,9 @@
         </p>
     </div>
     {{--
-        Satu tabel untuk keempat tingkat, menggantikan empat tab.
+        Satu tabel untuk keempat tingkat, menggantikan empat tab. Satu tingkat
+        ditampilkan pada satu waktu agar kolomnya dapat menyebut nama wilayah
+        dan seluruh leluhurnya secara jelas.
 
         Filter Tingkat WAJIB mencantumkan jumlahnya, sebab judul tab lama
         menampilkan angka itu. Menghapus tab tanpa memindahkan angkanya
@@ -57,12 +66,12 @@
     <form method="GET" action="{{ route('wilayah') }}">
         <x-sim.data-table :jumlah="$jumlahBaris" :per-halaman="$perHalaman" :paginator="$paginator" :kata-kunci="$cari"
             judul="Daftar wilayah administratif"
-            placeholder-cari="Cari nama wilayah, induk, atau kode"
+            placeholder-cari="Cari nama wilayah, leluhur, atau kode"
             judul-kosong="Wilayah tidak ditemukan"
-            pesan-kosong="Ubah kata kunci atau lepas penyaring tingkatnya.">
+            pesan-kosong="Ubah kata kunci atau pilih tingkat wilayah lain.">
 
             <x-slot:filter>
-                <div class="grid gap-4 sm:grid-cols-2">
+                <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     <div>
                         <label for="filter_tingkat"
                             class="mb-1.5 block text-theme-xs font-medium text-gray-700 dark:text-gray-400">
@@ -70,7 +79,6 @@
                         </label>
                         <select id="filter_tingkat" name="tingkat"
                             class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
-                            <option value="">Semua tingkat ({{ array_sum($cacahTingkat) }})</option>
                             @foreach (['provinsi' => 'Provinsi', 'kabupaten' => 'Kabupaten/Kota', 'kecamatan' => 'Kecamatan', 'desa' => 'Desa'] as $nilai => $label)
                                 <option value="{{ $nilai }}" @selected($filterTingkat === $nilai)>
                                     {{ $label }} ({{ $cacahTingkat[$nilai] }})
@@ -78,6 +86,7 @@
                             @endforeach
                         </select>
                     </div>
+                    <x-sim.tombol-filter :ada-filter="$adaFilter" :url-bersih="route('wilayah')" />
                 </div>
             </x-slot:filter>
 
@@ -98,18 +107,18 @@
             </x-slot:aksiKosong>
 
             <x-slot:kepala>
-                <th scope="col" class="px-5 py-3 text-left text-theme-xs font-medium text-gray-500 dark:text-gray-400">Nama Wilayah</th>
-                <th scope="col" class="px-5 py-3 text-left text-theme-xs font-medium text-gray-500 dark:text-gray-400">Tingkat</th>
-                <th scope="col" class="px-5 py-3 text-left text-theme-xs font-medium text-gray-500 dark:text-gray-400">Induk</th>
+                @foreach ($kolomWilayah as $label)
+                    <th scope="col" class="px-5 py-3 text-left text-theme-xs font-medium text-gray-500 dark:text-gray-400">{{ $label }}</th>
+                @endforeach
                 <th scope="col" class="px-5 py-3 text-left text-theme-xs font-medium text-gray-500 dark:text-gray-400">Kode</th>
                 <th scope="col" class="px-5 py-3 text-right text-theme-xs font-medium text-gray-500 dark:text-gray-400">Aksi</th>
             </x-slot:kepala>
 
             @foreach ($baris as $b)
                 <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
-                    <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">{{ $b['nama'] }}</td>
-                    <td class="px-5 py-3 text-theme-sm text-gray-600 capitalize dark:text-gray-400">{{ $b['tingkat'] }}</td>
-                    <td class="px-5 py-3 text-theme-sm text-gray-600 dark:text-gray-400">{{ $b['induk'] ?? '-' }}</td>
+                    @foreach ($kolomWilayah as $kolom => $label)
+                        <td class="px-5 py-3 text-theme-sm {{ $loop->first ? 'text-gray-800 dark:text-white/90' : 'text-gray-600 dark:text-gray-400' }}">{{ $b[$kolom] ?? '-' }}</td>
+                    @endforeach
                     <td class="px-5 py-3 text-theme-sm tabular-nums text-gray-600 dark:text-gray-400">{{ $b['kode'] ?? '-' }}</td>
                     <td class="px-5 py-3 text-right">
                         <x-sim.aksi-baris modal-ubah="formUbahWilayahBaris"
@@ -126,9 +135,11 @@
                         <div class="flex items-start justify-between gap-3">
                             <div class="min-w-0">
                                 <p class="truncate text-theme-sm font-medium text-gray-800 dark:text-white/90">{{ $b['nama'] }}</p>
-                                <p class="mt-0.5 text-theme-xs text-gray-500 capitalize dark:text-gray-400">
-                                    {{ $b['tingkat'] }}@if ($b['induk']) &middot; {{ $b['induk'] }} @endif
-                                </p>
+                                @if (count($kolomWilayah) > 1)
+                                    <p class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                                        {{ collect(array_keys($kolomWilayah))->skip(1)->map(fn ($kolom) => $b[$kolom])->filter()->implode(' · ') }}
+                                    </p>
+                                @endif
                             </div>
                             <x-sim.aksi-baris modal-ubah="formUbahWilayahBaris"
                                 :data-baris="$b['asli'] + ['id' => $b['id'], 'tingkat' => $b['tingkat']]"

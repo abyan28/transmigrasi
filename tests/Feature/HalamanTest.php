@@ -15,6 +15,7 @@ use App\Enums\AksiPermission;
 use App\Enums\AlasanPergantianKK;
 use App\Enums\AsalWakilPoktan;
 use App\Enums\BidangPengaduan;
+use App\Enums\CakupanData;
 use App\Enums\HubunganAnggotaKeluarga;
 use App\Enums\JenisDaftarPilihan;
 use App\Enums\KegiatanAnggota;
@@ -27,9 +28,11 @@ use App\Helpers\MenuHelper;
 use App\Helpers\RemahHelper;
 use App\Models\Alsintan;
 use App\Models\AuditLog;
+use App\Models\DaftarPilihan;
 use App\Models\Lahan;
 use App\Models\Pengaduan;
 use App\Models\Permission;
+use App\Models\Provinsi;
 use App\Models\Role;
 use App\Models\Rumah;
 use App\Models\RuteAksesibilitasSp;
@@ -43,6 +46,7 @@ use App\Support\PenyajianPanen;
 use App\Support\RekapDashboard;
 use App\Support\SkemaImpor;
 use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
@@ -1282,14 +1286,14 @@ it('menampilkan footer ramping pada layout aplikasi dan footer informatif pada l
 
 it('menampilkan seluruh cakupan layanan pada Tentang meski pengguna dibatasi per SP', function () {
     $pengguna = auth()->user();
-    $pengguna->role = new \App\Models\Role(['cakupan_data' => \App\Enums\CakupanData::PerSp]);
+    $pengguna->role = new Role(['cakupan_data' => CakupanData::PerSp]);
     $pengguna->setRelation('satuanPermukiman', collect([
-        \App\Models\SatuanPermukiman::query()->first(),
+        SatuanPermukiman::query()->first(),
     ]));
 
     $konten = $this->get(route('tentang'))->assertOk()->getContent();
 
-    foreach (\App\Models\SatuanPermukiman::query()->pluck('nama') as $nama) {
+    foreach (SatuanPermukiman::query()->pluck('nama') as $nama) {
         expect($konten)->toContain($nama);
     }
 });
@@ -5256,9 +5260,9 @@ it('memisahkan bantuan benih dari pupuk pada Laporan Saprotan', function () {
 });
 
 it('mengelompokkan kode benih baru melalui perilaku master pada laporan', function () {
-    \App\Models\DaftarPilihan::where('jenis', JenisDaftarPilihan::JenisSaprotan->value)
+    DaftarPilihan::where('jenis', JenisDaftarPilihan::JenisSaprotan->value)
         ->where('nilai', 'Benih')->update(['kode_perilaku' => null]);
-    \App\Models\DaftarPilihan::create([
+    DaftarPilihan::create([
         'jenis' => JenisDaftarPilihan::JenisSaprotan->value,
         'nilai' => 'Bibit',
         'kode_perilaku' => 'benih',
@@ -5943,49 +5947,96 @@ it('mencabut kewenangan export dari seluruh sumber kebenaran', function () {
 |--------------------------------------------------------------------------
 */
 
-it('menyatukan keempat tingkat wilayah dalam satu tabel, bukan empat tab', function () {
-    // Menggantikan uji tab bawaan (dicabut 2026-09-02 bersama tabnya).
-    // Sejak provinsi dan kabupaten dibaca dari data referensi nasional, tab
-    // Kabupaten memuat ratusan baris tanpa pencarian; menyatukannya juga
-    // menghapus keharusan menebak satu nama berada di tab mana.
-    $isi = $this->get(route('wilayah'))->assertOk()->getContent();
+it('membuka daftar wilayah pada tingkat provinsi tanpa pilihan semua tingkat', function () {
+    $respons = $this->get(route('wilayah'))->assertOk();
+    $baris = $respons->viewData('baris');
 
-    // Tab benar-benar tidak ada lagi, bukan sekadar tersembunyi.
-    $sumber = file_get_contents(resource_path('views/pages/master/wilayah.blade.php'));
-    expect($sumber)->not->toContain('hashTabs(')
-        ->and($sumber)->not->toContain('role="tablist"');
+    expect($respons->viewData('filterTingkat'))->toBe('provinsi')
+        ->and(collect($baris)->pluck('tingkat')->unique()->all())->toBe(['provinsi']);
 
-    // Tingkat berpindah menjadi kolom sekaligus penyaring.
+    $isi = $respons->getContent();
     expect($isi)->toContain('name="tingkat"')
-        ->and($isi)->toContain('Tingkat Wilayah');
+        ->and($isi)->not->toContain('Semua tingkat')
+        ->and($isi)->not->toMatch('/>\s*Tingkat\s*<\/th>/')
+        ->and($isi)->not->toMatch('/>\s*Induk\s*<\/th>/');
 
-    // Keempat tingkat tetap terjangkau dari satu halaman.
     foreach (['provinsi', 'kabupaten', 'kecamatan', 'desa'] as $tingkat) {
         expect($isi)->toContain('value="'.$tingkat.'"');
     }
 });
 
-it('menyaring daftar wilayah menurut tingkat beserta jumlahnya', function () {
-    // Judul tab lama menampilkan jumlah per tingkat. Menghapus tab tanpa
-    // memindahkan angka itu berarti pembaca kehilangan keterangan yang
-    // sebelumnya ada, dan perombakannya berubah menjadi kemunduran.
-    $w = DummyData::wilayah();
+it('menampilkan setiap leluhur sebagai kolom menurut tingkat wilayah', function () {
+    $kolom = [
+        'provinsi' => ['Provinsi'],
+        'kabupaten' => ['Kabupaten/Kota', 'Provinsi'],
+        'kecamatan' => ['Kecamatan', 'Kabupaten/Kota', 'Provinsi'],
+        'desa' => ['Desa', 'Kecamatan', 'Kabupaten/Kota', 'Provinsi'],
+    ];
 
+    foreach ($kolom as $tingkat => $daftarKolom) {
+        $isi = $this->get(route('wilayah', ['tingkat' => $tingkat]))->assertOk()->getContent();
+
+        foreach ($daftarKolom as $namaKolom) {
+            expect($isi)->toMatch('/>\s*'.preg_quote($namaKolom, '/').'\s*<\/th>/');
+        }
+    }
+
+    $desa = $this->get(route('wilayah', ['tingkat' => 'desa']))->assertOk();
+    $baris = collect($desa->viewData('baris'));
+    $kapitanMeo = $baris->firstWhere('nama', 'Kapitan Meo');
+
+    expect($kapitanMeo)->toMatchArray([
+        'kecamatan' => 'Laen Manen',
+        'kabupaten' => 'Kabupaten Malaka',
+        'provinsi' => 'Nusa Tenggara Timur',
+    ]);
+});
+
+it('menyaring wilayah menurut tingkat beserta jumlah dan seluruh leluhurnya', function () {
+    $w = DummyData::wilayah();
     $isi = $this->get(route('wilayah'))->assertOk()->getContent();
 
     foreach (['provinsi', 'kabupaten', 'kecamatan', 'desa'] as $tingkat) {
         expect($isi)->toContain('('.count($w[$tingkat]).')');
     }
 
-    // Penyaringnya benar-benar menyempitkan, bukan sekadar tampil.
-    $desa = $this->get(route('wilayah', ['tingkat' => 'desa']))->assertOk()->getContent();
+    $respons = $this->get(route('wilayah', [
+        'tingkat' => 'desa',
+        'cari' => 'Nusa Tenggara Timur',
+    ]))->assertOk();
 
-    expect(substr_count($desa, 'formUbahWilayahBaris'))
-        ->toBeLessThan(substr_count($isi, 'formUbahWilayahBaris'));
+    expect(collect($respons->viewData('baris'))->pluck('nama'))->toContain('Kapitan Meo');
+});
 
-    // Pencarian mencakup induknya, sebab petugas kerap mengingat
-    // kabupatennya ketika nama kecamatannya sendiri sudah kabur.
-    $this->get(route('wilayah', ['cari' => 'Malaka']))->assertOk()->assertSee('Laen Manen');
+it('menyediakan tindakan terapkan filter dan memakai tingkat sebagai konteks form', function () {
+    $isi = $this->get(route('wilayah', ['tingkat' => 'desa']))->assertOk()->getContent();
+    $sumber = file_get_contents(resource_path('views/pages/master/form-wilayah.blade.php'));
+
+    expect($isi)->toContain('Terapkan Filter')
+        ->and($sumber)->toContain("request('tingkat')")
+        ->and($sumber)->not->toContain("request('tab')");
+});
+
+it('kembali ke tingkat wilayah yang disimpan', function () {
+    $this->post(route('wilayah.simpan'), [
+        'tingkat' => 'provinsi',
+        'nama' => 'PROVINSI UJI',
+    ])->assertRedirect(route('wilayah', ['tingkat' => 'provinsi']));
+});
+
+it('kembali ke tingkat wilayah yang diperbarui', function () {
+    $provinsi = Provinsi::create(['nama' => 'PROVINSI UJI']);
+
+    $this->put(route('wilayah.perbarui', ['tingkat' => 'provinsi', 'id' => $provinsi]), [
+        'nama' => 'PROVINSI UJI BARU',
+    ])->assertRedirect(route('wilayah', ['tingkat' => 'provinsi']));
+});
+
+it('kembali ke tingkat wilayah yang dihapus', function () {
+    $provinsi = Provinsi::create(['nama' => 'PROVINSI UJI']);
+
+    $this->delete(route('wilayah.hapus', ['tingkat' => 'provinsi', 'id' => $provinsi]))
+        ->assertRedirect(route('wilayah', ['tingkat' => 'provinsi']));
 });
 
 it('menandai wajib isian induk wilayah secara bersyarat', function () {
@@ -6065,7 +6116,7 @@ it('merender empty state sebaran sp pada halaman kawasan saat belum ada data sp'
         'provinsi' => 'Nusa Tenggara Timur',
         'jumlah_sp' => 0,
     ];
-    $kawasan = new \Illuminate\Pagination\LengthAwarePaginator([$item], 1, 10);
+    $kawasan = new LengthAwarePaginator([$item], 1, 10);
     $html = view('pages.sp.kawasan', [
         'title' => 'Kawasan Transmigrasi',
         'kawasan' => $kawasan,
