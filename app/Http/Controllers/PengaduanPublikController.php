@@ -158,6 +158,7 @@ class PengaduanPublikController extends Controller
             'nomor' => $nomor,
             'pengaduan' => $pengaduan,
             'riwayat' => $riwayat,
+            'portal' => KontenSistem::portal(),
         ]);
     }
 }

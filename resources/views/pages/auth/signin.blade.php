@@ -199,11 +199,10 @@
                             dijelaskan sekali.
                         --}}
                         <p class="text-center text-lg font-semibold text-white dark:text-white">
-                            DIGITRANS &ndash; Digitalisasi Transmigrasi
+                            {{ \App\Support\KontenSistem::namaAplikasi() }}
                         </p>
                         <p class="mt-2 text-center text-sm text-gray-400 dark:text-white/60">
-                            Monitoring Pertanian dan Tata Kelola Data
-                            Kawasan Transmigrasi Kobalima Timur
+                            {{ \App\Support\KontenSistem::subjudul() }}
                         </p>
                     </div>
                 </div>

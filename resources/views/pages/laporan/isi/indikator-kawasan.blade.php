@@ -145,7 +145,7 @@
                 @empty
                     <tr>
                         <td colspan="6" class="px-3 py-6 text-center text-gray-500 dark:text-gray-400">
-                            Belum ada data satuan permukiman pada data contoh.
+                            Belum ada data satuan permukiman.
                         </td>
                     </tr>
                 @endforelse

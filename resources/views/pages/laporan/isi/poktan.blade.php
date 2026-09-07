@@ -75,7 +75,7 @@
     </div>
 @empty
     <div class="rounded-2xl border border-gray-200 p-6 text-center text-gray-500 dark:border-gray-800 dark:text-gray-400">
-        Belum ada kelompok tani pada data contoh.
+        Belum ada kelompok tani.
     </div>
 @endforelse
 

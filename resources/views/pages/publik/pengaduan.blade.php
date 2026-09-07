@@ -116,11 +116,10 @@
     {{-- Keterangan singkat cara kerjanya, menjawab kekhawatiran umum warga --}}
     <div class="mb-6 rounded-xl border border-gray-200 bg-white p-4 dark:border-navy-700 dark:bg-navy-800">
         <p class="text-theme-sm font-medium text-gray-800 dark:text-white/90">Yang terjadi setelah Anda mengirim</p>
-        <ol class="mt-2 space-y-1.5 text-theme-sm text-gray-600 dark:text-gray-400">
-            <li>1. Anda menerima <strong>Nomor Pengaduan</strong>. Catat atau foto nomor itu.</li>
-            <li>2. Petugas memeriksa laporan Anda lalu menindaklanjutinya.</li>
-            <li>3. Anda dapat melihat perkembangannya kapan saja lewat menu <strong>Lacak Pengaduan</strong>.</li>
-        </ol>
+        <p class="mt-2 whitespace-pre-line text-theme-sm text-gray-600 dark:text-gray-400">{{ $portal['alur'] }}</p>
+        @if ($portal['sla'])
+            <p class="mt-2 text-theme-xs text-gray-500 dark:text-gray-400">{{ $portal['sla'] }}</p>
+        @endif
     </div>
 
     <form method="POST" action="{{ route('pengaduan-warga.kirim') }}" enctype="multipart/form-data"

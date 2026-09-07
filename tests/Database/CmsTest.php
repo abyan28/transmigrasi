@@ -11,6 +11,7 @@
 
 use App\Mail\KodePemulihanSandiMail;
 use App\Mail\KredensialAkunMail;
+use App\Models\AuditLog;
 use App\Models\Pengaturan;
 use App\Models\User;
 use App\Support\KontenSistem;
@@ -67,6 +68,94 @@ it('menyimpan tab identitas dan mengubah nama aplikasi', function () {
     $this->get(route('beranda'))->assertSee('SIM Transmigrasi Malaka');
 });
 
+it('memakai identitas CMS pada halaman login', function () {
+    $this->put(route('cms.simpan'), [
+        'tab' => 'identitas',
+        'nama_app' => 'SIM Login Uji',
+        'subjudul' => 'Subjudul Login Uji',
+    ])->assertRedirect();
+
+    auth()->logout();
+    $this->get(route('login'))
+        ->assertOk()
+        ->assertSee('SIM Login Uji')
+        ->assertSee('Subjudul Login Uji');
+});
+
+it('menampilkan identitas kontak dan footer CMS pada halaman internal dan publik', function () {
+    $this->put(route('cms.simpan'), [
+        'tab' => 'identitas',
+        'nama_app' => 'SIM Kobalima',
+        'subjudul' => 'Subjudul Kobalima Uji',
+        'instansi_pusat' => 'Kementerian Uji',
+        'instansi_daerah' => 'Dinas Uji',
+        'email_bantuan' => 'bantuan@example.test',
+        'telepon_bantuan' => '0389-111',
+        'wa_bantuan' => '0812-111',
+        'footer' => 'Footer resmi uji.',
+    ])->assertRedirect();
+
+    $this->get(route('beranda'))->assertSee('Footer resmi uji.');
+    $this->get(route('pengaduan-warga'))
+        ->assertSee('SIM Kobalima')
+        ->assertSee('Subjudul Kobalima Uji')
+        ->assertSee('Kementerian Uji')
+        ->assertSee('Dinas Uji')
+        ->assertSee('bantuan@example.test')
+        ->assertSee('0389-111')
+        ->assertSee('0812-111')
+        ->assertSee('Footer resmi uji.');
+});
+
+it('menolak tab CMS yang tidak dikenal tanpa menyimpan data', function () {
+    $this->put(route('cms.simpan'), [
+        'tab' => 'tidak-ada',
+        'nama_app' => 'Tidak Boleh Tersimpan',
+        'subjudul' => 'Tidak Boleh Tersimpan',
+    ])->assertSessionHasErrors('tab');
+
+    expect(Pengaturan::count())->toBe(0);
+});
+
+it('mencatat satu audit perubahan CMS beserta pelaku dan kunci yang berubah', function () {
+    $this->put(route('cms.simpan'), [
+        'tab' => 'identitas',
+        'nama_app' => 'SIM Audit',
+        'subjudul' => 'Kawasan Audit',
+    ])->assertRedirect();
+
+    $audit = AuditLog::query()->where('nama_tabel', 'pengaturan')->sole();
+
+    expect($audit->user_id)->toBe(auth()->id())
+        ->and($audit->record_id)->toBe(0)
+        ->and($audit->data_baru['identitas.nama_app'])->toBe('SIM Audit')
+        ->and($audit->data_baru['identitas.subjudul'])->toBe('Kawasan Audit')
+        ->and($audit->data_lama['identitas.nama_app'])->toBe(config('app.name'));
+});
+
+it('menggulung perubahan CMS bila pencatatan audit gagal', function () {
+    $this->withoutExceptionHandling();
+    AuditLog::creating(fn () => throw new RuntimeException('audit gagal'));
+
+    expect(fn () => $this->put(route('cms.simpan'), [
+        'tab' => 'identitas',
+        'nama_app' => 'Tidak Boleh Tersimpan',
+        'subjudul' => 'Tidak Boleh Tersimpan',
+    ]))->toThrow(RuntimeException::class, 'audit gagal');
+
+    expect(Pengaturan::count())->toBe(0);
+});
+
+it('mengingat pengaturan sekali per request dan menyegarkannya setelah simpan', function () {
+    expect(KontenSistem::namaAplikasi())->toBe(config('app.name'));
+
+    Pengaturan::create(['kunci' => 'identitas.nama_app', 'nilai' => 'Perubahan Langsung', 'tipe' => 'teks']);
+    expect(KontenSistem::namaAplikasi())->toBe(config('app.name'));
+
+    KontenSistem::simpan(['identitas.nama_app' => 'Perubahan Resmi']);
+    expect(KontenSistem::namaAplikasi())->toBe('Perubahan Resmi');
+});
+
 it('menolak nama aplikasi dan subjudul kosong', function () {
     $this->put(route('cms.simpan'), ['tab' => 'identitas'])
         ->assertSessionHasErrors(['nama_app', 'subjudul']);
@@ -80,19 +169,43 @@ it('menyimpan kop laporan dan memakainya pada dokumen laporan', function () {
         'kop_dinas' => 'Dinas Transmigrasi Kabupaten Malaka',
         'kop_alamat' => 'Betun, Malaka, Nusa Tenggara Timur',
         'kop_kontak' => 'Telepon 0389-123',
-        'titimangsa_tempat' => 'Betun',
+        'tampilkan_ttd' => '1',
+        'titimangsa_tempat' => 'Kota Uji',
         'ttd_jabatan' => 'Kepala Dinas',
         'ttd_nama' => 'Agustinus Nahak',
+        'ttd_pangkat' => 'Pembina Uji',
         'ttd_nip' => '19750812 199903 1 004',
+        'catatan_laporan' => ['transmigran' => 'Catatan editorial transmigran uji.'],
     ])->assertRedirect();
 
     expect(LaporanData::instansi()['dinas'])->toBe('Dinas Transmigrasi Kabupaten Malaka');
+
+    $this->get(route('laporan.dokumen', 'transmigran'))
+        ->assertOk()
+        ->assertSee('Kota Uji')
+        ->assertSee('Kepala Dinas')
+        ->assertSee('Agustinus Nahak')
+        ->assertSee('Pembina Uji')
+        ->assertSee('19750812 199903 1 004')
+        ->assertSee('Catatan editorial transmigran uji.');
 });
 
 it('tidak mengapitalkan teks konten CMS', function () {
     $this->put(route('cms.simpan'), [
         'tab' => 'informasi',
         'latar_belakang' => 'Kawasan Kobalima Timur memiliki potensi agroekologis.',
+        'tim' => 'Tim pengembang uji.',
+        'mitra' => 'Mitra kelembagaan uji.',
+        'narahubung' => 'Narahubung uji.',
+        'panduan' => [
+            'peran' => 'Panduan peran uji.',
+            'dashboard' => 'Panduan dashboard uji.',
+            'wilayah' => 'Panduan wilayah uji.',
+            'kependudukan' => 'Panduan kependudukan uji.',
+            'pertanian' => 'Panduan pertanian uji.',
+            'pengaduan' => 'Panduan pengaduan uji.',
+            'laporan' => 'Panduan laporan uji.',
+        ],
         'faq' => [['tanya' => 'Bagaimana cara masuk?', 'jawab' => 'Gunakan akun dari Admin.']],
     ])->assertRedirect();
 
@@ -100,8 +213,15 @@ it('tidak mengapitalkan teks konten CMS', function () {
         ->and(KontenSistem::faq())->toHaveCount(1)
         ->and(KontenSistem::faq()[0]['tanya'])->toBe('Bagaimana cara masuk?');
 
-    $this->get(route('tentang'))->assertSee('Kawasan Kobalima Timur memiliki potensi agroekologis.');
-    $this->get(route('panduan'))->assertSee('Bagaimana cara masuk?');
+    $this->get(route('tentang'))
+        ->assertSee('Kawasan Kobalima Timur memiliki potensi agroekologis.')
+        ->assertSee('Tim pengembang uji.')
+        ->assertSee('Mitra kelembagaan uji.')
+        ->assertSee('Narahubung uji.');
+    $this->get(route('panduan'))
+        ->assertSee('Panduan peran uji.')
+        ->assertSee('Panduan laporan uji.')
+        ->assertSee('Bagaimana cara masuk?');
 });
 
 it('mengubah awalan nomor pengaduan yang dipakai NomorPengaduan', function () {
@@ -113,6 +233,24 @@ it('mengubah awalan nomor pengaduan yang dipakai NomorPengaduan', function () {
 
     expect(KontenSistem::awalanNomorPengaduan())->toBe('LPR')
         ->and(NomorPengaduan::buat())->toStartWith('LPR-'.date('Y').'-');
+});
+
+it('menampilkan hotline CMS pada layanan pengaduan publik', function () {
+    $this->put(route('cms.simpan'), [
+        'tab' => 'portal',
+        'awalan_nomor' => 'PGD',
+        'hotline' => '0811-999-888',
+        'alur' => 'Alur layanan uji.',
+        'sla' => 'SLA layanan uji.',
+        'pelacakan' => 'Petunjuk pelacakan uji.',
+    ])->assertRedirect();
+
+    $this->get(route('pengaduan-warga'))
+        ->assertSee('Alur layanan uji.')
+        ->assertSee('SLA layanan uji.');
+    $this->get(route('lacak-pengaduan'))
+        ->assertSee('0811-999-888')
+        ->assertSee('Petunjuk pelacakan uji.');
 });
 
 it('menolak awalan nomor yang mengandung angka', function () {

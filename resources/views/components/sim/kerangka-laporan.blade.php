@@ -212,6 +212,25 @@
 
         <div class="space-y-8 p-6">
             {{ $slot }}
+
+            @if ($catatanEditorial = \App\Support\KontenSistem::catatanLaporan($slug))
+                <p class="rounded-lg border border-gray-200 p-3 text-theme-xs text-gray-600 dark:border-gray-700 dark:text-gray-300" role="note">
+                    {{ $catatanEditorial }}
+                </p>
+            @endif
+
+            @if ($dokumen)
+                @php($ttd = \App\Support\KontenSistem::ttd())
+                @if ($ttd['tampilkan'])
+                    <div class="ml-auto max-w-xs pt-8 text-center text-theme-sm text-gray-800 dark:text-gray-200">
+                        <p>{{ $ttd['tempat'] }}, {{ now()->translatedFormat('d F Y') }}</p>
+                        <p>{{ $ttd['jabatan'] }}</p>
+                        <p class="mt-16 font-semibold underline">{{ $ttd['nama'] }}</p>
+                        @if ($ttd['pangkat'])<p>{{ $ttd['pangkat'] }}</p>@endif
+                        <p>NIP {{ $ttd['nip'] }}</p>
+                    </div>
+                @endif
+            @endif
         </div>
     </article>
 

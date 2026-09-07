@@ -75,7 +75,7 @@
                         Pengaduan Warga
                     </span>
                     <span class="text-theme-xs text-gray-500 dark:text-gray-400">
-                        Kawasan Transmigrasi Kobalima Timur
+                        {{ \App\Support\KontenSistem::subjudul() }}
                     </span>
                 </span>
             </a>

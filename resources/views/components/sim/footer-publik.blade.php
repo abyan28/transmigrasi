@@ -18,15 +18,15 @@
                         height="32" />
                     <div>
                         <span class="block text-theme-sm font-semibold text-gray-800 dark:text-white/90">
-                            {{ config('app.name', 'DIGITRANS') }}
+                            {{ \App\Support\KontenSistem::namaAplikasi() }}
                         </span>
                         <span class="block text-theme-xs text-gray-500 dark:text-gray-400">
-                            Kawasan Kobalima Timur &bull; Malaka
+                            {{ \App\Support\KontenSistem::subjudul() }}
                         </span>
                     </div>
                 </div>
                 <p class="mt-3 text-theme-xs leading-relaxed text-gray-600 dark:text-gray-400">
-                    Sistem informasi digitalisasi monitoring pertanian dan tata kelola data kawasan transmigrasi Kabupaten Malaka, NTT.
+                    {{ \App\Support\KontenSistem::footer() }}
                 </p>
                 <div class="mt-3">
                     <a href="{{ route('login') }}"
@@ -45,12 +45,9 @@
                     Lokus Satuan Permukiman
                 </h3>
                 <ul class="mt-3 space-y-1 text-theme-xs text-gray-600 dark:text-gray-400">
-                    <li>SP Kapitan Meo (Laen Manen)</li>
-                    <li>SP Tniumanu (Laen Manen)</li>
-                    <li>SP Harekakae (Malaka Tengah)</li>
-                    <li>SP Weoe / Uluk Lubuk (Wewiku)</li>
-                    <li>SP Tualaran (Rinhat)</li>
-                    <li>SP Weain (Rinhat)</li>
+                    @foreach ($daftarSp as $sp)
+                        <li>{{ $sp['nama'] }}{{ $sp['kecamatan'] ? ' ('.$sp['kecamatan'].')' : '' }}</li>
+                    @endforeach
                 </ul>
             </div>
 
@@ -60,9 +57,9 @@
                     Kerja Sama Kelembagaan
                 </h3>
                 <ul class="mt-3 space-y-1.5 text-theme-xs text-gray-600 dark:text-gray-400">
-                    <li>Kementerian Transmigrasi RI</li>
-                    <li>Pemerintah Kabupaten Malaka</li>
-                    <li>Institut Teknologi Sepuluh Nopember (ITS)</li>
+                    @foreach (array_filter(\App\Support\KontenSistem::instansi()) as $instansi)
+                        <li>{{ $instansi }}</li>
+                    @endforeach
                 </ul>
                 <div class="mt-4 flex flex-wrap gap-2 text-theme-xs">
                     <a href="{{ route('pengaduan-warga') }}" class="text-gray-500 hover:text-brand-600 dark:text-gray-400 dark:hover:text-brand-400">
@@ -78,9 +75,11 @@
 
         {{-- Hak Cipta --}}
         <div class="mt-8 border-t border-gray-200 pt-5 text-center sm:flex sm:items-center sm:justify-between sm:text-left dark:border-navy-700">
-            <p class="text-theme-xs text-gray-500 dark:text-gray-400">
-                &copy; {{ date('Y') }} Kementerian Transmigrasi RI &amp; Pemkab Malaka. Dikembangkan bersama ITS Surabaya.
-            </p>
+            <div class="text-theme-xs text-gray-500 dark:text-gray-400">
+                <p>&copy; {{ date('Y') }} {{ \App\Support\KontenSistem::footer() }}</p>
+                @php($kontak = \App\Support\KontenSistem::kontakBantuan())
+                <p>{{ implode(' · ', array_filter($kontak)) }}</p>
+            </div>
             <p class="mt-2 text-[11px] text-gray-400 sm:mt-0 dark:text-gray-500">
                 Fondasi antarmuka TailAdmin (MIT).
             </p>

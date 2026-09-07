@@ -124,6 +124,18 @@ class ViewServiceProvider extends ServiceProvider
             $tampilan->with('memakaiDataContoh', self::memakaiDataContoh());
         });
 
+        View::composer(['components.sim.footer-publik', 'pages.tentang.index'], function ($tampilan): void {
+            $tampilan->with('daftarSp', SatuanPermukiman::query()
+                ->with('desa.kecamatan')
+                ->orderBy('nama')
+                ->get()
+                ->map(fn (SatuanPermukiman $sp) => [
+                    'nama' => $sp->nama,
+                    'kecamatan' => $sp->desa?->kecamatan?->nama,
+                ])
+                ->all());
+        });
+
         // Menu pengguna di header, disisipkan `layouts.app` pada setiap halaman.
         // Task 3.13: dari pengguna sungguhan yang masuk, bukan `DummyData`.
         View::composer('components.header.user-dropdown', function ($tampilan): void {

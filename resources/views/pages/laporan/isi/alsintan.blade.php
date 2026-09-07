@@ -63,7 +63,7 @@
             @empty
                 <tr>
                     <td colspan="9" class="px-3 py-6 text-center text-gray-500 dark:text-gray-400">
-                        Belum ada data alsintan pada data contoh.
+                        Belum ada data alsintan.
                     </td>
                 </tr>
             @endforelse

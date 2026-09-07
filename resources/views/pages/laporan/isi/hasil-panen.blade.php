@@ -130,7 +130,7 @@
             @empty
                 <tr>
                     <td colspan="{{ 7 + count($kolomAngka) + 1 }}" class="px-3 py-6 text-center text-gray-500 dark:text-gray-400">
-                        Belum ada catatan hasil panen pada data contoh.
+                        Belum ada catatan hasil panen.
                     </td>
                 </tr>
             @endforelse

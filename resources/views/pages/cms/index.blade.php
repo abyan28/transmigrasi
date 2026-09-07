@@ -28,7 +28,7 @@
         <x-slot:aksi>
             <a href="{{ route('tentang') }}" target="_blank"
                 class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-theme-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
-                Lihat Halaman Publik
+                Lihat Halaman Tentang
             </a>
         </x-slot:aksi>
     </x-sim.page-header>
@@ -252,6 +252,18 @@
                             </div>
                         </section>
 
+                        <section class="border-t border-gray-200 pt-5 dark:border-gray-800">
+                            <h3 class="{{ $kelasBagian }}">Catatan Editorial Laporan</h3>
+                            <div class="mt-4 space-y-4">
+                                @foreach (\App\Support\LaporanData::meta() as $slug => $meta)
+                                    <div>
+                                        <label for="cms_laporan_{{ $slug }}" class="{{ $kelasLabel }}">{{ $meta['judul'] }}</label>
+                                        <textarea id="cms_laporan_{{ $slug }}" name="catatan_laporan[{{ $slug }}]" rows="2" maxlength="3000" class="{{ $kelasArea }}">{{ old('catatan_laporan.'.$slug, $konten['laporan.'.$slug.'.catatan']) }}</textarea>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </section>
+
                         <div class="pt-2">
                             <button type="submit" class="{{ $simpanBtn }}">Simpan Format Laporan</button>
                         </div>
@@ -305,6 +317,26 @@
                         <div class="mt-4">
                             <label for="cms_latar" class="{{ $kelasLabel }}">Latar Belakang & Tujuan Kawasan</label>
                             <textarea id="cms_latar" name="latar_belakang" rows="5" maxlength="5000" class="{{ $kelasArea }}">{{ old('latar_belakang', $konten['profil.latar_belakang']) }}</textarea>
+                        </div>
+                        <div class="mt-4 grid gap-4">
+                            @foreach (['tim' => 'Tim Pengembang', 'mitra' => 'Mitra Kelembagaan', 'narahubung' => 'Narahubung'] as $kunci => $label)
+                                <div>
+                                    <label for="cms_{{ $kunci }}" class="{{ $kelasLabel }}">{{ $label }}</label>
+                                    <textarea id="cms_{{ $kunci }}" name="{{ $kunci }}" rows="3" maxlength="5000" class="{{ $kelasArea }}">{{ old($kunci, $konten['profil.'.$kunci]) }}</textarea>
+                                </div>
+                            @endforeach
+                        </div>
+                    </section>
+
+                    <section class="border-t border-gray-200 pt-5 dark:border-gray-800">
+                        <h3 class="{{ $kelasBagian }}">Panduan Penggunaan</h3>
+                        <div class="mt-4 grid gap-4">
+                            @foreach (['peran' => 'Peran & Hak Akses', 'dashboard' => 'Dashboard', 'wilayah' => 'Wilayah & SP', 'kependudukan' => 'Kependudukan, Rumah & Lahan', 'pertanian' => 'Pertanian', 'pengaduan' => 'Pengaduan', 'laporan' => 'Laporan'] as $kunci => $label)
+                                <div>
+                                    <label for="cms_panduan_{{ $kunci }}" class="{{ $kelasLabel }}">{{ $label }}</label>
+                                    <textarea id="cms_panduan_{{ $kunci }}" name="panduan[{{ $kunci }}]" rows="3" maxlength="5000" class="{{ $kelasArea }}">{{ old('panduan.'.$kunci, $konten['panduan.'.$kunci]) }}</textarea>
+                                </div>
+                            @endforeach
                         </div>
                     </section>
 
@@ -401,6 +433,18 @@
                                 <input type="text" id="cms_hotline" name="hotline" maxlength="40"
                                     value="{{ old('hotline', $konten['portal.hotline']) }}" class="{{ $kelasKontrol }} tabular-nums" />
                             </div>
+                        </div>
+                    </section>
+
+                    <section class="border-t border-gray-200 pt-5 dark:border-gray-800">
+                        <h3 class="{{ $kelasBagian }}">Petunjuk Layanan</h3>
+                        <div class="mt-4 space-y-4">
+                            @foreach (['alur' => 'Alur Setelah Pengiriman', 'sla' => 'Estimasi / SLA Penanganan', 'pelacakan' => 'Petunjuk Pelacakan & Eskalasi'] as $kunci => $label)
+                                <div>
+                                    <label for="cms_portal_{{ $kunci }}" class="{{ $kelasLabel }}">{{ $label }}</label>
+                                    <textarea id="cms_portal_{{ $kunci }}" name="{{ $kunci }}" rows="3" maxlength="3000" class="{{ $kelasArea }}">{{ old($kunci, $konten['portal.'.$kunci]) }}</textarea>
+                                </div>
+                            @endforeach
                         </div>
                     </section>
 

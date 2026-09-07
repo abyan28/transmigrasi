@@ -9,22 +9,14 @@
 --}}
 @extends('layouts.app')
 
+@php($panduan = \App\Support\KontenSistem::panduan())
+
 @section('content')
-    <div x-data="{ modalPdf: false }">
+    <div>
         <x-sim.page-header judul="Panduan Penggunaan"
             keterangan="Buku petunjuk operasional tata kelola data dan monitoring kawasan transmigrasi Kobalima Timur."
             :remah="\App\Helpers\RemahHelper::untuk('/panduan')">
-            <x-slot:aksi>
-                <button type="button" @click="modalPdf = true"
-                    class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 shadow-xs">
-                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"
-                        aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                    </svg>
-                    Unduh Panduan (PDF)
-                </button>
-            </x-slot:aksi>
+
         </x-sim.page-header>
 
         <div class="grid gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
@@ -121,7 +113,7 @@
                     </div>
 
                     <p class="mt-4 text-theme-sm leading-relaxed text-gray-600 dark:text-gray-400">
-                        Sistem Informasi Transmigrasi mengimplementasikan pembatasan akses berbasis peran (RBAC) dinamis. Terdapat 4 profil peran utama:
+                        {{ $panduan['peran'] }}
                     </p>
 
                     <div class="mt-4 grid gap-3 sm:grid-cols-2">
@@ -177,10 +169,10 @@
                     </div>
 
                     <div class="mt-4 space-y-3 text-theme-sm text-gray-600 dark:text-gray-400">
-                        <p>Dashboard utama menyajikan gambaran menyeluruh kondisi kawasan transmigrasi yang terbagi dalam 4 bagian analitis:</p>
+                        <p class="whitespace-pre-line">{{ $panduan['dashboard'] }}</p>
                         <ul class="list-disc space-y-1 pl-5 text-theme-xs">
                             <li><strong>Ringkasan Indikator Kunci:</strong> Kartu statistik jumlah KK, total Jiwa, jumlah Petani, total Luas Lahan Usaha &amp; Pekarangan, dan total Volume Panen tahun berjalan.</li>
-                            <li><strong>Dinamika Kependudukan:</strong> Grafik garis multi-series tren penduduk (Jiwa, KK, Petani) 10 tahun terakhir dan perbandingan demografi antar-SP.</li>
+                            <li><strong>Dinamika Kependudukan:</strong> Grafik garis multi-series tren penduduk (Jiwa, KK, Petani) sesuai rentang tahun yang tersedia dan perbandingan demografi antar-SP.</li>
                             <li><strong>Produksi &amp; Komoditas Pertanian:</strong> Donut chart sebaran volume komoditas unggulan (Jagung, Padi, Kedelai, Ubi Kayu, Kacang Tanah, Hortikultura).</li>
                             <li><strong>Kondisi Infrastruktur &amp; Status Pengaduan:</strong> Evaluasi fasilitas dasar SP (air, jalan, listrik, irigasi) serta donut chart status pengaduan warga.</li>
                         </ul>
@@ -204,14 +196,14 @@
                     </div>
 
                     <p class="mt-4 text-theme-sm leading-relaxed text-gray-600 dark:text-gray-400">
-                        Struktur data wilayah memiliki hierarki ganda: jalur administratif (Kabupaten &rarr; Kecamatan &rarr; Desa) dan jalur program ketransmigrasian (Kawasan &rarr; Satuan Permukiman).
+                        {{ $panduan['wilayah'] }}
                     </p>
 
                     <div class="mt-3 rounded-xl border border-gray-200 bg-gray-50 p-4 text-theme-xs dark:border-gray-800 dark:bg-white/[0.02]">
                         <h4 class="font-semibold text-gray-800 dark:text-white/90">Submenu Wilayah &amp; SP:</h4>
                         <ol class="mt-2 list-decimal space-y-1 pl-4 text-gray-600 dark:text-gray-400">
                             <li><strong>Kawasan Transmigrasi:</strong> Data profil kawasan, koordinat batas, dan SK penetapan wilayah.</li>
-                            <li><strong>Satuan Permukiman:</strong> Profil 6 SP, luas wilayah tapak, daya tampung, dan status perkembangan SP.</li>
+                            <li><strong>Satuan Permukiman:</strong> Profil tiap SP, luas wilayah tapak, daya tampung, dan status perkembangan SP.</li>
                             <li><strong>Inventaris SP:</strong> Aset bergerak milik permukiman (kendaraan operasional, genset, pompa air komunal).</li>
                             <li><strong>Fasilitas SP:</strong> Sarana ibadah, balai warga, puskesmas pembantu, dan posyandu per SP.</li>
                             <li><strong>Infrastruktur SP:</strong> Jaringan irigasi, jalan poros, ketersediaan air bersih, dan pasokan listrik.</li>
@@ -237,6 +229,7 @@
 
                     <div class="mt-4 space-y-3 text-theme-sm text-gray-600 dark:text-gray-400">
                         <div class="rounded-xl border border-teal-200 bg-teal-50/50 p-3.5 dark:border-teal-500/20 dark:bg-teal-500/5">
+                            <p class="mb-3 whitespace-pre-line text-theme-xs text-teal-700 dark:text-teal-300">{{ $panduan['kependudukan'] }}</p>
                             <h4 class="font-semibold text-teal-800 dark:text-teal-200 text-theme-xs">
                                 Aturan Kardinalitas Utama (rules.md §10a):
                             </h4>
@@ -249,7 +242,7 @@
                             <li><strong>Perekaman Transmigran:</strong> Input NIK 16-digit, Nomor KK, data anggota keluarga, daerah asal (Transmigran Penduduk Asal / TPA vs Penduduk Setempat / TPS), dan tingkat pendidikan.</li>
                             <li><strong>Suksesi Kepala Keluarga:</strong> Bila KK lama meninggal atau pindah, suksesi dilakukan dengan mengalihkan data KK ke ahli waris yang sah dalam kartu keluarga.</li>
                             <li><strong>Pencatatan Lahan:</strong> Status kepemilikan (SHM / Hak Pakai / Belum Bersertifikat), luas dalam hektare, koordinat polygon, dan riwayat komoditas tanam.</li>
-                            <li><strong>Rekap Kependudukan:</strong> Filter tahun konteks memungkinkan eksplorasi demografi tahun 2016 s.d. 2026 secara konsisten.</li>
+                            <li><strong>Rekap Kependudukan:</strong> Filter tahun konteks memungkinkan eksplorasi demografi sesuai rentang data yang tersedia.</li>
                         </ul>
                     </div>
                 </section>
@@ -271,7 +264,7 @@
                     </div>
 
                     <div class="mt-4 space-y-3 text-theme-sm text-gray-600 dark:text-gray-400">
-                        <p>Bagian Pertanian menghubungkan kelembagaan tani dengan produktivitas lahan tapak transmigrasi:</p>
+                        <p class="whitespace-pre-line">{{ $panduan['pertanian'] }}</p>
                         <div class="grid gap-3 sm:grid-cols-2 text-theme-xs">
                             <div class="rounded-xl border border-gray-200 p-3 dark:border-gray-800">
                                 <span class="font-semibold text-gray-800 dark:text-white/90">Kelompok Tani (Poktan):</span>
@@ -310,9 +303,7 @@
                     </div>
 
                     <div class="mt-4 space-y-4 text-theme-sm text-gray-600 dark:text-gray-400">
-                        <p>
-                            Warga dapat menyampaikan aduan terkait sengketa lahan, kerusakan rumah, pasokan air, jalan rusak, maupun kebutuhan alsintan melalui halaman publik <strong>/pengaduan-warga</strong> tanpa harus memiliki akun.
-                        </p>
+                        <p class="whitespace-pre-line">{{ $panduan['pengaduan'] }}</p>
 
                         <div class="rounded-xl border border-gray-200 bg-gray-50/70 p-4 dark:border-gray-800 dark:bg-white/[0.02]">
                             <h4 class="text-theme-xs font-semibold text-gray-800 dark:text-white/90">
@@ -353,36 +344,20 @@
                                 Laporan Resmi Kawasan &amp; Cetak Dokumen Ber-Kop
                             </h3>
                             <p class="text-theme-xs text-gray-500 dark:text-gray-400">
-                                7 Format laporan standar kementerian dengan kop dinas ganda dan tanda tangan pejabat
+                                {{ count(\App\Support\LaporanData::meta()) }} format laporan dengan kop dinas dan tanda tangan pejabat
                             </p>
                         </div>
                     </div>
 
                     <div class="mt-4 space-y-3 text-theme-sm text-gray-600 dark:text-gray-400">
-                        <p>Sistem menyediakan 7 laporan resmi siap cetak yang dilengkapi kop surat ganda (Lambang Pemkab Malaka dan Logo Kementerian Transmigrasi):</p>
-                        <div class="grid gap-2 sm:grid-cols-2 text-theme-xs">
-                            <div class="rounded-lg border border-gray-200 p-2.5 dark:border-gray-800">
-                                <span class="font-medium text-gray-800 dark:text-white/90">1. Laporan Perkembangan SP</span>
-                            </div>
-                            <div class="rounded-lg border border-gray-200 p-2.5 dark:border-gray-800">
-                                <span class="font-medium text-gray-800 dark:text-white/90">2. Laporan Kependudukan Kawasan</span>
-                            </div>
-                            <div class="rounded-lg border border-gray-200 p-2.5 dark:border-gray-800">
-                                <span class="font-medium text-gray-800 dark:text-white/90">3. Laporan Lahan &amp; Sertifikasi</span>
-                            </div>
-                            <div class="rounded-lg border border-gray-200 p-2.5 dark:border-gray-800">
-                                <span class="font-medium text-gray-800 dark:text-white/90">4. Laporan Kelembagaan Poktan</span>
-                            </div>
-                            <div class="rounded-lg border border-gray-200 p-2.5 dark:border-gray-800">
-                                <span class="font-medium text-gray-800 dark:text-white/90">5. Laporan Alsintan &amp; Saprotan</span>
-                            </div>
-                            <div class="rounded-lg border border-gray-200 p-2.5 dark:border-gray-800">
-                                <span class="font-medium text-gray-800 dark:text-white/90">6. Laporan Produksi &amp; Panen</span>
-                            </div>
-                            <div class="rounded-lg border border-gray-200 p-2.5 dark:border-gray-800 sm:col-span-2">
-                                <span class="font-medium text-gray-800 dark:text-white/90">7. Laporan Penanganan Pengaduan Kawasan</span>
-                            </div>
-                        </div>
+                        <p class="whitespace-pre-line">{{ $panduan['laporan'] }}</p>
+                        <ol class="grid gap-2 sm:grid-cols-2 text-theme-xs">
+                            @foreach (\App\Support\LaporanData::meta() as $meta)
+                                <li class="rounded-lg border border-gray-200 p-2.5 dark:border-gray-800">
+                                    <span class="font-medium text-gray-800 dark:text-white/90">{{ $loop->iteration }}. {{ $meta['judul'] }}</span>
+                                </li>
+                            @endforeach
+                        </ol>
                         <p class="text-theme-xs text-gray-500 dark:text-gray-400">
                             Fitur cetak dokumen dilengkapi filter di tempat (SP dan rentang tahun) serta tombol "Buka Tampilan Dokumen" untuk pratinjau format surat dinas sebelum dicetak atau diekspor ke PDF peramban.
                         </p>
@@ -422,40 +397,6 @@
             </main>
         </div>
 
-        {{-- Modal Informasi Unduh PDF --}}
-        <div x-show="modalPdf" x-cloak
-            class="fixed inset-0 z-99999 flex items-center justify-center bg-gray-900/60 p-4 backdrop-blur-xs"
-            @click.self="modalPdf = false"
-            @keydown.escape.window="modalPdf = false">
-            <div class="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl dark:border-gray-800 dark:bg-gray-900">
-                <div class="flex items-center gap-3">
-                    <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/20 dark:text-brand-400">
-                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                        </svg>
-                    </div>
-                    <div>
-                        <h3 class="text-theme-base font-bold text-gray-800 dark:text-white/90">
-                            Buku Panduan Format PDF
-                        </h3>
-                        <p class="text-theme-xs text-gray-500 dark:text-gray-400">
-                            Dokumen Cetak Resmi Serah Terima Sistem
-                        </p>
-                    </div>
-                </div>
 
-                <p class="mt-4 text-theme-xs leading-relaxed text-gray-600 dark:text-gray-400">
-                    Buku Panduan Operasional (*Manual Book*) resmi dalam format berkas PDF ber-SK sedang dalam tahap finalisasi penyusunan dokumen serah terima (BAST Task 11.6). Seluruh materi dan petunjuk teknis dapat Anda baca secara lengkap dan interaktif pada halaman web ini.
-                </p>
-
-                <div class="mt-6 flex justify-end gap-2">
-                    <button type="button" @click="modalPdf = false"
-                        class="rounded-lg bg-brand-500 px-4 py-2 text-theme-xs font-semibold text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
-                        Mengerti &amp; Tutup
-                    </button>
-                </div>
-            </div>
-        </div>
     </div>
 @endsection

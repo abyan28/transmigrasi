@@ -69,7 +69,7 @@
             @empty
                 <tr>
                     <td colspan="15" class="px-3 py-6 text-center text-gray-500 dark:text-gray-400">
-                        Belum ada penyaluran benih pada data contoh.
+                        Belum ada penyaluran benih.
                     </td>
                 </tr>
             @endforelse
@@ -119,7 +119,7 @@
             @empty
                 <tr>
                     <td colspan="7" class="px-3 py-6 text-center text-gray-500 dark:text-gray-400">
-                        Belum ada penyaluran pupuk atau pestisida pada data contoh.
+                        Belum ada penyaluran pupuk atau pestisida.
                     </td>
                 </tr>
             @endforelse

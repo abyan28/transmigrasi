@@ -7,6 +7,7 @@ use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 /**
@@ -33,7 +34,9 @@ class CmsController extends Controller
 
     public function simpan(Request $request): RedirectResponse
     {
-        $tab = $request->input('tab', 'identitas');
+        $tab = $request->validate([
+            'tab' => ['required', Rule::in(['identitas', 'laporan', 'informasi', 'portal', 'pengumuman', 'surel'])],
+        ])['tab'];
 
         $data = match ($tab) {
             'laporan' => $this->simpanLaporan($request),
@@ -41,10 +44,10 @@ class CmsController extends Controller
             'portal' => $this->simpanPortal($request),
             'pengumuman' => $this->simpanPengumuman($request),
             'surel' => $this->simpanSurel($request),
-            default => $this->simpanIdentitas($request),
+            'identitas' => $this->simpanIdentitas($request),
         };
 
-        KontenSistem::simpan($data);
+        DB::transaction(fn () => KontenSistem::simpan($data));
 
         return redirect()->route('cms', ['tab' => $tab])->with('sukses', 'Pengaturan konten berhasil disimpan.');
     }
@@ -97,6 +100,8 @@ class CmsController extends Controller
             'ttd_nama' => ['required', 'string', 'max:255'],
             'ttd_pangkat' => ['nullable', 'string', 'max:100'],
             'ttd_nip' => ['required', 'string', 'max:40'],
+            'catatan_laporan' => ['nullable', 'array'],
+            'catatan_laporan.*' => ['nullable', 'string', 'max:3000'],
         ], [
             'kop_kementerian.required' => 'Nama kementerian pembina wajib diisi.',
             'kop_dinas.required' => 'Nama dinas pelaksana wajib diisi.',
@@ -118,7 +123,9 @@ class CmsController extends Controller
             'kop.ttd_nama' => $v['ttd_nama'],
             'kop.ttd_pangkat' => $v['ttd_pangkat'] ?? '',
             'kop.ttd_nip' => $v['ttd_nip'],
-        ];
+        ] + collect(array_keys(\App\Support\LaporanData::meta()))
+            ->mapWithKeys(fn (string $slug) => ["laporan.{$slug}.catatan" => $v['catatan_laporan'][$slug] ?? ''])
+            ->all();
     }
 
     /**
@@ -128,6 +135,11 @@ class CmsController extends Controller
     {
         $v = $request->validate([
             'latar_belakang' => ['nullable', 'string', 'max:5000'],
+            'tim' => ['nullable', 'string', 'max:5000'],
+            'mitra' => ['nullable', 'string', 'max:5000'],
+            'narahubung' => ['nullable', 'string', 'max:5000'],
+            'panduan' => ['nullable', 'array'],
+            'panduan.*' => ['nullable', 'string', 'max:5000'],
             'faq' => ['nullable', 'array', 'max:50'],
             'faq.*.tanya' => ['nullable', 'string', 'max:255'],
             'faq.*.jawab' => ['nullable', 'string', 'max:2000'],
@@ -141,8 +153,13 @@ class CmsController extends Controller
 
         return [
             'profil.latar_belakang' => $v['latar_belakang'] ?? '',
+            'profil.tim' => $v['tim'] ?? '',
+            'profil.mitra' => $v['mitra'] ?? '',
+            'profil.narahubung' => $v['narahubung'] ?? '',
             'profil.faq' => $faq,
-        ];
+        ] + collect(['peran', 'dashboard', 'wilayah', 'kependudukan', 'pertanian', 'pengaduan', 'laporan'])
+            ->mapWithKeys(fn (string $bagian) => ["panduan.{$bagian}" => $v['panduan'][$bagian] ?? ''])
+            ->all();
     }
 
     /**
@@ -155,6 +172,9 @@ class CmsController extends Controller
             'disclaimer' => ['nullable', 'string', 'max:1000'],
             'awalan_nomor' => ['required', 'string', 'regex:/^[A-Za-z]{2,6}$/'],
             'hotline' => ['nullable', 'string', 'max:40'],
+            'alur' => ['nullable', 'string', 'max:3000'],
+            'sla' => ['nullable', 'string', 'max:2000'],
+            'pelacakan' => ['nullable', 'string', 'max:3000'],
         ], [
             'awalan_nomor.required' => 'Awalan nomor tiket wajib diisi.',
             'awalan_nomor.regex' => 'Awalan nomor tiket 2-6 huruf, tanpa angka atau spasi.',
@@ -165,6 +185,9 @@ class CmsController extends Controller
             'portal.disclaimer' => $v['disclaimer'] ?? '',
             'portal.awalan_nomor' => strtoupper($v['awalan_nomor']),
             'portal.hotline' => $v['hotline'] ?? '',
+            'portal.alur' => $v['alur'] ?? '',
+            'portal.sla' => $v['sla'] ?? '',
+            'portal.pelacakan' => $v['pelacakan'] ?? '',
         ];
     }
 

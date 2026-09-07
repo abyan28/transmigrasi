@@ -73,7 +73,7 @@
             @empty
                 <tr>
                     <td colspan="13" class="px-3 py-6 text-center text-gray-500 dark:text-gray-400">
-                        Belum ada data satuan permukiman pada data contoh.
+                        Belum ada data satuan permukiman.
                     </td>
                 </tr>
             @endforelse
@@ -249,7 +249,7 @@
         </section>
     @empty
         <p class="rounded-2xl border border-gray-200 p-6 text-center text-theme-sm text-gray-500 dark:border-gray-800 dark:text-gray-400">
-            Belum ada satuan permukiman pada data contoh.
+            Belum ada satuan permukiman.
         </p>
     @endforelse
 

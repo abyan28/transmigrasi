@@ -1243,7 +1243,7 @@ it('merender halaman Tentang Sistem beserta seluruh data tim pengembang dan kola
         ->and($konten)->toContain('SP Weain');
 });
 
-it('merender halaman Panduan Penggunaan beserta seluruh bab dan daftar isi', function () {
+it('merender halaman Panduan Penggunaan beserta seluruh bab dan daftar isi tanpa kontrol PDF palsu', function () {
     $response = $this->get(route('panduan'))->assertOk();
     $konten = $response->getContent();
 
@@ -1257,7 +1257,7 @@ it('merender halaman Panduan Penggunaan beserta seluruh bab dan daftar isi', fun
         ->and($konten)->toContain('pengaduan-warga')
         ->and($konten)->toContain('laporan-ekspor')
         ->and($konten)->toContain('faq-bantuan')
-        ->and($konten)->toContain('Unduh Panduan (PDF)');
+        ->and($konten)->not->toContain('Unduh Panduan (PDF)');
 });
 
 it('menampilkan submenu Bantuan & Info pada sidebar aplikasi', function () {
@@ -1272,17 +1272,31 @@ it('menampilkan submenu Bantuan & Info pada sidebar aplikasi', function () {
 it('menampilkan footer ramping pada layout aplikasi dan footer informatif pada layout publik', function () {
     // CMS Layout: footer ramping
     $kontenApp = $this->get(route('beranda'))->assertOk()->getContent();
-    expect($kontenApp)->toContain('Kementerian Transmigrasi RI')
+    expect($kontenApp)->toContain('Kementerian Transmigrasi Republik Indonesia')
         ->and($kontenApp)->toContain('Pemerintah Kabupaten Malaka')
-        ->and($kontenApp)->toContain('ITS Surabaya')
+        ->and($kontenApp)->toContain('Institut Teknologi Sepuluh Nopember')
         ->and($kontenApp)->toContain('TailAdmin');
 
     // Public Layout: footer informatif
     $kontenPublik = $this->get(route('pengaduan-warga'))->assertOk()->getContent();
-    expect($kontenPublik)->toContain('Kawasan Kobalima Timur')
+    expect($kontenPublik)->toContain('Kawasan Transmigrasi Kobalima Timur')
         ->and($kontenPublik)->toContain('SP Kapitan Meo')
-        ->and($kontenPublik)->toContain('Kementerian Transmigrasi RI')
+        ->and($kontenPublik)->toContain('Kementerian Transmigrasi Republik Indonesia')
         ->and($kontenPublik)->toContain('Masuk sebagai Petugas Sistem');
+});
+
+it('menampilkan seluruh cakupan layanan pada Tentang meski pengguna dibatasi per SP', function () {
+    $pengguna = auth()->user();
+    $pengguna->role = new \App\Models\Role(['cakupan_data' => \App\Enums\CakupanData::PerSp]);
+    $pengguna->setRelation('satuanPermukiman', collect([
+        \App\Models\SatuanPermukiman::query()->first(),
+    ]));
+
+    $konten = $this->get(route('tentang'))->assertOk()->getContent();
+
+    foreach (\App\Models\SatuanPermukiman::query()->pluck('nama') as $nama) {
+        expect($konten)->toContain($nama);
+    }
 });
 
 it('menyusun kolom rekap sesuai dasar pengelompokannya', function () {

@@ -2,8 +2,12 @@
 
 namespace App\Support;
 
+use App\Enums\AksiAuditLog;
+use App\Models\AuditLog;
 use App\Models\Pengaturan;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Str;
 
 /**
  * Pengelolaan Konten Sistem (Task 9.6) -- pembaca terpusat tabel `pengaturan`.
@@ -55,13 +59,28 @@ class KontenSistem
 
         // Tab 3 -- Konten Profil & FAQ
         'profil.latar_belakang' => 'Kawasan Transmigrasi Kobalima Timur memiliki potensi agroekologis yang strategis dengan komoditas unggulan utama tanaman jagung, padi, palawija, dan hortikultura. Sistem informasi ini dikembangkan sebagai basis data terpadu untuk mendigitalisasi pemantauan kondisi kependudukan, penguasaan lahan usaha dan pekarangan, sarana produksi, bantuan alat mesin pertanian, realisasi penanaman, serta hasil panen secara transparan dan akuntabel.',
+        'profil.tim' => "Sistem dikembangkan bersama tim peneliti dan pengembang Institut Teknologi Sepuluh Nopember (ITS) Surabaya:\nDr. Budi Setiyono, S.Si., M.T. — Ketua Tim / Peneliti Utama\nLeonardi Paris Hasugian — Anggota Tim Pengembang\nMuhammad Abyan Dzaka — Anggota Tim Pengembang\nReyner Marvi Leiwakabessy — Anggota Tim Pengembang\nMuhammad Rias Ramadan — Anggota Tim Pengembang\nHeaven Happyna Putra Febriyono — Anggota Tim Pengembang",
+        'profil.mitra' => "Kementerian Transmigrasi Republik Indonesia — pembina kebijakan nasional ketransmigrasian.\nPemerintah Kabupaten Malaka dan Dinas Transmigrasi — pengelola data kawasan, warga, perumahan, lahan, dan infrastruktur.\nDinas Pertanian Kabupaten Malaka — mitra pembinaan kelompok tani, alsintan, saprotan, dan hasil panen.\nInstitut Teknologi Sepuluh Nopember — mitra riset dan pengembangan sistem.",
+        'profil.narahubung' => "Sekretariat Pelaksana: Kantor Dinas Transmigrasi Kabupaten Malaka, Betun, Nusa Tenggara Timur.\nTim Riset dan Pengembang: Institut Teknologi Sepuluh Nopember, Kampus ITS Sukolilo, Surabaya, Jawa Timur.\nSaluran bantuan resmi tercantum pada catatan kaki aplikasi.",
         'profil.faq' => '[{"tanya":"Bagaimana jika terjadi pergantian pengurus atau suksesi Kepala Keluarga?","jawab":"Masuk ke menu Penduduk & Lahan lalu Transmigran, buka rincian transmigran bersangkutan, lalu pilih tombol suksesi. Sistem menyimpan riwayat perubahan pada audit log tanpa menghapus jejak data awal."},{"tanya":"Mengapa tombol Hapus tidak muncul pada akun Operator SP?","jawab":"Operator SP hanya berhak menambah dan memperbarui data lapangan demi mencegah kehilangan data. Penghapusan data master hanya dapat diproses oleh Administrator atau Dinas berwenang."},{"tanya":"Bagaimana alur penanganan pengaduan warga?","jawab":"Pengaduan masuk berstatus Menunggu Diterima, diverifikasi petugas menjadi Diterima, diproses tindak lanjut lapangannya, lalu ditandai Selesai setelah masalah terselesaikan."}]',
+
+        // Panduan tetap: isi dapat disunting, perilaku dan validasi tetap di kode.
+        'panduan.peran' => 'Hak akses mengikuti peran dan penugasan pengguna. Menu yang tersedia dapat berbeda untuk setiap petugas; hubungi Administrator bila kewenangan belum sesuai.',
+        'panduan.dashboard' => 'Dashboard merangkum data kawasan, kependudukan, pertanian, kondisi SP, dan pengaduan. Gunakan penyaring wilayah serta periode untuk mempersempit analisis.',
+        'panduan.wilayah' => 'Kelola kawasan, satuan permukiman, inventaris, fasilitas, dan infrastruktur melalui kelompok menu Wilayah & SP.',
+        'panduan.kependudukan' => 'Data transmigran menjadi sumber hubungan keluarga, rumah, dan lahan. Perbarui data dari halaman rincian agar keterkaitannya tetap terjaga.',
+        'panduan.pertanian' => 'Catat kelompok tani, bantuan alsintan dan saprotan, penanaman, lalu hasil panen sesuai urutan kejadian lapangan.',
+        'panduan.pengaduan' => 'Warga dapat mengirim dan melacak pengaduan tanpa akun. Petugas menindaklanjuti pengaduan melalui menu internal sesuai kewenangannya.',
+        'panduan.laporan' => 'Laporan memakai data operasional yang tersimpan. Gunakan filter yang tersedia sebelum membuka dokumen atau mengekspor hasil.',
 
         // Tab 4 -- Portal Pengaduan Warga
         'portal.sambutan' => 'Sampaikan laporan, kendala pertanian, atau keluhan fasilitas di lingkungan satuan permukiman Anda. Laporan akan ditindaklanjuti langsung oleh dinas terkait.',
         'portal.disclaimer' => 'Identitas pelapor dilindungi dan hanya digunakan untuk keperluan verifikasi lapangan oleh petugas resmi kementerian dan dinas.',
         'portal.awalan_nomor' => 'PGD',
         'portal.hotline' => '0811-2345-6789',
+        'portal.alur' => 'Catat atau foto nomor pengaduan setelah laporan dikirim. Petugas akan memeriksa dan menindaklanjutinya, lalu perkembangan dapat dilihat pada halaman pelacakan.',
+        'portal.sla' => 'Waktu penanganan mengikuti jenis masalah dan kebutuhan verifikasi lapangan.',
+        'portal.pelacakan' => 'Masukkan nomor pengaduan persis seperti yang diterima saat pengiriman. Bila perlu bantuan, sampaikan nomor tersebut melalui hotline layanan.',
 
         // Tab 5 -- Pengumuman Dinas
         'pengumuman.aktif' => '0',
@@ -74,6 +93,15 @@ class KontenSistem
         'surel.penutup' => 'Hormat kami,',
         'surel.nama_pengirim' => 'Tim DIGITRANS Kobalima Timur',
         'surel.catatan_kaki' => 'Pesan ini dikirim otomatis oleh sistem. Mohon tidak membalas email ini.',
+
+        // Catatan editorial tambahan; struktur dan formula laporan tetap di kode.
+        'laporan.indikator-kawasan.catatan' => '',
+        'laporan.monografi-sp.catatan' => '',
+        'laporan.transmigran.catatan' => '',
+        'laporan.poktan.catatan' => '',
+        'laporan.alsintan.catatan' => '',
+        'laporan.saprotan.catatan' => '',
+        'laporan.hasil-panen.catatan' => '',
     ];
 
     /** Kunci ber-tipe boolean (disimpan '1'/'0'). */
@@ -141,6 +169,9 @@ class KontenSistem
      */
     public static function simpan(array $data): void
     {
+        $sebelum = self::semua();
+        $baru = [];
+
         foreach ($data as $kunci => $nilai) {
             if (! array_key_exists($kunci, self::BAWAAN)) {
                 continue;
@@ -160,7 +191,29 @@ class KontenSistem
             }
 
             Pengaturan::updateOrCreate(['kunci' => $kunci], ['nilai' => $simpan, 'tipe' => $tipe]);
+            $baru[$kunci] = $simpan;
         }
+
+        if ($baru !== []) {
+            $baru = array_filter($baru, fn ($nilai, $kunci) => ($sebelum[$kunci] ?? null) !== $nilai, ARRAY_FILTER_USE_BOTH);
+        }
+
+        if ($baru !== []) {
+            $permintaan = request();
+
+            AuditLog::create([
+                'user_id' => Auth::id(),
+                'aksi' => AksiAuditLog::Ubah,
+                'nama_tabel' => 'pengaturan',
+                'record_id' => 0,
+                'data_lama' => array_intersect_key($sebelum, $baru),
+                'data_baru' => $baru,
+                'ip_address' => $permintaan->ip(),
+                'user_agent' => Str::limit((string) $permintaan->userAgent(), 255, ''),
+            ]);
+        }
+
+        request()->attributes->remove(self::class);
     }
 
     /*
@@ -184,6 +237,15 @@ class KontenSistem
     public static function footer(): string
     {
         return self::teks('identitas.footer');
+    }
+
+    /** @return array{pusat: string, daerah: string} */
+    public static function instansi(): array
+    {
+        return [
+            'pusat' => self::teks('identitas.instansi_pusat'),
+            'daerah' => self::teks('identitas.instansi_daerah'),
+        ];
     }
 
     /**
@@ -234,6 +296,30 @@ class KontenSistem
         return self::teks('profil.latar_belakang');
     }
 
+    /** @return array{latar_belakang: string, tim: string, mitra: string, narahubung: string} */
+    public static function halamanTentang(): array
+    {
+        return [
+            'latar_belakang' => self::teks('profil.latar_belakang'),
+            'tim' => self::teks('profil.tim'),
+            'mitra' => self::teks('profil.mitra'),
+            'narahubung' => self::teks('profil.narahubung'),
+        ];
+    }
+
+    /** @return array<string, string> */
+    public static function panduan(): array
+    {
+        return collect(['peran', 'dashboard', 'wilayah', 'kependudukan', 'pertanian', 'pengaduan', 'laporan'])
+            ->mapWithKeys(fn (string $bagian) => [$bagian => self::teks('panduan.'.$bagian)])
+            ->all();
+    }
+
+    public static function catatanLaporan(string $slug): string
+    {
+        return self::teks('laporan.'.$slug.'.catatan');
+    }
+
     /**
      * @return list<array{tanya: string, jawab: string}>
      */
@@ -252,7 +338,7 @@ class KontenSistem
     }
 
     /**
-     * @return array{sambutan: string, disclaimer: string, hotline: string}
+     * @return array{sambutan: string, disclaimer: string, hotline: string, alur: string, sla: string, pelacakan: string}
      */
     public static function portal(): array
     {
@@ -260,6 +346,9 @@ class KontenSistem
             'sambutan' => self::teks('portal.sambutan'),
             'disclaimer' => self::teks('portal.disclaimer'),
             'hotline' => self::teks('portal.hotline'),
+            'alur' => self::teks('portal.alur'),
+            'sla' => self::teks('portal.sla'),
+            'pelacakan' => self::teks('portal.pelacakan'),
         ];
     }
 
@@ -306,6 +395,12 @@ class KontenSistem
      */
     private static function mentah(): array
     {
-        return Pengaturan::query()->pluck('nilai', 'kunci')->all();
+        $permintaan = request();
+
+        if (! $permintaan->attributes->has(self::class)) {
+            $permintaan->attributes->set(self::class, Pengaturan::query()->pluck('nilai', 'kunci')->all());
+        }
+
+        return $permintaan->attributes->get(self::class);
     }
 }

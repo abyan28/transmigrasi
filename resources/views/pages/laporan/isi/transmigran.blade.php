@@ -267,7 +267,7 @@
                 @empty
                     <tr>
                         <td colspan="12" class="px-3 py-8 text-center text-gray-500 dark:text-gray-400">
-                            Belum ada data transmigran pada data contoh.
+                            Belum ada data transmigran.
                         </td>
                     </tr>
                 @endforelse
@@ -366,7 +366,7 @@
                 @empty
                     <tr>
                         <td colspan="14" class="px-3 py-8 text-center text-gray-500 dark:text-gray-400">
-                            Belum ada data transmigran pada data contoh.
+                            Belum ada data transmigran.
                         </td>
                     </tr>
                 @endforelse
@@ -466,7 +466,7 @@
                 @empty
                     <tr>
                         <td colspan="9" class="px-3 py-8 text-center text-gray-500 dark:text-gray-400">
-                            Belum ada data rumah pada data contoh.
+                            Belum ada data rumah.
                         </td>
                     </tr>
                 @endforelse
@@ -574,7 +574,7 @@
                 @empty
                     <tr>
                         <td colspan="9" class="px-3 py-8 text-center text-gray-500 dark:text-gray-400">
-                            Belum ada data lahan pada data contoh.
+                            Belum ada data lahan.
                         </td>
                     </tr>
                 @endforelse

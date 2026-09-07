@@ -59,6 +59,7 @@ class UppercaseInput
         'tingkat',
         'jenis',
         'jenis_fasilitas',
+        'tab',
 
         // Nilai daftar pilihan (Task 4.3/4.4/4.6): TEKS yang dicocokkan ke tabel
         // `referensi` lewat ValidationRules::daftarPilihan(). Dikapitalkan, ia

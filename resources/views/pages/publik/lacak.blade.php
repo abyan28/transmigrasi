@@ -28,6 +28,12 @@
         <p class="mt-2 text-theme-sm text-gray-600 dark:text-gray-400">
             Masukkan nomor pengaduan yang Anda terima saat mengirim laporan.
         </p>
+        @if (! empty($portal['hotline']))
+            <p class="mt-2 text-theme-xs text-gray-500 dark:text-gray-400">Hotline layanan: {{ $portal['hotline'] }}</p>
+        @endif
+        @if (! empty($portal['pelacakan']))
+            <p class="mt-2 whitespace-pre-line text-theme-xs text-gray-500 dark:text-gray-400">{{ $portal['pelacakan'] }}</p>
+        @endif
     </div>
 
     {{--
@@ -216,8 +222,8 @@
                     @endif
 
                     <p class="mt-5 rounded-lg bg-gray-50 p-3.5 text-theme-xs text-gray-600 dark:bg-white/[0.03] dark:text-gray-400">
-                        Bila laporan Anda belum ditangani dalam waktu lama, hubungi petugas desa atau
-                        satuan permukiman Anda dengan menyebutkan nomor pengaduan di atas.
+                        Bila laporan Anda belum ditangani dalam waktu lama, hubungi {{ $portal['hotline'] ?: 'petugas desa atau satuan permukiman Anda' }}
+                        dengan menyebutkan nomor pengaduan di atas.
                     </p>
                 </div>
             </div>
