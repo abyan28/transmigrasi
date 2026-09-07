@@ -18,10 +18,19 @@
     $awalan = $awalan ?? 'tambah';
     $data = $data ?? [];
     $ruteAksesibilitasData = old('rute_aksesibilitas', $ruteAksesibilitasData ?? []);
-
     $kelasKontrol = 'h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30';
     $kelasLabel = 'mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400';
     $kelasBagian = 'text-theme-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400';
+
+    $tambahkanNilaiSaatIni = function (string $kolom, array &$opsi) use ($data): void {
+        $nilai = old($kolom, $data[$kolom] ?? '');
+        if ($nilai !== '' && ! array_key_exists($nilai, $opsi)) {
+            $opsi[$nilai] = $data[$kolom.'_label'] ?? $nilai;
+        }
+    };
+    $tambahkanNilaiSaatIni('pola_permukiman', $opsiPolaPermukiman);
+    $tambahkanNilaiSaatIni('tingkat_kesuburan_tanah', $opsiKesuburanTanah);
+    $tambahkanNilaiSaatIni('bentuk_wilayah', $opsiBentukWilayah);
 
     // `$daftarDesa` dan `$daftarKawasan` disuplai ViewServiceProvider.
 @endphp

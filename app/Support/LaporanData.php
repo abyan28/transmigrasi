@@ -532,7 +532,7 @@ class LaporanData
         foreach (PenyajianSaprotan::distribusi() as $d) {
             $pok = $poktan[$d['poktan_id']] ?? null;
 
-            if ($d['jenis'] === 'Benih') {
+            if (DaftarPilihan::memilikiPerilaku(JenisDaftarPilihan::JenisSaprotan, $d['jenis'], 'benih')) {
                 $pid = $d['poktan_id'];
 
                 $benih[] = [
@@ -765,6 +765,7 @@ class LaporanData
                 'tanggal_lahir' => $t->tanggal_lahir,
                 'agama' => $t->agama?->value,
                 'status_sertifikat' => DaftarPilihan::labelUntuk(JenisDaftarPilihan::StatusSertifikat, $t->status_sertifikat),
+                'status_sertifikat_kode' => $t->status_sertifikat,
             ])->all();
         $idTransmigran = array_column($transmigranSp, 'id_transmigran');
         $anggotaSp = AnggotaKeluarga::query()
@@ -1014,11 +1015,21 @@ class LaporanData
         // sehingga menghitungnya per bidang melipatgandakan satu sertifikat yang
         // sama. Belum Didata sengaja tampil terpisah: ia bukan elum punya,
         // melainkan belum pernah ditanyakan petugas.
-        $sertGrup = array_count_values(array_column($transmigranSp, 'status_sertifikat'));
+        $perilakuSertifikat = DaftarPilihan::query()
+            ->where('jenis', JenisDaftarPilihan::StatusSertifikat->value)
+            ->pluck('kode_perilaku', 'nilai');
+        $sertGrup = ['sudah' => 0, 'belum' => 0, 'tidak_diketahui' => 0];
+        foreach ($transmigranSp as $transmigran) {
+            $perilaku = $perilakuSertifikat[$transmigran['status_sertifikat_kode']] ?? 'tidak_diketahui';
+            $sertGrup[$perilaku] = ($sertGrup[$perilaku] ?? 0) + 1;
+        }
         $barisDok = [];
-        $statusSertifikat = DaftarPilihan::opsi(JenisDaftarPilihan::StatusSertifikat, false);
-        foreach ($statusSertifikat as $kode => $label) {
-            $barisDok[] = [$label, $sertGrup[$label] ?? $sertGrup[$kode] ?? 0];
+        foreach (['sudah' => 'Sudah', 'belum' => 'Belum', 'tidak_diketahui' => 'Belum Didata'] as $perilaku => $label) {
+            $nilai = DaftarPilihan::nilaiPerilaku(JenisDaftarPilihan::StatusSertifikat, $perilaku);
+            $barisDok[] = [
+                DaftarPilihan::labelUntuk(JenisDaftarPilihan::StatusSertifikat, $nilai) ?? $label,
+                $sertGrup[$perilaku],
+            ];
         }
 
         $panenGrup = [];

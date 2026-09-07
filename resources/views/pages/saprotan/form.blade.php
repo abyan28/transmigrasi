@@ -24,6 +24,10 @@
     $kelasBagian = 'text-theme-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400';
 
     $nilaiBenih = DaftarPilihan::nilaiPerilaku(JenisDaftarPilihan::JenisSaprotan, 'benih');
+    $jenisSaatIni = old('jenis', $data['jenis'] ?? '');
+    if ($jenisSaatIni !== '' && ! array_key_exists($jenisSaatIni, $opsiJenisSaprotan)) {
+        $opsiJenisSaprotan[$jenisSaatIni] = $data['jenis_label'] ?? $jenisSaatIni;
+    }
 
     $petaPoktan = [];
     foreach ($daftarPoktan as $p) {
@@ -117,7 +121,7 @@
                 <select id="{{ $awalan }}_jenis" name="jenis" required x-model="jenis" class="{{ $kelasKontrol }}">
                     <option value="">Pilih jenis</option>
                     @foreach ($opsiJenisSaprotan as $nilai => $label)
-                        <option value="{{ $nilai }}" @selected(old('jenis', $data['jenis'] ?? '') === $nilai)>{{ $label }}</option>
+                        <option value="{{ $nilai }}" @selected($jenisSaatIni === $nilai)>{{ $label }}</option>
                     @endforeach
                 </select>
             </div>

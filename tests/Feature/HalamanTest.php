@@ -5255,6 +5255,22 @@ it('memisahkan bantuan benih dari pupuk pada Laporan Saprotan', function () {
     }
 });
 
+it('mengelompokkan kode benih baru melalui perilaku master pada laporan', function () {
+    \App\Models\DaftarPilihan::where('jenis', JenisDaftarPilihan::JenisSaprotan->value)
+        ->where('nilai', 'Benih')->update(['kode_perilaku' => null]);
+    \App\Models\DaftarPilihan::create([
+        'jenis' => JenisDaftarPilihan::JenisSaprotan->value,
+        'nilai' => 'Bibit',
+        'kode_perilaku' => 'benih',
+    ]);
+    Saprotan::where('jenis', 'Benih')->update(['jenis' => 'Bibit']);
+
+    $data = LaporanData::saprotan();
+
+    expect($data['benih'])->not->toBeEmpty()
+        ->and(array_column($data['nonBenih'], 'jenis'))->not->toContain('Bibit');
+});
+
 it('menjumlahkan luas lahan anggota tiap poktan pada Laporan Poktan', function () {
     $data = LaporanData::poktan();
 

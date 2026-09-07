@@ -20,6 +20,7 @@
     Nama kolom mengikuti agents/data-dictionary.md bagian 7.1.
 --}}
 @php
+
     $awalan = $awalan ?? 'tambah';
     $data = $data ?? [];
 
@@ -37,6 +38,10 @@
     $kelasArea = 'w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90';
     $kelasLabel = 'mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400';
     $kelasBagian = 'text-theme-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400';
+    $statusSertifikatSaatIni = old('status_sertifikat', $data['status_sertifikat'] ?? 'Belum Didata');
+    if ($statusSertifikatSaatIni !== '' && ! array_key_exists($statusSertifikatSaatIni, $opsiStatusSertifikat)) {
+        $opsiStatusSertifikat[$statusSertifikatSaatIni] = $data['status_sertifikat_label'] ?? $statusSertifikatSaatIni;
+    }
 @endphp
 
 <div class="space-y-6"
@@ -225,7 +230,7 @@
                     class="{{ $kelasKontrol }}">
                     @foreach ($opsiStatusSertifikat as $nilai => $label)
                         <option value="{{ $nilai }}"
-                            @selected(old('status_sertifikat', $data['status_sertifikat'] ?? 'Belum Didata') === $nilai)>
+                            @selected($statusSertifikatSaatIni === $nilai)>
                             {{ $label }}
                         </option>
                     @endforeach

@@ -279,6 +279,10 @@ class LahanController extends Controller
             'keterangan' => $l->keterangan,
             'status_sertifikat' => $l->transmigran?->status_sertifikat
                 ?? DaftarPilihan::nilaiPerilaku(JenisDaftarPilihan::StatusSertifikat, 'tidak_diketahui'),
+            'status_sertifikat_label' => DaftarPilihan::labelUntuk(
+                JenisDaftarPilihan::StatusSertifikat,
+                $l->transmigran?->status_sertifikat,
+            ),
             'shm' => $shmMeta['nama_file'] ?? null,
             'shm_meta' => $shmMeta,
         ];
