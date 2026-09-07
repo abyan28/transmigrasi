@@ -1684,8 +1684,17 @@ menghapus sisa terakhir `DummyData::penggunaSaatIni()` -- dikerjakan berbarengan
 
 ## Tahap 11 — Pengujian, Deployment, dan Serah Terima
 
-- [ ] Task 11.1 - Alpha testing internal (login, role, CRUD, filter, upload, export, audit log) `[Sulit]`
-- [ ] Task 11.2 - Perbaikan bug blocker `[Sedang]`
+- [ ] Task 11.1 - Alpha testing dan audit internal menyeluruh `[Sulit]`
+  - [ ] Task 11.1a - Audit UI/UX seluruh frontend pada desktop dan mobile: seluruh halaman publik/internal, light/dark mode, responsivitas, aksesibilitas, state, navigasi, form, tabel, modal, grafik, dan alur pengguna nyata di browser
+  - [ ] Task 11.1b - Audit backend, keamanan, dan integritas sistem: autentikasi, otorisasi/cakupan data, validasi, aturan bisnis, transaksi, constraint basis data, konkurensi, query/performa, berkas privat, impor/export, dashboard/laporan, serta kualitas pengujian
+  - [ ] Task 11.1c - Audit adversarial atas klaim dan kecukupan bukti pengujian: falsifikasi klaim perubahan, pisahkan subklaim UI/server, bedakan uji perilaku dari pemeriksaan markup, jalankan alur pengguna persis, lacak binding Alpine ke rantai scope, dan bandingkan implementasi saudara
+  - [ ] Task 11.1d - Audit alur end-to-end dan konsolidasi temuan: hubungkan gejala UI dengan akar backend, hilangkan duplikasi, koreksi severity, tandai konflik bukti, dan petakan area yang belum tercakup
+  - [ ] Task 11.1e - Triase temuan dan susun backlog perbaikan beserta akar masalah, dependensi, acceptance criteria, serta verifikasi yang wajib dijalankan
+- [ ] Task 11.2 - Perbaikan temuan hasil alpha testing `[Sulit]`
+  - [ ] Tuntaskan seluruh temuan Critical/Blocker dan High sebelum deployment
+  - [ ] Dahulukan akar masalah pada komponen, layout, atau batas backend bersama daripada patch per halaman/caller
+  - [ ] Putuskan temuan Medium/Low: kerjakan bila bernilai nyata atau dokumentasikan sebagai susulan; jangan memperluas menjadi refactor tanpa batas
+  - [ ] Jalankan regression test dan audit ulang area terdampak; klaim perilaku layar wajib dibuktikan lewat keadaan DOM nyata, bukan pemeriksaan markup saja
 - [ ] Task 11.3 - Deployment ke hosting + domain, SSL, storage, backup terjadwal `[Sulit]`
   * **Prasyarat:** hentikan penerbitan statis GitHub Pages sepenuhnya + pindah hosting. **Sebagian sudah 2026-09-04:** pemicu otomatis `push` `deploy.yml` dicabut (kini `workflow_dispatch` manual). Sisa: hapus/arsipkan `deploy.yml`, `DaftarTautanStatis`, `TautanStatisTest`; nilai kembali pembenaran filter hash-fragment (`rules.md:854/859`, `ui-spec.md:929/947`). Rinciannya `notes.md` 1b.7
   * Penyeragaman `asset()`/`url()`/`route()` (1b.3) dan kepercayaan `X-Forwarded-*` di `bootstrap/app.php` **tetap diperlukan**, sebab keduanya syarat hosting di belakang reverse proxy
