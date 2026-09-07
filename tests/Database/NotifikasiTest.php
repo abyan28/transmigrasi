@@ -5,6 +5,7 @@ use App\Enums\CakupanData;
 use App\Enums\JenisNotifikasi;
 use App\Models\Infrastruktur;
 use App\Models\Notifikasi;
+use App\Models\ParameterPenilaianSp;
 use App\Models\Pengaduan;
 use App\Models\PenilaianSp;
 use App\Models\Permission;
@@ -17,6 +18,7 @@ use Database\Seeders\KawasanSeeder;
 use Database\Seeders\PenilaianKondisiSeeder;
 use Database\Seeders\SpSeeder;
 use Database\Seeders\WilayahSeeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 function penggunaNotifikasi(string $izin, CakupanData $cakupan = CakupanData::Semua): User
@@ -85,6 +87,10 @@ it('menahan pengaduan tanpa bidang dari penerima Per Bidang', function () {
 });
 
 it('mendeduplikasi notifikasi per penerima bukan secara global', function () {
+    $query = [];
+    DB::listen(function ($event) use (&$query) {
+        $query[] = strtolower($event->sql);
+    });
     $sp = SatuanPermukiman::first();
     $a = penggunaNotifikasi('pengaduan.lihat');
     $b = penggunaNotifikasi('pengaduan.lihat');
@@ -101,7 +107,8 @@ it('mendeduplikasi notifikasi per penerima bukan secara global', function () {
     LayananNotifikasi::pengaduanBaru($pengaduan);
 
     expect(Notifikasi::where('jenis', JenisNotifikasi::PengaduanBaru)->count())->toBe(2)
-        ->and(Notifikasi::pluck('user_id')->all())->toEqualCanonicalizing([$a->id_user, $b->id_user]);
+        ->and(Notifikasi::pluck('user_id')->all())->toEqualCanonicalizing([$a->id_user, $b->id_user])
+        ->and(collect($query)->contains(fn ($sql) => str_contains($sql, 'from `notifikasi`') && str_contains($sql, 'for update')))->toBeTrue();
 });
 
 it('mengirim notifikasi pengaduan mendesak selama belum selesai', function () {
@@ -206,6 +213,55 @@ it('tidak menggandakan riwayat penilaian_sp saat status hasil hitung tidak berub
     LayananNotifikasi::hitungUlangSp([$sp->id_satuan_permukiman]);
     expect(PenilaianSp::where('satuan_permukiman_id', $sp->id_satuan_permukiman)->count())
         ->toBe($setelahPertama);
+});
+
+it('mengunci SP sebelum menulis snapshot penilaian', function () {
+    $query = [];
+    DB::listen(function ($event) use (&$query) {
+        $query[] = strtolower($event->sql);
+    });
+
+    $sp = SatuanPermukiman::first();
+    LayananNotifikasi::hitungUlangSp([$sp->id_satuan_permukiman]);
+
+    expect(collect($query)->contains(fn ($sql) => str_contains($sql, 'from `satuan_permukiman`') && str_contains($sql, 'for update')))
+        ->toBeTrue();
+});
+
+it('mencatat snapshot baru ketika skor berubah meski status tetap sama', function () {
+    $sp = SatuanPermukiman::first();
+
+    LayananNotifikasi::hitungUlangSp([$sp->id_satuan_permukiman]);
+    $awal = PenilaianSp::where('satuan_permukiman_id', $sp->id_satuan_permukiman)
+        ->latest('id_penilaian_sp')->firstOrFail();
+
+    $parameter = ParameterPenilaianSp::where('is_dinilai', true)
+        ->where('tingkat', 'Tersier')->firstOrFail();
+    $parameter->update(['bobot' => $parameter->bobot + 1]);
+
+    LayananNotifikasi::hitungUlangSp([$sp->id_satuan_permukiman]);
+    $akhir = PenilaianSp::where('satuan_permukiman_id', $sp->id_satuan_permukiman)
+        ->latest('id_penilaian_sp')->firstOrFail();
+
+    expect(PenilaianSp::where('satuan_permukiman_id', $sp->id_satuan_permukiman)->count())->toBe(2)
+        ->and($akhir->status)->toBe($awal->status)
+        ->and($akhir->rincian)->not->toBe($awal->rincian);
+});
+
+it('menggulung balik snapshot bila pembuatan notifikasi kondisi SP gagal', function () {
+    $sp = SatuanPermukiman::first();
+    penggunaNotifikasi('penilaian_kondisi.lihat');
+
+    DB::listen(function ($query) {
+        if (str_contains($query->sql, 'insert into `notifikasi`')) {
+            throw new RuntimeException('Paksa notifikasi gagal.');
+        }
+    });
+
+    expect(fn () => LayananNotifikasi::hitungUlangSp([$sp->id_satuan_permukiman]))
+        ->toThrow(RuntimeException::class, 'Paksa notifikasi gagal.');
+    expect(PenilaianSp::where('satuan_permukiman_id', $sp->id_satuan_permukiman)->exists())
+        ->toBeFalse();
 });
 
 it('memberi tahu petugas Per SP di SP yang dilayani, bukan hanya SP pangkal, saat infrastruktur rusak berat', function () {

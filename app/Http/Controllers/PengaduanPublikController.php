@@ -11,6 +11,7 @@ use App\Http\Controllers\Concerns\MenyimpanBerkas;
 use App\Models\DaftarPilihan;
 use App\Models\Pengaduan;
 use App\Models\SatuanPermukiman;
+use App\Models\Scopes\CakupanDataSp;
 use App\Support\KontenSistem;
 use App\Support\LayananNotifikasi;
 use App\Support\NomorPengaduan;
@@ -131,7 +132,7 @@ class PengaduanPublikController extends Controller
         $riwayat = [];
 
         if ($nomor !== '') {
-            $model = Pengaduan::withoutGlobalScope(\App\Models\Scopes\CakupanDataSp::class)
+            $model = Pengaduan::withoutGlobalScope(CakupanDataSp::class)
                 ->with(['penanganan' => fn ($q) => $q->orderBy('id_penanganan_pengaduan'), 'penanganan.berkas'])
                 ->where('nomor_pengaduan', Str::upper($nomor))
                 ->first();

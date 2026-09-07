@@ -28,6 +28,7 @@
  *   node tests/Browser/uji-lebar-dokumen.mjs
  */
 
+import { buatPenjagaBrowser, masukAdmin, wajibWebSocket } from './browser-harness.mjs';
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { setTimeout as tidur } from 'node:timers/promises';
@@ -81,11 +82,8 @@ function cariEdge() {
 }
 
 async function main() {
-    if (typeof WebSocket === 'undefined') {
-        console.log('  LEWAT: WebSocket bawaan tidak tersedia pada Node ini.');
-
-        return;
-    }
+    wajibWebSocket();
+    const penjaga = buatPenjagaBrowser();
 
     const proses = spawn(cariEdge(), [
         '--headless=new',
@@ -118,6 +116,7 @@ async function main() {
 
         soket.addEventListener('message', (peristiwa) => {
             const pesan = JSON.parse(peristiwa.data);
+            penjaga.amati(pesan);
 
             if (pesan.id && menunggu.has(pesan.id)) {
                 menunggu.get(pesan.id)(pesan.result);
@@ -148,6 +147,7 @@ async function main() {
 
         await kirim('Page.enable');
         await kirim('Runtime.enable');
+        await masukAdmin({ kirim, nilai, asal: ASAL, penjaga });
 
         await kirim('Emulation.setDeviceMetricsOverride', {
             width: LEBAR_LAYAR,
@@ -234,6 +234,8 @@ async function main() {
                 meluber.map((w) => `${w.gulir}>${w.tampak}`).join(', ') + ` (kertas ${kertas.lebar}px)`,
             );
         }
+
+        penjaga.pastikanBersih();
 
         soket.close();
     } finally {

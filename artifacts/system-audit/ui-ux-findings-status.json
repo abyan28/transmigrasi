@@ -1,0 +1,47 @@
+{
+  "audit_sha": "29549bf0b0a2aed6a48fa587f77cec261dfec3bf",
+  "overall": "TIDAK_DAPAT_DIPERCAYA_UNTUK_HEAD",
+  "source_commit": "a3ba350848bab42b52367899b4b3e1a25761d15c",
+  "summary": {
+    "measurement_records": 172,
+    "declared_screenshots": 153,
+    "actual_screenshots": 153,
+    "duplicate_hash_groups": 9,
+    "duplicate_files": 31,
+    "invalid_contrast_values": 37,
+    "post_audit_ui_commits": 2,
+    "post_audit_changed_views": 21
+  },
+  "statuses": [
+    {
+      "area": "route_and_screenshot_mapping",
+      "status": "BUKTI_INVALID",
+      "reason": "Beberapa URL audit tidak ada pada HEAD dan screenshot dengan label berbeda identik serta menampilkan 404."
+    },
+    {
+      "area": "automated_contrast_measurements",
+      "status": "BUKTI_INVALID",
+      "reason": "37 rasio berada di luar rentang WCAG 1..21 akibat warna OKLab/alpha tidak dikompositkan dengan benar."
+    },
+    {
+      "area": "sidebar_group_heading_contrast",
+      "status": "SUDAH_DIPERBAIKI",
+      "reason": "HEAD memakai text-gray-500 dark:text-gray-400 pada sidebar."
+    },
+    {
+      "area": "metric_cards_and_summary_semantics",
+      "status": "STALE",
+      "reason": "Dua commit setelah audit mengubah compact metric strip dan semantik ringkasan pada 21 view."
+    },
+    {
+      "area": "global_no_overflow_claim",
+      "status": "TIDAK_TERBUKTI",
+      "reason": "Script browser tidak mengautentikasi dan dapat lulus saat halaman target dialihkan ke login."
+    },
+    {
+      "area": "health_score_and_production_readiness",
+      "status": "PALSU",
+      "reason": "Kesimpulan agregat bersandar pada bukti route, screenshot, measurement, dan baseline yang tidak valid."
+    }
+  ]
+}

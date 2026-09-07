@@ -8,11 +8,13 @@ use App\Mail\KodePemulihanSandiMail;
 use App\Models\AuditLog;
 use App\Models\KodePemulihanSandi;
 use App\Models\User;
+use App\Support\SesiPengguna;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -145,35 +147,44 @@ class PemulihanSandiController extends Controller
             throw ValidationException::withMessages(['kode' => self::PESAN_KODE_TAK_SAH]);
         }
 
-        $baris = KodePemulihanSandi::query()
-            ->where('user_id', $pengguna->id_user)
-            ->masihBerlaku()
-            ->latest('id_kode_pemulihan')
-            ->first();
+        $berhasil = DB::transaction(function () use ($pengguna, $data, $request): bool {
+            $pengguna = User::query()->lockForUpdate()->find($pengguna->id_user);
+            $baris = KodePemulihanSandi::query()
+                ->where('user_id', $pengguna?->id_user)
+                ->masihBerlaku()
+                ->latest('id_kode_pemulihan')
+                ->lockForUpdate()
+                ->first();
 
-        if ($baris === null) {
+            if ($pengguna === null || $baris === null) {
+                return false;
+            }
+
+            if (! Hash::check($data['kode'], $baris->kode_hash)) {
+                $baris->increment('percobaan');
+
+                return false;
+            }
+
+            $baris->forceFill(['dipakai_pada' => now()])->save();
+            $pengguna->forceFill(['password' => $data['password_baru']])->save();
+            SesiPengguna::cabut($pengguna);
+
+            AuditLog::create([
+                'user_id' => $pengguna->id_user,
+                'aksi' => AksiAuditLog::ResetKataSandi,
+                'nama_tabel' => 'user',
+                'record_id' => $pengguna->id_user,
+                'data_baru' => ['jalur' => 'Kode verifikasi'],
+                'ip_address' => $request->ip(),
+            ]);
+
+            return true;
+        });
+
+        if (! $berhasil) {
             throw ValidationException::withMessages(['kode' => self::PESAN_KODE_TAK_SAH]);
         }
-
-        if (! Hash::check($data['kode'], $baris->kode_hash)) {
-            $baris->increment('percobaan');
-
-            throw ValidationException::withMessages(['kode' => self::PESAN_KODE_TAK_SAH]);
-        }
-
-        $baris->forceFill(['dipakai_pada' => now()])->save();
-
-        // TANPA `password_harus_diganti`: petugas sudah memilih sandi finalnya.
-        $pengguna->forceFill(['password' => $data['password_baru']])->save();
-
-        AuditLog::create([
-            'user_id' => $pengguna->id_user,
-            'aksi' => AksiAuditLog::ResetKataSandi,
-            'nama_tabel' => 'user',
-            'record_id' => $pengguna->id_user,
-            'data_baru' => ['jalur' => 'Kode verifikasi'],
-            'ip_address' => $request->ip(),
-        ]);
 
         $request->session()->forget('pemulihan_user_id');
 

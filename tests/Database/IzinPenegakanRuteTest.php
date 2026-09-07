@@ -11,6 +11,7 @@
 use App\Models\Berkas;
 use App\Models\Permission;
 use App\Models\Role;
+use App\Models\SatuanPermukiman;
 use App\Models\Transmigran;
 use App\Models\User;
 use App\Support\PenyimpananDokumen;
@@ -28,13 +29,12 @@ beforeEach(function () {
     $this->seed(PermissionRoleSeeder::class);
 });
 
-it('memetakan atau mengecualikan setiap rute tulis internal bernama', function () {
+it('memetakan atau mengecualikan setiap rute internal bernama', function () {
     $peta = PetaIzinRute::peta();
     $dikecualikan = PetaIzinRute::dikecualikan();
 
     $tanpaPenjagaan = collect(app('router')->getRoutes()->getRoutes())
         ->filter(fn ($rute) => $rute->getName() !== null
-            && array_intersect($rute->methods(), ['POST', 'PUT', 'PATCH', 'DELETE']) !== []
             && in_array('auth', $rute->middleware(), true))
         ->map(fn ($rute) => $rute->getName())
         ->reject(fn (string $nama) => isset($peta[$nama]) || in_array($nama, $dikecualikan, true))
@@ -173,6 +173,29 @@ it('menahan unduhan dokumen di luar cakupan data operator Per SP (Task 10.6)', f
     // Operator SP 2: berkas di luar cakupan -> 404 (bukan 403, tak dibedakan
     // dari berkas yang memang tidak ada).
     $this->actingAs($ditugaskanSp2)->get($url)->assertNotFound();
+});
+
+it('menahan unduhan dokumen SP di luar penugasan operator Per SP', function () {
+    Storage::fake('local');
+    $this->seed(WilayahSeeder::class);
+    $this->seed(KawasanSeeder::class);
+    $this->seed(SpSeeder::class);
+
+    $sp = SatuanPermukiman::withoutGlobalScopes()->findOrFail(1);
+    $path = PenyimpananDokumen::folder('sp', $sp->id_satuan_permukiman, $sp->nama).'/sk-01-a83f2c19.pdf';
+    Storage::disk('local')->put($path, '%PDF-1.4 contoh');
+    $berkas = Berkas::create([
+        'uuid' => (string) Str::uuid(), 'nama_file' => basename($path), 'nama_asli' => 'SK.pdf',
+        'path' => $path, 'mime' => 'application/pdf', 'ekstensi' => 'pdf', 'ukuran' => 17, 'disk' => 'local',
+    ]);
+    $sp->update(['berkas_id' => $berkas->id_berkas]);
+
+    $operator = User::factory()->create(['role_id' => 4]);
+    $operator->satuanPermukiman()->attach(2);
+
+    $this->actingAs($operator)
+        ->get(route('dokumen.tampilkan', ['modul' => 'satuan_permukiman', 'id' => 1, 'namaBerkas' => basename($path)]))
+        ->assertNotFound();
 });
 
 it('membuka dokumen dari path registry meski folder memakai label snapshot', function () {

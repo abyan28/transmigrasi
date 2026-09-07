@@ -1,0 +1,24 @@
+{
+  "audit_sha": "29549bf0b0a2aed6a48fa587f77cec261dfec3bf",
+  "findings": [
+    {"id":"SYS-H01","severity":"HIGH","status":"TERBUKTI_STATIC_TRACE","title":"Akun nonaktif tetap dapat memakai sesi aktif"},
+    {"id":"SYS-H02","severity":"HIGH","status":"TERBUKTI_STATIC_TRACE","title":"Perubahan status, kredensial, role, atau cakupan tidak mencabut seluruh sesi"},
+    {"id":"SYS-H04","severity":"HIGH","status":"TERBUKTI_STATIC_TRACE","title":"Soft-delete poktan atau saprotan dapat menyembunyikan alur produksi aktif"},
+    {"id":"SYS-H05","severity":"HIGH","status":"TERBUKTI_STATIC_TRACE","title":"rincian_kondisi inventaris dan fasilitas dibuang backend"},
+    {"id":"SYS-H06","severity":"HIGH","status":"TERBUKTI_STATIC_TRACE","title":"Transisi status pengaduan rentan lost update dan riwayat bercabang"},
+    {"id":"SYS-H07","severity":"HIGH_CONDITIONAL","status":"TERBUKTI_STATIC_TRACE","title":"Semua proxy dipercaya sehingga kontrol IP dapat dipalsukan bila origin terekspos"},
+    {"id":"SYS-M01","severity":"MEDIUM","status":"TERBUKTI_STATIC_TRACE","title":"Dokumen SP dapat diunduh lintas penugasan Per-SP"},
+    {"id":"SYS-M02","severity":"MEDIUM","status":"TERBUKTI_RUNTIME","title":"Validasi tipe impor mendahulukan ekstensi nama klien"},
+    {"id":"SYS-M03","severity":"MEDIUM","status":"TERBUKTI_STATIC_TRACE","title":"Berkas fisik tidak atomik dengan transaksi database"},
+    {"id":"SYS-M04","severity":"MEDIUM","status":"TERBUKTI_RUNTIME","title":"Fresh install dan suite Database gagal pada master pilihan SP P1/P2"},
+    {"id":"SYS-M05","severity":"MEDIUM","status":"TERBUKTI_RUNTIME","title":"Lock dependency produksi tidak kompatibel dengan PHP 8.2 workflow"},
+    {"id":"SYS-M08","severity":"MEDIUM","status":"TERBUKTI_STATIC_TRACE","title":"Batas percobaan recovery dapat dilompati request paralel"},
+    {"id":"SYS-M09","severity":"MEDIUM","status":"TERBUKTI_STATIC_TRACE","title":"Deduplikasi notifikasi rentan concurrency"},
+    {"id":"SYS-M10","severity":"MEDIUM","status":"TERBUKTI_STATIC_TRACE","title":"Nomor urut pengaduan dapat sama pada request paralel"},
+    {"id":"SYS-M11","severity":"MEDIUM","status":"TERBUKTI_STATIC_TRACE","title":"Dashboard dan laporan melakukan full-load berulang per tahun"},
+    {"id":"SYS-M12","severity":"MEDIUM","status":"TERBUKTI_STATIC_TRACE","title":"Antrean surel tidak memiliki worker produksi yang terdefinisi"},
+    {"id":"SYS-M13","severity":"MEDIUM","status":"TERBUKTI_STATIC_TRACE","title":"Cookie Secure bergantung konfigurasi deployment yang tidak terdokumentasi"},
+    {"id":"SYS-L01","severity":"LOW","status":"TERBUKTI_RUNTIME","title":"Pint quality gate gagal pada 12 file"},
+    {"id":"SYS-L02","severity":"LOW","status":"TERBUKTI_STATIC_TRACE","title":"Route-map test dan CI belum menjadi quality gate menyeluruh"}
+  ]
+}

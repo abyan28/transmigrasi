@@ -26,6 +26,7 @@
  *   php artisan serve --port=8099
  *   node tests/Browser/uji-form-panen.mjs
  */
+import { buatPenjagaBrowser, masukAdmin, wajibWebSocket } from './browser-harness.mjs';
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { setTimeout as tidur } from 'node:timers/promises';
@@ -62,11 +63,8 @@ function cariEdge() {
 }
 
 async function main() {
-    if (typeof WebSocket === 'undefined') {
-        console.log('  LEWAT: WebSocket bawaan tidak tersedia pada Node ini.');
-
-        return;
-    }
+    wajibWebSocket();
+    const penjaga = buatPenjagaBrowser();
 
     const proses = spawn(cariEdge(), [
         '--headless=new',
@@ -98,6 +96,7 @@ async function main() {
 
         soket.addEventListener('message', (peristiwa) => {
             const pesan = JSON.parse(peristiwa.data);
+            penjaga.amati(pesan);
 
             if (pesan.id && menunggu.has(pesan.id)) {
                 menunggu.get(pesan.id)(pesan.result);
@@ -125,6 +124,10 @@ async function main() {
 
             return hasil?.result?.value;
         };
+
+        await kirim('Page.enable');
+        await kirim('Runtime.enable');
+        await masukAdmin({ kirim, nilai, asal: ASAL, penjaga });
 
         const buka = async (jalur) => {
             await kirim('Page.navigate', { url: `${ASAL}${jalur}` });
@@ -245,19 +248,18 @@ async function main() {
             `poktan_id=${sesudah.poktanTersembunyi}`
         );
 
-        // Penanaman #6 seluas 1 ha. Memilihnya langsung mengisi hasil panen
-        // dengan seluruh luas dan puso nol: panen mulus lebih lazim daripada
-        // gagal, sehingga itulah bawaan yang paling jarang perlu diubah.
+        // Gunakan luas pilihan nyata; urutan/ID data seed tidak menjadi kontrak UI.
+        const luasDipilih = Number(sesudah.maxPanen);
         periksa(
             'memilih penanaman langsung menutup seluruh luasnya',
-            sesudah.nilaiPanen === '1' && sesudah.nilaiPuso === '0',
-            `panen=${sesudah.nilaiPanen}, puso=${sesudah.nilaiPuso}, seharusnya 1 dan 0`
+            Number(sesudah.nilaiPanen) === luasDipilih && Number(sesudah.nilaiPuso) === 0,
+            `panen=${sesudah.nilaiPanen}, puso=${sesudah.nilaiPuso}, luas=${luasDipilih}`
         );
 
         periksa(
             'hasil panen dibatasi luas yang ditanam',
-            sesudah.maxPanen === '1',
-            `max=${sesudah.maxPanen}, seharusnya 1`
+            Number(sesudah.maxPanen) === luasDipilih,
+            `max=${sesudah.maxPanen}, luas=${luasDipilih}`
         );
 
         /*
@@ -305,26 +307,30 @@ async function main() {
         // waktu - penanaman November 2025 masih menyisakan 0,80 ha sampai
         // Agustus 2026, padahal jagung tidak berdiri sepuluh bulan.
         // ------------------------------------------------------------------
-        await isiKontrol('realisasi_panen', '0.6');
+        const panenUji = Math.min(0.6, luasDipilih / 2);
+        await isiKontrol('realisasi_panen', String(panenUji));
         await tidur(400);
 
         const sesudahPanen = await keadaan();
+        const pusoDiharapkan = Math.max(0, Math.round((luasDipilih - panenUji) * 100) / 100);
 
         periksa(
             'mengetik hasil panen mengisi puso',
-            sesudahPanen.nilaiPuso === '0.4',
-            `puso=${sesudahPanen.nilaiPuso}, seharusnya 1 - 0,6 = 0,4`
+            Number(sesudahPanen.nilaiPuso) === pusoDiharapkan,
+            `puso=${sesudahPanen.nilaiPuso}, seharusnya ${luasDipilih} - ${panenUji} = ${pusoDiharapkan}`
         );
 
-        await isiKontrol('puso', '0.25');
+        const pusoUji = Math.min(0.25, luasDipilih / 4);
+        await isiKontrol('puso', String(pusoUji));
         await tidur(400);
 
         const sesudahPuso = await keadaan();
+        const panenDiharapkan = Math.max(0, Math.round((luasDipilih - pusoUji) * 100) / 100);
 
         periksa(
             'mengetik puso mengisi hasil panen',
-            sesudahPuso.nilaiPanen === '0.75',
-            `panen=${sesudahPuso.nilaiPanen}, seharusnya 1 - 0,25 = 0,75`
+            Number(sesudahPuso.nilaiPanen) === panenDiharapkan,
+            `panen=${sesudahPuso.nilaiPanen}, seharusnya ${luasDipilih} - ${pusoUji} = ${panenDiharapkan}`
         );
 
         periksa(
@@ -340,8 +346,8 @@ async function main() {
 
         periksa(
             'produksi terhitung dari hasil panen dikali produktivitas',
-            sesudahProd.produksiTersembunyi === '2.25',
-            `produksi=${sesudahProd.produksiTersembunyi}, seharusnya 0,75 x 3 = 2,25`
+            Number(sesudahProd.produksiTersembunyi) === Math.round(panenDiharapkan * 3 * 1000) / 1000,
+            `produksi=${sesudahProd.produksiTersembunyi}, seharusnya ${panenDiharapkan} x 3`
         );
 
         // ------------------------------------------------------------------
@@ -357,8 +363,8 @@ async function main() {
 
         periksa(
             'gagal total mengalihkan seluruh luas ke puso',
-            gagalTotal.nilaiPuso === '1',
-            `puso=${gagalTotal.nilaiPuso}, seharusnya seluruh 1 ha`
+            Number(gagalTotal.nilaiPuso) === luasDipilih,
+            `puso=${gagalTotal.nilaiPuso}, seharusnya seluruh ${luasDipilih} ha`
         );
 
         periksa(
@@ -372,6 +378,8 @@ async function main() {
             gagalTotal.teks.includes('Seluruh hamparan gagal panen'),
             'petugas perlu tahu bahwa yang ia catat adalah kegagalan penuh'
         );
+
+        penjaga.pastikanBersih();
 
         soket.close();
 

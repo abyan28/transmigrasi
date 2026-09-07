@@ -12,8 +12,10 @@ use App\Mail\KodePemulihanSandiMail;
 use App\Models\AuditLog;
 use App\Models\KodePemulihanSandi;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
 
 require_once __DIR__.'/DatabaseHelpers.php';
 
@@ -181,6 +183,45 @@ it('menolak atur ulang tanpa sesi permintaan', function () {
     $this->post(route('atur-ulang-sandi'), [
         'kode' => '123456', 'password_baru' => 'RahasiaBaru9', 'password_baru_konfirmasi' => 'RahasiaBaru9',
     ])->assertSessionHasErrors('kode');
+});
+
+it('membatasi endpoint permintaan kode untuk akun yang tidak dikenal', function () {
+    config(['sim.batas_laju.aktif' => true, 'sim.batas_laju.pemulihan_sandi' => 2]);
+
+    RateLimiter::clear('198.51.100.20|hantu@malakakab.go.id');
+
+    for ($i = 0; $i < 2; $i++) {
+        $this->withServerVariables(['REMOTE_ADDR' => '198.51.100.20'])
+            ->post(route('lupa-kata-sandi.kirim'), ['kredensial' => 'hantu@malakakab.go.id'])
+            ->assertRedirect(route('verifikasi-kode'));
+    }
+
+    $this->withServerVariables(['REMOTE_ADDR' => '198.51.100.20'])
+        ->post(route('lupa-kata-sandi.kirim'), ['kredensial' => 'hantu@malakakab.go.id'])
+        ->assertTooManyRequests();
+
+    RateLimiter::clear('198.51.100.20|hantu@malakakab.go.id');
+});
+
+it('mencabut sesi dan remember token ketika recovery berhasil', function () {
+    config(['session.driver' => 'database', 'session.connection' => 'mysql_testing']);
+    $user = User::factory()->create(['remember_token' => 'remember-recovery']);
+    $kode = mintaKode($user);
+    DB::table('sessions')->insert([
+        'id' => 'sesi-recovery',
+        'user_id' => $user->id_user,
+        'payload' => 'payload',
+        'last_activity' => now()->timestamp,
+    ]);
+
+    $this->post(route('atur-ulang-sandi'), [
+        'kode' => $kode,
+        'password_baru' => 'RahasiaBaru9',
+        'password_baru_konfirmasi' => 'RahasiaBaru9',
+    ])->assertRedirect(route('login'));
+
+    expect(DB::table('sessions')->where('user_id', $user->id_user)->exists())->toBeFalse()
+        ->and($user->refresh()->remember_token)->not->toBe('remember-recovery');
 });
 
 it('menolak kata sandi baru yang lemah atau tidak sama', function () {

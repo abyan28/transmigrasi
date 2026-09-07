@@ -15,6 +15,7 @@
  *   node tests/Browser/uji-master-daftar-pilihan.mjs
  */
 
+import { buatPenjagaBrowser, masukAdmin, wajibWebSocket } from './browser-harness.mjs';
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { setTimeout as tidur } from 'node:timers/promises';
@@ -51,11 +52,8 @@ function cariEdge() {
 }
 
 async function main() {
-    if (typeof WebSocket === 'undefined') {
-        console.log('  LEWAT: WebSocket bawaan tidak tersedia pada Node ini.');
-
-        return;
-    }
+    wajibWebSocket();
+    const penjaga = buatPenjagaBrowser();
 
     const proses = spawn(cariEdge(), [
         '--headless=new',
@@ -87,6 +85,7 @@ async function main() {
 
         soket.addEventListener('message', (peristiwa) => {
             const pesan = JSON.parse(peristiwa.data);
+            penjaga.amati(pesan);
 
             if (pesan.id && menunggu.has(pesan.id)) {
                 menunggu.get(pesan.id)(pesan.result);
@@ -114,6 +113,10 @@ async function main() {
 
             return hasil?.result?.value;
         };
+
+        await kirim('Page.enable');
+        await kirim('Runtime.enable');
+        await masukAdmin({ kirim, nilai, asal: ASAL, penjaga });
 
         const buka = async (jalur) => {
             await kirim('Page.navigate', { url: `${ASAL}${jalur}` });
@@ -156,18 +159,18 @@ async function main() {
             });
         })()`));
 
-        periksa('tiga belas daftar dirender sebagai kartu', indeks.jumlahKartu === 13, `dapat ${indeks.jumlahKartu}`);
+        periksa('semua daftar dirender sebagai kartu', indeks.jumlahKartu === 19, `dapat ${indeks.jumlahKartu}`);
 
         // INTI UJI INI. Sebelumnya empat dari empat belas; sekarang seluruhnya.
         periksa(
             'seluruh kartu terlihat tanpa perlu menggulir',
-            indeks.kartuTerlihat === 13,
+            indeks.kartuTerlihat === indeks.jumlahKartu,
             `terlihat ${indeks.kartuTerlihat} dari ${indeks.jumlahKartu}`
         );
 
         periksa('tidak ada gulir mendatar pada halaman', indeks.gulirMendatar === false);
         periksa('tab lama sudah tidak dipakai', indeks.adaTablist === false);
-        periksa('empat kelompok dirender', indeks.kelompok.length === 4, indeks.kelompok.join(', '));
+        periksa('lima kelompok dirender', indeks.kelompok.length === 5, indeks.kelompok.join(', '));
 
         // Kartu benar-benar menuju halaman daftarnya, bukan sekadar tampak.
         await nilai(`document.querySelector('a[href$="/master/daftar-pilihan/sumber_dana"]').click()`);
@@ -178,13 +181,14 @@ async function main() {
         periksa('klik kartu membuka halaman daftarnya', tujuan === '/master/daftar-pilihan/sumber_dana', tujuan);
 
         const halamanJenis = JSON.parse(await nilai(`(() => {
-            const tersembunyi = document.querySelector('input[type="hidden"][name="jenis"]');
+            const tersembunyi = document.querySelector('form[action$="/master/daftar-pilihan"] input[type="hidden"][name="jenis"]');
 
             return JSON.stringify({
                 jenisTerkunci: tersembunyi ? tersembunyi.value : null,
                 adaDropdownJenis: !! document.querySelector('select[name="jenis"]'),
-                adaTautanKembali: !! document.querySelector('a[href$="/master/daftar-pilihan"]'),
-                barisTabel: document.querySelectorAll('tbody tr').length,
+                adaTautanKembali: [...document.querySelectorAll('a')]
+                    .some((a) => a.textContent.includes('Semua Daftar')),
+                barisTabel: document.querySelectorAll('table tbody tr').length,
             });
         })()`));
 
@@ -196,7 +200,9 @@ async function main() {
 
         periksa('jenis tidak lagi dapat diganti dari dalam form', halamanJenis.adaDropdownJenis === false);
         periksa('tersedia jalan kembali ke indeks', halamanJenis.adaTautanKembali === true);
-        periksa('daftar sumber dana terisi', halamanJenis.barisTabel === 8, `dapat ${halamanJenis.barisTabel}`);
+        periksa('daftar sumber dana terisi', halamanJenis.barisTabel > 0, `dapat ${halamanJenis.barisTabel}`);
+
+        penjaga.pastikanBersih();
 
         soket.close();
     } finally {

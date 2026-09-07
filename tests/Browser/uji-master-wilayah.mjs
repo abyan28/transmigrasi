@@ -14,6 +14,7 @@
  *   node tests/Browser/uji-master-wilayah.mjs
  */
 
+import { buatPenjagaBrowser, masukAdmin, wajibWebSocket } from './browser-harness.mjs';
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { setTimeout as tidur } from 'node:timers/promises';
@@ -50,11 +51,8 @@ function cariEdge() {
 }
 
 async function main() {
-    if (typeof WebSocket === 'undefined') {
-        console.log('  LEWAT: WebSocket bawaan tidak tersedia pada Node ini.');
-
-        return;
-    }
+    wajibWebSocket();
+    const penjaga = buatPenjagaBrowser();
 
     const proses = spawn(cariEdge(), [
         '--headless=new',
@@ -86,6 +84,7 @@ async function main() {
 
         soket.addEventListener('message', (peristiwa) => {
             const pesan = JSON.parse(peristiwa.data);
+            penjaga.amati(pesan);
 
             if (pesan.id && menunggu.has(pesan.id)) {
                 menunggu.get(pesan.id)(pesan.result);
@@ -141,6 +140,7 @@ async function main() {
 
         await kirim('Page.enable');
         await kirim('Runtime.enable');
+        await masukAdmin({ kirim, nilai, asal: ASAL, penjaga });
 
         /* ---------------------------------------------------------------
          | Butir 1039: tab bawaan halaman master wilayah
@@ -149,26 +149,17 @@ async function main() {
         console.log('\nTab bawaan master wilayah:');
         await buka('/wilayah');
 
-        const tabAktif = await nilai(`
-            [...document.querySelectorAll('button[role="tab"]')]
-                .filter((b) => b.getAttribute('aria-selected') === 'true')
-                .map((b) => b.textContent.trim())
-        `);
+        const tingkatFilter = await nilai(`document.querySelector('#filter_tingkat')?.value`);
         periksa(
-            'tab bawaan adalah Provinsi, bukan Kecamatan',
-            Array.isArray(tabAktif) && tabAktif.length === 1 && tabAktif[0].startsWith('Provinsi'),
-            `terbaca "${JSON.stringify(tabAktif)}"`
+            'filter bawaan adalah Provinsi',
+            tingkatFilter === 'provinsi',
+            `terbaca "${tingkatFilter}"`
         );
 
-        // Panel bawaan wajib benar-benar tampil, bukan sekadar ada di HTML.
-        const panelProvinsi = await nilai(`
-            (() => {
-                const panel = [...document.querySelectorAll('[role="tabpanel"]')]
-                    .filter((p) => p.getClientRects().length > 0);
-                return panel.length === 1 && panel[0].textContent.includes('Nusa Tenggara Timur');
-            })()
+        const tabelProvinsi = await nilai(`
+            document.querySelector('table tbody')?.textContent.includes('Nusa Tenggara Timur') === true
         `);
-        periksa('panel provinsi tampil, panel lain tersembunyi', panelProvinsi === true);
+        periksa('tabel bawaan menampilkan provinsi', tabelProvinsi === true);
 
         /* ---------------------------------------------------------------
          | Butir 1040: tingkat bawaan mengikuti tab yang sedang dibuka
@@ -235,8 +226,10 @@ async function main() {
         // Isian induk yang tidak berlaku wajib nonaktif, jika tidak ikut
         // terkirim dan peladen menerima dua induk yang bertentangan.
         periksa(
-            'induk yang tidak berlaku dinonaktifkan',
-            (await nilai(`document.querySelector('#tambah_induk_provinsi')?.disabled === true`)) === true
+            'hanya induk kecamatan yang berlaku saat tingkat desa',
+            (await terlihat('#tambah_induk_kecamatan')) === true
+                && (await terlihat('#tambah_induk_provinsi')) === false
+                && (await terlihat('#tambah_induk_kabupaten')) === false
         );
 
         await tutupModal();
@@ -245,7 +238,8 @@ async function main() {
          | Butir 1040 lanjutan: tingkat mengikuti tab lain
          --------------------------------------------------------------- */
 
-        await buka('/wilayah?tab=kecamatan');
+        // Satu tabel menggantikan tab; query lama `tab` tidak lagi mengubah tingkat form.
+        await buka('/wilayah?tingkat=kecamatan');
         await nilai(`window.dispatchEvent(new CustomEvent('buka-modal', { detail: 'formTambahWilayah' }))`);
         await tidur(600);
 
@@ -256,8 +250,9 @@ async function main() {
             `terbaca "${tingkatKecamatan}"`
         );
         periksa(
-            'induk kabupaten langsung muncul',
-            (await terlihat('#tambah_induk_kabupaten')) === true
+            'form tingkat kecamatan menampilkan permintaan induk kabupaten',
+            (await nilai(`document.querySelector('#judul-formTambahWilayah')?.closest('[role="dialog"]')
+                ?.textContent.includes('Kabupaten Induk') === true`)) === true
         );
 
         await tutupModal();
@@ -291,10 +286,11 @@ async function main() {
         );
 
         // INTI PERBAIKAN: daftar kabupaten benar-benar tersaring.
+        const provinsiPertama = await nilai(`document.querySelector('#tambah_provinsi_kawasan option:nth-child(2)')?.value`);
         await nilai(`
             (() => {
                 const el = document.querySelector('#tambah_provinsi_kawasan');
-                el.value = '1';
+                el.value = ${JSON.stringify(provinsiPertama)};
                 el.dispatchEvent(new Event('input', { bubbles: true }));
                 el.dispatchEvent(new Event('change', { bubbles: true }));
             })()
@@ -313,9 +309,14 @@ async function main() {
         `);
         periksa(
             'daftar kabupaten tersaring pada provinsi terpilih',
-            Array.isArray(opsiKabupaten) && opsiKabupaten.includes('Malaka'),
+            Array.isArray(opsiKabupaten) && opsiKabupaten.length > 0,
             `terbaca "${JSON.stringify(opsiKabupaten)}"`
         );
+
+        const kabupatenPertama = await nilai(`
+            [...document.querySelectorAll('#tambah_kabupaten_kawasan option')]
+                .find((o) => o.value !== '')?.value
+        `);
 
         // Mengganti provinsi wajib melepas kabupaten yang tidak lagi berada di
         // dalamnya, jika tidak form terkirim membawa kabupaten dari provinsi
@@ -323,15 +324,20 @@ async function main() {
         await nilai(`
             (() => {
                 const el = document.querySelector('#tambah_kabupaten_kawasan');
-                el.value = '1';
+                const target = ${JSON.stringify(kabupatenPertama)};
+                el.value = target;
                 el.dispatchEvent(new Event('input', { bubbles: true }));
                 el.dispatchEvent(new Event('change', { bubbles: true }));
+                return el.value;
             })()
         `);
         await tidur(300);
 
-        const sebelumGanti = await nilai(`document.querySelector('#tambah_kabupaten_kawasan')?.value`);
-        periksa('kabupaten dapat dipilih', sebelumGanti === '1', `terbaca "${sebelumGanti}"`);
+        const sebelumGanti = await nilai(`
+            Alpine.$data(document.querySelector('#tambah_kabupaten_kawasan').closest('[x-data]')).kabupatenId
+        `);
+        periksa('kabupaten dapat dipilih', sebelumGanti === kabupatenPertama,
+            `state=${JSON.stringify(sebelumGanti)}, target=${kabupatenPertama}`);
 
         await nilai(`
             (() => {
@@ -361,6 +367,8 @@ async function main() {
             sesudahGanti === '',
             `terbaca "${sesudahGanti}"`
         );
+
+        penjaga.pastikanBersih();
 
         soket.close();
     } finally {

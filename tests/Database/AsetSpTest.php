@@ -88,6 +88,45 @@ it('menyimpan inventaris baru beserta fotonya', function () {
         ->and($baru->berkas->first()->pivot->peran)->toBe('foto');
 });
 
+it('menyimpan rincian kondisi dari form dan menolak jumlah histogram yang tidak cocok', function () {
+    $dasar = [
+        'satuan_permukiman_id' => 1,
+        'jenis_inventaris' => 'Perabotan',
+        'nama_barang' => 'KURSI RINCIAN UJI',
+        'jumlah' => 3,
+        'status_penyerahan' => 'Sudah Diserahkan',
+        'kondisi' => 'Rusak Ringan',
+    ];
+
+    $this->post(route('inventaris.simpan'), $dasar + [
+        'rincian_kondisi' => ['Baik' => 1, 'Rusak Berat' => 2],
+    ])->assertSessionHasNoErrors();
+
+    expect(InventarisSp::where('nama_barang', 'KURSI RINCIAN UJI')->value('rincian_kondisi'))
+        ->toBe(['Baik' => 1, 'Rusak Berat' => 2]);
+
+    $this->post(route('inventaris.simpan'), $dasar + [
+        'nama_barang' => 'KURSI RINCIAN SALAH',
+        'rincian_kondisi' => ['Baik' => 1, 'Rusak Berat' => 1],
+    ])->assertSessionHasErrors('rincian_kondisi');
+
+    expect(InventarisSp::where('nama_barang', 'KURSI RINCIAN SALAH')->exists())->toBeFalse();
+});
+
+it('mengisi rincian kondisi dari kondisi umum bila form lama tidak mengirim histogram', function () {
+    $this->post(route('fasilitas.simpan'), [
+        'satuan_permukiman_id' => 1,
+        'jenis_fasilitas' => 'Kesehatan',
+        'nama_fasilitas' => 'POSKESDES KOMPATIBILITAS',
+        'jumlah' => 2,
+        'status_penyerahan' => 'Sudah Diserahkan',
+        'kondisi' => 'Baik',
+    ])->assertSessionHasNoErrors();
+
+    expect(FasilitasSp::where('nama_fasilitas', 'POSKESDES KOMPATIBILITAS')->value('rincian_kondisi'))
+        ->toBe(['Baik' => 2]);
+});
+
 it('menolak kolom REF yang tidak ada pada daftar pilihan', function () {
     // Kolom REF disimpan TEKS dan dicocokkan ke tabel `daftar_pilihan`, bukan enum
     // PHP -- tetapi nilai karangan tetap wajib ditolak.

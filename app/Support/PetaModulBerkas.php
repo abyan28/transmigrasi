@@ -78,6 +78,10 @@ class PetaModulBerkas
             return true;
         }
 
+        if ($modul === 'satuan_permukiman') {
+            return SatuanPermukiman::query()->terlihatOlehPengguna()->whereKey($id)->exists();
+        }
+
         return $model::query()->whereKey($id)->exists();
     }
 

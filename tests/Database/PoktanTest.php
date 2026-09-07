@@ -367,6 +367,15 @@ it('menolak target SP di luar cakupan tulis meski id disubmit langsung', functio
     ])->assertNotFound();
 });
 
+it('menolak menghapus poktan yang masih memiliki data bergantung', function () {
+    $poktan = Poktan::whereHas('anggota')->firstOrFail();
+
+    $this->delete(route('poktan.hapus', $poktan->id_poktan))
+        ->assertSessionHas('galat');
+
+    expect($poktan->fresh())->not->toBeNull();
+});
+
 it('menghapus poktan secara halus', function () {
     $id = Poktan::where('nama', 'POKTAN HARAPAN BARU')->value('id_poktan');
 

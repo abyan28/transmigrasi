@@ -58,6 +58,25 @@ it('menerima pengaduan warga tanpa login dan mencatat IP serta bidang awal', fun
     Mail::assertQueued(PengaduanMail::class, fn ($mail) => $mail->baru);
 });
 
+it('mengabaikan forwarded IP dari klien langsung yang tidak dipercaya', function () {
+    $sp = SatuanPermukiman::value('id_satuan_permukiman');
+
+    $this->withServerVariables(['REMOTE_ADDR' => '198.51.100.20'])
+        ->withHeader('X-Forwarded-For', '203.0.113.99')
+        ->post(route('pengaduan-warga.kirim'), [
+            'nama_pelapor' => 'IBU LUSIA',
+            'kontak_pelapor' => '081311112222',
+            'satuan_permukiman_id' => $sp,
+            'kategori' => 'Kelompok Tani',
+            'tanggal_pengaduan' => '2026-08-22',
+            'judul' => 'Uji IP proxy tidak dipercaya',
+            'deskripsi' => 'Alamat forwarded dari klien langsung harus diabaikan.',
+        ])->assertRedirect();
+
+    expect(Pengaduan::where('judul', 'Uji IP proxy tidak dipercaya')->value('ip_pelapor'))
+        ->toBe('198.51.100.20');
+});
+
 it('membiarkan bidang kosong untuk kategori netral', function () {
     $sp = SatuanPermukiman::value('id_satuan_permukiman');
 

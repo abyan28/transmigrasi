@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureIzin;
 use App\Http\Middleware\PastikanGantiKataSandi;
+use App\Http\Middleware\PastikanPenggunaAktif;
 use App\Http\Middleware\UppercaseInput;
 use App\Support\PetaIzinRute;
 use Illuminate\Foundation\Application;
@@ -17,7 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         then: function (): void {
             // Rute internal: WAJIB login + kunci kata-sandi-sementara.
             // routes/web.php menyimpan rute publik saja (Task 3.2b).
-            Route::middleware(['web', 'auth', 'pastikan.ganti.sandi'])
+            Route::middleware(['web', 'auth', 'pastikan.pengguna.aktif', 'pastikan.ganti.sandi'])
                 ->group(base_path('routes/internal.php'));
 
             // Task 3.3: lampirkan `izin:<modul>,<aksi>` per rute dari peta
@@ -60,10 +61,13 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         // Mempercayai header X-Forwarded-* agar asset() dan url() memakai skema
-        // dan host asli saat aplikasi diakses lewat tunnel (Cloudflare) atau
-        // reverse proxy. Tanpa ini aset dicetak http:// lalu diblokir browser
-        // sebagai mixed content.
-        $middleware->trustProxies(at: '*');
+        // Percayai hanya proxy yang dinyatakan operator. Nilai kosong berarti
+        // koneksi langsung; CIDR/IP dipisahkan koma di SIM_TRUSTED_PROXIES.
+        $proxy = array_values(array_filter(array_map(
+            'trim',
+            explode(',', (string) env('SIM_TRUSTED_PROXIES', '')),
+        )));
+        $middleware->trustProxies(at: $proxy);
 
         // Menyeragamkan isian teks pengguna menjadi huruf kapital agar rekap
         // per wilayah tidak terpecah oleh perbedaan penulisan.
@@ -77,6 +81,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // per-rute di `routes/internal.php`, mis. `izin:transmigran,ubah`.
         $middleware->alias([
             'pastikan.ganti.sandi' => PastikanGantiKataSandi::class,
+            'pastikan.pengguna.aktif' => PastikanPenggunaAktif::class,
             'izin' => EnsureIzin::class,
         ]);
 

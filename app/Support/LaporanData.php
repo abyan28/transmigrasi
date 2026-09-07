@@ -368,12 +368,6 @@ class LaporanData
      */
     private static function anggotaAktifPerPoktan(): array
     {
-        static $peta = null;
-
-        if ($peta !== null) {
-            return $peta;
-        }
-
         $peta = [];
 
         foreach (PenyajianPoktan::daftarAnggota() as $a) {
@@ -447,7 +441,7 @@ class LaporanData
                 'realisasi_panen' => $realisasiPanen,
                 'puso' => $puso,
                 'belum_dipanen' => $belumDipanen,
-                'produktivitas' => (float) $h['produktivitas'],
+                'produktivitas' => round(KonversiPanen::keTon((float) $h['produktivitas'], $h['satuan']), 6),
                 'produksi_ton' => round(KonversiPanen::keTon((float) $h['produksi'], $h['satuan']), 2),
                 'keterangan' => $h['keterangan'] ?? null,
             ];
@@ -1555,18 +1549,7 @@ class LaporanData
             'alsintan' => self::filterAlsintan($daftarSp, $cakupanBawaan),
             'saprotan' => self::filterSaprotan($daftarSp, $cakupanBawaan),
             'hasil-panen' => self::filterHasilPanen($daftarSp, $cakupanBawaan),
-            'monografi-sp' => [
-                'sp' => $daftarSp,
-                'tahun' => false,
-                'tahunTunggal' => true,
-                'labelTahun' => 'Tahun',
-                'daftarTahun' => RekapDashboard::daftarTahunLaporan(),
-                'tahunBawaan' => self::tahunDokumenBawaan(),
-                'dimensi' => [],
-                'cakupanBawaan' => $cakupanBawaan,
-                'iklimTahun' => self::monografiSp()['iklimTahun'],
-                'kependudukanTahun' => self::monografiSp()['kependudukanTahun'],
-            ],
+            'monografi-sp' => self::filterMonografi($daftarSp, $cakupanBawaan),
             'indikator-kawasan' => [
                 'sp' => $daftarSp,
                 'tahun' => false,
@@ -1580,6 +1563,24 @@ class LaporanData
             ],
             default => [],
         };
+    }
+
+    private static function filterMonografi(array $daftarSp, string $cakupanBawaan): array
+    {
+        $monografi = self::monografiSp();
+
+        return [
+            'sp' => $daftarSp,
+            'tahun' => false,
+            'tahunTunggal' => true,
+            'labelTahun' => 'Tahun',
+            'daftarTahun' => RekapDashboard::daftarTahunLaporan(),
+            'tahunBawaan' => self::tahunDokumenBawaan(),
+            'dimensi' => [],
+            'cakupanBawaan' => $cakupanBawaan,
+            'iklimTahun' => $monografi['iklimTahun'],
+            'kependudukanTahun' => $monografi['kependudukanTahun'],
+        ];
     }
 
     private static function filterTransmigran(array $daftarSp, string $cakupan): array

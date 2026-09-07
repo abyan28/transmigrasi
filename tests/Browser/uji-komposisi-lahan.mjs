@@ -14,6 +14,7 @@
  *   node tests/Browser/uji-komposisi-lahan.mjs
  */
 
+import { buatPenjagaBrowser, masukAdmin, wajibWebSocket } from './browser-harness.mjs';
 import { spawn } from 'node:child_process';
 import { setTimeout as tidur } from 'node:timers/promises';
 
@@ -87,10 +88,8 @@ async function main() {
 
         // WebSocket bawaan Node 22+. Bila tidak ada, uji dilewati dengan
         // pesan yang jelas alih-alih memerah tanpa sebab.
-        if (typeof WebSocket === 'undefined') {
-            console.log('  LEWAT: WebSocket bawaan tidak tersedia pada Node ini.');
-            return;
-        }
+        wajibWebSocket();
+    const penjaga = buatPenjagaBrowser();
 
         const soket = new WebSocket(sasaran.webSocketDebuggerUrl);
         let nomor = 0;
@@ -98,6 +97,7 @@ async function main() {
 
         soket.addEventListener('message', (peristiwa) => {
             const pesan = JSON.parse(peristiwa.data);
+            penjaga.amati(pesan);
 
             if (pesan.id && menunggu.has(pesan.id)) {
                 menunggu.get(pesan.id)(pesan.result);
@@ -128,6 +128,7 @@ async function main() {
 
         await kirim('Page.enable');
         await kirim('Runtime.enable');
+        await masukAdmin({ kirim, nilai, asal: ASAL, penjaga });
         await kirim('Page.navigate', { url: `${ASAL}/lahan` });
 
         // Menunggu Alpine benar-benar memulai, bukan sekadar HTML termuat.
@@ -153,22 +154,14 @@ async function main() {
         const adaBasah = await nilai(`!! document.querySelector('#tambah_luas_basah')`);
         periksa('isian luas basah dirender', adaBasah === true);
 
-        // Beralih ke lahan usaha agar bagian komposisi tampil.
-        await nilai(`
+        // Form saat ini menyimpan pekarangan dan lahan usaha sekaligus; tidak ada lagi selector peruntukan.
+        const komposisiAda = await nilai(`
             (() => {
-                const s = document.querySelector('#tambah_peruntukan_lahan');
-                s.value = 'Lahan Usaha';
-                s.dispatchEvent(new Event('input', { bubbles: true }));
-                s.dispatchEvent(new Event('change', { bubbles: true }));
-                return s.value;
+                const modal = document.querySelector('#judul-formTambahLahan').closest('[role="dialog"]');
+                return !! modal.querySelector('#tambah_luas_kering');
             })()
         `);
-        await tidur(400);
-
-        const komposisiTampil = await nilai(`
-            document.querySelector('#tambah_luas_kering').getClientRects().length > 0
-        `);
-        periksa('komposisi tampil untuk lahan usaha', komposisiTampil === true);
+        periksa('komposisi lahan usaha tersedia pada form', komposisiAda === true);
 
         // Inti pengujian: total benar-benar dihitung, bukan diketik.
         await nilai(`
@@ -190,7 +183,7 @@ async function main() {
         periksa('total dihitung dari kedua bagian', totalTampil === '2.00', `terbaca "${totalTampil}"`);
 
         const totalTerkirim = await nilai(`
-            document.querySelector('input[name="luas"].sr-only')?.value
+            document.querySelector('input[name="luas_usaha"].sr-only')?.value
         `);
         periksa('nilai terkirim mengikuti total', totalTerkirim === '2' || totalTerkirim === '2.00',
             `terbaca "${totalTerkirim}"`);
@@ -210,33 +203,21 @@ async function main() {
         `);
         periksa('total ikut berubah saat bagian disunting', totalBaru === '1.50', `terbaca "${totalBaru}"`);
 
-        // Lahan pekarangan: komposisi wajib hilang, luas diketik langsung.
-        await nilai(`
+        // Pekarangan dan usaha dicatat bersamaan; keduanya harus tetap aktif.
+        const pekaranganAda = await nilai(`
             (() => {
-                const s = document.querySelector('#tambah_peruntukan_lahan');
-                s.value = 'Lahan Pekarangan';
-                s.dispatchEvent(new Event('input', { bubbles: true }));
-                s.dispatchEvent(new Event('change', { bubbles: true }));
+                const modal = document.querySelector('#judul-formTambahLahan').closest('[role="dialog"]');
+                return !! modal.querySelector('#tambah_luas_pekarangan');
             })()
         `);
-        await tidur(400);
+        periksa('luas pekarangan tersedia bersama komposisi usaha', pekaranganAda === true);
 
-        const komposisiHilang = await nilai(`
-            document.querySelector('#tambah_luas_kering').getClientRects().length === 0
+        const keringAktif = await nilai(`
+            document.querySelector('#tambah_luas_kering')?.disabled === false
         `);
-        periksa('komposisi disembunyikan untuk pekarangan', komposisiHilang === true);
+        periksa('komposisi usaha tetap aktif bersama pekarangan', keringAktif === true);
 
-        const luasLangsung = await nilai(`
-            document.querySelector('#tambah_luas')?.getClientRects().length > 0
-        `);
-        periksa('luas diketik langsung untuk pekarangan', luasLangsung === true);
-
-        // Isian yang tersembunyi wajib nonaktif, jika tidak keduanya ikut
-        // terkirim dan peladen menerima dua nilai luas yang bertentangan.
-        const keringNonaktif = await nilai(`
-            document.querySelector('#tambah_luas_kering')?.disabled === true
-        `);
-        periksa('komposisi nonaktif saat tersembunyi', keringNonaktif === true);
+        penjaga.pastikanBersih();
 
         soket.close();
     } finally {

@@ -19,6 +19,7 @@ use App\Models\SaprotanDistribusi;
 use App\Models\Satuan;
 use App\Models\User;
 use App\Support\DummyData;
+use App\Support\PenyajianSaprotan;
 use Database\Seeders\DaftarPilihanSeeder;
 use Database\Seeders\KawasanSeeder;
 use Database\Seeders\KomoditasSeeder;
@@ -152,7 +153,7 @@ it('menampilkan label jenis saprotan tanpa mengubah kode tersimpan', function ()
         ->where('nilai', 'Benih')->update(['label' => 'Bibit']);
 
     $saprotan = Saprotan::where('jenis', 'Benih')->firstOrFail();
-    $baris = \App\Support\PenyajianSaprotan::baris($saprotan);
+    $baris = PenyajianSaprotan::baris($saprotan);
 
     expect($saprotan->jenis)->toBe('Benih')
         ->and($baris['jenis_label'])->toBe('Bibit');
@@ -365,6 +366,15 @@ it('menegakkan satu distribusi saprotan per poktan di basis data', function () {
         'poktan_id' => $baris->poktan_id,
         'jumlah' => 1,
     ]))->toThrow(QueryException::class);
+});
+
+it('menolak menghapus saprotan yang masih memiliki distribusi', function () {
+    $saprotan = Saprotan::whereHas('distribusi')->firstOrFail();
+
+    $this->delete(route('saprotan.hapus', $saprotan->id_saprotan))
+        ->assertSessionHas('galat');
+
+    expect($saprotan->fresh())->not->toBeNull();
 });
 
 it('menghapus pengadaan saprotan secara halus', function () {

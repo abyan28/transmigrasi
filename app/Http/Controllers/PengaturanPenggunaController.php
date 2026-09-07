@@ -11,10 +11,12 @@ use App\Models\User;
 use App\Support\LayananNotifikasi;
 use App\Support\Paginasi;
 use App\Support\PendingEmailChangeService;
+use App\Support\SesiPengguna;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
@@ -96,7 +98,11 @@ class PengaturanPenggunaController extends Controller
     public function simpan(Request $request): RedirectResponse
     {
         $data = $this->validasi($request);
-        $role = Role::findOrFail($data['role_id']);
+        $role = Role::query()->where('is_aktif', true)->find($data['role_id']);
+        if ($role === null) {
+            return back()->withErrors(['role_id' => 'Role yang dipilih tidak aktif atau tidak ada.'])->withInput();
+        }
+        $this->pastikanBolehMenetapkanRole($request->user(), new User, $role);
         $spIds = $this->validasiPenugasanSp($request, $role);
 
         $sandiSementara = $this->sandiSementara();
@@ -144,28 +150,41 @@ class PengaturanPenggunaController extends Controller
     ): RedirectResponse {
         $pengguna = User::findOrFail($id);
         $data = $this->validasi($request, $pengguna);
-        $role = Role::findOrFail($data['role_id']);
+        $role = Role::query()->where('is_aktif', true)->find($data['role_id']);
+
+        if ($role === null) {
+            return back()->withErrors(['role_id' => 'Role yang dipilih tidak aktif atau tidak ada.'])->withInput();
+        }
+
+        $this->pastikanBolehMenetapkanRole($request->user(), $pengguna, $role);
         $spIds = $this->validasiPenugasanSp($request, $role);
         $emailBerubah = strcasecmp($data['email'], $pengguna->email) !== 0;
+        $roleBerubah = $pengguna->role_id !== $role->id_role;
         $lama = $pengguna->only(['nama', 'email', 'role_id', 'telepon', 'jabatan']);
 
-        $pengguna->forceFill([
-            'role_id' => $role->id_role,
-            'nama' => $data['nama'],
-            'telepon' => $data['telepon'] ?? null,
-            'jabatan' => $data['jabatan'] ?? null,
-        ])->save();
+        DB::transaction(function () use ($request, $pengguna, $role, $spIds, $data, $lama, $emailBerubah, $roleBerubah): void {
+            $pengguna->forceFill([
+                'role_id' => $role->id_role,
+                'nama' => $data['nama'],
+                'telepon' => $data['telepon'] ?? null,
+                'jabatan' => $data['jabatan'] ?? null,
+            ])->save();
 
-        $pengguna->satuanPermukiman()->sync(
-            $role->cakupan_data === CakupanData::PerSp ? $spIds : []
-        );
+            $pengguna->satuanPermukiman()->sync(
+                $role->cakupan_data === CakupanData::PerSp ? $spIds : []
+            );
 
-        $sesudah = $pengguna->only(['nama', 'email', 'role_id', 'telepon', 'jabatan']);
-        $this->catat($request, $pengguna, AksiAuditLog::Ubah, [
-            'sebelum' => $lama,
-            'sesudah' => $sesudah,
-            'email_baru_menunggu_verifikasi' => $emailBerubah ? $data['email'] : null,
-        ]);
+            if ($roleBerubah) {
+                SesiPengguna::cabut($pengguna);
+            }
+
+            $sesudah = $pengguna->only(['nama', 'email', 'role_id', 'telepon', 'jabatan']);
+            $this->catat($request, $pengguna, AksiAuditLog::Ubah, [
+                'sebelum' => $lama,
+                'sesudah' => $sesudah,
+                'email_baru_menunggu_verifikasi' => $emailBerubah ? $data['email'] : null,
+            ]);
+        });
 
         if ($emailBerubah) {
             $emailChanges->request($pengguna, $data['email']);
@@ -190,6 +209,7 @@ class PengaturanPenggunaController extends Controller
             'password' => $sandiSementara,
             'password_harus_diganti' => true,
         ])->save();
+        SesiPengguna::cabut($pengguna);
 
         // `rules.md` 14b poin 15: catat pelaku, sasaran, waktu, dan JALUR.
         $this->catat($request, $pengguna, AksiAuditLog::ResetKataSandi, ['jalur' => 'Admin']);
@@ -209,18 +229,27 @@ class PengaturanPenggunaController extends Controller
 
     public function nonaktifkan(Request $request, int $id): RedirectResponse
     {
-        $pengguna = User::findOrFail($id);
+        DB::transaction(function () use ($request, $id): void {
+            $pengguna = User::query()->lockForUpdate()->findOrFail($id);
 
-        // `rules.md` 14b poin 16 -- diperiksa DI SERVER, bukan hanya lewat
-        // penyembunyian tombol.
-        abort_if(
-            $this->adminAktifTerakhir($pengguna),
-            422,
-            'Tidak dapat menonaktifkan Admin aktif terakhir. Sistem harus selalu punya satu jalur administrasi.',
-        );
+            if ($pengguna->is_aktif && ($pengguna->role?->is_terkunci ?? false)) {
+                User::query()
+                    ->where('is_aktif', true)
+                    ->whereHas('role', fn ($q) => $q->where('is_terkunci', true))
+                    ->lockForUpdate()
+                    ->get(['id_user']);
 
-        $pengguna->forceFill(['is_aktif' => false])->save();
-        $this->catat($request, $pengguna, AksiAuditLog::NonaktifkanAkun, ['nama' => $pengguna->nama]);
+                abort_if(
+                    $this->adminAktifTerakhir($pengguna),
+                    422,
+                    'Tidak dapat menonaktifkan Admin aktif terakhir. Sistem harus selalu punya satu jalur administrasi.',
+                );
+            }
+
+            $pengguna->forceFill(['is_aktif' => false])->save();
+            SesiPengguna::cabut($pengguna);
+            $this->catat($request, $pengguna, AksiAuditLog::NonaktifkanAkun, ['nama' => $pengguna->nama]);
+        });
 
         return redirect()->route('pengguna.index')
             ->with('sukses', 'Akun dinonaktifkan. Seluruh riwayat tindakannya tetap tersimpan.');
@@ -299,6 +328,16 @@ class PengaturanPenggunaController extends Controller
         ]);
 
         return array_map('intval', $data['satuan_permukiman']);
+    }
+
+    private function pastikanBolehMenetapkanRole(?User $aktor, User $target, Role $role): void
+    {
+        $aktorAdmin = $aktor?->role?->is_terkunci ?? false;
+        $targetAdmin = $target->role?->is_terkunci ?? false;
+
+        abort_if(($role->is_terkunci || $targetAdmin) && ! $aktorAdmin, 403);
+        abort_if($targetAdmin && ! $role->is_terkunci && $this->adminAktifTerakhir($target), 422,
+            'Tidak dapat menurunkan role Admin aktif terakhir.');
     }
 
     /**

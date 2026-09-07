@@ -44,9 +44,17 @@ class ImporController extends Controller
         ]);
 
         $berkas = $request->file('berkas');
-        $ekstensi = strtolower((string) ($berkas->getClientOriginalExtension() ?: $berkas->extension()));
+        $contoh = (string) file_get_contents($berkas->getRealPath(), false, null, 0, 8192);
+        $barisPertama = collect(preg_split('/\R/', preg_replace('/^\xEF\xBB\xBF/', '', $contoh)) ?: [])
+            ->map('trim')
+            ->first(fn (string $baris) => $baris !== '' && ! str_starts_with($baris, '#'));
+        $ekstensi = match (true) {
+            str_starts_with($contoh, "PK\x03\x04") => 'xlsx',
+            ! str_contains($contoh, "\0") && str_contains((string) $barisPertama, ',') => 'csv',
+            default => null,
+        };
 
-        if (! in_array($ekstensi, ['xlsx', 'csv'], true)) {
+        if ($ekstensi === null) {
             return response()->json([
                 'pesan' => 'Berkas harus berformat XLSX (.xlsx) atau CSV (.csv).',
             ], 422);

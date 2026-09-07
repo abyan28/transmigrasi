@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Enums\AksiAuditLog;
 use App\Models\AuditLog;
 use App\Models\User;
+use App\Support\SesiPengguna;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 
@@ -62,6 +63,7 @@ class PulihkanAdmin extends Command
             'password' => $sandi,
             'password_harus_diganti' => true,
         ])->save();
+        SesiPengguna::cabut($admin);
 
         AuditLog::create([
             'user_id' => null,

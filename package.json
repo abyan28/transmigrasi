@@ -4,7 +4,9 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "test:browser": "node tests/Browser/jalankan-semua.mjs",
+        "test:browser:harness": "node tests/Browser/uji-harness.mjs"
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.1.12",

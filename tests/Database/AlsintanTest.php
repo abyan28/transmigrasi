@@ -10,9 +10,11 @@
  */
 
 use App\Enums\CakupanData;
+use App\Enums\JenisDaftarPilihan;
 use App\Models\Alsintan;
 use App\Models\AlsintanDistribusi;
 use App\Models\Berkas;
+use App\Models\DaftarPilihan;
 use App\Models\Poktan;
 use App\Models\Role;
 use App\Models\User;
@@ -260,7 +262,7 @@ it('memperbarui kondisi satu baris distribusi', function () {
 it('mempertahankan kondisi nonaktif hanya pada distribusi yang sudah memilikinya', function () {
     $baris = AlsintanDistribusi::where('kondisi', 'Baik')->firstOrFail();
     $baris->update(['kondisi' => 'Hilang']);
-    \App\Models\DaftarPilihan::where('jenis', \App\Enums\JenisDaftarPilihan::Kondisi->value)
+    DaftarPilihan::where('jenis', JenisDaftarPilihan::Kondisi->value)
         ->where('nilai', 'Hilang')->update(['is_aktif' => false]);
 
     $this->post("/alsintan/{$baris->alsintan_id}/distribusi/{$baris->id_alsintan_distribusi}/kondisi", [

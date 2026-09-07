@@ -47,21 +47,21 @@ class AdminAwalSeeder extends Seeder
             return;
         }
 
-        $email = env('SIM_ADMIN_EMAIL', 'admin@malakakab.go.id');
-        $sandiDiset = (string) env('SIM_ADMIN_PASSWORD', '');
+        $email = config('sim.admin_awal.email');
+        $sandiDiset = (string) config('sim.admin_awal.password', '');
         $sandi = $sandiDiset !== '' ? $sandiDiset : Str::password(16, symbols: false);
 
         $admin = new User;
         $admin->forceFill([
             'role_id' => $roleAdmin->id_role,
-            'nama' => env('SIM_ADMIN_NAMA', 'ADMINISTRATOR SISTEM'),
+            'nama' => config('sim.admin_awal.nama'),
             // `user.username` NOT NULL; bila `SIM_ADMIN_USERNAME` tak diisi,
             // Admin membuat miliknya sendiri saat masuk pertama.
-            'username' => env('SIM_ADMIN_USERNAME') ?: User::buatUsernameSementara(),
+            'username' => config('sim.admin_awal.username') ?: User::buatUsernameSementara(),
             'email' => $email,
             'password' => $sandi,
             'is_aktif' => true,
-            'password_harus_diganti' => (bool) env('SIM_ADMIN_WAJIB_GANTI', true),
+            'password_harus_diganti' => (bool) config('sim.admin_awal.wajib_ganti', true),
         ])->save();
 
         $this->command?->info("Akun Admin awal dibuat: {$email}");

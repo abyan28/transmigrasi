@@ -101,6 +101,29 @@ it('keeps a permanent account email and password pending until POST while GET is
     Mail::assertQueued(AccountChangeNoticeMail::class, fn ($mail) => $mail->hasTo('old@malakakab.go.id'));
 });
 
+it('menggulung balik kredensial sementara bila antrean verifikasi gagal', function () {
+    $user = User::factory()->create([
+        'email' => 'queue-old@malakakab.go.id',
+        'password' => 'Temporary123',
+        'password_harus_diganti' => true,
+        'remember_token' => 'remember-temporary',
+    ]);
+    $oldHash = $user->password;
+
+    Mail::shouldReceive('to')
+        ->once()
+        ->with('queue-new@malakakab.go.id')
+        ->andThrow(new RuntimeException('Antrean tidak tersedia.'));
+
+    expect(fn () => app(PendingEmailChangeService::class)
+        ->request($user, 'queue-new@malakakab.go.id'))
+        ->toThrow(RuntimeException::class, 'Antrean tidak tersedia.');
+
+    expect($user->refresh()->password)->toBe($oldHash)
+        ->and($user->remember_token)->toBe('remember-temporary')
+        ->and(PendingEmailChange::where('user_id', $user->id_user)->exists())->toBeFalse();
+});
+
 it('rotates a temporary credential at request then requires permanent password and username', function () {
     $user = User::factory()->create([
         'email' => 'temporary-old@malakakab.go.id',

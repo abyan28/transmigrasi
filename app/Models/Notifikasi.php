@@ -6,6 +6,7 @@ use App\Enums\JenisNotifikasi;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class Notifikasi extends Model
 {
@@ -60,13 +61,15 @@ class Notifikasi extends Model
         $waktu = now();
 
         foreach ($penerima as $user) {
-            $kunci = ['user_id' => $user->id_user, 'jenis' => $jenis->value, ...$subjek];
+            DB::transaction(function () use ($user, $jenis, $subjek, $pesan, $waktu) {
+                $kunci = ['user_id' => $user->id_user, 'jenis' => $jenis->value, ...$subjek];
 
-            if (static::query()->where($kunci)->whereNull('dibaca_at')->exists()) {
-                continue;
-            }
+                if (static::query()->where($kunci)->whereNull('dibaca_at')->lockForUpdate()->exists()) {
+                    return;
+                }
 
-            static::create($kunci + ['pesan' => $pesan, 'created_at' => $waktu, 'updated_at' => $waktu]);
+                static::create($kunci + ['pesan' => $pesan, 'created_at' => $waktu, 'updated_at' => $waktu]);
+            });
         }
     }
 

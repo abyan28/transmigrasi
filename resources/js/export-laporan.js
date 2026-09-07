@@ -58,7 +58,7 @@ function angkaDariTeks(teks) {
  * berpola angka Indonesia -- supaya Excel dapat menjumlah/mengurutkannya,
  * bukan sekadar teks yang terbaca seperti angka.
  */
-function konversiAngka(XLSX, ws) {
+function konversiAngka(XLSX, ws, tabel) {
     if (!ws['!ref']) {
         return;
     }
@@ -74,7 +74,12 @@ function konversiAngka(XLSX, ws) {
                 continue;
             }
 
-            const angka = angkaDariTeks(sel.v);
+            let angka = angkaDariTeks(sel.v);
+            const selDom = tabel.rows[baris]?.cells[kolom];
+
+            if (angka === null && selDom?.hasAttribute('data-export-number') && /^-?\d+(?:[.,]\d+)?$/.test(sel.v.trim())) {
+                angka = Number(sel.v.trim().replace(',', '.'));
+            }
 
             if (angka !== null) {
                 sel.t = 'n';
@@ -132,7 +137,7 @@ async function keExcel(root, slug) {
 
     tabel.forEach((tbl) => {
         const ws = XLSX.utils.table_to_sheet(tbl, { display: true, raw: true });
-        konversiAngka(XLSX, ws);
+        konversiAngka(XLSX, ws, tbl);
 
         const caption = tbl.querySelector('caption')?.textContent || 'Lembar';
         XLSX.utils.book_append_sheet(wb, ws, namaLembar(caption, dipakai));

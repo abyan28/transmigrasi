@@ -9,7 +9,11 @@
  * ber-bagian acak; halaman lacak tanpa data pribadi.
  */
 
+use App\Enums\JenisDaftarPilihan;
+use App\Http\Controllers\Concerns\MenyimpanBerkas;
 use App\Mail\PengaduanMail;
+use App\Models\Berkas;
+use App\Models\DaftarPilihan;
 use App\Models\PenangananPengaduan;
 use App\Models\Pengaduan;
 use App\Models\SatuanPermukiman;
@@ -60,7 +64,7 @@ it('merender daftar pengaduan dengan barisnya', function () {
 });
 
 it('menyortir pengaduan memakai urutan master prioritas', function () {
-    \App\Models\DaftarPilihan::where('jenis', \App\Enums\JenisDaftarPilihan::PrioritasPengaduan->value)
+    DaftarPilihan::where('jenis', JenisDaftarPilihan::PrioritasPengaduan->value)
         ->where('nilai', 'Rendah')->update(['urutan' => 99]);
 
     $isi = $this->get(route('pengaduan.index'))->assertOk()->getContent();
@@ -150,6 +154,56 @@ it('menyimpan dokumen tindak lanjut di bawah folder pengaduannya', function () {
     Storage::disk('local')->assertExists($path);
 });
 
+it('menghapus berkas fisik bila transaksi registry digulung balik', function () {
+    Storage::fake('local');
+
+    try {
+        DB::transaction(function () {
+            $penyimpan = new class
+            {
+                use MenyimpanBerkas;
+
+                public function simpanUntukUji(UploadedFile $berkas): void
+                {
+                    $this->rekamBerkas($berkas, 'uji', 1, 'rollback');
+                }
+            };
+            $penyimpan->simpanUntukUji(
+                UploadedFile::fake()->create('rollback.pdf', 40, 'application/pdf'),
+            );
+
+            throw new RuntimeException('Paksa rollback setelah berkas tersimpan.');
+        });
+    } catch (RuntimeException $e) {
+        expect($e->getMessage())->toBe('Paksa rollback setelah berkas tersimpan.');
+    }
+
+    expect(Storage::disk('local')->allFiles())->toBe([])
+        ->and(Berkas::where('nama_asli', 'rollback.pdf')->exists())->toBeFalse();
+});
+
+it('menolak transisi dari status basi setelah request lain lebih dulu memajukan pengaduan', function () {
+    $disela = false;
+
+    DB::listen(function ($query) use (&$disela) {
+        if ($disela || ! str_contains($query->sql, 'from `pengaduan`') || ! str_contains($query->sql, 'limit 1')) {
+            return;
+        }
+
+        $disela = true;
+        DB::table('pengaduan')->where('id_pengaduan', 3)->update(['status' => 'Diterima']);
+    });
+
+    $this->post(route('pengaduan.tangani', 3), [
+        'status_sesudah' => 'Diterima',
+        'tanggal_penanganan' => '2026-08-20',
+        'catatan' => 'Request kedua tidak boleh membuat riwayat bercabang.',
+    ])->assertSessionHasErrors('status_sesudah');
+
+    expect(Pengaduan::find(3)->status->value)->toBe('Diterima')
+        ->and(PenangananPengaduan::where('pengaduan_id', 3)->count())->toBe(0);
+});
+
 it('menolak lompatan status yang melewati satu tahap', function () {
     // Pengaduan 3 masih Menunggu Diterima; Diproses adalah lompatan.
     $this->post(route('pengaduan.tangani', 3), [
@@ -207,6 +261,18 @@ it('merender rekap pengaduan pada tiap dasar pengelompokan', function () {
             ->assertOk()
             ->assertSee('Rekap');
     }
+});
+
+it('mengunci rentang nomor tahun berjalan sebelum mengambil urutan berikutnya', function () {
+    $query = [];
+    DB::listen(function ($event) use (&$query) {
+        $query[] = strtolower($event->sql);
+    });
+
+    DB::transaction(fn () => NomorPengaduan::buat(2026));
+
+    expect(collect($query)->contains(fn ($sql) => str_contains($sql, 'from `pengaduan`') && str_contains($sql, 'for update')))
+        ->toBeTrue();
 });
 
 it('membuat nomor pengaduan ber-bagian acak yang unik', function () {

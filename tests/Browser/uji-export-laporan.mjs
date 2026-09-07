@@ -17,6 +17,7 @@
  *   node tests/Browser/uji-export-laporan.mjs
  */
 
+import { buatPenjagaBrowser, masukAdmin, wajibWebSocket } from './browser-harness.mjs';
 import { spawn } from 'node:child_process';
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -92,11 +93,8 @@ async function tungguBerkas(dir, cocokNama, batasMs = 8000) {
 }
 
 async function main() {
-    if (typeof WebSocket === 'undefined') {
-        console.log('  LEWAT: WebSocket bawaan tidak tersedia pada Node ini.');
-
-        return;
-    }
+    wajibWebSocket();
+    const penjaga = buatPenjagaBrowser();
 
     const dirUnduh = mkdtempSync(join(tmpdir(), 'sim-export-'));
     // Profil TERPISAH, wajib untuk uji ini: tanpa --user-data-dir, Edge
@@ -140,6 +138,7 @@ async function main() {
 
         soket.addEventListener('message', (peristiwa) => {
             const pesan = JSON.parse(peristiwa.data);
+            penjaga.amati(pesan);
             if (pesan.id && menunggu.has(pesan.id)) {
                 menunggu.get(pesan.id)(pesan.result);
                 menunggu.delete(pesan.id);
@@ -169,6 +168,7 @@ async function main() {
 
         await kirim('Page.enable');
         await kirim('Runtime.enable');
+        await masukAdmin({ kirim, nilai, asal: ASAL, penjaga });
         await kirim('Emulation.setDeviceMetricsOverride', {
             width: LEBAR_LAYAR,
             height: TINGGI_LAYAR,
@@ -207,25 +207,6 @@ async function main() {
             })()
         `);
 
-        // Seluruh rute /laporan/* WAJIB login (routes/internal.php: 'web',
-        // 'auth', 'pastikan.ganti.sandi'). Akun contoh dari AdminAwalSeeder
-        // (.env SIM_ADMIN_USERNAME/PASSWORD, SIM_ADMIN_WAJIB_GANTI=false).
-        console.log('\nMasuk sebagai admin:');
-        await buka('/login');
-        await nilai(`
-            (() => {
-                document.querySelector('#kredensial').value = 'admin@malakakab.go.id';
-                document.querySelector('#password').value = 'admin';
-                document.querySelector('#kredensial').closest('form').submit();
-            })()
-        `);
-        for (let i = 0; i < 40; i += 1) {
-            if (await nilai(`window.location.pathname !== '/login'`)) break;
-            await tidur(250);
-        }
-        await tidur(300);
-        periksa('berhasil masuk (dialihkan keluar dari /login)',
-            await nilai('window.location.pathname') !== '/login');
 
         // ============================================================
         console.log('\nLaporan Poktan (satu tabel, tanpa filter aktif):');
@@ -364,6 +345,8 @@ async function main() {
         `);
         periksa('href "Generate Laporan" TIDAK membawa cetak=1 (tinjau layar, bukan cetak otomatis)',
             ! hrefGenerate.includes('cetak=1'), `href=${hrefGenerate}`);
+
+        penjaga.pastikanBersih();
 
         soket.close();
     } finally {

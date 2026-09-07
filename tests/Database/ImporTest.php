@@ -7,7 +7,9 @@
  * data langsung, bukan lewat Request tervalidasi seperti controller lain).
  */
 
+use App\Enums\JenisDaftarPilihan;
 use App\Models\Alsintan;
+use App\Models\DaftarPilihan;
 use App\Models\Desa;
 use App\Models\FasilitasSp;
 use App\Models\HasilPanen;
@@ -260,8 +262,8 @@ it('mengimpor baris fasilitas-sp', function () {
 });
 
 it('mengimpor jenis fasilitas aktif yang ditambahkan lewat daftar pilihan', function () {
-    \App\Models\DaftarPilihan::create([
-        'jenis' => \App\Enums\JenisDaftarPilihan::JenisFasilitas->value,
+    DaftarPilihan::create([
+        'jenis' => JenisDaftarPilihan::JenisFasilitas->value,
         'nilai' => 'Perpustakaan',
         'urutan' => 10,
     ]);
@@ -529,6 +531,31 @@ it('menjaga paritas xlsx dengan csv untuk delapan entitas aktif', function (stri
     ]],
 ]);
 
+it('mendeteksi format impor dari isi meski nama klien salah', function () {
+    $csv = UploadedFile::fake()->createWithContent(
+        'salah.txt',
+        "nama,simbol,faktor_ke_ton\nKarung Isi,krg,\n",
+    );
+    $xlsxAsli = berkasXlsxImpor([
+        ['nama', 'simbol', 'faktor_ke_ton'],
+        ['Liter Isi', 'ltr', null],
+    ]);
+    $xlsx = new UploadedFile(
+        $xlsxAsli->getRealPath(),
+        'salah.csv',
+        'text/csv',
+        null,
+        true,
+    );
+
+    $this->post(route('impor.unggah', 'satuan'), ['berkas' => $csv])
+        ->assertOk()->assertJsonPath('dibuat', 1);
+    $this->post(route('impor.unggah', 'satuan'), ['berkas' => $xlsx])
+        ->assertOk()->assertJsonPath('dibuat', 1);
+
+    expect(Satuan::whereIn('nama', ['Karung Isi', 'Liter Isi'])->count())->toBe(2);
+});
+
 it('menolak format yang tidak didukung termasuk xls xlsm xlsb dan txt', function (string $ekstensi) {
     $berkas = UploadedFile::fake()->create('data.'.$ekstensi, 10);
 
@@ -536,6 +563,13 @@ it('menolak format yang tidak didukung termasuk xls xlsm xlsb dan txt', function
         ->assertStatus(422)
         ->assertJsonFragment(['pesan' => 'Berkas harus berformat XLSX (.xlsx) atau CSV (.csv).']);
 })->with(['xls', 'xlsm', 'xlsb', 'txt']);
+
+it('menolak isi teks yang hanya menyamar dengan nama xlsx', function () {
+    $this->post(route('impor.unggah', 'satuan'), [
+        'berkas' => UploadedFile::fake()->createWithContent('tipuan.xlsx', 'ini bukan workbook'),
+    ])->assertStatus(422)
+        ->assertJsonPath('pesan', 'Berkas harus berformat XLSX (.xlsx) atau CSV (.csv).');
+});
 
 it('menolak formula dan struktur xlsx yang tidak aman', function (callable $berkas, string $pesan) {
     $this->post(route('impor.unggah', 'satuan'), ['berkas' => $berkas()])
@@ -565,7 +599,7 @@ it('menolak xlsx rusak palsu dan sel ekstrem sparse', function (UploadedFile $be
         ->assertStatus(422)
         ->assertJsonPath('pesan', fn (string $nilai): bool => str_contains($nilai, $pesan));
 })->with([
-    'palsu' => [UploadedFile::fake()->createWithContent('palsu.xlsx', 'bukan zip'), 'XLSX rusak'],
+    'palsu' => [UploadedFile::fake()->createWithContent('palsu.xlsx', 'bukan zip'), 'Berkas harus berformat XLSX'],
     'sparse' => [berkasXlsxImpor([
         ['nama', 'simbol', 'faktor_ke_ton'],
         ['Karung Sparse', 'krg', null],

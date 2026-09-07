@@ -15,6 +15,7 @@ use App\Mail\KredensialAkunMail;
 use App\Models\AuditLog;
 use App\Models\Role;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
@@ -219,6 +220,85 @@ it('mengizinkan menonaktifkan Admin bila masih ada Admin aktif lain', function (
 
     expect($adminLain->refresh()->is_aktif)->toBeFalse();
 });
+
+it('menolak pengelola non-Admin membuat akun dengan role Admin terkunci', function () {
+    $rolePengelola = roleSemua();
+    $pengelola = User::factory()->create(['role_id' => $rolePengelola->id_role]);
+    $pengelola->semuaIzin = true;
+    $this->actingAs($pengelola);
+    $admin = Role::factory()->terkunci()->create(['nama' => 'Admin Uji']);
+
+    $this->post(route('pengguna.simpan'), [
+        'nama' => 'ADMIN SISIPAN',
+        'email' => 'admin.sisipan@example.test',
+        'role_id' => $admin->id_role,
+    ])->assertForbidden();
+
+    expect(User::where('email', 'admin.sisipan@example.test')->exists())->toBeFalse();
+});
+
+it('menolak user manager non-Admin memberi role Admin terkunci', function () {
+    $rolePengelola = roleSemua();
+    $pengelola = User::factory()->create(['role_id' => $rolePengelola->id_role]);
+    $pengelola->semuaIzin = true;
+    $this->actingAs($pengelola);
+
+    $roleAdmin = Role::factory()->terkunci()->create(['nama' => 'Admin Terkunci']);
+    $target = User::factory()->create(['role_id' => $rolePengelola->id_role]);
+
+    $this->put(route('pengguna.perbarui', $target->id_user), [
+        'nama' => $target->nama,
+        'email' => $target->email,
+        'role_id' => $roleAdmin->id_role,
+    ])->assertForbidden();
+
+    expect($target->refresh()->role_id)->toBe($rolePengelola->id_role);
+});
+
+it('menolak menurunkan role Admin aktif terakhir', function () {
+    $admin = aktingAdmin();
+    $roleBiasa = roleSemua();
+
+    $this->put(route('pengguna.perbarui', $admin->id_user), [
+        'nama' => $admin->nama,
+        'email' => $admin->email,
+        'role_id' => $roleBiasa->id_role,
+    ])->assertStatus(422);
+
+    expect($admin->refresh()->role_id)->not->toBe($roleBiasa->id_role);
+});
+
+it('menolak menetapkan role yang nonaktif', function () {
+    aktingAdmin();
+    $roleLama = roleSemua();
+    $roleNonaktif = Role::factory()->create(['is_aktif' => false]);
+    $target = User::factory()->create(['role_id' => $roleLama->id_role]);
+
+    $this->put(route('pengguna.perbarui', $target->id_user), [
+        'nama' => $target->nama,
+        'email' => $target->email,
+        'role_id' => $roleNonaktif->id_role,
+    ])->assertSessionHasErrors('role_id');
+
+    expect($target->refresh()->role_id)->toBe($roleLama->id_role);
+});
+
+it('mencabut sesi database dan remember token saat akun dinonaktifkan atau sandinya direset', function (string $route) {
+    aktingAdmin();
+    $target = User::factory()->create(['remember_token' => 'remember-lama']);
+    DB::table('sessions')->insert([
+        'id' => 'sesi-target-'.$route,
+        'user_id' => $target->id_user,
+        'payload' => 'payload',
+        'last_activity' => now()->timestamp,
+    ]);
+    config(['session.driver' => 'database', 'session.connection' => 'mysql_testing']);
+
+    $this->post(route($route, $target->id_user))->assertRedirect();
+
+    expect(DB::table('sessions')->where('user_id', $target->id_user)->exists())->toBeFalse()
+        ->and($target->refresh()->remember_token)->not->toBe('remember-lama');
+})->with(['pengguna.nonaktifkan', 'pengguna.setel-sandi']);
 
 it('mengirim kata sandi sementara ke surel petugas saat akun dibuat', function () {
     Mail::fake();

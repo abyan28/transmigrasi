@@ -138,12 +138,15 @@ Hasil terakhir: 413 lulus, 1926 pernyataan.
 
 ## Penerbitan ke GitHub Pages
 
-Antarmuka Tahap 2 diterbitkan sebagai berkas statis di
-https://abyan28.github.io/transmigrasi/ dan diperbarui otomatis setiap `git push` ke `main`.
+Antarmuka publik dapat diterbitkan sebagai **pratinjau statis manual** di
+https://abyan28.github.io/transmigrasi/. Workflow hanya berjalan lewat `workflow_dispatch`,
+bukan otomatis setiap push, dan saat ini menggilas 14 URL publik; halaman internal,
+autentikasi, CRUD, unggahan, basis data persisten, dan antrean tidak ikut diterbitkan.
 
 Alur kerja `.github/workflows/deploy.yml` menjalankan aplikasi sebentar di runner, menggilas
-setiap alamat dari `php artisan sim:tautan-statis` menjadi HTML, lalu menerbitkannya. Per
-2026-08-18 tercatat 122 halaman.
+alamat publik dari `php artisan sim:tautan-statis` menjadi HTML, lalu menerbitkannya. Ini
+bukan deployment produksi Laravel. Deployment stateful tetap Task 11.3 dan membutuhkan
+hosting PHP, database, SSL, storage privat, queue worker, backup, serta monitoring.
 
 Pengaturan sekali di awal: **Settings → Pages → Source: GitHub Actions**.
 

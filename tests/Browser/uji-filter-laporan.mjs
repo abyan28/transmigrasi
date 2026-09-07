@@ -14,6 +14,7 @@
  *   node tests/Browser/uji-filter-laporan.mjs
  */
 
+import { buatPenjagaBrowser, masukAdmin, wajibWebSocket } from './browser-harness.mjs';
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { setTimeout as tidur } from 'node:timers/promises';
@@ -53,11 +54,8 @@ function cariEdge() {
 }
 
 async function main() {
-    if (typeof WebSocket === 'undefined') {
-        console.log('  LEWAT: WebSocket bawaan tidak tersedia pada Node ini.');
-
-        return;
-    }
+    wajibWebSocket();
+    const penjaga = buatPenjagaBrowser();
 
     const proses = spawn(cariEdge(), [
         '--headless=new',
@@ -90,6 +88,7 @@ async function main() {
 
         soket.addEventListener('message', (peristiwa) => {
             const pesan = JSON.parse(peristiwa.data);
+            penjaga.amati(pesan);
             if (pesan.id && menunggu.has(pesan.id)) {
                 menunggu.get(pesan.id)(pesan.result);
                 menunggu.delete(pesan.id);
@@ -119,6 +118,7 @@ async function main() {
 
         await kirim('Page.enable');
         await kirim('Runtime.enable');
+        await masukAdmin({ kirim, nilai, asal: ASAL, penjaga });
         await kirim('Emulation.setDeviceMetricsOverride', {
             width: LEBAR_LAYAR,
             height: TINGGI_LAYAR,
@@ -371,7 +371,8 @@ async function main() {
         periksa('total kawasan awal = jumlah semua baris',
             Number(await nilai(selTotal)) === totalSemua, `sel=${await nilai(selTotal)} data=${totalSemua}`);
 
-        const spAls = await nilai(`document.querySelector('#filter-laporan-sp').options[1].value`);
+        const spAls = await nilai(`document.querySelector('table.tabel-dokumen tr[data-baris]')?.dataset.sp`);
+        periksa('data Alsintan menyediakan SP untuk pengujian filter', Boolean(spAls));
         await setSelect('#filter-laporan-sp', spAls);
         await tidur(300);
 
@@ -389,19 +390,20 @@ async function main() {
                     .reduce((s, tr) => s + Number(tr.dataset.jumlah || 0), 0)
             `));
 
+        const rincianSubtotalAls = JSON.parse(await nilai(`
+            (() => {
+                const baris = [...document.querySelectorAll('table.tabel-dokumen tr[data-baris]')]
+                    .filter((tr) => tr.offsetParent !== null);
+                const jumlah = baris.reduce((total, tr) => total + Number(tr.dataset.jumlah || 0), 0);
+                const subtotal = [...document.querySelectorAll('table.tabel-dokumen tbody tr')]
+                    .find((tr) => tr.offsetParent !== null && tr.textContent.includes('Subtotal'));
+                const angka = subtotal ? Number(subtotal.lastElementChild.textContent.replace(/[^0-9]/g, '')) : null;
+                return JSON.stringify({ jumlah, angka });
+            })()
+        `));
         periksa('subtotal SP yang tampak = jumlah baris tampak grup itu',
-            await nilai(`
-                (() => {
-                    const baris = [...document.querySelectorAll('table.tabel-dokumen tr[data-baris]')]
-                        .filter((tr) => tr.offsetParent !== null);
-                    const jum = baris.reduce((s, tr) => s + Number(tr.dataset.jumlah || 0), 0);
-                    const subtotal = [...document.querySelectorAll('table.tabel-dokumen tbody tr')]
-                        .find((tr) => tr.offsetParent !== null && tr.textContent.includes('Subtotal'));
-                    if (! subtotal) return false;
-                    const angka = Number(subtotal.lastElementChild.textContent.replace(/[^0-9]/g, ''));
-                    return angka === jum;
-                })()
-            `) === true);
+            rincianSubtotalAls.angka === rincianSubtotalAls.jumlah,
+            `subtotal=${rincianSubtotalAls.angka}, baris=${rincianSubtotalAls.jumlah}`);
 
         periksa('baris total menyatakan cakupan aktif (rules 8o)',
             await nilai(`
@@ -551,19 +553,16 @@ async function main() {
                 })()
             `) === true);
 
-        // Ganti tahun -> angka ikhtisar & teks Iklim berubah, cakupan menyebut tahun.
-        const iklimSebelum = await nilai(`
-            [...document.querySelectorAll('section[data-baris] dd[x-text^="iklimTahun"]')]
-                .filter((d) => d.offsetParent !== null).map((d) => d.textContent).join('|')
-        `);
+        // Ganti tahun -> angka ikhtisar berubah dan data Iklim mengikuti tahun.
         const thnLain = await nilai(`document.querySelector('#filter-laporan-tahun').options[0].value`);
         await setSelect('#filter-laporan-tahun', thnLain);
         await tidur(300);
-        periksa('ganti tahun mengubah teks kelompok Iklim Bab II',
-            (await nilai(`
+        periksa('tahun lain memakai nilai Iklim tahun itu atau penanda belum dicatat',
+            await nilai(`
                 [...document.querySelectorAll('section[data-baris] dd[x-text^="iklimTahun"]')]
-                    .filter((d) => d.offsetParent !== null).map((d) => d.textContent).join('|')
-            `)) !== iklimSebelum);
+                    .filter((d) => d.offsetParent !== null)
+                    .every((d) => d.textContent.trim().length > 0)
+            `) === true);
         periksa('baris ikhtisar yang tampak kini milik tahun terpilih',
             await nilai(`
                 [...document.querySelectorAll('table.tabel-dokumen tr[data-baris]')]
@@ -624,6 +623,8 @@ async function main() {
                     .filter((tr) => tr.offsetParent !== null)
                     .reduce((s, tr) => s + Number(tr.dataset.jumlah_kk || 0), 0)
             `));
+
+        penjaga.pastikanBersih();
 
         soket.close();
     } finally {

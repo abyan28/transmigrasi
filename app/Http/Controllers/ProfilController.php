@@ -7,6 +7,7 @@ use App\Models\AuditLog;
 use App\Models\User;
 use App\Support\PendingEmailChangeService;
 use App\Support\PetaPenggunaTampilan;
+use App\Support\SesiPengguna;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -100,6 +101,7 @@ class ProfilController extends Controller
 
         // TANPA `password_harus_diganti`: petugas memilih sendiri sandi finalnya.
         $pengguna->forceFill(['password' => $request->input('password')])->save();
+        SesiPengguna::cabut($pengguna);
 
         $this->catat($request, AksiAuditLog::ResetKataSandi, ['jalur' => 'Mandiri']);
 

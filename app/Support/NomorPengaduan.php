@@ -53,6 +53,7 @@ class NomorPengaduan
 
         $tertinggi = Pengaduan::withTrashed()
             ->where('nomor_pengaduan', 'like', $awalanTahun.'%')
+            ->lockForUpdate()
             ->get(['nomor_pengaduan'])
             ->map(fn ($p) => (int) (explode('-', (string) $p->nomor_pengaduan)[2] ?? 0))
             ->max();

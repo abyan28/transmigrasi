@@ -9,6 +9,7 @@ use App\Models\RuteAksesibilitasSp;
 use App\Models\SatuanPermukiman;
 use App\Models\User;
 use App\Support\DummyData;
+use Database\Seeders\DaftarPilihanSeeder;
 use Database\Seeders\KawasanSeeder;
 use Database\Seeders\SpSeeder;
 use Database\Seeders\WilayahSeeder;
@@ -23,6 +24,7 @@ beforeEach(function () {
     $this->actingAs($petugas);
     $this->seed(WilayahSeeder::class);
     $this->seed(KawasanSeeder::class);
+    $this->seed(DaftarPilihanSeeder::class);
     $this->seed(SpSeeder::class);
 });
 

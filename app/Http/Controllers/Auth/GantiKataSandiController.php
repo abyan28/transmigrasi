@@ -6,6 +6,7 @@ use App\Enums\AksiAuditLog;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\User;
+use App\Support\SesiPengguna;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -60,6 +61,7 @@ class GantiKataSandiController extends Controller
         }
 
         $pengguna->forceFill($atribut)->save();
+        SesiPengguna::cabut($pengguna);
 
         // Atas nama pemilik akun sendiri (`rules.md` 14b poin 15). Jalur
         // seragam dengan `Admin` / `Mandiri` / `Kode verifikasi`.

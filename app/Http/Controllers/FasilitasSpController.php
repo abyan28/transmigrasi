@@ -210,6 +210,8 @@ class FasilitasSpController extends Controller
             // NOT NULL di skema, karena itu WAJIB -- bukan sekadar opsional.
             'status_penyerahan' => ValidationRules::daftarPilihan(JenisDaftarPilihan::StatusPenyerahan, wajib: true, nilaiSaatIni: $fasilitas?->status_penyerahan),
             'kondisi' => ValidationRules::daftarPilihan(JenisDaftarPilihan::Kondisi, nilaiSaatIni: $fasilitas?->kondisi),
+            'rincian_kondisi' => ['nullable', 'array'],
+            'rincian_kondisi.*' => ['nullable', 'integer', 'min:0'],
             'lintang' => ValidationRules::lintang(),
             'bujur' => ValidationRules::bujur(),
             'keterangan' => ['nullable', 'string', 'max:500'],
@@ -226,6 +228,11 @@ class FasilitasSpController extends Controller
             'status_penyerahan.required' => 'Status penyerahan wajib dipilih.',
         ] + ValidationRules::pesan());
 
+        $data['rincian_kondisi'] = ValidationRules::rincianKondisi(
+            $data['rincian_kondisi'] ?? null,
+            (int) $data['jumlah'],
+            $data['kondisi'] ?? null,
+        );
         unset($data['foto'], $data['satuan_permukiman_ids_lain'], $data['_cakupan_disunting']);
         CakupanDataSp::pastikanDapatDitulis((int) $data['satuan_permukiman_id']);
 

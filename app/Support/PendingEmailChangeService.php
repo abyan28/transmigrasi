@@ -29,6 +29,20 @@ class PendingEmailChangeService
                 ->whereNull('cancelled_at')
                 ->update(['cancelled_at' => now()]);
 
+            $pending = PendingEmailChange::create([
+                'user_id' => $lockedUser->id_user,
+                'new_email' => $newEmail,
+                'token_hash' => hash('sha256', $token),
+                'expires_at' => now()->addMinutes(self::EXPIRES_IN_MINUTES),
+            ]);
+
+            Mail::to($newEmail)->queue(new PendingEmailChangeMail(
+                $lockedUser->nama,
+                $newEmail,
+                $token,
+                self::EXPIRES_IN_MINUTES,
+            ));
+
             if ($lockedUser->password_harus_diganti) {
                 $lockedUser->forceFill([
                     'password' => bin2hex(random_bytes(32)),
@@ -43,26 +57,8 @@ class PendingEmailChangeService
                 }
             }
 
-            $pending = PendingEmailChange::create([
-                'user_id' => $lockedUser->id_user,
-                'new_email' => $newEmail,
-                'token_hash' => hash('sha256', $token),
-                'expires_at' => now()->addMinutes(self::EXPIRES_IN_MINUTES),
-            ]);
-
             return [$pending, $lockedUser->email, $lockedUser->nama];
         });
-
-        try {
-            Mail::to($newEmail)->queue(new PendingEmailChangeMail(
-                $name,
-                $newEmail,
-                $token,
-                self::EXPIRES_IN_MINUTES,
-            ));
-        } catch (\Throwable $e) {
-            Log::error('Gagal mengantre verifikasi perubahan email: '.$e->getMessage());
-        }
 
         $this->sendNotice(
             $currentEmail,

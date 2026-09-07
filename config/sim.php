@@ -35,6 +35,15 @@ return [
         'lacak_publik' => (int) env('SIM_BATAS_LACAK_PUBLIK', 10),   // per menit
         'verifikasi_email' => (int) env('SIM_BATAS_VERIFIKASI_EMAIL', 10), // per menit
         'kirim_pengaduan' => (int) env('SIM_BATAS_KIRIM_PENGADUAN', 3), // per jam
+        'pemulihan_sandi' => (int) env('SIM_BATAS_PEMULIHAN_SANDI', 5), // per menit
+    ],
+
+    'admin_awal' => [
+        'email' => env('SIM_ADMIN_EMAIL', 'admin@malakakab.go.id'),
+        'nama' => env('SIM_ADMIN_NAMA', 'ADMINISTRATOR SISTEM'),
+        'username' => env('SIM_ADMIN_USERNAME'),
+        'password' => env('SIM_ADMIN_PASSWORD'),
+        'wajib_ganti' => filter_var(env('SIM_ADMIN_WAJIB_GANTI', true), FILTER_VALIDATE_BOOL),
     ],
 
 ];

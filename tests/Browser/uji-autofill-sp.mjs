@@ -10,6 +10,7 @@
  *   node tests/Browser/uji-autofill-sp.mjs
  */
 
+import { buatPenjagaBrowser, masukAdmin, wajibWebSocket } from './browser-harness.mjs';
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { setTimeout as tidur } from 'node:timers/promises';
@@ -45,10 +46,8 @@ function cariEdge() {
 }
 
 async function main() {
-    if (typeof WebSocket === 'undefined') {
-        console.log('  LEWAT: WebSocket bawaan tidak tersedia pada Node ini.');
-        return;
-    }
+    wajibWebSocket();
+    const penjaga = buatPenjagaBrowser();
 
     const edge = cariEdge();
     const proses = spawn(edge, [
@@ -83,6 +82,7 @@ async function main() {
 
         soket.addEventListener('message', (peristiwa) => {
             const pesan = JSON.parse(peristiwa.data);
+            penjaga.amati(pesan);
             if (pesan.id && menunggu.has(pesan.id)) {
                 menunggu.get(pesan.id)(pesan.result);
                 menunggu.delete(pesan.id);
@@ -111,6 +111,7 @@ async function main() {
         };
 
         await kirim('Runtime.enable');
+        await masukAdmin({ kirim, nilai, asal: ASAL, penjaga });
 
         // ==========================================
         // 1. UJI FORM LAHAN
@@ -132,7 +133,7 @@ async function main() {
         // Periksa urutan: field transmigran_id muncul sebelum satuan_permukiman_id di DOM
         const urutanLahan = await nilai(`
             (() => {
-                const form = document.querySelector('form[action*="lahan"]:not([method="GET"])');
+                const form = document.querySelector('#judul-formTambahLahan').closest('[role="dialog"]').querySelector('form');
                 const pemilik = form.querySelector('[name="transmigran_id"]');
                 const sp = form.querySelector('[name="satuan_permukiman_id"]');
                 return pemilik && sp && (pemilik.compareDocumentPosition(sp) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
@@ -143,7 +144,7 @@ async function main() {
         // Ubah nilai Pemilik ke ID 1 (YOHANES BERE -> SP 1 Kapitan Meo)
         await nilai(`
             (() => {
-                const form = document.querySelector('form[action*="lahan"]:not([method="GET"])');
+                const form = document.querySelector('#judul-formTambahLahan').closest('[role="dialog"]').querySelector('form');
                 const input = form.querySelector('[name="transmigran_id"]');
                 input.value = '1';
                 input.dispatchEvent(new Event('input', { bubbles: true }));
@@ -154,7 +155,7 @@ async function main() {
 
         const spLahanTerisi = await nilai(`
             (() => {
-                const form = document.querySelector('form[action*="lahan"]:not([method="GET"])');
+                const form = document.querySelector('#judul-formTambahLahan').closest('[role="dialog"]').querySelector('form');
                 const sp = form.querySelector('[name="satuan_permukiman_id"]');
                 return sp ? sp.value : '';
             })()
@@ -229,6 +230,8 @@ async function main() {
             })()
         `);
         periksa('status Tidak Dihuni menonaktifkan tombol pemilih Penghuni', tombolDisabled === true);
+
+        penjaga.pastikanBersih();
 
         soket.close();
     } finally {

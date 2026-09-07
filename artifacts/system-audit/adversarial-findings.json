@@ -1,0 +1,19 @@
+{
+  "audit_sha": "29549bf0b0a2aed6a48fa587f77cec261dfec3bf",
+  "claims": [
+    {"id":"CL-01","status":"TERBUKTI","finding_ids":[]},
+    {"id":"CL-02","status":"TERBUKTI","finding_ids":[]},
+    {"id":"CL-03","status":"PALSU","finding_ids":["SYS-H01"]},
+    {"id":"CL-04","status":"SEBAGIAN_TERBUKTI","finding_ids":["SYS-H02"]},
+    {"id":"CL-05","status":"TERBUKTI","finding_ids":[]},
+    {"id":"CL-06","status":"SEBAGIAN_TERBUKTI","finding_ids":["SYS-M02"]},
+    {"id":"CL-07","status":"PALSU","finding_ids":["SYS-H03","SYS-M06"]},
+    {"id":"CL-08","status":"TERBUKTI_RUNTIME","finding_ids":[]},
+    {"id":"CL-09","status":"PALSU","finding_ids":["SYS-M07"]},
+    {"id":"CL-10","status":"TERBUKTI_RUNTIME","finding_ids":[]},
+    {"id":"CL-11","status":"PALSU","finding_ids":["SYS-M04"]},
+    {"id":"CL-12","status":"TERBUKTI_RUNTIME","finding_ids":[]},
+    {"id":"CL-13","status":"TERBUKTI_RUNTIME","finding_ids":[]},
+    {"id":"CL-14","status":"PALSU","finding_ids":["SYS-M05"]}
+  ]
+}

@@ -7,6 +7,7 @@ use App\Support\PenyimpananDokumen;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
@@ -96,6 +97,10 @@ trait MenyimpanBerkas
             pengenal: $pendek,
             subfolder: $subfolder,
         );
+
+        if (DB::transactionLevel() > 0) {
+            DB::afterRollBack(fn () => PenyimpananDokumen::hapus($path));
+        }
 
         return Berkas::create([
             'uuid' => $uuid,

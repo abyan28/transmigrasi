@@ -12,6 +12,7 @@ use App\Models\Pengaduan;
 use App\Models\PenilaianSp;
 use App\Models\SatuanPermukiman;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class LayananNotifikasi
 {
@@ -126,41 +127,51 @@ class LayananNotifikasi
     public static function hitungUlangSp(array $spIds): void
     {
         foreach (array_unique($spIds) as $spId) {
-            $hasil = PenilaianKondisiSp::nilai($spId);
-            $terakhir = PenilaianSp::withoutGlobalScopes()
-                ->where('satuan_permukiman_id', $spId)
-                ->latest('id_penilaian_sp')->first();
+            DB::transaction(function () use ($spId) {
+                SatuanPermukiman::query()->lockForUpdate()->findOrFail($spId);
+                $hasil = PenilaianKondisiSp::nilai($spId);
+                $terakhir = PenilaianSp::withoutGlobalScopes()
+                    ->where('satuan_permukiman_id', $spId)
+                    ->lockForUpdate()
+                    ->latest('id_penilaian_sp')->first();
 
-            if ($terakhir?->status === $hasil['status']) {
-                continue;
-            }
+                $tidakBerubah = $terakhir !== null
+                    && (float) $terakhir->skor === (float) $hasil['skor']
+                    && $terakhir->status === $hasil['status']
+                    && $terakhir->ada_primer_nol === $hasil['ada_primer_nol']
+                    && $terakhir->rincian == $hasil['rincian'];
 
-            PenilaianSp::create([
-                'satuan_permukiman_id' => $spId,
-                'tanggal_penilaian' => today(),
-                'skor' => $hasil['skor'],
-                'status' => $hasil['status'],
-                'ada_primer_nol' => $hasil['ada_primer_nol'],
-                'rincian' => $hasil['rincian'],
-                'user_id' => auth()->id(),
-                'catatan' => 'Dihitung otomatis setelah perubahan aset.',
-            ]);
+                if ($tidakBerubah) {
+                    return;
+                }
 
-            $subjek = ['satuan_permukiman_id' => $spId];
+                PenilaianSp::create([
+                    'satuan_permukiman_id' => $spId,
+                    'tanggal_penilaian' => today(),
+                    'skor' => $hasil['skor'],
+                    'status' => $hasil['status'],
+                    'ada_primer_nol' => $hasil['ada_primer_nol'],
+                    'rincian' => $hasil['rincian'],
+                    'user_id' => auth()->id(),
+                    'catatan' => 'Dihitung otomatis setelah perubahan aset.',
+                ]);
 
-            if ($hasil['status'] !== StatusKondisiSp::PerluPenanganan) {
-                self::selesaikan(JenisNotifikasi::SpPerluPenanganan, $subjek);
+                $subjek = ['satuan_permukiman_id' => $spId];
 
-                continue;
-            }
+                if ($hasil['status'] !== StatusKondisiSp::PerluPenanganan) {
+                    self::selesaikan(JenisNotifikasi::SpPerluPenanganan, $subjek);
 
-            $sp = SatuanPermukiman::find($spId);
-            Notifikasi::kirim(
-                JenisNotifikasi::SpPerluPenanganan,
-                PenerimaNotifikasi::untuk('penilaian_kondisi.lihat', $spId),
-                $subjek,
-                'SP '.($sp?->nama ?? $spId).' perlu penanganan layanan dasar.',
-            );
+                    return;
+                }
+
+                $sp = SatuanPermukiman::find($spId);
+                Notifikasi::kirim(
+                    JenisNotifikasi::SpPerluPenanganan,
+                    PenerimaNotifikasi::untuk('penilaian_kondisi.lihat', $spId),
+                    $subjek,
+                    'SP '.($sp?->nama ?? $spId).' perlu penanganan layanan dasar.',
+                );
+            });
         }
     }
 

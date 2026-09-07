@@ -51,7 +51,7 @@
                         <td class="px-3 py-2">{{ $b['ketua'] }}</td>
                         <td class="px-3 py-2">{{ $b['kecamatan'] }}</td>
                         <td class="px-3 py-2">{{ $b['desa'] }}</td>
-                        <td class="px-3 py-2 text-right tabular-nums">{{ $angka($b['jumlah']) }}</td>
+                        <td class="px-3 py-2 text-right tabular-nums" data-export-number>{{ $angka($b['jumlah']) }}</td>
                     </tr>
                 @endforeach
                 <tr x-show="! kosong($el.closest('table'), selSp({{ $grup['sp_id'] }}))"

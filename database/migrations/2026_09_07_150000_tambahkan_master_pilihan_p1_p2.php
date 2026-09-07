@@ -40,7 +40,7 @@ return new class extends Migration
 
         if (DB::getDriverName() === 'mysql') {
             DB::statement('ALTER TABLE daftar_pilihan MODIFY label VARCHAR(100) NOT NULL');
-            DB::statement("ALTER TABLE saprotan MODIFY jenis VARCHAR(100) NOT NULL");
+            DB::statement('ALTER TABLE saprotan MODIFY jenis VARCHAR(100) NOT NULL');
             DB::statement("ALTER TABLE transmigran MODIFY status_sertifikat VARCHAR(100) NOT NULL DEFAULT 'Belum Didata'");
             DB::statement('ALTER TABLE satuan_permukiman MODIFY pola_permukiman VARCHAR(100) NULL');
             DB::statement('ALTER TABLE satuan_permukiman MODIFY tingkat_kesuburan_tanah VARCHAR(100) NULL');

@@ -195,25 +195,28 @@ class PengaduanController extends Controller
             'catatan.required' => 'Catatan tindakan wajib diisi.',
         ] + ValidationRules::pesan());
 
-        $sekarang = $pengaduan->status;
         $tujuan = StatusPengaduan::from($data['status_sesudah']);
 
-        if (! $sekarang->bolehPindahKe($tujuan)) {
-            throw ValidationException::withMessages([
-                'status_sesudah' => 'Status hanya dapat maju satu langkah, dari '.$sekarang->label().' ke '.($sekarang->berikutnya()?->label() ?? '-').'.',
-            ]);
-        }
+        DB::transaction(function () use ($request, $id, $tujuan, $data) {
+            $pengaduan = Pengaduan::query()->lockForUpdate()->findOrFail($id);
+            CakupanDataSp::pastikanDapatDitulis($pengaduan);
+            $sekarang = $pengaduan->status;
 
-        $bidangBaru = $data['bidang'] ?? $pengaduan->bidang;
+            if (! $sekarang->bolehPindahKe($tujuan)) {
+                throw ValidationException::withMessages([
+                    'status_sesudah' => 'Status hanya dapat maju satu langkah, dari '.$sekarang->label().' ke '.($sekarang->berikutnya()?->label() ?? '-').'.',
+                ]);
+            }
 
-        // Rule 10b.7b: bidang wajib terisi sebelum status maju ke Diproses.
-        if ($tujuan === StatusPengaduan::Diproses && empty($bidangBaru)) {
-            throw ValidationException::withMessages([
-                'bidang' => 'Bidang penanganan wajib ditetapkan sebelum pengaduan berstatus Diproses.',
-            ]);
-        }
+            $bidangBaru = $data['bidang'] ?? $pengaduan->bidang;
 
-        DB::transaction(function () use ($request, $pengaduan, $sekarang, $tujuan, $data, $bidangBaru) {
+            // Rule 10b.7b: bidang wajib terisi sebelum status maju ke Diproses.
+            if ($tujuan === StatusPengaduan::Diproses && empty($bidangBaru)) {
+                throw ValidationException::withMessages([
+                    'bidang' => 'Bidang penanganan wajib ditetapkan sebelum pengaduan berstatus Diproses.',
+                ]);
+            }
+
             $penanganan = $pengaduan->penanganan()->create([
                 'user_id' => Auth::id(),
                 'status_sebelum' => $sekarang->value,
@@ -240,7 +243,7 @@ class PengaduanController extends Controller
             ])->save();
         });
 
-        $pengaduan = $pengaduan->fresh();
+        $pengaduan = Pengaduan::findOrFail($id);
         LayananNotifikasi::pengaduanMendesak($pengaduan);
         SurelPengaduan::kirim($pengaduan);
 

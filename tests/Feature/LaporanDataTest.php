@@ -54,6 +54,15 @@ it('derives monograph age tables from recorded people', function () {
         ->and($monografi['kependudukan']['mutasi']['catatan'])->toContain('tidak dapat diturunkan');
 });
 
+it('mengubah produktivitas baris hasil panen ke ton per hektare', function () {
+    $baris = collect(LaporanData::hasilPanen()['kelompok'])
+        ->flatMap(fn (array $grup): array => $grup['baris'])
+        ->first(fn (array $item): bool => $item['produksi_ton'] === 0.32);
+
+    expect($baris)->not->toBeNull()
+        ->and($baris['produktivitas'])->toBe(1.282);
+});
+
 it('membatasi laporan transmigran dan opsi SP pada cakupan pengguna', function () {
     $sp = SatuanPermukiman::query()->orderBy('id_satuan_permukiman')->get();
     $role = Role::factory()->create(['cakupan_data' => CakupanData::PerSp->value]);

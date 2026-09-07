@@ -13,8 +13,10 @@
 use App\Enums\BidangPengaduan;
 use App\Enums\JenisDaftarPilihan;
 use App\Enums\KelompokDaftarPilihan;
+use App\Models\DaftarPilihan;
 use App\Support\DummyData;
 use App\Support\PenilaianKondisiSp;
+use App\Support\SkemaImpor;
 use Illuminate\Support\Facades\File;
 
 it('menyediakan seluruh jenis daftar pilihan pada data contoh', function () {
@@ -46,12 +48,12 @@ it('menyediakan kandidat P1 dan P2 sebagai master berkode stabil', function () {
 });
 
 it('memisahkan kode nilai dari label yang dapat diubah', function () {
-    $pilihan = \App\Models\DaftarPilihan::where('jenis', JenisDaftarPilihan::SumberDana->value)->firstOrFail();
+    $pilihan = DaftarPilihan::where('jenis', JenisDaftarPilihan::SumberDana->value)->firstOrFail();
     $kode = $pilihan->nilai;
     $pilihan->update(['label' => 'Label Baru']);
 
     expect($pilihan->fresh()->nilai)->toBe($kode)
-        ->and(\App\Models\DaftarPilihan::opsi(JenisDaftarPilihan::SumberDana)[$kode])->toBe('Label Baru');
+        ->and(DaftarPilihan::opsi(JenisDaftarPilihan::SumberDana)[$kode])->toBe('Label Baru');
 });
 
 it('menyediakan jenis alsintan sebagai data master yang dapat disunting admin', function () {
@@ -164,9 +166,9 @@ it('menandai daftar yang nilainya terikat perilaku sistem', function () {
 });
 
 it('mengambil pilihan template komoditas dan fasilitas dari daftar pilihan', function () {
-    expect(\App\Support\SkemaImpor::kolomDaftarPilihan('komoditas'))
+    expect(SkemaImpor::kolomDaftarPilihan('komoditas'))
         ->toBe(['jenis' => 'TipeKomoditas'])
-        ->and(\App\Support\SkemaImpor::kolomDaftarPilihan('fasilitas-sp'))
+        ->and(SkemaImpor::kolomDaftarPilihan('fasilitas-sp'))
         ->toHaveKey('jenis_fasilitas', 'JenisFasilitas');
 });
 

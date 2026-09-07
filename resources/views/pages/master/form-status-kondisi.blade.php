@@ -22,7 +22,7 @@
 @endphp
 
 <div class="space-y-6" x-data="{ ambangTerkunci: false }"
-    x-effect="ambangTerkunci = Number($modalData?.ambang_bawah ?? 1) === 0">
+    x-effect="ambangTerkunci = Number(baris?.ambang_bawah ?? 1) === 0">
 
     <div>
         <label for="ubahStatus_nama" class="{{ $kelasLabel }}">

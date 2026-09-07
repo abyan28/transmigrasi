@@ -40,7 +40,8 @@ Route::middleware('guest')->group(function () {
     // Balasan POST /lupa-kata-sandi SAMA baik akun ada maupun tidak
     // (rules.md 14b poin 9). Perilaku nyata diuji di tests/Database.
     Route::get('/lupa-kata-sandi', [PemulihanSandiController::class, 'tampilPermintaan'])->name('lupa-kata-sandi');
-    Route::post('/lupa-kata-sandi', [PemulihanSandiController::class, 'kirimKode'])->name('lupa-kata-sandi.kirim');
+    Route::post('/lupa-kata-sandi', [PemulihanSandiController::class, 'kirimKode'])
+        ->middleware('throttle:pemulihan-sandi')->name('lupa-kata-sandi.kirim');
     Route::get('/verifikasi-kode', [PemulihanSandiController::class, 'tampilVerifikasi'])->name('verifikasi-kode');
     Route::post('/atur-ulang-sandi', [PemulihanSandiController::class, 'aturUlang'])->name('atur-ulang-sandi');
 });

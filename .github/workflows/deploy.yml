@@ -37,10 +37,10 @@ jobs:
         id: pages
         uses: actions/configure-pages@v5
 
-      - name: Siapkan PHP 8.2
+      - name: Siapkan PHP 8.3
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'
+          php-version: '8.3'
           extensions: mbstring, intl, bcmath, zip, gd, pdo_sqlite
           coverage: none
 

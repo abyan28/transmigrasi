@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Enums\JenisDaftarPilihan;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
-use App\Models\Lahan;
 use App\Models\DaftarPilihan;
+use App\Models\Lahan;
 use App\Models\SatuanPermukiman;
 use App\Models\Scopes\CakupanDataSp;
 use App\Models\Transmigran;

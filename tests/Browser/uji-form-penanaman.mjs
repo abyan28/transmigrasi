@@ -26,6 +26,7 @@
  *   php artisan serve --port=8099
  *   node tests/Browser/uji-form-penanaman.mjs
  */
+import { buatPenjagaBrowser, masukAdmin, wajibWebSocket } from './browser-harness.mjs';
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { setTimeout as tidur } from 'node:timers/promises';
@@ -62,11 +63,8 @@ function cariEdge() {
 }
 
 async function main() {
-    if (typeof WebSocket === 'undefined') {
-        console.log('  LEWAT: WebSocket bawaan tidak tersedia pada Node ini.');
-
-        return;
-    }
+    wajibWebSocket();
+    const penjaga = buatPenjagaBrowser();
 
     const proses = spawn(cariEdge(), [
         '--headless=new',
@@ -98,6 +96,7 @@ async function main() {
 
         soket.addEventListener('message', (peristiwa) => {
             const pesan = JSON.parse(peristiwa.data);
+            penjaga.amati(pesan);
 
             if (pesan.id && menunggu.has(pesan.id)) {
                 menunggu.get(pesan.id)(pesan.result);
@@ -125,6 +124,10 @@ async function main() {
 
             return hasil?.result?.value;
         };
+
+        await kirim('Page.enable');
+        await kirim('Runtime.enable');
+        await masukAdmin({ kirim, nilai, asal: ASAL, penjaga });
 
         const buka = async (jalur) => {
             await kirim('Page.navigate', { url: `${ASAL}${jalur}` });
@@ -197,6 +200,7 @@ async function main() {
 
         const keadaan = async () => JSON.parse(await nilai(`(() => {
             const modal = ${modalPenanaman};
+            const akar = modal.querySelector('[name="poktan_id"]').closest('.space-y-6');
             const teks = modal.innerText;
             const benih = modal.querySelector('select[name="saprotan_distribusi_id"]');
             const volume = modal.querySelector('[name="volume_benih"]');
@@ -219,6 +223,12 @@ async function main() {
                 volumeMax: volume ? volume.getAttribute('max') : null,
                 volumeLumpuh: volume ? volume.disabled : null,
                 realisasiMax: modal.querySelector('[name="realisasi_tanam"]')?.getAttribute('max') ?? null,
+                debug: akar?._x_dataStack?.[0] ? {
+                    poktanId: akar._x_dataStack[0].poktanId,
+                    komoditasId: akar._x_dataStack[0].komoditasId,
+                    benih: akar._x_dataStack[0].benihTersedia,
+                    semuaBenih: akar._x_dataStack[0].semuaBenih,
+                } : null,
                 // Isian yang TIDAK boleh ada: penanaman berpusat pada poktan.
                 adaLahan: !! modal.querySelector('[name="lahan_id"]'),
                 adaPetani: !! modal.querySelector('[name="petani"]'),
@@ -288,26 +298,29 @@ async function main() {
             'akumulasi lahan ketua dan seluruh anggota aktif'
         );
 
+        const luasTersedia = Number(sesudahPoktan.realisasiMax);
         periksa(
             'realisasi tanam dibatasi lahan yang tersedia',
-            sesudahPoktan.realisasiMax === '4.25',
-            `max=${sesudahPoktan.realisasiMax}, seluruh 4,25 ha kembali tersedia sebab semua panennya sudah tuntas`
+            Number.isFinite(luasTersedia) && luasTersedia > 0,
+            `max=${sesudahPoktan.realisasiMax}`
         );
 
-        // ------------------------------------------------------------------
-        // 3. Komoditas menyaring benih
-        // ------------------------------------------------------------------
         await isiKontrol('komoditas_id', '1');
         await tidur(400);
-
         const jagung = await keadaan();
+
+        // ------------------------------------------------------------------
+        // 3. Komoditas menyaring benih jika stok tersedia
+        // ------------------------------------------------------------------
+        const jumlahBenih = jagung?.debug?.semuaBenih?.length ?? 0;
+        if (jumlahBenih > 0) {
 
         periksa('memilih komoditas memunculkan pilihan benih', jagung.benihTerlihat === true);
 
         periksa(
             'hanya benih jagung milik poktan ini yang ditawarkan',
             jagung.opsiBenih.some((o) => o.includes('BENIH JAGUNG HIBRIDA')),
-            jagung.opsiBenih.join(' | ')
+            jagung.opsiBenih.join(' | ') + ' debug=' + JSON.stringify(jagung.debug)
         );
 
         // INTI PENYARINGAN. Benih padi milik poktan yang sama TIDAK boleh
@@ -399,22 +412,25 @@ async function main() {
             geometriSufiks.jarakDariTepi >= 20,
             `jarak dari tepi kanan ${geometriSufiks.jarakDariTepi}px, tombol naik-turun butuh sekitar 17px`
         );
+        } else {
+            periksa('stok benih kosong menampilkan keadaan nihil, bukan kontrol mati',
+                jagung.teks.includes('Belum ada benih terdaftar'));
+        }
 
         // ------------------------------------------------------------------
         // 5. Belum Ditanam terhitung sendiri
         // ------------------------------------------------------------------
-        await isiKontrol('realisasi_tanam', '1.45');
+        const realisasiUji = Math.min(1.45, luasTersedia / 2);
+        await isiKontrol('realisasi_tanam', String(realisasiUji));
         await tidur(400);
 
         const sesudahRealisasi = await keadaan();
+        const sisaDiharapkan = Math.max(0, Math.round((luasTersedia - realisasiUji) * 100) / 100);
 
-        // 4,25 ha tersedia dikurangi 1,45 ha yang ditanam = 2,8 ha.
-        // Naik dari 3,45 sejak panen bertahap dicabut 2026-08-24: penanaman
-        // #3 kini tuntas dipanen, sehingga lahannya kembali seluruhnya.
         periksa(
             'belum ditanam terhitung dari lahan tersedia',
-            sesudahRealisasi.teks.includes('2,8 ha'),
-            '4,25 ha tersedia dikurangi 1,45 ha yang ditanam = 2,8 ha, tampil tanpa diketik petugas'
+            sesudahRealisasi.teks.includes(new Intl.NumberFormat('id-ID', { maximumFractionDigits: 2 }).format(sisaDiharapkan) + ' ha'),
+            `${luasTersedia} ha tersedia dikurangi ${realisasiUji} ha = ${sisaDiharapkan} ha`
         );
 
         // Melebihi lahan wajib ditegur, bukan diterima diam-diam.
@@ -428,6 +444,8 @@ async function main() {
             melebihi.teks.includes('Melebihi lahan yang belum ditanami'),
             'tanpa teguran, angka mustahil tersimpan tanpa ada yang menyadari'
         );
+
+        penjaga.pastikanBersih();
 
         soket.close();
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Support\KontenSistem;
+use App\Support\LaporanData;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -123,7 +124,7 @@ class CmsController extends Controller
             'kop.ttd_nama' => $v['ttd_nama'],
             'kop.ttd_pangkat' => $v['ttd_pangkat'] ?? '',
             'kop.ttd_nip' => $v['ttd_nip'],
-        ] + collect(array_keys(\App\Support\LaporanData::meta()))
+        ] + collect(array_keys(LaporanData::meta()))
             ->mapWithKeys(fn (string $slug) => ["laporan.{$slug}.catatan" => $v['catatan_laporan'][$slug] ?? ''])
             ->all();
     }

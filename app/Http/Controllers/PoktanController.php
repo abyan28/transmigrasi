@@ -177,6 +177,14 @@ class PoktanController extends Controller
         $poktan = Poktan::findOrFail($id);
 
         CakupanDataSp::pastikanDapatDitulis($poktan);
+
+        if ($poktan->anggota()->exists()
+            || $poktan->alsintanDistribusi()->exists()
+            || $poktan->saprotanDistribusi()->exists()
+            || $poktan->penanaman()->withTrashed()->exists()) {
+            return back()->with('galat', 'Kelompok tani masih memiliki anggota, distribusi, atau riwayat tanam sehingga tidak dapat dihapus.');
+        }
+
         $poktan->delete();
 
         return redirect()->route('poktan.index')->with('sukses', 'Data kelompok tani dihapus.');

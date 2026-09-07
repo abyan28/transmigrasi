@@ -21,6 +21,12 @@ beforeEach(function () {
     putenv('SIM_ADMIN_USERNAME');
     unset($_ENV['SIM_ADMIN_USERNAME'], $_SERVER['SIM_ADMIN_USERNAME']);
 
+    config([
+        'sim.admin_awal.username' => null,
+        'sim.admin_awal.password' => null,
+        'sim.admin_awal.wajib_ganti' => true,
+    ]);
+
     $this->seed(PermissionRoleSeeder::class);
 });
 
@@ -42,7 +48,7 @@ it('mematikan wajib-ganti hanya bila SIM_ADMIN_WAJIB_GANTI disetel false', funct
     // Pengecualian untuk penelusuran lokal. Ditandai di sini supaya nilai
     // bawaannya tidak dapat berubah diam-diam menjadi longgar: akun seed yang
     // lahir tanpa paksa-ganti di server melanggar `rules.md` 14b poin 5.
-    putenv('SIM_ADMIN_WAJIB_GANTI=false');
+    config(['sim.admin_awal.wajib_ganti' => false]);
 
     $this->seed(AdminAwalSeeder::class);
 
@@ -52,6 +58,23 @@ it('mematikan wajib-ganti hanya bila SIM_ADMIN_WAJIB_GANTI disetel false', funct
         ->toBeFalse();
 
     putenv('SIM_ADMIN_WAJIB_GANTI');
+});
+
+it('membaca konfigurasi Admin awal melalui config agar aman saat config cache', function () {
+    config([
+        'sim.admin_awal.email' => 'cached-admin@malakakab.go.id',
+        'sim.admin_awal.nama' => 'ADMIN CACHE',
+        'sim.admin_awal.username' => 'admin.cache',
+        'sim.admin_awal.password' => 'RahasiaCache9',
+        'sim.admin_awal.wajib_ganti' => false,
+    ]);
+
+    $this->seed(AdminAwalSeeder::class);
+
+    $admin = User::where('email', 'cached-admin@malakakab.go.id')->firstOrFail();
+    expect($admin->nama)->toBe('ADMIN CACHE')
+        ->and($admin->username)->toBe('admin.cache')
+        ->and($admin->password_harus_diganti)->toBeFalse();
 });
 
 it('idempoten: dijalankan ulang tidak menambah akun Admin kedua', function () {

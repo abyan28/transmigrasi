@@ -58,8 +58,11 @@
                 return [];
             }
 
+            const poktanId = String(this.poktanId);
+            const komoditasId = String(this.komoditasId);
+
             return this.semuaBenih.filter(
-                (b) => b.poktan_id === this.poktanId && b.komoditas_id === this.komoditasId
+                (b) => String(b.poktan_id) === poktanId && String(b.komoditas_id) === komoditasId
             );
         },
 
@@ -96,14 +99,7 @@
             return new Intl.NumberFormat('id-ID', { maximumFractionDigits: 2 }).format(nilai);
         },
     }"
-    x-effect="
-        /* Benih dilepas ketika poktan atau komoditasnya berganti, sebab
-           pilihan lama hampir pasti bukan milik poktan yang baru. Tanpa ini
-           id lama tetap terkirim meski tidak lagi ada di daftar. */
-        if (saprotanId && ! benihTersedia.some((b) => b.id === saprotanId)) {
-            saprotanId = '';
-        }
-    ">
+    x-effect="saprotanId && ! benihTersedia.some((b) => b.id === saprotanId) ? saprotanId = '' : null">
 
     <div class="grid gap-4 sm:grid-cols-2">
         {{-- Langkah 1: kelompok tani, penentu segalanya --}}

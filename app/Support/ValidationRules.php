@@ -3,7 +3,9 @@
 namespace App\Support;
 
 use App\Enums\JenisDaftarPilihan;
+use App\Models\DaftarPilihan;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Kumpulan aturan validasi yang dipakai berulang di banyak form.
@@ -312,6 +314,41 @@ class ValidationRules
             'mimes:jpg,jpeg,png,webp',
             'max:'.self::MAKS_UKURAN_BERKAS_KB,
         ];
+    }
+
+    /**
+     * Menormalkan histogram kondisi aset dan memastikan jumlahnya lengkap.
+     *
+     * @return array<string, int>
+     */
+    public static function rincianKondisi(mixed $rincian, int $jumlah, ?string $kondisi): array
+    {
+        if (! is_array($rincian) || $rincian === []) {
+            return $kondisi === null || $kondisi === '' ? [] : [$kondisi => $jumlah];
+        }
+
+        $opsi = DaftarPilihan::opsi(JenisDaftarPilihan::Kondisi, false);
+        $hasil = [];
+
+        foreach ($rincian as $nama => $nilai) {
+            if (! array_key_exists($nama, $opsi) || filter_var($nilai, FILTER_VALIDATE_INT) === false || (int) $nilai < 0) {
+                throw ValidationException::withMessages([
+                    'rincian_kondisi' => 'Rincian kondisi memuat nilai yang tidak sah.',
+                ]);
+            }
+
+            if ((int) $nilai > 0) {
+                $hasil[$nama] = (int) $nilai;
+            }
+        }
+
+        if (array_sum($hasil) !== $jumlah) {
+            throw ValidationException::withMessages([
+                'rincian_kondisi' => 'Jumlah rincian kondisi harus sama dengan jumlah unit.',
+            ]);
+        }
+
+        return $hasil;
     }
 
     /**

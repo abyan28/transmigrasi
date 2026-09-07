@@ -148,15 +148,26 @@ class SaprotanController extends Controller
 
     public function hapus(int $id): RedirectResponse
     {
-        DB::transaction(function () use ($id) {
+        $dihapus = DB::transaction(function () use ($id) {
             $saprotan = Saprotan::whereKey($id)->lockForUpdate()->firstOrFail();
             // 403, BUKAN 404: pengadaan saprotan terlihat semua role (tak
             // ber-cakupan). Yang dilarang adalah menghapus induk yang masih
             // menyuplai distribusi ke SP di luar cakupan aktor -- sumber daya
             // ADA dan terlihat, tindakannya yang ditolak.
             abort_if($this->distribusiDiLuarCakupan($this->distribusiLengkap($saprotan, true))->isNotEmpty(), 403);
+
+            if ($saprotan->distribusi()->withoutGlobalScopes()->exists()) {
+                return false;
+            }
+
             $saprotan->delete();
+
+            return true;
         });
+
+        if (! $dihapus) {
+            return back()->with('galat', 'Saprotan masih memiliki distribusi sehingga tidak dapat dihapus.');
+        }
 
         return redirect()->route('saprotan.index')->with('sukses', 'Data saprotan dihapus.');
     }

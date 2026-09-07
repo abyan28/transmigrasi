@@ -64,8 +64,10 @@
         gantiStatus() {
             if (this.statusHunian === 'Tidak Dihuni') {
                 const input = this.$el.querySelector('[name=&quot;transmigran_id&quot;]');
-                input.value = '';
-                input.dispatchEvent(new Event('change', { bubbles: true }));
+                if (input) {
+                    input.value = '';
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                }
             }
         },
     }"
