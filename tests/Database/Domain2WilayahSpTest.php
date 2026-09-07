@@ -11,7 +11,6 @@
  */
 
 use App\Enums\JenisDaftarPilihan;
-use App\Enums\PolaPermukiman;
 use App\Models\Berkas;
 use App\Models\DaftarPilihan;
 use App\Models\Desa;
@@ -74,11 +73,11 @@ it('menautkan penugasan SP dua arah lewat pivot user_satuan_permukiman', functio
         ->and($sp->petugas->pluck('id_user'))->toContain($user->id_user);
 });
 
-it('meng-cast ENUM keadaan wilayah SP dan jenis daftar pilihan', function () {
-    $sp = buatSp(['pola_permukiman' => PolaPermukiman::Linear->value, 'luas_lahan' => '12.50']);
+it('menyimpan keadaan wilayah SP sebagai kode master dan jenis daftar pilihan', function () {
+    $sp = buatSp(['pola_permukiman' => 'Linear', 'luas_lahan' => '12.50']);
     $ref = DaftarPilihan::create(['jenis' => JenisDaftarPilihan::SumberDana->value, 'nilai' => 'APBN']);
 
-    expect($sp->pola_permukiman)->toBe(PolaPermukiman::Linear)
+    expect($sp->pola_permukiman)->toBe('Linear')
         ->and($sp->luas_lahan)->toBe('12.50')
         ->and($ref->jenis)->toBe(JenisDaftarPilihan::SumberDana)
         ->and($ref->fresh()->is_aktif)->toBeTrue();

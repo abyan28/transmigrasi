@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Schema;
  * `jenis_berkas_id` -> `daftar_pilihan`, dan `satuan_permukiman` menaut `berkas_id`.
  *
  * Nilai dropdown yang dikelola Admin (`data-dictionary.md` 5.6). `jenis`
- * ber-ENUM 14 nilai; `jenis_dokumen_lahan` DICABUT Putaran 15 -- jangan
+ * ber-ENUM 19 nilai; `jenis_dokumen_lahan` DICABUT Putaran 15 -- jangan
  * ditambahkan kembali. Self-FK `bidang_id` hanya untuk jenis `kategori_pengaduan`.
  */
 return new class extends Migration
@@ -25,8 +25,12 @@ return new class extends Migration
                 'status_hunian', 'tipe_komoditas', 'prioritas_pengaduan',
                 'jabatan_anggota_poktan', 'jenis_infrastruktur', 'jenis_fasilitas',
                 'bidang_pengaduan', 'kategori_pengaduan', 'jenis_alsintan', 'jenis_inventaris',
+                'jenis_saprotan', 'status_sertifikat', 'pola_permukiman',
+                'tingkat_kesuburan_tanah', 'bentuk_wilayah',
             ]);
             $table->string('nilai', 100);
+            $table->string('label', 100);
+            $table->string('kode_perilaku', 50)->nullable();
             $table->unsignedSmallInteger('urutan')->default(0);
             $table->decimal('nilai_skor', 3, 2)->nullable();
             $table->unsignedBigInteger('bidang_id')->nullable();

@@ -6,14 +6,13 @@ use App\Enums\Agama;
 use App\Enums\AsalWakilPoktan;
 use App\Enums\JenisDaftarPilihan;
 use App\Enums\JenisKelamin;
-use App\Enums\JenisSaprotan;
 use App\Enums\PendidikanTerakhir;
 use App\Enums\StatusKeaktifanAnggota;
-use App\Enums\StatusSertifikat;
 use App\Enums\StatusTinggal;
 use App\Models\Alsintan;
 use App\Models\AnggotaKeluarga;
 use App\Models\Desa;
+use App\Models\DaftarPilihan;
 use App\Models\FasilitasSp;
 use App\Models\HasilPanen;
 use App\Models\Infrastruktur;
@@ -1052,9 +1051,10 @@ class ImporEngine
             'varietas' => self::teks($pertama, 'varietas'), 'jadwal_tanam' => self::teks($pertama, 'jadwal_tanam'),
             'sumber_dana' => self::teks($pertama, 'sumber_dana'), 'keterangan' => self::teks($pertama, 'keterangan'),
         ];
-        $benih = $profil['jenis'] === JenisSaprotan::Benih->value;
+        $benih = DaftarPilihan::memilikiPerilaku(JenisDaftarPilihan::JenisSaprotan, $profil['jenis'], 'benih');
         $validator = Validator::make($profil, [
-            'kode_saprotan' => ['required', 'string', 'max:50'], 'jenis' => ['required', Rule::enum(JenisSaprotan::class)],
+            'kode_saprotan' => ['required', 'string', 'max:50'],
+            'jenis' => ValidationRules::daftarPilihan(JenisDaftarPilihan::JenisSaprotan, wajib: true),
             'nama' => ['required', 'string', 'max:255'], 'jumlah_total' => ['required', 'numeric', 'gt:0', 'max:99999999'],
             'satuan_id' => ['required', 'integer'], 'tahun_pengadaan' => ValidationRules::tahun(wajib: true),
             'komoditas_id' => ['nullable', 'integer', Rule::requiredIf($benih)],
@@ -1326,7 +1326,7 @@ class ImporEngine
             'lintang_usaha' => ['required_with:bujur_usaha', ...ValidationRules::lintang()],
             'bujur_usaha' => ['required_with:lintang_usaha', ...ValidationRules::bujur()],
             'tujuan_pemanfaatan' => ['nullable', 'string', 'max:2000'],
-            'status_sertifikat' => ['required', Rule::enum(StatusSertifikat::class)],
+            'status_sertifikat' => ValidationRules::daftarPilihan(JenisDaftarPilihan::StatusSertifikat, wajib: true),
             'keterangan' => ['nullable', 'string', 'max:1000'],
         ], self::PESAN_UMUM);
 
@@ -1336,7 +1336,7 @@ class ImporEngine
             $diharapkan['luas_usaha'] = ($data['luas_kering'] === null && $data['luas_basah'] === null)
                 ? null : (float) ($data['luas_kering'] ?? 0) + (float) ($data['luas_basah'] ?? 0);
             $sama = $existing->only(array_keys($diharapkan)) == $diharapkan
-                && $existing->transmigran?->status_sertifikat?->value === $data['status_sertifikat'];
+                && $existing->transmigran?->status_sertifikat === $data['status_sertifikat'];
 
             return $sama ? ['status' => 'dilewati'] : 'Kode lahan sudah ada dengan isi berbeda.';
         }

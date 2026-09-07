@@ -37,7 +37,7 @@ return new class extends Migration
             $table->year('tahun_kedatangan');
             $table->enum('status_tinggal', ['Aktif', 'Pindah Penduduk', 'Tidak Aktif']);
             $table->year('tahun_keluar')->nullable();
-            $table->enum('status_sertifikat', ['Sudah', 'Belum', 'Belum Didata'])->default('Belum Didata');
+            $table->string('status_sertifikat', 100)->default('Belum Didata');
             $table->string('telepon', 20)->nullable();
             $table->text('keterangan')->nullable();
             $table->timestamps();

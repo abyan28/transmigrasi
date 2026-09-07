@@ -32,6 +32,8 @@ class DaftarPilihanSeeder extends Seeder
                 [
                     'jenis' => $b['jenis'],
                     'nilai' => $b['nilai'],
+                    'label' => $b['label'],
+                    'kode_perilaku' => $b['kode_perilaku'],
                     'urutan' => $b['urutan'],
                     'nilai_skor' => $b['nilai_skor'],
                     'bidang_id' => $b['bidang_id'],

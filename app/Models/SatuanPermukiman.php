@@ -2,10 +2,7 @@
 
 namespace App\Models;
 
-use App\Enums\BentukWilayah;
 use App\Enums\CakupanData;
-use App\Enums\PolaPermukiman;
-use App\Enums\TingkatKesuburanTanah;
 use App\Models\Concerns\BerslugOtomatis;
 use App\Models\Scopes\CakupanDataSp;
 use Illuminate\Database\Eloquent\Builder;
@@ -63,9 +60,6 @@ class SatuanPermukiman extends Model
     protected function casts(): array
     {
         return [
-            'pola_permukiman' => PolaPermukiman::class,
-            'tingkat_kesuburan_tanah' => TingkatKesuburanTanah::class,
-            'bentuk_wilayah' => BentukWilayah::class,
             'tanggal_sk_pencadangan' => 'date',
             'luas_lahan' => 'decimal:2',
             'jumlah_kk_rencana' => 'integer',

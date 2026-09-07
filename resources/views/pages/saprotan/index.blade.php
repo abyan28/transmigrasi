@@ -55,7 +55,7 @@
                     <select id="filter_jenis" name="jenis"
                         class="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-3 text-theme-sm text-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90">
                         <option value="">Semua jenis</option>
-                        @foreach (\App\Enums\JenisSaprotan::opsi() as $nilai => $label)
+                        @foreach (\App\Models\DaftarPilihan::opsi(\App\Enums\JenisDaftarPilihan::JenisSaprotan, false) as $nilai => $label)
                             <option value="{{ $nilai }}" @selected($filterJenis === $nilai)>{{ $label }}</option>
                         @endforeach
                     </select>
@@ -78,7 +78,7 @@
                 <td class="px-5 py-3">
                     <p class="text-theme-sm font-medium text-gray-800 dark:text-white/90">{{ $s['nama'] }}</p>
                     <p class="text-theme-xs text-gray-500 dark:text-gray-400">
-                        {{ $s['jenis'] }}@if (! empty($s['komoditas'])) &middot; {{ $s['komoditas'] }} @endif
+                        {{ $s['jenis_label'] }}@if (! empty($s['komoditas'])) &middot; {{ $s['komoditas'] }} @endif
                     </p>
                 </td>
                 <td class="px-5 py-3">

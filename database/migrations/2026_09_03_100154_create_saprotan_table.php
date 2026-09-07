@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 /**
  * Terjemahan `database/data/schema.sql` -- DOMAIN 6, tabel `saprotan`
  * (induk / pengadaan). `komoditas_id` & `varietas` wajib hanya bila
- * `jenis = Benih` (ditegakkan aplikasi). `tahun_pengadaan` = tahun anggaran.
+ * perilaku jenis = benih (ditegakkan aplikasi). `tahun_pengadaan` = tahun anggaran.
  * `jadwal_tanam` = rencana YYYY-MM. Penerima selalu poktan. Soft delete aktif.
  */
 return new class extends Migration
@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('kode_saprotan', 50);
             $table->unsignedBigInteger('satuan_id');
             $table->unsignedBigInteger('komoditas_id')->nullable();
-            $table->enum('jenis', ['Benih', 'Pupuk', 'Pestisida', 'Mulsa', 'Lainnya']);
+            $table->string('jenis', 100);
             $table->string('nama', 255);
             $table->decimal('jumlah_total', 12, 3);
             $table->string('varietas', 120)->nullable();

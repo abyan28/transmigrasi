@@ -13,15 +13,13 @@ use App\Enums\AksiPermission;
 use App\Enums\AlasanPergantianKK;
 use App\Enums\BidangPengaduan;
 use App\Enums\CakupanData;
-use App\Enums\JenisInfrastruktur;
-use App\Enums\KategoriPengaduan;
+use App\Enums\JenisDaftarPilihan;
 use App\Enums\Kondisi;
 use App\Enums\KondisiRumah;
 use App\Enums\PrioritasPengaduan;
 use App\Enums\StatusAnggotaKeluarga;
 use App\Enums\StatusPengaduan;
 use App\Enums\StatusTinggal;
-use App\Enums\SumberDana;
 use App\Support\DummyData;
 use App\Support\PenilaianKondisiSp;
 
@@ -38,7 +36,6 @@ it('memuat seluruh nilai baku sesuai kamus data', function (string $enum, array 
     'prioritas pengaduan' => [PrioritasPengaduan::class, ['Rendah', 'Sedang', 'Tinggi', 'Mendesak']],
     'kondisi rumah' => [KondisiRumah::class, ['Tidak Rusak', 'Rusak Ringan', 'Rusak Berat']],
     'kondisi aset' => [Kondisi::class, ['Baik', 'Rusak Ringan', 'Rusak Berat', 'Hilang']],
-    'bidang pengaduan' => [BidangPengaduan::class, ['Ketransmigrasian', 'Pertanian']],
     'cakupan data' => [CakupanData::class, ['Semua', 'Per SP', 'Per Bidang']],
     'aksi permission' => [AksiPermission::class, ['lihat', 'tambah', 'ubah', 'hapus']],
 ]);
@@ -94,13 +91,14 @@ it('memuat dua belas kategori pengaduan tanpa spasi berlebih', function () {
     // dua tabel berbeda; 'Saprotan' ditambahkan agar keluhan bibit dan pupuk
     // tidak menumpang pada 'Produksi Panen'; dan 'Kelompok Tani' ditambahkan
     // sebab poktan modul penuh tetapi keluhannya terpaksa masuk 'Lainnya'.
-    expect(KategoriPengaduan::cases())->toHaveCount(12);
+    $kategoriMaster = array_column(DummyData::daftarPilihan(JenisDaftarPilihan::KategoriPengaduan), 'nilai');
+    expect($kategoriMaster)->toHaveCount(12);
 
-    foreach (KategoriPengaduan::cases() as $kategori) {
-        expect($kategori->value)->toBe(trim($kategori->value));
+    foreach ($kategoriMaster as $kategori) {
+        expect($kategori)->toBe(trim($kategori));
     }
 
-    expect(KategoriPengaduan::nilai())
+    expect($kategoriMaster)
         ->toContain('Inventaris SP')
         ->toContain('Fasilitas SP')
         ->toContain('Saprotan')
@@ -115,7 +113,7 @@ it('menyediakan kategori bagi tiap modul yang dapat diadukan warga', function ()
     //
     // Modul internal sistem, data referensi, serta data pribadi transmigran
     // sengaja tidak berkategori (rules.md 10b poin 3a).
-    $nilai = KategoriPengaduan::nilai();
+    $nilai = array_column(DummyData::daftarPilihan(JenisDaftarPilihan::KategoriPengaduan), 'nilai');
 
     foreach ([
         'rumah' => 'Rumah',
@@ -145,16 +143,15 @@ it('memuat sepuluh aksi audit log termasuk tindakan terhadap akun', function () 
 });
 
 it('memuat delapan sumber dana termasuk swadaya', function () {
-    expect(SumberDana::nilai())->toHaveCount(8)
-        ->and(SumberDana::nilai())->toContain('Swadaya')
-        ->and(SumberDana::Apbn->value)->toBe('APBN');
+    $nilai = array_column(DummyData::daftarPilihan(JenisDaftarPilihan::SumberDana), 'nilai');
+    expect($nilai)->toHaveCount(8)->toContain('Swadaya')->toContain('APBN');
 });
 
 it('memuat sepuluh jenis infrastruktur sesuai aturan modul', function () {
     // Diperluas pada Task 2.25 dengan sanitasi, jalan penghubung, dan pasar
     // atau kios saprotan, karena ketiganya berpengaruh pada kelayakan huni
     // dan menjadi parameter penilaian kondisi SP (agents/rules.md bagian 10).
-    expect(JenisInfrastruktur::nilai())->toBe([
+    expect(array_column(DummyData::daftarPilihan(JenisDaftarPilihan::JenisInfrastruktur), 'nilai'))->toBe([
         'Air', 'Sanitasi', 'Irigasi', 'Listrik', 'Jalan Penghubung',
         'Jalan Produksi', 'Telekomunikasi', 'Gudang',
         'Pasar atau Kios Saprotan', 'Lainnya',
@@ -165,9 +162,8 @@ it('membedakan jalan penghubung dari jalan produksi', function () {
     // Jalan penghubung menentukan akses masuk ke kawasan termasuk bagi
     // kendaraan darurat; jalan produksi menentukan pengangkutan hasil dari
     // lahan usaha. Keduanya berbeda dampak dan berbeda bobot pada penilaian.
-    expect(JenisInfrastruktur::JalanPenghubung->value)->toBe('Jalan Penghubung')
-        ->and(JenisInfrastruktur::JalanProduksi->value)->toBe('Jalan Produksi')
-        ->and(JenisInfrastruktur::JalanPenghubung)->not->toBe(JenisInfrastruktur::JalanProduksi);
+    $nilai = array_column(DummyData::daftarPilihan(JenisDaftarPilihan::JenisInfrastruktur), 'nilai');
+    expect($nilai)->toContain('Jalan Penghubung')->toContain('Jalan Produksi');
 });
 
 /*
@@ -309,10 +305,11 @@ it('memetakan seluruh kategori tanpa terkecuali', function () {
     // seluruh nilai enum benar-benar dilewatkan.
     $peta = BidangPengaduan::petaDariKategori();
 
-    expect($peta)->toHaveCount(count(KategoriPengaduan::cases()));
+    $kategori = array_column(DummyData::daftarPilihan(JenisDaftarPilihan::KategoriPengaduan), 'nilai');
+    expect($peta)->toHaveCount(count($kategori));
 
-    foreach (KategoriPengaduan::cases() as $kategori) {
-        expect($peta)->toHaveKey($kategori->value);
+    foreach ($kategori as $nilai) {
+        expect($peta)->toHaveKey($nilai);
     }
 
     // Empat kategori netral bernilai string kosong, bukan hilang dari peta.

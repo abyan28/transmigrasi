@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\BentukWilayah;
-use App\Enums\PolaPermukiman;
+use App\Enums\JenisDaftarPilihan;
 use App\Enums\StatusTinggal;
-use App\Enums\TingkatKesuburanTanah;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
+use App\Models\DaftarPilihan;
 use App\Models\Desa;
 use App\Models\FasilitasSp;
 use App\Models\HasilPanen;
@@ -230,6 +229,9 @@ class SpController extends Controller
             'lintang' => $sp->lintang === null ? null : (float) $sp->lintang,
             'bujur' => $sp->bujur === null ? null : (float) $sp->bujur,
             'tanggal_sk_pencadangan' => $sp->tanggal_sk_pencadangan?->format('Y-m-d'),
+            'pola_permukiman_label' => DaftarPilihan::labelUntuk(JenisDaftarPilihan::PolaPermukiman, $sp->pola_permukiman),
+            'tingkat_kesuburan_tanah_label' => DaftarPilihan::labelUntuk(JenisDaftarPilihan::TingkatKesuburanTanah, $sp->tingkat_kesuburan_tanah),
+            'bentuk_wilayah_label' => DaftarPilihan::labelUntuk(JenisDaftarPilihan::BentukWilayah, $sp->bentuk_wilayah),
             'dokumen_pendukung' => $sp->berkas?->nama_file,
         ]);
     }
@@ -425,9 +427,9 @@ class SpController extends Controller
             'batas_barat' => ['nullable', 'string', 'max:150'],
             'nomor_sk_pencadangan' => ['nullable', 'string', 'max:100'],
             'tanggal_sk_pencadangan' => ['nullable', 'date', 'before_or_equal:today'],
-            'pola_permukiman' => ['nullable', Rule::enum(PolaPermukiman::class)],
-            'tingkat_kesuburan_tanah' => ['nullable', Rule::enum(TingkatKesuburanTanah::class)],
-            'bentuk_wilayah' => ['nullable', Rule::enum(BentukWilayah::class)],
+            'pola_permukiman' => ValidationRules::daftarPilihan(JenisDaftarPilihan::PolaPermukiman, nilaiSaatIni: $sp?->pola_permukiman),
+            'tingkat_kesuburan_tanah' => ValidationRules::daftarPilihan(JenisDaftarPilihan::TingkatKesuburanTanah, nilaiSaatIni: $sp?->tingkat_kesuburan_tanah),
+            'bentuk_wilayah' => ValidationRules::daftarPilihan(JenisDaftarPilihan::BentukWilayah, nilaiSaatIni: $sp?->bentuk_wilayah),
             'curah_hujan_tahunan_mm' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
             'suhu_rata_c' => ['nullable', 'numeric', 'min:0', 'max:60'],
             'angin_rata_knot' => ['nullable', 'numeric', 'min:0', 'max:200'],

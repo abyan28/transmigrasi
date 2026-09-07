@@ -14,7 +14,6 @@ use App\Enums\AlasanPergantianKK;
 use App\Enums\HubunganAnggotaKeluarga;
 use App\Enums\JenisKelamin;
 use App\Enums\StatusAnggotaKeluarga;
-use App\Enums\StatusSertifikat;
 use App\Enums\StatusTinggal;
 use App\Models\AnggotaKeluarga;
 use App\Models\RiwayatKepalaKeluarga;
@@ -71,10 +70,10 @@ it('merangkai KK -> anggota -> SP -> daerah asal lewat kunci eksplisit', functio
         ->and($sp->transmigran->pluck('id_transmigran'))->toContain($kk->id_transmigran);
 });
 
-it('meng-cast ENUM kependudukan dan default status_sertifikat', function () {
+it('menyimpan kode master status sertifikat dan enum status tinggal', function () {
     $kk = buatTransmigran();
 
-    expect($kk->fresh()->status_sertifikat)->toBe(StatusSertifikat::BelumDidata)
+    expect($kk->fresh()->status_sertifikat)->toBe('Belum Didata')
         ->and($kk->status_tinggal)->toBe(StatusTinggal::Aktif);
 });
 

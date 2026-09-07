@@ -650,12 +650,12 @@
                                         'Nomor SK Pencadangan Areal' => $sp['nomor_sk_pencadangan'] ?? null,
                                         'Tanggal SK Pencadangan' => ($sp['tanggal_sk_pencadangan'] ?? null)
                                             ? \Illuminate\Support\Carbon::parse($sp['tanggal_sk_pencadangan'])->translatedFormat('d F Y') : null,
-                                        'Pola permukiman' => $sp['pola_permukiman'] ?? null,
+                                        'Pola permukiman' => $sp['pola_permukiman_label'] ?? null,
                                     ],
                                     'Tanah dan Topografi' => [
-                                        'Tingkat kesuburan tanah' => $sp['tingkat_kesuburan_tanah'] ?? null,
+                                        'Tingkat kesuburan tanah' => $sp['tingkat_kesuburan_tanah_label'] ?? null,
                                         'pH tanah' => $rentang('ph_tanah_min', 'ph_tanah_maks'),
-                                        'Bentuk wilayah' => $sp['bentuk_wilayah'] ?? null,
+                                        'Bentuk wilayah' => $sp['bentuk_wilayah_label'] ?? null,
                                         'Kemiringan lereng' => $rentang('kemiringan_min_persen', 'kemiringan_maks_persen', '%'),
                                     ],
                                     'Iklim & Cuaca' => [

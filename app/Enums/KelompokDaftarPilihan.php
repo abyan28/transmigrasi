@@ -31,6 +31,7 @@ enum KelompokDaftarPilihan: string
     case RumahLahan = 'rumah_lahan';
     case Pertanian = 'pertanian';
     case Pengaduan = 'pengaduan';
+    case KlasifikasiSp = 'klasifikasi_sp';
 
     /**
      * Judul kelompok pada halaman indeks.
@@ -44,6 +45,7 @@ enum KelompokDaftarPilihan: string
             self::RumahLahan => 'Rumah & Lahan',
             self::Pertanian => 'Pertanian',
             self::Pengaduan => 'Pengaduan',
+            self::KlasifikasiSp => 'Klasifikasi SP',
         };
     }
 
@@ -62,6 +64,7 @@ enum KelompokDaftarPilihan: string
             self::RumahLahan => 'Dipakai pada data rumah dan data lahan.',
             self::Pertanian => 'Dipakai pada komoditas, hasil panen, dan kelompok tani.',
             self::Pengaduan => 'Dipakai pada pencatatan dan penanganan pengaduan warga.',
+            self::KlasifikasiSp => 'Dipakai pada profil dan monografi satuan permukiman.',
         };
     }
 

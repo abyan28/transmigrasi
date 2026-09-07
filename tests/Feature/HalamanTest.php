@@ -14,20 +14,15 @@ use App\Enums\AksiAuditLog;
 use App\Enums\AksiPermission;
 use App\Enums\AlasanPergantianKK;
 use App\Enums\AsalWakilPoktan;
-use App\Enums\BentukWilayah;
 use App\Enums\BidangPengaduan;
 use App\Enums\HubunganAnggotaKeluarga;
-use App\Enums\JabatanAnggotaPoktan;
-use App\Enums\JenisSaprotan;
+use App\Enums\JenisDaftarPilihan;
 use App\Enums\KegiatanAnggota;
 use App\Enums\Kondisi;
 use App\Enums\PendidikanTerakhir;
-use App\Enums\PolaPermukiman;
 use App\Enums\StatusAnggotaKeluarga;
 use App\Enums\StatusPanen;
 use App\Enums\StatusPengaduan;
-use App\Enums\SumberDana;
-use App\Enums\TingkatKesuburanTanah;
 use App\Helpers\MenuHelper;
 use App\Helpers\RemahHelper;
 use App\Models\Alsintan;
@@ -3294,7 +3289,7 @@ it('memakai nilai enum pada data contoh, bukan teks yang menyerupainya', functio
     // ternyata masih bersembunyi pada kolom lain: ''Pembelian Sendiri'' pada
     // sumber dana alsintan juga bukan nilai enum mana pun. Uji ini karena itu
     // dialihkan ke sana, bukan dihapus.
-    $sumberSah = array_column(SumberDana::cases(), 'value');
+    $sumberSah = array_column(DummyData::daftarPilihan(JenisDaftarPilihan::SumberDana), 'nilai');
     $kondisiSah = array_column(Kondisi::cases(), 'value');
 
     // `sumber_dana` / `tahun_pengadaan` diseragamkan dari `sumber_perolehan`
@@ -6501,7 +6496,7 @@ it('mencabut Ketua dari pilihan jabatan anggota poktan', function () {
     // Ketua ditetapkan pada profil poktan. Menyediakannya juga di daftar
     // anggota membuat satu poktan dapat memiliki dua ketua berbeda tanpa
     // penjaga apa pun (rules.md 7a.4b).
-    expect(array_column(JabatanAnggotaPoktan::cases(), 'value'))
+    expect(array_column(DummyData::daftarPilihan(JenisDaftarPilihan::JabatanAnggotaPoktan), 'nilai'))
         ->toBe(['Sekretaris', 'Bendahara', 'Anggota']);
 
     foreach (DummyData::anggotaPoktan() as $anggota) {
@@ -7153,12 +7148,12 @@ it('menyediakan tempat tampil bagi setiap field Keadaan Wilayah SP', function ()
     expect($rincian)->toContain($sp1->nomor_sk_pencadangan)->toContain($sp1->batas_utara);
 });
 
-it('mengunci enum Keadaan Wilayah SP', function () {
-    expect(PolaPermukiman::nilai())
+it('menyediakan master Keadaan Wilayah SP', function () {
+    expect(array_column(DummyData::daftarPilihan(JenisDaftarPilihan::PolaPermukiman), 'nilai'))
         ->toBe(['Konsentris', 'Papan Catur', 'Linear', 'Menyebar']);
-    expect(TingkatKesuburanTanah::nilai())
+    expect(array_column(DummyData::daftarPilihan(JenisDaftarPilihan::TingkatKesuburanTanah), 'nilai'))
         ->toBe(['Subur', 'Sedang', 'Kurang Subur']);
-    expect(BentukWilayah::nilai())
+    expect(array_column(DummyData::daftarPilihan(JenisDaftarPilihan::BentukWilayah), 'nilai'))
         ->toBe(['Datar', 'Bergelombang', 'Berbukit', 'Bergunung']);
 });
 
@@ -8402,7 +8397,7 @@ it('menanyakan varietas hanya untuk benih, seperti komoditas', function () {
 
     // Data contoh: setiap benih punya varietas, jenis lain kosong.
     foreach (DummyData::saprotan() as $b) {
-        if ($b['jenis'] === JenisSaprotan::Benih->value) {
+        if ($b['jenis'] === 'Benih') {
             expect($b['varietas'])->not->toBeNull("benih {$b['nama']} tanpa varietas");
         } else {
             expect($b['varietas'])->toBeNull("{$b['jenis']} {$b['nama']} punya varietas");

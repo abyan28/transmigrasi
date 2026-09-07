@@ -9,6 +9,8 @@
  */
 
 use App\Enums\CakupanData;
+use App\Enums\JenisDaftarPilihan;
+use App\Models\DaftarPilihan;
 use App\Models\Komoditas;
 use App\Models\Poktan;
 use App\Models\Role;
@@ -54,7 +56,7 @@ it('menanam saprotan dan distribusinya dari data contoh', function () {
         ->and(SaprotanDistribusi::count())->toBe(count(DummyData::saprotanDistribusi()));
 
     $benih = Saprotan::where('nama', 'BENIH JAGUNG HIBRIDA')->first();
-    expect($benih->jenis->value)->toBe('Benih')
+    expect($benih->jenis)->toBe('Benih')
         ->and($benih->komoditas->nama)->toBe('JAGUNG')
         ->and($benih->distribusi)->toHaveCount(2);
 });
@@ -127,6 +129,35 @@ it('mewajibkan komoditas dan varietas untuk jenis Benih', function () {
     ])->assertSessionHasErrors(['komoditas_id', 'varietas']);
 });
 
+it('menerapkan perilaku benih pada jenis saprotan baru dari data master', function () {
+    DaftarPilihan::create([
+        'jenis' => JenisDaftarPilihan::JenisSaprotan->value,
+        'nilai' => 'Bibit',
+        'label' => 'Bibit Tanaman',
+        'kode_perilaku' => 'benih',
+    ]);
+
+    $this->post(route('saprotan.simpan'), [
+        'kode_saprotan' => 'SAP-BIBIT-001',
+        'jenis' => 'Bibit',
+        'nama' => 'BIBIT TANPA KOMODITAS',
+        'jumlah_total' => '10',
+        'satuan_id' => Satuan::where('nama', 'Kilogram')->value('id_satuan'),
+        'tahun_pengadaan' => 2026,
+    ])->assertSessionHasErrors(['komoditas_id', 'varietas']);
+});
+
+it('menampilkan label jenis saprotan tanpa mengubah kode tersimpan', function () {
+    DaftarPilihan::where('jenis', JenisDaftarPilihan::JenisSaprotan->value)
+        ->where('nilai', 'Benih')->update(['label' => 'Bibit']);
+
+    $saprotan = Saprotan::where('jenis', 'Benih')->firstOrFail();
+    $baris = \App\Support\PenyajianSaprotan::baris($saprotan);
+
+    expect($saprotan->jenis)->toBe('Benih')
+        ->and($baris['jenis_label'])->toBe('Bibit');
+});
+
 it('tidak menyimpan komoditas untuk jenis non-Benih', function () {
     $satuan = Satuan::where('nama', 'Liter')->value('id_satuan');
     $komoditas = Komoditas::where('nama', 'JAGUNG')->value('id_komoditas');
@@ -170,7 +201,7 @@ it('melepas baris distribusi untuk poktan yang tidak lagi menerima', function ()
     $tetap = $benih->distribusi->first()->poktan_id;
 
     $this->put(route('saprotan.perbarui', $benih->id_saprotan), [
-        'jenis' => $benih->jenis->value,
+        'jenis' => $benih->jenis,
         'nama' => $benih->nama,
         'komoditas_id' => $benih->komoditas_id,
         'varietas' => $benih->varietas,
@@ -192,7 +223,7 @@ it('mempertahankan distribusi bila pembaruan tidak membawa penanda penggantian',
     $sebelum = $benih->distribusi()->orderBy('poktan_id')->pluck('jumlah', 'poktan_id')->all();
 
     $this->put(route('saprotan.perbarui', $benih->id_saprotan), [
-        'jenis' => $benih->jenis->value,
+        'jenis' => $benih->jenis,
         'nama' => 'BENIH AMAN QUICK EDIT',
         'komoditas_id' => $benih->komoditas_id,
         'varietas' => $benih->varietas,
@@ -219,7 +250,7 @@ it('menjaga distribusi lintas cakupan dari aktor Per SP', function () {
     $this->actingAs($operator);
 
     $induk = [
-        'jenis' => $saprotan->jenis->value,
+        'jenis' => $saprotan->jenis,
         'nama' => $saprotan->nama,
         'komoditas_id' => $saprotan->komoditas_id,
         'varietas' => $saprotan->varietas,
@@ -262,7 +293,7 @@ it('melarang aktor Per SP mengubah metadata atau menghapus induk bersama', funct
     $this->actingAs($operator);
 
     $this->put(route('saprotan.perbarui', $saprotan->id_saprotan), [
-        'jenis' => $saprotan->jenis->value,
+        'jenis' => $saprotan->jenis,
         'nama' => 'UBAH INDUK BERSAMA',
         'komoditas_id' => $saprotan->komoditas_id,
         'varietas' => $saprotan->varietas,
@@ -311,7 +342,7 @@ it('menolak perubahan saprotan yang membuat pemakaian benih tidak sah', function
         'satuan_id' => Satuan::where('id_satuan', '!=', $saprotan->satuan_id)->value('id_satuan'),
     ])->assertSessionHasErrors('jenis');
 
-    expect($saprotan->fresh()->jenis->value)->toBe('Benih');
+    expect($saprotan->fresh()->jenis)->toBe('Benih');
 
     $this->put(route('saprotan.perbarui', $saprotan->id_saprotan), [
         ...$induk,

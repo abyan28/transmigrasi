@@ -79,7 +79,12 @@
             :kolom-kanan="['Aksi']">
             @foreach ($baris as $b)
                 <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
-                    <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">{{ $b['nilai'] }}</td>
+                    <td class="px-5 py-3 text-theme-sm text-gray-800 dark:text-white/90">
+                        {{ $b['label'] }}
+                        @if ($b['label'] !== $b['nilai'])
+                            <span class="block font-mono text-theme-xs text-gray-400">{{ $b['nilai'] }}</span>
+                        @endif
+                    </td>
 
                     @if ($jenis->berskor())
                         {{--

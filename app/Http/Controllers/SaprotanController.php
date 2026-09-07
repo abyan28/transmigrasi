@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Enums\CakupanData;
 use App\Enums\JenisDaftarPilihan;
-use App\Enums\JenisSaprotan;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
+use App\Models\DaftarPilihan;
 use App\Models\Poktan;
 use App\Models\Saprotan;
 use App\Models\SaprotanDistribusi;
@@ -207,7 +207,7 @@ class SaprotanController extends Controller
      */
     private function kolomInduk(array $data): array
     {
-        $benih = $data['jenis'] === JenisSaprotan::Benih->value;
+        $benih = DaftarPilihan::memilikiPerilaku(JenisDaftarPilihan::JenisSaprotan, $data['jenis'], 'benih');
 
         return [
             'kode_saprotan' => $data['kode_saprotan'],
@@ -304,7 +304,7 @@ class SaprotanController extends Controller
             return;
         }
 
-        if ($data['jenis'] !== JenisSaprotan::Benih->value
+        if (! DaftarPilihan::memilikiPerilaku(JenisDaftarPilihan::JenisSaprotan, $data['jenis'], 'benih')
             || (int) $data['komoditas_id'] !== (int) $saprotan->komoditas_id
             || (int) $data['satuan_id'] !== (int) $saprotan->satuan_id) {
             throw ValidationException::withMessages([
@@ -337,13 +337,13 @@ class SaprotanController extends Controller
      */
     private function validasi(Request $request, ?Saprotan $saprotan = null, ?Collection $lama = null, bool $gantiDistribusi = true): array
     {
-        $benih = fn () => $request->input('jenis') === JenisSaprotan::Benih->value;
+        $benih = fn () => DaftarPilihan::memilikiPerilaku(JenisDaftarPilihan::JenisSaprotan, $request->input('jenis'), 'benih');
         $data = $request->validate([
             'kode_saprotan' => [
                 Rule::requiredIf($saprotan === null), 'nullable', 'string', 'max:50',
                 Rule::unique('saprotan', 'kode_saprotan')->ignore($saprotan?->id_saprotan, 'id_saprotan'),
             ],
-            'jenis' => ['required', Rule::enum(JenisSaprotan::class)],
+            'jenis' => ValidationRules::daftarPilihan(JenisDaftarPilihan::JenisSaprotan, wajib: true, nilaiSaatIni: $saprotan?->jenis),
             'nama' => ['required', 'string', 'max:255'],
             'komoditas_id' => [
                 'nullable', 'integer', Rule::exists('komoditas', 'id_komoditas'),

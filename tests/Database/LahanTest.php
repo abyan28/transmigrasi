@@ -16,6 +16,7 @@ use App\Models\Transmigran;
 use App\Models\User;
 use App\Support\DummyData;
 use Database\Seeders\KawasanSeeder;
+use Database\Seeders\DaftarPilihanSeeder;
 use Database\Seeders\LahanSeeder;
 use Database\Seeders\SpSeeder;
 use Database\Seeders\TransmigranSeeder;
@@ -29,6 +30,7 @@ beforeEach(function () {
     $petugas = User::factory()->create();
     $petugas->semuaIzin = true;
     $this->actingAs($petugas);
+    $this->seed(DaftarPilihanSeeder::class);
     $this->seed(WilayahSeeder::class);
     $this->seed(KawasanSeeder::class);
     $this->seed(SpSeeder::class);
@@ -95,7 +97,7 @@ it('menyimpan lahan baru dan menurunkan luas usaha dari kering + basah', functio
     expect($lahan)->not->toBeNull()
         ->and((float) $lahan->luas_usaha)->toBe(2.0)
         ->and((float) $lahan->luas_kering)->toBe(1.2)
-        ->and($kk->fresh()->status_sertifikat->value)->toBe('Sudah');
+        ->and($kk->fresh()->status_sertifikat)->toBe('Sudah');
 });
 
 it('menolak KK yang sudah punya baris lahan', function () {
@@ -224,7 +226,7 @@ it('memperbarui lahan dan menulis SHM ke transmigran_berkas peran shm', function
     ])->assertRedirect(route('lahan.detail', $lahan->id_lahan));
 
     $kk = $lahan->transmigran->fresh();
-    expect($kk->status_sertifikat->value)->toBe('Sudah')
+    expect($kk->status_sertifikat)->toBe('Sudah')
         ->and($kk->berkas()->wherePivot('peran', 'shm')->count())->toBe(1);
 });
 

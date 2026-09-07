@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\StatusSertifikat;
+use App\Enums\JenisDaftarPilihan;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
 use App\Models\Lahan;
+use App\Models\DaftarPilihan;
 use App\Models\SatuanPermukiman;
 use App\Models\Scopes\CakupanDataSp;
 use App\Models\Transmigran;
@@ -93,7 +94,10 @@ class LahanController extends Controller
             'pemilik' => $pemilik === null ? null : [
                 'id_transmigran' => $pemilik->id_transmigran,
                 'nama_kepala_keluarga' => $pemilik->nama_kepala_keluarga,
-                'status_sertifikat' => $pemilik->status_sertifikat->value,
+                'status_sertifikat' => DaftarPilihan::labelUntuk(
+                    JenisDaftarPilihan::StatusSertifikat,
+                    $pemilik->status_sertifikat,
+                ),
             ],
             'shm' => $data['shm_meta'],
             'hpl' => $this->berkasKawasan($lahan, 'hpl'),
@@ -273,7 +277,8 @@ class LahanController extends Controller
             'bujur_usaha' => $l->bujur_usaha === null ? null : (float) $l->bujur_usaha,
             'tujuan_pemanfaatan' => $l->tujuan_pemanfaatan,
             'keterangan' => $l->keterangan,
-            'status_sertifikat' => $l->transmigran?->status_sertifikat->value ?? StatusSertifikat::BelumDidata->value,
+            'status_sertifikat' => $l->transmigran?->status_sertifikat
+                ?? DaftarPilihan::nilaiPerilaku(JenisDaftarPilihan::StatusSertifikat, 'tidak_diketahui'),
             'shm' => $shmMeta['nama_file'] ?? null,
             'shm_meta' => $shmMeta,
         ];
@@ -307,7 +312,11 @@ class LahanController extends Controller
             'lintang_usaha' => ValidationRules::lintang(),
             'bujur_usaha' => ValidationRules::bujur(),
 
-            'status_sertifikat' => ['required', Rule::enum(StatusSertifikat::class)],
+            'status_sertifikat' => ValidationRules::daftarPilihan(
+                JenisDaftarPilihan::StatusSertifikat,
+                wajib: true,
+                nilaiSaatIni: $lahan?->transmigran?->status_sertifikat,
+            ),
             'shm' => ValidationRules::dokumen(),
         ], [
             'transmigran_id.required' => 'Pemilik lahan wajib dipilih.',

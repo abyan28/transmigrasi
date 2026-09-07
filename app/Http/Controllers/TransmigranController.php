@@ -11,12 +11,12 @@ use App\Enums\KegiatanAnggota;
 use App\Enums\PendidikanTerakhir;
 use App\Enums\StatusAnggotaKeluarga;
 use App\Enums\StatusKeaktifanAnggota;
-use App\Enums\StatusSertifikat;
 use App\Enums\StatusTinggal;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
 use App\Models\AnggotaKeluarga;
 use App\Models\AnggotaPoktan;
 use App\Models\Berkas;
+use App\Models\DaftarPilihan;
 use App\Models\Lahan;
 use App\Models\Poktan;
 use App\Models\RiwayatKepalaKeluarga;
@@ -441,7 +441,8 @@ class TransmigranController extends Controller
             'bujur_usaha' => $lahan->bujur_usaha === null ? null : (float) $lahan->bujur_usaha,
             'tujuan_pemanfaatan' => $lahan->tujuan_pemanfaatan,
             'keterangan' => $lahan->keterangan,
-            'status_sertifikat' => $lahan->transmigran?->status_sertifikat->value ?? StatusSertifikat::BelumDidata->value,
+            'status_sertifikat' => $lahan->transmigran?->status_sertifikat
+                ?? DaftarPilihan::nilaiPerilaku(JenisDaftarPilihan::StatusSertifikat, 'tidak_diketahui'),
             'shm' => $shmMeta['nama_file'] ?? null,
             'shm_meta' => $shmMeta,
         ];
@@ -593,7 +594,7 @@ class TransmigranController extends Controller
             'status_tinggal' => $t->status_tinggal->value,
             'tahun_keluar' => $t->tahun_keluar === null ? null : (int) $t->tahun_keluar,
             'status_anggota_poktan' => $t->status_anggota_poktan,
-            'status_sertifikat' => $t->status_sertifikat->value,
+            'status_sertifikat' => $t->status_sertifikat,
             'telepon' => $t->telepon,
             'keterangan' => $t->keterangan,
             'satuan_permukiman' => $t->satuanPermukiman?->nama,

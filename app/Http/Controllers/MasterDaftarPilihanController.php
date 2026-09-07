@@ -157,6 +157,8 @@ class MasterDaftarPilihanController extends Controller
             'jenis' => $r->jenis->value,
             'jenis_label' => $r->jenis->label(),
             'nilai' => $r->nilai,
+            'label' => $r->label,
+            'kode_perilaku' => $r->kode_perilaku,
             'urutan' => $r->urutan,
             'nilai_skor' => $r->nilai_skor === null ? null : (float) $r->nilai_skor,
             'bidang_id' => $r->bidang_id,
@@ -185,10 +187,16 @@ class MasterDaftarPilihanController extends Controller
                     ->where('jenis', $jenis?->value)
                     ->ignore($daftarPilihan?->id_daftar_pilihan, 'id_daftar_pilihan'),
             ],
+            'label' => ['nullable', 'string', 'max:100'],
             'urutan' => ['nullable', 'integer', 'min:1', 'max:999'],
             // Hanya bermakna bagi jenis berskor (`kondisi`); dipakai
             // menghitung kondisi SP, sehingga rentangnya dikunci 0..1.
             'nilai_skor' => ['nullable', 'numeric', 'min:0', 'max:1'],
+            'kode_perilaku' => [
+                Rule::requiredIf($jenis?->perilakuWajib() ?? false), 'nullable', 'string',
+                Rule::when($jenis?->opsiPerilaku() !== [], Rule::in(array_keys($jenis->opsiPerilaku()))),
+                Rule::when($daftarPilihan !== null, Rule::in([$daftarPilihan?->kode_perilaku])),
+            ],
             // Hanya bermakna bagi `kategori_pengaduan` (self-FK).
             'bidang_id' => ['nullable', 'integer', Rule::exists('daftar_pilihan', 'id_daftar_pilihan')
                 ->where('jenis', JenisDaftarPilihan::BidangPengaduan->value)],
@@ -201,7 +209,9 @@ class MasterDaftarPilihanController extends Controller
         // Kolom yang tak berlaku bagi jenisnya DIKOSONGKAN, bukan dibiarkan
         // terbawa: skor pada daftar tak berskor tidak pernah dibaca siapa pun
         // dan hanya menyesatkan pembaca tabel.
+        $data['label'] = ($data['label'] ?? null) ?: $data['nilai'];
         $data['nilai_skor'] = $jenis?->berskor() ? ($data['nilai_skor'] ?? null) : null;
+        $data['kode_perilaku'] = $jenis?->opsiPerilaku() !== [] ? ($data['kode_perilaku'] ?? null) : null;
         $data['bidang_id'] = $jenis?->berbidang() ? ($data['bidang_id'] ?? null) : null;
         $data['urutan'] ??= (int) DaftarPilihan::where('jenis', $jenis?->value)->max('urutan') + 1;
 

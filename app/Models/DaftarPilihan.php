@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * Nilai dropdown yang dikelola Admin (`data-dictionary.md` 5.6). Nilai baru
- * cukup INSERT tanpa ALTER TABLE. `jenis` ber-ENUM 14 nilai sebagai registry
+ * cukup INSERT tanpa ALTER TABLE. `jenis` ber-ENUM 19 nilai sebagai registry
  * daftar yang dikenal sistem. `nilai_skor` hanya untuk jenis
  * `kondisi`; `bidang_id` (self-FK) hanya untuk jenis `kategori_pengaduan`.
  * `nilai` yang sudah tersimpan tidak dapat diganti karena menjadi identitas
@@ -22,7 +22,44 @@ class DaftarPilihan extends Model
 
     protected $primaryKey = 'id_daftar_pilihan';
 
-    protected $fillable = ['jenis', 'nilai', 'urutan', 'nilai_skor', 'bidang_id', 'is_aktif'];
+    protected $fillable = ['jenis', 'nilai', 'label', 'kode_perilaku', 'urutan', 'nilai_skor', 'bidang_id', 'is_aktif'];
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $pilihan): void {
+            $pilihan->label ??= $pilihan->nilai;
+        });
+    }
+
+    public static function nilaiPerilaku(JenisDaftarPilihan $jenis, string $kode): ?string
+    {
+        return self::query()
+            ->where('jenis', $jenis->value)
+            ->where('kode_perilaku', $kode)
+            ->where('is_aktif', true)
+            ->value('nilai');
+    }
+
+    public static function memilikiPerilaku(JenisDaftarPilihan $jenis, ?string $nilai, string $kode): bool
+    {
+        return $nilai !== null && self::query()
+            ->where('jenis', $jenis->value)
+            ->where('nilai', $nilai)
+            ->where('kode_perilaku', $kode)
+            ->exists();
+    }
+
+    public static function labelUntuk(JenisDaftarPilihan $jenis, ?string $nilai): ?string
+    {
+        if ($nilai === null) {
+            return null;
+        }
+
+        return self::query()
+            ->where('jenis', $jenis->value)
+            ->where('nilai', $nilai)
+            ->value('label') ?? $nilai;
+    }
 
     protected function casts(): array
     {
@@ -41,7 +78,7 @@ class DaftarPilihan extends Model
             ->when($hanyaAktif, fn ($query) => $query->where('is_aktif', true))
             ->orderBy('urutan')
             ->orderBy('id_daftar_pilihan')
-            ->pluck('nilai', 'nilai')
+            ->pluck('label', 'nilai')
             ->all();
     }
 

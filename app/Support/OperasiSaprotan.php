@@ -2,7 +2,8 @@
 
 namespace App\Support;
 
-use App\Enums\JenisSaprotan;
+use App\Enums\JenisDaftarPilihan;
+use App\Models\DaftarPilihan;
 use App\Models\Saprotan;
 use Illuminate\Validation\ValidationException;
 
@@ -11,7 +12,7 @@ class OperasiSaprotan
     /** @param array<int, array<string, mixed>> $distribusi */
     public static function buat(array $data, array $distribusi): Saprotan
     {
-        if ($data['jenis'] !== JenisSaprotan::Benih->value) {
+        if (! DaftarPilihan::memilikiPerilaku(JenisDaftarPilihan::JenisSaprotan, $data['jenis'], 'benih')) {
             $data['komoditas_id'] = $data['varietas'] = null;
         }
 

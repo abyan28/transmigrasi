@@ -223,7 +223,7 @@
                 </label>
                 <select id="{{ $awalan }}_status_sertifikat" name="status_sertifikat" required
                     class="{{ $kelasKontrol }}">
-                    @foreach (\App\Enums\StatusSertifikat::opsi() as $nilai => $label)
+                    @foreach ($opsiStatusSertifikat as $nilai => $label)
                         <option value="{{ $nilai }}"
                             @selected(old('status_sertifikat', $data['status_sertifikat'] ?? 'Belum Didata') === $nilai)>
                             {{ $label }}

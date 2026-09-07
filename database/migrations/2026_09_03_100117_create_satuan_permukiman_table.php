@@ -55,11 +55,11 @@ return new class extends Migration
             $table->date('tanggal_sk_pencadangan')->nullable();
 
             // Keadaan Wilayah -- pola permukiman, tanah, topografi
-            $table->enum('pola_permukiman', ['Konsentris', 'Papan Catur', 'Linear', 'Menyebar'])->nullable();
-            $table->enum('tingkat_kesuburan_tanah', ['Subur', 'Sedang', 'Kurang Subur'])->nullable();
+            $table->string('pola_permukiman', 100)->nullable();
+            $table->string('tingkat_kesuburan_tanah', 100)->nullable();
             $table->decimal('ph_tanah_min', 4, 2)->nullable();
             $table->decimal('ph_tanah_maks', 4, 2)->nullable();
-            $table->enum('bentuk_wilayah', ['Datar', 'Bergelombang', 'Berbukit', 'Bergunung'])->nullable();
+            $table->string('bentuk_wilayah', 100)->nullable();
             $table->decimal('kemiringan_min_persen', 5, 2)->nullable();
             $table->decimal('kemiringan_maks_persen', 5, 2)->nullable();
 

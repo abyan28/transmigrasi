@@ -5,9 +5,7 @@ namespace App\Support;
 use App\Enums\Agama;
 use App\Enums\AsalWakilPoktan;
 use App\Enums\JenisKelamin;
-use App\Enums\JenisSaprotan;
 use App\Enums\PendidikanTerakhir;
-use App\Enums\StatusSertifikat;
 use App\Enums\StatusTinggal;
 
 /**
@@ -100,8 +98,6 @@ class SkemaImpor
             'agama' => array_map(fn (Agama $c) => $c->value, Agama::cases()),
             'pendidikan_terakhir' => array_map(fn (PendidikanTerakhir $c) => $c->value, PendidikanTerakhir::cases()),
             'status_tinggal' => array_map(fn (StatusTinggal $c) => $c->value, StatusTinggal::cases()),
-            'status_sertifikat' => array_map(fn (StatusSertifikat $c) => $c->value, StatusSertifikat::cases()),
-            'jenis_saprotan' => array_map(fn (JenisSaprotan $c) => $c->value, JenisSaprotan::cases()),
             'asal_ketua' => array_map(fn (AsalWakilPoktan $c) => $c->value, AsalWakilPoktan::cases()),
             default => [],
         };
@@ -198,9 +194,10 @@ class SkemaImpor
                 ['lintang_usaha', false, '-9.5138', 'Desimal derajat'],
                 ['bujur_usaha', false, '124.9152', 'Desimal derajat'],
                 ['tujuan_pemanfaatan', false, 'JAGUNG', self::T],
-                ['status_sertifikat', true, 'Sudah', 'Nilai baku', ['enum:status_sertifikat']],
+                ['status_sertifikat', true, 'Sudah', 'Nilai baku', ['dp']],
                 ['keterangan', false, '', self::T],
             ],
+            'daftarPilihan' => ['status_sertifikat' => 'StatusSertifikat'],
         ],
         'poktan' => [
             'judul' => 'Kelompok Tani',
@@ -249,7 +246,7 @@ class SkemaImpor
             'teks' => ['kode_saprotan', 'poktan_slug'],
             'kolom' => [
                 ['kode_saprotan', true, 'SAP-2026-001', 'Kode pengadaan unik; ulangi sama pada seluruh baris penerima'],
-                ['jenis_saprotan', true, 'Benih', 'Nilai baku jenis saprotan', ['enum:jenis_saprotan']],
+                ['jenis_saprotan', true, 'Benih', 'Nilai baku jenis saprotan', ['dp']],
                 ['nama', true, 'BENIH JAGUNG HIBRIDA', self::T],
                 ['jumlah_total', true, '250', 'Angka'],
                 ['satuan', true, 'Kilogram', 'Nama satuan terdaftar'],
@@ -263,7 +260,7 @@ class SkemaImpor
                 ['jumlah_distribusi', false, '100', 'Wajib bila poktan_slug diisi'],
                 ['tanggal_serah', false, '2026-01-10', 'Tanggal serah YYYY-MM-DD'],
             ],
-            'daftarPilihan' => ['sumber_dana' => 'SumberDana'],
+            'daftarPilihan' => ['jenis_saprotan' => 'JenisSaprotan', 'sumber_dana' => 'SumberDana'],
         ],
         'komoditas' => [
             'judul' => 'Data Komoditas',

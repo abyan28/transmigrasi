@@ -59,6 +59,8 @@ class UppercaseInput
         'tingkat',
         'jenis',
         'nilai',
+        'label',
+        'kode_perilaku',
         'jenis_fasilitas',
         'tab',
 

@@ -5,18 +5,14 @@ namespace App\Providers;
 use App\Enums\Agama;
 use App\Enums\AksiAuditLog;
 use App\Enums\AsalWakilPoktan;
-use App\Enums\BentukWilayah;
 use App\Enums\CakupanData;
 use App\Enums\HubunganAnggotaKeluarga;
 use App\Enums\JenisDaftarPilihan;
 use App\Enums\JenisKelamin;
-use App\Enums\JenisSaprotan;
 use App\Enums\KegiatanAnggota;
 use App\Enums\PendidikanTerakhir;
-use App\Enums\PolaPermukiman;
 use App\Enums\StatusAnggotaKeluarga;
 use App\Enums\StatusKeaktifanAnggota;
-use App\Enums\TingkatKesuburanTanah;
 use App\Models\AnggotaKeluarga;
 use App\Models\AnggotaPoktan;
 use App\Models\AuditLog;
@@ -77,13 +73,13 @@ class ViewServiceProvider extends ServiceProvider
      */
     private const RUJUKAN_FORM = [
         'pages.alsintan.form' => ['daftarPoktan', 'opsiJenisAlsintan', 'opsiKondisi', 'opsiSumberDana', 'anggotaPerPoktan'],
-        'pages.saprotan.form' => ['daftarPoktan', 'daftarSatuan', 'daftarKomoditas', 'opsiSumberDana'],
+        'pages.saprotan.form' => ['daftarPoktan', 'daftarSatuan', 'daftarKomoditas', 'opsiJenisSaprotan', 'opsiSumberDana'],
         'pages.infrastruktur.form' => ['daftarSp', 'opsiJenisInfrastruktur', 'opsiSumberDana', 'opsiKondisi'],
         'pages.komoditas.form' => ['daftarSatuan', 'sebaran', 'opsiTipeKomoditas'],
         'pages.rumah.form' => ['transmigranTanpaRumah', 'daftarTransmigran', 'daftarSp', 'opsiKondisiRumah', 'opsiStatusHunian'],
         'pages.poktan.form' => ['daftarSp', 'daftarTransmigran', 'kontakTransmigran', 'lahanTransmigran', 'anggotaKeluargaPerKeluarga', 'opsiJabatanAnggota', 'anggotaPoktanPerPoktan'],
         'pages.poktan.form-anggota' => ['daftarTransmigran', 'kontakTransmigran', 'lahanTransmigran', 'opsiJabatanAnggota', 'anggotaKeluargaPerKeluarga'],
-        'pages.lahan.form' => ['daftarTransmigran', 'transmigranTanpaLahan', 'daftarSp'],
+        'pages.lahan.form' => ['daftarTransmigran', 'transmigranTanpaLahan', 'daftarSp', 'opsiStatusSertifikat'],
         'pages.transmigran.form' => ['daftarSp', 'saranPekerjaan', 'opsiDaerahAsal', 'opsiAgama', 'opsiHubunganAnggota', 'opsiKegiatanAnggota', 'opsiPendidikan', 'opsiJenisKelamin'],
         'pages.panen.form' => ['satuanKomoditas', 'simbolSatuan', 'penanamanUntukPanen'],
         'pages.penanaman.form' => ['daftarPoktan', 'daftarKomoditas', 'petaPoktan', 'petaBenih'],
@@ -263,6 +259,8 @@ class ViewServiceProvider extends ServiceProvider
             'opsiJenisInfrastruktur' => self::opsiDaftarPilihan(JenisDaftarPilihan::JenisInfrastruktur),
             'opsiJenisAlsintan' => self::opsiDaftarPilihan(JenisDaftarPilihan::JenisAlsintan),
             'opsiTipeKomoditas' => self::opsiDaftarPilihan(JenisDaftarPilihan::TipeKomoditas),
+            'opsiJenisSaprotan' => self::opsiDaftarPilihan(JenisDaftarPilihan::JenisSaprotan),
+            'opsiStatusSertifikat' => self::opsiDaftarPilihan(JenisDaftarPilihan::StatusSertifikat),
             // Fase 1, 2026-09-05: Eloquent nyata, bukan `DummyData` -- role
             // buatan Admin sebelumnya tak pernah muncul di sini, sehingga
             // akun baru tak dapat ditugaskan ke role selain kelima bawaan.
@@ -363,11 +361,10 @@ class ViewServiceProvider extends ServiceProvider
             'opsiPendidikan' => PendidikanTerakhir::opsi(),
             'opsiJenisKelamin' => JenisKelamin::opsi(),
 
-            // Enum "Keadaan Wilayah" SP (Rombongan C, 2026-08-28), baku dari
-            // format Monografi, bukan data master.
-            'opsiPolaPermukiman' => PolaPermukiman::opsi(),
-            'opsiKesuburanTanah' => TingkatKesuburanTanah::opsi(),
-            'opsiBentukWilayah' => BentukWilayah::opsi(),
+            // Klasifikasi keadaan wilayah dikelola melalui daftar pilihan.
+            'opsiPolaPermukiman' => self::opsiDaftarPilihan(JenisDaftarPilihan::PolaPermukiman),
+            'opsiKesuburanTanah' => self::opsiDaftarPilihan(JenisDaftarPilihan::TingkatKesuburanTanah),
+            'opsiBentukWilayah' => self::opsiDaftarPilihan(JenisDaftarPilihan::BentukWilayah),
 
             // Anggota keluarga dikelompokkan per keluarga, agar pilihan wakil
             // maupun ketua poktan menyempit begitu keluarganya dipilih
@@ -496,7 +493,7 @@ class ViewServiceProvider extends ServiceProvider
             ->when($hanyaAktif, fn ($q) => $q->where('is_aktif', true))
             ->orderBy('urutan')
             ->orderBy('id_daftar_pilihan')
-            ->pluck('nilai', 'nilai')
+            ->pluck('label', 'nilai')
             ->all();
     }
 
@@ -516,6 +513,7 @@ class ViewServiceProvider extends ServiceProvider
                 'jenis' => $pilihan->jenis->value,
                 'jenis_label' => $pilihan->jenis->label(),
                 'nilai' => $pilihan->nilai,
+                'label' => $pilihan->label,
                 'urutan' => $pilihan->urutan,
                 'nilai_skor' => $pilihan->nilai_skor === null ? null : (float) $pilihan->nilai_skor,
                 'bidang_id' => $pilihan->bidang_id,
@@ -786,7 +784,7 @@ class ViewServiceProvider extends ServiceProvider
         // Task 7.3: saprotan_distribusi ber-Eloquent. Hanya baris berjenis
         // Benih yang sisanya masih ada (dihitung lewat penanaman ber-Eloquent).
         return SaprotanDistribusi::query()
-            ->whereHas('saprotan', fn ($q) => $q->where('jenis', JenisSaprotan::Benih->value))
+            ->whereHas('saprotan', fn ($q) => $q->where('jenis', DaftarPilihan::nilaiPerilaku(JenisDaftarPilihan::JenisSaprotan, 'benih')))
             ->with(['saprotan.satuan', 'penanaman'])
             ->orderBy('id_saprotan_distribusi')
             ->get()

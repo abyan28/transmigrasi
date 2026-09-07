@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Enums\JenisSaprotan;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -10,7 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Sarana produksi pertanian -- induk / pengadaan. `komoditas_id` & `varietas`
- * wajib hanya bila `jenis = Benih` (ditegakkan aplikasi). `tahun_pengadaan` =
+ * wajib bila jenisnya berkode perilaku `benih` (ditegakkan aplikasi). `tahun_pengadaan` =
  * tahun anggaran (sumbu laporan panen). `jadwal_tanam` = rencana YYYY-MM.
  * Penerima selalu poktan.
  */
@@ -31,7 +30,6 @@ class Saprotan extends Model
     protected function casts(): array
     {
         return [
-            'jenis' => JenisSaprotan::class,
             'jumlah_total' => 'decimal:3',
         ];
     }

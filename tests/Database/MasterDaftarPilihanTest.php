@@ -24,9 +24,9 @@ beforeEach(function () {
     $this->seed(DaftarPilihanSeeder::class);
 });
 
-it('menanam seluruh 14 jenis daftar pilihan', function () {
+it('menanam seluruh jenis daftar pilihan', function () {
     expect(DaftarPilihan::distinct('jenis')->count('jenis'))->toBe(count(JenisDaftarPilihan::cases()))
-        ->and(DaftarPilihan::count())->toBe(76);
+        ->and(DaftarPilihan::count())->toBe(count(DummyData::daftarPilihan()));
 });
 
 it('mempertahankan id yang sudah ditunjuk penilaian kondisi SP', function () {

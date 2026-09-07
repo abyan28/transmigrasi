@@ -5,7 +5,6 @@ namespace App\Models;
 use App\Enums\Agama;
 use App\Enums\JenisKelamin;
 use App\Enums\PendidikanTerakhir;
-use App\Enums\StatusSertifikat;
 use App\Enums\StatusTinggal;
 use App\Models\Scopes\CakupanDataSp;
 use Illuminate\Database\Eloquent\Attributes\ScopedBy;
@@ -19,7 +18,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 /**
  * Satu baris = satu kepala keluarga / KK. `usia` & `jumlah_anggota_keluarga`
  * TIDAK disimpan (diturunkan). Status keanggotaan Poktan diturunkan dari
- * `anggota_poktan` Aktif. `status_sertifikat` (SHM) melekat di KK,
+ * `anggota_poktan` Aktif. `status_sertifikat` (kode master SHM) melekat di KK,
  * bukan per bidang lahan (`rules.md` 7.6).
  *
  * Pengenal publik URL: `uuid` -- data pribadi tak boleh terekspos lewat id urut.
@@ -50,7 +49,6 @@ class Transmigran extends Model
             'tanggal_lahir' => 'date',
             'pendapatan_per_bulan' => 'decimal:2',
             'status_tinggal' => StatusTinggal::class,
-            'status_sertifikat' => StatusSertifikat::class,
         ];
     }
 

@@ -2,7 +2,8 @@
 
 namespace App\Support;
 
-use App\Enums\JenisSaprotan;
+use App\Enums\JenisDaftarPilihan;
+use App\Models\DaftarPilihan;
 use App\Models\Saprotan;
 use App\Models\SaprotanDistribusi;
 
@@ -38,7 +39,7 @@ class PenyajianSaprotan
      */
     public static function baris(Saprotan $s): array
     {
-        $benih = $s->jenis === JenisSaprotan::Benih;
+        $benih = DaftarPilihan::memilikiPerilaku(JenisDaftarPilihan::JenisSaprotan, $s->jenis, 'benih');
 
         $distribusi = $s->distribusi
             ->sortBy('id_saprotan_distribusi')
@@ -66,7 +67,8 @@ class PenyajianSaprotan
         return [
             'id_saprotan' => $s->id_saprotan,
             'kode_saprotan' => $s->kode_saprotan,
-            'jenis' => $s->jenis?->value,
+            'jenis' => $s->jenis,
+            'jenis_label' => DaftarPilihan::labelUntuk(JenisDaftarPilihan::JenisSaprotan, $s->jenis),
             'nama' => $s->nama,
             'komoditas_id' => $s->komoditas_id,
             'komoditas' => $s->komoditas?->nama,

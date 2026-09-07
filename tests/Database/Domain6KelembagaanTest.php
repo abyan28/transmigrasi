@@ -11,7 +11,6 @@
  */
 
 use App\Enums\AsalWakilPoktan;
-use App\Enums\JenisSaprotan;
 use App\Enums\StatusKeaktifanAnggota;
 use App\Models\Alsintan;
 use App\Models\AlsintanDistribusi;
@@ -131,13 +130,13 @@ it('menautkan saprotan benih ke komoditas + satuan, distribusi ke poktan', funct
     $saprotan = Saprotan::create([
         'kode_saprotan' => 'SAP-UNIT-001',
         'satuan_id' => $satuan->id_satuan, 'komoditas_id' => $komoditas->id_komoditas,
-        'jenis' => JenisSaprotan::Benih->value, 'nama' => 'Benih Jagung Hibrida',
+        'jenis' => 'Benih', 'nama' => 'Benih Jagung Hibrida',
         'jumlah_total' => '150.000', 'varietas' => 'NK212', 'jadwal_tanam' => '2026-11',
         'tahun_pengadaan' => 2026,
     ]);
     SaprotanDistribusi::create(['saprotan_id' => $saprotan->id_saprotan, 'poktan_id' => $poktan->id_poktan, 'jumlah' => '75.500']);
 
-    expect($saprotan->jenis)->toBe(JenisSaprotan::Benih)
+    expect($saprotan->jenis)->toBe('Benih')
         ->and($saprotan->jumlah_total)->toBe('150.000')
         ->and($saprotan->komoditas->id_komoditas)->toBe($komoditas->id_komoditas)
         ->and($saprotan->distribusi->first()->jumlah)->toBe('75.500');

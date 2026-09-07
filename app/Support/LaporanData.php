@@ -3,10 +3,12 @@
 namespace App\Support;
 
 use App\Enums\AlasanPergantianKK;
+use App\Enums\JenisDaftarPilihan;
 use App\Enums\JenisKelamin;
 use App\Enums\StatusAnggotaKeluarga;
 use App\Models\Alsintan;
 use App\Models\AnggotaKeluarga;
+use App\Models\DaftarPilihan;
 use App\Models\FasilitasSp;
 use App\Models\Infrastruktur;
 use App\Models\InventarisSp;
@@ -762,7 +764,7 @@ class LaporanData
                 'jenis_kelamin' => $t->jenis_kelamin?->value,
                 'tanggal_lahir' => $t->tanggal_lahir,
                 'agama' => $t->agama?->value,
-                'status_sertifikat' => $t->status_sertifikat?->value,
+                'status_sertifikat' => DaftarPilihan::labelUntuk(JenisDaftarPilihan::StatusSertifikat, $t->status_sertifikat),
             ])->all();
         $idTransmigran = array_column($transmigranSp, 'id_transmigran');
         $anggotaSp = AnggotaKeluarga::query()
@@ -1014,8 +1016,9 @@ class LaporanData
         // melainkan belum pernah ditanyakan petugas.
         $sertGrup = array_count_values(array_column($transmigranSp, 'status_sertifikat'));
         $barisDok = [];
-        foreach (['Sudah', 'Belum', 'Belum Didata'] as $s) {
-            $barisDok[] = [$s, $sertGrup[$s] ?? 0];
+        $statusSertifikat = DaftarPilihan::opsi(JenisDaftarPilihan::StatusSertifikat, false);
+        foreach ($statusSertifikat as $kode => $label) {
+            $barisDok[] = [$label, $sertGrup[$label] ?? $sertGrup[$kode] ?? 0];
         }
 
         $panenGrup = [];
@@ -1399,8 +1402,7 @@ class LaporanData
             ->pluck('nama_kepala_keluarga', 'id_transmigran');
 
         $sertifikatPerKk = Transmigran::query()
-            ->pluck('status_sertifikat', 'id_transmigran')
-            ->map(fn ($s) => $s?->value);
+            ->pluck('status_sertifikat', 'id_transmigran');
 
         $transmigran = Transmigran::query()
             ->withCount(['anggotaKeluarga as anggota_aktif_count' => fn ($q) => $q->where('status', StatusAnggotaKeluarga::Aktif->value)])
@@ -1424,7 +1426,7 @@ class LaporanData
                 'tahun_kedatangan' => $t->tahun_kedatangan,
                 'status_tinggal' => $t->status_tinggal?->value,
                 'status_anggota_poktan' => $t->status_anggota_poktan,
-                'status_sertifikat' => $t->status_sertifikat?->value,
+                'status_sertifikat' => DaftarPilihan::labelUntuk(JenisDaftarPilihan::StatusSertifikat, $t->status_sertifikat),
                 'telepon' => $t->telepon,
                 'satuan_permukiman' => $namaSp[$t->satuan_permukiman_id] ?? '-',
                 'satuan_permukiman_id' => $t->satuan_permukiman_id,

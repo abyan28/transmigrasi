@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Enums\AsalWakilPoktan;
 use App\Enums\JenisDaftarPilihan;
-use App\Enums\JenisSaprotan;
 use App\Enums\StatusKeaktifanAnggota;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
 use App\Models\AlsintanDistribusi;
@@ -415,12 +414,12 @@ class PoktanController extends Controller
             ->orderBy('id_saprotan_distribusi')
             ->get()
             ->map(function (SaprotanDistribusi $d) {
-                $benih = $d->saprotan?->jenis === JenisSaprotan::Benih;
+                $benih = DaftarPilihan::memilikiPerilaku(JenisDaftarPilihan::JenisSaprotan, $d->saprotan?->jenis, 'benih');
                 $jumlah = (float) $d->jumlah;
 
                 return [
                     'saprotan_id' => $d->saprotan_id,
-                    'jenis' => $d->saprotan?->jenis?->value,
+                    'jenis' => $d->saprotan?->jenis,
                     'nama' => $d->saprotan?->nama,
                     'jumlah' => $jumlah,
                     'satuan' => $d->saprotan?->satuan?->nama,

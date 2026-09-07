@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\JenisSaprotan;
+use App\Enums\JenisDaftarPilihan;
 use App\Enums\StatusPanen;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
+use App\Models\DaftarPilihan;
 use App\Models\HasilPanen;
 use App\Models\Penanaman;
 use App\Models\Saprotan;
@@ -304,7 +305,7 @@ class PenanamanController extends Controller
 
         $galat = [];
 
-        if ($distribusi->saprotan->jenis !== JenisSaprotan::Benih) {
+        if (! DaftarPilihan::memilikiPerilaku(JenisDaftarPilihan::JenisSaprotan, $distribusi->saprotan->jenis, 'benih')) {
             $galat['saprotan_distribusi_id'] = 'Penyaluran yang dipilih bukan benih.';
         } elseif (! $distribusi->saprotan->komoditas()->exists()) {
             $galat['saprotan_distribusi_id'] = 'Komoditas benih tidak tersedia.';

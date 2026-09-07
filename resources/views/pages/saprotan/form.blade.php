@@ -13,8 +13,8 @@
     Nama kolom mengikuti agents/data-dictionary.md bagian 8.4.
 --}}
 @php
-    use App\Enums\JenisSaprotan;
-    use App\Enums\SumberDana;
+    use App\Enums\JenisDaftarPilihan;
+    use App\Models\DaftarPilihan;
 
     $awalan = $awalan ?? 'tambah';
     $data = $data ?? [];
@@ -23,8 +23,7 @@
     $kelasLabel = 'mb-1.5 block text-theme-sm font-medium text-gray-700 dark:text-gray-400';
     $kelasBagian = 'text-theme-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400';
 
-    // `$daftarPoktan`, `$daftarSatuan`, `$daftarKomoditas`, dan
-    // `$opsiSumberDana` disuplai ViewServiceProvider.
+    $nilaiBenih = DaftarPilihan::nilaiPerilaku(JenisDaftarPilihan::JenisSaprotan, 'benih');
 
     $petaPoktan = [];
     foreach ($daftarPoktan as $p) {
@@ -92,7 +91,7 @@
         namaPoktan(pid) { return this.petaPoktan[pid]?.nama ?? pid; },
         spUntuk(pid) { return this.petaPoktan[pid]?.sp ?? '-'; },
 
-        get benih() { return this.jenis === @js(JenisSaprotan::Benih->value); },
+        get benih() { return this.jenis === @js($nilaiBenih); },
         get jumlahTersalur() {
             return this.poktanTerpilih.reduce((t, pid) => t + Number(this.distribusi[pid]?.jumlah || 0), 0);
         },
@@ -117,10 +116,8 @@
                 <label for="{{ $awalan }}_jenis" class="{{ $kelasLabel }}">Jenis Saprotan<span class="text-error-500">*</span></label>
                 <select id="{{ $awalan }}_jenis" name="jenis" required x-model="jenis" class="{{ $kelasKontrol }}">
                     <option value="">Pilih jenis</option>
-                    @foreach (JenisSaprotan::cases() as $j)
-                        <option value="{{ $j->value }}" @selected(old('jenis', $data['jenis'] ?? '') === $j->value)>
-                            {{ $j->value }}
-                        </option>
+                    @foreach ($opsiJenisSaprotan as $nilai => $label)
+                        <option value="{{ $nilai }}" @selected(old('jenis', $data['jenis'] ?? '') === $nilai)>{{ $label }}</option>
                     @endforeach
                 </select>
             </div>

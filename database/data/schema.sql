@@ -319,11 +319,11 @@ CREATE TABLE `satuan_permukiman` (
   `nomor_sk_pencadangan`     VARCHAR(100) NULL,
   `tanggal_sk_pencadangan`   DATE NULL,
   -- Keadaan Wilayah -- pola permukiman, tanah, topografi
-  `pola_permukiman`          ENUM('Konsentris','Papan Catur','Linear','Menyebar') NULL,
-  `tingkat_kesuburan_tanah`  ENUM('Subur','Sedang','Kurang Subur') NULL,
+  `pola_permukiman`          VARCHAR(100) NULL,
+  `tingkat_kesuburan_tanah`  VARCHAR(100) NULL,
   `ph_tanah_min`             DECIMAL(4,2) NULL,
   `ph_tanah_maks`            DECIMAL(4,2) NULL,
-  `bentuk_wilayah`           ENUM('Datar','Bergelombang','Berbukit','Bergunung') NULL,
+  `bentuk_wilayah`           VARCHAR(100) NULL,
   `kemiringan_min_persen`    DECIMAL(5,2) NULL,
   `kemiringan_maks_persen`   DECIMAL(5,2) NULL,
   -- Keadaan Wilayah -- iklim
@@ -531,8 +531,10 @@ CREATE TABLE `komoditas` (
 -- dipakai kode mana pun. Jangan ditambahkan kembali tanpa mencabut rules.md 7.6.
 CREATE TABLE `daftar_pilihan` (
   `id_daftar_pilihan` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `jenis`        ENUM('sumber_dana','status_penyerahan','kondisi','kondisi_rumah','status_hunian','tipe_komoditas','prioritas_pengaduan','jabatan_anggota_poktan','jenis_infrastruktur','jenis_fasilitas','bidang_pengaduan','kategori_pengaduan','jenis_alsintan','jenis_inventaris') NOT NULL,
+  `jenis`        ENUM('sumber_dana','status_penyerahan','kondisi','kondisi_rumah','status_hunian','tipe_komoditas','prioritas_pengaduan','jabatan_anggota_poktan','jenis_infrastruktur','jenis_fasilitas','bidang_pengaduan','kategori_pengaduan','jenis_alsintan','jenis_inventaris','jenis_saprotan','status_sertifikat','pola_permukiman','tingkat_kesuburan_tanah','bentuk_wilayah') NOT NULL,
   `nilai`        VARCHAR(100) NOT NULL,
+  `label`        VARCHAR(100) NOT NULL,                 -- teks tampil yang dapat disunting
+  `kode_perilaku` VARCHAR(50) NULL,
   `urutan`       SMALLINT UNSIGNED NOT NULL DEFAULT 0,
   `nilai_skor`   DECIMAL(3,2) NULL,                  -- hanya jenis 'kondisi'
   `bidang_id`    BIGINT UNSIGNED NULL,               -- hanya jenis 'kategori_pengaduan'
@@ -959,7 +961,7 @@ CREATE TABLE `transmigran` (
   -- 'Belum Didata' memisahkan keluarga yang dipastikan belum bersertifikat dari
   -- yang belum pernah ditanyakan; tanpa itu keduanya terhitung sama dan laporan
   -- ke dinas menyebut angka yang keliru tanpa memerahkan apa pun.
-  `status_sertifikat`          ENUM('Sudah','Belum','Belum Didata') NOT NULL DEFAULT 'Belum Didata',
+  `status_sertifikat`          VARCHAR(100) NOT NULL DEFAULT 'Belum Didata',
   `telepon`                    VARCHAR(20) NULL,
   `keterangan`                 TEXT NULL,
   `created_at`                 TIMESTAMP NULL DEFAULT NULL,
@@ -1280,7 +1282,7 @@ CREATE TABLE `saprotan` (
   `kode_saprotan`    VARCHAR(50) NOT NULL,
   `satuan_id`        BIGINT UNSIGNED NOT NULL,          -- satuan jumlah
   `komoditas_id`     BIGINT UNSIGNED NULL,              -- wajib bila jenis = Benih
-  `jenis`            ENUM('Benih','Pupuk','Pestisida','Mulsa','Lainnya') NOT NULL,
+  `jenis`            VARCHAR(100) NOT NULL,
   `nama`             VARCHAR(255) NOT NULL,
   `jumlah_total`     DECIMAL(12,3) NOT NULL,
   `varietas`         VARCHAR(120) NULL,                 -- wajib bila jenis = Benih

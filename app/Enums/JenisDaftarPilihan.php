@@ -43,6 +43,11 @@ enum JenisDaftarPilihan: string
     case KategoriPengaduan = 'kategori_pengaduan';
     case JenisAlsintan = 'jenis_alsintan';
     case JenisInventaris = 'jenis_inventaris';
+    case JenisSaprotan = 'jenis_saprotan';
+    case StatusSertifikat = 'status_sertifikat';
+    case PolaPermukiman = 'pola_permukiman';
+    case TingkatKesuburanTanah = 'tingkat_kesuburan_tanah';
+    case BentukWilayah = 'bentuk_wilayah';
 
     /**
      * Teks yang tampil sebagai judul tab pada halaman data master.
@@ -66,6 +71,11 @@ enum JenisDaftarPilihan: string
             self::KategoriPengaduan => 'Kategori Pengaduan',
             self::JenisAlsintan => 'Jenis Alsintan',
             self::JenisInventaris => 'Jenis Inventaris',
+            self::JenisSaprotan => 'Jenis Saprotan',
+            self::StatusSertifikat => 'Status Sertifikat',
+            self::PolaPermukiman => 'Pola Permukiman',
+            self::TingkatKesuburanTanah => 'Tingkat Kesuburan Tanah',
+            self::BentukWilayah => 'Bentuk Wilayah',
         };
     }
 
@@ -97,13 +107,19 @@ enum JenisDaftarPilihan: string
 
             self::KondisiRumah,
             self::StatusHunian,
+            self::StatusSertifikat => KelompokDaftarPilihan::RumahLahan,
 
             self::TipeKomoditas,
-            self::JabatanAnggotaPoktan => KelompokDaftarPilihan::Pertanian,
+            self::JabatanAnggotaPoktan,
+            self::JenisSaprotan => KelompokDaftarPilihan::Pertanian,
 
             self::KategoriPengaduan,
             self::BidangPengaduan,
             self::PrioritasPengaduan => KelompokDaftarPilihan::Pengaduan,
+
+            self::PolaPermukiman,
+            self::TingkatKesuburanTanah,
+            self::BentukWilayah => KelompokDaftarPilihan::KlasifikasiSp,
         };
     }
 
@@ -203,5 +219,24 @@ enum JenisDaftarPilihan: string
     public function berbidang(): bool
     {
         return $this === self::KategoriPengaduan;
+    }
+
+    /** @return array<string, string> */
+    public function opsiPerilaku(): array
+    {
+        return match ($this) {
+            self::JenisSaprotan => ['umum' => 'Umum', 'benih' => 'Benih'],
+            self::StatusSertifikat => [
+                'sudah' => 'Sudah bersertifikat',
+                'belum' => 'Belum bersertifikat',
+                'tidak_diketahui' => 'Belum didata',
+            ],
+            default => [],
+        };
+    }
+
+    public function perilakuWajib(): bool
+    {
+        return $this === self::StatusSertifikat;
     }
 }

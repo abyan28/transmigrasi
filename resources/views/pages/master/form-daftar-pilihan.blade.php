@@ -41,6 +41,8 @@
         array_filter(JenisDaftarPilihan::cases(), fn (JenisDaftarPilihan $j) => $j->berbidang())
     ));
 
+    $opsiPerilaku = $jenis->opsiPerilaku();
+
     // `$daftarBidang` disuplai ViewServiceProvider.
 @endphp
 
@@ -81,6 +83,15 @@
         </div>
 
         <div>
+            <label for="{{ $awalan }}_label_daftar_pilihan" class="{{ $kelasLabel }}">
+                Label
+            </label>
+            <input type="text" id="{{ $awalan }}_label_daftar_pilihan" name="label" maxlength="100"
+                value="{{ old('label', $data['label'] ?? $data['nilai'] ?? '') }}"
+                placeholder="Teks yang tampil" class="{{ $kelasKontrol }}" />
+        </div>
+
+        <div>
             <label for="{{ $awalan }}_urutan_daftar_pilihan" class="{{ $kelasLabel }}">
                 Urutan<span class="text-error-500">*</span>
             </label>
@@ -95,10 +106,36 @@
             </p>
         </div>
 
+        @if ($opsiPerilaku !== [])
+            <div>
+                <label for="{{ $awalan }}_kode_perilaku" class="{{ $kelasLabel }}">
+                    Perilaku Sistem
+                    @if ($jenis->perilakuWajib())
+                        <span class="text-error-500">*</span>
+                    @endif
+                </label>
+                <select id="{{ $awalan }}_kode_perilaku" name="kode_perilaku" @required($jenis->perilakuWajib())
+                    @disabled($awalan !== 'tambah') class="{{ $kelasKontrol }}">
+                    <option value="">Tanpa perilaku khusus</option>
+                    @foreach ($opsiPerilaku as $kode => $label)
+                        <option value="{{ $kode }}"
+                            @selected(old('kode_perilaku', $data['kode_perilaku'] ?? '') === $kode)>{{ $label }}</option>
+                    @endforeach
+                </select>
+                @if ($awalan !== 'tambah')
+                    <input type="hidden" name="kode_perilaku" value="{{ $data['kode_perilaku'] ?? '' }}" />
+                @endif
+                <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
+                    Perilaku dikunci setelah tersimpan agar perubahan label tidak mengubah aturan bisnis.
+                </p>
+            </div>
+        @endif
+
         {{-- Skor hanya untuk jenis berskor. Wajib bila berlaku. --}}
         <div x-show="jenisBerskor" x-cloak>
             <label for="{{ $awalan }}_nilai_skor" class="{{ $kelasLabel }}">
-                Skor Penilaian<span class="text-error-500">*</span>
+                Skor Penilaian
+                <span x-show="jenisBerskor" class="text-error-500">wajib</span>
             </label>
             <input type="number" id="{{ $awalan }}_nilai_skor" name="nilai_skor" min="0" max="1" step="0.01"
                 value="{{ old('nilai_skor', $data['nilai_skor'] ?? '') }}"

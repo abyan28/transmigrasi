@@ -11,14 +11,15 @@
 
 @section('content')
     @php
-        use App\Enums\JenisSaprotan;
+        use App\Enums\JenisDaftarPilihan;
+        use App\Models\DaftarPilihan;
 
         $bolehUbah = true;
-        $benih = $data['jenis'] === JenisSaprotan::Benih->value;
+        $benih = DaftarPilihan::memilikiPerilaku(JenisDaftarPilihan::JenisSaprotan, $data['jenis'], 'benih');
     @endphp
 
     <x-sim.page-header :judul="$data['nama']"
-        :keterangan="$data['jenis'] . ($data['komoditas'] ? ' ' . $data['komoditas'] : '') . ', diadakan tahun ' . $data['tahun_pengadaan'] . '.'"
+        :keterangan="$data['jenis_label'] . ($data['komoditas'] ? ' ' . $data['komoditas'] : '') . ', diadakan tahun ' . $data['tahun_pengadaan'] . '.'"
         :remah="\App\Helpers\RemahHelper::untuk('/saprotan', $data['nama'])">
         <x-slot:aksi>
             @if ($bolehUbah)
@@ -47,7 +48,7 @@
                     </div>
                     <div class="flex justify-between gap-3">
                         <dt class="text-gray-500 dark:text-gray-400">Jenis</dt>
-                        <dd class="text-right font-medium text-gray-800 dark:text-white/90">{{ $data['jenis'] }}</dd>
+                        <dd class="text-right font-medium text-gray-800 dark:text-white/90">{{ $data['jenis_label'] }}</dd>
                     </div>
                     @if (! empty($data['komoditas']))
                         <div class="flex justify-between gap-3">

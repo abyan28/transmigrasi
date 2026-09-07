@@ -27,6 +27,33 @@ it('menyediakan seluruh jenis daftar pilihan pada data contoh', function () {
     }
 });
 
+it('menyediakan kandidat P1 dan P2 sebagai master berkode stabil', function () {
+    foreach ([
+        JenisDaftarPilihan::JenisSaprotan,
+        JenisDaftarPilihan::StatusSertifikat,
+        JenisDaftarPilihan::PolaPermukiman,
+        JenisDaftarPilihan::TingkatKesuburanTanah,
+        JenisDaftarPilihan::BentukWilayah,
+    ] as $jenis) {
+        expect(DummyData::daftarPilihan($jenis))->not->toBeEmpty();
+    }
+
+    $benih = collect(DummyData::daftarPilihan(JenisDaftarPilihan::JenisSaprotan))->firstWhere('nilai', 'Benih');
+    $belumDidata = collect(DummyData::daftarPilihan(JenisDaftarPilihan::StatusSertifikat))->firstWhere('nilai', 'Belum Didata');
+
+    expect($benih['kode_perilaku'])->toBe('benih')
+        ->and($belumDidata['kode_perilaku'])->toBe('tidak_diketahui');
+});
+
+it('memisahkan kode nilai dari label yang dapat diubah', function () {
+    $pilihan = \App\Models\DaftarPilihan::where('jenis', JenisDaftarPilihan::SumberDana->value)->firstOrFail();
+    $kode = $pilihan->nilai;
+    $pilihan->update(['label' => 'Label Baru']);
+
+    expect($pilihan->fresh()->nilai)->toBe($kode)
+        ->and(\App\Models\DaftarPilihan::opsi(JenisDaftarPilihan::SumberDana)[$kode])->toBe('Label Baru');
+});
+
 it('menyediakan jenis alsintan sebagai data master yang dapat disunting admin', function () {
     // Putaran 7: alsintan sebelumnya tidak punya `jenis` sama sekali.
     // Dideklarasikan paling akhir supaya id `jenis_infrastruktur` /

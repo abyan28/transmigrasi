@@ -7,9 +7,6 @@ use App\Enums\AsalWakilPoktan;
 use App\Enums\CakupanData;
 use App\Enums\HubunganAnggotaKeluarga;
 use App\Enums\JenisDaftarPilihan;
-use App\Enums\JenisInfrastruktur;
-use App\Enums\JenisSaprotan;
-use App\Enums\KategoriPengaduan;
 use App\Enums\Kondisi;
 use App\Enums\KondisiRumah;
 use App\Enums\PrioritasPengaduan;
@@ -2349,7 +2346,7 @@ class DummyData
                 'sumber_laporan' => SumberLaporan::Publik->value,
                 'satuan_permukiman' => 'SP Kapitan Meo',
                 'satuan_permukiman_id' => 1,
-                'kategori' => KategoriPengaduan::Infrastruktur->value,
+                'kategori' => 'Infrastruktur',
                 /*
                  * Kategori Infrastruktur bersifat netral, sehingga bidang ini
                  * BUKAN nilai turunan melainkan hasil penetapan petugas saat
@@ -2378,7 +2375,7 @@ class DummyData
                 'sumber_laporan' => SumberLaporan::Publik->value,
                 'satuan_permukiman' => 'SP Kapitan Meo',
                 'satuan_permukiman_id' => 1,
-                'kategori' => KategoriPengaduan::Rumah->value,
+                'kategori' => 'Rumah',
                 'bidang' => 'Ketransmigrasian',
                 'judul' => 'Atap rumah bocor',
                 'deskripsi' => 'Atap bagian belakang bocor cukup parah ketika hujan deras.',
@@ -2394,7 +2391,7 @@ class DummyData
                 'sumber_laporan' => SumberLaporan::Petugas->value,
                 'satuan_permukiman' => 'SP Tniumanu',
                 'satuan_permukiman_id' => 2,
-                'kategori' => KategoriPengaduan::Alsintan->value,
+                'kategori' => 'Alsintan',
                 'bidang' => 'Pertanian',
                 'judul' => 'Traktor bantuan tidak dapat dinyalakan',
                 'deskripsi' => 'Traktor roda dua bantuan tahun lalu tidak dapat dinyalakan sejak dua pekan terakhir.',
@@ -2412,7 +2409,7 @@ class DummyData
                 'sumber_laporan' => SumberLaporan::Publik->value,
                 'satuan_permukiman' => 'SP Tualaran',
                 'satuan_permukiman_id' => 5,
-                'kategori' => KategoriPengaduan::Bencana->value,
+                'kategori' => 'Bencana',
                 /*
                  * Sengaja NULL. Kategori Bencana tidak dapat disimpulkan
                  * bidangnya, dan laporan ini masih berstatus Menunggu Diterima
@@ -2437,7 +2434,7 @@ class DummyData
                 'sumber_laporan' => SumberLaporan::Publik->value,
                 'satuan_permukiman' => 'SP Weain',
                 'satuan_permukiman_id' => 6,
-                'kategori' => KategoriPengaduan::ProduksiPanen->value,
+                'kategori' => 'Produksi Panen',
                 'bidang' => 'Pertanian',
                 'judul' => 'Serangan hama pada tanaman jagung',
                 'deskripsi' => 'Sebagian tanaman jagung terserang hama ulat, mohon pendampingan penyuluh.',
@@ -2460,7 +2457,7 @@ class DummyData
                 'sumber_laporan' => SumberLaporan::Petugas->value,
                 'satuan_permukiman' => 'SP Kapitan Meo',
                 'satuan_permukiman_id' => 1,
-                'kategori' => KategoriPengaduan::InventarisSp->value,
+                'kategori' => 'Inventaris SP',
                 'bidang' => 'Ketransmigrasian',
                 'judul' => 'Meja kantor balai pertemuan rusak',
                 'deskripsi' => 'Salah satu meja di ruang kepala patah kakinya sehingga tidak dapat dipakai.',
@@ -2476,7 +2473,7 @@ class DummyData
                 'sumber_laporan' => SumberLaporan::Publik->value,
                 'satuan_permukiman' => 'SP Tniumanu',
                 'satuan_permukiman_id' => 2,
-                'kategori' => KategoriPengaduan::FasilitasSp->value,
+                'kategori' => 'Fasilitas SP',
                 'bidang' => 'Ketransmigrasian',
                 'judul' => 'Plafon ruang kelas sekolah dasar bocor',
                 'deskripsi' => 'Plafon dua ruang kelas bocor sehingga kegiatan belajar terganggu saat hujan.',
@@ -2492,7 +2489,7 @@ class DummyData
                 'sumber_laporan' => SumberLaporan::Publik->value,
                 'satuan_permukiman' => 'SP Harekakae',
                 'satuan_permukiman_id' => 3,
-                'kategori' => KategoriPengaduan::InventarisSp->value,
+                'kategori' => 'Inventaris SP',
                 'bidang' => 'Ketransmigrasian',
                 'judul' => 'Mesin pompa balai desa tidak berfungsi',
                 'deskripsi' => 'Mesin pompa di balai desa mati total, warga tidak dapat mengambil air.',
@@ -2519,7 +2516,7 @@ class DummyData
                 'sumber_laporan' => SumberLaporan::Publik->value,
                 'satuan_permukiman' => 'SP Kapitan Meo',
                 'satuan_permukiman_id' => 1,
-                'kategori' => KategoriPengaduan::KelompokTani->value,
+                'kategori' => 'Kelompok Tani',
                 'bidang' => 'Pertanian',
                 'judul' => 'Pembagian bantuan kelompok tani tidak merata',
                 'deskripsi' => 'Sebagian anggota POKTAN MEKAR JAYA belum menerima pembagian bantuan, mohon ditinjau pengelolaannya.',
@@ -2721,7 +2718,7 @@ class DummyData
             [
                 'id_infrastruktur' => 1,
                 'nama' => 'SALURAN IRIGASI BLOK A',
-                'jenis' => JenisInfrastruktur::Irigasi->value,
+                'jenis' => 'Irigasi',
                 'satuan_permukiman' => 'SP Kapitan Meo',
                 'satuan_permukiman_id' => 1,
                 'tahun_perolehan' => 2016,
@@ -2736,7 +2733,7 @@ class DummyData
             [
                 'id_infrastruktur' => 2,
                 'nama' => 'SUMUR BOR TENGAH',
-                'jenis' => JenisInfrastruktur::Air->value,
+                'jenis' => 'Air',
                 'satuan_permukiman' => 'SP Kapitan Meo',
                 'satuan_permukiman_id' => 1,
                 'tahun_perolehan' => 2017,
@@ -2747,7 +2744,7 @@ class DummyData
             [
                 'id_infrastruktur' => 3,
                 'nama' => 'JALAN PRODUKSI UTARA',
-                'jenis' => JenisInfrastruktur::JalanProduksi->value,
+                'jenis' => 'Jalan Produksi',
                 'satuan_permukiman' => 'SP Tniumanu',
                 'satuan_permukiman_id' => 2,
                 'tahun_perolehan' => 2018,
@@ -2758,7 +2755,7 @@ class DummyData
             [
                 'id_infrastruktur' => 4,
                 'nama' => 'GUDANG PASCAPANEN',
-                'jenis' => JenisInfrastruktur::Gudang->value,
+                'jenis' => 'Gudang',
                 'satuan_permukiman' => 'SP Harekakae',
                 'satuan_permukiman_id' => 3,
                 'tahun_perolehan' => 2019,
@@ -2780,52 +2777,52 @@ class DummyData
              */
 
             // SP Kapitan Meo
-            ['id_infrastruktur' => 5, 'nama' => 'JARINGAN LISTRIK PLN', 'jenis' => JenisInfrastruktur::Listrik->value, 'satuan_permukiman' => 'SP Kapitan Meo', 'satuan_permukiman_id' => 1, 'tahun_perolehan' => 2017, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Melayani 218 KK'],
-            ['id_infrastruktur' => 6, 'nama' => 'JALAN MASUK KAWASAN', 'jenis' => JenisInfrastruktur::JalanPenghubung->value, 'satuan_permukiman' => 'SP Kapitan Meo', 'satuan_permukiman_id' => 1, 'tahun_perolehan' => 2016, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Panjang 4,2 km, beraspal'],
-            ['id_infrastruktur' => 7, 'nama' => 'MENARA TELEKOMUNIKASI', 'jenis' => JenisInfrastruktur::Telekomunikasi->value, 'satuan_permukiman' => 'SP Kapitan Meo', 'satuan_permukiman_id' => 1, 'tahun_perolehan' => 2020, 'sumber_dana' => 'APBD Provinsi', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Jangkauan 3 km'],
-            ['id_infrastruktur' => 8, 'nama' => 'SANITASI KOMUNAL', 'jenis' => JenisInfrastruktur::Sanitasi->value, 'satuan_permukiman' => 'SP Kapitan Meo', 'satuan_permukiman_id' => 1, 'tahun_perolehan' => 2018, 'sumber_dana' => 'APBD Kabupaten', 'kondisi' => Kondisi::RusakRingan->value, 'kapasitas' => 'Melayani 80 KK'],
-            ['id_infrastruktur' => 9, 'nama' => 'KIOS SAPROTAN DESA', 'jenis' => JenisInfrastruktur::PasarKios->value, 'satuan_permukiman' => 'SP Kapitan Meo', 'satuan_permukiman_id' => 1, 'tahun_perolehan' => 2021, 'sumber_dana' => 'Swadaya', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Melayani 3 SP sekitar'],
+            ['id_infrastruktur' => 5, 'nama' => 'JARINGAN LISTRIK PLN', 'jenis' => 'Listrik', 'satuan_permukiman' => 'SP Kapitan Meo', 'satuan_permukiman_id' => 1, 'tahun_perolehan' => 2017, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Melayani 218 KK'],
+            ['id_infrastruktur' => 6, 'nama' => 'JALAN MASUK KAWASAN', 'jenis' => 'Jalan Penghubung', 'satuan_permukiman' => 'SP Kapitan Meo', 'satuan_permukiman_id' => 1, 'tahun_perolehan' => 2016, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Panjang 4,2 km, beraspal'],
+            ['id_infrastruktur' => 7, 'nama' => 'MENARA TELEKOMUNIKASI', 'jenis' => 'Telekomunikasi', 'satuan_permukiman' => 'SP Kapitan Meo', 'satuan_permukiman_id' => 1, 'tahun_perolehan' => 2020, 'sumber_dana' => 'APBD Provinsi', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Jangkauan 3 km'],
+            ['id_infrastruktur' => 8, 'nama' => 'SANITASI KOMUNAL', 'jenis' => 'Sanitasi', 'satuan_permukiman' => 'SP Kapitan Meo', 'satuan_permukiman_id' => 1, 'tahun_perolehan' => 2018, 'sumber_dana' => 'APBD Kabupaten', 'kondisi' => Kondisi::RusakRingan->value, 'kapasitas' => 'Melayani 80 KK'],
+            ['id_infrastruktur' => 9, 'nama' => 'KIOS SAPROTAN DESA', 'jenis' => 'Pasar atau Kios Saprotan', 'satuan_permukiman' => 'SP Kapitan Meo', 'satuan_permukiman_id' => 1, 'tahun_perolehan' => 2021, 'sumber_dana' => 'Swadaya', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Melayani 3 SP sekitar'],
 
             // SP Tniumanu
-            ['id_infrastruktur' => 10, 'nama' => 'SUMUR BOR TNIUMANU', 'jenis' => JenisInfrastruktur::Air->value, 'satuan_permukiman' => 'SP Tniumanu', 'satuan_permukiman_id' => 2, 'tahun_perolehan' => 2017, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Debit 2,5 liter per detik'],
-            ['id_infrastruktur' => 11, 'nama' => 'JARINGAN LISTRIK PLN', 'jenis' => JenisInfrastruktur::Listrik->value, 'satuan_permukiman' => 'SP Tniumanu', 'satuan_permukiman_id' => 2, 'tahun_perolehan' => 2018, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::RusakRingan->value, 'kapasitas' => 'Sering padam saat hujan'],
-            ['id_infrastruktur' => 12, 'nama' => 'JALAN MASUK KAWASAN', 'jenis' => JenisInfrastruktur::JalanPenghubung->value, 'satuan_permukiman' => 'SP Tniumanu', 'satuan_permukiman_id' => 2, 'tahun_perolehan' => 2016, 'sumber_dana' => 'APBD Kabupaten', 'kondisi' => Kondisi::RusakBerat->value, 'kapasitas' => 'Panjang 6,8 km, berlubang parah'],
+            ['id_infrastruktur' => 10, 'nama' => 'SUMUR BOR TNIUMANU', 'jenis' => 'Air', 'satuan_permukiman' => 'SP Tniumanu', 'satuan_permukiman_id' => 2, 'tahun_perolehan' => 2017, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Debit 2,5 liter per detik'],
+            ['id_infrastruktur' => 11, 'nama' => 'JARINGAN LISTRIK PLN', 'jenis' => 'Listrik', 'satuan_permukiman' => 'SP Tniumanu', 'satuan_permukiman_id' => 2, 'tahun_perolehan' => 2018, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::RusakRingan->value, 'kapasitas' => 'Sering padam saat hujan'],
+            ['id_infrastruktur' => 12, 'nama' => 'JALAN MASUK KAWASAN', 'jenis' => 'Jalan Penghubung', 'satuan_permukiman' => 'SP Tniumanu', 'satuan_permukiman_id' => 2, 'tahun_perolehan' => 2016, 'sumber_dana' => 'APBD Kabupaten', 'kondisi' => Kondisi::RusakBerat->value, 'kapasitas' => 'Panjang 6,8 km, berlubang parah'],
 
             // SP Harekakae
-            ['id_infrastruktur' => 13, 'nama' => 'SUMUR BOR HAREKAKAE', 'jenis' => JenisInfrastruktur::Air->value, 'satuan_permukiman' => 'SP Harekakae', 'satuan_permukiman_id' => 3, 'tahun_perolehan' => 2017, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Debit 4 liter per detik'],
-            ['id_infrastruktur' => 14, 'nama' => 'JARINGAN LISTRIK PLN', 'jenis' => JenisInfrastruktur::Listrik->value, 'satuan_permukiman' => 'SP Harekakae', 'satuan_permukiman_id' => 3, 'tahun_perolehan' => 2018, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Melayani 195 KK'],
-            ['id_infrastruktur' => 15, 'nama' => 'JALAN MASUK KAWASAN', 'jenis' => JenisInfrastruktur::JalanPenghubung->value, 'satuan_permukiman' => 'SP Harekakae', 'satuan_permukiman_id' => 3, 'tahun_perolehan' => 2017, 'sumber_dana' => 'APBD Provinsi', 'kondisi' => Kondisi::RusakRingan->value, 'kapasitas' => 'Panjang 3,5 km'],
-            ['id_infrastruktur' => 16, 'nama' => 'MENARA TELEKOMUNIKASI', 'jenis' => JenisInfrastruktur::Telekomunikasi->value, 'satuan_permukiman' => 'SP Harekakae', 'satuan_permukiman_id' => 3, 'tahun_perolehan' => 2021, 'sumber_dana' => 'APBD Provinsi', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Jangkauan 2,5 km'],
+            ['id_infrastruktur' => 13, 'nama' => 'SUMUR BOR HAREKAKAE', 'jenis' => 'Air', 'satuan_permukiman' => 'SP Harekakae', 'satuan_permukiman_id' => 3, 'tahun_perolehan' => 2017, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Debit 4 liter per detik'],
+            ['id_infrastruktur' => 14, 'nama' => 'JARINGAN LISTRIK PLN', 'jenis' => 'Listrik', 'satuan_permukiman' => 'SP Harekakae', 'satuan_permukiman_id' => 3, 'tahun_perolehan' => 2018, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Melayani 195 KK'],
+            ['id_infrastruktur' => 15, 'nama' => 'JALAN MASUK KAWASAN', 'jenis' => 'Jalan Penghubung', 'satuan_permukiman' => 'SP Harekakae', 'satuan_permukiman_id' => 3, 'tahun_perolehan' => 2017, 'sumber_dana' => 'APBD Provinsi', 'kondisi' => Kondisi::RusakRingan->value, 'kapasitas' => 'Panjang 3,5 km'],
+            ['id_infrastruktur' => 16, 'nama' => 'MENARA TELEKOMUNIKASI', 'jenis' => 'Telekomunikasi', 'satuan_permukiman' => 'SP Harekakae', 'satuan_permukiman_id' => 3, 'tahun_perolehan' => 2021, 'sumber_dana' => 'APBD Provinsi', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Jangkauan 2,5 km'],
 
             // SP Weoe, sengaja TANPA listrik untuk menguji aturan primer nol
-            ['id_infrastruktur' => 17, 'nama' => 'SUMUR BOR WEOE', 'jenis' => JenisInfrastruktur::Air->value, 'satuan_permukiman' => 'SP Weoe / Uluk Lubuk', 'satuan_permukiman_id' => 4, 'tahun_perolehan' => 2018, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Debit 3 liter per detik'],
-            ['id_infrastruktur' => 18, 'nama' => 'JALAN MASUK KAWASAN', 'jenis' => JenisInfrastruktur::JalanPenghubung->value, 'satuan_permukiman' => 'SP Weoe / Uluk Lubuk', 'satuan_permukiman_id' => 4, 'tahun_perolehan' => 2017, 'sumber_dana' => 'APBD Kabupaten', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Panjang 5,1 km'],
-            ['id_infrastruktur' => 19, 'nama' => 'IRIGASI BLOK BARAT', 'jenis' => JenisInfrastruktur::Irigasi->value, 'satuan_permukiman' => 'SP Weoe / Uluk Lubuk', 'satuan_permukiman_id' => 4, 'tahun_perolehan' => 2018, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Mengairi 120 ha'],
+            ['id_infrastruktur' => 17, 'nama' => 'SUMUR BOR WEOE', 'jenis' => 'Air', 'satuan_permukiman' => 'SP Weoe / Uluk Lubuk', 'satuan_permukiman_id' => 4, 'tahun_perolehan' => 2018, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Debit 3 liter per detik'],
+            ['id_infrastruktur' => 18, 'nama' => 'JALAN MASUK KAWASAN', 'jenis' => 'Jalan Penghubung', 'satuan_permukiman' => 'SP Weoe / Uluk Lubuk', 'satuan_permukiman_id' => 4, 'tahun_perolehan' => 2017, 'sumber_dana' => 'APBD Kabupaten', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Panjang 5,1 km'],
+            ['id_infrastruktur' => 19, 'nama' => 'IRIGASI BLOK BARAT', 'jenis' => 'Irigasi', 'satuan_permukiman' => 'SP Weoe / Uluk Lubuk', 'satuan_permukiman_id' => 4, 'tahun_perolehan' => 2018, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Mengairi 120 ha'],
 
             // SP Tualaran
-            ['id_infrastruktur' => 20, 'nama' => 'SUMUR BOR TUALARAN', 'jenis' => JenisInfrastruktur::Air->value, 'satuan_permukiman' => 'SP Tualaran', 'satuan_permukiman_id' => 5, 'tahun_perolehan' => 2019, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Debit 2,8 liter per detik'],
-            ['id_infrastruktur' => 21, 'nama' => 'JARINGAN LISTRIK PLN', 'jenis' => JenisInfrastruktur::Listrik->value, 'satuan_permukiman' => 'SP Tualaran', 'satuan_permukiman_id' => 5, 'tahun_perolehan' => 2019, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Melayani 201 KK'],
-            ['id_infrastruktur' => 22, 'nama' => 'JALAN MASUK KAWASAN', 'jenis' => JenisInfrastruktur::JalanPenghubung->value, 'satuan_permukiman' => 'SP Tualaran', 'satuan_permukiman_id' => 5, 'tahun_perolehan' => 2018, 'sumber_dana' => 'APBD Provinsi', 'kondisi' => Kondisi::RusakRingan->value, 'kapasitas' => 'Panjang 7,4 km'],
+            ['id_infrastruktur' => 20, 'nama' => 'SUMUR BOR TUALARAN', 'jenis' => 'Air', 'satuan_permukiman' => 'SP Tualaran', 'satuan_permukiman_id' => 5, 'tahun_perolehan' => 2019, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Debit 2,8 liter per detik'],
+            ['id_infrastruktur' => 21, 'nama' => 'JARINGAN LISTRIK PLN', 'jenis' => 'Listrik', 'satuan_permukiman' => 'SP Tualaran', 'satuan_permukiman_id' => 5, 'tahun_perolehan' => 2019, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Melayani 201 KK'],
+            ['id_infrastruktur' => 22, 'nama' => 'JALAN MASUK KAWASAN', 'jenis' => 'Jalan Penghubung', 'satuan_permukiman' => 'SP Tualaran', 'satuan_permukiman_id' => 5, 'tahun_perolehan' => 2018, 'sumber_dana' => 'APBD Provinsi', 'kondisi' => Kondisi::RusakRingan->value, 'kapasitas' => 'Panjang 7,4 km'],
 
             // SP Weain, sengaja TANPA air bersih dan TANPA jalan penghubung
-            ['id_infrastruktur' => 23, 'nama' => 'JARINGAN LISTRIK PLN', 'jenis' => JenisInfrastruktur::Listrik->value, 'satuan_permukiman' => 'SP Weain', 'satuan_permukiman_id' => 6, 'tahun_perolehan' => 2020, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::RusakRingan->value, 'kapasitas' => 'Melayani 163 KK'],
-            ['id_infrastruktur' => 24, 'nama' => 'GUDANG PASCAPANEN', 'jenis' => JenisInfrastruktur::Gudang->value, 'satuan_permukiman' => 'SP Weain', 'satuan_permukiman_id' => 6, 'tahun_perolehan' => 2021, 'sumber_dana' => 'Dinas Pertanian Kabupaten', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Daya tampung 25 ton'],
+            ['id_infrastruktur' => 23, 'nama' => 'JARINGAN LISTRIK PLN', 'jenis' => 'Listrik', 'satuan_permukiman' => 'SP Weain', 'satuan_permukiman_id' => 6, 'tahun_perolehan' => 2020, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::RusakRingan->value, 'kapasitas' => 'Melayani 163 KK'],
+            ['id_infrastruktur' => 24, 'nama' => 'GUDANG PASCAPANEN', 'jenis' => 'Gudang', 'satuan_permukiman' => 'SP Weain', 'satuan_permukiman_id' => 6, 'tahun_perolehan' => 2021, 'sumber_dana' => 'Dinas Pertanian Kabupaten', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Daya tampung 25 ton'],
             // Aset penyeimbang data contoh, ditambahkan 2026-08-21 bersama
             // empat parameter yang dahulu terlewat. Sebarannya semula timpang
             // 1 Mandiri, 1 Berkembang, dan 4 Perlu Penanganan, sehingga dua
             // status pertama masing-masing hanya punya satu contoh untuk
             // memeriksa lencana, kartu rekap, dan penyortiran.
-            ['id_infrastruktur' => 25, 'nama' => 'GUDANG PASCAPANEN KAPITAN MEO', 'jenis' => JenisInfrastruktur::Gudang->value, 'satuan_permukiman' => 'SP Kapitan Meo', 'satuan_permukiman_id' => 1, 'tahun_perolehan' => 2021, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Daya tampung 60 ton'],
-            ['id_infrastruktur' => 26, 'nama' => 'JALAN PRODUKSI BLOK TIMUR', 'jenis' => JenisInfrastruktur::JalanProduksi->value, 'satuan_permukiman' => 'SP Kapitan Meo', 'satuan_permukiman_id' => 1, 'tahun_perolehan' => 2022, 'sumber_dana' => 'APBD Kabupaten', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Panjang 2,4 km'],
-            ['id_infrastruktur' => 27, 'nama' => 'SANITASI KOMUNAL TNIUMANU', 'jenis' => JenisInfrastruktur::Sanitasi->value, 'satuan_permukiman' => 'SP Tniumanu', 'satuan_permukiman_id' => 2, 'tahun_perolehan' => 2021, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Melayani 45 KK'],
-            ['id_infrastruktur' => 28, 'nama' => 'MENARA TELEKOMUNIKASI TNIUMANU', 'jenis' => JenisInfrastruktur::Telekomunikasi->value, 'satuan_permukiman' => 'SP Tniumanu', 'satuan_permukiman_id' => 2, 'tahun_perolehan' => 2022, 'sumber_dana' => 'Swadaya', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Jangkauan 4G'],
-            ['id_infrastruktur' => 29, 'nama' => 'SALURAN IRIGASI TNIUMANU', 'jenis' => JenisInfrastruktur::Irigasi->value, 'satuan_permukiman' => 'SP Tniumanu', 'satuan_permukiman_id' => 2, 'tahun_perolehan' => 2019, 'sumber_dana' => 'APBD Provinsi', 'kondisi' => Kondisi::RusakRingan->value, 'kapasitas' => 'Mengairi 18 ha'],
-            ['id_infrastruktur' => 30, 'nama' => 'SANITASI KOMUNAL HAREKAKAE', 'jenis' => JenisInfrastruktur::Sanitasi->value, 'satuan_permukiman' => 'SP Harekakae', 'satuan_permukiman_id' => 3, 'tahun_perolehan' => 2021, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Melayani 52 KK'],
-            ['id_infrastruktur' => 31, 'nama' => 'SALURAN IRIGASI HAREKAKAE', 'jenis' => JenisInfrastruktur::Irigasi->value, 'satuan_permukiman' => 'SP Harekakae', 'satuan_permukiman_id' => 3, 'tahun_perolehan' => 2020, 'sumber_dana' => 'APBD Provinsi', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Mengairi 26 ha'],
-            ['id_infrastruktur' => 32, 'nama' => 'JALAN PRODUKSI HAREKAKAE', 'jenis' => JenisInfrastruktur::JalanProduksi->value, 'satuan_permukiman' => 'SP Harekakae', 'satuan_permukiman_id' => 3, 'tahun_perolehan' => 2022, 'sumber_dana' => 'APBD Kabupaten', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Panjang 3,1 km'],
-            ['id_infrastruktur' => 33, 'nama' => 'KIOS SAPROTAN HAREKAKAE', 'jenis' => JenisInfrastruktur::PasarKios->value, 'satuan_permukiman' => 'SP Harekakae', 'satuan_permukiman_id' => 3, 'tahun_perolehan' => 2022, 'sumber_dana' => 'Swadaya', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Satu unit kios'],
-            ['id_infrastruktur' => 34, 'nama' => 'MENARA TELEKOMUNIKASI TUALARAN', 'jenis' => JenisInfrastruktur::Telekomunikasi->value, 'satuan_permukiman' => 'SP Tualaran', 'satuan_permukiman_id' => 5, 'tahun_perolehan' => 2023, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Jangkauan 4G'],
-            ['id_infrastruktur' => 35, 'nama' => 'SANITASI KOMUNAL TUALARAN', 'jenis' => JenisInfrastruktur::Sanitasi->value, 'satuan_permukiman' => 'SP Tualaran', 'satuan_permukiman_id' => 5, 'tahun_perolehan' => 2019, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::RusakRingan->value, 'kapasitas' => 'Melayani 38 KK'],
+            ['id_infrastruktur' => 25, 'nama' => 'GUDANG PASCAPANEN KAPITAN MEO', 'jenis' => 'Gudang', 'satuan_permukiman' => 'SP Kapitan Meo', 'satuan_permukiman_id' => 1, 'tahun_perolehan' => 2021, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Daya tampung 60 ton'],
+            ['id_infrastruktur' => 26, 'nama' => 'JALAN PRODUKSI BLOK TIMUR', 'jenis' => 'Jalan Produksi', 'satuan_permukiman' => 'SP Kapitan Meo', 'satuan_permukiman_id' => 1, 'tahun_perolehan' => 2022, 'sumber_dana' => 'APBD Kabupaten', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Panjang 2,4 km'],
+            ['id_infrastruktur' => 27, 'nama' => 'SANITASI KOMUNAL TNIUMANU', 'jenis' => 'Sanitasi', 'satuan_permukiman' => 'SP Tniumanu', 'satuan_permukiman_id' => 2, 'tahun_perolehan' => 2021, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Melayani 45 KK'],
+            ['id_infrastruktur' => 28, 'nama' => 'MENARA TELEKOMUNIKASI TNIUMANU', 'jenis' => 'Telekomunikasi', 'satuan_permukiman' => 'SP Tniumanu', 'satuan_permukiman_id' => 2, 'tahun_perolehan' => 2022, 'sumber_dana' => 'Swadaya', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Jangkauan 4G'],
+            ['id_infrastruktur' => 29, 'nama' => 'SALURAN IRIGASI TNIUMANU', 'jenis' => 'Irigasi', 'satuan_permukiman' => 'SP Tniumanu', 'satuan_permukiman_id' => 2, 'tahun_perolehan' => 2019, 'sumber_dana' => 'APBD Provinsi', 'kondisi' => Kondisi::RusakRingan->value, 'kapasitas' => 'Mengairi 18 ha'],
+            ['id_infrastruktur' => 30, 'nama' => 'SANITASI KOMUNAL HAREKAKAE', 'jenis' => 'Sanitasi', 'satuan_permukiman' => 'SP Harekakae', 'satuan_permukiman_id' => 3, 'tahun_perolehan' => 2021, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Melayani 52 KK'],
+            ['id_infrastruktur' => 31, 'nama' => 'SALURAN IRIGASI HAREKAKAE', 'jenis' => 'Irigasi', 'satuan_permukiman' => 'SP Harekakae', 'satuan_permukiman_id' => 3, 'tahun_perolehan' => 2020, 'sumber_dana' => 'APBD Provinsi', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Mengairi 26 ha'],
+            ['id_infrastruktur' => 32, 'nama' => 'JALAN PRODUKSI HAREKAKAE', 'jenis' => 'Jalan Produksi', 'satuan_permukiman' => 'SP Harekakae', 'satuan_permukiman_id' => 3, 'tahun_perolehan' => 2022, 'sumber_dana' => 'APBD Kabupaten', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Panjang 3,1 km'],
+            ['id_infrastruktur' => 33, 'nama' => 'KIOS SAPROTAN HAREKAKAE', 'jenis' => 'Pasar atau Kios Saprotan', 'satuan_permukiman' => 'SP Harekakae', 'satuan_permukiman_id' => 3, 'tahun_perolehan' => 2022, 'sumber_dana' => 'Swadaya', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Satu unit kios'],
+            ['id_infrastruktur' => 34, 'nama' => 'MENARA TELEKOMUNIKASI TUALARAN', 'jenis' => 'Telekomunikasi', 'satuan_permukiman' => 'SP Tualaran', 'satuan_permukiman_id' => 5, 'tahun_perolehan' => 2023, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::Baik->value, 'kapasitas' => 'Jangkauan 4G'],
+            ['id_infrastruktur' => 35, 'nama' => 'SANITASI KOMUNAL TUALARAN', 'jenis' => 'Sanitasi', 'satuan_permukiman' => 'SP Tualaran', 'satuan_permukiman_id' => 5, 'tahun_perolehan' => 2019, 'sumber_dana' => 'APBN', 'kondisi' => Kondisi::RusakRingan->value, 'kapasitas' => 'Melayani 38 KK'],
         ];
 
         $data = self::lekatkanBerkas($data, 'infrastruktur_berkas', 'infrastruktur_id', 'id_infrastruktur', ['foto' => 'foto', 'pendukung' => 'dokumen_pendukung']);
@@ -3088,10 +3085,10 @@ class DummyData
     /**
      * Daftar pilihan yang dikelola Admin lewat data master daftar pilihan.
      *
-     * Menggantikan sembilan enum yang sebelumnya ditulis di dalam kode. Yang
+     * Menggantikan enum pilihan bisnis yang sebelumnya ditulis di dalam kode. Yang
      * tersimpan pada kolom pemakainya tetap TEKS `nilai`, bukan id, sebab
-     * kolom-kolom itu bertipe ENUM pada SQL referensi dan sudah dipakai
-     * puluhan tampilan tanpa join (kamus data 5.6).
+     * kolom pemakainya menyimpan kode teks stabil; label tampil dapat diubah
+     * tanpa memecah data historis (kamus data 5.6).
      *
      * Nilai DINONAKTIFKAN, tidak pernah dihapus: menghapus `Hibah` dari sumber
      * dana membuat baris infrastruktur lama menunjuk nilai yang lenyap, dan
@@ -3158,6 +3155,11 @@ class DummyData
             JenisDaftarPilihan::JenisInventaris->value => [
                 'Peralatan Kantor', 'Elektronik & Mesin', 'Perabotan', 'Kendaraan Operasional', 'Peralatan Lainnya',
             ],
+            JenisDaftarPilihan::JenisSaprotan->value => ['Benih', 'Pupuk', 'Pestisida', 'Mulsa', 'Lainnya'],
+            JenisDaftarPilihan::StatusSertifikat->value => ['Sudah', 'Belum', 'Belum Didata'],
+            JenisDaftarPilihan::PolaPermukiman->value => ['Konsentris', 'Papan Catur', 'Linear', 'Menyebar'],
+            JenisDaftarPilihan::TingkatKesuburanTanah->value => ['Subur', 'Sedang', 'Kurang Subur'],
+            JenisDaftarPilihan::BentukWilayah->value => ['Datar', 'Bergelombang', 'Berbukit', 'Bergunung'],
         ];
 
         // Bidang penanganan bawaan tiap kategori, menggantikan `match` pada
@@ -3186,6 +3188,14 @@ class DummyData
         // berat masih dapat diperbaiki. Menyamakan keduanya membuat SP yang
         // kehilangan inventarisnya tetap terhitung memiliki layanan itu.
         $skor = ['Baik' => 1.0, 'Rusak Ringan' => 0.5, 'Rusak Berat' => 0.2, 'Hilang' => 0.0];
+        $perilaku = [
+            JenisDaftarPilihan::JenisSaprotan->value => [
+                'Benih' => 'benih',
+            ],
+            JenisDaftarPilihan::StatusSertifikat->value => [
+                'Sudah' => 'sudah', 'Belum' => 'belum', 'Belum Didata' => 'tidak_diketahui',
+            ],
+        ];
 
         // Satu nilai sengaja dinonaktifkan agar keadaan itu ikut terlihat saat
         // peninjauan: ia tetap terbaca pada data lama, hanya tidak lagi
@@ -3209,6 +3219,8 @@ class DummyData
                     'jenis' => $kunciJenis,
                     'jenis_label' => $jenisIni->label(),
                     'nilai' => $satu,
+                    'label' => $satu,
+                    'kode_perilaku' => $perilaku[$kunciJenis][$satu] ?? null,
                     'urutan' => $urutan + 1,
                     'nilai_skor' => $jenisIni->berskor() ? ($skor[$satu] ?? null) : null,
                     'bidang_id' => $jenisIni->berbidang()
@@ -3249,7 +3261,7 @@ class DummyData
         $hasil = [];
 
         foreach (self::daftarPilihan($jenis, true) as $baris) {
-            $hasil[$baris['nilai']] = $baris['nilai'];
+            $hasil[$baris['nilai']] = $baris['label'];
         }
 
         return $hasil;
@@ -4295,7 +4307,7 @@ class DummyData
         $hasil = [];
 
         foreach (self::saprotanDistribusi() as $baris) {
-            if ($baris['jenis'] !== JenisSaprotan::Benih->value) {
+            if ($baris['jenis'] !== 'Benih') {
                 continue;
             }
 

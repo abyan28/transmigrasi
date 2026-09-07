@@ -602,13 +602,15 @@ Riwayat penilaian kondisi SP. Satu SP memiliki banyak baris, satu untuk setiap k
 
 Daftar pilihan yang **dikelola Admin lewat antarmuka**, bukan ditulis sebagai enum di dalam kode (`rules.md` §4 poin 4 dan §13.0; kriteria enum-vs-master pada bulir terakhir §5.6 ini).
 
-Empat belas daftar disatukan pada satu tabel karena strukturnya identik. Empat belas tabel terpisah berarti empat belas migration, empat belas model, dan empat belas halaman CRUD untuk perbedaan yang hanya terletak pada nama jenisnya.
+Sembilan belas daftar disatukan pada satu tabel karena strukturnya identik. Tabel terpisah per jenis hanya menggandakan migration, model, dan halaman CRUD untuk perbedaan yang terletak pada nama jenisnya.
 
 | Kolom | Tipe | Null | Kunci | Keterangan |
 |---|---|---|---|---|
 | `id_daftar_pilihan` | `BIGINT UNSIGNED AUTO_INCREMENT` | TIDAK | PK | |
 | `jenis` | `ENUM` | TIDAK | IDX, UQ¹ | Lihat 11.37; menentukan daftar mana nilai ini termasuk |
-| `nilai` | `VARCHAR(100)` | TIDAK | UQ¹ | Teks yang tampil sekaligus tersimpan pada kolom pemakainya |
+| `nilai` | `VARCHAR(100)` | TIDAK | UQ¹ | Kode teks stabil yang tersimpan pada kolom pemakainya |
+| `label` | `VARCHAR(100)` | TIDAK | | Teks tampil yang dapat disunting tanpa mengubah kode |
+| `kode_perilaku` | `VARCHAR(50)` | YA | | Semantik stabil untuk pilihan yang mengendalikan perilaku |
 | `urutan` | `SMALLINT UNSIGNED` | TIDAK | | Urutan tampil; bermakna pada jenis berjenjang |
 | `nilai_skor` | `DECIMAL(3,2)` | YA | | Bobot nilai pada penilaian kondisi SP; hanya jenis berskor |
 | `bidang_id` | `BIGINT UNSIGNED` | YA | FK, IDX | Bidang penanganan bawaan; hanya jenis `kategori_pengaduan`. NULL bermakna: bidang ditetapkan petugas per laporan |
@@ -621,7 +623,7 @@ Empat belas daftar disatukan pada satu tabel karena strukturnya identik. Empat b
 - **Nilai DINONAKTIFKAN, tidak pernah dihapus.** Menghapus `Hibah` dari sumber dana membuat puluhan baris infrastruktur lama menunjuk baris yang lenyap, dan rekap kehilangan baris itu **tanpa pesan apa pun**. Nilai nonaktif tetap terbaca pada data lama, hanya tidak lagi ditawarkan pada data baru. Pola ini mengikuti `parameter_penilaian_sp` (5.4) yang sudah memakainya lebih dulu dengan alasan sama.
 - **Yang tersimpan pada kolom pemakainya adalah TEKS `nilai`, bukan id.** Nilai itu merupakan identitas referensi dan tidak dapat diganti setelah dibuat; admin memakai nonaktif untuk menghentikan pilihan baru tanpa memecah histori. Pengecualiannya hanya `parameter_penilaian_sp.daftar_pilihan_id` yang menunjuk id.
 - **`nilai_skor` hanya untuk jenis `kondisi`**, bukan `kondisi_rumah`. Keduanya tampak sebagai skala kerusakan yang sama, tetapi hanya `kondisi` yang dibaca `PenilaianKondisiSp`; kondisi rumah murni tampilan dan tidak pernah masuk perhitungan mana pun. Memberi `nilai_skor` kepadanya berarti menyediakan isian yang tidak menentukan apa pun, dan Admin yang menyuntingnya akan menyangka skor SP ikut berubah. Mengubahnya mengubah cara penilaian BERIKUTNYA dihitung, tetapi tidak mengubah penilaian yang sudah tersimpan: `penilaian_sp.rincian` menyalin nilai yang berlaku saat penilaian dibuat (5.5). Tanpa salinan itu, laporan yang sudah dicetak akan berbeda dari tampilan sistem setiap kali Admin menyunting skor.
-- **Dikelola lewat satu halaman per daftar**, bukan satu halaman bertab. Semula keempat belasnya berupa tab dalam satu baris, dan itu berhenti bekerja begitu jumlahnya bertambah: bar tab mencapai 2309px pada ruang 705px, sehingga hanya empat tab yang terlihat dan sepuluh sisanya tersembunyi di balik gulir mendatar. Indeks di `/master/referensi` menampilkan seluruh daftar sebagai kartu berkelompok, dan tiap daftar dibuka di `/master/referensi/{jenis}` (`ui-spec.md` 5.1d).
+- **Dikelola lewat satu halaman per daftar**, bukan satu halaman bertab. Semula daftar yang ada berupa tab dalam satu baris, dan itu berhenti bekerja begitu jumlahnya bertambah: bar tab mencapai 2309px pada ruang 705px. Indeks di `/master/referensi` menampilkan seluruh daftar sebagai kartu berkelompok, dan tiap daftar dibuka di `/master/referensi/{jenis}` (`ui-spec.md` 5.1d).
 - **`jenis_infrastruktur` dan `jenis_fasilitas` DIRUJUK LEWAT ID** oleh parameter penilaian, satu-satunya pengecualian dari aturan teks di atas. `parameter_penilaian_sp.daftar_pilihan_id` menunjuk baris pada tabel ini, misalnya parameter `air_bersih` menunjuk jenis infrastruktur `Air`; identitas nilai tetap dikunci, sementara jenis baru otomatis mendapat parameter nonaktif untuk ditinjau dinas.
 - **`bidang_id` hanya untuk `kategori_pengaduan`**, dan NULL di sana bermakna. Ia menyatakan kategori yang dapat jatuh ke dua dinas sekaligus, sehingga bidangnya wajib ditetapkan petugas sebelum status maju ke Diproses (`rules.md` 10b poin 7b). Nilai yang terisi hanya menetapkan bidang AWAL; petugas selalu dapat menimpanya.
 - **`urutan` bermakna pada `prioritas_pengaduan`**, sebab daftar pengaduan menyortir memakainya. Menukar urutan berarti menukar antrean petugas, bukan sekadar menukar tampilan.

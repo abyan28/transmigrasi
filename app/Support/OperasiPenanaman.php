@@ -2,7 +2,8 @@
 
 namespace App\Support;
 
-use App\Enums\JenisSaprotan;
+use App\Enums\JenisDaftarPilihan;
+use App\Models\DaftarPilihan;
 use App\Models\Penanaman;
 use App\Models\Saprotan;
 use App\Models\SaprotanDistribusi;
@@ -25,7 +26,7 @@ class OperasiPenanaman
 
     public static function buat(array $data, SaprotanDistribusi $distribusi): Penanaman
     {
-        if ($distribusi->saprotan->jenis !== JenisSaprotan::Benih) {
+        if (! DaftarPilihan::memilikiPerilaku(JenisDaftarPilihan::JenisSaprotan, $distribusi->saprotan->jenis, 'benih')) {
             throw ValidationException::withMessages(['saprotan_distribusi_id' => 'Penyaluran yang dipilih bukan benih.']);
         }
         $sisa = $distribusi->sisaBenih();

@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Enums\JenisSaprotan;
+use App\Enums\JenisDaftarPilihan;
 use App\Models\Concerns\DisaringLewatInduk;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -61,7 +61,7 @@ class SaprotanDistribusi extends Model
      */
     public function sisaBenih(?int $kecualiPenanamanId = null): float
     {
-        if ($this->saprotan?->jenis !== JenisSaprotan::Benih) {
+        if (! DaftarPilihan::memilikiPerilaku(JenisDaftarPilihan::JenisSaprotan, $this->saprotan?->jenis, 'benih')) {
             return 0.0;
         }
 

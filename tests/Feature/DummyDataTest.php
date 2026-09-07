@@ -10,9 +10,6 @@
 
 use App\Enums\BidangPengaduan;
 use App\Enums\JenisDaftarPilihan;
-use App\Enums\JenisInfrastruktur;
-use App\Enums\JenisSaprotan;
-use App\Enums\KategoriPengaduan;
 use App\Enums\Kondisi;
 use App\Enums\KondisiRumah;
 use App\Enums\PrioritasPengaduan;
@@ -87,7 +84,7 @@ it('memakai nilai enum yang sah pada data rumah', function () {
 
 it('memakai nilai enum yang sah pada data pengaduan', function () {
     foreach (DummyData::pengaduan() as $baris) {
-        expect(KategoriPengaduan::dari($baris['kategori']))->not->toBeNull()
+        expect(DummyData::opsiDaftarPilihan(JenisDaftarPilihan::KategoriPengaduan))->toHaveKey($baris['kategori'])
             ->and(StatusPengaduan::dari($baris['status']))->not->toBeNull()
             ->and(PrioritasPengaduan::dari($baris['prioritas']))->not->toBeNull()
             ->and(SumberLaporan::dari($baris['sumber_laporan']))->not->toBeNull();
@@ -102,7 +99,7 @@ it('memakai nilai enum yang sah pada data pengaduan', function () {
 
 it('memakai nilai enum yang sah pada data infrastruktur', function () {
     foreach (DummyData::infrastruktur() as $baris) {
-        expect(JenisInfrastruktur::dari($baris['jenis']))->not->toBeNull()
+        expect(DummyData::opsiDaftarPilihan(JenisDaftarPilihan::JenisInfrastruktur))->toHaveKey($baris['jenis'])
             ->and(Kondisi::dari($baris['kondisi']))->not->toBeNull();
     }
 });
@@ -720,7 +717,7 @@ it('mewajibkan komoditas pada benih dan mengosongkannya pada jenis lain', functi
     foreach (DummyData::saprotan() as $baris) {
         expect($baris)->toHaveKey('komoditas_id');
 
-        if ($baris['jenis'] === JenisSaprotan::Benih->value) {
+        if ($baris['jenis'] === 'Benih') {
             expect($baris['komoditas_id'])->not->toBeNull("benih {$baris['nama']} tanpa komoditas");
 
             // Menunjuk komoditas yang benar-benar ada, bukan id karangan.
@@ -740,7 +737,7 @@ it('menghitung sisa benih per DISTRIBUSI dari jatah dikurangi pemakaian penanama
     // hanya penanaman poktan itu sendiri. Rumusnya tetap satu pengurangan
     // yang mengoreksi diri sendiri saat baris penanaman disunting.
     foreach (DummyData::saprotanDistribusi() as $d) {
-        if ($d['jenis'] !== JenisSaprotan::Benih->value) {
+        if ($d['jenis'] !== 'Benih') {
             expect(DummyData::sisaBenih($d['id_saprotan_distribusi']))->toBe(0.0);
 
             continue;
@@ -785,7 +782,7 @@ it('menyembunyikan benih yang stoknya habis dari daftar tersedia', function () {
     // ketika STOKNYA HABIS, bukan ketika pertama kali dipakai (penanaman
     // bertahap: 3 ha lalu 7 ha dari jatah yang sama). Grain kini distribusi.
     $habis = collect(DummyData::saprotanDistribusi())
-        ->first(fn ($d) => $d['jenis'] === JenisSaprotan::Benih->value
+        ->first(fn ($d) => $d['jenis'] === 'Benih'
             && DummyData::sisaBenih($d['id_saprotan_distribusi']) <= 0);
 
     expect($habis)->not->toBeNull('data contoh wajib memuat satu distribusi benih yang habis');
@@ -794,7 +791,7 @@ it('menyembunyikan benih yang stoknya habis dari daftar tersedia', function () {
     expect($tersedia)->not->toContain($habis['id_saprotan_distribusi']);
 
     $bersisa = collect(DummyData::saprotanDistribusi())
-        ->first(fn ($d) => $d['jenis'] === JenisSaprotan::Benih->value
+        ->first(fn ($d) => $d['jenis'] === 'Benih'
             && DummyData::sisaBenih($d['id_saprotan_distribusi']) > 0);
     expect($tersedia)->toContain($bersisa['id_saprotan_distribusi']);
 });
@@ -805,7 +802,7 @@ it('menyaring benih tersedia menurut poktan dan komoditasnya', function () {
     foreach (DummyData::benihTersedia(1, 1) as $benih) {
         expect($benih['poktan_id'])->toBe(1)
             ->and($benih['komoditas_id'])->toBe(1)
-            ->and($benih['jenis'])->toBe(JenisSaprotan::Benih->value);
+            ->and($benih['jenis'])->toBe('Benih');
     }
 
     // Poktan yang jatah benihnya sudah habis menerima daftar kosong.
@@ -827,7 +824,7 @@ it('menautkan volume benih penanaman ke baris distribusi saprotan yang sah', fun
             ->firstWhere('id_saprotan_distribusi', $tanam['saprotan_distribusi_id']);
 
         expect($benih)->not->toBeNull()
-            ->and($benih['jenis'])->toBe(JenisSaprotan::Benih->value)
+            ->and($benih['jenis'])->toBe('Benih')
             ->and($tanam['volume_benih'])->toBeGreaterThan(0)
             // Komoditas benih wajib cocok dengan komoditas yang ditanam.
             ->and($benih['komoditas'])->toBe($tanam['komoditas'])
@@ -838,7 +835,7 @@ it('menautkan volume benih penanaman ke baris distribusi saprotan yang sah', fun
 
 it('menjaga pemakaian benih tidak melebihi jatah distribusi poktan', function () {
     foreach (DummyData::saprotanDistribusi() as $d) {
-        if ($d['jenis'] !== JenisSaprotan::Benih->value) {
+        if ($d['jenis'] !== 'Benih') {
             continue;
         }
 
