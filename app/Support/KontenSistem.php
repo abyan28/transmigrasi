@@ -205,6 +205,8 @@ class KontenSistem
                 'user_id' => Auth::id(),
                 'aksi' => AksiAuditLog::Ubah,
                 'nama_tabel' => 'pengaturan',
+                // Satu audit mewakili satu tab, bukan satu row `pengaturan`.
+                // ID 0 adalah sentinel agregat; key yang berubah ada di JSON.
                 'record_id' => 0,
                 'data_lama' => array_intersect_key($sebelum, $baru),
                 'data_baru' => $baru,

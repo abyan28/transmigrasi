@@ -109,7 +109,8 @@
                     tidak terbaca sama sekali di mode terang (R-25 dan R-34).
                 --}}
                 <span class="text-theme-sm font-semibold text-navy-500 dark:text-white">{{ \App\Support\KontenSistem::namaAplikasi() }}</span>
-                <span class="text-theme-xs text-gray-500 dark:text-navy-200">Kobalima Timur</span>
+                <span class="max-w-48 truncate text-theme-xs text-gray-500 dark:text-navy-200"
+                    title="{{ \App\Support\KontenSistem::subjudul() }}">{{ \App\Support\KontenSistem::subjudul() }}</span>
             </span>
         </a>
 

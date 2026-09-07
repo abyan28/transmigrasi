@@ -101,3 +101,13 @@ it('menjelaskan keadaan saat nomor lacak tidak ditemukan', function () {
         ->assertOk()
         ->assertDontSee('Saluran irigasi tersumbat');
 });
+
+it('tidak membuka kembali pengaduan yang sudah dihapus pada pelacakan publik', function () {
+    $pengaduan = Pengaduan::where('nomor_pengaduan', 'PGD-2026-0001-PMTUXK')->firstOrFail();
+    $pengaduan->delete();
+
+    $this->get(route('lacak-pengaduan.nomor', ['nomor' => $pengaduan->nomor_pengaduan]))
+        ->assertOk()
+        ->assertSee('Nomor pengaduan tidak ditemukan')
+        ->assertDontSee('Saluran irigasi tersumbat');
+});

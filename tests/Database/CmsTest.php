@@ -75,8 +75,18 @@ it('memakai identitas CMS pada halaman login', function () {
         'subjudul' => 'Subjudul Login Uji',
     ])->assertRedirect();
 
+    $this->get(route('beranda'))->assertSee('Subjudul Login Uji');
+
     auth()->logout();
     $this->get(route('login'))
+        ->assertOk()
+        ->assertSee('SIM Login Uji')
+        ->assertSee('Subjudul Login Uji');
+    $this->get(route('lupa-kata-sandi'))
+        ->assertOk()
+        ->assertSee('SIM Login Uji')
+        ->assertSee('Subjudul Login Uji');
+    $this->get(route('verifikasi-kode'))
         ->assertOk()
         ->assertSee('SIM Login Uji')
         ->assertSee('Subjudul Login Uji');

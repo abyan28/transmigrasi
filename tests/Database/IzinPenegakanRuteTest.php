@@ -61,6 +61,21 @@ it('menolak Operator SP membuka manajemen pengguna dan role (403)', function () 
     $this->actingAs($operator)->get(route('audit-log'))->assertForbidden();
 });
 
+it('membatasi CMS pada dinas yang berwenang', function () {
+    $operator = User::factory()->create(['role_id' => 4]);
+    $dinas = User::factory()->create(['role_id' => 2]);
+
+    $this->actingAs($operator)->get(route('cms'))->assertForbidden();
+    $this->actingAs($operator)->put(route('cms.simpan'), ['tab' => 'identitas'])->assertForbidden();
+
+    $this->actingAs($dinas)->get(route('cms'))->assertOk();
+    $this->actingAs($dinas)->put(route('cms.simpan'), [
+        'tab' => 'identitas',
+        'nama_app' => 'DIGITRANS',
+        'subjudul' => 'Kawasan Transmigrasi Kobalima Timur',
+    ])->assertRedirect();
+});
+
 it('meloloskan Operator SP melihat & menambah transmigran tetapi menolak menghapus', function () {
     $operator = User::factory()->create(['role_id' => 4]);
 

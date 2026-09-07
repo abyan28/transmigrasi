@@ -115,10 +115,10 @@
                     --}}
                     <div class="flex max-w-xs flex-col items-center">
                         <h2 class="mb-3 text-center text-xl font-semibold text-white dark:text-white">
-                            Sistem Informasi Transmigrasi
+                            {{ \App\Support\KontenSistem::namaAplikasi() }}
                         </h2>
                         <p class="text-center text-sm text-gray-400 dark:text-white/60">
-                            Kabupaten Malaka, Nusa Tenggara Timur
+                            {{ \App\Support\KontenSistem::subjudul() }}
                         </p>
                     </div>
                 </div>

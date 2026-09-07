@@ -131,7 +131,7 @@ class PengaduanPublikController extends Controller
         $riwayat = [];
 
         if ($nomor !== '') {
-            $model = Pengaduan::withoutGlobalScopes()
+            $model = Pengaduan::query()
                 ->with(['penanganan' => fn ($q) => $q->orderBy('id_penanganan_pengaduan'), 'penanganan.berkas'])
                 ->where('nomor_pengaduan', Str::upper($nomor))
                 ->first();

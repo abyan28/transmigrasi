@@ -1589,8 +1589,10 @@ Jawaban final:
 # 17. Catatan Verifikasi
 
 - Audit awal menggunakan kode aktual sebagai source of truth.
-- Implementasi mempertahankan tabel `pengaturan` dan whitelist key yang sudah ada; tidak ada migration baru.
-- Focused CMS suite lulus: 19 test / 93 assertion.
+- Implementasi mempertahankan tabel `pengaturan` dan whitelist key yang sudah ada; tidak ada migration baru. Audit satu tab tetap satu event agregat dengan sentinel `record_id = 0`; identitas key yang berubah tersimpan pada `data_lama`/`data_baru`.
+- Focused CMS suite lulus: 19 test / 100 assertion.
+- Focused pengaduan publik lulus: 7 test / 30 assertion, termasuk pengaduan terhapus tidak dapat dilacak publik.
+- Gate RBAC CMS terverifikasi: Operator SP ditolak, Dinas Transmigrasi diizinkan.
 - Seluruh Feature suite lulus: 768 test / 7.600 assertion.
 - Kompilasi Blade (`php artisan view:cache`) dan build aset (`npm run build`) lulus.
 - Seluruh migration runtime berstatus `Ran`.
