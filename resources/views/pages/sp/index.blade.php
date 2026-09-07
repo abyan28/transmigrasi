@@ -30,6 +30,18 @@
             </button>
         </x-slot:aksi>
 
+        <x-slot:metrik>
+            <x-sim.metric-item label="Satuan Permukiman" :nilai="$jumlahSp" satuan="SP"
+                ikon="lokasi" warna="teal" keterangan="Kawasan Kobalima Timur" />
+            <x-sim.metric-item label="Total Luas Lahan" :nilai="number_format($totalLuas, 2, ',', '.')"
+                satuan="ha" ikon="lahan" warna="navy" keterangan="Total wilayah SP" />
+            <x-sim.metric-item label="Daya Tampung" :nilai="number_format($totalRencana, 0, ',', '.')"
+                satuan="KK" ikon="keluarga" warna="gold" keterangan="Kapasitas penempatan" />
+            <x-sim.metric-item label="Sudah Terisi" :nilai="number_format($totalTerisi, 0, ',', '.')"
+                satuan="KK" ikon="hunian" warna="emerald"
+                :prosentase="$totalRencana > 0 ? round(($totalTerisi / $totalRencana) * 100, 1) : null" />
+        </x-slot:metrik>
+
         <x-slot:ringkasan>
             <x-sim.stat-card label="Jumlah SP" :nilai="$jumlahSp" satuan="SP" />
             <x-sim.stat-card label="Total Luas Lahan" :nilai="number_format($totalLuas, 2, ',', '.')" satuan="ha" />

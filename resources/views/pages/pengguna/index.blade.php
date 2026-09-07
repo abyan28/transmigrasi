@@ -122,6 +122,19 @@
             </button>
         </x-slot:aksi>
 
+        <x-slot:metrik>
+            <x-sim.metric-item label="Total Akun" :nilai="$totalAkun" satuan="akun"
+                ikon="pengguna" warna="teal" keterangan="Petugas terdaftar" />
+            <x-sim.metric-item label="Akun Aktif" :nilai="$aktif" satuan="akun"
+                ikon="pengguna" warna="emerald"
+                :prosentase="$totalAkun > 0 ? round(($aktif / $totalAkun) * 100, 1) : null" />
+            <x-sim.metric-item label="Akun Nonaktif" :nilai="$totalAkun - $aktif" satuan="akun"
+                ikon="perhatian" warna="gold"
+                :prosentase="$totalAkun > 0 ? round((($totalAkun - $aktif) / $totalAkun) * 100, 1) : null" />
+            <x-sim.metric-item label="Wajib Ganti Sandi" :nilai="$perluGanti" satuan="akun"
+                ikon="mendesak" warna="red" keterangan="Perlu ganti sandi" />
+        </x-slot:metrik>
+
         <x-slot:ringkasan>
             <x-sim.stat-card label="Total Akun" :nilai="$totalAkun" />
             <x-sim.stat-card label="Akun Aktif" :nilai="$aktif" />

@@ -20,6 +20,7 @@
         keterangan="Pengadaan benih, pupuk, pestisida, dan mulsa, beserta pembagiannya ke kelompok tani."
         :remah="\App\Helpers\RemahHelper::untuk('/saprotan')"
         :jumlah="$baris->total()" :paginator="$baris" :kata-kunci="$cari" :aksi-url="route('saprotan.index')"
+        :kolom-metrik="3"
         placeholder-cari="Cari nama saprotan atau poktan" judul-kosong="Belum ada pengadaan saprotan"
         pesan-kosong="Pengadaan sarana produksi akan tampil di sini setelah dicatat.">
 
@@ -27,6 +28,15 @@
             <x-sim.aksi-daftar modal-impor="imporSaprotan"
                 modal-tambah="formTambahSaprotan" label-tambah="Tambah Saprotan" />
         </x-slot:aksi>
+
+        <x-slot:metrik>
+            <x-sim.metric-item label="Total Pengadaan" :nilai="$pengadaan" satuan="paket"
+                ikon="saprotan" warna="teal" keterangan="Pengadaan saprotan terdata" />
+            <x-sim.metric-item label="Ragam Jenis" :nilai="count($jenisUnik)" satuan="jenis"
+                ikon="komoditas" warna="navy" keterangan="Benih, pupuk & pestisida" />
+            <x-sim.metric-item label="Poktan Penerima" :nilai="$poktanPenerima" satuan="poktan"
+                ikon="poktan" warna="emerald" keterangan="Kelompok tani penerima bagian" />
+        </x-slot:metrik>
 
         <x-slot:ringkasan>
             <x-sim.stat-card label="Pengadaan" :nilai="$pengadaan" />

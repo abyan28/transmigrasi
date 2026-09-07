@@ -25,6 +25,18 @@
                 modal-tambah="formTambahAlsintan" label-tambah="Tambah Alsintan" />
         </x-slot:aksi>
 
+        <x-slot:metrik>
+            <x-sim.metric-item label="Total Pengadaan" :nilai="$pengadaan" satuan="paket"
+                ikon="alsintan" warna="teal" keterangan="Tercatat di sistem" />
+            <x-sim.metric-item label="Total Alsintan" :nilai="number_format($totalUnit, 0, ',', '.')"
+                satuan="unit" ikon="aset" warna="navy" keterangan="Alat & mesin pertanian" />
+            <x-sim.metric-item label="Belum Tersalur" :nilai="number_format($belumTersalur, 0, ',', '.')"
+                satuan="unit" ikon="perhatian" warna="gold"
+                :prosentase="$totalUnit > 0 ? round(($belumTersalur / $totalUnit) * 100, 1) : null" />
+            <x-sim.metric-item label="Poktan Penerima" :nilai="$poktanPenerima"
+                satuan="poktan" ikon="poktan" warna="emerald" keterangan="Kelompok penerima bagian" />
+        </x-slot:metrik>
+
         <x-slot:ringkasan>
             <x-sim.stat-card label="Pengadaan" :nilai="$pengadaan" />
             <x-sim.stat-card label="Total Unit" :nilai="number_format($totalUnit, 0, ',', '.')" />

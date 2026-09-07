@@ -25,6 +25,19 @@
                 modal-tambah="formTambahFasilitas" label-tambah="Tambah Fasilitas" />
         </x-slot:aksi>
 
+        <x-slot:metrik>
+            <x-sim.metric-item label="Jenis Fasilitas" :nilai="$jenisFasilitas" satuan="jenis"
+                ikon="fasilitas" warna="teal" keterangan="Sarana umum SP" />
+            <x-sim.metric-item label="Total Fasilitas" :nilai="number_format($totalUnit, 0, ',', '.')"
+                satuan="unit" ikon="aset" warna="navy" keterangan="Gedung & fasilitas publik" />
+            <x-sim.metric-item label="Kondisi Baik" :nilai="$kondisiBaik" satuan="unit"
+                ikon="fasilitas" warna="emerald"
+                :prosentase="$totalUnit > 0 ? round(($kondisiBaik / $totalUnit) * 100, 1) : null" />
+            <x-sim.metric-item label="Perlu Perbaikan" :nilai="$rusak" satuan="unit"
+                ikon="rusak" warna="gold"
+                :prosentase="$totalUnit > 0 ? round(($rusak / $totalUnit) * 100, 1) : null" />
+        </x-slot:metrik>
+
         <x-slot:ringkasan>
             <x-sim.stat-card label="Jenis Fasilitas" :nilai="$jenisFasilitas" />
             <x-sim.stat-card label="Total Unit" :nilai="number_format($totalUnit, 0, ',', '.')" />

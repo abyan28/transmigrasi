@@ -24,6 +24,19 @@
                 modal-tambah="formTambahPoktan" label-tambah="Tambah Poktan" />
         </x-slot:aksi>
 
+        <x-slot:metrik>
+            <x-sim.metric-item label="Kelompok Tani" :nilai="$totalPoktan" satuan="Poktan"
+                ikon="poktan" warna="teal" keterangan="Kawasan Kobalima Timur" />
+            <x-sim.metric-item label="Total Anggota" :nilai="number_format($totalAnggota, 0, ',', '.')"
+                satuan="orang" ikon="keluarga" warna="navy" keterangan="Tersebar di seluruh SP" />
+            <x-sim.metric-item label="Anggota Terdata" :nilai="number_format($anggotaTerdata, 0, ',', '.')"
+                satuan="orang" ikon="penduduk" warna="emerald"
+                :prosentase="$totalAnggota > 0 ? round(($anggotaTerdata / $totalAnggota) * 100, 1) : null" />
+            <x-sim.metric-item label="Anggota Aktif" :nilai="number_format($anggotaAktif, 0, ',', '.')"
+                satuan="orang" ikon="tanam" warna="gold"
+                :prosentase="$totalAnggota > 0 ? round(($anggotaAktif / $totalAnggota) * 100, 1) : null" />
+        </x-slot:metrik>
+
         <x-slot:ringkasan>
             <x-sim.stat-card label="Jumlah Poktan" :nilai="$totalPoktan" satuan="kelompok" />
             <x-sim.stat-card label="Total Anggota" :nilai="number_format($totalAnggota, 0, ',', '.')" satuan="orang" />

@@ -24,6 +24,18 @@
                 modal-tambah="formTambahInventaris" label-tambah="Tambah Inventaris" />
         </x-slot:aksi>
 
+        <x-slot:metrik>
+            <x-sim.metric-item label="Jenis Barang" :nilai="$jenisBarang" satuan="jenis"
+                ikon="aset" warna="teal" keterangan="Aset perlengkapan SP" />
+            <x-sim.metric-item label="Total Unit" :nilai="number_format($totalUnit, 0, ',', '.')"
+                satuan="unit" ikon="aset" warna="navy" keterangan="Barang inventaris tercatat" />
+            <x-sim.metric-item label="Sudah Diserahkan" :nilai="$sudahDiserahkan" satuan="jenis"
+                ikon="keluarga" warna="emerald"
+                :prosentase="$jenisBarang > 0 ? round(($sudahDiserahkan / $jenisBarang) * 100, 1) : null" />
+            <x-sim.metric-item label="Perlu Perhatian" :nilai="$perluPerhatian" satuan="unit"
+                ikon="perhatian" warna="gold" keterangan="Rusak ringan atau berat" />
+        </x-slot:metrik>
+
         <x-slot:ringkasan>
             <x-sim.stat-card label="Jenis Barang" :nilai="$jenisBarang" />
             <x-sim.stat-card label="Total Unit" :nilai="number_format($totalUnit, 0, ',', '.')" />

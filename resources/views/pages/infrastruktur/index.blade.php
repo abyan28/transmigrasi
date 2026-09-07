@@ -25,6 +25,20 @@
                 modal-tambah="formTambahInfrastruktur" label-tambah="Tambah Aset" />
         </x-slot:aksi>
 
+        <x-slot:metrik>
+            <x-sim.metric-item label="Aset Terdata" :nilai="$totalAset" satuan="unit"
+                ikon="infrastruktur" warna="teal" keterangan="Jembatan, jalan & fasilitas" />
+            <x-sim.metric-item label="Kondisi Baik" :nilai="$kondisiBaik" satuan="unit"
+                ikon="infrastruktur" warna="emerald"
+                :prosentase="$totalAset > 0 ? round(($kondisiBaik / $totalAset) * 100, 1) : null" />
+            <x-sim.metric-item label="Perlu Perbaikan" :nilai="$perluPerbaikan" satuan="unit"
+                ikon="rusak" warna="gold"
+                :prosentase="$totalAset > 0 ? round(($perluPerbaikan / $totalAset) * 100, 1) : null" />
+            <x-sim.metric-item label="Rusak Berat" :nilai="$rusakBerat" satuan="unit"
+                ikon="rusak" warna="red"
+                :prosentase="$totalAset > 0 ? round(($rusakBerat / $totalAset) * 100, 1) : null" />
+        </x-slot:metrik>
+
         <x-slot:ringkasan>
             <x-sim.stat-card label="Aset Terdata" :nilai="$totalAset" />
             <x-sim.stat-card label="Kondisi Baik" :nilai="$kondisiBaik" />

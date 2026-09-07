@@ -41,8 +41,8 @@
     };
 
     $kelasStatus = match (true) {
-        $isMendesak => ' border-error-500 ring-1 ring-error-500/30 dark:border-error-500/80 dark:ring-error-500/20',
-        $isPerhatian => ' border-amber-300/80 dark:border-amber-500/30',
+        $isMendesak => ' border-error-500 ring-2 ring-error-500/40 motion-safe:animate-pulse bg-red-50/40 dark:border-error-500/80 dark:ring-error-500/30 dark:bg-red-950/20',
+        $isPerhatian => ' border-amber-300/90 ring-2 ring-amber-400/30 motion-safe:animate-pulse bg-amber-50/30 dark:border-amber-500/50 dark:ring-amber-500/20 dark:bg-amber-950/15',
         default => ' border-gray-200 dark:border-gray-800',
     };
 @endphp

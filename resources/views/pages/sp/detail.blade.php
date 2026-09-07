@@ -142,20 +142,75 @@
                 {{-- TAB 1: Ringkasan & Kondisi --}}
                 {{-- ====================================================================== --}}
                 <div x-show="tab === 'ringkasan'" role="tabpanel" class="p-5 space-y-6 sm:p-6">
-                    {{-- 4 Stat Cards KPI --}}
-                    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                        <x-sim.stat-card label="Kepala Keluarga"
-                            :nilai="number_format($rekap['jumlah_kk'], 0, ',', '.')" satuan="KK" />
+                    {{-- Wadah Ringkasan dengan Pilihan Tampilan (Bilah Ramping vs Kartu Lama) --}}
+                    <div x-data="{
+                            modeRingkas: localStorage.getItem('pref_ringkasan_sp_detail') !== 'kartu',
+                            toggleMode() {
+                                this.modeRingkas = !this.modeRingkas;
+                                localStorage.setItem('pref_ringkasan_sp_detail', this.modeRingkas ? 'strip' : 'kartu');
+                            }
+                        }">
 
-                        <x-sim.stat-card label="Rumah Terhuni"
-                            :nilai="number_format($rekap['rumah_terhuni'], 0, ',', '.')"
-                            :keterangan="$persenHuni . '% dari KK terdata'" />
+                        {{-- Baris kontrol alih tampilan kecil --}}
+                        <div class="mb-2 flex items-center justify-between gap-2 px-1">
+                            <p class="text-theme-xs font-medium text-gray-500 dark:text-gray-400">
+                                Indikator Kunci SP
+                            </p>
+                            <button type="button" @click="toggleMode()"
+                                :title="modeRingkas ? 'Beralih ke tampilan kartu' : 'Beralih ke tampilan bilah ramping'"
+                                class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-theme-xs font-medium text-gray-600 shadow-2xs hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-white/5">
+                                <template x-if="modeRingkas">
+                                    <span class="inline-flex items-center gap-1">
+                                        <svg class="h-3.5 w-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+                                        </svg>
+                                        Tampilan Kartu
+                                    </span>
+                                </template>
+                                <template x-if="!modeRingkas">
+                                    <span class="inline-flex items-center gap-1">
+                                        <svg class="h-3.5 w-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9h16.5m-16.5 6.75h16.5" />
+                                        </svg>
+                                        Tampilan Ramping
+                                    </span>
+                                </template>
+                            </button>
+                        </div>
 
-                        <x-sim.stat-card label="Luas Lahan"
-                            :nilai="number_format($rekap['luas_lahan'], 2, ',', '.')" satuan="ha" />
+                        {{-- Desain 1: Compact Metric Strip (Default Ramping & Visual) --}}
+                        <div x-show="modeRingkas" x-transition.opacity>
+                            <x-sim.metric-strip>
+                                <x-sim.metric-item label="Kepala Keluarga"
+                                    :nilai="number_format($rekap['jumlah_kk'], 0, ',', '.')" satuan="KK"
+                                    ikon="keluarga" warna="teal" keterangan="Warga KK di SP ini" />
+                                <x-sim.metric-item label="Rumah Terhuni"
+                                    :nilai="number_format($rekap['rumah_terhuni'], 0, ',', '.')" satuan="unit"
+                                    ikon="hunian" warna="emerald" :prosentase="$persenHuni" />
+                                <x-sim.metric-item label="Luas Lahan"
+                                    :nilai="number_format($rekap['luas_lahan'], 2, ',', '.')" satuan="ha"
+                                    ikon="lahan" warna="navy" keterangan="Total areal garapan" />
+                                <x-sim.metric-item label="Volume Panen"
+                                    :nilai="number_format($rekap['volume_panen'], 2, ',', '.')" satuan="ton"
+                                    ikon="panen" warna="gold" keterangan="Hasil panen terdata" />
+                            </x-sim.metric-strip>
+                        </div>
 
-                        <x-sim.stat-card label="Volume Panen"
-                            :nilai="number_format($rekap['volume_panen'], 2, ',', '.')" satuan="ton" />
+                        {{-- Desain 2: 4 Stat Cards KPI Lama (Opsi Revert / Fallback Penuh) --}}
+                        <div x-show="!modeRingkas" x-cloak x-transition.opacity class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                            <x-sim.stat-card label="Kepala Keluarga"
+                                :nilai="number_format($rekap['jumlah_kk'], 0, ',', '.')" satuan="KK" />
+
+                            <x-sim.stat-card label="Rumah Terhuni"
+                                :nilai="number_format($rekap['rumah_terhuni'], 0, ',', '.')"
+                                :keterangan="$persenHuni . '% dari KK terdata'" />
+
+                            <x-sim.stat-card label="Luas Lahan"
+                                :nilai="number_format($rekap['luas_lahan'], 2, ',', '.')" satuan="ha" />
+
+                            <x-sim.stat-card label="Volume Panen"
+                                :nilai="number_format($rekap['volume_panen'], 2, ',', '.')" satuan="ton" />
+                        </div>
                     </div>
 
                     {{-- 2 Grafik Tren SP --}}

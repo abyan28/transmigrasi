@@ -39,6 +39,19 @@
                 modal-tambah="formTambahKomoditas" label-tambah="Tambah Komoditas" />
         </x-slot:aksi>
 
+        <x-slot:metrik>
+            <x-sim.metric-item label="Jenis Komoditas" :nilai="$totalKomoditas" satuan="jenis"
+                ikon="komoditas" warna="teal" keterangan="Terdaftar di kawasan" />
+            <x-sim.metric-item label="Komoditas Unggulan" :nilai="$unggulan" satuan="jenis"
+                ikon="panen" warna="emerald"
+                :prosentase="$totalKomoditas > 0 ? round(($unggulan / $totalKomoditas) * 100, 1) : null" />
+            <x-sim.metric-item label="Satuan Dipakai" :nilai="$satuanDipakai" satuan="satuan"
+                ikon="aset" warna="navy" keterangan="Satuan panen baku" />
+            <x-sim.metric-item label="Total Panen Tercatat"
+                :nilai="number_format(array_sum($sebaran), 1, ',', '.')" satuan="ton"
+                ikon="panen" warna="gold" keterangan="Agregat kawasan" />
+        </x-slot:metrik>
+
         <x-slot:ringkasan>
             <x-sim.stat-card label="Jenis Komoditas" :nilai="$totalKomoditas" />
             {{--
