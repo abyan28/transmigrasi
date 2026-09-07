@@ -211,7 +211,7 @@
                 <td class="px-5 py-3">
                     <div class="flex flex-wrap gap-1.5">
                         <x-sim.status-badge :teks="$u['is_aktif'] ? 'Aktif' : 'Nonaktif'"
-                            :warna="$u['is_aktif'] ? 'success' : 'gray'" ukuran="sm" />
+                            :warna="$u['is_aktif'] ? 'success' : 'error'" ukuran="sm" />
                         @if ($u['password_harus_diganti'])
                             <x-sim.status-badge teks="Wajib ganti sandi" warna="warning" ukuran="sm" />
                         @endif
@@ -297,7 +297,7 @@
                     <div class="flex items-start justify-between gap-3">
                         <p class="text-theme-sm font-medium text-gray-800 dark:text-white/90">{{ $u['nama'] }}</p>
                         <x-sim.status-badge :teks="$u['is_aktif'] ? 'Aktif' : 'Nonaktif'"
-                            :warna="$u['is_aktif'] ? 'success' : 'gray'" ukuran="sm" />
+                            :warna="$u['is_aktif'] ? 'success' : 'error'" ukuran="sm" />
                     </div>
                     <p class="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
                         {{ $u['username'] }} &middot; {{ $u['role'] }}

@@ -25,37 +25,39 @@
         :keterangan="'Kepala keluarga di ' . $data['satuan_permukiman'] . ', datang tahun ' . $data['tahun_kedatangan'] . '.'"
         :remah="\App\Helpers\RemahHelper::untuk('/transmigran', $data['nama_kepala_keluarga'])">
         <x-slot:aksi>
-            {{--
-                Suksesi adalah TINDAKAN TERSENDIRI, bukan efek samping form
-                ubah (rules.md 6 poin 5b). Bila ia lahir dari penyuntingan nama
-                pada form biasa, setiap perbaikan ejaan akan mengotori riwayat
-                suksesi, yaitu kekaburan yang justru hendak ditutup.
+            <div class="flex flex-col sm:flex-row w-full sm:w-auto gap-2.5">
+                {{--
+                    Suksesi adalah TINDAKAN TERSENDIRI, bukan efek samping form
+                    ubah (rules.md 6 poin 5b). Bila ia lahir dari penyuntingan nama
+                    pada form biasa, setiap perbaikan ejaan akan mengotori riwayat
+                    suksesi, yaitu kekaburan yang justru hendak ditutup.
 
-                Bergaya sekunder sebab jauh lebih jarang dipakai daripada
-                menyunting data biasa.
-            --}}
-            @if ($bolehSuksesi)
-                <button type="button" @click="$dispatch('buka-modal', 'formGantiKepalaKeluarga')"
-                    class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-theme-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
-                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"
-                        aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M16.023 9.348h4.992V4.356m-4.993 4.992l3.181-3.183a8.25 8.25 0 00-13.803 3.7M4.031 9.865v4.992h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7" />
-                    </svg>
-                    Ganti Kepala Keluarga
-                </button>
-            @endif
-            @if ($bolehUbah)
-                <button type="button" @click="$dispatch('buka-modal', 'formUbahTransmigran')"
-                    class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
-                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"
-                        aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" />
-                    </svg>
-                    Ubah Data Transmigran
-                </button>
-            @endif
+                    Bergaya sekunder sebab jauh lebih jarang dipakai daripada
+                    menyunting data biasa.
+                --}}
+                @if ($bolehSuksesi)
+                    <button type="button" @click="$dispatch('buka-modal', 'formGantiKepalaKeluarga')"
+                        class="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-theme-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"
+                            aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M16.023 9.348h4.992V4.356m-4.993 4.992l3.181-3.183a8.25 8.25 0 00-13.803 3.7M4.031 9.865v4.992h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7" />
+                        </svg>
+                        Ganti Kepala Keluarga
+                    </button>
+                @endif
+                @if ($bolehUbah)
+                    <button type="button" @click="$dispatch('buka-modal', 'formUbahTransmigran')"
+                        class="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"
+                            aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" />
+                        </svg>
+                        Ubah Data Transmigran
+                    </button>
+                @endif
+            </div>
         </x-slot:aksi>
     </x-sim.page-header>
 
@@ -218,11 +220,12 @@
                         <x-sim.empty-state judul="Belum ada anggota keluarga terdata"
                             pesan="Selain kepala keluarga, belum ada istri, suami, anak, atau anggota lain yang dicatat. Tambahkan lewat tombol Ubah Data." />
                     @else
-                        <div class="relative overflow-x-auto">
-                            <table class="w-full text-theme-sm">
-                                <caption class="px-5 py-3 text-left text-theme-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Anggota keluarga {{ $data['nama_kepala_keluarga'] }} selain kepala keluarga
-                                </caption>
+                        <div class="relative">
+                            <div class="overflow-x-auto">
+                                <table class="w-full min-w-[900px] text-theme-sm">
+                                    <caption class="px-5 py-3 text-left text-theme-sm font-medium text-gray-700 dark:text-gray-300">
+                                        Anggota keluarga {{ $data['nama_kepala_keluarga'] }} selain kepala keluarga
+                                    </caption>
                                 <thead class="border-y border-gray-200 bg-gray-50 text-theme-xs text-gray-500 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400">
                                     <tr>
                                         <th scope="col" class="px-5 py-3 text-left">Nama</th>
@@ -290,6 +293,9 @@
                                 </tbody>
                             </table>
                         </div>
+                        {{-- Penanda visual bayangan (scroll affordance hint) bahwa tabel dapat digeser ke kanan di mobile --}}
+                        <div class="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white dark:from-gray-900 md:hidden" aria-hidden="true"></div>
+                    </div>
                         <p class="px-5 py-3 text-theme-xs text-gray-500 dark:text-gray-400">
                             Usia dihitung dari tanggal lahir dan bertambah sendiri tiap tahun. Anggota
                             yang meninggal atau pindah tetap tercatat untuk riwayat dan laporan, tetapi

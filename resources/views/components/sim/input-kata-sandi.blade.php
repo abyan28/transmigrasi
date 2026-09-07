@@ -31,11 +31,11 @@
             autocomplete="{{ $autocomplete }}" placeholder="{{ $placeholder }}"
             @if ($wajib) required @endif
             {{ $attributes->except('class') }}
-            class="h-11 w-full rounded-lg border border-gray-300 bg-transparent py-2.5 pr-11 pl-4 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30" />
+            class="h-11 w-full rounded-lg border border-gray-300 bg-transparent py-2.5 pr-12 pl-4 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90 dark:placeholder:text-white/30" />
 
         <button type="button" @click="tampilkan = !tampilkan"
             :aria-label="tampilkan ? 'Sembunyikan kata sandi' : 'Perlihatkan kata sandi'"
-            class="absolute top-1/2 right-3 -translate-y-1/2 rounded p-1 text-gray-500 hover:text-gray-700 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-gray-400 dark:hover:text-gray-200">
+            class="absolute top-1/2 right-1 z-10 flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-lg text-gray-500 hover:text-gray-700 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-gray-400 dark:hover:text-gray-200">
             <svg x-show="!tampilkan" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
                 stroke-width="1.5" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round"

@@ -309,7 +309,7 @@
                                 </p>
                                 <p class="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">{{ $p['poktan'] }}</p>
                             </a>
-                            <span class="shrink-0 text-theme-sm tabular-nums text-gray-700 dark:text-gray-300">
+                            <span class="shrink-0 text-right text-theme-sm font-medium tabular-nums text-gray-700 dark:text-gray-300">
                                 {{ number_format($p['produksi'], 3, ',', '.') }} {{ $p['satuan'] }}
                             </span>
                         </div>

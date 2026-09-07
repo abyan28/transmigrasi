@@ -22,7 +22,7 @@ enum StatusHunian: string
     {
         return match ($this) {
             self::Dihuni => 'teal',
-            self::TidakDihuni => 'gray',
+            self::TidakDihuni => 'warning',
         };
     }
 }

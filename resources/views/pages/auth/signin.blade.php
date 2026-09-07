@@ -76,7 +76,7 @@
                                             class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent py-2.5 pr-11 pl-4 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30" />
                                         <button type="button" @click="tampilkanSandi = !tampilkanSandi"
                                             :aria-label="tampilkanSandi ? 'Sembunyikan kata sandi' : 'Perlihatkan kata sandi'"
-                                            class="absolute top-1/2 right-4 z-30 -translate-y-1/2 cursor-pointer rounded focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
+                                            class="absolute top-1/2 right-1 z-30 flex h-11 w-11 -translate-y-1/2 items-center justify-center cursor-pointer rounded-lg text-gray-500 hover:text-gray-700 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:text-gray-400 dark:hover:text-gray-200">
                                             <svg x-show="!tampilkanSandi" class="fill-gray-500 dark:fill-gray-400"
                                                 width="20" height="20" viewBox="0 0 20 20" fill="none"
                                                 xmlns="http://www.w3.org/2000/svg" aria-hidden="true">

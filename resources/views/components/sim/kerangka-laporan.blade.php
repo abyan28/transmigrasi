@@ -95,9 +95,9 @@
             keterangan="Dokumen laporan berformat tetap untuk kebutuhan dinas, pendamping, dan kementerian."
             :remah="\App\Helpers\RemahHelper::untuk('/laporan/' . $slug)">
             <x-slot:aksi>
-                <div class="flex flex-wrap items-center gap-2.5">
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
                     {{-- Pemilih Ukuran Kertas (Opsi 2: Pill Selector) --}}
-                    <div class="inline-flex items-center rounded-lg border border-gray-200 bg-gray-50 p-1 dark:border-gray-800 dark:bg-gray-800/80">
+                    <div class="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-gray-50 p-1 dark:border-gray-800 dark:bg-gray-800/80">
                         <span class="px-2 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Kertas:</span>
                         <button type="button" @click="ukuranKertas = 'a4'"
                             :class="ukuranKertas === 'a4' ? 'bg-white font-semibold text-gray-900 shadow-sm dark:bg-gray-900 dark:text-white' : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white font-medium'"
@@ -119,7 +119,7 @@
                         href = alamat polos.
                     --}}
                     <a :href="@js(route('laporan.dokumen', $slug)) + hashFilter" target="_blank" rel="noopener"
-                        class="inline-flex h-10 shrink-0 items-center gap-2 rounded-lg bg-brand-500 px-4 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
+                        class="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round"
                                 d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />

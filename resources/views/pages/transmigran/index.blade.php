@@ -226,6 +226,7 @@
                                     {{ $t['nik'] }}
                                 </p>
                             </a>
+                            <x-sim.status-badge :status="\App\Enums\StatusTinggal::from($t['status_tinggal'])" ukuran="sm" />
                         </div>
                         <p class="mt-2 text-theme-xs text-gray-500 dark:text-gray-400">
                             {{ $t['satuan_permukiman'] }} &middot; {{ $t['jumlah_anggota_keluarga'] }} anggota

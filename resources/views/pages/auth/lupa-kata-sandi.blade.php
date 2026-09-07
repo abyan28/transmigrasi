@@ -76,7 +76,7 @@
                             <p class="text-sm text-gray-600 dark:text-gray-400">
                                 Sudah ingat kata sandi Anda?
                                 <a href="{{ route('login') }}"
-                                    class="font-medium text-brand-500 hover:text-brand-600">Kembali ke halaman masuk</a>
+                                    class="inline-block py-1.5 font-medium text-brand-500 hover:text-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">Kembali ke halaman masuk</a>
                             </p>
                         </div>
                     </div>

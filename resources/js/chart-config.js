@@ -174,11 +174,30 @@ export function opsiDasar() {
         xaxis: {
             axisBorder: { color: warnaGaris },
             axisTicks: { color: warnaGaris },
-            labels: { style: { colors: warnaTeks, fontSize: '12px' } },
+            labels: {
+                hideOverlappingLabels: true,
+                trim: true,
+                style: { colors: warnaTeks, fontSize: '12px' },
+            },
         },
         yaxis: {
             labels: { style: { colors: warnaTeks, fontSize: '12px' } },
         },
+        responsive: [
+            {
+                breakpoint: 640,
+                options: {
+                    xaxis: {
+                        labels: {
+                            rotate: -45,
+                            rotateAlways: false,
+                            hideOverlappingLabels: true,
+                            style: { fontSize: '10px' },
+                        },
+                    },
+                },
+            },
+        ],
         states: {
             hover: { filter: { type: 'lighten', value: 0.06 } },
         },

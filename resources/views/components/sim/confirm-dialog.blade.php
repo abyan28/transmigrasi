@@ -41,8 +41,10 @@
         terbuka: false,
         aksi: '',
         mengirim: false,
+        teksAlasan: '',
         buka(detail) {
             this.aksi = detail.aksi ?? '';
+            this.teksAlasan = '';
             this.terbuka = true;
             window.kunciGulir?.kunci();
             this.$nextTick(() => this.$refs.tombolBatal?.focus());
@@ -54,6 +56,7 @@
 
             this.terbuka = false;
             this.mengirim = false;
+            this.teksAlasan = '';
             window.kunciGulir?.lepas();
         },
     }"
@@ -123,8 +126,11 @@
                                         {{ $labelAlasan }}<span class="text-error-500">*</span>
                                     </label>
                                     <textarea id="alasan-{{ $nama }}" name="{{ $namaAlasan }}" rows="3" required
+                                        x-model="teksAlasan" maxlength="255"
                                         placeholder="Tuliskan bagian mana yang perlu diperbaiki"
                                         class="w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-700 dark:text-white/90"></textarea>
+                                    <p class="mt-1 text-right text-theme-xs tabular-nums text-gray-400 dark:text-gray-500"
+                                        x-text="teksAlasan.length + '/255'"></p>
                                 </div>
                             @endif
                         </div>

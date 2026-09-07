@@ -116,7 +116,7 @@
 
         <!-- Mobile Close Button (visible only on mobile when sidebar is open) -->
         <button type="button" @click="$store.sidebar.setMobileOpen(false)"
-            class="flex xl:hidden items-center justify-center w-9 h-9 text-gray-500 rounded-lg hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500"
+            class="flex xl:hidden items-center justify-center w-11 h-11 text-gray-500 rounded-lg hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500"
             aria-label="Tutup menu samping">
             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -131,7 +131,7 @@
                 @foreach ($menuGroups as $groupIndex => $menuGroup)
                     <div>
                         <!-- Menu Group Title -->
-                        <h2 class="mb-4 text-xs uppercase flex leading-[20px] text-gray-400"
+                        <h2 class="mb-4 text-xs font-semibold uppercase flex leading-[20px] text-gray-500 dark:text-gray-400"
                             :class="(!$store.sidebar.isExpanded && !$store.sidebar.isHovered && !$store.sidebar.isMobileOpen) ?
                             'lg:justify-center' : 'justify-start'">
                             <template

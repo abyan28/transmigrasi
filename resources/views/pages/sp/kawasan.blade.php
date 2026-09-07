@@ -68,7 +68,7 @@
                 <div>
                     <dt class="text-theme-xs text-gray-500 dark:text-gray-400">Nomor SK</dt>
                     <dd class="mt-0.5 text-theme-sm font-semibold text-gray-800 dark:text-white/90">
-                        {{ $k['nomor_sk'] ?? '—' }}
+                        {{ $k['nomor_sk'] ?? '-' }}
                     </dd>
                 </div>
                 <div>

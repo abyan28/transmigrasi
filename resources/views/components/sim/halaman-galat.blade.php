@@ -45,7 +45,7 @@
         @endif
 
         @if ($pesan)
-            <p class="mt-6 text-theme-sm text-gray-600 sm:text-base dark:text-gray-400">
+            <p class="mt-6 text-theme-sm text-gray-600 sm:text-base dark:text-gray-300">
                 {{ $pesan }}
             </p>
         @endif
