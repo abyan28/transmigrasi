@@ -257,6 +257,22 @@ it('memperbarui kondisi satu baris distribusi', function () {
     expect($baris->refresh()->kondisi)->toBe('Rusak Berat');
 });
 
+it('mempertahankan kondisi nonaktif hanya pada distribusi yang sudah memilikinya', function () {
+    $baris = AlsintanDistribusi::where('kondisi', 'Baik')->firstOrFail();
+    $baris->update(['kondisi' => 'Hilang']);
+    \App\Models\DaftarPilihan::where('jenis', \App\Enums\JenisDaftarPilihan::Kondisi->value)
+        ->where('nilai', 'Hilang')->update(['is_aktif' => false]);
+
+    $this->post("/alsintan/{$baris->alsintan_id}/distribusi/{$baris->id_alsintan_distribusi}/kondisi", [
+        'kondisi' => 'Hilang',
+    ])->assertSessionHasNoErrors();
+
+    $lain = AlsintanDistribusi::whereKeyNot($baris->id_alsintan_distribusi)->firstOrFail();
+    $this->post("/alsintan/{$lain->alsintan_id}/distribusi/{$lain->id_alsintan_distribusi}/kondisi", [
+        'kondisi' => 'Hilang',
+    ])->assertSessionHasErrors('kondisi');
+});
+
 it('membatasi foto distribusi alsintan menurut cakupan poktan penerima', function () {
     Storage::fake('local');
     $baris = AlsintanDistribusi::withoutGlobalScopes()->whereHas('poktan', fn ($q) => $q->where('satuan_permukiman_id', 1))->firstOrFail();

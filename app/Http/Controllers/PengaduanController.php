@@ -70,15 +70,12 @@ class PengaduanController extends Controller
             ->when($filterBidang && $filterBidang !== 'belum', fn ($q) => $q->where('bidang', $filterBidang))
             // Belum selesai didahulukan, lalu menurut kemendesakan.
             //
-            // SEBELUMNYA memakai FIELD(), fungsi MariaDB yang tak ada di
-            // SQLite (Fase 1, 2026-09-05 -- ternyata `tests/Feature/HalamanTest.php`
-            // memang memuat uji `/pengaduan` di SQLite, bukan cuma tests/Database
-            // seperti catatan lama di sini mengira). `CASE WHEN` portabel di
-            // kedua mesin, jadi dipakai untuk KEDUA pengurutan sekaligus.
+            // Prioritas mengikuti urutan yang dikelola pada Daftar Pilihan.
             ->orderByRaw('CASE WHEN status = ? THEN 1 ELSE 0 END', [StatusPengaduan::Selesai->value])
-            ->orderByRaw("CASE prioritas
-                WHEN 'Mendesak' THEN 1 WHEN 'Tinggi' THEN 2
-                WHEN 'Sedang' THEN 3 WHEN 'Rendah' THEN 4 ELSE 5 END")
+            ->orderByDesc(DaftarPilihan::query()->select('urutan')
+                ->where('jenis', JenisDaftarPilihan::PrioritasPengaduan->value)
+                ->whereColumn('nilai', 'pengaduan.prioritas'))
+            ->orderBy('id_pengaduan')
             ->paginate($perHalaman)
             ->withQueryString();
 
@@ -163,7 +160,7 @@ class PengaduanController extends Controller
     {
         $pengaduan = Pengaduan::findOrFail($id);
         CakupanDataSp::pastikanDapatDitulis($pengaduan);
-        $data = $this->validasi($request);
+        $data = $this->validasi($request, $pengaduan);
 
         DB::transaction(function () use ($request, $pengaduan, $data) {
             $pengaduan->update($this->kolom($data));
@@ -190,7 +187,7 @@ class PengaduanController extends Controller
             'status_sesudah' => ['required', Rule::enum(StatusPengaduan::class)],
             'tanggal_penanganan' => ['required', 'date', 'before_or_equal:today'],
             'catatan' => ['required', 'string', 'max:500'],
-            'bidang' => ValidationRules::daftarPilihan(JenisDaftarPilihan::BidangPengaduan),
+            'bidang' => ValidationRules::daftarPilihan(JenisDaftarPilihan::BidangPengaduan, nilaiSaatIni: $pengaduan->bidang),
             'dokumen_tindak_lanjut' => ValidationRules::dokumen(),
         ], [
             'status_sesudah.required' => 'Status tujuan wajib ada.',
@@ -343,16 +340,16 @@ class PengaduanController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function validasi(Request $request): array
+    private function validasi(Request $request, ?Pengaduan $pengaduan = null): array
     {
         $data = $request->validate([
             'nama_pelapor' => ['required', 'string', 'max:255'],
             'kontak_pelapor' => ['required', 'string', 'max:20'],
             'satuan_permukiman_id' => ['required', 'integer', Rule::exists('satuan_permukiman', 'id_satuan_permukiman')],
             'tanggal_pengaduan' => ['required', 'date', 'before_or_equal:today'],
-            'kategori' => ValidationRules::daftarPilihan(JenisDaftarPilihan::KategoriPengaduan, wajib: true),
-            'bidang' => ValidationRules::daftarPilihan(JenisDaftarPilihan::BidangPengaduan),
-            'prioritas' => ValidationRules::daftarPilihan(JenisDaftarPilihan::PrioritasPengaduan, wajib: true),
+            'kategori' => ValidationRules::daftarPilihan(JenisDaftarPilihan::KategoriPengaduan, wajib: true, nilaiSaatIni: $pengaduan?->kategori),
+            'bidang' => ValidationRules::daftarPilihan(JenisDaftarPilihan::BidangPengaduan, nilaiSaatIni: $pengaduan?->bidang),
+            'prioritas' => ValidationRules::daftarPilihan(JenisDaftarPilihan::PrioritasPengaduan, wajib: true, nilaiSaatIni: $pengaduan?->prioritas),
             'judul' => ['required', 'string', 'max:255'],
             'deskripsi' => ['required', 'string', 'max:5000'],
             'lintang' => ValidationRules::lintang(),

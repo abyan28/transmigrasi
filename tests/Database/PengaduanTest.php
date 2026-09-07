@@ -59,6 +59,15 @@ it('merender daftar pengaduan dengan barisnya', function () {
         ->assertSee('Saluran irigasi tersumbat');
 });
 
+it('menyortir pengaduan memakai urutan master prioritas', function () {
+    \App\Models\DaftarPilihan::where('jenis', \App\Enums\JenisDaftarPilihan::PrioritasPengaduan->value)
+        ->where('nilai', 'Rendah')->update(['urutan' => 99]);
+
+    $isi = $this->get(route('pengaduan.index'))->assertOk()->getContent();
+
+    expect(strpos($isi, 'PGD-2026-0006-KCJSY6'))->toBeLessThan(strpos($isi, 'PGD-2026-0004-TGMZ79'));
+});
+
 it('membalas 404 untuk pengaduan yang tidak ada', function () {
     $this->get('/pengaduan/99999')->assertNotFound();
 });

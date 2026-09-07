@@ -139,7 +139,7 @@ class KomoditasController extends Controller
                 'required', 'string', 'max:100',
                 Rule::unique('komoditas', 'nama')->ignore($komoditas?->id_komoditas, 'id_komoditas'),
             ],
-            'tipe' => ValidationRules::daftarPilihan(JenisDaftarPilihan::TipeKomoditas, wajib: true),
+            'tipe' => ValidationRules::daftarPilihan(JenisDaftarPilihan::TipeKomoditas, wajib: true, nilaiSaatIni: $komoditas?->tipe),
             'satuan_id' => ['required', 'integer', Rule::exists('satuan', 'id_satuan')],
             'is_unggulan' => ['nullable', 'boolean'],
             'deskripsi' => ['nullable', 'string', 'max:1000'],

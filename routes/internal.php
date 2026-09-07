@@ -141,9 +141,11 @@ Route::get('/', function () {
      */
     $tahunTerakhir = $tahunAcuan;
 
-    $urutanPrioritas = ['Mendesak' => 0, 'Tinggi' => 1, 'Sedang' => 2, 'Rendah' => 3];
+    $urutanPrioritas = DaftarPilihan::query()
+        ->where('jenis', JenisDaftarPilihan::PrioritasPengaduan->value)
+        ->pluck('urutan', 'nilai');
     $isuPrioritas = array_filter($pengaduan, fn ($p) => $p['status'] !== 'Selesai');
-    usort($isuPrioritas, fn ($a, $b) => $urutanPrioritas[$a['prioritas']] <=> $urutanPrioritas[$b['prioritas']]);
+    usort($isuPrioritas, fn ($a, $b) => ($urutanPrioritas[$b['prioritas']] ?? 0) <=> ($urutanPrioritas[$a['prioritas']] ?? 0));
 
     return view('pages.dashboard.index', [
         'title' => 'Dashboard',

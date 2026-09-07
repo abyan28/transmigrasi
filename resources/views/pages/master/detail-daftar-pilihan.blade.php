@@ -21,7 +21,7 @@
     @endphp
 
     <x-sim.page-header :judul="$jenis->label()"
-        keterangan="Pilihan pada form yang dapat ditambah dan disunting tanpa mengubah kode."
+        keterangan="Pilihan pada form; nilai yang tersimpan menjadi identitas tetap dan dapat dinonaktifkan."
         :remah="\App\Helpers\RemahHelper::untuk('/master/daftar-pilihan', $jenis->label())">
         <x-slot:aksi>
             <a href="{{ route('master.daftar-pilihan') }}"
@@ -33,7 +33,7 @@
                 Semua Daftar
             </a>
 
-            @if ($bolehUbah)
+            @if ($bolehUbah && $dapatDitambah)
                 <button type="button" @click="$dispatch('buka-modal', 'formTambahDaftarPilihan')"
                     class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-theme-sm font-medium text-white transition hover:bg-brand-600 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500">
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
@@ -162,11 +162,13 @@
     @endif
 
     @if ($bolehUbah)
+        @if ($dapatDitambah)
         <x-sim.modal-form nama="formTambahDaftarPilihan" judul="Tambah Pilihan"
             :keterangan="'Nilai baru langsung tersedia pada form yang memakai ' . $jenis->label() . '.'"
             :aksi="route('daftar-pilihan.simpan')" ukuran="lg" label-simpan="Simpan Pilihan">
             @include('pages.master.form-daftar-pilihan', ['awalan' => 'tambah', 'jenis' => $jenis])
         </x-sim.modal-form>
+        @endif
 
         <x-sim.modal-form nama="formUbahDaftarPilihan" judul="Ubah Pilihan"
             keterangan="Nilai yang tidak lagi dipakai dinonaktifkan, bukan dihapus."

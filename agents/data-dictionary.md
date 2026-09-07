@@ -428,7 +428,7 @@ Bangunan dan fasilitas tetap milik SP. Struktur sama persis dengan `inventaris_s
 |---|---|---|---|---|
 | `id_fasilitas_sp` | `BIGINT UNSIGNED AUTO_INCREMENT` | TIDAK | PK | |
 | `satuan_permukiman_id` | `BIGINT UNSIGNED` | TIDAK | FK, IDX | |
-| `jenis_fasilitas` | `ENUM` | TIDAK | IDX | Lihat 11.32; dipakai penilaian kondisi SP |
+| `jenis_fasilitas` | `VARCHAR(100)` | TIDAK | IDX | Master daftar pilihan jenis fasilitas; dipakai penilaian kondisi SP |
 | `nama_fasilitas` | `VARCHAR(255)` | TIDAK | | Nama sebagaimana disebut warga, contoh "Puskesmas Pembantu Kapitan Meo" |
 | `jumlah` | `INT UNSIGNED` | TIDAK | | Bawaan 1 |
 | `tahun_perolehan` | `YEAR` | YA | | |
@@ -445,7 +445,7 @@ Bangunan dan fasilitas tetap milik SP. Struktur sama persis dengan `inventaris_s
 **Catatan:**
 - **`satuan_permukiman_id` = lokasi/pangkal.** Tabel `fasilitas_sp_cakupan` `(fasilitas_sp_id, satuan_permukiman_id)` menyimpan SP yang dilayani, **wajib memuat SP pangkal** (Putaran 7). SMP Satu Atap, puskesmas pembantu, atau pasar desa di satu SP kerap melayani warga SP tetangga; `PenilaianKondisiSp` membacanya sama seperti `infrastruktur_sp` (§10.1). `rincian_kondisi`: lihat §4.1.
 - **Kolom `foto` ditambahkan 2026-08-20**, alasan sama dengan §4.1. Sebelumnya satu slot dipakai untuk keduanya, dan labelnya bahkan berbunyi "Dokumen atau Foto Fasilitas" — menjanjikan dua hal untuk satu tempat penyimpanan.
-- `jenis_fasilitas` dan `nama_fasilitas` sengaja berdampingan. Enum diperlukan agar penilaian kondisi SP dapat menghitung otomatis, sebab teks bebas membuat "SEKOLAH DASAR" dan "SD Negeri 1" tidak terbaca sebagai hal yang sama. Nama bebas tetap dipertahankan agar petugas dapat menulis sebutan yang dikenal warga setempat.
+- `jenis_fasilitas` dan `nama_fasilitas` sengaja berdampingan. Jenis memakai Daftar Pilihan agar penilaian kondisi SP membandingkan vocabulary yang konsisten; nama fasilitas tetap teks bebas agar petugas dapat menulis sebutan yang dikenal warga setempat.
 
 ---
 
@@ -619,10 +619,10 @@ Empat belas daftar disatukan pada satu tabel karena strukturnya identik. Empat b
 **Catatan:**
 
 - **Nilai DINONAKTIFKAN, tidak pernah dihapus.** Menghapus `Hibah` dari sumber dana membuat puluhan baris infrastruktur lama menunjuk baris yang lenyap, dan rekap kehilangan baris itu **tanpa pesan apa pun**. Nilai nonaktif tetap terbaca pada data lama, hanya tidak lagi ditawarkan pada data baru. Pola ini mengikuti `parameter_penilaian_sp` (5.4) yang sudah memakainya lebih dulu dengan alasan sama.
-- **Yang tersimpan pada kolom pemakainya adalah TEKS `nilai`, bukan id.** Sengaja demikian: kolom-kolom itu bertipe `ENUM` atau `VARCHAR` pada SQL referensi dan sudah dipakai puluhan tampilan tanpa join. Pengecualiannya hanya `parameter_penilaian_sp.jenis_rujukan` yang menunjuk id (Fase 4), sebab di sanalah penggantian teks berakibat fatal: parameter berhenti menemukan asetnya lalu menilai SP sebagai `Tidak Ada`.
+- **Yang tersimpan pada kolom pemakainya adalah TEKS `nilai`, bukan id.** Nilai itu merupakan identitas referensi dan tidak dapat diganti setelah dibuat; admin memakai nonaktif untuk menghentikan pilihan baru tanpa memecah histori. Pengecualiannya hanya `parameter_penilaian_sp.daftar_pilihan_id` yang menunjuk id.
 - **`nilai_skor` hanya untuk jenis `kondisi`**, bukan `kondisi_rumah`. Keduanya tampak sebagai skala kerusakan yang sama, tetapi hanya `kondisi` yang dibaca `PenilaianKondisiSp`; kondisi rumah murni tampilan dan tidak pernah masuk perhitungan mana pun. Memberi `nilai_skor` kepadanya berarti menyediakan isian yang tidak menentukan apa pun, dan Admin yang menyuntingnya akan menyangka skor SP ikut berubah. Mengubahnya mengubah cara penilaian BERIKUTNYA dihitung, tetapi tidak mengubah penilaian yang sudah tersimpan: `penilaian_sp.rincian` menyalin nilai yang berlaku saat penilaian dibuat (5.5). Tanpa salinan itu, laporan yang sudah dicetak akan berbeda dari tampilan sistem setiap kali Admin menyunting skor.
 - **Dikelola lewat satu halaman per daftar**, bukan satu halaman bertab. Semula keempat belasnya berupa tab dalam satu baris, dan itu berhenti bekerja begitu jumlahnya bertambah: bar tab mencapai 2309px pada ruang 705px, sehingga hanya empat tab yang terlihat dan sepuluh sisanya tersembunyi di balik gulir mendatar. Indeks di `/master/referensi` menampilkan seluruh daftar sebagai kartu berkelompok, dan tiap daftar dibuka di `/master/referensi/{jenis}` (`ui-spec.md` 5.1d).
-- **`jenis_infrastruktur` dan `jenis_fasilitas` DIRUJUK LEWAT ID**, satu-satunya pengecualian dari aturan teks di atas. `parameter_penilaian_sp.referensi_id` menunjuk baris pada tabel ini, misalnya parameter `air_bersih` menunjuk jenis infrastruktur `Air`. Alasannya justru dampaknya: daftar lain hanya menampilkan teksnya kembali, sedangkan dua daftar ini menentukan hasil perhitungan. Rujukan berbasis teks putus tanpa pesan apa pun begitu Admin memperbaiki ejaan `Air` menjadi `Air Bersih`, dan parameter itu lalu diam-diam menilai setiap SP sebagai tidak punya air, sehingga status SP jatuh karena satu penyuntingan ejaan.
+- **`jenis_infrastruktur` dan `jenis_fasilitas` DIRUJUK LEWAT ID** oleh parameter penilaian, satu-satunya pengecualian dari aturan teks di atas. `parameter_penilaian_sp.daftar_pilihan_id` menunjuk baris pada tabel ini, misalnya parameter `air_bersih` menunjuk jenis infrastruktur `Air`; identitas nilai tetap dikunci, sementara jenis baru otomatis mendapat parameter nonaktif untuk ditinjau dinas.
 - **`bidang_id` hanya untuk `kategori_pengaduan`**, dan NULL di sana bermakna. Ia menyatakan kategori yang dapat jatuh ke dua dinas sekaligus, sehingga bidangnya wajib ditetapkan petugas sebelum status maju ke Diproses (`rules.md` 10b poin 7b). Nilai yang terisi hanya menetapkan bidang AWAL; petugas selalu dapat menimpanya.
 - **`urutan` bermakna pada `prioritas_pengaduan`**, sebab daftar pengaduan menyortir memakainya. Menukar urutan berarti menukar antrean petugas, bukan sekadar menukar tampilan.
 - **Jenisnya tetap enum**, tidak ikut menjadi data. `jenis` menyatakan daftar mana yang ada, bukan isinya; menjadikannya data membuat Admin dapat membuat jenis yang tidak satu pun kolom database menunjuknya.

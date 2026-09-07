@@ -4,8 +4,8 @@
     Berbeda dari inventaris yang berupa barang bergerak, fasilitas menempel
     pada lokasi sehingga memiliki koordinat (agents/rules.md bagian 4b poin 1).
 
-    Kolom jenis_fasilitas berupa enum, terpisah dari nama_fasilitas yang tetap
-    teks bebas. Enum diperlukan agar penilaian kondisi SP dapat menghitung
+    Kolom jenis_fasilitas memakai Daftar Pilihan, terpisah dari nama_fasilitas
+    yang tetap teks bebas agar penilaian kondisi SP memakai vocabulary konsisten.
     otomatis, sebab teks bebas membuat "SEKOLAH DASAR" dan "SD Negeri 1" tidak
     terbaca sebagai hal yang sama. Nama bebas dipertahankan agar petugas tetap
     dapat menulis sebutan yang dikenal warga.

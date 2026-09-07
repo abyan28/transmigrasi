@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Enums\JenisFasilitas;
 use App\Models\Scopes\CakupanDataSp;
 use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 use Illuminate\Database\Eloquent\Model;
@@ -11,8 +10,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
- * Bangunan/fasilitas tetap milik SP. `jenis_fasilitas` tetap ENUM (dipakai
- * penilaian kondisi SP) -> di-cast. `satuan_permukiman_id` = lokasi/pangkal;
+ * Bangunan/fasilitas tetap milik SP. `jenis_fasilitas` merujuk nilai aktif
+ * Daftar Pilihan. `satuan_permukiman_id` = lokasi/pangkal;
  * SP yang DILAYANI ada di pivot `fasilitas_sp_cakupan` (WAJIB memuat SP pangkal).
  */
 #[ScopedBy([CakupanDataSp::class])]
@@ -33,7 +32,6 @@ class FasilitasSp extends Model
     protected function casts(): array
     {
         return [
-            'jenis_fasilitas' => JenisFasilitas::class,
             'jumlah' => 'integer',
             'rincian_kondisi' => 'array',
             'lintang' => 'decimal:7',

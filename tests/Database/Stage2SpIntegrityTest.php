@@ -118,7 +118,7 @@ it('menolak pembuatan dan pemindahan fasilitas ke SP yang tidak ditugaskan', fun
     $fasilitas = FasilitasSp::query()->where('satuan_permukiman_id', $sp[0]->id_satuan_permukiman)->firstOrFail();
     $this->put(route('fasilitas.perbarui', $fasilitas->id_fasilitas_sp), [
         'satuan_permukiman_id' => $sp[1]->id_satuan_permukiman,
-        'jenis_fasilitas' => $fasilitas->jenis_fasilitas->value,
+        'jenis_fasilitas' => $fasilitas->jenis_fasilitas,
         'nama_fasilitas' => $fasilitas->nama_fasilitas,
         'jumlah' => $fasilitas->jumlah,
         'status_penyerahan' => $fasilitas->status_penyerahan,
@@ -210,7 +210,7 @@ it('mempertahankan seluruh cakupan saat ubah cepat tidak membawa penanda cakupan
     $cakupanFasilitas = $fasilitas->cakupan->pluck('id_satuan_permukiman')->sort()->values()->all();
     $this->put(route('fasilitas.perbarui', $fasilitas->id_fasilitas_sp), [
         'satuan_permukiman_id' => $fasilitas->satuan_permukiman_id,
-        'jenis_fasilitas' => $fasilitas->jenis_fasilitas->value,
+        'jenis_fasilitas' => $fasilitas->jenis_fasilitas,
         'nama_fasilitas' => 'FASILITAS QUICK EDIT',
         'jumlah' => $fasilitas->jumlah,
         'status_penyerahan' => $fasilitas->status_penyerahan,
@@ -247,7 +247,7 @@ it('mengganti cakupan terlihat tetapi mempertahankan cakupan tersembunyi pada ed
         '_cakupan_disunting' => 1,
         'satuan_permukiman_id' => $sp[0]->id_satuan_permukiman,
         'satuan_permukiman_ids_lain' => [$sp[3]->id_satuan_permukiman],
-        'jenis_fasilitas' => $fasilitas->jenis_fasilitas->value,
+        'jenis_fasilitas' => $fasilitas->jenis_fasilitas,
         'nama_fasilitas' => $fasilitas->nama_fasilitas,
         'jumlah' => $fasilitas->jumlah,
         'status_penyerahan' => $fasilitas->status_penyerahan,

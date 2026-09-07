@@ -354,7 +354,7 @@ class SaprotanController extends Controller
             'satuan_id' => ['required', 'integer', Rule::exists('satuan', 'id_satuan')],
             'jadwal_tanam' => ['nullable', 'date_format:Y-m'],
             'tahun_pengadaan' => ValidationRules::tahun(wajib: true),
-            'sumber_dana' => ValidationRules::daftarPilihan(JenisDaftarPilihan::SumberDana),
+            'sumber_dana' => ValidationRules::daftarPilihan(JenisDaftarPilihan::SumberDana, nilaiSaatIni: $saprotan?->sumber_dana),
             'keterangan' => ['nullable', 'string', 'max:1000'],
             'ganti_distribusi' => ['sometimes', 'accepted'],
             'poktan_id' => ['nullable', 'array'],

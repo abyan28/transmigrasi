@@ -105,3 +105,11 @@ it('menemukan isian pemilih yang memang ada, bukan larik kosong', function () {
         ->and(array_keys($ditemukan))->toContain('jenis_fasilitas')
         ->and(array_keys($ditemukan))->toContain('kondisi');
 });
+
+it('mempertahankan kapitalisasi nilai daftar pilihan', function () {
+    $request = request()->create('/', 'POST', ['nilai' => 'Rusak Ringan']);
+
+    (new UppercaseInput)->handle($request, fn ($lanjut) => response($lanjut->input('nilai')));
+
+    expect($request->input('nilai'))->toBe('Rusak Ringan');
+});

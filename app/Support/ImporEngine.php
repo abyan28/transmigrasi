@@ -5,7 +5,6 @@ namespace App\Support;
 use App\Enums\Agama;
 use App\Enums\AsalWakilPoktan;
 use App\Enums\JenisDaftarPilihan;
-use App\Enums\JenisFasilitas;
 use App\Enums\JenisKelamin;
 use App\Enums\JenisSaprotan;
 use App\Enums\PendidikanTerakhir;
@@ -843,7 +842,7 @@ class ImporEngine
 
         $v = Validator::make($data, [
             'satuan_permukiman_id' => ['required', 'integer'],
-            'jenis_fasilitas' => ['required', Rule::enum(JenisFasilitas::class)],
+            'jenis_fasilitas' => ValidationRules::daftarPilihan(JenisDaftarPilihan::JenisFasilitas, wajib: true),
             'nama_fasilitas' => ['required', 'string', 'max:150'],
             'jumlah' => ['required', 'integer', 'min:1', 'max:100000'],
             'tahun_perolehan' => ['nullable', 'integer', 'min:1900', 'max:'.date('Y')],

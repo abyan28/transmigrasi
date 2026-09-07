@@ -179,6 +179,9 @@
                 if (isian.type === 'checkbox') {
                     isian.checked = Boolean(nilai);
                 } else {
+                    if (isian.tagName === 'SELECT' && ! Array.from(isian.options).some((opsi) => opsi.value == nilai)) {
+                        isian.add(new Option(nilai + ' (nonaktif)', nilai));
+                    }
                     isian.value = nilai;
                 }
 

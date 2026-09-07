@@ -9,9 +9,11 @@
  */
 
 use App\Enums\CakupanData;
+use App\Enums\JenisDaftarPilihan;
 use App\Enums\StatusKeaktifanAnggota;
 use App\Models\AnggotaKeluarga;
 use App\Models\AnggotaPoktan;
+use App\Models\DaftarPilihan;
 use App\Models\Poktan;
 use App\Models\Role;
 use App\Models\Transmigran;
@@ -134,6 +136,37 @@ it('menambah anggota satu SP lewat langkah 3 form poktan', function () {
     ])->assertRedirect(route('poktan.detail', $poktan->id_poktan));
 
     expect($poktan->anggota()->where('transmigran_id', $baru->id_transmigran)->exists())->toBeTrue();
+});
+
+it('mempertahankan jabatan nonaktif hanya pada anggota yang sudah memilikinya', function () {
+    $poktan = Poktan::where('nama', 'POKTAN MEKAR JAYA')->firstOrFail();
+    $anggota = $poktan->anggota()->firstOrFail();
+    $anggota->update(['jabatan' => 'Anggota']);
+    DaftarPilihan::where('jenis', JenisDaftarPilihan::JabatanAnggotaPoktan->value)
+        ->where('nilai', 'Anggota')->update(['is_aktif' => false]);
+    $baru = buatTransmigran($poktan->satuanPermukiman);
+
+    $dasar = [
+        'satuan_permukiman_id' => $poktan->satuan_permukiman_id,
+        'nama' => $poktan->nama,
+        'asal_ketua' => $poktan->asal_ketua->value,
+        'ketua_transmigran_id' => $poktan->ketua_transmigran_id,
+        '_anggota_disunting' => '1',
+    ];
+
+    $this->put(route('poktan.perbarui', $poktan->id_poktan), $dasar + [
+        'anggota' => [[
+            'transmigran_id' => $anggota->transmigran_id,
+            'jabatan' => 'Anggota',
+        ]],
+    ])->assertSessionHasNoErrors();
+
+    $this->put(route('poktan.perbarui', $poktan->id_poktan), $dasar + [
+        'anggota' => [[
+            'transmigran_id' => $baru->id_transmigran,
+            'jabatan' => 'Anggota',
+        ]],
+    ])->assertSessionHasErrors('anggota.0.jabatan');
 });
 
 it('menandai anggota Sudah Keluar tanpa menghapus barisnya', function () {

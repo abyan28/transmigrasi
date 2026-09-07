@@ -259,6 +259,22 @@ it('mengimpor baris fasilitas-sp', function () {
         ->and($fas->cakupan->pluck('id_satuan_permukiman')->all())->toBe([1]);
 });
 
+it('mengimpor jenis fasilitas aktif yang ditambahkan lewat daftar pilihan', function () {
+    \App\Models\DaftarPilihan::create([
+        'jenis' => \App\Enums\JenisDaftarPilihan::JenisFasilitas->value,
+        'nilai' => 'Perpustakaan',
+        'urutan' => 10,
+    ]);
+    $csv = "satuan_permukiman,jenis_fasilitas,nama_fasilitas,jumlah,status_penyerahan,kondisi,tahun_perolehan,sumber_dana,lintang,bujur,keterangan\n"
+        ."SP Kapitan Meo,Perpustakaan,Perpustakaan Uji,1,Sudah Diserahkan,Baik,,,,,\n";
+
+    $this->post(route('impor.unggah', 'fasilitas-sp'), ['berkas' => berkasCsvImpor($csv)])
+        ->assertOk()->assertJsonPath('dibuat', 1)->assertJsonPath('jumlah_gagal', 0);
+
+    expect(FasilitasSp::where('nama_fasilitas', 'Perpustakaan Uji')->value('jenis_fasilitas'))
+        ->toBe('Perpustakaan');
+});
+
 it('mengimpor baris alsintan tanpa distribusi (belum tersalurkan)', function () {
     $csv = "jenis_alsintan,nama_alat,jumlah_total,tahun_pengadaan,sumber_dana,keterangan\n"
         ."Traktor Roda Dua,Traktor Uji,2,2024,APBN,\n";

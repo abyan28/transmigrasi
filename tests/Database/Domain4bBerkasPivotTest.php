@@ -11,7 +11,6 @@
  * `buatSp()` di-share dari Domain2WilayahSpTest.
  */
 
-use App\Enums\JenisFasilitas;
 use App\Models\Berkas;
 use App\Models\FasilitasSp;
 use App\Models\InventarisSp;
@@ -70,7 +69,7 @@ it('menautkan berkas ke inventaris & fasilitas SP dan ikut terhapus saat induk h
     ]);
     $fasilitas = FasilitasSp::create([
         'satuan_permukiman_id' => $sp->id_satuan_permukiman,
-        'jenis_fasilitas' => JenisFasilitas::Kesehatan->value,
+        'jenis_fasilitas' => 'Kesehatan',
         'nama_fasilitas' => 'Pustu', 'status_penyerahan' => 'Sudah',
     ]);
     $bInv = buatBerkas();
@@ -95,7 +94,7 @@ it('menghapus baris pivot saat berkas registry dihapus permanen (CASCADE ke berk
     $sp = buatSp();
     $fasilitas = FasilitasSp::create([
         'satuan_permukiman_id' => $sp->id_satuan_permukiman,
-        'jenis_fasilitas' => JenisFasilitas::Ibadah->value,
+        'jenis_fasilitas' => 'Ibadah',
         'nama_fasilitas' => 'Masjid', 'status_penyerahan' => 'Sudah',
     ]);
     $berkas = buatBerkas();

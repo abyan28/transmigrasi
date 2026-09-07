@@ -12,7 +12,6 @@
  */
 
 use App\Enums\JenisDaftarPilihan;
-use App\Enums\JenisFasilitas;
 use App\Enums\StatusKondisiSp as StatusKondisiSpEnum;
 use App\Models\DaftarPilihan;
 use App\Models\FasilitasSp;
@@ -83,11 +82,11 @@ it('menegakkan FK RESTRICT satuan saat masih dipakai komoditas', function () {
     expect(fn () => $satuan->delete())->toThrow(QueryException::class);
 });
 
-it('meng-cast ENUM jenis_fasilitas dan status penilaian ke PHP Enum', function () {
+it('menyimpan jenis fasilitas sebagai teks referensi dan status penilaian sebagai enum', function () {
     $sp = buatSp();
     $fasilitas = FasilitasSp::create([
         'satuan_permukiman_id' => $sp->id_satuan_permukiman,
-        'jenis_fasilitas' => JenisFasilitas::PendidikanDasar->value,
+        'jenis_fasilitas' => 'Pendidikan Dasar',
         'nama_fasilitas' => 'SD Inpres Kapitan Meo', 'status_penyerahan' => 'Sudah',
         'rincian_kondisi' => ['Baik' => 1],
     ]);
@@ -97,20 +96,22 @@ it('meng-cast ENUM jenis_fasilitas dan status penilaian ke PHP Enum', function (
         'ada_primer_nol' => false, 'rincian' => ['air_bersih' => 3],
     ]);
 
-    expect($fasilitas->jenis_fasilitas)->toBe(JenisFasilitas::PendidikanDasar)
+    expect($fasilitas->jenis_fasilitas)->toBe('Pendidikan Dasar')
         ->and($fasilitas->rincian_kondisi)->toBe(['Baik' => 1])
         ->and($penilaian->status)->toBe(StatusKondisiSpEnum::Berkembang)
         ->and($penilaian->rincian)->toBe(['air_bersih' => 3])
         ->and($penilaian->tanggal_penilaian->format('Y-m-d'))->toBe('2026-08-01');
 });
 
-it('menolak nilai di luar ENUM jenis_fasilitas pada lapisan basis data', function () {
+it('menyimpan jenis fasilitas baru sebagai teks setelah lolos validasi referensi', function () {
     $sp = buatSp();
 
-    expect(fn () => DB::table('fasilitas_sp')->insert([
+    DB::table('fasilitas_sp')->insert([
         'satuan_permukiman_id' => $sp->id_satuan_permukiman,
-        'jenis_fasilitas' => 'Bioskop', 'nama_fasilitas' => 'X', 'status_penyerahan' => 'Sudah',
-    ]))->toThrow(QueryException::class);
+        'jenis_fasilitas' => 'Perpustakaan', 'nama_fasilitas' => 'X', 'status_penyerahan' => 'Sudah',
+    ]);
+
+    expect(DB::table('fasilitas_sp')->value('jenis_fasilitas'))->toBe('Perpustakaan');
 });
 
 it('merujuk parameter penilaian ke baris daftar pilihan lewat id', function () {
@@ -140,12 +141,40 @@ it('mewajibkan kode parameter penilaian unik', function () {
     expect(fn () => ParameterPenilaianSp::create($atribut))->toThrow(QueryException::class);
 });
 
+it('mewajibkan satu parameter per daftar pilihan', function () {
+    $ref = DaftarPilihan::create(['jenis' => JenisDaftarPilihan::JenisFasilitas->value, 'nilai' => 'Perpustakaan']);
+    $atribut = [
+        'nama' => 'Perpustakaan', 'tingkat' => 'Tersier', 'bobot' => 1,
+        'sumber' => 'Fasilitas', 'daftar_pilihan_id' => $ref->id_daftar_pilihan,
+    ];
+    ParameterPenilaianSp::create($atribut + ['kode' => 'perpustakaan_1']);
+
+    expect(fn () => ParameterPenilaianSp::create($atribut + ['kode' => 'perpustakaan_2']))
+        ->toThrow(QueryException::class);
+});
+
+it('memigrasikan pilihan aset lama yang belum mempunyai parameter penilaian', function () {
+    $pilihan = collect([
+        DaftarPilihan::create(['jenis' => JenisDaftarPilihan::JenisFasilitas->value, 'nilai' => 'Perpustakaan Lama']),
+        DaftarPilihan::create(['jenis' => JenisDaftarPilihan::JenisInfrastruktur->value, 'nilai' => 'Dermaga Lama']),
+    ]);
+
+    $migrasi = require database_path('migrations/2026_09_07_080000_selaraskan_jenis_fasilitas_dengan_daftar_pilihan.php');
+    $migrasi->up();
+    $migrasi->up();
+
+    $parameter = ParameterPenilaianSp::whereIn('daftar_pilihan_id', $pilihan->pluck('id_daftar_pilihan'))->get();
+
+    expect($parameter)->toHaveCount(2)
+        ->and($parameter->every(fn (ParameterPenilaianSp $baris) => ! $baris->is_dinilai))->toBeTrue();
+});
+
 it('mencakup SP lewat pivot fasilitas_sp_cakupan dua arah', function () {
     $spPangkal = buatSp();
     $spTetangga = buatSp();
     $fasilitas = FasilitasSp::create([
         'satuan_permukiman_id' => $spPangkal->id_satuan_permukiman,
-        'jenis_fasilitas' => JenisFasilitas::Kesehatan->value,
+        'jenis_fasilitas' => 'Kesehatan',
         'nama_fasilitas' => 'Puskesmas Pembantu', 'status_penyerahan' => 'Sudah',
     ]);
 
@@ -170,7 +199,7 @@ it('menghapus aset SP saat SP dihapus permanen (CASCADE)', function () {
     ]);
     FasilitasSp::create([
         'satuan_permukiman_id' => $sp->id_satuan_permukiman,
-        'jenis_fasilitas' => JenisFasilitas::Ibadah->value, 'nama_fasilitas' => 'Masjid',
+        'jenis_fasilitas' => 'Ibadah', 'nama_fasilitas' => 'Masjid',
         'status_penyerahan' => 'Sudah',
     ]);
 

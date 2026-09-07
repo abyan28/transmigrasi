@@ -188,7 +188,7 @@ class AlsintanController extends Controller
             ->firstOrFail();
 
         $data = $request->validate([
-            'kondisi' => ValidationRules::daftarPilihan(JenisDaftarPilihan::Kondisi, wajib: true),
+            'kondisi' => ValidationRules::daftarPilihan(JenisDaftarPilihan::Kondisi, wajib: true, nilaiSaatIni: $baris->kondisi),
             'foto' => ValidationRules::foto(),
         ], [
             'kondisi.required' => 'Kondisi wajib dipilih.',
@@ -338,18 +338,18 @@ class AlsintanController extends Controller
     private function validasi(Request $request, ?Alsintan $alsintan = null, ?Collection $lama = null, bool $gantiDistribusi = true): array
     {
         $data = $request->validate([
-            'jenis_alsintan' => ValidationRules::daftarPilihan(JenisDaftarPilihan::JenisAlsintan, wajib: true),
+            'jenis_alsintan' => ValidationRules::daftarPilihan(JenisDaftarPilihan::JenisAlsintan, wajib: true, nilaiSaatIni: $alsintan?->jenis_alsintan),
             'nama_alat' => ['required', 'string', 'max:255'],
             'jumlah_total' => ['required', 'integer', 'min:1', 'max:999999'],
             'tahun_pengadaan' => ValidationRules::tahun(),
-            'sumber_dana' => ValidationRules::daftarPilihan(JenisDaftarPilihan::SumberDana),
+            'sumber_dana' => ValidationRules::daftarPilihan(JenisDaftarPilihan::SumberDana, nilaiSaatIni: $alsintan?->sumber_dana),
             'keterangan' => ['nullable', 'string', 'max:1000'],
             'ganti_distribusi' => ['sometimes', 'accepted'],
             'poktan_id' => ['nullable', 'array'],
             'poktan_id.*' => ['integer', 'distinct', Rule::exists('poktan', 'id_poktan')],
             'distribusi' => ['nullable', 'array'],
             'distribusi.*.jumlah' => ['required', 'integer', 'min:0', 'max:999999'],
-            'distribusi.*.kondisi' => ValidationRules::daftarPilihan(JenisDaftarPilihan::Kondisi, wajib: true),
+            'distribusi.*.kondisi' => ['required', 'string', 'max:100'],
             'distribusi.*.penanda_terima_id' => ['nullable', 'integer', Rule::exists('anggota_poktan', 'id_anggota_poktan')],
             'distribusi.*.tanggal_serah' => ['nullable', 'date', 'before_or_equal:today'],
             'foto' => ValidationRules::foto(),
@@ -359,6 +359,26 @@ class AlsintanController extends Controller
             'nama_alat.required' => 'Nama alat wajib diisi.',
             'jumlah_total.required' => 'Jumlah unit total wajib diisi.',
         ] + ValidationRules::pesan());
+
+        if ($gantiDistribusi) {
+            $lamaPerPoktan = ($lama ?? collect())->keyBy(fn ($baris) => (string) $baris->poktan_id);
+            foreach ((array) ($data['distribusi'] ?? []) as $poktanId => $baris) {
+                $kondisiLama = $lamaPerPoktan->get((string) $poktanId)?->kondisi;
+                if ($baris['kondisi'] === $kondisiLama) {
+                    continue;
+                }
+
+                if (! DaftarPilihan::query()
+                    ->where('jenis', JenisDaftarPilihan::Kondisi->value)
+                    ->where('nilai', $baris['kondisi'])
+                    ->where('is_aktif', true)
+                    ->exists()) {
+                    throw ValidationException::withMessages([
+                        "distribusi.{$poktanId}.kondisi" => 'Nilai kondisi tidak aktif atau tidak dikenal.',
+                    ]);
+                }
+            }
+        }
 
         $baru = $alsintan === null || $gantiDistribusi ? $this->distribusiTerpilih($request, $data) : [];
         $dipertahankan = $alsintan === null

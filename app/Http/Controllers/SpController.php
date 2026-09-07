@@ -300,7 +300,7 @@ class SpController extends Controller
             'satuan_permukiman_ids' => $fasilitas->cakupan->pluck('id_satuan_permukiman')->all()
                 ?: [$fasilitas->satuan_permukiman_id],
             'nama_fasilitas' => $fasilitas->nama_fasilitas,
-            'jenis_fasilitas' => $fasilitas->jenis_fasilitas?->value ?? $fasilitas->jenis_fasilitas,
+            'jenis_fasilitas' => $fasilitas->jenis_fasilitas,
             'kondisi' => $fasilitas->kondisi,
             'rincian_kondisi' => $fasilitas->rincian_kondisi,
         ];

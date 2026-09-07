@@ -42,6 +42,7 @@
             'penanda_terima_id' => (string) ($d['penanda_terima_id'] ?? ''),
             'tanggal_serah' => $d['tanggal_serah'] ?? '',
         ];
+        $opsiKondisi[$d['kondisi']] ??= $d['kondisi'];
     }
     $poktanAwal = array_keys($distribusiAwal);
 @endphp

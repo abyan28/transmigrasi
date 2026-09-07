@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Enums\CakupanData;
 use App\Enums\JenisDaftarPilihan;
-use App\Enums\JenisFasilitas;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
 use App\Models\DaftarPilihan;
 use App\Models\FasilitasSp;
@@ -27,8 +26,7 @@ use Illuminate\Validation\Rule;
  * ikut tercantum pada cakupannya -- fasilitas yang tak melayani SP tempatnya
  * berdiri tidak masuk akal.
  *
- * `jenis_fasilitas` adalah ENUM sungguhan di skema (Task 3.1 B3), berbeda dari
- * kolom REF lain pada modul ini yang dibaca dari tabel `daftar_pilihan`.
+ * `jenis_fasilitas` dan kolom REF lain dibaca dari tabel `daftar_pilihan`.
  */
 class FasilitasSpController extends Controller
 {
@@ -181,7 +179,7 @@ class FasilitasSpController extends Controller
             'satuan_permukiman_id' => $f->satuan_permukiman_id,
             'satuan_permukiman' => $f->satuanPermukiman?->nama,
             'satuan_permukiman_ids' => $f->cakupan->pluck('id_satuan_permukiman')->all(),
-            'jenis_fasilitas' => $f->jenis_fasilitas?->value ?? $f->jenis_fasilitas,
+            'jenis_fasilitas' => $f->jenis_fasilitas,
             'nama_fasilitas' => $f->nama_fasilitas,
             'jumlah' => $f->jumlah,
             'tahun_perolehan' => $f->tahun_perolehan,
@@ -204,15 +202,14 @@ class FasilitasSpController extends Controller
     {
         $data = $request->validate([
             'satuan_permukiman_id' => ['required', 'integer', Rule::exists('satuan_permukiman', 'id_satuan_permukiman')],
-            // ENUM sungguhan di skema, berbeda dari kolom REF lain di modul ini.
-            'jenis_fasilitas' => ['required', Rule::enum(JenisFasilitas::class)],
+            'jenis_fasilitas' => ValidationRules::daftarPilihan(JenisDaftarPilihan::JenisFasilitas, wajib: true, nilaiSaatIni: $fasilitas?->jenis_fasilitas),
             'nama_fasilitas' => ['required', 'string', 'max:150'],
             'jumlah' => ['required', 'integer', 'min:1', 'max:100000'],
             'tahun_perolehan' => ValidationRules::tahun(),
-            'sumber_dana' => ValidationRules::daftarPilihan(JenisDaftarPilihan::SumberDana),
+            'sumber_dana' => ValidationRules::daftarPilihan(JenisDaftarPilihan::SumberDana, nilaiSaatIni: $fasilitas?->sumber_dana),
             // NOT NULL di skema, karena itu WAJIB -- bukan sekadar opsional.
-            'status_penyerahan' => ValidationRules::daftarPilihan(JenisDaftarPilihan::StatusPenyerahan, wajib: true),
-            'kondisi' => ValidationRules::daftarPilihan(JenisDaftarPilihan::Kondisi),
+            'status_penyerahan' => ValidationRules::daftarPilihan(JenisDaftarPilihan::StatusPenyerahan, wajib: true, nilaiSaatIni: $fasilitas?->status_penyerahan),
+            'kondisi' => ValidationRules::daftarPilihan(JenisDaftarPilihan::Kondisi, nilaiSaatIni: $fasilitas?->kondisi),
             'lintang' => ValidationRules::lintang(),
             'bujur' => ValidationRules::bujur(),
             'keterangan' => ['nullable', 'string', 'max:500'],

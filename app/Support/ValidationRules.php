@@ -453,9 +453,10 @@ class ValidationRules
      * tetap terbaca pada data lama, tetapi tidak boleh dipakai pada data baru.
      *
      * @param  bool  $wajib  Menentukan apakah kolom harus diisi
+     * @param  string|null  $nilaiSaatIni  Nilai lama yang tetap sah saat edit record itu sendiri
      * @return array<int, mixed> Daftar aturan siap pakai
      */
-    public static function daftarPilihan(JenisDaftarPilihan $jenis, bool $wajib = false): array
+    public static function daftarPilihan(JenisDaftarPilihan $jenis, bool $wajib = false, ?string $nilaiSaatIni = null): array
     {
         return [
             $wajib ? 'required' : 'nullable',
@@ -463,7 +464,8 @@ class ValidationRules
             'max:100',
             Rule::exists('daftar_pilihan', 'nilai')
                 ->where('jenis', $jenis->value)
-                ->where('is_aktif', true),
+                ->where(fn ($query) => $query->where('is_aktif', true)
+                    ->when($nilaiSaatIni !== null, fn ($q) => $q->orWhere('nilai', $nilaiSaatIni))),
         ];
     }
 }

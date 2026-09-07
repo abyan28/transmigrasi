@@ -30,6 +30,7 @@ it('derives monograph age tables from recorded people', function () {
     $tahun = LaporanData::tahunDokumenBawaan();
     $akhirTahun = Carbon::create($tahun, 12, 31)->endOfDay();
     $monografi = collect(LaporanData::monografiSp()['monografi'])->first();
+    expect($monografi['sosial_budaya']['fasilitasUmum']['baris'][0][0])->not->toBeNull();
     $id = $monografi['sp_id'];
 
     $kepala = Transmigran::withoutGlobalScopes()

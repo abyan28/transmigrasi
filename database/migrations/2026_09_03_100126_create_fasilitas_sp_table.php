@@ -7,8 +7,8 @@ use Illuminate\Support\Facades\Schema;
 /**
  * Terjemahan `database/data/schema.sql` -- DOMAIN 3, tabel `fasilitas_sp`.
  *
- * Bangunan/fasilitas tetap milik SP. `jenis_fasilitas` tetap ENUM (bukan teks
- * bebas) sebab dipakai penilaian kondisi SP. `satuan_permukiman_id` = lokasi/
+ * Bangunan/fasilitas tetap milik SP. `jenis_fasilitas` memakai referensi teks
+ * dari Daftar Pilihan. `satuan_permukiman_id` = lokasi/
  * pangkal; SP yang dilayani ada di pivot `fasilitas_sp_cakupan`. Soft delete aktif.
  */
 return new class extends Migration
@@ -18,10 +18,7 @@ return new class extends Migration
         Schema::create('fasilitas_sp', function (Blueprint $table) {
             $table->id('id_fasilitas_sp');
             $table->unsignedBigInteger('satuan_permukiman_id');
-            $table->enum('jenis_fasilitas', [
-                'Kesehatan', 'Pendidikan Dasar', 'Pendidikan Lanjutan', 'Ibadah',
-                'Balai Pertemuan', 'Pasar atau Kios', 'Olahraga', 'Keamanan', 'Lainnya',
-            ]);
+            $table->string('jenis_fasilitas', 100);
             $table->string('nama_fasilitas', 255);
             $table->unsignedInteger('jumlah')->default(1);
             $table->year('tahun_perolehan')->nullable();

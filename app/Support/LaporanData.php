@@ -1089,7 +1089,7 @@ class LaporanData
             ->orderBy('id_fasilitas_sp')
             ->get()
             ->map(fn (FasilitasSp $x): array => [
-                'jenis_fasilitas' => $x->jenis_fasilitas?->value,
+                'jenis_fasilitas' => $x->jenis_fasilitas,
                 'nama_fasilitas' => $x->nama_fasilitas,
                 'jumlah' => (int) $x->jumlah,
                 'kondisi' => $x->kondisi,

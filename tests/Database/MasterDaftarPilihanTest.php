@@ -10,6 +10,7 @@
 
 use App\Enums\JenisDaftarPilihan;
 use App\Models\DaftarPilihan;
+use App\Models\ParameterPenilaianSp;
 use App\Models\User;
 use App\Support\DummyData;
 use Database\Seeders\DaftarPilihanSeeder;
@@ -65,15 +66,29 @@ it('menyimpan pilihan baru dan langsung menyediakannya', function () {
         ->and($baru->urutan)->toBe(9);
 });
 
+it('membuat parameter nonaktif untuk jenis fasilitas baru', function () {
+    $this->post(route('daftar-pilihan.simpan'), [
+        'jenis' => JenisDaftarPilihan::JenisFasilitas->value,
+        'nilai' => 'Perpustakaan',
+    ])->assertSessionHasNoErrors();
+
+    $pilihan = DaftarPilihan::where('jenis', JenisDaftarPilihan::JenisFasilitas->value)
+        ->where('nilai', 'Perpustakaan')->firstOrFail();
+    $parameter = ParameterPenilaianSp::where('daftar_pilihan_id', $pilihan->id_daftar_pilihan)->firstOrFail();
+
+    expect($parameter->sumber)->toBe('Fasilitas')
+        ->and($parameter->is_dinilai)->toBeFalse();
+});
+
 it('mengizinkan nilai sama pada daftar yang berbeda', function () {
     // "Lainnya" sah muncul pada banyak daftar sekaligus, sehingga keunikan
     // ditegakkan DALAM jenis, bukan lintas jenis.
     $this->post(route('daftar-pilihan.simpan'), [
-        'jenis' => JenisDaftarPilihan::StatusHunian->value,
-        'nilai' => 'Lainnya',
+        'jenis' => JenisDaftarPilihan::JenisInventaris->value,
+        'nilai' => 'APBN',
     ])->assertSessionHasNoErrors();
 
-    expect(DaftarPilihan::where('nilai', 'Lainnya')->count())->toBeGreaterThan(1);
+    expect(DaftarPilihan::where('nilai', 'APBN')->count())->toBeGreaterThan(1);
 });
 
 it('menolak nilai kembar dalam daftar yang sama', function () {
@@ -83,22 +98,69 @@ it('menolak nilai kembar dalam daftar yang sama', function () {
     ])->assertSessionHasErrors('nilai');
 });
 
+it('menolak nilai baru pada daftar yang terikat perilaku sistem', function () {
+    $this->post(route('daftar-pilihan.simpan'), [
+        'jenis' => JenisDaftarPilihan::PrioritasPengaduan->value,
+        'nilai' => 'Darurat',
+    ])->assertUnprocessable();
+
+    expect(DaftarPilihan::where('nilai', 'Darurat')->exists())->toBeFalse();
+});
+
 it('menonaktifkan pilihan tanpa menghapusnya', function () {
     // Tidak ada rute hapus, dan itu disengaja: menghapus membuat data lama
     // menunjuk pilihan yang lenyap, dan rekapnya kehilangan baris itu tanpa
     // pesan apa pun.
-    $dihuni = DaftarPilihan::where('jenis', JenisDaftarPilihan::StatusHunian->value)
-        ->where('nilai', 'Dihuni')->first();
+    $sumber = DaftarPilihan::where('jenis', JenisDaftarPilihan::SumberDana->value)
+        ->where('nilai', 'APBN')->first();
 
-    $this->put(route('daftar-pilihan.perbarui', $dihuni->id_daftar_pilihan), [
-        'jenis' => JenisDaftarPilihan::StatusHunian->value,
-        'nilai' => 'Dihuni',
-        'urutan' => $dihuni->urutan,
+    $this->put(route('daftar-pilihan.perbarui', $sumber->id_daftar_pilihan), [
+        'jenis' => JenisDaftarPilihan::SumberDana->value,
+        'nilai' => 'APBN',
+        'urutan' => $sumber->urutan,
         'is_aktif' => '0',
-    ])->assertRedirect(route('daftar-pilihan.jenis', ['jenis' => JenisDaftarPilihan::StatusHunian->value]));
+    ])->assertRedirect(route('daftar-pilihan.jenis', ['jenis' => JenisDaftarPilihan::SumberDana->value]));
 
-    expect(DaftarPilihan::find($dihuni->id_daftar_pilihan))->not->toBeNull()
-        ->and($dihuni->fresh()->is_aktif)->toBeFalse();
+    expect(DaftarPilihan::find($sumber->id_daftar_pilihan))->not->toBeNull()
+        ->and($sumber->fresh()->is_aktif)->toBeFalse();
+});
+
+it('mengunci nilai yang sudah tersimpan sebagai identitas referensi', function () {
+    $sumber = DaftarPilihan::where('jenis', JenisDaftarPilihan::SumberDana->value)
+        ->where('nilai', 'APBN')->firstOrFail();
+
+    $this->put(route('daftar-pilihan.perbarui', $sumber->id_daftar_pilihan), [
+        'jenis' => JenisDaftarPilihan::SumberDana->value,
+        'nilai' => 'Anggaran Pendapatan dan Belanja Negara',
+        'urutan' => $sumber->urutan,
+        'is_aktif' => '1',
+    ])->assertSessionHasErrors('nilai');
+
+    expect($sumber->fresh()->nilai)->toBe('APBN');
+});
+
+it('mengunci jenis baris yang sudah tersimpan', function () {
+    $sumber = DaftarPilihan::where('jenis', JenisDaftarPilihan::SumberDana->value)->firstOrFail();
+
+    $this->put(route('daftar-pilihan.perbarui', $sumber->id_daftar_pilihan), [
+        'jenis' => JenisDaftarPilihan::JenisInventaris->value,
+        'nilai' => $sumber->nilai,
+        'urutan' => $sumber->urutan,
+        'is_aktif' => '1',
+    ])->assertSessionHasErrors('jenis');
+});
+
+it('menolak bidang bawaan yang bukan berasal dari daftar bidang', function () {
+    $kategori = DaftarPilihan::where('jenis', JenisDaftarPilihan::KategoriPengaduan->value)->firstOrFail();
+    $prioritas = DaftarPilihan::where('jenis', JenisDaftarPilihan::PrioritasPengaduan->value)->firstOrFail();
+
+    $this->put(route('daftar-pilihan.perbarui', $kategori->id_daftar_pilihan), [
+        'jenis' => JenisDaftarPilihan::KategoriPengaduan->value,
+        'nilai' => $kategori->nilai,
+        'urutan' => $kategori->urutan,
+        'bidang_id' => $prioritas->id_daftar_pilihan,
+        'is_aktif' => '1',
+    ])->assertSessionHasErrors('bidang_id');
 });
 
 it('mengosongkan skor pada daftar yang memang tak berskor', function () {
@@ -106,12 +168,12 @@ it('mengosongkan skor pada daftar yang memang tak berskor', function () {
     // daftar lain menaruh angka yang tak pernah dibaca siapa pun dan hanya
     // menyesatkan pembaca tabel.
     $this->post(route('daftar-pilihan.simpan'), [
-        'jenis' => JenisDaftarPilihan::StatusHunian->value,
-        'nilai' => 'DIHUNI SEBAGIAN',
+        'jenis' => JenisDaftarPilihan::JenisInventaris->value,
+        'nilai' => 'INVENTARIS UJI',
         'nilai_skor' => '0.5',
     ]);
 
-    expect(DaftarPilihan::where('nilai', 'DIHUNI SEBAGIAN')->first()?->nilai_skor)->toBeNull();
+    expect(DaftarPilihan::where('nilai', 'INVENTARIS UJI')->first()?->nilai_skor)->toBeNull();
 });
 
 it('membalas 404 untuk jenis daftar yang tidak ada', function () {

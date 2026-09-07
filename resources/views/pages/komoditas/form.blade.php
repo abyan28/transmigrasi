@@ -11,8 +11,6 @@
     Nama kolom mengikuti agents/data-dictionary.md bagian 5.2.
 --}}
 @php
-    use App\Enums\TipeKomoditas;
-
     $awalan = $awalan ?? 'tambah';
     $data = $data ?? [];
 

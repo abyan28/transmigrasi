@@ -85,7 +85,7 @@ class AnggotaPoktanController extends Controller
                 Rule::requiredIf(fn () => $request->input('asal_wakil') === AsalWakilPoktan::AnggotaKeluarga->value),
             ],
             'telepon_wakil' => ['nullable', 'string', 'max:20'],
-            'jabatan' => ValidationRules::daftarPilihan(JenisDaftarPilihan::JabatanAnggotaPoktan, wajib: true),
+            'jabatan' => ValidationRules::daftarPilihan(JenisDaftarPilihan::JabatanAnggotaPoktan, wajib: true, nilaiSaatIni: $anggota?->jabatan),
             'tanggal_masuk' => ['required', 'date', 'before_or_equal:today'],
             'status' => ['required', Rule::enum(StatusKeaktifanAnggota::class)],
             'tanggal_keluar' => [

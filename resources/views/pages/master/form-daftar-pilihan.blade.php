@@ -72,10 +72,11 @@
                 Nilai<span class="text-error-500">*</span>
             </label>
             <input type="text" id="{{ $awalan }}_nilai_daftar_pilihan" name="nilai" required maxlength="100"
+                @readonly($awalan !== 'tambah')
                 value="{{ old('nilai', $data['nilai'] ?? '') }}"
                 placeholder="Contoh: APBD Provinsi" class="{{ $kelasKontrol }}" />
             <p class="mt-1.5 text-theme-xs text-gray-500 dark:text-gray-400">
-                Teks ini yang tampil pada dropdown sekaligus tersimpan pada datanya.
+                Teks ini menjadi identitas data dan tidak dapat diganti setelah tersimpan.
             </p>
         </div>
 
@@ -140,6 +141,7 @@
         Penonaktifan, bukan penghapusan. Ditaruh sebagai isian tersendiri agar
         petugas melihat bahwa nilai lama memang tidak dibuang.
     --}}
+    @unless ($nilaiTetap ?? false)
     <div class="rounded-lg border border-gray-200 p-4 dark:border-gray-800">
         <label class="inline-flex items-start gap-2 text-theme-sm text-gray-700 dark:text-gray-300">
             <input type="checkbox" name="is_aktif" value="1"
@@ -154,4 +156,5 @@
             </span>
         </label>
     </div>
+    @endunless
 </div>

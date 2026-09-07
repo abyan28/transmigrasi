@@ -4,13 +4,11 @@ namespace App\Support;
 
 use App\Enums\Agama;
 use App\Enums\AsalWakilPoktan;
-use App\Enums\JenisFasilitas;
 use App\Enums\JenisKelamin;
 use App\Enums\JenisSaprotan;
 use App\Enums\PendidikanTerakhir;
 use App\Enums\StatusSertifikat;
 use App\Enums\StatusTinggal;
-use App\Enums\TipeKomoditas;
 
 /**
  * Skema kolom template impor luring (Task 10.6 / 10.4).
@@ -105,8 +103,6 @@ class SkemaImpor
             'status_sertifikat' => array_map(fn (StatusSertifikat $c) => $c->value, StatusSertifikat::cases()),
             'jenis_saprotan' => array_map(fn (JenisSaprotan $c) => $c->value, JenisSaprotan::cases()),
             'asal_ketua' => array_map(fn (AsalWakilPoktan $c) => $c->value, AsalWakilPoktan::cases()),
-            'jenis_fasilitas' => array_map(fn (JenisFasilitas $c) => $c->value, JenisFasilitas::cases()),
-            'tipe_komoditas' => array_map(fn (TipeKomoditas $c) => $c->value, TipeKomoditas::cases()),
             default => [],
         };
     }
@@ -273,11 +269,12 @@ class SkemaImpor
             'judul' => 'Data Komoditas',
             'kolom' => [
                 ['nama_komoditas', true, 'JAGUNG', 'Nama komoditas, unik'],
-                ['jenis', true, 'Pangan', 'Nilai baku tipe komoditas', ['enum:tipe_komoditas']],
+                ['jenis', true, 'Pangan', 'Nilai baku tipe komoditas', ['dp']],
                 ['satuan_baku', true, 'Ton', 'Nama satuan panen baku (harus terdaftar)'],
                 ['unggulan', false, 'tidak', 'ya / tidak', ['ya', 'tidak']],
                 ['deskripsi', false, '', self::T],
             ],
+            'daftarPilihan' => ['jenis' => 'TipeKomoditas'],
         ],
         'penanaman' => [
             'judul' => 'Penanaman',
@@ -344,7 +341,7 @@ class SkemaImpor
             'judul' => 'Fasilitas SP',
             'kolom' => [
                 ['satuan_permukiman', true, 'SP Kapitan Meo', 'Nama SP tempat fasilitas berdiri'],
-                ['jenis_fasilitas', true, 'Pendidikan Dasar', 'Nilai baku', ['enum:jenis_fasilitas']],
+                ['jenis_fasilitas', true, 'Pendidikan Dasar', 'Nilai baku', ['dp']],
                 ['nama_fasilitas', true, 'SD Negeri Kapitan Meo', self::T],
                 ['jumlah', true, '1', 'Angka'],
                 ['status_penyerahan', true, 'Sudah Diserahkan', 'Nilai baku', ['dp']],
@@ -356,7 +353,8 @@ class SkemaImpor
                 ['keterangan', false, '', self::T],
             ],
             'daftarPilihan' => [
-                'status_penyerahan' => 'StatusPenyerahan', 'kondisi' => 'Kondisi', 'sumber_dana' => 'SumberDana',
+                'jenis_fasilitas' => 'JenisFasilitas', 'status_penyerahan' => 'StatusPenyerahan',
+                'kondisi' => 'Kondisi', 'sumber_dana' => 'SumberDana',
             ],
         ],
         'satuan' => [

@@ -216,7 +216,7 @@ class PenilaianKondisiSp
     {
         return FasilitasSp::query()->with('cakupan')->get()
             ->map(fn (FasilitasSp $aset): array => [
-                'jenis_fasilitas' => $aset->jenis_fasilitas->value,
+                'jenis_fasilitas' => $aset->jenis_fasilitas,
                 'kondisi' => $aset->kondisi,
                 'rincian_kondisi' => $aset->rincian_kondisi,
                 'satuan_permukiman_id' => $aset->satuan_permukiman_id,

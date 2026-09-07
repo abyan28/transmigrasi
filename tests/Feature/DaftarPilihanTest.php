@@ -120,6 +120,29 @@ it('menyortir prioritas pengaduan memakai urutan, bukan abjad', function () {
     expect($prioritas)->toBe(['Rendah', 'Sedang', 'Tinggi', 'Mendesak']);
 });
 
+it('menandai daftar yang nilainya terikat perilaku sistem', function () {
+    foreach ([
+        JenisDaftarPilihan::StatusPenyerahan,
+        JenisDaftarPilihan::Kondisi,
+        JenisDaftarPilihan::KondisiRumah,
+        JenisDaftarPilihan::StatusHunian,
+        JenisDaftarPilihan::PrioritasPengaduan,
+        JenisDaftarPilihan::BidangPengaduan,
+    ] as $jenis) {
+        expect($jenis->nilaiTetap())->toBeTrue();
+    }
+
+    expect(JenisDaftarPilihan::JenisFasilitas->nilaiTetap())->toBeFalse();
+    expect(JenisDaftarPilihan::JenisFasilitas->dapatDitambah())->toBeTrue();
+});
+
+it('mengambil pilihan template komoditas dan fasilitas dari daftar pilihan', function () {
+    expect(\App\Support\SkemaImpor::kolomDaftarPilihan('komoditas'))
+        ->toBe(['jenis' => 'TipeKomoditas'])
+        ->and(\App\Support\SkemaImpor::kolomDaftarPilihan('fasilitas-sp'))
+        ->toHaveKey('jenis_fasilitas', 'JenisFasilitas');
+});
+
 it('tidak lagi memakai enum untuk daftar yang sudah menjadi data master', function () {
     // Enum yang tertinggal menjadi sumber kedua: dropdown membaca data master,
     // sedangkan tempat lain membaca enum, dan keduanya diam-diam berbeda
@@ -196,9 +219,10 @@ it('memberi setiap daftar halamannya sendiri', function () {
         expect($isi)->toContain($jenis->label());
 
         // Isian form ada di halaman jenis, bukan lagi di indeks.
-        foreach (['name="jenis"', 'name="nilai"', 'name="urutan"', 'name="is_aktif"'] as $isian) {
+        foreach (['name="jenis"', 'name="nilai"', 'name="urutan"'] as $isian) {
             expect($isi)->toContain($isian);
         }
+        expect(str_contains($isi, 'name="is_aktif"'))->toBe(! $jenis->nilaiTetap());
 
         // Jenisnya dikunci ke halaman: dikirim sebagai isian tersembunyi,
         // bukan dropdown yang dapat memindahkan nilai baru ke daftar lain.

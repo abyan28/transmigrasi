@@ -58,6 +58,7 @@ class UppercaseInput
         // DAFTAR pilihan dan berpasangan dengan ENUM basis data (4.7).
         'tingkat',
         'jenis',
+        'nilai',
         'jenis_fasilitas',
         'tab',
 

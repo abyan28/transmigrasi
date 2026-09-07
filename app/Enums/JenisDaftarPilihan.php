@@ -143,6 +143,24 @@ enum JenisDaftarPilihan: string
         return $this === self::PrioritasPengaduan;
     }
 
+    /** Daftar yang nilainya merupakan kontrak perilaku, bukan taxonomy bebas. */
+    public function nilaiTetap(): bool
+    {
+        return in_array($this, [
+            self::StatusPenyerahan,
+            self::Kondisi,
+            self::KondisiRumah,
+            self::StatusHunian,
+            self::PrioritasPengaduan,
+            self::BidangPengaduan,
+        ], true);
+    }
+
+    public function dapatDitambah(): bool
+    {
+        return ! $this->nilaiTetap();
+    }
+
     /**
      * Menandai jenis yang nilainya dirujuk parameter penilaian kondisi SP.
      *

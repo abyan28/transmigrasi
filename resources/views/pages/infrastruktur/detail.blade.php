@@ -13,17 +13,15 @@
 
 @section('content')
     @php
-        use App\Enums\JenisInfrastruktur;
         use App\Enums\Kondisi;
 
         $bolehUbah = true;
 
         $kondisi = Kondisi::from($data['kondisi']);
-        $jenis = JenisInfrastruktur::from($data['jenis']);
     @endphp
 
     <x-sim.page-header :judul="$data['nama']"
-        :keterangan="$jenis->value . ' di ' . $data['satuan_permukiman'] . ', dibangun tahun ' . $data['tahun_perolehan'] . '.'"
+        :keterangan="$data['jenis'] . ' di ' . $data['satuan_permukiman'] . ', dibangun tahun ' . $data['tahun_perolehan'] . '.'"
         :remah="\App\Helpers\RemahHelper::untuk('/sp/infrastruktur', $data['nama'])">
         <x-slot:aksi>
             @if ($bolehUbah)
@@ -52,7 +50,7 @@
                 <dl class="mt-5 space-y-3 border-t border-gray-200 pt-5 text-theme-sm dark:border-gray-800">
                     <div class="flex justify-between gap-3">
                         <dt class="text-gray-500 dark:text-gray-400">Jenis</dt>
-                        <dd class="text-right font-medium text-gray-800 dark:text-white/90">{{ $jenis->value }}</dd>
+                        <dd class="text-right font-medium text-gray-800 dark:text-white/90">{{ $data['jenis'] }}</dd>
                     </div>
                     <div class="flex justify-between gap-3">
                         <dt class="text-gray-500 dark:text-gray-400">Kapasitas</dt>

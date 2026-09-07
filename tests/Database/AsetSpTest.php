@@ -7,7 +7,9 @@
  * cakupan lintas SP milik fasilitas.
  */
 
+use App\Enums\JenisDaftarPilihan;
 use App\Models\Berkas;
+use App\Models\DaftarPilihan;
 use App\Models\FasilitasSp;
 use App\Models\InventarisSp;
 use App\Models\User;
@@ -110,6 +112,21 @@ it('menolak nilai daftar pilihan yang sudah dinonaktifkan', function () {
     ])->assertSessionHasErrors('sumber_dana');
 });
 
+it('tetap menerima nilai nonaktif saat record lama disimpan tanpa menggantinya', function () {
+    $inventaris = InventarisSp::firstOrFail();
+    $inventaris->update(['sumber_dana' => 'Lembaga Swadaya Masyarakat']);
+
+    $this->put(route('inventaris.perbarui', $inventaris->id_inventaris_sp), [
+        'satuan_permukiman_id' => $inventaris->satuan_permukiman_id,
+        'jenis_inventaris' => $inventaris->jenis_inventaris,
+        'nama_barang' => $inventaris->nama_barang,
+        'jumlah' => $inventaris->jumlah,
+        'status_penyerahan' => $inventaris->status_penyerahan,
+        'kondisi' => $inventaris->kondisi,
+        'sumber_dana' => 'Lembaga Swadaya Masyarakat',
+    ])->assertSessionHasNoErrors();
+});
+
 it('menyertakan SP pangkal pada cakupan walau tak disebut form', function () {
     // Fasilitas yang tak melayani SP tempatnya berdiri tidak masuk akal,
     // sehingga pangkalnya disertakan apa pun isian formnya.
@@ -129,7 +146,26 @@ it('menyertakan SP pangkal pada cakupan walau tak disebut form', function () {
         ->toBe([2, 3]);
 });
 
-it('menolak jenis fasilitas di luar enum skema', function () {
+it('menerima jenis fasilitas aktif yang ditambahkan lewat daftar pilihan', function () {
+    DaftarPilihan::create([
+        'jenis' => JenisDaftarPilihan::JenisFasilitas->value,
+        'nilai' => 'Perpustakaan',
+        'urutan' => 10,
+    ]);
+
+    $this->post(route('fasilitas.simpan'), [
+        'satuan_permukiman_id' => 1,
+        'jenis_fasilitas' => 'Perpustakaan',
+        'nama_fasilitas' => 'PERPUSTAKAAN UJI',
+        'jumlah' => 1,
+        'status_penyerahan' => 'Sudah Diserahkan',
+    ])->assertSessionHasNoErrors();
+
+    expect(FasilitasSp::where('nama_fasilitas', 'PERPUSTAKAAN UJI')->value('jenis_fasilitas'))
+        ->toBe('Perpustakaan');
+});
+
+it('menolak jenis fasilitas di luar daftar pilihan', function () {
     $this->post(route('fasilitas.simpan'), [
         'satuan_permukiman_id' => 1,
         'jenis_fasilitas' => 'Bandar Antariksa',

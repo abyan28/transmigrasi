@@ -160,11 +160,11 @@ class InventarisSpController extends Controller
             'tahun_perolehan' => ValidationRules::tahun(),
             // Kolom REF: TEKS yang dicocokkan ke tabel `daftar_pilihan`, bukan enum
             // PHP -- Admin boleh menambah nilainya lewat master (Task 4.7).
-            'jenis_inventaris' => ValidationRules::daftarPilihan(JenisDaftarPilihan::JenisInventaris),
-            'sumber_dana' => ValidationRules::daftarPilihan(JenisDaftarPilihan::SumberDana),
+            'jenis_inventaris' => ValidationRules::daftarPilihan(JenisDaftarPilihan::JenisInventaris, nilaiSaatIni: $inventaris?->jenis_inventaris),
+            'sumber_dana' => ValidationRules::daftarPilihan(JenisDaftarPilihan::SumberDana, nilaiSaatIni: $inventaris?->sumber_dana),
             // NOT NULL di skema, karena itu WAJIB -- bukan sekadar opsional.
-            'status_penyerahan' => ValidationRules::daftarPilihan(JenisDaftarPilihan::StatusPenyerahan, wajib: true),
-            'kondisi' => ValidationRules::daftarPilihan(JenisDaftarPilihan::Kondisi),
+            'status_penyerahan' => ValidationRules::daftarPilihan(JenisDaftarPilihan::StatusPenyerahan, wajib: true, nilaiSaatIni: $inventaris?->status_penyerahan),
+            'kondisi' => ValidationRules::daftarPilihan(JenisDaftarPilihan::Kondisi, nilaiSaatIni: $inventaris?->kondisi),
             'keterangan' => ['nullable', 'string', 'max:500'],
             'foto' => ['nullable', 'array'],
             'foto.*' => ValidationRules::foto(),

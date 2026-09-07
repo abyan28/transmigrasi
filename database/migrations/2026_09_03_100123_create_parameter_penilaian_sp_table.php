@@ -29,8 +29,8 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique('kode', 'uq_parameter_penilaian_kode');
+            $table->unique('daftar_pilihan_id', 'uq_parameter_penilaian_daftar_pilihan');
             $table->index('tingkat', 'idx_parameter_penilaian_tingkat');
-            $table->index('daftar_pilihan_id', 'idx_parameter_penilaian_daftar_pilihan');
 
             $table->foreign('daftar_pilihan_id', 'fk_parameter_penilaian_daftar_pilihan')
                 ->references('id_daftar_pilihan')->on('daftar_pilihan')

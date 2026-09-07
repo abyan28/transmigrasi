@@ -8,9 +8,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * Nilai dropdown yang dikelola Admin (`data-dictionary.md` 5.6). Nilai baru
- * cukup INSERT tanpa ALTER TABLE. `jenis` ber-ENUM 14 nilai (bukan daftar
- * pilihan: enum berperilaku tetap ENUM). `nilai_skor` hanya untuk jenis
+ * cukup INSERT tanpa ALTER TABLE. `jenis` ber-ENUM 14 nilai sebagai registry
+ * daftar yang dikenal sistem. `nilai_skor` hanya untuk jenis
  * `kondisi`; `bidang_id` (self-FK) hanya untuk jenis `kategori_pengaduan`.
+ * `nilai` yang sudah tersimpan tidak dapat diganti karena menjadi identitas
+ * teks pada tabel pemakainya.
  *
  * Tanpa soft delete: dinonaktifkan lewat `is_aktif`, tidak dihapus.
  */

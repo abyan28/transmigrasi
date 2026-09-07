@@ -10,6 +10,7 @@ use App\Http\Controllers\Concerns\MenyimpanBerkas;
 use App\Models\AlsintanDistribusi;
 use App\Models\AnggotaKeluarga;
 use App\Models\AnggotaPoktan;
+use App\Models\DaftarPilihan;
 use App\Models\Lahan;
 use App\Models\Poktan;
 use App\Models\SaprotanDistribusi;
@@ -439,7 +440,7 @@ class PoktanController extends Controller
     {
         $id = $poktan?->id_poktan;
 
-        return $request->validate([
+        $data = $request->validate([
             'satuan_permukiman_id' => ['required', 'integer', Rule::exists('satuan_permukiman', 'id_satuan_permukiman')],
             'nama' => [
                 'required', 'string', 'max:255',
@@ -478,7 +479,7 @@ class PoktanController extends Controller
             '_anggota_disunting' => ['nullable', 'string'],
             'anggota' => ['nullable', 'array'],
             'anggota.*.transmigran_id' => ['required', 'integer', Rule::exists('transmigran', 'id_transmigran')],
-            'anggota.*.jabatan' => ValidationRules::daftarPilihan(JenisDaftarPilihan::JabatanAnggotaPoktan, wajib: true),
+            'anggota.*.jabatan' => ['required', 'string', 'max:100'],
             'anggota.*.keterangan' => ['nullable', 'string', 'max:255'],
         ], [
             'satuan_permukiman_id.required' => 'Satuan permukiman wajib dipilih.',
@@ -490,5 +491,24 @@ class PoktanController extends Controller
             'nama_ketua.required' => 'Nama ketua wajib diisi.',
             'nik_ketua.required' => 'NIK ketua wajib diisi.',
         ] + ValidationRules::pesan());
+
+        $jabatanLama = $poktan?->anggota()->pluck('jabatan', 'transmigran_id') ?? collect();
+        foreach ((array) ($data['anggota'] ?? []) as $i => $anggota) {
+            if (($jabatanLama[(int) $anggota['transmigran_id']] ?? null) === $anggota['jabatan']) {
+                continue;
+            }
+
+            if (! DaftarPilihan::query()
+                ->where('jenis', JenisDaftarPilihan::JabatanAnggotaPoktan->value)
+                ->where('nilai', $anggota['jabatan'])
+                ->where('is_aktif', true)
+                ->exists()) {
+                throw ValidationException::withMessages([
+                    "anggota.{$i}.jabatan" => 'Nilai jabatan tidak aktif atau tidak dikenal.',
+                ]);
+            }
+        }
+
+        return $data;
     }
 }

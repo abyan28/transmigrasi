@@ -434,11 +434,11 @@ CREATE TABLE `inventaris_sp` (
 
 -- 3.2 fasilitas_sp ---------------------------------------------------
 -- Bangunan/fasilitas tetap milik SP. satuan_permukiman_id = lokasi/pangkal.
--- jenis_fasilitas tetap dipakai penilaian kondisi SP -> ENUM (bukan teks bebas).
+-- jenis_fasilitas memakai REF(jenis=jenis_fasilitas) agar satu sumber dengan form/import.
 CREATE TABLE `fasilitas_sp` (
   `id_fasilitas_sp`      BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `satuan_permukiman_id` BIGINT UNSIGNED NOT NULL,
-  `jenis_fasilitas`      ENUM('Kesehatan','Pendidikan Dasar','Pendidikan Lanjutan','Ibadah','Balai Pertemuan','Pasar atau Kios','Olahraga','Keamanan','Lainnya') NOT NULL,
+  `jenis_fasilitas`      VARCHAR(100) NOT NULL,                 -- REF(jenis=jenis_fasilitas)
   `nama_fasilitas`       VARCHAR(255) NOT NULL,
   `jumlah`               INT UNSIGNED NOT NULL DEFAULT 1,
   `tahun_perolehan`      YEAR NULL,
@@ -566,8 +566,8 @@ CREATE TABLE `parameter_penilaian_sp` (
   `updated_at`   TIMESTAMP NULL DEFAULT NULL,
   PRIMARY KEY (`id_parameter_penilaian_sp`),
   UNIQUE KEY `uq_parameter_penilaian_kode` (`kode`),
+  UNIQUE KEY `uq_parameter_penilaian_daftar_pilihan` (`daftar_pilihan_id`),
   KEY `idx_parameter_penilaian_tingkat` (`tingkat`),
-  KEY `idx_parameter_penilaian_daftar_pilihan` (`daftar_pilihan_id`),
   CONSTRAINT `fk_parameter_penilaian_daftar_pilihan`
     FOREIGN KEY (`daftar_pilihan_id`) REFERENCES `daftar_pilihan` (`id_daftar_pilihan`) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

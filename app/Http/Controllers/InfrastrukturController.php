@@ -212,10 +212,10 @@ class InfrastrukturController extends Controller
         $data = $request->validate([
             'satuan_permukiman_id' => ['required', 'integer', Rule::exists('satuan_permukiman', 'id_satuan_permukiman')],
             'nama' => ['required', 'string', 'max:150'],
-            'jenis' => ValidationRules::daftarPilihan(JenisDaftarPilihan::JenisInfrastruktur, wajib: true),
+            'jenis' => ValidationRules::daftarPilihan(JenisDaftarPilihan::JenisInfrastruktur, wajib: true, nilaiSaatIni: $infra?->jenis),
             'tahun_perolehan' => ValidationRules::tahun(),
-            'sumber_dana' => ValidationRules::daftarPilihan(JenisDaftarPilihan::SumberDana),
-            'kondisi' => ValidationRules::daftarPilihan(JenisDaftarPilihan::Kondisi, wajib: true),
+            'sumber_dana' => ValidationRules::daftarPilihan(JenisDaftarPilihan::SumberDana, nilaiSaatIni: $infra?->sumber_dana),
+            'kondisi' => ValidationRules::daftarPilihan(JenisDaftarPilihan::Kondisi, wajib: true, nilaiSaatIni: $infra?->kondisi),
             'kapasitas' => ['nullable', 'string', 'max:100'],
             'lintang' => ValidationRules::lintang(),
             'bujur' => ValidationRules::bujur(),

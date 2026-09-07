@@ -4,11 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Enums\JenisDaftarPilihan;
 use App\Models\DaftarPilihan;
+use App\Models\ParameterPenilaianSp;
 use App\Support\Paginasi;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 /**
@@ -78,14 +81,32 @@ class MasterDaftarPilihanController extends Controller
             'baris' => $baris,
             'jumlahNonaktif' => $jumlahNonaktif,
             'nilaiBidang' => $nilaiBidang,
+            'nilaiTetap' => $pilihan->nilaiTetap(),
+            'dapatDitambah' => $pilihan->dapatDitambah(),
         ]);
     }
 
     public function simpan(Request $request): RedirectResponse
     {
         $data = $this->validasi($request);
+        abort_unless(JenisDaftarPilihan::from($data['jenis'])->dapatDitambah(), 422, 'Daftar ini tidak menerima nilai baru dari halaman ini.');
 
-        DaftarPilihan::create($data + ['is_aktif' => $request->boolean('is_aktif', true)]);
+        DB::transaction(function () use ($data, $request): void {
+            $pilihan = DaftarPilihan::create($data + ['is_aktif' => $request->boolean('is_aktif', true)]);
+
+            if ($pilihan->jenis->dirujukParameter()) {
+                ParameterPenilaianSp::create([
+                    'kode' => Str::limit(Str::slug($pilihan->nilai, '_'), 28, '').'_'.$pilihan->id_daftar_pilihan,
+                    'nama' => $pilihan->nilai,
+                    'tingkat' => 'Tersier',
+                    'bobot' => 1,
+                    'sumber' => $pilihan->jenis === JenisDaftarPilihan::JenisFasilitas ? 'Fasilitas' : 'Infrastruktur',
+                    'daftar_pilihan_id' => $pilihan->id_daftar_pilihan,
+                    'is_dinilai' => false,
+                    'urutan' => (int) ParameterPenilaianSp::max('urutan') + 1,
+                ]);
+            }
+        });
 
         return $this->kembali($data['jenis'], 'Pilihan baru tersimpan dan langsung tersedia pada form.');
     }
@@ -99,7 +120,12 @@ class MasterDaftarPilihanController extends Controller
         $daftarPilihan = DaftarPilihan::findOrFail($id);
         $data = $this->validasi($request, $daftarPilihan);
 
-        $daftarPilihan->update($data + ['is_aktif' => $request->boolean('is_aktif')]);
+        if ($daftarPilihan->jenis->nilaiTetap()) {
+            $data['nilai'] = $daftarPilihan->nilai;
+            $data['is_aktif'] = true;
+        }
+
+        $daftarPilihan->update($data + ['is_aktif' => $data['is_aktif'] ?? $request->boolean('is_aktif')]);
 
         return $this->kembali($data['jenis'], 'Perubahan pilihan tersimpan.');
     }
@@ -146,9 +172,13 @@ class MasterDaftarPilihanController extends Controller
         $jenis = JenisDaftarPilihan::tryFrom((string) $request->input('jenis'));
 
         $data = $request->validate([
-            'jenis' => ['required', Rule::enum(JenisDaftarPilihan::class)],
+            'jenis' => [
+                'required', Rule::enum(JenisDaftarPilihan::class),
+                Rule::when($daftarPilihan !== null, Rule::in([$daftarPilihan?->jenis->value])),
+            ],
             'nilai' => [
                 'required', 'string', 'max:100',
+                Rule::when($daftarPilihan !== null, Rule::in([$daftarPilihan?->nilai])),
                 // Unik DALAM jenisnya, bukan lintas jenis: "Lainnya" sah
                 // muncul pada banyak daftar sekaligus.
                 Rule::unique('daftar_pilihan', 'nilai')
@@ -160,7 +190,8 @@ class MasterDaftarPilihanController extends Controller
             // menghitung kondisi SP, sehingga rentangnya dikunci 0..1.
             'nilai_skor' => ['nullable', 'numeric', 'min:0', 'max:1'],
             // Hanya bermakna bagi `kategori_pengaduan` (self-FK).
-            'bidang_id' => ['nullable', 'integer', Rule::exists('daftar_pilihan', 'id_daftar_pilihan')],
+            'bidang_id' => ['nullable', 'integer', Rule::exists('daftar_pilihan', 'id_daftar_pilihan')
+                ->where('jenis', JenisDaftarPilihan::BidangPengaduan->value)],
         ], [
             'nilai.required' => 'Nilai pilihan wajib diisi.',
             'nilai.unique' => 'Nilai ini sudah ada pada daftar yang sama.',
