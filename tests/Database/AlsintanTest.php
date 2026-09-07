@@ -12,6 +12,7 @@
 use App\Enums\CakupanData;
 use App\Models\Alsintan;
 use App\Models\AlsintanDistribusi;
+use App\Models\Berkas;
 use App\Models\Poktan;
 use App\Models\Role;
 use App\Models\User;
@@ -25,7 +26,9 @@ use Database\Seeders\SpSeeder;
 use Database\Seeders\TransmigranSeeder;
 use Database\Seeders\WilayahSeeder;
 use Illuminate\Database\QueryException;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 require_once __DIR__.'/DatabaseHelpers.php';
 
@@ -252,6 +255,26 @@ it('memperbarui kondisi satu baris distribusi', function () {
     ])->assertRedirect(route('alsintan.detail', $baris->alsintan_id));
 
     expect($baris->refresh()->kondisi)->toBe('Rusak Berat');
+});
+
+it('membatasi foto distribusi alsintan menurut cakupan poktan penerima', function () {
+    Storage::fake('local');
+    $baris = AlsintanDistribusi::withoutGlobalScopes()->whereHas('poktan', fn ($q) => $q->where('satuan_permukiman_id', 1))->firstOrFail();
+
+    $this->post("/alsintan/{$baris->alsintan_id}/distribusi/{$baris->id_alsintan_distribusi}/kondisi", [
+        'kondisi' => 'Baik',
+        'foto' => UploadedFile::fake()->image('unit.jpg'),
+    ])->assertRedirect();
+    $berkas = Berkas::findOrFail($baris->fresh()->foto_berkas_id);
+
+    $role = Role::factory()->create(['cakupan_data' => CakupanData::PerSp->value]);
+    $operator = User::factory()->create(['role_id' => $role->id_role]);
+    $operator->semuaIzin = true;
+    $operator->satuanPermukiman()->attach(2);
+
+    $this->actingAs($operator)
+        ->get(route('dokumen.tampilkan', ['modul' => 'alsintan', 'id' => $baris->alsintan_id, 'namaBerkas' => $berkas->nama_file]))
+        ->assertNotFound();
 });
 
 it('menghapus pengadaan alsintan secara halus', function () {

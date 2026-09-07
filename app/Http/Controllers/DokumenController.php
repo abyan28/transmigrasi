@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Berkas;
 use App\Support\PenyimpananDokumen;
 use App\Support\PetaModulBerkas;
 use Illuminate\Http\Request;
@@ -37,7 +38,6 @@ class DokumenController extends Controller
      */
     public function tampilkan(Request $request, string $modul, int $id, string $namaBerkas): StreamedResponse
     {
-        $path = PenyimpananDokumen::folder($modul, $id).'/'.$namaBerkas;
 
         // Menolak upaya menembus folder lain lewat penulisan path,
         // misalnya "../../.env" yang diselundupkan pada nama berkas.
@@ -45,15 +45,11 @@ class DokumenController extends Controller
             abort(404);
         }
 
-        if (! PenyimpananDokumen::ada($path)) {
-            abort(404, 'Dokumen tidak ditemukan.');
-        }
-
         // Kewenangan `lihat` pada modul pemilik berkas (Task 3.3). Diperiksa di
         // sini, bukan lewat middleware `izin:`, sebab modulnya berupa parameter
         // rute yang dinamis.
         abort_unless(
-            $request->user()?->punyaAksi($modul, 'lihat') === true,
+            $request->user()?->punyaAksi(PetaModulBerkas::modulIzin($modul), 'lihat') === true,
             403,
             'Anda tidak memiliki kewenangan membuka dokumen ini.',
         );
@@ -63,6 +59,13 @@ class DokumenController extends Controller
         // tak dapat dibedakan dari berkas yang memang tidak ada.
         abort_unless(PetaModulBerkas::pemilikTerlihat($modul, $id), 404, 'Dokumen tidak ditemukan.');
 
-        return Storage::disk(PenyimpananDokumen::DISK)->response($path);
+        $berkas = Berkas::query()
+            ->where('disk', PenyimpananDokumen::DISK)
+            ->where('nama_file', $namaBerkas)
+            ->get()
+            ->first(fn (Berkas $item): bool => PetaModulBerkas::berkasMilik($modul, $id, $item->id_berkas));
+        abort_unless($berkas !== null && PenyimpananDokumen::ada($berkas->path), 404, 'Dokumen tidak ditemukan.');
+
+        return Storage::disk($berkas->disk)->response($berkas->path);
     }
 }

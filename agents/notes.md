@@ -13,6 +13,8 @@
 
 Dokumen ini berisi catatan temuan, keputusan, dan hal yang perlu ditindaklanjuti selama penyusunan dokumen dan pengembangan sistem.
 
+- [DONE 2026-09-07] **Path dokumen privat dibuat terbaca dan bebas tabrakan.** Unggahan baru memakai `[modul]/[id]-[slug-label]/[peran]/[peran]-[urutan]-[uuid-pendek].[ekstensi]`; label folder adalah snapshot. Rumah tetap aset mandiri, sedangkan dokumen penanganan dinest di bawah pengaduan dan ID tindak lanjut. Unduhan membaca `berkas.path`, memverifikasi relasi pemilik, izin alias modul, serta cakupan termasuk foto distribusi alsintan. Registry dev berisi 37 metadata contoh tetapi nol berkas fisik, sehingga migrasi file lama tidak diperlukan.
+
 > **Status per 2026-08-11:** seluruh koreksi pada bagian 1 sudah **diterapkan** pada skema final di `erd.md` dan `data-dictionary.md`. Bagian 1 dipertahankan sebagai jejak alasan perubahan. Temuan yang muncul belakangan dicatat pada bagian 1a.
 
 ---

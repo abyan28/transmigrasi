@@ -189,7 +189,7 @@ class PoktanController extends Controller
         }
 
         // SK poktan = FK TUNGGAL (bukan pivot). Simpan berkasnya lalu tunjuk.
-        $berkas = $this->rekamBerkas($request->file('dokumen_pendukung'), 'poktan', (int) $poktan->id_poktan, 'sk');
+        $berkas = $this->rekamBerkas($request->file('dokumen_pendukung'), 'poktan', (int) $poktan->id_poktan, 'sk', $poktan->nama, 1, 'sk');
 
         $poktan->forceFill(['berkas_id' => $berkas->id_berkas])->save();
     }

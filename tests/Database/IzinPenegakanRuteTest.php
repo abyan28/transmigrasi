@@ -8,18 +8,21 @@
  * redirect; yang diuji adalah PINTU izinnya, bukan isi aksinya.
  */
 
+use App\Models\Berkas;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\Transmigran;
 use App\Models\User;
 use App\Support\PenyimpananDokumen;
 use App\Support\PetaIzinRute;
+use App\Support\PetaModulBerkas;
 use Database\Seeders\KawasanSeeder;
 use Database\Seeders\PermissionRoleSeeder;
 use Database\Seeders\SpSeeder;
 use Database\Seeders\TransmigranSeeder;
 use Database\Seeders\WilayahSeeder;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 beforeEach(function () {
     $this->seed(PermissionRoleSeeder::class);
@@ -131,8 +134,15 @@ it('menahan unduhan dokumen di luar cakupan data operator Per SP (Task 10.6)', f
     $transmigran = Transmigran::withoutGlobalScopes()->findOrFail(1);
     expect($transmigran->satuan_permukiman_id)->toBe(1);
 
-    $folder = PenyimpananDokumen::folder('transmigran', 1);
-    Storage::disk('local')->put($folder.'/KK.pdf', '%PDF-1.4 contoh');
+    $folder = PenyimpananDokumen::folder('transmigran', 1, $transmigran->nama_kepala_keluarga);
+    $path = $folder.'/kk-01-a83f2c19.pdf';
+    Storage::disk('local')->put($path, '%PDF-1.4 contoh');
+    $berkas = Berkas::create([
+        'uuid' => (string) Str::uuid(),
+        'nama_file' => basename($path), 'nama_asli' => 'KK.pdf', 'path' => $path,
+        'mime' => 'application/pdf', 'ekstensi' => 'pdf', 'ukuran' => 17, 'disk' => 'local',
+    ]);
+    $transmigran->berkas()->attach($berkas->id_berkas, ['peran' => 'kk', 'urutan' => 1]);
 
     $ditugaskanSp1 = User::factory()->create(['role_id' => 4]);
     $ditugaskanSp1->satuanPermukiman()->attach(1);
@@ -140,7 +150,7 @@ it('menahan unduhan dokumen di luar cakupan data operator Per SP (Task 10.6)', f
     $ditugaskanSp2 = User::factory()->create(['role_id' => 4]);
     $ditugaskanSp2->satuanPermukiman()->attach(2);
 
-    $url = '/dokumen/transmigran/1/KK.pdf';
+    $url = '/dokumen/transmigran/1/'.basename($path);
 
     // Operator SP 1: berkas milik SP-nya -> boleh.
     $this->actingAs($ditugaskanSp1)->get($url)->assertOk();
@@ -149,3 +159,69 @@ it('menahan unduhan dokumen di luar cakupan data operator Per SP (Task 10.6)', f
     // dari berkas yang memang tidak ada).
     $this->actingAs($ditugaskanSp2)->get($url)->assertNotFound();
 });
+
+it('membuka dokumen dari path registry meski folder memakai label snapshot', function () {
+    Storage::fake('local');
+    $this->seed(WilayahSeeder::class);
+    $this->seed(KawasanSeeder::class);
+    $this->seed(SpSeeder::class);
+    $this->seed(TransmigranSeeder::class);
+
+    $transmigran = Transmigran::withoutGlobalScopes()->findOrFail(1);
+    $folder = PenyimpananDokumen::folder('transmigran', 1, $transmigran->nama_kepala_keluarga);
+    $path = $folder.'/kk-01-a83f2c19.pdf';
+    Storage::disk('local')->put($path, '%PDF-1.4 contoh');
+    $berkas = Berkas::create([
+        'uuid' => (string) Str::uuid(),
+        'nama_file' => basename($path), 'nama_asli' => 'KK.pdf', 'path' => $path,
+        'mime' => 'application/pdf', 'ekstensi' => 'pdf', 'ukuran' => 17, 'disk' => 'local',
+    ]);
+    $transmigran->berkas()->attach($berkas->id_berkas, ['peran' => 'kk', 'urutan' => 1]);
+    $transmigran->update(['nama_kepala_keluarga' => 'NAMA SUDAH BERUBAH']);
+    $admin = User::factory()->create(['role_id' => 1]);
+
+    $this->actingAs($admin)
+        ->get(route('dokumen.tampilkan', ['modul' => 'transmigran', 'id' => 1, 'namaBerkas' => basename($path)]))
+        ->assertOk();
+});
+
+it('menolak berkas yang pathnya tampak benar tetapi tidak dimiliki baris tersebut', function () {
+    Storage::fake('local');
+    $this->seed(WilayahSeeder::class);
+    $this->seed(KawasanSeeder::class);
+    $this->seed(SpSeeder::class);
+    $this->seed(TransmigranSeeder::class);
+
+    $transmigran = Transmigran::withoutGlobalScopes()->findOrFail(1);
+    $path = PenyimpananDokumen::folder('transmigran', 1, $transmigran->nama_kepala_keluarga).'/asing-01-a83f2c19.pdf';
+    Storage::disk('local')->put($path, '%PDF-1.4 contoh');
+    Berkas::create([
+        'uuid' => (string) Str::uuid(), 'nama_file' => basename($path), 'nama_asli' => 'asing.pdf',
+        'path' => $path, 'mime' => 'application/pdf', 'ekstensi' => 'pdf', 'ukuran' => 17, 'disk' => 'local',
+    ]);
+    $admin = User::factory()->create(['role_id' => 1]);
+
+    $this->actingAs($admin)
+        ->get(route('dokumen.tampilkan', ['modul' => 'transmigran', 'id' => 1, 'namaBerkas' => basename($path)]))
+        ->assertNotFound();
+});
+
+it('memakai alias izin modul dokumen SP dan panen', function () {
+    $role = Role::factory()->create();
+    foreach (['sp', 'hasil_panen'] as $modul) {
+        $role->permissions()->attach(Permission::where('nama', $modul.'.lihat')->firstOrFail());
+    }
+    $pengguna = User::factory()->create(['role_id' => $role->id_role]);
+
+    expect($pengguna->punyaAksi(PetaModulBerkas::modulIzin('satuan_permukiman'), 'lihat'))->toBeTrue()
+        ->and($pengguna->punyaAksi(PetaModulBerkas::modulIzin('panen'), 'lihat'))->toBeTrue();
+});
+
+it('menolak nama berkas yang mencoba menembus folder privat', function (string $nama) {
+    $pengguna = User::factory()->create();
+    $pengguna->semuaIzin = true;
+
+    $this->actingAs($pengguna)
+        ->get('/dokumen/transmigran/1/'.rawurlencode($nama))
+        ->assertNotFound();
+})->with(['../rahasia.pdf', '..\\rahasia.pdf']);

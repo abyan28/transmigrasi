@@ -197,7 +197,15 @@ class AlsintanController extends Controller
         $baris->kondisi = $data['kondisi'];
 
         if ($request->hasFile('foto')) {
-            $berkas = $this->rekamBerkas($request->file('foto'), 'alsintan', $id, 'foto');
+            $berkas = $this->rekamBerkas(
+                $request->file('foto'),
+                'alsintan',
+                $id,
+                'foto',
+                $baris->alsintan?->nama_alat ?? '',
+                1,
+                'distribusi/'.$baris->id_alsintan_distribusi.'/foto',
+            );
             $baris->foto_berkas_id = $berkas->id_berkas;
         }
 

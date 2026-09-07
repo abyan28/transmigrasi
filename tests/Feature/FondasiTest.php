@@ -8,6 +8,7 @@
 
 use App\Http\Middleware\UppercaseInput;
 use App\Support\PenyimpananDokumen;
+use App\Support\PetaModulBerkas;
 use App\Support\ValidationRules;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -229,24 +230,23 @@ it('melewatkan permintaan GET tanpa perubahan', function () {
 |--------------------------------------------------------------------------
 */
 
-it('menyusun nama berkas sesuai pola yang disepakati', function () {
+it('menyusun nama berkas unik yang tetap mudah dikenali', function () {
     $berkas = UploadedFile::fake()->create('scan.pdf', 100, 'application/pdf');
 
-    expect(PenyimpananDokumen::susunNamaBerkas($berkas, 'Kartu Keluarga', 'Yohanes Bere'))
-        ->toBe('KartuKeluarga_yohanes-bere.pdf');
-
-    // Singkatan seperti HPL wajib tetap kapital, tidak boleh jadi "Hpl"
-    expect(PenyimpananDokumen::susunNamaBerkas($berkas, 'SertifikatHPL', 'Maria Da Costa'))
-        ->toBe('SertifikatHPL_maria-da-costa.pdf');
-
-    // Tanpa nama pemilik, hanya jenis dokumennya
-    expect(PenyimpananDokumen::susunNamaBerkas($berkas, 'SK Penetapan'))
-        ->toBe('SKPenetapan.pdf');
+    expect(PenyimpananDokumen::susunNamaBerkas($berkas, 'Kartu Keluarga', 2, 'a83f2c19'))
+        ->toBe('kartu-keluarga-02-a83f2c19.pdf');
 });
 
-it('menyusun folder penyimpanan per modul dan id', function () {
-    expect(PenyimpananDokumen::folder('transmigran', 12))->toBe('transmigran/12');
-    expect(PenyimpananDokumen::folder('kawasan_transmigrasi', 1))->toBe('kawasan-transmigrasi/1');
+it('menyusun folder penyimpanan dari id dan snapshot nama pemilik', function () {
+    expect(PenyimpananDokumen::folder('transmigran', 12, 'Nara Bere'))->toBe('transmigran/12-nara-bere')
+        ->and(PenyimpananDokumen::folder('pengaduan', 7, 'PGD-2026-0007', 'tindak-lanjut/21'))
+        ->toBe('pengaduan/7-pgd-2026-0007/tindak-lanjut/21');
+});
+
+it('memetakan alias modul dokumen ke izin yang benar', function () {
+    expect(PetaModulBerkas::modulIzin('satuan_permukiman'))->toBe('sp')
+        ->and(PetaModulBerkas::modulIzin('panen'))->toBe('hasil_panen')
+        ->and(PetaModulBerkas::modulIzin('transmigran'))->toBe('transmigran');
 });
 
 it('memakai disk privat dan batas 5 MB', function () {
@@ -259,9 +259,9 @@ it('menyimpan berkas ke disk privat lalu menghapusnya', function () {
 
     $berkas = UploadedFile::fake()->create('kk.pdf', 100, 'application/pdf');
 
-    $path = PenyimpananDokumen::simpan($berkas, 'transmigran', 12, 'KartuKeluarga', 'Yohanes Bere');
+    $path = PenyimpananDokumen::simpan($berkas, 'transmigran', 12, 'Kartu Keluarga', 'Yohanes Bere', 1, '410ca28e', 'kk');
 
-    expect($path)->toBe('transmigran/12/KartuKeluarga_yohanes-bere.pdf')
+    expect($path)->toBe('transmigran/12-yohanes-bere/kk/kartu-keluarga-01-410ca28e.pdf')
         ->and(PenyimpananDokumen::ada($path))->toBeTrue();
 
     PenyimpananDokumen::hapus($path);
@@ -273,12 +273,12 @@ it('menghapus berkas lama saat diganti', function () {
     Storage::fake('local');
 
     $lama = UploadedFile::fake()->create('lama.pdf', 100, 'application/pdf');
-    $pathLama = PenyimpananDokumen::simpan($lama, 'transmigran', 5, 'KartuKeluarga', 'Maria Bere');
+    $pathLama = PenyimpananDokumen::simpan($lama, 'transmigran', 5, 'Kartu Keluarga', 'Maria Bere', 1, 'lama0001', 'kk');
 
     $baru = UploadedFile::fake()->image('baru.jpg');
-    $pathBaru = PenyimpananDokumen::ganti($baru, $pathLama, 'transmigran', 5, 'KartuKeluarga', 'Maria Bere');
+    $pathBaru = PenyimpananDokumen::ganti($baru, $pathLama, 'transmigran', 5, 'Kartu Keluarga', 'Maria Bere', 1, 'baru0001', 'kk');
 
-    expect($pathBaru)->toBe('transmigran/5/KartuKeluarga_maria-bere.jpg')
+    expect($pathBaru)->toBe('transmigran/5-maria-bere/kk/kartu-keluarga-01-baru0001.jpg')
         ->and(PenyimpananDokumen::ada($pathBaru))->toBeTrue()
         ->and(PenyimpananDokumen::ada($pathLama))->toBeFalse();
 });

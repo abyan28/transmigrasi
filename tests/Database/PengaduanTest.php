@@ -21,7 +21,9 @@ use Database\Seeders\KawasanSeeder;
 use Database\Seeders\PengaduanSeeder;
 use Database\Seeders\SpSeeder;
 use Database\Seeders\WilayahSeeder;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 
 require_once __DIR__.'/DatabaseHelpers.php';
 
@@ -119,6 +121,24 @@ it('memajukan status penanganan satu langkah dan mencatat riwayatnya', function 
         ->and($p->penanganan->first()->user_id)->not->toBeNull();
 
     Mail::assertQueued(PengaduanMail::class, fn ($mail) => $mail->hasTo('pelapor@example.test') && ! $mail->baru);
+});
+
+it('menyimpan dokumen tindak lanjut di bawah folder pengaduannya', function () {
+    Storage::fake('local');
+    $pengaduan = Pengaduan::findOrFail(3);
+
+    $this->post(route('pengaduan.tangani', $pengaduan->id_pengaduan), [
+        'status_sesudah' => 'Diterima',
+        'tanggal_penanganan' => '2026-08-20',
+        'catatan' => 'Laporan diterima.',
+        'dokumen_tindak_lanjut' => UploadedFile::fake()->create('berita-acara.pdf', 40, 'application/pdf'),
+    ])->assertRedirect();
+
+    $penanganan = $pengaduan->penanganan()->with('berkas')->firstOrFail();
+    $path = $penanganan->berkas->firstOrFail()->path;
+
+    expect($path)->toStartWith("pengaduan/{$pengaduan->id_pengaduan}-".strtolower($pengaduan->nomor_pengaduan)."/tindak-lanjut/{$penanganan->id_penanganan_pengaduan}/tindak-lanjut-01-");
+    Storage::disk('local')->assertExists($path);
 });
 
 it('menolak lompatan status yang melewati satu tahap', function () {

@@ -226,7 +226,15 @@ class PengaduanController extends Controller
             ]);
 
             if ($request->hasFile('dokumen_tindak_lanjut')) {
-                $this->lekatkanBerkas($penanganan, [$request->file('dokumen_tindak_lanjut')], 'pengaduan', 'tindak_lanjut');
+                $this->lekatkanBerkas(
+                    pemilik: $penanganan,
+                    berkasDiunggah: [$request->file('dokumen_tindak_lanjut')],
+                    modul: 'pengaduan',
+                    peran: 'tindak_lanjut',
+                    labelPemilik: $pengaduan->nomor_pengaduan,
+                    subfolder: 'tindak-lanjut/'.$penanganan->id_penanganan_pengaduan,
+                    idFolder: (int) $pengaduan->id_pengaduan,
+                );
             }
 
             $pengaduan->forceFill([

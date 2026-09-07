@@ -18,6 +18,7 @@ use App\Models\Saprotan;
 use App\Models\SatuanPermukiman;
 use App\Models\Transmigran;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Peta nama modul berkas -> model pemiliknya (Task 10.6).
@@ -33,6 +34,11 @@ use Illuminate\Database\Eloquent\Model;
  */
 class PetaModulBerkas
 {
+    private const MODUL_IZIN = [
+        'satuan_permukiman' => 'sp',
+        'panen' => 'hasil_panen',
+    ];
+
     /**
      * @var array<string, class-string<Model>>
      */
@@ -73,5 +79,49 @@ class PetaModulBerkas
         }
 
         return $model::query()->whereKey($id)->exists();
+    }
+
+    public static function distribusiAlsintanTerlihat(int $alsintanId, int $berkasId): bool
+    {
+        return DB::table('alsintan_distribusi')
+            ->where('alsintan_id', $alsintanId)
+            ->where('foto_berkas_id', $berkasId)
+            ->whereIn('poktan_id', Poktan::query()->select('id_poktan'))
+            ->exists();
+    }
+
+    public static function modulIzin(string $modul): string
+    {
+        return self::MODUL_IZIN[$modul] ?? $modul;
+    }
+
+    public static function berkasMilik(string $modul, int $id, int $berkasId): bool
+    {
+        return match ($modul) {
+            'transmigran' => self::adaPivot('transmigran_berkas', 'transmigran_id', $id, $berkasId),
+            'rumah' => self::adaPivot('rumah_berkas', 'rumah_id', $id, $berkasId),
+            'kawasan', 'kawasan_transmigrasi' => self::adaPivot('kawasan_transmigrasi_berkas', 'kawasan_transmigrasi_id', $id, $berkasId),
+            'inventaris_sp' => self::adaPivot('inventaris_sp_berkas', 'inventaris_sp_id', $id, $berkasId),
+            'fasilitas_sp' => self::adaPivot('fasilitas_sp_berkas', 'fasilitas_sp_id', $id, $berkasId),
+            'infrastruktur' => self::adaPivot('infrastruktur_berkas', 'infrastruktur_id', $id, $berkasId),
+            'alsintan' => self::adaPivot('alsintan_berkas', 'alsintan_id', $id, $berkasId)
+                || self::distribusiAlsintanTerlihat($id, $berkasId),
+            'penanaman' => self::adaPivot('penanaman_berkas', 'penanaman_id', $id, $berkasId),
+            'panen', 'hasil_panen' => self::adaPivot('hasil_panen_berkas', 'hasil_panen_id', $id, $berkasId),
+            'pengaduan' => self::adaPivot('pengaduan_berkas', 'pengaduan_id', $id, $berkasId)
+                || DB::table('penanganan_pengaduan_berkas as pb')
+                    ->join('penanganan_pengaduan as p', 'p.id_penanganan_pengaduan', '=', 'pb.penanganan_pengaduan_id')
+                    ->where('p.pengaduan_id', $id)->where('pb.berkas_id', $berkasId)->exists(),
+            'poktan' => DB::table('poktan')->where('id_poktan', $id)->where('berkas_id', $berkasId)->exists(),
+            'saprotan' => DB::table('saprotan')->where('id_saprotan', $id)
+                ->where(fn ($q) => $q->where('berkas_id', $berkasId)->orWhere('foto_berkas_id', $berkasId))->exists(),
+            'satuan_permukiman' => DB::table('satuan_permukiman')->where('id_satuan_permukiman', $id)->where('berkas_id', $berkasId)->exists(),
+            default => false,
+        };
+    }
+
+    private static function adaPivot(string $tabel, string $kolomPemilik, int $id, int $berkasId): bool
+    {
+        return DB::table($tabel)->where($kolomPemilik, $id)->where('berkas_id', $berkasId)->exists();
     }
 }

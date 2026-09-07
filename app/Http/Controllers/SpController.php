@@ -495,6 +495,9 @@ class SpController extends Controller
             'sp',
             (int) $sp->id_satuan_permukiman,
             'sk',
+            $sp->nama,
+            1,
+            'sk',
         );
 
         $sp->forceFill(['berkas_id' => $berkas->id_berkas])->save();

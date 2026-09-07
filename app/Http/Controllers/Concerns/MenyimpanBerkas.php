@@ -33,15 +33,26 @@ trait MenyimpanBerkas
         string $modul,
         string $peran,
         string $relasi = 'berkas',
+        ?string $labelPemilik = null,
+        string $subfolder = '',
+        ?int $idFolder = null,
     ): void {
-        $urutan = (int) $pemilik->{$relasi}()->max('urutan');
+        $urutan = (int) $pemilik->{$relasi}()->wherePivot('peran', $peran)->max('urutan');
 
         foreach ($berkasDiunggah as $satu) {
             if (! $satu instanceof UploadedFile || ! $satu->isValid()) {
                 continue;
             }
 
-            $berkas = $this->rekamBerkas($satu, $modul, (int) $pemilik->getKey(), $peran);
+            $berkas = $this->rekamBerkas(
+                $satu,
+                $modul,
+                $idFolder ?? (int) $pemilik->getKey(),
+                $peran,
+                $labelPemilik ?? $this->labelBerkas($pemilik),
+                $urutan + 1,
+                $subfolder === '' ? $peran : $subfolder,
+            );
 
             $pemilik->{$relasi}()->attach($berkas->id_berkas, [
                 'peran' => $peran,
@@ -56,17 +67,38 @@ trait MenyimpanBerkas
      * `uuid` dibangkitkan di sini sebab model `Berkas` belum punya observer
      * auto-generate; kolomnya UNIQUE dan NOT NULL sehingga wajib terisi.
      */
-    private function rekamBerkas(UploadedFile $unggahan, string $modul, int $idPemilik, string $peran): Berkas
-    {
+    protected function rekamBerkas(
+        UploadedFile $unggahan,
+        string $modul,
+        int $idPemilik,
+        string $peran,
+        string $labelPemilik = '',
+        int $urutan = 1,
+        string $subfolder = '',
+        ?string $uuid = null,
+    ): Berkas {
+        do {
+            $uuid ??= (string) Str::uuid();
+            $pendek = substr(str_replace('-', '', $uuid), 0, 8);
+            $tabrakan = Berkas::where('uuid', $uuid)->orWhere('nama_file', 'like', '%-'.$pendek.'.%')->exists();
+            if ($tabrakan) {
+                $uuid = null;
+            }
+        } while ($tabrakan);
+
         $path = PenyimpananDokumen::simpan(
             berkas: $unggahan,
             modul: $modul,
             idPemilik: $idPemilik,
-            namaDokumen: Str::studly($peran),
+            namaDokumen: str_replace('_', ' ', $peran),
+            namaPemilik: $labelPemilik,
+            urutan: $urutan,
+            pengenal: $pendek,
+            subfolder: $subfolder,
         );
 
         return Berkas::create([
-            'uuid' => (string) Str::uuid(),
+            'uuid' => $uuid,
             'nama_file' => basename($path),
             'nama_asli' => $unggahan->getClientOriginalName(),
             'path' => $path,
@@ -78,5 +110,16 @@ trait MenyimpanBerkas
             // keputusan 4), sehingga ketiadaan pengunggah bukan galat.
             'user_id' => Auth::id(),
         ]);
+    }
+
+    private function labelBerkas(Model $pemilik): string
+    {
+        foreach (['nama_kepala_keluarga', 'nomor_pengaduan', 'no_rumah', 'kode_saprotan', 'kode_penanaman', 'kode_sp', 'nama', 'nama_barang', 'nama_fasilitas', 'nama_alat', 'periode_panen', 'judul', 'uuid'] as $kolom) {
+            if (filled($pemilik->getAttribute($kolom))) {
+                return (string) $pemilik->getAttribute($kolom);
+            }
+        }
+
+        return '';
     }
 }

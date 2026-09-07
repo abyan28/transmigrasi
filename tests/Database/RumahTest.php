@@ -329,5 +329,12 @@ it('mengunggah foto rumah sebagai berkas berperan foto', function () {
         ],
     ])->assertRedirect(route('rumah.detail', $rumah->id_rumah));
 
-    expect($rumah->berkas()->wherePivot('peran', 'foto')->count())->toBe(2);
+    $path = $rumah->berkas()->wherePivot('peran', 'foto')->orderByPivot('urutan')->pluck('path');
+
+    expect($path)->toHaveCount(2)
+        ->and($path->unique())->toHaveCount(2)
+        ->and($path->every(fn (string $nilai): bool => str_starts_with($nilai, "rumah/{$rumah->id_rumah}-c-02/foto/foto-")))->toBeTrue();
+    foreach ($path as $nilai) {
+        Storage::disk('local')->assertExists($nilai);
+    }
 });

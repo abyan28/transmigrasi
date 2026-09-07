@@ -166,11 +166,11 @@ class SaprotanController extends Controller
         $ubah = [];
 
         if ($request->hasFile('foto')) {
-            $ubah['foto_berkas_id'] = $this->rekamBerkas($request->file('foto'), 'saprotan', (int) $saprotan->id_saprotan, 'foto')->id_berkas;
+            $ubah['foto_berkas_id'] = $this->rekamBerkas($request->file('foto'), 'saprotan', (int) $saprotan->id_saprotan, 'foto', $saprotan->kode_saprotan, 1, 'foto')->id_berkas;
         }
 
         if ($request->hasFile('dokumen_pendukung')) {
-            $ubah['berkas_id'] = $this->rekamBerkas($request->file('dokumen_pendukung'), 'saprotan', (int) $saprotan->id_saprotan, 'pendukung')->id_berkas;
+            $ubah['berkas_id'] = $this->rekamBerkas($request->file('dokumen_pendukung'), 'saprotan', (int) $saprotan->id_saprotan, 'pendukung', $saprotan->kode_saprotan, 1, 'pendukung')->id_berkas;
         }
 
         if ($ubah !== []) {

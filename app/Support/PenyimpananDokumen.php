@@ -27,7 +27,8 @@ use InvalidArgumentException;
  *         namaDokumen: 'KartuKeluarga',
  *         namaPemilik: $transmigran->nama_kepala_keluarga,
  *     );
- *     // menghasilkan: transmigran/12/KartuKeluarga_yohanes-bere.pdf
+ *     // menghasilkan:
+ *     // transmigran/12-yohanes-bere/kartu-keluarga/kartu-keluarga-01-a83f2c19.pdf
  */
 class PenyimpananDokumen
 {
@@ -56,8 +57,7 @@ class PenyimpananDokumen
      * Menyimpan berkas unggahan dan mengembalikan path relatifnya.
      *
      * Pola penamaan mengikuti agents/rules.md bagian 14a poin 5:
-     * `[NamaDokumen]_[nama-pemilik].[ekstensi]`, dengan spasi pada nama pemilik
-     * diganti tanda hubung.
+     * `[peran]-[urutan]-[uuid-pendek].[ekstensi]`.
      *
      * @param  UploadedFile  $berkas  Berkas hasil unggahan
      * @param  string  $modul  Nama modul, dipakai sebagai folder tingkat pertama
@@ -71,10 +71,13 @@ class PenyimpananDokumen
         string $modul,
         int $idPemilik,
         string $namaDokumen,
-        string $namaPemilik = ''
+        string $namaPemilik = '',
+        int $urutan = 1,
+        ?string $pengenal = null,
+        string $subfolder = '',
     ): string {
-        $folder = self::folder($modul, $idPemilik);
-        $namaBerkas = self::susunNamaBerkas($berkas, $namaDokumen, $namaPemilik);
+        $folder = self::folder($modul, $idPemilik, $namaPemilik, $subfolder);
+        $namaBerkas = self::susunNamaBerkas($berkas, $namaDokumen, $urutan, $pengenal);
 
         return Storage::disk(self::DISK)->putFileAs($folder, $berkas, $namaBerkas);
     }
@@ -90,7 +93,7 @@ class PenyimpananDokumen
      * @param  string  $modul  Nama modul
      * @param  int  $idPemilik  Id baris pemilik berkas
      * @param  string  $namaDokumen  Jenis dokumen
-     * @param  string  $namaPemilik  Nama pemilik
+     * @param  string  $namaPemilik  Snapshot label pemilik untuk nama folder
      * @return string Path relatif berkas baru
      */
     public static function ganti(
@@ -99,9 +102,12 @@ class PenyimpananDokumen
         string $modul,
         int $idPemilik,
         string $namaDokumen,
-        string $namaPemilik = ''
+        string $namaPemilik = '',
+        int $urutan = 1,
+        ?string $pengenal = null,
+        string $subfolder = '',
     ): string {
-        $pathBaru = self::simpan($berkas, $modul, $idPemilik, $namaDokumen, $namaPemilik);
+        $pathBaru = self::simpan($berkas, $modul, $idPemilik, $namaDokumen, $namaPemilik, $urutan, $pengenal, $subfolder);
 
         if ($pathLama !== null && $pathLama !== $pathBaru) {
             self::hapus($pathLama);
@@ -138,9 +144,9 @@ class PenyimpananDokumen
      * @param  int  $idPemilik  Id baris pemilik berkas
      * @return bool True bila folder terhapus atau memang tidak ada
      */
-    public static function hapusFolder(string $modul, int $idPemilik): bool
+    public static function hapusFolder(string $modul, int $idPemilik, string $namaPemilik = ''): bool
     {
-        $folder = self::folder($modul, $idPemilik);
+        $folder = self::folder($modul, $idPemilik, $namaPemilik);
 
         if (! Storage::disk(self::DISK)->exists($folder)) {
             return true;
@@ -178,44 +184,42 @@ class PenyimpananDokumen
     /**
      * Menyusun path folder penyimpanan.
      *
-     * Struktur: `[modul]/[id-pemilik]/`, contoh `transmigran/12/`.
+     * Struktur: `[modul]/[id-pemilik]-[label]/`, contoh
+     * `transmigran/12-yohanes-bere/`. Label adalah snapshot saat unggah;
+     * perubahan nama pemilik tidak memindahkan berkas lama.
      * Pemisahan per id mencegah satu folder memuat ribuan berkas sekaligus.
      *
      * @param  string  $modul  Nama modul
      * @param  int  $idPemilik  Id baris pemilik berkas
      * @return string Path folder relatif
      */
-    public static function folder(string $modul, int $idPemilik): string
+    public static function folder(string $modul, int $idPemilik, string $namaPemilik = '', string $subfolder = ''): string
     {
-        return Str::slug($modul).'/'.$idPemilik;
+        $label = Str::slug($namaPemilik);
+        $pemilik = (string) $idPemilik.($label === '' ? '' : '-'.$label);
+        $bagian = array_filter(array_map(Str::slug(...), explode('/', str_replace('\\', '/', $subfolder))));
+
+        return implode('/', [Str::slug($modul), $pemilik, ...$bagian]);
     }
 
     /**
-     * Menyusun nama berkas sesuai pola penamaan yang disepakati.
-     *
-     * Nama pemilik dijadikan huruf kecil berpemisah tanda hubung agar aman
-     * dipakai di seluruh sistem berkas, termasuk yang tidak menerima spasi.
+     * Menyusun nama berkas aman dan unik untuk satu peran dokumen.
      *
      * @param  UploadedFile  $berkas  Berkas unggahan, dipakai mengambil ekstensinya
      * @param  string  $namaDokumen  Jenis dokumen
-     * @param  string  $namaPemilik  Nama pemilik
      * @return string Nama berkas lengkap beserta ekstensi
      */
-    public static function susunNamaBerkas(UploadedFile $berkas, string $namaDokumen, string $namaPemilik = ''): string
-    {
+    public static function susunNamaBerkas(
+        UploadedFile $berkas,
+        string $namaDokumen,
+        int $urutan = 1,
+        ?string $pengenal = null,
+    ): string {
         $ekstensi = self::ekstensiAman($berkas);
+        $dokumen = Str::slug($namaDokumen) ?: 'berkas';
+        $pengenal ??= substr(str_replace('-', '', (string) Str::uuid()), 0, 8);
 
-        // Spasi dibuang dan tiap kata diawali huruf besar, tetapi huruf besar
-        // yang sudah ada di tengah kata dipertahankan. Dengan begitu masukan
-        // "Kartu Keluarga" maupun "KartuKeluarga" sama-sama menghasilkan
-        // "KartuKeluarga", bukan "Kartukeluarga".
-        $dokumen = str_replace(' ', '', ucwords($namaDokumen));
-
-        if ($namaPemilik === '') {
-            return $dokumen.'.'.$ekstensi;
-        }
-
-        return $dokumen.'_'.Str::slug($namaPemilik).'.'.$ekstensi;
+        return sprintf('%s-%02d-%s.%s', $dokumen, max(1, $urutan), Str::lower($pengenal), $ekstensi);
     }
 
     /**

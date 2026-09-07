@@ -960,9 +960,9 @@ Pola berikut adalah **standar yang harus dibangun dan dipatuhi** sejak awal proy
 ### 14a. Aturan File dan Upload
 1. Batas ukuran setiap file dokumen yang diunggah adalah **5 MB**.
 2. Format file yang diterima adalah gambar dan PDF, dan wajib divalidasi tipenya di sisi server.
-3. File disimpan pada filesystem di folder `storage/app/private/[transmigran]/[id-transmigran]/`, bukan disimpan sebagai BLOB di dalam database.
+3. File disimpan pada filesystem privat dengan pola `storage/app/private/[modul]/[id]-[slug-label]/[peran]/`, bukan sebagai BLOB. Label adalah snapshot saat unggah dan tidak ikut dipindah ketika nama pemilik berubah.
 4. Database hanya menyimpan path/nama file, bukan isi filenya.
-5. Format penamaan file dokumen: `[Nama Dokumen berdasarkan tabel pada database]_[nama-transmigran].[ekstensi]`, dengan spasi pada nama transmigran diganti tanda hubung `-`.
+5. Format penamaan file dokumen: `[peran]-[urutan-2-digit]-[8-karakter-awal-uuid].[ekstensi]`. Nama asli tetap direkam pada `berkas.nama_asli`; UUID pendek mencegah unggahan jamak saling menimpa.
 6. Akses file bersifat privat dan harus melewati pemeriksaan hak akses, tidak boleh diakses langsung lewat URL publik.
 7. File dokumen wajib ikut diperhitungkan dalam strategi backup.
 8. **Metadata berkas disimpan pada registry `berkas`, bukan kolom path pada tabel domain** (ditetapkan 2026-09-02, Putaran 12). Sebelumnya 24 kolom `VARCHAR(255)` tersebar di 17 tabel, dan tidak satu pun merekam `mime` maupun `ukuran` - padahal poin 1 dan 2 mewajibkan keduanya divalidasi di sisi server. Tanpa merekamnya, tidak ada cara memeriksa ulang apa yang sebenarnya tersimpan.
@@ -981,6 +981,7 @@ Pola berikut adalah **standar yang harus dibangun dan dipatuhi** sejak awal proy
 11c. **Isian wajib berarti PALING SEDIKIT satu berkas ada, bukan selalu diunggah ulang.** Penanda `required` dipasang hanya ketika belum ada berkas tersimpan; bila sudah ada, menyunting data lain pada form yang sama tidak boleh memaksa pengunggahan ulang.
 11d. **Panel rincian wajib membaca registry, bukan kolom lama.** Dua panel sempat masih membaca kolom yang sudah dicabut Putaran 12, sehingga berkas yang nyata-nyata ada tidak muncul sama sekali - unggahan tanpa jalan dibuka, yaitu kontrol mati yang dilarang R-26.
 11e. **Berpivot TIDAK otomatis berarti jamak di layar.** Poin 8b menyebut dua belas domain berpivot, dan itu benar sebagai daftar STRUKTUR, tetapi tidak seluruhnya layak dijamakkan pada antarmuka. Yang dijamakkan Putaran 14 hanya tujuh: transmigran, infrastruktur, pengaduan, kawasan, rumah, inventaris SP, dan fasilitas SP. `user_berkas` tetap tunggal sebab `UNIQUE (user_id)` memang membatasinya (8d); `penanganan_pengaduan` belum dapat dijamakkan sebab barisnya tidak punya kolom id untuk dicocokkan; sedangkan poktan, saprotan, dan SP sama sekali bukan pivot melainkan FK langsung (8c). Sebelum menjamakkan sebuah domain, periksa `schema.sql`, bukan daftar pada 8b.
+11f. **Rumah tetap aset mandiri** di `rumah/[id]-[nomor-rumah]/`; foldernya tidak berpindah mengikuti keluarga penghuninya. **Dokumen tindak lanjut** berada di `pengaduan/[id]-[nomor]/tindak-lanjut/[id-penanganan]/`. Pengunduhan membaca `berkas.path` sebagai sumber kebenaran dan tetap memeriksa izin serta cakupan pemilik.
 
 ### 14b. Aturan Akun dan Pemulihan Kata Sandi
 
