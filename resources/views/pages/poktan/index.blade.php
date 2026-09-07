@@ -26,7 +26,7 @@
 
         <x-slot:metrik>
             <x-sim.metric-item label="Kelompok Tani" :nilai="$totalPoktan" satuan="Poktan"
-                ikon="poktan" warna="teal" keterangan="Kawasan Kobalima Timur" />
+                ikon="poktan" warna="teal" keterangan="Dalam cakupan akses Anda" />
             <x-sim.metric-item label="Total Anggota" :nilai="number_format($totalAnggota, 0, ',', '.')"
                 satuan="orang" ikon="keluarga" warna="navy" keterangan="Tersebar di seluruh SP" />
             <x-sim.metric-item label="Anggota Terdata" :nilai="number_format($anggotaTerdata, 0, ',', '.')"

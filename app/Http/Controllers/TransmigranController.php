@@ -26,6 +26,7 @@ use App\Models\Scopes\CakupanDataSp;
 use App\Models\Transmigran;
 use App\Support\Paginasi;
 use App\Support\PenyajianPoktan;
+use App\Support\RekapDashboard;
 use App\Support\ValidationRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
@@ -85,6 +86,7 @@ class TransmigranController extends Controller
             ->withQueryString();
 
         $baris->through(fn (Transmigran $t) => $this->baris($t));
+        $pendudukAktif = RekapDashboard::jumlahKkJiwa();
 
         return view('pages.transmigran.index', [
             'title' => 'Data Transmigran',
@@ -93,9 +95,8 @@ class TransmigranController extends Controller
             // bila Per SP -- CakupanDataSp berlaku sama di sini seperti pada
             // $baris di atas), BUKAN cuma halaman yang sedang tampil.
             'totalKk' => Transmigran::query()->count(),
-            'totalAktif' => Transmigran::query()->where('status_tinggal', StatusTinggal::Aktif->value)->count(),
-            'totalJiwa' => Transmigran::query()->count()
-                + AnggotaKeluarga::query()->where('status', StatusAnggotaKeluarga::Aktif->value)->count(),
+            'totalAktif' => $pendudukAktif['jumlah_kk'],
+            'totalJiwa' => $pendudukAktif['jumlah_jiwa'],
             'totalSp' => Transmigran::query()->distinct('satuan_permukiman_id')->count('satuan_permukiman_id'),
             'cari' => $cari,
             'filterSp' => $filterSp,

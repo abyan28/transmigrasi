@@ -627,7 +627,7 @@ class RekapDashboard
     /**
      * @return array{jumlah_kk: int, jumlah_jiwa: int}
      */
-    private static function jumlahKkJiwa(?int $spId = null): array
+    public static function jumlahKkJiwa(?int $spId = null): array
     {
         $jiwaAktif = self::terapkanSp(Transmigran::query()
             ->where('status_tinggal', StatusTinggal::Aktif->value), $spId)

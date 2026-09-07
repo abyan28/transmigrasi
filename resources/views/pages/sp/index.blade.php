@@ -32,7 +32,7 @@
 
         <x-slot:metrik>
             <x-sim.metric-item label="Satuan Permukiman" :nilai="$jumlahSp" satuan="SP"
-                ikon="lokasi" warna="teal" keterangan="Kawasan Kobalima Timur" />
+                ikon="lokasi" warna="teal" keterangan="Dalam cakupan akses Anda" />
             <x-sim.metric-item label="Total Luas Lahan" :nilai="number_format($totalLuas, 2, ',', '.')"
                 satuan="ha" ikon="lahan" warna="navy" keterangan="Total wilayah SP" />
             <x-sim.metric-item label="Daya Tampung" :nilai="number_format($totalRencana, 0, ',', '.')"

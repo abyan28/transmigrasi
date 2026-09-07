@@ -36,7 +36,8 @@
                 <x-sim.stat-card label="Luas Lahan"
                     :nilai="number_format($ringkasan['luas_lahan_total'], 2, ',', '.')" satuan="ha" />
                 <x-sim.stat-card label="Volume Panen"
-                    :nilai="number_format($ringkasan['volume_panen_ton'], 2, ',', '.')" satuan="ton" />
+                    :nilai="number_format($ringkasan['volume_panen_ton'], 2, ',', '.')" satuan="ton"
+                    keterangan="Tahun {{ $tahunPanen }}" />
             </div>
         </section>
 
@@ -45,14 +46,14 @@
             <h2 class="mb-3 text-lg font-semibold text-gray-800 dark:text-white/90">Bilah Metrik Ramping (Compact Metric Strip)</h2>
             <x-sim.metric-strip>
                 <x-sim.metric-item label="Kepala Keluarga" :nilai="number_format($ringkasan['jumlah_kk'], 0, ',', '.')"
-                    satuan="KK" ikon="keluarga" warna="teal" keterangan="Kawasan Kobalima Timur" />
+                    satuan="KK" ikon="keluarga" warna="teal" keterangan="Dalam cakupan akses Anda" />
                 <x-sim.metric-item label="Rumah Terhuni" :nilai="number_format($ringkasan['rumah_terhuni'], 0, ',', '.')"
                     satuan="unit" ikon="hunian" warna="emerald"
                     :prosentase="$ringkasan['rumah_total'] > 0 ? round(($ringkasan['rumah_terhuni'] / $ringkasan['rumah_total']) * 100, 1) : 0" />
                 <x-sim.metric-item label="Luas Lahan" :nilai="number_format($ringkasan['luas_lahan_total'], 2, ',', '.')"
                     satuan="ha" ikon="lahan" warna="navy" keterangan="Total areal garapan" />
                 <x-sim.metric-item label="Volume Panen" :nilai="number_format($ringkasan['volume_panen_ton'], 2, ',', '.')"
-                    satuan="ton" ikon="panen" warna="gold" keterangan="Hasil komoditas tahunan" />
+                    satuan="ton" ikon="panen" warna="gold" keterangan="Tahun {{ $tahunPanen }}" />
             </x-sim.metric-strip>
         </section>
 

@@ -43,9 +43,10 @@
 
         {{-- Baris kontrol alih tampilan kecil --}}
         <div class="mb-2 flex items-center justify-between gap-2 px-1">
-            <p class="text-theme-xs font-medium text-gray-500 dark:text-gray-400">
-                Ringkasan Kondisi & Keterhunian Rumah
-            </p>
+            <div class="text-theme-xs text-gray-500 dark:text-gray-400">
+                <p class="font-medium">Ringkasan Kondisi & Keterhunian Rumah</p>
+                <p>Seluruh data dalam cakupan akses; filter tabel tidak mengubah ringkasan.</p>
+            </div>
             <button type="button" @click="toggleMode()"
                 :title="modeRingkas ? 'Beralih ke tampilan kartu' : 'Beralih ke tampilan bilah ramping'"
                 class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-theme-xs font-medium text-gray-600 shadow-2xs hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-white/5">

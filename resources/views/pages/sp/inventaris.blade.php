@@ -32,7 +32,7 @@
             <x-sim.metric-item label="Sudah Diserahkan" :nilai="$sudahDiserahkan" satuan="jenis"
                 ikon="keluarga" warna="emerald"
                 :prosentase="$jenisBarang > 0 ? round(($sudahDiserahkan / $jenisBarang) * 100, 1) : null" />
-            <x-sim.metric-item label="Perlu Perhatian" :nilai="$perluPerhatian" satuan="unit"
+            <x-sim.metric-item label="Perlu Perhatian" :nilai="$perluPerhatian" satuan="jenis"
                 ikon="perhatian" warna="gold" keterangan="Rusak ringan atau berat" />
         </x-slot:metrik>
 
@@ -42,7 +42,7 @@
             <x-sim.stat-card label="Sudah Diserahkan" :nilai="$sudahDiserahkan"
                 :keterangan="'dari ' . $jenisBarang . ' jenis barang'" />
             <x-sim.stat-card label="Perlu Perhatian" :nilai="$perluPerhatian"
-                keterangan="Kondisi rusak ringan atau berat" />
+                satuan="jenis" keterangan="Kondisi rusak ringan atau berat" />
         </x-slot:ringkasan>
 
         <x-slot:filter>

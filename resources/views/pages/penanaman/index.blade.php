@@ -39,14 +39,14 @@
 
         <x-slot:metrik>
             <x-sim.metric-item label="Catatan Penanaman" :nilai="$totalCatatan" satuan="catatan"
-                ikon="tanam" warna="teal" keterangan="Musim tanam terdata" />
+                ikon="tanam" warna="teal" keterangan="Kegiatan tanam terdata" />
             <x-sim.metric-item label="Realisasi Tanam" :nilai="number_format($totalRealisasiTanam, 2, ',', '.')"
                 satuan="ha" ikon="lahan" warna="navy" keterangan="Total areal tanam" />
             <x-sim.metric-item label="Belum Dipanen" :nilai="number_format($totalBelumDipanen, 2, ',', '.')"
                 satuan="ha" ikon="tanaman" warna="emerald"
                 :prosentase="$totalRealisasiTanam > 0 ? round(($totalBelumDipanen / $totalRealisasiTanam) * 100, 1) : null" />
             <x-sim.metric-item label="Ragam Komoditas" :nilai="count($daftarKomoditas)"
-                satuan="jenis" ikon="komoditas" warna="gold" keterangan="Padi, jagung, palawija dll" />
+                satuan="jenis" ikon="komoditas" warna="gold" keterangan="Komoditas yang sudah ditanam" />
         </x-slot:metrik>
 
         <x-slot:ringkasan>

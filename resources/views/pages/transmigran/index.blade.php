@@ -36,7 +36,7 @@
 
     @php
         $persenAktif = $totalKk > 0 ? round(($totalAktif / $totalKk) * 100, 1) : 0;
-        $rasioJiwa = $totalKk > 0 ? number_format($totalJiwa / $totalKk, 1, ',', '.') : '0';
+        $rasioJiwa = $totalAktif > 0 ? number_format($totalJiwa / $totalAktif, 1, ',', '.') : '0';
     @endphp
 
     {{-- Wadah Ringkasan dengan Pilihan Tampilan (Bilah Ramping vs Kartu Lama) --}}
@@ -51,9 +51,10 @@
 
         {{-- Baris kontrol alih tampilan kecil --}}
         <div class="mb-2 flex items-center justify-between gap-2 px-1">
-            <p class="text-theme-xs font-medium text-gray-500 dark:text-gray-400">
-                Ringkasan Kependudukan
-            </p>
+            <div class="text-theme-xs text-gray-500 dark:text-gray-400">
+                <p class="font-medium">Ringkasan Kependudukan</p>
+                <p>Seluruh data dalam cakupan akses; filter tabel tidak mengubah ringkasan.</p>
+            </div>
             <button type="button" @click="toggleMode()"
                 :title="modeRingkas ? 'Beralih ke tampilan kartu' : 'Beralih ke tampilan bilah ramping'"
                 class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-theme-xs font-medium text-gray-600 shadow-2xs hover:bg-gray-50 focus:outline-2 focus:outline-offset-2 focus:outline-brand-500 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-white/5">
@@ -80,13 +81,13 @@
         <div x-show="modeRingkas" x-transition.opacity>
             <x-sim.metric-strip>
                 <x-sim.metric-item label="Kepala Keluarga" :nilai="number_format($totalKk, 0, ',', '.')"
-                    satuan="KK" ikon="keluarga" warna="teal" keterangan="Kawasan Kobalima Timur" />
+                    satuan="KK" ikon="keluarga" warna="teal" keterangan="Dalam cakupan akses Anda" />
                 <x-sim.metric-item label="Masih Tinggal" :nilai="number_format($totalAktif, 0, ',', '.')"
                     satuan="KK" ikon="hunian" warna="emerald" :prosentase="$persenAktif" />
-                <x-sim.metric-item label="Total Penduduk" :nilai="number_format($totalJiwa, 0, ',', '.')"
+                <x-sim.metric-item label="Penduduk Aktif" :nilai="number_format($totalJiwa, 0, ',', '.')"
                     satuan="Jiwa" ikon="penduduk" warna="navy" :keterangan="'~' . $rasioJiwa . ' jiwa / KK'" />
                 <x-sim.metric-item label="Satuan Permukiman" :nilai="number_format($totalSp, 0, ',', '.')"
-                    satuan="SP" ikon="lokasi" warna="gold" keterangan="SP 1 sampai SP 4" />
+                    satuan="SP" ikon="lokasi" warna="gold" :keterangan="'Tersebar di ' . $totalSp . ' SP'" />
             </x-sim.metric-strip>
         </div>
 
@@ -97,9 +98,9 @@
             <x-sim.stat-card label="Masih Tinggal di Kawasan"
                 :nilai="number_format($totalAktif, 0, ',', '.')"
                 satuan="KK" />
-            <x-sim.stat-card label="Total Jiwa"
+            <x-sim.stat-card label="Penduduk Aktif"
                 :nilai="number_format($totalJiwa, 0, ',', '.')"
-                keterangan="Seluruh anggota keluarga terdata" />
+                keterangan="Kepala dan anggota keluarga berstatus aktif" />
             <x-sim.stat-card label="Satuan Permukiman"
                 :nilai="number_format($totalSp, 0, ',', '.')"
                 keterangan="Tempat data tersebar" />

@@ -40,11 +40,13 @@ class KomoditasController extends Controller
             ->withQueryString();
 
         $baris->through(fn (Komoditas $k) => $this->baris($k));
+        $tahunPanen = RekapDashboard::tahunTerakhir();
 
         return view('pages.komoditas.index', [
             'title' => 'Data Komoditas',
             'baris' => $baris,
-            'sebaran' => RekapDashboard::sebaranKomoditas(),
+            'sebaran' => RekapDashboard::sebaranKomoditas(tahun: $tahunPanen),
+            'tahunPanen' => $tahunPanen,
             'cari' => $cari,
             'filterTipe' => $filterTipe,
             'adaFilter' => $cari !== '' || $filterTipe,

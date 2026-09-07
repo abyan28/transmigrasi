@@ -293,19 +293,18 @@ if (app()->environment(['local', 'testing'])) {
             ->orderBy('urutan')
             ->pluck('nilai', 'nilai')
             ->all();
+        $tahunPanen = RekapDashboard::tahunTerakhir();
 
         return view('pages.galeri-komponen', [
             'title' => 'Galeri Komponen',
-            'ringkasan' => RekapDashboard::ringkasan(),
+            'ringkasan' => RekapDashboard::ringkasan(tahun: $tahunPanen),
+            'tahunPanen' => $tahunPanen,
             'transmigran' => Transmigran::query()->with('satuanPermukiman')->limit(10)->get()->map(fn ($t) => [
                 'nama_kepala_keluarga' => $t->nama_kepala_keluarga,
                 'nik' => $t->nik,
                 'satuan_permukiman' => $t->satuanPermukiman?->nama,
             ])->all(),
-            'daftarSp' => SatuanPermukiman::query()->orderBy('nama')->get()->map(fn ($sp) => [
-                'id_satuan_permukiman' => $sp->id_satuan_permukiman,
-                'nama' => $sp->nama,
-            ])->all(),
+            'daftarSp' => SatuanPermukiman::opsiTerlihat(),
             'opsiPrioritasPengaduan' => $opsi(JenisDaftarPilihan::PrioritasPengaduan),
             'opsiKondisiRumah' => $opsi(JenisDaftarPilihan::KondisiRumah),
         ]);

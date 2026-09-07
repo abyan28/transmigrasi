@@ -162,7 +162,8 @@ class SpController extends Controller
             ->orderBy('id_rute_aksesibilitas_sp')
             ->get();
         $jumlahKk = $transmigran->where('status_tinggal', StatusTinggal::Aktif)->count();
-        $ringkasan = RekapDashboard::ringkasan($id);
+        $tahunPanen = RekapDashboard::tahunTerakhir();
+        $ringkasan = RekapDashboard::ringkasan($id, $tahunPanen);
         $deret = RekapDashboard::deret($id);
 
         return view('pages.sp.detail', [
@@ -171,10 +172,12 @@ class SpController extends Controller
             'rekap' => [
                 'jumlah_kk' => $jumlahKk,
                 'rumah_terhuni' => $ringkasan['rumah_terhuni'],
+                'rumah_total' => $ringkasan['rumah_total'],
                 'luas_lahan' => $ringkasan['luas_lahan_total'],
                 'volume_panen' => $ringkasan['volume_panen_ton'],
                 'pengaduan_terbuka' => $ringkasan['pengaduan_terbuka'],
             ],
+            'tahunPanen' => $tahunPanen,
             'deretSp' => [
                 'tahun' => $deret['tahun'],
                 'jumlah_kk' => $deret['jumlah_kk'],
@@ -206,7 +209,9 @@ class SpController extends Controller
                 'ongkos_rp' => $r->ongkos_rp === null ? null : (float) $r->ongkos_rp,
                 'keterangan' => $r->keterangan,
             ])->all(),
-            'persenHuni' => $jumlahKk > 0 ? round($ringkasan['rumah_terhuni'] / $jumlahKk * 100) : 0,
+            'persenHuni' => $ringkasan['rumah_total'] > 0
+                ? round($ringkasan['rumah_terhuni'] / $ringkasan['rumah_total'] * 100)
+                : 0,
             'persenIsi' => $model->jumlah_kk_rencana > 0 ? round($jumlahKk / $model->jumlah_kk_rencana * 100) : 0,
             'dataGrafik' => [
                 'tahun' => $deret['tahun'],

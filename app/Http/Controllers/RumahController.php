@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\JenisDaftarPilihan;
+use App\Enums\KondisiRumah;
 use App\Enums\StatusHunian;
 use App\Http\Controllers\Concerns\MenyimpanBerkas;
 use App\Models\DaftarPilihan;
@@ -65,7 +66,7 @@ class RumahController extends Controller
             'adaFilter' => $cari !== '' || $filterSp || $filterKondisi || $filterHunian,
             'jumlahRumah' => Rumah::query()->count(),
             'jumlahDihuni' => Rumah::query()->where('status_hunian', StatusHunian::Dihuni->value)->count(),
-            'jumlahRusak' => Rumah::query()->whereNot('kondisi', 'Tidak Rusak')->count(),
+            'jumlahRusak' => Rumah::query()->whereNot('kondisi', KondisiRumah::TidakRusak->value)->count(),
             'daftarSp' => $this->daftarSp(),
             'opsiFilterKondisiRumah' => $this->opsiFilter(JenisDaftarPilihan::KondisiRumah),
             'opsiFilterStatusHunian' => $this->opsiFilter(JenisDaftarPilihan::StatusHunian),

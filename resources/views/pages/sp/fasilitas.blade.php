@@ -26,24 +26,24 @@
         </x-slot:aksi>
 
         <x-slot:metrik>
-            <x-sim.metric-item label="Jenis Fasilitas" :nilai="$jenisFasilitas" satuan="jenis"
+            <x-sim.metric-item label="Data Fasilitas" :nilai="$jenisFasilitas" satuan="fasilitas"
                 ikon="fasilitas" warna="teal" keterangan="Sarana umum SP" />
             <x-sim.metric-item label="Total Fasilitas" :nilai="number_format($totalUnit, 0, ',', '.')"
                 satuan="unit" ikon="aset" warna="navy" keterangan="Gedung & fasilitas publik" />
-            <x-sim.metric-item label="Kondisi Baik" :nilai="$kondisiBaik" satuan="unit"
+            <x-sim.metric-item label="Kondisi Baik" :nilai="$kondisiBaik" satuan="fasilitas"
                 ikon="fasilitas" warna="emerald"
-                :prosentase="$totalUnit > 0 ? round(($kondisiBaik / $totalUnit) * 100, 1) : null" />
-            <x-sim.metric-item label="Perlu Perbaikan" :nilai="$rusak" satuan="unit"
+                :prosentase="$jenisFasilitas > 0 ? round(($kondisiBaik / $jenisFasilitas) * 100, 1) : null" />
+            <x-sim.metric-item label="Perlu Perbaikan" :nilai="$rusak" satuan="fasilitas"
                 ikon="rusak" warna="gold"
-                :prosentase="$totalUnit > 0 ? round(($rusak / $totalUnit) * 100, 1) : null" />
+                :prosentase="$jenisFasilitas > 0 ? round(($rusak / $jenisFasilitas) * 100, 1) : null" />
         </x-slot:metrik>
 
         <x-slot:ringkasan>
-            <x-sim.stat-card label="Jenis Fasilitas" :nilai="$jenisFasilitas" />
+            <x-sim.stat-card label="Data Fasilitas" :nilai="$jenisFasilitas" satuan="fasilitas" />
             <x-sim.stat-card label="Total Unit" :nilai="number_format($totalUnit, 0, ',', '.')" />
-            <x-sim.stat-card label="Kondisi Baik" :nilai="$kondisiBaik" />
+            <x-sim.stat-card label="Kondisi Baik" :nilai="$kondisiBaik" satuan="fasilitas" />
             <x-sim.stat-card label="Perlu Perbaikan" :nilai="$rusak"
-                keterangan="Rusak ringan atau rusak berat" />
+                satuan="fasilitas" keterangan="Rusak ringan atau rusak berat" />
         </x-slot:ringkasan>
 
         <x-slot:filter>

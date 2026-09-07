@@ -192,7 +192,7 @@
                                     ikon="lahan" warna="navy" keterangan="Total areal garapan" />
                                 <x-sim.metric-item label="Volume Panen"
                                     :nilai="number_format($rekap['volume_panen'], 2, ',', '.')" satuan="ton"
-                                    ikon="panen" warna="gold" keterangan="Hasil panen terdata" />
+                                    ikon="panen" warna="gold" keterangan="Tahun {{ $tahunPanen }}" />
                             </x-sim.metric-strip>
                         </div>
 
@@ -203,13 +203,14 @@
 
                             <x-sim.stat-card label="Rumah Terhuni"
                                 :nilai="number_format($rekap['rumah_terhuni'], 0, ',', '.')"
-                                :keterangan="$persenHuni . '% dari KK terdata'" />
+                                :keterangan="$persenHuni . '% dari rumah terdata'" />
 
                             <x-sim.stat-card label="Luas Lahan"
                                 :nilai="number_format($rekap['luas_lahan'], 2, ',', '.')" satuan="ha" />
 
                             <x-sim.stat-card label="Volume Panen"
-                                :nilai="number_format($rekap['volume_panen'], 2, ',', '.')" satuan="ton" />
+                                :nilai="number_format($rekap['volume_panen'], 2, ',', '.')" satuan="ton"
+                                keterangan="Tahun {{ $tahunPanen }}" />
                         </div>
                     </div>
 

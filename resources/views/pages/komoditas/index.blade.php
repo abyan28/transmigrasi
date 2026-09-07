@@ -47,9 +47,9 @@
                 :prosentase="$totalKomoditas > 0 ? round(($unggulan / $totalKomoditas) * 100, 1) : null" />
             <x-sim.metric-item label="Satuan Dipakai" :nilai="$satuanDipakai" satuan="satuan"
                 ikon="aset" warna="navy" keterangan="Satuan panen baku" />
-            <x-sim.metric-item label="Total Panen Tercatat"
+            <x-sim.metric-item label="Produksi Tahun {{ $tahunPanen }}"
                 :nilai="number_format(array_sum($sebaran), 1, ',', '.')" satuan="ton"
-                ikon="panen" warna="gold" keterangan="Agregat kawasan" />
+                ikon="panen" warna="gold" keterangan="Agregat kawasan pada tahun acuan" />
         </x-slot:metrik>
 
         <x-slot:ringkasan>
@@ -63,9 +63,9 @@
             <x-sim.stat-card label="Komoditas Unggulan" :nilai="$unggulan"
                 keterangan="Ditandai menurut proposal atau kebijakan dinas" />
             <x-sim.stat-card label="Satuan Dipakai" :nilai="$satuanDipakai" />
-            <x-sim.stat-card label="Total Panen Tercatat"
+            <x-sim.stat-card label="Produksi Tahun {{ $tahunPanen }}"
                 :nilai="number_format(array_sum($sebaran), 1, ',', '.')" satuan="ton"
-                keterangan="Agregat kawasan seluruh komoditas" />
+                keterangan="Agregat kawasan pada tahun acuan" />
         </x-slot:ringkasan>
 
         <x-slot:filter>
