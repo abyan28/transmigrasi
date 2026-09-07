@@ -439,10 +439,14 @@
                     <section class="border-t border-gray-200 pt-5 dark:border-gray-800">
                         <h3 class="{{ $kelasBagian }}">Petunjuk Layanan</h3>
                         <div class="mt-4 space-y-4">
-                            @foreach (['alur' => 'Alur Setelah Pengiriman', 'sla' => 'Estimasi / SLA Penanganan', 'pelacakan' => 'Petunjuk Pelacakan & Eskalasi'] as $kunci => $label)
+                            @foreach ([
+                                'alur' => ['Alur Setelah Pengiriman', 3000],
+                                'sla' => ['Estimasi / SLA Penanganan', 2000],
+                                'pelacakan' => ['Petunjuk Pelacakan & Eskalasi', 3000],
+                            ] as $kunci => [$label, $maksimal])
                                 <div>
                                     <label for="cms_portal_{{ $kunci }}" class="{{ $kelasLabel }}">{{ $label }}</label>
-                                    <textarea id="cms_portal_{{ $kunci }}" name="{{ $kunci }}" rows="3" maxlength="3000" class="{{ $kelasArea }}">{{ old($kunci, $konten['portal.'.$kunci]) }}</textarea>
+                                    <textarea id="cms_portal_{{ $kunci }}" name="{{ $kunci }}" rows="3" maxlength="{{ $maksimal }}" class="{{ $kelasArea }}">{{ old($kunci, $konten['portal.'.$kunci]) }}</textarea>
                                 </div>
                             @endforeach
                         </div>
