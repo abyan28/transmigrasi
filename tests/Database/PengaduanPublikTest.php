@@ -8,9 +8,12 @@
  * kurang; halaman lacak hanya status/tanggal/catatan, tak pernah data pribadi.
  */
 
+use App\Enums\CakupanData;
 use App\Mail\PengaduanMail;
 use App\Models\Pengaduan;
+use App\Models\Role;
 use App\Models\SatuanPermukiman;
+use App\Models\User;
 use Database\Seeders\DaftarPilihanSeeder;
 use Database\Seeders\KawasanSeeder;
 use Database\Seeders\PengaduanSeeder;
@@ -110,4 +113,15 @@ it('tidak membuka kembali pengaduan yang sudah dihapus pada pelacakan publik', f
         ->assertOk()
         ->assertSee('Nomor pengaduan tidak ditemukan')
         ->assertDontSee('Saluran irigasi tersumbat');
+});
+
+it('tetap melacak nomor publik saat petugas bersesi memiliki cakupan SP lain', function () {
+    $role = Role::factory()->create(['cakupan_data' => CakupanData::PerSp]);
+    $petugas = User::factory()->create(['role_id' => $role->id_role]);
+    $petugas->satuanPermukiman()->attach(2);
+
+    $this->actingAs($petugas)
+        ->get(route('lacak-pengaduan.nomor', ['nomor' => 'PGD-2026-0001-PMTUXK']))
+        ->assertOk()
+        ->assertSee('Saluran irigasi tersumbat');
 });

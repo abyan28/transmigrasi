@@ -132,12 +132,20 @@ it('mencatat satu audit perubahan CMS beserta pelaku dan kunci yang berubah', fu
         'tab' => 'identitas',
         'nama_app' => 'SIM Audit',
         'subjudul' => 'Kawasan Audit',
+        'instansi_pusat' => KontenSistem::teks('identitas.instansi_pusat'),
+        'instansi_daerah' => KontenSistem::teks('identitas.instansi_daerah'),
+        'email_bantuan' => KontenSistem::teks('identitas.email_bantuan'),
+        'telepon_bantuan' => KontenSistem::teks('identitas.telepon_bantuan'),
+        'wa_bantuan' => KontenSistem::teks('identitas.wa_bantuan'),
+        'footer' => KontenSistem::teks('identitas.footer'),
     ])->assertRedirect();
 
     $audit = AuditLog::query()->where('nama_tabel', 'pengaturan')->sole();
 
     expect($audit->user_id)->toBe(auth()->id())
         ->and($audit->record_id)->toBe(0)
+        ->and(array_keys(array_filter($audit->data_baru, fn ($nilai, $kunci) => ($audit->data_lama[$kunci] ?? null) !== $nilai, ARRAY_FILTER_USE_BOTH)))
+        ->toBe(['identitas.nama_app', 'identitas.subjudul'])
         ->and($audit->data_baru['identitas.nama_app'])->toBe('SIM Audit')
         ->and($audit->data_baru['identitas.subjudul'])->toBe('Kawasan Audit')
         ->and($audit->data_lama['identitas.nama_app'])->toBe(config('app.name'));
