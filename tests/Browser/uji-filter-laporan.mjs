@@ -553,15 +553,25 @@ async function main() {
                 })()
             `) === true);
 
-        // Ganti tahun -> angka ikhtisar berubah dan data Iklim mengikuti tahun.
+        const iklimSebelum = await nilai(`
+            [...document.querySelectorAll('section[data-baris] dd[x-text^="iklimTahun"]')]
+                .filter((d) => d.offsetParent !== null)
+                .map((d) => d.textContent.trim()).join('|')
+        `);
+        // Ganti tahun -> data Iklim mengikuti tahun, bukan mempertahankan nilai tahun bawaan.
         const thnLain = await nilai(`document.querySelector('#filter-laporan-tahun').options[0].value`);
         await setSelect('#filter-laporan-tahun', thnLain);
         await tidur(300);
-        periksa('tahun lain memakai nilai Iklim tahun itu atau penanda belum dicatat',
+        periksa('tahun lain mengganti seluruh nilai Iklim menjadi penanda data belum dicatat',
             await nilai(`
-                [...document.querySelectorAll('section[data-baris] dd[x-text^="iklimTahun"]')]
-                    .filter((d) => d.offsetParent !== null)
-                    .every((d) => d.textContent.trim().length > 0)
+                (() => {
+                    const nilai = [...document.querySelectorAll('section[data-baris] dd[x-text^="iklimTahun"]')]
+                        .filter((d) => d.offsetParent !== null)
+                        .map((d) => d.textContent.trim());
+                    return nilai.length > 0
+                        && nilai.every((teks) => teks === 'belum dicatat')
+                        && nilai.join('|') !== ${JSON.stringify(iklimSebelum)};
+                })()
             `) === true);
         periksa('baris ikhtisar yang tampak kini milik tahun terpilih',
             await nilai(`

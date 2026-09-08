@@ -158,11 +158,24 @@ class PengaturanPenggunaController extends Controller
 
         $this->pastikanBolehMenetapkanRole($request->user(), $pengguna, $role);
         $spIds = $this->validasiPenugasanSp($request, $role);
-        $emailBerubah = strcasecmp($data['email'], $pengguna->email) !== 0;
-        $roleBerubah = $pengguna->role_id !== $role->id_role;
-        $lama = $pengguna->only(['nama', 'email', 'role_id', 'telepon', 'jabatan']);
+        $emailBerubah = false;
 
-        DB::transaction(function () use ($request, $pengguna, $role, $spIds, $data, $lama, $emailBerubah, $roleBerubah): void {
+        DB::transaction(function () use ($request, $pengguna, $role, $spIds, $data, &$emailBerubah): void {
+            $pengguna = User::query()->lockForUpdate()->findOrFail($pengguna->id_user);
+            $this->pastikanBolehMenetapkanRole($request->user(), $pengguna, $role);
+            $emailBerubah = strcasecmp($data['email'], $pengguna->email) !== 0;
+            $roleBerubah = $pengguna->role_id !== $role->id_role;
+            if ($pengguna->is_aktif && ($pengguna->role?->is_terkunci ?? false) && ! $role->is_terkunci) {
+                User::query()
+                    ->where('is_aktif', true)
+                    ->whereHas('role', fn ($q) => $q->where('is_terkunci', true))
+                    ->lockForUpdate()
+                    ->get(['id_user']);
+                abort_if($this->adminAktifTerakhir($pengguna), 422,
+                    'Tidak dapat menurunkan role Admin aktif terakhir.');
+            }
+            $lama = $pengguna->only(['nama', 'email', 'role_id', 'telepon', 'jabatan']);
+
             $pengguna->forceFill([
                 'role_id' => $role->id_role,
                 'nama' => $data['nama'],
@@ -336,8 +349,6 @@ class PengaturanPenggunaController extends Controller
         $targetAdmin = $target->role?->is_terkunci ?? false;
 
         abort_if(($role->is_terkunci || $targetAdmin) && ! $aktorAdmin, 403);
-        abort_if($targetAdmin && ! $role->is_terkunci && $this->adminAktifTerakhir($target), 422,
-            'Tidak dapat menurunkan role Admin aktif terakhir.');
     }
 
     /**

@@ -2,8 +2,8 @@
 
 ## Status Perbaikan (dimulai 2026-09-08)
 
-- [FIXED] **SYS-H01, SYS-H02, SYS-H08, SYS-H09, SYS-M14** — boundary lifecycle akun diperketat: middleware menolak sesi akun nonaktif; helper shared merotasi remember token dan mencabut sesi database; reset Admin, nonaktif, serta perubahan role memakai revocation; mutasi user/pivot/audit dibungkus transaksi; role nonaktif ditolak; hanya Admin terkunci dapat memberi/mencabut role Admin; Admin aktif terakhir tidak dapat didemote dan guard nonaktif diserialisasi dengan row lock.
-  - Regression: `PengaturanPenggunaTest` focused — **5 passed, 13 assertions**.
+- [FIXED] **SYS-H01, SYS-H02, SYS-H08, SYS-H09, SYS-M14** — boundary lifecycle akun diperketat: middleware menolak sesi akun nonaktif termasuk seluruh rute ganti kata sandi; helper shared merotasi remember token dan mencabut sesi database; reset Admin, nonaktif, serta perubahan role memakai revocation; mutasi user/pivot/audit dibungkus transaksi; role nonaktif ditolak; hanya Admin terkunci dapat membuat/memberi/mencabut role Admin. Penonaktifan dan demosi Admin mengunci target serta seluruh Admin aktif sebelum memeriksa invariant Admin terakhir.
+  - Regression: `PengaturanPenggunaTest` **20 passed, 64 assertions**; guard rute ganti sandi akun nonaktif **3 passed, 12 assertions**.
   - Files: `app/Support/SesiPengguna.php`, `app/Http/Middleware/PastikanPenggunaAktif.php`, `bootstrap/app.php`, `app/Http/Controllers/PengaturanPenggunaController.php`, `tests/Database/PengaturanPenggunaTest.php`.
 
 - [FIXED] **SYS-M08, SYS-M19** — pemulihan sandi kini memiliki throttle per IP+kredensial, dan verifikasi kode berjalan dalam transaksi dengan row lock; konsumsi kode, perubahan password, pencabutan sesi, rotasi remember token, dan audit menjadi satu unit atomik.
@@ -58,8 +58,8 @@
   - Regression penuh sebelumnya: `ImporTest` **65 passed, 222 assertions**; verifikasi boundary terakhir **6 passed, 15 assertions**.
   - Files: `app/Http/Controllers/ImporController.php`, `tests/Database/ImporTest.php`.
 
-- [FIXED] **SYS-M09** — pemeriksaan dan pembuatan notifikasi belum dibaca kini berada dalam transaksi per penerima dan query dedupe memakai `lockForUpdate()`, menutup celah `exists()` lalu `create()` yang tidak terserialisasi.
-  - Regression: `NotifikasiTest` — **16 passed, 37 assertions**, termasuk bukti query dedupe dan penilaian memakai row lock.
+- [FIXED] **SYS-M09** — pemeriksaan dan pembuatan notifikasi belum dibaca berada dalam transaksi per penerima dan diserialisasi dengan row lock pada baris pengguna yang selalu ada; ini menghindari ketergantungan pada gap lock hasil query notifikasi kosong.
+  - Regression: dedupe focused lulus **1 test, 3 assertions**; `NotifikasiTest` sebelumnya **16 passed, 37 assertions**.
   - Files: `app/Models/Notifikasi.php`, `tests/Database/NotifikasiTest.php`.
 
 - [FIXED] **SYS-M10** — pembacaan urut tertinggi nomor pengaduan per awalan+tahun kini memakai `lockForUpdate()` di dalam transaksi create yang sudah ada, sehingga pembuat nomor paralel terserialisasi sebelum memilih urutan berikutnya.
@@ -77,11 +77,15 @@
 - [FIXED] **SYS-L01** — 12 pelanggaran format yang dilaporkan audit dibersihkan menggunakan Pint pada file yang tepat; tidak ada perubahan perilaku yang disengaja.
   - Verification: `vendor/bin/pint --test` — **358 files PASS**.
 
+## Baseline audit asli (historis, sebelum remediasi)
+
+Bagian berikut mempertahankan temuan awal pada SHA audit agar jejak pemeriksaan tidak hilang. Status terkini dan bukti perbaikan berada di bagian **Status Perbaikan** di atas serta `final-findings.json`; teks “terbuka/gagal” di bawah bukan status HEAD setelah remediasi.
+
 ## Identitas dan putusan
 
-- SHA: `29549bf0b0a2aed6a48fa587f77cec261dfec3bf`
-- Branch: `main`
-- Mode: audit-only
+- SHA baseline audit: `29549bf0b0a2aed6a48fa587f77cec261dfec3bf`
+- Branch baseline: `main`
+- Mode baseline: audit-only
 - Putusan: **belum layak dinyatakan siap produksi**.
 - Temuan final setelah rekonsiliasi seluruh audit paralel: **0 Critical, 11 High, 24 Medium, 3 Low**.
 
@@ -179,4 +183,4 @@ Laporan lama **tidak layak menjadi bukti HEAD**:
 
 Workflow yang ada adalah preview statis GitHub Pages, bukan deployment Laravel produksi. Queue worker, scheduler, backup DB+private files, restore drill, log monitoring, production smoke test, benchmark volume nyata, dan UAT/beta belum dibuktikan.
 
-Artefak lengkap tersedia di `artifacts/system-audit/`. Source aplikasi, `agents/tasklist.md`, riwayat Git, dan artefak audit UI/UX lama tidak diubah.
+Artefak lengkap tersedia di `artifacts/system-audit/`. Catatan pada paragraf ini adalah kondisi saat baseline audit; source kemudian berubah melalui batch remediasi yang dirinci pada bagian teratas.

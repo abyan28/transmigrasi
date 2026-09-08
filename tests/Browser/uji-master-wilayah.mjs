@@ -307,10 +307,23 @@ async function main() {
                 .map((o) => o.textContent.trim())
                 .filter((t) => t !== 'Pilih kabupaten' && t !== 'Pilih provinsi lebih dulu')
         `);
+        const opsiKabupatenSalah = await nilai(`
+            (() => {
+                const state = Alpine.$data(document.querySelector('#tambah_kabupaten_kawasan').closest('[x-data]'));
+                const opsi = [...document.querySelectorAll('#tambah_kabupaten_kawasan option')]
+                    .map((o) => o.value)
+                    .filter(Boolean);
+                return opsi.filter((id) => {
+                    const kabupaten = state.kabupaten.find((item) => item.id === id);
+                    return ! kabupaten || kabupaten.provinsi_id !== state.provinsiId;
+                });
+            })()
+        `);
         periksa(
-            'daftar kabupaten tersaring pada provinsi terpilih',
-            Array.isArray(opsiKabupaten) && opsiKabupaten.length > 0,
-            `terbaca "${JSON.stringify(opsiKabupaten)}"`
+            'daftar kabupaten hanya milik provinsi terpilih',
+            Array.isArray(opsiKabupaten) && opsiKabupaten.length > 0
+                && Array.isArray(opsiKabupatenSalah) && opsiKabupatenSalah.length === 0,
+            `opsi=${JSON.stringify(opsiKabupaten)}, salah=${JSON.stringify(opsiKabupatenSalah)}`
         );
 
         const kabupatenPertama = await nilai(`

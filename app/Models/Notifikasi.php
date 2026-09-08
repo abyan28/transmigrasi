@@ -62,9 +62,10 @@ class Notifikasi extends Model
 
         foreach ($penerima as $user) {
             DB::transaction(function () use ($user, $jenis, $subjek, $pesan, $waktu) {
+                User::query()->lockForUpdate()->findOrFail($user->id_user);
                 $kunci = ['user_id' => $user->id_user, 'jenis' => $jenis->value, ...$subjek];
 
-                if (static::query()->where($kunci)->whereNull('dibaca_at')->lockForUpdate()->exists()) {
+                if (static::query()->where($kunci)->whereNull('dibaca_at')->exists()) {
                     return;
                 }
 

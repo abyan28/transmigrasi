@@ -108,7 +108,7 @@ it('mendeduplikasi notifikasi per penerima bukan secara global', function () {
 
     expect(Notifikasi::where('jenis', JenisNotifikasi::PengaduanBaru)->count())->toBe(2)
         ->and(Notifikasi::pluck('user_id')->all())->toEqualCanonicalizing([$a->id_user, $b->id_user])
-        ->and(collect($query)->contains(fn ($sql) => str_contains($sql, 'from `notifikasi`') && str_contains($sql, 'for update')))->toBeTrue();
+        ->and(collect($query)->contains(fn ($sql) => str_contains($sql, 'from `user`') && str_contains($sql, 'for update')))->toBeTrue();
 });
 
 it('mengirim notifikasi pengaduan mendesak selama belum selesai', function () {

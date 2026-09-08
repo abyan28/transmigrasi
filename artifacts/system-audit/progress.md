@@ -35,7 +35,7 @@
 | Runtime verification | SELESAI | Build, Unit, Feature, schema parity, audit dependency, view cache, Pint, browser terarah, dan Database serial dijalankan. Database final: 633 lulus/3 gagal; detail di `commands.log`. |
 | Task 11.1d, konsolidasi | SELESAI | Audit utama dan seluruh batch audit paralel direkonsiliasi terhadap HEAD. Temuan final: 0 Critical, 11 High, 24 Medium, 3 Low; coverage, traceability, dan backlog diperbarui. Satu probe subagent yang melanggar read-only membuat role/user development sementara; tiga row terkait telah diverifikasi dan dihapus kembali. |
 | Task 11.1e, backlog | SELESAI | Backlog final terurut dengan pendekatan minimum, acceptance criteria, regression test, dan verifikasi dibuat. |
-| Perbaikan audit — lifecycle akun | SELESAI | SYS-H01/H02/H08/H09/M14 diperbaiki dan focused regression 5 test/13 assertion lulus; rincian di `final-report.md`. |
+| Perbaikan audit — lifecycle akun | SELESAI | SYS-H01/H02/H08/H09/M14 diperbaiki; create/update role Admin dijaga, rute ganti sandi memakai guard akun aktif, dan penonaktifan/demosi Admin terakhir diserialisasi dengan row lock. |
 | Perbaikan audit — pemulihan sandi | SELESAI | SYS-M08/M19 diperbaiki; `PemulihanSandiTest` 14 test/94 assertion lulus. |
 | Perbaikan audit — induk produksi & rincian kondisi | SELESAI | SYS-H04/H05 diperbaiki; focused regression 4 test/11 assertion lulus. |
 | Perbaikan audit — laporan panen & dokumen SP | SELESAI | SYS-H10/M01 diperbaiki; LaporanData 4 test/12 assertion dan scope dokumen 1 test/1 assertion lulus. |
@@ -49,7 +49,7 @@
 | Perbaikan audit — pending email | SELESAI | SYS-M15 diperbaiki: enqueue token mendahului pencabutan kredensial dalam transaksi; `PendingEmailChangeTest` 15/116 lulus termasuk forced queue failure. |
 | Perbaikan audit — snapshot/notifikasi SP | SELESAI | SYS-M16/M17 diperbaiki: dedupe snapshot penuh serta snapshot+notifikasi atomik dengan row lock SP; `NotifikasiTest` 16/37 lulus. |
 | Perbaikan audit — deteksi format impor | SELESAI | SYS-M02 diperbaiki dengan content-first detection; `ImporTest` 65/222 lulus. |
-| Perbaikan audit — dedupe notifikasi | SELESAI | SYS-M09 diperbaiki dengan transaction + row lock per penerima; `NotifikasiTest` 16/37 lulus. |
+| Perbaikan audit — dedupe notifikasi | SELESAI | SYS-M09 diperbaiki dengan transaction + row lock pada penerima yang selalu ada; focused regression 1 test/3 assertion lulus. |
 | Perbaikan audit — nomor pengaduan | SELESAI | SYS-M10 diperbaiki dengan row lock pada rentang awalan+tahun dalam transaksi create; `PengaduanTest` 16/68 lulus. |
 | Perbaikan audit — browser harness | SELESAI | SYS-H03/M06/L03 diperbaiki: shared login/error/precondition guard 18/18 script + runner npm; smoke browser 16/16 dan 36/36 lulus. |
 | Perbaikan audit — route-map | SEBAGIAN | SYS-L02: seluruh named auth route kini wajib dipetakan/dikecualikan; `IzinPenegakanRuteTest` 17/38 lulus. CI umum/pin action masih terbuka. |

@@ -61,7 +61,7 @@ Route::middleware('throttle:verifikasi-email')->group(function () {
  * `pastikan.ganti.sandi` (middleware itu sendiri sudah self-exclude nama
  * rutenya) supaya pengguna berkata-sandi sementara dapat mencapainya.
  */
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'pastikan.pengguna.aktif'])->group(function () {
     Route::get('/ganti-kata-sandi', [GantiKataSandiController::class, 'tampil'])->name('ganti-kata-sandi');
     Route::post('/ganti-kata-sandi', [GantiKataSandiController::class, 'simpan'])->name('ganti-kata-sandi.simpan');
     // Task 3.14: cek ketersediaan username saat diketik (rules.md 14b poin 5a).

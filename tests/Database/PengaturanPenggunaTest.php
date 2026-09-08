@@ -255,7 +255,11 @@ it('menolak user manager non-Admin memberi role Admin terkunci', function () {
     expect($target->refresh()->role_id)->toBe($rolePengelola->id_role);
 });
 
-it('menolak menurunkan role Admin aktif terakhir', function () {
+it('menolak menurunkan role Admin aktif terakhir dengan mengunci seluruh Admin aktif', function () {
+    $query = [];
+    DB::listen(function ($event) use (&$query) {
+        $query[] = strtolower($event->sql);
+    });
     $admin = aktingAdmin();
     $roleBiasa = roleSemua();
 
@@ -265,7 +269,8 @@ it('menolak menurunkan role Admin aktif terakhir', function () {
         'role_id' => $roleBiasa->id_role,
     ])->assertStatus(422);
 
-    expect($admin->refresh()->role_id)->not->toBe($roleBiasa->id_role);
+    expect($admin->refresh()->role_id)->not->toBe($roleBiasa->id_role)
+        ->and(collect($query)->contains(fn ($sql) => str_contains($sql, 'from `user`') && str_contains($sql, 'for update')))->toBeTrue();
 });
 
 it('menolak menetapkan role yang nonaktif', function () {

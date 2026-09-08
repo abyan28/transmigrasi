@@ -160,6 +160,25 @@ it('menyimpan kata sandi baru dan mengosongkan flag wajib ganti', function () {
         ->and($segar->password_harus_diganti)->toBeFalse();
 });
 
+it('mengeluarkan akun nonaktif dari seluruh rute ganti kata sandi', function (string $route, string $method) {
+    $user = User::factory()->harusGantiSandi()->nonaktif()->create();
+    $sandiLama = $user->password;
+
+    $respons = $this->actingAs($user)->call($method, route($route), [
+        'username' => 'akun.nonaktif',
+        'password' => 'sandibaru123',
+        'password_confirmation' => 'sandibaru123',
+    ]);
+
+    $respons->assertRedirect(route('login'));
+    expect(Auth::check())->toBeFalse()
+        ->and($user->fresh()->password)->toBe($sandiLama);
+})->with([
+    ['ganti-kata-sandi', 'GET'],
+    ['ganti-kata-sandi.simpan', 'POST'],
+    ['ganti-kata-sandi.cek-username', 'GET'],
+]);
+
 it('menolak kata sandi baru yang tidak memuat angka', function () {
     $user = User::factory()->harusGantiSandi()->create();
 
