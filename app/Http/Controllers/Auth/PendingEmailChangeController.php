@@ -80,7 +80,7 @@ class PendingEmailChangeController extends Controller
                     ->lockForUpdate()
                     ->first();
 
-                if ($pending === null || $user === null || User::withTrashed()
+                if ($pending === null || $user === null || ! $user->is_aktif || User::withTrashed()
                     ->where('email', $pending->new_email)
                     ->where('id_user', '!=', $user->id_user)
                     ->exists()) {
@@ -166,6 +166,7 @@ class PendingEmailChangeController extends Controller
             ->with('user')
             ->where('token_hash', hash('sha256', $token))
             ->valid()
+            ->whereHas('user', fn ($query) => $query->where('is_aktif', true))
             ->first();
     }
 

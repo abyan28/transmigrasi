@@ -179,6 +179,22 @@ it('tidak menerbitkan kode untuk akun nonaktif', function () {
     Mail::assertNothingOutgoing();
 });
 
+it('menolak kode sah bila akun dinonaktifkan sebelum reset dilakukan', function () {
+    $user = User::factory()->create();
+    $hashLama = $user->password;
+    $kode = mintaKode($user);
+    $user->forceFill(['is_aktif' => false])->save();
+
+    $this->post(route('atur-ulang-sandi'), [
+        'kode' => $kode,
+        'password_baru' => 'RahasiaBaru9',
+        'password_baru_konfirmasi' => 'RahasiaBaru9',
+    ])->assertSessionHasErrors('kode');
+
+    expect($user->refresh()->password)->toBe($hashLama)
+        ->and(KodePemulihanSandi::where('user_id', $user->id_user)->firstOrFail()->dipakai_pada)->toBeNull();
+});
+
 it('menolak atur ulang tanpa sesi permintaan', function () {
     $this->post(route('atur-ulang-sandi'), [
         'kode' => '123456', 'password_baru' => 'RahasiaBaru9', 'password_baru_konfirmasi' => 'RahasiaBaru9',

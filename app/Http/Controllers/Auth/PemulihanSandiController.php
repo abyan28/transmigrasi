@@ -156,7 +156,7 @@ class PemulihanSandiController extends Controller
                 ->lockForUpdate()
                 ->first();
 
-            if ($pengguna === null || $baris === null) {
+            if ($pengguna === null || ! $pengguna->is_aktif || $baris === null) {
                 return false;
             }
 

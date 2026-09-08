@@ -3,7 +3,7 @@
 ## Status Perbaikan (dimulai 2026-09-08)
 
 - [FIXED] **SYS-H01, SYS-H02, SYS-H08, SYS-H09, SYS-M14** — boundary lifecycle akun diperketat: middleware menolak sesi akun nonaktif termasuk seluruh rute ganti kata sandi; helper shared merotasi remember token dan mencabut sesi database; reset Admin, nonaktif, serta perubahan role memakai revocation; mutasi user/pivot/audit dibungkus transaksi; role nonaktif ditolak; hanya Admin terkunci dapat membuat/memberi/mencabut role Admin. Penonaktifan dan demosi Admin mengunci target serta seluruh Admin aktif sebelum memeriksa invariant Admin terakhir.
-  - Regression: `PengaturanPenggunaTest` **20 passed, 64 assertions**; guard rute ganti sandi akun nonaktif **3 passed, 12 assertions**.
+  - Regression: `PengaturanPenggunaTest` **20 passed, 64 assertions**; guard rute ganti sandi akun nonaktif **3 passed, 12 assertions**. Token perubahan email akun nonaktif dan recovery yang berubah status setelah permintaan juga ditolak ulang pada boundary bertulis.
   - Files: `app/Support/SesiPengguna.php`, `app/Http/Middleware/PastikanPenggunaAktif.php`, `bootstrap/app.php`, `app/Http/Controllers/PengaturanPenggunaController.php`, `tests/Database/PengaturanPenggunaTest.php`.
 
 - [FIXED] **SYS-M08, SYS-M19** — pemulihan sandi kini memiliki throttle per IP+kredensial, dan verifikasi kode berjalan dalam transaksi dengan row lock; konsumsi kode, perubahan password, pencabutan sesi, rotasi remember token, dan audit menjadi satu unit atomik.

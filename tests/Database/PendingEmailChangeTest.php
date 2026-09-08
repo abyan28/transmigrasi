@@ -124,6 +124,29 @@ it('menggulung balik kredensial sementara bila antrean verifikasi gagal', functi
         ->and(PendingEmailChange::where('user_id', $user->id_user)->exists())->toBeFalse();
 });
 
+it('menolak token perubahan email milik akun yang sudah dinonaktifkan', function () {
+    $user = User::factory()->create([
+        'email' => 'inactive-old@malakakab.go.id',
+        'password_harus_diganti' => true,
+    ]);
+    $token = issueEmailChange($user, 'inactive-new@malakakab.go.id');
+    $hashSesudahPermintaan = $user->refresh()->password;
+    $user->forceFill(['is_aktif' => false])->save();
+
+    $this->get(route('email-change.show', $token))
+        ->assertOk()
+        ->assertSee('Tautan verifikasi tidak valid atau sudah kedaluwarsa.');
+    $this->post(route('email-change.confirm', $token), [
+        'username' => 'akun.nonaktif',
+        'password' => 'Permanen123',
+        'password_confirmation' => 'Permanen123',
+    ])->assertSessionHasErrors('token');
+
+    expect($user->refresh()->email)->toBe('inactive-old@malakakab.go.id')
+        ->and($user->password)->toBe($hashSesudahPermintaan)
+        ->and(PendingEmailChange::where('user_id', $user->id_user)->firstOrFail()->used_at)->toBeNull();
+});
+
 it('rotates a temporary credential at request then requires permanent password and username', function () {
     $user = User::factory()->create([
         'email' => 'temporary-old@malakakab.go.id',
