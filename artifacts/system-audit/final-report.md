@@ -24,7 +24,7 @@
 
 - [FIXED] **SYS-M11, SYS-M18** — graf tanam/panen dashboard dimuat sekali dan dipakai ulang untuk seluruh tahun serta seluruh widget request; regression fixture >10 tahun dijaga **≤25 query**. Static cache user-scoped tetap dihapus.
   - Files: `app/Support/RekapDashboard.php`, `app/Support/RekapPanen.php`, `app/Support/RekapPoktan.php`, `routes/internal.php`, `tests/Feature/RekapDashboardPerformaTest.php`.
-- [IMPROVED] **SYS-M21** — Monografi memakai ulang payload route untuk filter, memuat dataset pertanian lintas-SP sekali, dan menghitung kependudukan seluruh SP/tahun lewat dua query batch. Fixture enam SP dijaga **≤270 query**; residual query bagian tambahan per-SP masih terbuka.
+- [FIXED] **SYS-M21** — Monografi memakai ulang payload route untuk filter, memuat dataset pertanian lintas-SP sekali, dan menghitung kependudukan seluruh SP/tahun lewat dua query batch. Fixture enam SP dijaga **≤220 query**; konversi panen serta lookup master sertifikat tidak lagi mengulang query di loop SP.
   - Files: `app/Support/LaporanData.php`, `app/Support/KonversiPanen.php`, `resources/views/components/sim/kerangka-laporan.blade.php`, `tests/Feature/LaporanDataTest.php`.
 
 - [FIXED] **SYS-M05, SYS-M13, SYS-M22, SYS-M23** — workflow preview diselaraskan ke PHP 8.3 yang memenuhi lock; cookie Secure production dan limiter recovery didokumentasikan; seeder Admin membaca `config()` sehingga aman setelah config cache; README kini jelas menyebut preview Pages manual 14 URL, bukan deployment stateful.

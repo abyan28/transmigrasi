@@ -40,7 +40,7 @@
 | Perbaikan audit — induk produksi & rincian kondisi | SELESAI | SYS-H04/H05 diperbaiki; focused regression 4 test/11 assertion lulus. |
 | Perbaikan audit — laporan panen & dokumen SP | SELESAI | SYS-H10/M01 diperbaiki; LaporanData 4 test/12 assertion dan scope dokumen 1 test/1 assertion lulus. |
 | Perbaikan audit — numeric export | SELESAI | SYS-M20 diperbaiki dengan metadata sel; JS syntax dan build lulus. |
-| Perbaikan audit — cache/performa laporan | SEBAGIAN | SYS-M11/M18 selesai: graf panen dashboard dimuat sekali dan fixture >10 tahun dijaga ≤25 query. SYS-M21 membaik: payload filter/dataset lintas-SP dipakai ulang dan kependudukan dibaca batch; fixture Monografi enam SP dijaga ≤270 query, residual bagian tambahan per-SP masih terbuka. |
+| Perbaikan audit — cache/performa laporan | SELESAI | SYS-M11/M18 selesai: graf panen dashboard dimuat sekali dan fixture >10 tahun dijaga ≤25 query. SYS-M21 selesai: payload filter/dataset lintas-SP dipakai ulang, kependudukan dibaca batch, serta konversi panen dan lookup sertifikat tidak mengulang query; fixture enam SP dijaga ≤220 query. |
 | Perbaikan audit — workflow/config/dokumentasi | SELESAI | SYS-M05/M13/M22/M23 diperbaiki; Admin seeder 5 test/10 assertion lulus. |
 | Perbaikan audit — fixture SP & revocation lengkap | SELESAI | SYS-M04 selesai (`SpTest` 11/343); semua jalur perubahan sandi kini mencabut sesi lama. |
 | Perbaikan audit — transisi pengaduan | SELESAI | SYS-H06 diperbaiki dengan row lock + validasi status di dalam transaksi; `PengaduanTest` 14/64 lulus. |

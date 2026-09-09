@@ -14,7 +14,7 @@ Dokumen ini adalah ringkasan setelah batch remediasi. Baseline audit historis te
 | Import CSV/XLSX | signature/content boundary, hostile parser, transaksi per baris/kelompok | FIXED |
 | Notification | dedupe diserialisasi pada row pengguna; snapshot penilaian di-lock | FIXED untuk temuan audit |
 | Complaint status/number | row lock transisi dan rentang nomor | FIXED |
-| Dashboard/report | semantik/unit diperbaiki; graf panen dashboard dimuat sekali; query budget terkunci | SYS-M11 FIXED; Monografi SYS-M21 improved |
+| Dashboard/report | semantik/unit diperbaiki; graf panen dashboard dimuat sekali; query budget terkunci | SYS-M11 dan SYS-M21 FIXED |
 | Export browser | login, download, readback | Kuat |
 | General browser/Alpine | helper 18/18 menangkap redirect/exception/console | FIXED; full runner masih menemukan race form Alsintan |
 | Migration/schema | parity dan master bootstrap | FIXED |
@@ -28,5 +28,4 @@ Dokumen ini adalah ringkasan setelah batch remediasi. Baseline audit historis te
 - SYS-H11 — strategi backup/restore database dan storage privat.
 - SYS-M07 — audit UI/UX ulang terhadap HEAD.
 - SYS-M12 — process supervisor queue worker production.
-- SYS-M21 — residual N+1/full-load Monografi.
 - SYS-M24 — deployment Laravel stateful.

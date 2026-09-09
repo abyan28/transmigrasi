@@ -26,5 +26,5 @@
 | CL-22 | User manager tidak dapat memberi role Admin | create/update guards + tests | TERBUKTI | — |
 | CL-23 | Produktivitas laporan seragam ton/ha | conversion regression | TERBUKTI | — |
 | CL-24 | Export menyimpan kuantitas sebagai number | metadata cell + build/browser checks | TERBUKTI | — |
-| CL-25 | Monografi layak pada data demo | fixture enam SP dijaga ≤270 query; filter memakai payload route dan kependudukan dibaca batch | IMPROVED | SYS-M21 |
+| CL-25 | Monografi layak pada data demo | fixture enam SP dijaga ≤220 query; dataset/filter/master dipakai ulang | TERBUKTI | — |
 | CL-26 | Aplikasi dapat dideploy dan dipulihkan | preview statis saja; belum ada restore drill | TIDAK_TERBUKTI | SYS-H11, SYS-M24 |

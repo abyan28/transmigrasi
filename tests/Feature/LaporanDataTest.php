@@ -1,9 +1,11 @@
 <?php
 
 use App\Enums\CakupanData;
+use App\Enums\JenisDaftarPilihan;
 use App\Enums\JenisKelamin;
 use App\Enums\StatusAnggotaKeluarga;
 use App\Models\AnggotaKeluarga;
+use App\Models\DaftarPilihan;
 use App\Models\Role;
 use App\Models\SatuanPermukiman;
 use App\Models\Transmigran;
@@ -36,7 +38,7 @@ it('menjaga Monografi di bawah budget query pada enam SP demo', function () {
     DB::disableQueryLog();
 
     expect($isi['monografi'])->toHaveCount(6)
-        ->and($jumlahQuery)->toBeLessThanOrEqual(270);
+        ->and($jumlahQuery)->toBeLessThanOrEqual(220);
 });
 
 it('menggunakan ulang payload Monografi saat menyusun filter laporan', function () {
@@ -62,6 +64,20 @@ it('tidak menganggap jenis kelamin kosong sebagai perempuan pada agregasi batch 
     $harapan = LaporanData::keadaanPendudukTahun($transmigran->satuan_permukiman_id, $tahun);
 
     expect($aktual)->toBe($harapan);
+});
+
+it('memakai fallback dokumen tanah bila pilihan berperilaku dinonaktifkan', function () {
+    $pilihan = DaftarPilihan::query()
+        ->where('jenis', JenisDaftarPilihan::StatusSertifikat->value)
+        ->where('kode_perilaku', 'sudah')
+        ->firstOrFail();
+    $pilihan->update(['label' => 'Label Nonaktif', 'is_aktif' => false]);
+
+    $baris = collect(LaporanData::monografiSp()['monografi'])
+        ->flatMap(fn (array $sp): array => $sp['sosial_ekonomi']['sertifikat']['baris'])
+        ->firstWhere(0, 'Sudah');
+
+    expect($baris)->not->toBeNull();
 });
 
 it('derives monograph age tables from recorded people', function () {

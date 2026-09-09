@@ -33,7 +33,7 @@
     {"id":"SYS-M18","severity":"MEDIUM_CONDITIONAL","title":"Cache statis laporan dapat mencampur konteks pengguna pada worker persisten","status":"FIXED"},
     {"id":"SYS-M19","severity":"MEDIUM","title":"Password recovery tanpa throttle memungkinkan CPU exhaustion bcrypt","status":"FIXED"},
     {"id":"SYS-M20","severity":"MEDIUM","title":"Excel export membiarkan kuantitas integer biasa sebagai teks","status":"FIXED"},
-    {"id":"SYS-M21","severity":"MEDIUM","title":"Laporan Monografi menjalankan ribuan query berulang pada enam SP","status":"IMPROVED"},
+    {"id":"SYS-M21","severity":"MEDIUM","title":"Laporan Monografi menjalankan ribuan query berulang pada enam SP","status":"FIXED"},
     {"id":"SYS-M22","severity":"MEDIUM","title":"Seeder Admin awal memakai env langsung dan tidak aman setelah config cache","status":"FIXED"},
     {"id":"SYS-M23","severity":"MEDIUM","title":"Dokumentasi deployment bertentangan dengan workflow preview aktual","status":"FIXED"},
     {"id":"SYS-M24","severity":"MEDIUM","title":"Tidak ada deployment path untuk aplikasi Laravel stateful","status":"TERBUKTI_STATIC_TRACE"},

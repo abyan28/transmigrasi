@@ -61,8 +61,8 @@ Sumber: SYS-L01, SYS-L02. Seluruh named auth route sudah masuk penjaga; workflow
 ### BL-14 (M) — Definisikan worker email produksi dan delivery failure policy
 Sumber: SYS-M12, SYS-M15. Supervisor/systemd/container worker, restart policy, retry, failed-job alert, dan smoke test delivery. Untuk pending-email berkredensial sementara, jangan mencabut kredensial sebelum enqueue terjamin; bila enqueue gagal, rollback/cancel pending dan beri hasil actionable. Tanpa ini mail queued tidak menjamin terkirim dan akun dapat terkunci tanpa token.
 
-### BL-15 (M, selesai sebagian) — Hilangkan cache lintas user dan perbaiki hot path laporan
-Sumber: SYS-M11, SYS-M18, SYS-M21. **SYS-M11 dan SYS-M18 selesai:** graf panen dashboard dimuat sekali untuk seluruh rentang dan dipakai ulang pada widget request; static cache user-scoped sudah dihapus. **SYS-M21 improved:** filter Monografi memakai payload route, dataset lintas-SP diangkat keluar loop, dan kependudukan seluruh SP/tahun dibaca dengan dua query batch; fixture enam SP dijaga ≤270 query. Sisa: optimalkan bagian tambahan per-SP sampai budget akhir disepakati.
+### BL-15 (M, selesai) — Hilangkan cache lintas user dan perbaiki hot path laporan
+Sumber: SYS-M11, SYS-M18, SYS-M21. Graf panen dashboard dimuat sekali untuk seluruh rentang dan widget request; static cache user-scoped dihapus. Monografi memakai ulang payload/filter dan dataset lintas-SP, membatch kependudukan, serta menghapus lookup satuan/sertifikat berulang. Fixture enam SP dijaga ≤220 query.
 
 ### BL-16 (M) — Audit visual ulang terikat HEAD
 Sumber: SYS-M07. Setelah BL-10, capture high-risk/changed surfaces dengan manifest SHA, route final, heading, role, viewport, theme, dimensions, hash, dan warna efektif. Validator menolak 404, missing screenshot, viewport mismatch, duplicate lintas route, dan rasio di luar 1..21.

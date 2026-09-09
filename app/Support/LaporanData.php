@@ -441,8 +441,8 @@ class LaporanData
                 'realisasi_panen' => $realisasiPanen,
                 'puso' => $puso,
                 'belum_dipanen' => $belumDipanen,
-                'produktivitas' => round(KonversiPanen::keTon((float) $h['produktivitas'], $h['satuan']), 6),
-                'produksi_ton' => round(KonversiPanen::keTon((float) $h['produksi'], $h['satuan']), 2),
+                'produktivitas' => round((float) $h['produktivitas_ton_ha'], 6),
+                'produksi_ton' => round((float) $h['produksi_ton'], 2),
                 'keterangan' => $h['keterangan'] ?? null,
             ];
         }
@@ -790,6 +790,9 @@ class LaporanData
         array $semuaPenanaman = [],
         array $semuaPanen = [],
         array $semuaAlsintan = [],
+        array $labelSertifikat = [],
+        array $perilakuSertifikat = [],
+        array $nilaiSertifikat = [],
     ): array {
         $id = $s['id_satuan_permukiman'];
         $nama = $s['nama'];
@@ -807,7 +810,7 @@ class LaporanData
                 'jenis_kelamin' => $t->jenis_kelamin?->value,
                 'tanggal_lahir' => $t->tanggal_lahir,
                 'agama' => $t->agama?->value,
-                'status_sertifikat' => DaftarPilihan::labelUntuk(JenisDaftarPilihan::StatusSertifikat, $t->status_sertifikat),
+                'status_sertifikat' => $labelSertifikat[$t->status_sertifikat] ?? $t->status_sertifikat,
                 'status_sertifikat_kode' => $t->status_sertifikat,
             ])->all();
         $idTransmigran = array_column($transmigranSp, 'id_transmigran');
@@ -1058,9 +1061,6 @@ class LaporanData
         // sehingga menghitungnya per bidang melipatgandakan satu sertifikat yang
         // sama. Belum Didata sengaja tampil terpisah: ia bukan elum punya,
         // melainkan belum pernah ditanyakan petugas.
-        $perilakuSertifikat = DaftarPilihan::query()
-            ->where('jenis', JenisDaftarPilihan::StatusSertifikat->value)
-            ->pluck('kode_perilaku', 'nilai');
         $sertGrup = ['sudah' => 0, 'belum' => 0, 'tidak_diketahui' => 0];
         foreach ($transmigranSp as $transmigran) {
             $perilaku = $perilakuSertifikat[$transmigran['status_sertifikat_kode']] ?? 'tidak_diketahui';
@@ -1068,9 +1068,9 @@ class LaporanData
         }
         $barisDok = [];
         foreach (['sudah' => 'Sudah', 'belum' => 'Belum', 'tidak_diketahui' => 'Belum Didata'] as $perilaku => $label) {
-            $nilai = DaftarPilihan::nilaiPerilaku(JenisDaftarPilihan::StatusSertifikat, $perilaku);
+            $nilai = $nilaiSertifikat[$perilaku] ?? null;
             $barisDok[] = [
-                DaftarPilihan::labelUntuk(JenisDaftarPilihan::StatusSertifikat, $nilai) ?? $label,
+                $labelSertifikat[$nilai] ?? $label,
                 $sertGrup[$perilaku],
             ];
         }
@@ -1092,7 +1092,7 @@ class LaporanData
             $panenGrup[$k] ??= ['tanam' => 0.0, 'panen' => 0.0, 'puso' => 0.0, 'produksi' => 0.0];
             $panenGrup[$k]['panen'] += (float) $h['realisasi_panen'];
             $panenGrup[$k]['puso'] += (float) $h['puso'];
-            $panenGrup[$k]['produksi'] += KonversiPanen::keTon((float) $h['produksi'], $h['satuan']);
+            $panenGrup[$k]['produksi'] += (float) $h['produksi_ton'];
         }
         $barisTanam = [];
         foreach ($panenGrup as $kom => $v) {
@@ -1246,6 +1246,12 @@ class LaporanData
             ->groupBy('satuan_permukiman_id')
             ->pluck('jumlah', 'satuan_permukiman_id');
 
+        $pilihanSertifikat = DaftarPilihan::query()
+            ->where('jenis', JenisDaftarPilihan::StatusSertifikat->value)
+            ->get(['nilai', 'label', 'kode_perilaku', 'is_aktif']);
+        $labelSertifikat = $pilihanSertifikat->pluck('label', 'nilai')->all();
+        $perilakuSertifikat = $pilihanSertifikat->pluck('kode_perilaku', 'nilai')->all();
+        $nilaiSertifikat = $pilihanSertifikat->where('is_aktif', true)->pluck('nilai', 'kode_perilaku')->all();
         $semuaPenanaman = PenyajianPanen::penanaman();
         $semuaPanen = PenyajianPanen::hasilPanen();
         $semuaAlsintan = PenyajianAlsintan::daftar();
@@ -1321,7 +1327,16 @@ class LaporanData
             // Keadaan penduduk seluruh SP/tahun sudah dihitung dari dua query
             // batch sebelum loop ini.
 
-            $bagian = self::bagianTambahanSp($s, $tahunBawaan, $semuaPenanaman, $semuaPanen, $semuaAlsintan);
+            $bagian = self::bagianTambahanSp(
+                $s,
+                $tahunBawaan,
+                $semuaPenanaman,
+                $semuaPanen,
+                $semuaAlsintan,
+                $labelSertifikat,
+                $perilakuSertifikat,
+                $nilaiSertifikat,
+            );
 
             $monografi[] = [
                 'sp_id' => $id,
