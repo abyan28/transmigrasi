@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Support\LaporanData;
 use App\Support\RekapDashboard;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 it('builds report data and filter options without DummyData', function () {
     expect(file_get_contents(app_path('Support/LaporanData.php')))->not->toContain('DummyData');
@@ -24,6 +25,43 @@ it('builds report data and filter options without DummyData', function () {
         )
         ->and(LaporanData::filterLaporan('indikator-kawasan')['ringkasanTahun'])
         ->toBe(RekapDashboard::ringkasanTahun());
+});
+
+it('menjaga Monografi di bawah budget query pada enam SP demo', function () {
+    DB::flushQueryLog();
+    DB::enableQueryLog();
+
+    $isi = LaporanData::monografiSp();
+    $jumlahQuery = count(DB::getQueryLog());
+    DB::disableQueryLog();
+
+    expect($isi['monografi'])->toHaveCount(6)
+        ->and($jumlahQuery)->toBeLessThanOrEqual(270);
+});
+
+it('menggunakan ulang payload Monografi saat menyusun filter laporan', function () {
+    $isi = LaporanData::monografiSp();
+    $query = 0;
+    DB::listen(function () use (&$query): void {
+        $query++;
+    });
+
+    $filter = LaporanData::filterLaporan('monografi-sp', $isi);
+
+    expect($filter['iklimTahun'])->toBe($isi['iklimTahun'])
+        ->and($filter['kependudukanTahun'])->toBe($isi['kependudukanTahun'])
+        ->and($query)->toBeLessThanOrEqual(30);
+});
+
+it('tidak menganggap jenis kelamin kosong sebagai perempuan pada agregasi batch Monografi', function () {
+    $tahun = LaporanData::tahunDokumenBawaan();
+    $transmigran = Transmigran::query()->where('tahun_kedatangan', '<=', $tahun)->firstOrFail();
+    $transmigran->forceFill(['jenis_kelamin' => null])->save();
+
+    $aktual = LaporanData::monografiSp()['kependudukanTahun'][$transmigran->satuan_permukiman_id][$tahun];
+    $harapan = LaporanData::keadaanPendudukTahun($transmigran->satuan_permukiman_id, $tahun);
+
+    expect($aktual)->toBe($harapan);
 });
 
 it('derives monograph age tables from recorded people', function () {

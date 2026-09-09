@@ -22,8 +22,10 @@
   - Verification: `node --check resources/js/export-laporan.js` dan `npm run build` lulus.
   - Files: `resources/js/export-laporan.js`, `resources/views/pages/laporan/isi/alsintan.blade.php`.
 
-- [FIXED] **SYS-M18** dan [IMPROVED] **SYS-M21** — static cache user-scoped pada laporan dihapus; filter Monografi sekarang membangun dataset sekali, bukan dua kali. Probe filter enam SP turun dari **2.164 query/5,95 dtk** menjadi **1.227 query/3,41 dtk**. Sisa N+1 lintas helper masih terbuka dan memerlukan refactor terukur berikutnya.
-  - Files: `app/Support/LaporanData.php`.
+- [FIXED] **SYS-M11, SYS-M18** — graf tanam/panen dashboard dimuat sekali dan dipakai ulang untuk seluruh tahun serta seluruh widget request; regression fixture >10 tahun dijaga **≤25 query**. Static cache user-scoped tetap dihapus.
+  - Files: `app/Support/RekapDashboard.php`, `app/Support/RekapPanen.php`, `app/Support/RekapPoktan.php`, `routes/internal.php`, `tests/Feature/RekapDashboardPerformaTest.php`.
+- [IMPROVED] **SYS-M21** — Monografi memakai ulang payload route untuk filter, memuat dataset pertanian lintas-SP sekali, dan menghitung kependudukan seluruh SP/tahun lewat dua query batch. Fixture enam SP dijaga **≤270 query**; residual query bagian tambahan per-SP masih terbuka.
+  - Files: `app/Support/LaporanData.php`, `app/Support/KonversiPanen.php`, `resources/views/components/sim/kerangka-laporan.blade.php`, `tests/Feature/LaporanDataTest.php`.
 
 - [FIXED] **SYS-M05, SYS-M13, SYS-M22, SYS-M23** — workflow preview diselaraskan ke PHP 8.3 yang memenuhi lock; cookie Secure production dan limiter recovery didokumentasikan; seeder Admin membaca `config()` sehingga aman setelah config cache; README kini jelas menyebut preview Pages manual 14 URL, bukan deployment stateful.
   - Regression: `AdminAwalSeederTest` **5 passed/10 assertions**; workflow YAML lint dan build lulus.
@@ -70,12 +72,12 @@
   - Verification: `npm run test:browser:harness` PASS; syntax seluruh script lulus; adopsi helper **18/18**. Script terfokus yang diperbarui lulus: export **16/16**, filter laporan **54/54**, form panen **23/23**, form penanaman **15/15** (jalur stok kosong), komposisi lahan **8/8**, master daftar pilihan **10/10**, master wilayah **19/19**, penilaian kondisi **12/12**, lebar halaman **36/36**. Full runner masih menemukan exception lama di form distribusi Alsintan (`distribusi[pid]` saat pilihan berubah), sehingga suite keseluruhan belum diklaim hijau.
   - Files: `tests/Browser/browser-harness.mjs`, `tests/Browser/uji-harness.mjs`, `tests/Browser/jalankan-semua.mjs`, 18 script browser domain, `package.json`; defect runtime tambahan diperbaiki di form Rumah, Penanaman, dan Status Kondisi.
 
-- [FIXED sebagian] **SYS-L02** — penjaga route-map kini menyapu seluruh named authenticated route (GET dan write), bukan hanya POST/PUT/PATCH/DELETE. Pengecualian `ganti-kata-sandi.cek-username` dicatat eksplisit karena endpoint itu milik setiap pengguna terautentikasi. Quality gate CI umum dan pin action SHA masih terbuka.
+- [FIXED sebagian] **SYS-L02** — penjaga route-map kini menyapu seluruh named authenticated route (GET dan write), bukan hanya POST/PUT/PATCH/DELETE. Pengecualian `ganti-kata-sandi.cek-username` dicatat eksplisit karena endpoint itu milik setiap pengguna terautentikasi. Workflow kini menjalankan Pint, Unit, browser-harness, audit dependency, dan build; seluruh action dipin SHA. Gate MySQL route-map masih lokal.
   - Regression: `IzinPenegakanRuteTest` — **17 passed, 38 assertions**.
-  - Files: `app/Support/PetaIzinRute.php`, `tests/Database/IzinPenegakanRuteTest.php`.
+  - Files: `app/Support/PetaIzinRute.php`, `tests/Database/IzinPenegakanRuteTest.php`, `.github/workflows/deploy.yml`.
 
-- [FIXED] **SYS-L01** — 12 pelanggaran format yang dilaporkan audit dibersihkan menggunakan Pint pada file yang tepat; tidak ada perubahan perilaku yang disengaja.
-  - Verification: `vendor/bin/pint --test` — **358 files PASS**.
+- [FIXED] **SYS-L01** — pelanggaran format yang dilaporkan audit dibersihkan menggunakan Pint pada file yang tepat; tidak ada perubahan perilaku yang disengaja.
+  - Verification: `vendor/bin/pint --test` — **361 files PASS**.
 
 ## Baseline audit asli (historis, sebelum remediasi)
 

@@ -26,6 +26,7 @@
 @props([
     'slug',
     'dokumen' => false,
+    'isiLaporan' => [],
 ])
 
 @php
@@ -41,7 +42,7 @@
     // Konfigurasi bilah filter (D3). Larik kosong berarti laporan ini belum
     // berfilter; cakupan Alpine tetap dipasang agar partial isi yang memakai
     // x-show tidak pecah pada laporan tanpa filter.
-    $filter = \App\Support\LaporanData::filterLaporan($slug);
+    $filter = \App\Support\LaporanData::filterLaporan($slug, $isiLaporan);
     $konfigFilter = $filter + [
         'cakupanBawaan' => $cakupan,
         // Tahun rujukan untuk baris "TAHUN ..." kop dokumen (Putaran 5).

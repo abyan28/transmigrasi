@@ -730,6 +730,50 @@ class LaporanData
     }
 
     /**
+     * @param  list<int>  $spIds
+     * @param  list<int>  $tahun
+     * @return array<int, array<int, array{kk: int, jiwa: int, laki: int, perempuan: int}>>
+     */
+    private static function keadaanPendudukSemuaTahun(array $spIds, array $tahun): array
+    {
+        $kepala = Transmigran::query()
+            ->whereIn('satuan_permukiman_id', $spIds)
+            ->where('tahun_kedatangan', '<=', max($tahun))
+            ->get(['id_transmigran', 'satuan_permukiman_id', 'tahun_kedatangan', 'tahun_keluar', 'jenis_kelamin']);
+        $anggota = AnggotaKeluarga::query()
+            ->whereIn('transmigran_id', $kepala->pluck('id_transmigran'))
+            ->get(['transmigran_id', 'jenis_kelamin', 'tanggal_lahir', 'status', 'tanggal_peristiwa']);
+        $anggotaPerKepala = $anggota->groupBy('transmigran_id');
+        $hasil = [];
+
+        foreach ($spIds as $spId) {
+            $kepalaSp = $kepala->where('satuan_permukiman_id', $spId);
+            foreach ($tahun as $nilaiTahun) {
+                $akhirTahun = Carbon::create($nilaiTahun, 12, 31)->endOfDay();
+                $kepalaTahun = $kepalaSp->filter(fn (Transmigran $baris): bool => $baris->tahun_kedatangan <= $nilaiTahun
+                    && ($baris->tahun_keluar === null || $baris->tahun_keluar > $nilaiTahun));
+                $anggotaTahun = $kepalaTahun->flatMap(fn (Transmigran $baris) => ($anggotaPerKepala[$baris->id_transmigran] ?? collect())->filter(fn (AnggotaKeluarga $anggota): bool => $anggota->tanggal_lahir?->lte($akhirTahun) === true
+                        && ($anggota->status === StatusAnggotaKeluarga::Aktif
+                            || $anggota->tanggal_peristiwa?->gt($akhirTahun) === true)));
+                $laki = $kepalaTahun->where('jenis_kelamin', JenisKelamin::LakiLaki)->count()
+                    + $anggotaTahun->where('jenis_kelamin', JenisKelamin::LakiLaki)->count();
+                $perempuan = $kepalaTahun->where('jenis_kelamin', JenisKelamin::Perempuan)->count()
+                    + $anggotaTahun->where('jenis_kelamin', JenisKelamin::Perempuan)->count();
+                $jiwa = $kepalaTahun->count() + $anggotaTahun->count();
+
+                $hasil[$spId][$nilaiTahun] = [
+                    'kk' => $kepalaTahun->count(),
+                    'jiwa' => $jiwa,
+                    'laki' => $laki,
+                    'perempuan' => $perempuan,
+                ];
+            }
+        }
+
+        return $hasil;
+    }
+
+    /**
      * Bagian perluasan Monografi satu SP: Pendahuluan, Kependudukan, Sosial
      * Ekonomi, Sosial Budaya (Putaran 6).
      *
@@ -740,8 +784,13 @@ class LaporanData
      * @param  array<string, mixed>  $s  Baris satuanPermukiman (sudah memuat keadaan wilayah)
      * @return array<string, mixed>
      */
-    private static function bagianTambahanSp(array $s, int $tahun): array
-    {
+    private static function bagianTambahanSp(
+        array $s,
+        int $tahun,
+        array $semuaPenanaman = [],
+        array $semuaPanen = [],
+        array $semuaAlsintan = [],
+    ): array {
         $id = $s['id_satuan_permukiman'];
         $nama = $s['nama'];
         $akhirTahun = Carbon::create($tahun, 12, 31)->endOfDay();
@@ -1027,7 +1076,7 @@ class LaporanData
         }
 
         $panenGrup = [];
-        foreach (PenyajianPanen::penanaman() as $t) {
+        foreach ($semuaPenanaman as $t) {
             if ($t['satuan_permukiman_id'] !== $id) {
                 continue;
             }
@@ -1035,7 +1084,7 @@ class LaporanData
             $panenGrup[$k] ??= ['tanam' => 0.0, 'panen' => 0.0, 'puso' => 0.0, 'produksi' => 0.0];
             $panenGrup[$k]['tanam'] += (float) $t['realisasi_tanam'];
         }
-        foreach (PenyajianPanen::hasilPanen() as $h) {
+        foreach ($semuaPanen as $h) {
             if ($h['satuan_permukiman_id'] !== $id) {
                 continue;
             }
@@ -1123,7 +1172,7 @@ class LaporanData
         // Alsintan disaring lewat baris distribusi: satu SP dilayani bila ada
         // poktan di SP itu yang menerima bagian dari pengadaan (Putaran 7).
         $alsintanSp = [];
-        foreach (PenyajianAlsintan::daftar() as $a) {
+        foreach ($semuaAlsintan as $a) {
             foreach ($a['distribusi'] as $d) {
                 if ($d['satuan_permukiman_id'] === $id) {
                     $alsintanSp[] = [$a['jenis_alsintan'], $a['nama_alat'], $d['jumlah'], $a['tahun_pengadaan'], $d['poktan']];
@@ -1186,18 +1235,22 @@ class LaporanData
      */
     public static function monografiSp(): array
     {
+        $daftarTahunLaporan = array_slice(RekapDashboard::deret()['tahun'], -5);
+        $tahunBawaan = $daftarTahunLaporan[array_key_last($daftarTahunLaporan)] ?? (int) date('Y');
         // Ikhtisar kk_terisi/rumah_terhuni/produksi_ton/pengaduan_terbuka dan
         // daftar tahunnya mengikuti RekapDashboard agar sama dengan dashboard.
         $rekap = collect(RekapDashboard::perSp())->keyBy('satuan_permukiman_id');
         $kawasan = self::kawasan();
-        $daftarTahunLaporan = RekapDashboard::daftarTahunLaporan();
         $poktanPerSp = Poktan::query()
             ->selectRaw('satuan_permukiman_id, count(*) as jumlah')
             ->groupBy('satuan_permukiman_id')
             ->pluck('jumlah', 'satuan_permukiman_id');
 
+        $semuaPenanaman = PenyajianPanen::penanaman();
+        $semuaPanen = PenyajianPanen::hasilPanen();
+        $semuaAlsintan = PenyajianAlsintan::daftar();
         $lahanTergarap = [];
-        foreach (PenyajianPanen::penanaman() as $t) {
+        foreach ($semuaPenanaman as $t) {
             $lahanTergarap[$t['satuan_permukiman_id']] = ($lahanTergarap[$t['satuan_permukiman_id']] ?? 0)
                 + (float) $t['realisasi_tanam'];
         }
@@ -1205,16 +1258,19 @@ class LaporanData
         // Rekap per SP untuk tiap tahun laporan, agar ikhtisar dan Bab II
         // "Iklim" dapat mengikuti tahun terpilih.
         $rekapTahun = [];
+        $panen = RekapPanen::data();
         foreach ($daftarTahunLaporan as $tahun) {
-            $rekapTahun[$tahun] = collect(RekapDashboard::perSp($tahun))->keyBy('satuan_permukiman_id');
+            $rekapTahun[$tahun] = collect(RekapDashboard::perSp($tahun, $panen))->keyBy('satuan_permukiman_id');
         }
 
+        $sp = self::daftarSp();
+        $spIds = array_column($sp, 'id_satuan_permukiman');
+        $kependudukanTahun = self::keadaanPendudukSemuaTahun($spIds, $daftarTahunLaporan);
         $baris = [];
         $monografi = [];
         $iklimTahun = [];
-        $kependudukanTahun = [];
 
-        foreach (self::daftarSp() as $s) {
+        foreach ($sp as $s) {
             $id = $s['id_satuan_permukiman'];
             $r = $rekap->get($id);
 
@@ -1255,21 +1311,17 @@ class LaporanData
             $iklimTahun[$id] = [];
             $iklimTercatat = self::bab2($s)['Iklim'];
             foreach ($daftarTahunLaporan as $tahun) {
-                $iklimTahun[$id][$tahun] = $tahun === self::tahunDokumenBawaan()
+                $iklimTahun[$id][$tahun] = $tahun === $tahunBawaan
                     ? $iklimTercatat
                     : array_fill_keys(array_keys($iklimTercatat), null);
             }
 
             $rute = $s['rute'];
 
-            // Keadaan penduduk "sekarang" untuk tiap tahun laporan, agar
-            // pemilih tahun mengubah angka KK dan jiwa di sisi peramban.
-            $kependudukanTahun[$id] = [];
-            foreach ($daftarTahunLaporan as $tahun) {
-                $kependudukanTahun[$id][$tahun] = self::keadaanPendudukTahun($id, $tahun);
-            }
+            // Keadaan penduduk seluruh SP/tahun sudah dihitung dari dua query
+            // batch sebelum loop ini.
 
-            $bagian = self::bagianTambahanSp($s, self::tahunDokumenBawaan());
+            $bagian = self::bagianTambahanSp($s, $tahunBawaan, $semuaPenanaman, $semuaPanen, $semuaAlsintan);
 
             $monografi[] = [
                 'sp_id' => $id,
@@ -1529,7 +1581,7 @@ class LaporanData
      *
      * @return array<string, mixed>
      */
-    public static function filterLaporan(string $slug): array
+    public static function filterLaporan(string $slug, array $isiLaporan = []): array
     {
         $daftarSp = SatuanPermukiman::query()->terlihatOlehPengguna()
             ->orderBy('nama')
@@ -1549,7 +1601,7 @@ class LaporanData
             'alsintan' => self::filterAlsintan($daftarSp, $cakupanBawaan),
             'saprotan' => self::filterSaprotan($daftarSp, $cakupanBawaan),
             'hasil-panen' => self::filterHasilPanen($daftarSp, $cakupanBawaan),
-            'monografi-sp' => self::filterMonografi($daftarSp, $cakupanBawaan),
+            'monografi-sp' => self::filterMonografi($daftarSp, $cakupanBawaan, $isiLaporan),
             'indikator-kawasan' => [
                 'sp' => $daftarSp,
                 'tahun' => false,
@@ -1565,9 +1617,9 @@ class LaporanData
         };
     }
 
-    private static function filterMonografi(array $daftarSp, string $cakupanBawaan): array
+    private static function filterMonografi(array $daftarSp, string $cakupanBawaan, array $isiLaporan): array
     {
-        $monografi = self::monografiSp();
+        $monografi = $isiLaporan !== [] ? $isiLaporan : self::monografiSp();
 
         return [
             'sp' => $daftarSp,

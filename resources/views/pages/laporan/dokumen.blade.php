@@ -7,7 +7,7 @@
 @extends('layouts.dokumen')
 
 @section('content')
-    <x-sim.kerangka-laporan :slug="$slug" :dokumen="true">
+    <x-sim.kerangka-laporan :slug="$slug" :dokumen="true" :isi-laporan="$isiLaporan">
         @include('pages.laporan.isi.' . $slug, $isiLaporan)
     </x-sim.kerangka-laporan>
 @endsection

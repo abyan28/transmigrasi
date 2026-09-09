@@ -2,7 +2,7 @@
 
 | ID | Klaim | Bukti terkini | Status | Finding tersisa |
 |---|---|---|---|---|
-| CL-01 | Route internal ber-auth + izin | route-map seluruh named authenticated route + security tests | TERBUKTI | SYS-L02 hanya CI |
+| CL-01 | Route internal ber-auth + izin | route-map seluruh named authenticated route; CI umum SHA-pinned | TERBUKTI | SYS-L02: gate MySQL route-map belum di CI |
 | CL-02 | Scope Per-SP mencegah IDOR | scope/write/document tests | TERBUKTI | — |
 | CL-03 | Penonaktifan menghentikan akses | revocation helper + middleware internal dan ganti sandi | TERBUKTI | — |
 | CL-04 | Perubahan kredensial/status/role mencabut sesi | mutation-path tests | TERBUKTI | — |
@@ -26,5 +26,5 @@
 | CL-22 | User manager tidak dapat memberi role Admin | create/update guards + tests | TERBUKTI | — |
 | CL-23 | Produktivitas laporan seragam ton/ha | conversion regression | TERBUKTI | — |
 | CL-24 | Export menyimpan kuantitas sebagai number | metadata cell + build/browser checks | TERBUKTI | — |
-| CL-25 | Monografi layak pada data demo | query turun tetapi masih tinggi | IMPROVED | SYS-M21 |
+| CL-25 | Monografi layak pada data demo | fixture enam SP dijaga ≤270 query; filter memakai payload route dan kependudukan dibaca batch | IMPROVED | SYS-M21 |
 | CL-26 | Aplikasi dapat dideploy dan dipulihkan | preview statis saja; belum ada restore drill | TIDAK_TERBUKTI | SYS-H11, SYS-M24 |

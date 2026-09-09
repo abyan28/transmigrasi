@@ -12,11 +12,13 @@ use App\Models\AnggotaKeluarga;
 use App\Models\HasilPanen;
 use App\Models\Infrastruktur;
 use App\Models\Lahan;
+use App\Models\Penanaman;
 use App\Models\Pengaduan;
 use App\Models\Rumah;
 use App\Models\SatuanPermukiman;
 use App\Models\Transmigran;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 
 /**
  * Angka dashboard dari Eloquent (Task 9.1, rules.md 8g DIBALIK 2026-09-04).
@@ -55,10 +57,10 @@ class RekapDashboard
      *
      * @return array<string, mixed>
      */
-    public static function ringkasan(?int $spId = null, ?int $tahun = null): array
+    public static function ringkasan(?int $spId = null, ?int $tahun = null, ?Collection $panen = null): array
     {
         $tahun ??= self::tahunTerakhir();
-        $totalPanen = self::totalPanenTahun($tahun, $spId);
+        $totalPanen = self::totalPanenTahun($tahun, $spId, $panen);
         $kkJiwa = self::jumlahKkJiwa($spId);
 
         return [
@@ -71,7 +73,9 @@ class RekapDashboard
             'luas_lahan_total' => round((float) self::terapkanSp(Lahan::query(), $spId)->sum('luas_usaha'), 2),
             'pengaduan_terbuka' => self::terapkanSp(Pengaduan::whereNot('status', StatusPengaduan::Selesai->value), $spId)->count(),
             'volume_panen_ton' => $totalPanen['produksi_ton'],
-            'harga_rata_rata' => self::hargaRataRata($tahun, $spId),
+            'harga_rata_rata' => $panen === null
+                ? self::hargaRataRata($tahun, $spId)
+                : self::hargaRataRataDariData($panen, $tahun, $spId),
             'realisasi_tanam_ha' => $totalPanen['realisasi_tanam'],
             'hasil_panen_ha' => $totalPanen['hasil_panen'],
             'puso_ha' => $totalPanen['puso'],
@@ -97,7 +101,7 @@ class RekapDashboard
      *
      * @return array<string, mixed>
      */
-    public static function deret(?int $spId = null): array
+    public static function deret(?int $spId = null, ?Collection $panen = null): array
     {
         $tahunMasukQuery = self::terapkanSp(Transmigran::query(), $spId);
         $tahunMasuk = (int) ($tahunMasukQuery->min('tahun_kedatangan') ?? date('Y'));
@@ -138,6 +142,14 @@ class RekapDashboard
             $petaniKumulatif[] = max(0, $petaniKum);
         }
 
+        $panen ??= RekapPanen::data();
+        $panenPerTahun = [];
+        $hargaPerTahun = [];
+        foreach ($tahun as $t) {
+            $panenPerTahun[$t] = self::totalPanenTahun($t, $spId, $panen);
+            $hargaPerTahun[$t] = self::hargaRataRataDariData($panen, $t, $spId);
+        }
+
         return [
             'tahun' => $tahun,
             'jumlah_kk' => $kk,
@@ -145,8 +157,8 @@ class RekapDashboard
             'jumlah_petani' => $petaniKumulatif,
             'kk_masuk' => array_map(fn ($t) => (int) ($masukPerTahun[$t] ?? 0), $tahun),
             'kk_keluar' => array_map(fn ($t) => (int) ($keluarPerTahun[$t] ?? 0), $tahun),
-            'volume_panen' => array_map(fn ($t) => self::totalPanenTahun($t, $spId)['produksi_ton'], $tahun),
-            'harga_rata_rata' => array_map(fn ($t) => self::hargaRataRata($t, $spId), $tahun),
+            'volume_panen' => array_map(fn ($t) => $panenPerTahun[$t]['produksi_ton'], $tahun),
+            'harga_rata_rata' => array_map(fn ($t) => $hargaPerTahun[$t], $tahun),
         ];
     }
 
@@ -213,10 +225,10 @@ class RekapDashboard
      *
      * @return array<int, array<string, mixed>>
      */
-    public static function perSp(?int $tahun = null): array
+    public static function perSp(?int $tahun = null, ?Collection $panen = null): array
     {
         $tahunPanen = $tahun ?? self::tahunTerakhir();
-        $panenPerSp = collect(RekapPanen::rekap('sp', $tahunPanen))->keyBy('nama');
+        $panenPerSp = collect(RekapPanen::rekap('sp', $tahunPanen, null, null, $panen))->keyBy('nama');
 
         // Kolom KK ikut tahun bila diisi (dipakai `/kependudukan/rekap`,
         // taksiran kumulatif -- lihat `hadirPadaTahun()`); bawaannya keadaan
@@ -432,10 +444,10 @@ class RekapDashboard
      *
      * @return array<string, float>
      */
-    public static function sebaranKomoditas(?int $spId = null, ?int $tahun = null): array
+    public static function sebaranKomoditas(?int $spId = null, ?int $tahun = null, ?Collection $panen = null): array
     {
         $namaSp = self::namaSp($spId);
-        $baris = RekapPanen::rekap('komoditas', $tahun ?? self::tahunTerakhir(), $namaSp);
+        $baris = RekapPanen::rekap('komoditas', $tahun ?? self::tahunTerakhir(), $namaSp, null, $panen);
 
         $hasil = [];
         foreach ($baris as $b) {
@@ -535,24 +547,25 @@ class RekapDashboard
     {
         $sekarang = self::ringkasan();
         $deret = self::deret();
+        $panen = RekapPanen::data();
 
         $hasil = [];
-        foreach (self::daftarTahunLaporan() as $tahun) {
+        foreach (array_slice($deret['tahun'], -5) as $tahun) {
             $i = array_search($tahun, $deret['tahun'], true);
-            $panen = self::totalPanenTahun($tahun);
+            $panenTahun = self::totalPanenTahun($tahun, null, $panen);
 
             $hasil[$tahun] = [
                 'jumlah_kk' => $i !== false ? $deret['jumlah_kk'][$i] : 0,
                 'jumlah_jiwa' => $i !== false ? $deret['jumlah_jiwa'][$i] : 0,
                 'jumlah_petani' => $i !== false ? $deret['jumlah_petani'][$i] : 0,
                 'harga_rata_rata' => $i !== false ? $deret['harga_rata_rata'][$i] : 0.0,
-                'volume_panen_ton' => $panen['produksi_ton'],
-                'realisasi_tanam_ha' => $panen['realisasi_tanam'],
-                'hasil_panen_ha' => $panen['hasil_panen'],
-                'puso_ha' => $panen['puso'],
-                'belum_dipanen_ha' => $panen['belum_dipanen'],
-                'produktivitas_ton_ha' => $panen['hasil_panen'] > 0
-                    ? round($panen['produksi_ton'] / $panen['hasil_panen'], 3) : 0.0,
+                'volume_panen_ton' => $panenTahun['produksi_ton'],
+                'realisasi_tanam_ha' => $panenTahun['realisasi_tanam'],
+                'hasil_panen_ha' => $panenTahun['hasil_panen'],
+                'puso_ha' => $panenTahun['puso'],
+                'belum_dipanen_ha' => $panenTahun['belum_dipanen'],
+                'produktivitas_ton_ha' => $panenTahun['hasil_panen'] > 0
+                    ? round($panenTahun['produksi_ton'] / $panenTahun['hasil_panen'], 3) : 0.0,
                 // Keadaan sekarang, bukan angka tahun itu -- lihat docblock.
                 'rumah_total' => $sekarang['rumah_total'],
                 'rumah_terhuni' => $sekarang['rumah_terhuni'],
@@ -571,9 +584,9 @@ class RekapDashboard
      *
      * @return array{realisasi_tanam: float, hasil_panen: float, puso: float, belum_dipanen: float, produksi_ton: float}
      */
-    private static function totalPanenTahun(int $tahun, ?int $spId = null): array
+    private static function totalPanenTahun(int $tahun, ?int $spId = null, ?Collection $panen = null): array
     {
-        $baris = collect(RekapPanen::rekap('sp', $tahun, self::namaSp($spId)));
+        $baris = collect(RekapPanen::rekap('sp', $tahun, self::namaSp($spId), null, $panen));
 
         return [
             'realisasi_tanam' => round((float) $baris->sum('realisasi_tanam'), 2),
@@ -611,6 +624,30 @@ class RekapDashboard
         }
 
         return round((float) ($query->avg('harga_jual') ?? 0), 0);
+    }
+
+    /**
+     * Rata-rata harga dari graf panen yang sudah dimuat oleh deret().
+     *
+     * @param  Collection<int, Penanaman>  $panen
+     */
+    private static function hargaRataRataDariData(Collection $panen, int $tahun, ?int $spId): float
+    {
+        $harga = $panen
+            ->filter(fn ($p) => $p->hasilPanen !== null
+                && self::tahunPanen($p) === $tahun
+                && ($spId === null || $p->poktan?->satuan_permukiman_id === $spId)
+                && $p->hasilPanen->harga_jual !== null)
+            ->pluck('hasilPanen.harga_jual');
+
+        return round((float) ($harga->avg() ?? 0), 0);
+    }
+
+    private static function tahunPanen($penanaman): int
+    {
+        return $penanaman->hasilPanen === null
+            ? (int) date('Y')
+            : (int) substr((string) $penanaman->hasilPanen->periode_panen, 0, 4);
     }
 
     /**

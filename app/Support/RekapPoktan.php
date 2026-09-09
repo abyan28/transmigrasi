@@ -24,17 +24,20 @@ class RekapPoktan
      */
     public static function kekuatan(Poktan $poktan): array
     {
-        $poktan->loadMissing('anggota');
+        $poktan->loadMissing('anggota.transmigran.lahan');
 
         $aktif = $poktan->anggota->filter(
             fn ($a) => $a->status === StatusKeaktifanAnggota::Aktif,
         );
-
+        $lahanKeluarga = fn (?int $id): array => self::ringkasLahan(
+            $aktif->firstWhere('transmigran_id', $id)?->transmigran?->lahan
+                ?? ($poktan->ketua_transmigran_id === $id ? $poktan->ketuaTransmigran?->lahan : null),
+        );
         $kering = 0.0;
         $basah = 0.0;
 
         foreach ($aktif as $a) {
-            $lahan = self::lahanKeluarga($a->transmigran_id);
+            $lahan = $lahanKeluarga($a->transmigran_id);
             $kering += $lahan['kering'];
             $basah += $lahan['basah'];
         }
@@ -44,7 +47,7 @@ class RekapPoktan
 
         if (! $ketuaTerhitung) {
             $lahanKetua = $poktan->asal_ketua->dariKeluargaTransmigran()
-                ? self::lahanKeluarga($poktan->ketua_transmigran_id)
+                ? $lahanKeluarga($poktan->ketua_transmigran_id)
                 : ['kering' => (float) ($poktan->luas_kering_ketua ?? 0), 'basah' => (float) ($poktan->luas_basah_ketua ?? 0)];
 
             $kering += $lahanKetua['kering'];
@@ -83,9 +86,17 @@ class RekapPoktan
      */
     private static function lahanKeluarga(?int $transmigranId): array
     {
-        $rekap = RekapLahan::keluarga(
+        return self::ringkasLahan(
             $transmigranId === null ? null : Lahan::where('transmigran_id', $transmigranId)->first(),
         );
+    }
+
+    /**
+     * @return array{kering: float, basah: float}
+     */
+    private static function ringkasLahan(?Lahan $lahan): array
+    {
+        $rekap = RekapLahan::keluarga($lahan);
 
         return ['kering' => $rekap['kering'], 'basah' => $rekap['basah']];
     }

@@ -77,7 +77,8 @@ Route::get('/', function () {
     $spId = $daftarSp->contains('id_satuan_permukiman', (int) request('sp'))
         ? (int) request('sp') : null;
 
-    $deretPenuh = RekapDashboard::deret($spId);
+    $panenDashboard = RekapPanen::data();
+    $deretPenuh = RekapDashboard::deret($spId, $panenDashboard);
     $tahunAwal = request()->filled('tahun_awal') && in_array((int) request('tahun_awal'), $deretPenuh['tahun'], true)
         ? (int) request('tahun_awal') : null;
     $tahunAkhir = request()->filled('tahun_akhir') && in_array((int) request('tahun_akhir'), $deretPenuh['tahun'], true)
@@ -92,11 +93,11 @@ Route::get('/', function () {
     // terakhir yang benar-benar terdata.
     $tahunAcuan = $tahunAkhir ?? RekapDashboard::tahunTerakhir();
 
-    $ringkasan = RekapDashboard::ringkasan($spId, $tahunAcuan);
+    $ringkasan = RekapDashboard::ringkasan($spId, $tahunAcuan, $panenDashboard);
     // Perbandingan Antar SP TIDAK ikut menyempit menurut SP -- premisnya
     // justru membandingkan seluruh SP; menyaringnya ke satu SP meniadakan
     // grafiknya sendiri. Tahun Akhir tetap berlaku (volume panennya).
-    $rekapSp = RekapDashboard::perSp($tahunAcuan);
+    $rekapSp = RekapDashboard::perSp($tahunAcuan, $panenDashboard);
 
     $penilaianSp = $spId === null
         ? PenilaianKondisiSp::nilaiSeluruhSp()
@@ -107,7 +108,7 @@ Route::get('/', function () {
     $statusInfra = RekapDashboard::statusInfrastruktur($spId);
     $sebaranPekerjaan = RekapDashboard::sebaranPekerjaan($spId);
     $rekapStatusPengaduan = RekapPengaduan::rekap('status', $spId);
-    $sebaranKomoditas = RekapDashboard::sebaranKomoditas($spId, $tahunAcuan);
+    $sebaranKomoditas = RekapDashboard::sebaranKomoditas($spId, $tahunAcuan, $panenDashboard);
     $rekapPenghuni = RekapDashboard::rekapPenghuni($spId);
     $pendapatanSaatIni = RekapDashboard::pendapatanSaatIni($spId);
 
@@ -985,7 +986,7 @@ foreach ($judulLaporan as $slug => $judul) {
 // Tampilan dokumen polos (tanpa sidebar/header), dibuka di tab baru. Satu
 // rute berparameter, dibatasi `where` pada slug yang sah -- pola yang sama
 // dengan /panen/rekap/{kelompok}.
-Route::get('/laporan/{slug}/dokumen', function (string $slug) use ($judulLaporan, $dataLaporan) {
+Route::get('/laporan/{slug}/dokumen', function (string $slug) use ($dataLaporan) {
     $meta = LaporanData::meta($slug);
     abort_if($meta === [], 404);
     abort_unless(request()->user()?->punyaIzin($meta['izin']) === true, 403);

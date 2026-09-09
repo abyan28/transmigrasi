@@ -53,16 +53,16 @@ Sumber: SYS-M04. Satu seeder/bootstrap authoritative; jangan duplikasi literal. 
 ### BL-12 (S) — Selaraskan PHP workflow dan lock
 Sumber: SYS-M05. Naikkan workflow ke ≥8.3 atau pin dependency kompatibel 8.2 setelah keputusan target. Acceptance: clean `composer install --no-dev` + platform check hijau.
 
-### BL-13 (S) — Perluas quality gates
-Sumber: SYS-L01, SYS-L02. Sweep seluruh named auth routes, jalankan test/audit/schema parity/build di CI, lalu bereskan Pint. Pin action SHA bila kebijakan supply-chain mengharuskan. Acceptance: CI merah pada route GET tanpa map/exemption dan seluruh gate hijau.
+### BL-13 (S, selesai sebagian) — Perluas quality gates
+Sumber: SYS-L01, SYS-L02. Seluruh named auth route sudah masuk penjaga; workflow menjalankan Pint, Unit, browser-harness, Composer/npm audit, dan build. Seluruh GitHub Action dipin ke commit SHA. Sisa: sediakan service MySQL CI sebelum menjadikan `IzinPenegakanRuteTest` gate wajib.
 
 ## Batch 4 — Operasi dan evidence
 
 ### BL-14 (M) — Definisikan worker email produksi dan delivery failure policy
 Sumber: SYS-M12, SYS-M15. Supervisor/systemd/container worker, restart policy, retry, failed-job alert, dan smoke test delivery. Untuk pending-email berkredensial sementara, jangan mencabut kredensial sebelum enqueue terjamin; bila enqueue gagal, rollback/cancel pending dan beri hasil actionable. Tanpa ini mail queued tidak menjamin terkirim dan akun dapat terkunci tanpa token.
 
-### BL-15 (M, ukur dulu) — Hilangkan cache lintas user dan perbaiki hot path laporan
-Sumber: SYS-M11, SYS-M18, SYS-M21. Hapus static cache user-scoped. Bangun Monografi sekali per request (filter sekarang memanggilnya dua kali), lalu hilangkan repeated per-SP/full-dataset loads. Baseline enam SP: 3.137 query/8,74 detik untuk route; tetapkan budget regression. Tambahkan matriks Per-SP laporan pertanian dan fixture panen batal ekstrem.
+### BL-15 (M, selesai sebagian) — Hilangkan cache lintas user dan perbaiki hot path laporan
+Sumber: SYS-M11, SYS-M18, SYS-M21. **SYS-M11 dan SYS-M18 selesai:** graf panen dashboard dimuat sekali untuk seluruh rentang dan dipakai ulang pada widget request; static cache user-scoped sudah dihapus. **SYS-M21 improved:** filter Monografi memakai payload route, dataset lintas-SP diangkat keluar loop, dan kependudukan seluruh SP/tahun dibaca dengan dua query batch; fixture enam SP dijaga ≤270 query. Sisa: optimalkan bagian tambahan per-SP sampai budget akhir disepakati.
 
 ### BL-16 (M) — Audit visual ulang terikat HEAD
 Sumber: SYS-M07. Setelah BL-10, capture high-risk/changed surfaces dengan manifest SHA, route final, heading, role, viewport, theme, dimensions, hash, dan warna efektif. Validator menolak 404, missing screenshot, viewport mismatch, duplicate lintas route, dan rasio di luar 1..21.

@@ -31,30 +31,44 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Siapkan Pages
         id: pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
 
       - name: Siapkan PHP 8.3
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
         with:
           php-version: '8.3'
           extensions: mbstring, intl, bcmath, zip, gd, pdo_sqlite
           coverage: none
 
       - name: Siapkan Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '24'
           cache: npm
 
       - name: Pasang dependensi PHP
-        run: composer install --no-dev --prefer-dist --no-progress --optimize-autoloader
+        run: composer install --prefer-dist --no-progress --optimize-autoloader
 
       - name: Pasang dependensi Node
         run: npm ci
+
+      - name: Periksa kualitas aplikasi
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ':memory:'
+          PULSE_ENABLED: 'false'
+          TELESCOPE_ENABLED: 'false'
+          NIGHTWATCH_ENABLED: 'false'
+        run: |
+          vendor/bin/pint --test
+          php artisan test --testsuite=Unit
+          npm run test:browser:harness
+          composer audit --no-interaction
+          npm audit --audit-level=high
 
       - name: Bangun aset
         run: |
@@ -251,7 +265,7 @@ jobs:
           # sehingga pengunjung tetap melihat tampilan galat milik sistem.
           curl -s -o keluaran/404.html http://127.0.0.1:8000/alamat-yang-tidak-ada || true
 
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3
         with:
           path: keluaran
 
@@ -265,4 +279,4 @@ jobs:
 
     steps:
       - id: penerbitan
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4

@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Enums\StatusKeaktifanAnggota;
 use App\Enums\StatusPanen;
 use App\Models\HasilPanen;
 use App\Models\Penanaman;
@@ -109,8 +110,28 @@ class RekapPanen
     }
 
     /**
+     * Memuat graf tanam/panen sekali untuk dipakai beberapa agregasi pada satu request.
+     *
+     * @return Collection<int, Penanaman>
+     */
+    public static function data(): Collection
+    {
+        return Penanaman::query()
+            ->with([
+                'poktan.satuanPermukiman',
+                'poktan.anggota' => fn ($query) => $query->where('status', StatusKeaktifanAnggota::Aktif->value),
+                'poktan.anggota.transmigran.lahan',
+                'poktan.ketuaTransmigran.lahan',
+                'komoditas',
+                'hasilPanen.satuan',
+            ])
+            ->get();
+    }
+
+    /**
      * Baris rekap, produksi terbesar dulu.
      *
+     * @param  Collection<int, Penanaman>|null  $penanaman
      * @return array<int, array<string, mixed>>
      */
     public static function rekap(
@@ -118,11 +139,12 @@ class RekapPanen
         ?int $tahun = null,
         ?string $filterSp = null,
         ?string $filterKomoditas = null,
+        ?Collection $penanaman = null,
     ): array {
         $peta = [];
         $kekuatan = [];
 
-        foreach (self::penanaman() as $p) {
+        foreach ($penanaman ?? self::data() as $p) {
             if ($tahun !== null && self::tahunRekap($p) !== $tahun) {
                 continue;
             }
@@ -222,8 +244,6 @@ class RekapPanen
      */
     private static function penanaman(): Collection
     {
-        return Penanaman::query()
-            ->with(['poktan.satuanPermukiman', 'poktan.anggota', 'komoditas', 'hasilPanen.satuan'])
-            ->get();
+        return self::data();
     }
 }

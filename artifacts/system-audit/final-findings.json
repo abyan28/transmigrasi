@@ -23,7 +23,7 @@
     {"id":"SYS-M08","severity":"MEDIUM","title":"Batas percobaan recovery dapat dilompati request paralel","status":"FIXED"},
     {"id":"SYS-M09","severity":"MEDIUM","title":"Deduplikasi notifikasi rentan concurrency","status":"FIXED"},
     {"id":"SYS-M10","severity":"MEDIUM","title":"Nomor urut pengaduan dapat sama pada request paralel","status":"FIXED"},
-    {"id":"SYS-M11","severity":"MEDIUM","title":"Dashboard dan laporan melakukan full-load berulang per tahun","status":"TERBUKTI_STATIC_TRACE"},
+    {"id":"SYS-M11","severity":"MEDIUM","title":"Dashboard dan laporan melakukan full-load berulang per tahun","status":"FIXED"},
     {"id":"SYS-M12","severity":"MEDIUM","title":"Antrean surel tidak memiliki worker produksi yang terdefinisi","status":"TERBUKTI_STATIC_TRACE"},
     {"id":"SYS-M13","severity":"MEDIUM","title":"Cookie Secure bergantung konfigurasi deployment yang tidak terdokumentasi","status":"FIXED"},
     {"id":"SYS-M14","severity":"MEDIUM","title":"Mutasi user dan role tidak atomik dengan pivot dan audit","status":"FIXED"},
