@@ -52,13 +52,14 @@
 | Perbaikan audit — dedupe notifikasi | SELESAI | SYS-M09 diperbaiki dengan transaction + row lock pada penerima yang selalu ada; focused regression 1 test/3 assertion lulus. |
 | Perbaikan audit — nomor pengaduan | SELESAI | SYS-M10 diperbaiki dengan row lock pada rentang awalan+tahun dalam transaksi create; `PengaduanTest` 16/68 lulus. |
 | Perbaikan audit — browser harness | SELESAI | SYS-H03/M06/L03 diperbaiki: shared login/error/precondition guard 18/18 script + runner npm; smoke browser 16/16 dan 36/36 lulus. |
-| Perbaikan audit — route-map/CI | SEBAGIAN | SYS-L02: seluruh named auth route wajib dipetakan/dikecualikan; workflow menjalankan Pint, Unit, browser-harness, audit dependency, build, dan action SHA-pinned. Gate MySQL route-map masih lokal. |
-| Perbaikan audit — formatting | SELESAI | SYS-L01 diperbaiki; `vendor/bin/pint --test` lulus pada 358 file. |
+| Perbaikan audit — route-map/CI | SELESAI | SYS-L02: workflow quality memakai MariaDB 10.11 dan memaksa `IzinPenegakanRuteTest` gagal bila database tidak tersedia; lokal 17 test/38 assertion lulus. |
+| Perbaikan audit — visual HEAD | SEBAGIAN | SYS-M07: 16 capture dark-theme pada 8 permukaan × desktop/mobile tervalidasi; pengukuran warna efektif/kontras dan theme/role tambahan belum selesai. |
+| Perbaikan audit — formatting | SELESAI | SYS-L01 diperbaiki; `vendor/bin/pint --test` lulus pada 361 file. |
 
 ## Blocker dan peringatan
 
-- PHP aktif adalah 8.5.8, sedangkan workflow masih menetapkan PHP 8.2. Lock produksi aktual tidak kompatibel dengan PHP 8.2 (`maennchen/zipstream-php 3.2.2` membutuhkan `php-64bit ^8.3`).
-- Database test terbukti terpisah (`digitrans_test`). Run serial final mencapai 633 lulus dan 3 gagal pada `SpTest`; kegagalan berasal dari master pilihan P1/P2 yang tidak ditanam oleh setup test/fresh bootstrap tersebut.
+- Target workflow sudah diselaraskan ke PHP 8.3; lock produksi memenuhi platform tersebut.
+- Master pilihan P1/P2 pada setup resmi telah dipulihkan; focused `SpTest` 11/343 lulus. Angka run serial 633/3 pada bagian histori adalah baseline sebelum perbaikan, bukan status kini.
 - Tidak ada deployment Laravel produksi, queue worker, backup/restore drill, atau UAT yang dapat dibuktikan dari repo; workflow GitHub Pages hanya pratinjau statis publik.
 
 ## Artefak yang dibuat audit ini

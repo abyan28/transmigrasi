@@ -3499,7 +3499,7 @@ class DummyData
 
                 $hasil[] = [
                     'id_parameter_penilaian_sp' => $id++,
-                    'kode' => $cocok[0] ?? Str::slug($baris['nilai'], '_'),
+                    'kode' => $cocok[0] ?? Str::slug($baris['nilai'], '_').'_'.$baris['id_daftar_pilihan'],
                     'nama' => $cocok[1] ?? $baris['nilai'],
                     'tingkat' => $cocok[2] ?? TingkatKebutuhan::Tersier,
                     'bobot' => ($cocok[2] ?? TingkatKebutuhan::Tersier)->bobotBawaan(),

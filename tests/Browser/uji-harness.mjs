@@ -1,4 +1,10 @@
+import { readFileSync } from 'node:fs';
 import { buatPenjagaBrowser } from './browser-harness.mjs';
+
+const sumber = readFileSync(new URL('./browser-harness.mjs', import.meta.url), 'utf8');
+if (! sumber.includes('form.requestSubmit()') || sumber.includes('form.submit()')) {
+    throw new Error('Login browser wajib melewati validasi dan event submit form.');
+}
 
 const penjaga = buatPenjagaBrowser();
 

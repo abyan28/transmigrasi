@@ -2,16 +2,16 @@
 
 | ID | Klaim | Bukti terkini | Status | Finding tersisa |
 |---|---|---|---|---|
-| CL-01 | Route internal ber-auth + izin | route-map seluruh named authenticated route; CI umum SHA-pinned | TERBUKTI | SYS-L02: gate MySQL route-map belum di CI |
+| CL-01 | Route internal ber-auth + izin | route-map seluruh named authenticated route; CI MariaDB wajib dan SHA-pinned | TERBUKTI | — |
 | CL-02 | Scope Per-SP mencegah IDOR | scope/write/document tests | TERBUKTI | — |
 | CL-03 | Penonaktifan menghentikan akses | revocation helper + middleware internal dan ganti sandi | TERBUKTI | — |
 | CL-04 | Perubahan kredensial/status/role mencabut sesi | mutation-path tests | TERBUKTI | — |
 | CL-05 | Pending email aman | lock, rollback queue, revocation tests | TERBUKTI | — |
 | CL-06 | Recovery dibatasi dan atomik | throttle + transaction/row-lock tests | TERBUKTI | — |
 | CL-07 | Import aman | signature/content detection + hostile parser tests | TERBUKTI | — |
-| CL-08 | Browser tests mencapai halaman internal dan menangkap JS error | shared login/error harness 18/18 | TERBUKTI; full suite belum hijau | race Alsintan di luar finding awal |
+| CL-08 | Browser tests mencapai halaman internal dan menangkap JS error | shared login/error harness 18/18; race distribusi focused 21/21 | TERBUKTI SEBAGIAN | canonical full runner masih memuat kontrak suksesi/wakil-poktan lama |
 | CL-09 | Export Excel/browser bekerja | login + workbook readback | TERBUKTI_RUNTIME | — |
-| CL-10 | Audit UI lama membuktikan HEAD | validasi hash/route/dimensi | PALSU/STALE | SYS-M07 |
+| CL-10 | Audit visual terkini membuktikan permukaan risiko HEAD | 16 screenshot dark-theme + manifest URL/heading/role/viewport/dimensi/SHA-256 tervalidasi | TERBUKTI SEBAGIAN | SYS-M07: kontras efektif dan theme/role tambahan |
 | CL-11 | Migration cocok schema SQL | schema parity | TERBUKTI_RUNTIME | — |
 | CL-12 | Fresh master bootstrap sehat | focused SpTest/master tests | TERBUKTI | — |
 | CL-13 | Build frontend berhasil | `npm run build` | TERBUKTI_RUNTIME | warning chunk saja |

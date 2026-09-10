@@ -47,14 +47,14 @@ Sumber: SYS-M20. Jangan mengubah semua digit polos karena NIK/telepon/tahun/kode
 ### BL-10 (M) — Perbaiki browser harness
 Sumber: SYS-H03, SYS-M06, SYS-L03. Reuse login dari `uji-export-laporan.mjs`; helper shared wajib assert URL final, heading/selector unik, console/Runtime exception, dan skip prasyarat sebagai nonzero. Daftarkan runner wajib di `package.json`. Acceptance: tanpa login/WebSocket semua test internal gagal precondition; dengan login mencapai target; identifier Alpine rusak memerahkan test.
 
-### BL-11 (S) — Pulihkan master P1/P2 pada setup resmi
+### BL-11 (S, selesai) — Pulihkan master P1/P2 pada setup resmi
 Sumber: SYS-M04. Satu seeder/bootstrap authoritative; jangan duplikasi literal. Acceptance: focused `SpTest` dan seluruh 636 Database tests lulus serial.
 
-### BL-12 (S) — Selaraskan PHP workflow dan lock
+### BL-12 (S, selesai) — Selaraskan PHP workflow dan lock
 Sumber: SYS-M05. Naikkan workflow ke ≥8.3 atau pin dependency kompatibel 8.2 setelah keputusan target. Acceptance: clean `composer install --no-dev` + platform check hijau.
 
-### BL-13 (S, selesai sebagian) — Perluas quality gates
-Sumber: SYS-L01, SYS-L02. Seluruh named auth route sudah masuk penjaga; workflow menjalankan Pint, Unit, browser-harness, Composer/npm audit, dan build. Seluruh GitHub Action dipin ke commit SHA. Sisa: sediakan service MySQL CI sebelum menjadikan `IzinPenegakanRuteTest` gate wajib.
+### BL-13 (S, selesai) — Perluas quality gates
+Sumber: SYS-L01, SYS-L02. Seluruh named auth route masuk penjaga; workflow umum menjalankan quality gates dan workflow MariaDB 10.11 memaksa `IzinPenegakanRuteTest` lulus tanpa skip. Seluruh GitHub Action dipin SHA.
 
 ## Batch 4 — Operasi dan evidence
 
@@ -64,8 +64,8 @@ Sumber: SYS-M12, SYS-M15. Supervisor/systemd/container worker, restart policy, r
 ### BL-15 (M, selesai) — Hilangkan cache lintas user dan perbaiki hot path laporan
 Sumber: SYS-M11, SYS-M18, SYS-M21. Graf panen dashboard dimuat sekali untuk seluruh rentang dan widget request; static cache user-scoped dihapus. Monografi memakai ulang payload/filter dan dataset lintas-SP, membatch kependudukan, serta menghapus lookup satuan/sertifikat berulang. Fixture enam SP dijaga ≤220 query.
 
-### BL-16 (M) — Audit visual ulang terikat HEAD
-Sumber: SYS-M07. Setelah BL-10, capture high-risk/changed surfaces dengan manifest SHA, route final, heading, role, viewport, theme, dimensions, hash, dan warna efektif. Validator menolak 404, missing screenshot, viewport mismatch, duplicate lintas route, dan rasio di luar 1..21.
+### BL-16 (M, selesai sebagian) — Audit visual ulang terikat HEAD
+Sumber: SYS-M07. Capture dark-theme segar mencakup 8 permukaan berisiko pada desktop/mobile. Manifest mengikat SHA, URL akhir, heading, role, viewport, dimensi, path, overflow, dan hash; validator menolak file/hash/dimensi/identitas/duplikat yang tidak sah. Sisa: warna efektif/rasio kontras valid 1..21 serta cakupan theme/role tambahan.
 
 ## Batch keputusan terpisah
 

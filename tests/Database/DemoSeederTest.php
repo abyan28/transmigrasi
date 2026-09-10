@@ -22,7 +22,8 @@ it('membatasi seeder bawaan pada data bootstrap dan referensi', function () {
         ->and(DB::table('desa')->count())->toBeGreaterThan(0)
         ->and(DB::table('satuan')->count())->toBeGreaterThan(0)
         ->and(DB::table('daftar_pilihan')->count())->toBeGreaterThan(0)
-        ->and(DB::table('parameter_penilaian_sp')->count())->toBeGreaterThan(0)
+        ->and(DB::table('parameter_penilaian_sp')->count())
+        ->toBe(count(DummyData::parameterPenilaian()))
         ->and(DB::table('status_kondisi_sp')->count())->toBeGreaterThan(0);
 
     foreach ([

@@ -181,7 +181,8 @@ async function main() {
         periksa('klik kartu membuka halaman daftarnya', tujuan === '/master/daftar-pilihan/sumber_dana', tujuan);
 
         const halamanJenis = JSON.parse(await nilai(`(() => {
-            const tersembunyi = document.querySelector('form[action$="/master/daftar-pilihan"] input[type="hidden"][name="jenis"]');
+            const dialog = document.querySelector('[role="dialog"][aria-labelledby="judul-formTambahDaftarPilihan"]');
+            const tersembunyi = dialog?.querySelector('input[type="hidden"][name="jenis"]');
 
             return JSON.stringify({
                 jenisTerkunci: tersembunyi ? tersembunyi.value : null,

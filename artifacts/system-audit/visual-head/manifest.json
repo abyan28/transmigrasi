@@ -1,0 +1,312 @@
+{
+  "audit_sha": "b545f50a02ff51e8ca3eb90c4bb9d18619be1a7b",
+  "generated_at": "2026-09-10T00:07:48.183Z",
+  "theme": "dark",
+  "count": 16,
+  "captures": [
+    {
+      "nama": "dashboard",
+      "jalur": "/",
+      "url_akhir": "/",
+      "heading": "Dashboard Kawasan Kobalima Timur",
+      "role": "Admin",
+      "mode": "desktop",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "png": {
+        "width": 1440,
+        "height": 900
+      },
+      "overflow_horizontal": false,
+      "file": "artifacts/system-audit/visual-head/desktop-dashboard.png",
+      "sha256": "f6fa559048cd93ffaf9fe8e7c4fcabb1f5fa5b67b6436a4ae0af1150e2e33983"
+    },
+    {
+      "nama": "transmigran",
+      "jalur": "/transmigran",
+      "url_akhir": "/transmigran",
+      "heading": "Data Transmigran",
+      "role": "Admin",
+      "mode": "desktop",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "png": {
+        "width": 1440,
+        "height": 900
+      },
+      "overflow_horizontal": false,
+      "file": "artifacts/system-audit/visual-head/desktop-transmigran.png",
+      "sha256": "419e5c487ea0d4a6d4a9557b8d4fbe5d1e37b273ba09a25ecb64880fbe189a99"
+    },
+    {
+      "nama": "pengaduan",
+      "jalur": "/pengaduan",
+      "url_akhir": "/pengaduan",
+      "heading": "Pengaduan",
+      "role": "Admin",
+      "mode": "desktop",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "png": {
+        "width": 1440,
+        "height": 900
+      },
+      "overflow_horizontal": false,
+      "file": "artifacts/system-audit/visual-head/desktop-pengaduan.png",
+      "sha256": "08e1b6e0d44ec20cfd3535f3f09b1f177cd3e12ad8fe1d9fee87cf004088dc44"
+    },
+    {
+      "nama": "penanaman",
+      "jalur": "/penanaman",
+      "url_akhir": "/penanaman",
+      "heading": "Penanaman",
+      "role": "Admin",
+      "mode": "desktop",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "png": {
+        "width": 1440,
+        "height": 900
+      },
+      "overflow_horizontal": false,
+      "file": "artifacts/system-audit/visual-head/desktop-penanaman.png",
+      "sha256": "10adf5a4965e24252eee11c2c1381c9c057dc3415ccd13767002b088e92c5692"
+    },
+    {
+      "nama": "panen",
+      "jalur": "/panen",
+      "url_akhir": "/panen",
+      "heading": "Hasil Panen",
+      "role": "Admin",
+      "mode": "desktop",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "png": {
+        "width": 1440,
+        "height": 900
+      },
+      "overflow_horizontal": false,
+      "file": "artifacts/system-audit/visual-head/desktop-panen.png",
+      "sha256": "7cea2b9a3771a6fb7b7e5c4fc8276b631b9f9c86454b881340d51c07b9e60ab1"
+    },
+    {
+      "nama": "master-wilayah",
+      "jalur": "/wilayah",
+      "url_akhir": "/wilayah",
+      "heading": "Data Master Wilayah",
+      "role": "Admin",
+      "mode": "desktop",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "png": {
+        "width": 1440,
+        "height": 900
+      },
+      "overflow_horizontal": false,
+      "file": "artifacts/system-audit/visual-head/desktop-master-wilayah.png",
+      "sha256": "d194366928b7cbce4b9bab3c02a721a36c108da97eb459310a92c95059734cbf"
+    },
+    {
+      "nama": "master-daftar-pilihan",
+      "jalur": "/master/daftar-pilihan",
+      "url_akhir": "/master/daftar-pilihan",
+      "heading": "Data Master Daftar Pilihan",
+      "role": "Admin",
+      "mode": "desktop",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "png": {
+        "width": 1440,
+        "height": 900
+      },
+      "overflow_horizontal": false,
+      "file": "artifacts/system-audit/visual-head/desktop-master-daftar-pilihan.png",
+      "sha256": "e738cdd8f9122db86e72baa5018590e0c1696bbb0c6a211b17e5d5ea028ee35d"
+    },
+    {
+      "nama": "monografi",
+      "jalur": "/laporan/monografi-sp",
+      "url_akhir": "/laporan/monografi-sp",
+      "heading": "Laporan Monografi SP",
+      "role": "Admin",
+      "mode": "desktop",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "png": {
+        "width": 1440,
+        "height": 900
+      },
+      "overflow_horizontal": false,
+      "file": "artifacts/system-audit/visual-head/desktop-monografi.png",
+      "sha256": "1a49f06230294f0376b4b243fb45a5e185e9803c80ae8f08334f400a7b055af6"
+    },
+    {
+      "nama": "dashboard",
+      "jalur": "/",
+      "url_akhir": "/",
+      "heading": "Dashboard Kawasan Kobalima Timur",
+      "role": "Admin",
+      "mode": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "png": {
+        "width": 390,
+        "height": 844
+      },
+      "overflow_horizontal": false,
+      "file": "artifacts/system-audit/visual-head/mobile-dashboard.png",
+      "sha256": "0825aa352612d4963c22afd90ca681918b96878062f3d5bd681027acc7a15e2f"
+    },
+    {
+      "nama": "transmigran",
+      "jalur": "/transmigran",
+      "url_akhir": "/transmigran",
+      "heading": "Data Transmigran",
+      "role": "Admin",
+      "mode": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "png": {
+        "width": 390,
+        "height": 844
+      },
+      "overflow_horizontal": false,
+      "file": "artifacts/system-audit/visual-head/mobile-transmigran.png",
+      "sha256": "8813862191ff64c7721950827fb46da91e822ee498d86df1ff2b039200cc5f8d"
+    },
+    {
+      "nama": "pengaduan",
+      "jalur": "/pengaduan",
+      "url_akhir": "/pengaduan",
+      "heading": "Pengaduan",
+      "role": "Admin",
+      "mode": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "png": {
+        "width": 390,
+        "height": 844
+      },
+      "overflow_horizontal": false,
+      "file": "artifacts/system-audit/visual-head/mobile-pengaduan.png",
+      "sha256": "fdbcd0473dc859993e8e9a8306e81e4e2442683d0f06ce22b6d8299034478564"
+    },
+    {
+      "nama": "penanaman",
+      "jalur": "/penanaman",
+      "url_akhir": "/penanaman",
+      "heading": "Penanaman",
+      "role": "Admin",
+      "mode": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "png": {
+        "width": 390,
+        "height": 844
+      },
+      "overflow_horizontal": false,
+      "file": "artifacts/system-audit/visual-head/mobile-penanaman.png",
+      "sha256": "c976f13780d6cd1ff81ca7dfd54db5f53f3a562180457ed765317126efa5f98b"
+    },
+    {
+      "nama": "panen",
+      "jalur": "/panen",
+      "url_akhir": "/panen",
+      "heading": "Hasil Panen",
+      "role": "Admin",
+      "mode": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "png": {
+        "width": 390,
+        "height": 844
+      },
+      "overflow_horizontal": false,
+      "file": "artifacts/system-audit/visual-head/mobile-panen.png",
+      "sha256": "b48b5b7afa93576ed9c819c17a6c5e36498f81539cd5c4ef30f0bbd3aab01e84"
+    },
+    {
+      "nama": "master-wilayah",
+      "jalur": "/wilayah",
+      "url_akhir": "/wilayah",
+      "heading": "Data Master Wilayah",
+      "role": "Admin",
+      "mode": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "png": {
+        "width": 390,
+        "height": 844
+      },
+      "overflow_horizontal": false,
+      "file": "artifacts/system-audit/visual-head/mobile-master-wilayah.png",
+      "sha256": "7f619d386764b879526d68ba47b2829df073bdc5da0e71e31bb1c9d586c72cb9"
+    },
+    {
+      "nama": "master-daftar-pilihan",
+      "jalur": "/master/daftar-pilihan",
+      "url_akhir": "/master/daftar-pilihan",
+      "heading": "Data Master Daftar Pilihan",
+      "role": "Admin",
+      "mode": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "png": {
+        "width": 390,
+        "height": 844
+      },
+      "overflow_horizontal": false,
+      "file": "artifacts/system-audit/visual-head/mobile-master-daftar-pilihan.png",
+      "sha256": "9094529a1091692dc7d95d6a2e9f8811c83d3624957248fc4c49867704a440c0"
+    },
+    {
+      "nama": "monografi",
+      "jalur": "/laporan/monografi-sp",
+      "url_akhir": "/laporan/monografi-sp",
+      "heading": "Laporan Monografi SP",
+      "role": "Admin",
+      "mode": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "png": {
+        "width": 390,
+        "height": 844
+      },
+      "overflow_horizontal": false,
+      "file": "artifacts/system-audit/visual-head/mobile-monografi.png",
+      "sha256": "65ba2e4dacf376c8c4a36545910d03683bc004cab8efe49514609ab845f9ad09"
+    }
+  ]
+}

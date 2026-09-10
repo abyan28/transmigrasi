@@ -315,7 +315,7 @@ async function main() {
 
         const hrefUnduhPdf = await nilai(`
             [...document.querySelectorAll('a[target="_blank"]')]
-                .find((a) => a.textContent.trim().startsWith('Unduh PDF'))?.getAttribute('href') ?? ''
+                .find((a) => a.textContent.includes('Unduh PDF'))?.getAttribute('href') ?? ''
         `);
         periksa('href "Unduh PDF" menuju rute dokumen + filter aktif + cetak=1',
             hrefUnduhPdf.includes('/laporan/hasil-panen/dokumen#') && hrefUnduhPdf.includes('cetak=1')

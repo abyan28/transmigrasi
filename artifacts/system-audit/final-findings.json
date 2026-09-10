@@ -1,5 +1,5 @@
 {
-  "audit_sha": "29549bf0b0a2aed6a48fa587f77cec261dfec3bf",
+  "audit_sha": "b545f50a02ff51e8ca3eb90c4bb9d18619be1a7b",
   "summary": {"critical": 0, "high": 11, "medium": 24, "low": 3},
   "findings": [
     {"id":"SYS-H01","severity":"HIGH","title":"Akun nonaktif tetap dapat memakai sesi aktif","status":"FIXED"},
@@ -19,7 +19,7 @@
     {"id":"SYS-M04","severity":"MEDIUM","title":"Fresh install dan suite Database gagal pada master pilihan SP P1/P2","status":"FIXED"},
     {"id":"SYS-M05","severity":"MEDIUM","title":"Lock dependency produksi tidak kompatibel dengan PHP 8.2 workflow","status":"FIXED"},
     {"id":"SYS-M06","severity":"MEDIUM","title":"Browser suite tidak menangkap exception JavaScript/Alpine","status":"FIXED"},
-    {"id":"SYS-M07","severity":"MEDIUM","title":"Audit UI/UX lama tidak memiliki integritas bukti memadai","status":"TERBUKTI_RUNTIME"},
+    {"id":"SYS-M07","severity":"MEDIUM","title":"Audit UI/UX lama tidak memiliki integritas bukti memadai","status":"IMPROVED"},
     {"id":"SYS-M08","severity":"MEDIUM","title":"Batas percobaan recovery dapat dilompati request paralel","status":"FIXED"},
     {"id":"SYS-M09","severity":"MEDIUM","title":"Deduplikasi notifikasi rentan concurrency","status":"FIXED"},
     {"id":"SYS-M10","severity":"MEDIUM","title":"Nomor urut pengaduan dapat sama pada request paralel","status":"FIXED"},
@@ -38,7 +38,7 @@
     {"id":"SYS-M23","severity":"MEDIUM","title":"Dokumentasi deployment bertentangan dengan workflow preview aktual","status":"FIXED"},
     {"id":"SYS-M24","severity":"MEDIUM","title":"Tidak ada deployment path untuk aplikasi Laravel stateful","status":"TERBUKTI_STATIC_TRACE"},
     {"id":"SYS-L01","severity":"LOW","title":"Pint menemukan 12 style issues","status":"FIXED"},
-    {"id":"SYS-L02","severity":"LOW","title":"Route-map test hanya menyapu route tulis dan CI belum menjadi quality gate","status":"IMPROVED"},
+    {"id":"SYS-L02","severity":"LOW","title":"Route-map test hanya menyapu route tulis dan CI belum menjadi quality gate","status":"FIXED"},
     {"id":"SYS-L03","severity":"LOW","title":"Browser scripts dapat skip dengan exit sukses dan tidak memiliki runner wajib","status":"FIXED"}
   ],
   "deferred_decisions": [

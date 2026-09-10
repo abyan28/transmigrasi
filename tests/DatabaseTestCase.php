@@ -71,7 +71,7 @@ abstract class DatabaseTestCase extends TestCase
         try {
             parent::setUp();
         } catch (Throwable $e) {
-            if ($this->lewatiAlasan !== null) {
+            if ($this->lewatiAlasan !== null && ! $this->databaseWajib()) {
                 $this->markTestSkipped($this->lewatiAlasan);
             }
 
@@ -79,7 +79,16 @@ abstract class DatabaseTestCase extends TestCase
         }
 
         if ($this->lewatiAlasan !== null) {
+            if ($this->databaseWajib()) {
+                $this->fail($this->lewatiAlasan);
+            }
+
             $this->markTestSkipped($this->lewatiAlasan);
         }
+    }
+
+    private function databaseWajib(): bool
+    {
+        return filter_var(env('CI_REQUIRE_DATABASE', false), FILTER_VALIDATE_BOOL);
     }
 }

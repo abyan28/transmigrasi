@@ -59,7 +59,7 @@ export async function masukAdmin({ kirim, nilai, asal, penjaga }) {
             if (! kredensial || ! sandi || ! form) return false;
             kredensial.value = ${JSON.stringify(username)};
             sandi.value = ${JSON.stringify(password)};
-            form.submit();
+            form.requestSubmit();
             return true;
         })()
     `);

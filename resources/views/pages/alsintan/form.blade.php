@@ -173,7 +173,7 @@
             </p>
 
             {{-- Satu baris per poktan terpilih. --}}
-            <template x-for="pid in poktanTerpilih" :key="pid">
+            <template x-for="pid in Object.keys(distribusi)" :key="pid">
                 <fieldset class="rounded-lg border border-gray-200 p-4 dark:border-gray-800">
                     <legend class="px-1 text-theme-sm font-medium text-gray-800 dark:text-white/90">
                         <span x-text="namaPoktan(pid)"></span>

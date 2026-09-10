@@ -23,8 +23,9 @@ class PenilaianKondisiSeeder extends Seeder
     {
         foreach (DummyData::parameterPenilaian() as $urutan => $p) {
             ParameterPenilaianSp::updateOrCreate(
-                ['kode' => $p['kode']],
+                ['daftar_pilihan_id' => $p['daftar_pilihan_id']],
                 [
+                    'kode' => $p['kode'],
                     'nama' => $p['nama'],
                     'tingkat' => $p['tingkat'] ?? null,
                     'bobot' => $p['bobot'],

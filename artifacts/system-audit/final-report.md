@@ -69,12 +69,15 @@
   - Files: `app/Support/NomorPengaduan.php`, `tests/Database/PengaduanTest.php`.
 
 - [FIXED] **SYS-H03, SYS-M06, SYS-L03** — seluruh 18 script browser memakai helper shared yang wajib login sebelum mengakses rute internal, menangkap `Runtime.exceptionThrown`/`console.error`, menolak redirect kembali ke `/login`, dan gagal keras bila WebSocket/Edge/server/kredensial tidak tersedia. Runner resmi `npm run test:browser` sekarang terdaftar.
-  - Verification: `npm run test:browser:harness` PASS; syntax seluruh script lulus; adopsi helper **18/18**. Script terfokus yang diperbarui lulus: export **16/16**, filter laporan **54/54**, form panen **23/23**, form penanaman **15/15** (jalur stok kosong), komposisi lahan **8/8**, master daftar pilihan **10/10**, master wilayah **19/19**, penilaian kondisi **12/12**, lebar halaman **36/36**. Full runner masih menemukan exception lama di form distribusi Alsintan (`distribusi[pid]` saat pilihan berubah), sehingga suite keseluruhan belum diklaim hijau.
+  - Verification: `npm run test:browser:harness` PASS; syntax seluruh script lulus; adopsi helper **18/18**. Script terfokus yang diperbarui lulus, termasuk export **16/16**, filter laporan **54/54**, lebar halaman **36/36**, dan distribusi Saprotan/Alsintan **21/21** tanpa exception. Canonical full runner masih memuat kontrak test suksesi/wakil-poktan lama yang perlu diselaraskan terpisah.
   - Files: `tests/Browser/browser-harness.mjs`, `tests/Browser/uji-harness.mjs`, `tests/Browser/jalankan-semua.mjs`, 18 script browser domain, `package.json`; defect runtime tambahan diperbaiki di form Rumah, Penanaman, dan Status Kondisi.
 
-- [FIXED sebagian] **SYS-L02** — penjaga route-map kini menyapu seluruh named authenticated route (GET dan write), bukan hanya POST/PUT/PATCH/DELETE. Pengecualian `ganti-kata-sandi.cek-username` dicatat eksplisit karena endpoint itu milik setiap pengguna terautentikasi. Workflow kini menjalankan Pint, Unit, browser-harness, audit dependency, dan build; seluruh action dipin SHA. Gate MySQL route-map masih lokal.
+- [FIXED] **SYS-L02** — penjaga route-map menyapu seluruh named authenticated route. Workflow quality terpisah menyediakan MariaDB 10.11 dan menjalankan `IzinPenegakanRuteTest --fail-on-skipped`; `CI_REQUIRE_DATABASE=true` mengubah database tidak tersedia menjadi kegagalan terang. Seluruh action dipin SHA.
   - Regression: `IzinPenegakanRuteTest` — **17 passed, 38 assertions**.
-  - Files: `app/Support/PetaIzinRute.php`, `tests/Database/IzinPenegakanRuteTest.php`, `.github/workflows/deploy.yml`.
+  - Files: `app/Support/PetaIzinRute.php`, `tests/Database/IzinPenegakanRuteTest.php`, `tests/DatabaseTestCase.php`, `.github/workflows/quality.yml`.
+
+- [IMPROVED] **SYS-M07** — audit visual segar dark-theme terikat SHA `b545f50` menangkap 8 permukaan berisiko pada desktop 1440×900 dan mobile 390×844. Manifest mencatat URL akhir, heading eksak, role, viewport, dimensi PNG, overflow, path, dan SHA-256; validator membuktikan matriks 16/16 lengkap, unik, berdimensi cocok, bukan login/404, dan tanpa overflow horizontal. Pengukuran warna efektif/rasio kontras serta theme/role tambahan masih terbuka.
+  - Files: `tests/Browser/audit-visual-head.mjs`, `tests/Browser/validasi-audit-visual.mjs`, `artifacts/system-audit/visual-head/`.
 
 - [FIXED] **SYS-L01** — pelanggaran format yang dilaporkan audit dibersihkan menggunakan Pint pada file yang tepat; tidak ada perubahan perilaku yang disengaja.
   - Verification: `vendor/bin/pint --test` — **361 files PASS**.
@@ -165,7 +168,7 @@ Laporan lama **tidak layak menjadi bukti HEAD**:
 - Build frontend: lulus; warning chunk >500 kB.
 - Unit: 1 test / 1 assertion lulus.
 - Feature: 788 test / 7.780 assertion lulus.
-- Database serial utama: 633 lulus / 3 gagal / 2.819 assertion.
+- Database serial baseline audit (sebelum perbaikan SYS-M04): 633 lulus / 3 gagal / 2.819 assertion; focused `SpTest` setelah perbaikan: 11/343 lulus.
 - Audit keamanan paralel: 193 test / 716 assertion lulus.
 - Audit domain terfokus: 105 test / 392 assertion lulus; laporan Feature: 3 test / 10 assertion lulus.
 - Schema parity: `NOL SELISIH` migration vs `schema.sql`.

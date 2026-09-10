@@ -1,0 +1,58 @@
+name: Periksa kualitas
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  database:
+    runs-on: ubuntu-latest
+    services:
+      mariadb:
+        image: mariadb:10.11
+        env:
+          MARIADB_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mariadb-admin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Siapkan PHP 8.3
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, intl, bcmath, zip, gd, pdo_mysql
+          coverage: none
+
+      - name: Pasang dependensi
+        run: composer install --prefer-dist --no-progress --optimize-autoloader
+
+      - name: Uji peta izin pada MariaDB
+        env:
+          APP_ENV: testing
+          APP_KEY: base64:5GWJnggIxdq3H1/Y4Kc4zFDbftfTOIpcXEI0Q1H8Bmg=
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_USERNAME: root
+          DB_PASSWORD: root
+          DB_TEST_DATABASE: digitrans_test
+          CI_REQUIRE_DATABASE: 'true'
+          PULSE_ENABLED: 'false'
+          TELESCOPE_ENABLED: 'false'
+          NIGHTWATCH_ENABLED: 'false'
+        run: php artisan test tests/Database/IzinPenegakanRuteTest.php --fail-on-skipped

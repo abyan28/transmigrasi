@@ -141,10 +141,12 @@ async function main() {
                     return r.width > 0 && r.left >= 0 && r.right <= b.width;
                 }).length,
                 gulirMendatar: document.documentElement.scrollWidth > document.documentElement.clientWidth,
-                barisTampak: baris.filter((t) => t.getBoundingClientRect().height > 0).length,
+                barisParameter: baris.filter((t) => t.getBoundingClientRect().height > 0).map((tr) => ({
+                    nama: tr.querySelector('td')?.textContent.trim() ?? '',
+                    tidakDinilai: tr.textContent.includes('Tidak dinilai'),
+                })),
                 adaTotalBobot: document.body.textContent.includes('37'),
                 adaKeamanan: document.body.textContent.includes('Sarana Keamanan'),
-                tidakDinilai: (document.body.textContent.match(/Tidak dinilai/g) || []).length,
             });
         })()`));
 
@@ -155,11 +157,11 @@ async function main() {
         periksa('kedua tab terlihat tanpa menggulir', awal.tabTerlihat === 2, `terlihat ${awal.tabTerlihat}`);
         periksa('tidak ada gulir mendatar', awal.gulirMendatar === false);
 
-        // 19 jenis pada tab parameter; tab status tersembunyi saat termuat.
-        periksa('seluruh jenis dirender sebagai baris', awal.barisTampak === 19, `dapat ${awal.barisTampak}`);
+        const lainnya = awal.barisParameter.filter((baris) => baris.nama === 'Lainnya');
+        periksa('seluruh jenis yang tersedia dirender sebagai baris', awal.barisParameter.length === 19, `dapat ${awal.barisParameter.length}`);
         periksa('total bobot 37 ditampilkan', awal.adaTotalBobot === true);
         periksa('parameter Keamanan yang dahulu terlewat kini ada', awal.adaKeamanan === true);
-        periksa('dua jenis Lainnya ditandai tidak dinilai', awal.tidakDinilai === 2, `dapat ${awal.tidakDinilai}`);
+        periksa('seluruh jenis Lainnya ditandai tidak dinilai', lainnya.length === 2 && lainnya.every((baris) => baris.tidakDinilai), `dapat ${lainnya.length}`);
 
         // Tab kedua benar-benar berpindah, bukan sekadar ada di HTML.
         await nilai(`[...document.querySelectorAll('[role="tab"]')][1].click()`);
